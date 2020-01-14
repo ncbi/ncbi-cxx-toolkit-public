@@ -3005,13 +3005,8 @@ void TrimSeqAlign(CBioseq_Handle bsh,
 }
 
 
-void SetPartial(CSeq_loc& loc, CRef<CSeq_feat> feat, bool partial_start, bool partial_stop)
+void SetPartial(CSeq_loc& loc, CRef<CSeq_feat> feat, CSeq_loc::TStrand strand, bool partial_start, bool partial_stop)
 {
-  	auto strand = eNa_strand_unknown;
-	if (feat->CanGetLocation()) {
-		strand = feat->GetLocation().GetStrand();
-	}
-
     if (strand == eNa_strand_minus) {
         swap(partial_start, partial_stop);
     }
@@ -3043,22 +3038,26 @@ void TrimSeqFeat(CRef<CSeq_feat> feat, const TCuts& sorted_cuts, bool& bFeatureD
             new_location->Assign(feat->GetLocation());
 
             // check if the cut overlaps feature location, then feature should be marked partial
-			if (to >= new_location->GetStart(eExtreme_Positional) && 
+            if (to >= new_location->GetStart(eExtreme_Positional) && 
                 to < new_location->GetStop(eExtreme_Positional) &&
                 from <= new_location->GetStart(eExtreme_Positional))
             {
-				partial_start = true;
-			}
-			if (from <= new_location->GetStop(eExtreme_Positional) && 
+                partial_start = true;
+            }
+            if (from <= new_location->GetStop(eExtreme_Positional) && 
                 from > new_location->GetStart(eExtreme_Positional) &&
                 to >= new_location->GetStop(eExtreme_Positional)) 
             {
-				partial_stop = true;
-			}
+                partial_stop = true;
+            }
             s_SeqLocDelete(new_location, from, to, bFeatureDeleted, bFeatureTrimmed);
             feat->SetLocation(*new_location);
             if (bFeatureTrimmed) {
-                SetPartial(feat->SetLocation(), feat, partial_start, partial_stop);
+                auto strand = eNa_strand_unknown;
+                if (feat->CanGetLocation()) {
+                    strand = feat->GetLocation().GetStrand();
+                }
+                SetPartial(feat->SetLocation(), feat, strand, partial_start, partial_stop);
             }
 
             // No need to cut anymore nor update.  Feature will be completely deleted.  
@@ -3133,7 +3132,7 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
 {
     // Get partialness and strand of location before cutting
     bool bIsPartialStart = false;
-    ENa_strand eStrand = eNa_strand_unknown;
+    CSeq_loc::TStrand eStrand = eNa_strand_unknown;
     if (cds->CanGetLocation()) {
         bIsPartialStart = cds->GetLocation().IsPartialStart(eExtreme_Biological);
         eStrand = cds->GetLocation().GetStrand(); 
@@ -3323,7 +3322,13 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
                     new_protein_bioseq->GetLength() - 1);
 
                 // set partial flag
-                SetPartial(new_feat->SetLocation(), new_feat, isPartialStart, isPartialStop);
+                // protein feat location does not have strand so we have to use cds here
+                // to get the strand
+                auto strand = eNa_strand_unknown;
+                if (cds->CanGetLocation()) {
+                    strand = cds->GetLocation().GetStrand();
+                }
+                SetPartial(new_feat->SetLocation(), new_feat, strand, isPartialStart, isPartialStop);
 
                 // Update the original
                 CSeq_feat_EditHandle prot_feat_eh(*prot_feat_ci);

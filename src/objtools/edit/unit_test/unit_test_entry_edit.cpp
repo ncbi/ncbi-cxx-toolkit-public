@@ -1354,11 +1354,22 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
                 BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
             }
 
-			// Seq1 is found in test3 input
+			// Contig1 is found in test4 input
 			if (s_FindLocalId(bsh, "Contig1")) {
 				// Create the cuts from known vector contamination
 				// Seqid "Seq1" has vector
 				edit::TRange cut1(0, 11);
+				edit::TCuts cuts;
+				cuts.push_back(cut1);
+
+				BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation(bsh, cuts, edit::eTrimToClosestEnd));
+			}
+            
+            // ctg7180000000092 is found in test5 input
+			if (s_FindLocalId(bsh, "ctg7180000000092")) {
+				// Create the cuts from known vector contamination
+				// Seqid "Seq1" has vector
+				edit::TRange cut1(19148, 19270);
 				edit::TCuts cuts;
 				cuts.push_back(cut1);
 
@@ -1370,7 +1381,7 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
         BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
              *entry_h.GetCompleteSeq_entry(),
              *expected_entry_h.GetCompleteSeq_entry()) );
-
+             
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
     }

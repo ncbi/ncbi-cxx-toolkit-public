@@ -1,0 +1,2407 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Klebsiella pneumoniae subsp. pneumoniae",
+        db {
+          {
+            db "taxon",
+            tag id 72407
+          }
+        },
+        orgname {
+          mod {
+            {
+              subtype strain,
+              subname "TestABCDE"
+            }
+          },
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacterales; Enterobacteriaceae; Klebsiella",
+          gcode 11,
+          mgcode 0,
+          div "BCT"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Wang",
+                  first "Baozhan",
+                  initials "B."
+                }
+              }
+            }
+          },
+          title "An acidophilic Thaumarchaeota of Nitrosotalea cluster."
+        }
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA588273"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN13234604"
+          }
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 11
+        },
+        {
+          label str "day",
+          data int 21
+        },
+        {
+          label str "year",
+          data int 2019
+        }
+      }
+    },
+    create-date std {
+      year 2018,
+      month 9,
+      day 7
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "ctg7180000000092"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "ALT EMAIL:mdna@majorbio.com"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "Submission Title:None"
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "ctg7180000000092"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 19148,
+        seq-data ncbi2na '9AC02167E524184DFB2CF1DAC31CA2204C138114510C257BA7B4
+03E19A770004A7826BC94979A41901547A78E66098F9D2CEC89A820419821F400A095D1E4E8287
+34841A8013B46AE38AD3C4E9E804EAB8904040959D5039442C35F1606E73590DF81AB9283F75F1
+00157B499026A4A1094D34004D2BC74224151036A692B20A8E79683D66074F3D2FEB8C9A73BA67
+B34739298EFB86B7C18D653400824A53CAE006E7A2C400ACFF422802640D922A069D4447F84A66
+E89643340F1F4A9B62D69D60BC338069E55D0918A96B1A1F855649F4974B8E615F79DD503918DD
+867B26E26B4264F661BDFF59B41931684579BAC011A5F7E74EC957C40EEBEE38407934E767D813
+25B6D213A6B42ADBE2A6CFECFD400EBD7E79B4B8303597E7498E9A493566453820568618C2EF77
+EB87EB2C0E931A3AE01B4564256E58BEB66ADB9434BA22E9B944DCFB7EB0D6B42B06AF92DAF456
+7DAD90ECD548FD642B6BF59E4DAE2B82AD0A7E9E307D757FA638E67FF3407C64585A643359435F
+CD8CD67F4B966074E21E8395967BF51D99127DD9187D1EB22932D54DB4165B7E3059E53B4B293A
+E8EB4E6F431D94C9B5D6ECE3D30F4C7F34C73FC70A416A8F1A9243780487CE412D0898BBF29ABE
+EBBEF920BC51FB804A2228350E2F565E319FB60B020E4DB0B74EA9A8AE2B9157ED68D3E316F53E
+CDB0DF1FBD69DDB66FE4F63B64B6B829E06F248075E4D41DFFB26D27D8E30682427F291B8E8FAA
+6652FF7DEF62F544FF499A4B04DEE3B4EFB0BD77DB11527B641C214C20D0D415F23B0F93145774
+AF634223D8EE62FE0A1AB3DC829174BD82436AD832BDD1F390682137E4E01493A2E07D377A2000
+B8AEED994826478BBE2D67DDA75F74001F8EDF7BBE551E755ED615BEB8E2283155E775885276AE
+A789A381CD61F56AEAD10142514B68ED3D85E89609BF7D0F4DCF9F97DD684396CA715222335436
+F7DC52A2B953A23AFF2419F7D6E56D6F40A8A64D3990575B67F7DDE5E09AE153F40DA3240FF0F3
+BB607A26BDC675921028B808838E3C3E83A6B49D3457415E88C6987EE5A687C15694AFCE637FF3
+30F79410E1943996B83B6EE8B0764165AC5AD1ED52914694090ADE9A673BF6CDA98631831AD24D
+D9DAD2265D2BB10B509BF7682EE08E5AD0C6D693C104D9BC5DD8694814E5F4197D15AFF396E592
+253EB3D2A41D40984D052F4DDAC4BD0A09899CDB8336D0C276D8D42C5BCF0339EB5493524960EC
+BC43035348494063F5E837D2A0EA190FADE8D0E584BB100F540B984309B50D9D9A6BF1865CC362
+ADBF822FA2982B4E9829009A6615C2DD28DB4915E3B839F4AB9E18D611A4C5ECEF7A5C350F3008
+998D5C80AB97A62A4E7CC51359088877C6E2A9A9BF4C1E147DE012925CC7FFA4113E304D3531FB
+D7346F1B8E13F76F450A6896908655516584536EBBE1A66095E064D35B8A9AF6426EAE74156566
+6090E45E9E7791500D94D15615E2FF68E5120591A4EA7D79DA9A3E616E480D818538AB56AB59E9
+D3657D98B199A3527D50A5EA34AA64356E6716A576587D68D0DD842B86FD258E59E8A209659669
+A96845599624D7457668A509A49E9A117DA6D0968A5B603463D9A78896A82AA695E99943519695
+6F7B8A86566289664505AB264F7B4A8062669C4EDE778ADA27AAFE74557535981B634214599A46
+AEE46AEE0EAF2829807A31FAC668A8C50CE87DD1822118221052A345A4212E77B80978E088D4D6
+E0D3D14E3449CFCDC5262641666258B98E25EFBE40D8EE795DD6AC3C0313D6D129E3430FF3688F
+80CE9E2AC7ED9E5E9E0C0C0C0E0C0D348F97937FFB91CF3F3F3D50E3FD18550E3F95866870FC60
+4FAEFEF5AE48143D32D0CEE5920F379837557BD140960332B8837DDCA82B78FCF41BD61070D275
+3D96EFB9B941E2C434A0F0D217D7C30303834D23E5C4DFFEA473CFCF5438FE5619A1E3F0C1326F
+75F0D8E5FA93FF004307A4A8ED6EE00E5AEFB266C4C78F552A570C82694BE797DDF59D480F57B3
+D9A543FDFCFB39B3212BB2E755C03425370A0ADE3F3D78FB1D217D7CBFF7ADF98411A1962F0C09
+3D763E910E97FB885C1514901252FE9421B3E9E3622256B329BE290E6567603BB8ADBC643150CF
+5A7D8D49935B12A20611430E034FF293AB84D7F5E3AF882EE203B67EF9E43287AA201E22389355
+2467CE90E98E5ACC79DB011AFE0CB5F1AFE37DD0D9EF2E15BC9D6CEE238C8D18B7B7F8698FD0DA
+AC00C2F4B42041B000345672B35C79EE249F8A750E38914AB70FCC5AD36CD555694ABAE0BED2BD
+962F698D1C28DBE0454FE0E13F2345DF73DD987A514E24681156123D04824A44E1812BFAFC64F7
+DF9559C2C08C3880A27A31F5D228AF1A4FA0A20242476783E696E229E6D5D1AC29BE94626594A9
+6D34919D149B99E8F2A7917BD8BE59D8EB4D27E82ECF51E5D6EB77786A34B7BF44189A4538597B
+5BE2EAE7E3BBBA31DE0998EB4674D02F3628353225B4DF69315E561AD06842F08AF77C76A0B59E
+4FD53AE389CEEFFB5DFE9F462699396567326AA29F429D8E2AA44955937B782FB572EEAB452736
+80DCD2BF072284EE2882E96E8D167DC6540E186AEBE303431F4FB03433BEE1BE78AA0BA5B9FFDF
+1128D1D6626BE92A9C6E5943C166A1A44A69A9F3AD49B8A5B72E9D1E852D6B096DB7EF6AB55B12
+FA6881B66BF44D9118EF3F4347CD39B52EDE8986A69997DF8FA3097FF4F4479940F5F40E86A055
+2959536802762E0671499A95D600D66665F5A5DD43F4065A0AA95E5165575813BFE0980AB82BC4
+60098FC02A4C4AAAC0FF8E5F5555F15D1D6FDBE77BA5F5CA6FF38E9BD8C935EE17555D778457FE
+0A437DFDFD7FA7725E2F8A808040B7FF50E571E2A7C7A08291C5A40D37FA7FD573D60D48C102FF
+512F6818041C480F1CCFDFCF0232AA9CFD26CD32AA9CFD26CD32AA9CFD26E8C1FF73D2ED83BA30
+7FA40C083C69034AEBCF080AEA73F4AB34238EAF07BEABFCBF8FB0E928F92AC219D19455E333E0
+95C2D28C07EFA3FFF80927FA7F7F802D7F3B6EBFDED5C3EBCE0A3FD46231C625ED4FF9EEF6B29A
+ECAC9508322B70670AA79DFC09FF0E764CD04A05AE282C3269000F5DD70783527FD40AB9FE3BAF
+9F74D51441397FEB9C6D4EF4D4A6C17FFF5FFEBEE9DEF801E3FE93C08A6F537BD1B3DBFA4D9C6F
+D59571FA342B42F864E0E09C07BC58BD0A69AF67BD92E7DAEBCD4022402DEA0DB94C2B0D6C7DF3
+6B89934C149F931500403E5BEBD8653B34BFCABF7BBA42BE7E042FA666300927D67F36AB429A3A
+71A4934282FF7EFBA2C2E93A0436CCFEEBC3FEE26BADACDACCABD6BF96CF51242F8F8F91B58827
+BF4AB4259FD67D0E09B225F9A1F4A64C019971C0137F23E79FEDF6B2C5BA8FABD0BA06AFF5A79A
+680B8FBF0991EEFFF4CF0CC35C893CC30DCC0CC8CCC3EFD3F41279FE589AB62F55A7B7F50ADD69
+B68389A4638041104A6417E095E773C14F56E6D76EDE6D5EC6A24D3E30817492BA7D5E423E20CD
+A316EB88B7701E80CE6BD8FA0D00D6B6909FE59F43A737B5A4EABAAED0E184034195D6FFA7EBF0
+05FE90DB9E7A1C4C41250DADA1DF66DAD9D4FC52C825EFAD0AD8F0A41FD217B193A7D469C05799
+AEB63F147165FFE1E30490A8FD3660F35C93BCCF30CD1CCBCCCACC334CCC33B9CCC21C0A3C8B43
+A02D4031BF903CB9A4F3089ABBDBCFF6DFD1013BEEE983AFFC5E77D7700E9D2800BCB9FA4A9927
+401D217979F7B03250B16404AF59979A3C5A3A9E07A64D29FF20A4DFAD9FE8429D409632D93C3B
+0D993479FE567D04D978860A5D0F5F6642266D18065FB5FF9959B983ADD7C034EED2E933D3357F
+7D6C3F32D6549A80896FD0ED9EF7B759FAE59794828C3489B7535F6403035AC1595543435ACF42
+4479C50653EB3E880F9527535AB4198C987FA47E5B27D41DB4051DFE0459185BF6B63B05DD3743
+4FCC0EB14426F14C242084CD97D20BF4FD4442A398F48AC5CB1840619149EE0B28800BED993DD1
+874C48BAADE74AE48CBE045B99A631BD266FA63F6A06B485F965E2F5E676FDAAC9FDB6E5E525B5
+7EC45519E1A90A90E58C9F96F7FAEE790F53F690E5022427A4388ED51EE59D2B63F9E6E1243456
+46D1BF914B498A33E3D6D7E29E6A629AD8BF5114516DD0FD15F833E67FB0F9E019E867A03CB667
+B7F37D01499167F416F96EE6539F527699BE9CDADF7B5DEAE284668CC8292C64E46CEAC45733E4
+B7B434040056642A00AF38A8C004524573EE4ABE824AA228B226B00859F94906137ECB3C76B0C7
+28881304E0451443095EE9ED00F8669DC00129E09AF2525E690640551E9E3998263E74B3B226A0
+81066087D00282574793A0A1CD2106A004ED1AB8E2B4F13A7A013AAE2410102567540E510B0D7C
+581B9CD6437E06AE4A0FDD7C40055ED26409A92842534D00134AF1D08905440DA9A4AC82A39E5A
+0F5981D3CF4BFAE3269CEE99ECD1CE4A63BEE1ADF063594D00209294F2B801B9E2C400ACFF4228
+02640D922A069D4447F84A66E89643340F1F4A9B62D69D60BC338069E55D0918A96B1A1F855649
+F4974B8E615F79DD503918DD867B26E26B4264F661BDFF59B41931684579BAC011A5F7E74EC955
+F103BAFB8E107934E767D81325B6D213A6B42ADBE2A6CFECFD400EBD7E79B4B8303597E7498E9A
+493566453820568618C2EF77EB87EB2C0E931A3AE01B4564256E58BEB66ADB9434BA22E9B944DC
+FB7EB0D6B42B06AF92DAF4567DAD90ECD548FD642B6BF59E4DAE2B82AD0A7E9E307D757FA638E6
+7FF3407C6456169A43359435FCD8CD67F4B966074E21E8395967BF51D99127DD9187D1EB22932D
+54DB4165B7E3059E53B4B293AE3AD39BD0C765326D75BB38F4C3D31FCD31CFF1C2905AA3C6A490
+DE0121F3904B42262EFCA6AFBAEFBE482F147EE012888A0D438BD5978C67ED82C083936C2DD3AA
+6A2B8AE455FB5A34F8C5BD4FB36C37C7EF5A776D9BF93D8ED92DAE0A781BC9201D7935077FEC9B
+49F638C1A0909FCA46E3A3EA9994BFDF7BD8BD513FD26692C137B8ED3BEC2F5DF6C4549ED90708
+53083435057C8EC3E4C515DD2BD8D088F63B98BF8286AB3DC829174BD82436AD832BDD1F390682
+137E4E01493A2E07D377A2000B8AEED994826478BBE2D67DDA75F74001F8EDF7BBE551E755ED61
+5BEB8E2283155E775885276AEA789A381CD61F56AEAD10149452DA3B4F617A25826FDF43D373E7
+E5F75A10E5B29C54888CD50DBDF714A8AE54E88EBFC9067DF5B95B5BD02A29934E6415D6D9FDF7
+797826B854FD0368C903FC3CEED81E89AF719D64840A2E0220E38F0FA0E9AD274D15D057A231A6
+1FB969A1F055A52BF398DFFCCC3DE50438650E65AE0EDBBA2C1D90596B16B47B54A451A5090ADE
+9A673BF6CDA98631831AD24DD9DAD2265D2BB10B509BF7682EE08E5AD0C6D693C104D9BC5DD869
+4814E5F4197D15AFF396E592253EB3D2A41D40984D052F4DDAC4BD0A09899CDB8336D0C276D8D4
+2C5BCF0339EB5493524960ECBC43035348494063F5E837D2A83A8643EB7A3439612EC403D502E6
+10C26D4367669AFC619730D8AB6FE08BE8A60AD3A60A4026998570B74A36D24578EE0E7D2AE786
+358469317B3BDE970D43CC02266357202AE5E98A939F3144D642221DF1B8AA6A6FD307851F7804
+A49731FFE9044F8C134D4C7EF5CD1BC6E384FDDBD1429A25A4219554596114DBAEF86998257819
+34D6E2A6BD909BAB9D05595998243917A79DE454036534558578BFDA39448164693A9F5E76A68F
+985B920360614E2AD5AAD67A74D95F662C6668D49F54297A8D2A990D5B99C5A95D961F5A343761
+0AE1BF4963967A288259659A6A5A1156658935D15D9A29426927A6845F69B425A296D80D18F669
+E225AA0AA9A57A6650D465A55BDEE2A19598A25991416AC993DED2A01899A713B79DE2B689EABF
+9D155D4D6606D8D085166691ABB91ABB83ABCA0A601E8C7EB19A2A31433A1F74608846088414A8
+D169084B9DEE025E38223535B834F4538D1273F3714989905998962E63897BEF90363B9E5775AB
+0F00C4F5B44A78D0C3FCDA23E033A78AB1FB6797A78303030383034D23E5E4DFFEE473CFCFCF54
+38FF4615438FE5619A1C3F1813EBBFBD6B92050F4CB433B96483CDE60DD55EF4502580CCAE20DF
+772A0ADE3F3D06F5841C349D4F65BBEE6E5078B10D283C3485F5F030303834D23E5C4DFFEA473C
+FCF5438FE55866878FC304C9BDD7C36397EA4FFC010C1E92A0ED6EE00E5AEFB266C4C78F552A57
+0C82694BE797DDF59D480F57B3D9A543F7F3ECE6CC84AECB9D55C00D094DC282B78FCF5E3EC748
+5F5F2FFDEB7E610468658BC3024F5D8FA440E97FB885C05514901252FE9421B3E9E3622095AC32
+9BE290E6565D80EEE2B6F190C5430F5A7D8D49935B12A20611430E00D3F0A4EAE135FD78EBE20B
+B880ED9FBE790CA1EA8807888E24D54919F3A43A6396B3079DB011AFE0CB5F1BF8DF74367BCB85
+5BC9D6CEE238C23460B7B7E1A63F436AC00C0BD2D08106C000345672B35C79EE249F8A750E3891
+42ADC3F316B4DB35555694ABAE0BED2BD962F698D1C28DBE04553F8384FC8D177DC3DD987A514E
+24681156123D04824A44E1812BF6BF193DF7E5559C2C08C3880A27A307D748A2BC693E82880909
+1D9E0F9A5B88A79B5746B029BE944899652A5B4D24674526E67A3CA9E457BD8BE59D8EB4D27E82
+ECF51E5D6EB77786A34B7BF44189A4538597B5BE2EAE7E3BBBA31D782663AD19D3402F3628350C
+896E34'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus-tag "DYY67_2330"
+              },
+              location int {
+                from 70,
+                to 360,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2331"
+              },
+              location int {
+                from 396,
+                to 638,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2332"
+              },
+              location int {
+                from 746,
+                to 1021,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2333"
+              },
+              location int {
+                from 1023,
+                to 1694,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2334"
+              },
+              location int {
+                from 1919,
+                to 2275,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2335"
+              },
+              location int {
+                from 3104,
+                to 3649,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2336"
+              },
+              location int {
+                from 4009,
+                to 4863,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2337"
+              },
+              location int {
+                from 6088,
+                to 6267,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2338"
+              },
+              location int {
+                from 6248,
+                to 6628,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2339"
+              },
+              location int {
+                from 7132,
+                to 7527,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2340"
+              },
+              location int {
+                from 7966,
+                to 8127,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2341"
+              },
+              location int {
+                from 8424,
+                to 9353,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2342"
+              },
+              location int {
+                from 9375,
+                to 9656,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2343"
+              },
+              location int {
+                from 9677,
+                to 10297,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2344"
+              },
+              location int {
+                from 10533,
+                to 10859,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2345"
+              },
+              location int {
+                from 10856,
+                to 11182,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2346"
+              },
+              location int {
+                from 11339,
+                to 11932,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2347"
+              },
+              location int {
+                from 12131,
+                to 12421,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2348"
+              },
+              location int {
+                from 12457,
+                to 12699,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2349"
+              },
+              location int {
+                from 12806,
+                to 13042,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2350"
+              },
+              location int {
+                from 13173,
+                to 13481,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2351"
+              },
+              location int {
+                from 13478,
+                to 13783,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2352"
+              },
+              location int {
+                from 13980,
+                to 14336,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2353"
+              },
+              location int {
+                from 15023,
+                to 15811,
+                strand plus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2354"
+              },
+              location int {
+                from 16070,
+                to 16924,
+                strand minus,
+                id local str "ctg7180000000092"
+              }
+            },
+            {
+              data gene {
+                locus-tag "DYY67_2355"
+              },
+              partial TRUE,
+              location int {
+                from 18726,
+                to 19147,
+                strand minus,
+                id local str "ctg7180000000092",
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2330"
+        }
+      },
+      descr {
+        title "Prevent host death protein, Phd antitoxin [Candidatus
+ Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2330"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 96,
+        seq-data ncbieaa "MNTTTISPVAVKIDAALKNRLKRLASLRQRKPHWLMREAIAQYVEREEQRED
+FKKEALTAWKDYQTTGKHVTGDEVITWLETWGEQQTKPAPKCHK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "Prevent host death protein, Phd antitoxin"
+                }
+              },
+              location int {
+                from 0,
+                to 95,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2330"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2331"
+        }
+      },
+      descr {
+        title "Death on curing protein, Doc toxin [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2331"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 80,
+        seq-data ncbieaa "MQEFLLTKTPVSAKRAGQAIIKNIRLLKSNPQIGRQVEGMLPEFRELIIQFG
+DSGYVALYHYAGDVVTVLTIRHQKEAGH"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "Death on curing protein, Doc toxin"
+                }
+              },
+              location int {
+                from 0,
+                to 79,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2331"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2332"
+        }
+      },
+      descr {
+        title "hypothetical protein PA0941 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2332"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 91,
+        seq-data ncbieaa "MQFVITTTFVRGYMSKKAVFYHAGCPVCVDAEKNVANALDRSRYSVEIVHLG
+EQKGRITEAEAAGVKSVPALVLEGQPFHINFGAGLDALK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein PA0941"
+                }
+              },
+              location int {
+                from 0,
+                to 90,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2332"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2333"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2333 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2333"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 223,
+        seq-data ncbieaa "MLASNIAVVRHGGQGSLRAYLYFQKWFLAASVNKSALLSDGGSIPRTMKNPD
+DDKCSLGDLVVNGIRMVKRHPQARAELVAGRANQWRVACHIYCLGNPVKVTGCSRFTRFGRNVSPDFRKVGFRCIGEV
+KGQGLADNFLPLAMMRFLSNLRTDRRNIRQSFIDIRFQCRELMRLECPPLFPLAHSFSHDFTGRGIVPIVNRRLDNRC
+HVSRHGGWSCVQYSP"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 222,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2333"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2334"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2334 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2334"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 118,
+        seq-data ncbieaa "MQLHLRVGLILMVLVATAGCTKRNLQHDITDVTAALKMWELEQKKTGAPQSI
+TCLKLASVIIEADATKELDAGVSANVQPSPTATSNANATRAGTSKITIQWNGINDPDKGCTSPPAP"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 117,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2334"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2335"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2335 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2335"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 181,
+        seq-data ncbieaa "MSCGVTRNRRYRSLSQAPRPKQGLAALCFVSGDDTNTVSISLGQSASGVQVQ
+AFLGSVKMPVNTSGINNIALPLDGQNHAFNAFTRFYAVPQSHWYSGQLQSDINQFISVQFKEASAIVNIVNKLVDPST
+VIKYAGPSIQQPNVVTINPSDSQTISWNLQGMGRNWSGSMPTVYKIPKVRQ"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 180,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2335"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2336"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2336 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2336"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 284,
+        seq-data ncbieaa "MRSPYWYPSAYQVSSFAFLTHSHPCTPVPRGGLDRRSRMEGVSKPQLRPQSR
+HVAALVSLTECATRLVRGSSRASLTERGRRGLARQGRPLPRLSAANRDFDGLRLDAEGVRQLPLGLREGEDARRGVSG
+PPRRRLLLQRHRLKRHLVEIDPEVGEGPVAHGIAPLIPGLGKLDPRVLAKGDEPADPGTLMVVRFLHGRNPPEQEAHA
+VRFCGIRKLRVGVMAILGAEQPGALLRAGGVEHPRLRTALTDDAFRASRRQHHDGVGGGGRLAGSALVNEKCHHVT"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 283,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2336"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2337"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2337 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2337"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 59,
+        seq-data ncbieaa "MRRSNRKDYSNRVYEQYTGIAIAISVLGMLISQFLPSPIAATSDISHTSQPS
+GKDVTHA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 58,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2337"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2338"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2338 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2338"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 126,
+        seq-data ncbieaa "MCLLLLNLSGCSVLMVASRENRRGDLNVIQMGVQRSLVIAELGEPDNFTTLA
+GGGYDDRYKLDPGAHHWSLKLLTAVGYLAGDFFTLFLTELIFTPIEIAVKDRLVIYHLTYGANGSLTAIEKIKP"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 125,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2338"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2339"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2339 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2339"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 131,
+        seq-data ncbieaa "MVMSYVFCPLWLHERRMPPAIAGEASRLDEGAQPPHLSEVVPSVGSPAIGNL
+SGLTRGHVRRSGRGSPLLRPNDDGWLINQYFIVNQYVVTLLRGSGRAFSYTGSLRERLAGATCRQLTAGRHRRRAYGPA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 130,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2339"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2340"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2340 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2340"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 53,
+        seq-data ncbieaa "MEKDFVSFPQLRLEPKERKKIAFKRVSEEGGGHRMLSNAIIKRLGRPQSNETE"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 52,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2340"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2341"
+        }
+      },
+      descr {
+        title "IncW-like replication protein [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2341"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 309,
+        seq-data ncbieaa "MPLTPQQENFLDAAVAIRLDPDKAEAAFIARQLVQATLPHRNPKTDTWRRTN
+GNFVLGMQAGYDALTDKKYGLPYGTIPRLLLFWITTEALRTANRRLELGNSLASFMRQLDLDPSRGGKRSDAKRIREQ
+MERLFNAKISFQQSHNQKGKKGYAWMNMDVAPKGMLWWDEKQPHQSTLWKSWIQLGEEFFAAITSSPVPVDMRALKAL
+KSSPLALDLYSWATYTAYRTQQNGQARSISWKILHNQLGTENHDIKDFSKKAKAAFKKIQQVYPDLGLQYIRGGVSVL
+PCNPAITIKLKPQQLTHHLDTLK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "IncW-like replication protein"
+                }
+              },
+              location int {
+                from 0,
+                to 308,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2341"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2342"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2342 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2342"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 93,
+        seq-data ncbieaa "MKKHSALKQSLSAAAGKPVPLEPNPTVLPKTKQQSKDVLVGAFYAPEVRKAL
+RFIEAESGLTLKQLLGRAINQLAVEYGKPEPYTDTDHRSQN"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 92,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2342"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2343"
+        }
+      },
+      descr {
+        title "Chromosome [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2343"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 206,
+        seq-data ncbieaa "MKSLAVISQKGGSGKSTTAQGLAVEAMRTGLKVALIDLDQQASTGKWSDRRE
+ESDRLAVVCSPAARLPKVLNQAKTEGVDFVVIDTPPHAGQIAIEAAKLADRILIPIEPHISSLETLTTVSDILNLAGK
+PPAEVLINDAPVQGRRHEDAREWLIEQGFKVAPVVLFHRAAHSDAGDLGKTAGELDPLGKAAVEMKQLYIYIYRLL"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "Chromosome"
+                }
+              },
+              location int {
+                from 0,
+                to 205,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2343"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2344"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2344 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2344"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 108,
+        seq-data ncbieaa "MNMPLTHDFKETIRTRAQKDKAFRDALLREGIEAFVSGDVEAGKAVMRDYIN
+ATIGFGALSKATKMPSKSLMRQFSPSGNPQARNLFAVLGYLQKQAGLSFELRPAKH"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 107,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2344"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2345"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2345 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2345"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 108,
+        seq-data ncbieaa "MIEMRGYIDRNGRAVFKEWFDELEATASAKVAIALTRMELGNFSNTNGVGSS
+VLEYRIDWGAGYRIYFAKDGDALIILLAGGTKRRQNSDIETALSRWADYKLRKKGI"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 107,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2345"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2346"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2346 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2346"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 197,
+        seq-data ncbieaa "MRTAFYIRVSSPRGQKTDSQRAELEAWRTRQRLKAVRWFEDKDSATNFQRPA
+FQQLQSAIFKGEIETVVVWKLDRLARSLKDGINILADWCKRDVRVIAVTQQIDLSGTVGHLIASLLFGIAEMELQHTK
+ERQAIGIALARQRGVYKGRLAGTTKATPKRAQELRRQGLTVPEIANALNVSPRTVFNYLHLSRPHSV"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 196,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2346"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2347"
+        }
+      },
+      descr {
+        title "Prevent host death protein, Phd antitoxin [Candidatus
+ Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2347"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 96,
+        seq-data ncbieaa "MNTTTISPVAVKIDAALKNRLKRLASLRQRKPHWLMREAIAQYVEREEQRED
+FKKEALTAWKDYQTTGKHVTGDEVITWLETWGEQQTKPAPKCHK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "Prevent host death protein, Phd antitoxin"
+                }
+              },
+              location int {
+                from 0,
+                to 95,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2347"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2348"
+        }
+      },
+      descr {
+        title "Death on curing protein, Doc toxin [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2348"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 80,
+        seq-data ncbieaa "MQEFLLTKTPVSAKRAGQAIIKNIRLLKSNPQIGRQVEGMLPEFRELIIQFG
+DSGYVALYHYAGDVVTVLTIRHQKEAGH"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "Death on curing protein, Doc toxin"
+                }
+              },
+              location int {
+                from 0,
+                to 79,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2348"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2349"
+        }
+      },
+      descr {
+        title "hypothetical protein PA0941 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2349"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 78,
+        seq-data ncbieaa "MSKKAVFYHAGCPVCVDAEKNVANALDRSRYSVEIVHLGEQKGRITEAEAAG
+VKSVPALVLEGQPFHINFGAGLDALK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein PA0941"
+                }
+              },
+              location int {
+                from 0,
+                to 77,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2349"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2350"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2350 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2350"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 102,
+        seq-data ncbieaa "MTLHLTDAAETDLAEIWGYIATEAGEPTATRYLDRITKTIDVARHSPLIGTT
+RDQLGTGLRVTFHHPYAIYYQVTKRTLIVVRVLHGARDAAAIAEQGGFIH"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 101,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2350"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2351"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2351 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2351"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 101,
+        seq-data ncbieaa "MNYESYTEDAMASIERMTITMPTDMAAVIKTAVDDGDYASTSEVVREAVREW
+KQRRAFQSHEFAALKADIDKGLADIAAGRVRKFDKKRIIAKGRKLSAKP"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 100,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2351"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2352"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2352 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2352"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 118,
+        seq-data ncbieaa "MQLHLRVGLILMVLVATAGCTKRNLQHDITDVTAALKMWELEQKKTGAPQSI
+TCLKLASVIIEADATKELDAGVSANVQPSPTATSNANATRAGTSKITIQWNGINDPDKGCTSPPAP"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 117,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2352"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2353"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2353 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2353"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 262,
+        seq-data ncbieaa "MMINWNGGQLITLNPGDTATCAGGLNPGQVYAIFLYNSANNDANAPVNVVWS
+NSQPPVPVTVPGTTAKQGLAALCFVSGDDTNTVSISLGQSASGVQVQAFLGSVKMPVNTSGINNIALPLDGQNHAFNA
+FTRFYAVPQSHWYSGQLQSDINQFISVQFKEASAIVNIVNKLVDPSTVIKYAGPSIQQPNVVTINPSDSQTISWNLQG
+NGTQLVWINADSVQNSQSATISVQSLAAVYDAYNRGSFEELEAKVMAKAKAARP"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 261,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2353"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2354"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2354 [Candidatus Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2354"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 284,
+        seq-data ncbieaa "MRSPYWYPSAYQVSSFAFLTHSHPCTPVPRGGLDRRSRMEGVSKPQLRPQSR
+HVAALVSLTECATRLVRGSSRASLTERGRRGLARQGRPLPRLSAANRDFDGLRLDAEGVRQLPLGLREGEDARRGVSG
+PPRRRLLLQRHRLKRHLVEIDPEVGEGPVAHGIAPLIPGLGKLDPRVLAKGDEPADPGTLMVVRFLHGRNPPEQEAHA
+VRFCGIRKLRVGVMAILGAEQPGALLRAGGVEHPRLRTALTDDAFRASRRQHHDGVGGGGRLAGSALVNEKCHHVT"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 283,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2354"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "zhongguo",
+          tag str "DYY67_2355"
+        }
+      },
+      descr {
+        title "hypothetical protein DYY67_2355, partial [Candidatus
+ Nitrosotalea sp.]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans,
+          completeness no-left
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "General",
+              data str "gnl|zhongguo|DYY67_2355"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 139,
+        seq-data iupacaa "ITALLDSSITFDERDHRASGVSTHIKHPLNGQAVMVPLVVKQTDPVRETTEA
+VEYTSKLMTIERQLEQGAALIQRTLVSVLMTALAALCGQRLYREGRSLSRPQFSECLLSPSNAVTSSEEVIQLLSHYL
+YLAGGKKNA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 138,
+                id general {
+                  db "zhongguo",
+                  tag str "DYY67_2355"
+                },
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2330"
+          },
+          location int {
+            from 70,
+            to 360,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2331"
+          },
+          location int {
+            from 396,
+            to 638,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2332"
+          },
+          location int {
+            from 746,
+            to 1021,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2333"
+          },
+          location int {
+            from 1023,
+            to 1694,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2334"
+          },
+          location int {
+            from 1919,
+            to 2275,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2335"
+          },
+          location int {
+            from 3104,
+            to 3649,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2336"
+          },
+          location int {
+            from 4009,
+            to 4863,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2337"
+          },
+          location int {
+            from 6088,
+            to 6267,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2338"
+          },
+          location int {
+            from 6248,
+            to 6628,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2339"
+          },
+          location int {
+            from 7132,
+            to 7527,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2340"
+          },
+          location int {
+            from 7966,
+            to 8127,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2341"
+          },
+          location int {
+            from 8424,
+            to 9353,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2342"
+          },
+          location int {
+            from 9375,
+            to 9656,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2343"
+          },
+          location int {
+            from 9677,
+            to 10297,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2344"
+          },
+          location int {
+            from 10533,
+            to 10859,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2345"
+          },
+          location int {
+            from 10856,
+            to 11182,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2346"
+          },
+          location int {
+            from 11339,
+            to 11932,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2347"
+          },
+          location int {
+            from 12131,
+            to 12421,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2348"
+          },
+          location int {
+            from 12457,
+            to 12699,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2349"
+          },
+          location int {
+            from 12806,
+            to 13042,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2350"
+          },
+          location int {
+            from 13173,
+            to 13481,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2351"
+          },
+          location int {
+            from 13478,
+            to 13783,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2352"
+          },
+          location int {
+            from 13980,
+            to 14336,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2353"
+          },
+          location int {
+            from 15023,
+            to 15811,
+            strand plus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2354"
+          },
+          location int {
+            from 16070,
+            to 16924,
+            strand minus,
+            id local str "ctg7180000000092"
+          }
+        },
+        {
+          data cdregion {
+            frame three,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole general {
+            db "zhongguo",
+            tag str "DYY67_2355"
+          },
+          location int {
+            from 18726,
+            to 19147,
+            strand minus,
+            id local str "ctg7180000000092",
+            fuzz-to lim gt
+          }
+        }
+      }
+    }
+  }
+}
