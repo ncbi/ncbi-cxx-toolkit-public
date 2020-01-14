@@ -86,7 +86,10 @@ Section "DefaultSection" SecDflt
   ;Update PATH
   ${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR\bin"
   ;Create the IGDATA environment variable
-  ${EnvVarUpdate} $0 "IGDATA" "P" "HKCU" "$INSTDIR"
+  ;${EnvVarUpdate} $0 "IGDATA" "P" "HKCU" "$INSTDIR"
+  ;create BLASTDB_LMDB_MAP_SIZE env needed for makeblastdb
+  ${EnvVarUpdate} $0 "BLASTDB_LMDB_MAP_SIZE" "P" "HKCU" "1000000"
+      
   
 SectionEnd
 
@@ -102,6 +105,9 @@ Section "Uninstall"
   ; Remove installation directory from PATH
   ${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR\bin"
   ; Remove the IGDATA environment variable 
-  ${un.EnvVarUpdate} $0 "IGDATA" "R" "HKCU" "$INSTDIR"
+  ;${un.EnvVarUpdate} $0 "IGDATA" "R" "HKCU" "$INSTDIR"
+  ;remove BLASTDB_LMDB_MAP_SIZE env
+  ${un.EnvVarUpdate} $0 "BLASTDB_LMDB_MAP_SIZE" "R" "HKCU" "1000000"
+
 
 SectionEnd
