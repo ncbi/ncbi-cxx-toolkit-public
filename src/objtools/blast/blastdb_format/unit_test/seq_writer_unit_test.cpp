@@ -250,11 +250,11 @@ BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
 BOOST_AUTO_TEST_CASE(TestRequestGiGivenPIG)
 {
     const int kPig(1067150);
-    const int kGi(129295);
+    const string kAcc("P01013.1");
     CTmpFile tmpfile;
     const string& fname = tmpfile.GetFileName();
     CSeqDB db("nr", CSeqDB::eProtein);
-    const string format_spec("%g");
+    const string format_spec("%a");
     ofstream out(fname.c_str());
     CSeqFormatter f(format_spec, db, out);
     CBlastDBSeqId id(kPig);
@@ -264,9 +264,9 @@ BOOST_AUTO_TEST_CASE(TestRequestGiGivenPIG)
     ifstream in(fname.c_str());
     char buffer[256] = { '\0' };
     in.getline(buffer, sizeof(buffer));
+    string acc_read(buffer);
 
-    const int gi_read = NStr::StringToInt(buffer, kConvFlags);
-    BOOST_REQUIRE_EQUAL(kGi, gi_read);
+    BOOST_REQUIRE_EQUAL(kAcc, acc_read);
 }
 
 BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
