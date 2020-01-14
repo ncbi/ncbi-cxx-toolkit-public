@@ -534,11 +534,11 @@ BOOST_AUTO_TEST_CASE(SetFilteringOptions) {
     }
 
     CRemoteBlast rmt_blaster(&prot_opts);
-    rmt_blaster.SetDatabase("alu");
+    rmt_blaster.SetDatabase("nr");
 
     CRemoteBlast::TSeqLocList query_seqloc(1);
     // use gi with low complexity regions
-    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 115129102));
+    CRef<CSeq_id> id(new CSeq_id("ABI82289.1"));
     query_seqloc.front().Reset(new CSeq_loc);
     query_seqloc.front()->SetWhole(*id);
     rmt_blaster.SetQueries(query_seqloc);
