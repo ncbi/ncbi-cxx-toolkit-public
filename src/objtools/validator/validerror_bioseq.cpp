@@ -4810,7 +4810,7 @@ size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& sr
         if (NStr::Find(lineage, "Cnidaria") != NPOS ||
             NStr::Find(lineage, "Mollusca") != NPOS ||
             NStr::Find(lineage, "Placozoa") != NPOS) {
-            return 50000;
+            return 65000;
         } else {
             return 30000;
         }

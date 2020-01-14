@@ -23892,19 +23892,29 @@ BOOST_AUTO_TEST_CASE(Test_VR_796)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
         "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [31000]"));
-    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // for RW-991
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().SetLength(64000);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [64000]"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetInst().SetLength(51000);
+    entry->SetSeq().SetInst().SetLength(66000);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "MitoMetazoanTooLong", cMitoMezoMsg));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
-        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [51000]"));
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [66000]"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
