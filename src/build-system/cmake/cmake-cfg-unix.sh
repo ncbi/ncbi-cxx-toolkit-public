@@ -181,13 +181,14 @@ while [ $# != 0 ]; do
   esac 
   shift 
 done 
-if [ $do_help = "yes" ]; then
-  Usage
-  exit 0
-fi
 
 if [ -f $tree_root/$extension ]; then
   source $tree_root/$extension
+fi
+
+if [ $do_help = "yes" ]; then
+  Usage
+  exit 0
 fi
 
 if [ -n "$unknown" ]; then
