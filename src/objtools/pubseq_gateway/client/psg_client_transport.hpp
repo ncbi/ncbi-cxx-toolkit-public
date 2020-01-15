@@ -707,6 +707,8 @@ struct SPSG_IoSession
     }
 
 private:
+    using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
+
     void OnConnect(int status);
     void OnWrite(int status);
     void OnRead(const char* buf, ssize_t nread);
@@ -714,6 +716,7 @@ private:
     bool Send();
     bool Write();
     bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
+    void RequestComplete(TRequests::iterator& it);
 
     void Reset(SPSG_Error error);
 
@@ -765,7 +768,7 @@ private:
     SPSG_UvTcp m_Tcp;
     SPSG_NgHttp2Session m_Session;
 
-    unordered_map<int32_t, SPSG_TimedRequest> m_Requests;
+    TRequests m_Requests;
 };
 
 struct SPSG_AsyncQueue : SPSG_UvAsync

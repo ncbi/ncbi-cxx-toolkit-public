@@ -984,7 +984,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             req->reply->SetSuccess();
         }
 
-        m_Requests.erase(it);
+        RequestComplete(it);
     }
 
     return 0;
@@ -1112,9 +1112,17 @@ bool SPSG_IoSession::ProcessRequest()
         }
     }
 
-    // Continue processing of remaining requests on the next callback
-    m_Io->queue.Send();
     return false;
+}
+
+void SPSG_IoSession::RequestComplete(TRequests::iterator& it)
+{
+    if ((m_Requests.size() == m_Session.GetMaxStreams())) {
+        // Continue processing of requests in the IO thread queue on next UV loop iteration
+        m_Io->queue.Send();
+    }
+
+    it = m_Requests.erase(it);
 }
 
 void SPSG_IoSession::CheckRequestExpiration()
@@ -1124,7 +1132,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {
             Retry(it->second, error);
-            it = m_Requests.erase(it);
+            RequestComplete(it);
         } else {
             ++it;
         }
