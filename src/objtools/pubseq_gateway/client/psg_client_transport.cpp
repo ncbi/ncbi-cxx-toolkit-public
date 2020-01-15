@@ -476,7 +476,6 @@ SPSG_UvWrite::SPSG_UvWrite(void* user_data) :
     m_WriteHiwater(TPSG_WriteHiwater::eGetDefault)
 {
     NewBuffer();
-    NewBuffer();
     PSG_UV_WRITE_TRACE(this << " created");
 }
 
@@ -497,6 +496,27 @@ int SPSG_UvWrite::Write(uv_stream_t* handle, uv_write_cb cb)
     uv_buf_t buf;
     buf.base = data.data();
     buf.len = data.size();
+
+    auto try_rv = uv_try_write(handle, &buf, 1);
+
+    // If immediately sent everything
+    if (try_rv == static_cast<int>(data.size())) {
+        PSG_UV_WRITE_TRACE(this << '/' << &request << " try-wrote: " << try_rv);
+        data.clear();
+        return 0;
+
+    // If sent partially
+    } else if (try_rv > 0) {
+        PSG_UV_WRITE_TRACE(this << '/' << &request << " try-wrote partially: " << try_rv);
+        _ASSERT(try_rv < static_cast<int>(data.size()));
+        buf.base += try_rv;
+        buf.len -= try_rv;
+
+    // If unexpected error
+    } else if (try_rv != UV_EAGAIN) {
+        PSG_UV_WRITE_TRACE(this << '/' << &request << " try-write failed: " << uv_strerror(try_rv));
+        return try_rv;
+    }
 
     auto rv = uv_write(&request, handle, &buf, 1, cb);
 
