@@ -508,6 +508,13 @@ public:
     /// Histograms -- in the order from the most recent to the least recent
     TTimeBins GetHistograms() const;
 
+    /// Number of ticks the histogram series has handled.
+    /// Initially the number of ticks is zero.
+    TTicks GetCurrentTick(void) const
+    {
+        return m_CurrentTick;
+    }
+
 private:
     void x_AppendBin(const THistogram& model_histogram, TTicks n_ticks);
     void x_Shift(size_t index, typename TTimeBins::iterator current_it);
