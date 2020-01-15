@@ -20,7 +20,6 @@
 
 #include "visitors.hpp"
 
-
 #include <misc/discrepancy/discrepancy.hpp>
 
 
@@ -53,6 +52,14 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
 {
     bool need_recalculate_index = false;
 
+    if (flags.find('x') != string::npos) {
+        CBioseq_CI bi(h_entry, CSeq_inst::eMol_na);
+        while (bi) {
+            edit::ExtendPartialFeatureEnds(*bi);
+            ++bi;
+        }
+    }
+
     CCleanup cleanup;
     if (flags.find('w') != string::npos)
     {
@@ -74,13 +81,6 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
 
         if (flags.find('U') != string::npos)
             cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
-    }
-    if (flags.find('x') != string::npos) {
-        CBioseq_CI bi(h_entry, CSeq_inst::eMol_na);
-        while (bi) {
-            edit::ExtendPartialFeatureEnds(*bi);
-            ++bi;
-        }
     }
 
     if (flags.find('d') != string::npos) {
