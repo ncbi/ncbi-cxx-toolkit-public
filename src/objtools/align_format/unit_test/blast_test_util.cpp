@@ -96,7 +96,6 @@ void PrintFormattedSeqAlign(ostream& out,
     ASSERT(sas);
 
     int align_opt = CDisplaySeqalign::eShowMiddleLine   |
-                    CDisplaySeqalign::eShowGi           |
                     CDisplaySeqalign::eShowBlastInfo    |
                     CDisplaySeqalign::eShowBlastStyleId;
 

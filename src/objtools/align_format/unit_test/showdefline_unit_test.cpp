@@ -92,8 +92,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
         
         CShowBlastDeflineTest sbd(*seqalign, *scope);
         int options = 0;
-        options += CShowBlastDefline::eShowGi|
-            CShowBlastDefline::eHtml|
+        options +=  CShowBlastDefline::eHtml|
             CShowBlastDefline::eLinkout;
         sbd.SetOption(options);
         
@@ -116,20 +115,17 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
                   CShowBlastDefline::SScoreInfo* si, 
                   int index)
     {
-        TGi gi_list[] = {GI_CONST(18426812), GI_CONST(6680636)};
         string defline[] = {"adenosine deaminase [Rattus norvegicus]", 
                             "adenosine deaminase [Mus musculus]"};
-        string evalue_string[] = {"2e-141", "3e-141"};
-        string bit_string[] = {"503", "502"};
+        string evalue_string[] = {"0.0", "0.0"};
+        string bit_string[] = {"734", "677"};
         int sum_n[] = {1, 1};
                 
         string id_url[] = {"<a title=\"Show report for NP_569083.1\" href=\"https://www.ncbi.nlm.nih.gov/nucleotide/NP_569083.1?report=genbank&log$=nucltop&blast_rank=1&RID=\" >",
-                           "<a title=\"Show report for NP_031424.1\" href=\"https://www.ncbi.nlm.nih.gov/nucleotide/NP_031424.1?report=genbank&log$=nucltop&blast_rank=1&RID=\" >"};
-        string score_url[] = {"<a href=#18426812>", "<a href=#6680636>"};
+        		"<a title=\"Show report for NP_001258981.1\" href=\"https://www.ncbi.nlm.nih.gov/nucleotide/NP_001258981.1?report=genbank&log$=nucltop&blast_rank=1&RID=\" >" };
+        string score_url[] = {"<a href=#NP_569083.1>", "<a href=#NP_001258981.1>"};
         bool is_new[] = {false, false};
         bool was_checked[] = {false, false};
-        
-        BOOST_REQUIRE_EQUAL(dl->gi, gi_list[index]);
         BOOST_REQUIRE_EQUAL(dl->defline, defline[index]);
         BOOST_REQUIRE_EQUAL(dl->id_url, id_url[index]);
         BOOST_REQUIRE_EQUAL(dl->score_url, score_url[index]);
@@ -151,5 +147,4 @@ BOOST_AUTO_TEST_CASE(RemoteDeflineInfo)
 {
     CShowBlastDeflineTest::GetDeflineInfo(CBlastOM::eRemote);
 }
-
 BOOST_AUTO_TEST_SUITE_END()

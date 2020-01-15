@@ -233,39 +233,30 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
        ctab.Print();
        ctab2.Print();
     }
-    const string ref[8] = {
-	"9940	Ovis aries	sheep	even-toed ungulates	Eukaryota",
-	"9913	Bos taurus	cattle	even-toed ungulates	Eukaryota",
-	"72004	Bos mutus	wild yak	even-toed ungulates	Eukaryota",
-	"9970	Syncerus caffer	African buffalo	even-toed ungulates	Eukaryota",
-	"43346	Bison bison bison	Bison bison bison	even-toed ungulates	Eukaryota",
-	"346063	Bubalus carabanensis	carabao	even-toed ungulates	Eukaryota",
-	"89462;365610	Bubalus bubalis;Bubalus bubalis x Bubalus carabanensis	water buffalo;Bubalus bubalis x Bubalus carabanensis	even-toed ungulates	Eukaryota",
-	"89462	Bubalus bubalis	water buffalo	even-toed ungulates	Eukaryota"
- };
+    const string ref[5] = {
+    		"XP_003443710	XP_003443710	8128;47969	Oreochromis niloticus;Oreochromis aureus	Nile tilapia;Oreochromis aureus	bony fishes	Eukaryota",
+    		"XP_003443710	XP_004568121	8153;8154;106582;303518	Haplochromis burtoni;Astatotilapia calliptera;Maylandia zebra;Pundamilia nyererei	Burton's mouthbrooder;eastern happy;zebra mbuna;Pundamilia nyererei	bony fishes	Eukaryota",
+    		"XP_003443710	XP_030605880	63155	Archocentrus centrarchus	flier cichlid	bony fishes	Eukaryota",
+    		"XP_003443710	XP_006794996	32507	Neolamprologus brichardi	Neolamprologus brichardi	bony fishes	Eukaryota",
+    		"XP_003443710	XP_030605881	63155	Archocentrus centrarchus	flier cichlid	bony fishes	Eukaryota"
+    };
 
     {
     	string output = CNcbiOstrstreamToString(output_stream);
-    	vector<string> results;
-    	NStr::Split(output, "\n", results);
 
-    	for(unsigned int i=0; i < 8; i++) {
-    		BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    	for(unsigned int i=0; i < 5; i++) {
+    		BOOST_REQUIRE(output.find(ref[i]) != NPOS);
     	}
     }
     {
     	string output = CNcbiOstrstreamToString(output_stream2);
-    	vector<string> results;
-    	NStr::Split(output, "\n", results);
-    	const string single_tax = "89462	Bubalus bubalis	water buffalo	even-toed ungulates	Eukaryota";
+    	const string single_tax[2] = {
+    			"XP_003443710	XP_003443710	8128	Oreochromis niloticus	Nile tilapia	bony fishes	Eukaryota",
+    			"XP_003443710	XP_004568121	106582	Maylandia zebra	zebra mbuna	bony fishes	Eukaryota"
+    	};
 
-    	for(unsigned int i=0; i < 8; i++) {
-    		if(i != 6) {
-    			BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
-    		}
-    		else {
-    			BOOST_REQUIRE(results[i].find(single_tax) != NPOS);
-    		}
+    	for(unsigned int i=0; i < 2; i++) {
+    		BOOST_REQUIRE(output.find(single_tax[i]) != NPOS);
     	}
     }
     scope->GetObjectManager().RevokeAllDataLoaders();                
@@ -297,23 +288,19 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     		ctab.Print();
     	}
 
-        const string ref[7] = {		
-		"X12497	NP_776517	interleukin-1 alpha precursor [Bos taurus]",
-		"X12497	XP_005890049	PREDICTED: interleukin-1 alpha [Bos mutus]",
-		"X12497	BAJ11606	interleukin 1 alpha [Syncerus caffer]",
-		"X12497	XP_010832415	PREDICTED: interleukin-1 alpha [Bison bison bison]",
-		"X12497	BAE76004	Interleukin-1 alpha [Bubalus carabanensis]",
-		"X12497	XP_006056051	interleukin-1 alpha isoform X1 [Bubalus bubalis]",
-		"X12497	NP_001277833	interleukin-1 alpha [Bubalus bubalis]"};
+        const string ref[5] = {
+        	"O19910	NP_045082	phycocyanin alpha subunit [Cyanidium caldarium]",
+        	"O19910	AAB01593	cpcA [Cyanidium caldarium]",
+        	"O19910	P00306	RecName: Full=C-phycocyanin alpha chain [Galdieria sulphuraria]",
+        	"O19910	YP_009051179	phycocyanin alpha subunit [Galdieria sulphuraria]",
+        	"O19910	YP_009297463	phycocyanin alpha subunit [Erythrotrichia carnea]"};
 
     	string output = CNcbiOstrstreamToString(output_stream);
-    	vector<string> results;
-    	NStr::Split(output, "\n", results);
-    	for(unsigned int i=0; i < 7; i++) {
+    	for(unsigned int i=0; i < 5; i++) {
             CNcbiOstrstream oss;
             oss << "Failed to find '" << ref[i] << "' in '" << output;
             string msg = CNcbiOstrstreamToString(oss);            
-    	    BOOST_REQUIRE_MESSAGE(results[i].find(ref[i]) != NPOS, msg);
+    	    BOOST_REQUIRE_MESSAGE(output.find(ref[i]) != NPOS, msg);
     	}
     }
 
@@ -328,21 +315,17 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	}
 
     	string output = CNcbiOstrstreamToString(output_stream);
-        const string ref[7] = {            
-	    "interleukin-1 alpha precursor [Bos taurus]<>RecName: Full=Interleukin-1 alpha; Short=IL-1 alpha; Flags: Precursor<>pre-interleukin-1 alpha [Bos taurus]<>interleukin 1-alpha [Bos taurus]<>interleukin-1 alpha precursor [Bos taurus]<>TPA: interleukin-1 alpha precursor [Bos taurus]",
-	    "PREDICTED: interleukin-1 alpha [Bos mutus]<>Interleukin-1 alpha [Bos mutus]",
-	    "interleukin 1 alpha [Syncerus caffer]",
-            "PREDICTED: interleukin-1 alpha [Bison bison bison]",
-            "Interleukin-1 alpha [Bubalus carabanensis]",
-            "interleukin-1 alpha isoform X1 [Bubalus bubalis]<>interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis x Bubalus carabanensis]",
-            "interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
-    	vector<string> results;
-    	NStr::Split(output, "\n", results);
-    	for(unsigned int i=0; i < 7; i++) {
+        const string ref[5] = {
+        		"O19910	NP_045082	phycocyanin alpha subunit [Cyanidium caldarium]<>RecName: Full=C-phycocyanin alpha chain [Cyanidium caldarium]<>unknown [Cyanidium caldarium]",
+        		"O19910	AAB01593	cpcA [Cyanidium caldarium]",
+        		"O19910	P00306	RecName: Full=C-phycocyanin alpha chain [Galdieria sulphuraria]<>C-phycocyanin alpha chain [validated] - red alga (Cyanidium caldarium) [Cyanidium caldarium]<>phycocyanin alpha subunits [Cyanidium caldarium]<>Chain A, Phycocyanin [Cyanidium caldarium]",
+        		"O19910	YP_009051179	phycocyanin alpha subunit [Galdieria sulphuraria]<>[pt] C-phycocyanin alpha chain [Galdieria sulphuraria]<>Chain A, C-phycocyanin Alpha Chain [Galdieria sulphuraria]<>Chain A, C-phycocyanin Alpha Chain [Galdieria sulphuraria]<>phycocyanin alpha subunit [Galdieria sulphuraria]<>[pt] C-phycocyanin alpha chain [Galdieria sulphuraria]",
+        		"O19910	YP_009297463	phycocyanin alpha subunit [Erythrotrichia carnea]<>phycocyanin alpha subunit [Erythrotrichia carnea]"};
+    	for(unsigned int i=0; i < 5; i++) {
             CNcbiOstrstream oss;
             oss << "Failed to find '" << ref[i] << "' in '" << output;
             string msg = CNcbiOstrstreamToString(oss);
-    	    BOOST_REQUIRE_MESSAGE(results[i].find(ref[i]) != NPOS, msg);
+    	    BOOST_REQUIRE_MESSAGE(output.find(ref[i]) != NPOS, msg);
     	}
     }
     scope->GetObjectManager().RevokeAllDataLoaders();                

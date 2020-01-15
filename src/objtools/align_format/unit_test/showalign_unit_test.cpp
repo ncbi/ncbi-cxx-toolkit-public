@@ -81,7 +81,7 @@ const int kPerformanceTimeout = 30;
 #endif
 BOOST_AUTO_TEST_CASE_TIMEOUT(TestPerformance, kPerformanceTimeout);
 
-BOOST_AUTO_TEST_CASE(TestTGIConversion)
+BOOST_AUTO_TEST_CASE(TestAccConversion)
 {
     const string seqAlignFileName_in = "data/in_showalign_use_this_gi.asn";
     CRef<CSeq_annot> san(new CSeq_annot);
@@ -102,20 +102,19 @@ BOOST_AUTO_TEST_CASE(TestTGIConversion)
     ds.SetDbName(kDbName);
     ds.SetDbType((kDbType == CBlastDbDataLoader::eProtein));
     int flags = CDisplaySeqalign::eShowBlastInfo |
-        CDisplaySeqalign::eShowGi | 
         CDisplaySeqalign::eShowBlastStyleId;
     ds.SetAlignOption(flags);
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
     CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);    
-    BOOST_REQUIRE(output.find("gi|212900") != NPOS);
-    BOOST_REQUIRE(output.find("gi|385145537") != NPOS);
-    BOOST_REQUIRE(output.find("gi|385145539") != NPOS);        
+    BOOST_REQUIRE(output.find("XP_011512980.1") != NPOS);
+    BOOST_REQUIRE(output.find("NP_004146.1") != NPOS);
+    BOOST_REQUIRE(output.find("AAH96218.1") != NPOS);
     scope->GetObjectManager().RevokeAllDataLoaders();            
 }
 
-BOOST_AUTO_TEST_CASE(TestTGIConversionExt)
+BOOST_AUTO_TEST_CASE(TestAccConversionExt)
 {
     const string seqAlignFileName_in = "data/in_showalign_use_this_gi_ext.asn";
     CRef<CSeq_annot> san(new CSeq_annot);
@@ -136,18 +135,17 @@ BOOST_AUTO_TEST_CASE(TestTGIConversionExt)
     ds.SetDbName(kDbName);
     ds.SetDbType((kDbType == CBlastDbDataLoader::eProtein));
     int flags = CDisplaySeqalign::eShowBlastInfo |
-        CDisplaySeqalign::eShowGi | 
         CDisplaySeqalign::eShowBlastStyleId;
     ds.SetAlignOption(flags);
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
     CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);        
-    BOOST_REQUIRE(output.find("gi|212900") != NPOS);
-    BOOST_REQUIRE(output.find("gi|385145537") != NPOS);
-    BOOST_REQUIRE(output.find("gi|385145539") != NPOS);
-    BOOST_REQUIRE(output.find("gi|129296") != NPOS);
-    BOOST_REQUIRE(output.find("gi|71897377") != NPOS);
+    BOOST_REQUIRE(output.find("NP_001263315.1") != NPOS);
+    BOOST_REQUIRE(output.find("XP_015137661.1") != NPOS);
+    BOOST_REQUIRE(output.find("AGN32861.1") != NPOS);
+    BOOST_REQUIRE(output.find("BAM13279.1") != NPOS);
+    BOOST_REQUIRE(output.find("P01014.1") != NPOS);
     scope->GetObjectManager().RevokeAllDataLoaders();                
 }
 
@@ -163,7 +161,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
     CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);  
     fileSeqAlignSet->Set() = san->GetData().GetAlign();     
 
-    const string kDbName("ecoli");
+    const string kDbName("nt");
     const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eNucleotide);
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, location);
     {{  // to limit the scope of the objects declared in this block

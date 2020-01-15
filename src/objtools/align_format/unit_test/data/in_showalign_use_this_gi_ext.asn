@@ -45,7 +45,7 @@ Seq-annot ::= {
         },
         {
           id str "e_value",
-          value real { 811021147991027, 10, -186 }
+          value real { 424243260630565, 10, -189 }
         },
         {
           id str "bit_score",
@@ -58,7 +58,7 @@ Seq-annot ::= {
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
           value int 232
@@ -73,7 +73,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_evalue",
-          value real { 811021147991027, 10, -186 }
+          value real { 424243260630565, 10, -189 }
         },
         {
           id str "seq_bit_score",
@@ -89,7 +89,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 100
+          value real { 1, 10, 2 }
         },
         {
           id str "seq_hspnum",
@@ -104,8 +104,14 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 129295
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          swissprot {
+            accession "P01013",
+            version 1
+          }
         },
         starts {
           0,
@@ -125,9 +131,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
+              num 1,
               data strs {
-                "gi:129295"              
+                "seqid:P01013.1"
               }
             }
           }
@@ -148,7 +154,7 @@ Seq-annot ::= {
         },
         {
           id str "e_value",
-          value real { 48986488021524, 10, -181 }
+          value real { 279269669246305, 10, -185 }
         },
         {
           id str "bit_score",
@@ -161,7 +167,7 @@ Seq-annot ::= {
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
           value int 230
@@ -176,7 +182,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_evalue",
-          value real { 48986488021524, 10, -181 }
+          value real { 279269669246305, 10, -185 }
         },
         {
           id str "seq_bit_score",
@@ -192,7 +198,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 99
+          value real { 987068965517241, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -207,8 +213,14 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 448824824
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          other {
+            accession "NP_001263315",
+            version 1
+          }
         },
         starts {
           0,
@@ -228,9 +240,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
-              data strs {       
-                "gi:448824824"
+              num 1,
+              data strs {
+                "seqid:NP_001263315.1"
               }
             }
           }
@@ -243,19 +255,19 @@ Seq-annot ::= {
       score {
         {
           id str "score",
-          value int 1226
+          value int 1227
         },
         {
           id str "blast_score",
-          value int 1226
+          value int 1227
         },
         {
           id str "e_value",
-          value real { 170841590304487, 10, -181 }
+          value real { 562393889395435, 10, -185 }
         },
         {
           id str "bit_score",
-          value real { 476862912354719, 10, -12 }
+          value real { 477248111930636, 10, -12 }
         },
         {
           id str "num_ident",
@@ -264,7 +276,7 @@ Seq-annot ::= {
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
           value int 230
@@ -279,15 +291,15 @@ Seq-annot ::= {
         },
         {
           id str "seq_evalue",
-          value real { 170841590304487, 10, -181 }
+          value real { 562393889395435, 10, -185 }
         },
         {
           id str "seq_bit_score",
-          value real { 476862912354719, 10, -12 }
+          value real { 477248111930636, 10, -12 }
         },
         {
           id str "seq_total_bit_score",
-          value real { 476862912354719, 10, -12 }
+          value real { 477248111930636, 10, -12 }
         },
         {
           id str "seq_percent_coverage",
@@ -295,7 +307,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 99
+          value real { 987068965517241, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -310,12 +322,18 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 510032768
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          other {
+            accession "XP_015137661",
+            version 1
+          }
         },
         starts {
           0,
-          170
+          165
         },
         lens {
           232
@@ -331,9 +349,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
-              data strs {       
-                "gi:510032768"
+              num 1,
+              data strs {
+                "seqid:XP_015137661.1"
               }
             }
           }
@@ -346,31 +364,31 @@ Seq-annot ::= {
       score {
         {
           id str "score",
-          value int 1133
+          value int 1226
         },
         {
           id str "blast_score",
-          value int 1133
+          value int 1226
         },
         {
           id str "e_value",
-          value real { 237944940659373, 10, -167 }
+          value real { 983313423938628, 10, -185 }
         },
         {
           id str "bit_score",
-          value real { 441039351794405, 10, -12 }
+          value real { 476862912354719, 10, -12 }
         },
         {
           id str "num_ident",
-          value int 211
+          value int 229
         },
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
-          value int 224
+          value int 230
         },
         {
           id str "hsp_percent_coverage",
@@ -378,19 +396,19 @@ Seq-annot ::= {
         },
         {
           id str "pc_ident",
-          value real { 90948275862069, 10, -14 }
+          value real { 987068965517241, 10, -15 }
         },
         {
           id str "seq_evalue",
-          value real { 237944940659373, 10, -167 }
+          value real { 983313423938628, 10, -185 }
         },
         {
           id str "seq_bit_score",
-          value real { 441039351794405, 10, -12 }
+          value real { 476862912354719, 10, -12 }
         },
         {
           id str "seq_total_bit_score",
-          value real { 441039351794405, 10, -12 }
+          value real { 476862912354719, 10, -12 }
         },
         {
           id str "seq_percent_coverage",
@@ -398,7 +416,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 91
+          value real { 987068965517241, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -413,8 +431,14 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 733881413
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          other {
+            accession "XP_015137660",
+            version 1
+          }
         },
         starts {
           0,
@@ -435,8 +459,118 @@ Seq-annot ::= {
             {
               label str "SEQIDS",
               num 2,
-              data strs {       
-                "gi:733881413"
+              data strs {
+                "seqid:XP_015137660.1",
+                "seqid:AGN32861.1"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 1229
+        },
+        {
+          id str "blast_score",
+          value int 1229
+        },
+        {
+          id str "e_value",
+          value real { 183996343309623, 10, -184 }
+        },
+        {
+          id str "bit_score",
+          value real { 478018511082471, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 229
+        },
+        {
+          id str "comp_adjustment_method",
+          value int 2
+        },
+        {
+          id str "num_positives",
+          value int 230
+        },
+        {
+          id str "hsp_percent_coverage",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "pc_ident",
+          value real { 987068965517241, 10, -15 }
+        },
+        {
+          id str "seq_evalue",
+          value real { 183996343309623, 10, -184 }
+        },
+        {
+          id str "seq_bit_score",
+          value real { 478018511082471, 10, -12 }
+        },
+        {
+          id str "seq_total_bit_score",
+          value real { 478018511082471, 10, -12 }
+        },
+        {
+          id str "seq_percent_coverage",
+          value int 100
+        },
+        {
+          id str "seq_percent_identity",
+          value real { 987068965517241, 10, -13 }
+        },
+        {
+          id str "seq_hspnum",
+          value int 1
+        },
+        {
+          id str "seq_align_totlen",
+          value real { 232, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          other {
+            accession "XP_015137659",
+            version 1
+          }
+        },
+        starts {
+          0,
+          224
+        },
+        lens {
+          232
+        },
+        strands {
+          unknown,
+          unknown
+        }
+      },
+      ext {
+        {
+          type str "use_this_seqid",
+          data {
+            {
+              label str "SEQIDS",
+              num 1,
+              data strs {
+                "seqid:XP_015137659.1"
               }
             }
           }
@@ -457,7 +591,7 @@ Seq-annot ::= {
         },
         {
           id str "e_value",
-          value real { 656868398284742, 10, -146 }
+          value real { 500971231721975, 10, -149 }
         },
         {
           id str "bit_score",
@@ -470,7 +604,7 @@ Seq-annot ::= {
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
           value int 207
@@ -485,7 +619,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_evalue",
-          value real { 656868398284742, 10, -146 }
+          value real { 500971231721975, 10, -149 }
         },
         {
           id str "seq_bit_score",
@@ -501,7 +635,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 78
+          value real { 780172413793103, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -516,8 +650,14 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 385145541
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          ddbj {
+            accession "BAM13279",
+            version 1
+          }
         },
         starts {
           0,
@@ -537,9 +677,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
-              data strs {       
-                "gi:385145541"
+              num 1,
+              data strs {
+                "seqid:BAM13279.1"
               }
             }
           }
@@ -560,7 +700,7 @@ Seq-annot ::= {
         },
         {
           id str "e_value",
-          value real { 30817206154261, 10, -144 }
+          value real { 236511901308944, 10, -148 }
         },
         {
           id str "bit_score",
@@ -573,7 +713,7 @@ Seq-annot ::= {
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
           value int 207
@@ -588,7 +728,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_evalue",
-          value real { 30817206154261, 10, -144 }
+          value real { 236511901308944, 10, -148 }
         },
         {
           id str "seq_bit_score",
@@ -604,7 +744,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 78
+          value real { 775862068965517, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -619,8 +759,14 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 71897377
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          other {
+            accession "NP_001026172",
+            version 1
+          }
         },
         starts {
           0,
@@ -640,13 +786,13 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
+              num 5,
               data strs {
-                "gi:129296",
-                "gi:212900",
-                "gi:71897377",
-                "gi:385145537",
-                "gi:385145539"
+                "seqid:NP_001026172.1",
+                "seqid:P01014.1",
+                "seqid:AAA68882.1",
+                "seqid:BAM13277.1",
+                "seqid:BAM13278.1"
               }
             }
           }
@@ -659,19 +805,19 @@ Seq-annot ::= {
       score {
         {
           id str "score",
-          value int 977
+          value int 974
         },
         {
           id str "blast_score",
-          value int 977
+          value int 974
         },
         {
           id str "e_value",
-          value real { 588602003232089, 10, -144 }
+          value real { 982553369197453, 10, -147 }
         },
         {
           id str "bit_score",
-          value real { 380948217951298, 10, -12 }
+          value real { 379792619223546, 10, -12 }
         },
         {
           id str "num_ident",
@@ -680,10 +826,10 @@ Seq-annot ::= {
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
-          value int 209
+          value int 206
         },
         {
           id str "hsp_percent_coverage",
@@ -695,15 +841,15 @@ Seq-annot ::= {
         },
         {
           id str "seq_evalue",
-          value real { 588602003232089, 10, -144 }
+          value real { 982553369197453, 10, -147 }
         },
         {
           id str "seq_bit_score",
-          value real { 380948217951298, 10, -12 }
+          value real { 379792619223546, 10, -12 }
         },
         {
           id str "seq_total_bit_score",
-          value real { 380948217951298, 10, -12 }
+          value real { 379792619223546, 10, -12 }
         },
         {
           id str "seq_percent_coverage",
@@ -711,7 +857,7 @@ Seq-annot ::= {
         },
         {
           id str "seq_percent_identity",
-          value int 77
+          value real { 767241379310345, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -726,8 +872,14 @@ Seq-annot ::= {
         dim 2,
         numseg 1,
         ids {
-          gi 129295,
-          gi 733881415
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          other {
+            accession "XP_015137657",
+            version 1
+          }
         },
         starts {
           0,
@@ -747,9 +899,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
-              data strs {      
-                "gi:733881415"
+              num 1,
+              data strs {
+                "seqid:XP_015137657.1"
               }
             }
           }
@@ -762,59 +914,59 @@ Seq-annot ::= {
       score {
         {
           id str "score",
-          value int 958
+          value int 787
         },
         {
           id str "blast_score",
-          value int 958
+          value int 787
         },
         {
           id str "e_value",
-          value real { 17920560600765, 10, -142 }
+          value real { 244017231431998, 10, -118 }
         },
         {
           id str "bit_score",
-          value real { 373629426008868, 10, -12 }
+          value real { 307760298527001, 10, -12 }
         },
         {
           id str "num_ident",
-          value int 175
+          value int 151
         },
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
-          value int 214
+          value int 191
         },
         {
           id str "hsp_percent_coverage",
-          value real { 1, 10, 2 }
+          value real { 995689655172414, 10, -13 }
         },
         {
           id str "pc_ident",
-          value real { 754310344827586, 10, -15 }
+          value real { 653679653679654, 10, -15 }
         },
         {
           id str "seq_evalue",
-          value real { 17920560600765, 10, -142 }
+          value real { 244017231431998, 10, -118 }
         },
         {
           id str "seq_bit_score",
-          value real { 373629426008868, 10, -12 }
+          value real { 307760298527001, 10, -12 }
         },
         {
           id str "seq_total_bit_score",
-          value real { 373629426008868, 10, -12 }
+          value real { 307760298527001, 10, -12 }
         },
         {
           id str "seq_percent_coverage",
-          value int 100
+          value int 99
         },
         {
           id str "seq_percent_identity",
-          value int 75
+          value real { 653679653679654, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -822,24 +974,40 @@ Seq-annot ::= {
         },
         {
           id str "seq_align_totlen",
-          value real { 232, 10, 0 }
+          value real { 231, 10, 0 }
         }
       },
       segs denseg {
         dim 2,
-        numseg 1,
+        numseg 3,
         ids {
-          gi 129295,
-          gi 697456700
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          genbank {
+            accession "AUD54591",
+            version 1
+          }
         },
         starts {
-          0,
-          0
+          1,
+          157,
+          192,
+          -1,
+          194,
+          348
         },
         lens {
-          232
+          191,
+          2,
+          38
         },
         strands {
+          unknown,
+          unknown,
+          unknown,
+          unknown,
           unknown,
           unknown
         }
@@ -850,9 +1018,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
-              data strs {       
-                "gi:697456700"
+              num 1,
+              data strs {
+                "seqid:AUD54591.1"
               }
             }
           }
@@ -865,59 +1033,59 @@ Seq-annot ::= {
       score {
         {
           id str "score",
-          value int 958
+          value int 784
         },
         {
           id str "blast_score",
-          value int 958
+          value int 784
         },
         {
           id str "e_value",
-          value real { 232892966327255, 10, -143 }
+          value real { 679481663130691, 10, -118 }
         },
         {
           id str "bit_score",
-          value real { 373629426008868, 10, -12 }
+          value real { 306604699799249, 10, -12 }
         },
         {
           id str "num_ident",
-          value int 174
+          value int 150
         },
         {
           id str "comp_adjustment_method",
           value int 2
-        },        
+        },
         {
           id str "num_positives",
-          value int 211
+          value int 191
         },
         {
           id str "hsp_percent_coverage",
-          value real { 1, 10, 2 }
+          value real { 995689655172414, 10, -13 }
         },
         {
           id str "pc_ident",
-          value real { 75, 10, -2 }
+          value real { 649350649350649, 10, -15 }
         },
         {
           id str "seq_evalue",
-          value real { 232892966327255, 10, -143 }
+          value real { 679481663130691, 10, -118 }
         },
         {
           id str "seq_bit_score",
-          value real { 373629426008868, 10, -12 }
+          value real { 306604699799249, 10, -12 }
         },
         {
           id str "seq_total_bit_score",
-          value real { 373629426008868, 10, -12 }
+          value real { 306604699799249, 10, -12 }
         },
         {
           id str "seq_percent_coverage",
-          value int 100
+          value int 99
         },
         {
           id str "seq_percent_identity",
-          value int 75
+          value real { 649350649350649, 10, -13 }
         },
         {
           id str "seq_hspnum",
@@ -925,127 +1093,40 @@ Seq-annot ::= {
         },
         {
           id str "seq_align_totlen",
-          value real { 232, 10, 0 }
+          value real { 231, 10, 0 }
         }
       },
       segs denseg {
         dim 2,
-        numseg 1,
+        numseg 3,
         ids {
-          gi 129295,
-          gi 677552130
-        },
-        starts {
-          0,
-          0
-        },
-        lens {
-          232
-        },
-        strands {
-          unknown,
-          unknown
-        }
-      },
-      ext {
-        {
-          type str "use_this_seqid",
-          data {
-            {
-              label str "SEQIDS",
-              num 2,
-              data strs {       
-                "gi:677552130"
-              }
-            }
+          swissprot {
+            accession "P01013",
+            release "reviewed"
+          },
+          genbank {
+            accession "AUD54553",
+            version 1
           }
-        }
-      }
-    },
-    {
-      type partial,
-      dim 2,
-      score {
-        {
-          id str "score",
-          value int 955
-        },
-        {
-          id str "blast_score",
-          value int 955
-        },
-        {
-          id str "e_value",
-          value real { 62217975104378, 10, -142 }
-        },
-        {
-          id str "bit_score",
-          value real { 372473827281116, 10, -12 }
-        },
-        {
-          id str "num_ident",
-          value int 175
-        },
-        {
-          id str "comp_adjustment_method",
-          value int 2
-        },        
-        {
-          id str "num_positives",
-          value int 211
-        },
-        {
-          id str "hsp_percent_coverage",
-          value real { 1, 10, 2 }
-        },
-        {
-          id str "pc_ident",
-          value real { 754310344827586, 10, -15 }
-        },
-        {
-          id str "seq_evalue",
-          value real { 62217975104378, 10, -142 }
-        },
-        {
-          id str "seq_bit_score",
-          value real { 372473827281116, 10, -12 }
-        },
-        {
-          id str "seq_total_bit_score",
-          value real { 372473827281116, 10, -12 }
-        },
-        {
-          id str "seq_percent_coverage",
-          value int 100
-        },
-        {
-          id str "seq_percent_identity",
-          value int 75
-        },
-        {
-          id str "seq_hspnum",
-          value int 1
-        },
-        {
-          id str "seq_align_totlen",
-          value real { 232, 10, 0 }
-        }
-      },
-      segs denseg {
-        dim 2,
-        numseg 1,
-        ids {
-          gi 129295,
-          gi 679011882
         },
         starts {
-          0,
-          0
+          1,
+          157,
+          192,
+          -1,
+          194,
+          348
         },
         lens {
-          232
+          191,
+          2,
+          38
         },
         strands {
+          unknown,
+          unknown,
+          unknown,
+          unknown,
           unknown,
           unknown
         }
@@ -1056,9 +1137,9 @@ Seq-annot ::= {
           data {
             {
               label str "SEQIDS",
-              num 2,
-              data strs {       
-                "gi:679011882"
+              num 1,
+              data strs {
+                "seqid:AUD54553.1"
               }
             }
           }
@@ -1067,7 +1148,5 @@ Seq-annot ::= {
     }
   }
 }
-
-
 
 

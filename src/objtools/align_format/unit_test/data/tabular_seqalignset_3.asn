@@ -5,23 +5,23 @@ Seq-align-set ::= {
     score {
       {
         id str "score",
-        value int 1354
+        value int 853
       },
       {
         id str "blast_score",
-        value int 1354
+        value int 853
       },
       {
         id str "e_value",
-        value real { 0, 10, 0 }
+        value real { 18351283355605, 10, -128 }
       },
       {
         id str "bit_score",
-        value real { 52616845807214, 10, -11 }
+        value real { 333183470537546, 10, -12 }
       },
       {
         id str "num_ident",
-        value int 268
+        value int 162
       },
       {
         id str "comp_adjustment_method",
@@ -29,34 +29,36 @@ Seq-align-set ::= {
       },
       {
         id str "num_positives",
-        value int 268
+        value int 162
       },
       {
         id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
+        value real { 1, 10, 2 }
       }
     },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 27806577
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        swissprot {
+          accession "O19910",
+          version 1
         },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 27806577
-          }
+        other {
+          accession "NP_045082",
+          version 1
         }
+      },
+      starts {
+        0,
+        0
+      },
+      lens {
+        162
+      },
+      strands {
+        unknown,
+        unknown
       }
     }
   },
@@ -66,23 +68,23 @@ Seq-align-set ::= {
     score {
       {
         id str "score",
-        value int 1344
+        value int 738
       },
       {
         id str "blast_score",
-        value int 1344
+        value int 738
       },
       {
         id str "e_value",
-        value real { 0, 10, 0 }
+        value real { 786748783671196, 10, -112 }
       },
       {
         id str "bit_score",
-        value real { 522316462312967, 10, -12 }
+        value real { 288885519307051, 10, -12 }
       },
       {
         id str "num_ident",
-        value int 266
+        value int 137
       },
       {
         id str "comp_adjustment_method",
@@ -90,34 +92,36 @@ Seq-align-set ::= {
       },
       {
         id str "num_positives",
-        value int 268
+        value int 153
       },
       {
         id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
+        value real { 1, 10, 2 }
       }
     },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 555955787
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        swissprot {
+          accession "O19910",
+          version 1
         },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 555955787
-          }
+        genbank {
+          accession "AAB01593",
+          version 1
         }
+      },
+      starts {
+        0,
+        0
+      },
+      lens {
+        162
+      },
+      strands {
+        unknown,
+        unknown
       }
     }
   },
@@ -127,23 +131,23 @@ Seq-align-set ::= {
     score {
       {
         id str "score",
-        value int 1344
+        value int 734
       },
       {
         id str "blast_score",
-        value int 1344
+        value int 734
       },
       {
         id str "e_value",
-        value real { 0, 10, 0 }
+        value real { 293446107541838, 10, -111 }
       },
       {
         id str "bit_score",
-        value real { 522316462312967, 10, -12 }
+        value real { 287344721003381, 10, -12 }
       },
       {
         id str "num_ident",
-        value int 265
+        value int 136
       },
       {
         id str "comp_adjustment_method",
@@ -151,34 +155,36 @@ Seq-align-set ::= {
       },
       {
         id str "num_positives",
-        value int 268
+        value int 153
       },
       {
         id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
+        value real { 1, 10, 2 }
       }
     },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 300669780
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        swissprot {
+          accession "O19910",
+          version 1
         },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 300669780
-          }
+        swissprot {
+          accession "P00306",
+          version 3
         }
+      },
+      starts {
+        0,
+        0
+      },
+      lens {
+        162
+      },
+      strands {
+        unknown,
+        unknown
       }
     }
   },
@@ -188,23 +194,23 @@ Seq-align-set ::= {
     score {
       {
         id str "score",
-        value int 1340
+        value int 734
       },
       {
         id str "blast_score",
-        value int 1340
+        value int 734
       },
       {
         id str "e_value",
-        value real { 0, 10, 0 }
+        value real { 338423857549664, 10, -111 }
       },
       {
         id str "bit_score",
-        value real { 520775664009297, 10, -12 }
+        value real { 287344721003381, 10, -12 }
       },
       {
         id str "num_ident",
-        value int 265
+        value int 135
       },
       {
         id str "comp_adjustment_method",
@@ -212,34 +218,36 @@ Seq-align-set ::= {
       },
       {
         id str "num_positives",
-        value int 267
+        value int 153
       },
       {
         id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
+        value real { 1, 10, 2 }
       }
     },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 742093586
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        swissprot {
+          accession "O19910",
+          version 1
         },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 742093586
-          }
+        other {
+          accession "YP_009051179",
+          version 1
         }
+      },
+      starts {
+        0,
+        0
+      },
+      lens {
+        162
+      },
+      strands {
+        unknown,
+        unknown
       }
     }
   },
@@ -249,23 +257,23 @@ Seq-align-set ::= {
     score {
       {
         id str "score",
-        value int 1340
+        value int 731
       },
       {
         id str "blast_score",
-        value int 1340
+        value int 731
       },
       {
         id str "e_value",
-        value real { 0, 10, 0 }
+        value real { 859808147265221, 10, -111 }
       },
       {
         id str "bit_score",
-        value real { 520775664009297, 10, -12 }
+        value real { 286189122275629, 10, -12 }
       },
       {
         id str "num_ident",
-        value int 264
+        value int 135
       },
       {
         id str "comp_adjustment_method",
@@ -273,156 +281,36 @@ Seq-align-set ::= {
       },
       {
         id str "num_positives",
-        value int 268
+        value int 150
       },
       {
         id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
+        value real { 1, 10, 2 }
       }
     },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 84993680
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        swissprot {
+          accession "O19910",
+          version 1
         },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 84993680
-          }
+        other {
+          accession "YP_009297463",
+          version 1
         }
-      }
-    }
-  },
-  {
-    type partial,
-    dim 2,
-    score {
-      {
-        id str "score",
-        value int 1335
       },
-      {
-        id str "blast_score",
-        value int 1335
+      starts {
+        0,
+        0
       },
-      {
-        id str "e_value",
-        value real { 0, 10, 0 }
+      lens {
+        162
       },
-      {
-        id str "bit_score",
-        value real { 518849666129711, 10, -12 }
-      },
-      {
-        id str "num_ident",
-        value int 263
-      },
-      {
-        id str "comp_adjustment_method",
-        value int 2
-      },
-      {
-        id str "num_positives",
-        value int 268
-      },
-      {
-        id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
-      }
-    },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 594064064
-        },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 594064064
-          }
-        }
-      }
-    }
-  },
-  {
-    type partial,
-    dim 2,
-    score {
-      {
-        id str "score",
-        value int 1330
-      },
-      {
-        id str "blast_score",
-        value int 1330
-      },
-      {
-        id str "e_value",
-        value real { 0, 10, 0 }
-      },
-      {
-        id str "bit_score",
-        value real { 516923668250124, 10, -12 }
-      },
-      {
-        id str "num_ident",
-        value int 262
-      },
-      {
-        id str "comp_adjustment_method",
-        value int 2
-      },
-      {
-        id str "num_positives",
-        value int 268
-      },
-      {
-        id str "hsp_percent_coverage",
-        value real { 272198404785643, 10, -13 }
-      }
-    },
-    segs std {
-      {
-        dim 2,
-        ids {
-          gi 444,
-          gi 595763446
-        },
-        loc {
-          int {
-            from 32,
-            to 835,
-            strand plus,
-            id gi 444
-          },
-          int {
-            from 0,
-            to 267,
-            strand unknown,
-            id gi 595763446
-          }
-        }
+      strands {
+        unknown,
+        unknown
       }
     }
   }
