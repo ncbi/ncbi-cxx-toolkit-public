@@ -472,45 +472,93 @@ void SPSG_Request::Add()
 
 
 SPSG_UvWrite::SPSG_UvWrite(void* user_data) :
+    m_UserData(user_data),
     m_WriteHiwater(TPSG_WriteHiwater::eGetDefault)
 {
-    m_Request.data = user_data;
-
-    m_Buffers[0].reserve(m_WriteHiwater);
-    m_Buffers[1].reserve(m_WriteHiwater);
-
+    NewBuffer();
+    NewBuffer();
     PSG_UV_WRITE_TRACE(this << " created");
 }
 
-int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
+int SPSG_UvWrite::Write(uv_stream_t* handle, uv_write_cb cb)
 {
-    if (m_InProgress) {
-        PSG_UV_WRITE_TRACE(this << " already writing");
-        return 0;
-    }
+    _ASSERT(m_CurrentBuffer);
+    auto& request     = m_CurrentBuffer->request;
+    auto& data        = m_CurrentBuffer->data;
+    auto& in_progress = m_CurrentBuffer->in_progress;
 
-    auto& write_buffer = m_Buffers[m_Index];
+    _ASSERT(!in_progress);
 
-    if (write_buffer.empty()) {
+    if (data.empty()) {
         PSG_UV_WRITE_TRACE(this << " empty write");
         return 0;
     }
 
     uv_buf_t buf;
-    buf.base = write_buffer.data();
-    buf.len = write_buffer.size();
+    buf.base = data.data();
+    buf.len = data.size();
 
-    auto rv = uv_write(&m_Request, handle, &buf, 1, cb);
+    auto rv = uv_write(&request, handle, &buf, 1, cb);
 
     if (rv < 0) {
-        PSG_UV_WRITE_TRACE(this << " pre-write failed");
+        PSG_UV_WRITE_TRACE(this << '/' << &request << " pre-write failed");
         return rv;
     }
 
-    PSG_UV_WRITE_TRACE(this << " writing: " << write_buffer.size());
-    m_Index = !m_Index;
-    m_InProgress = true;
+    PSG_UV_WRITE_TRACE(this << '/' << &request << " writing: " << data.size());
+    in_progress = true;
+
+    // Looking for unused buffer
+    for (auto& buffer : m_Buffers) {
+        if (!buffer.in_progress) {
+            _ASSERT(buffer.data.empty());
+
+            PSG_UV_WRITE_TRACE(this << '/' << &buffer.request << " switching to");
+            m_CurrentBuffer = &buffer;
+            return 0;
+        }
+    }
+
+    // Need more buffers
+    NewBuffer();
     return 0;
+}
+
+void SPSG_UvWrite::OnWrite(uv_write_t* req)
+{
+    for (auto& buffer : m_Buffers) {
+        if (&buffer.request == req) {
+            _ASSERT(buffer.data.size());
+            _ASSERT(buffer.in_progress);
+
+            PSG_UV_WRITE_TRACE(this << '/' << req << " wrote");
+            buffer.data.clear();
+            buffer.in_progress = false;
+            return;
+        }
+    }
+
+    _TROUBLE;
+}
+
+void SPSG_UvWrite::Reset()
+{
+    PSG_UV_WRITE_TRACE(this << " reset");
+
+    for (auto& buffer : m_Buffers) {
+        buffer.data.clear();
+        buffer.in_progress = false;
+    }
+}
+
+void SPSG_UvWrite::NewBuffer()
+{
+    m_Buffers.emplace_front();
+    m_CurrentBuffer = &m_Buffers.front();
+
+    PSG_UV_WRITE_TRACE(this << '/' << &m_CurrentBuffer->request << " new buffer");
+    m_CurrentBuffer->request.data = m_UserData;
+    m_CurrentBuffer->data.reserve(m_WriteHiwater);
 }
 
 
@@ -571,7 +619,7 @@ int SPSG_UvTcp::Write()
     }
 
     if (m_State == eConnected) {
-        auto rv = m_Write((uv_stream_t*)this, s_OnWrite);
+        auto rv = m_Write.Write((uv_stream_t*)this, s_OnWrite);
 
         if (rv < 0) {
             PSG_UV_TCP_TRACE(this << "  pre-write failed: " << uv_strerror(rv));
@@ -595,9 +643,9 @@ void SPSG_UvTcp::Close()
         } else {
             PSG_UV_TCP_TRACE(this << " read stopped");
         }
-
-        m_Write.Reset();
     }
+
+    m_Write.Reset();
 
     if ((m_State != eClosing) && (m_State != eClosed)) {
         PSG_UV_TCP_TRACE(this << " closing");
@@ -654,14 +702,14 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
     m_ReadCb(buf->base, nread);
 }
 
-void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
+void SPSG_UvTcp::OnWrite(uv_write_t* req, int status)
 {
     if (status < 0) {
-        PSG_UV_TCP_TRACE(this << " write failed: " << uv_strerror(status));
+        PSG_UV_TCP_TRACE(this << '/' << req << " write failed: " << uv_strerror(status));
         Close();
     } else {
-        PSG_UV_TCP_TRACE(this << " wrote");
-        m_Write.Done();
+        PSG_UV_TCP_TRACE(this << '/' << req << " wrote");
+        m_Write.OnWrite(req);
     }
 
     m_WriteCb(status);
@@ -875,14 +923,14 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
         if (rv > 0) {
             buffer.insert(buffer.end(), data, data + rv);
             total += rv;
-        } else {
-            if (rv) {
-                PSG_NGHTTP2_SESSION_TRACE(this << " send failed: " << s_NgHttp2Error(rv));
-            } else {
-                PSG_NGHTTP2_SESSION_TRACE(this << " sended: " << total);
-            }
 
+        } else if (rv < 0) {
+            PSG_NGHTTP2_SESSION_TRACE(this << " send failed: " << s_NgHttp2Error(rv));
             return x_DelOnError(rv);
+
+        } else {
+            PSG_NGHTTP2_SESSION_TRACE(this << " sended: " << total);
+            return total;
         }
     }
 }
@@ -891,7 +939,7 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 {
     if (auto rv = Init()) return rv;
 
-    _DEBUG_ARG(const size_t total = size);
+    const size_t total = size;
 
     for (;;) {
         auto rv = nghttp2_session_mem_recv(m_Session, buffer, size);
@@ -904,11 +952,11 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 
         if (rv < 0) {
             PSG_NGHTTP2_SESSION_TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
+            return x_DelOnError(rv);
         } else {
             PSG_NGHTTP2_SESSION_TRACE(this << " received: " << total);
+            return total;
         }
-
-        return x_DelOnError(rv);
     }
 }
 
@@ -1027,12 +1075,16 @@ void SPSG_IoSession::StartClose()
 
 bool SPSG_IoSession::Send()
 {
-    if (auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer())) {
+    auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer());
+
+    if (send_rv < 0) {
         Reset(send_rv);
-        return false;
+
+    } else if (send_rv > 0) {
+        return Write();
     }
 
-    return Write();
+    return false;
 }
 
 bool SPSG_IoSession::Write()
@@ -1087,7 +1139,7 @@ bool SPSG_IoSession::ProcessRequest()
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
-    while((m_Requests.size() < m_Session.GetMaxStreams()) && !m_Tcp.IsWriteBufferFull()) {
+    while((m_Requests.size() < m_Session.GetMaxStreams())) {
         shared_ptr<SPSG_Request> req;
 
         if (!m_Io->queue.Pop(req)) {

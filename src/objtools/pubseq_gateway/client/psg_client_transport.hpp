@@ -52,6 +52,7 @@
 #include <thread>
 #include <utility>
 #include <condition_variable>
+#include <forward_list>
 #include <mutex>
 #include <chrono>
 #include <sstream>
@@ -430,32 +431,25 @@ struct SPSG_UvWrite
 {
     SPSG_UvWrite(void* user_data);
 
-    vector<char>& GetBuffer() { return m_Buffers[m_Index]; }
-    bool IsBufferFull() const { return m_Buffers[m_Index].size() >= m_WriteHiwater; }
-
-    int operator()(uv_stream_t* handle, uv_write_cb cb);
-
-    void Done()
-    {
-        PSG_UV_WRITE_TRACE(this << " done");
-        m_Buffers[!m_Index].clear();
-        m_InProgress = false;
-    }
-
-    void Reset()
-    {
-        PSG_UV_WRITE_TRACE(this << " reset");
-        m_Buffers[0].clear();
-        m_Buffers[1].clear();
-        m_InProgress = false;
-    }
+    vector<char>& GetBuffer() { _ASSERT(m_CurrentBuffer); return m_CurrentBuffer->data; }
+    int Write(uv_stream_t* handle, uv_write_cb cb);
+    void OnWrite(uv_write_t* req);
+    void Reset();
 
 private:
+    struct SBuffer
+    {
+        uv_write_t request;
+        vector<char> data;
+        bool in_progress = false;
+    };
+
+    void NewBuffer();
+
+    void* const m_UserData;
     const TPSG_WriteHiwater m_WriteHiwater;
-    uv_write_t m_Request;
-    array<vector<char>, 2> m_Buffers;
-    bool m_Index = false;
-    bool m_InProgress = false;
+    forward_list<SBuffer> m_Buffers;
+    SBuffer* m_CurrentBuffer = nullptr;
 };
 
 struct SPSG_UvConnect
@@ -482,7 +476,6 @@ struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
     void Close();
 
     vector<char>& GetWriteBuffer() { return m_Write.GetBuffer(); }
-    bool IsWriteBufferFull() const { return m_Write.IsBufferFull(); }
 
 private:
     enum EState {
