@@ -35,7 +35,6 @@
 
 #include "pubseq_gateway_types.hpp"
 
-#include <chrono>
 #include <vector>
 #include <mutex>
 using namespace std;
@@ -121,6 +120,17 @@ class CPSGTimingBase
         {
             if (m_PSGTiming)
                 m_PSGTiming->Rotate();
+        }
+
+        TPSGTiming::TTicks  GetNumberOfCoveredTicks(void) const
+        {
+            if (m_PSGTiming) {
+                // The histogram series counts ticks starting from 0 so even
+                // before the first tick some data may be collected. So +1
+                // is added here.
+                return m_PSGTiming->GetCurrentTick() + 1;
+            }
+            return 0;
         }
 
         // Generic serialization to json
@@ -315,8 +325,6 @@ class COperationTiming
         ssize_t x_GetBlobRetrievalBinIndex(unsigned long  blob_size);
 
     private:
-        chrono::system_clock::time_point    m_StartTime;
-
         // Note: 2 items, found and not found
         vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbSi2csiTiming;
         vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbBioseqInfoTiming;
@@ -348,7 +356,7 @@ class COperationTiming
 
         map<string, CPSGTimingBase *>                       m_NamesMap;
 
-        mutable mutex                                       m_Lock; // rotate-serialize lock
+        mutable mutex                                       m_Lock; // reset-rotate-serialize lock
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

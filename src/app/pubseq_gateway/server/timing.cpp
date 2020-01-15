@@ -458,8 +458,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  max_stat_value,
                                    unsigned long  n_bins,
                                    const string &  stat_type,
-                                   unsigned long  small_blob_size) :
-    m_StartTime(chrono::system_clock::now())
+                                   unsigned long  small_blob_size)
 {
     auto        scale_type = TOnePSGTiming::eLog2;
     if (NStr::CompareNocase(stat_type, "linear") == 0)
@@ -754,7 +753,7 @@ void COperationTiming::Rotate(void)
 
 void COperationTiming::Reset(void)
 {
-    m_StartTime = chrono::system_clock::now();
+    lock_guard<mutex>   guard(m_Lock);
 
     for (size_t  k = 0; k <= 1; ++k) {
         m_LookupLmdbSi2csiTiming[k]->Reset();
@@ -789,12 +788,15 @@ COperationTiming::Serialize(int  most_ancient_time,
                             const vector<CTempString> &  histogram_names,
                             unsigned long  tick_span) const
 {
-    static string   kStartTime("StartTime");
+    static string   kSecondsCovered("SecondsCovered");
 
     lock_guard<mutex>       guard(m_Lock);
 
     CJsonNode       ret(CJsonNode::NewObjectNode());
-    ret.SetString(kStartTime, FormatPreciseTime(m_StartTime));
+
+    // All the histograms have the same number of covered ticks
+    ret.SetInteger(kSecondsCovered,
+                   tick_span * m_ResolutionFoundInCacheTiming->GetNumberOfCoveredTicks());
 
     if (histogram_names.empty()) {
         for (const auto &  name_to_histogram : m_NamesMap) {
