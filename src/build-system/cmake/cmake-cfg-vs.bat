@@ -33,31 +33,33 @@ REM when specifying path, both "/" and "\" are allowed
 
 :USAGE
 echo USAGE:
-echo   %script_name% [OPTION]...
+echo   %script_name% [OPTIONS]...
 echo SYNOPSIS:
 echo   Configure NCBI C++ toolkit for Visual Studio using CMake build system.
 echo OPTIONS:
-echo   --help                  -- print Usage
-echo   --without-dll           -- build all libraries as static ones (default)
-echo   --with-dll              -- assemble toolkit libraries into DLLs
-echo                              where requested
-echo   --with-projects="FILE"  -- build projects listed in %tree_root%\FILE
-echo                              FILE can also be a list of subdirectories of
-echo                              %tree_root%\src
-echo                  examples:   --with-projects="corelib$;serial"
-echo                              --with-projects=scripts/projects/ncbi_cpp.lst
-echo   --with-tags="tags"      -- build projects which have allowed tags only
-echo                  examples:   --with-tags="*;-test"
-echo   --with-targets="names"  -- build projects which have allowed names only
-echo                  examples:   --with-targets="datatool;xcgi$"
-echo   --with-details="names"  -- print detailed information about projects
-echo                  examples:   --with-details="datatool;test_hash"
-echo   --with-vs=N             -- use Visual Studio N generator 
-echo                  examples:   --with-vs=2017  (default)
-echo                              --with-vs=2015
-echo   --with-install="DIR"    -- generate rules for installation into "DIR" directory
-echo                  examples:   --with-install="D:\CPP toolkit"
-echo   --with-generator="X"    -- use generator X
+echo   --help                   -- print Usage
+echo   --without-dll            -- build all libraries as static ones (default)
+echo   --with-dll               -- assemble toolkit libraries into DLLs
+echo                               where requested
+echo   --with-projects="FILE"   -- build projects listed in %tree_root%\FILE
+echo                               FILE can also be a list of subdirectories of
+echo                               %tree_root%\src
+echo                  examples:    --with-projects="corelib$;serial"
+echo                               --with-projects=scripts/projects/ncbi_cpp.lst
+echo   --with-tags="tags"       -- build projects which have allowed tags only
+echo                  examples:    --with-tags="*;-test"
+echo   --with-targets="names"   -- build projects which have allowed names only
+echo                  examples:    --with-targets="datatool;xcgi$"
+echo   --with-components="LIST" -- explicitly enable or disable components
+echo                  examples:    --with-components="StrictGI;-Z"
+echo   --with-details="names"   -- print detailed information about projects
+echo                  examples:    --with-details="datatool;test_hash"
+echo   --with-vs=N              -- use Visual Studio N generator 
+echo                  examples:    --with-vs=2017  (default)
+echo                               --with-vs=2015
+echo   --with-install="DIR"     -- generate rules for installation into "DIR" directory
+echo                  examples:    --with-install="D:\CPP toolkit"
+echo   --with-generator="X"     -- use generator X
 echo:
 
 set generatorfound=
@@ -104,10 +106,11 @@ if "%1"=="--rootdir"           (set tree_root=%~2&         shift& goto :CONTINUE
 if "%1"=="--caller"            (set script_name=%~2&       shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--without-dll"       (set BUILD_SHARED_LIBS=OFF&        goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"          (set BUILD_SHARED_LIBS=ON&         goto :CONTINUEPARSEARGS)
-if "%1"=="--with-projects"     (set project_list=%~2&      shift& goto :CONTINUEPARSEARGS)
-if "%1"=="--with-tags"         (set project_tags=%~2&      shift& goto :CONTINUEPARSEARGS)
-if "%1"=="--with-targets"      (set project_targets=%~2&   shift& goto :CONTINUEPARSEARGS)
-if "%1"=="--with-details"      (set project_details=%~2&   shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-components"   (set PROJECT_COMPONENTS=%~2& shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-projects"     (set PROJECT_LIST=%~2&      shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-tags"         (set PROJECT_TAGS=%~2&      shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-targets"      (set PROJECT_TARGETS=%~2&   shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-details"      (set PROJECT_DETAILS=%~2&   shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-vs"           (set VISUAL_STUDIO=%~2&     shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-install"      (set INSTALL_PATH=%~2&      shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-generator"    (set CMAKE_GENERATOR=%~2&   shift& goto :CONTINUEPARSEARGS)
@@ -155,19 +158,19 @@ if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
   set generator_name=VS2015
 )
 
-if not "%project_list%"=="" (
-  if exist "%tree_root%\%project_list%" (
-    set project_list=%tree_root%\%project_list%
+if not "%PROJECT_LIST%"=="" (
+  if exist "%tree_root%\%PROJECT_LIST%" (
+    set PROJECT_LIST=%tree_root%\%PROJECT_LIST%
   )
 )
-if not "%project_tags%"=="" (
-  if exist "%tree_root%\%project_tags%" (
-    set project_tags=%tree_root%\%project_tags%
+if not "%PROJECT_TAGS%"=="" (
+  if exist "%tree_root%\%PROJECT_TAGS%" (
+    set PROJECT_TAGS=%tree_root%\%PROJECT_TAGS%
   )
 )
-if not "%project_targets%"=="" (
-  if exist "%tree_root%\%project_targets%" (
-    set project_targets=%tree_root%\%project_targets%
+if not "%PROJECT_TARGETS%"=="" (
+  if exist "%tree_root%\%PROJECT_TARGETS%" (
+    set PROJECT_TARGETS=%tree_root%\%PROJECT_TARGETS%
   )
 )
 
@@ -178,24 +181,25 @@ set CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
 if not "%CMAKE_GENERATOR%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -G "%CMAKE_GENERATOR%"
 )
-set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
-set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%project_tags%"
-set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%project_targets%"
-set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_VERBOSE_PROJECTS="%project_details%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_COMPONENTS="%PROJECT_COMPONENTS%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%PROJECT_LIST%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%PROJECT_TAGS%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%PROJECT_TARGETS%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_VERBOSE_PROJECTS="%PROJECT_DETAILS%"
 if not "%INSTALL_PATH%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_INSTALL_PATH="%INSTALL_PATH%"
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
-set build_root=CMake-%generator_name%
+set BUILD_ROOT=CMake-%generator_name%
 if "%BUILD_SHARED_LIBS%"=="ON" (
-  set build_root=%build_root%-DLL
+  set BUILD_ROOT=%BUILD_ROOT%-DLL
 )
 
-if not exist "%tree_root%\%build_root%\build" (
-  mkdir "%tree_root%\%build_root%\build"
+if not exist "%tree_root%\%BUILD_ROOT%\build" (
+  mkdir "%tree_root%\%BUILD_ROOT%\build"
 )
-cd "%tree_root%\%build_root%\build"
+cd "%tree_root%\%BUILD_ROOT%\build"
 
 REM echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"

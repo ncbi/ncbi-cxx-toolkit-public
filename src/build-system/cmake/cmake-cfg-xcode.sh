@@ -31,14 +31,14 @@ Usage()
 {
     cat <<EOF 1>&2
 USAGE:
-  $script_name [OPTION]...
+  $script_name [OPTIONS]...
 SYNOPSIS:
   Configure NCBI C++ toolkit for XCode using CMake build system.
 OPTIONS:
   --help                     -- print Usage
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
-                                unless explicitely requested otherwise
+                                unless explicitly requested otherwise
   --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
                     examples:   --with-projects="corelib$;serial"
@@ -47,6 +47,8 @@ OPTIONS:
                     examples:   --with-tags="*;-test"
   --with-targets="names"     -- build projects which have allowed names only
                     examples:   --with-targets="datatool;xcgi$"
+  --with-components="LIST"   -- explicitly enable or disable components
+                    examples:   --with-components="StrictGI;-Z"
   --with-details="names"     -- print detailed information about projects
                     examples:   --with-details="datatool;test_hash"
   --with-install="DIR"       -- generate rules for installation into DIR directory
@@ -99,29 +101,32 @@ while [ $# != 0 ]; do
     --with-dll) 
       BUILD_SHARED_LIBS=ON 
       ;; 
+    --with-components=*)
+      PROJECT_COMPONENTS=${1#*=}
+      ;; 
     --with-projects=*)
-      project_list=${1#*=}
-      if [ -e "${tree_root}/$project_list" ]; then
-        project_list="${tree_root}/$project_list"
+      PROJECT_LIST=${1#*=}
+      if [ -e "${tree_root}/$PROJECT_LIST" ]; then
+        PROJECT_LIST="${tree_root}/$PROJECT_LIST"
       fi
       ;; 
     --with-tags=*)
-      project_tags=${1#*=}
-      if [ -e "${tree_root}/$project_tags" ]; then
-        project_tags="${tree_root}/$project_tags"
+      PROJECT_TAGS=${1#*=}
+      if [ -e "${tree_root}/$PROJECT_TAGS" ]; then
+        PROJECT_TAGS="${tree_root}/$PROJECT_TAGS"
       fi
       ;; 
     --with-targets=*)
-      project_targets=${1#*=}
-      if [ -e "${tree_root}/$project_targets" ]; then
-        project_targets="${tree_root}/$project_targets"
+      PROJECT_TARGETS=${1#*=}
+      if [ -e "${tree_root}/$PROJECT_TARGETS" ]; then
+        PROJECT_TARGETS="${tree_root}/$PROJECT_TARGETS"
       fi
       ;; 
     --with-details=*)
-      project_details=${1#*=}
+      PROJECT_DETAILS=${1#*=}
       ;; 
     --with-install=*)
-      install_path=${1#*=}
+      INSTALL_PATH=${1#*=}
       ;; 
     --with-prebuilt=*)
       prebuilt_path=${1#*=}
@@ -161,24 +166,25 @@ CC_VERSION=`xcodebuild -version | awk 'NR==1{print $2}'`
 
 CMAKE_ARGS="-DNCBI_EXPERIMENTAL=ON -G Xcode"
 
-CMAKE_ARGS="$CMAKE_ARGS -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${project_details}")"
-if [ -n "$install_path" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${install_path}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_COMPONENTS=$(Quote "${PROJECT_COMPONENTS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${PROJECT_LIST}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${PROJECT_TAGS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${PROJECT_TARGETS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${PROJECT_DETAILS}")"
+if [ -n "$INSTALL_PATH" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 
-build_root=CMake-${CC_NAME}${CC_VERSION}
+BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
 if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-  build_root="$build_root"-DLL
+  BUILD_ROOT="$BUILD_ROOT"-DLL
 fi
 
-if test ! -e "${tree_root}/${build_root}/build"; then
-  mkdir -p "${tree_root}/${build_root}/build"
+if test ! -e "${tree_root}/${BUILD_ROOT}/build"; then
+  mkdir -p "${tree_root}/${BUILD_ROOT}/build"
 fi
-cd ${tree_root}/${build_root}/build 
+cd ${tree_root}/${BUILD_ROOT}/build 
 
 
 #echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"

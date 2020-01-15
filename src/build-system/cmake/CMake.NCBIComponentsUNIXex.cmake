@@ -93,8 +93,8 @@ set(NCBI_ThirdParty_H2O          ${NCBI_TOOLS_ROOT}/h2o-2.2.5)
 
 function(NCBI_define_component _name)
 
-    if(DEFINED NCBI_COMPONENT_${_name}_FOUND)
-        message("Already defined ${_name}")
+    if(NCBI_COMPONENT_${_name}_DISABLED)
+        message("DISABLED ${_name}")
         return()
     endif()
 # root
@@ -190,7 +190,7 @@ endfunction()
 
 #############################################################################
 macro(NCBI_find_library _name)
-    if(NOT DEFINED NCBI_COMPONENT_${_name}_FOUND)
+    if(NOT NCBI_COMPONENT_${_name}_DISABLED)
         set(_args ${ARGN})
         set(_all_libs "")
         set(_notfound_libs "")
@@ -216,7 +216,7 @@ macro(NCBI_find_library _name)
             message("NOT FOUND ${_name}: some libraries not found: ${_notfound_libs}")
         endif()
     else()
-        message("Already defined ${_name}")
+        message("DISABLED ${_name}")
     endif()
 endmacro()
 

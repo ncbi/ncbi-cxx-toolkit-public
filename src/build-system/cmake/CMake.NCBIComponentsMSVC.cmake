@@ -129,8 +129,8 @@ set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPar
 
 function(NCBI_define_component _name)
 
-    if(DEFINED NCBI_COMPONENT_${_name}_FOUND)
-        message("Already defined ${_name}")
+    if(NCBI_COMPONENT_${_name}_DISABLED)
+        message("DISABLED ${_name}")
         return()
     endif()
 # root

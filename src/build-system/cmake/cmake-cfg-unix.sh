@@ -9,6 +9,8 @@ script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 tree_root=`pwd`
+extension="cmake_configure_ext.sh"
+NCBI_EXPERIMENTAL="ON"
 
 host_os=`uname`
 if test $host_os = "Darwin"; then
@@ -30,11 +32,16 @@ USE_CCACHE="ON"
 USE_DISTCC="ON"
 
 ############################################################################# 
+Check_function_exists() {
+  local t=`type -t $1`
+  test "$t" = "function"
+}
+
 Usage()
 {
     cat <<EOF 1>&2
 USAGE:
-  $script_name [OPTION]...
+  $script_name [OPTIONS]...
 SYNOPSIS:
   Configure NCBI C++ toolkit using CMake build system.
 OPTIONS:
@@ -43,7 +50,7 @@ OPTIONS:
   --with-debug               -- build debug versions of libs and apps (default)
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
-                                unless explicitely requested otherwise
+                                unless explicitly requested otherwise
   --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
                     examples:   --with-projects="corelib$;serial"
@@ -52,6 +59,8 @@ OPTIONS:
                     examples:   --with-tags="*;-test"
   --with-targets="names"     -- build projects which have allowed names only
                     examples:   --with-targets="datatool;xcgi$"
+  --with-components="LIST"   -- explicitly enable or disable components
+                    examples:   --with-components="StrictGI;-Z"
   --with-details="names"     -- print detailed information about projects
                     examples:   --with-details="datatool;test_hash"
   --with-install="DIR"       -- generate rules for installation into DIR directory
@@ -60,6 +69,11 @@ OPTIONS:
   --without-distcc           -- do not use distcc
   --with-generator="X"       -- use generator X
 EOF
+
+  Check_function_exists configure_ext_Usage
+  if [ $? -eq 0 ]; then
+    configure_ext_Usage
+  fi
 
   generatorfound=""
   "${CMAKE_CMD}" --help | while IFS= read -r line; do
@@ -90,6 +104,7 @@ Quote() {
 # parse arguments
 
 do_help="no"
+unknown=""
 while [ $# != 0 ]; do
   case "$1" in 
     --help|-help|help)
@@ -128,29 +143,32 @@ while [ $# != 0 ]; do
     --with-generator=*)
       CMAKE_GENERATOR=${1#*=}
       ;; 
+    --with-components=*)
+      PROJECT_COMPONENTS=${1#*=}
+      ;; 
     --with-projects=*)
-      project_list=${1#*=}
-      if [ -e "${tree_root}/$project_list" ]; then
-        project_list="${tree_root}/$project_list"
+      PROJECT_LIST=${1#*=}
+      if [ -e "${tree_root}/$PROJECT_LIST" ]; then
+        PROJECT_LIST="${tree_root}/$PROJECT_LIST"
       fi
       ;; 
     --with-tags=*)
-      project_tags=${1#*=}
-      if [ -e "${tree_root}/$project_tags" ]; then
-        project_tags="${tree_root}/$project_tags"
+      PROJECT_TAGS=${1#*=}
+      if [ -e "${tree_root}/$PROJECT_TAGS" ]; then
+        PROJECT_TAGS="${tree_root}/$PROJECT_TAGS"
       fi
       ;; 
     --with-targets=*)
-      project_targets=${1#*=}
-      if [ -e "${tree_root}/$project_targets" ]; then
-        project_targets="${tree_root}/$project_targets"
+      PROJECT_TARGETS=${1#*=}
+      if [ -e "${tree_root}/$PROJECT_TARGETS" ]; then
+        PROJECT_TARGETS="${tree_root}/$PROJECT_TARGETS"
       fi
       ;; 
     --with-details=*)
-      project_details=${1#*=}
+      PROJECT_DETAILS=${1#*=}
       ;; 
     --with-install=*)
-      install_path=${1#*=}
+      INSTALL_PATH=${1#*=}
       ;; 
     --with-prebuilt=*)
       prebuilt_path=${1#*=}
@@ -158,7 +176,7 @@ while [ $# != 0 ]; do
       prebuilt_name=`basename $prebuilt_path`
       ;; 
     *) 
-      Error "unknown option: $1" 
+      unknown="$unknown $1"
       ;; 
   esac 
   shift 
@@ -166,6 +184,20 @@ done
 if [ $do_help = "yes" ]; then
   Usage
   exit 0
+fi
+
+if [ -f $tree_root/$extension ]; then
+  source $tree_root/$extension
+fi
+
+if [ -n "$unknown" ]; then
+  Check_function_exists configure_ext_ParseArgs
+  if [ $? -eq 0 ]; then
+    configure_ext_ParseArgs unknown $unknown
+  fi
+fi
+if [ -n "$unknown" ]; then
+  Error "Unknown options: $unknown" 
 fi
 
 ############################################################################# 
@@ -216,7 +248,7 @@ else
 fi
 ############################################################################# 
 
-CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
+CMAKE_ARGS=-DNCBI_EXPERIMENTAL=$NCBI_EXPERIMENTAL
 
 if [ -n "$CC" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"
@@ -227,32 +259,38 @@ fi
 if [ -n "$CMAKE_GENERATOR" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$CMAKE_GENERATOR")"
 fi
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
-CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${project_details}")"
-if [ -n "$install_path" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${install_path}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_COMPONENTS=$(Quote "${PROJECT_COMPONENTS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${PROJECT_LIST}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${PROJECT_TAGS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${PROJECT_TARGETS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${PROJECT_DETAILS}")"
+if [ -n "$INSTALL_PATH" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 if test "$CMAKE_GENERATOR" = "Xcode"; then
-  build_root=CMake-${CC_NAME}${CC_VERSION}
+  BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
   if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-    build_root="$build_root"-DLL
+    BUILD_ROOT="$BUILD_ROOT"-DLL
   fi
 else
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
-  build_root=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
+  BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
   if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-    build_root="$build_root"DLL
+    BUILD_ROOT="$BUILD_ROOT"DLL
   fi
-#build_root="$build_root"64
+#BUILD_ROOT="$BUILD_ROOT"64
 fi
 
-mkdir -p ${tree_root}/${build_root}/build 
-cd ${tree_root}/${build_root}/build 
+Check_function_exists configure_ext_PreCMake
+if [ $? -eq 0 ]; then
+  configure_ext_PreCMake
+fi
+
+mkdir -p ${tree_root}/${BUILD_ROOT}/build 
+cd ${tree_root}/${BUILD_ROOT}/build 
 
 #echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"

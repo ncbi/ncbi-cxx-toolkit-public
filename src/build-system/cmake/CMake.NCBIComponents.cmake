@@ -18,6 +18,32 @@
 set(NCBI_ALL_COMPONENTS "")
 set(NCBI_REQUIRE_MT_FOUND YES)
 
+if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTS}" STREQUAL "")
+    foreach(_comp IN LISTS NCBI_PTBCFG_PROJECT_COMPONENTS)
+        string(SUBSTRING ${_comp} 0 1 _sign)
+        if ("${_sign}" STREQUAL "-")
+            string(SUBSTRING ${_comp} 1 -1 _comp)
+            set(NCBI_COMPONENT_${_comp}_DISABLED YES)
+            set(NCBI_COMPONENT_${_comp}_FOUND NO)
+        else()
+            set(NCBI_COMPONENT_${_comp}_DISABLED NO)
+            set(NCBI_COMPONENT_${_comp}_FOUND YES)
+        endif()
+    endforeach()
+endif()
+
+if(NCBI_COMPONENT_ChaosMonkey_FOUND)
+    add_definitions(-DNCBI_MONKEY)
+endif()
+
+if(NCBI_COMPONENT_Int8GI_FOUND)
+    add_definitions(-DNCBI_INT8_GI)
+endif()
+
+if(NCBI_COMPONENT_StrictGI_FOUND)
+    add_definitions(-DNCBI_STRICT_GI)
+endif()
+
 #############################################################################
 # local_lbsm
 if(WIN32)

@@ -84,8 +84,8 @@ set(NCBI_ThirdParty_FreeType  ${NCBI_OPT_ROOT})
 set(_XCODE_EXTRA_LIBS)
 function(NCBI_define_component _name)
 
-    if(DEFINED NCBI_COMPONENT_${_name}_FOUND)
-        message("Already defined ${_name}")
+    if(NCBI_COMPONENT_${_name}_DISABLED)
+        message("DISABLED ${_name}")
         return()
     endif()
 # root
@@ -176,7 +176,7 @@ endfunction()
 
 #############################################################################
 macro(NCBI_find_library _name)
-    if(NOT DEFINED NCBI_COMPONENT_${_name}_FOUND)
+    if(NOT NCBI_COMPONENT_${_name}_DISABLED)
         set(_args ${ARGN})
         find_library(NCBI_COMPONENT_${_name}_LIBS ${_args})
         if(NCBI_COMPONENT_${_name}_LIBS)
@@ -192,7 +192,7 @@ macro(NCBI_find_library _name)
             message("NOT FOUND ${_name}")
         endif()
     else()
-        message("Already defined ${_name}")
+        message("DISABLED ${_name}")
     endif()
 endmacro()
 
