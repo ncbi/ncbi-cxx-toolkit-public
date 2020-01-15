@@ -67,6 +67,13 @@
 
 BEGIN_NCBI_SCOPE
 
+// Different TRACE macros allow turning off tracing in some classes
+#define PSG_UV_WRITE_TRACE(message)        _TRACE(message)
+#define PSG_UV_TCP_TRACE(message)          _TRACE(message)
+#define PSG_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
+#define PSG_IO_SESSION_TRACE(message)      _TRACE(message)
+#define PSG_IO_THREAD_TRACE(message)       _TRACE(message)
+
 template <class TType>
 struct SPSG_ThreadSafe : SPSG_CV<0>
 {
@@ -430,14 +437,14 @@ struct SPSG_UvWrite
 
     void Done()
     {
-        _TRACE(this << " done");
+        PSG_UV_WRITE_TRACE(this << " done");
         m_Buffers[!m_Index].clear();
         m_InProgress = false;
     }
 
     void Reset()
     {
-        _TRACE(this << " reset");
+        PSG_UV_WRITE_TRACE(this << " reset");
         m_Buffers[0].clear();
         m_Buffers[1].clear();
         m_InProgress = false;

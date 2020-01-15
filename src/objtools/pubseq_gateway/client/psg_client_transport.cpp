@@ -479,20 +479,20 @@ SPSG_UvWrite::SPSG_UvWrite(void* user_data) :
     m_Buffers[0].reserve(m_WriteHiwater);
     m_Buffers[1].reserve(m_WriteHiwater);
 
-    _TRACE(this << " created");
+    PSG_UV_WRITE_TRACE(this << " created");
 }
 
 int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
 {
     if (m_InProgress) {
-        _TRACE(this << " already writing");
+        PSG_UV_WRITE_TRACE(this << " already writing");
         return 0;
     }
 
     auto& write_buffer = m_Buffers[m_Index];
 
     if (write_buffer.empty()) {
-        _TRACE(this << " empty write");
+        PSG_UV_WRITE_TRACE(this << " empty write");
         return 0;
     }
 
@@ -503,11 +503,11 @@ int SPSG_UvWrite::operator()(uv_stream_t* handle, uv_write_cb cb)
     auto rv = uv_write(&m_Request, handle, &buf, 1, cb);
 
     if (rv < 0) {
-        _TRACE(this << " pre-write failed");
+        PSG_UV_WRITE_TRACE(this << " pre-write failed");
         return rv;
     }
 
-    _TRACE(this << " writing: " << write_buffer.size());
+    PSG_UV_WRITE_TRACE(this << " writing: " << write_buffer.size());
     m_Index = !m_Index;
     m_InProgress = true;
     return 0;
@@ -545,7 +545,7 @@ SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const CNetServer::SAddress& address,
     data = this;
     m_ReadBuffer.reserve(TPSG_RdBufSize::GetDefault());
 
-    _TRACE(this << " created");
+    PSG_UV_TCP_TRACE(this << " created");
 }
 
 int SPSG_UvTcp::Write()
@@ -554,19 +554,19 @@ int SPSG_UvTcp::Write()
         auto rv = uv_tcp_init(m_Loop, this);
 
         if (rv < 0) {
-            _TRACE(this << " init failed: " << uv_strerror(rv));
+            PSG_UV_TCP_TRACE(this << " init failed: " << uv_strerror(rv));
             return rv;
         }
 
         rv = m_Connect(this, s_OnConnect);
 
         if (rv < 0) {
-            _TRACE(this << " pre-connect failed: " << uv_strerror(rv));
+            PSG_UV_TCP_TRACE(this << " pre-connect failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
-        _TRACE(this << " connecting");
+        PSG_UV_TCP_TRACE(this << " connecting");
         m_State = eConnecting;
     }
 
@@ -574,12 +574,12 @@ int SPSG_UvTcp::Write()
         auto rv = m_Write((uv_stream_t*)this, s_OnWrite);
 
         if (rv < 0) {
-            _TRACE(this << "  pre-write failed: " << uv_strerror(rv));
+            PSG_UV_TCP_TRACE(this << "  pre-write failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
-        _TRACE(this << " writing");
+        PSG_UV_TCP_TRACE(this << " writing");
     }
 
     return 0;
@@ -591,20 +591,20 @@ void SPSG_UvTcp::Close()
         auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
 
         if (rv < 0) {
-            _TRACE(this << " read stop failed: " << uv_strerror(rv));
+            PSG_UV_TCP_TRACE(this << " read stop failed: " << uv_strerror(rv));
         } else {
-            _TRACE(this << " read stopped");
+            PSG_UV_TCP_TRACE(this << " read stopped");
         }
 
         m_Write.Reset();
     }
 
     if ((m_State != eClosing) && (m_State != eClosed)) {
-        _TRACE(this << " closing");
+        PSG_UV_TCP_TRACE(this << " closing");
         m_State = eClosing;
         SPSG_UvHandle<uv_tcp_t>::Close();
     } else {
-        _TRACE(this << " already closing/closed");
+        PSG_UV_TCP_TRACE(this << " already closing/closed");
     }
 }
 
@@ -617,18 +617,18 @@ void SPSG_UvTcp::OnConnect(uv_connect_t*, int status)
             status = uv_read_start((uv_stream_t*)this, s_OnAlloc, s_OnRead);
 
             if (status >= 0) {
-                _TRACE(this << " connected");
+                PSG_UV_TCP_TRACE(this << " connected");
                 m_State = eConnected;
                 m_ConnectCb(status);
                 return;
             } else {
-                _TRACE(this << " read start failed: " << uv_strerror(status));
+                PSG_UV_TCP_TRACE(this << " read start failed: " << uv_strerror(status));
             }
         } else {
-            _TRACE(this << " nodelay failed: " << uv_strerror(status));
+            PSG_UV_TCP_TRACE(this << " nodelay failed: " << uv_strerror(status));
         }
     } else {
-        _TRACE(this << " connect failed: " << uv_strerror(status));
+        PSG_UV_TCP_TRACE(this << " connect failed: " << uv_strerror(status));
     }
 
     Close();
@@ -645,10 +645,10 @@ void SPSG_UvTcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
-        _TRACE(this << " read failed: " << uv_strerror(nread));
+        PSG_UV_TCP_TRACE(this << " read failed: " << uv_strerror(nread));
         Close();
     } else {
-        _TRACE(this << " read: " << nread);
+        PSG_UV_TCP_TRACE(this << " read: " << nread);
     }
 
     m_ReadCb(buf->base, nread);
@@ -657,10 +657,10 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 {
     if (status < 0) {
-        _TRACE(this << " write failed: " << uv_strerror(status));
+        PSG_UV_TCP_TRACE(this << " write failed: " << uv_strerror(status));
         Close();
     } else {
-        _TRACE(this << " wrote");
+        PSG_UV_TCP_TRACE(this << " wrote");
         m_Write.Done();
     }
 
@@ -669,7 +669,7 @@ void SPSG_UvTcp::OnWrite(uv_write_t*, int status)
 
 void SPSG_UvTcp::OnClose(uv_handle_t*)
 {
-    _TRACE(this << " closed");
+    PSG_UV_TCP_TRACE(this << " closed");
     m_State = eClosed;
 }
 
@@ -765,7 +765,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
     m_OnError(on_error),
     m_MaxStreams(TPSG_MaxConcurrentStreams::GetDefault())
 {
-    _TRACE(this << " created");
+    PSG_NGHTTP2_SESSION_TRACE(this << " created");
 }
 
 ssize_t SPSG_NgHttp2Session::Init()
@@ -789,11 +789,11 @@ ssize_t SPSG_NgHttp2Session::Init()
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
     if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
-        _TRACE(this << " submit settings failed: " << s_NgHttp2Error(rv));
+        PSG_NGHTTP2_SESSION_TRACE(this << " submit settings failed: " << s_NgHttp2Error(rv));
         return x_DelOnError(rv);
     }
 
-    _TRACE(this << " initialized");
+    PSG_NGHTTP2_SESSION_TRACE(this << " initialized");
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     m_MaxStreams = min(max_streams, TPSG_MaxConcurrentStreams::GetDefault());
     return 0;
@@ -802,16 +802,16 @@ ssize_t SPSG_NgHttp2Session::Init()
 void SPSG_NgHttp2Session::Del()
 {
     if (!m_Session) {
-        _TRACE(this << " already terminated");
+        PSG_NGHTTP2_SESSION_TRACE(this << " already terminated");
         return;
     }
 
     auto rv = nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
 
     if (rv) {
-        _TRACE(this << " terminate failed: " << s_NgHttp2Error(rv));
+        PSG_NGHTTP2_SESSION_TRACE(this << " terminate failed: " << s_NgHttp2Error(rv));
     } else {
-        _TRACE(this << " terminated");
+        PSG_NGHTTP2_SESSION_TRACE(this << " terminated");
     }
 
     x_DelOnError(-1);
@@ -842,11 +842,11 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
     auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, req.get());
 
     if (rv < 0) {
-        _TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
+        PSG_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
     } else {
         auto authority = (const char*)m_Headers[eAuthority].value;
         req->reply->debug_printout << authority << path << endl;
-        _TRACE(this << " submitted");
+        PSG_NGHTTP2_SESSION_TRACE(this << " submitted");
     }
 
     return x_DelOnError(rv);
@@ -858,11 +858,11 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
 
     if (nghttp2_session_want_write(m_Session) == 0) {
         if (nghttp2_session_want_read(m_Session) == 0) {
-            _TRACE(this << " does not want to write and read");
+            PSG_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
             return x_DelOnError(-1);
         }
 
-        _TRACE(this << " does not want to write");
+        PSG_NGHTTP2_SESSION_TRACE(this << " does not want to write");
         return 0;
     }
 
@@ -877,9 +877,9 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
             total += rv;
         } else {
             if (rv) {
-                _TRACE(this << " send failed: " << s_NgHttp2Error(rv));
+                PSG_NGHTTP2_SESSION_TRACE(this << " send failed: " << s_NgHttp2Error(rv));
             } else {
-                _TRACE(this << " sended: " << total);
+                PSG_NGHTTP2_SESSION_TRACE(this << " sended: " << total);
             }
 
             return x_DelOnError(rv);
@@ -903,9 +903,9 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
         }
 
         if (rv < 0) {
-            _TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
+            PSG_NGHTTP2_SESSION_TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
         } else {
-            _TRACE(this << " received: " << total);
+            PSG_NGHTTP2_SESSION_TRACE(this << " received: " << total);
         }
 
         return x_DelOnError(rv);
@@ -931,7 +931,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetSer
 
 int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t* data, size_t len)
 {
-    _TRACE(this << '/' << stream_id << " received: " << len);
+    PSG_IO_SESSION_TRACE(this << '/' << stream_id << " received: " << len);
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
@@ -964,7 +964,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error
 
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
 {
-    _TRACE(this << '/' << stream_id << " closed: " << error_code);
+    PSG_IO_SESSION_TRACE(this << '/' << stream_id << " closed: " << error_code);
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
@@ -999,7 +999,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
         auto stream_id = frame->hd.stream_id;
         auto status_str = reinterpret_cast<const char*>(value);
 
-        _TRACE(this << '/' << stream_id << " status: " << status_str);
+        PSG_IO_SESSION_TRACE(this << '/' << stream_id << " status: " << status_str);
         auto it = m_Requests.find(stream_id);
 
         if (it != m_Requests.end()) {
@@ -1020,7 +1020,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 
 void SPSG_IoSession::StartClose()
 {
-    _TRACE(this << " closing");
+    PSG_IO_SESSION_TRACE(this << " closing");
     Reset(SPSG_Error::eShutdown, "Shutdown is in process");
     m_Tcp.Close();
 }
@@ -1047,7 +1047,7 @@ bool SPSG_IoSession::Write()
 
 void SPSG_IoSession::OnConnect(int status)
 {
-    _TRACE(this << " connected: " << status);
+    PSG_IO_SESSION_TRACE(this << " connected: " << status);
 
     if (status < 0) {
         Reset(status, "Failed to connect/start read");
@@ -1058,7 +1058,7 @@ void SPSG_IoSession::OnConnect(int status)
 
 void SPSG_IoSession::OnWrite(int status)
 {
-    _TRACE(this << " wrote: " << status);
+    PSG_IO_SESSION_TRACE(this << " wrote: " << status);
 
     if (status < 0) {
         Reset(status, "Failed to submit request");
@@ -1067,7 +1067,7 @@ void SPSG_IoSession::OnWrite(int status)
 
 void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
 {
-    _TRACE(this << " read: " << nread);
+    PSG_IO_SESSION_TRACE(this << " read: " << nread);
 
     if (nread < 0) {
         Reset(nread, nread == UV_EOF ? "Server disconnected" : "Failed to receive server reply");
@@ -1085,7 +1085,7 @@ void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
 
 bool SPSG_IoSession::ProcessRequest()
 {
-    _TRACE(this << " processing requests");
+    PSG_IO_SESSION_TRACE(this << " processing requests");
 
     while((m_Requests.size() < m_Session.GetMaxStreams()) && !m_Tcp.IsWriteBufferFull()) {
         shared_ptr<SPSG_Request> req;
@@ -1104,7 +1104,7 @@ bool SPSG_IoSession::ProcessRequest()
             return false;
         }
 
-        _TRACE(this << '/' << stream_id << " submitted");
+        PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
         m_Requests.emplace(stream_id, move(req));
 
         if (!Send()) {
@@ -1133,7 +1133,7 @@ void SPSG_IoSession::CheckRequestExpiration()
 
 void SPSG_IoSession::Reset(SPSG_Error error)
 {
-    _TRACE(this << " resetting with " << error);
+    PSG_IO_SESSION_TRACE(this << " resetting with " << error);
     m_Session.Del();
     m_Tcp.Close();
 
@@ -1212,7 +1212,7 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
             if (session.discovered != in_service) {
                 session.discovered = in_service;
-                _TRACE("Host '" << address.AsString() << "' " <<
+                PSG_IO_THREAD_TRACE("Host '" << address.AsString() << "' " <<
                         (in_service ? "added to" : "removed from") << " service '" << service_name << '\'');
             }
         }
@@ -1220,7 +1220,7 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
         // Add sessions for newly discovered addresses
         for (auto& address : discovered) {
             m_Sessions.emplace_back(this, handle->loop, address);
-            _TRACE("Host '" << address.AsString() << "' added to service '" << service_name << '\'');
+            PSG_IO_THREAD_TRACE("Host '" << address.AsString() << "' added to service '" << service_name << '\'');
         }
     }
     catch(...) {
