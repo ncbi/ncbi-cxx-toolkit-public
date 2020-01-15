@@ -447,17 +447,6 @@ unsigned CDiscrepancyContext::Summarize()
 }
 
 
-//void CDiscrepancyContext::AutofixAll()
-//{
-//    for (auto& tt : m_Tests) {
-//        const TReportItemList& list = tt.second->GetReport();
-//        for (auto& it : list) {
-//            it->Autofix(*m_Scope);
-//        }
-//    }
-//}
-
-
 void CDiscrepancyContext::TestString(const string& str)
 {
     for (auto& it : m_All_string) {

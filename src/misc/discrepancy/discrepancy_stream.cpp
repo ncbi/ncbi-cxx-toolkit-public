@@ -269,12 +269,12 @@ void CDiscrepancyContext::Extend(CParseNode& node, CObjectIStream& stream)
             }
         }
         Extend(item, stream);
-        if (node.m_Type != eSeqSet_NucProt) {
+        if (node.m_Type != eSeqSet_NucProt && node.m_Type != eSeqSet_GenProd) {
             node.m_Children[i].Reset();
         }
     }
 
-    //cout << "Running tests on " << node.Path() << " ...\n";
+//cout << "Running tests on " << node.Path() << " ...\n";
     m_CurrentNode.Reset(&node);
     RunTests();
 

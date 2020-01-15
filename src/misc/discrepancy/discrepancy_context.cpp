@@ -765,7 +765,7 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CSeq_feat& 
         if (it != node->m_FeatureMap.end()) {
             return it->second;
         }
-        if (node->m_Type == eSeqSet_NucProt) {
+        if (node->m_Type == eSeqSet_NucProt || node->m_Type == eSeqSet_GenProd) {
             for (auto& child : node->m_Children) {
                 CDiscrepancyContext::CParseNode* found = FindLocalNode(*child, feat);
                 if (found) {
