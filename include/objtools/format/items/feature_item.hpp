@@ -208,6 +208,7 @@ protected:
     void x_AddQualCodonStart( const CCdregion&, CBioseqContext& );
     void x_AddQualCodonStartIdx( const CCdregion&, CBioseqContext&, const int inset );
     void x_AddQualTranslationException( const CCdregion&, CBioseqContext& );
+    void x_AddQualTranslationExceptionIdx( const CCdregion&, CBioseqContext&, string& tr_ex );
     void x_AddQualProteinConflict( const CCdregion&, CBioseqContext& );
     void x_AddQualCodedBy( CBioseqContext& );
     void x_AddQualProteinId( CBioseqContext&, const CBioseq_Handle&, CConstRef<CSeq_id> );  

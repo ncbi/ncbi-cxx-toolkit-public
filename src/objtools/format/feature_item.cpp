@@ -2466,6 +2466,23 @@ void CFeatureItem::x_AddQualTranslationException(
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualTranslationExceptionIdx( 
+    const CCdregion& cdr,
+    CBioseqContext& ctx,
+    string& tr_ex )
+//  ----------------------------------------------------------------------------
+{
+     if ( !ctx.IsProt() || !IsMappedFromCDNA() ) {
+        if ( cdr.IsSetCode_break() ) {
+            x_AddQual( eFQ_transl_except, 
+                new CFlatCodeBreakQVal( cdr.GetCode_break() ) );
+        } else {
+            x_AddQual(eFQ_seqfeat_note, new CFlatStringQVal("unprocessed translation exception: " + tr_ex));
+        }
+    } 
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualProteinConflict( 
     const CCdregion& cdr,
     CBioseqContext& ctx )
@@ -2940,9 +2957,25 @@ void CFeatureItem::x_AddQualsCdregionIdx(
     CMappedFeat protFeat;
     CConstRef<CSeq_id> prot_id;
 
+    string tr_ex;
+    for (auto& gbqual : cds.GetQual()) {
+        if (!gbqual->IsSetQual()  ||  !gbqual->IsSetVal()) continue;
+        if (NStr::CompareNocase( gbqual->GetQual(), "transl_except") != 0) continue;
+        tr_ex = gbqual->GetVal ();
+        break;
+    }
+    TQI it = m_Quals.begin();
+     while ( it != m_Quals.end() ) {
+        if ( it->first == eFQ_transl_except ) {
+            it = m_Quals.Erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     x_AddQualTranslationTable( cdr, ctx );
     x_AddQualCodonStartIdx( cdr, ctx, inset );
-    x_AddQualTranslationException( cdr, ctx );
+    x_AddQualTranslationExceptionIdx( cdr, ctx, tr_ex );
     x_AddQualProteinConflict( cdr, ctx );
     x_AddQualCodedBy( ctx );
     if ( ctx.IsProt()  &&  IsMappedFromCDNA() ) {
