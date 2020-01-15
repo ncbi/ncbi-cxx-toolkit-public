@@ -58,7 +58,7 @@ errcode=0
 # Get build directory
 build_dir=`dirname $script`
 build_dir=`(cd "$build_dir"; pwd)`
-timer="date +'%H:%M'"
+timer="date +'%a %m/%k/%Y %T'"
 
 if [ ! -d $build_dir ] ; then
     Error "Build directory $build_dir not found"
