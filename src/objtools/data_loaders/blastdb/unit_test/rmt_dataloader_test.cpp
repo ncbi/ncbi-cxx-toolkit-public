@@ -220,8 +220,8 @@ BOOST_AUTO_TEST_CASE(RemoteFetchLongNucleotideBioseq_NotFixedSliceSize)
 
 BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
 {
-    const string db("nr");
-    const bool is_protein(true);
+    const string db("nt");
+    const bool is_protein(false);
     const bool kFixedSliceSize(true);
     const bool is_remote(true);
     CAutoRegistrar::RemoveAllDataLoaders();
@@ -239,9 +239,9 @@ BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
     typedef pair<TGi, CSeq_inst::TLength> TGiLengthPair;
     typedef vector<TGiLengthPair> TGiLengthVector;
     TGiLengthVector test_data;
-    test_data.push_back(TGiLengthPair(GI_CONST(129295), 232));
-    test_data.push_back(TGiLengthPair(GI_CONST(129296), 388));
-    test_data.push_back(TGiLengthPair(GI_CONST(129295), 232));
+    test_data.push_back(TGiLengthPair(GI_CONST(405832), 2592));
+    test_data.push_back(TGiLengthPair(GI_CONST(42365), 3326));
+    test_data.push_back(TGiLengthPair(GI_CONST(1274591754), 539));
 
     CScope::TIds ids;
     ITERATE(TGiLengthVector, itr, test_data) {
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
             scope->AddDataLoader(*name);
         }
 
-        CSeq_id seqid1(CSeq_id::e_Gi, 129295);  // protein
+        CSeq_id seqid1("P01013.1");  // protein
         CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
         BOOST_REQUIRE(handle1);
         BOOST_REQUIRE_EQUAL((TSeqPos)232, handle1.GetInst().GetLength());
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinBioseq)
         
         scope.AddDataLoader(loader_names.front());
 
-        CSeq_id seqid1(CSeq_id::e_Gi, 129295);  // protein
+        CSeq_id seqid1("P01013.1");  // protein
         CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
         BOOST_REQUIRE(handle1);
         BOOST_REQUIRE_EQUAL((TSeqPos)232, handle1.GetInst().GetLength());

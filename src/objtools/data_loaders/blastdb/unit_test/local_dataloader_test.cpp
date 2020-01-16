@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
 
      scope.AddDataLoader(loader_name);
 
-     CSeq_id seqid1(CSeq_id::e_Gi, 129295);  // protein
+     CSeq_id seqid1("P01013.1");  // protein
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(232, handle1.GetInst().GetLength());
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
 }
 
 // Motivated by WB-1712
-BOOST_AUTO_TEST_CASE(FetchNonRedundantEntryByGi)
+BOOST_AUTO_TEST_CASE(FetchNonRedundantEntry)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
      string dbname("nr");
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(FetchNonRedundantEntryByGi)
      const size_t kExpectedLength(536);
      const size_t kExpectedTaxid(9606);
 
-     CSeq_id seqid1(CSeq_id::e_Gi, 21389599);  // human protein
+     CSeq_id seqid1("NP_653295.1");  // human protein
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(kExpectedLength, handle1.GetInst().GetLength());
@@ -281,11 +281,11 @@ BOOST_AUTO_TEST_CASE(FetchNonRedundantEntryByGi)
      BOOST_REQUIRE_EQUAL(kExpectedLength, bioseq1->GetInst().GetLength());
      BOOST_CHECK_EQUAL(kExpectedTaxid, bioseq1->GetTaxId());
 
-     CSeq_id monkey_gi(CSeq_id::e_Gi, 332855063); // monkey sequence
-     CBioseq_Handle monkey_handle = scope.GetBioseqHandle(seqid1);
+     CSeq_id monkey_id("XP_001165763"); // monkey sequence
+     CBioseq_Handle monkey_handle = scope.GetBioseqHandle(monkey_id);
      BOOST_REQUIRE(monkey_handle);
      BOOST_REQUIRE_EQUAL(kExpectedLength, monkey_handle.GetInst().GetLength());
-     BOOST_CHECK_EQUAL(9598, scope.GetTaxId(monkey_gi));
+     BOOST_CHECK_EQUAL(9598, scope.GetTaxId(monkey_id));
 }
 
 END_SCOPE(blast)
