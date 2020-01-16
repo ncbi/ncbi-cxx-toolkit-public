@@ -2476,7 +2476,7 @@ void CFeatureItem::x_AddQualTranslationExceptionIdx(
         if ( cdr.IsSetCode_break() ) {
             x_AddQual( eFQ_transl_except, 
                 new CFlatCodeBreakQVal( cdr.GetCode_break() ) );
-        } else {
+        } else if ( tr_ex.length() > 0 ) {
             x_AddQual(eFQ_seqfeat_note, new CFlatStringQVal("unprocessed translation exception: " + tr_ex));
         }
     } 
