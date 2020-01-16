@@ -131,6 +131,7 @@ while [ $# != 0 ]; do
       BUILD_TYPE=Release 
       ;; 
     --with-max-debug)
+      BUILD_TYPE=Debug 
       PROJECT_FEATURES="$PROJECT_FEATURES;MaxDebug"
       ;; 
     --with-symbols)
