@@ -97,4 +97,18 @@ CHECK_CMD = objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader gb -pubseqos 
 CHECK_CMD = objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader psg
 CHECK_CMD = objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader psg -no_split
 
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -loader gb -bulk_gi
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -loader gb -pubseqos -bulk_gi
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -loader gb -no_split -bulk_gi
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -loader gb -pubseqos -no_split -bulk_gi
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -loader psg -bulk_gi
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -loader psg -no_split -bulk_gi
+
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader gb -bulk_acc
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader gb -pubseqos -bulk_acc
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader gb -no_split -bulk_acc
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader gb -pubseqos -no_split -bulk_acc
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader psg -bulk_acc
+CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader psg -no_split -bulk_acc
+
 WATCHERS = grichenk

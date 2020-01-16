@@ -183,6 +183,10 @@ void CPerfTestApp::Init(void)
     arg_desc->AddFlag("print_data", "print TSE");
     arg_desc->AddFlag("all_ids", "fetch all seq-ids from each thread");
 
+    arg_desc->AddFlag("bulk_gi", "test bulk GetGis()");
+    arg_desc->AddFlag("bulk_acc", "test bulk GetAccVers()");
+    arg_desc->SetDependency("bulk_gi", CArgDescriptions::eExcludes, "bulk_acc");
+
     arg_desc->AddOptionalKey("stat", "StatFile",
         "File with performace test outputs",
         CArgDescriptions::eInputFile);
@@ -218,6 +222,8 @@ int CPerfTestApp::Run(void)
         return 0;
     }
 
+    bool bulk_gi = args["bulk_gi"];
+    bool bulk_acc = args["bulk_acc"];
     int repeat_count = args["count"].AsInteger();
     if (repeat_count <= 0) repeat_count = 1;
     int thread_count = args["threads"].AsInteger();
@@ -317,18 +323,40 @@ int CPerfTestApp::Run(void)
         CStopWatch sw2;
         sw2.Start();
 
-        if (thread_count == 0) {
-            TestIds();
+        if (bulk_gi) {
+            CScope::TIds bulk_ids;
+            bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
+            CScope::TGIs gis = m_Scope->GetGis(bulk_ids);
+            if (m_PrintData) {
+                ITERATE(CScope::TGIs, gi, gis) {
+                    cout << *gi << endl;
+                }
+            }
+        }
+        else if (bulk_acc) {
+            CScope::TIds bulk_ids;
+            bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
+            CScope::TIds ids = m_Scope->GetAccVers(bulk_ids);
+            if (m_PrintData) {
+                ITERATE(CScope::TIds, id, ids) {
+                    cout << id->AsString() << endl;
+                }
+            }
         }
         else {
-            vector<CRef<CThread>> threads;
-            for (int i = 0; i < thread_count; ++i) {
-                CRef<CThread> thr(new CTestThread(*this));
-                threads.push_back(thr);
-                thr->Run();
+            if (thread_count == 0) {
+                TestIds();
             }
-            for (int i = 0; i < thread_count; ++i) {
-                threads[i]->Join(nullptr);
+            else {
+                vector<CRef<CThread>> threads;
+                for (int i = 0; i < thread_count; ++i) {
+                    CRef<CThread> thr(new CTestThread(*this));
+                    threads.push_back(thr);
+                    thr->Run();
+                }
+                for (int i = 0; i < thread_count; ++i) {
+                    threads[i]->Join(nullptr);
+                }
             }
         }
 
@@ -350,7 +378,17 @@ int CPerfTestApp::Run(void)
     cout << "; " << loader;
     if (loader == "gb") cout << (args["pubseqos"] ? "/pubseqos" : "/id");
     cout << (args["no_split"] ? "/no_split" : "/split");
-    cout << "; " << m_Ids.size() << " ids; " << thread_count << " thr; " << repeat_count << " rep";
+    cout << "; " << m_Ids.size() << " ids; ";
+    if (bulk_gi) {
+        cout << "bulk gi ";
+    }
+    else if (bulk_acc) {
+        cout << "bulk acc ";
+    }
+    else {
+        cout << thread_count << " thr; ";
+    }
+    cout << repeat_count << " rep";
     cout << endl;
 
     return 0;

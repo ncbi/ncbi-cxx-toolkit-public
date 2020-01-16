@@ -69,17 +69,24 @@ BEGIN_SCOPE(objects)
 class CPsgClientContext
 {
 public:
-    CPsgClientContext(void) : m_Sema(0, 1) {}
-    ~CPsgClientContext(void) {}
+    CPsgClientContext(void);
+    virtual ~CPsgClientContext(void) {}
 
     void Wait(void);
-    void SetReply(shared_ptr<CPSG_Reply> reply);
-    shared_ptr<CPSG_Reply> GetReply(void) { return m_Reply; }
+    virtual void SetReply(shared_ptr<CPSG_Reply> reply);
+    virtual shared_ptr<CPSG_Reply> GetReply(void);
 
-private:
+protected:
     CSemaphore m_Sema;
+private:
     shared_ptr<CPSG_Reply> m_Reply;
 };
+
+
+CPsgClientContext::CPsgClientContext(void)
+    : m_Sema(0, kMax_UInt)
+{
+}
 
 
 void CPsgClientContext::Wait(void)
@@ -92,6 +99,47 @@ void CPsgClientContext::SetReply(shared_ptr<CPSG_Reply> reply)
 {
     m_Reply = reply;
     m_Sema.Post();
+}
+
+
+shared_ptr<CPSG_Reply> CPsgClientContext::GetReply(void)
+{
+    return m_Reply;
+}
+
+
+class CPsgClientContext_Bulk : public CPsgClientContext
+{
+public:
+    CPsgClientContext_Bulk(void) {}
+    virtual ~CPsgClientContext_Bulk(void) {}
+
+    void SetReply(shared_ptr<CPSG_Reply> reply) override;
+    shared_ptr<CPSG_Reply> GetReply(void) override;
+
+private:
+    deque<shared_ptr<CPSG_Reply>> m_Replies;
+    CFastMutex m_Lock;
+};
+
+
+void CPsgClientContext_Bulk::SetReply(shared_ptr<CPSG_Reply> reply)
+{
+    CFastMutexGuard guard(m_Lock);
+    m_Replies.push_front(reply);
+    m_Sema.Post();
+}
+
+
+shared_ptr<CPSG_Reply> CPsgClientContext_Bulk::GetReply(void)
+{
+    shared_ptr<CPSG_Reply> ret;
+    CFastMutexGuard guard(m_Lock);
+    if (!m_Replies.empty()) {
+        ret = m_Replies.back();
+        m_Replies.pop_back();
+    }
+    return ret;
 }
 
 
@@ -168,8 +216,8 @@ const size_t kMaxCacheSize = 10000;
 class CBioseqCache
 {
 public:
-    CBioseqCache(void) {};
-    ~CBioseqCache(void) {};
+    CBioseqCache(void) {}
+    ~CBioseqCache(void) {}
 
     shared_ptr<SPsgBioseqInfo> Get(const CSeq_id_Handle& idh);
     shared_ptr<SPsgBioseqInfo> Add(const CPSG_BioseqInfo& info, CSeq_id_Handle req_idh);
@@ -239,31 +287,37 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
       hash(0),
       deadline(kMaxCacheLifespanSeconds)
 {
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fMoleculeType)
+    CPSG_Request_Resolve::TIncludeInfo inc_info = bioseq_info.IncludedInfo();
+    if (inc_info & CPSG_Request_Resolve::fMoleculeType)
         molecule_type = bioseq_info.GetMoleculeType();
 
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fLength)
+    if (inc_info & CPSG_Request_Resolve::fLength)
         length = bioseq_info.GetLength();
 
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fState)
+    if (inc_info & CPSG_Request_Resolve::fState)
         state = bioseq_info.GetState();
 
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fTaxId)
+    if (inc_info & CPSG_Request_Resolve::fTaxId)
         tax_id = bioseq_info.GetTaxId();
 
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fHash)
+    if (inc_info & CPSG_Request_Resolve::fHash)
         hash = bioseq_info.GetHash();
 
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fCanonicalId) {
-        ids.push_back(PsgIdToHandle(bioseq_info.GetCanonicalId()));
+    if (inc_info & CPSG_Request_Resolve::fCanonicalId) {
+        canonical = PsgIdToHandle(bioseq_info.GetCanonicalId());
+        ids.push_back(canonical);
     }
-    if (bioseq_info.IncludedInfo() & CPSG_Request_Resolve::fOtherIds) {
+    if (inc_info & CPSG_Request_Resolve::fGi)
+        gi = bioseq_info.GetGi();
+
+    if (inc_info & CPSG_Request_Resolve::fOtherIds) {
         vector<CPSG_BioId> other_ids = bioseq_info.GetOtherIds();
         ITERATE(vector<CPSG_BioId>, other_id, other_ids) {
             ids.push_back(PsgIdToHandle(*other_id));
         }
     }
-    blob_id = bioseq_info.GetBlobId().Get();
+    if (inc_info & CPSG_Request_Resolve::fBlobId)
+        blob_id = bioseq_info.GetBlobId().Get();
 }
 
 
@@ -641,6 +695,32 @@ void CPSGDataLoader_Impl::DropTSE(const CPsgBlobId& blob_id)
         return;
     }
     m_Blobs.erase(blob_it);
+}
+
+
+void CPSGDataLoader_Impl::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    x_GetBulkBioseqInfo(CPSG_Request_Resolve::fCanonicalId, ids, loaded, infos);
+    for (size_t i = 0; i < infos.size(); ++i) {
+        if (!infos[i].get()) continue;
+        loaded[i] = true;
+        ret[i] = infos[i]->canonical;
+    }
+}
+
+
+void CPSGDataLoader_Impl::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    x_GetBulkBioseqInfo(CPSG_Request_Resolve::fGi, ids, loaded, infos);
+    for (size_t i = 0; i < infos.size(); ++i) {
+        if (!infos[i].get()) continue;
+        loaded[i] = true;
+        ret[i] = infos[i]->gi;
+    }
 }
 
 
@@ -1098,6 +1178,81 @@ CObjectIStream* CPSGDataLoader_Impl::x_GetBlobDataStream(
     _ASSERT(ret);
     z_stream.release();
     return ret;
+}
+
+
+void CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
+    CPSG_Request_Resolve::EIncludeInfo info,
+    const TIds& ids,
+    TLoaded& loaded,
+    TBioseqInfos& ret)
+{
+    TIdxMap idx_map;
+    auto context = make_shared<CPsgClientContext_Bulk>();
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (loaded[i]) continue;
+        ret[i] = m_BioseqCache->Get(ids[i]);
+        if (ret[i]) {
+            loaded[i] = true;
+            continue;
+        }
+        CPSG_BioId bio_id = x_GetBioId(ids[i]);
+        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id), context);
+        idx_map[request.get()] = i;
+        request->IncludeInfo(info);
+        m_Queue->SendRequest(request, DEFAULT_DEADLINE);
+        m_Thread->Wake();
+    }
+
+    while (!idx_map.empty()) {
+        auto reply = context->GetReply();
+        if (!reply) continue;
+        TIdxMap::iterator idx_it = idx_map.find((void*)reply->GetRequest().get());
+        size_t idx = ret.size();
+        if (idx_it != idx_map.end()) {
+            idx = idx_it->second;
+            idx_map.erase(idx_it);
+        }
+
+        EPSG_Status status = reply->GetStatus(0);
+        if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
+            x_ReportStatus(reply, status);
+            continue;
+        }
+
+        shared_ptr<CPSG_BioseqInfo> bioseq_info;
+        for (;;) {
+            auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
+            if (!reply_item) {
+                _TRACE("Request failed: null reply item");
+                continue;
+            }
+            if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+                break;
+            }
+            status = reply_item->GetStatus(CDeadline::eInfinite);
+            if (status != EPSG_Status::eSuccess) {
+                x_ReportStatus(reply_item, status);
+                bioseq_info.reset();
+                break;
+            }
+
+            if (reply_item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
+                bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(reply_item);
+            }
+        }
+        status = reply->GetStatus(CDeadline::eInfinite);
+        if (status != EPSG_Status::eSuccess) {
+            x_ReportStatus(reply, status);
+            continue;
+        }
+
+        if (!bioseq_info) {
+            _TRACE("Failed to get bioseq info for PSG-id " << reply->GetRequest()->GetId());
+            continue;
+        }
+        ret[idx] = make_shared<SPsgBioseqInfo>(*bioseq_info);
+    }
 }
 
 

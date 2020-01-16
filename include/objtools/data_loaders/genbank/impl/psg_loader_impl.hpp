@@ -56,6 +56,8 @@ struct SPsgBioseqInfo
     CPSG_BioseqInfo::TState state;
     TTaxId tax_id;
     int hash;
+    TGi gi;
+    CSeq_id_Handle canonical;
     TIds ids;
     string blob_id;
 
@@ -93,7 +95,7 @@ private:
 
 class CPsgClientThread;
 class CBioseqCache;
-
+class CPsgClientContext_Bulk;
 
 class CPSGDataLoader_Impl : public CObject
 {
@@ -101,7 +103,9 @@ public:
     explicit CPSGDataLoader_Impl(const CGBLoaderParams& params);
     ~CPSGDataLoader_Impl(void);
 
-    typedef vector<CSeq_id_Handle> TIds;
+    typedef CDataLoader::TIds TIds;
+    typedef CDataLoader::TGis TGis;
+    typedef CDataLoader::TLoaded TLoaded;
 
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     int GetTaxId(const CSeq_id_Handle& idh);
@@ -124,6 +128,9 @@ public:
                                                 CDataLoader::TProcessedNAs* processed_nas);
 
     void DropTSE(const CPsgBlobId& blob_id);
+
+    void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
+    void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
 
 private:
     struct SReplyResult {
@@ -148,6 +155,14 @@ private:
         const CPSG_BlobData& blob_data,
         CTSE_LoadLock& load_lock);
     CObjectIStream* x_GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
+
+    typedef map<void*, size_t> TIdxMap;
+    typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
+
+    void x_GetBulkBioseqInfo(CPSG_Request_Resolve::EIncludeInfo info,
+        const TIds& ids,
+        TLoaded& loaded,
+        TBioseqInfos& ret);
 
     template<class TReply> bool xxx_CheckStatus(TReply reply) const
     {

@@ -242,6 +242,18 @@ void CPSGDataLoader::DropTSE(CRef<CTSE_Info> tse_info)
 }
 
 
+void CPSGDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
+{
+    m_Impl->GetAccVers(ids, loaded, ret);
+}
+
+
+void CPSGDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    m_Impl->GetGis(ids, loaded, ret);
+}
+
+
 CGBDataLoader::TNamedAnnotNames
 CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
 {
