@@ -11,6 +11,18 @@ set(NCBI_DEFAULT_HEADERS "*.h*;*impl/*.h*;*.inl;*impl/*.inl")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+if(ChaosMonkey IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_definitions(-DNCBI_MONKEY)
+endif()
+
+if(Int8GI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_definitions(-DNCBI_INT8_GI)
+endif()
+
+if(StrictGI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_definitions(-DNCBI_STRICT_GI)
+endif()
+
 if (NCBI_EXPERIMENTAL_CFG)
 
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -145,6 +157,14 @@ if (NOT buildconf)
   set(buildconf0 ${CMAKE_BUILD_TYPE})
   set(NCBI_BUILD_TYPE "${CMAKE_BUILD_TYPE}MT64")
 endif (NOT buildconf)
+
+if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_definitions(-D_GLIBCXX_DEBUG)
+endif()
+
+if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    set(CMAKE_DEBUG_SYMBOLS ON)
+endif()
 
 message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")

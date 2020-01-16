@@ -50,15 +50,18 @@ echo   --with-tags="tags"       -- build projects which have allowed tags only
 echo                  examples:    --with-tags="*;-test"
 echo   --with-targets="names"   -- build projects which have allowed names only
 echo                  examples:    --with-targets="datatool;xcgi$"
-echo   --with-components="LIST" -- explicitly enable or disable components
-echo                  examples:    --with-components="StrictGI;-Z"
 echo   --with-details="names"   -- print detailed information about projects
 echo                  examples:    --with-details="datatool;test_hash"
+echo   --with-install="DIR"     -- generate rules for installation into "DIR" directory
+echo                  examples:    --with-install="D:\CPP toolkit"
+echo   --with-components="LIST" -- explicitly enable or disable components
+echo                  examples:    --with-components="StrictGI;-Z"
+echo   --with-features="LIST"   -- specify compilation features
+echo                  examples:    --with-features="StrictGI"
+echo   --with-build-root=name   -- specify a non-default build directory name
 echo   --with-vs=N              -- use Visual Studio N generator 
 echo                  examples:    --with-vs=2017  (default)
 echo                               --with-vs=2015
-echo   --with-install="DIR"     -- generate rules for installation into "DIR" directory
-echo                  examples:    --with-install="D:\CPP toolkit"
 echo   --with-generator="X"     -- use generator X
 echo:
 
@@ -102,11 +105,14 @@ if "%~1"=="" goto :ENDPARSEARGS
 if "%1"=="--help"              (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="-help"               (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="help"                (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="-h"                  (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="--rootdir"           (set tree_root=%~2&         shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--caller"            (set script_name=%~2&       shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--without-dll"       (set BUILD_SHARED_LIBS=OFF&        goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"          (set BUILD_SHARED_LIBS=ON&         goto :CONTINUEPARSEARGS)
 if "%1"=="--with-components"   (set PROJECT_COMPONENTS=%~2& shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-features"     (set PROJECT_FEATURES=%~2&  shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-build-root"   (set BUILD_ROOT=%~2&        shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-projects"     (set PROJECT_LIST=%~2&      shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-tags"         (set PROJECT_TAGS=%~2&      shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-targets"      (set PROJECT_TARGETS=%~2&   shift& goto :CONTINUEPARSEARGS)
@@ -182,6 +188,7 @@ if not "%CMAKE_GENERATOR%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -G "%CMAKE_GENERATOR%"
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_COMPONENTS="%PROJECT_COMPONENTS%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_FEATURES="%PROJECT_FEATURES%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%PROJECT_LIST%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%PROJECT_TAGS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%PROJECT_TARGETS%"
@@ -191,9 +198,11 @@ if not "%INSTALL_PATH%"=="" (
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
-set BUILD_ROOT=CMake-%generator_name%
-if "%BUILD_SHARED_LIBS%"=="ON" (
-  set BUILD_ROOT=%BUILD_ROOT%-DLL
+if "%BUILD_ROOT%"=="" (
+  set BUILD_ROOT=CMake-%generator_name%
+  if "%BUILD_SHARED_LIBS%"=="ON" (
+    set BUILD_ROOT=%BUILD_ROOT%-DLL
+  )
 )
 
 if not exist "%tree_root%\%BUILD_ROOT%\build" (

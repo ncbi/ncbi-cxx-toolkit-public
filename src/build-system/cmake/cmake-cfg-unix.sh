@@ -48,6 +48,8 @@ OPTIONS:
   --help                     -- print Usage
   --without-debug            -- build release versions of libs and apps
   --with-debug               -- build debug versions of libs and apps (default)
+  --with-max-debug           -- enable extra runtime checks (esp. of STL usage)
+  --with-symbols             -- retain debugging symbols in non-debug mode
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitly requested otherwise
@@ -59,21 +61,21 @@ OPTIONS:
                     examples:   --with-tags="*;-test"
   --with-targets="names"     -- build projects which have allowed names only
                     examples:   --with-targets="datatool;xcgi$"
-  --with-components="LIST"   -- explicitly enable or disable components
-                    examples:   --with-components="StrictGI;-Z"
   --with-details="names"     -- print detailed information about projects
                     examples:   --with-details="datatool;test_hash"
   --with-install="DIR"       -- generate rules for installation into DIR directory
                     examples:   --with-install="/usr/CPP_toolkit"
+  --with-components="LIST"   -- explicitly enable or disable components
+                    examples:   --with-components="-Z"
+  --with-features="LIST"     -- specify compilation features
+                    examples:   --with-features="StrictGI"
+  --with-build-root=name     -- specify a non-default build directory name
   --without-ccache           -- do not use ccache
   --without-distcc           -- do not use distcc
   --with-generator="X"       -- use generator X
 EOF
 
-  Check_function_exists configure_ext_Usage
-  if [ $? -eq 0 ]; then
-    configure_ext_Usage
-  fi
+  Check_function_exists configure_ext_Usage && configure_ext_Usage
 
   generatorfound=""
   "${CMAKE_CMD}" --help | while IFS= read -r line; do
@@ -107,7 +109,7 @@ do_help="no"
 unknown=""
 while [ $# != 0 ]; do
   case "$1" in 
-    --help|-help|help)
+    --help|-help|help|-h)
       do_help="yes"
     ;; 
     --rootdir=*)
@@ -128,6 +130,12 @@ while [ $# != 0 ]; do
     --without-debug) 
       BUILD_TYPE=Release 
       ;; 
+    --with-max-debug)
+      PROJECT_FEATURES="$PROJECT_FEATURES;MaxDebug"
+      ;; 
+    --with-symbols)
+      PROJECT_FEATURES="$PROJECT_FEATURES;Symbols"
+      ;; 
     --with-ccache)
       USE_CCACHE="ON"
       ;; 
@@ -140,12 +148,6 @@ while [ $# != 0 ]; do
     --without-distcc)
       USE_DISTCC="OFF"
       ;;
-    --with-generator=*)
-      CMAKE_GENERATOR=${1#*=}
-      ;; 
-    --with-components=*)
-      PROJECT_COMPONENTS=${1#*=}
-      ;; 
     --with-projects=*)
       PROJECT_LIST=${1#*=}
       if [ -e "${tree_root}/$PROJECT_LIST" ]; then
@@ -169,6 +171,18 @@ while [ $# != 0 ]; do
       ;; 
     --with-install=*)
       INSTALL_PATH=${1#*=}
+      ;; 
+    --with-generator=*)
+      CMAKE_GENERATOR=${1#*=}
+      ;; 
+    --with-components=*)
+      PROJECT_COMPONENTS=${1#*=}
+      ;; 
+    --with-features=*)
+      PROJECT_FEATURES="$PROJECT_FEATURES;${1#*=}"
+      ;; 
+    --with-build-root=*)
+      BUILD_ROOT=${1#*=}
       ;; 
     --with-prebuilt=*)
       prebuilt_path=${1#*=}
@@ -261,6 +275,7 @@ if [ -n "$CMAKE_GENERATOR" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$CMAKE_GENERATOR")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_COMPONENTS=$(Quote "${PROJECT_COMPONENTS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_FEATURES=$(Quote "${PROJECT_FEATURES}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${PROJECT_LIST}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${PROJECT_TAGS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${PROJECT_TARGETS}")"
@@ -270,27 +285,29 @@ if [ -n "$INSTALL_PATH" ]; then
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
-if test "$CMAKE_GENERATOR" = "Xcode"; then
-  BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
-  if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-    BUILD_ROOT="$BUILD_ROOT"-DLL
-  fi
-else
+if test "$CMAKE_GENERATOR" != "Xcode"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
-  BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
-  if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-    BUILD_ROOT="$BUILD_ROOT"DLL
-  fi
+fi
+
+if [ -z "$BUILD_ROOT" ]; then
+  if test "$CMAKE_GENERATOR" = "Xcode"; then
+    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
+    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+      BUILD_ROOT="$BUILD_ROOT"-DLL
+    fi
+  else
+    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
+    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+      BUILD_ROOT="$BUILD_ROOT"DLL
+    fi
 #BUILD_ROOT="$BUILD_ROOT"64
+  fi
 fi
 
-Check_function_exists configure_ext_PreCMake
-if [ $? -eq 0 ]; then
-  configure_ext_PreCMake
-fi
-
-mkdir -p ${tree_root}/${BUILD_ROOT}/build 
+cd ${tree_root}
+Check_function_exists configure_ext_PreCMake && configure_ext_PreCMake
+mkdir -p ${BUILD_ROOT}/build 
 cd ${tree_root}/${BUILD_ROOT}/build 
 
 #echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
