@@ -4178,6 +4178,9 @@ void CFeatureItem::x_ImportQuals(
             }
             break;
         case eFQ_illegal_qual:
+            if ( ctx.UsingSeqEntryIndex() && NStr::CompareNocase (name, "transl_except") == 0 ) {
+              break;
+            }
             x_AddQual(slot, new CFlatIllegalQVal(**it));
             break;
         case eFQ_product:
