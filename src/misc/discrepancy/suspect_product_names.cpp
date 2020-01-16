@@ -338,6 +338,9 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
     GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
     if (prot) {
         string& prot_name = prot->SetData().SetProt().SetName().front();
+        if (!rule->StringMatchesSuspectProductRule(prot_name)) {
+            return ret;
+        }
         string old_prot_name = FixProductName(rule, context.GetScope(),
             prot_name,
             [&mrna] { return CRef<CSeq_feat>(mrna); },
@@ -411,6 +414,9 @@ DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS)
     GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
     if (prot) {
         string& prot_name = prot->SetData().SetProt().SetName().front();
+        if (!rule->StringMatchesSuspectProductRule(prot_name)) {
+            return ret;
+        }
         string old_prot_name = FixProductName(rule, context.GetScope(),
             prot_name,
             [&mrna] { return CRef<CSeq_feat>(mrna); },
