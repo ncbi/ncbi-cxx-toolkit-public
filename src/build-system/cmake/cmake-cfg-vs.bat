@@ -12,6 +12,8 @@ REM set script_dir=%~dp0
 cd %0\..
 set script_dir=%CD%
 set tree_root=%initial_dir%
+set extension=cmake_configure_ext.bat
+
 
 REM #########################################################################
 if "%CMAKE_CMD%"=="" (
@@ -63,6 +65,10 @@ echo   --with-vs=N              -- use Visual Studio N generator
 echo                  examples:    --with-vs=2017  (default)
 echo                               --with-vs=2015
 echo   --with-generator="X"     -- use generator X
+
+if defined have_configure_ext_Usage (
+  call "%extension%" :configure_ext_Usage
+)
 echo:
 
 set generatorfound=
@@ -127,9 +133,21 @@ shift
 goto :PARSEARGS
 :ENDPARSEARGS
 
+set have_configure_host=yes
+set extension=%tree_root%\%extension%
+if exist "%extension%" (
+  call "%extension%"
+)
+
 if not "%do_help%"=="" (
   call :USAGE
   goto :DONE
+)
+
+if not "%unknown%"=="" (
+  if defined have_configure_ext_ParseArgs (
+    call "%extension%" :configure_ext_ParseArgs unknown %unknown%
+  )
 )
 
 if not "%unknown%"=="" (
@@ -205,8 +223,12 @@ if "%BUILD_ROOT%"=="" (
   )
 )
 
-if not exist "%tree_root%\%BUILD_ROOT%\build" (
-  mkdir "%tree_root%\%BUILD_ROOT%\build"
+cd "%tree_root%"
+if defined have_configure_ext_PreCMake (
+  call "%extension%" :configure_ext_PreCMake
+)
+if not exist "%BUILD_ROOT%\build" (
+  mkdir "%BUILD_ROOT%\build"
 )
 cd "%tree_root%\%BUILD_ROOT%\build"
 
