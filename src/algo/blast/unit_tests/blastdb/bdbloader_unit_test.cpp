@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveGi555WithTimeOut_Remote, 5);
 
 void RetrieveLargeProteinWithTimeOut(bool is_remote)
 {
-    const CSeq_id id(CSeq_id::e_Gi, 1212992);
+    const CSeq_id id("CAA62188.1");
 
     const string db("nr");
     const bool is_protein = true;
