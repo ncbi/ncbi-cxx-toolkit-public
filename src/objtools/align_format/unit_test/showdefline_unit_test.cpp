@@ -126,7 +126,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
         string score_url[] = {"<a href=#NP_569083.1>", "<a href=#NP_001258981.1>"};
         bool is_new[] = {false, false};
         bool was_checked[] = {false, false};
-        BOOST_REQUIRE_EQUAL(dl->defline, defline[index]);
+        BOOST_REQUIRE(dl->defline.find(defline[index])!= NPOS);
         BOOST_REQUIRE_EQUAL(dl->id_url, id_url[index]);
         BOOST_REQUIRE_EQUAL(dl->score_url, score_url[index]);
         BOOST_REQUIRE_EQUAL(dl->is_new, is_new[index]);
