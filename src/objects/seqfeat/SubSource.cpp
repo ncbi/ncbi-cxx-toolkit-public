@@ -2242,7 +2242,20 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                   show_claimed = true;
                 }
             }
-            if (!suppress) {
+            string water = id->GetGuessWater();
+            if (NStr::EqualNocase (water, "Red Sea") &&
+               (NStr::EqualNocase (reportregion, "Egypt") ||
+                NStr::EqualNocase (reportregion, "Saudi Arabia") ||
+                NStr::EqualNocase (reportregion, "Sudan") ||
+                NStr::EqualNocase (reportregion, "Eritrea") ||
+                NStr::EqualNocase (reportregion, "Dijibouti") ||
+                NStr::EqualNocase (reportregion, "Yemen") ||
+                NStr::EqualNocase (reportregion, "Israel") ||
+                NStr::EqualNocase (reportregion, "Jordan"))) {
+            } else if (NStr::EqualNocase (water, "Gulf of Mexico") &&
+               (NStr::EqualNocase (reportregion, "USA") ||
+                NStr::EqualNocase (reportregion, "Mexico"))) {
+            } else if (!suppress) {
                 errcode = eLatLonCountryErr_Water;
                 if (show_claimed) {
                     error = "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion + "' at distance "
