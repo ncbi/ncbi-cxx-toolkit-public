@@ -334,8 +334,7 @@ static void s_MacArgMunging(CNcbiApplicationAPI&   app,
 
 NCBI_PARAM_DECL(bool, Debug, Catch_Unhandled_Exceptions);
 NCBI_PARAM_DEF_EX(bool, Debug, Catch_Unhandled_Exceptions, true,
-                  eParam_NoThread,
-                  DEBUG_CATCH_UNHANDLED_EXCEPTIONS);
+                  eParam_NoThread, DEBUG_CATCH_UNHANDLED_EXCEPTIONS);
 typedef NCBI_PARAM_TYPE(Debug, Catch_Unhandled_Exceptions) TParamCatchExceptions;
 
 bool s_HandleExceptions(void)
@@ -344,8 +343,12 @@ bool s_HandleExceptions(void)
 }
 
 
-void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag,
-                                 const char*    conf)
+NCBI_PARAM_DECL(bool, NCBI, TerminateOnCpuIncompatibility); 
+NCBI_PARAM_DEF_EX(bool, NCBI, TerminateOnCpuIncompatibility, false,
+                  eParam_NoThread, NCBI_CONFIG__TERMINATE_ON_CPU_INCOMPATIBILITY);
+
+
+void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag, const char* conf)
 {
     // Load registry from the config file
     if ( conf ) {
@@ -367,6 +370,15 @@ void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag,
 
     // Application start
     AppStart();
+
+    // Verify CPU compatibility
+    {{
+        string err_message;
+        if (!VerifyCpuCompatibility(&err_message)) {
+            bool fatal = NCBI_PARAM_TYPE(NCBI, TerminateOnCpuIncompatibility)::GetDefault();
+            ERR_POST_X(22, (fatal ? Fatal : Critical) << err_message);
+        }
+    }}
 
     // Do init
 #if (defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION < 900)
