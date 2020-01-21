@@ -10,10 +10,7 @@ rem      call it cmake_configure_ext_team.bat, for example.
 rem      This script will be included into cmake-cfg-vs.bat
 rem      In the root directory of your build tree create cmake_configure_ext.bat
 rem      with the following contents:
-rem         @echo off
-rem         set _ext_script_dir=%~dp0?
-rem         set _ext_script_dir=%_ext_script_dir:\?=%
-rem         call "%_ext_script_dir%\src\build-system\cmake\cmake_configure_ext_team.bat" %*
+rem         call "%~dp0src\build-system\cmake\cmake_configure_ext_team.bat" %*
 rem
 rem   Note:
 rem      Be careful not to overwrite parent script variables accidentally.
@@ -34,7 +31,7 @@ if not defined have_configure_host (
   echo Instead, it should be included into another script.
   exit /b 1
 )
-if "%*"=="" (
+if "%~1"=="" (
   exit /b 0
 )
 call %*
@@ -64,11 +61,11 @@ set _ext_unknown=
 rem parse arguments, modify parent script variables if needed
 :configure_ext_PARSE
 shift
-if "%~1"==""                                   goto :configure_ext_ENDPARSE
-if "%1"=="--a"    (echo found --a&             goto :configure_ext_PARSE)
-if "%1"=="--b"    (echo found --b %~2&  shift& goto :configure_ext_PARSE)
+if "%~1"==""                                    goto :configure_ext_ENDPARSE
+if "%~1"=="--a"    (echo found --a&             goto :configure_ext_PARSE)
+if "%~1"=="--b"    (echo found --b %~2&  shift& goto :configure_ext_PARSE)
 rem collect unknown arguments
-set _ext_unknown=%_ext_unknown% %1
+set _ext_unknown=%_ext_unknown% %~1
 goto :configure_ext_PARSE
 :configure_ext_ENDPARSE
 rem put unrecognized arguments into return variable

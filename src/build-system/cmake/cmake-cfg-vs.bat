@@ -108,6 +108,7 @@ set do_help=
 set unknown=
 :PARSEARGS
 if "%~1"=="" goto :ENDPARSEARGS
+if "%~1"==%1             (set unknown=%unknown% ?%~1?& goto :CONTINUEPARSEARGS)
 if "%1"=="--help"              (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="-help"               (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="help"                (set do_help=YES&       goto :CONTINUEPARSEARGS)
@@ -146,12 +147,12 @@ if not "%do_help%"=="" (
 
 if not "%unknown%"=="" (
   if defined have_configure_ext_ParseArgs (
-    call "%extension%" :configure_ext_ParseArgs unknown %unknown%
+    call "%extension%" :configure_ext_ParseArgs unknown %unknown:?=^"%
   )
 )
 
 if not "%unknown%"=="" (
-  call :ERROR unknown option: %unknown%
+  call :ERROR unknown options: %unknown%
   goto :DONE
 )
 
