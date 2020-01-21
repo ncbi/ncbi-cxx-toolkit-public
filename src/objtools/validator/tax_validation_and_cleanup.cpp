@@ -880,7 +880,9 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
     vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = m_DescCtxs.cbegin();
 
     size_t skipped = 0;
-    while (skipped < offset) {
+    while (skipped < offset
+        && desc_it != m_SrcDescs.cend()
+        && ctx_it != m_DescCtxs.cend()) {
         ++desc_it;
         ++ctx_it;
         skipped++;
