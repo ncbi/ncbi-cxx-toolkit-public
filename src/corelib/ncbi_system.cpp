@@ -1385,7 +1385,7 @@ bool VerifyCpuCompatibility(string* message)
     // Compiles with SSE 4.2 support -- verify that CPU allow it
 
     #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
-        unsigned eax, ebx, ecx, edx, flag = 0;
+        unsigned eax, ebx, ecx, edx;
         #ifdef NCBI_OS_MSWIN
             int cpuid[4];
             __cpuid(cpuid, 1);
