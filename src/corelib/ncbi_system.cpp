@@ -37,7 +37,6 @@
 #include <corelib/ncbierror.hpp>
 #include "ncbisys.hpp"
 
-
 #define NCBI_USE_ERRCODE_X   Corelib_System
 
 #if defined(NCBI_OS_UNIX)
@@ -90,6 +89,7 @@ extern "C" {
 #  include <windows.h>
 #  include "ncbi_os_mswin_p.hpp"
 #  include <dbghelp.h>
+#  include <intrin.h>
 #endif //NCBI_OS_MSWIN
 
 
@@ -1368,6 +1368,43 @@ extern bool IsSuppressedDebugSystemMessageBox(void)
 #else
     return false;
 #endif //NCBI_OS_MSWIN
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CPU
+///
+
+// Code credit for CPU capabilities checks:
+// https://attractivechaos.wordpress.com/2017/09/04/on-cpu-dispatch/
+//
+bool VerifyCpuCompatibility(string* message)
+{
+    // Compiles with SSE 4.2 support -- verify that CPU allow it
+
+    #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
+        unsigned eax, ebx, ecx, edx, flag = 0;
+        #ifdef NCBI_OS_MSWIN
+            int cpuid[4];
+            __cpuid(cpuid, 1);
+            eax = cpuid[0], ebx = cpuid[1], ecx = cpuid[2], edx = cpuid[3];
+        #else
+            asm volatile("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (1));
+        #endif
+        // NCBI_SSE 42 involve AVX usage as well, so check it also
+        if ( !(ecx>>20 & 1)  ||   // SSE 4.2
+             !(ecx>>28 & 1))      // AVX
+        {
+            if (message) {
+                message->assign("Application requires a CPU with SSE 4.2 support");
+            }
+            return false;
+        }
+    #endif
+
+    return true;
 }
 
 

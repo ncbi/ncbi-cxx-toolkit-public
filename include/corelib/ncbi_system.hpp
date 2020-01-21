@@ -216,7 +216,7 @@ extern bool SetMemoryLimitHard(size_t max_size,
 ///   Only async-safe library functions and system calls can be used in 
 ///   the print handler. For example, you cannot use C++ streams (cout/cerr)
 ///   and printf() calls here, but write() is allowed... You can find a list
-///   of such functions in the C++ documentation (see man, internet and etc).
+///   of such functions in the C++ documentation (see man, Internet and etc).
 ///   Also, avoid to alter any shared (global) variables, except that are
 ///   declared to be of storage class and type "volatile sig_atomic_t".
 /// @sa SetMemoryLimit, TLimitsPrintHandler
@@ -232,6 +232,16 @@ extern bool SetCpuTimeLimit(size_t                max_cpu_time,
                             TLimitsPrintHandler   handler = NULL, 
                             TLimitsPrintParameter parameter = NULL,
                             size_t                terminate_delay_time = 5);
+
+/// Verify that the CPU, where an application run, is compatible with flags it compiled for.
+/// Right now it checks on SSE 4.2 only.
+/// @param message
+///   Optional pointer to a string that will receive a description
+///   of the problem if function returns FALSE.
+/// @return
+///    TRUE if CPU is compatible and application can run on it, FALSE otherwise.
+NCBI_XNCBI_EXPORT
+bool VerifyCpuCompatibility(string* message = nullptr /* out */);
 
 
 
