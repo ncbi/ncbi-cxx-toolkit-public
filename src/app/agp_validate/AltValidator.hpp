@@ -94,14 +94,8 @@ protected:
     int line_num;
     int comp_end;
 
-    CNcbiOstrstream* messages;
-    int gi;
-
-    SLineData()
-    {
-      messages=NULL;
-      gi=0;
-    }
+    CNcbiOstrstream* messages=nullptr;
+    int gi=0;
   };
 
 
@@ -109,27 +103,27 @@ protected:
   TLineQueue lineQueue;
 
   set<string> accessions; // with or without versions (as given in the AGP file)
-  struct SGiVerLenTaxid
+  struct SComponentInfo
   {
-    TGi gi;
-    int ver, len, taxid;
-    SGiVerLenTaxid()
-    {
-      gi=ZERO_GI;
-      ver=len=taxid=0;
-    }
+    TGi gi=ZERO_GI;
+    int ver=0; 
+    int len=0;
+    int taxid=0;
+    bool inDatabase=false;
+
     bool MatchesVersion_HasAllData(int ver1, bool check_len_taxid) const
     {
-      if(gi==ZERO_GI || (ver1!=0 && ver1!=ver)) return false;
+      //if(gi==ZERO_GI || (ver1!=0 && ver1!=ver)) return false;
+      if(ver==0 || (ver1!=0 && ver1!=ver)) return false;
       if(check_len_taxid && len<=0 && taxid<=0) return false;
       return true;
     }
   };
-  typedef map<string, SGiVerLenTaxid> TMapAccData; // key = accession with no version
+  using TMapAccData = map<string, SComponentInfo>; // key = accession with no version
   TMapAccData mapAccData;
 
 public:
-  int GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_data );
+  void GetAccDataFromObjMan( const string& acc, SComponentInfo& acc_data);
 
   void QueueLine(
     const string& orig_line, const string& comp_id,

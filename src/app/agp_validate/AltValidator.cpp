@@ -60,13 +60,10 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
 
 using namespace ncbi;
 using namespace objects;
-
-#ifndef s2i
-#define s2i(x) NStr::StringToNonNegativeInt(x)
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -95,6 +92,15 @@ void CAltValidator::Init(void)
     cerr << "FATAL: cannot connect to GenBank!\n";
     exit(1);
   }
+  const auto wgsInfo = CWGSDataLoader::RegisterInObjectManager(
+          *m_ObjectManager, CObjectManager::eDefault);
+
+  // Do I need this check
+  //if (!wgsInfo.IsCreated()) {
+  //  cerr << "FATAL: cannot connect to VDB!\n";
+  //  exit(1);
+  // }
+
 
   // Create a new scope ("attached" to our OM).
   m_Scope.Reset(new CScope(*m_ObjectManager));
@@ -104,7 +110,7 @@ void CAltValidator::Init(void)
 
 // Returns GI // int* missing_ver
 
-int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_data )
+void CAltValidator::GetAccDataFromObjMan( const string& acc, SComponentInfo& acc_data )
 {
 
   CSeq_id seq_id;
@@ -114,42 +120,39 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
   //    catch (CSeqIdException::eFormat)
   catch (...) {
     pAgpErr->Msg(CAgpErrEx::G_InvalidCompId, string(": ")+acc);
-    return 0;
+    return;
   }
 
-
-  CBioseq_Handle bioseq_handle;
   try {
-    bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
+    auto bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
     if( !bioseq_handle ) {
       pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, string(": ")+acc);
-      return 0;
+      return;
     }
+    acc_data.inDatabase=true;
 
-    if(acc_data.gi<=ZERO_GI) {
+
+    if(acc_data.ver<=0) {
       try {
-        CSeq_id_Handle seq_id_handle = sequence::GetId(
-          bioseq_handle, sequence::eGetId_ForceGi
-        );
-        acc_data.gi=seq_id_handle.GetGi();
-
-        // seq_id_handle.GetSeqId()->GetSeqIdString(sequence::eWithAccessionVersion);
-        string acc_ver = sequence::GetAccessionForGi( acc_data.gi, *m_Scope );
+        auto seq_id_handle =
+            sequence::GetId(bioseq_handle, sequence::eGetId_ForceAcc);
+        string acc_ver = 
+            sequence::GetAccessionForId(*seq_id_handle.GetSeqId(), *m_Scope );
         SIZE_TYPE pos_dot = acc_ver.find('.');
         if( pos_dot!=NPOS && pos_dot<acc_ver.size()-1 ) {
-          acc_data.ver = s2i( acc_ver.substr(pos_dot+1) );
+          acc_data.ver = NStr::StringToNonNegativeInt( acc_ver.substr(pos_dot+1) );
         }
       }
       catch (...) {
         pAgpErr->Msg(CAgpErrEx::G_DataError,
-          string(" - cannot get GI for ") + acc);
-        return 0;
+          string(" - cannot get version for ") + acc);
+        return;
       }
     }
 
     if(m_check_len_taxid) {
-      acc_data.len   = (int) bioseq_handle.GetInst_Length();
-      acc_data.taxid =  sequence::GetTaxId(bioseq_handle);;\
+      acc_data.len   = static_cast<int>(bioseq_handle.GetInst_Length());
+      acc_data.taxid =  sequence::GetTaxId(bioseq_handle);
       if(acc_data.taxid<=0) {
         pAgpErr->Msg(CAgpErrEx::G_DataError,
           " - cannot retrieve taxonomic id for "+acc);
@@ -160,30 +163,10 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
   catch (...) {
     pAgpErr->Msg(CAgpErrEx::G_DataError,
       string(" - cannot get version for ") + acc);
-    return 0;
-  }
-
-  return GI_TO(int, acc_data.gi);
-}
-
-/*
-// to do: use CAgpRow::CheckComponentEnd()
-void CAltValidator::ValidateLength(
-  const string& comp_id, int comp_end, int comp_len)
-{
-  if( comp_end > comp_len) {
-    string details=": ";
-    details += NStr::IntToString(comp_end);
-    details += " > ";
-    details += comp_id;
-    details += " length = ";
-    details += NStr::IntToString(comp_len);
-    details += " bp";
-
-    pAgpErr->Msg(CAgpErrEx::G_CompEndGtLength, details );
+    return;
   }
 }
-*/
+
 
 void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
@@ -420,19 +403,22 @@ void CAltValidator::QueryAccessions()
         it_docsum!=docsums.end(); it_docsum++
     ) {
       string acc  = (*it_docsum)->GetValue("Caption"); // accession, no version
-      SGiVerLenTaxid& gvt = mapAccData[acc];
+      SComponentInfo& gvt = mapAccData[acc];
 
-      gvt.gi= GI_FROM(CEntrez2_docsum::TUid, (*it_docsum)->GetUid());
+      gvt.inDatabase = true;
 
       string s = (*it_docsum)->GetValue("Extra");   // gi|...|accession.ver...
       SIZE_TYPE pos=s.find("|"+acc+".");
       if(pos!=NPOS) gvt.ver=atoi(s.c_str()+pos+2+acc.size());
 
-      gvt.len   = s2i( (*it_docsum)->GetValue("Slen" ) );
-      gvt.taxid = s2i( (*it_docsum)->GetValue("TaxId") );
+      gvt.len   = NStr::StringToNonNegativeInt((*it_docsum)->GetValue("Slen" ));
+      gvt.taxid = NStr::StringToNonNegativeInt((*it_docsum)->GetValue("TaxId"));
     }
   }
   catch(CException e){
+    accessions.clear();
+    return;
+
     cerr << "Note: temporary Entrez2 problems; falling back to Object Manager for this batch:\n  ";
 
     // first 3 ... last 3 (total count)
@@ -451,61 +437,63 @@ void CAltValidator::QueryAccessions()
 
 void CAltValidator::ProcessQueue()
 {
-  int entrez_count=0;
-  int objman_count=0;
-
   //cerr << "before QueryAccessions" << endl;
   QueryAccessions(); // In: accessions; Out: mapAccData.
   //cerr << "after QueryAccessions" << endl;
 
-  for(TLineQueue::iterator it=lineQueue.begin();
-      it != lineQueue.end(); ++it
-  ) {
-    string& acc=it->comp_id;
-    if(acc.size()==0) {
+  for (const auto& lineInfo : lineQueue) 
+  {
+    const string& acc=lineInfo.comp_id;
+    const string& orig_line = lineInfo.orig_line;
+    if(acc.empty()) {
       // a line to be printed verbatim and not to be processed
       if(m_out) {
-        *m_out << it->orig_line << "\n";
+        *m_out << orig_line << "\n";
       }
     }
     else {
       SIZE_TYPE pos_ver = acc.find('.');
       int ver=0;
-      if(pos_ver!=NPOS) ver=s2i( acc.substr(pos_ver+1) );
+      if(pos_ver!=NPOS) ver=NStr::StringToNonNegativeInt(acc.substr(pos_ver+1));
       string acc_nover= acc.substr(0, pos_ver );
 
-      SGiVerLenTaxid acc_data;
+      SComponentInfo acc_data;
       TMapAccData::const_iterator itAccData = mapAccData.find( acc_nover );
       if( itAccData!=mapAccData.end() && itAccData->second.MatchesVersion_HasAllData(ver, m_check_len_taxid) ) {
         acc_data = itAccData->second;
-        entrez_count++;
       }
       else {
         // a fallback
         GetAccDataFromObjMan(acc, acc_data);
-        objman_count++;
       }
 
       if(m_out) {
+
         if(ver==0 && acc_data.ver==1) {
           // add missing version 1
-          SIZE_TYPE pos =
-            it->orig_line.find( "\t", 1+
-            it->orig_line.find( "\t", 1+
-            it->orig_line.find( "\t", 1+
-            it->orig_line.find( "\t", 1+
-            it->orig_line.find( "\t", 1+
-            it->orig_line.find( "\t") )))));
-          *m_out << it->orig_line.substr(0, pos);
-          if(pos!=NPOS) *m_out << ".1" << it->orig_line.substr(pos);
+          // Look for the 6th tab in the line - right after the accession
+          SIZE_TYPE pos=NPOS;
+          size_t tabCount=0;
+          for (size_t i=0; i<orig_line.size(); ++i) {
+            if (orig_line[i] == '\t') {
+                ++tabCount;
+            }
+            if (tabCount==6) {
+                pos = i;
+                break;
+            }
+          } 
+          *m_out << orig_line.substr(0, pos);
+          if(pos!=NPOS) *m_out << ".1" << orig_line.substr(pos);
         }
         else {
-          *m_out << it->orig_line;
+          *m_out << orig_line;
           if(ver<=0) {
             if(acc_data.ver) {
               *m_out << "#current version " << acc << "." << acc_data.ver;
             }
-            else if(acc_data.gi==ZERO_GI){
+            else 
+            if(!acc_data.inDatabase){
               *m_out << "#component_id not in GenBank";
             }
           }
@@ -513,7 +501,7 @@ void CAltValidator::ProcessQueue()
         *m_out << "\n";
       }
 
-      if(acc_data.gi != ZERO_GI) {
+      if(acc_data.inDatabase) {
         // component_id is a valid GenBank accession
         m_GenBankCompLineCount++;
 
@@ -524,7 +512,7 @@ void CAltValidator::ProcessQueue()
 
         if(m_check_len_taxid) {
           // Component out of bounds check
-          CAgpRow::CheckComponentEnd( acc, it->comp_end, acc_data.len, *pAgpErr );
+          CAgpRow::CheckComponentEnd( acc, lineInfo.comp_end, acc_data.len, *pAgpErr );
 
           // Taxid check
           int taxid = acc_data.taxid;
@@ -532,17 +520,16 @@ void CAltValidator::ProcessQueue()
             if(m_SpeciesLevelTaxonCheck) {
               taxid = x_GetSpecies(taxid);
             }
-            x_AddToTaxidMap(taxid, acc, it->line_num);
+            x_AddToTaxidMap(taxid, acc, lineInfo.line_num);
           }
         }
       }
     }
 
-    pAgpErr->LineDone(it->orig_line, it->line_num);
+    pAgpErr->LineDone(orig_line, lineInfo.line_num);
   }
 
   lineQueue.clear();
-  //cerr << "entrez_count=" << entrez_count << " objman_count=" << objman_count << endl;
 }
 
 string ExtractAccession(const string& long_acc)
