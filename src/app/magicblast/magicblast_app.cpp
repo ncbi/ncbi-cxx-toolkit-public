@@ -359,6 +359,13 @@ int CMagicBlastApp::Run(void)
             if (num_db_sequences < kSamLargeNumSubjects) {
                 PrintSAMHeader(m_CmdLineArgs->GetOutputStream(), db_adapter,
                                s_GetCmdlineArgs(GetArguments()));
+
+                // print another SAM header if reporting unaligned reads
+                // in another file
+                if (m_CmdLineArgs->HasUnalignedOutputStream()) {
+                    PrintSAMHeader(*m_CmdLineArgs->GetUnalignedOutputStream(),
+                                   db_adapter, s_GetCmdlineArgs(GetArguments()));
+                }
             }
         }
         else if (fmt_args->GetFormattedOutputChoice() ==
@@ -367,6 +374,14 @@ int CMagicBlastApp::Run(void)
             PrintTabularHeader(m_CmdLineArgs->GetOutputStream(),
                                GetVersion().Print(),
                                s_GetCmdlineArgs(GetArguments()));
+
+            // print another tabular header if reporting unaligned reads in
+            // another file
+            if (m_CmdLineArgs->HasUnalignedOutputStream()) {
+                PrintTabularHeader(*m_CmdLineArgs->GetUnalignedOutputStream(),
+                                   GetVersion().Print(),
+                                   s_GetCmdlineArgs(GetArguments()));
+            }
         }
 
         int batch_size = m_CmdLineArgs->GetQueryBatchSize();
@@ -398,7 +413,8 @@ int CMagicBlastApp::Run(void)
             threads[i] = new CMagicBlastThread(input, magic_opts,
                                                query_opts, db_args,
                                                fmt_args,
-                                               m_CmdLineArgs->GetOutputStream());
+                                               m_CmdLineArgs->GetOutputStream(),
+                                               m_CmdLineArgs->GetUnalignedOutputStream());
             threads[i]->Run();
         }
 

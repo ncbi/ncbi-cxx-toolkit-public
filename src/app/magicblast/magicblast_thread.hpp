@@ -52,7 +52,8 @@ public:
                       CRef<CMapperQueryOptionsArgs> query_opts,
                       CRef<CBlastDatabaseArgs> db_args,
                       CRef<CMapperFormattingArgs> fmt_args,
-                      CNcbiOstream& out);
+                      CNcbiOstream& out,
+                      CNcbiOstream* unaligned_stream);
 
 protected:
     virtual ~CMagicBlastThread() {}
@@ -65,6 +66,7 @@ private:
     CRef<CBlastDatabaseArgs> m_DatabaseArgs;
     CRef<CMapperFormattingArgs> m_FormattingArgs;
     CNcbiOstream& m_OutStream;
+    CNcbiOstream* m_OutUnalignedStream;
 };
 
 

@@ -463,6 +463,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgMaxEditDist;
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxDbWordCount;
 /// Argument to specify printing SAN MD tag
 NCBI_BLASTINPUT_EXPORT extern const string kArgPrintMdTag;
+/// Argument to output unaligned reads in a separate file
+NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedOutput;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

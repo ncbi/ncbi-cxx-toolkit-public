@@ -49,6 +49,14 @@ public:
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
 
+    /// Has a separate output stream for unaligned reads been set up 
+    bool HasUnalignedOutputStream(void) const
+    {return m_StdCmdLineArgs->HasUnalignedOutputStream();}
+
+    /// Get output stream for unaligned reads or NULL if it was not set up
+    CNcbiOstream* GetUnalignedOutputStream(void) const
+    {return m_StdCmdLineArgs->GetUnalignedOutputStream();}
+
 protected:
     /// @inheritDoc
     virtual CRef<CBlastOptionsHandle>

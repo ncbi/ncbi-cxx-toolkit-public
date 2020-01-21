@@ -593,6 +593,7 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
 
 static
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
+                           CNcbiOstream& unaligned_ostr,
                            const CMagicBlastResults& results,
                            const TQueryMap& queries,
                            bool is_paired, int batch_number,
@@ -616,16 +617,16 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
     if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0 ||
         (no_discordant && !is_concordant)) {
 
-        PrintTabularUnaligned(ostr, results, queries, true);
-        ostr << endl;
+        PrintTabularUnaligned(unaligned_ostr, results, queries, true);
+        unaligned_ostr << endl;
     }
 
     if (results.IsPaired() &&
         ((results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0 ||
          (no_discordant && !is_concordant))) {
 
-        PrintTabularUnaligned(ostr, results, queries, false);
-        ostr << endl;
+        PrintTabularUnaligned(unaligned_ostr, results, queries, false);
+        unaligned_ostr << endl;
     }
 
     return ostr;
@@ -633,6 +634,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
 
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
+                           CNcbiOstream& unaligned_ostr,
                            const CMagicBlastResultSet& results,
                            const CBioseq_set& query_batch,
                            bool is_paired, int batch_number,
@@ -644,7 +646,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
 
     int compartment = 0;
     for (auto it: results) {
-        PrintTabular(ostr, *it, queries, is_paired, batch_number,
+        PrintTabular(ostr, unaligned_ostr, *it, queries, is_paired, batch_number,
                      compartment, print_unaligned, no_discordant);
     }
 
@@ -1365,7 +1367,9 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 }
 
 static
-CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
+CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
+                       CNcbiOstream& unaligned_ostr,
+                       CMagicBlastResults& results,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info,
                        bool is_spliced, int batch_number,
@@ -1403,22 +1407,24 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
     if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0 ||
         (no_discordant && !is_concordant)) {
 
-        PrintSAMUnaligned(ostr, results, queries, true, trim_read_id);
-        ostr << endl;
+        PrintSAMUnaligned(unaligned_ostr, results, queries, true, trim_read_id);
+        unaligned_ostr << endl;
     }
 
     if (results.IsPaired() &&
         ((results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0 ||
          (no_discordant && !is_concordant))) {
-        PrintSAMUnaligned(ostr, results, queries, false, trim_read_id);
-        ostr << endl;
+        PrintSAMUnaligned(unaligned_ostr, results, queries, false, trim_read_id);
+        unaligned_ostr << endl;
     }
 
     return ostr;
 }
 
 
-CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
+CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
+                       CNcbiOstream& unaligned_ostr,
+                       const CMagicBlastResultSet& results,
                        const CBioseq_set& query_batch,
                        const BlastQueryInfo* query_info,
                        bool is_spliced,
@@ -1434,9 +1440,9 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
     s_CreateQueryMap(query_batch, bioseqs);
 
     for (auto it: results) {
-        PrintSAM(ostr, *it, bioseqs, query_info, is_spliced, batch_number,
-                 trim_read_id, print_unaligned, no_discordant, strand_specific,
-                 only_specific, print_md_tag);
+        PrintSAM(ostr, unaligned_ostr, *it, bioseqs, query_info, is_spliced,
+                 batch_number, trim_read_id, print_unaligned, no_discordant,
+                 strand_specific, only_specific, print_md_tag);
     }
 
     return ostr;

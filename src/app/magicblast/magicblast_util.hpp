@@ -48,7 +48,9 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
                              CRef<CLocalDbAdapter> db_adapter,
                              const string& cmd_line_args);
 
-CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
+CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
+                       CNcbiOstream& unaligned_ostr,
+                       const CMagicBlastResultSet& results,
                        const CBioseq_set& query_batch,
                        const BlastQueryInfo* query_info,
                        bool is_spliced,
@@ -64,6 +66,7 @@ CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
                                  const string& cmd_line_args);
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
+                           CNcbiOstream& unaligned_ostr,
                            const CMagicBlastResultSet& results,
                            const CBioseq_set& query_batch,
                            bool is_paired, int batch_number,

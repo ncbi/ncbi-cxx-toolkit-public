@@ -51,13 +51,15 @@ CMagicBlastThread::CMagicBlastThread(CBlastInputOMF& input,
                                      CRef<CMapperQueryOptionsArgs> query_opts,
                                      CRef<CBlastDatabaseArgs> db_args,
                                      CRef<CMapperFormattingArgs> fmt_args,
-                                     CNcbiOstream& out)
+                                     CNcbiOstream& out,
+                                     CNcbiOstream* unaligned_stream)
  : m_Input(input),
    m_Options(options),
    m_QueryOptions(query_opts),
    m_DatabaseArgs(db_args),
    m_FormattingArgs(fmt_args),
-   m_OutStream(out)
+   m_OutStream(out),
+   m_OutUnalignedStream(unaligned_stream)
 {}
 
 void* CMagicBlastThread::Main(void)
@@ -166,7 +168,13 @@ void* CMagicBlastThread::Main(void)
             // do mapping
             CMagicBlast magicblast(queries, thread_db_adapter, m_Options);
             results = magicblast.RunEx();
+
+            // use a single stream when reporting to one file, or two streams
+            // when reporting unaligned reads separately
             ostringstream ostr;
+            ostringstream the_unaligned_ostr;
+            ostringstream& unaligned_ostr = 
+                m_OutUnalignedStream ? the_unaligned_ostr : ostr;
 
             // format ouput
             if (m_FormattingArgs->GetFormattedOutputChoice() ==
@@ -176,6 +184,7 @@ void* CMagicBlastThread::Main(void)
                     queries->MakeLocalQueryData(&m_Options->GetOptions());
 
                 PrintTabular(ostr,
+                             unaligned_ostr,
                              *results,
                              *query_batch,
                              m_Options->GetPaired(),
@@ -195,6 +204,7 @@ void* CMagicBlastThread::Main(void)
                     queries->MakeLocalQueryData(&m_Options->GetOptions());
 
                 PrintSAM(ostr,
+                         unaligned_ostr,
                          *results,
                          *query_batch,
                          query_data->GetQueryInfo(),
@@ -215,6 +225,12 @@ void* CMagicBlastThread::Main(void)
                 m_OutStream << ostr.str();
                 // flush string
                 ostr.str("");
+
+                // report unaligned reads to a separate stream if requested 
+                if (m_OutUnalignedStream) {
+                    *m_OutUnalignedStream << unaligned_ostr.str();
+                    unaligned_ostr.str("");
+                }
             }
 
             query_batch.Reset();

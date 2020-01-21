@@ -43,6 +43,32 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+
+/// StdCmdLineArgs with output stream for unaligned reads
+class CMapperStdCmdLineArgs : public CStdCmdLineArgs
+{
+public:
+    CMapperStdCmdLineArgs(void) : CStdCmdLineArgs() {}
+
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {
+
+        CStdCmdLineArgs::SetArgumentDescriptions(arg_desc);
+
+        arg_desc.SetCurrentGroup("General search options");
+
+        arg_desc.AddOptionalKey(kArgUnalignedOutput, "output_file",
+                                "Report unaligned reads to this file",
+                                CArgDescriptions::eOutputFile);
+
+        arg_desc.SetDependency(kArgUnalignedOutput,
+                               CArgDescriptions::eExcludes,
+                               kArgNoUnaligned);
+
+        arg_desc.SetCurrentGroup("");        
+    }
+};
+
+
 /// Special generic search arguments for blastmapper
 class CMapperGenericSearchArgs : public CGenericSearchArgs
 {
@@ -213,7 +239,7 @@ CMagicBlastAppArgs::CMagicBlastAppArgs()
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
-    m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
+    m_StdCmdLineArgs.Reset(new CMapperStdCmdLineArgs);
     m_StdCmdLineArgs->SetGzipEnabled(true);
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);

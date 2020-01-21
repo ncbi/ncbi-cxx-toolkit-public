@@ -112,7 +112,8 @@ public:
     /** Default constructor */
     CStdCmdLineArgs() : m_InputStream(0), m_OutputStream(0),
                         m_GzipEnabled(false),
-    			m_SRAaccessionEnabled(false){};
+                        m_SRAaccessionEnabled(false),
+                        m_UnalignedOutputStream(0) {};
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -137,6 +138,18 @@ public:
      */
     void SetSRAaccessionEnabled(bool g) {m_SRAaccessionEnabled = g;}
 
+    /** Is there a separate output stream for unaligned sequences/reads
+     *  (for magicblast)
+     *  @return True if separate output stream has been set up, otherwise false
+     */
+    bool HasUnalignedOutputStream(void) const {return m_UnalignedOutputStream;}
+
+    /** Get output stream for unaligned sequences/reads (for magicblast)
+     *  @return Output stream for unaligned reads or NULL
+     */
+    CNcbiOstream* GetUnalignedOutputStream() const
+    {return m_UnalignedOutputStream;}
+
 private:
     CNcbiIstream* m_InputStream;    ///< Application's input stream
     CNcbiOstream* m_OutputStream;   ///< Application's output stream
@@ -154,6 +167,10 @@ private:
     /// If true, option to specify SRA runs will be presented  as possible
     /// query input
     bool m_SRAaccessionEnabled;
+
+    /// Output stream to report unaligned sequences/reads
+    CNcbiOstream* m_UnalignedOutputStream;
+    unique_ptr<CCompressOStream> m_UnalignedCompressOStream;
 };
 
 /** Argument class to populate an application's name and description */

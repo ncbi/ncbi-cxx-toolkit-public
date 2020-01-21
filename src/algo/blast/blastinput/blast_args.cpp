@@ -3260,6 +3260,19 @@ CStdCmdLineArgs::ExtractAlgorithmOptions(const CArgs& args,
     else {
         m_OutputStream = &args[kArgOutput].AsOutputFile();
     }
+
+    // stream for unaligned reads in magicblast
+    if (args.Exist(kArgUnalignedOutput) && args[kArgUnalignedOutput]) {
+        if (args.Exist(kArgOutputGzip) && args[kArgOutputGzip]) {
+            m_UnalignedCompressOStream.reset(new CCompressOStream(
+                                   args[kArgUnalignedOutput].AsOutputFile(),
+                                   CCompressOStream::eGZipFile));
+            m_UnalignedOutputStream = m_UnalignedCompressOStream.get();
+        }
+        else {
+            m_UnalignedOutputStream = &args[kArgUnalignedOutput].AsOutputFile();
+        }
+    }
 }
 
 CNcbiIstream&
