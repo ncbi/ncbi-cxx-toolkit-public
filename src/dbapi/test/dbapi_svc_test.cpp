@@ -156,6 +156,7 @@ enum : size_t {
     eResult_SKIP_FAIL,
     eResult_SKIP_USER,
     eResult_SKIP_CTLIB,
+    eResult_SKIP_INTF,
 };
 static string   s_Results[] = {
     string("NONE"),
@@ -167,6 +168,7 @@ static string   s_Results[] = {
     string("SKIP_FAIL"),
     string("SKIP_USER"),
     string("SKIP_CTLIB"),
+    string("SKIP_INTF"),
 };
 
 
@@ -534,14 +536,17 @@ static bool s_Api_DBLB_Quit(void)
 
 // Test data structures
 struct STest {
-    size_t  m_Id;
-    size_t  m_ApiId;
-    size_t  m_SetupId;
-    size_t  m_MapperId;
-    size_t  m_ResultActualId;
+    size_t      m_Id;
+    size_t      m_ApiId;
+    size_t      m_SetupId;
+    size_t      m_MapperId;
+    size_t      m_ResultExpectedId;
+    size_t      m_ResultActualId;
+    const char* m_Result;
 };
 static vector<STest>    s_Tests;
 static vector<size_t>   s_SelectedTestIds;
+static vector<size_t>   s_SkippedTestIds;
 
 
 // APIs
@@ -608,9 +613,6 @@ enum : size_t {
     eServer_DN,
     eServer_NE,
     eServer_UP,
-    eServer_BK_UP,
-    eServer_DN_UP,
-    eServer_NE_UP,
 };
 static string   s_Servers[] = {
     string("NONE"),
@@ -618,9 +620,6 @@ static string   s_Servers[] = {
     string("DN"),
     string("NE"),
     string("UP"),
-    string("BK_UP"),
-    string("DN_UP"),
-    string("NE_UP"),
 };
 static size_t           s_NumServers = sizeof(s_Servers) / sizeof(*s_Servers);
 static vector<size_t>   s_SelectedServer1Ids;
@@ -666,6 +665,14 @@ enum : size_t {
     eSetup_LBR_I_DN_UP,
     eSetup_LBR_I_NE_UP,
 };
+// NOTE: For the foreseeable future (as of 2019-10-25), namerd will be getting
+// its data from LBSMD, and down servers are filtered out of that data.  Thus,
+// for eSetup_LBR_NOI_DN_UP and eSetup_LBR_I_DN_UP, the down server will not be
+// returned by namerd and only the up server will be returned.  Thus, these test
+// cases won't really test a down-up scenario and should always pass.  As such,
+// they are benign extraneous test cases.  However, when (if) namerd gets its
+// data independently (or includes down servers), these test cases will become
+// relevant.  So they have been left in.
 struct SSetup
 {
     size_t  m_Id;
@@ -922,6 +929,7 @@ private:
     void SelectMappers(void);
     void SelectServers(void);
     void SelectSetups(void);
+    void SelectSkips(void);
     void SelectTests(void);
 
     int  SanityCheck(void);
@@ -1027,7 +1035,7 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
         }
     }}
 
-    // Verify UP server can be connected to (using the host:port from DT_LB_I_UP service resolution).
+    // Verify UP server can be connected to (using the host:port from a known UP server).
     // TODO: In the future, possibly make sure it communicates properly via TDS protocol,
     // but by sending/receiving TDS protocol via socket, not via DB software layers?
     {{
@@ -1188,6 +1196,18 @@ void CTestNcbiDblbSvcResApp::SelectSetups(void)
 }
 
 
+void CTestNcbiDblbSvcResApp::SelectSkips(void)
+{
+    if (GetArgs()["skip"].HasValue()) {
+        vector<string> skip_strs;
+        NStr::Split(GetArgs()["skip"].AsString(), ",", skip_strs);
+        for (const string& skip_id : skip_strs) {
+            s_SkippedTestIds.push_back(NStr::StringToSizet(skip_id));
+        }
+    }
+}
+
+
 void CTestNcbiDblbSvcResApp::SelectTests(void)
 {
     if (GetArgs()["test"].HasValue()) {
@@ -1221,7 +1241,8 @@ void CTestNcbiDblbSvcResApp::TestCaseLine(
     msg += sep + "ResLbNm=" + s_ResLbNms[setup.m_ResLbNm];
     msg += sep + "ResRev=" + s_ResRevs[setup.m_ResRev];
     msg += sep + "ResIdns=" + s_ResIdnss[setup.m_ResIdns];
-    msg += sep + "Expected=" + s_Results[setup.m_ResultExpectedId];
+    msg += sep + "SetupExpected=" + s_Results[setup.m_ResultExpectedId];
+    msg += sep + "TestExpected=" + s_Results[test.m_ResultExpectedId];
     if (show_success) {
         msg += sep + "Actual=" + s_Results[test.m_ResultActualId];
         msg += sep + "Result=" + (success ? "PASS" : "FAIL");
@@ -1253,7 +1274,7 @@ bool CTestNcbiDblbSvcResApp::Test(STest& test)
     bool success = false;
     CMapper::Select(test.m_MapperId);
     s_Apis[test.m_ApiId].Check(test);
-    if (test.m_ResultActualId == s_Setups[test.m_SetupId].m_ResultExpectedId) {
+    if (test.m_ResultActualId == test.m_ResultExpectedId) {
         success = true;
     }
     TestCaseEnd(test, success);
@@ -1302,6 +1323,9 @@ void CTestNcbiDblbSvcResApp::Init(void)
     args->AddOptionalKey("service", "service", "Comma-separated list of services (e.g. DT_LB_NOI_BK,DT_LB_NOI_NE)",
                          CArgDescriptions::eString);
 
+    args->AddOptionalKey("skip", "skip", "Comma-separated list of skipped test IDs (e.g. 0,4,5,6)",
+                         CArgDescriptions::eString);
+
     args->AddOptionalKey("test", "test", "Comma-separated list of test IDs (e.g. 0,4,5,6)",
                          CArgDescriptions::eString);
 
@@ -1314,7 +1338,14 @@ void CTestNcbiDblbSvcResApp::Init(void)
     SelectMappers();
     SelectServers();
     SelectSetups();
+    SelectSkips();
     SelectTests();
+
+    // Verify integrity of s_Setups.
+    _ASSERT(sizeof(s_Setups) / sizeof(s_Setups[0]) == s_NumSetups);
+    for (size_t setup_id = 0; setup_id < s_NumSetups; ++setup_id) {
+        _ASSERT(s_Setups[setup_id].m_Id == setup_id);
+    }
 
     // Name the log file after the service, if a single service is selected.
     if (GetArgs()["service"].HasValue()  &&  s_SelectedSetupIds.size() == 1) {
@@ -1342,7 +1373,18 @@ int CTestNcbiDblbSvcResApp::Run(void)
         for (size_t mapper_id : s_SelectedMapperIds) {
             for (size_t setup_id = 0; setup_id < s_NumSetups; ++setup_id) {
 
-                STest test = {test_id, api_id, setup_id, mapper_id, eResult_NONE};
+                STest test = {test_id, api_id, setup_id, mapper_id, eResult_NONE, eResult_NONE, NULL};
+
+                // This test result should match the setup expected result, except in some cases.
+                test.m_ResultExpectedId = s_Setups[setup_id].m_ResultExpectedId;
+
+                // Expect test cases to fail where not LBR and RESET_SYBASE env var not set,
+                // because FreeTDS won't try the interfaces file unless RESET_SYBASE is true.
+                // TODO: NEED A BETTER WAY TO TWEAK EXPECTED RESULT BASED ON CUSTOM SYBASE.
+                if (s_Setups[test.m_SetupId].m_ResLbNm == eResLbNm_NOLB  &&  getenv("RESET_SYBASE") == NULL) {
+                    test.m_ResultExpectedId = eResult_ERROR;
+                    test.m_Result = "not LBR and RESET_SYBASE env var not set";
+                }
 
                 // Skip test cases deselected by command-line options.
                 bool deselected = false;
@@ -1351,13 +1393,61 @@ int CTestNcbiDblbSvcResApp::Run(void)
                 deselected = deselected  ||  (find(s_SelectedSetupIds.begin(), s_SelectedSetupIds.end(), setup_id) == s_SelectedSetupIds.end());
                 deselected = deselected  ||  (find(s_SelectedServer1Ids.begin(), s_SelectedServer1Ids.end(), s_Setups[setup_id].m_Server1) == s_SelectedServer1Ids.end());
                 deselected = deselected  ||  (find(s_SelectedServer2Ids.begin(), s_SelectedServer2Ids.end(), s_Setups[setup_id].m_Server2) == s_SelectedServer2Ids.end());
+                deselected = deselected  ||   find(s_SkippedTestIds.begin(), s_SkippedTestIds.end(), test_id) != s_SkippedTestIds.end();
                 if (deselected) {
                     test.m_ResultActualId = eResult_SKIP_USER;
+                    test.m_Result = "user de-selected";
                     ++num_skipped;
                 } else {
                     // Skip test cases using DBAPI/CTLIB to connect to a non-Sybase service.
                     if (api_id == eApi_DbapiCtlib  &&  ! s_Setups[setup_id].m_Sybase) {
                         test.m_ResultActualId = eResult_SKIP_CTLIB;
+                        test.m_Result = "DBAPI/CTLIB to connect to a non-Sybase service";
+                        ++num_skipped;
+                    }
+                    // Skip test cases using DBAPI/CTLIB and interfaces file but not LBSM.
+                    // The problem with these cases is that they need the SYBASE env var to point
+                    // to our custom interfaces file, but for CTLIB that var also points to where
+                    // the binaries are.  Since we can't tweak the installation interfaces file
+                    // or place the binaries in our test directory we can't customize this case.
+                    // So we skip it.  It's an exceedingly unlikely scenario anyway.
+                    // Cases using LBSM are not skipped because they should be resolved by
+                    // LBSM and therefore should be unaffected by the interfaces file.
+                    // Command-line pattern: -api DBAPI_CTLIB -service DT_I_*
+                    else if (api_id == eApi_DbapiCtlib  &&
+                             s_Setups[setup_id].m_ResLbNm == eResLbNm_NOLB  &&
+                             s_Setups[setup_id].m_ResIdns == eResIdns_I)
+                    {
+                        test.m_ResultActualId = eResult_SKIP_CTLIB;
+                        test.m_Result = "using DBAPI/CTLIB and interfaces file but not LBSM";
+                        ++num_skipped;
+                    }
+                    // Skip test cases where UP and LB but not LBR.  This is because if service is UP,
+                    // then it talks to mssql, and that is managed by dbhelp, and dbhelp always has
+                    // reverse dns setup, so LB but not LBR for UP is invalid in practice.
+                    else if (s_Setups[setup_id].m_ResLbNm == eResLbNm_LB  &&
+                             s_Setups[setup_id].m_ResRev == eResRev_NOREV  &&
+                             (s_Setups[setup_id].m_Server1 == eServer_UP  ||
+                              s_Setups[setup_id].m_Server2 == eServer_UP))
+                    {
+                        test.m_Result = "UP and LB but not LBR";
+                        test.m_ResultActualId = eResult_SKIP_INTF;
+                        ++num_skipped;
+                    }
+                    // Skip 2-server test cases using interfaces file but not reverse DNS.
+                    // The problem in these cases is that FreeTDS has a known bug wherein it
+                    // only checks the last entry in the interfaces file, so there's no way to
+                    // try a second server if the first one fails; thus 2-server setups can't work.
+                    // Cases using reverse DNS are not skipped because they should be resolved by
+                    // LBSM and therefore should be unaffected by the interfaces file.
+                     // See https://jira.ncbi.nlm.nih.gov/browse/CXX-4186
+                    // Command-line pattern: -service DT(_LB)?_I_*_UP
+                    else if (s_Setups[setup_id].m_ResRev == eResRev_NOREV  &&
+                             s_Setups[setup_id].m_ResIdns == eResIdns_I  &&
+                             s_Setups[setup_id].m_Server2 != eServer_NONE)
+                    {
+                        test.m_ResultActualId = eResult_SKIP_INTF;
+                        test.m_Result = "2-server test cases using interfaces file but not reverse DNS";
                         ++num_skipped;
                     } else {
                         // This test case is selected, even if skipped due to prior failure.
@@ -1366,6 +1456,7 @@ int CTestNcbiDblbSvcResApp::Run(void)
                         // Skip remaining test cases if any have failed and -all option not used.
                         if (num_failed > 0  &&  ! m_ProcessAll) {
                             test.m_ResultActualId = eResult_SKIP_FAIL;
+                            test.m_Result = "prior fails";
                             ++num_notrun;
                         } else {
                             // Ok, let's do the test!
@@ -1421,13 +1512,14 @@ void CTestNcbiDblbSvcResApp::ReportResults(size_t num_possible, size_t num_skipp
     for (const STest& test : s_Tests) {
         const SSetup& setup(s_Setups[test.m_SetupId]);
         string status;
+
         if (NStr::StartsWith(s_Results[test.m_ResultActualId], "SKIP")  ||
-            NStr::StartsWith(s_Results[setup.m_ResultExpectedId], "SKIP"))
+            NStr::StartsWith(s_Results[test.m_ResultExpectedId], "SKIP"))
         {
             status = "skip";
-        } else if (test.m_ResultActualId == setup.m_ResultExpectedId) {
+        } else if (test.m_ResultActualId == test.m_ResultExpectedId) {
             status = "pass";
-        } else if (setup.m_ResultExpectedId != eResult_NONE) {
+        } else if (test.m_ResultExpectedId != eResult_NONE) {
             status = "FAIL";
         } else {
             status = "none";
@@ -1453,8 +1545,12 @@ void CTestNcbiDblbSvcResApp::ReportResults(size_t num_possible, size_t num_skipp
             results += sep + "ResLbNm=" + s_ResLbNms[setup.m_ResLbNm];
             results += sep + "ResRev=" + s_ResRevs[setup.m_ResRev];
             results += sep + "ResIdns=" + s_ResIdnss[setup.m_ResIdns];
-            results += sep + "Expected=" + s_Results[setup.m_ResultExpectedId];
+            results += sep + "SetupExpected=" + s_Results[setup.m_ResultExpectedId];
+            results += sep + "TestExpected=" + s_Results[test.m_ResultExpectedId];
             results += sep + "Actual=" + s_Results[test.m_ResultActualId];
+            if (test.m_Result) {
+                results += sep + "Reason=" + test.m_Result;
+            }
         }
     }
     if (results.empty()) {
