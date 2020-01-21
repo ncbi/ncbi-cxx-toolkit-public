@@ -124,6 +124,9 @@ GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cach
     {
         (*cache)[accession] = response;
     }
+
+#if 0        
+    // show biosample server response for debugging
     static unsigned int suffix(1);
     if (response) {
         string filename = "biosource.asn1." + NStr::IntToString(suffix++);
@@ -131,6 +134,8 @@ GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cach
         ostr << MSerial_Format_AsnText() << response;
         ostr.close();
     }
+#endif        
+
     return response;
 }
 
