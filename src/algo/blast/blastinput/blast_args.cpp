@@ -2754,6 +2754,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         NCBI_THROW(CInputException, eInvalidInput,
                    "AIRR rearrangement format is only applicable to igblastn" );
     }
+    if (m_OutputFormat == eFasta) {
+        NCBI_THROW(CInputException, eInvalidInput,
+                   "FASTA output format is only applicable to magicblast");
+    }
     s_ValidateCustomDelim(m_CustomOutputFormatSpec,m_CustomDelim);
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
     if(m_IsIgBlast){
@@ -2871,6 +2875,14 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                              "tabular = Tabular format,\n"
                                              "asn = text ASN.1\n");
 
+    string kUnalignedOutputFormatDescription = string(
+                                    "format for reporting unaligned reads:\n"
+                                    "sam = SAM format,\n"
+                                    "tabular = Tabular format,\n"
+                                    "fasta = sequences in FASTA format\n"
+                                    "Default = same as ") +
+                                    align_format::kArgOutputFormat;
+
     arg_desc.AddDefaultKey(align_format::kArgOutputFormat, "format",
                            kOutputFormatDescription,
                            CArgDescriptions::eString,
@@ -2879,6 +2891,18 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     set<string> allowed_formats = {"sam", "tabular", "asn"};
     arg_desc.SetConstraint(align_format::kArgOutputFormat,
                            new CArgAllowStringSet(allowed_formats));
+
+    arg_desc.AddOptionalKey(kArgUnalignedFormat, "format",
+                            kUnalignedOutputFormatDescription,
+                            CArgDescriptions::eString);
+
+    set<string> allowed_unaligned_formats = {"sam", "tabular", "fasta"};
+    arg_desc.SetConstraint(kArgUnalignedFormat,
+                           new CArgAllowStringSet(allowed_unaligned_formats));
+
+    arg_desc.SetDependency(kArgUnalignedFormat, CArgDescriptions::eRequires,
+                           kArgUnalignedOutput);
+
 
     arg_desc.AddFlag(kArgPrintMdTag, "Include MD tag in SAM report");
     arg_desc.AddFlag(kArgNoReadIdTrim, "Do not trim '.1', '/1', '.2', " \
@@ -2910,6 +2934,28 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         else {
             CNcbiOstrstream os;
             os << "'" << fmt_choice << "' is not a valid output format";
+            string msg = CNcbiOstrstreamToString(os);
+            NCBI_THROW(CInputException, eInvalidInput, msg);
+        }
+
+        m_UnalignedOutputFormat = m_OutputFormat;
+    }
+
+    if (args.Exist(kArgUnalignedFormat) && args[kArgUnalignedFormat]) {
+        string fmt_choice = args[kArgUnalignedFormat].AsString();
+        if (fmt_choice == "sam") {
+            m_UnalignedOutputFormat = eSAM;
+        }
+        else if (fmt_choice == "tabular") {
+            m_UnalignedOutputFormat = eTabular;
+        }
+        else if (fmt_choice == "fasta") {
+            m_UnalignedOutputFormat = eFasta;
+        }
+        else {
+            CNcbiOstrstream os;
+            os << "'" << fmt_choice
+               << "' is not a valid output format for unaligned reads";
             string msg = CNcbiOstrstreamToString(os);
             NCBI_THROW(CInputException, eInvalidInput, msg);
         }

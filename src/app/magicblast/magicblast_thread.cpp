@@ -185,10 +185,12 @@ void* CMagicBlastThread::Main(void)
 
                 PrintTabular(ostr,
                              unaligned_ostr,
+                             m_FormattingArgs->GetUnalignedOutputFormat(),
                              *results,
                              *query_batch,
                              m_Options->GetPaired(),
                              /*thread_batch_number*/ 1,
+                             kTrimReadIdForSAM,
                              kPrintUnaligned,
                              kNoDiscordant);
             }
@@ -205,6 +207,7 @@ void* CMagicBlastThread::Main(void)
 
                 PrintSAM(ostr,
                          unaligned_ostr,
+                         m_FormattingArgs->GetUnalignedOutputFormat(),
                          *results,
                          *query_batch,
                          query_data->GetQueryInfo(),

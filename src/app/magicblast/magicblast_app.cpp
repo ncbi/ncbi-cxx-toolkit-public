@@ -359,13 +359,6 @@ int CMagicBlastApp::Run(void)
             if (num_db_sequences < kSamLargeNumSubjects) {
                 PrintSAMHeader(m_CmdLineArgs->GetOutputStream(), db_adapter,
                                s_GetCmdlineArgs(GetArguments()));
-
-                // print another SAM header if reporting unaligned reads
-                // in another file
-                if (m_CmdLineArgs->HasUnalignedOutputStream()) {
-                    PrintSAMHeader(*m_CmdLineArgs->GetUnalignedOutputStream(),
-                                   db_adapter, s_GetCmdlineArgs(GetArguments()));
-                }
             }
         }
         else if (fmt_args->GetFormattedOutputChoice() ==
@@ -374,10 +367,16 @@ int CMagicBlastApp::Run(void)
             PrintTabularHeader(m_CmdLineArgs->GetOutputStream(),
                                GetVersion().Print(),
                                s_GetCmdlineArgs(GetArguments()));
+        }
 
-            // print another tabular header if reporting unaligned reads in
-            // another file
-            if (m_CmdLineArgs->HasUnalignedOutputStream()) {
+        // print another SAM or tabular header if reporting unaligned reads
+        // in another file
+        if (m_CmdLineArgs->HasUnalignedOutputStream()) {
+            if (fmt_args->GetUnalignedOutputFormat() == CFormattingArgs::eSAM) {
+                PrintSAMHeader(*m_CmdLineArgs->GetUnalignedOutputStream(),
+                               db_adapter, s_GetCmdlineArgs(GetArguments()));
+            }
+            else if (fmt_args->GetUnalignedOutputFormat() == CFormattingArgs::eTabular) {
                 PrintTabularHeader(*m_CmdLineArgs->GetUnalignedOutputStream(),
                                    GetVersion().Print(),
                                    s_GetCmdlineArgs(GetArguments()));

@@ -1064,6 +1064,9 @@ public:
         
         ///igblast AIRR rearrangement, 19
         eAirrRearrangement,
+
+        /// unaligned reads in magicblast
+        eFasta,
         /// Sentinel value for error checking
         eEndValue
         
@@ -1211,7 +1214,9 @@ public:
         m_FwdOnly(false),
         m_RevOnly(false),
         m_OnlyStrandSpecific(false),
-        m_PrintMdTag(false) {}
+        m_PrintMdTag(false),
+        m_UnalignedOutputFormat(eSAM)
+    {}
 
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
 
@@ -1249,6 +1254,10 @@ public:
     /// Should MD tag be included in SAM report
     bool PrintMdTag(void) const {return m_PrintMdTag;}
 
+    /// Get format choice for unaligned reads
+    EOutputFormat GetUnalignedOutputFormat(void) const
+    {return m_UnalignedOutputFormat;}
+
 private:
     bool m_TrimReadIds;
     bool m_PrintUnaligned;
@@ -1259,7 +1268,7 @@ private:
     bool m_RevOnly;
     bool m_OnlyStrandSpecific;
     bool m_PrintMdTag;
-
+    EOutputFormat m_UnalignedOutputFormat;
 };
 
 /// Argument class to collect multi-threaded arguments

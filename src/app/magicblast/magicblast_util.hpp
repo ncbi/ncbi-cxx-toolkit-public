@@ -35,6 +35,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <algo/blast/api/magicblast.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
+#include <algo/blast/blastinput/blast_args.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -50,6 +51,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
 
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
                        CNcbiOstream& unaligned_ostr,
+                       CFormattingArgs::EOutputFormat fmt,
                        const CMagicBlastResultSet& results,
                        const CBioseq_set& query_batch,
                        const BlastQueryInfo* query_info,
@@ -67,9 +69,11 @@ CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            CNcbiOstream& unaligned_ostr,
+                           CFormattingArgs::EOutputFormat unaligned_fmt,
                            const CMagicBlastResultSet& results,
                            const CBioseq_set& query_batch,
                            bool is_paired, int batch_number,
+                           bool trim_read_id,
                            bool print_unaligned,
                            bool no_discordant);
 

@@ -465,6 +465,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgMaxDbWordCount;
 NCBI_BLASTINPUT_EXPORT extern const string kArgPrintMdTag;
 /// Argument to output unaligned reads in a separate file
 NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedOutput;
+/// Argument to specify format for reporting unaligned reads
+NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedFormat;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
