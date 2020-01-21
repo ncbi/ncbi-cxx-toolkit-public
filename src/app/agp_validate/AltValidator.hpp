@@ -137,7 +137,11 @@ public:
   }
   void ProcessQueue();
 
-  void QueryAccessions();
+//  void QueryAccessions();
+
+  void QueryAccessionsEntrez(); 
+
+  void QueryAccessionsOM();
 };
 
 // These really should be in agp_validate.cpp, but gcc inexplicably balks, saying:

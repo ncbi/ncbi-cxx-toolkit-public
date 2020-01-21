@@ -381,7 +381,7 @@ void CAltValidator::QueueLine(const string& orig_line)
 }
 
 // In: accessions; Out: mapAccData.
-void CAltValidator::QueryAccessions()
+void CAltValidator::QueryAccessionsEntrez()
 {
   string query;
   for(set<string>::iterator it = accessions.begin();  it != accessions.end(); ++it) {
@@ -390,6 +390,7 @@ void CAltValidator::QueryAccessions()
   }
   if(query.size()==0) return;
   query.resize( query.size()-4 );
+
 
   try{
     CEntrez2Client entrez;
@@ -435,11 +436,50 @@ void CAltValidator::QueryAccessions()
   accessions.clear();
 }
 
+
+void CAltValidator::QueryAccessionsOM()
+{
+    vector<CSeq_id_Handle> idHandles;
+
+    CSeq_id seqId;
+    for (const auto& accession : accessions) {
+        try {
+            seqId.Set(accession);
+        }
+        catch (...)
+        {
+            continue;
+        }
+        if (!seqId.IsGenbank()) {
+            continue;
+        }
+        idHandles.push_back(CSeq_id_Handle::GetHandle(seqId));
+    }
+
+    auto bioseqHandles = m_Scope->GetBioseqHandles(idHandles);
+    for (auto bioseqHandle : bioseqHandles) {
+        if (!bioseqHandle) { 
+            continue; // revisit this
+        }
+        auto idHandle = sequence::GetId(bioseqHandle, sequence::eGetId_ForceAcc);
+        const auto& gbAccVer = idHandle.GetSeqId()->GetGenbank();
+        // Add information to map  
+        auto& compInfo = mapAccData[gbAccVer.GetAccession()];
+        compInfo.ver = gbAccVer.GetVersion();
+        compInfo.len = bioseqHandle.GetInst_Length();
+        compInfo.taxid = sequence::GetTaxId(bioseqHandle);
+        compInfo.inDatabase=true;
+    }
+    accessions.clear();
+}
+
+
 void CAltValidator::ProcessQueue()
 {
-  //cerr << "before QueryAccessions" << endl;
-  QueryAccessions(); // In: accessions; Out: mapAccData.
-  //cerr << "after QueryAccessions" << endl;
+  //cerr << "before QueryAccessionsEntrez()" << endl;
+  QueryAccessionsEntrez(); // In: accessions; Out: mapAccData.
+  //cerr << "after QueryAccessionsEntrez()" << endl;
+  
 
   for (const auto& lineInfo : lineQueue) 
   {
