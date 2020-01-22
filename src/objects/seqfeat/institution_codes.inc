@@ -4836,7 +4836,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NCSM:Herp\ts\tNorth Carolina Museum of Natural Sciences, Herpetology Collection\t",
 "NCSM:Mammals\ts\tNorth Carolina Museum of Natural Sciences, Mammal collection\t",
 "NCSU\ts\tNorth Carolina State University Collections\t\t\t",
-"NCTC\tc\tNational Collection of Type Cultures\t\thttps://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC+&collection=nctc\t",
+"NCTC\tc\tNational Collection of Type Cultures\t\thttps://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC+spec&collection=nctc\t",
 "NCU\ts\tUniversity of North Carolina, North Carolina Botanical Garden\t\t\t",
 "NCUT\ts\tNicolaus Copernicus University\t\t\t",
 "NCWRF\tc\tNational Collection of Wood Rotting Fungi\t\t\t",
