@@ -1623,12 +1623,8 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
                     unsigned char chain = static_cast<unsigned char>(pid.GetChain());
                     if (chain > ' ') {
                         *label += '_';
-                        if (islower(chain)) {
-                            *label += string(SIZE_TYPE(2),
-                                             static_cast<char>(toupper(chain)));
-                        } else {
-                            *label += static_cast<char>(chain);
-                        }
+                        // previously if: (islower(chain)) then doubled the upper-case version with: *label += string(SIZE_TYPE(2), static_cast<char>(toupper(chain)));
+                        *label += static_cast<char>(chain);
                     }
                 }
             }}
