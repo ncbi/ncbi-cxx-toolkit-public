@@ -36,6 +36,7 @@
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbierror.hpp>
 #include "ncbisys.hpp"
+#include <array>
 
 #define NCBI_USE_ERRCODE_X   Corelib_System
 
@@ -1406,6 +1407,192 @@ bool VerifyCpuCompatibility(string* message)
 
     return true;
 }
+
+
+// Get all information on the first usage
+const CCpuFeatures::InstructionSet& CCpuFeatures::IS(void)
+{
+    static CCpuFeatures::InstructionSet* instruction_set = new CCpuFeatures::InstructionSet();
+    return *instruction_set;
+}
+
+CCpuFeatures::InstructionSet::InstructionSet(void)
+    : f01_ECX_  { 0 },
+      f01_EDX_  { 0 },
+      f07_EBX_  { 0 },
+      f07_ECX_  { 0 },
+      f81_ECX_  { 0 },
+      f81_EDX_  { 0 }
+{
+    int nIds   = 0;
+    int nExIds = 0;
+
+    using TRegisters = std::array<int,4>;  // [EAX, EBX, ECX, EDX]
+    TRegisters registers;
+    vector<TRegisters> m_Data;
+    vector<TRegisters> m_ExtData;
+
+    // Local function
+    auto CPUID = [](TRegisters& r, int func_id) {
+        #ifdef NCBI_OS_MSWIN
+            __cpuid(r.data(), func_id);
+        #else
+            asm volatile("cpuid" : "=a" (r[0]), "=b" (r[1]), "=c" (r[2]), "=d" (r[3]) : "a" (func_id));
+        #endif
+    };
+    auto CPUID_EX = [](TRegisters& r, int func_id, int sub_id) {
+        #ifdef NCBI_OS_MSWIN
+            __cpuidex(r.data(), func_id, sub_id);
+        #else
+            asm volatile("cpuid" : "=a" (r[0]), "=b" (r[1]), "=c" (r[2]), "=d" (r[3]) : "a" (func_id), "c" (sub_id));
+        #endif
+    };
+
+    // Calling __cpuid with 0x0 as the function_id argument
+    // gets the number of the highest valid function ID.
+    CPUID(registers, 0);
+    nIds = registers[0];
+
+    for (int i = 0; i <= nIds; ++i) {
+        CPUID_EX(registers, i, 0);
+        m_Data.push_back(registers);
+    }
+
+    // Capture vendor string
+    char vendor[0x20];
+    memset(vendor, 0, sizeof(vendor));
+    *reinterpret_cast<int*>(vendor)     = m_Data[0][1];
+    *reinterpret_cast<int*>(vendor + 4) = m_Data[0][3];
+    *reinterpret_cast<int*>(vendor + 8) = m_Data[0][2];
+    m_VendorStr = vendor;
+    if (m_VendorStr == "GenuineIntel") {
+        m_Vendor = eIntel;
+    }
+    else if (m_VendorStr == "AuthenticAMD") {
+        m_Vendor = eAMD;
+    }
+
+    // Load bitset with flags for function 0x00000001
+    if (nIds >= 1) {
+        f01_ECX_ = m_Data[1][2];
+        f01_EDX_ = m_Data[1][3];
+    }
+    // Load bitset with flags for function 0x00000007
+    if (nIds >= 7) {
+        f07_EBX_ = m_Data[7][1];
+        f07_ECX_ = m_Data[7][2];
+    }
+
+    // Calling cpuid with 0x80000000 as the function_id argument
+    // gets the number of the highest valid extended ID.
+    CPUID(registers, 0x80000000);
+    nExIds = registers[0];
+    //
+    for (int i = 0x80000000; i <= nExIds; ++i) {
+        CPUID_EX(registers, i, 0);
+        m_ExtData.push_back(registers);
+    }
+
+    // Load bitset with flags for function 0x80000001
+    if (nExIds >= (int)0x80000001) {
+        f81_ECX_ = m_ExtData[1][2];
+        f81_EDX_ = m_ExtData[1][3];
+    }
+
+    // Interpret CPU brand string if reported
+    if (nExIds >= (int)0x80000004) {
+        char brand[0x40];
+        memset(brand, 0, sizeof(brand));
+        memcpy(brand,      m_ExtData[2].data(), sizeof(registers));
+        memcpy(brand + 16, m_ExtData[3].data(), sizeof(registers));
+        memcpy(brand + 32, m_ExtData[4].data(), sizeof(registers));
+        m_BrandStr = brand;
+    }
+};
+
+
+void CCpuFeatures::Print(void)
+{
+    list<string> supported;
+    list<string> unsupported;
+
+    auto check = [&supported,&unsupported](string feature, bool is_supported) {
+        if (is_supported) {
+            supported.push_back(feature);
+        } else {
+            unsupported.push_back(feature);
+        }
+    };
+
+    // sorted order
+
+    check( "_3DNOW",      CCpuFeatures::_3DNOW()     );
+    check( "_3DNOWEXT",   CCpuFeatures::_3DNOWEXT()  );
+    check( "ABM",         CCpuFeatures::ABM()        );
+    check( "ADX",         CCpuFeatures::ADX()        );
+    check( "AES",         CCpuFeatures::AES()        );
+    check( "AVX",         CCpuFeatures::AVX()        );
+    check( "AVX2",        CCpuFeatures::AVX2()       );
+    check( "AVX512CD",    CCpuFeatures::AVX512CD()   );
+    check( "AVX512ER",    CCpuFeatures::AVX512ER()   );
+    check( "AVX512F",     CCpuFeatures::AVX512F()    );
+    check( "AVX512PF",    CCpuFeatures::AVX512PF()   );
+    check( "BMI1",        CCpuFeatures::BMI1()       );
+    check( "BMI2",        CCpuFeatures::BMI2()       );
+    check( "CLFSH",       CCpuFeatures::CLFSH()      );
+    check( "CMPXCHG16B",  CCpuFeatures::CMPXCHG16B() );
+    check( "CX8",         CCpuFeatures::CX8()        );
+    check( "ERMS",        CCpuFeatures::ERMS()       );
+    check( "F16C",        CCpuFeatures::F16C()       );
+    check( "FMA",         CCpuFeatures::FMA()        );
+    check( "FSGSBASE",    CCpuFeatures::FSGSBASE()   );
+    check( "FXSR",        CCpuFeatures::FXSR()       );
+    check( "HLE",         CCpuFeatures::HLE()        );
+    check( "INVPCID",     CCpuFeatures::INVPCID()    );
+    check( "LAHF",        CCpuFeatures::LAHF()       );
+    check( "LZCNT",       CCpuFeatures::LZCNT()      );
+    check( "MMX",         CCpuFeatures::MMX()        );
+    check( "MMXEXT",      CCpuFeatures::MMXEXT()     );
+    check( "MONITOR",     CCpuFeatures::MONITOR()    );
+    check( "MOVBE",       CCpuFeatures::MOVBE()      );
+    check( "MSR",         CCpuFeatures::MSR()        );
+    check( "OSXSAVE",     CCpuFeatures::OSXSAVE()    );
+    check( "PCLMULQDQ",   CCpuFeatures::PCLMULQDQ()  );
+    check( "POPCNT",      CCpuFeatures::POPCNT()     );
+    check( "PREFETCHWT1", CCpuFeatures::PREFETCHWT1());
+    check( "RDRAND",      CCpuFeatures::RDRAND()     );
+    check( "RDSEED",      CCpuFeatures::RDSEED()     );
+    check( "RDTSCP",      CCpuFeatures::RDTSCP()     );
+    check( "RTM",         CCpuFeatures::RTM()        );
+    check( "SEP",         CCpuFeatures::SEP()        );
+    check( "SHA",         CCpuFeatures::SHA()        );
+    check( "SSE",         CCpuFeatures::SSE()        );
+    check( "SSE2",        CCpuFeatures::SSE2()       );
+    check( "SSE3",        CCpuFeatures::SSE3()       );
+    check( "SSE4.1",      CCpuFeatures::SSE41()      );
+    check( "SSE4.2",      CCpuFeatures::SSE42()      );
+    check( "SSE4a",       CCpuFeatures::SSE4a()      );
+    check( "SSSE3",       CCpuFeatures::SSSE3()      );
+    check( "SYSCALL",     CCpuFeatures::SYSCALL()    );
+    check( "TBM",         CCpuFeatures::TBM()        );
+    check( "XOP",         CCpuFeatures::XOP()        );
+    check( "XSAVE",       CCpuFeatures::XSAVE()      );
+
+    cout << "CPU vendor ID    : " << CCpuFeatures::VendorStr() << endl;
+    cout << "CPU brand string : " << CCpuFeatures::BrandStr()  << endl;
+
+    cout << endl << "Supported features:" << endl;
+    for (auto feature : supported) {
+        cout << feature << " ";
+    }
+    cout << endl;
+    cout << endl << "Not supported features:" << endl;
+    for (auto feature : unsupported) {
+        cout << feature << " ";
+    }
+    cout << endl;
+}
+
 
 
 END_NCBI_SCOPE

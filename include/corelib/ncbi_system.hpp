@@ -35,6 +35,8 @@
 
 #include <corelib/ncbitime.hpp>
 #include <time.h>
+#include <vector>
+#include <bitset>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -242,6 +244,113 @@ extern bool SetCpuTimeLimit(size_t                max_cpu_time,
 ///    TRUE if CPU is compatible and application can run on it, FALSE otherwise.
 NCBI_XNCBI_EXPORT
 bool VerifyCpuCompatibility(string* message = nullptr /* out */);
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCpuFeatures --
+///
+/// Uses the cpuid intrinsic to get information about CPU extended
+/// instruction set support.
+
+class NCBI_XNCBI_EXPORT CCpuFeatures
+{
+public:
+    /// CPU vendor -- very limited list
+    enum EVendor {
+        eAMD,
+        eIntel,
+        eOther
+    };
+    static EVendor Vendor   (void) { return IS().m_Vendor;     }
+    static string  VendorStr(void) { return IS().m_VendorStr;  }
+    static string  BrandStr (void) { return IS().m_BrandStr;   }
+
+    static bool SSE3        (void) { return IS().f01_ECX_[0];  }
+    static bool PCLMULQDQ   (void) { return IS().f01_ECX_[1];  }
+    static bool MONITOR     (void) { return IS().f01_ECX_[3];  }
+    static bool SSSE3       (void) { return IS().f01_ECX_[9];  }
+    static bool FMA         (void) { return IS().f01_ECX_[12]; }
+    static bool CMPXCHG16B  (void) { return IS().f01_ECX_[13]; }
+    static bool SSE41       (void) { return IS().f01_ECX_[19]; }
+    static bool SSE42       (void) { return IS().f01_ECX_[20]; }
+    static bool MOVBE       (void) { return IS().f01_ECX_[22]; }
+    static bool POPCNT      (void) { return IS().f01_ECX_[23]; }
+    static bool AES         (void) { return IS().f01_ECX_[25]; }
+    static bool XSAVE       (void) { return IS().f01_ECX_[26]; }
+    static bool OSXSAVE     (void) { return IS().f01_ECX_[27]; }
+    static bool AVX         (void) { return IS().f01_ECX_[28]; }
+    static bool F16C        (void) { return IS().f01_ECX_[29]; }
+    static bool RDRAND      (void) { return IS().f01_ECX_[30]; }
+
+    static bool MSR         (void) { return IS().f01_EDX_[5];  }
+    static bool CX8         (void) { return IS().f01_EDX_[8];  }
+    static bool SEP         (void) { return IS().f01_EDX_[11]; }
+    static bool CMOV        (void) { return IS().f01_EDX_[15]; }
+    static bool CLFSH       (void) { return IS().f01_EDX_[19]; }
+    static bool MMX         (void) { return IS().f01_EDX_[23]; }
+    static bool FXSR        (void) { return IS().f01_EDX_[24]; }
+    static bool SSE         (void) { return IS().f01_EDX_[25]; }
+    static bool SSE2        (void) { return IS().f01_EDX_[26]; }
+
+    static bool FSGSBASE    (void) { return IS().f07_EBX_[0]; }
+    static bool BMI1        (void) { return IS().f07_EBX_[3]; }
+    static bool HLE         (void) { return IS().isIntel() && IS().f07_EBX_[4]; }
+    static bool AVX2        (void) { return IS().f07_EBX_[5]; }
+    static bool BMI2        (void) { return IS().f07_EBX_[8]; }
+    static bool ERMS        (void) { return IS().f07_EBX_[9]; }
+    static bool INVPCID     (void) { return IS().f07_EBX_[10]; }
+    static bool RTM         (void) { return IS().isIntel() && IS().f07_EBX_[11]; }
+    static bool AVX512F     (void) { return IS().f07_EBX_[16]; }
+    static bool RDSEED      (void) { return IS().f07_EBX_[18]; }
+    static bool ADX         (void) { return IS().f07_EBX_[19]; }
+    static bool AVX512PF    (void) { return IS().f07_EBX_[26]; }
+    static bool AVX512ER    (void) { return IS().f07_EBX_[27]; }
+    static bool AVX512CD    (void) { return IS().f07_EBX_[28]; }
+    static bool SHA         (void) { return IS().f07_EBX_[29]; }
+
+    static bool PREFETCHWT1 (void) { return IS().f07_ECX_[0]; }
+
+    static bool LAHF        (void) { return IS().f81_ECX_[0]; }
+    static bool LZCNT       (void) { return IS().isIntel() && IS().f81_ECX_[5];  }
+    static bool ABM         (void) { return IS().isAMD()   && IS().f81_ECX_[5];  }
+    static bool SSE4a       (void) { return IS().isAMD()   && IS().f81_ECX_[6];  }
+    static bool XOP         (void) { return IS().isAMD()   && IS().f81_ECX_[11]; }
+    static bool TBM         (void) { return IS().isAMD()   && IS().f81_ECX_[21]; }
+
+    static bool SYSCALL     (void) { return IS().isIntel() && IS().f81_EDX_[11]; }
+    static bool MMXEXT      (void) { return IS().isAMD()   && IS().f81_EDX_[22]; }
+    static bool RDTSCP      (void) { return IS().isIntel() && IS().f81_EDX_[27]; }
+    static bool _3DNOWEXT   (void) { return IS().isAMD()   && IS().f81_EDX_[30]; }
+    static bool _3DNOW      (void) { return IS().isAMD()   && IS().f81_EDX_[31]; }
+
+    /// Print human-readable list of supported and not supported CPU features.
+    /// Could be useful for debug purposes.
+    static void Print(void);
+
+private:
+    class InstructionSet
+    {
+    public:
+        InstructionSet(void);
+
+        bool isAMD(void)   const { return m_Vendor == eAMD;   };
+        bool isIntel(void) const { return m_Vendor == eIntel; };
+
+        EVendor     m_Vendor;
+        string      m_VendorStr;
+        string      m_BrandStr;
+        bitset<32>  f01_ECX_;
+        bitset<32>  f01_EDX_;
+        bitset<32>  f07_EBX_;
+        bitset<32>  f07_ECX_;
+        bitset<32>  f81_ECX_;
+        bitset<32>  f81_EDX_;
+    };
+    // Get an instruction set on a first usage
+    static const InstructionSet& IS(void);
+};
 
 
 
