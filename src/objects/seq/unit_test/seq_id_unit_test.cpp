@@ -1098,8 +1098,8 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
         "pat|JP|2003530853|257", "JP2003530853_257", "JP2003530853_257", "PAT|JP|2003530853|257",
 
         "Seq-id ::= pdb { mol \"1GAV\", chain 120 }",
-        "pdb", "1GAV_XX", "pdb|1GAV_XX",
-        "pdb|1GAV|XX", "1GAV_XX", "1GAV_XX", "PDB|1GAV|x",
+        "pdb", "1GAV_x", "pdb|1GAV_x",
+        "pdb|1GAV|XX", "1GAV_x", "1GAV_x", "PDB|1GAV|x",
 
         "Seq-id ::= pdb { mol \"1GAV\", chain-id \"xY\" }",
         "pdb", "1GAV_xY", "pdb|1GAV_xY",
