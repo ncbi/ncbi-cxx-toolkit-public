@@ -2357,7 +2357,8 @@ CConstRef<CSeq_feat> x_GetFeatById(CSeqFeatData::ESubtype subtype,
 CConstRef<CSeq_feat>
 GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                    const CTSE_Handle& tse,
-                   TBestFeatOpts opts)
+                   TBestFeatOpts opts,
+                   CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> ret =
@@ -2371,7 +2372,8 @@ GetBestGeneForMrna(const CSeq_feat& mrna_feat,
 CConstRef<CSeq_feat>
 GetBestGeneForCds(const CSeq_feat& cds_feat,
                   const CTSE_Handle& tse,
-                  TBestFeatOpts opts)
+                  TBestFeatOpts opts,
+                  CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
     CConstRef<CSeq_feat> ret =
@@ -2385,7 +2387,8 @@ GetBestGeneForCds(const CSeq_feat& cds_feat,
 CConstRef<CSeq_feat>
 GetBestMrnaForCds(const CSeq_feat& cds_feat,
                   const CTSE_Handle& tse,
-                  TBestFeatOpts opts)
+                  TBestFeatOpts opts,
+                  CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
     CConstRef<CSeq_feat> ret =
@@ -2399,7 +2402,8 @@ GetBestMrnaForCds(const CSeq_feat& cds_feat,
 CConstRef<CSeq_feat>
 GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                   const CTSE_Handle& tse,
-                  TBestFeatOpts opts)
+                  TBestFeatOpts opts,
+                  CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> ret =
@@ -2413,7 +2417,8 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
 void GetMrnasForGene(const CSeq_feat& gene_feat,
                      const CTSE_Handle& tse,
                      list< CConstRef<CSeq_feat> >& mrna_feats,
-                     TBestFeatOpts opts)
+                     TBestFeatOpts opts,
+                     CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     GetMrnasForGene(gene_feat, tse.GetScope(), mrna_feats, opts);
@@ -2422,7 +2427,8 @@ void GetMrnasForGene(const CSeq_feat& gene_feat,
 void GetCdssForGene(const CSeq_feat& gene_feat,
                     const CTSE_Handle& tse,
                     list< CConstRef<CSeq_feat> >& cds_feats,
-                    TBestFeatOpts opts)
+                    TBestFeatOpts opts,
+                    CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     GetCdssForGene(gene_feat, tse.GetScope(), cds_feats, opts);
