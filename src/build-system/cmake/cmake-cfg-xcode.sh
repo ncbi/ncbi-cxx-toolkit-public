@@ -28,6 +28,11 @@ fi
 BUILD_SHARED_LIBS="OFF"
 
 ############################################################################# 
+Check_function_exists() {
+  local t=`type -t $1`
+  test "$t" = "function"
+}
+
 Usage()
 {
     cat <<EOF 1>&2
