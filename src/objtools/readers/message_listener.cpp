@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/reader_error_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
@@ -93,6 +94,31 @@ CMessageListenerBase::PutProgress(
 
     m_pProgressOstrm->flush();
 }
+
+
+CGPipeMessageListener::CGPipeMessageListener(bool ignoreBadModValue) 
+    : m_IgnoreBadModValue(ignoreBadModValue) {}
+
+
+bool CGPipeMessageListener::PutError(const ILineError& error) {
+
+    const auto severity = error.GetSeverity();
+
+    if (severity == eDiag_Info) {
+        return true;
+    }
+
+    if (severity == eDiag_Warning) {
+        ERR_POST(Warning << error.Message());
+        return true;
+    }
+
+    return ((error.GetCode() == EReaderCode::eReader_Mods) &&
+            (error.GetSubCode() != EModSubcode::eModSubcode_InvalidValue ||
+             m_IgnoreBadModValue));
+}
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
