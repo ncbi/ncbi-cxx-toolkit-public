@@ -252,10 +252,10 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
 			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 				if (pdbID.size() == 0 && pdbChain.empty()) {
 					pdbID = newID;
-					pdbChain = (*n)->GetPdb().GetChain_id_unified();
-				} else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetChain_id_unified()) {
+					pdbChain = (*n)->GetPdb().GetEffectiveChain_id();
+				} else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetEffectiveChain_id()) {
 					// special case: for merged structures with multiple pdb ids, allow match to a sequence from a single specific pdb id
-					if (pdbID.size() > 4 && pdbChain == (*n)->GetPdb().GetChain_id_unified() && NStr::Find(pdbID, newID) != NPOS)
+					if (pdbID.size() > 4 && pdbChain == (*n)->GetPdb().GetEffectiveChain_id() && NStr::Find(pdbID, newID) != NPOS)
 							pdbID = newID;
 					else
 						ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << pdbChain << "'");
