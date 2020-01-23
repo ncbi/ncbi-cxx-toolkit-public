@@ -48,6 +48,8 @@ class IObjtoolsListener
 public:
     virtual ~IObjtoolsListener(void) = default;
 
+    virtual bool SevEnabled(EDiagSev severity) const;
+
     virtual bool PutMessage(const IObjtoolsMessage& message) = 0;
 };
 

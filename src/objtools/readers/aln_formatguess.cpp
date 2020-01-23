@@ -143,6 +143,7 @@ CAlnFormatGuesser::xSampleIsClustal(
         }
         if (lineCount > 0  &&  line.empty()) {
             auto maybeConsensus = sample[lineCount-1];
+
             auto firstConsensusChar = maybeConsensus.find_first_of(
                 CONSENSUS_CHARS.substr(1));
             if (firstConsensusChar == string::npos) {

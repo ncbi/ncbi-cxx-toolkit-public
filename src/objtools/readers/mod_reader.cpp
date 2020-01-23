@@ -212,7 +212,7 @@ void CModHandler::SetMods(const TMods& mods)
 void CModHandler::AddMods(const TModList& mods,
                           EHandleExisting handle_existing,
                           TModList& rejected_mods,
-                          FReportError fReportError)
+                          FReportError fPostMessage)
 {
     rejected_mods.clear();
 
@@ -235,8 +235,8 @@ void CModHandler::AddMods(const TModList& mods,
         if (m_ExcludedModifiers.find(canonical_name) != 
             m_ExcludedModifiers.end()) {
             string message = "The following modifier is unsupported in this context and will be ignored: " + mod.GetName() + ".";
-            if (fReportError) {
-                fReportError(mod, message, eDiag_Warning, eModSubcode_Excluded);
+            if (fPostMessage) {
+                fPostMessage(mod, message, eDiag_Warning, eModSubcode_Excluded);
             }
             rejected_mods.push_back(mod);
             continue;
@@ -244,8 +244,8 @@ void CModHandler::AddMods(const TModList& mods,
 
         if (x_IsDeprecated(canonical_name)) {
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
-            if (fReportError) {
-                fReportError(mod, message, eDiag_Warning, eModSubcode_Deprecated);
+            if (fPostMessage) {
+                fPostMessage(mod, message, eDiag_Warning, eModSubcode_Deprecated);
             } 
             rejected_mods.push_back(mod);
             continue;
@@ -291,8 +291,8 @@ void CModHandler::AddMods(const TModList& mods,
                 mod :
                 CModData( mod.GetName(), kEmptyStr);
             
-            if (fReportError) {
-                fReportError(reportMod, msg, sev, subcode);
+            if (fPostMessage) {
+                fPostMessage(reportMod, msg, sev, subcode);
                 continue;
             }   
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
@@ -435,20 +435,32 @@ string CModHandler::x_GetNormalizedString(const string& name)
 void CModAdder::Apply(const CModHandler& mod_handler,
                       CBioseq& bioseq,
                       TSkippedMods& skipped_mods,
-                      FReportError fReportError)
+                      FReportError fPostMessage)
+{
+    Apply(mod_handler, bioseq, skipped_mods, false, fPostMessage);
+}
+
+
+void CModAdder::Apply(const CModHandler& mod_handler,
+                      CBioseq& bioseq,
+                      TSkippedMods& skipped_mods,
+                      bool logInfo,
+                      FReportError fPostMessage)
 {
     skipped_mods.clear();
 
     CDescrModApply descr_mod_apply(bioseq,
-                                   fReportError,
+                                   fPostMessage,
                                    skipped_mods);
                 
     CFeatModApply feat_mod_apply(bioseq, 
-                                 fReportError,
+                                 fPostMessage,
                                  skipped_mods);
 
+    list<string> applied_mods;
     for (const auto& mod_entry : mod_handler.GetMods()) {
         try {
+            bool applied = false;
             if (descr_mod_apply.Apply(mod_entry)) {
                 const string& mod_name = x_GetModName(mod_entry);
                 if (mod_name == "secondary-accession"){
@@ -461,26 +473,30 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     // the information extracted from mol-type when setting Seq-inst::mol
                     x_SetMoleculeFromMolType(mod_entry, bioseq.SetInst());
                 }
-                continue;
+                applied = true;
+            }
+            else 
+            if (x_TrySeqInstMod(mod_entry, bioseq.SetInst(), skipped_mods, fPostMessage) ||
+                feat_mod_apply.Apply(mod_entry)) {
+                applied = true;
             }
 
-            if (x_TrySeqInstMod(mod_entry, bioseq.SetInst(), skipped_mods, fReportError)) {
-                continue;
-            }
-
-            if (feat_mod_apply.Apply(mod_entry)) {
+            if (applied) {
+                if (logInfo) {
+                    applied_mods.push_back(x_GetModName(mod_entry));  
+                } 
                 continue;
             }
 
             // Report unrecognised modifier
-            if (fReportError) {
+            if (fPostMessage) {
                 skipped_mods.insert(skipped_mods.end(),
                     mod_entry.second.begin(),
                     mod_entry.second.end());
 
                 for (const auto& modData : mod_entry.second) {
                     string msg = "Unrecognized modifier: " + modData.GetName() + ".";
-                    fReportError(modData, msg, eDiag_Warning, eModSubcode_Unrecognized);
+                    fPostMessage(modData, msg, eDiag_Warning, eModSubcode_Unrecognized);
                 }
                 continue;
             }
@@ -492,28 +508,36 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             skipped_mods.insert(skipped_mods.end(),
                     mod_entry.second.begin(),
                     mod_entry.second.end());
-            if (fReportError) {
+            if (fPostMessage) {
                 string canonicalName = x_GetModName(mod_entry);
-                fReportError(CModData( canonicalName, kEmptyStr), e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
+                fPostMessage(CModData( canonicalName, kEmptyStr), e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
             } 
             else { 
                 throw; // rethrow e
             }
         }
     }
+
+    if (!applied_mods.empty()) {
+        string msg = "Applied mods: ";
+        for (const auto& applied_mod : applied_mods) {
+            msg += " " + applied_mod;
+        }
+        fPostMessage(CModData("",""), msg, eDiag_Info, eModSubcode_Applied);
+    }
 }
 
 
 void CModAdder::x_ReportInvalidValue(const CModData& mod_data,
                                     TSkippedMods& skipped_mods,
-                                    FReportError fReportError)
+                                    FReportError fPostMessage)
 {
     const auto& mod_name = mod_data.GetName();
     const auto& mod_value = mod_data.GetValue();
     string msg = "Invalid value: " + mod_name + "=" + mod_value + ".";
 
-    if (fReportError) {
-        fReportError(mod_data, msg, eDiag_Error, eModSubcode_InvalidValue);
+    if (fPostMessage) {
+        fPostMessage(mod_data, msg, eDiag_Error, eModSubcode_InvalidValue);
         skipped_mods.push_back(mod_data);
         return;
     }
@@ -539,22 +563,22 @@ bool CModAdder::x_TrySeqInstMod(
         const TModEntry& mod_entry, 
         CSeq_inst& seq_inst, 
         TSkippedMods& skipped_mods,
-        FReportError fReportError)
+        FReportError fPostMessage)
 {
     const auto& mod_name = x_GetModName(mod_entry);
 
     if (mod_name == "strand") {
-        x_SetStrand(mod_entry, seq_inst, skipped_mods, fReportError);
+        x_SetStrand(mod_entry, seq_inst, skipped_mods, fPostMessage);
         return true;
     }
 
     if (mod_name == "molecule") {
-        x_SetMolecule(mod_entry, seq_inst, skipped_mods, fReportError);
+        x_SetMolecule(mod_entry, seq_inst, skipped_mods, fPostMessage);
         return true;
     }
 
     if (mod_name == "topology") {
-        x_SetTopology(mod_entry, seq_inst, skipped_mods, fReportError);
+        x_SetTopology(mod_entry, seq_inst, skipped_mods, fPostMessage);
         return true;
     }
 
@@ -572,12 +596,12 @@ bool CModAdder::x_TrySeqInstMod(
 void CModAdder::x_SetStrand(const TModEntry& mod_entry, 
                             CSeq_inst& seq_inst, 
                             TSkippedMods& skipped_mods,
-                            FReportError fReportError)
+                            FReportError fPostMessage)
 {
     string value = x_GetModValue(mod_entry);
     const auto it = s_StrandStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_StrandStringToEnum.end()) {
-        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
+        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fPostMessage);
         return;
     }
     seq_inst.SetStrand(it->second);
@@ -587,12 +611,12 @@ void CModAdder::x_SetStrand(const TModEntry& mod_entry,
 void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
                               CSeq_inst& seq_inst,
                               TSkippedMods& skipped_mods,
-                              FReportError fReportError)
+                              FReportError fPostMessage)
 {
     string value = x_GetModValue(mod_entry);
     const auto it = s_MolStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_MolStringToEnum.end()) {
-        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
+        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fPostMessage);
         return;
     }
     seq_inst.SetMol(it->second);
@@ -616,12 +640,12 @@ void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& 
 void CModAdder::x_SetTopology(const TModEntry& mod_entry, 
                               CSeq_inst& seq_inst,
                               TSkippedMods& skipped_mods,
-                              FReportError fReportError)
+                              FReportError fPostMessage)
 {
     string value = x_GetModValue(mod_entry);
     const auto it = s_TopologyStringToEnum.find(g_GetNormalizedModVal(value));
     if (it == s_TopologyStringToEnum.end()) {
-        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fReportError);
+        x_ReportInvalidValue(mod_entry.second.front(), skipped_mods, fPostMessage);
         return;
     }
     seq_inst.SetTopology(it->second);
@@ -664,10 +688,10 @@ void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 CDefaultModErrorReporter::CDefaultModErrorReporter(
         const string& seqId,
         int lineNum,
-        ILineErrorListener* pErrorListener)
+        IObjtoolsListener* pMessageListener)
     : m_SeqId(seqId),
       m_LineNum(lineNum),
-      m_pErrorListener(pErrorListener) 
+      m_pMessageListener(pMessageListener) 
     {}
 
 
@@ -677,8 +701,20 @@ void CDefaultModErrorReporter::operator()(
     EDiagSev sev,
     EModSubcode subcode)
 {
-    if (!m_pErrorListener) {
+    if (!m_pMessageListener) {
+        if (sev == eDiag_Info) {
+            return;
+        }
+        if (sev == eDiag_Warning) {
+            ERR_POST(Warning << msg);
+            return;
+        }
         NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
+    }
+
+
+    if (!m_pMessageListener->SevEnabled(sev)) {
+        return;
     }
 
     AutoPtr<CLineErrorEx> pErr(
@@ -694,7 +730,7 @@ void CDefaultModErrorReporter::operator()(
             mod.GetName(),
             mod.GetValue()));
 
-    if (!m_pErrorListener->PutError(*pErr)) {
+    if (!m_pMessageListener->PutMessage(*pErr)) {
         NCBI_THROW2(CObjReaderParseException, eFormat, msg, 0);
     }
 }

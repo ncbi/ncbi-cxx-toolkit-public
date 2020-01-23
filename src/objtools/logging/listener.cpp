@@ -40,6 +40,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+bool IObjtoolsListener::SevEnabled(EDiagSev severity) const
+{
+    return (severity > eDiag_Info);
+}
+
+
 CObjtoolsListener::~CObjtoolsListener() = default;
 
 

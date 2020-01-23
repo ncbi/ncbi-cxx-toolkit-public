@@ -2116,7 +2116,7 @@ void CFastaReader::x_ApplyMods(
      const string& title, 
      TSeqPos line_number, 
      CBioseq& bioseq,
-     ILineErrorListener * pMessageListener )
+     ILineErrorListener* pMessageListener )
 {
     string processed_title = title;
     if (TestFlag(fAddMods)) {
@@ -2137,7 +2137,11 @@ void CFastaReader::x_ApplyMods(
         s_AppendMods(rejected_mods, remainder);
 
         CModHandler::TModList skipped_mods;
-        CModAdder::Apply(m_ModHandler, bioseq, skipped_mods, errorReporter);
+        const bool logInfo = 
+            pMessageListener ?
+            pMessageListener->SevEnabled(eDiag_Info) :
+            false;
+        CModAdder::Apply(m_ModHandler, bioseq, skipped_mods, logInfo, errorReporter);
         s_AppendMods(skipped_mods, remainder);
 
         processed_title = remainder;

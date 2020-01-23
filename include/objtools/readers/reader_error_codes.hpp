@@ -57,7 +57,8 @@ enum EModSubcode
     eModSubcode_ConflictingValues,
     eModSubcode_Deprecated,
     eModSubcode_ProteinModOnNucseq,
-    eModSubcode_Excluded
+    eModSubcode_Excluded,
+    eModSubcode_Applied
 };
 
 NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EModSubcode)(void);

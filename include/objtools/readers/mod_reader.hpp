@@ -152,13 +152,18 @@ public:
     using TModEntry = CModHandler::TModEntry;
     using TSkippedMods = list<CModData>;
     using FReportError = CModHandler::FReportError;
-
+    using FPostMessage = FReportError;
 
     static void Apply(const CModHandler& mod_handler,
             CBioseq& bioseq,
             TSkippedMods& skipped_mods,
-            FReportError fReportError=nullptr);
+            FPostMessage fPostMessage=nullptr);
 
+    static void Apply(const CModHandler& mod_handler,
+            CBioseq& bioseq,
+            TSkippedMods& skipped_mods,
+            bool logInfo,
+            FPostMessage fPostMessage=nullptr);
 private:
 
     static const string& x_GetModName(const TModEntry& mod_entry);
@@ -167,17 +172,17 @@ private:
     static bool x_TrySeqInstMod(const TModEntry& mod_entry, 
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
-            FReportError fReportError);
+            FPostMessage fPostMessage);
 
     static void x_SetStrand(const TModEntry& mod_entry, 
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
-            FReportError fReportError);
+            FPostMessage fPostMessage);
 
     static void x_SetMolecule(const TModEntry& mod_entry, 
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
-            FReportError fReportError);
+            FPostMessage fPostMessage);
 
     static void x_SetMoleculeFromMolType(const TModEntry& mod_entry, 
             CSeq_inst& seq_inst);
@@ -185,35 +190,38 @@ private:
     static void x_SetTopology(const TModEntry& mod_entry, 
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
-            FReportError fReportError);
+            FPostMessage fPostMessage);
 
     static void x_SetHist(const TModEntry& mod_entry, 
             CSeq_inst& seq_inst);
 
     static void x_ReportInvalidValue(const CModData& mod_data,
                                      TSkippedMods& skipped_mods,
-                                     FReportError fReportError);
+                                     FPostMessage fPostMessage);
 };
 
 
-class ILineErrorListener;
+class IObjtoolsListener;
 class NCBI_XOBJREAD_EXPORT CDefaultModErrorReporter
 {
 public:
+    using TModList = list<CModData>;
+
     CDefaultModErrorReporter(
             const string& seqId,
             int lineNum,
-            ILineErrorListener* pErrorListener);
+            IObjtoolsListener* pMessageListener);
 
     void operator()(
             const CModData& mod,
             const string& msg,
             EDiagSev sev,
             EModSubcode subcode);
+
 private:
     string m_SeqId;
     int m_LineNum;
-    ILineErrorListener* m_pErrorListener;
+    IObjtoolsListener* m_pMessageListener;
 };
 
 

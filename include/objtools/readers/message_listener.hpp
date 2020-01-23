@@ -49,7 +49,7 @@ class ILineErrorListener : public CObject, public IObjtoolsListener
 {
 public:
     virtual ~ILineErrorListener() {}
-    
+
     // IListener::Post() implementation
     virtual void Post(const IMessage& message)
     {

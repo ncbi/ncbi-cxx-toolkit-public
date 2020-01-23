@@ -837,7 +837,11 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
 
     // Apply modifiers to the bioseq
     CModHandler::TModList skipped_mods;
-    CModAdder::Apply(mod_handler, bioseq, skipped_mods, errorReporter);
+    const bool logInfo = pErrorListener ?
+        pErrorListener->SevEnabled(eDiag_Info) :
+        false;
+
+    CModAdder::Apply(mod_handler, bioseq, skipped_mods, logInfo, errorReporter);
 
     s_AppendMods(rejected_mods, remainder);
     s_AppendMods(skipped_mods, remainder);
