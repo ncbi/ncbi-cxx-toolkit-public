@@ -292,7 +292,7 @@ if (NCBI_EXPERIMENTAL_CFG)
             endif()
             set(c_ncbi_runpath "${_file}")
             if (WIN32)
-                string(REPLACE "/" "\\\\" SYBASE_PATH ${SYBASE_PATH})
+                string(REPLACE "/" "\\\\" SYBASE_PATH "${SYBASE_PATH}")
             endif()
 
 #            set(NCBI_SIGNATURE "${NCBI_COMPILER}_${NCBI_COMPILER_VERSION}-${_cfg}--${HOST}-${_local_host_name}")
