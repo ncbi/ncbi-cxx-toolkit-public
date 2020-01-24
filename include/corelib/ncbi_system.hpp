@@ -335,8 +335,8 @@ private:
     public:
         InstructionSet(void);
 
-        bool isAMD(void)   const { return m_Vendor == eAMD;   };
-        bool isIntel(void) const { return m_Vendor == eIntel; };
+        bool isAMD(void)   const { return m_Vendor == eAMD;   }
+        bool isIntel(void) const { return m_Vendor == eIntel; }
 
         EVendor     m_Vendor;
         string      m_VendorStr;
