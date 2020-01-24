@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 
 
 //  ============================================================================
-class IObjtoolsListener
+class NCBI_XOBJUTIL_EXPORT IObjtoolsListener
 //  ============================================================================
 {
 public:
