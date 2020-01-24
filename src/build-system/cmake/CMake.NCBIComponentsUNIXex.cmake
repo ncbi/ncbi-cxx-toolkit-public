@@ -688,7 +688,7 @@ NCBI_define_component(MSGSL)
 # SGE  (Sun Grid Engine)
 find_external_library(SGE INCLUDES drmaa.h LIBS drmaa
     INCLUDE_HINTS "${NCBI_ThirdParty_SGE}/include"
-    LIBS_HINTS "${NCBI_ThirdParty_SGE}/lib/lx-amd64/")
+    LIBS_HINTS "${NCBI_ThirdParty_SGE}/ncbi-lib/lx-amd64/")
 if (SGE_FOUND)
     set(NCBI_COMPONENT_SGE_FOUND YES)
     set(NCBI_COMPONENT_SGE_INCLUDE ${SGE_INCLUDE})
