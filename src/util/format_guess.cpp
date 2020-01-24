@@ -1423,8 +1423,7 @@ CFormatGuess::TestFormatCLUSTAL()
 
     /// determine the number of observed columns
     size_t ncols = 0;
-    bool found = false;
-    for ( ;  iter != m_TestLines.end()  &&  ! found;  ++iter) {
+    for ( ;  iter != m_TestLines.end();  ++iter) {
         if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
             continue;
         }
@@ -1432,7 +1431,7 @@ CFormatGuess::TestFormatCLUSTAL()
         toks.clear();
         NStr::Split(*iter, delims, toks, NStr::fSplit_Tokenize);
         ncols = toks.size();
-        found = true;
+        break;
     }
     if ( ncols < 2 ) {
         return false;
@@ -1456,6 +1455,14 @@ CFormatGuess::TestFormatCLUSTAL()
             }
         } else {
             ++nlines;
+        }
+        // Tokens should only contain printable characters
+        for (const auto& token : toks) {
+            auto it = find_if(token.begin(), token.end(), 
+                    [](unsigned char c){ return !isprint(c); });
+            if (it != token.end()) {
+                return false;
+            }
         }
     }
     return ( nlines >= 3 );
@@ -3243,9 +3250,13 @@ CFormatGuess::IsAsciiText()
     // first stab - are we text?  comments are only valid if we are text
     size_t count = 0;
     size_t count_print = 0;
+    int count_space = 0;
     for (int i = 0;  i < m_iTestDataSize;  ++i, ++count) {
         if (isprint((unsigned char) m_pTestBuffer[i])) {
             ++count_print;
+        }
+        if (isspace(m_pTestBuffer[i])) {
+            ++count_space;
         }
     }
     if (count_print < (double)count * REQUIRED_ASCII_RATIO) {
