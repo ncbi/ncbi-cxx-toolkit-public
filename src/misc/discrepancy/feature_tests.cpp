@@ -2032,14 +2032,54 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
     if (!context.IsEukaryotic(src) || context.IsOrganelle(src) || !bioseq.GetInst().IsSetMol() || bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna) {
         return;
     }
-    auto& cds = context.FeatCDS();
-    auto& mrnas = context.FeatMRNAs();
+
+    vector<const CSeq_feat*> cds = context.FeatCDS();
+    vector<const CSeq_feat*> mrnas = context.FeatMRNAs();
+    auto cds_it = cds.begin();
+    while (cds_it != cds.end()) {
+        if (context.IsPseudo(**cds_it)) {
+            cds_it = cds.erase(cds_it);
+            continue;
+        }
+        const CSeq_feat* mrna = 0;
+        if ((*cds_it)->IsSetXref()) {
+            auto rna_it = mrnas.cbegin();
+            while (rna_it != mrnas.end()) {
+                auto& rnaid = (*rna_it)->GetId();
+                if (rnaid.IsLocal()) {
+                    for (auto xref : (*cds_it)->GetXref()) {
+                        auto& id = xref->GetId();
+                        if (id.IsLocal()) {
+                            if (!id.GetLocal().Compare(rnaid.GetLocal())) {
+                                mrna = *rna_it;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (mrna) {
+                    mrnas.erase(rna_it);
+                    break;
+                }
+                ++rna_it;
+            }
+        }
+        if (mrna) {
+            string prod = context.GetProdForFeature(**cds_it);
+            if (!IsProductMatch(prod, mrna->GetData().GetRna().GetRnaProductName())) {
+                m_Objs["[n] coding region[s] [has] mismatching mRNA"].Add(*context.SeqFeatObjRef(**cds_it));
+            }
+            cds_it = cds.erase(cds_it);
+            continue;
+        }
+        ++cds_it;
+    }
+
     for (size_t i = 0; i < cds.size(); i++) {
         if (context.IsPseudo(*cds[i])) {
             continue;
         }
         bool found = false;
-        bool stillbad = false;
         string prod = context.GetProdForFeature(*cds[i]);
         const CSeq_loc& loc_i = cds[i]->GetLocation();
         for (size_t j = 0; j < mrnas.size(); j++) {
@@ -2048,23 +2088,12 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
             if (compare == sequence::eContains || compare == sequence::eSame) {
                 if (IsProductMatch(prod, mrnas[j]->GetData().GetRna().GetRnaProductName())) {
                     found = true;
-                    if (stillbad) {
-                        break;
-                    }
-                }
-                else {
-                    stillbad = true;
-                    if (found) {
-                        break;
-                    }
+                    break;
                 }
             }
         }
         if (!found) {
             m_Objs["[n] coding region[s] [does] not have an mRNA"].Add(*context.SeqFeatObjRef(*cds[i], CDiscrepancyContext::eFixSet));
-        }
-        else if (stillbad) {
-            m_Objs["[n] coding region[s] [has] mismatching mRNA"].Add(*context.SeqFeatObjRef(*cds[i]));
         }
     }
 }
