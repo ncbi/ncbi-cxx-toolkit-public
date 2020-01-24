@@ -1575,6 +1575,7 @@ CFormatGuess::TestFormatTextAsn(
 
     // criteria:
     // at least 80% text-ish,
+    // 1st field of the first non-blank not comment line must start with letter.
     // "::=" as the 2nd field of the first non-blank non comment line.
     //
     double dAlNumFraction = (double)(m_iStatsCountAlNumChars+m_iStatsCountBraces) /
@@ -1594,7 +1595,7 @@ CFormatGuess::TestFormatTextAsn(
         if ( IsAsnComment( Fields  ) ) {
             continue;
         }
-        return ( Fields.size() >= 2 && Fields[1] == "::=" );
+        return ( Fields.size() >= 2 && Fields[1] == "::=" && isalpha(Fields[0][0]));
     }
     return false;
 }
