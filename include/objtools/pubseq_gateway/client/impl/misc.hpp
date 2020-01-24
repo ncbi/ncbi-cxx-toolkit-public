@@ -327,6 +327,20 @@ struct SPSG_ParamValue
         SetDefaultImpl(TParam(), value);
     }
 
+    // Overriding default but only if it's not configured explicitly
+    template <typename T>
+    static void SetImplicitDefault(const T& value)
+    {
+        bool sourcing_complete;
+        typename TParam::EParamSource param_source;
+        TParam::GetDefault();
+        TParam::GetState(&sourcing_complete, &param_source);
+
+        if (sourcing_complete && (param_source == TParam::eSource_Default)) {
+            SetDefault(value);
+        }
+    }
+
 private:
     // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
     // This templated method circumvents that shortcoming.
