@@ -17,5 +17,5 @@ REQUIRES = objects -Cygwin SQLITE3
 CXXFLAGS = $(ORIG_CXXFLAGS)
 # -Wno-parentheses
 
-WATCHERS = sapojnik drozdov
+WATCHERS = sapojnik drozdov foleyjp
 
