@@ -394,7 +394,7 @@ private:
 
 
 //  ===========================================================================
-class CGPipeMessageListener :
+class NCBI_XOBJREAD_EXPORT CGPipeMessageListener :
 //  ===========================================================================
     public CMessageListenerBase 
 {
