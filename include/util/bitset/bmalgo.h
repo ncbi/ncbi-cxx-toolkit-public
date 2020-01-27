@@ -38,6 +38,140 @@ For more information please visit:  http://bitmagic.io
 namespace bm
 {
 
+/*!
+    \brief Computes bitcount of AND operation of two bitsets
+    \param bv1 - Argument bit-vector.
+    \param bv2 - Argument bit-vector.
+    \return bitcount of the result
+    \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type count_and(const BV& bv1, const BV& bv2)
+{
+    return bm::distance_and_operation(bv1, bv2);
+}
+
+/*!
+   \brief Computes if there is any bit in AND operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type any_and(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_AND);
+
+    distance_operation_any(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+
+
+/*!
+   \brief Computes bitcount of XOR operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return bitcount of the result
+   \ingroup  setalgo
+*/
+template<class BV>
+bm::distance_metric_descriptor::size_type
+count_xor(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_XOR);
+
+    distance_operation(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+/*!
+   \brief Computes if there is any bit in XOR operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type any_xor(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_XOR);
+
+    distance_operation_any(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+
+
+/*!
+   \brief Computes bitcount of SUB operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return bitcount of the result
+   \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type count_sub(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
+
+    distance_operation(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+
+/*!
+   \brief Computes if there is any bit in SUB operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type any_sub(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
+
+    distance_operation_any(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+
+/*!
+   \brief Computes bitcount of OR operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return bitcount of the result
+   \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type count_or(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_OR);
+
+    distance_operation(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+/*!
+   \brief Computes if there is any bit in OR operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  setalgo
+*/
+template<class BV>
+typename BV::size_type any_or(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_OR);
+
+    distance_operation_any(bv1, bv2, &dmd, &dmd + 1);
+    return dmd.result;
+}
+
+
+
 #define BM_SCANNER_OP(x) \
     if (0 != (block = blk_blk[j+x])) \
     { \
@@ -165,7 +299,8 @@ void visit_each_bit(const BV&                 bv,
 
     1. Source vector (bv_src) is a subset of index vector (bv_idx)
     2. As a subset it can be collapsed using bit-rank method, where each position
-    in the source vector is defined by population count (range) [0..index_position] (count_range())
+    in the source vector is defined by population count (range)
+    [0..index_position] (count_range())
     As a result all integer set of source vector gets re-mapped in
     accord with the index vector.
  
@@ -190,8 +325,8 @@ public:
     void decompress(BV& bv_target, const BV& bv_idx, const BV& bv_src);
 
     /**
-    Rank compression algorithm based on two palallel iterators/enumerators set of source
-    vector gets re-mapped in accord with the index/rank vector.
+    Rank compression algorithm based on two palallel iterators/enumerators
+    set of source vector gets re-mapped in accord with the index/rank vector.
 
     \param bv_target - target bit-vector
     \param bv_idx    - index (rank) vector used for address recalculation
@@ -253,8 +388,8 @@ void rank_compressor<BV>::compress(BV& bv_target,
             ibuffer[b_size++] = r_idx++;
             if (b_size == n_buffer_cap)
             {
-                bm::combine_or(bv_target, ibuffer+0, ibuffer+b_size);
-                b_size ^= b_size; // = 0
+                bv_target.set(ibuffer, b_size, bm::BM_SORTED);
+                b_size = 0;
             }
             ++en_i; ++en_s;
             continue;
@@ -282,13 +417,12 @@ void rank_compressor<BV>::compress(BV& bv_target,
     
     if (b_size)
     {
-        bm::combine_or(bv_target, ibuffer+0, ibuffer+b_size);
+        bv_target.set(ibuffer, b_size, bm::BM_SORTED);
     }
 
 }
 
 // ------------------------------------------------------------------------
-
 
 template<class BV>
 void rank_compressor<BV>::decompress(BV& bv_target,
@@ -323,8 +457,8 @@ void rank_compressor<BV>::decompress(BV& bv_target,
             ibuffer[b_size++] = i;
             if (b_size == n_buffer_cap)
             {
-                bm::combine_or(bv_target, ibuffer+0, ibuffer+b_size);
-                b_size ^= b_size; // = 0
+                bv_target.set(ibuffer, b_size, bm::BM_SORTED);
+                b_size = 0;
             }
             ++en_i; ++en_s; ++r_idx;
             continue;
@@ -352,8 +486,8 @@ void rank_compressor<BV>::decompress(BV& bv_target,
         ibuffer[b_size++] = new_pos;
         if (b_size == n_buffer_cap)
         {
-            bm::combine_or(bv_target, ibuffer+0, ibuffer+b_size);
-            b_size ^= b_size; // = 0
+            bv_target.set(ibuffer, b_size, bm::BM_SORTED);
+            b_size = 0;
         }
         ++en_i; ++en_s; ++r_idx;
         
@@ -361,7 +495,7 @@ void rank_compressor<BV>::decompress(BV& bv_target,
     
     if (b_size)
     {
-        bm::combine_or(bv_target, ibuffer+0, ibuffer+b_size);
+        bv_target.set(ibuffer, b_size, bm::BM_SORTED);
     }
 }
 

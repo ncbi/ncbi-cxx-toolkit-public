@@ -18,6 +18,9 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+#include <stddef.h>
+#include <type_traits>
+
 #include "bmdef.h"
 
 namespace bm
@@ -295,7 +298,7 @@ private:
     Simple heap allocated vector based on bvector allocator
     @internal
 */
-template<typename Val, typename BVAlloc>
+template<typename Val, typename BVAlloc, bool trivial_type>
 class heap_vector
 {
 public:
@@ -306,9 +309,10 @@ public:
 
     heap_vector()
         : buffer_()    
-    {}
+    {
+    }
 
-    heap_vector(const heap_vector<Val, BVAlloc>& hv)
+    heap_vector(const heap_vector<Val, BVAlloc, trivial_type>& hv)
         : buffer_()
     {
         size_type v_size = value_size();
@@ -322,7 +326,7 @@ public:
         }
     }
 
-    heap_vector& operator=(const heap_vector<Val, BVAlloc>& hv)
+    heap_vector& operator=(const heap_vector<Val, BVAlloc, trivial_type>& hv)
     {
         if (this == &hv)
             return *this;
@@ -342,24 +346,27 @@ public:
    
     ~heap_vector()
     {
-        size_type sz = size();
-        size_type v_size = value_size();
-        unsigned char* this_data = buffer_.data();
-        for (size_type i = 0; i < sz; ++i) 
+        if (!trivial_type)
         {
-            unsigned char *p = this_data + (i * v_size);
-            reinterpret_cast<value_type*>(p)->~Val();
+            size_type sz = size();
+            size_type v_size = value_size();
+            unsigned char* this_data = buffer_.data();
+            for (size_type i = 0; i < sz; ++i)
+            {
+                unsigned char *p = this_data + (i * v_size);
+                reinterpret_cast<value_type*>(p)->~Val();
+            }
         }
     }
     
     value_type* data() { return (value_type*) buffer_.data(); }
 
-    void swap(heap_vector<Val, BVAlloc>& other) BMNOEXEPT
+    void swap(heap_vector<Val, BVAlloc, trivial_type>& other) BMNOEXEPT
     {
         buffer_.swap(other.buffer_);
     }
 
-    const value_type& operator[](std::size_t pos) const
+    const value_type& operator[](size_type pos) const
     {
         BM_ASSERT(pos < size());
         size_type v_size = value_size();
@@ -367,7 +374,7 @@ public:
         return *reinterpret_cast<const value_type*>(p);
     }
 
-    value_type& operator[](std::size_t pos)
+    value_type& operator[](size_type pos)
     {
         BM_ASSERT(pos < size());
         size_type v_size = value_size();
@@ -375,7 +382,7 @@ public:
         return *reinterpret_cast<value_type*>(p);
     }
 
-    value_type& at(std::size_t pos)
+    value_type& at(size_type pos)
     {
         size_type sz = size();
         if (pos >= sz)
@@ -415,6 +422,12 @@ public:
         buffer_.reserve(new_size * v_size);
     }
 
+    /**
+        @brief vector resize
+        @param new_size - new number of elements
+        @param init_destroy_values - need to init or destroy values 
+           false - skip construction/destruction
+    */
     void resize(size_type new_size)
     {
         size_type sz = size();
@@ -423,22 +436,28 @@ public:
             return;
         if (new_size < sz) // shrink
         {
-            unsigned char* this_data = buffer_.data();
-            for (size_type i = new_size; i < sz; ++i)
+            if (!trivial_type)
             {
-                unsigned char *p = this_data + (i * v_size);
-                reinterpret_cast<value_type*>(p)->~Val();
+                unsigned char* this_data = buffer_.data();
+                for (size_type i = new_size; i < sz; ++i)
+                {
+                    unsigned char *p = this_data + (i * v_size);
+                    reinterpret_cast<value_type*>(p)->~Val();
+                }
             }
             buffer_.resize(new_size * v_size);
         }
         else
         {
             buffer_.resize(new_size * v_size);
-            unsigned char* this_data = buffer_.data();
-            for (size_type i = sz; i < new_size; ++i)
+            if (!trivial_type)
             {
-                unsigned char *p = this_data + (i * v_size);
-                new(p) value_type();
+                unsigned char* this_data = buffer_.data();
+                for (size_type i = sz; i < new_size; ++i)
+                {
+                    unsigned char *p = this_data + (i * v_size);
+                    new(p) value_type();
+                }
             }
         }
     }
@@ -484,6 +503,7 @@ protected:
     #ifndef BM_NO_STL
         throw std::range_error(err_msg);
     #else
+        (void) err_msg;
         BM_ASSERT_THROW(false, BM_ERR_RANGE);
     #endif
     }
@@ -550,7 +570,7 @@ public:
         return buffer_.size();
     }
 
-    value_type get(size_t row_idx, size_t col_idx) const
+    value_type get(size_type row_idx, size_type col_idx) const
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(col_idx < COLS);
@@ -559,7 +579,7 @@ public:
         return ((const value_type*)buf)[col_idx];
     }
 
-    const value_type* row(size_t row_idx) const
+    const value_type* row(size_type row_idx) const
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(buffer_.size());
@@ -567,7 +587,7 @@ public:
         return (const value_type*) buf;
     }
 
-    value_type* row(size_t row_idx)
+    value_type* row(size_type row_idx)
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(buffer_.size());

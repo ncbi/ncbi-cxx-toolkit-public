@@ -2262,9 +2262,9 @@ void SparseVectorAccessTest()
     FillSparseIntervals(sv1);
     BM_DECLARE_TEMP_BLOCK(tb)
     sv1.optimize(tb);
-    target.resize(250000000);
-    target1.resize(250000000);
-    target2.resize(250000000);
+    target.resize(150000000);
+    target1.resize(150000000);
+    target2.resize(150000000);
 
     {
         TimeTaker tt("sparse_vector random element assignment test", REPEATS/10 );
@@ -2291,7 +2291,7 @@ void SparseVectorAccessTest()
             }
         }
     }
-    
+
     // check just in case
     //
     if (!sv2.equal(sv3))
@@ -2316,12 +2316,11 @@ void SparseVectorAccessTest()
         exit(1);
     }
 
-    
 
     unsigned long long cnt = 0;
     
     unsigned gather_from = 256000;
-    unsigned gather_to = 190000000/2;
+    unsigned gather_to = 19000000/2;
     std::vector<unsigned> idx;
     for (unsigned j = gather_from; j < gather_to; ++j)
     {
@@ -2349,7 +2348,7 @@ void SparseVectorAccessTest()
             sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
         }
     }
-
+/*
 
     {
         TimeTaker tt("sparse_vector extract test", REPEATS );
@@ -2357,27 +2356,29 @@ void SparseVectorAccessTest()
         {
             unsigned target_off = gather_to - gather_from;
             sv1.extract(&target1[0], sv1.size());
-            sv1.extract(&target[0], 256000, target_off);
+            //sv1.extract(&target[0], 256000, target_off);
         }
     }
-
+*/
     {
         TimeTaker tt("sparse_vector const_iterator test", REPEATS );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             auto it = sv1.begin();
             auto it_end = sv1.end();
-            for (unsigned k = 0; it != it_end; ++it, ++k)
+            auto sz = target2.size();
+            for (unsigned k = 0; it != it_end && k < sz; ++it, ++k)
             {
                 auto v = *it;
                 target2[k] = v;
             }
         }
     }
-
+/*
     // check just in case
     //
-    for (unsigned j = 0; j < target2.size(); ++j)
+    size_t sz = min(target1.size(), target2.size());
+    for (unsigned j = 0; j < sz; ++j)
     {
         if (target1[j] != target2[j])
         {
@@ -2388,11 +2389,11 @@ void SparseVectorAccessTest()
             exit(1);
         }
     }
-
+*/
     
     char buf[256];
     sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
-    
+
 }
 
 static
@@ -2851,6 +2852,32 @@ void RankCompressionTest()
 }
 
 static
+void generate_serialization_test_set(sparse_vector_u32&   sv,
+                                     unsigned vector_max = BSIZE)
+{
+    sparse_vector_u32::back_insert_iterator bi(sv.get_back_inserter());
+
+    unsigned v = 0;
+    for (unsigned i = 0; i < vector_max; ++i)
+    {
+        unsigned plato = rand() % 16;
+        for (unsigned j = 0; i < vector_max && j < plato; ++i, ++j)
+        {
+            *bi = v;
+        } // for j
+        if (++v > 100000)
+            v = 0;
+        unsigned nulls = rand() % 16;
+        if (nulls)
+            bi.add_null(nulls);
+        i += nulls;
+    } // for i
+
+    sv.optimize();
+}
+
+
+static
 void generate_scanner_test_set(std::vector<unsigned>& vect,
                                bvect&               bv_null,
                                sparse_vector_u32&   sv,
@@ -2967,6 +2994,177 @@ void SparseVectorScannerTest()
         exit(1);
     }
 }
+
+
+static
+void SparseVectorSerializationTest()
+{
+    const unsigned char* buf;
+    bool eq;
+    size_t sz1, sz2;
+
+    sparse_vector_u32 sv1(bm::use_null);
+    sparse_vector_u32 sv2(bm::use_null);
+    sparse_vector_u32 sv3(bm::use_null);
+
+    generate_serialization_test_set(sv1, BSIZE);
+
+    bm::sparse_vector_serial_layout<sparse_vector_u32> sv_lay;
+
+    bm::sparse_vector_serializer<sparse_vector_u32> sv_serializer;
+    bm::sparse_vector_deserializer<sparse_vector_u32> sv_deserial;
+
+
+    {
+        {
+            TimeTaker tt("bm::sparse_vector<> serialization XOR disabled ", 1);
+
+            sv_serializer.set_xor_ref(false); // disable XOR compression
+            sv_serializer.serialize(sv1, sv_lay);
+        }
+
+        buf = sv_lay.buf();
+        sz1 = sv_lay.size();
+
+        sv_deserial.deserialize(sv2, buf);
+
+        eq = sv1.equal(sv2);
+        if (!eq)
+        {
+            cerr << "Error: SparseVectorSerializationTest() integrity failure! (1)" << endl;
+            sparse_vector_u32::size_type pos;
+
+            bool f = bm::sparse_vector_find_first_mismatch(sv1, sv2, pos);
+            assert(f);
+            cerr << "Mismatch at: " << pos << endl;
+
+            sv_deserial.deserialize(sv2, buf);
+
+            exit(1);
+        }
+        sv2.resize(0);
+    }
+
+    {
+        TimeTaker tt("bm::sparse_vector<> serialization XOR enabled ", 1);
+        sv_serializer.set_xor_ref(true); // enable XOR compression
+        sv_serializer.serialize(sv1, sv_lay);
+    }
+
+    buf = sv_lay.buf();
+    sz2 = sv_lay.size();
+    sv_deserial.deserialize(sv3, buf);
+    eq = sv1.equal(sv3);
+    if (!eq)
+    {
+        cerr << "Error: SparseVectorSerializationTest() integrity failure! (2)" << endl;
+        sparse_vector_u32::size_type pos;
+        bool f = bm::sparse_vector_find_first_mismatch(sv1, sv3, pos);
+        assert(f);
+        cerr << "Mismatch at: " << pos << endl;
+
+        sv_deserial.deserialize(sv3, buf);
+
+        exit(1);
+    }
+
+    if (sz2 >= sz1)
+    {
+        cerr << "XOR negative compression!" << endl;
+        assert(0);
+    }
+    else
+    {
+        cout << "sz1 = " << sz1 << " gain=" << (sz1 - sz2) << endl;
+    }
+
+}
+
+static
+void SparseVectorRangeDeserializationTest()
+{
+    std::vector<unsigned> vect;
+    bvect bv_null;
+    sparse_vector_u32 sv1(bm::use_null);
+    sparse_vector_u32 sv2(bm::use_null);
+
+    generate_scanner_test_set(vect, bv_null, sv1, BSIZE);
+
+    bm::sparse_vector_deserializer<sparse_vector_u32> sv_deserial;
+    bm::sparse_vector_serializer<sparse_vector_u32> sv_serializer;
+    sv_serializer.set_bookmarks(false);
+
+    bm::sparse_vector_serial_layout<sparse_vector_u32> sv_lay;
+    const unsigned char* buf;
+
+    sv_serializer.serialize(sv1, sv_lay);
+
+    buf = sv_lay.buf();
+    
+    {
+        TimeTaker tt("bm::sparse_vector<> Range Deserialization() - NO bookmarks ", 1);
+        for (unsigned i = 0; i < 15; ++i)
+        {
+            sv_deserial.deserialize(sv2, buf, 0, 65536 * 2);
+            sv_deserial.deserialize(sv2, buf, BSIZE / 4, BSIZE / 2);
+            sv_deserial.deserialize(sv2, buf, BSIZE / 2, (65536 * 2) + (BSIZE / 2));
+        }
+    }
+
+    assert(sv1.size() == sv2.size());
+    // validation
+    {
+        sparse_vector_u32::size_type to = (65536 * 2) + (BSIZE / 2);
+        for (sparse_vector_u32::size_type from = BSIZE / 2; from <= to; ++from)
+        {
+            auto v1 = sv1[from];
+            auto v2 = sv2[from];
+            if (v1 != v2)
+            {
+                cerr << "Range extraction failed!" << endl;
+                exit(1);
+            }
+        }
+    }
+
+
+    // book-mark enabled serialization
+    //
+    sv_serializer.set_bookmarks(true, 64);
+    sv_serializer.serialize(sv1, sv_lay);
+
+    buf = sv_lay.buf();
+
+    {
+        TimeTaker tt("bm::sparse_vector<> Range Deserialization() - WITH bookmarks ", 1);
+        for (unsigned i = 0; i < 15; ++i)
+        {
+            sv_deserial.deserialize_range(sv2, buf, 0, 65536 * 2);
+            sv_deserial.deserialize_range(sv2, buf, BSIZE / 4, BSIZE / 2);
+            sv_deserial.deserialize_range(sv2, buf, BSIZE / 2, (65536 * 2) + (BSIZE / 2));
+        }
+    }
+
+    // validation
+    //
+    {
+        sparse_vector_u32::size_type to = (65536 * 2) + (BSIZE / 2);
+        for (sparse_vector_u32::size_type from = BSIZE / 2; from <= to; ++from)
+        {
+            auto v1 = sv1[from];
+            auto v2 = sv2[from];
+            if (v1 != v2)
+            {
+                cerr << "Bookmark Range extraction failed!" << endl;
+                exit(1);
+            }
+        }
+    }
+
+}
+
+
+
 
 typedef bm::str_sparse_vector<char, bvect, 32> str_svect_type;
 
@@ -3121,6 +3319,10 @@ int main(void)
     SparseVectorAccessTest();
 
     SparseVectorScannerTest();
+
+    SparseVectorSerializationTest();
+
+    SparseVectorRangeDeserializationTest();
 
     RankCompressionTest();
 

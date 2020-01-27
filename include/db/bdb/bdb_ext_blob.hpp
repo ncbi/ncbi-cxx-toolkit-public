@@ -582,10 +582,9 @@ void CBDB_ExtBlobStore<TBV>::Open(const string&             storage_name,
 
     EBDB_ErrCode ret = m_BlobAttrDB->ReadRealloc(m_CompressBuffer);
     if (ret == eBDB_Ok) {
-        bm::operation_deserializer<TBitVector>::deserialize(m_BlobIds,
-                                            m_CompressBuffer.data(),
-                                            m_STmpBlock,
-                                            bm::set_ASSIGN);
+        bm::operation_deserializer<TBitVector> od;
+        od.deserialize(m_BlobIds, m_CompressBuffer.data(), m_STmpBlock,
+                       bm::set_ASSIGN);
 
     } else {
         m_BlobIds.clear();

@@ -240,7 +240,7 @@ public:
         access assignment.
      
         Limitations for buffered inserter:
-        1. Do not use more than one inserter (into one vector) at the same time
+        1. Do not use more than one inserter per vector at a time
         2. Use method flush() at the end to send the rest of accumulated buffer
         flush is happening automatically on destruction, but if flush produces an
         exception (for whatever reason) it will be an exception in destructor.
@@ -275,7 +275,7 @@ public:
         back_insert_iterator& operator=(const back_insert_iterator& bi)
         {
             BM_ASSERT(bi.empty());
-            this->flush(); sv_ = bi.sv_;
+            this->flush(); sv_ = bi.sv_; bv_null_ = bi. bv_null_;
             return *this;
         }
 
@@ -304,15 +304,32 @@ public:
         
         /** flush the accumulated buffer */
         void flush();
-    protected:
-    
+        
+        // ---------------------------------------------------------------
+        // open internals
+        // (TODO: create proper friend declarations)
+        //
+        /**
+            Get access to not-null vector
+            @internal
+        */
+        bvector_type* get_null_bvect() const { return bv_null_; }
+        
         /** add value to the buffer without changing the NULL vector
             @param v - value to push back
             @return index of added value in the internal buffer
             @internal
         */
-        size_type add_value(value_type v);
+        size_type add_value_no_null(value_type v);
         
+        /**
+            Reconf back inserter not to touch the NULL vector
+        */
+        void disable_set_null() { set_not_null_ = false; }
+        // ---------------------------------------------------------------
+        
+    protected:
+        typedef typename bvector_type::block_idx_type     block_idx_type;
     private:
         enum buf_size_e
         {
@@ -324,6 +341,8 @@ public:
         bvector_type*               bv_null_; ///!< not NULL vector pointer
         buffer_type                 buffer_;  ///!< value buffer
         value_type*                 buf_ptr_; ///!< position in the buffer
+        block_idx_type              prev_nb_; ///!< previous block added
+        bool                        set_not_null_;
     };
     
     friend const_iterator;
@@ -510,15 +529,22 @@ public:
         \param arr  - source array
         \param arr_size - source size
         \param offset - target index in the sparse vector
+        \param set_not_null - import should register in not null vector
     */
-    void import(const value_type* arr, size_type arr_size, size_type offset = 0);
+    void import(const value_type* arr,
+                size_type arr_size,
+                size_type offset = 0,
+                bool      set_not_null = true);
     
     /*!
         \brief Import list of elements from a C-style array (pushed back)
         \param arr  - source array
-        \param srr_size - source size
+        \param arr_size - source array size
+        \param set_not_null - import should register in not null vector
     */
-    void import_back(const value_type* arr, size_type arr_size);
+    void import_back(const value_type* arr,
+                     size_type         arr_size,
+                     bool              set_not_null = true);
     ///@}
 
     // ------------------------------------------------------------
@@ -638,6 +664,7 @@ public:
     */
     bool equal(const sparse_vector<Val, BV>& sv,
                bm::null_support null_able = bm::use_null) const;
+
     ///@}
 
     // ------------------------------------------------------------
@@ -725,9 +752,12 @@ public:
         \param sv - source vector
         \param left  - index from in losed diapason of [left..right]
         \param right - index to in losed diapason of [left..right]
+        \param splice_null - "use_null" copy range for NULL vector or
+                             do not copy it
     */
     void copy_range(const sparse_vector<Val, BV>& sv,
-                    size_type left, size_type right);
+                    size_type left, size_type right,
+                    bm::null_support splice_null = bm::use_null);
     
     /**
         @brief Apply value filter, defined by mask vector
@@ -758,8 +788,8 @@ public:
         \param size - dest size
         \param offset - target index in the sparse vector to export from
         \param zero_mem - set to false if target array is pre-initialized
-                          with 0s to avoid performance penalty
-     
+                          with 0s to avoid performance penalty   
+        \param pool_ptr - optional pointer to block allocation pool
         \return number of exported elements
      
         \sa decode
@@ -864,6 +894,12 @@ protected:
     unsigned char* init_remap_buffer() { return 0; }
     void set_remap() { }
 
+    bool resolve_range(size_type from, size_type to,
+                       size_type* idx_from, size_type* idx_to) const
+    {
+        *idx_from = from; *idx_to = to; return true;
+    }
+
 protected:
     template<class V, class SV> friend class rsc_sparse_vector;
     template<class SVect> friend class sparse_vector_scanner;
@@ -952,7 +988,8 @@ void sparse_vector<Val, BV>::set_null(size_type idx)
 template<class Val, class BV>
 void sparse_vector<Val, BV>::import(const value_type* arr,
                                     size_type         arr_size,
-                                    size_type         offset)
+                                    size_type         offset,
+                                    bool              set_not_null)
 {
     unsigned char b_list[sizeof(Val)*8];
     unsigned row_len[sizeof(Val)*8] = {0, };
@@ -1016,10 +1053,11 @@ void sparse_vector<Val, BV>::import(const value_type* arr,
     if (i + offset > this->size_)
         this->size_ = i + offset;
     
-    bvector_type* bv_null = this->get_null_bvect();
-    if (bv_null) // configured to support NULL assignments
+    if (set_not_null)
     {
-        bv_null->set_range(offset, offset + arr_size - 1);
+        bvector_type* bv_null = this->get_null_bvect();
+        if (bv_null) // configured to support NULL assignments
+            bv_null->set_range(offset, offset + arr_size - 1);
     }
 }
 
@@ -1027,9 +1065,10 @@ void sparse_vector<Val, BV>::import(const value_type* arr,
 
 template<class Val, class BV>
 void sparse_vector<Val, BV>::import_back(const value_type* arr,
-                                         size_type         arr_size)
+                                         size_type         arr_size,
+                                         bool              set_not_null)
 {
-    this->import(arr, arr_size, this->size());
+    this->import(arr, arr_size, this->size(), set_not_null);
 }
 
 //---------------------------------------------------------------------
@@ -1620,7 +1659,8 @@ void sparse_vector<Val, BV>::set_value_no_null(size_type idx, value_type v)
             if (bv)
                 bv->clear_bit_no_check(idx);
         }
-    }
+    } // for i
+
     if (v)
     {
         value_type mask = 1u;
@@ -1641,7 +1681,7 @@ void sparse_vector<Val, BV>::set_value_no_null(size_type idx, value_type v)
                 }
             }
             mask <<=  1;
-        }
+        } // for j
     }
 }
 
@@ -1830,34 +1870,13 @@ sparse_vector<Val, BV>::merge(sparse_vector<Val, BV>& sv)
 template<class Val, class BV>
 void sparse_vector<Val, BV>::copy_range(const sparse_vector<Val, BV>& sv,
                                         typename sparse_vector<Val, BV>::size_type left,
-                                        typename sparse_vector<Val, BV>::size_type right)
+                                        typename sparse_vector<Val, BV>::size_type right,
+                                        bm::null_support splice_null)
 {
     if (left > right)
         bm::xor_swap(left, right);
-    
-    bvector_type* bv_null = this->get_null_bvect();
-    unsigned plains;
-    if (bv_null)
-    {
-        plains = this->stored_plains();
-        const bvector_type* bv_null_arg = sv.get_null_bvector();
-        if (bv_null_arg)
-            bv_null->copy_range(*bv_null_arg, left, right);
-    }
-    else
-        plains = this->plains();
-    
-    for (unsigned j = 0; j < plains; ++j)
-    {
-        const bvector_type* arg_bv = sv.bmatr_.row(j);
-        if (arg_bv)
-        {
-            bvector_type* bv = this->bmatr_.get_row(j);
-            if (!bv)
-                bv = this->get_plain(j);
-            bv->copy_range(*arg_bv, left, right);
-        }
-    } // for j
+    //this->clear();
+    this->copy_range_plains(sv, left, right, splice_null);
     this->resize(sv.size());
 }
 //---------------------------------------------------------------------
@@ -2057,7 +2076,7 @@ bool sparse_vector<Val, BV>::const_iterator::is_null() const
 
 template<class Val, class BV>
 sparse_vector<Val, BV>::back_insert_iterator::back_insert_iterator()
-: sv_(0), bv_null_(0), buf_ptr_(0)
+: sv_(0), bv_null_(0), buf_ptr_(0), prev_nb_(0), set_not_null_(true)
 {}
 
 //---------------------------------------------------------------------
@@ -2065,9 +2084,17 @@ sparse_vector<Val, BV>::back_insert_iterator::back_insert_iterator()
 template<class Val, class BV>
 sparse_vector<Val, BV>::back_insert_iterator::back_insert_iterator(
    typename sparse_vector<Val, BV>::back_insert_iterator::sparse_vector_type* sv)
-: sv_(sv), buf_ptr_(0)
+: sv_(sv), buf_ptr_(0), set_not_null_(true)
 {
-    bv_null_ = sv_? sv_->get_null_bvect() : 0;
+    if (sv)
+    {
+        prev_nb_ = sv_->size() >> bm::set_block_shift;
+        bv_null_ = sv_->get_null_bvect();
+    }
+    else
+    {
+        bv_null_ = 0; prev_nb_ = 0;
+    }
 }
 
 //---------------------------------------------------------------------
@@ -2075,7 +2102,8 @@ sparse_vector<Val, BV>::back_insert_iterator::back_insert_iterator(
 template<class Val, class BV>
 sparse_vector<Val, BV>::back_insert_iterator::back_insert_iterator(
     const typename sparse_vector<Val, BV>::back_insert_iterator& bi)
-: sv_(bi.sv_), bv_null_(bi.bv_null_), buf_ptr_(0)
+: sv_(bi.sv_), bv_null_(bi.bv_null_), buf_ptr_(0), prev_nb_(bi.prev_nb_),
+  set_not_null_(bi.set_not_null_)
 {
     BM_ASSERT(bi.empty());
 }
@@ -2094,7 +2122,7 @@ template<class Val, class BV>
 void sparse_vector<Val, BV>::back_insert_iterator::add(
          typename sparse_vector<Val, BV>::back_insert_iterator::value_type v)
 {
-    size_type buf_idx = this->add_value(v);
+    size_type buf_idx = this->add_value_no_null(v);
     if (bv_null_)
     {
         typename sparse_vector<Val, BV>::size_type sz = sv_->size();
@@ -2106,7 +2134,7 @@ void sparse_vector<Val, BV>::back_insert_iterator::add(
 
 template<class Val, class BV>
 typename sparse_vector<Val, BV>::size_type
-sparse_vector<Val, BV>::back_insert_iterator::add_value(
+sparse_vector<Val, BV>::back_insert_iterator::add_value_no_null(
          typename sparse_vector<Val, BV>::back_insert_iterator::value_type v)
 {
     BM_ASSERT(sv_);
@@ -2135,7 +2163,8 @@ sparse_vector<Val, BV>::back_insert_iterator::add_value(
 template<class Val, class BV>
 void sparse_vector<Val, BV>::back_insert_iterator::add_null()
 {
-    this->add(value_type(0));
+    BM_ASSERT(bv_null_);
+    this->add_value_no_null(value_type(0));
 }
 
 //---------------------------------------------------------------------
@@ -2147,7 +2176,7 @@ void sparse_vector<Val, BV>::back_insert_iterator::add_null(
     if (count < 32)
     {
         for (size_type i = 0; i < count; ++i)
-            this->add(value_type(0));
+            this->add_value_no_null(value_type(0));
     }
     else
     {
@@ -2172,8 +2201,15 @@ void sparse_vector<Val, BV>::back_insert_iterator::flush()
     if (this->empty())
         return;
     value_type* d = (value_type*)buffer_.data();
-    sv_->import_back(d, size_type(buf_ptr_ - d));
+    sv_->import_back(d, size_type(buf_ptr_ - d), false); //!set_not_null_);
     buf_ptr_ = 0;
+    block_idx_type nb = sv_->size() >> bm::set_block_shift;
+    if (nb != prev_nb_)
+    {
+        // optimize all previous blocks in all planes
+        sv_->optimize_block(prev_nb_);
+        prev_nb_ = nb;
+    }
 }
 
 //---------------------------------------------------------------------

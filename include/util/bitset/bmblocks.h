@@ -446,6 +446,7 @@ public:
     }
     */
 
+
     /**
         \brief Finds block in 2-level blocks array  
         Specilized version of get_block(unsigned), returns an additional
@@ -480,16 +481,6 @@ public:
         return ret;
     }
 
-    /** 
-    Recalculate absolute block address into coordinates
-    */
-    static
-    BMFORCEINLINE
-    void get_block_coord(block_idx_type nb, unsigned& i, unsigned& j)
-    {
-        i = unsigned(nb >> bm::set_array_shift); // top block address
-        j = unsigned(nb &  bm::set_array_mask);  // address in sub-block
-    }
 
     /**
     Find the next non-zero block starting from nb
@@ -706,9 +697,18 @@ public:
         
         unsigned i, j, i_from, j_from, i_to, j_to;
         get_block_coord(nb, i_from, j_from);
+
+        if (i_from >= top_block_size_) // nothing to do
+            return;
+
         get_block_coord(nb_to, i_to, j_to);
-        
-        reserve_top_blocks(i_to+1); // TODO: why do it if it is zero anyway?        
+
+        if (i_to >= top_block_size_)
+        {
+            i_to = top_block_size_-1;
+            j_to = bm::set_sub_array_size;
+        }
+                
         bm::word_t*** blk_root = top_blocks_root();
         
         if (i_from == i_to)  // same subblock
@@ -716,8 +716,9 @@ public:
             bm::word_t** blk_blk = blk_root[i_from];
             if (blk_blk)
             {
+                j_to -= (j_to == bm::set_sub_array_size);
                 for (j = j_from; j <= j_to; ++j)
-                    zero_block(i_from, j);
+                    zero_block(i_from, j); // TODO: optimization (lots of ifs in this loop)
             }
             return;
         }
@@ -742,11 +743,13 @@ public:
             --i_to; // safe because (i_from == i_to) case is covered
         }
         // process all full sub-lanes
-        //
+        // TODO: loop unroll /SIMD
         for (i = i_from; i <= i_to; ++i)
         {
             bm::word_t** blk_blk = blk_root[i];
-            if (!blk_blk || blk_blk == (bm::word_t**)FULL_BLOCK_FAKE_ADDR)
+            if (!blk_blk)
+                continue;
+            if (blk_blk == (bm::word_t**)FULL_BLOCK_FAKE_ADDR)
             {
                 blk_root[i] = 0;
                 continue;
@@ -1047,7 +1050,7 @@ public:
                                      bool     allow_null_ret=true)
     {
         unsigned i, j;
-        this->get_block_coord(nb, i, j);
+        bm::get_block_coord(nb, i, j);
         bm::word_t*  block = this->get_block_ptr(i, j);
 
         if (!IS_VALID_ADDR(block)) // NULL block or ALLSET
@@ -1091,7 +1094,7 @@ public:
     bm::word_t* check_allocate_block(block_idx_type nb, int initial_block_type)
     {
         unsigned i, j;
-        this->get_block_coord(nb, i, j);
+        bm::get_block_coord(nb, i, j);
         bm::word_t* block = this->get_block_ptr(i, j);
 
         if (!IS_VALID_ADDR(block)) // NULL block or ALLSET
@@ -1374,7 +1377,17 @@ public:
         // non-compressable bit-block
         copy_bit_block(i, j, src_block);
     }
-    
+
+    /**
+        Optimize bit-block
+    */
+    void optimize_bit_block(block_idx_type nb)
+    {
+        unsigned i, j;
+        bm::get_block_coord(nb, i, j);
+        optimize_bit_block(i, j);
+    }
+
     /**
         Optimize bit-block at i-j position
     */
@@ -1513,7 +1526,7 @@ public:
             gap_word_t* gap_block = BMGAP_PTR(block);
             
             bm::word_t* new_block = alloc_.alloc_bit_block();
-            gap_convert_to_bitset(new_block, gap_block);
+            bm::gap_convert_to_bitset(new_block, gap_block);
             alloc_.free_gap_block(gap_block, this->glen());
             
             set_block_ptr(nb, new_block);
@@ -1784,7 +1797,7 @@ public:
     */
     unsigned reserve_top_blocks(unsigned top_blocks)
     {
-        if (top_blocks_ && top_blocks <= top_block_size_)
+        if ((top_blocks_ && top_blocks <= top_block_size_) || !top_blocks )
             return top_block_size_; // nothing to do
         
         bm::word_t*** new_blocks = 
@@ -1793,8 +1806,16 @@ public:
         unsigned i = 0;
         if (top_blocks_)
         {
+            if (i < top_block_size_)
+            {
+                ::memcpy(&new_blocks[0], &top_blocks_[0],
+                            top_block_size_ * sizeof(top_blocks_[0]));
+                i = top_block_size_;
+            }
+            /*
             for (; i < top_block_size_; ++i)
                 new_blocks[i] = top_blocks_[i];
+            */
             alloc_.free_ptr(top_blocks_, top_block_size_);
         }
         if (i < top_blocks)
@@ -2057,6 +2078,7 @@ public:
         return s_size;
     }
 
+
     // ----------------------------------------------------------------
     
     void optimize_tree(bm::word_t*  temp_block, int opt_mode,
@@ -2228,14 +2250,20 @@ private:
               block_idx_type block_from = 0,
               block_idx_type block_to = bm::set_total_blocks)
     {
-        unsigned arg_top_blocks = blockman.top_block_size();
-        this->reserve_top_blocks(arg_top_blocks);
-        
-        bm::word_t*** blk_root = top_blocks_root();
         bm::word_t*** blk_root_arg = blockman.top_blocks_root();
-        
         if (!blk_root_arg)
             return;
+
+        unsigned arg_top_blocks = blockman.top_block_size();
+        {
+            block_idx_type need_top_blocks = 1 + (block_to / 256);
+            if (need_top_blocks < arg_top_blocks)
+                arg_top_blocks = unsigned(need_top_blocks);
+        }
+
+        this->reserve_top_blocks(arg_top_blocks);
+        bm::word_t*** blk_root = top_blocks_root();
+
         
         unsigned i_from, j_from, i_to, j_to;
         get_block_coord(block_from, i_from, j_from);

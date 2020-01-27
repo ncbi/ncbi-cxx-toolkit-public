@@ -59,6 +59,7 @@ struct bv_statistics
     size_t bv_count;          ///< Number of bit-vectors
     size_t  max_serialize_mem; ///< estimated maximum memory for serialization
     size_t  memory_used; ///< memory usage for all blocks and service tables
+    size_t  gap_cap_overhead; ///< gap memory overhead between length and capacity
     gap_word_t  gap_levels[bm::gap_levels]; ///< GAP block lengths in the bvect
     unsigned long long gaps_by_level[bm::gap_levels]; ///< number of GAP blocks at each level
 
@@ -78,6 +79,8 @@ struct bv_statistics
         size_t mem_used = (capacity * sizeof(gap_word_t));
         memory_used += mem_used;
         max_serialize_mem += (unsigned)(length * sizeof(gap_word_t));
+        BM_ASSERT(length <= capacity);
+        gap_cap_overhead += (capacity - length) * sizeof(gap_word_t);
         for (unsigned i = 0; i < bm::gap_levels; ++i)
         {
             if (capacity == gap_levels[i])
@@ -93,7 +96,7 @@ struct bv_statistics
     void reset()
     {
         bit_blocks = gap_blocks = ptr_sub_blocks = bv_count = 0;
-        max_serialize_mem = memory_used = 0;
+        max_serialize_mem = memory_used = gap_cap_overhead = 0;
         for (unsigned i = 0; i < bm::gap_levels; ++i)
             gaps_by_level[i] = 0ull;
     }
@@ -106,6 +109,7 @@ struct bv_statistics
         bv_count += st.bv_count;
         max_serialize_mem += st.max_serialize_mem + 8;
         memory_used += st.memory_used;
+        gap_cap_overhead += st.gap_cap_overhead;
     }
 };
 
@@ -131,6 +135,17 @@ struct  bit_decode_cache
     bit_decode_cache() : bcnt(0), cvalue(0) {}
 };
 
+
+/**
+    \brief Recalc linear bvector block index into 2D matrix coordinates
+    \internal
+*/
+template<typename BI_TYPE>
+void get_block_coord(BI_TYPE nb, unsigned& i, unsigned& j)
+{
+    i = unsigned(nb >> bm::set_array_shift); // top block address
+    j = unsigned(nb &  bm::set_array_mask);  // address in sub-block
+}
 
 /**
     \brief ad-hoc conditional expressions 
@@ -175,13 +190,18 @@ unsigned bit_scan_reverse(T value)
     
     if (bm::conditional<sizeof(T)==8>::test())
     {
+    #if defined(BM_USE_GCC_BUILD)
+        return (unsigned) (63 - __builtin_clzll(value));
+    #else
         bm::id64_t v8 = value;
         v8 >>= 32;
         unsigned v = (unsigned)v8;
         if (v)
         {
-            return bit_scan_reverse32(v) + 32;
+            v = bm::bit_scan_reverse32(v);
+            return v + 32;
         }
+    #endif
     }
     return bit_scan_reverse32((unsigned)value);
 }
@@ -197,11 +217,15 @@ bm::id_t word_bitcount(bm::id_t w)
 #if defined(BMSSE42OPT) || defined(BMAVX2OPT)
     return bm::id_t(_mm_popcnt_u32(w));
 #else
+    #if defined(BM_USE_GCC_BUILD)
+        return (bm::id_t)__builtin_popcount(w);
+    #else
     return
-    bm::bit_count_table<true>::_count[(unsigned char)(w)] + 
-    bm::bit_count_table<true>::_count[(unsigned char)((w) >> 8)] + 
-    bm::bit_count_table<true>::_count[(unsigned char)((w) >> 16)] + 
-    bm::bit_count_table<true>::_count[(unsigned char)((w) >> 24)];
+        bm::bit_count_table<true>::_count[(unsigned char)(w)] +
+        bm::bit_count_table<true>::_count[(unsigned char)((w) >> 8)] +
+        bm::bit_count_table<true>::_count[(unsigned char)((w) >> 16)] +
+        bm::bit_count_table<true>::_count[(unsigned char)((w) >> 24)];
+    #endif
 #endif
 }
 
@@ -230,13 +254,17 @@ unsigned word_bitcount64(bm::id64_t x)
     return _mm_popcnt_u32(x >> 32) + _mm_popcnt_u32((unsigned)x);
 #endif
 #else
-    x = x - ((x >> 1) & 0x5555555555555555);
-    x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
-    x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F;
-    x = x + (x >> 8);
-    x = x + (x >> 16);
-    x = x + (x >> 32); 
-    return x & 0xFF;
+    #if defined(BM_USE_GCC_BUILD)
+        return (unsigned)__builtin_popcountll(x);
+    #else
+        x = x - ((x >> 1) & 0x5555555555555555);
+        x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
+        x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F;
+        x = x + (x >> 8);
+        x = x + (x >> 16);
+        x = x + (x >> 32);
+        return x & 0xFF;
+    #endif
 #endif
 }
 
@@ -497,9 +525,7 @@ unsigned short bitscan_popcnt(bm::id_t w, B* bits)
     \brief Unpacks 64-bit word into list of ON bit indexes using popcnt method
     \param w - value
     \param bits - pointer on the result array
-    \param offs - bit address offset to add (0 - default)
     \return number of bits in the list
-
     @ingroup bitfunc
 */
 template<typename B>
@@ -1045,9 +1071,7 @@ bool gap_is_all_zero(const bm::gap_word_t* buf)
 /*!
    \brief Checks if GAP block is all-one.
    \param buf - GAP buffer pointer.
-   \param set_max - max possible bitset length
    \returns true if all-one.
-
    @ingroup gapfunc
 */
 BMFORCEINLINE
@@ -1741,6 +1765,65 @@ bm::id64_t sum_arr(T* first, T* last)
     return sum;
 }
 
+/*!
+    Extract short (len=1) exceptions from the GAP block
+    \param buf - GAP buffer to split
+    \param arr0 - [OUT] list of isolates 0 positions (clear list)
+    \param arr1 - [OUT] list of isolated 1 positions (set list)
+    \param arr0_cnt - [OUT] arr0 size
+    \param arr1_cnt -
+    @ingroup gapfunc
+*/
+template<typename T>
+void gap_split(const T* buf, T* arr0, T* arr1, T& arr0_cnt, T& arr1_cnt)
+{
+    const T* pcurr = buf;
+    unsigned len = (*pcurr >> 3);
+    const T* pend = pcurr + len;
+
+    T cnt0, cnt1;
+    cnt0 = cnt1 = 0;
+    unsigned is_set = (*buf & 1);
+
+    if (*pcurr == 0)
+    {
+        if (is_set)
+        {
+            arr1[cnt1] = *pcurr;
+            ++cnt1;
+        }
+        else
+        {
+            arr0[cnt0] = *pcurr;
+            ++cnt0;
+        }
+    }
+    T prev = *pcurr;
+    ++pcurr;
+
+    while (pcurr <= pend)
+    {
+        is_set ^= 1;
+        T delta = *pcurr - prev;
+        if (delta == 1)
+        {
+            if (is_set)
+            {
+                arr1[cnt1] = prev;
+                ++cnt1;
+            }
+            else
+            {
+                arr0[cnt0] = prev;
+                ++cnt0;
+            }
+        }
+        prev = *pcurr++;
+    } // while
+
+    arr0_cnt = cnt0;
+    arr1_cnt = cnt1;
+}
 
 
 /*!
@@ -1750,7 +1833,8 @@ bm::id64_t sum_arr(T* first, T* last)
    \return Number of non-zero bits.
    @ingroup gapfunc
 */
-template<typename T> unsigned gap_bit_count(const T* buf, unsigned dsize=0) 
+template<typename T>
+unsigned gap_bit_count(const T* buf, unsigned dsize=0)
 {
     const T* pcurr = buf;
     if (dsize == 0)
@@ -2139,6 +2223,37 @@ template<typename T> int gapcmp(const T* buf1, const T* buf2)
     return 0;
 }
 
+/*!
+   \brief Find first bit which is different between two GAP-blocks
+   \param buf1 - block 1
+   \param buf2 - block 2
+   \param pos - out - position of difference (undefined if blocks are equal)
+   \return  true if difference was found
+
+   @ingroup gapfunc
+*/
+template<typename T>
+bool gap_find_first_diff(const T* BMRESTRICT buf1,
+                         const T* BMRESTRICT buf2,
+                         unsigned* BMRESTRICT pos)
+{
+    BM_ASSERT(buf1 && buf2 && pos);
+
+    const T* pcurr1 = buf1;
+    const T* pend1 = pcurr1 + (*pcurr1 >> 3);
+    const T* pcurr2 = buf2;
+    for (++pcurr1, ++pcurr2; pcurr1 <= pend1; ++pcurr1, ++pcurr2)
+    {
+        if (*pcurr1 != *pcurr2)
+        {
+            *pos = 1 + ((*pcurr1 < *pcurr2) ? *pcurr1 : *pcurr2);
+            return true;
+        }
+    } // for
+    return false;
+}
+
+
 
 /*!
    \brief Abstract operation for GAP buffers. 
@@ -2218,6 +2333,82 @@ void gap_buff_op(T*         BMRESTRICT dest,
     dlen = (unsigned)(res - dest);
     *dest = (T)((*dest & 7) + (dlen << 3));
 }
+
+/*!
+   \brief Abstract operation for GAP buffers (predicts legth)
+          Receives functor F as a template argument
+   \param vect1 - operand 1 GAP encoded buffer.
+   \param vect2 - operand 2 GAP encoded buffer.
+   \param f - operation functor.
+   \param dlen - destination length after the operation
+   \param limit - maximum target length limit,
+                  returns false if limit is reached
+   \return true if operation would be successfull or 
+           false if limit reached
+
+   \note Internal function.
+   @internal
+
+   @ingroup gapfunc
+*/
+template<typename T, class F>
+bool gap_buff_dry_op(const T*   BMRESTRICT vect1,
+                     const T*   BMRESTRICT vect2,
+                          F&         f,
+                     unsigned&  dlen,
+                     unsigned limit)
+{
+    const T*  cur1 = vect1;
+    const T*  cur2 = vect2;
+
+    T bitval1 = (T)((*cur1++ & 1));
+    T bitval2 = (T)((*cur2++ & 1));
+
+    T bitval = (T) f(bitval1, bitval2);
+    T bitval_prev = bitval;
+
+    unsigned len = 1;
+
+    T c1 = *cur1; T c2 = *cur2;
+    while (1)
+    {
+        bitval = (T) f(bitval1, bitval2);
+
+        // Check if GAP value changes and we need to
+        // start the next one
+        //
+        len += (bitval != bitval_prev);
+        if (len > limit)
+            return false;
+        bitval_prev = bitval;
+        if (c1 < c2) 
+        {
+            ++cur1; c1 = *cur1;
+            bitval1 ^= 1;
+        }
+        else // >=
+        {
+            if (c2 < c1) // (*cur2 < *cur1)
+            {
+                bitval2 ^= 1;
+            }
+            else  // equal
+            {
+                if (c2 == (bm::gap_max_bits - 1))
+                    break;
+
+                ++cur1; c1 = *cur1;
+                bitval1 ^= 1; bitval2 ^= 1;
+            }
+            ++cur2; c2 = *cur2;
+        }
+
+    } // while
+
+    dlen = len;
+    return true;
+}
+
 
 /*!
    \brief Abstract distance test operation for GAP buffers. 
@@ -2556,7 +2747,8 @@ unsigned gap_add_value(T* buf, unsigned pos)
 /*!
     @brief Right shift GAP block by 1 bit
     @param buf - block pointer
-    @param co_falg - carry over from the previous block
+    @param co_flag - carry over from the previous block
+    @param new_len - output length of the GAP block after the operation
  
     @return carry over bit (1 or 0)
     @ingroup gapfunc
@@ -2603,8 +2795,9 @@ bool gap_shift_r1(T* buf, unsigned co_flag, unsigned* new_len)
 /*!
     @brief Left shift GAP block by 1 bit
     @param buf - block pointer
-    @param co_falg - carry over from the previous block
- 
+    @param co_flag - carry over from the previous block
+    @param new_len - new length of the block
+
     @return carry over bit (1 or 0)
     @ingroup gapfunc
 */
@@ -3745,6 +3938,59 @@ int bitcmp(const T* buf1, const T* buf2, unsigned len)
     return 0;
 }
 
+/*!
+   \brief Find first bit which is different between two bit-blocks
+   \param blk1 - block 1
+   \param blk2 - block 2
+   \param pos - out - position of difference (undefined if blocks are equal)
+   \return  true if difference was found
+
+   @ingroup bitfunc
+*/
+inline
+bool bit_find_first_diff(const bm::word_t* blk1, const bm::word_t* blk2,
+                         unsigned* pos)
+{
+    BM_ASSERT(blk1 && blk2 && pos);
+#ifdef VECT_BIT_FIND_DIFF
+    bool f = VECT_BIT_FIND_DIFF(blk1, blk2, pos);
+    return f;
+#else
+#ifdef BM64OPT
+    BM_ASSERT(sizeof(bm::wordop_t) == 8);
+
+    const bm::wordop_t* b1 = (const bm::wordop_t*) blk1;
+    const bm::wordop_t* b2 = (const bm::wordop_t*) blk2;
+
+    for (unsigned i = 0; i < bm::set_block_size/2; ++i)
+    {
+        bm::wordop_t w1 = b1[i]; bm::wordop_t w2 = b2[i];
+        bm::wordop_t diff = w1 ^ w2;
+        if (diff)
+        {
+            unsigned idx = bm::count_trailing_zeros_u64(diff);
+            *pos = unsigned(idx + (i * 8u * sizeof(bm::wordop_t)));
+            return true;
+        }
+    } // for
+#else
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        bm::word_t w1 = blk1[i]; bm::word_t w2 = blk2[i];
+        bm::word_t diff = w1 ^ w2;
+        if (diff)
+        {
+            unsigned idx = bm::bit_scan_forward32(diff); // trailing zeros
+            *pos = unsigned(idx + (i * 8u * sizeof(bm::word_t)));
+            return true;
+        }
+    } // for
+#endif
+#endif
+    return false;
+}
+
+
 #ifndef BMAVX2OPT
 
 /*!
@@ -4122,7 +4368,7 @@ bm::id_t bit_count_change(bm::word_t w)
     @internal
 */
 inline
-unsigned bit_block_change32(const bm::word_t* block)
+unsigned bit_block_change32(const bm::word_t* block, unsigned size)
 {
     unsigned gap_count = 1;
 
@@ -4134,8 +4380,8 @@ unsigned bit_block_change32(const bm::word_t* block)
     BM_INCWORD_BITCOUNT(gap_count, w);
     gap_count -= (w_prev = (w0 >> w_shift)); // negative value correction
 
-    const bm::word_t* block_end = block + bm::set_block_size;
-    for (++block ;block < block_end; ++block)
+    const bm::word_t* block_end = block + size; // bm::set_block_size;
+    for (++block; block < block_end; ++block)
     {
         w = w0 = *block;
         ++gap_count;
@@ -4161,6 +4407,31 @@ unsigned bit_block_change32(const bm::word_t* block)
 
 
 /*!
+    Function calculates basic bit-block statistics
+     number of times when bit value changed (GAPS)
+     and population count
+    @param block - bit-block pointer
+    @param gc - [output] gap_count
+    @param bc - [output] bit count
+    @internal
+*/
+inline
+void bit_block_change_bc(const bm::word_t* block, unsigned* gc, unsigned* bc)
+{
+    BM_ASSERT(gc);
+    BM_ASSERT(bc);
+    
+    #ifdef VECT_BLOCK_CHANGE_BC
+        VECT_BLOCK_CHANGE_BC(block, gc, bc);
+    #else
+        *gc = bm::bit_block_change32(block, bm::set_block_size);
+        *bc = bm::bit_block_count(block);
+    #endif
+}
+
+
+
+/*!
     Function calculates number of times when bit value changed
     (1-0 or 0-1) in the bit block.
  
@@ -4173,11 +4444,12 @@ inline
 unsigned bit_block_calc_change(const bm::word_t* block)
 {
 #if defined(VECT_BLOCK_CHANGE)
-    return VECT_BLOCK_CHANGE(block);
+    return VECT_BLOCK_CHANGE(block, bm::set_block_size);
 #else
-    return bm::bit_block_change32(block);
+    return bm::bit_block_change32(block, bm::set_block_size);
 #endif
 }
+
 
 
 /*!
@@ -4864,7 +5136,7 @@ unsigned gap_operation_any_and(const gap_word_t* BMRESTRICT vect1,
 
    @ingroup gapfunc
 */
-BMFORCEINLINE 
+inline
 unsigned gap_count_and(const gap_word_t* BMRESTRICT vect1,
                        const gap_word_t* BMRESTRICT vect2)
 {
@@ -4889,7 +5161,7 @@ unsigned gap_count_and(const gap_word_t* BMRESTRICT vect1,
 
    @ingroup gapfunc
 */
-BMFORCEINLINE 
+inline
 gap_word_t* gap_operation_xor(const gap_word_t*  BMRESTRICT vect1,
                               const gap_word_t*  BMRESTRICT vect2,
                               gap_word_t*        BMRESTRICT tmp_buf,
@@ -4897,6 +5169,18 @@ gap_word_t* gap_operation_xor(const gap_word_t*  BMRESTRICT vect1,
 {
     gap_buff_op(tmp_buf, vect1, 0, vect2, 0, bm::xor_op, dsize);
     return tmp_buf;
+}
+
+/*! Light weight gap_operation_xor for len prediction
+   @ingroup gapfunc
+*/
+inline
+bool gap_operation_dry_xor(const gap_word_t*  BMRESTRICT vect1,
+                           const gap_word_t*  BMRESTRICT vect2,
+                           unsigned&                     dsize,
+                           unsigned limit)
+{
+    return gap_buff_dry_op(vect1, vect2, bm::xor_op, dsize, limit);
 }
 
 
@@ -6063,7 +6347,10 @@ bool bit_block_or_3way(bm::word_t* BMRESTRICT dst,
    Function does not analyse availability of source and destination blocks.
 
    \param dst - destination block.
-   \param src1 - source1, etc 
+   \param src1 - source1, etc
+   \param src2 - source1, etc
+   \param src3 - source1, etc
+   \param src4 - source1, etc
  
    @return 1 if produced block of ALL ones
 
@@ -6266,8 +6553,8 @@ bm::id64_t bit_block_sub(bm::word_t* BMRESTRICT dst,
    \brief digest based bitblock SUB (AND NOT) operation (3 operand)
 
    \param dst - destination block.
-   \param src1 - source block.
-   \param src1 - source block.
+   \param src1 - source block 1
+   \param src2 - source block 2
    \param digest - known digest of dst block
  
    \return new digest
@@ -6502,7 +6789,6 @@ bm::word_t* bit_operation_xor(bm::word_t* BMRESTRICT dst,
    \brief Performs bitblock XOR operation and calculates bitcount of the result. 
 
    \param src1 - bit block start ptr
-   \param src1_end - bit block end ptr
    \param src2 - second bit block
 
    \returns bitcount value 
@@ -6671,7 +6957,7 @@ unsigned bit_block_find(const bm::word_t* block, unsigned nbit, unsigned* pos)
 
     \param block - bit block buffer pointer
     \param last - index of the last 1 bit (out)
-    \return 0 is not found
+    \return true if found
 
     @ingroup bitfunc
 */
@@ -6702,30 +6988,33 @@ unsigned bit_find_last(const bm::word_t* block, unsigned* last)
     \brief BIT block find the first set bit
 
     \param block - bit block buffer pointer
-    \param first - index of the first 1 bit (out)
+    \param pos - index of the first 1 bit (out)
     \return 0 if not found
 
     @ingroup bitfunc
+    @internal
 */
 inline
-unsigned bit_find_first(const bm::word_t* block, unsigned* first)
+bool bit_find_first(const bm::word_t* block, unsigned* pos)
 {
     BM_ASSERT(block);
-    BM_ASSERT(first);
+    BM_ASSERT(pos);
 
-    // TODO: SIMD version
-    
+#ifdef VECT_BIT_FIND_FIRST
+    return VECT_BIT_FIND_FIRST(block, pos);
+#else
     for (unsigned i = 0; i < bm::set_block_size; ++i)
     {
         bm::word_t w = block[i];
         if (w)
         {
-            unsigned idx = bit_scan_forward32(w); // trailing zeros
-            *first = unsigned(idx + (i * 8u * sizeof(bm::word_t)));
+            unsigned idx = bm::bit_scan_forward32(w); // trailing zeros
+            *pos = unsigned(idx + (i * 8u * sizeof(bm::word_t)));
             return w;
         }
     } // for i
-    return 0u;
+    return false;
+#endif
 }
 
 /*!
@@ -7172,6 +7461,99 @@ bool improve_gap_levels(const T* length,
     return is_improved;
 
 }
+
+/*!
+   \brief Find first bit which is different between two blocks (GAP or bit)
+   \param blk - block 1
+   \param arg_blk - block 2
+   \param pos - out - position of difference (undefined if blocks are equal)
+   \return  true if difference was found
+   @internal
+*/
+inline
+bool block_find_first_diff(const bm::word_t* BMRESTRICT blk,
+                           const bm::word_t* BMRESTRICT arg_blk,
+                           unsigned* BMRESTRICT pos)
+{
+    // If one block is zero we check if the other one has at least
+    // one bit ON
+
+    if (!blk || !arg_blk)
+    {
+        const bm::word_t* pblk; bool is_gap;
+        if (blk)
+        {
+            pblk = blk;
+            is_gap = BM_IS_GAP(blk);
+        }
+        else
+        {
+            pblk = arg_blk;
+            is_gap = BM_IS_GAP(arg_blk);
+        }
+
+        if (is_gap)
+        {
+            unsigned found = bm::gap_find_first(BMGAP_PTR(pblk), pos);
+            if (found)
+                return true;
+        }
+        else
+        {
+            unsigned found = bm::bit_find_first(pblk, pos);
+            if (found)
+                return true;
+        }
+        return false;
+    }
+
+    bool arg_gap = BM_IS_GAP(arg_blk);
+    bool gap = BM_IS_GAP(blk);
+
+    if (arg_gap != gap)
+    {
+        //BM_DECLARE_TEMP_BLOCK(temp_blk);
+        bm::bit_block_t temp_blk;
+        bm::word_t* blk1; bm::word_t* blk2;
+
+        if (gap)
+        {
+            bm::gap_convert_to_bitset((bm::word_t*)temp_blk,
+                                    BMGAP_PTR(blk));
+            blk1 = (bm::word_t*)temp_blk;
+            blk2 = (bm::word_t*)arg_blk;
+        }
+        else
+        {
+            bm::gap_convert_to_bitset((bm::word_t*)temp_blk,
+                                      BMGAP_PTR(arg_blk));
+            blk1 = (bm::word_t*)blk;
+            blk2 = (bm::word_t*)temp_blk;
+        }
+        bool found = bm::bit_find_first_diff(blk1, blk2, pos);
+        if (found)
+            return true;
+    }
+    else
+    {
+        if (gap)
+        {
+            bool found =
+                bm::gap_find_first_diff(BMGAP_PTR(blk),
+                                        BMGAP_PTR(arg_blk), pos);
+            if (found)
+                return true;
+        }
+        else
+        {
+            bool found = bm::bit_find_first_diff(blk, arg_blk, pos);
+            if (found)
+                return true;
+        }
+    }
+    return false;
+}
+
 
 
 
@@ -7699,7 +8081,7 @@ void set_block_bits_u32(bm::word_t* BMRESTRICT block,
 
 /**
     @brief array range detector
-    @intenal
+    @internal
 */
 inline
 bool block_ptr_array_range(bm::word_t** arr, unsigned& left, unsigned& right)

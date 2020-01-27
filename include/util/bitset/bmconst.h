@@ -62,7 +62,8 @@ const unsigned set_block_alloc_size = bm::set_block_size * unsigned(sizeof(bm::w
 const unsigned set_block_plain_size = bm::set_block_size / 32u;
 const unsigned set_block_plain_cnt = (unsigned)(sizeof(bm::word_t) * 8u);
 
-const unsigned set_block_digest_wave_size = bm::set_block_size / 64;
+const unsigned block_waves = 64;
+const unsigned set_block_digest_wave_size = bm::set_block_size / bm::block_waves;
 const unsigned set_block_digest_pos_shift = 10;
 
 // Word parameters
@@ -82,6 +83,8 @@ const unsigned gap_equiv_len = (unsigned)
 const unsigned gap_max_bits_cmrz = bm::gap_max_bits / 2;
 const unsigned gap_levels = 4;
 const unsigned gap_max_level = bm::gap_levels - 1;
+
+const unsigned bie_cut_off = 16384; // binary interpolative encode size cut-off
 
 
 // Block Array parameters
@@ -121,17 +124,13 @@ const unsigned sub_block3_size = bm::gap_max_bits / 4;
 
 
 #if defined(BM64OPT) || defined(BM64_SSE4)
-
 typedef id64_t  wordop_t;
-const id64_t    all_bits_mask = 0xffffffffffffffff;
+const id64_t    all_bits_mask = 0xffffffffffffffffULL;
 const unsigned set_block_size_op  = bm::set_block_size / 2;
-
 #else
-
 typedef word_t wordop_t;
 const word_t all_bits_mask = 0xffffffff;
 const unsigned set_block_size_op  = bm::set_block_size;
-
 #endif
 
 
@@ -229,8 +228,8 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.5.0.0 (c) 2002-2019 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {3, 20, 0};
+    "BitMagic C++ Library. v.6.0.0 (c) 2002-2020 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] = {6, 0, 0};
 
 
 

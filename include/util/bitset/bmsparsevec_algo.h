@@ -144,9 +144,328 @@ void dynamic_range_clip_low(SV& svect, unsigned low_bit)
     bv_low_plain->bit_or(bv_acc1);
 }
 
+/**
+    Find first mismatch (element which is different) between two sparse vectors
+    (uses linear scan in bit-vector plains)
+
+    Function works with both NULL and NOT NULL vectors
+    NULL means unassigned (uncertainty), so first mismatch NULL is a mismatch
+    even if values in vectors can be formally the same (i.e. 0)
+
+    @param sv1 - vector 1
+    @param sv2 - vector 2
+    @param midx - mismatch index
+    @param null_proc - defines if we want to include (not) NULL
+                  vector into comparison (bm::use_null) or not.
+                  By default search takes NULL vector into account 
+
+    @return true if mismatch found
+
+    @sa sparse_vector_find_mismatch
+
+    \ingroup svalgo
+*/
+template<typename SV>
+bool sparse_vector_find_first_mismatch(const SV& sv1,
+                                       const SV& sv2,
+                                       typename SV::size_type& midx,
+                                       bm::null_support  null_proc = bm::use_null)
+{
+    typename SV::size_type mismatch = bm::id_max;
+    bool found = false;
+
+    unsigned sv_idx = 0;
+
+    unsigned plains1 = sv1.plains();
+    BM_ASSERT(plains1);
+
+    // for RSC vector do NOT compare NULL plains
+
+    if (bm::conditional<SV::is_rsc_support::value>::test())
+    {
+        //--plains1;
+    }
+    else // regular sparse vector - may have NULL plains
+    {
+        if (null_proc == bm::use_null)
+        {
+            typename SV::bvector_type_const_ptr bv_null1 = sv1.get_null_bvector();
+            typename SV::bvector_type_const_ptr bv_null2 = sv2.get_null_bvector();
+            if (bv_null1 && bv_null2) // both (not) NULL vectors present
+            {
+                bool f = bv_null1->find_first_mismatch(*bv_null2, midx, mismatch);
+                if (f && (midx < mismatch)) // better mismatch found
+                {
+                    found = f; mismatch = midx;
+                }
+
+            }
+            else // one or both NULL vectors are not present
+            {
+                if (bv_null1)
+                {
+                    typename SV::bvector_type bv_tmp; // TODO: get rid of temp bv
+                    bv_tmp.resize(sv2.size());
+                    bv_tmp.invert(); // turn into true NULL vector
+
+                    // find first NULL value (mismatch)
+                    bool f = bv_null1->find_first_mismatch(bv_tmp, midx, mismatch);
+                    if (f && (midx < mismatch)) // better mismatch found
+                    {
+                        found = f; mismatch = midx;
+                    }
+                }
+                if (bv_null2)
+                {
+                    typename SV::bvector_type bv_tmp; // TODO: get rid of temp bv
+                    bv_tmp.resize(sv1.size());
+                    bv_tmp.invert();
+
+                    bool f = bv_null2->find_first_mismatch(bv_tmp, midx, mismatch);
+                    if (f && (midx < mismatch)) // better mismatch found
+                    {
+                        found = f; mismatch = midx;
+                    }
+                }
+            }
+        } // null_proc
+    }
+
+    for (unsigned i = 0; mismatch & (i < plains1); ++i)
+    {
+        typename SV::bvector_type_const_ptr bv1 = sv1.get_plain(i);
+        typename SV::bvector_type_const_ptr bv2 = sv2.get_plain(i);
+        if (!bv1)
+        {
+            if (!bv2)
+                continue;
+            bool f = bv2->find(midx);
+            if (f && (midx < mismatch))
+            {
+                found = f; sv_idx = 2; mismatch = midx;
+            }
+            continue;
+        }
+        if (!bv2)
+        {
+            BM_ASSERT(bv1);
+            bool f = bv1->find(midx);
+            if (f && (midx < mismatch))
+            {
+                found = f; sv_idx = 1; mismatch = midx;
+            }
+            continue;
+        }
+        // both plains are not NULL
+        //
+        bool f = bv1->find_first_mismatch(*bv2, midx, mismatch);
+        if (f && (midx < mismatch)) // better mismatch found
+        {
+            found = f; mismatch = midx;
+            // which vector has '1' at mismatch position?
+            if (bm::conditional<SV::is_rsc_support::value>::test())
+                sv_idx = (bv1->test(mismatch)) ? 1 : 2;
+        }
+
+    } // for i
+
+    // RSC address translation here
+    //
+    if (bm::conditional<SV::is_rsc_support::value>::test())
+    {
+        if (found) // RSC address translation
+        {
+            BM_ASSERT(sv1.is_compressed());
+            BM_ASSERT(sv2.is_compressed());
+
+            switch (sv_idx)
+            {
+            case 1:
+                found = sv1.find_rank(midx + 1, mismatch);
+                break;
+            case 2:
+                found = sv2.find_rank(midx + 1, mismatch);
+                break;
+            default: // unknown, try both
+                BM_ASSERT(0);
+            }
+            BM_ASSERT(found);
+        }
+        else // search for mismatch in the NOT NULL vectors
+        {
+            if (null_proc == bm::use_null)
+            {
+                // no need for address translation in this case
+                typename SV::bvector_type_const_ptr bv_null1 = sv1.get_null_bvector();
+                typename SV::bvector_type_const_ptr bv_null2 = sv2.get_null_bvector();
+                found = bv_null1->find_first_mismatch(*bv_null2, mismatch);
+            }
+        }
+    }
+
+    midx = mismatch; // minimal mismatch
+    return found;
+}
 
 /**
-    \brief algorithms for sparse_vector scan/seach
+    Find mismatch vector, indicating positions of mismatch between two sparse vectors
+    (uses linear scan in bit-vector plains)
+
+    Function works with both NULL and NOT NULL vectors
+
+    @param bv - [out] - bit-ector with mismatch positions indicated as 1s
+    @param sv1 - vector 1
+    @param sv2 - vector 2
+    @param null_proc - rules of processing for (not) NULL plain
+      bm::no_null - NULLs from both vectors are treated as uncertainty
+                    and NOT included into final result
+      bm::use_null - difference in NULLs accounted into the result
+
+    @sa sparse_vector_find_first_mismatch
+
+    \ingroup svalgo
+*/
+template<typename SV1, typename SV2>
+void sparse_vector_find_mismatch(typename SV1::bvector_type& bv,
+                                 const SV1&                  sv1,
+                                 const SV2&                  sv2,
+                                 bm::null_support            null_proc)
+{
+    typedef typename SV1::bvector_type       bvector_type;
+    typedef typename bvector_type::allocator_type        allocator_type;
+    typedef typename allocator_type::allocator_pool_type allocator_pool_type;
+
+    allocator_pool_type  pool; // local pool for blocks
+    typename bvector_type::mem_pool_guard mp_guard_bv;
+    mp_guard_bv.assign_if_not_set(pool, bv);
+
+
+    if (bm::conditional<SV1::is_rsc_support::value>::test())
+    {
+        BM_ASSERT(0); // TODO: fixme
+    }
+    if (bm::conditional<SV2::is_rsc_support::value>::test())
+    {
+        BM_ASSERT(0); // TODO: fixme
+    }
+
+    bv.clear();
+
+    unsigned plains = sv1.plains();
+    if (plains < sv2.plains())
+        plains = sv2.plains();
+
+    for (unsigned i = 0; i < plains; ++i)
+    {
+        typename SV1::bvector_type_const_ptr bv1 = sv1.get_plain(i);
+        typename SV2::bvector_type_const_ptr bv2 = sv2.get_plain(i);
+
+        if (!bv1)
+        {
+            if (!bv2)
+                continue;
+            bv |= *bv2;
+            continue;
+        }
+        if (!bv2)
+        {
+            BM_ASSERT(bv1);
+            bv |= *bv1;
+            continue;
+        }
+
+        // both plains are not NULL, compute XOR diff
+        //
+        bvector_type bv_xor;
+        typename bvector_type::mem_pool_guard mp_guard;
+        mp_guard.assign_if_not_set(pool, bv_xor);
+
+        bv_xor.bit_xor(*bv1, *bv2, SV1::bvector_type::opt_none);
+        bv |= bv_xor;
+
+    } // for i
+
+    // size mismatch check
+    {
+        typename SV1::size_type sz1 = sv1.size();
+        typename SV2::size_type sz2 = sv2.size();
+        if (sz1 != sz2)
+        {
+            if (sz1 < sz2)
+            {
+            }
+            else
+            {
+                bm::xor_swap(sz1, sz2);
+            }
+            bv.set_range(sz1, sz2-1);
+        }
+    }
+
+    // NULL processings
+    //
+    typename SV1::bvector_type_const_ptr bv_null1 = sv1.get_null_bvector();
+    typename SV2::bvector_type_const_ptr bv_null2 = sv2.get_null_bvector();
+
+    switch (null_proc)
+    {
+    case bm::no_null:
+        // NULL correction to exclude all NULL (unknown) values from the result set
+        //  (AND with NOT NULL vector)
+        if (bv_null1 && bv_null2)
+        {
+            bvector_type bv_or;
+            typename bvector_type::mem_pool_guard mp_guard;
+            mp_guard.assign_if_not_set(pool, bv_or);
+
+            bv_or.bit_or(*bv_null1, *bv_null2, bvector_type::opt_none);
+            bv &= bv_or;
+        }
+        else
+        {
+            if (bv_null1)
+                bv &= *bv_null1;
+            if (bv_null2)
+                bv &= *bv_null2;
+        }
+    break;
+    case bm::use_null:
+        if (bv_null1 && bv_null2)
+        {
+            bvector_type bv_xor;
+            typename bvector_type::mem_pool_guard mp_guard;
+            mp_guard.assign_if_not_set(pool, bv_xor);
+
+            bv_xor.bit_xor(*bv_null1, *bv_null2, bvector_type::opt_none);
+            bv |= bv_xor;
+        }
+        else
+        {
+            bvector_type bv_null;
+            typename bvector_type::mem_pool_guard mp_guard;
+            mp_guard.assign_if_not_set(pool, bv_null);
+            if (bv_null1)
+            {
+                bv_null = *bv_null1;
+                bv_null.resize(sv1.size());
+            }
+            if (bv_null2)
+            {
+                bv_null = *bv_null2;
+                bv_null.resize(sv2.size());
+            }
+            bv_null.invert();
+            bv |= bv_null;
+        }
+    break;
+    default:
+        BM_ASSERT(0);
+    }
+}
+
+
+/**
+    \brief algorithms for sparse_vector scan/search
  
     Scanner uses properties of bit-vector plains to answer questions
     like "find all sparse vector elements equivalent to XYZ".

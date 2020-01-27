@@ -326,7 +326,8 @@ public:
         /** flush the accumulated buffer */
         void flush();
     protected:
-    
+        typedef typename bvector_type::block_idx_type     block_idx_type;
+
         /** add value to the buffer without changing the NULL vector
             @param v - value to push back
             @return index of added value in the internal buffer
@@ -349,6 +350,7 @@ public:
         bvector_type*            bv_null_;     ///!< not NULL vector pointer
         buffer_matrix_type       buf_matrix_;  ///!< value buffer
         size_type                pos_in_buf_;  ///!< buffer position
+        block_idx_type           prev_nb_;     ///!< previous block added
     };
 
 
@@ -536,9 +538,7 @@ public:
 
     /*!
         \brief get specified string element
-     
         Template method expects an STL-compatible type basic_string<>
-     
         \param idx  - element index (vector auto-resized if needs to)
         \param str  - string to get [out]
     */
@@ -913,6 +913,28 @@ public:
     ///@}
 
     // ------------------------------------------------------------
+    /*! @name Merge, split, partition data                        */
+    ///@{
+
+    /**
+        @brief copy range of values from another sparse vector
+
+        Copy [left..right] values from the source vector,
+        clear everything outside the range.
+
+        \param sv - source vector
+        \param left  - index from in losed diapason of [left..right]
+        \param right - index to in losed diapason of [left..right]
+        \param splice_null - "use_null" copy range for NULL vector or
+                             do not copy it
+    */
+    void copy_range(const str_sparse_vector<CharType, BV, MAX_STR_SIZE>& sv,
+                    size_type left, size_type right,
+                    bm::null_support splice_null = bm::use_null);
+
+    ///@}
+
+    // ------------------------------------------------------------
 
     /*! \brief syncronize internal structures */
     void sync(bool force);
@@ -1068,7 +1090,15 @@ protected:
         return remap_matrix1_.get_buffer().data();
     }
     void set_remap() { remap_flags_ = 1; }
-    
+
+protected:
+
+    bool resolve_range(size_type from, size_type to,
+                       size_type* idx_from, size_type* idx_to) const
+    {
+        *idx_from = from; *idx_to = to; return true;
+    }
+
 protected:
     template<class SVect> friend class sparse_vector_serializer;
     template<class SVect> friend class sparse_vector_deserializer;
@@ -1314,6 +1344,7 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::calc_stat(
     st->bv_count += stbv.bv_count;
     st->max_serialize_mem += stbv.max_serialize_mem + 8;
     st->memory_used += stbv.memory_used;
+    st->gap_cap_overhead += stbv.gap_cap_overhead;
     
     size_t remap_mem_usage = sizeof(remap_flags_);
     remap_mem_usage += remap_matrix1_.get_buffer().mem_usage();
@@ -1633,6 +1664,27 @@ bool str_sparse_vector<CharType, BV, MAX_STR_SIZE>::equal(
 //---------------------------------------------------------------------
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
+void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::copy_range(
+                const str_sparse_vector<CharType, BV, MAX_STR_SIZE>& sv,
+                size_type left, size_type right,
+                bm::null_support splice_null)
+{
+    if (left > right)
+        bm::xor_swap(left, right);
+    this->clear();
+
+    remap_flags_ = sv.remap_flags_;
+    remap_matrix1_ = sv.remap_matrix1_;
+    remap_matrix2_ = sv.remap_matrix2_;
+
+    this->copy_range_plains(sv, left, right, splice_null);
+    this->resize(sv.size());
+}
+
+
+//---------------------------------------------------------------------
+
+template<class CharType, class BV, unsigned MAX_STR_SIZE>
 typename str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::begin() const
 {
@@ -1774,7 +1826,7 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::advance()
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::back_insert_iterator()
-: sv_(0), bv_null_(0), pos_in_buf_(~size_type(0))
+: sv_(0), bv_null_(0), pos_in_buf_(~size_type(0)), prev_nb_(0)
 {}
 
 //---------------------------------------------------------------------
@@ -1784,7 +1836,15 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::back_insert
            str_sparse_vector<CharType, BV, MAX_STR_SIZE>* sv)
 : sv_(sv), pos_in_buf_(~size_type(0))
 {
-    bv_null_ = sv_? sv_->get_null_bvect() : 0;
+    if (sv)
+    {
+        prev_nb_ = sv_->size() >> bm::set_block_shift;
+        bv_null_ = sv_->get_null_bvect();
+    }
+    else
+    {
+        bv_null_ = 0; prev_nb_ = 0;
+    }
 }
 
 //---------------------------------------------------------------------
@@ -1792,7 +1852,7 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::back_insert
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::back_insert_iterator(
 const str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator& bi)
-: sv_(bi.sv_), bv_null_(bi.bv_null_), pos_in_buf_(~size_type(0))
+: sv_(bi.sv_), bv_null_(bi.bv_null_), pos_in_buf_(~size_type(0)), prev_nb_(bi.prev_nb_)
 {
     BM_ASSERT(bi.empty());
 }
@@ -1820,9 +1880,16 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::flush(
 {
     if (this->empty())
         return;
-    
+
     sv_->import_no_check(buf_matrix_, sv_->size(), pos_in_buf_+1, false);
     pos_in_buf_ = ~size_type(0);
+    block_idx_type nb = sv_->size() >> bm::set_block_shift;
+    if (nb != prev_nb_)
+    {
+        // optimize all previous blocks in all planes
+        sv_->optimize_block(prev_nb_);
+        prev_nb_ = nb;
+    }
 }
 
 //---------------------------------------------------------------------
