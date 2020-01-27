@@ -3426,9 +3426,9 @@ void SortSeqDescr(CSeq_descr& descr)
 void SortSeqDescr(CSeq_entry& entry)
 {
     if (entry.IsSetDescr())
-      SortSeqDescr(entry.SetDescr());
+        SortSeqDescr(entry.SetDescr());
     if (entry.IsSet())
-    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
     {
         SortSeqDescr((**it));
     }
@@ -3441,7 +3441,8 @@ const string& GetTargetedLocusName(const CGene_ref& gene)
 {
     if (gene.IsSetLocus()) {
         return gene.GetLocus();
-    } else {
+    }
+    else {
         return kEmptyStr;
     }
 }
@@ -3452,7 +3453,8 @@ const string& GetTargetedLocusName(const CProt_ref& prot)
     if (prot.IsSetName() &&
         prot.GetName().size() > 0) {
         return prot.GetName().front();
-    } else {
+    }
+    else {
         return kEmptyStr;
     }
 
@@ -3470,23 +3472,42 @@ string GetTargetedLocusName(const CSeq_feat& feat)
     string tln = kEmptyStr;
     if (feat.IsSetData()) {
         switch (feat.GetData().Which()) {
-            case CSeqFeatData::e_Prot:
-                tln = GetTargetedLocusName(feat.GetData().GetProt());
-                break;
-            case CSeqFeatData::e_Gene:
-                tln = GetTargetedLocusName(feat.GetData().GetGene());
-                break;
-            case CSeqFeatData::e_Rna:
-                tln = GetTargetedLocusName(feat.GetData().GetRna());
-                break;
-            case CSeqFeatData::e_Imp:
-                if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature &&
-                    feat.IsSetComment()) {
+        case CSeqFeatData::e_Prot:
+            tln = GetTargetedLocusName(feat.GetData().GetProt());
+            break;
+        case CSeqFeatData::e_Gene:
+            tln = GetTargetedLocusName(feat.GetData().GetGene());
+            break;
+        case CSeqFeatData::e_Rna:
+            tln = GetTargetedLocusName(feat.GetData().GetRna());
+            break;
+        case CSeqFeatData::e_Imp:
+            switch (feat.GetData().GetSubtype()) {
+            case CSeqFeatData::eSubtype_misc_feature:
+                if (feat.IsSetComment()) {
                     tln = feat.GetComment();
+                }
+                break;
+            case CSeqFeatData::eSubtype_mobile_element:
+                if (feat.IsSetQual()) {
+                    for (auto it : feat.GetQual()) {
+                        if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), "mobile_element_type") && it->IsSetVal()) {
+                            tln = it->GetVal();
+                            size_t pos = NStr::Find(tln, ":");
+                            if (pos != string::npos) {
+                                tln = tln.substr(pos + 1);
+                                NStr::TruncateSpacesInPlace(tln);
+                            }
+                            break;
+                        }
+                    }
                 }
                 break;
             default:
                 break;
+            }
+        default:
+            break;
         }
     }
     return tln;

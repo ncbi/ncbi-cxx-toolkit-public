@@ -1584,6 +1584,18 @@ BOOST_AUTO_TEST_CASE(Test_GetTargetedLocusName)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_4679)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> imp = unit_test_util::AddMiscFeature(entry);
+    imp->SetData().SetImp().SetKey("mobile_element");
+    imp->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("mobile_element_type", "retrotransposon:LTR retrotransposon")));
+    CheckTargetedLocusEntry(entry, "LTR retrotransposon");
+    imp->SetQual().back()->SetVal("transposon");
+    CheckTargetedLocusEntry(entry, "transposon");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_BioseqSetDescriptorPropagateUp)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
