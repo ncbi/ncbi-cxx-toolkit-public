@@ -1,9 +1,3 @@
-Contemporary docs, source browsers, CVS tree:
+Contemporary docs, source browsers, SVN tree:
 
-   http://www.ncbi.nlm.nih.gov/toolkit/doc/book/
-
-
-
-
-------------
-*) The (VERY OLD!) HTML-formatted documentation is in "index.html".
+   https://ncbi.github.io/cxx-toolkit/
