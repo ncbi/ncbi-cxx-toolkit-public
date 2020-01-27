@@ -169,17 +169,20 @@ void CPDB_seq_id::SetChainIdentifiers(const CPDB_seq_id::TChain_id& chainIdentif
 {
     CTempString chain_id = NStr::TruncateSpaces_Unsafe(chainIdentifier, NStr::eTrunc_Both);
 
-    if (chainIdentifier.empty()) {  // sets both fields to default state
-        ResetChain_id_unified();
+    //  A single space is a valid chain identifier; multiple spaces are not.
+    if (chain_id.empty() && chainIdentifier.length() == 1 ) {
+        chain_id = " ";
     }
-    else if (chain_id.empty()) {    // chainIdentifier contained only whitespace
+
+    //  chainIdentifier is either empty or a string of two or more spaces.
+    if (chainIdentifier.empty() || chain_id.empty()) {
         ResetChainIdentifiers();
-	}
-    else if (chain_id.size() == 1) {
+    }
+    else if (chain_id.length() == 1) {  //  empty chain_id means chainIdentifier was a single space
     	SetChain( static_cast<unsigned char>(chain_id[0]) );
 		SetChain_id(chain_id);
 	}
-	else {                         // multi-character chain code 
+	else {                              // multi-character chain code 
         ResetChain();
         SetChain_id(chain_id);
 	}

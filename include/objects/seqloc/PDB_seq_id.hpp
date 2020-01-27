@@ -67,12 +67,15 @@ public:
     //  Reset both chain and chain-id.  
     void ResetChainIdentifiers(void);
 
-    //  Set both 'chain' and 'chain-id'.
+    //  Sets both 'chain' and 'chain-id'.
     void SetChainIdentifiers(TChain chainIdentifier);
 
-    //  Set 'chain' and 'chain-id' to the same value, when possible.
-    //  When chainIdentifier is not a single-character, 'chain' is reset.
-    //  If chainIdentifier is empty or purely whitespace, both 'chain' and 'chain-id' are reset.
+    //  Sets 'chain' and 'chain-id' to the same value, when possible.
+    //  When chainIdentifier is not a single-character, 'chain' is reset to avoid internal inconsistency.
+    //  If chainIdentifier is empty, or  both 'chain' and 'chain-id' are reset.
+    //  If chainIdentifier contains only whitespace:
+    //      length == 1:  both fields set to ' ' (this is a valid 'chain' value)
+    //      length >  1:  both 'chain' and 'chain-id' are reset (an invalid 'chain_id' value)
     void SetChainIdentifiers(const TChain_id& chainIdentifier);
 
     
