@@ -73,7 +73,7 @@ static string s_GetEffectiveChain_id(const CPDB_seq_id& id)
         return id.GetChain_id();
     }
     if ( id.IsSetChain() ) {
-        return string(char(id.GetChain()), 1);
+        return string(1, char(id.GetChain()));
     }
     return string();
 }
