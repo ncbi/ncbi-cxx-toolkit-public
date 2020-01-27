@@ -141,6 +141,15 @@ CNcbiApplicationAPI::CNcbiApplicationAPI(const SBuildInfo& build_info)
     GetDiagContext().InitMessages(size_t(-1));
     GetDiagContext().SetGlobalAppState(eDiagAppState_AppBegin);
 
+    // Verify CPU compatibility
+    // First check. Print critical error only. See second check in x_TryInit() below.
+    {{
+        string err_message;
+        if (!VerifyCpuCompatibility(&err_message)) {
+            ERR_POST_X(22,  Critical << err_message);
+        }
+    }}
+
     m_DisableArgDesc = 0;
     m_HideArgs = 0;
     m_StdioFlags = 0;
@@ -372,6 +381,8 @@ void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag, const char* conf)
     AppStart();
 
     // Verify CPU compatibility
+    // Second check. Print error message and allow to terminate program depends on configuration parameters.
+    // Also, see first check in CNcbiApplicationAPI() constructor.
     {{
         string err_message;
         if (!VerifyCpuCompatibility(&err_message)) {
