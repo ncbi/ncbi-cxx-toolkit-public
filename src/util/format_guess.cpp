@@ -3250,13 +3250,9 @@ CFormatGuess::IsAsciiText()
     // first stab - are we text?  comments are only valid if we are text
     size_t count = 0;
     size_t count_print = 0;
-    int count_space = 0;
     for (int i = 0;  i < m_iTestDataSize;  ++i, ++count) {
         if (isprint((unsigned char) m_pTestBuffer[i])) {
             ++count_print;
-        }
-        if (isspace(m_pTestBuffer[i])) {
-            ++count_space;
         }
     }
     if (count_print < (double)count * REQUIRED_ASCII_RATIO) {
