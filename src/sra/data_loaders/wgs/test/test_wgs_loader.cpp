@@ -1649,7 +1649,7 @@ BOOST_AUTO_TEST_CASE(FetchProt18)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
