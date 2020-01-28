@@ -833,7 +833,7 @@ static void s_TEST_Dir(void)
     // Current directory list
     {{
         cout << endl;
-        const string kFFTestPath = "..";
+        const string kFFTestPath = ".";
         CDir dir(kFFTestPath);
         CDir::TEntries contents = dir.GetEntries("*", CDir::fIgnoreRecursive);
         ITERATE(CDir::TEntries, i, contents) {
