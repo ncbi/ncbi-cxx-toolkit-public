@@ -46,11 +46,10 @@ class CAltValidator
 {
 public:
   bool m_check_len_taxid;
-  CNcbiOstream* m_out;
+  CNcbiOstream* m_out=nullptr;
   CAltValidator(bool check_len_taxid)
   {
     m_check_len_taxid=check_len_taxid;
-    m_out=NULL;
   }
 
   bool m_SpeciesLevelTaxonCheck;
@@ -106,7 +105,7 @@ protected:
   struct SComponentInfo
   {
     TGi gi=ZERO_GI;
-    int ver=0; 
+    int currentVersion=0; 
     int len=0;
     int taxid=0;
     bool inDatabase=false;
@@ -114,7 +113,7 @@ protected:
     bool MatchesVersion_HasAllData(int ver1, bool check_len_taxid) const
     {
       //if(gi==ZERO_GI || (ver1!=0 && ver1!=ver)) return false;
-      if(ver==0 || (ver1!=0 && ver1!=ver)) return false;
+      if(currentVersion==0 || (ver1!=0 && ver1!=currentVersion)) return false;
       if(check_len_taxid && len<=0 && taxid<=0) return false;
       return true;
     }
@@ -137,11 +136,8 @@ public:
   }
   void ProcessQueue();
 
-//  void QueryAccessions();
-
-  void QueryAccessionsEntrez(); 
-
-  void QueryAccessionsOM();
+private:
+  void x_QueryAccessions();
 };
 
 // These really should be in agp_validate.cpp, but gcc inexplicably balks, saying:
