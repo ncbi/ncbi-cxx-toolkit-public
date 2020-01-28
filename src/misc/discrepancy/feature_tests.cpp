@@ -362,10 +362,20 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
         }
     }
     if (rval != eExtensibe_fixable) return rval;
+    CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
+    string codon;
+    svec.GetSeqData(left - extend_len, left, codon);
+    for (unsigned i = 0; i < extend_len; i++) {
+        if (codon[i] == 'N') {
+            extend_len = i;
+            break;
+        }
+    }
+    if (!extend_len) {
+        return eExtensibe_abut;
+    }
     if (strand == eNa_strand_minus) {
-        CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
-        string codon;
-        svec.GetSeqData(left - extend_len, left - extend_len + 3, codon);
+        svec.GetSeqData(left - extend_len, left - extend_len + 3, codon); // may it be off by 1 nt?
         if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
             rval = eExtensibe_none;
         }
@@ -411,10 +421,20 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
         }
     }
     if (rval != eExtensibe_fixable) return rval;
+    CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
+    string codon;
+    svec.GetSeqData(right + 1, right + extend_len + 1, codon);
+    for (unsigned i = 0; i < extend_len; i++) {
+        if (codon[i] == 'N') {
+            extend_len = i;
+            break;
+        }
+    }
+    if (!extend_len) {
+        return eExtensibe_abut;
+    }
     if (strand != eNa_strand_minus) {
-        CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
-        string codon;
-        svec.GetSeqData(right + extend_len - 3, right + extend_len, codon);
+        svec.GetSeqData(right + extend_len - 3, right + extend_len, codon); // may it be off by 1 nt?
         if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
             rval = eExtensibe_none;
         }
