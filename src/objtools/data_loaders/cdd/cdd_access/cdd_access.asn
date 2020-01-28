@@ -39,10 +39,10 @@ CDD-Request ::= SEQUENCE {
                 get-blob              ID2-Blob-Id,
 
                 -- get one blob for one seq-id
-                get-blob-by-seq-id    Seq-id
+                get-blob-by-seq-id    Seq-id,
                 
                 -- get one blob for multiple seq-ids
-                get-blob-by-seq-ids ::= SEQUENCE OF Seq-id
+                get-blob-by-seq-ids   SEQUENCE OF Seq-id
         }
 }
 
