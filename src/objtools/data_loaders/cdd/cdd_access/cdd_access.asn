@@ -40,6 +40,9 @@ CDD-Request ::= SEQUENCE {
 
                 -- get data for the seq-id
                 get-blob-by-seq-id    Seq-id
+                
+                -- get data for multiple seq-ids
+                get-blob-by-seq-ids   SEQUENCE OF Seq-id
         }
 }
 
@@ -78,7 +81,7 @@ CDD-Reply ::= SEQUENCE {
                 -- return Seq-annot for get-blob request
                 get-blob              Seq-annot,
 
-                -- return (Seq-annot + blob-id) for get-blob-by-seq-id request
+                -- return (Seq-annot + blob-id) for get-blob-by-seq-id OR get-blob-by-seq-ids request
                 get-blob-by-seq-id    CDD-Reply-Get-Blob-By-Seq-Id
         }
 }
