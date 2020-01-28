@@ -255,29 +255,35 @@ CRef<CSeq_entry> CTLSHandler::ReadSeqEntry(void)
 class CTLSContigHandler : public CTLSHandler
 {
 public:
-    CTLSContigHandler() : CTLSHandler(), m_Consensus(kEmptyStr) {}
+    CTLSContigHandler() : CTLSHandler(), m_Consensus(kEmptyStr), m_CalculateConsensus(true) {}
     virtual ~CTLSContigHandler() {}
 
     virtual void ProcessBioseq(CBioseq_Handle bh);
     const string& GetConsensus() { return m_Consensus; }
+    void SetConsensus(const string& consensus) { m_Consensus = consensus; m_CalculateConsensus = false; }
     bool first = true;
 
 protected:
     string m_Consensus;
+    bool m_CalculateConsensus;
 };
 
 
 void CTLSContigHandler::ProcessBioseq(CBioseq_Handle bh)
 {
-    string tls = edit::GenerateTargetedLocusName(bh);
+    if (m_CalculateConsensus) {
+        string tls = edit::GenerateTargetedLocusName(bh);
 
-    if (!NStr::IsBlank(tls)) {
-        if (first || !NStr::IsBlank(m_Consensus)) {
-            // if an earlier collision rendered the consensus name blank, it should stay blank
-            m_Consensus = edit::GetTargetedLocusNameConsensus(m_Consensus, tls);
+        if (!NStr::IsBlank(tls)) {
+            if (first || !NStr::IsBlank(m_Consensus)) {
+                // if an earlier collision rendered the consensus name blank, it should stay blank
+                m_Consensus = edit::GetTargetedLocusNameConsensus(m_Consensus, tls);
+            }
+            edit::SetTargetedLocusName(bh, tls);
+            first = false;
         }
-        edit::SetTargetedLocusName(bh, tls);
-        first = false;
+    } else {
+        edit::SetTargetedLocusName(bh, m_Consensus);
     }
 }
 
@@ -351,6 +357,10 @@ void CTLSApp::Init(void)
         CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("b", "Input is in binary format");
 
+    arg_desc->AddOptionalKey("targetedlocusname", "TargetedLocusName", 
+        "Optional value to use for Targeted Locus Name for master and all contigs instead of calculated value",
+        CArgDescriptions::eString);
+
     // Program description
     string prog_description = "Targeted Locus Name Generator\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -366,6 +376,10 @@ int CTLSApp::Run(void)
 {
     const CArgs& args = GetArgs();
     Setup(args);
+
+    if (args["targetedlocusname"]) {
+        m_ContigHandler.SetConsensus(args["targetedlocusname"].AsString());
+    }
  
     // process contigs
 
