@@ -1683,16 +1683,13 @@ CPendingOperation::x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
 {
     ECacheLookupResult  cache_lookup_result = eNotFound;
 
-    // Need to capitalize the seq_id before going to the tables.
-    // Capitalizing in place suites because the other tries are done via
-    // copies provided by OSLT
-    char *      current = (char *)(m_UrlSeqId.data());
-    for (size_t  index = 0; index < m_UrlSeqId.size(); ++index, ++current)
-        *current = (char)toupper((unsigned char)(*current));
+    // Capitalize seq_id
+    string      upper_seq_id(m_UrlSeqId.data(), m_UrlSeqId.size());
+    NStr::ToUpper(upper_seq_id);
 
     // 1. As is
     if (need_as_is == true) {
-        cache_lookup_result = x_ResolveSecondaryOSLTInCache(m_UrlSeqId,
+        cache_lookup_result = x_ResolveSecondaryOSLTInCache(upper_seq_id,
                                                             m_UrlSeqIdType,
                                                             bioseq_resolution);
     }
@@ -1700,15 +1697,15 @@ CPendingOperation::x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
     if (cache_lookup_result == eNotFound) {
         // 2. if there are | at the end => strip all trailing bars
         //    else => add one | at the end
-        if (m_UrlSeqId[m_UrlSeqId.size() - 1] == '|') {
-            CTempString     strip_bar_seq_id(m_UrlSeqId);
+        if (upper_seq_id[upper_seq_id.size() - 1] == '|') {
+            string  strip_bar_seq_id(upper_seq_id);
             while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
-                strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1);
+                strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1, 1);
             cache_lookup_result = x_ResolveSecondaryOSLTInCache(strip_bar_seq_id,
                                                                 m_UrlSeqIdType,
                                                                 bioseq_resolution);
         } else {
-            string      seq_id_added_bar(m_UrlSeqId.data(), m_UrlSeqId.size());
+            string      seq_id_added_bar(upper_seq_id);
             seq_id_added_bar.append(1, '|');
             cache_lookup_result = x_ResolveSecondaryOSLTInCache(seq_id_added_bar,
                                                                 m_UrlSeqIdType,
