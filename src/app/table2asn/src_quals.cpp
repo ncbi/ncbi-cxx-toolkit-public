@@ -451,6 +451,158 @@ static void s_PreprocessNoteMods(CModHandler::TModList& mods)
 }
 
 
+class CApplyMods
+{
+public:
+    using TModList = CModHandler::TModList;
+    using TMods = CModHandler::TMods;
+
+    CApplyMods(const TMods& commandLineMods, 
+               const string& m_CommandLineRemainder,
+               CMemorySrcFileMap* pNamedSrcFileMap,
+               CMemorySrcFileMap* pDefaultSrcFileMap,
+               ILineErrorListener* pMessageListener,
+               bool readModsFromTitle,
+               bool isVerbose);
+
+    void operator()(CBioseq& bioseq);
+
+private:
+    TMods m_CommandLineMods;
+    const string m_CommandLineRemainder;
+
+    CMemorySrcFileMap* m_pNamedSrcFileMap=nullptr;
+    CMemorySrcFileMap* m_pDefaultSrcFileMap=nullptr;
+    ILineErrorListener* m_pMessageListener=nullptr;
+
+    bool m_ReadModsFromTitle = false;
+    bool m_IsVerbose=false; // can set this in CMemorySrcFileMap
+};
+
+
+CApplyMods::CApplyMods(
+        const TMods& commandLineMods,
+        const string& commandLineRemainder,
+        CMemorySrcFileMap* pNamedSrcFileMap,
+        CMemorySrcFileMap* pDefaultSrcFileMap,
+        ILineErrorListener* pMessageListener,
+        bool readModsFromTitle,
+        bool isVerbose) : 
+    m_CommandLineMods(commandLineMods), 
+    m_CommandLineRemainder(commandLineRemainder),
+    m_pNamedSrcFileMap(pNamedSrcFileMap),
+    m_pDefaultSrcFileMap(pDefaultSrcFileMap),
+    m_pMessageListener(pMessageListener),
+    m_ReadModsFromTitle(readModsFromTitle),
+    m_IsVerbose(isVerbose)
+{}
+
+    
+void CApplyMods::operator()(CBioseq& bioseq)
+{
+    CModHandler mod_handler;
+    mod_handler.SetMods(m_CommandLineMods);
+    string remainder = m_CommandLineRemainder;
+    TModList rejectedMods;
+
+    string seqId = bioseq.GetId().front()->AsFastaString();
+    auto fReportError = 
+        [&](const CModData& /* mod */, const string& msg, EDiagSev /* sev */,
+            EModSubcode subcode) {
+            return sReportError(m_pMessageListener, eDiag_Warning, subcode, seqId, msg);
+        };
+ 
+    if (m_pNamedSrcFileMap && m_pNamedSrcFileMap->Mapped()) {
+        TModList mods;
+        if (m_pNamedSrcFileMap->GetMods(bioseq, mods, m_IsVerbose)) {
+            s_PreprocessNoteMods(mods); // RW-928
+             mod_handler.AddMods(mods, 
+                CModHandler::ePreserve, 
+                rejectedMods,
+                fReportError);
+            s_AppendMods(rejectedMods, remainder);
+        }
+    }
+
+    if (m_pDefaultSrcFileMap && m_pDefaultSrcFileMap->Mapped()) {
+        TModList mods;
+        if (m_pDefaultSrcFileMap->GetMods(bioseq, mods, m_IsVerbose)) {
+            s_PreprocessNoteMods(mods); // RW-928
+            mod_handler.AddMods(mods, 
+                CModHandler::ePreserve, 
+                rejectedMods, 
+                fReportError);
+            s_AppendMods(rejectedMods, remainder);
+        }
+    }
+
+    CRef<CSeqdesc> pTitleDesc;
+    CSeq_descr::Tdata* pDescriptors = nullptr;
+    if ((bioseq.IsSetDescr() &&
+        bioseq.GetDescr().IsSet()) ||
+        !NStr::IsBlank(remainder)) {
+        pDescriptors = &(bioseq.SetDescr().Set());
+    }
+
+    CSeq_descr::Tdata::iterator title_it;
+    if (pDescriptors) {
+        title_it = 
+            find_if(pDescriptors->begin(), pDescriptors->end(),
+                    [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
+        if (title_it != pDescriptors->end()) {
+            pTitleDesc = *title_it;
+            if (m_ReadModsFromTitle) { 
+                auto& title = (*title_it)->SetTitle();
+                string titleRemainder;
+                TModList mods;
+                CTitleParser::Apply(title, mods, titleRemainder);
+                title.clear(); 
+                mod_handler.AddMods(mods, 
+                    CModHandler::ePreserve, 
+                    rejectedMods, 
+                    fReportError);
+                s_AppendMods(rejectedMods, titleRemainder);
+                remainder = titleRemainder +  remainder;
+            }
+        }
+    }
+
+
+    CModAdder::Apply(mod_handler, bioseq, rejectedMods, fReportError);
+    s_AppendMods(rejectedMods, remainder);
+
+
+    NStr::TruncateSpacesInPlace(remainder);
+    if (!remainder.empty()) {
+        if (!pTitleDesc) {
+            pTitleDesc = Ref(new CSeqdesc());
+            pDescriptors->push_back(pTitleDesc);
+            pTitleDesc->SetTitle() = remainder;
+        }
+        else {
+            string current_title = 
+                NStr::TruncateSpaces(
+                    pTitleDesc->GetTitle(), 
+                    NStr::eTrunc_End);
+            pTitleDesc->SetTitle() = current_title.empty() ?
+                remainder : 
+                current_title + " " + remainder;
+        }
+    }
+    else // remainder.empty() 
+    if (pDescriptors) {
+        if (title_it != pDescriptors->end() &&
+            (*title_it)->GetTitle().empty()) {
+            pDescriptors->erase(title_it);
+        }
+        
+        if (pDescriptors->empty()) {
+            bioseq.ResetDescr();
+        }
+    }
+}
+
+
 void g_ApplyMods(
     unique_ptr<CMemorySrcFileMap>& pNamedSrcFileMap,
     const string& namedSrcFile,
@@ -512,6 +664,8 @@ void g_ApplyMods(
                 .GetPointerOrNull());
 
         if (pBioseq) {
+
+
             CModHandler mod_handler;
             mod_handler.SetMods(commandLineMods);
             string remainder = commandLineRemainder;
@@ -611,6 +765,9 @@ void g_ApplyMods(
                     pBioseq->ResetDescr();
                 }
             }
+
+
+
         }
     }
 
