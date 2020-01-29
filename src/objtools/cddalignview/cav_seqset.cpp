@@ -296,8 +296,14 @@ string Sequence::GetTitle(void) const
     for (s=seqIDs.begin(); s!=se; ++s) {
         if ((*s)->IsPdb()) {
             string title = (*s)->GetPdb().GetMol();
+#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+            string _chain_id = (*s)->GetPdb().GetEffectiveChain_id();
+            if (!_chain_id.empty() && _chain_id[0] != ' ')
+                title += string("_") + _chain_id;
+#else
             if ((char) (*s)->GetPdb().GetChain() != ' ')
                 title += string("_") + (char) (*s)->GetPdb().GetChain();
+#endif
             return title;
         }
     }
@@ -319,8 +325,14 @@ string Sequence::GetLabel(void) const
     for (s=seqIDs.begin(); s!=se; ++s) {
         if ((*s)->IsPdb()) {
             label = (*s)->GetPdb().GetMol();
+#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+            string _chain_id = (*s)->GetPdb().GetEffectiveChain_id();
+            if (!_chain_id.empty() && _chain_id[0] != ' ')
+                label += _chain_id;
+#else
             if ((char) (*s)->GetPdb().GetChain() != ' ')
                 label += (char) (*s)->GetPdb().GetChain();
+#endif
             return label;
         }
     }
