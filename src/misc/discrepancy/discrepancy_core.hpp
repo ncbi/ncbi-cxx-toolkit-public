@@ -883,10 +883,10 @@ protected:
 public:
     const string GetText() const { return m_Ref->GetText(); }
     const string GetPath() const { for (auto ref = m_Ref; ref; ref = ref->m_Parent) if (ref->m_Type == CDiscrepancyContext::eFile) return ref->m_Text; return kEmptyStr; }
-    const string& GetFeatureType() const { return kEmptyStr; }
-    const string& GetProductName() const { return kEmptyStr; }
-    const string& GetLocation() const { return kEmptyStr; }
-    const string& GetLocusTag() const { return kEmptyStr; }
+    const string GetFeatureType() const;
+    const string GetProductName() const;
+    const string GetLocation() const;
+    const string GetLocusTag() const;
     const string GetShort() const { return m_Ref->GetBioseqLabel(); }
     virtual void SetMoreInfo(CObject* data) { m_More.Reset(data); }
 

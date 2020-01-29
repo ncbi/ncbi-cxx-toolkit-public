@@ -339,6 +339,75 @@ void CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CSc
 }
 
 
+const string CDiscrepancyObject::GetFeatureType() const
+{
+    if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
+        size_t n = m_Ref->m_Text.find('\t');
+        if (n != string::npos) {
+            return m_Ref->m_Text.substr(0, n);
+        }
+    }
+    return kEmptyStr;
+}
+
+
+const string CDiscrepancyObject::GetProductName() const
+{
+    if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
+        size_t n = m_Ref->m_Text.find('\t');
+        if (n != string::npos) {
+            n++;
+            size_t m = m_Ref->m_Text.find('\t', n);
+            if (m != string::npos) {
+                return m_Ref->m_Text.substr(n, m - n);
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+
+const string CDiscrepancyObject::GetLocation() const
+{
+    if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
+        size_t n = m_Ref->m_Text.find('\t');
+        if (n != string::npos) {
+            n++;
+            n = m_Ref->m_Text.find('\t', n);
+            if (n != string::npos) {
+                n++;
+                size_t m = m_Ref->m_Text.find('\t', n);
+                if (m != string::npos) {
+                    return m_Ref->m_Text.substr(n, m - n);
+                }
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+
+const string CDiscrepancyObject::GetLocusTag() const
+{
+    if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
+        size_t n = m_Ref->m_Text.find('\t');
+        if (n != string::npos) {
+            n++;
+            n = m_Ref->m_Text.find('\t', n);
+            if (n != string::npos) {
+                n++;
+                n = m_Ref->m_Text.find('\t', n);
+                if (n != string::npos) {
+                    n++;
+                    return m_Ref->m_Text.substr(n);
+                }
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+
 string CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
 {
     string type;
