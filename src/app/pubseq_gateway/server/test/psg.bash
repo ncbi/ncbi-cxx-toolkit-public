@@ -53,6 +53,7 @@ obasename=$(basename $odirname)
 unset PORTCFG
 PORT=${PORTCFG:=2180}
 
+# full_url="http://psg21.be-md:10001/${url}"
 # full_url="http://tonka1:2180/${url}"
 full_url="http://localhost:${PORT}/${url}"
 if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
