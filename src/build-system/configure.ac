@@ -4274,8 +4274,13 @@ fi
 
 ### Common-use system and miscellaneous libs
 if test -z "${NETWORK_LIBS+set}"; then
-   AC_CHECK_LIB(nsl, gethostbyname, [libnsl=-lnsl], [libnsl=])
-   AC_CHECK_LIB(socket, connect, [NETWORK_LIBS="-lsocket $libnsl"],
+   AC_SEARCH_LIBS(gethostbyname, [nsl],
+      [test "x$ac_cv_search_gethostbyname" = "xnone required" \
+       || libnsl=$ac_cv_search_gethostbyname],
+      [libnsl=])
+   AC_SEARCH_LIBS(connect, [socket],
+      [test "x$ac_cv_search_connect" = "xnone required" \
+       || NETWORK_LIBS="$ac_cv_search_connect $libnsl"],
       [NETWORK_LIBS=$libnsl])
 fi
 AC_CACHE_CHECK([for res_search in -lresolv], ac_cv_lib_resolv_res_search,
