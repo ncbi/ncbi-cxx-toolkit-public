@@ -13,7 +13,7 @@ LIBS = $(DATA_LOADERS_UTIL_LIBS) \
 	   $(CMPRS_LIBS) $(NETWORK_LIBS) \
        $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin SQLITE3 VDB
+REQUIRES = objects -Cygwin SQLITE3
 CXXFLAGS = $(ORIG_CXXFLAGS)
 # -Wno-parentheses
 
