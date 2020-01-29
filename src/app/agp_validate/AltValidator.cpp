@@ -396,7 +396,7 @@ static void s_WriteLine(
         }
         ostr << line.substr(0, pos);
         if (pos != NPOS) ostr << ".1" << line.substr(pos);
-        cout << '\n';
+        ostr << '\n';
         return;
     }
 
@@ -406,7 +406,7 @@ static void s_WriteLine(
     else 
     if (!inDatabase) 
     {   
-        ostr << line << "#component_id not in Genbank" << '\n';
+        ostr << line << "#component_id not in GenBank" << '\n';
     }
 }
     
