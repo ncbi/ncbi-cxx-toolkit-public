@@ -37,7 +37,7 @@
 #ifdef NCBI_CXX_TOOLKIT
 #  include "ncbi_lbosp.h"
 #  include "ncbi_linkerd.h"
-#endif
+#endif /*NCBI_CXX_TOOLKIT*/
 #include "ncbi_namerd.h"
 #include "ncbi_priv.h"
 #include <ctype.h>
