@@ -460,9 +460,32 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
             const string& accn = bsx->GetAccession();
             m_AccnIndexMap[accn] = bsx;
 
-            // map from handle to best Seq-id string to CBioseqIndex object
-            string bestid = s_IdxGetBestIdString(bsh);
-            m_BestIdIndexMap[bestid] = bsx;
+            const CBioseq_Handle::TId& ids = bsh.GetId();
+            if (! ids.empty()) {
+                ITERATE( CBioseq_Handle::TId, it, ids ) {
+                    switch( (*it).Which() ) {
+                        case CSeq_id::e_Local:
+                        case CSeq_id::e_Genbank:
+                        case CSeq_id::e_Embl:
+                        case CSeq_id::e_Ddbj:
+                        case CSeq_id::e_Gi:
+                        case CSeq_id::e_Other:
+                        case CSeq_id::e_General:
+                        case CSeq_id::e_Tpg:
+                        case CSeq_id::e_Tpe:
+                        case CSeq_id::e_Tpd:
+                        case CSeq_id::e_Gpipe:
+                        {
+                            // map from handle to Seq-id string to CBioseqIndex object
+                            string str = (*it).AsString();
+                            m_BestIdIndexMap[str] = bsx;
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+            }
         }
     } else if (sep.IsSet()) {
         // Is Bioseq-set
@@ -661,7 +684,19 @@ CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (CBioseq_Handle bsh)
     return CRef<CBioseqIndex> ();
 }
 
-// // Get Bioseq index by feature
+// Get Bioseq index by string
+CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (string& str)
+
+{
+    TBestIdIndexMap::iterator it = m_BestIdIndexMap.find(str);
+    if (it != m_BestIdIndexMap.end()) {
+        CRef<CBioseqIndex> bsx = it->second;
+        return bsx;
+    }
+    return CRef<CBioseqIndex> ();
+}
+
+// Get Bioseq index by feature
 CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (const CMappedFeat& mf)
 
 {
@@ -2021,20 +2056,14 @@ void CBioseqIndex::x_InitFeats (void)
                     continue;
                 }
 
-                // index feature for product (CDS -> protein, mRNA -> cDNA, or Prot -> peptide)
+                // index feature for (local) product Bioseq (CDS -> protein, mRNA -> cDNA, or Prot -> peptide)
                 CSeq_id_Handle idh = mf.GetProductId();
                 if (idh) {
-                    CBioseq_Handle pbsh = m_Scope->GetBioseqHandle(idh);
-                    if (pbsh) {
-                        CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
-                        auto idxl = idx.Lock();
-                        if (idxl) {
-                            CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(pbsh);
-                            if (bsxp) {
-                                bsxp->m_FeatForProdInitialized = true;
-                                bsxp->m_FeatureForProduct = sfx;
-                            }
-                        }
+                    string str = idh.AsString();
+                    CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(str);
+                    if (bsxp) {
+                        bsxp->m_FeatForProdInitialized = true;
+                        bsxp->m_FeatureForProduct = sfx;
                     }
                 }
             }
@@ -2949,21 +2978,21 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestParent (void)
             CWeakRef<CSeqMasterIndex> idx = bsxl->GetSeqMasterIndex();
             auto idxl = idx.Lock();
             if (idxl) {
-				 static const CSeqFeatData::ESubtype sm_SpecialVDJTypes[] = {
-					 CSeqFeatData::eSubtype_C_region,
-					 CSeqFeatData::eSubtype_V_segment,
-					 CSeqFeatData::eSubtype_D_segment,
-					 CSeqFeatData::eSubtype_J_segment,
+                 static const CSeqFeatData::ESubtype sm_SpecialVDJTypes[] = {
+                     CSeqFeatData::eSubtype_C_region,
+                     CSeqFeatData::eSubtype_V_segment,
+                     CSeqFeatData::eSubtype_D_segment,
+                     CSeqFeatData::eSubtype_J_segment,
                      CSeqFeatData::eSubtype_bad
-				 };
-				 for ( const CSeqFeatData::ESubtype* type_ptr = sm_SpecialVDJTypes;
-				     *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
+                 };
+                 for ( const CSeqFeatData::ESubtype* type_ptr = sm_SpecialVDJTypes;
+                     *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
                      best = feature::GetBestParentForFeat(m_Mf, *type_ptr, idxl->GetFeatTree(), 0);
-                    if (best) {
-                        return bsxl->GetFeatIndex(best);
-                    }
-				 }
-            }
+                     if (best) {
+                         return bsxl->GetFeatIndex(best);
+                     }
+                 }
+             }
         }
     } catch (CException& e) {
         LOG_POST_X(8, Error << "Error in CFeatureIndex::GetBestParent: " << e.what());

@@ -221,6 +221,8 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (const string& accn);
     // Get Bioseq index by handle
     CRef<CBioseqIndex> GetBioseqIndex (CBioseq_Handle bsh);
+    // Get Bioseq index by string
+    CRef<CBioseqIndex> GetBioseqIndex (string& str);
     // Get Bioseq index by feature
     CRef<CBioseqIndex> GetBioseqIndex (const CMappedFeat& mf);
 
