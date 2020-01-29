@@ -134,6 +134,7 @@ private:
   using TLineQueue = vector<SLineData>;
   TLineQueue m_LineQueue;
   int m_GenBankCompLineCount=0;
+  set<string> m_InvalidAccessions;
 };
 
 // These really should be in agp_validate.cpp, but gcc inexplicably balks, saying:

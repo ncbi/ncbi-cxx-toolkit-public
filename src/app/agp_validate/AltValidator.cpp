@@ -328,9 +328,8 @@ void CAltValidator::QueueLine(const string& orig_line)
 
 void CAltValidator::x_QueryAccessions()
 {
+    m_InvalidAccessions.clear();
     vector<CSeq_id_Handle> idHandles;
-    vector<string> validAccessions;
-
     CSeq_id seqId;
     for (const auto& accession : m_Accessions) {
         try {
@@ -338,11 +337,10 @@ void CAltValidator::x_QueryAccessions()
         }
         catch (...)
         {
+            m_InvalidAccessions.insert(accession);
             continue;
         }
-
         idHandles.push_back(CSeq_id_Handle::GetHandle(seqId));
-        validAccessions.push_back(accession);
     }
 
     auto bioseqHandles = m_Scope->GetBioseqHandles(idHandles);
@@ -422,11 +420,11 @@ void CAltValidator::ProcessQueue()
         const CTempString& acc=lineInfo.comp_id;
         const string& orig_line = lineInfo.orig_line;
         if(acc.empty()) {
-        if (m_pOut) {
-            *m_pOut << orig_line << '\n';
-        }
-        pAgpErr->LineDone(orig_line, lineInfo.line_num);
-        continue;
+            if (m_pOut) {
+                *m_pOut << orig_line << '\n';
+            }
+            pAgpErr->LineDone(orig_line, lineInfo.line_num);
+            continue;
         }
 
 
@@ -476,12 +474,12 @@ void CAltValidator::ProcessQueue()
             }
         }
         else {
-            try {
-                CSeq_id seqId(acc);
-                pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, ": "+acc);
-            }
-            catch (...) {
+            auto it = m_InvalidAccessions.find(acc);
+            if (it != end(m_InvalidAccessions)) {
                 pAgpErr->Msg(CAgpErrEx::G_InvalidCompId, ": "+acc);
+            }
+            else {
+                pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, ": "+acc);
             }
         }
 
