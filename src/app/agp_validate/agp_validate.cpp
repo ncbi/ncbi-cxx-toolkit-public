@@ -932,8 +932,6 @@ int main(int argc, const char* argv[])
     return 0;
   }
 
-  return CAgpValidateApplication().AppMain(
-    argc, argv, 0, eDS_Default, 0
-  );
+  return CAgpValidateApplication().AppMain(argc, argv);
 }
 
