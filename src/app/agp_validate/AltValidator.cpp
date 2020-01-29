@@ -113,61 +113,6 @@ void CAltValidator::Init(void)
 
 // Returns GI // int* missing_ver
 
-void CAltValidator::GetAccDataFromObjMan( const string& acc, SComponentInfo& acc_data )
-{
-
-  CSeq_id seq_id;
-  try {
-    seq_id.Set(acc);
-  }
-  catch (...) {
-    pAgpErr->Msg(CAgpErrEx::G_InvalidCompId, string(": ")+acc);
-    return;
-  }
-
-  try {
-    auto bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
-    if( !bioseq_handle ) {
-      pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, string(": ")+acc);
-      return;
-    }
-    acc_data.inDatabase=true;
-
-    if(acc_data.currentVersion<=0) {
-      try {
-        auto seq_id_handle =
-            sequence::GetId(bioseq_handle, sequence::eGetId_ForceAcc);
-        string acc_ver = 
-            sequence::GetAccessionForId(*seq_id_handle.GetSeqId(), *m_Scope );
-        SIZE_TYPE pos_dot = acc_ver.find('.');
-        if( pos_dot!=NPOS && pos_dot<acc_ver.size()-1 ) {
-          acc_data.currentVersion = NStr::StringToNonNegativeInt( acc_ver.substr(pos_dot+1) );
-        }
-      }
-      catch (...) {
-        pAgpErr->Msg(CAgpErrEx::G_DataError,
-          string(" - cannot get version for ") + acc);
-        return;
-      }
-    }
-
-    if(m_check_len_taxid) {
-      acc_data.len   = static_cast<int>(bioseq_handle.GetInst_Length());
-      acc_data.taxid =  sequence::GetTaxId(bioseq_handle);
-      if(acc_data.taxid<=0) {
-        pAgpErr->Msg(CAgpErrEx::G_DataError,
-          " - cannot retrieve taxonomic id for "+acc);
-      }
-    }
-
-  }
-  catch (...) {
-    pAgpErr->Msg(CAgpErrEx::G_DataError,
-      string(" - cannot get version for ") + acc);
-    return;
-  }
-}
-
 
 void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
@@ -368,9 +313,8 @@ void CAltValidator::QueueLine(
   ld.comp_id = comp_id;
   ld.line_num = line_num;
   ld.comp_end = comp_end;
-  lineQueue.push_back(ld);
-
-  accessions.insert(comp_id);
+  m_LineQueue.push_back(ld);
+  m_Accessions.insert(comp_id);
 }
 
 void CAltValidator::QueueLine(const string& orig_line)
@@ -378,7 +322,7 @@ void CAltValidator::QueueLine(const string& orig_line)
   SLineData ld;
   ld.orig_line = orig_line;
   // ld.comp_id remains empty
-  lineQueue.push_back(ld);
+  m_LineQueue.push_back(ld);
 }
 
 
@@ -388,7 +332,7 @@ void CAltValidator::x_QueryAccessions()
     vector<string> validAccessions;
 
     CSeq_id seqId;
-    for (const auto& accession : accessions) {
+    for (const auto& accession : m_Accessions) {
         try {
             seqId.Set(accession);
         }
@@ -417,133 +361,141 @@ void CAltValidator::x_QueryAccessions()
                              idHandle.GetSeqId()->GetOther();
 
         // Add information to map  
-        auto& compInfo = mapAccData[accVer.GetAccession()];
+        auto& compInfo = m_ComponentInfoMap[accVer.GetAccession()];
         compInfo.currentVersion = accVer.GetVersion();
         compInfo.len = bioseqHandle.GetInst_Length();
         compInfo.taxid = sequence::GetTaxId(bioseqHandle);
         compInfo.inDatabase=true;
     }
-    accessions.clear();
+    m_Accessions.clear();
 }
 
+static void s_WriteLine(
+        const string& accession,
+        const CTempString& line,
+        bool inDatabase,
+        int currentVersion,
+        bool versionSpecifiedInFile,
+        CNcbiOstream& ostr)
+{
+
+    if (versionSpecifiedInFile) {
+        ostr << line << '\n';
+        return;
+    }
+
+    if (currentVersion==1) {  
+        size_t pos=NPOS;
+        size_t tabCount=0;
+        for (size_t i=0; i<line.size(); ++i) {
+            if (line[i] == '\t') {
+                ++tabCount;
+            }
+            if (tabCount==6) {
+                pos=i;
+                break;
+            }
+        }
+        ostr << line.substr(0, pos);
+        if (pos != NPOS) ostr << ".1" << line.substr(pos);
+        cout << '\n';
+        return;
+    }
+
+    if (currentVersion) {
+        ostr << line << "#current version " << accession << "." << currentVersion << '\n';
+    }
+    else 
+    if (!inDatabase) 
+    {   
+        ostr << line << "#component_id not in Genbank" << '\n';
+    }
+}
+    
 
 void CAltValidator::ProcessQueue()
 {
-  x_QueryAccessions(); // In: accessions; Out: mapAccData.
+    x_QueryAccessions(); // In: accessions; Out: m_ComponentInfoMap.
 
-  for (const auto& lineInfo : lineQueue) 
-  {
-    const CTempString& acc=lineInfo.comp_id;
-    const string& orig_line = lineInfo.orig_line;
-    if(acc.empty()) {
-      if (m_out) {
-        *m_out << orig_line << '\n';
-      }
-      pAgpErr->LineDone(orig_line, lineInfo.line_num);
-      continue;
-    }
-
-
-    SIZE_TYPE pos_ver = acc.find('.');
-    const bool versionSpecified = 
-        (pos_ver != NPOS) ?
-        (NStr::StringToNonNegativeInt(acc.substr(pos_ver+1)) != -1) :
-        false;
-
-    const CTempString& acc_nover = versionSpecified ?
-        acc.substr(0, pos_ver) :
-        acc;
-
-
-    SComponentInfo acc_data;
-    auto itAccData = mapAccData.find(acc_nover);
-
-    if (itAccData!=mapAccData.end()) {
-        acc_data = itAccData->second;
-        if (!acc_data.currentVersion) {
-            pAgpErr->Msg(CAgpErrEx::G_DataError, 
-                " - cannot get version for "+acc);
+    for (const auto& lineInfo : m_LineQueue) 
+    {
+        const CTempString& acc=lineInfo.comp_id;
+        const string& orig_line = lineInfo.orig_line;
+        if(acc.empty()) {
+        if (m_pOut) {
+            *m_pOut << orig_line << '\n';
         }
-        else 
-        if (m_check_len_taxid && !acc_data.taxid) {
-            pAgpErr->Msg(CAgpErrEx::G_DataError,
-                " - cannot retrieve taxonomic id for "+acc);
+        pAgpErr->LineDone(orig_line, lineInfo.line_num);
+        continue;
         }
-    }
-    else {
-        try {
-            CSeq_id seqId(acc);
-            pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, ": "+acc);
-        }
-        catch (...) {
-            pAgpErr->Msg(CAgpErrEx::G_InvalidCompId, ": "+acc);
-        }
-    }
 
-    if (m_out) {
-        if (!versionSpecified && acc_data.currentVersion==1) {  
-            // add missing version 1
-            // Look for the 6th tab in the line - right after the accession
-            size_t pos=NPOS;
-            size_t tabCount=0;
-            const CTempString& line = orig_line;
-            for (size_t i=0; i<line.size(); ++i) {
-                if (orig_line[i] == '\t') {
-                    ++tabCount;
-                }
-                if (tabCount==6) {
-                    pos=i;
-                    break;
+
+        SIZE_TYPE pos_ver = acc.find('.');
+        const bool versionSpecified = 
+            (pos_ver != NPOS) ?
+            (NStr::StringToNonNegativeInt(acc.substr(pos_ver+1)) != -1) :
+            false;
+
+        const CTempString& acc_nover = versionSpecified ?
+            acc.substr(0, pos_ver) :
+            acc;
+
+        SComponentInfo acc_data;
+        auto itAccData = m_ComponentInfoMap.find(acc_nover);
+
+        if (itAccData!=m_ComponentInfoMap.end()) {
+            acc_data = itAccData->second;
+            if (!acc_data.currentVersion) {
+                pAgpErr->Msg(CAgpErrEx::G_DataError, 
+                    " - cannot get version for "+acc);
+            }
+            else 
+            if (m_check_len_taxid && !acc_data.taxid) {
+                pAgpErr->Msg(CAgpErrEx::G_DataError,
+                    " - cannot retrieve taxonomic id for "+acc);
+            }
+
+            m_GenBankCompLineCount++;
+            // Warn if no version was supplied and GenBank version is > 1
+            if(!versionSpecified && acc_data.currentVersion>1) pAgpErr->Msg(CAgpErrEx::G_NeedVersion,
+                acc + " (current version " + NStr::IntToString(acc_data.currentVersion) + ")",
+                CAgpErr::fAtThisLine);
+
+            if(m_check_len_taxid) {
+                // Component out of bounds check
+                CAgpRow::CheckComponentEnd( acc, lineInfo.comp_end, acc_data.len, *pAgpErr );
+
+                // Taxid check
+                int taxid = acc_data.taxid;
+                if(taxid) {
+                    if(m_SpeciesLevelTaxonCheck) {
+                        taxid = x_GetSpecies(taxid);
+                    }
+                    x_AddToTaxidMap(taxid, acc, lineInfo.line_num);
                 }
             }
-            *m_out << line.substr(0, pos);
-            if (pos != NPOS) *m_out << ".1" << line.substr(pos);
         }
         else {
-            *m_out << orig_line;
-            if (!versionSpecified) {
-                if (acc_data.currentVersion) {
-                    *m_out << "#current version " << acc << "." << acc_data.currentVersion;
-                }
-                else 
-                if (!acc_data.inDatabase) 
-                {   
-                    *m_out << "component_id not in Genbank";   
-                }
+            try {
+                CSeq_id seqId(acc);
+                pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, ": "+acc);
             }
-            *m_out << '\n';
-        }
-    }
-
-
-
-    if(acc_data.inDatabase) {
-        // component_id is a valid GenBank accession
-        m_GenBankCompLineCount++;
-
-        // Warn if no version was supplied and GenBank version is > 1
-        if(!versionSpecified && acc_data.currentVersion>1) pAgpErr->Msg(CAgpErrEx::G_NeedVersion,
-            acc + " (current version " + NStr::IntToString(acc_data.currentVersion) + ")",
-            CAgpErr::fAtThisLine);
-
-        if(m_check_len_taxid) {
-            // Component out of bounds check
-            CAgpRow::CheckComponentEnd( acc, lineInfo.comp_end, acc_data.len, *pAgpErr );
-
-            // Taxid check
-            int taxid = acc_data.taxid;
-            if(taxid) {
-                if(m_SpeciesLevelTaxonCheck) {
-                    taxid = x_GetSpecies(taxid);
-                }
-                    x_AddToTaxidMap(taxid, acc, lineInfo.line_num);
+            catch (...) {
+                pAgpErr->Msg(CAgpErrEx::G_InvalidCompId, ": "+acc);
             }
         }
-    }
-    pAgpErr->LineDone(orig_line, lineInfo.line_num);
-  }
 
-  lineQueue.clear();
+        if (m_pOut) {
+            s_WriteLine(acc, 
+                    orig_line, 
+                    acc_data.inDatabase, 
+                    acc_data.currentVersion,
+                    versionSpecified,
+                    *m_pOut);
+        }
+        pAgpErr->LineDone(orig_line, lineInfo.line_num);
+    }
+    m_LineQueue.clear();
 }
 
 string ExtractAccession(const string& long_acc)

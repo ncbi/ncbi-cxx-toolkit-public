@@ -356,10 +356,10 @@ int CAgpValidateApplication::Run(void)
     m_AltValidator= new CAltValidator(m_ValidationType==VT_AccLenTaxid);
     m_AltValidator->Init();
     if( args["species"].HasValue() ) {
-      m_AltValidator->m_SpeciesLevelTaxonCheck = true;
+      m_AltValidator->SetSpeciesLevelTaxonCheck();
     }
     if( args["out"].HasValue() ) {
-      m_AltValidator->m_out = &(args["out"].AsOutputFile());
+      m_AltValidator->SetOstream(&(args["out"].AsOutputFile()));
     }
   }
 
@@ -671,7 +671,7 @@ void CAgpValidateApplication::x_ValidateFile(
       }
       // else: the error message already reached the error handler
 
-      if(m_AltValidator->m_out && !queued) {
+      if(m_AltValidator->IsSetOstream() && !queued) {
         // error or gap line - queue for verbatim reprinting
         m_AltValidator->QueueLine(line);
       }

@@ -45,31 +45,21 @@ extern CRef<CAgpErrEx> pAgpErr;
 class CAltValidator
 {
 public:
-  bool m_check_len_taxid;
-  CNcbiOstream* m_out=nullptr;
   CAltValidator(bool check_len_taxid)
-  {
-    m_check_len_taxid=check_len_taxid;
+      : m_check_len_taxid(check_len_taxid) {}
+
+  void SetOstream(CNcbiOstream* pOstr) {
+        m_pOut = pOstr;
   }
 
-  bool m_SpeciesLevelTaxonCheck;
+  bool IsSetOstream(void) const 
+  {
+      return (m_pOut != nullptr);
+  }
 
-  // taxids used in the AGP files: taxid -> vector of AGP lines
-  struct SAgpLineInfo {
-      int    file_num;
-      int    line_num;
-      string component_id;
-  };
-  typedef vector<SAgpLineInfo> TAgpInfoList;
-  typedef map<int, TAgpInfoList> TTaxidMap;
-  typedef pair<TTaxidMap::iterator, bool> TTaxidMapRes;
-  TTaxidMap m_TaxidMap;
-
-  int m_TaxidComponentTotal;
-
-  typedef map<int, int> TTaxidSpeciesMap;
-  TTaxidSpeciesMap m_TaxidSpeciesMap;
-  int m_GenBankCompLineCount;
+  void SetSpeciesLevelTaxonCheck(bool check=true) {
+    m_SpeciesLevelTaxonCheck = check;
+  }
 
   void Init();
   // true - no problems, false - found bad taxids
@@ -79,65 +69,71 @@ public:
   /// missing_ver: assign 0 if not missing, else the latest version
   static void ValidateLength(const string& comp_id, int comp_end, int comp_len);
 
+  void QueueLine(const string& orig_line, 
+          const string& comp_id,
+          int line_num, 
+          int comp_end);
+
+  // for the lines that are not processed, such as: comment, gap, invalid line
+  void QueueLine(const string& orig_line);
+
+  size_t QueueSize() const
+  {
+    return m_LineQueue.size();
+  }
+
+  void ProcessQueue();
+
+private:
+  void x_QueryAccessions();
   void x_AddToTaxidMap(int taxid, const string& comp_id, int line_num);
 
   // searches m_TaxidSpeciesMap first, calls x_GetTaxonSpecies() if necessary
   int x_GetSpecies(int taxid);
   int x_GetTaxonSpecies(int taxid);
 
-protected:
   struct SLineData
   {
     string orig_line;
     string comp_id;
     int line_num;
     int comp_end;
-
-    CNcbiOstrstream* messages=nullptr;
-    int gi=0;
   };
 
-
-  typedef vector<SLineData> TLineQueue;
-  TLineQueue lineQueue;
-
-  set<string> accessions; // with or without versions (as given in the AGP file)
   struct SComponentInfo
   {
-    TGi gi=ZERO_GI;
     int currentVersion=0; 
     int len=0;
     int taxid=0;
     bool inDatabase=false;
-
-    bool MatchesVersion_HasAllData(int ver1, bool check_len_taxid) const
-    {
-      //if(gi==ZERO_GI || (ver1!=0 && ver1!=ver)) return false;
-      if(currentVersion==0 || (ver1!=0 && ver1!=currentVersion)) return false;
-      if(check_len_taxid && len<=0 && taxid<=0) return false;
-      return true;
-    }
   };
+
   using TMapAccData = map<string, SComponentInfo>; // key = accession with no version
-  TMapAccData mapAccData;
+  TMapAccData m_ComponentInfoMap;
 
-public:
-  void GetAccDataFromObjMan( const string& acc, SComponentInfo& acc_data);
+  // taxids used in the AGP files: taxid -> vector of AGP lines
+  struct SAgpLineInfo {
+      int    file_num;
+      int    line_num;
+      string component_id;
+  };
 
-  void QueueLine(
-    const string& orig_line, const string& comp_id,
-    int line_num, int comp_end);
+  using TAgpInfoList = vector<SAgpLineInfo>;
+  using TTaxidMap = map<int, TAgpInfoList>;
+  using TTaxidMapRes = pair<TTaxidMap::iterator, bool>;
+  TTaxidMap m_TaxidMap;
 
-  // for the lines that are not processed, such as: comment, gap, invalid line
-  void QueueLine(const string& orig_line);
-  int QueueSize()
-  {
-    return lineQueue.size();
-  }
-  void ProcessQueue();
+  int m_TaxidComponentTotal;
+  using TTaxidSpeciesMap = map<int, int>;
+  TTaxidSpeciesMap m_TaxidSpeciesMap;
 
-private:
-  void x_QueryAccessions();
+  bool m_SpeciesLevelTaxonCheck;
+  set<string> m_Accessions; // with or without versions (as given in the AGP file)
+  CNcbiOstream* m_pOut=nullptr;
+  bool m_check_len_taxid=false;
+  using TLineQueue = vector<SLineData>;
+  TLineQueue m_LineQueue;
+  int m_GenBankCompLineCount=0;
 };
 
 // These really should be in agp_validate.cpp, but gcc inexplicably balks, saying:
