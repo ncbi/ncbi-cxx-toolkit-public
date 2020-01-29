@@ -3427,6 +3427,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
             feat_loc = s_NormalizeNullsBetween( feat_loc );
 
+            /*
             // make sure location ends on the current bioseq
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
@@ -3437,6 +3438,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 }
                 return;
             }
+            */
 
             feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
 
