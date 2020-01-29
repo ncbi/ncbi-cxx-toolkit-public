@@ -659,6 +659,20 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
                 AddString( *outputs, spec_base + ".files");
                 AddString( *outputs, spec_base + "__.cpp");
                 AddString( *outputs, spec_base + "___.cpp");
+                {
+                    string deffile(spec_base + ".def");
+                    if (CFile(deffile).Exists()) {
+                        CPtbRegistry reg;
+                        CNcbiIfstream ifs(deffile.c_str());
+                        reg.Read(ifs);
+                        string clients = reg.GetString("-", "clients");
+                        if (!clients.empty()) {
+                            string clients_base = CDirEntry(GetRelativePath(*f)).GetDir() + clients;
+                            AddString( *outputs, clients_base + ".cpp");
+                            AddString( *outputs, clients_base + "_.cpp");
+                        }
+                    }
+                }
             }
 #if 0
             script += "echo Generating C++ classes from " + entry.GetName() + "\n";
