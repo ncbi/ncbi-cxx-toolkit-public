@@ -64,7 +64,7 @@ function run
         head -$REQUESTS $INPUT_FILE |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client resolve -service $SERVICE -id-file - >/dev/null;
         echo -n "."
     elif [ $CMD -eq 2 ]; then
-        head -$REQUESTS $INPUT_FILE |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client interactive -service $SERVICE >/dev/null;
+        head -$REQUESTS $INPUT_FILE |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client interactive -service $SERVICE -worker-threads "$1:$1:$1" >/dev/null;
         echo -n "."
     else
         head -$REQUESTS $INPUT_FILE |$3/psg_client performance -service $SERVICE -user-threads $1 -local-queue -raw-metrics >/dev/null;
@@ -153,7 +153,7 @@ done
 OUTPUT_FILE="$OUTPUT_DIR/agg.csv"
 
 cat << EOF > $OUTPUT_FILE
-Legend:	
+Legend:
 app;Version of psg_client application
 io;Number of I/O threads
 req;Number of requests consecutively given to the same I/O thread
