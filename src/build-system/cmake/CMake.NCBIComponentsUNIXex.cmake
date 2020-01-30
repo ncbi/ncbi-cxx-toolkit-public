@@ -476,6 +476,7 @@ if(VDB_FOUND)
         ${VDB_INCLUDE}/cc/gcc
     )
     set(NCBI_COMPONENT_VDB_LIBS    ${VDB_LIBS})
+    set(HAVE_NCBI_VDB 1)
     list(APPEND NCBI_ALL_COMPONENTS VDB)
 else()
     set(NCBI_COMPONENT_VDB_FOUND NO)
