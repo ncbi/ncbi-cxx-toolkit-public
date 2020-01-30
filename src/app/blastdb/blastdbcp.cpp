@@ -32,6 +32,7 @@
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/impl/criteria.hpp>
+#include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -55,6 +56,9 @@ private: /* Private Methods */
 
     bool x_ShouldCopyPIGs(const string& dbname,
                           CSeqDB::ESeqType seq_type) const;
+
+    void x_MakeDBwIDList(const CArgs & args, CSeqDB::ESeqType seq_type, Uint8 bytes);
+    void x_CopyDB(const CArgs & args, CSeqDB::ESeqType seq_type, Uint8 bytes);
 
 private: /* Private Data */
     typedef map<string, ICriteria::EMembershipBit> TMemBitMap;
@@ -132,7 +136,6 @@ void BlastdbCopyApplication::Init(void)
     arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
                             kArgGiList);
 
-
     arg_desc->AddOptionalKey(
             kArgDbTitle,
             "database_title",
@@ -194,6 +197,9 @@ void BlastdbCopyApplication::Init(void)
             CArgDescriptions::eString
     );
 
+    arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
+                                "Maximum file size for BLAST database files",
+                                CArgDescriptions::eString, "1GB");
     HideStdArgs(
             fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun
     );
@@ -342,6 +348,38 @@ private:
     TIdToLeafs  m_LeafTaxids;
 };
 
+class CBlastDbAllBioseqSource : public IBioseqSource
+{
+public:
+    CBlastDbAllBioseqSource(CRef<CSeqDBExpert> blastdb): m_BlastDb (blastdb), m_Oid(0)
+    { }
+
+    virtual CConstRef<CBioseq> GetNext();
+
+private:
+	CRef<CSeqDBExpert> m_BlastDb;
+    int	m_Oid;
+};
+
+CConstRef<CBioseq> CBlastDbAllBioseqSource::GetNext()
+{
+	CConstRef<CBioseq> bs(0);
+	while (m_BlastDb->CheckOrFindOID(m_Oid)) {
+		CRef<CBioseq> bs_nc = m_BlastDb->GetBioseq(m_Oid);
+        if (bs_nc.Empty()) {
+              // If we end up here, all sequences were probably filtered
+              // out by the membership bit setting for this gi.
+        	  m_Oid++;
+              continue;
+         }
+
+         bs.Reset(&*bs_nc);
+         m_Oid++;
+         break;
+	}
+    return bs;
+}
+
 bool BlastdbCopyApplication::x_ShouldParseSeqIds(const string& dbname,
                                                  CSeqDB::ESeqType seq_type) const
 {
@@ -349,7 +387,7 @@ bool BlastdbCopyApplication::x_ShouldParseSeqIds(const string& dbname,
     CSeqDB::FindVolumePaths(dbname, seq_type, file_paths);
     const char type = (seq_type == CSeqDB::eProtein ? 'p' : 'n');
     bool retval = false;
-    const char* isam_extensions[] = { "si", "sd", "ni", "nd", NULL };
+    const char* isam_extensions[] = { "si", "sd", "ni", "nd", "os", NULL };
 
     ITERATE(vector<string>, f, file_paths) {
         for (int i = 0; isam_extensions[i] != NULL; i++) {
@@ -366,6 +404,8 @@ bool BlastdbCopyApplication::x_ShouldParseSeqIds(const string& dbname,
     }
     return retval;
 }
+
+
 
 bool BlastdbCopyApplication::x_ShouldCopyPIGs(const string& dbname,
 											  CSeqDB::ESeqType seq_type) const
@@ -387,6 +427,125 @@ bool BlastdbCopyApplication::x_ShouldCopyPIGs(const string& dbname,
 }
 
 
+void BlastdbCopyApplication::x_MakeDBwIDList(const CArgs & args, CSeqDB::ESeqType seq_type, Uint8 bytes)
+{
+    CSeqDBFileGiList::EIdType idtype = args[kArgSeqIdList] ? CSeqDBFileGiList::eSiList : CSeqDBFileGiList::eGiList;
+    string seqListFile = args[kArgSeqIdList] ? args[kArgSeqIdList].AsString() : args[kArgGiList].AsString();
+    CRef<CSeqDBGiList> gilist(
+            new CSeqDBFileGiList(seqListFile,idtype)
+    );
+
+    CSeqDBExpert* dbexpert;
+    if (args[kTargetOnly].AsBoolean()) {
+        dbexpert = new CSeqDBExpert(
+                args[kArgDb].AsString(),
+                seq_type,
+                &*gilist
+        );
+    } else {
+        dbexpert = new CSeqDBExpert(
+                args[kArgDb].AsString(),
+                seq_type
+        );
+    }
+    CRef<CSeqDBExpert> sourcedb(dbexpert);
+
+    if (args[kCopyOnly].HasValue()) {
+        string mbitName = args[kCopyOnly].AsString();
+        TMemBitMap::iterator it = m_MembershipMap.find(mbitName);
+        if (it != m_MembershipMap.end()) {
+            sourcedb->SetVolsMemBit(it->second);
+        }
+    }
+
+    string title;
+    if (args[kArgDbTitle].HasValue()) {
+        title = args[kArgDbTitle].AsString();
+    } else {
+        CNcbiOstrstream oss;
+        oss << "Copy of '" << sourcedb->GetDBNameList() << "': " << sourcedb->GetTitle();
+        title = CNcbiOstrstreamToString(oss);
+    }
+
+    const bool kCopyPIGs = x_ShouldCopyPIGs(args[kArgDb].AsString(),
+                                                          seq_type);
+    CBlastDbBioseqSource bioseq_source(
+            sourcedb,
+            gilist,
+            idtype,
+            args[kMembershipBits].AsBoolean()
+    );
+    const bool kIsSparse = false;
+    const bool kParseSeqids = (idtype == CSeqDBFileGiList::eGiList) ? x_ShouldParseSeqIds(args[kArgDb].AsString(),seq_type): true;
+
+
+    const bool kUseGiMask = false;
+    EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+    dbver = (dbver != sourcedb->GetBlastDbVersion()) ? sourcedb->GetBlastDbVersion() : dbver;
+
+    CStopWatch timer;
+    timer.Start();
+    CBuildDatabase destdb(args[kArgOutput].AsString(), title,
+                          static_cast<bool>(seq_type == CSeqDB::eProtein),
+                          kIsSparse, kParseSeqids, kUseGiMask,
+                          &(args["logfile"].HasValue()
+                           ? args["logfile"].AsOutputFile() : cerr), false, dbver);
+    destdb.SetUseRemote(false);
+	destdb.SetMaxFileSize(bytes);
+    destdb.SetSkipCopyingGis(args["skip_gis"]);
+    //destdb.SetVerbosity(true);
+    destdb.SetSourceDb(sourcedb);
+    destdb.StartBuild();
+    destdb.SetMembBits(bioseq_source.GetMembershipBits(), false);
+    destdb.SetLeafTaxIds(bioseq_source.GetLeafTaxIds(), false);
+    destdb.AddSequences(bioseq_source, kCopyPIGs);
+    destdb.EndBuild();
+    timer.Stop();
+    ERR_POST(Info << "Created BLAST database in " << timer.AsSmartString());
+}
+
+void BlastdbCopyApplication::x_CopyDB(const CArgs & args, CSeqDB::ESeqType seq_type,  Uint8 bytes)
+{
+    CRef<CSeqDBExpert> sourcedb(new CSeqDBExpert( args[kArgDb].AsString(), seq_type));
+
+    string title;
+	if (args[kArgDbTitle].HasValue()) {
+	    title = args[kArgDbTitle].AsString();
+	} else {
+	    CNcbiOstrstream oss;
+	    oss << sourcedb->GetTitle();
+	    title = CNcbiOstrstreamToString(oss);
+	}
+
+	const bool kCopyPIGs = x_ShouldCopyPIGs(args[kArgDb].AsString(), seq_type);
+	CBlastDbAllBioseqSource bioseq_source(sourcedb);
+	const bool kIsSparse = false;
+	const bool kParseSeqids = x_ShouldParseSeqIds(args[kArgDb].AsString(),seq_type);
+
+
+	const bool kUseGiMask = false;
+	EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+	dbver = (dbver != sourcedb->GetBlastDbVersion()) ? sourcedb->GetBlastDbVersion() : dbver;
+
+    CBuildDatabase destdb(args[kArgOutput].AsString(), title,
+	                          static_cast<bool>(seq_type == CSeqDB::eProtein),
+	                          kIsSparse, kParseSeqids, kUseGiMask,
+	                          &(args["logfile"].HasValue()
+	                           ? args["logfile"].AsOutputFile() : cerr), false, dbver);
+	destdb.SetUseRemote(false);
+	destdb.SetMaxFileSize(bytes);
+	destdb.SetSkipCopyingGis(args["skip_gis"]);
+	//destdb.SetVerbosity(true);
+	destdb.SetSourceDb(sourcedb);
+	destdb.StartBuild();
+	TLinkoutMap membershipBits;
+	TIdToLeafs  leafTaxids;
+	destdb.SetMembBits(membershipBits, true);
+	destdb.SetLeafTaxIds(leafTaxids, true);
+	destdb.AddSequences(bioseq_source, kCopyPIGs);
+	destdb.EndBuild();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  Run the program
 int BlastdbCopyApplication::Run(void)
@@ -403,83 +562,22 @@ int BlastdbCopyApplication::Run(void)
         LOG_POST( Info << string(72,'-') << "\n" << "NEW LOG - " << ctime(&now) );
     }
 
-    CSeqDB::ESeqType seq_type = CSeqDB::eUnknown;
+    Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
+    static const Uint8 MAX_VOL_FILE_SIZE = 0x100000000;
+    if (bytes >= MAX_VOL_FILE_SIZE) {
+    	NCBI_THROW(CInvalidDataException, eInvalidInput, "max_file_sz must be < 4 GiB");
+    }
+
+   	CSeqDB::ESeqType seq_type = CSeqDB::eUnknown;
     try {{
+   	    seq_type = ParseMoleculeTypeString(args[kArgDbType].AsString());
+    	if(args[kArgSeqIdList] || args[kArgGiList]){
+    		x_MakeDBwIDList(args, seq_type, bytes);
+    	}
+    	else {
+    		x_CopyDB(args, seq_type, bytes);
+    	}
 
-        seq_type = ParseMoleculeTypeString(args[kArgDbType].AsString());
-        
-        CSeqDBFileGiList::EIdType idtype = args[kArgSeqIdList] ? CSeqDBFileGiList::eSiList : CSeqDBFileGiList::eGiList;  
-        string seqListFile = args[kArgSeqIdList] ? args[kArgSeqIdList].AsString() : args[kArgGiList].AsString();
-        CRef<CSeqDBGiList> gilist(
-                new CSeqDBFileGiList(seqListFile,idtype)
-        );
-
-        CSeqDBExpert* dbexpert;
-        if (args[kTargetOnly].AsBoolean()) {
-            dbexpert = new CSeqDBExpert(
-                    args[kArgDb].AsString(),
-                    seq_type,
-                    &*gilist
-            );
-        } else {
-            dbexpert = new CSeqDBExpert(
-                    args[kArgDb].AsString(),
-                    seq_type
-            );
-        }
-        CRef<CSeqDBExpert> sourcedb(dbexpert);
-
-        if (args[kCopyOnly].HasValue()) {
-            string mbitName = args[kCopyOnly].AsString();
-            TMemBitMap::iterator it = m_MembershipMap.find(mbitName);
-            if (it != m_MembershipMap.end()) {
-                sourcedb->SetVolsMemBit(it->second);
-            }
-        }
-
-        string title;
-        if (args[kArgDbTitle].HasValue()) {
-            title = args[kArgDbTitle].AsString();
-        } else {
-            CNcbiOstrstream oss;
-            oss << "Copy of '" << sourcedb->GetDBNameList() << "': " << sourcedb->GetTitle();
-            title = CNcbiOstrstreamToString(oss);
-        }
-
-        const bool kCopyPIGs = x_ShouldCopyPIGs(args[kArgDb].AsString(),
-                                                              seq_type);
-        CBlastDbBioseqSource bioseq_source(
-                sourcedb,
-                gilist,
-                idtype,
-                args[kMembershipBits].AsBoolean()
-        );
-        const bool kIsSparse = false;        
-        const bool kParseSeqids = (idtype == CSeqDBFileGiList::eGiList) ? x_ShouldParseSeqIds(args[kArgDb].AsString(),seq_type): true;
-
-
-        const bool kUseGiMask = false;
-        EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
-        dbver = (dbver != sourcedb->GetBlastDbVersion()) ? sourcedb->GetBlastDbVersion() : dbver;
-        
-        CStopWatch timer;
-        timer.Start();
-        CBuildDatabase destdb(args[kArgOutput].AsString(), title,
-                              static_cast<bool>(seq_type == CSeqDB::eProtein),
-                              kIsSparse, kParseSeqids, kUseGiMask,
-                              &(args["logfile"].HasValue()
-                               ? args["logfile"].AsOutputFile() : cerr), false, dbver);
-        destdb.SetUseRemote(false);
-        destdb.SetSkipCopyingGis(args["skip_gis"]);
-        //destdb.SetVerbosity(true);
-        destdb.SetSourceDb(sourcedb);
-        destdb.StartBuild();
-        destdb.SetMembBits(bioseq_source.GetMembershipBits(), false);
-        destdb.SetLeafTaxIds(bioseq_source.GetLeafTaxIds(), false);
-        destdb.AddSequences(bioseq_source, kCopyPIGs);
-        destdb.EndBuild();
-        timer.Stop();
-        ERR_POST(Info << "Created BLAST database in " << timer.AsSmartString());
     }}
     catch (CException& ex) {
         LOG_POST( Error << ex );
