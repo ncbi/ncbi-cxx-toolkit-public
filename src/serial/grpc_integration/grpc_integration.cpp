@@ -385,6 +385,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     if ( !port.empty() ) {
         extra.Print("client_port", port);
     }
+    extra.Flush();
 
     CNcbiApplication* app = CNcbiApplication::Instance();
     AutoPtr<CNcbiEnvironment> env;
