@@ -304,6 +304,7 @@ public:
         eAcc_gibbmt = e_Gibbmt | eAcc_other,
         eAcc_giim   = e_Giim   | eAcc_other,
 
+        eAcc_gb_other       = e_Genbank | eAcc_other,
         eAcc_gb_prot        = e_Genbank | eAcc_other | fAcc_prot,      // AAA
         eAcc_gb_other_nuc   = e_Genbank | eAcc_other | fAcc_nuc,       // AS
         eAcc_gb_est         = e_Genbank | eAcc_est        | fAcc_nuc,  // H
@@ -341,6 +342,7 @@ public:
         eAcc_gb_optical_map = e_Genbank | eAcc_optical_map| fAcc_nuc,  // MAP_
         eAcc_gb_targeted_nuc= e_Genbank | eAcc_targeted   | fAcc_nuc,  // KAAA
 
+        eAcc_embl_other     = e_Embl | eAcc_other,
         eAcc_embl_prot      = e_Embl | eAcc_other | fAcc_prot,      // CAA
         eAcc_embl_other_nuc = e_Embl | eAcc_other | fAcc_nuc,       // AL
         eAcc_embl_est       = e_Embl | eAcc_est        | fAcc_nuc,  // F
@@ -407,6 +409,7 @@ public:
 
         eAcc_gi = e_Gi | eAcc_other,
 
+        eAcc_ddbj_other     = e_Ddbj | eAcc_other,
         eAcc_ddbj_prot      = e_Ddbj | eAcc_other | fAcc_prot,      // BAA
         eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other | fAcc_nuc,       // N00028
         eAcc_ddbj_est       = e_Ddbj | eAcc_est        | fAcc_nuc,  // C
@@ -442,6 +445,7 @@ public:
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!
 
+        eAcc_gb_tpa_other      = e_Tpg | eAcc_other,
         eAcc_gb_tpa_nuc        = e_Tpg | eAcc_other      | fAcc_nuc,  // BK
         eAcc_gb_tpa_prot       = e_Tpg | eAcc_other      | fAcc_prot, // DAA
         eAcc_gb_tpa_segset     = e_Tpg | eAcc_segset     | fAcc_nuc,  // BL
@@ -456,6 +460,7 @@ public:
         eAcc_gb_tpa_wgsvm_prot = e_Tpg | eAcc_wgs_vdb_master | fAcc_prot,
         eAcc_gb_tpa_chromosome = e_Tpg | eAcc_chromosome | fAcc_nuc,  // GK
 
+        eAcc_embl_tpa_other      = e_Tpe | eAcc_other,
         eAcc_embl_tpa_nuc        = e_Tpe | eAcc_other | fAcc_nuc,       // BN
         eAcc_embl_tpa_prot       = e_Tpe | eAcc_other | fAcc_prot,      // CAD29848
         eAcc_embl_tpa_wgs_nuc    = e_Tpe | eAcc_wgs        | fAcc_nuc,  // FAAA
@@ -467,6 +472,7 @@ public:
         eAcc_embl_tpa_wgsvm_nuc  = e_Tpe | eAcc_wgs_vdb_master | fAcc_nuc,
         eAcc_embl_tpa_wgsvm_prot = e_Tpe | eAcc_wgs_vdb_master | fAcc_prot,
 
+        eAcc_ddbj_tpa_other      = e_Tpd | eAcc_other,
         eAcc_ddbj_tpa_nuc        = e_Tpd | eAcc_other | fAcc_nuc,       // BR
         eAcc_ddbj_tpa_prot       = e_Tpd | eAcc_other | fAcc_prot,      // FAA
         eAcc_ddbj_tpa_con        = e_Tpd | eAcc_con        | fAcc_nuc,  // HT

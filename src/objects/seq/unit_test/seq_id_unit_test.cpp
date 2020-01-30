@@ -2228,12 +2228,10 @@ BOOST_AUTO_TEST_CASE(s_TestTypeMismatch)
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession(acc),
                       CSeq_id::eAcc_embl_wgs_nuc);
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Genbank, acc)));
-    BOOST_CHECK_EQUAL(id->IdentifyAccession(),
-                      static_cast<CSeq_id::EAccessionInfo>(CSeq_id::e_Genbank));
+    BOOST_CHECK_EQUAL(id->IdentifyAccession(), CSeq_id::eAcc_gb_other);
 
     acc = "F12345";
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Tpe, acc)));
-    BOOST_CHECK_EQUAL(id->IdentifyAccession(),
-                      static_cast<CSeq_id::EAccessionInfo>(CSeq_id::e_Tpe));
+    BOOST_CHECK_EQUAL(id->IdentifyAccession(), CSeq_id::eAcc_embl_tpa_other);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession(acc), CSeq_id::eAcc_embl_est);
 }
