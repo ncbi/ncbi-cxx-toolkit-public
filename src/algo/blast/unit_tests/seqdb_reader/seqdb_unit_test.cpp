@@ -1356,14 +1356,14 @@ BOOST_AUTO_TEST_CASE(OpenWithBLASTDBEnv)
         CTmpEnvironmentSetter tmpenv("BLASTDB", "/blast/db/blast");
     CSeqDB db1("nr", CSeqDB::eProtein);
     CSeqDB db2("pdb", CSeqDB::eProtein);
-    CSeqDB db3("pdb", CSeqDB::eNucleotide);
+    CSeqDB db3("pdbnt", CSeqDB::eNucleotide);
 }
 
 BOOST_AUTO_TEST_CASE(OpenWithoutBLASTDBEnv)
 {
         CTmpEnvironmentSetter tmpenv("BLASTDB");
     CSeqDB db1("nr", CSeqDB::eProtein);
-    CSeqDB db2("pdb", CSeqDB::eNucleotide);
+    CSeqDB db2("pdbnt", CSeqDB::eNucleotide);
     // When the line below is removed, things work (06/02/08 2:53PM EST) ?
     CSeqDB db3("pdb", CSeqDB::eProtein);
 }
@@ -1375,7 +1375,7 @@ BOOST_AUTO_TEST_CASE(GiLists)
 
     names.push_back("p,nr");
     names.push_back("n,nt");
-    names.push_back("n,pdb");
+    names.push_back("n,pdbnt");
     names.push_back("p,pdb");
     names.push_back("p,CDSEARCH/oasis_pfam");
 
