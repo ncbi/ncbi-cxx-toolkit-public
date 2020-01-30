@@ -4803,7 +4803,7 @@ NCSM:Fishes	s	North Carolina Museum of Natural Sciences, Fish collection
 NCSM:Herp	s	North Carolina Museum of Natural Sciences, Herpetology Collection	
 NCSM:Mammals	s	North Carolina Museum of Natural Sciences, Mammal collection	
 NCSU	s	North Carolina State University Collections			
-NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?refId=NCTC+spec&collection=nctc	
+NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?collection=nctc&refId=NCTC+	
 NCU	s	University of North Carolina, North Carolina Botanical Garden			
 NCUT	s	Nicolaus Copernicus University			
 NCWRF	c	National Collection of Wood Rotting Fungi			
@@ -7399,15 +7399,16 @@ USMP	s	Universiti Sains Malaysia
 USMS	s	University of Southern Mississippi, Department of Biological Sciences			
 USNC	s	Smithsonian Institution, Paleobiology Department			
 USNM	sb	National Museum of Natural History, Smithsonian Institution	NMNH		
-USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds	
-USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection	
-USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection	
-USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles	
+USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds	https://collections.nmnh.si.edu/search/birds/?nb=
+USNM:Botany	s	National Museum of Natural History, Smithsonian Institution, Plant Collection	https://collections.nmnh.si.edu/search/botany/?nb=
+USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection	https://collections.nmnh.si.edu/search/ento/?nb=
+USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection	https://collections.nmnh.si.edu/search/fishes/?nb=
+USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles	https://collections.nmnh.si.edu/search/herps/?nb=
 USNM:Herp Image	s	National Museum of Natural History, Smithsonian Institution, Herpetology image collection	
 USNM:Herp Tissue	s	National Museum of Natural History, Smithsonian Institution, Herpetology tissue collection	
-USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology	
+USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology	https://collections.nmnh.si.edu/search/iz/?nb=
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology		
-USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals	
+USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals	https://collections.nmnh.si.edu/search/mammals/?nb=
 USNTC	s	U.S. National Tick Collection			
 USON	s	Universidad de Sonora, Departamento de Investigaciones Cientificas y Technologicas			
 USP<BRA>	s	Universidade de Sao Paulo			
