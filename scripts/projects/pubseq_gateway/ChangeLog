@@ -1,3 +1,16 @@
+Release 1.8.666666 (2020-01-30)
+
+    * PSG (Statistics) -- allow to specify the time period (CXX-11013)
+    * PSG (Statistics) -- replace CHistogram with CHistogramTimeSeries
+      (CXX-11014)
+    * PSG (Statistics) -- allow to retrieve histogram(s) for specified
+      parameter(s) within a specified time period (CXX-11015)
+    * PSG - on error, use original (non-altered) seq-id in the error message
+      (CXX-11118)
+    * PSG -add tests for PDB resolutions (CXX-11133)
+    * PSG -- LMDB API fails to open cache for sat 11 through 47 (CXX-11167)
+
+
 Release 1.8.4 (2019-12-30)
 
     * PSG -- log client request errors (4XX) as Warnings rather than Errors
