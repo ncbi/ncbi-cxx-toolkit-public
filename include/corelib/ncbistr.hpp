@@ -151,7 +151,7 @@ typedef wstring TXString;
 
 #  if defined(_DEBUG)
 #    define _T_XSTRING(x) \
-    CUtf8::AsBasicString<TXChar>(x, NULL, CUtf8::eValidate)
+    ncbi::CUtf8::AsBasicString<ncbi::TXChar>(x, NULL, ncbi::CUtf8::eValidate)
 #  else
 #    define _T_XSTRING(x) \
     ncbi::CUtf8::AsBasicString<ncbi::TXChar>(x, NULL, ncbi::CUtf8::eNoValidate)
