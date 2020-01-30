@@ -842,8 +842,12 @@ string SequenceIdToString(const Sequence& sequence) {
     const CSeq_id& id = sequence.GetPreferredIdentifier();
 
     if (id.IsPdb()) {
+#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+        s = "PDB " + id.GetPdb().GetMol().Get() + '_' + id.GetPdb().GetEffectiveChain_id();
+#else
         char chain = id.GetPdb().GetChain();
         s = "PDB " + id.GetPdb().GetMol().Get() + '_' + chain;
+#endif
     } else if (id.IsGi()) {
         s = "GI " + NStr::NumericToString(id.GetGi());
     }
