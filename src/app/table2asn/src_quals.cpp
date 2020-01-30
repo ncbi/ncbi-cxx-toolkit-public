@@ -499,6 +499,30 @@ CApplyMods::CApplyMods(
 {}
 
 
+
+static void s_GetModsFromFileMap(
+        CMemorySrcFileMap& fileMap,
+        const CBioseq& bioseq,
+        bool isVerbose,
+        CModHandler::FReportError fReportError,
+        CModHandler& mod_handler,
+        string& remainder)
+{
+    CApplyMods::TModList mods;
+    if (!fileMap.GetMods(bioseq, mods, isVerbose)) {
+        return;
+    }
+        
+    s_PreprocessNoteMods(mods); // RW-928
+    CApplyMods::TModList rejectedMods;
+
+    mod_handler.AddMods(mods,
+            CModHandler::ePreserve,
+            rejectedMods,
+            fReportError);
+    s_AppendMods(rejectedMods, remainder);
+}
+
     
 void CApplyMods::operator()(CBioseq& bioseq)
 {
@@ -515,27 +539,23 @@ void CApplyMods::operator()(CBioseq& bioseq)
         };
  
     if (m_pNamedSrcFileMap && m_pNamedSrcFileMap->Mapped()) {
-        TModList mods;
-        if (m_pNamedSrcFileMap->GetMods(bioseq, mods, m_IsVerbose)) {
-            s_PreprocessNoteMods(mods); // RW-928
-             mod_handler.AddMods(mods, 
-                CModHandler::ePreserve, 
-                rejectedMods,
-                fReportError);
-            s_AppendMods(rejectedMods, remainder);
-        }
+        s_GetModsFromFileMap(
+                *m_pNamedSrcFileMap,
+                bioseq,
+                m_IsVerbose,
+                fReportError,
+                mod_handler,
+                remainder);
     }
 
     if (m_pDefaultSrcFileMap && m_pDefaultSrcFileMap->Mapped()) {
-        TModList mods;
-        if (m_pDefaultSrcFileMap->GetMods(bioseq, mods, m_IsVerbose)) {
-            s_PreprocessNoteMods(mods); // RW-928
-            mod_handler.AddMods(mods, 
-                CModHandler::ePreserve, 
-                rejectedMods, 
-                fReportError);
-            s_AppendMods(rejectedMods, remainder);
-        }
+        s_GetModsFromFileMap(
+                *m_pDefaultSrcFileMap,
+                bioseq,
+                m_IsVerbose,
+                fReportError,
+                mod_handler,
+                remainder);
     }
 
     CRef<CSeqdesc> pTitleDesc;
