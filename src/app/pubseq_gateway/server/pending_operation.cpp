@@ -851,7 +851,7 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
         } while (false);
     } else {
         err_msg = "Blob " + m_TSEChunkRequest.m_TSEId.ToString() +
-                  " properties are not found";
+                  " properties are not found in cache";
         if (blob_prop_cache_lookup_result == eFailure)
             err_msg += " due to LMDB error";
         PSG_WARNING(err_msg);
