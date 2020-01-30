@@ -37,7 +37,7 @@
 #include <util/lmdbxx/lmdb++.h>
 
 BEGIN_SCOPE()
-    static const MDB_dbi kLmdbMaxDbCount = 128;
+    static const MDB_dbi kLmdbMaxDbCount = 64;
     static const size_t kMapSizeInit = 256UL * 1024 * 1024 * 1024;
     static const size_t kMapSizeDelta = 16UL * 1024 * 1024 * 1024;
     static const size_t kMaxReaders = 1024UL;
