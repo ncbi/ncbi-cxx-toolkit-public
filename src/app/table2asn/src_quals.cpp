@@ -42,6 +42,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include "src_quals.hpp"
+#include "visitors.hpp"
 #include <sstream>
 
 
@@ -497,6 +498,7 @@ CApplyMods::CApplyMods(
     m_IsVerbose(isVerbose)
 {}
 
+
     
 void CApplyMods::operator()(CBioseq& bioseq)
 {
@@ -617,7 +619,6 @@ void g_ApplyMods(
     using TModList = CModHandler::TModList;
     using TMods = CModHandler::TMods;
     
-    TModList rejectedMods;
     string commandLineRemainder;
     TMods commandLineMods;
 
@@ -632,7 +633,7 @@ void g_ApplyMods(
                 return sReportError(pEC, eDiag_Warning, subcode, "", msg);
             };
 
-
+        TModList rejectedMods;
         CModHandler mod_handler;
         mod_handler.AddMods(mods,
             CModHandler::ePreserve,
@@ -649,130 +650,24 @@ void g_ApplyMods(
         pNamedSrcFileMap->MapFile(namedSrcFile, allowAcc);
     }
 
-    CMemorySrcFileMap defaultSrcFileMap(pEC);
+    unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap; 
     if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
-        defaultSrcFileMap.MapFile(defaultSrcFile, allowAcc);
+        pDefaultSrcFileMap.reset(new CMemorySrcFileMap(pEC));
+        pDefaultSrcFileMap->MapFile(defaultSrcFile, allowAcc);
     }
 
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    auto editHandle = pScope->AddTopLevelSeqEntry(entry).GetEditHandle();
+    CApplyMods applyMods(commandLineMods, 
+                         commandLineRemainder,
+                         pNamedSrcFileMap.get(),
+                         pDefaultSrcFileMap.get(),
+                         pEC,
+                         readModsFromTitle,
+                         isVerbose);
 
-    for (CBioseq_CI bioseq_it(editHandle); bioseq_it; ++bioseq_it) {
-        auto pBioseq = const_cast<CBioseq*>(
-                bioseq_it->GetEditHandle()
-                .GetCompleteBioseq()
-                .GetPointerOrNull());
+    VisitAllBioseqs(entry, applyMods);
 
-        if (pBioseq) {
-
-
-            CModHandler mod_handler;
-            mod_handler.SetMods(commandLineMods);
-            string remainder = commandLineRemainder;
-
-            string seqId = pBioseq->GetId().front()->AsFastaString();
-            auto fReportError = 
-                [&](const CModData& /* mod */, const string& msg, EDiagSev /* sev */,
-                    EModSubcode subcode) {
-                    return sReportError(pEC, eDiag_Warning, subcode, seqId, msg);
-                };
- 
-            if (pNamedSrcFileMap && pNamedSrcFileMap->Mapped()) {
-                TModList mods;
-                if (pNamedSrcFileMap->GetMods(*pBioseq, mods, isVerbose)) {
-                    s_PreprocessNoteMods(mods); // RW-928
-                    mod_handler.AddMods(mods, 
-                            CModHandler::ePreserve, 
-                            rejectedMods, 
-                            fReportError);
-                    s_AppendMods(rejectedMods, remainder);
-                }
-            }
-
-            if (defaultSrcFileMap.Mapped()) {
-                TModList mods;
-                if (defaultSrcFileMap.GetMods(*pBioseq, mods, isVerbose)) {
-                    s_PreprocessNoteMods(mods); // RW-928
-                    mod_handler.AddMods(mods, 
-                            CModHandler::ePreserve, 
-                            rejectedMods, 
-                            fReportError);
-                    s_AppendMods(rejectedMods, remainder);
-                }
-            }
-
-            CRef<CSeqdesc> pTitleDesc;
-            CSeq_descr::Tdata* pDescriptors = nullptr;
-            if ((pBioseq->IsSetDescr() &&
-                pBioseq->GetDescr().IsSet()) ||
-                !NStr::IsBlank(remainder)) {
-                pDescriptors = &(pBioseq->SetDescr().Set());
-            }
-
-            CSeq_descr::Tdata::iterator title_it;
-            if (pDescriptors) {
-                title_it = 
-                    find_if(pDescriptors->begin(), pDescriptors->end(),
-                        [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
-                if (title_it != pDescriptors->end()) {
-                    pTitleDesc = *title_it;
-                    if (readModsFromTitle) { 
-                        auto& title = (*title_it)->SetTitle();
-                        string titleRemainder;
-                        TModList mods;
-                        CTitleParser::Apply(title, mods, titleRemainder);
-                        title.clear(); 
-
-                        mod_handler.AddMods(mods, 
-                                CModHandler::ePreserve, 
-                                rejectedMods, 
-                                fReportError);
-                        s_AppendMods(rejectedMods, titleRemainder);
-                        remainder = titleRemainder +  remainder;
-                    }
-                }
-            }
-
-
-            CModAdder::Apply(mod_handler, *pBioseq, rejectedMods, fReportError);
-            s_AppendMods(rejectedMods, remainder);
-
-
-            NStr::TruncateSpacesInPlace(remainder);
-            if (!remainder.empty()) {
-                if (!pTitleDesc) {
-                    pTitleDesc = Ref(new CSeqdesc());
-                    pDescriptors->push_back(pTitleDesc);
-                    pTitleDesc->SetTitle() = remainder;
-                }
-                else {
-                    string current_title = 
-                        NStr::TruncateSpaces(
-                                pTitleDesc->GetTitle(), 
-                                NStr::eTrunc_End);
-                    pTitleDesc->SetTitle() = current_title.empty() ?
-                        remainder : 
-                        current_title + " " + remainder;
-                }
-            }
-            else // remainder.empty() 
-            if (pDescriptors) {
-                if (title_it != pDescriptors->end() &&
-                    (*title_it)->GetTitle().empty()) {
-                    pDescriptors->erase(title_it);
-                } 
-                if (pDescriptors->empty()) {
-                    pBioseq->ResetDescr();
-                }
-            }
-
-
-
-        }
-    }
-
-    if (isVerbose) {
-        defaultSrcFileMap.ReportUnusedIds();
+    if (isVerbose && pDefaultSrcFileMap) {
+        pDefaultSrcFileMap->ReportUnusedIds();
     }
 }
 
