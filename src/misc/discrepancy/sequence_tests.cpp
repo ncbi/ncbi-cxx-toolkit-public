@@ -366,7 +366,7 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
 {
     // context.SetGui(true); // for debug only!
     for (auto& feat : context.GetFeat()) {
-        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+        if (!feat.IsSetData() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
             continue;
         }
         string key = feat.GetData().IsGene() ? "gene" : feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
@@ -380,38 +380,15 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
         }
         CRef<CReportObj> rep(context.BioseqObjRef());
         for (auto& feat : context.GetAllFeat()) {
-            if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+            if (!feat.IsSetData() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
                 continue;
             }
             string key = feat.GetData().IsGene() ? "gene" : feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+            key = to_string(feat.GetData().GetSubtype()) + " " + key;
             m_Objs[kEmptyCStr][key].Add(*rep, false);
         }
         m_Objs[kEmptyCStr][na ? "N" : "A"].Add(*rep);
     }
-}
-
-
-static bool ReportOnNA(const string& s)
-{
-    static const vector<const char*> bad = { "prot", "peptide", "bond" };
-    for (auto b : bad) {
-        if (NStr::FindNoCase(s, b) != -1) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-static bool ReportOnAA(const string& s)
-{
-    static const vector<const char*> bad = { "CDS", "gene", "rna", "regulatory", "misc" };
-    for (auto b : bad) {
-        if (NStr::FindNoCase(s, b) != -1) {
-            return false;
-        }
-    }
-    return true;
 }
 
 
@@ -422,14 +399,17 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
             if (it.first == "N" || it.first == "A") {
                 continue;
             }
-            string label = it.first + ": [n] present";
+            size_t n = it.first.find(' ');
+            string key = it.first.substr(n + 1);
+            CSeqFeatData::EFeatureLocationAllowed allow = CSeqFeatData::AllowedFeatureLocation((CSeqFeatData::ESubtype)stoi(it.first.substr(0, n)));
+            string label = key + ": [n] present";
             map<CReportObj*, size_t> obj2num;
-            if (ReportOnNA(it.first)) {
+            if (allow == CSeqFeatData::eFeatureLocationAllowed_Any || allow == CSeqFeatData::eFeatureLocationAllowed_NucOnly) {
                 for (auto& obj : m_Objs[kEmptyStr]["N"].GetObjects()) {
                     obj2num[&*obj] = 0;
                 }
             }
-            if (ReportOnAA(it.first)) {
+            if (allow == CSeqFeatData::eFeatureLocationAllowed_Any || allow == CSeqFeatData::eFeatureLocationAllowed_ProtOnly) {
                 for (auto& obj : m_Objs[kEmptyStr]["A"].GetObjects()) {
                     obj2num[&*obj] = 0;
                 }
@@ -438,7 +418,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
                 obj2num[&*obj]++;
             }
             for (auto& pp : obj2num) {
-                m_Objs[label]["[n] bioseq[s] [has] [(]" + to_string(pp.second) + "[)] " + it.first + " features"].Info().Add(*pp.first);
+                m_Objs[label]["[n] bioseq[s] [has] [(]" + to_string(pp.second) + "[)] " + key + " features"].Info().Add(*pp.first);
             }
         }
         m_Objs.GetMap().erase(kEmptyCStr);
