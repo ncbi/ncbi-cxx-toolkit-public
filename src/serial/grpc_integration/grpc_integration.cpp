@@ -35,6 +35,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/grpc_integration/grpc_integration.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <util/static_map.hpp>
 #include <serial/error_codes.hpp>
 #ifdef HAVE_LIBGRPC
@@ -302,6 +303,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     CDiagContext&    dctx = GetDiagContext();
     CRequestContext& rctx = dctx.GetRequestContext();
     string           client_name, peer_ip, port;
+    map<string, string> grpc_fields, env_fields;
     rctx.SetRequestID();
 #ifdef HAVE_LIBGRPC
     if (sctx != NULL) {
@@ -330,6 +332,11 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
             string      name  = s_DecodeMetadataName (nm);
             string      value = s_DecodeMetadataValue(vl);
             rctx.AddPassThroughProperty(name, value);
+
+            string name2 = name;
+            NStr::ToLower(name2);
+            NStr::ReplaceInPlace(name2, "_", "-");
+            grpc_fields[name2] = value;
 
             TRCSetterMap::const_iterator it
                 = sc_RCSetterMap.find(name.c_str());
@@ -378,6 +385,25 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     if ( !port.empty() ) {
         extra.Print("client_port", port);
     }
+
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    AutoPtr<CNcbiEnvironment> env;
+    if (app == nullptr) {
+        env.reset(new CNcbiEnvironment);
+    } else {
+        env.reset(const_cast<CNcbiEnvironment*>(&app->GetEnvironment()),
+                  eNoOwnership);
+    }
+    list<string> env_names;
+    env->Enumerate(env_names);
+    for (const auto & it : env_names) {
+        string name = it;
+        NStr::ToLower(name);
+        NStr::ReplaceInPlace(name, "_", "-");
+        env_fields[name] = env->Get(it);
+    }
+    CNcbiLogFields("env").LogFields(env_fields);
+    CNcbiLogFields("grpc").LogFields(grpc_fields);
 }
 
 void CGRPCServerCallbacks::EndRequest(grpc::ServerContext* context)
