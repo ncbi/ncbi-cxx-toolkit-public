@@ -402,6 +402,20 @@ bool BlastdbCopyApplication::x_ShouldParseSeqIds(const string& dbname,
         }
         if (retval) break;
     }
+
+    if (!retval) {
+    	 ITERATE(vector<string>, f, file_paths) {
+    		std::size_t found = f->find_last_of(".");
+            CNcbiOstrstream oss;
+            oss << f->substr(0, found) << "." << type << "os";
+            const string fname = CNcbiOstrstreamToString(oss);
+            CFile file(fname);
+            if (file.Exists() && file.GetLength() > 0) {
+                retval = true;
+                break;
+            }
+    	 }
+    }
     return retval;
 }
 
