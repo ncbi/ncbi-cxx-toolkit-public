@@ -73,7 +73,7 @@ function run
         sed -i '{ s/Start/0/; s/Submit/1/; s/Reply/2/; s/Send/1000/; s/Receive/1001/; s/Close/1002/; s/Retry/1003/; s/Fail/1004/; s/Done/3/; }' psg_client.raw.txt
 
         # Need to rename request numbers to avoid overlap
-        awk "{ \$1 += ($4 - 1) * $REQUESTS; print }" psg_client.raw.txt >> $OUTPUT_FILE;
+        awk "{ \$1 = \$1 \".\" $4; print }" psg_client.raw.txt >> $OUTPUT_FILE;
 
         # Old binaries create complex metrics on performance command, so need to remove both files
         rm psg_client.raw.txt psg_client.table.txt 2>/dev/null;

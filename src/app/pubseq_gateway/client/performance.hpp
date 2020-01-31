@@ -71,7 +71,7 @@ struct SMetrics : string, private SMetricType
     using time_point = chrono::steady_clock::time_point;
     using duration = chrono::duration<double, milli>;
 
-    SMetrics() : string(to_string(++CurrentRequestId)) {}
+    SMetrics(string id) : string(move(id)) {}
 
     void Set(EType t)
     {
@@ -93,8 +93,6 @@ private:
     array<time_point, eSize> m_Data;
     bool m_Success = false;
     size_t m_Items = 0;
-
-    static size_t CurrentRequestId;
 
     friend ostream& operator<<(ostream& os, const SMetrics& metrics)
     {
@@ -190,7 +188,7 @@ struct SRule
 
 struct SComplexMetrics
 {
-    SComplexMetrics(size_t request, bool success) : m_Request(request), m_Success(success), m_Data(SRule::Rules.size()) {}
+    SComplexMetrics(const string& request, bool success) : m_Request(request), m_Success(success), m_Data(SRule::Rules.size()) {}
 
     void Add(double milliseconds, SMetricType::EType type);
     double Get(size_t i) const { return m_Data[i].second - m_Data[i].first; }
@@ -200,7 +198,7 @@ struct SComplexMetrics
 private:
     void Set(const SPoint& point, SMetricType::EType type, double milliseconds, double& value);
 
-    const size_t m_Request;
+    const string m_Request;
     const bool m_Success;
     vector<pair<double, double>> m_Data;
 

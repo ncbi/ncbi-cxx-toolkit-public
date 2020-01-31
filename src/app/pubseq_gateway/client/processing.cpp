@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <numeric>
+#include <unordered_set>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
@@ -748,22 +749,33 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
     static CJson_Schema json_schema(RequestSchema());
     string line;
     vector<shared_ptr<CPSG_Request>> requests;
+    unordered_set<string> ids;
 
     // Read requests from cin
     while (ReadLine(line)) {
         CJson_Document json_doc;
 
         if (!json_doc.ParseString(line)) {
-            cerr << "Error in request '" << s_GetId(json_doc) << "': " << json_doc.GetReadError() << endl;
+            cerr << "Error in request '" << line << "': " << json_doc.GetReadError() << endl;
+            return {};
+        }
+
+        auto id = s_GetId(json_doc);
+
+        if (id.empty()) {
+            cerr << "Error in request '" << line << "': no id or id is empty" << endl;
             return {};
         } else if (!json_schema.Validate(json_doc)) {
-            cerr << "Error in request '" << s_GetId(json_doc) << "': " << json_schema.GetValidationError() << endl;
+            cerr << "Error in request '" << id << "': " << json_schema.GetValidationError() << endl;
+            return {};
+        } else if (!ids.insert(id).second) {
+            cerr << "Error in request '" << id << "': duplicate ID" << endl;
             return {};
         } else {
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
             auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
-            auto user_context = create_context(json_doc, params);
+            auto user_context = create_context(id, params);
 
             if (!user_context) return {};
 
@@ -784,7 +796,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
     CPSG_Queue global_queue(service);
 
     cerr << "Preparing requests: ";
-    auto requests = ReadCommands([](CJson_Document&, CJson_ConstNode&){ return make_shared<SMetrics>(); });
+    auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); });
 
     if (requests.empty()) return -1;
 
@@ -910,15 +922,14 @@ struct STestingContext : string
 
     EExpected expected;
 
-    STestingContext(string id, EExpected e) : string(id), expected(e) {}
+    STestingContext(string id, EExpected e) : string(move(id)), expected(e) {}
 
-    static shared_ptr<STestingContext> CreateContext(CJson_Document& json_doc, CJson_ConstNode& params);
+    static shared_ptr<STestingContext> CreateContext(string id, CJson_ConstNode& params);
 };
 
-shared_ptr<STestingContext> STestingContext::CreateContext(CJson_Document& json_doc, CJson_ConstNode& params)
+shared_ptr<STestingContext> STestingContext::CreateContext(string id, CJson_ConstNode& params)
 {
     _ASSERT(params.IsObject());
-    const auto id = s_GetId(json_doc);
     string error;
 
     try {
@@ -935,7 +946,7 @@ shared_ptr<STestingContext> STestingContext::CreateContext(CJson_Document& json_
                     result = expected_obj["fail"].GetValue().GetString() == "reply" ? eReplyError : eReplyItemError;
                 }
 
-                return make_shared<STestingContext>(id, result);
+                return make_shared<STestingContext>(move(id), result);
             } else {
                 error = "'expected_result' is not of object type";
             }

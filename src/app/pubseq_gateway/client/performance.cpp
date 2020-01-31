@@ -31,12 +31,11 @@
 
 #include <algorithm>
 #include <numeric>
+#include <unordered_map>
 
 #include "performance.hpp"
 
 BEGIN_NCBI_SCOPE
-
-size_t SMetrics::CurrentRequestId = 0;
 
 const vector<SRule> SRule::Rules =
 {
@@ -180,10 +179,10 @@ void SPercentiles::Report(istream& is, ostream& os, double percentage)
 {
     cerr << "Reading raw metrics: ";
 
-    map<size_t, vector<SMessage>> raw_data;
+    unordered_map<string, vector<SMessage>> raw_data;
 
     while (is) {
-        size_t request;
+        string request;
         SMessage message;
 
         if ((is >> request >> message) && (message.type != SMetricType::eError)) {
