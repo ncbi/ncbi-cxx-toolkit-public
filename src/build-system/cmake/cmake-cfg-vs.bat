@@ -220,7 +220,7 @@ set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 if "%BUILD_ROOT%"=="" (
   set BUILD_ROOT=CMake-%generator_name%
   if "%BUILD_SHARED_LIBS%"=="ON" (
-    set BUILD_ROOT=%BUILD_ROOT%-DLL
+    set BUILD_ROOT=CMake-%generator_name%-DLL
   )
 )
 
