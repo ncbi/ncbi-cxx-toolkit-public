@@ -1584,7 +1584,7 @@ BOOST_AUTO_TEST_CASE(FetchProt17)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1616,7 +1616,7 @@ BOOST_AUTO_TEST_CASE(FetchProt17a)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1649,7 +1649,7 @@ BOOST_AUTO_TEST_CASE(FetchProt18)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1681,7 +1681,7 @@ BOOST_AUTO_TEST_CASE(FetchProt18a)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1712,7 +1712,7 @@ BOOST_AUTO_TEST_CASE(FetchProt19)
     }
     {
         CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
         const CSeq_id* contig_id = feat_it->GetLocation().GetId();
         BOOST_REQUIRE(contig_id);
@@ -1745,7 +1745,7 @@ BOOST_AUTO_TEST_CASE(FetchProt19a)
     }
     {
         CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
         const CSeq_id* contig_id = feat_it->GetLocation().GetId();
         BOOST_REQUIRE(contig_id);
@@ -1780,7 +1780,7 @@ BOOST_AUTO_TEST_CASE(FetchProt20)
     }
     {
         CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
         const CSeq_id* contig_id = feat_it->GetLocation().GetId();
         BOOST_REQUIRE(contig_id);
@@ -1814,7 +1814,7 @@ BOOST_AUTO_TEST_CASE(FetchProt20a)
     }
     {
         CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
-        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 2u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
         const CSeq_id* contig_id = feat_it->GetLocation().GetId();
         BOOST_REQUIRE(contig_id);
@@ -2060,7 +2060,7 @@ BOOST_AUTO_TEST_CASE(QualityTest)
     CGraph_CI graph_it(bh, SAnnotSelector().AddNamedAnnots("Phrap Graph"));
     BOOST_CHECK_EQUAL(graph_it.GetSize(), 1u);
     CFeat_CI feat_it(bh);
-    BOOST_CHECK_EQUAL(feat_it.GetSize(), 174u);
+    BOOST_CHECK_EQUAL(feat_it.GetSize(), 116u);
 }
 
 

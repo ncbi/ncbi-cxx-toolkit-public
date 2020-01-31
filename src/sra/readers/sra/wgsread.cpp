@@ -6125,12 +6125,6 @@ void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
             // generate features from FEATURE table
             PROFILE(sw__GetProtFeat);
             info.x_AddFeatures(GetLocFeatRowIdRange());
-            // ID-6011 : Also get CDS feature via the product row id.
-            TVDBRowId product_row_id = GetBestProductFeatRowId();
-            if (product_row_id > 0) {
-                TVDBRowIdRange product_row_id_range(product_row_id,1);
-                info.x_AddFeatures(product_row_id_range);
-            }
         }
     }
     info.main_seq->SetInst(*GetSeq_inst(info.flags));
