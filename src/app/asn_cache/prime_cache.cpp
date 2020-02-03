@@ -64,6 +64,7 @@
 #endif
 
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -474,6 +475,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
     if (GetArgs()["max-fasta-id"]) {
         reader.SetMaxIDLength(GetArgs()["max-fasta-id"].AsInteger());
     }
+    objects::CGPipeMessageListener messageListener;
     while ( !reader.AtEOF() ) {
 
         if (CSignal::IsSignaled()) {
@@ -481,7 +483,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
                        "trapped signal, exiting");
         }
 
-        CRef<CSeq_entry> entry = reader.ReadOneSeq();
+        CRef<CSeq_entry> entry = reader.ReadOneSeq(&messageListener);
         entry->SetSeq().SetInst().SetMol(m_InstMol);
         auto& descs  = entry->SetSeq().SetDescr().Set();
         bool molinfo_found=false;
