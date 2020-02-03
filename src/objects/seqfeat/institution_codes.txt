@@ -1165,6 +1165,7 @@ CLU	s	Universita della Calabria
 CM	s	Carnegie Museum of Natural History	CMNH<USA-PA>		
 CM-IEA	s	Universidad Autonoma de Tamaulipas (Mexico)			
 CM-MBM-UAC	s	Coleccion Mastozoologica Universidad  Autonoma de Campeche	CM-MBM-UAC,CMMBMUAC		
+CM-UFMG	c	Collection of Microorganisms, DNA and Cells of Universidade Federal de Minas Gerais (UFMG) (Colecao de Micro-organismos, DNA e Celulas da UFMG)			
 CM-UMSNH	s	Universidad de Michoacan (Mexico)			
 CM:Herps	s	Carnegie Museum of Natural History, Herpetology Collection	
 CM:M	s	Carnegie Museum of Natural History, Section of Mammals		
@@ -1378,6 +1379,7 @@ CRRHA	s	Centre Regional de Recherches en Hydrobiologie Appliquee
 CS<AUS>	c	Australian National Algae Culture Collection, ANACC	ANNAC		
 CS<FRA>	s	Musee des Dinosaures d'Esperaza (Aude)			
 CS<USA-CO>	s	Colorado State University herbarium			
+CSAEG	c	Culture Collection of Phytopathogenic Fungi  at the Colegio Superior Agropecuario del Estado de Guerrero			
 CSAT	s	Colegio de Postgraduados, Campus Tabasco			
 CSAU	s	National Agrarian University, Southern Branch "Crimean Agrotechnological University", Department of Botany, Plant Physiology and Genetics			
 CSB	s	St. John's University/College of Saint Benedict, Biology Department			
