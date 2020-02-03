@@ -167,6 +167,8 @@ public:
 
     const vector<CRef<CSeqsetIndex>>& GetSeqsetIndices(void);
 
+    bool DistributedReferences(void);
+
     // Check all Bioseqs for failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure(void);
 
@@ -254,6 +256,8 @@ public:
 
     bool IsSmallGenomeSet (void) const { return m_IsSmallGenomeSet; }
 
+    bool DistributedReferences (void) const { return m_DistributedReferences; }
+
     // Check all Bioseqs for failure to fetch remote sequence components or remote feature annotation
     bool IsFetchFailure(void);
 
@@ -266,7 +270,7 @@ private:
     void x_Init (void);
 
     // Recursive exploration to populate vector of index objects for Bioseqs in Seq-entry
-    void x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt);
+    void x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt, int level = 0);
 
     CRef<CSeq_id> x_MakeUniqueId(void);
 
@@ -304,6 +308,8 @@ private:
 
     bool m_HasOperon;
     bool m_IsSmallGenomeSet;
+
+    bool m_DistributedReferences;
 
     mutable CAtomicCounter m_Counter;
 

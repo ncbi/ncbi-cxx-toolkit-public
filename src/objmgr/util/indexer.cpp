@@ -176,6 +176,12 @@ const vector<CRef<CSeqsetIndex>>& CSeqEntryIndex::GetSeqsetIndices(void)
     return m_Idx->GetSeqsetIndices();
 }
 
+bool CSeqEntryIndex::DistributedReferences(void)
+
+{
+    return m_Idx->DistributedReferences();
+}
+
 bool CSeqEntryIndex::IsFetchFailure(void)
 
 {
@@ -208,6 +214,7 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
 
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
+    m_DistributedReferences = false;
     m_IndexFailure = false;
 
     try {
@@ -252,6 +259,7 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
 
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
+    m_DistributedReferences = false;
     m_IndexFailure = false;
 
     try {
@@ -442,7 +450,7 @@ static string s_IdxGetBestIdString(CBioseq_Handle bsh)
 }
 
 // Recursively explores from top-level Seq-entry to make flattened vector of CBioseqIndex objects
-void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt)
+void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt, int level)
 
 {
     if (sep.IsSeq()) {
@@ -486,6 +494,26 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
                     }
                 }
             }
+
+            if (bsp.IsSetDescr()) {
+                for (auto& desc : bsp.GetDescr().Get()) {
+                    if (desc->Which() == CSeqdesc::e_Pub) {
+                        m_DistributedReferences = true;
+                    }
+                }
+            }
+
+            if (bsp.IsSetAnnot()) {
+                for (auto& annt : bsp.GetAnnot()) {
+                    if (annt->IsFtable()) {
+                        for (auto& feat : annt->GetData().GetFtable()) {
+                            if (feat->IsSetData() && feat->GetData().Which() == CSeqFeatData::e_Pub) {
+                                m_DistributedReferences = true;
+                            }
+                        }
+                    }
+                }
+            }
         }
     } else if (sep.IsSet()) {
         // Is Bioseq-set
@@ -499,13 +527,33 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
                 m_IsSmallGenomeSet = true;
             }
 
+            if (level > 0 && bssp.IsSetDescr()) {
+                for (auto& desc : bssp.GetDescr().Get()) {
+                    if (desc->Which() == CSeqdesc::e_Pub) {
+                        m_DistributedReferences = true;
+                    }
+                }
+            }
+
             // record CSeqsetIndex in vector
             m_SsxList.push_back(ssx);
 
             if (bssp.CanGetSeq_set()) {
                 // recursively explore current Bioseq-set
                 for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
-                    x_InitSeqs(*tmp, ssx);
+                    x_InitSeqs(*tmp, ssx, level + 1);
+                }
+            }
+
+            if (bssp.IsSetAnnot()) {
+                for (auto& annt : bssp.GetAnnot()) {
+                    if (annt->IsFtable()) {
+                        for (auto& feat : annt->GetData().GetFtable()) {
+                            if (feat->IsSetData() && feat->GetData().Which() == CSeqFeatData::e_Pub) {
+                                m_DistributedReferences = true;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -520,6 +568,7 @@ void CSeqMasterIndex::x_Init (void)
 
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
+    m_DistributedReferences = false;
     m_IndexFailure = false;
 
     try {
