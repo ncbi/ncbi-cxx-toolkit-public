@@ -118,15 +118,21 @@ public:
 
 
 inline
-grpc::Status g_AsGRPCStatus(CRequestStatus::ECode status_code)
+grpc::Status g_AsGRPCStatus(CRequestStatus::ECode status_code,
+                            const CTempString& msg = nullptr)
 {
 #ifdef HAVE_LIBGRPC   
     if (status_code >= CRequestStatus::e100_Continue
         &&  status_code < CRequestStatus::e400_BadRequest) {
         return grpc::Status::OK;
     } else {
-        return grpc::Status(g_AsGRPCStatusCode(status_code),
-                            CRequestStatus::GetStdStatusMessage(status_code));
+        grpc::StatusCode grpc_code = g_AsGRPCStatusCode(status_code);
+        if (msg.empty()) {
+            return grpc::Status
+                (grpc_code, CRequestStatus::GetStdStatusMessage(status_code));
+        } else {
+            return grpc::Status(grpc_code, msg);
+        }
     }
 #else
     return status_code;
@@ -154,6 +160,10 @@ CGRPCRequestLogger::CGRPCRequestLogger(grpc::ServerContext* sctx,
 inline
 CGRPCRequestLogger::~CGRPCRequestLogger()
 {
+    if ( !m_RequestContext.IsSetRequestStatus() ) {
+        m_RequestContext.SetRequestStatus
+            (CRequestStatus::e500_InternalServerError);
+    }
     m_RequestContext.SetBytesWr(m_Reply.ByteSizeLong());
     if (m_ManagingRequest) {
         m_DiagContext.PrintRequestStop();

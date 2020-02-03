@@ -90,13 +90,17 @@ public:
         (sctx, NCBI_CURRENT_FUNCTION, request, reply)
 
 
-/// NCBI_GRPC_RETURN -- Provide consistent gRPC request handler status
-/// information to AppLog and gRPC.
-#define NCBI_GRPC_RETURN(sc) do {                                       \
+/// NCBI_GRPC_RETURN(_EX) -- Provide consistent gRPC request handler status
+/// information to AppLog and gRPC.  The _EX variant takes an error message
+/// to substitute for a stock status code description.  (A 1xx-3xx status
+/// code still always yields grpc::OK, with no custom message.)
+#define NCBI_GRPC_RETURN_EX(sc, msg) do {                               \
     CRequestStatus::ECode status_code = (sc);                           \
     GetDiagContext().GetRequestContext().SetRequestStatus(status_code); \
-    return g_AsGRPCStatus(status_code);                                 \
-} while (0);
+    return g_AsGRPCStatus(status_code, (msg));                          \
+} while (0)
+
+#define NCBI_GRPC_RETURN(sc) NCBI_GRPC_RETURN_EX(sc, nullptr)
 
 
 /// Get "hostport" for the likes of "grpc::CreateChannel(hostport, ...)" trying
