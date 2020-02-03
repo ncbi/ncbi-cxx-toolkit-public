@@ -176,7 +176,7 @@ typedef string TXString;
 
 #  define _T_XSTRING(x)       (x)
 #  define _T_STDSTRING(x)     (x)
-#  define _T_XCSTRING(x)      impl_ToCString(x)
+#  define _T_XCSTRING(x)      ncbi::impl_ToCString(x)
 #  define _T_CSTRING(x)       (x)
 
 #  define NcbiEmptyXCStr   NcbiEmptyCStr
