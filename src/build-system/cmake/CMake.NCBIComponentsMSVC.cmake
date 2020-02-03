@@ -79,8 +79,8 @@ if (${NCBI_ThirdPartyCompiler} STREQUAL "vs2017.64" OR ${NCBI_ThirdPartyCompiler
     endif()
 
     set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python252)
-    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1)
-    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1)
+    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
+    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
 else()
     set(NCBI_ThirdParty_TLS        ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9)
     set(NCBI_ThirdParty_FASTCGI    ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.0)
