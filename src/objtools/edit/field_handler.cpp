@@ -250,14 +250,10 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
                 feat_list = GetRelatedFeatures(*cds, constraint_type, scope);
             }                    
         } else if (obj_type == CSeqFeatData::eSubtype_gene) {
-            sequence::TFeatScores scores;
-            sequence::GetOverlappingFeatures (obj_feat.GetLocation(), 
-                                              CSeqFeatData::e_Cdregion, 
-                                              CSeqFeatData::eSubtype_cdregion, 
-                                              sequence::eOverlap_Contained, 
-                                              scores, *scope);
-            ITERATE (sequence::TFeatScores, it, scores) {
-                vector<CConstRef<CSeq_feat> > this_list = GetRelatedFeatures(*(it->second), constraint_type, scope);
+            list<CMappedFeat> cds_feats;
+            feature::GetCdssForGene(scope->GetSeq_featHandle(obj_feat), cds_feats);
+            for (auto& cds_it : cds_feats) {
+                vector<CConstRef<CSeq_feat> > this_list = GetRelatedFeatures(cds_it.GetOriginalFeature(), constraint_type, scope);
                 feat_list.insert(feat_list.end(), this_list.begin(), this_list.end());
             }
         }
