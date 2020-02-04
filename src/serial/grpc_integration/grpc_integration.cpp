@@ -298,8 +298,13 @@ DEFINE_STATIC_ARRAY_MAP(TRCSetterMap, sc_RCSetterMap, sc_RCSetters);
 // service name, the status code, or the number of bytes in and/or out?
 // (Byte counts appear to be tracked internally but not exposed. :-/)
 
-void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
+void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx,
+                                        EInvocationType invocation_type)
 {
+    if (invocation_type == eImplicit  &&  !x_IsRealRequest(sctx)) {
+        return;
+    }
+    
     CDiagContext&    dctx = GetDiagContext();
     CRequestContext& rctx = dctx.GetRequestContext();
     string           client_name, peer_ip, port;
@@ -407,9 +412,32 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     CNcbiLogFields("grpc").LogFields(grpc_fields);
 }
 
-void CGRPCServerCallbacks::EndRequest(grpc::ServerContext* context)
+
+void CGRPCServerCallbacks::EndRequest(grpc::ServerContext* sctx,
+                                      EInvocationType invocation_type)
 {
+    if (invocation_type == eImplicit  &&  !x_IsRealRequest(sctx)) {
+        return;
+    }
     GetDiagContext().PrintRequestStop();
+}
+
+
+bool CGRPCServerCallbacks::x_IsRealRequest(const grpc::ServerContext* sctx)
+{
+    auto peer = sctx->peer();
+    if ( !NStr::StartsWith(peer, "ipv4:127.")
+        &&  !NStr::StartsWith(peer, "ipv6:[::1]") ) {
+        return true;
+    }
+    for (const auto& it : sctx->client_metadata()) {
+        CTempString name(it.first.data(), it.first.size());
+        if (NStr::StartsWith(name, "ncbi")  ||  name == "sessionid") {
+            // l5d-*? dtab?
+            return true;
+        }
+    }
+    return false;
 }
 
 

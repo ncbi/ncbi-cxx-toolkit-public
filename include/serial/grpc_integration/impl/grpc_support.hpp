@@ -102,15 +102,26 @@ private:
 class CGRPCServerCallbacks : public grpc::Server::GlobalCallbacks
 {
 public:
+    /// How was BeginRequest or EndRequest called?
+    enum EInvocationType {
+        eImplicit, ///< From {Pre,Post}SynchronousRequest.
+        eExplicit, ///< Via CGRPCRequestLogger or the like.
+    };
+    
     void PreSynchronousRequest (grpc::ServerContext* sctx) override
-        { BeginRequest(sctx); }
+        { BeginRequest(sctx, eImplicit); }
     void PostSynchronousRequest(grpc::ServerContext* sctx) override
-        { EndRequest(sctx);   }
+        { EndRequest(sctx, eImplicit);   }
 
     // Static methods for use by any asynchronous service implementations,
     // which have no obvious provision for global hooks.
-    static void BeginRequest(grpc::ServerContext* sctx);
-    static void EndRequest  (grpc::ServerContext* sctx);
+    static void BeginRequest(grpc::ServerContext* sctx,
+                             EInvocationType invocation_type = eExplicit);
+    static void EndRequest  (grpc::ServerContext* sctx,
+                             EInvocationType invocation_type = eExplicit);
+
+private:
+    static bool x_IsRealRequest(const grpc::ServerContext* sctx);
 };
 
 
@@ -151,7 +162,8 @@ CGRPCRequestLogger::CGRPCRequestLogger(grpc::ServerContext* sctx,
 {
     if (m_DiagContext.GetAppState() < eDiagAppState_RequestBegin) {
         m_ManagingRequest = true;
-        CGRPCServerCallbacks::BeginRequest(sctx);
+        CGRPCServerCallbacks::BeginRequest(sctx,
+                                           CGRPCServerCallbacks::eExplicit);
     }
     m_DiagContext.Extra().Print("method_name", method_name);
     m_RequestContext.SetBytesRd(request.ByteSizeLong());
