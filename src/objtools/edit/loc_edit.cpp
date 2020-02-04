@@ -262,7 +262,7 @@ bool CLocationEditPolicy::Is5AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool
         try {
             CBioseq_Handle bsh = scope.GetBioseqHandle(first_l.GetSeq_id());
             rval = (first_l.GetRange().GetTo() == bsh.GetBioseqLength() - 1);
-        } catch (CException& ex) {
+        } catch (CException&) {
             confident = false;
         }
     }
@@ -286,7 +286,7 @@ bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool
             } else {
                 confident = false;
             }
-        } catch (CException& ex) {
+        } catch (CException&) {
             confident = false;
         }
     } else {
@@ -490,12 +490,12 @@ bool CLocationEditPolicy::Interpret3Policy
 }
 
 
-CRef<CSeq_loc> SeqLocExtend5(const CSeq_loc& loc, size_t pos, CScope* scope)
+CRef<CSeq_loc> SeqLocExtend5(const CSeq_loc& loc, TSeqPos pos, CScope* scope)
 {
     CSeq_loc_CI first_l(loc);
     CConstRef<CSeq_loc> first_loc = first_l.GetRangeAsSeq_loc();
 
-    size_t loc_start = first_loc->GetStart(eExtreme_Biological);
+    TSeqPos loc_start = first_loc->GetStart(eExtreme_Biological);
     bool partial_start = first_loc->IsPartialStart(eExtreme_Biological);
     ENa_strand strand = first_loc->IsSetStrand() ? first_loc->GetStrand() : eNa_strand_plus;
     CRef<CSeq_loc> new_loc(NULL);
@@ -516,14 +516,14 @@ CRef<CSeq_loc> SeqLocExtend5(const CSeq_loc& loc, size_t pos, CScope* scope)
 }
 
 
-CRef<CSeq_loc> SeqLocExtend3(const CSeq_loc& loc, size_t pos, CScope* scope)
+CRef<CSeq_loc> SeqLocExtend3(const CSeq_loc& loc, TSeqPos pos, CScope* scope)
 {
     CSeq_loc_CI last_l(loc);
     size_t num_intervals = last_l.GetSize();
     last_l.SetPos(num_intervals - 1);
     CConstRef<CSeq_loc> last_loc = last_l.GetRangeAsSeq_loc();
 
-    size_t loc_stop = last_loc->GetStop(eExtreme_Biological);
+    TSeqPos loc_stop = last_loc->GetStop(eExtreme_Biological);
     bool partial_stop = last_loc->IsPartialStop(eExtreme_Biological);
     ENa_strand strand = last_loc->IsSetStrand() ? last_loc->GetStrand() : eNa_strand_plus;
     CRef<CSeq_loc> new_loc(NULL);
@@ -547,8 +547,8 @@ CRef<CSeq_loc> SeqLocExtend3(const CSeq_loc& loc, size_t pos, CScope* scope)
 
 CRef<CSeq_loc> SeqLocExtend(const CSeq_loc& loc, size_t pos, CScope* scope)
 {
-    size_t loc_start = loc.GetStart(eExtreme_Positional);
-    size_t loc_stop = loc.GetStop(eExtreme_Positional);
+    TSeqPos loc_start = loc.GetStart(eExtreme_Positional);
+    TSeqPos loc_stop = loc.GetStop(eExtreme_Positional);
     bool partial_start = loc.IsPartialStart(eExtreme_Positional);
     bool partial_stop = loc.IsPartialStop(eExtreme_Positional);
     ENa_strand strand = loc.GetStrand();
@@ -557,15 +557,19 @@ CRef<CSeq_loc> SeqLocExtend(const CSeq_loc& loc, size_t pos, CScope* scope)
     if (pos < loc_start) {
         CRef<CSeq_id> id(new CSeq_id());
         id->Assign(*(loc.GetId()));
-        CRef<CSeq_loc> add(new CSeq_loc(*id, pos, loc_start - 1, strand));
+        CRef<CSeq_loc> add(
+            new CSeq_loc(*id, static_cast<TSeqPos>(pos), loc_start - 1, strand));
         add->SetPartialStart(partial_start, eExtreme_Positional);
-        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
+        new_loc = sequence::Seq_loc_Add(
+            loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
     } else if (pos > loc_stop) {
         CRef<CSeq_id> id(new CSeq_id());
         id->Assign(*(loc.GetId()));
-        CRef<CSeq_loc> add(new CSeq_loc(*id, loc_stop + 1, pos, strand));
+        CRef<CSeq_loc> add(new CSeq_loc(
+            *id, loc_stop + 1, static_cast<TSeqPos>(pos), strand));
         add->SetPartialStop(partial_stop, eExtreme_Positional);
-        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
+        new_loc = sequence::Seq_loc_Add(
+            loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
     }
     return new_loc;
 }
@@ -646,7 +650,7 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
             break;
     }
 
-    any_change |= AdjustFeaturePartialFlagForLocation(feat);
+    any_change |= feature::AdjustFeaturePartialFlagForLocation(feat);
 
     return any_change;
 }
@@ -849,8 +853,8 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
         if (adjust_gene) {
             CConstRef<CSeq_feat> old_gene = sequence::GetOverlappingGene(orig_feat.GetLocation(), scope);
             if (old_gene) {
-                size_t feat_start = new_feat->GetLocation().GetStart(eExtreme_Biological);
-                size_t feat_stop = new_feat->GetLocation().GetStop(eExtreme_Biological);
+                TSeqPos feat_start = new_feat->GetLocation().GetStart(eExtreme_Biological);
+                TSeqPos feat_stop = new_feat->GetLocation().GetStop(eExtreme_Biological);
                 CRef<CSeq_feat> new_gene(new CSeq_feat());
                 new_gene->Assign(*old_gene);
                 bool gene_change = false;
@@ -879,7 +883,7 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
 
         // retranslate or resynch if coding region
         if (new_feat->IsSetProduct() && new_feat->GetData().IsCdregion()) {
-            if (!retranslate_cds || !RetranslateCDS(*new_feat, scope)) {
+            if (!retranslate_cds || !feature::RetranslateCDS(*new_feat, scope)) {
                 CSeq_loc_CI l(new_feat->GetLocation());
                 feature::AdjustForCDSPartials(*new_feat, scope);
             }
@@ -1384,7 +1388,7 @@ void SeqLocAdjustForTrim(CSeq_point& pnt,
     }
 
     if (to < pnt.GetPoint()) {
-        size_t diff = to - from + 1;
+        auto diff = to - from + 1;
         pnt.SetPoint(pnt.GetPoint() - diff);
         bAdjusted = true;
     } else if (from < pnt.GetPoint()) {
@@ -1405,10 +1409,10 @@ void SeqLocAdjustForTrim(CPacked_seqpnt& pack,
 
     if (pack.IsSetPoints()) {
         bool from5 = true;
-        CPacked_seqpnt::TPoints::iterator it = pack.SetPoints().begin();
+        auto it = pack.SetPoints().begin();
         while (it != pack.SetPoints().end()) {
             if (to < *it) {
-                size_t diff = to - from + 1;
+                auto diff = to - from + 1;
                 *it -= diff;
                 it++;
                 bAdjusted = true;
@@ -1627,7 +1631,7 @@ void SeqLocAdjustForInsert(CSeq_point& pnt,
     }
 
     if (insert_from < pnt.GetPoint()) {
-        size_t diff = insert_to - insert_from + 1;
+        auto diff = insert_to - insert_from + 1;
         pnt.SetPoint(pnt.GetPoint() + diff);
     }
 }
@@ -1641,10 +1645,10 @@ void SeqLocAdjustForInsert(CPacked_seqpnt& packpnt,
         return;
     }
 
-    CPacked_seqpnt::TPoints::iterator it = packpnt.SetPoints().begin();
+    auto it = packpnt.SetPoints().begin();
     while (it != packpnt.SetPoints().end()) {
         if (from < *it) {
-            size_t diff = to - from + 1;
+            auto diff = to - from + 1;
             *it += diff;
         }
         it++;
@@ -1725,7 +1729,7 @@ void SeqLocAdjustForInsert(CSeq_loc& loc,
 
 
 CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
-    size_t start, size_t stop,
+    TSeqPos start, TSeqPos stop,
     const CSeq_id* seqid, bool& cut,
     unsigned int options)
 {
@@ -1785,7 +1789,7 @@ CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
 
 void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
                          CSeq_loc::TPacked_int& after_intervals,
-                         size_t start, size_t stop, 
+                         TSeqPos start, TSeqPos stop, 
                          const CSeq_id* seqid, unsigned int options)
 {
     if (before_intervals.IsSet()) {
@@ -1834,7 +1838,7 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
                          const CSeq_id* seqid, unsigned int options)
 {
     // Given a seqloc and a range, place the portion of the location before the range
-    // into loc1 and the remainder of the location into loc2
+    // into loc1 and the remainder of the location into loc2 
 
     switch(loc1.Which())
     {
@@ -1842,8 +1846,9 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
         case CSeq_loc::e_Int:
             {{
                 bool cut = false;
-                CRef<CSeq_interval> after = SplitLocationForGap(loc1.SetInt(), start, stop,
-                                                                seqid, cut, options);
+                CRef<CSeq_interval> after = SplitLocationForGap(loc1.SetInt(), 
+                    static_cast<TSeqPos>(start), static_cast<TSeqPos>(stop),
+                    seqid, cut, options);
                 if (cut) {
                     loc1.Reset();
                 }
@@ -1878,8 +1883,8 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
                 CSeq_loc::TPacked_int& before_intervals = loc1.SetPacked_int();
                 CRef<CSeq_loc::TPacked_int> after_intervals(new CSeq_loc::TPacked_int);
                 SplitLocationForGap(before_intervals, *after_intervals,
-                                    start, stop,
-                                    seqid, options);
+                    static_cast<TSeqPos>(start), static_cast<TSeqPos>(stop),
+                    seqid, options);
 
                 if (before_intervals.Set().empty()) {
                     loc1.Reset();
@@ -2279,7 +2284,7 @@ bool OneIdOneStrand(const CSeq_loc& loc, const CSeq_id** id, ENa_strand& strand)
             ++li;
         }
         return true;
-    } catch (CException& ex) {
+    } catch (CException&) {
         return false;
     }
 }
@@ -2330,7 +2335,7 @@ bool CorrectIntervalOrder(CSeq_loc::TMix::Tdata& mix)
                         }
                     }
                 }
-            } catch (CException& ex) {
+            } catch (CException&) {
                 // not just one id
             }
             ++a;
