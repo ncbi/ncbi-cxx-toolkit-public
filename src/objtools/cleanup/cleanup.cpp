@@ -2649,6 +2649,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
             }
         }
 
+        //any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
         if (change_this_cds) {
             CSeq_feat_EditHandle cds_h(*cds_it);
             
@@ -2684,10 +2685,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         any_changes |= SetGeneticCodes(*bi);
     }
 
-    CRef<CCleanupChange> changes(makeCleanupChange(0));
-    CNewCleanup_imp exclean(changes, options);
-    exclean.ExtendedCleanup(entry);
-
+    CCleanup::ExtendedCleanup(entry, 0);
     return any_changes;
 }
 

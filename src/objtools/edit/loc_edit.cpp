@@ -2476,7 +2476,7 @@ bool AdjustFeatureEnd5(CSeq_feat& cds, vector<CRef<CSeq_feat> > related_features
         if (cds_loc) {
             for (auto it : related_features) {
                 if (it->GetLocation().GetStart(eExtreme_Biological) == start) {
-                    CRef<CSeq_loc> related_loc = SeqLocExtend5(it->GetLocation(), start - extend_len, &scope);
+                    CRef<CSeq_loc> related_loc = SeqLocExtend5(it->GetLocation(), new_start, &scope);
                     if (related_loc) {
                         it->SetLocation().Assign(*related_loc);
                         if (it->IsSetData() && it->GetData().IsCdregion()) {
@@ -2534,7 +2534,7 @@ bool AdjustFeatureEnd3(CSeq_feat& cds, vector<CRef<CSeq_feat> > related_features
         CRef<CSeq_loc> cds_loc = SeqLocExtend3(cds.GetLocation(), new_stop, &scope);
         if (cds_loc) {
             for (auto it : related_features) {
-                if (it->GetLocation().GetStart(eExtreme_Biological) == stop) {
+                if (it->GetLocation().GetStop(eExtreme_Biological) == stop) {
                     CRef<CSeq_loc> related_loc = SeqLocExtend3(it->GetLocation(), new_stop, &scope);
                     if (related_loc) {
                         it->SetLocation().Assign(*related_loc);
@@ -2605,6 +2605,7 @@ bool ExtendPartialFeatureEnds(CBioseq_Handle bsh)
 
             if (AdjustFeatureEnd5(*new_cds, related_features, bsh.GetScope()) ||
                 AdjustFeatureEnd3(*new_cds, related_features, bsh.GetScope())) {
+                feature::RetranslateCDS(*new_cds, bsh.GetScope());
                 CSeq_feat_EditHandle feh(*f);
                 feh.Replace(*new_cds);
                 if (gene) {

@@ -52,14 +52,6 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
 {
     bool need_recalculate_index = false;
 
-    if (flags.find('x') != string::npos) {
-        CBioseq_CI bi(h_entry, CSeq_inst::eMol_na);
-        while (bi) {
-            edit::ExtendPartialFeatureEnds(*bi);
-            ++bi;
-        }
-    }
-
     CCleanup cleanup;
     if (flags.find('w') != string::npos)
     {
@@ -88,7 +80,17 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     } else if (flags.find('D') != string::npos) {
         CCleanup::CleanupCollectionDates(h_entry, false);
     }
-    
+
+    if (flags.find('x') != string::npos) {
+        CBioseq_CI bi(h_entry, CSeq_inst::eMol_na);
+        while (bi) {
+            if (edit::ExtendPartialFeatureEnds(*bi)) {
+            }
+            ++bi;
+        }
+    }
+    CCleanup::ExtendedCleanup(h_entry, 0);
+
 
     CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
 
