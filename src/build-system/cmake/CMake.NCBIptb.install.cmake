@@ -98,10 +98,16 @@ function(NCBI_internal_install_target _variable _access)
                     CONFIGURATIONS ${_cfg}
                 )
             endif()
-            if (WIN32 AND _haspdb)
-                install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
-                        DESTINATION ${_dest}/${_cfg} OPTIONAL
-                        CONFIGURATIONS ${_cfg})
+            if (WIN32)
+                if (_haspdb)
+                    install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
+                            DESTINATION ${_dest}/${_cfg} OPTIONAL
+                            CONFIGURATIONS ${_cfg})
+                else()
+                    install(FILES $<TARGET_FILE:${NCBI_PROJECT}>.pdb
+                            DESTINATION ${_dest}/${_cfg} OPTIONAL
+                            CONFIGURATIONS ${_cfg})
+                endif()
             endif()
         endforeach()
     else()
