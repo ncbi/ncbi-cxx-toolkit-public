@@ -436,6 +436,7 @@ void CGRPCServerCallbacks::EndRequest(grpc::ServerContext* sctx,
 
 bool CGRPCServerCallbacks::x_IsRealRequest(const grpc::ServerContext* sctx)
 {
+#ifdef HAVE_LIBGRPC
     auto peer = sctx->peer();
     if ( !NStr::StartsWith(peer, "ipv4:127.")
         &&  !NStr::StartsWith(peer, "ipv6:[::1]") ) {
@@ -448,6 +449,7 @@ bool CGRPCServerCallbacks::x_IsRealRequest(const grpc::ServerContext* sctx)
             return true;
         }
     }
+#endif
     return false;
 }
 
