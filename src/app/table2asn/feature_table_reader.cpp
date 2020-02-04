@@ -1137,7 +1137,6 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
     int flags = 0;
     flags |= CFastaReader::fAddMods
           |  CFastaReader::fNoUserObjs
-          |  CFastaReader::fBadModThrow
           |  CFastaReader::fAssumeProt;
 
     unique_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
@@ -1634,7 +1633,7 @@ void CFeatureTableReader::RemoveEmptyFtable(objects::CBioseq& bioseq)
     }
 }
 
-CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const CSeq_feat& feature_gap)
+CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq& bioseq, const CSeq_feat& feature_gap)
 {
     const string& sGT = feature_gap.GetNamedQual(kGapType_qual);
 
@@ -1726,7 +1725,8 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
     }
 
     CGapsEditor gap_edit(gap_type, evidences, 0, 0);
-    return gap_edit.CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length);
+    //return gap_edit.CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length);
+    return gap_edit.CreateGap(bioseq, gap_start, gap_length);
 }
 
 void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
@@ -1748,7 +1748,9 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
                         ++feature_it;
                         try
                         {
-                            CRef<CDelta_seq> gap = MakeGap(*bioseq_it, feature_gap);
+                            auto pBioseq = const_cast<CBioseq*>(bioseq_it->GetCompleteBioseq().GetPointer());
+                            //CRef<CDelta_seq> gap = MakeGap(*bioseq_it, feature_gap);
+                            CRef<CDelta_seq> gap = MakeGap(*pBioseq, feature_gap);
                             if (gap.Empty())
                             {
                                 m_context.m_logger->PutError(*unique_ptr<CLineError>(
@@ -1775,9 +1777,64 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 
         CBioseq& bioseq = (CBioseq&)*bioseq_it->GetEditHandle().GetCompleteBioseq();
         RemoveEmptyFtable(bioseq);
-
     }
 }
+
+
+void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry& entry) {
+
+    VisitAllBioseqs(entry, [&](CBioseq& bioseq) { MakeGapsFromFeatures(bioseq); });
+}
+
+
+void CFeatureTableReader::MakeGapsFromFeatures(CBioseq& bioseq)
+{
+    if (!bioseq.IsSetAnnot()) {
+        return;
+    }
+
+    for (auto pAnnot : bioseq.SetAnnot()) {
+        if (!pAnnot->IsSetData() ||
+            (pAnnot->GetData().Which() != CSeq_annot::TData::e_Ftable)) {
+            continue;
+        } 
+        // Annot is a feature table
+        // Feature tables are lists of CRef<CSeq_feat>
+        auto& ftable = pAnnot->SetData().SetFtable();
+        auto fit = ftable.begin();
+        while (fit != ftable.end()) {
+            auto pSeqFeat = *fit;
+            if (pSeqFeat->IsSetData() &&
+                pSeqFeat->GetData().IsImp() &&
+                pSeqFeat->GetData().GetImp().IsSetKey() &&
+                pSeqFeat->GetData().GetImp().GetKey() == kAssemblyGap_feature) {
+                
+                try {
+                    if (MakeGap(bioseq, *pSeqFeat)) {
+                        fit = ftable.erase(fit);
+                        continue;
+                    }
+                    m_context.m_logger->PutError(*unique_ptr<CLineError>(
+                                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                                "Failed to convert feature gap into a gap")));
+                }
+                catch(const CException& ex)
+                {
+                    m_context.m_logger->PutError(*unique_ptr<CLineError>(
+                                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                                ex.GetMsg())));
+                }
+
+            }
+            ++fit;
+        }
+    }
+
+    RemoveEmptyFtable(bioseq);
+}
+
+
+
 
 void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry)
 {

@@ -153,13 +153,53 @@ namespace objects
                VisitAllFeatures(bioseq, m);
         });
     }
-
+/*
     template<typename _M>
-    void VisitAllFeatures(objects::CSeq_entry& entry, _M m)
+    void VisitBioseqFeatures(objects::CSeq_entry& entry, _M m)
     {
         VisitAllFeatures(entry,
             [](CBioseq&){return true; }, // all fit filter
             m);
+    }
+*/
+
+    template<typename Method>
+    void VisitAllFeatures(objects::CBioseq::TAnnot& annots, Method method)
+    {
+        for (auto pAnnot : annots) {
+            if (!pAnnot->IsFtable()) {
+                continue;
+            }
+
+            for (auto pSeqFeat : pAnnot->SetData().SetFtable()) {
+                if (pSeqFeat) {
+                    method(*pSeqFeat);
+                }
+            }
+        }
+    }
+
+
+    template<typename Method>
+    void VisitAllFeatures(objects::CSeq_entry& entry, Method method) 
+    {
+        if (entry.IsSeq()) {
+            if (entry.GetSeq().IsSetAnnot()) {
+                VisitAllFeatures(entry.SetSeq().SetAnnot(), method);
+            }
+            return;
+        } 
+
+        // is set:
+        if(entry.GetSet().IsSetAnnot()) {
+            VisitAllFeatures(entry.SetSet().SetAnnot(), method);
+        }
+
+        for (auto pSubEntry : entry.SetSet().SetSeq_set()) {
+            if (pSubEntry) {
+                VisitAllFeatures(*pSubEntry, method);
+            }
+        }
     }
 };
 

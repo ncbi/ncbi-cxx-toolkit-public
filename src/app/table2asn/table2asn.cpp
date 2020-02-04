@@ -991,21 +991,24 @@ void CTbl2AsnApp::ProcessOneEntry(
 
 
     //m_context.MakeGenomeCenterId(*entry);
+    fr.MakeGapsFromFeatures(*entry);
 
-    CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
-    CSeq_entry_EditHandle entry_edit_handle = seh.GetEditHandle();
-
-    fr.MakeGapsFromFeatures(entry_edit_handle);
+    //CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    //CSeq_entry_EditHandle entry_edit_handle = seh.GetEditHandle();
 
     if (m_context.m_delay_genprodset)
     {
-        VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
+        //VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
     }
     else
     {
-        VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
+        //VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
+    CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    CSeq_entry_EditHandle entry_edit_handle = seh.GetEditHandle();
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)

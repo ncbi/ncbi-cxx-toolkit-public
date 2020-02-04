@@ -47,7 +47,9 @@ public:
    CRef<objects::CSeq_entry> m_replacement_protein;
 
    void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
-   CRef<objects::CDelta_seq> MakeGap(objects::CBioseq_Handle bsh, const objects::CSeq_feat& feature_gap);
+   void MakeGapsFromFeatures(objects::CSeq_entry& entry);
+   void MakeGapsFromFeatures(objects::CBioseq& bioseq);
+   CRef<objects::CDelta_seq> MakeGap(objects::CBioseq& bioseq, const objects::CSeq_feat& feature_gap);
    static 
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
    void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry);
