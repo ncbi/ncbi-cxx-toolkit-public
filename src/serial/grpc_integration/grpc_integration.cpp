@@ -43,6 +43,9 @@
 #  include <grpc/support/alloc.h>
 #  include <grpc/support/log.h>
 #endif
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_ifconf.h>
+#endif
 
 #define NCBI_USE_ERRCODE_X Serial_GRPCIntegration
 
@@ -188,6 +191,14 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
              }
              return true;
          });
+#  ifdef HAVE_LIBCONNEXT
+    if ( !rctx.IsSetClientIP() ) {
+        char buf[64];
+        if (NcbiGetHostIP(buf, sizeof(buf)) != nullptr) {
+            cctx.AddMetadata("ncbi_client_ip", buf);
+        }
+    }
+#  endif
 #endif
 }
 
