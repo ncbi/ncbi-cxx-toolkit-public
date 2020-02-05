@@ -43,7 +43,7 @@
 #  include <grpc/support/alloc.h>
 #  include <grpc/support/log.h>
 #endif
-#ifdef HAVE_LIBCONNEXT
+#if defined(HAVE_LIBCONNEXT)  &&  defined(NCBI_OS_UNIX)
 #  include <connect/ext/ncbi_ifconf.h>
 #endif
 
@@ -191,7 +191,7 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
              }
              return true;
          });
-#  ifdef HAVE_LIBCONNEXT
+#  if defined(HAVE_LIBCONNEXT)  &&  defined(NCBI_OS_UNIX)
     if ( !rctx.IsSetClientIP() ) {
         char buf[64];
         if (NcbiGetHostIP(buf, sizeof(buf)) != nullptr) {
