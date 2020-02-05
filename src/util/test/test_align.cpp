@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 typedef CAlignRange<TSignedSeqPos>  TAlignRange;
-typedef CAlignRangeCollection<TAlignRange>  TAlignColl;
+typedef CAlignRangeCollectionList<TAlignRange>  TAlignColl;
 typedef CRange<TSignedSeqPos>   TSignedRange;
 
 
@@ -453,13 +453,27 @@ struct SARange {
         return m_FirstFrom == r.GetFirstFrom()  &&  m_SecondFrom == r.GetSecondFrom() &&
                 m_Length == r.GetLength()  &&  m_Direct == r.IsDirect();
     }
+    bool operator!=(const TAlignRange& r) const
+    {
+        return !operator==(r);
+    }
 };
-
+typedef vector<SARange> SARanges;
 
 ostream& operator<<(ostream& out, const SARange& r)
 {
-    return out << "SARange  [ " << r.m_FirstFrom << ", " << r.m_SecondFrom
-               << ", " <<  r.m_Length << ", " << r.m_Direct << "]";
+    return out << "[ " << r.m_FirstFrom << ", " << r.m_SecondFrom
+               << ", " <<  r.m_Length << ", " << (r.m_Direct?"true":"false") << "]";
+}
+
+ostream& operator<<(ostream& out, const SARanges& rr)
+{
+    out << "{";
+    for ( size_t i = 0; i < rr.size(); ++i ) {
+        if ( i ) out << ',';
+        out << ' ' << rr[i];
+    }
+    return out << " }";
 }
 
 
@@ -503,6 +517,24 @@ ostream& operator<<(ostream& out, const TSignedRange& r)
     return out << "Range [" << r.GetFrom() << ", " << r.GetTo() << "]";
 }
 
+bool operator==(const TAlignColl& coll, const SARanges& expected)
+{
+    if ( coll.size() != expected.size() ) {
+        return false;
+    }
+    auto it = coll.begin();
+    for ( auto& e : expected ) {
+        if ( e != *it++ ) {
+            return false;
+        }
+    }
+    for ( size_t i = 0; i < expected.size(); ++i ) {
+        if ( expected[i] != coll[i] ) { /* NCBI_FAKE_WARNING: deprecated */
+            return false;
+        }
+    }
+    return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///  TAlignColl - Test Cases
@@ -518,8 +550,7 @@ BOOST_AUTO_TEST_CASE(AC_Test_Insert)
    TAlignColl::const_iterator it = coll.insert(coll.end(), TAlignRange(501, 1501, 10, true));
    
    BOOST_CHECK(it == coll.begin());
-   SARange res_1[] = { {501, 1501, 10, true} };
-   AC_Collection_Equals(coll, res_1, sizeof(res_1) / sizeof(SARange));
+   BOOST_CHECK_EQUAL(coll, SARanges({{501, 1501, 10, true}}));
    BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fDirect | TAlignColl::fNotValidated);
    BOOST_CHECK_EQUAL(coll.empty(), false);
 
@@ -532,16 +563,14 @@ BOOST_AUTO_TEST_CASE(AC_Test_Insert)
    // insert a segment in the first position
    it = coll.insert(coll.begin(), TAlignRange(1, 1001, 10, true));
    
-   BOOST_CHECK(it == coll.begin());    
-   SARange res_2[] = { {1, 1001, 10, true}, {501, 1501, 10, true} };
-   AC_Collection_Equals(coll, res_2, sizeof(res_2) / sizeof(SARange));
+   BOOST_CHECK(it == coll.begin());
+   BOOST_CHECK_EQUAL(coll, SARanges({{1, 1001, 10, true}, {501, 1501, 10, true}}));
    BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fDirect | TAlignColl::fNotValidated);
 
    it = coll.insert(coll.begin() + 1, TAlignRange(201, 1201, 10, true));
 
    BOOST_CHECK(it == coll.begin() + 1);       
-   SARange res_3[] = { {1, 1001, 10, true}, {201, 1201, 10, true}, {501, 1501, 10, true} };
-   AC_Collection_Equals(coll, res_3, sizeof(res_3) / sizeof(SARange));
+   BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1001, 10, true}, {201, 1201, 10, true}, {501, 1501, 10, true} }));
    BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fDirect | TAlignColl::fNotValidated);
 
    // reset
@@ -773,30 +802,27 @@ BOOST_AUTO_TEST_CASE(AC_TestDirections)
 BOOST_AUTO_TEST_CASE(AC_TestNormalized_Strict)
 {
     {
-       TAlignColl coll(TAlignColl::fKeepNormalized);
+        TAlignColl coll(TAlignColl::fKeepNormalized);
         
         SARange ranges_1[] = { {101, 101, 20, true}, {201, 201, 50, true}, {1, 1, 10, true} };    
         AC_AddToCollection(coll, ranges_1, sizeof(ranges_1) / sizeof(SARange));    
 
         // add - results should be sorted, validated and valid   
-        SARange res_1[] = { {1, 1, 10, true}, {101, 101, 20, true}, {201, 201, 50, true} };
-        AC_Collection_Equals(coll, res_1, sizeof(res_1) / sizeof(SARange));
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {101, 101, 20, true}, {201, 201, 50, true} }));
         BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fKeepNormalized | TAlignColl::fDirect);
         
         // add adjacent segment - it should merge automatically
         TAlignRange r_1(121, 121, 30, true);
         coll.insert(r_1);
 
-        SARange res_2[] = { {1, 1, 10, true}, {101, 101, 50, true}, {201, 201, 50, true} };
-        AC_Collection_Equals(coll, res_2, sizeof(res_2) / sizeof(SARange));
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {101, 101, 50, true}, {201, 201, 50, true} }));
         BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fKeepNormalized | TAlignColl::fDirect);
         
         // add a segment with wrong direction - becomes invalid
         TAlignRange r_2(1000, 1000, 10, false);
         BOOST_CHECK_THROW(coll.insert(r_2), CAlignRangeCollException);
 
-        SARange res_3[] = { {1, 1, 10, true}, {101, 101, 50, true}, {201, 201, 50, true}, {1000, 1000, 10, false} };
-        AC_Collection_Equals(coll, res_3, sizeof(res_3) / sizeof(SARange));
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {101, 101, 50, true}, {201, 201, 50, true}, {1000, 1000, 10, false} }));
         BOOST_CHECK_EQUAL(coll.GetFlags(), TAlignColl::fKeepNormalized | TAlignColl::fMixedDir | TAlignColl::fInvalid);    
     }
     {
@@ -809,8 +835,7 @@ BOOST_AUTO_TEST_CASE(AC_TestNormalized_Strict)
         TAlignRange r(210, 500, 30, true);
         BOOST_CHECK_THROW(coll.insert(r), CAlignRangeCollException);
 
-        SARange res[] = { {1, 1, 10, true}, {201, 201, 50, true}, {210, 500, 30, true} };
-        AC_Collection_Equals(coll, res, sizeof(res) / sizeof(SARange));
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {201, 201, 50, true}, {210, 500, 30, true} }));
         BOOST_CHECK_EQUAL(coll.GetFlags(), 
                           TAlignColl::fKeepNormalized | TAlignColl::fDirect |
                           TAlignColl::fOverlap | TAlignColl::fInvalid);    
@@ -826,8 +851,42 @@ BOOST_AUTO_TEST_CASE(AC_TestNormalized_Strict)
         TAlignRange r(210, 500, 30, false);
         BOOST_CHECK_THROW(coll.insert(r), CAlignRangeCollException);
         
-        SARange res[] = { {1, 1, 10, true}, {201, 201, 50, true}, {210, 500, 30, false} };
-        AC_Collection_Equals(coll, res, sizeof(res) / sizeof(SARange));
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {201, 201, 50, true}, {210, 500, 30, false} }));
+        BOOST_CHECK_EQUAL(coll.GetFlags(), 
+                          TAlignColl::fKeepNormalized | TAlignColl::fMixedDir |
+                          TAlignColl::fOverlap | TAlignColl::fInvalid);    
+    }
+
+
+    {
+        // if 'from' are equal new segment is inserted before old ones
+        TAlignColl coll(TAlignColl::fKeepNormalized);
+        
+        SARange ranges_1[] = { {1, 1, 10, true}, {201, 201, 50, true}, };    
+        AC_AddToCollection(coll, ranges_1, sizeof(ranges_1) / sizeof(SARange));    
+
+        // add Overlapping segment - becomes invalid
+        TAlignRange r(201, 500, 30, true);
+        BOOST_CHECK_THROW(coll.insert(r), CAlignRangeCollException);
+
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {201, 500, 30, true}, {201, 201, 50, true} }));
+        BOOST_CHECK_EQUAL(coll.GetFlags(), 
+                          TAlignColl::fKeepNormalized | TAlignColl::fDirect |
+                          TAlignColl::fOverlap | TAlignColl::fInvalid);    
+
+    }
+    {
+        // if 'from' are equal new segment is inserted before old ones
+        TAlignColl coll(TAlignColl::fKeepNormalized);
+        
+        SARange ranges_1[] = { {1, 1, 10, true}, {201, 201, 50, true}, };    
+        AC_AddToCollection(coll, ranges_1, sizeof(ranges_1) / sizeof(SARange));    
+
+        // add Overlapping Reversed segment - both fOverlap & fMixedDir must be flagged
+        TAlignRange r(201, 500, 300, false);
+        BOOST_CHECK_THROW(coll.insert(r), CAlignRangeCollException);
+        
+        BOOST_CHECK_EQUAL(coll, SARanges({ {1, 1, 10, true}, {201, 500, 300, false}, {201, 201, 50, true} }));
         BOOST_CHECK_EQUAL(coll.GetFlags(), 
                           TAlignColl::fKeepNormalized | TAlignColl::fMixedDir |
                           TAlignColl::fOverlap | TAlignColl::fInvalid);    
@@ -962,23 +1021,33 @@ BOOST_AUTO_TEST_CASE(AC_Test_GetSecondByFirst)
         pos = coll.GetSecondPosByFirstPos(0, TAlignColl::eForward);
         pos_2 = coll.GetSecondPosByFirstPos(0, TAlignColl::eRight);    
         BOOST_CHECK_EQUAL(pos, 1101);  // position closest to the right
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 1101);
 
         pos = coll.GetSecondPosByFirstPos(150, TAlignColl::eForward);
         pos_2 = coll.GetSecondPosByFirstPos(150, TAlignColl::eRight);    
         BOOST_CHECK_EQUAL(pos, 1201);  // position closest to the right
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 1201);
+
+        pos = coll.GetSecondPosByFirstPos(450, TAlignColl::eForward);
+        pos_2 = coll.GetSecondPosByFirstPos(450, TAlignColl::eRight);    
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
 
         // eBackwards, eLeft
         pos = coll.GetSecondPosByFirstPos(150, TAlignColl::eBackwards);
         pos_2 = coll.GetSecondPosByFirstPos(150, TAlignColl::eLeft);    
         BOOST_CHECK_EQUAL(pos, 1110);  // position closest to the left
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 1110);
 
         pos = coll.GetSecondPosByFirstPos(5000, TAlignColl::eBackwards);
         pos_2 = coll.GetSecondPosByFirstPos(5000, TAlignColl::eLeft);    
         BOOST_CHECK_EQUAL(pos, 1150);  // position closest to the left
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 1150);
+
+        pos = coll.GetSecondPosByFirstPos(10, TAlignColl::eBackwards);
+        pos_2 = coll.GetSecondPosByFirstPos(10, TAlignColl::eLeft);    
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
     }
     // reversed
     {
@@ -1009,23 +1078,33 @@ BOOST_AUTO_TEST_CASE(AC_Test_GetSecondByFirst)
         pos = coll.GetSecondPosByFirstPos(0, TAlignColl::eForward);
         pos_2 = coll.GetSecondPosByFirstPos(0, TAlignColl::eRight);    
         BOOST_CHECK_EQUAL(pos, 260);  // position closest to the right
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 260);
 
         pos = coll.GetSecondPosByFirstPos(30, TAlignColl::eForward);
         pos_2 = coll.GetSecondPosByFirstPos(30, TAlignColl::eRight);    
         BOOST_CHECK_EQUAL(pos, 220);  // position closest to the right
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 220);
+
+        pos = coll.GetSecondPosByFirstPos(130, TAlignColl::eForward);
+        pos_2 = coll.GetSecondPosByFirstPos(130, TAlignColl::eRight);    
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
 
         // eBackwards, eLeft
         pos = coll.GetSecondPosByFirstPos(30, TAlignColl::eBackwards);
         pos_2 = coll.GetSecondPosByFirstPos(30, TAlignColl::eLeft);    
         BOOST_CHECK_EQUAL(pos, 251);  // position closest to the left
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 251);
 
         pos = coll.GetSecondPosByFirstPos(5000, TAlignColl::eBackwards);
         pos_2 = coll.GetSecondPosByFirstPos(5000, TAlignColl::eLeft);    
         BOOST_CHECK_EQUAL(pos, 201);  // position closest to the left
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 201);
+
+        pos = coll.GetSecondPosByFirstPos(0, TAlignColl::eBackwards);
+        pos_2 = coll.GetSecondPosByFirstPos(0, TAlignColl::eLeft);    
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
     }
 }
 
@@ -1067,6 +1146,11 @@ BOOST_AUTO_TEST_CASE(AC_Test_GetFirstBySecond)
         BOOST_CHECK_EQUAL(pos, 201);  // position closest to the right
         BOOST_CHECK_EQUAL(pos_2, 201);
 
+        pos = coll.GetFirstPosBySecondPos(2150, TAlignColl::eForward);
+        pos_2 = coll.GetFirstPosBySecondPos(2150, TAlignColl::eRight);    
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
+
         // eBackwards, eLeft
         pos = coll.GetFirstPosBySecondPos(1150, TAlignColl::eBackwards);
         pos_2 = coll.GetFirstPosBySecondPos(1150, TAlignColl::eLeft);    
@@ -1077,6 +1161,11 @@ BOOST_AUTO_TEST_CASE(AC_Test_GetFirstBySecond)
         pos_2 = coll.GetFirstPosBySecondPos(5000, TAlignColl::eLeft);    
         BOOST_CHECK_EQUAL(pos, 350);  // position closest to the left
         BOOST_CHECK_EQUAL(pos_2, 350);
+
+        pos = coll.GetFirstPosBySecondPos(100, TAlignColl::eBackwards);
+        pos_2 = coll.GetFirstPosBySecondPos(100, TAlignColl::eLeft);
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
     }
     // reversed
     {
@@ -1105,25 +1194,35 @@ BOOST_AUTO_TEST_CASE(AC_Test_GetFirstBySecond)
 
         // use "seek" option - eForward, eLeft
         pos = coll.GetFirstPosBySecondPos(0, TAlignColl::eForward);
-        pos_2 = coll.GetFirstPosBySecondPos(0, TAlignColl::eLeft);    
+        pos_2 = coll.GetFirstPosBySecondPos(0, TAlignColl::eLeft);
         BOOST_CHECK_EQUAL(pos, 70);  // position closest to the left
         BOOST_CHECK_EQUAL(pos_2, pos);
 
         pos = coll.GetFirstPosBySecondPos(230, TAlignColl::eForward);
-        pos_2 = coll.GetFirstPosBySecondPos(230, TAlignColl::eLeft);    
+        pos_2 = coll.GetFirstPosBySecondPos(230, TAlignColl::eLeft);
         BOOST_CHECK_EQUAL(pos, 10);  // position closest to the left
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 10);
+
+        pos = coll.GetFirstPosBySecondPos(1200, TAlignColl::eForward);
+        pos_2 = coll.GetFirstPosBySecondPos(1200, TAlignColl::eLeft);
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
 
         // eBackwards, eRight
         pos = coll.GetFirstPosBySecondPos(230, TAlignColl::eBackwards);
-        pos_2 = coll.GetFirstPosBySecondPos(230, TAlignColl::eRight);    
+        pos_2 = coll.GetFirstPosBySecondPos(230, TAlignColl::eRight);
         BOOST_CHECK_EQUAL(pos, 51);  // position closest to the right
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 51);
 
         pos = coll.GetFirstPosBySecondPos(5000, TAlignColl::eBackwards);
-        pos_2 = coll.GetFirstPosBySecondPos(5000, TAlignColl::eRight);    
+        pos_2 = coll.GetFirstPosBySecondPos(5000, TAlignColl::eRight);
         BOOST_CHECK_EQUAL(pos, 1);  // position closest to the right
-        BOOST_CHECK_EQUAL(pos_2, pos);
+        BOOST_CHECK_EQUAL(pos_2, 1);
+
+        pos = coll.GetFirstPosBySecondPos(50, TAlignColl::eBackwards);
+        pos_2 = coll.GetFirstPosBySecondPos(50, TAlignColl::eRight);
+        BOOST_CHECK_EQUAL(pos, -1);  // out of bounds
+        BOOST_CHECK_EQUAL(pos_2, -1);
     }
 }
 

@@ -37,6 +37,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <util/rangemap.hpp>
 #include <util/itree.hpp>
+#include <util/random_gen.hpp>
 #include <stdlib.h>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -67,6 +68,7 @@ public:
 
     TRange RandomRange(void) const;
 
+    mutable CRandom m_Random;
     int m_Count;
 
     int m_Length;
@@ -169,8 +171,14 @@ void CTestRangeMap::PrintTotalScannedNumber(size_t number) const
 inline
 CTestRangeMap::TRange CTestRangeMap::RandomRange(void) const
 {
-    int from = int(rand() % m_Length);
-    int to = from + int(rand() % m_RangeLength);
+    int len = m_Random.GetRand(1, m_RangeLength);
+    for ( int i = 0; i < 4; ++i ) {
+        len = len * ((double)m_Random.GetRand()/m_Random.GetMax());
+        if ( len == 0 )
+            len = 1;
+    }
+    int from = m_Random.GetRand(0, m_Length-len);
+    int to = from + len-1;
     return TRange(from, to);
 }
 
@@ -184,24 +192,30 @@ void CTestRangeMap::TestIntervalTree(void) const
     TMap m;
 
     // fill
+    CStopWatch sw;
+    sw.Restart();
     for ( int count = 0; count < m_RangeNumber; ) {
         TRange range = RandomRange();
         m.Insert(range, CConstRef<CObject>(0));
         ++count;
         Added(range);
     }
+    cout << "Add time: "<<sw.Elapsed()<<endl;
     
     if ( m_PrintSize ) {
         Filled(m.Size());
         Stat(m.Stat());
     }
 
+    sw.Restart();
     for ( TMapCI i = m.AllIntervals(); i; ++i ) {
         FromAll(i.GetInterval());
     }
+    cout << "Full scan time: "<<sw.Elapsed()<<endl;
 
     size_t scannedCount = 0;
     for ( int count = 0; count < m_ScanCount; ++count ) {
+        sw.Restart();
         for ( int pos = 0; pos <= m_Length + 2*m_RangeLength;
               pos += m_ScanStep ) {
             TRange range(pos, pos + m_ScanLength - 1);
@@ -213,6 +227,7 @@ void CTestRangeMap::TestIntervalTree(void) const
                 ++scannedCount;
             }
         }
+        cout << "Lookup time: "<<sw.Elapsed()<<endl;
     }
     PrintTotalScannedNumber(scannedCount);
 
@@ -228,25 +243,31 @@ void CTestRangeMap::TestRangeMap(void) const
 
     TMap m;
 
+    CStopWatch sw;
     // fill
+    sw.Restart();
     for ( int count = 0; count < m_RangeNumber; ) {
         TRange range = RandomRange();
         m.insert(TMap::value_type(range, CConstRef<CObject>(0)));
         ++count;
         Added(range);
     }
+    cout << "Add time: "<<sw.Elapsed()<<endl;
     
     if ( m_PrintSize ) {
         Filled(m.size());
         // Stat(m.stat());
     }
 
+    sw.Restart();
     for ( TMapCI i = m.begin(); i; ++i ) {
         FromAll(i.GetInterval());
     }
+    cout << "Full scan time: "<<sw.Elapsed()<<endl;
 
     size_t scannedCount = 0;
     for ( int count = 0; count < m_ScanCount; ++count ) {
+        sw.Restart();
         for ( int pos = 0; pos <= m_Length + 2*m_RangeLength;
               pos += m_ScanStep ) {
             TRange range;
@@ -259,6 +280,7 @@ void CTestRangeMap::TestRangeMap(void) const
                 ++scannedCount;
             }
         }
+        cout << "Lookup time: "<<sw.Elapsed()<<endl;
     }
     PrintTotalScannedNumber(scannedCount);
 

@@ -22,6 +22,7 @@ APP_PROJ = example_value_convert \
            test_line_reader \
            test_porter_stemming \
            test_range_coll \
+           test_range_set \
            test_rangemap \
            test_regexp \
            test_resize_iter \
