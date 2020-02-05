@@ -14,7 +14,8 @@ ASN_DEP = seqset seq
 
 LIB_OR_DLL = both
 
-DLL_LIB = $(SOBJMGR_LIBS) sraread$(STATIC) $(SRAREAD_LDEP) dbsnp_ptis grpc_integration $(CMPRS_LIB)
+DLL_LIB = $(SOBJMGR_LIBS) sraread$(STATIC) $(SRAREAD_LDEP) dbsnp_ptis \
+          grpc_integration $(XCONNEXT) xconnect $(CMPRS_LIB)
 LIBS = $(SRA_SDK_SYSLIBS) $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 
