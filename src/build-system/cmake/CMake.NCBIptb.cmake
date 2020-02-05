@@ -1878,9 +1878,6 @@ endif()
 #message("add static library ${NCBI_PROJECT}")
         add_library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})
         set(_suffix ${CMAKE_STATIC_LIBRARY_SUFFIX})
-        if(WIN32)
-            set_target_properties(${NCBI_PROJECT} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-        endif()
 
 #----------------------------------------------------------------------------
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
