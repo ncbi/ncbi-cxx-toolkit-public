@@ -64,10 +64,8 @@ NCBI_XOBJEDIT_EXPORT bool IsGeneralIdProtPresent(objects::CSeq_entry_Handle tse)
 
 // these methods are being moved to ncbi::feature namespace 
 // please modify your usage of them
-NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat);
 NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
 NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
-NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
 NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope);
 
 class NCBI_XOBJEDIT_EXPORT ApplyCDSFrame

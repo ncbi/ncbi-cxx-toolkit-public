@@ -408,34 +408,7 @@ bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat
         new_prot.SetLocation().SetPartialStop(partial3, eExtreme_Biological);
         any_change = true;
     }
-    any_change |= AdjustFeaturePartialFlagForLocation(new_prot);
-    return any_change;
-}
-
-
-/// AdjustFeaturePartialFlagForLocation
-/// A function to ensure that Seq-feat.partial is set if either end of the
-/// feature is partial, and clear if neither end of the feature is partial
-/// @param new_feat   The feature to be adjusted (if necessary)
-///
-/// @return           Boolean to indicate whether the feature was changed
-bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat)
-{
-    bool any_change = false;
-    bool partial5 = new_feat.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool partial3 = new_feat.GetLocation().IsPartialStop(eExtreme_Biological);
-    bool should_be_partial = partial5 || partial3;
-    bool is_partial = false;
-    if (new_feat.IsSetPartial() && new_feat.GetPartial()) {
-        is_partial = true;
-    }
-    if (should_be_partial && !is_partial) {
-        new_feat.SetPartial(true);
-        any_change = true;
-    } else if (!should_be_partial && is_partial) {
-        new_feat.ResetPartial();        
-        any_change = true;
-    }
+    any_change |= feature::AdjustFeaturePartialFlagForLocation(new_prot);
     return any_change;
 }
 
@@ -493,62 +466,6 @@ bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
     }
 
     return any_change;
-}
-
-
-/// AdjustForCDSPartials
-/// A function to make all of the necessary related changes to
-/// a protein product sequence after a coding region has been
-/// changed.
-/// @param cds        The feature for which adjustments are to be made
-/// @param seh        The scope in which adjustments are to be made (if necessary)
-///
-/// @return           Boolean to indicate whether the record was changed
-bool RetranslateCDS(const CSeq_feat& cds, CScope& scope)
-{
-    // feature must be cds and already have product
-    if (!cds.IsSetData() || !cds.GetData().IsCdregion() || !cds.IsSetProduct()) { 
-        return false;
-    }
-
-    // Use Cdregion.Product to get handle to protein bioseq 
-    CBioseq_Handle prot_bsh = scope.GetBioseqHandle(cds.GetProduct());
-
-    // Should be a protein!
-    if (!prot_bsh || !prot_bsh.IsProtein())
-    {
-        return false;
-    }
-
-    CBioseq_EditHandle peh = prot_bsh.GetEditHandle();
-    CRef<CBioseq> new_protein = CSeqTranslator::TranslateToProtein(cds, scope);
-    if (new_protein && new_protein->IsSetInst()) {
-        CRef<CSeq_inst> new_inst(new CSeq_inst());
-        new_inst->Assign(new_protein->GetInst());
-        peh.SetInst(*new_inst);
-    }
-
-    // If protein feature exists, update location
-    CFeat_CI f(prot_bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
-    if (f) {
-        // This is necessary, to make sure that we are in "editing mode"
-        const CSeq_annot_Handle& annot_handle = f->GetAnnot();
-        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-        CSeq_feat_EditHandle feh(*f);
-        CRef<CSeq_feat> new_feat(new CSeq_feat());
-        new_feat->Assign(*(f->GetSeq_feat()));
-        if ( new_feat->CanGetLocation() &&
-             new_feat->GetLocation().IsInt() &&
-             new_feat->GetLocation().GetInt().CanGetTo() )
-        {
-            new_feat->SetLocation().SetInt().SetTo(
-                new_protein->GetLength() - 1);
-            feh.Replace(*new_feat);
-        }
-    }        
-
-    AdjustForCDSPartials(cds, peh.GetSeq_entry_Handle());
-    return true;
 }
 
 
