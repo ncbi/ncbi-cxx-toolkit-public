@@ -899,19 +899,8 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
         // with loader installed we look only in TSEs reported by loader.
 
         // collect set of TSEs with orphan annotations
-        CDataLoader::TTSE_LockSet tse_set;
-        ITERATE ( TSeq_idSet, id_it, ids ) {
-            CDataLoader::TTSE_LockSet tse_set2 =
-                m_Loader->GetOrphanAnnotRecordsNA(*id_it, sel, processed_nas);
-            if ( !tse_set2.empty() ) {
-                if ( tse_set.empty() ) {
-                    tse_set.swap(tse_set2);
-                }
-                else {
-                    tse_set.insert(tse_set2.begin(), tse_set2.end());
-                }
-            }
-        }
+        CDataLoader::TTSE_LockSet tse_set =
+            m_Loader->GetOrphanAnnotRecordsNA(ids, sel, processed_nas);
 
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set ) {
             x_AddTSEOrphanAnnots(ret, ids, *tse_it);

@@ -265,8 +265,12 @@ public:
     virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
                                                  const SAnnotSelector* sel);
 
+    typedef set<CSeq_id_Handle> TSeq_idSet;
     /// new Get*AnnotRecords() methods
     virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel,
+                                                 TProcessedNAs* processed_nas);
+    virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const TSeq_idSet& ids,
                                                  const SAnnotSelector* sel,
                                                  TProcessedNAs* processed_nas);
     virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
@@ -487,7 +491,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 5, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 6, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

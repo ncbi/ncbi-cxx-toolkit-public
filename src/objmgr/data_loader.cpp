@@ -238,6 +238,28 @@ CDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
 
 
 CDataLoader::TTSE_LockSet
+CDataLoader::GetOrphanAnnotRecordsNA(const TSeq_idSet& ids,
+                                     const SAnnotSelector* sel,
+                                     TProcessedNAs* processed_nas)
+{
+    CDataLoader::TTSE_LockSet tse_set;
+    ITERATE(TSeq_idSet, id_it, ids) {
+        CDataLoader::TTSE_LockSet tse_set2 =
+            GetOrphanAnnotRecordsNA(*id_it, sel, processed_nas);
+        if (!tse_set2.empty()) {
+            if (tse_set.empty()) {
+                tse_set.swap(tse_set2);
+            }
+            else {
+                tse_set.insert(tse_set2.begin(), tse_set2.end());
+            }
+        }
+    }
+    return tse_set;
+}
+
+
+CDataLoader::TTSE_LockSet
 CDataLoader::GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
                                        const SAnnotSelector* sel,
                                        TProcessedNAs* /*processed_nas*/)

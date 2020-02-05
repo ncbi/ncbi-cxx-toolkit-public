@@ -42,6 +42,9 @@
 #if defined(HAVE_PSG_LOADER)
 
 BEGIN_NCBI_SCOPE
+
+class CThreadPool;
+
 BEGIN_SCOPE(objects)
 
 using CPsgBlobId = CBlob_id;
@@ -94,8 +97,10 @@ private:
 
 
 class CPsgClientThread;
-class CBioseqCache;
+class CPSGBioseqCache;
+class CPSGBlobMap;
 class CPsgClientContext_Bulk;
+
 
 class CPSGDataLoader_Impl : public CObject
 {
@@ -120,7 +125,8 @@ public:
     CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
     CTSE_LoadLock GetBlobById(CDataSource* data_source,
                               const CPsgBlobId& blob_id);
-    void LoadChunk(const CPsgBlobId& blob_id, CTSE_Chunk_Info& chunk_info);
+    void LoadChunk(CTSE_Chunk_Info& chunk_info);
+    void LoadChunks(const CDataLoader::TChunkSet& chunks);
 
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source, 
                                                 const CSeq_id_Handle& idh,
@@ -132,18 +138,21 @@ public:
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
 
+    static CObjectIStream* GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
+
+    typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
+
 private:
     struct SReplyResult {
         CTSE_LoadLock lock;
         string blob_id;
     };
 
+    void x_SendRequest(shared_ptr<CPSG_Request> request);
     CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
     shared_ptr<CPSG_Reply> x_ProcessRequest(shared_ptr<CPSG_Request> request);
-    SReplyResult x_ProcessReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh);
+    SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh);
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
-    shared_ptr<SPsgBlobInfo> x_FindBlob(const string& bid);
-    void x_AddBlob(const string& bid, shared_ptr<SPsgBlobInfo> blob);
     CTSE_LoadLock x_LoadBlob(const SPsgBlobInfo& psg_blob_info, CDataSource& data_source);
     void x_GetBlobInfoAndData(
         const string& psg_blob_id,
@@ -154,67 +163,23 @@ private:
         const CPSG_BlobInfo& blob_info,
         const CPSG_BlobData& blob_data,
         CTSE_LoadLock& load_lock);
-    CObjectIStream* x_GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
 
     typedef map<void*, size_t> TIdxMap;
-    typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
 
     void x_GetBulkBioseqInfo(CPSG_Request_Resolve::EIncludeInfo info,
         const TIds& ids,
         TLoaded& loaded,
         TBioseqInfos& ret);
 
-    template<class TReply> bool xxx_CheckStatus(TReply reply) const
-    {
-        if (!reply) {
-            _TRACE("Request failed: null reply");
-            return false;
-        }
-        EPSG_Status status = reply->GetStatus(CDeadline(0));
-        if (status == EPSG_Status::eSuccess || status == EPSG_Status::eInProgress) return true;
-        x_ReportStatus(reply, status);
-        return false;
-    }
-
-    template<class TReply> void x_ReportStatus(TReply reply, EPSG_Status status) const
-    {
-        if (status == EPSG_Status::eSuccess) return;
-        string sstatus;
-        switch (status) {
-        case EPSG_Status::eCanceled:
-            sstatus = "Canceled";
-            break;
-        case EPSG_Status::eError:
-            sstatus = "Error";
-            break;
-        case EPSG_Status::eInProgress:
-            sstatus = "In progress";
-            break;
-        case EPSG_Status::eNotFound:
-            sstatus = "Not found";
-            break;
-        default:
-            sstatus = to_string((int)status);
-            break;
-        }
-        while (true) {
-            string msg = reply->GetNextMessage();
-            if (msg.empty()) break;
-            _TRACE("Request failed: " << sstatus << " - " << msg);
-        }
-    }
-
     // Map seq-id to bioseq info.
     typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
-    // Map blob-id to blob info
-    typedef map<string, shared_ptr<SPsgBlobInfo> > TBlobs;
 
-    CFastMutex m_Mutex;
     bool m_NoSplit = false;
     shared_ptr<CPSG_Queue> m_Queue;
     CRef<CPsgClientThread> m_Thread;
-    TBlobs m_Blobs;
-    unique_ptr<CBioseqCache> m_BioseqCache;
+    unique_ptr<CPSGBlobMap> m_BlobMap;
+    unique_ptr<CPSGBioseqCache> m_BioseqCache;
+    unique_ptr<CThreadPool> m_ThreadPool;
 };
 
 END_SCOPE(objects)

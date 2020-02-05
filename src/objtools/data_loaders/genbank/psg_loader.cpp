@@ -176,17 +176,13 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBi
 
 void CPSGDataLoader::GetChunk(TChunk chunk)
 {
-    TBlobId blob_id = chunk->GetBlobId();
-    const CPsgBlobId& psg_id = dynamic_cast<const CPsgBlobId&>(*blob_id);
-    m_Impl->LoadChunk(psg_id, *chunk);
+    m_Impl->LoadChunk(*chunk);
 }
 
 
 void CPSGDataLoader::GetChunks(const TChunkSet& chunks)
 {
-    ITERATE ( TChunkSet, it, chunks ) {
-        GetChunk(*it);
-    }
+    m_Impl->LoadChunks(chunks);
 }
 
 
