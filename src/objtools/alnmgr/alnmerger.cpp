@@ -137,8 +137,8 @@ CAlnMixMerger::x_Merge()
 
     // Set the widths if the mix contains both AA & NA
     // or in case we force translation
-    if (m_AlnMixMatches->m_ContainsNA  &&  m_AlnMixMatches->m_ContainsAA  ||
-        m_AlnMixMatches->m_AddFlags & CAlnMixMatches::fForceTranslation) {
+    if ((m_AlnMixMatches->m_ContainsNA  &&  m_AlnMixMatches->m_ContainsAA)  ||
+        (m_AlnMixMatches->m_AddFlags & CAlnMixMatches::fForceTranslation)) {
         NON_CONST_ITERATE (TSeqs, seq_i, m_Seqs) {
             (*seq_i)->m_Width = (*seq_i)->m_IsAA ? 1 : 3;
         }
@@ -148,7 +148,7 @@ CAlnMixMerger::x_Merge()
 
     CAlnMixSeq * refseq = 0, * seq1 = 0, * seq2 = 0;
     TSeqPos start, start1, start2, len, curr_len;
-    int width1, width2;
+    int width1 = 0, width2 = 0;
     CAlnMixMatch * match;
     CAlnMixSeq::TMatchList::iterator match_list_iter1, match_list_iter2;
     CAlnMixSeq::TMatchList::iterator match_list_i;
@@ -1229,8 +1229,8 @@ CAlnMixMerger::x_CreateDenseg()
 
     // widths
     CDense_seg::TWidths*  widths = NULL;
-    if (m_AlnMixMatches->m_ContainsNA  &&  m_AlnMixMatches->m_ContainsAA  || 
-        m_AlnMixMatches->m_AddFlags & CAlnMixMatches::fForceTranslation) {
+    if ((m_AlnMixMatches->m_ContainsNA  &&  m_AlnMixMatches->m_ContainsAA)  || 
+        (m_AlnMixMatches->m_AddFlags & CAlnMixMatches::fForceTranslation)) {
         widths = &m_DS->SetWidths();
         widths->resize(numrows);
         numrow = 0;

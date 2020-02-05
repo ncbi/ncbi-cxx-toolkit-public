@@ -113,6 +113,19 @@ struct PRangeLess
 };
 
 
+template<class Iter, class T, class Compare>
+inline
+Iter scan_to_lower_bound(Iter first, Iter last, const T& value, Compare comp)
+{
+    //auto ret = std::lower_bound(first, last, value, comp);
+    while ( first != last && comp(*first, value) ) {
+        ++first;
+    }
+    //_ASSERT(ret == first);
+    return first;
+}
+
+
 template<class TAlnRng>
 void SubtractOnFirst(
     const TAlnRng&                                           minuend,
@@ -122,10 +135,10 @@ void SubtractOnFirst(
 {
     PRangeLess<TAlnRng> p;
 
-    r_it = std::lower_bound(r_it,
-                            subtrahend.end(),
-                            minuend.GetFirstFrom(),
-                            p); /* NCBI_FAKE_WARNING: WorkShop */
+    r_it = scan_to_lower_bound(r_it,
+                               subtrahend.end(),
+                               minuend.GetFirstFrom(),
+                               p); /* NCBI_FAKE_WARNING: WorkShop */
 
     if (r_it == subtrahend.end()) {
         difference.insert(minuend);
@@ -213,10 +226,10 @@ void SubtractOnSecond(
 
     PItLess<TAlnRng> p;
 
-    r_it = std::lower_bound(r_it,
-                            subtrahend_ext.end(),
-                            minuend.GetSecondFrom(),
-                            p); /* NCBI_FAKE_WARNING: WorkShop */
+    r_it = scan_to_lower_bound(r_it,
+                               subtrahend_ext.end(),
+                               minuend.GetSecondFrom(),
+                               p); /* NCBI_FAKE_WARNING: WorkShop */
 
     if (r_it == subtrahend_ext.end()) {
         difference.insert(minuend);

@@ -46,18 +46,27 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#define USE_ALIGN_RANGE_LIST
 
 /// A pairwise aln is a collection of ranges for a pair of rows.
 class CPairwiseAln :
     public CObject,
+#ifdef USE_ALIGN_RANGE_LIST
+    public CAlignRangeCollectionList< CAlignRange<TSignedSeqPos> >
+#else
     public CAlignRangeCollection< CAlignRange<TSignedSeqPos> >
+#endif
 {
 public:
     // Types
     typedef TSignedSeqPos                  TPos;
     typedef CRange<TPos>                   TRng;
     typedef CAlignRange<TPos>              TAlnRng;
+#ifdef USE_ALIGN_RANGE_LIST
+    typedef CAlignRangeCollectionList<TAlnRng> TAlnRngColl;
+#else
     typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
+#endif
 
     /// Constructor - creates an empty pairwise alignment.
     /// @sa ConvertSeqAlignToPairwiseAln
@@ -72,6 +81,15 @@ public:
     {
     }
 
+#ifdef USE_ALIGN_RANGE_LIST
+    operator CAlignRangeCollection<TAlnRng>() const
+    {
+        CAlignRangeCollection<TAlnRng> ret;
+        ret.Assign(*this);
+        return ret;
+    }
+#endif
+    
     /// Base width of the first row
     int GetFirstBaseWidth(void) const
     {
@@ -107,16 +125,7 @@ public:
         if (!m_FirstId->IsProtein()  ||  !m_SecondId->IsProtein()) {
             return; // already genomic
         }
-        NON_CONST_ITERATE(TAlignRangeVector, rg, m_Ranges) {
-            rg->SetFirstFrom(rg->GetFirstFrom()*3);
-            rg->SetSecondFrom(rg->GetSecondFrom()*3);
-            rg->SetLength(rg->GetLength()*3);
-        }
-        NON_CONST_ITERATE(TAlignRangeVector, rg, m_Insertions) {
-            rg->SetFirstFrom(rg->GetFirstFrom()*3);
-            rg->SetSecondFrom(rg->GetSecondFrom()*3);
-            rg->SetLength(rg->GetLength()*3);
-        }
+        x_MultiplyCoordsBy3();
         m_UsingGenomic = true;
     }
 

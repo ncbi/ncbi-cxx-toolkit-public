@@ -230,7 +230,7 @@ void CheckPairwiseAln(CNcbiIstream&       in_exp,
     }
 
     if (!pw.GetInsertions().empty()) {
-        ITERATE(CPairwiseAln::TAlignRangeVector, gap, pw.GetInsertions()) {
+        ITERATE(CPairwiseAln::TInsertions, gap, pw.GetInsertions()) {
             if ( DumpExpected() ) {
                 cout << "    " << gap->GetFirstFrom() << " "
                     << gap->GetSecondFrom() << " "
@@ -651,8 +651,8 @@ BOOST_AUTO_TEST_CASE(s_TestPairwiseAlnRanged)
 
                 if (pw.size() < 2) continue;
 
-                first_from = pw[1].GetFirstFrom() + 1;
-                first_to = pw[pw.size() - 1].GetFirstFrom() - 2;
+                first_from = (pw.begin()+1)->GetFirstFrom() + 1;
+                first_to = pw.rbegin()->GetFirstFrom() - 2;
                 CPairwise_CI::TSignedRange rg(first_from, first_to);
 
                 for (CPairwise_CI seg(pw, rg); seg; ++seg) {

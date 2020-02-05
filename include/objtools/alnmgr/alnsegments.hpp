@@ -99,8 +99,8 @@ public:
     struct SSeqComp {
         bool operator () (const CAlnMixSeq* seq1, const CAlnMixSeq* seq2) const {
             return seq1->m_SeqIdx < seq2->m_SeqIdx  ||
-                seq1->m_SeqIdx == seq2->m_SeqIdx  &&  
-                seq1->m_ChildIdx < seq2->m_ChildIdx;
+                (seq1->m_SeqIdx == seq2->m_SeqIdx  &&  
+                 seq1->m_ChildIdx < seq2->m_ChildIdx);
         }
     };
     typedef map<CAlnMixSeq*, CAlnMixStarts::iterator, SSeqComp> TStartIterators;

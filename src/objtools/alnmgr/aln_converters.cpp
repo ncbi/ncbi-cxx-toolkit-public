@@ -50,6 +50,7 @@
 
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/aln_rng_coll_oper.hpp>
+#include <objtools/alnmgr/aln_rng_coll_list_oper.hpp>
 
 #include <objtools/error_codes.hpp>
 

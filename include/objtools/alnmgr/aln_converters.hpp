@@ -390,16 +390,17 @@ void CreateAnchoredAlnVec(_TAlnStats&            aln_stats,
                 for (CAnchoredAln::TDim row = 0; row < anchored_aln->GetDim(); ++row) {
                     if (row == anchor_row) continue;
                     const CPairwiseAln& rpw = *anchored_aln->GetPairwiseAlns()[row];
-                    for (size_t seg = 0; seg < rpw.size(); ++seg) {
+                    for (auto apw_seg = apw.begin(), rpw_seg = rpw.begin();
+                         rpw_seg != rpw.end(); ++apw_seg, ++rpw_seg) {
                         CRef<CAnchoredAln> sub_anchored_aln(new CAnchoredAln);
                         sub_anchored_aln->SetPairwiseAlns().resize(2);
                         sub_anchored_aln->SetDim(2);
                         CRef<CPairwiseAln> sub_row(new CPairwiseAln(
                             rpw.GetFirstId(), rpw.GetSecondId(), rpw.GetPolicyFlags()));
-                        sub_row->insert(sub_row->end(), rpw[seg]);
+                        sub_row->insert(sub_row->end(), *rpw_seg);
                         CRef<CPairwiseAln> sub_anchor_row(new CPairwiseAln(
                             apw.GetFirstId(), apw.GetSecondId(), apw.GetPolicyFlags()));
-                        sub_anchor_row->insert(sub_anchor_row->end(), apw[seg]);
+                        sub_anchor_row->insert(sub_anchor_row->end(), *apw_seg);
                         if (anchor_row == 0) {
                             sub_anchored_aln->SetAnchorRow(0);
                             sub_anchored_aln->SetPairwiseAlns()[0] = sub_anchor_row;
@@ -411,7 +412,7 @@ void CreateAnchoredAlnVec(_TAlnStats&            aln_stats,
                             sub_anchored_aln->SetPairwiseAlns()[1] = sub_anchor_row;
                         }
                         out_vec.push_back(sub_anchored_aln);
-                        sub_anchored_aln->SetScore(rpw[seg].GetLength());
+                        sub_anchored_aln->SetScore(rpw_seg->GetLength());
                     }
                 }
                 continue; // Done splitting std-seg

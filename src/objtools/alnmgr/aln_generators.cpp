@@ -55,7 +55,13 @@
 #include <objtools/alnmgr/aln_serial.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
 
-#include <util/range_coll.hpp>
+#define USE_RANGE_SET
+#ifdef USE_RANGE_SET
+# include <util/range_set.hpp>
+# define CRangeCollection CRangeSet
+#else
+# include <util/range_coll.hpp>
+#endif
 
 #include <serial/typeinfo.hpp> // for SerialAssign
 
@@ -153,17 +159,10 @@ class CSegmentedRangeCollection : public CRangeCollection<CPairwiseAln::TPos>
 public:
     typedef ncbi::CRangeCollection<CPairwiseAln::TPos> TParent;
 
-    iterator CutAtPosition(position_type pos) {
-        iterator ret_it = TParent::m_vRanges.end();
-        iterator it = find_nc(pos);
-        if (it != TParent::end()  &&  it->GetFrom() < pos) {
-            TRange left_clip_r(it->GetFrom(), pos-1);
-            TRange right_clip_r(pos, it->GetTo());
-            ret_it = TParent::m_vRanges.insert(TParent::m_vRanges.erase(it),
-                                               right_clip_r);
-            TParent::m_vRanges.insert(ret_it, left_clip_r);
+    void CutAtPosition(position_type pos) {
+        if ( pos > 0 ) {
+            DivideAfter(pos-1);
         }
-        return ret_it;
     }
 
     void insert(const TRange& r) {
@@ -181,14 +180,15 @@ public:
 
         // Find the diff if any
         TParent addition;
-        addition.CombineWith(r);
-        addition.Subtract(*this);
+        addition += r;
+        addition -= *this;
 
         if ( !addition.empty() ) {
 #ifdef _TRACE_CSegmentedRangeCollection
             cerr << "Addition: " << addition << endl;
 #endif
             // Insert the diff
+#ifndef USE_RANGE_SET
             iterator it = find_nc(addition.begin()->GetToOpen());
             ITERATE(TParent, add_it, addition) {
                 TRange rr(add_it->GetFrom(), add_it->GetTo());
@@ -199,6 +199,9 @@ public:
                 it = TParent::m_vRanges.insert(it, rr);
                 ++it;
             }
+#else
+            CombineWithAndKeepAbutting(addition);
+#endif
         }
 #ifdef _TRACE_CSegmentedRangeCollection
         else {
@@ -230,8 +233,7 @@ CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
 
     CSeq_align::TSegs::TDendiag diags;
     CDense_diag::TDim dim = anchored_aln.GetDim();
-    size_t numseg = anchor_segments.size();
-    for (size_t seg = 0; seg < numseg; ++seg) {
+    for ( auto anchor_segments_seg = anchor_segments.begin(); anchor_segments_seg != anchor_segments.end(); ++anchor_segments_seg ) {
         CRef<CDense_diag> diag(new CDense_diag);
         diag->SetDim(dim);
         diag->SetIds().resize(dim);
@@ -242,7 +244,7 @@ CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
         }
         diag->SetStarts().resize(dim, kInvalidSeqPos);
         diag->SetStrands().resize(dim);
-        diag->SetLen(anchor_segments[seg].GetLength());
+        diag->SetLen(anchor_segments_seg->GetLength());
         diags.push_back(diag);
     }
 
@@ -257,7 +259,6 @@ CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
         TSignedSeqPos left_delta = 0;
         TSignedSeqPos right_delta = aln_rng_i->GetLength();
         while (seg_i != anchor_segments.end()) {
-            _ASSERT(seg < numseg);
             if (aln_rng_i != pairwises[dim - row - 1]->end()  &&
                 seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
                 _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
@@ -534,8 +535,6 @@ void InitSplicedsegFromPairwiseAln(CSpliced_seg& spliced_seg,
 
     typedef TSignedSeqPos                  TPos;
     typedef CRange<TPos>                   TRng; 
-    typedef CAlignRange<TPos>              TAlnRng;
-    typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
 
     TPos last_prod_end = 0;
     TPos last_gen_end = 0;

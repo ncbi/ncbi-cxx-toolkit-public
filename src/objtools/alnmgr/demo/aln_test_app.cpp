@@ -189,7 +189,7 @@ void DumpPairwiseAln(const CPairwiseAln& pw, const string ind)
     }
     if ( !pw.GetInsertions().empty() ) {
         cout << ind << "  Insertions on " << pw.GetFirstId()->AsString() << ":" << endl;
-        ITERATE(CPairwiseAln::TAlignRangeVector, gap, pw.GetInsertions()) {
+        ITERATE(CPairwiseAln::TInsertions, gap, pw.GetInsertions()) {
             cout << ind << "    [" <<
                 gap->GetFirstFrom() << (gap->IsFirstDirect() ? "D" : "R") <<
                 "] => " << gap->GetSecondFrom() <<

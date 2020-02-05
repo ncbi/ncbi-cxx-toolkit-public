@@ -41,6 +41,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/seqalign_exception.hpp>
 
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -51,19 +52,15 @@ USING_SCOPE(objects);
 class CAlnContainer
 {
 public:
-    CAlnContainer()
-        : m_SplitDisc(true)
-    {
-    }
+    NCBI_XALNMGR_EXPORT CAlnContainer();
 
-    virtual ~CAlnContainer(void)
-    {
-    }
+    virtual NCBI_XALNMGR_EXPORT ~CAlnContainer(void);
 
 private:
     typedef CSeq_align::TSegs TSegs;
     typedef list< CConstRef<CSeq_align> > TAlnSet;
-	TAlnSet m_AlnSet;
+    TAlnSet m_AlnSet;
+    unordered_map<const CSeq_align*, TAlnSet::const_iterator> m_AlnMap;
 
 public:
     typedef TAlnSet::size_type size_type;
@@ -88,47 +85,7 @@ public:
     /// the same object.
     /// @return
     ///   Return iterator poiting to the inserted (or the existing) object.
-    const_iterator insert(const CSeq_align& seq_align)
-    {
-#if _DEBUG
-        seq_align.Validate(true);
-#endif
-        const_iterator ret_it = end();
-        switch ( seq_align.GetSegs().Which() ) {
-        case TSegs::e_Disc:
-            if ( m_SplitDisc ) {
-                ITERATE(CSeq_align_set::Tdata,
-                        seq_align_it,
-                        seq_align.GetSegs().GetDisc().Get()) {
-                    ret_it = insert(**seq_align_it);
-                }
-                break;
-            }
-            // If not splitting disc aligns, proceed to the common case.
-        case TSegs::e_Dendiag:
-        case TSegs::e_Denseg:
-        case TSegs::e_Std:
-        case TSegs::e_Packed:
-        case TSegs::e_Spliced:
-        case TSegs::e_Sparse:
-			NON_CONST_ITERATE(TAlnSet, iter, m_AlnSet) {
-				if (*iter == &seq_align) {
-                    // Return the existing object.
-					return iter;
-                }
-			}
-            ret_it = m_AlnSet.insert(m_AlnSet.end(),
-                CConstRef<CSeq_align>(&seq_align));
-            break;
-        case TSegs::e_not_set:
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                "Seq-align.segs not set.");
-        default:
-            NCBI_THROW(CSeqalignException, eUnsupported,
-                "Unsupported alignment type.");
-        }
-        return ret_it;
-    }
+    const_iterator NCBI_XALNMGR_EXPORT insert(const CSeq_align& seq_align);
 
     const_iterator begin(void) const
     {

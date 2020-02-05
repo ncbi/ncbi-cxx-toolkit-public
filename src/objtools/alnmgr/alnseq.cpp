@@ -81,8 +81,8 @@ CAlnMixSequences::x_CompareChainScores(const CRef<CAlnMixSeq>& seq1,
                                        const CRef<CAlnMixSeq>& seq2) 
 {
     return 
-        seq1->m_ChainScore == seq2->m_ChainScore  &&
-        seq1->m_Score > seq2->m_Score  ||
+        (seq1->m_ChainScore == seq2->m_ChainScore  &&
+         seq1->m_Score > seq2->m_Score)  ||
         seq1->m_ChainScore > seq2->m_ChainScore;
 }
 

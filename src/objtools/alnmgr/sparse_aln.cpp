@@ -78,7 +78,7 @@ struct SGapRange
     TSignedSeqPos len;  // length of the gap
     bool          direct;
     int           row;  // Row, containing the gap.
-    size_t        idx;  // Index of the gap in the original vector.
+    //size_t        idx;  // Index of the gap in the original vector.
     // This gap's 'from' must be shifted by 'shift'.
     // Segments at or after 'from' position must be offset by 'shift + len'.
     TSignedSeqPos shift;
@@ -111,17 +111,17 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
     TGapRanges gaps;
     for (TDim row = 0; row < dim; ++row) {
         const CPairwiseAln& pw = *src_align.GetPairwiseAlns()[row];
-        const CPairwiseAln::TAlignRangeVector& ins_vec = pw.GetInsertions();
+        const CPairwiseAln::TInsertions& ins_vec = pw.GetInsertions();
         gaps.reserve(gaps.size() + ins_vec.size());
-        for (size_t i = 0; i < ins_vec.size(); i++) {
+        for (auto i = ins_vec.begin(); i != ins_vec.end(); ++i) {
             SGapRange gap;
-            gap.from = ins_vec[i].GetFirstFrom();
-            gap.second_from = ins_vec[i].GetSecondFrom();
-            gap.len = ins_vec[i].GetLength();
-            gap.direct = ins_vec[i].IsDirect();
+            gap.from = i->GetFirstFrom();
+            gap.second_from = i->GetSecondFrom();
+            gap.len = i->GetLength();
+            gap.direct = i->IsDirect();
             gap.row = row;
             gap.shift = 0;
-            gap.idx = i;
+            //gap.idx = i;
             gaps.push_back(gap);
         }
     }

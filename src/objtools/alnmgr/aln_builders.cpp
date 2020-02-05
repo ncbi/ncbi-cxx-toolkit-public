@@ -36,12 +36,14 @@
 
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_rng_coll_oper.hpp>
+#include <objtools/alnmgr/aln_rng_coll_list_oper.hpp>
 #include <objtools/alnmgr/aln_serial.hpp>
 #include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//#define _TRACE_MergeAlnRngColl
 
 void
 MergePairwiseAlns(CPairwiseAln& existing,
@@ -182,8 +184,7 @@ private:
 
 
     bool x_CanInsertRng(CPairwiseAln& a, const CPairwiseAln::TAlnRng& r) {
-        PAlignRangeFromLess<CPairwiseAln::TAlnRng> p;
-        CPairwiseAln::const_iterator it = lower_bound(a.begin(), a.end(), r.GetFirstFrom(), p);
+        CPairwiseAln::const_iterator it = a.find_insertion_point(r);
 
         if (it != a.begin())   { // Check left
             const CPairwiseAln::TAlnRng& left = *(it - 1);
@@ -207,8 +208,8 @@ private:
 
     void x_AddPairwise(const CPairwiseAln& addition) {
         TPairwiseAlnVector::iterator aln_it, aln_end;
-        const CPairwiseAln::TAlignRangeVector& gaps = addition.GetInsertions();
-        CPairwiseAln::TAlignRangeVector::const_iterator gap_it = gaps.begin();
+        const CPairwiseAln::TInsertions& gaps = addition.GetInsertions();
+        CPairwiseAln::TInsertions::const_iterator gap_it = gaps.begin();
         ITERATE(CPairwiseAln, rng_it, addition) {
 
             // What alignments can we possibly insert it to?
@@ -371,8 +372,8 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   // output pairwise (needs
                                bool direct) // new anchor has the same direction as the original one?
 {
     // Shift between the old anchor and the alignment.
-    const CPairwiseAln::TAlignRangeVector& gaps = pw.GetInsertions();
-    CPairwiseAln::TAlignRangeVector::const_iterator gap_it = gaps.begin();
+    const CPairwiseAln::TInsertions& gaps = pw.GetInsertions();
+    CPairwiseAln::TInsertions::const_iterator gap_it = gaps.begin();
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
         CPairwiseAln::TPos pos =
