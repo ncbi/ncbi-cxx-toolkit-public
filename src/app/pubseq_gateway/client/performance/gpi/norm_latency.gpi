@@ -1,0 +1,8 @@
+width=0.00003
+bin(x)=width*floor(x/width)+width/2.0
+
+set output 'norm_latency.png'
+set terminal pngcairo size 1800,300
+set logscale xy
+set boxwidth width
+plot '<grep true norm_latency.txt |awk "{print \$6}"' using (bin($1)):(1.0) smooth freq with boxes title 'latency/size, ms/bytes'

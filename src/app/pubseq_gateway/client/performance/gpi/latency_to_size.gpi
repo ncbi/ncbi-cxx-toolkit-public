@@ -1,0 +1,7 @@
+set output 'latency_to_size.png'
+set terminal pngcairo size 1800,500
+set logscale xy
+set grid xtics mxtics ytics
+show grid
+set xrange [0.5:200]
+plot '<grep true latency_to_size.txt |awk "{print \$2, \$4}"' with points title 'latency to size'

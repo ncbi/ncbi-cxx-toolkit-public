@@ -1,0 +1,8 @@
+set output 'heatmap_by_latency_and_size.png'
+set terminal pngcairo size 1800,500
+unset colorbox
+set logscale xy
+set grid xtics mxtics ytics
+show grid
+set xrange [0.5:200]
+plot 'heatmap_by_latency_and_size.txt' with points palette z title 'latency to size heatmap'
