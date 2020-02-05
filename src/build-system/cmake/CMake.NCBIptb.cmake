@@ -1695,6 +1695,29 @@ function(NCBI_internal_print_report _caption _counter)
 endfunction()
 
 ##############################################################################
+function(NCBI_internal_tweak_debugging_env)
+    if (DEFINED NCBI_EXTERNAL_TREE_ROOT AND MSVC AND BUILD_SHARED_LIBS)
+        if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP" OR ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
+            set(_file "${CMAKE_CURRENT_BINARY_DIR}/${NCBI_PROJECT}.vcxproj.user")
+            set(_bin "${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_RUNTIME}")
+            string(REPLACE "/" "\\" _bin ${_bin})
+            if (NOT EXISTS "${_file}")
+                set(_info)
+                list(APPEND _info "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+                list(APPEND _info "<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n")
+                list(APPEND _info "  <PropertyGroup>\n")
+                list(APPEND _info "    <LocalDebuggerEnvironment>PATH=${_bin}\\\$(Configuration)\;\$(VCRedistPaths)%PATH%\n")
+                list(APPEND _info "</LocalDebuggerEnvironment>\n")
+                list(APPEND _info "    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>\n")
+                list(APPEND _info "  </PropertyGroup>\n")
+                list(APPEND _info "</Project>\n")
+                file(WRITE ${_file} ${_info})
+            endif()
+        endif()
+    endif()
+endfunction()
+
+##############################################################################
 function(NCBI_internal_add_project)
 
     if (DEFINED NCBI_${NCBI_PROJECT}_PARTS AND NOT NCBI_PTBCFG_ALLOW_COMPOSITE)
@@ -1978,6 +2001,7 @@ endif()
         endif()
         NCBI_internal_define_precompiled_header_usage()
     endif()
+    NCBI_internal_tweak_debugging_env()
 
     set(NCBI_PTB_CALLBACK_TARGET_ADDED ${NCBI_PROJECT})
 
