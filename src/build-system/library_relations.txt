@@ -640,7 +640,9 @@ grpc++ needs3party boringssl
 grpc++ needs3party cares
 grpc++ needs3party gpr
 grpc++ needs3party grpc
+grpc_integration needs $(CONNEXT)
 grpc_integration needs $(Z_LIB)
+grpc_integration needs connect
 grpc_integration needs xutil
 grpc_integration needs3party $(GRPC_LIBS)
 grpc_integration needs3party $(Z_LIBS)
