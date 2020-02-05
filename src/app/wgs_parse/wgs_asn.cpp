@@ -827,7 +827,7 @@ static void CheckMolecule(const CBioseq& bioseq, CSeqEntryInfo& info)
     }
 }
 
-static bool ReportAccession(const string& accession)
+static bool NotMainAccession(const string& accession)
 {
     if (GetParams().IsUpdateScaffoldsMode()) {
         if (NStr::StartsWith(accession, GetParams().GetAccession())) {
@@ -850,6 +850,10 @@ static bool IsProjectAccession(const string& accession, size_t len)
     if (len < MIN_ACCESSION_LEN || len > MAX_ACCESSION_LEN) {
         return false;
     }
+
+	if (!NotMainAccession(accession)) {
+		return true;
+	}
 
     bool four_letters_two_digits = NStr::IsUpper(CTempString(accession.c_str(), 4)) && isdigit(accession[4]) && isdigit(accession[5]);
     if (four_letters_two_digits) {
@@ -914,7 +918,7 @@ static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
 
                     size_t range = accession.find('-');
 
-                    if (ReportAccession(accession)) {
+                    if (NotMainAccession(accession)) {
                         if (range == string::npos) {
                             ERR_POST_EX(ERR_PARSE, ERR_PARSE_FoundSecondaryAccession, Error << "Found secondary accession \"" << accession << "\" in record with id \"" << cur_id << "\".");
                         }
