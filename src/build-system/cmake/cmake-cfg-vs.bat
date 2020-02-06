@@ -14,10 +14,12 @@ set script_dir=%CD%
 set tree_root=%initial_dir%
 set extension=cmake_configure_ext.bat
 
-
 REM #########################################################################
+set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere"
 if "%CMAKE_CMD%"=="" (
-  set CMAKE_CMD=C:\Program Files ^(x86^)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
+  for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -version 15.0 -property installationPath`) do (
+    set CMAKE_CMD=%%i\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
+  )
 )
 if not exist "%CMAKE_CMD%" (
   echo ERROR: CMake is not found
