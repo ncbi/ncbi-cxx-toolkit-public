@@ -1041,6 +1041,9 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 void CTSE_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     _ASSERT(this == &tse);
+    if ( m_Split ) {
+        m_Split->x_UpdateAnnotIndex();
+    }
     TParent::x_UpdateAnnotIndexContents(tse);
 }
 
