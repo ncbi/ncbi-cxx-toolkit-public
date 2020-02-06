@@ -1254,7 +1254,13 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         << endl << "\t@echo --------------------------------------"
         << endl << "\t@echo LIBRARIES"
         << endl << "\t@echo"
-        << endl << "\t@for i in $(all_libraries); do echo $$i; done";
+        << endl << "\t@for i in $(all_libraries); do echo $$i; done"
+        << endl << "\t@echo"
+        << endl << "\t@echo"
+        << endl << "\t@echo --------------------------------------"
+        << endl << "\t@echo UNIX PROJECTS"
+        << endl << "\t@echo"
+        << endl << "\t@for i in $(all_unix); do echo $$i; done";
 
     if (!existing_composite_names.empty()) {
        ofs 
