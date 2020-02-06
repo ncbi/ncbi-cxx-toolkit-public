@@ -253,8 +253,13 @@ else \
 fi
 
 endef
+# 1: proj_name
+define warn_one_check
+@/bin/echo SKIP -- $(rel_srcdir:src/%=%)/$(1) \(makefile absent\)
+
+endef
 define add_each_check
-$(foreach p,$(APP_PROJ) $(EXPENDABLE_APP_PROJ),$(call add_one_check,$(p)))
+$(foreach p,$(APP_PROJ) $(EXPENDABLE_APP_PROJ),$(if $(wildcard $(srcdir)/Makefile.$(p).app),$(call add_one_check,$(p)),$(call warn_one_check,$(p))))
 endef
 
 generic_targets = libs mark-as-disabled clean purge check_add depend
