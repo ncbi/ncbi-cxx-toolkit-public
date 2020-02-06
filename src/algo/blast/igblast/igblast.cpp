@@ -1493,6 +1493,38 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         annot->m_DomainInfo[i+1] = stop;
                     }
 
+                  
+
+                    // extension of the first and last annotated domain (if any)
+                    int i = 0;
+                    int extension = 0;
+                    while (i<10 && annot->m_DomainInfo[i] < 0) i+=2;
+                    if (i < 10 && domain_info[i] > 0) {
+                        extension = (domain_info[i] - 1 -
+                                     s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
+                                                               IAlnExplorer::eBackwards))*q_dir;
+                        annot->m_DomainInfo[i] += extension;
+                        //this does not get reversed like m_DomainInfo
+                        annot->m_DomainInfo_S[i] -= abs(extension);
+                    
+                        if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
+                        if (annot->m_DomainInfo_S[i] < 0) annot->m_DomainInfo_S[i] = 0;
+
+                        i+=2;
+                        while (i<10 && annot->m_DomainInfo[i] >=0) {
+                            annot->m_DomainInfo[i] = annot->m_DomainInfo[i-1] + q_dir;
+                            i+=2;
+                        }
+                        i = 9;
+                        while (i>0 && annot->m_DomainInfo[i] < 0) i-=2;
+                        if (i >= 0) {
+                            annot->m_DomainInfo[i] += (domain_info[i] - 1 -
+                                                       s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
+                                                                                 IAlnExplorer::eForward))*q_dir;
+                            if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
+                        }
+                    }
+
                     // any extra alignments after FWR3 are attributed to CDR3
                     start = annot->m_DomainInfo[9];
 
@@ -1505,29 +1537,6 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                             annot->m_DomainInfo[11] = q_ends[1];
                         }
                     }
-
-                    // extension of the first and last annotated domain (if any)
-                    int i = 0;
-                    while (i<10 && annot->m_DomainInfo[i] < 0) i+=2;
-                    annot->m_DomainInfo[i] += (domain_info[i] - 1 -
-                                       s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
-                                                                 IAlnExplorer::eBackwards))*q_dir;
-                    if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
-                    i+=2;
-                    while (i<10 && annot->m_DomainInfo[i] >=0) {
-                        annot->m_DomainInfo[i] = annot->m_DomainInfo[i-1] + q_dir;
-                        i+=2;
-                    }
-                    i = 9;
-                    while (i>0 && annot->m_DomainInfo[i] < 0) i-=2;
-                    if (i >= 0) {
-                        annot->m_DomainInfo[i] += (domain_info[i] - 1 -
-                                                   s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
-                                                                             IAlnExplorer::eForward))*q_dir;
-                        if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
-                    }
-
-                 
                     // annotate the query frame offset
                     int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
                     
