@@ -44,7 +44,7 @@ namespace wgsparse
 {
 
 bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first, bool &reject);
-bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& info, CSeqEntryCommonInfo& common_info);
+bool CheckSeqEntry(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEntryCommonInfo& common_info);
 EDateIssues CheckDates(const CSeq_entry& entry, CSeqdesc::E_Choice choice, CDate& date);
 void StripAuthors(CSeq_entry& entry);
 bool IsScaffoldPrefix(const string& accession, size_t prefix_len);

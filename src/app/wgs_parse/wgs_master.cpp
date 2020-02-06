@@ -1534,18 +1534,20 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     return ret;
 }
 
-static bool IsDupIds(const list<string>& ids)
+static bool IsDupIds(const list<pair<string, string>>& ids)
 {
-    map<string, int> unique_ids;
+    map<string, set<string>> unique_ids;
     for (auto& id : ids) {
-        ++unique_ids[id];
+        unique_ids[id.first].insert(id.second);
     }
 
     bool ret = false;
     for (auto& id: unique_ids) {
-        if (id.second > 1) {
+        if (id.second.size() > 1) {
             ret = true;
-            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicatedObjectIds, Error << "Found duplicated general or local id: \"" << id.first << "\".");
+
+			string files = NStr::Join(id.second, ",");
+			ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicatedObjectIds, Error << "Found duplicated general or local id: \"" << id.first << "\", files: " << files << ".");
         }
     }
 
@@ -2425,7 +2427,9 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             break;
         }
 
-        bool first = true;
+		common_info.SetCurrentPath(file);
+
+		bool first = true;
         while (in && !in.eof()) {
 
             CRef<CSeq_submit> seq_submit = GetSeqSubmit(in, master_info.m_input_type);
@@ -2541,7 +2545,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                 CSeqEntryInfo info(master_info.m_keywords_set, master_info.m_keywords);
                 info.m_biomol = biomol;
-                if (!CheckSeqEntry(*entry, file, info, common_info)) {
+                if (!CheckSeqEntry(*entry, info, common_info)) {
                     master_info.m_reject = true;
                 }
                 else if (GetParams().IsTsa() && GetParams().GetFixTech() == eNoFix && info.m_biomol != CMolInfo::eBiomol_transcribed_RNA) {

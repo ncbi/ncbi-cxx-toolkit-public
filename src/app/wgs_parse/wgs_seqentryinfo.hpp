@@ -122,7 +122,7 @@ struct CSeqEntryInfo
     CSeq_id::E_Choice m_seqid_type;
     CMolInfo::TBiomol m_biomol;
 
-    list<string> m_object_ids;
+    list<pair<string, string>> m_object_ids;
 
     string m_dbname;
     string m_diff_dbname;
@@ -167,6 +167,10 @@ struct CSeqEntryCommonInfo
     list<string> m_acc_assigned;
     list<TAccessionRange> m_acc_ranges;
 
+	string m_cur_path,
+		   m_cur_file;
+
+
     CSeqEntryCommonInfo() :
         m_nuc_warn(false),
         m_prot_warn(false)
@@ -176,6 +180,17 @@ struct CSeqEntryCommonInfo
     {
         return !m_nuc_warn && !m_prot_warn;
     }
+
+	void SetCurrentPath(const string& pathname)
+	{
+		m_cur_path = pathname;
+
+		string base,
+			   ext;
+
+		CDirEntry::SplitPathEx(m_cur_path, nullptr, nullptr, &base, &ext);
+		m_cur_file = base + '.' + ext;
+	}
 };
 
 enum EDBLinkProblem
@@ -282,7 +297,7 @@ struct CMasterInfo
     list<string> m_common_file_tracks;
     CRef<CBioSource> m_biosource;
     list<COrgRefInfo> m_org_refs;
-    list<string> m_object_ids;
+    list<pair<string, string>> m_object_ids;
 
     list<CIdInfo> m_id_infos;
 
