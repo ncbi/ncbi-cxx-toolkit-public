@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,8,1) );
+    SetVersion( CVersionInfo(4,8,2) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1507,7 +1507,11 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             << " APP_PROJ=" << target_app
             << (p->second.m_IsMetallib ? " LIB_PROJ=\"\" METAL_PROJ=" : " LIB_PROJ=") << target_lib
             << " UNIX_PROJ=" << target_user
-            << " $(MTARGET) $(SKIP_PRELIMINARIES)" << endl << endl;
+            << " $(MTARGET)";
+        if (p->first.Type() != CProjKey::eMsvc) {
+            ofs << " $(SKIP_PRELIMINARIES)";
+        }
+        ofs << endl << endl;
  #endif
         if (hasDataspec) {
             ofs << target << dotfiles << " :" << endl
