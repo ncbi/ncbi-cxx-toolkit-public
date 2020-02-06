@@ -205,14 +205,17 @@ set(NCBI_CPP_TOOLKIT_VERSION
 # This is needed for some use cases
 
 include(FindSubversion)
-if (EXISTS ${top_src_dir}/.svn)
+if (Subversion_FOUND AND EXISTS ${top_src_dir}/.svn)
     Subversion_WC_INFO(${top_src_dir} TOOLKIT)
+elseif(NOT "$ENV{SVNREV}" STREQUAL "")
+    set(TOOLKIT_WC_REVISION "$ENV{SVNREV}")
+    set(TOOLKIT_WC_URL "$ENV{SVNURL}")
 else()
     set(TOOLKIT_WC_REVISION 0)
     set(TOOLKIT_WC_URL "")
 endif()
 
-if (EXISTS ${top_src_dir}/src/corelib/.svn)
+if (Subversion_FOUND AND EXISTS ${top_src_dir}/src/corelib/.svn)
     Subversion_WC_INFO(${top_src_dir}/src/corelib CORELIB)
 else()
     set(CORELIB_WC_REVISION 0)
