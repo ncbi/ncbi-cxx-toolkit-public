@@ -373,6 +373,7 @@ void CPendingOperation::x_ProcessGetRequest(SResolveInputSeqIdError &  err,
 {
     if (!bioseq_resolution.IsValid()) {
         if (err.HasError()) {
+            UpdateOverallStatus(err.m_ErrorCode);
             PSG_WARNING(err.m_ErrorMessage);
             x_OnReplyError(err.m_ErrorCode, eUnresolvedSeqId,
                            err.m_ErrorMessage,
@@ -484,6 +485,7 @@ void CPendingOperation::x_OnResolveResolutionError(
                             const string &  message,
                             const THighResolutionTimePoint &  start_timestamp)
 {
+    UpdateOverallStatus(status);
     PSG_WARNING(message);
     if (x_UsePsgProtocol()) {
         x_OnReplyError(status, eUnresolvedSeqId, message, start_timestamp);
@@ -664,6 +666,9 @@ void CPendingOperation::x_CompleteResolveRequest(
 void CPendingOperation::OnBioseqDetailsRecord(
                                     SBioseqResolution &&  async_bioseq_info)
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     switch (m_AsyncInterruptPoint) {
         case eResolveBioseqDetails:
             if (async_bioseq_info.IsValid())
@@ -699,6 +704,9 @@ void CPendingOperation::OnBioseqDetailsError(
                                 EDiagSev  severity, const string &  message,
                                 const THighResolutionTimePoint &  start_timestamp)
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     switch (m_AsyncInterruptPoint) {
         case eResolveBioseqDetails:
             x_ResolveRequestBioseqInconsistency(
@@ -895,6 +903,7 @@ void CPendingOperation::x_ProcessAnnotRequest(
 {
     if (!bioseq_resolution.IsValid()) {
         if (err.HasError()) {
+            UpdateOverallStatus(err.m_ErrorCode);
             PSG_WARNING(err.m_ErrorMessage);
             x_OnReplyError(err.m_ErrorCode, eUnresolvedSeqId,
                            err.m_ErrorMessage,
@@ -1481,7 +1490,7 @@ CPendingOperation::x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
         // Memorize an error if there was one
         if (!parse_err_msg.empty() && !err.HasError()) {
             err.m_ErrorMessage = parse_err_msg;
-            err.m_ErrorCode = CRequestStatus::e400_BadRequest;
+            err.m_ErrorCode = CRequestStatus::e404_NotFound;
         }
 
         bioseq_resolution.m_PostponedError = std::move(err);
@@ -1514,7 +1523,7 @@ CPendingOperation::x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
     if (!parse_err_msg.empty()) {
         if (!err.HasError()) {
             err.m_ErrorMessage = parse_err_msg;
-            err.m_ErrorCode = CRequestStatus::e400_BadRequest;
+            err.m_ErrorCode = CRequestStatus::e404_NotFound;
         }
     }
 }
@@ -2837,6 +2846,9 @@ bool CPendingOperation::x_ParseTSEChunkId2Info(const string &  info,
 void CPendingOperation::OnSeqIdAsyncResolutionFinished(
                                 SBioseqResolution &&  async_bioseq_resolution)
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     auto    app = CPubseqGatewayApp::GetInstance();
 
     if (!async_bioseq_resolution.IsValid()) {
@@ -2874,6 +2886,9 @@ void CPendingOperation::OnSeqIdAsyncError(
                             EDiagSev  severity, const string &  message,
                             const THighResolutionTimePoint &  start_timestamp)
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     switch (m_AsyncInterruptPoint) {
         case eAnnotSeqIdResolution:
             x_OnReplyError(status, code, message, start_timestamp);

@@ -555,10 +555,6 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count)
 
 
 
-CRequestContextResetter::CRequestContextResetter()
-{}
-
-
 extern bool  g_Log;
 CRequestContextResetter::~CRequestContextResetter()
 {

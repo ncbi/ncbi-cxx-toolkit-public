@@ -218,7 +218,9 @@ string  GetReplyMessageHeader(size_t  msg_size,
 class CRequestContextResetter
 {
 public:
-    CRequestContextResetter();
+    CRequestContextResetter()
+    {}
+
     ~CRequestContextResetter();
 };
 
