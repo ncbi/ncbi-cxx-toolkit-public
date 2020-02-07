@@ -2068,11 +2068,13 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
                 auto& rnaid = (*rna_it)->GetId();
                 if (rnaid.IsLocal()) {
                     for (auto xref : (*cds_it)->GetXref()) {
-                        auto& id = xref->GetId();
-                        if (id.IsLocal()) {
-                            if (!id.GetLocal().Compare(rnaid.GetLocal())) {
-                                mrna = *rna_it;
-                                break;
+                        if (xref->IsSetId()) {
+                            auto& id = xref->GetId();
+                            if (id.IsLocal()) {
+                                if (!id.GetLocal().Compare(rnaid.GetLocal())) {
+                                    mrna = *rna_it;
+                                    break;
+                                }
                             }
                         }
                     }
