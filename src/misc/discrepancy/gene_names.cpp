@@ -213,7 +213,7 @@ DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj, true));
     CRef<CSeq_feat> new_feat(new CSeq_feat());
     new_feat->Assign(*sf);
-    AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
+    AddComment(*new_feat, sf->GetData().GetGene().IsSetLocus() ? sf->GetData().GetGene().GetLocus() : kEmptyStr);
     new_feat->SetData().SetGene().ResetLocus();
     context.ReplaceSeq_feat(*obj, *sf, *new_feat, true);
     obj->SetFixed();

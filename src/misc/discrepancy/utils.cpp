@@ -153,15 +153,17 @@ bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector
 
 void AddComment(CSeq_feat& feat, const string& comment)
 {
-    if (feat.IsSetComment() && !feat.GetComment().empty()) {
-        if (feat.GetComment().find(comment) != -1) {
-            return;
+    if (!comment.empty()) {
+        if (feat.IsSetComment() && !feat.GetComment().empty()) {
+            if (feat.GetComment().find(comment) != -1) {
+                return;
+            }
+            if (!NStr::EndsWith(feat.GetComment(), ";")) {
+                feat.SetComment() += "; ";
+            }
         }
-        if (!NStr::EndsWith(feat.GetComment(), ";")) {
-            feat.SetComment() += "; ";
-        }
+        feat.SetComment() += comment;
     }
-    feat.SetComment() += comment;
 }
 
 
