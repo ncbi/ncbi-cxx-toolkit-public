@@ -168,10 +168,9 @@ void BlastdbCopyApplication::Init(void)
             true
     );
 
-    arg_desc->AddDefaultKey("blastdb_version", "version",
+    arg_desc->AddOptionalKey("blastdb_version", "version",
                              "Version of BLAST database to be created",
-                             CArgDescriptions::eInteger,
-                             NStr::NumericToString(static_cast<int>(eBDB_Version5)));
+                             CArgDescriptions::eInteger);
     arg_desc->SetConstraint("blastdb_version",
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
 
@@ -494,8 +493,10 @@ void BlastdbCopyApplication::x_MakeDBwIDList(const CArgs & args, CSeqDB::ESeqTyp
 
 
     const bool kUseGiMask = false;
-    EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
-    dbver = (dbver != sourcedb->GetBlastDbVersion()) ? sourcedb->GetBlastDbVersion() : dbver;
+    EBlastDbVersion dbver =  sourcedb->GetBlastDbVersion();
+    if (args["blastdb_version"]) {
+    		dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+    }
 
     CStopWatch timer;
     timer.Start();
@@ -538,8 +539,10 @@ void BlastdbCopyApplication::x_CopyDB(const CArgs & args, CSeqDB::ESeqType seq_t
 
 
 	const bool kUseGiMask = false;
-	EBlastDbVersion dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
-	dbver = (dbver != sourcedb->GetBlastDbVersion()) ? sourcedb->GetBlastDbVersion() : dbver;
+	EBlastDbVersion dbver =  sourcedb->GetBlastDbVersion();
+	if (args["blastdb_version"]) {
+		dbver = static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+	}
 
     CBuildDatabase destdb(args[kArgOutput].AsString(), title,
 	                          static_cast<bool>(seq_type == CSeqDB::eProtein),
