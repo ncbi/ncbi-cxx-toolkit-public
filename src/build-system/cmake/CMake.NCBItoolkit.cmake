@@ -47,7 +47,11 @@ if(NCBI_EXPERIMENTAL)
     set(NCBI_PTBCFG_ADDCHECK               ON)
     if (NOT "${NCBI_PTBCFG_INSTALL_PATH}" STREQUAL "")
         set(NCBI_PTBCFG_DOINSTALL              ON)
+        if (MSVC OR XCODE)
+            set(CMAKE_SUPPRESS_REGENERATION ON)
+        endif()
     endif()
+
 else()
 
     set(NCBI_EXPERIMENTAL_CFG              OFF)
