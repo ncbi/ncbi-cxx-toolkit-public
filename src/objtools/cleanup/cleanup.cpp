@@ -1010,10 +1010,11 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
 }
 
 
-bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
+bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos_, CScope& scope)
 {
-    size_t loc_start = loc.GetStart(eExtreme_Positional);
-    size_t loc_stop = loc.GetStop(eExtreme_Positional);
+    TSeqPos pos = static_cast<TSeqPos>(pos_);
+    TSeqPos loc_start = loc.GetStart(eExtreme_Positional);
+    TSeqPos loc_stop = loc.GetStop(eExtreme_Positional);
     bool partial_start = loc.IsPartialStart(eExtreme_Positional);
     bool partial_stop = loc.IsPartialStop(eExtreme_Positional);
     ENa_strand strand = loc.GetStrand();
@@ -1043,8 +1044,9 @@ bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
 //LCOV_EXCL_STOP
 
 
-bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_t extension)
+bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_t extension_)
 {
+    TSeqPos extension = static_cast<TSeqPos>(extension_);
     CRef<CSeq_loc> new_loc(&f.SetLocation());
 
     CRef<CSeq_loc> last_interval;
@@ -1098,7 +1100,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
            frame = f.GetData().GetCdregion().GetFrame();
     }
 
-    size_t stop = loc.GetStop(eExtreme_Biological);
+    TSeqPos stop = loc.GetStop(eExtreme_Biological);
     if (stop < 1 || stop > bsh.GetBioseqLength() - 1) {
         // no room to extend
         return false;
@@ -1113,7 +1115,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
         len -= 2;
     }
     
-    size_t mod = len % 3;
+    TSeqPos mod = len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
     vector_loc->SetInt().SetId().Assign(*(bsh.GetId().front().GetSeqId()));
 
@@ -1144,7 +1146,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
 
     size_t i;
     size_t k;
-    size_t state = 0;
+    int state = 0;
     size_t length = usable_size / 3;
 
     for (i = 0; i < length; ++i) {
@@ -1154,7 +1156,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
         }
 
         if (tbl.GetCodonResidue(state) == '*') {
-            size_t extension = ((i + 1) * 3) - mod;
+            TSeqPos extension = static_cast<TSeqPos>(((i + 1) * 3) - mod);
             ExtendStopPosition(f, 0, extension);
             return true;
         }
@@ -1286,10 +1288,10 @@ bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh
         string translation;
         try {
             CSeqTranslator::Translate(f, bsh.GetScope(), translation, true);
-        } catch (CSeqMapException& e) {
+        } catch (CSeqMapException&) {
             //unable to translate
             return false;
-        } catch (CSeqVectorException& e) {
+        } catch (CSeqVectorException&) {
             //unable to translate
             return false;
         }
@@ -2296,7 +2298,7 @@ static void s_RemoveOrgFromEndOfProtein(CBioseq& seq, string taxname)
             EDIT_EACH_NAME_ON_PROTREF(it, prot_ref) {
                 string str = *it;
                 if (str.empty()) continue;
-                int len = str.length();
+                auto len = str.length();
                 if (len < 5) continue;
                 if (str[len - 1] != ']') continue;
                 SIZE_TYPE cp = NStr::Find(str, "[", NStr::eCase, NStr::eReverseSearch);
@@ -2828,7 +2830,7 @@ DEFINE_STATIC_ARRAY_MAP(TSeqdescOrderMap, sc_SeqdescOrderMap, sc_seqdesc_order_m
 static
 int s_SeqDescToOrdering(CSeqdesc::E_Choice chs) {
     // ordering assigned to unknown
-    const int unknown_seqdesc = (1 + sc_SeqdescOrderMap.size());
+    const int unknown_seqdesc = static_cast<int>(1 + sc_SeqdescOrderMap.size());
 
     TSeqdescOrderMap::const_iterator find_iter = sc_SeqdescOrderMap.find(chs);
     if (find_iter == sc_SeqdescOrderMap.end()) {
@@ -4001,7 +4003,7 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
         static CFastMutex searcher_mtx;
         CFastMutexGuard searcher_mtx_guard( searcher_mtx );
         if( ! searcher.IsPrimed() ) {
-            for( size_t idx = 0;
+            for( int idx = 0;
                 idx < sizeof(transformations)/sizeof(transformations[0]); 
                 ++idx ) 
             {
@@ -4539,7 +4541,7 @@ bool CInfluenzaSet::OkToMakeSet() const
                         }
                         seg_found[seg - 1] = true;
                         found_seg = true;
-                    } catch (CException& ex) {
+                    } catch (CException&) {
                         ok = false;
                         break;
                     }
@@ -4801,9 +4803,9 @@ CConstRef<CCode_break> CCleanup::GetCodeBreakForLocation(size_t pos, const CSeq_
 //appears not to be used
 void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat& cds)
 {
-    int start = pos;
-    start -= 1;
-    start *= 3;
+    int start = static_cast<int>((pos-1)*3);
+    //start -= 1;
+    //start *= 3;
     int frame = 0;
     if (cds.IsSetData() && cds.GetData().IsCdregion() && cds.GetData().GetCdregion().IsSetFrame())
     {
