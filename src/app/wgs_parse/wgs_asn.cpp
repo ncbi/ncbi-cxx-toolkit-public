@@ -827,38 +827,47 @@ static void CheckMolecule(const CBioseq& bioseq, CSeqEntryInfo& info)
     }
 }
 
-static bool NotMainAccession(const string& accession)
+static bool IsMainAccession(const string& accession)
 {
     if (GetParams().IsUpdateScaffoldsMode()) {
         if (NStr::StartsWith(accession, GetParams().GetAccession())) {
 
             auto next_to_zeros = accession.find_first_not_of('0', GetParams().GetAccession().size());
             if (next_to_zeros == string::npos || accession[next_to_zeros] == '-') {
-                return false;
+                return true;
             }
         }
     }
 
-    return true;
+    return false;
 }
 
 static bool IsProjectAccession(const string& accession, size_t len)
 {
-    static const size_t MIN_ACCESSION_LEN = 12;
-    static const size_t MAX_ACCESSION_LEN = 15;
+    static const size_t MIN_ACCESSION_LEN_PREFIX_4 = 12;
+    static const size_t MAX_ACCESSION_LEN_PREFIX_4 = 14;
+	static const size_t MIN_ACCESSION_LEN_PREFIX_6 = 15;
+	static const size_t MAX_ACCESSION_LEN_PREFIX_6 = 17;
 
-    if (len < MIN_ACCESSION_LEN || len > MAX_ACCESSION_LEN) {
-        return false;
-    }
+	size_t prefix_len = 0;
+	if (len >= MIN_ACCESSION_LEN_PREFIX_4 && len <= MAX_ACCESSION_LEN_PREFIX_4) {
+		prefix_len = 4;
+	}
+	else if (len >= MIN_ACCESSION_LEN_PREFIX_6 && len <= MAX_ACCESSION_LEN_PREFIX_6) {
+		prefix_len = 6;
+	}
+	else {
+		return false;
+	}
 
-	if (!NotMainAccession(accession)) {
+	if (IsMainAccession(accession)) {
 		return true;
 	}
 
-    bool four_letters_two_digits = NStr::IsUpper(CTempString(accession.c_str(), 4)) && isdigit(accession[4]) && isdigit(accession[5]);
-    if (four_letters_two_digits) {
+    bool prefix_of_letters_two_digits = NStr::IsUpper(CTempString(accession.c_str(), prefix_len)) && isdigit(accession[prefix_len]) && isdigit(accession[prefix_len + 1]);
+    if (prefix_of_letters_two_digits) {
 
-        auto next_to_zeros = accession.find_first_not_of('0', 6);
+        auto next_to_zeros = accession.find_first_not_of('0', prefix_len + 2);
         if (next_to_zeros == string::npos) {
             return true;
         }
@@ -918,7 +927,7 @@ static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
 
                     size_t range = accession.find('-');
 
-                    if (NotMainAccession(accession)) {
+                    if (!IsMainAccession(accession)) {
                         if (range == string::npos) {
                             ERR_POST_EX(ERR_PARSE, ERR_PARSE_FoundSecondaryAccession, Error << "Found secondary accession \"" << accession << "\" in record with id \"" << cur_id << "\".");
                         }
