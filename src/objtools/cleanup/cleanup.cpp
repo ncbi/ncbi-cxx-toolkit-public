@@ -1317,15 +1317,14 @@ bool CCleanup::LocationMayBeExtendedToMatch(const CSeq_loc& orig, const CSeq_loc
 
 void CCleanup::SetProteinName(CProt_ref& prot_ref, const string& protein_name, bool append)
 {
-    if (append && prot_ref.IsSetName() &&
-        prot_ref.GetName().size() > 0 &&
-        !NStr::IsBlank(prot_ref.GetName().front())) {
-        prot_ref.SetName().front() += "; " + protein_name;
+    if (append && prot_ref.IsSetName() && prot_ref.GetName().size() > 0) {
+        if (!NStr::IsBlank(prot_ref.GetName().front())) {
+            prot_ref.SetName().front() += "; ";
+        } 
+        prot_ref.SetName().front() += protein_name;
     } else {
-        prot_ref.ResetName();
         prot_ref.SetName().push_back(protein_name);
     }
-
 }
 
 
