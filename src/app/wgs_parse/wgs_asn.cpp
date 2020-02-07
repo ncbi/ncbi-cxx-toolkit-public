@@ -845,7 +845,7 @@ static bool NotMainAccession(const string& accession)
 static bool IsProjectAccession(const string& accession, size_t len)
 {
     static const size_t MIN_ACCESSION_LEN = 12;
-    static const size_t MAX_ACCESSION_LEN = 14;
+    static const size_t MAX_ACCESSION_LEN = 15;
 
     if (len < MIN_ACCESSION_LEN || len > MAX_ACCESSION_LEN) {
         return false;
