@@ -967,6 +967,9 @@ bool CGff2Record::xMigrateAttributeDefault(
     NStr::Split(it->second, ",", values, 0);
     for (list<CTempStringEx>::const_iterator cit = values.begin(); cit != values.end();
             cit++) {
+        if (cit->empty()) {
+            continue;
+        }
         string value = xNormalizedAttributeValue(*cit);
         pFeature->AddQualifier(qualKey, value);
     }
