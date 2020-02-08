@@ -1518,7 +1518,7 @@ DAV	s	University of California, Plant Biology
 DAVFP	s	Pacific Forestry Centre, Canadian Forest Service			
 DAVH	s	University of California, Environmental Horticulture Department			
 DAWES	s	The Dawes Arboretum			
-DB	c	Dominik Begerow culture collection			
+DB	cb	Dominik Begerow culture collection			
 DBAI	s	Instituto de Ciencias Biologicas			
 DBAU	s	Universidade Santa Ursula			
 DBC	s	University College, Botany Department			
@@ -3985,7 +3985,7 @@ MAY	s	Adygean State University, Department of Botany
 MAZHAR	s	Mazhar Botanical Garden			
 MB<DEU-Berlin>	s	Museum of Natural History of Humboldt-University			
 MB<DEU-Marburg>	s	Philipps-Universitaet, Spezielle Botanik			
-MB<PRT>	s	Universidade de Lisboa, Museu Bocage			
+MB<PRT>	s	Universidade de Lisboa			
 MBA	s	Environmental Protection Agency			
 MBAB	s	Museo Biblioteca Archivio			
 MBAC	s	Museo del Dipartimento di Biologia Animale dell'Universita			
