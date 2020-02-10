@@ -63,6 +63,7 @@ SQueueParameters::SQueueParameters() :
     read_failed_retries(default_failed_retries),    // See CXX-5161, the same
                                                     // default as for
                                                     // failed_retries
+    max_jobs_per_client(default_max_jobs_per_client),
     blacklist_time(default_blacklist_time),
     read_blacklist_time(default_blacklist_time),    // See CXX-4993, the same
                                                     // default as for
@@ -116,6 +117,7 @@ bool SQueueParameters::ReadQueueClass(const IRegistry &  reg,
     failed_retries = ReadFailedRetries(reg, sname, warnings);
     read_failed_retries = ReadReadFailedRetries(reg, sname, warnings,
                                                 failed_retries);
+    max_jobs_per_client = ReadMaxJobsPerClient(reg, sname, warnings);
     blacklist_time = ReadBlacklistTime(reg, sname, warnings);
     read_blacklist_time = ReadReadBlacklistTime(reg, sname, warnings,
                                                 blacklist_time);
@@ -232,6 +234,8 @@ bool SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
             read_failed_retries =
                 ReadReadFailedRetries(reg, sname, warnings,
                                       failed_retries_preread);
+        else if (*val == "max_jobs_per_client")
+            max_jobs_per_client = ReadMaxJobsPerClient(reg, sname, warnings);
         else if (*val == "blacklist_time")
             blacklist_time = blacklist_time_preread;
         else if (*val == "read_blacklist_time")
@@ -421,6 +425,10 @@ SQueueParameters::Diff(const SQueueParameters &  other,
     if (read_failed_retries != other.read_failed_retries)
         AddParameterToDiff(diff, "read_failed_retries",
                            read_failed_retries, other.read_failed_retries);
+
+    if (max_jobs_per_client != other.max_jobs_per_client)
+        AddParameterToDiff(diff, "max_jobs_per_client",
+                           max_jobs_per_client, other.max_jobs_per_client);
 
     if (blacklist_time != other.blacklist_time)
         AddParameterToDiff(
@@ -705,6 +713,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
           .append(prefix).append("read_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(read_timeout)).append(separator)
           .append(prefix).append("failed_retries").append(suffix).append(NStr::NumericToString(failed_retries)).append(separator)
           .append(prefix).append("read_failed_retries").append(suffix).append(NStr::NumericToString(read_failed_retries)).append(separator)
+          .append(prefix).append("max_jobs_per_client").append(suffix).append(NStr::NumericToString(max_jobs_per_client)).append(separator)
           .append(prefix).append("blacklist_time").append(suffix).append(NS_FormatPreciseTimeAsSec(blacklist_time)).append(separator)
           .append(prefix).append("read_blacklist_time").append(suffix).append(NS_FormatPreciseTimeAsSec(read_blacklist_time)).append(separator)
           .append(prefix).append("max_input_size").append(suffix).append(NStr::NumericToString(max_input_size)).append(separator)
@@ -778,6 +787,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "program=\"" + program_name + "\"\n"
     "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
     "read_failed_retries=\"" + NStr::NumericToString(read_failed_retries) + "\"\n"
+    "max_jobs_per_client=\"" + NStr::NumericToString(max_jobs_per_client) + "\"\n"
     "blacklist_time=\"" + NS_FormatPreciseTimeAsSec(blacklist_time) + "\"\n"
     "read_blacklist_time=\"" + NS_FormatPreciseTimeAsSec(read_blacklist_time) + "\"\n"
     "max_input_size=\"" + NStr::NumericToString(max_input_size) + "\"\n"
@@ -1166,6 +1176,26 @@ SQueueParameters::ReadReadFailedRetries(const IRegistry &  reg,
                            NS_RegValName(sname, "read_failed_retries") +
                            ". It must be >= 0");
         return failed_retries;
+    }
+    return val;
+}
+
+unsigned int
+SQueueParameters::ReadMaxJobsPerClient(const IRegistry &  reg,
+                                       const string &     sname,
+                                       vector<string> &   warnings)
+{
+    bool    ok = NS_ValidateInt(reg, sname, "max_jobs_per_client", warnings);
+    if (!ok)
+        return default_max_jobs_per_client;
+
+    int     val = reg.GetInt(sname, "max_jobs_per_client",
+                             default_max_jobs_per_client);
+    if (val < 0) {
+        warnings.push_back(g_WarnPrefix +
+                           NS_RegValName(sname, "max_jobs_per_client") +
+                           ". It must be >= 0");
+        return default_max_jobs_per_client;
     }
     return val;
 }

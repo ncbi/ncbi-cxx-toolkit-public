@@ -123,6 +123,7 @@ const CNSPreciseTime    default_pending_timeout(604800, 0);
 const CNSPreciseTime    default_max_pending_wait_timeout(0, 0);
 const CNSPreciseTime    default_max_pending_read_wait_timeout(0, 0);
 const bool              default_scramble_job_keys = false;
+const unsigned int      default_max_jobs_per_client = 0;
 
 // Queue client registry GC settings
 const CNSPreciseTime    default_client_registry_timeout_worker_node = CNSPreciseTime(3600, 0);

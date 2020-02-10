@@ -300,6 +300,8 @@ struct SQueueDescriptionDump
     Uint4               linked_section_names_size;
     char                linked_section_names[kLinkedSectionsList];
 
+    Uint4               max_jobs_per_client;
+
     SQueueDescriptionDump();
 
     void Write(FILE *  f);

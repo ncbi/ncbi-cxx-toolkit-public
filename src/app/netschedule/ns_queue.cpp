@@ -86,6 +86,7 @@ CQueue::CQueue(const string &        queue_name,
     m_ReadFailedRetries(default_failed_retries),  // See CXX-5161, the same
                                                   // default as for
                                                   // failed_retries
+    m_MaxJobsPerClient(default_max_jobs_per_client),
     m_BlacklistTime(default_blacklist_time),
     m_ReadBlacklistTime(default_blacklist_time),  // See CXX-4993, the same
                                                   // default as for
@@ -173,6 +174,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_ReadTimeout           = params.read_timeout;
     m_FailedRetries         = params.failed_retries;
     m_ReadFailedRetries     = params.read_failed_retries;
+    m_MaxJobsPerClient      = params.max_jobs_per_client;
     m_BlacklistTime         = params.blacklist_time;
     m_ReadBlacklistTime     = params.read_blacklist_time;
     m_MaxInputSize          = params.max_input_size;
@@ -2560,8 +2562,14 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
 {
     bool            explicit_aff = !aff_ids.empty();
     bool            effective_use_pref_affinity = use_pref_affinity;
-    unsigned int    pref_aff_candidate_job_id = 0;
-    unsigned int    exclusive_aff_candidate = 0;
+    TNSBitVector    pref_aff_candidate_jobs;
+    TNSBitVector    exclusive_aff_candidate_jobs;
+
+    // Jobs per client support: CXX-11138 (only for GET)
+    map<string, size_t>     running_jobs_per_client;
+    if (m_MaxJobsPerClient > 0 && cmd_group == eGet) {
+        running_jobs_per_client = x_GetRunningJobsPerClientIP();
+    }
 
     TNSBitVector    pref_aff = m_ClientsRegistry.GetPreferredAffinities(
                                                     client, cmd_group);
@@ -2604,14 +2612,30 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
                 TNSBitVector    aff_jobs = m_AffinityRegistry.
                                                     GetJobsWithAffinity(*k);
                 TNSBitVector    candidates = vacant_jobs & aff_jobs;
-                if (candidates.any())
-                    return x_SJobPick(*(candidates.first()), false, *k);
+                if (candidates.any()) {
+                    // Need to check the running jobs per client ip
+                    TNSBitVector::enumerator    en(candidates.first());
+                    for (; en.valid(); ++en) {
+                        auto            job_id = *en;
+                        if (x_ValidateMaxJobsPerClientIP(
+                                    job_id, running_jobs_per_client)) {
+                            return x_SJobPick(job_id, false, *k);
+                        }
+                    }
+                }
             }
             if (any_affinity) {
                 if (vacant_jobs.any()) {
-                    unsigned int    job_id = *(vacant_jobs.first());
-                    return x_SJobPick(job_id, false,
-                                      m_GCRegistry.GetAffinityID(job_id));
+                    // Need to check the running jobs per client ip
+                    TNSBitVector::enumerator    en(vacant_jobs.first());
+                    for (; en.valid(); ++en) {
+                        auto            job_id = *en;
+                        if (x_ValidateMaxJobsPerClientIP(
+                                    job_id, running_jobs_per_client)) {
+                            return x_SJobPick(job_id, false,
+                                              m_GCRegistry.GetAffinityID(job_id));
+                        }
+                    }
                 }
             }
             return x_SJobPick();
@@ -2629,16 +2653,24 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
 
             unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
             if (aff_id != 0 && explicit_aff) {
-                if (explicit_affs.get_bit(aff_id))
-                    return x_SJobPick(job_id, false, aff_id);
+                if (explicit_affs.get_bit(aff_id)) {
+                    if (x_ValidateMaxJobsPerClientIP(
+                                job_id, running_jobs_per_client)) {
+                        return x_SJobPick(job_id, false, aff_id);
+                    }
+                }
             }
 
             if (aff_id != 0 && effective_use_pref_affinity) {
                 if (pref_aff.get_bit(aff_id)) {
-                    if (explicit_aff == false)
-                        return x_SJobPick(job_id, false, aff_id);
-                    if (pref_aff_candidate_job_id == 0)
-                        pref_aff_candidate_job_id = job_id;
+                    if (explicit_aff == false) {
+                        if (x_ValidateMaxJobsPerClientIP(
+                                job_id, running_jobs_per_client)) {
+                            return x_SJobPick(job_id, false, aff_id);
+                        }
+                    }
+
+                    pref_aff_candidate_jobs.set_bit(job_id);
                     continue;
                 }
             }
@@ -2646,21 +2678,31 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             if (exclusive_new_affinity) {
                 if (aff_id == 0 || all_pref_aff.get_bit(aff_id) == false) {
                     if (explicit_aff == false &&
-                        effective_use_pref_affinity == false)
-                        return x_SJobPick(job_id, true, aff_id);
-                    if (exclusive_aff_candidate == 0)
-                        exclusive_aff_candidate = job_id;
+                        effective_use_pref_affinity == false) {
+                        if (x_ValidateMaxJobsPerClientIP(
+                                    job_id, running_jobs_per_client)) {
+                            return x_SJobPick(job_id, true, aff_id);
+                        }
+                    }
+
+                    exclusive_aff_candidate_jobs.set_bit(job_id);
                 }
             }
         } // end for
 
-        if (pref_aff_candidate_job_id != 0)
-            return x_SJobPick(pref_aff_candidate_job_id, false, 0);
+        TNSBitVector::enumerator  en1(pref_aff_candidate_jobs.first());
+        for (; en1.valid(); ++en1) {
+            if (x_ValidateMaxJobsPerClientIP(*en1, running_jobs_per_client)) {
+                return x_SJobPick(*en1, false, 0);
+            }
+        }
 
-        if (exclusive_aff_candidate != 0)
-            return x_SJobPick(exclusive_aff_candidate, true,
-                              m_GCRegistry.GetAffinityID(
-                                                    exclusive_aff_candidate));
+        TNSBitVector::enumerator  en2(exclusive_aff_candidate_jobs.first());
+        for (; en2.valid(); ++en2) {
+            if (x_ValidateMaxJobsPerClientIP(*en2, running_jobs_per_client)) {
+                return x_SJobPick(*en2, true, m_GCRegistry.GetAffinityID(*en2));
+            }
+        }
     }
 
     // The second condition looks strange and it covers a very specific
@@ -2689,32 +2731,56 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
         }
 
         if (cmd_group == eGet) {
+            // NOTE: this only to avoid an expensive temporary bvector
+            m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
+                                                 jobs_in_scope);
+
+            TNSBitVector    pending_jobs;
+            m_StatusTracker.GetJobs(CNetScheduleAPI::ePending, pending_jobs);
+            TNSBitVector::enumerator    en = pending_jobs.first();
+
             if (no_scope_only) {
                 // only the jobs which are not in the scope
-
-                // NOTE: this only to avoid an expensive temporary bvector
-                m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
-                                                     jobs_in_scope);
-                if (has_groups)
-                    job_id = m_StatusTracker.GetJobByStatus(
-                                                CNetScheduleAPI::ePending,
-                                                jobs_in_scope,
-                                                m_GroupRegistry.GetJobs(group_ids),
-                                                has_groups);
-                else
-                    job_id = m_StatusTracker.GetJobByStatus(
-                                                CNetScheduleAPI::ePending,
-                                                jobs_in_scope,
-                                                kEmptyBitVector,
-                                                false);
+                if (has_groups) {
+                    TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group_ids);
+                    for (; en.valid(); ++en) {
+                        unsigned int    candidate_job_id = *en;
+                        if (jobs_in_scope.get_bit(candidate_job_id))
+                            continue;
+                        if (!group_jobs.get_bit(candidate_job_id))
+                            continue;
+                        if (x_ValidateMaxJobsPerClientIP(candidate_job_id,
+                                                         running_jobs_per_client)) {
+                            job_id = candidate_job_id;
+                            break;
+                        }
+                    }
+                } else {
+                    for (; en.valid(); ++en) {
+                        unsigned int    candidate_job_id = *en;
+                        if (jobs_in_scope.get_bit(candidate_job_id))
+                            continue;
+                        if (x_ValidateMaxJobsPerClientIP(candidate_job_id,
+                                                         running_jobs_per_client)) {
+                            job_id = candidate_job_id;
+                            break;
+                        }
+                    }
+                }
             } else {
                 // only the specific scope jobs
-                m_ClientsRegistry.AddBlacklistedJobs(client, cmd_group,
-                                                     jobs_in_scope);
-                job_id = m_StatusTracker.GetJobByStatus(
-                                            CNetScheduleAPI::ePending,
-                                            jobs_in_scope,
-                                            restricted_jobs, true);
+                for (; en.valid(); ++en) {
+                    unsigned int    candidate_job_id = *en;
+                    if (jobs_in_scope.get_bit(candidate_job_id))
+                        continue;
+                    if (!restricted_jobs.get_bit(candidate_job_id))
+                        continue;
+                    if (x_ValidateMaxJobsPerClientIP(candidate_job_id,
+                                                     running_jobs_per_client)) {
+                        job_id = candidate_job_id;
+                        break;
+                    }
+                }
             }
         } else {
             if (no_scope_only) {
@@ -2753,6 +2819,49 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
     }
 
     return x_SJobPick();
+}
+
+// Provides a map between the client IP and the number of running jobs
+map<string, size_t> CQueue::x_GetRunningJobsPerClientIP(void)
+{
+    map<string, size_t>     ret;
+    TNSBitVector            running_jobs;
+
+    m_StatusTracker.GetJobs(CNetScheduleAPI::eRunning, running_jobs);
+    TNSBitVector::enumerator    en(running_jobs.first());
+    for (; en.valid(); ++en) {
+        auto            job_iter = m_Jobs.find(*en);
+        if (job_iter != m_Jobs.end()) {
+            string  client_ip = job_iter->second.GetClientIP();
+            auto    iter = ret.find(client_ip);
+            if (iter == ret.end()) {
+                ret[client_ip] = 1;
+            } else {
+                iter->second += 1;
+            }
+        }
+    }
+    return ret;
+}
+
+
+bool
+CQueue::x_ValidateMaxJobsPerClientIP(
+                        unsigned int  job_id,
+                        const map<string, size_t> &  jobs_per_client_ip) const
+{
+    if (jobs_per_client_ip.empty())
+        return true;
+
+    auto    job_iter = m_Jobs.find(job_id);
+    if (job_iter == m_Jobs.end())
+        return true;
+
+    string  client_ip = job_iter->second.GetClientIP();
+    auto    iter = jobs_per_client_ip.find(client_ip);
+    if (iter == jobs_per_client_ip.end())
+        return true;
+    return iter->second < m_MaxJobsPerClient;
 }
 
 
@@ -2807,7 +2916,7 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &   client,
         m_GroupRegistry.RestrictByGroup(group_ids, outdated_pending);
 
     if (!outdated_pending.any())
-        return x_SJobPick();;
+        return x_SJobPick();
 
 
     x_SJobPick      job_pick;

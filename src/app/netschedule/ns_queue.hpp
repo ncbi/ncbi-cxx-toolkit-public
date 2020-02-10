@@ -520,6 +520,10 @@ private:
                     bool                          has_groups,
                     ECommandGroup                 cmd_group,
                     const string &                scope);
+    map<string, size_t> x_GetRunningJobsPerClientIP(void);
+    bool x_ValidateMaxJobsPerClientIP(unsigned int  job_id,
+                                      const map<string, size_t> &  jobs_per_client_ip) const;
+
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
                              unsigned int         picked_earlier,
@@ -676,6 +680,7 @@ private:
     // How many attempts to make on different nodes before failure
     unsigned                    m_FailedRetries;
     unsigned                    m_ReadFailedRetries;
+    unsigned                    m_MaxJobsPerClient;
     CNSPreciseTime              m_BlacklistTime;
     CNSPreciseTime              m_ReadBlacklistTime;
     unsigned                    m_MaxInputSize;

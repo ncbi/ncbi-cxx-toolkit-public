@@ -89,6 +89,7 @@ notif_handicap=5
 notif_hifreq_interval=160
 notif_hifreq_period=320
 notif_lofreq_mult=2
+max_jobs_per_client=1
 
 [service_to_queue]
 service1=TEST1

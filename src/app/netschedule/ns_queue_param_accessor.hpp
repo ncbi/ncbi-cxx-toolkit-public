@@ -56,7 +56,7 @@ public:
     { return m_Queue.m_MaxOutputSize; }
 
     unsigned GetNumParams() const
-    { return 21; }
+    { return 22; }
 
     string GetParamName(unsigned int  n) const {
         switch (n) {
@@ -81,33 +81,35 @@ public:
         case 18: return "dump_aff_buffer_size";
         case 19: return "dump_group_buffer_size";
         case 20: return "scramble_job_keys";
+        case 21: return "max_jobs_per_client";
         default: return "";
         }
     }
 
     string GetParamValue(unsigned int  n) const {
         switch (n) {
-        case 0:  return NStr::NumericToString(m_Queue.m_Timeout.Sec());
+        case 0:  return to_string(m_Queue.m_Timeout.Sec());
         case 1:  return NS_FormatPreciseTimeAsSec(m_Queue.m_NotifHifreqInterval);
         case 2:  return NS_FormatPreciseTimeAsSec(m_Queue.m_NotifHifreqPeriod);
-        case 3:  return NStr::NumericToString(m_Queue.m_NotifLofreqMult);
+        case 3:  return to_string(m_Queue.m_NotifLofreqMult);
         case 4:  return NS_FormatPreciseTimeAsSec(m_Queue.m_HandicapTimeout);
-        case 5:  return NStr::NumericToString(m_Queue.m_DumpBufferSize);
+        case 5:  return to_string(m_Queue.m_DumpBufferSize);
         case 6:  return NS_FormatPreciseTimeAsSec(m_Queue.m_RunTimeout);
         case 7:  return NS_FormatPreciseTimeAsSec(m_Queue.m_ReadTimeout);
-        case 8:  return NStr::NumericToString(m_Queue.m_FailedRetries);
-        case 9:  return NStr::NumericToString(m_Queue.m_ReadFailedRetries);
+        case 8:  return to_string(m_Queue.m_FailedRetries);
+        case 9:  return to_string(m_Queue.m_ReadFailedRetries);
         case 10: return NS_FormatPreciseTimeAsSec(m_Queue.m_BlacklistTime);
         case 11: return NS_FormatPreciseTimeAsSec(m_Queue.m_ReadBlacklistTime);
-        case 12: return NStr::NumericToString(m_Queue.m_MaxInputSize);
-        case 13: return NStr::NumericToString(m_Queue.m_MaxOutputSize);
+        case 12: return to_string(m_Queue.m_MaxInputSize);
+        case 13: return to_string(m_Queue.m_MaxOutputSize);
         case 14: return m_Queue.m_ProgramVersionList.Print();
         case 15: return m_Queue.m_SubmHosts.Print("", ",");
         case 16: return m_Queue.m_WnodeHosts.Print("", ",");
-        case 17: return NStr::NumericToString(m_Queue.m_DumpClientBufferSize);
-        case 18: return NStr::NumericToString(m_Queue.m_DumpAffBufferSize);
-        case 19: return NStr::NumericToString(m_Queue.m_DumpGroupBufferSize);
+        case 17: return to_string(m_Queue.m_DumpClientBufferSize);
+        case 18: return to_string(m_Queue.m_DumpAffBufferSize);
+        case 19: return to_string(m_Queue.m_DumpGroupBufferSize);
         case 20: return NStr::BoolToString(m_Queue.m_ScrambleJobKeys);
+        case 21: return to_string(m_Queue.m_MaxJobsPerClient);
         default: return "";
         }
     }

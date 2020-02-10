@@ -199,3 +199,49 @@ class Scenario2003(TestBase):
             if "Unexpected notification in socket" in str(ex):
                 raise
         return 0
+
+
+class Scenario2004(TestBase):
+
+    """Scenario 2004"""
+
+    def __init__(self, netschedule):
+        TestBase.__init__(self, netschedule)
+
+    @staticmethod
+    def getScenario():
+        """Provides the scenario"""
+        return "Set max_jobs_per client to 1; submit two jobs; " \
+               "get the first job; GET2 for another -> no jobs; " \
+               "put the first job; GET2 -> second job provided"
+
+    def execute(self):
+        """Should return True if the execution completed successfully"""
+        self.fromScratch(1200)
+        jobID1 = self.ns.submitJob('TEST2', 'blah')
+        jobID2 = self.ns.submitJob('TEST2', 'blah')
+
+        ns_client = self.getNetScheduleService('TEST2', 'scenario2004')
+        ns_client.set_client_identification('node', 'session')
+
+        output1 = execAny(ns_client, 'GET2 wnode_aff=0 any_aff=1')
+        values1 = parse_qs(output1, True, True)
+        jobKey = values1['job_key']
+        if jobKey[0] != jobID1:
+            raise Exception("Unexpected GET2 output; expected the first job")
+
+        # The second job must not be given
+        output2 = execAny(ns_client, 'GET2 wnode_aff=0 any_aff=1')
+        if output2.strip() != '':
+            raise Exception("Unexpected GET2 output; "
+                            "expected no jobs but the second job is provided")
+
+        authToken1 = values1['auth_token'][0]
+        execAny(ns_client, "PUT2 " + jobID1 + " " + authToken1 + " 0 output")
+
+        output2 = execAny(ns_client, 'GET2 wnode_aff=0 any_aff=1')
+        if output2.strip() == '':
+            raise Exception("Unexpected GET2 output; expected the first job")
+
+        return True
+

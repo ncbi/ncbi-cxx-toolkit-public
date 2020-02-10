@@ -2311,6 +2311,7 @@ void CQueueDataBase::x_DumpQueueOrClass(FILE *  f,
                                         params.program_name.size());
         descr_dump.failed_retries = params.failed_retries;
         descr_dump.read_failed_retries = params.read_failed_retries;
+        descr_dump.max_jobs_per_client = params.max_jobs_per_client;
         descr_dump.blacklist_time = (double)params.blacklist_time;
         descr_dump.read_blacklist_time = (double)params.read_blacklist_time;
         descr_dump.max_input_size = params.max_input_size;
@@ -2644,6 +2645,7 @@ CQueueDataBase::x_ReadDumpQueueDesrc(set<string, PNocase> &  dump_static_queues,
                                             dump_struct.program_name_size);
                     p.failed_retries = dump_struct.failed_retries;
                     p.read_failed_retries = dump_struct.read_failed_retries;
+                    p.max_jobs_per_client = dump_struct.max_jobs_per_client;
                     p.blacklist_time =
                         CNSPreciseTime(dump_struct.blacklist_time);
                     p.read_blacklist_time =

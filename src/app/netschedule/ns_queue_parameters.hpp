@@ -78,6 +78,7 @@ struct SQueueParameters
     string          program_name;
     unsigned int    failed_retries;
     unsigned int    read_failed_retries;
+    unsigned int    max_jobs_per_client;
     CNSPreciseTime  blacklist_time;
     CNSPreciseTime  read_blacklist_time;
     unsigned int    max_input_size;
@@ -164,6 +165,8 @@ struct SQueueParameters
     unsigned int    ReadReadFailedRetries(const IRegistry &, const string &,
                                           vector<string> &,
                                           unsigned int  failed_retries);
+    unsigned int    ReadMaxJobsPerClient(const IRegistry &, const string &,
+                                         vector<string> &);
     CNSPreciseTime  ReadBlacklistTime(const IRegistry &, const string &,
                                       vector<string> &);
     CNSPreciseTime  ReadReadBlacklistTime(const IRegistry &, const string &,
