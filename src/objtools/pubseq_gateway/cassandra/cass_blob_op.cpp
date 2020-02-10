@@ -430,6 +430,7 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
 
     bool rslt1 = false;
     string value1 = "";
+    
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
         [this, name, &value1, &rslt1](bool is_repeated) {
             string sql = "SELECT value FROM maintenance.settings WHERE domain = ? AND name = ?";
