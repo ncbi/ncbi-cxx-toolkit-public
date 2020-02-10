@@ -47,7 +47,8 @@
 #include <align/align-access.h>
 
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiapp_api.hpp>
+#include <corelib/request_ctx.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqset/seqset__.hpp>
@@ -445,14 +446,25 @@ CBamMgr::CBamMgr(void)
                     "Cannot create AlignAccessMgr", rc);
     }
     
+    CBamVFSManager vfs_mgr;
+    CBamRef<KNSManager> kns_mgr;
+    if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot get KNSManager", rc);
+    }
+    
+    CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
+    if ( req_ctx.IsSetSessionID() ) {
+        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+    }
+    if ( req_ctx.IsSetClientIP() ) {
+        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+    }
+    if ( req_ctx.IsSetHitID() ) {
+        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
+    }
+    
     if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
-        CBamVFSManager vfs_mgr;
-        CBamRef<KNSManager> kns_mgr;
-        if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {
-            NCBI_THROW2(CBamException, eInitFailed,
-                        "Cannot get KNSManager", rc);
-        }
-        
         string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
         int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
         if ( !host.empty() && port != 0 ) {
