@@ -222,6 +222,10 @@ function(NCBI_internal_install_root _variable _access)
 
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
+
+#install build info files
+    set(_files "${NCBI_TREE_ROOT}/build_info;${NCBI_TREE_ROOT}/checkout_info")
+    install(FILES ${_files} DESTINATION "." OPTIONAL)
 endfunction()
 
 #############################################################################
