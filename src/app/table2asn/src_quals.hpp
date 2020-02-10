@@ -4,6 +4,7 @@
 #include <corelib/ncbistl.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include <unordered_map>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 
@@ -36,32 +37,40 @@ class CMemorySrcFileMap
 public:
     using TModList = CModHandler::TModList;
 
+    struct SIter;
+
     struct SLineInfo {
         size_t lineNum;
         CTempString line;
-    };    
+        list<unique_ptr<SIter>> equiv; 
+    };
 
-    using TLineMap = map<set<string>, SLineInfo>;
+    using TLineMap = unordered_map<string, SLineInfo>;
+    struct SIter
+    {
+        using TVal = TLineMap::iterator;
+        SIter(const TLineMap::iterator& v) : val(v) {}
+        TLineMap::iterator val;
+    };
 
     CMemorySrcFileMap(ILineErrorListener* pEC)
         : m_pEC(pEC) {}
-
 
     bool GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose);
     void MapFile(const string& fileName, bool allowAcc);
     bool Empty(void) const;
     bool Mapped(void) const;
-    const TLineMap& GetLineMap(void) const;
     void ReportUnusedIds(void);
 private:
     void x_ProcessLine(const CTempString& line, TModList& mods);
     void x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc);
-    bool m_FileMapped = false;
+    bool m_FileMapped=false;
     unique_ptr<CMemoryFileMap> m_pFileMap;
     vector<CTempString> m_ColumnNames;
     TLineMap m_LineMap;
     ILineErrorListener* m_pEC;
-    unordered_map<string, size_t> m_ProcessedIdsToLineNum;
+    unordered_map<string,size_t> m_IdsToLineNum;
+    unordered_map<string,size_t> m_ProcessedIdsToLineNum;
 };
 
 

@@ -50,37 +50,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-const CMemorySrcFileMap::TLineMap& 
-CMemorySrcFileMap::GetLineMap(void) const
-{
-    return m_LineMap;
-}
-
-
-bool CMemorySrcFileMap::Empty(void) const 
-{
-    return m_LineMap.empty();
-}
-
-
-bool CMemorySrcFileMap::Mapped(void) const 
-{
-    return m_FileMapped;
-}
-
-
-void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
-{
-    vector<CTempString> tokens;
-    NStr::Split(line, "\t", tokens, 0);
-    for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
-        auto value=NStr::TruncateSpaces_Unsafe(tokens[i]);
-        if (!NStr::IsBlank(value)) {
-            mods.emplace_back(m_ColumnNames[i], value);
-        }
-    }
-}
-
 static void sPostError(
         ILineErrorListener* pEC,
         const string& message,
@@ -101,9 +70,6 @@ static void sPostError(
     pEC->PutError(*pErr);
 
 }
-
-
-
 
 static void sReportMissingMods(
         ILineErrorListener* pEC,
@@ -156,6 +122,70 @@ static void s_PostProcessID(string& id)
 }
 
 
+static void sReportDuplicateIds(
+    ILineErrorListener* pEC,
+    const string& fileName,
+    size_t currentLine,
+    size_t previousLine,
+    const CTempString& seqId)
+{
+
+    ostringstream message;
+    message
+        <<  "Sequence id " 
+        <<  seqId 
+        << " on line "  
+        << currentLine
+        << " of " << fileName 
+        << " duplicates id on line "
+        << previousLine 
+        << ". Skipping line "
+        << currentLine 
+        << ".";
+
+    sPostError(pEC, message.str(), seqId, currentLine);
+}
+
+
+static void sReportUnusedMods(
+    ILineErrorListener* pEC,
+    const string& fileName,
+    size_t lineNum,
+    const CTempString& seqId)
+{
+    _ASSERT(pEC);
+
+    string message =
+        fileName +
+        " contains qualifiers for sequence id " +
+        seqId +
+        ", but no sequence with that id was found.";
+
+    AutoPtr<CLineErrorEx> pErr(
+        CLineErrorEx::Create(
+            ILineError::eProblem_GeneralParsingError,
+            eDiag_Error,
+            0, 0, // code and subcode
+            seqId,
+            lineNum, // lineNumber,
+            message));
+
+    pEC->PutError(*pErr);
+}
+
+
+bool CMemorySrcFileMap::Empty(void) const 
+{
+    return m_LineMap.empty();
+}
+
+
+bool CMemorySrcFileMap::Mapped(void) const 
+{
+    return m_FileMapped;
+}
+
+
 bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose) 
 {
     mods.clear();
@@ -193,18 +223,14 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
 
 
     for (const auto& id : id_strings) {
-        auto it = 
-            find_if(m_LineMap.begin(),
-                    m_LineMap.end(),
-                    [id](const TLineMap::value_type& entry) {
-                        return (entry.first.find(id) != entry.first.end());
-                    });
+        auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
             x_ProcessLine(it->second.line, mods);
             auto lineNum = it->second.lineNum;
-            for (const string& entry_id : it->first) {
-                m_ProcessedIdsToLineNum.emplace(entry_id, lineNum);
-            } 
+            m_ProcessedIdsToLineNum.emplace(id, lineNum);
+            for (const auto& pEquivIt : it->second.equiv) {
+                m_LineMap.erase(pEquivIt->val);
+            }
             m_LineMap.erase(it);
             return true;
         }
@@ -225,28 +251,35 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
 }
 
 
-static void sReportDuplicateIds(
-    ILineErrorListener* pEC,
-    const string& fileName,
-    size_t currentLine,
-    size_t previousLine,
-    const CTempString& seqId)
+void CMemorySrcFileMap::ReportUnusedIds()
 {
+    if (!Empty()) {
+        map<size_t, CTempString> unusedLines;
+        for (const auto& entry : m_LineMap) { 
+            unusedLines.emplace(entry.second.lineNum, entry.second.line);    
+        }
 
-    ostringstream message;
-    message
-        <<  "Sequence id " 
-        <<  seqId 
-        << " on line "  
-        << currentLine
-        << " of " << fileName 
-        << " duplicates id on line "
-        << previousLine 
-        << ". Skipping line "
-        << currentLine 
-        << ".";
+        for (const auto& entry : unusedLines) {
+            CTempString seqId, remainder;
+            NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
+            sReportUnusedMods(m_pEC, 
+                    m_pFileMap->GetFileName(), 
+                    entry.first, 
+                    NStr::TruncateSpaces_Unsafe(seqId));
+        }
+    }
+}
 
-    sPostError(pEC, message.str(), seqId, currentLine);
+void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
+{
+    vector<CTempString> tokens;
+    NStr::Split(line, "\t", tokens, 0);
+    for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
+        auto value=NStr::TruncateSpaces_Unsafe(tokens[i]);
+        if (!NStr::IsBlank(value)) {
+            mods.emplace_back(m_ColumnNames[i], value);
+        }
+    }
 }
 
 
@@ -292,18 +325,40 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool al
                 idSet.emplace(idKey);
             }
         }
-        auto rval = m_LineMap.emplace(idSet, SLineInfo{lineNum, line});
-        if (!rval.second) { // conflicts with a prexisting entry
-            CTempString seqId, remainder;
-            NStr::SplitInTwo(line, "\t", seqId, remainder);
-            sReportDuplicateIds(m_pEC, 
+
+
+        list<TLineMap::iterator> iterators;
+        for (auto idKey : idSet) {
+            auto rval = m_LineMap.emplace(idKey, SLineInfo{lineNum, line});
+            if (!rval.second) {
+                CTempString seqId, remainder; // revisit this
+                NStr::SplitInTwo(line, "\t", seqId, remainder);
+                sReportDuplicateIds(m_pEC, 
                     m_pFileMap->GetFileName(),
                     lineNum,
                     rval.first->second.lineNum,
                     NStr::TruncateSpaces_Unsafe(seqId));
+                for (auto it : iterators) {
+                    m_LineMap.erase(it);
+                }
+                break;
+            }
+            iterators.push_back(rval.first);
+        }
+
+        if (iterators.size()>1) {
+            for (auto current_it : iterators) {
+                for(auto other_it : iterators) {
+                    if (other_it != current_it) {
+                        current_it->second.equiv.emplace_back(new SIter(other_it));
+                    }
+                }
+            }
         }
     }
 }
+
+
 
 void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
 {
@@ -359,45 +414,10 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
     m_FileMapped = true;
 }
 
-static void sReportUnusedMods(
-    ILineErrorListener* pEC,
-    const string& fileName,
-    size_t lineNum,
-    const CTempString& seqId)
-{
-    _ASSERT(pEC);
 
-    string message =
-        fileName +
-        " contains qualifiers for sequence id " +
-        seqId +
-        ", but no sequence with that id was found.";
 
-    AutoPtr<CLineErrorEx> pErr(
-        CLineErrorEx::Create(
-            ILineError::eProblem_GeneralParsingError,
-            eDiag_Error,
-            0, 0, // code and subcode
-            seqId,
-            lineNum, // lineNumber,
-            message));
 
-    pEC->PutError(*pErr);
-}
 
-void CMemorySrcFileMap::ReportUnusedIds()
-{
-    if (!Empty()) {
-        for (const auto& entry : m_LineMap) {
-            CTempString seqId, remainder;
-            NStr::SplitInTwo(entry.second.line, "\t", seqId, remainder);
-            sReportUnusedMods(m_pEC, 
-                    m_pFileMap->GetFileName(), 
-                    entry.second.lineNum, 
-                    NStr::TruncateSpaces_Unsafe(seqId));
-        }
-    }
-}
 
 static void s_AppendMods(
     const CModHandler::TModList& mods,
