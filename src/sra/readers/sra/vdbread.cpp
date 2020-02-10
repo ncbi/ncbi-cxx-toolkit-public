@@ -64,6 +64,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/request_ctx.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
@@ -528,6 +529,18 @@ void CVDBMgr::x_Init(void)
                            prefix.c_str(),
                            sdk_ver);
 
+
+    CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
+    if ( req_ctx.IsSetSessionID() ) {
+        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+    }
+    if ( req_ctx.IsSetClientIP() ) {
+        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+    }
+    if ( req_ctx.IsSetHitID() ) {
+        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
+    }
+    
     // redirect VDB log to C++ Toolkit
     if ( s_GetDiagHandler() ) {
         KLogInit();
