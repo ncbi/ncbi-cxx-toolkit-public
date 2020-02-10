@@ -397,133 +397,6 @@ s_RPSOffsetArrayToContextOffsets(BlastQueryInfo    * info,
     OffsetArrayToContextOffsets(info, new_offsets, kProgram);
 }
 
-static int
-s_CompareHSPsBySubjectEnd(const void* a, const void* b)
-{
-    BlastHSP* h1, * h2;
-    BlastHSP** hp1, ** hp2;
-
-    hp1 = (BlastHSP**)a;
-    hp2 = (BlastHSP**)b;
-    h1 = *hp1;
-    h2 = *hp2;
-
-    if (!h1 && !h2) {
-        return 0;
-    }
-    else if (!h1) {
-        return -1;
-    }
-    else if (!h2) {
-        return 1;
-    }
-
-    if (h1->subject.end < h2->subject.end) {
-        return -1;
-    }
-    else if (h1->subject.end > h2->subject.end) {
-        return 1;
-    }
-
-    return 0;
-}
-
-/* Write HSPs for a single subject chunk to HSP stream, implemented for mapper.
-   A single read may align to several exons that fall in two subject chunks.
-   This is a problem because combining HSPs into exon chains is done for each
-   HSP list write independently.
-   Given the maximum intron length we can write HSPs with positions on the
-   subject too far from subject chunk end to be combined with HSPs aligned to
-   the next subject chunk. */
-static Int2
-s_WriteHSPsForChunk(BlastHSPList* hsp_list,
-                    const SubjectSplitStruct* backup,
-                    const BlastHitSavingParameters* hit_params,
-                    BlastHSPStream* hsp_stream,
-                    Int4 chunk_length,
-                    Int4 full_subject_length)
-{
-    BlastHSP** hsp_array = NULL;
-    BlastHSP** new_hsp_array = NULL;
-    BlastHSPList* hsp_list_to_write = NULL;
-    Int4 max_intron_len;
-    Int4 new_allocated;
-    Int4 last_pos_to_move;
-    Int4 status;
-    Int4 i, n = 0;
-
-    if (!hsp_list || !backup || !hit_params || !hsp_stream) {
-        return -1;
-    }
-
-    if (backup->next >= full_subject_length) {
-        /* HSPs for the last subject chunk will be written to HSP stream at
-           the end of subject processing */
-
-        return 0;
-    }
-
-    max_intron_len = hit_params->options->longest_intron;
-
-    /* HSPs up to this subject offset will be removed from hsp_list and
-       written to HSP stream */
-    /* FIXME: shoule this be until 1 * max_intron_length? */
-    last_pos_to_move = backup->offset + chunk_length - max_intron_len - 1;
-
-    hsp_array = hsp_list->hsp_array;
-
-    /* sort HSPs by subject offset */
-    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
-          s_CompareHSPsBySubjectEnd);
-
-    /* separate HSPs with subject offset smaller than last chunk position -
-       max intron length */
-    i = 0;
-    while (i < hsp_list->hspcnt &&
-           hsp_array[i]->subject.end < last_pos_to_move) {
-        i++;
-    }
-
-    /* copy HSPs with sbubject positions between max intron lengths and
-       chunk end */
-    new_allocated = hsp_list->hspcnt - i + 1;
-    new_hsp_array = calloc(new_allocated, sizeof(BlastHSP*));
-    if (!new_hsp_array) {
-        return -1;
-    }
-    for (;i < hsp_list->hspcnt;i++) {
-        new_hsp_array[n++] = Blast_HSPClone(hsp_array[i]);
-    }
-    ASSERT(i == hsp_list->hspcnt);
-
-    hsp_list_to_write = Blast_HSPListNew(1);
-    if (!hsp_list_to_write) {
-        return -1;
-    }
-
-    if (hsp_list_to_write->hsp_array) {
-        sfree(hsp_list_to_write->hsp_array);
-    }
-
-    hsp_list_to_write->hsp_array = hsp_array;
-    hsp_list_to_write->hspcnt = hsp_list->hspcnt /*hspcnt_to_write*/;
-    hsp_list_to_write->allocated = hsp_list->allocated;
-    hsp_list_to_write->oid = hsp_list->oid;
-
-    hsp_list->hsp_array = new_hsp_array;
-    hsp_list->hspcnt = n;
-    hsp_list->allocated = new_allocated;
-
-    /* write hsp_list_to_write */
-    status = BlastHSPStreamWrite(hsp_stream, &hsp_list_to_write);
-    if (hsp_list_to_write) {
-        hsp_list_to_write = Blast_HSPListFree(hsp_list_to_write);
-    }
-
-    return status;
-}
-
-
 /** Searches only one context of a database sequence, but does all chunks if it is split.
  * @param program_number BLAST program type [in]
  * @param query Query sequence structure [in]
@@ -559,7 +432,6 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
         BlastDiagnostics* diagnostics,
         BlastCoreAuxStruct* aux_struct,
         BlastHSPList** hsp_list_out_ptr,
-        BlastHSPStream* hsp_stream,
         TInterruptFnPtr interrupt_search,
         SBlastProgress* progress_info)
 {
@@ -719,15 +591,6 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
            								query_info, combined_hsp_list);
         }
 
-/*
-        if (getenv("MAPPER_WRITE_SUBJECT_CHUNK")) {
-            s_WriteHSPsForChunk(combined_hsp_list, &backup, hit_params,
-                                hsp_stream, subject->length,
-                                backup.full_range.right -
-                                backup.full_range.left);
-        }
-*/
-
     } /* End loop on chunks of subject sequence */
 
     s_RestoreSubject(subject, &backup);
@@ -851,7 +714,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         BlastDiagnostics* diagnostics,
         BlastCoreAuxStruct* aux_struct,
         BlastHSPList** hsp_list_out_ptr,
-        BlastHSPStream* hsp_stream,
         TInterruptFnPtr interrupt_search,
         SBlastProgress* progress_info)
 {
@@ -977,8 +839,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
                                                word_params, ext_params,
                                                hit_params, diagnostics,
                                                aux_struct, &hsp_list_for_chunks,
-                                               hsp_stream, interrupt_search,
-                                               progress_info);
+                                               interrupt_search, progress_info);
         if (status != 0)  break;
 
         if (Blast_HSPListAppend(&hsp_list_for_chunks, &hsp_list_out, kHspNumMax)) {
@@ -1308,7 +1169,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
           s_BlastSearchEngineCore(program_number, &concat_db, one_query_info,
              one_query, lookup_wrap, gap_align, score_params,
              word_params, ext_params, hit_params, NULL,
-             diagnostics, aux_struct, &hsp_list, NULL, interrupt_search,
+             diagnostics, aux_struct, &hsp_list, interrupt_search,
              progress_info);
 
         if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
@@ -1608,7 +1469,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                   seq_arg.seq, lookup_wrap, gap_align,
                                   score_params, word_params, ext_params,
                                   hit_params, db_options, diagnostics,
-                                  aux_struct, &hsp_list, hsp_stream,
+                                  aux_struct, &hsp_list,
                                   interrupt_search, progress_info);
       if (status) {
           break;
