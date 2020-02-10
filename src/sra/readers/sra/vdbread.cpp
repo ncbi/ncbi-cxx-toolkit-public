@@ -529,7 +529,7 @@ void CVDBMgr::x_Init(void)
                            prefix.c_str(),
                            sdk_ver);
 
-
+#if 0
     CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
     if ( req_ctx.IsSetSessionID() ) {
         KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
@@ -540,6 +540,7 @@ void CVDBMgr::x_Init(void)
     if ( req_ctx.IsSetHitID() ) {
         KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
     }
+#endif
     
     // redirect VDB log to C++ Toolkit
     if ( s_GetDiagHandler() ) {
