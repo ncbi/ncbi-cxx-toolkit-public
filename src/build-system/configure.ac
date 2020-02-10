@@ -3958,7 +3958,7 @@ if test $ncbi_cv_c_attribute_destructor = yes; then
 fi
 
 case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
-   GCC:*\ *\ -fvisibility*|ICC:*\ -fvisibility* ) ;;
+   GCC:*\ *\ -fvisibility* | ICC:*\ -fvisibility* ) ;;
    * ) ncbi_cv_c_attribute_visibility_default=unnecessary ;;
 esac
 
@@ -5610,7 +5610,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          # when using Boost at all.
          BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
          ;;
-      GCC*:4[[7-9]]* | GCC*:5*)
+      GCC*)
          # Some portions of Boost also have a lot of "unused" typedefs
          # from concept checking.
          BOOST_INCLUDE="$BOOST_INCLUDE -Wno-unused-local-typedefs"

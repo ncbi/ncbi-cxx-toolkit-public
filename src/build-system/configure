@@ -25596,7 +25596,7 @@ _ACEOF
 fi
 
 case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
-   GCC:*\ *\ -fvisibility*|ICC:*\ -fvisibility* ) ;;
+   GCC:*\ *\ -fvisibility* | ICC:*\ -fvisibility* ) ;;
    * ) ncbi_cv_c_attribute_visibility_default=unnecessary ;;
 esac
 
@@ -37227,7 +37227,7 @@ _ACEOF
          # when using Boost at all.
          BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
          ;;
-      GCC*:4[7-9]* | GCC*:5*)
+      GCC*)
          # Some portions of Boost also have a lot of "unused" typedefs
          # from concept checking.
          BOOST_INCLUDE="$BOOST_INCLUDE -Wno-unused-local-typedefs"
