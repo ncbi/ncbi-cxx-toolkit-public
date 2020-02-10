@@ -975,7 +975,7 @@
 /* Compiler name */
 #undef NCBI_COMPILER_UNKNOWN
 
-/* Compiler version as three-digit integer */
+/* Compiler version as three- or four-digit integer */
 #undef NCBI_COMPILER_VERSION
 
 /* Compiler name */
