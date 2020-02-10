@@ -114,6 +114,17 @@ static string GetMapperFileName(void)
 }
 
 
+NCBI_PARAM_DECL(string, BAM_LOADER, MAPPER_CONTEXT);
+NCBI_PARAM_DEF_EX(string, BAM_LOADER, MAPPER_CONTEXT, "",
+                  eParam_NoThread, BAM_LOADER_MAPPER_CONTEXT);
+
+static string GetMapperContext(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(BAM_LOADER, MAPPER_CONTEXT)> s_Value;
+    return s_Value->Get();
+}
+
+
 NCBI_PARAM_DECL(bool, BAM_LOADER, PILEUP_GRAPHS);
 NCBI_PARAM_DEF(bool, BAM_LOADER, PILEUP_GRAPHS, true);
 
@@ -292,7 +303,7 @@ CBAMDataLoader_Impl::CBAMDataLoader_Impl(
         string mapper_file_name = GetMapperFileName();
         if ( !mapper_file_name.empty() ) {
             CNcbiIfstream in(mapper_file_name.c_str());
-            m_IdMapper.reset(new CIdMapperConfig(in, "", false));
+            m_IdMapper.reset(new CIdMapperConfig(in, GetMapperContext(), false));
         }
     }
     CSrzPath srz_path;
