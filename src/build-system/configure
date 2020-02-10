@@ -8281,8 +8281,8 @@ case "$compiler:$ncbi_compiler_ver" in
     WorkShop*:?.?? )   ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\)/\1\20/' ;;
     WorkShop*:[6-9].?) ncbi_compiler_sed='s/\([0-9]\)\.\([0-9\)/\10\20/' ;;
     ICC:??.? )  ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)/\1\20/' ;;
-    ICC:??.?.? | \
-    ICC:??.?.?.* ) ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
+    GCC:??.?.? | ICC:??.?.? | ICC:??.?.?.* )
+       ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
     *:?.?.?)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9]\)\.\([0-9]\)/\1\2\3/' ;;
     *:?.??*)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\).*/\1\2/' ;;
     *:?.?)      ncbi_compiler_sed='s/\([0-9]\).\([0-9]\)/\1\20/' ;;
@@ -8502,10 +8502,7 @@ if test "$with_mt" != "no" ; then
             # Will allegedly support -openmp at some point, but as of 3.4,
             # just parses it as specifying an output filename: -o penmp.
          else
-            case "$compiler_version" in
-               [123]?? | 4[01]? ) ;;
-               * ) : ${OPENMP_FLAGS=-fopenmp} ;;
-            esac
+            : ${OPENMP_FLAGS=-fopenmp}
          fi
          ;;
       ICC )
@@ -8557,16 +8554,14 @@ case "$host_os:$compiler" in
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
-   case "$compiler_version" in
-      1[1-9]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
-   esac
+   MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
    ;;
 
  linux*:GCC )
     if test -r $srcdir/src/build-system/config.site.ncbi && test -d "$NCBI"
     then
        case "$compiler_version" in
-          5* ) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 $CPPFLAGS" ;;
+          5?? ) CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 $CPPFLAGS" ;;
        esac
     fi
     ;;
@@ -9935,7 +9930,7 @@ esac
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
     cygwin* ) with_lfs=no ;;
-    *:GCC:3[4-9]* | *:GCC:[4-9]* | *:ICC:[91]* ) : ${with_lfs=yes} ;;
+    *:GCC:* | *:ICC:* ) : ${with_lfs=yes} ;;
 esac
 
 if test "$with_lfs" = "yes" ; then
@@ -9957,17 +9952,9 @@ wsrx="[$wschars]"
 #### Flags to enable (potentially unsafe) extra optimization.
 if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
    case "$compiler:$compiler_version" in
-      GCC:2* | GCC:344 )
-        # GCC 2.9x sometimes experiences internal errors at high optimization;
-        # GCC 3.4.4 (at least on FreeBSD) meanwhile generates crashprone code.
-        DEF_FAST_FLAGS="-O2"
-        ;;
       GCC:* )
         DEF_FAST_FLAGS="-O3 -finline-functions -fstrict-aliasing"
-        case "$host_os:$host_cpu:$compiler_version" in
-           freebsd* | solaris*:*86*:* | *:4[5-9]? | *:[5-9]?? ) ;;
-           * ) DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
-        esac
+        # DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
         if test "$with_profiling" != "yes"; then
            # incompatible with -pg
            DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
@@ -10004,15 +9991,6 @@ if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
         case "$host_os" in
            solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast $ARCH_CFLAGS" ;;
         esac
-        ;;
-      ICC:[1-8]?? )
-        DEF_FAST_FLAGS="-O2"
-        ;;
-      ICC:9?? )
-        DEF_FAST_FLAGS="-O3 -axP -ip" # optimized for Core or P4 w/SSE3 (max)
-        ;;
-      ICC:10?? )
-        DEF_FAST_FLAGS="-O3 -axT -ip" # Core 2 w/SSSE3; axS would cover SSE 4.1
         ;;
       ICC:* )
         # Core 2; ICC 11 goes up to SSE4.2 (i7), ICC 12 up to CORE-AVX-I
@@ -10155,12 +10133,7 @@ echo "$as_me: error: Unable to find static libstdc++ requested by --with-bin-rel
     ;;
   GCC:* )
     # Need to specify runpath for compiler-provided libraries
-    case $compiler_version in
-        30*     ) major=3 ;;
-        31*     ) major=4 ;;
-        3[23]*) major=5 ;;
-        *       ) major=6 ;;
-    esac
+    major=6 # true for all supported versions at present
     found=false
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
         path=`$CXX $LDFLAGS -print-file-name=$f`
@@ -10341,9 +10314,6 @@ esac
 if test "$compiler" = "GCC" ; then
    CFLAGS="-Wall -Wno-format-y2k $CFLAGS"
    CXXFLAGS="-Wall -Wno-format-y2k $CXXFLAGS"
-   case "$compiler_version" in
-      2* ) CXXFLAGS="-ftemplate-depth-32 $CXXFLAGS" ;;
-   esac
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
       irix*    )  CXXFLAGS="$CXXFLAGS -D_LANGUAGE_C_PLUS_PLUS" ;;
@@ -13261,12 +13231,10 @@ _ACEOF
         ;;
       linux* | *gnu* ) # | *bsd*
         case "$compiler:$compiler_version" in
-           ICC:9* | ICC:1??? )
+           ICC:* )
              ncbi_cv_prog_cc_wl_no_asu=no
              LIBS="$LIBS -lc"
              C_LIBS="$C_LIBS -lc"
-             ;;
-           ICC:* )
              ;;
            * )
              FORBID_UNDEF='-Wl,--no-undefined'
@@ -14010,7 +13978,7 @@ echo "$as_me: error: --with-max-debug=$with_max_debug unimplemented for compiler
       echo " $LDFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || LDFLAGS="$LDFLAGS -g"
       STRIP="@:"
       case "$compiler:$compiler_version" in
-         GCC:4[89]? | GCC:[5-9]? | GCC:???? )
+         GCC:* )
             # GCC 4.8 defaults to DWARF 4, which Totalview for one
             # can't handle; roll back to version 3 by default.
             echo " $USER_CFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || \
@@ -25391,10 +25359,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 # Avoid using unsupported (and noisily ignored) attributes.
 case "$compiler:$compiler_version" in
-   GCC:2* | GCC:3[01]* )
-      ncbi_cv_c_deprecation_syntax=none
-      ncbi_cv_c_forceinline=inline
-      ;;
    VisualAge:* )
       ncbi_cv_c_forceinline=inline
       ;;
@@ -25632,7 +25596,7 @@ _ACEOF
 fi
 
 case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
-   GCC:[4-9]??\ *\ -fvisibility*|ICC:*\ -fvisibility* ) ;;
+   GCC:*\ *\ -fvisibility*|ICC:*\ -fvisibility* ) ;;
    * ) ncbi_cv_c_attribute_visibility_default=unnecessary ;;
 esac
 
@@ -37306,6 +37270,7 @@ echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6; }
             *:MSVC)      BOOST_TAG="-vc"  ;;
          esac
          case "$BOOST_TAG" in
+            # Still valid for version 10.x and up?
             -*gcc|-il ) boost_comp_vers=`echo $compiler_version | cut -c1-2` ;;
             *         ) boost_comp_vers='' ;;
          esac
