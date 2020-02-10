@@ -392,6 +392,19 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
             return true;
         }
     );
+    
+    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
+        [this, name, value](bool /*is_repeated*/) {
+            string sql = "INSERT INTO maintenance.settings (domain, name, value) VALUES(?, ?, ?)";
+            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
+            qry->SetSQL(sql, 2);
+            qry->BindStr(0, m_Keyspace);
+            qry->BindStr(1, name);
+            qry->BindStr(2, value);
+            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
+            return true;
+        }
+    );
 }
 
 bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, string & value)
@@ -415,7 +428,35 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
         }
     );
 
-    return rslt;
+    bool rslt1 = false;
+    string value1 = "";
+    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
+        [this, name, &value1, &rslt1](bool is_repeated) {
+            string sql = "SELECT value FROM maintenance.settings WHERE domain = ? AND name = ?";
+            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
+            qry->SetSQL(sql, 1);
+            qry->BindStr(0, m_Keyspace);
+            qry->BindStr(1, name);
+            CassConsistency cons = is_repeated && m_Conn->GetFallBackRdConsistency() ?
+                CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
+            qry->Query(cons, false, false);
+            async_rslt_t rv = qry->NextRow();
+            if (rv == ar_dataready) {
+                qry->FieldGetStrValue(0, value1);
+                rslt1 = true;
+            }
+            return true;
+        }
+    );
+
+    //return rslt;
+    
+    if( rslt && rslt1)
+    {
+      if( !value.compare( value1)) return true;
+    }
+    
+    return false;
 }
 
 END_IDBLOB_SCOPE
