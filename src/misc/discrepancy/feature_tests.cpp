@@ -2270,7 +2270,7 @@ DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
 
 static const string kFeatureList = "Feature List";
 
-DISCREPANCY_CASE(FEATURE_LIST, FEAT, eDisc, "Feature List")
+DISCREPANCY_CASE(FEATURE_LIST, FEAT, eDisc | eSubmitter, "Feature List")
 {
     for (auto& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_gap && feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) {
