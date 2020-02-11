@@ -275,11 +275,9 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 if (input.size() > kNetScheduleMaxOverflowSize)
                     NCBI_THROW(CNetScheduleException, eDataTooLong,
                                "input exceeds the max allowed length. "
-                               "Received: " +
-                               NStr::NumericToString(input.size()) +
+                               "Received: " + to_string(input.size()) +
                                " Allowed: " +
-                               NStr::NumericToString(
-                                                kNetScheduleMaxOverflowSize));
+                               to_string(kNetScheduleMaxOverflowSize));
             }
             else if (key == s_IpOption) {
                 ip = NStr::ParseEscapes(val);
@@ -337,11 +335,9 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 if (output.size() > kNetScheduleMaxOverflowSize)
                     NCBI_THROW(CNetScheduleException, eDataTooLong,
                                "output exceeds the max allowed length. "
-                               "Received: " +
-                               NStr::NumericToString(output.size()) +
+                               "Received: " + to_string(output.size()) +
                                " Allowed: " +
-                               NStr::NumericToString(
-                                                kNetScheduleMaxOverflowSize));
+                               to_string(kNetScheduleMaxOverflowSize));
             }
             else if (key == s_OptionOption) {
                 option = NStr::ParseEscapes(val);
@@ -442,10 +438,9 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
         if (size_to_check > kNetScheduleMaxDBDataSize - 1)
             NCBI_THROW(CNetScheduleException, eDataTooLong,
                        "Argument '" + string(key) + "' size (" +
-                       NStr::NumericToString(size_to_check) +
+                       to_string(size_to_check) +
                        " bytes) exceeds the DB max limit ( " +
-                       NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
-                       " bytes)");
+                       to_string(kNetScheduleMaxDBDataSize - 1) + " bytes)");
     }
 
     return;
@@ -465,10 +460,8 @@ void SNSCommandArguments::x_CheckAffinityList(const string &  val)
             NCBI_THROW(
                 CNetScheduleException, eDataTooLong,
                 "Affinity token '" + aff + "' length (" +
-                NStr::NumericToString(aff.size()) +
-                " bytes) exceeds the limit ( " +
-                NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
-                " bytes)");
+                to_string(aff.size()) + " bytes) exceeds the limit ( " +
+                to_string(kNetScheduleMaxDBDataSize - 1) + " bytes)");
 }
 
 
@@ -485,10 +478,8 @@ void SNSCommandArguments::x_CheckGroupList(const string &  val)
             NCBI_THROW(
                 CNetScheduleException, eDataTooLong,
                 "Group token '" + group + "' length (" +
-                NStr::NumericToString(group.size()) +
-                " bytes) exceeds the limit ( " +
-                NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
-                " bytes)");
+                to_string(group.size()) + " bytes) exceeds the limit ( " +
+                to_string(kNetScheduleMaxDBDataSize - 1) + " bytes)");
 }
 
 
@@ -501,10 +492,8 @@ void SNSCommandArguments::x_CheckQueueName(const string &  val,
             q += " class";
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "The  '" + key + "' " + q + " name length (" +
-                   NStr::NumericToString(val.size()) +
-                   " bytes) exceeds the limit ( " +
-                   NStr::NumericToString(kMaxQueueNameSize - 1) +
-                   " bytes)");
+                   to_string(val.size()) + " bytes) exceeds the limit ( " +
+                   to_string(kMaxQueueNameSize - 1) + " bytes)");
     }
 }
 

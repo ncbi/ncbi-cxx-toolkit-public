@@ -976,8 +976,8 @@ void  CNetScheduleHandler::x_HandleSocketErrorOnResponse(
         "Error writing message to the client. "
         "Peer: " +  GetSocket().GetPeerAddress() + ". "
         "Socket write error status: " + IO_StatusStr(write_result) + ". "
-        "Written bytes: " + NStr::NumericToString(written_bytes) + ". "
-        "Socket write timing: " + NStr::NumericToString(double(timing)) + ". "
+        "Written bytes: " + to_string(written_bytes) + ". "
+        "Socket write timing: " + to_string(double(timing)) + ". "
         "Message begins with: ";
     if (msg.size() > 32)
         report += msg.substr(0, 32) + " (TRUNCATED)";
@@ -1455,7 +1455,7 @@ string CNetScheduleHandler::x_GetConnRef(void) const
 {
     // See CXX-8253
     return GetDiagContext().GetStringUID() + "_" +
-           NStr::NumericToString(m_ConnContext->GetRequestID());
+           to_string(m_ConnContext->GetRequestID());
 }
 
 
@@ -1542,9 +1542,9 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
                        NStr::DoubleToString(db_elapsed, 4,
                                             NStr::fDoubleFixed));
 
-        x_WriteMessage("OK:" + NStr::NumericToString(job_id) + " " +
+        x_WriteMessage("OK:" + to_string(job_id) + " " +
                        m_Server->GetHost().c_str() + " " +
-                       NStr::NumericToString(unsigned(m_Server->GetPort())) +
+                       to_string(unsigned(m_Server->GetPort())) +
                        kEndOfResponse);
         x_ClearRollbackAction();
     }
@@ -1607,8 +1607,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
             x_WriteMessage(kErrNoJobFoundResponse);
         else
             x_WriteMessage(kOKResponsePrefix +
-                           NStr::NumericToString((int) status) +
-                           kEndOfResponse);
+                           to_string((int) status) + kEndOfResponse);
     } else {
         if (cmdv2) {
             CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
@@ -1618,7 +1617,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
             reply.append("OK:job_status=")
                  .append(CNetScheduleAPI::StatusToString(status))
                  .append("&job_exptime=")
-                 .append(NStr::NumericToString(lifetime.Sec()));
+                 .append(to_string(lifetime.Sec()));
 
             if (pause_status == CQueue::ePauseWithPullback)
                 reply.append("&pause=pullback");
@@ -1632,8 +1631,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
             x_WriteMessage(reply);
         }
         else
-            x_WriteMessage(kOKResponsePrefix +
-                           NStr::NumericToString((int) status) +
+            x_WriteMessage(kOKResponsePrefix + to_string((int) status) +
                            kEndOfResponse);
         x_LogCommandWithJob(job);
     }
@@ -1664,8 +1662,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
         if (cmdv2)
             x_WriteMessage(kErrNoJobFoundResponse);
         else
-            x_WriteMessage(kOKResponsePrefix +
-                           NStr::NumericToString((int) status) +
+            x_WriteMessage(kOKResponsePrefix + to_string((int) status) +
                            kEndOfResponse);
     } else {
         if (cmdv2) {
@@ -1676,7 +1673,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
             reply.append("OK:job_status=")
                  .append(CNetScheduleAPI::StatusToString(status))
                  .append("&job_exptime=")
-                 .append(NStr::NumericToString(lifetime.Sec()));
+                 .append(to_string(lifetime.Sec()));
 
             if (pause_status == CQueue::ePauseWithPullback)
                 reply.append("&pause=pullback");
@@ -1690,8 +1687,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
             x_WriteMessage(reply);
         }
         else
-            x_WriteMessage(kOKResponsePrefix +
-                           NStr::NumericToString((int) status) +
+            x_WriteMessage(kOKResponsePrefix + to_string((int) status) +
                            kEndOfResponse);
         x_LogCommandWithJob(client_ip, client_sid, client_phid);
     }
@@ -2016,16 +2012,14 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                                             statuses,
                                             x_NeedCmdLogging(), warnings);
         if (warnings.empty())
-            x_WriteMessage("OK:" + NStr::NumericToString(count) +
-                           kEndOfResponse);
+            x_WriteMessage("OK:" + to_string(count) + kEndOfResponse);
         else {
             string  msg;
             for (vector<string>::const_iterator  k = warnings.begin();
                  k != warnings.end(); ++k) {
                 msg += "WARNING:" + *k + ";";
             }
-            x_WriteMessage("OK:" + msg + NStr::NumericToString(count) +
-                           kEndOfResponse);
+            x_WriteMessage("OK:" + msg + to_string(count) + kEndOfResponse);
         }
 
         x_PrintCmdRequestStop();
@@ -2076,8 +2070,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
             x_WriteMessage(kErrNoJobFoundResponse);
         else
             x_WriteMessage(kOKResponsePrefix +
-                           NStr::NumericToString(
-                                        (int)CNetScheduleAPI::eJobNotFound) +
+                           to_string((int)CNetScheduleAPI::eJobNotFound) +
                            kEndOfResponse);
         x_PrintCmdRequestStop();
         return;
@@ -2111,9 +2104,9 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
              .append("&ncbi_phid=")
              .append(NStr::URLEncode(job.GetNCBIPHID()))
              .append("&job_exptime=")
-             .append(NStr::NumericToString(lifetime.Sec()))
+             .append(to_string(lifetime.Sec()))
              .append("&ret_code=")
-             .append(NStr::NumericToString(job.GetRetCode()))
+             .append(to_string(job.GetRetCode()))
              .append("&output=")
              .append(NStr::URLEncode(job.GetOutput()))
              .append("&err_msg=")
@@ -2125,9 +2118,9 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
              .append(kEndOfResponse);
     } else {
         reply.append("OK:")
-             .append(NStr::NumericToString((int) job.GetStatus()))
+             .append(to_string((int) job.GetStatus()))
              .append(1, ' ')
-             .append(NStr::NumericToString(job.GetRetCode()))
+             .append(to_string(job.GetRetCode()))
              .append(" \"")
              .append(NStr::PrintableString(job.GetOutput()))
              .append("\" \"")
@@ -2851,7 +2844,7 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
         x_WriteMessage("OK:job_status=" +
                        CNetScheduleAPI::StatusToString(status) +
                        "&last_event_index=" +
-                       NStr::NumericToString(last_event_index) +
+                       to_string(last_event_index) +
                        progress_msg_part +
                        kEndOfResponse);
         x_LogCommandWithJob(job);
@@ -2984,18 +2977,15 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         unsigned        count = q->CountStatus(st);
 
         info += "OK:" + CNetScheduleAPI::StatusToString(st) + ": " +
-                NStr::NumericToString(count) + kEndOfResponse;
+                to_string(count) + kEndOfResponse;
 
         if (what == "ALL") {
             TNSBitVector::statistics bv_stat;
             q->StatusStatistics(st, &bv_stat);
             info += "OK:"
-                    "  bit_blk=" +
-                    NStr::NumericToString(bv_stat.bit_blocks) +
-                    "; gap_blk=" +
-                    NStr::NumericToString(bv_stat.gap_blocks) +
-                    "; mem_used=" +
-                    NStr::NumericToString(bv_stat.memory_used) +
+                    "  bit_blk=" + to_string(bv_stat.bit_blocks) +
+                    "; gap_blk=" + to_string(bv_stat.gap_blocks) +
+                    "; mem_used=" + to_string(bv_stat.memory_used) +
                     kEndOfResponse;
         }
     } // for
@@ -3127,8 +3117,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessActiveCount(CQueue* q)
 {
-    string      active_jobs = NStr::NumericToString(
-                                            m_Server->CountActiveJobs());
+    string      active_jobs = to_string(m_Server->CountActiveJobs());
 
     x_WriteMessage("OK:" + active_jobs + kEndOfResponse);
     x_PrintCmdRequestStop();
@@ -3289,7 +3278,7 @@ void CNetScheduleHandler::x_ProcessVersion(CQueue*)
                     "&build_date=" + NStr::URLEncode(NETSCHEDULED_BUILD_DATE) +
                     "&ns_node=" + m_Server->GetNodeID() +
                     "&ns_session=" + m_Server->GetSessionID() +
-                    "&pid=" + NStr::NumericToString(CDiagContext::GetPID()) +
+                    "&pid=" + to_string(CDiagContext::GetPID()) +
                     kEndOfResponse;
     x_WriteMessage(reply);
     x_PrintCmdRequestStop();
@@ -3334,7 +3323,7 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
 
     string      reply =
                     "OK:pid=" +
-                    NStr::NumericToString(CDiagContext::GetPID()) +
+                    to_string(CDiagContext::GetPID()) +
                     "&ns_node=" +
                     m_Server->GetNodeID() +
                     "&ns_session=" +
@@ -3342,40 +3331,30 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
                     "&started=" +
                     NStr::URLEncode(m_Server->GetStartTime().AsString()) +
                     "&cpu_count=" +
-                    NStr::NumericToString(CSystemInfo::GetCpuCount());
+                    to_string(CSystemInfo::GetCpuCount());
     if (process_time_result)
-        reply += "&user_time=" + NStr::NumericToString(user_time) +
-                 "&system_time=" + NStr::NumericToString(system_time) +
-                 "&real_time=" + NStr::NumericToString(real_time);
+        reply += "&user_time=" + to_string(user_time) +
+                 "&system_time=" + to_string(system_time) +
+                 "&real_time=" + to_string(real_time);
     else
         reply += "&user_time=n/a&system_time=n/a&real_time=n/a";
 
     if (physical_memory > 0)
-        reply += "&physical_memory=" + NStr::NumericToString(physical_memory);
+        reply += "&physical_memory=" + to_string(physical_memory);
     else
         reply += "&physical_memory=n/a";
 
     if (mem_used_result)
-        reply += "&mem_used_total=" +
-                 NStr::NumericToString(mem_used.total) +
-                 "&mem_used_total_peak=" +
-                 NStr::NumericToString(mem_used.total_peak) +
-                 "&mem_used_resident=" +
-                 NStr::NumericToString(mem_used.resident) +
-                 "&mem_used_resident_peak=" +
-                 NStr::NumericToString(mem_used.resident_peak) +
-                 "&mem_used_shared=" +
-                 NStr::NumericToString(mem_used.shared) +
-                 "&mem_used_data=" +
-                 NStr::NumericToString(mem_used.data) +
-                 "&mem_used_stack=" +
-                 NStr::NumericToString(mem_used.stack) +
-                 "&mem_used_text=" +
-                 NStr::NumericToString(mem_used.text) +
-                 "&mem_used_lib=" +
-                 NStr::NumericToString(mem_used.lib) +
-                 "&mem_used_swap=" +
-                 NStr::NumericToString(mem_used.swap);
+        reply += "&mem_used_total=" + to_string(mem_used.total) +
+                 "&mem_used_total_peak=" + to_string(mem_used.total_peak) +
+                 "&mem_used_resident=" + to_string(mem_used.resident) +
+                 "&mem_used_resident_peak=" + to_string(mem_used.resident_peak) +
+                 "&mem_used_shared=" + to_string(mem_used.shared) +
+                 "&mem_used_data=" + to_string(mem_used.data) +
+                 "&mem_used_stack=" + to_string(mem_used.stack) +
+                 "&mem_used_text=" + to_string(mem_used.text) +
+                 "&mem_used_lib=" + to_string(mem_used.lib) +
+                 "&mem_used_swap=" + to_string(mem_used.swap);
     else
         reply += "&mem_used_total=n/a"
                  "&mem_used_total_peak=n/a"
@@ -3389,25 +3368,22 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
                  "&mem_used_swap=n/a";
 
     if (proc_fd_soft_limit >= 0)
-        reply += "&proc_fd_soft_limit=" +
-                 NStr::NumericToString(proc_fd_soft_limit);
+        reply += "&proc_fd_soft_limit=" + to_string(proc_fd_soft_limit);
     else
         reply += "&proc_fd_soft_limit=n/a";
 
     if (proc_fd_hard_limit >= 0)
-        reply += "&proc_fd_hard_limit=" +
-                 NStr::NumericToString(proc_fd_hard_limit);
+        reply += "&proc_fd_hard_limit=" + to_string(proc_fd_hard_limit);
     else
         reply += "&proc_fd_hard_limit=n/a";
 
     if (proc_fd_used >= 0)
-        reply += "&proc_fd_used=" + NStr::NumericToString(proc_fd_used);
+        reply += "&proc_fd_used=" + to_string(proc_fd_used);
     else
         reply += "&proc_fd_used=n/a";
 
     if (proc_thread_count >= 1)
-        reply += "&proc_thread_count=" +
-                 NStr::NumericToString(proc_thread_count);
+        reply += "&proc_thread_count=" + to_string(proc_thread_count);
     else
         reply += "&proc_thread_count=n/a";
 
@@ -3535,11 +3511,11 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
             jobs_part.append(1, '&')
                      .append(CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]))
                      .append(1, '=')
-                     .append(NStr::NumericToString(jobs_per_state[index]));
+                     .append(to_string(jobs_per_state[index]));
             total += jobs_per_state[index];
         }
         jobs_part.append("&Total=")
-                 .append(NStr::NumericToString(total));
+                 .append(to_string(total));
 
         for (map< string, map<string, string> >::const_iterator
                 k = linked_sections.begin(); k != linked_sections.end(); ++k) {
@@ -3567,7 +3543,7 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
     } else {
         SQueueParameters    params = m_Server->QueueInfo(
                                                 m_CommandArguments.qname);
-        x_WriteMessage("OK:" + NStr::NumericToString(params.kind) + "\t" +
+        x_WriteMessage("OK:" + to_string(params.kind) + "\t" +
                        params.qclass + "\t\"" +
                        NStr::PrintableString(params.description) + "\"" +
                        kEndOfResponse);
@@ -3692,9 +3668,9 @@ void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
 
     if (m_CommandArguments.cmd == "GETP2") {
         string  result("OK:max_input_size=" +
-                       NStr::NumericToString(max_input_size) + "&" +
+                       to_string(max_input_size) + "&" +
                        "max_output_size=" +
-                       NStr::NumericToString(max_output_size));
+                       to_string(max_output_size));
 
         for (map< string, map<string, string> >::const_iterator
                 k = linked_sections.begin(); k != linked_sections.end(); ++k) {
@@ -3708,10 +3684,8 @@ void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
         }
         x_WriteMessage(result + kEndOfResponse);
     } else {
-        x_WriteMessage("OK:max_input_size=" +
-                       NStr::NumericToString(max_input_size) + ";"
-                       "max_output_size=" +
-                       NStr::NumericToString(max_output_size) + ";" +
+        x_WriteMessage("OK:max_input_size=" + to_string(max_input_size) + ";"
+                       "max_output_size=" + to_string(max_output_size) + ";" +
                        NETSCHEDULED_FEATURES + kEndOfResponse);
     }
     x_PrintCmdRequestStop();
@@ -3981,15 +3955,14 @@ void CNetScheduleHandler::x_ProcessSetClientData(CQueue* q)
                          << " bytes.");
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:eInvalidParameter:Client data is too long. "
-                       "It must be <= " + NStr::NumericToString(limit) +
-                       " bytes. Received " + NStr::NumericToString(data_size) +
+                       "It must be <= " + to_string(limit) +
+                       " bytes. Received " + to_string(data_size) +
                        " bytes." + kEndOfResponse);
     } else {
         int     current_data_version = q->SetClientData(m_ClientId,
                                         m_CommandArguments.client_data,
                                         m_CommandArguments.client_data_version);
-        x_WriteMessage("OK:version=" +
-                       NStr::NumericToString(current_data_version) +
+        x_WriteMessage("OK:version=" + to_string(current_data_version) +
                        kEndOfResponse);
     }
     x_PrintCmdRequestStop();
@@ -4032,7 +4005,7 @@ void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 {
     unsigned int  count = q->CancelAllJobs(m_ClientId, x_NeedCmdLogging());
-    x_WriteMessage("OK:" + NStr::NumericToString(count) + kEndOfResponse);
+    x_WriteMessage("OK:" + to_string(count) + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
 
@@ -4371,7 +4344,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
             submitter_notif_info.append("&submitter_notif_host=")
                                 .append(NStr::URLEncode(host))
                                 .append("&submitter_notif_port=")
-                                .append(NStr::NumericToString(job.GetSubmNotifPort()));
+                                .append(to_string(job.GetSubmNotifPort()));
         }
         string      reply;
         reply.reserve(1024);
@@ -4388,7 +4361,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
              .append("&ncbi_phid=")
              .append(NStr::URLEncode(job.GetNCBIPHID()))
              .append("&mask=")
-             .append(NStr::NumericToString(job.GetMask()))
+             .append(to_string(job.GetMask()))
              .append("&auth_token=")
              .append(job.GetAuthToken())
              .append(submitter_notif_info)
@@ -4403,7 +4376,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                                                 job.GetAffinityId())) + "\""
                        " \"" + NStr::PrintableString(job.GetClientIP()) + " " +
                                NStr::PrintableString(job.GetClientSID()) + "\""
-                       " " + NStr::NumericToString(job.GetMask()) +
+                       " " + to_string(job.GetMask()) +
                        kEndOfResponse);
     }
 }
@@ -4634,17 +4607,17 @@ string CNetScheduleHandler::x_GetServerSection(void) const
 
     return "[server]\n"
            "max_connections=\"" +
-                NStr::NumericToString(server_params.max_connections) + "\"\n"
+                to_string(server_params.max_connections) + "\"\n"
            "max_threads=\"" +
-                NStr::NumericToString(server_params.max_threads) + "\"\n"
+                to_string(server_params.max_threads) + "\"\n"
            "init_threads=\"" +
-                NStr::NumericToString(server_params.init_threads) + "\"\n"
+                to_string(server_params.init_threads) + "\"\n"
            "port=\"" +
-                NStr::NumericToString(m_Server->GetPort()) + "\"\n"
+                to_string(m_Server->GetPort()) + "\"\n"
            "use_hostname=\"" +
                 NStr::BoolToString(m_Server->GetUseHostname()) + "\"\n"
            "network_timeout=\"" +
-                NStr::NumericToString(m_Server->GetInactivityTimeout()) + "\"\n"
+                to_string(m_Server->GetInactivityTimeout()) + "\"\n"
            "log=\"" +
                 NStr::BoolToString(m_Server->IsLog()) + "\"\n"
            "log_batch_each_job=\"" +
@@ -4659,20 +4632,20 @@ string CNetScheduleHandler::x_GetServerSection(void) const
            "log_statistics_thread=\"" +
                 NStr::BoolToString(m_Server->IsLogStatisticsThread()) + "\"\n"
            "del_batch_size=\"" +
-                NStr::NumericToString(m_Server->GetDeleteBatchSize()) + "\"\n"
+                to_string(m_Server->GetDeleteBatchSize()) + "\"\n"
            "markdel_batch_size=\"" +
-                NStr::NumericToString(m_Server->GetMarkdelBatchSize()) + "\"\n"
+                to_string(m_Server->GetMarkdelBatchSize()) + "\"\n"
            "scan_batch_size=\"" +
-                NStr::NumericToString(m_Server->GetScanBatchSize()) + "\"\n"
+                to_string(m_Server->GetScanBatchSize()) + "\"\n"
            "purge_timeout=\"" +
-                NStr::NumericToString(m_Server->GetPurgeTimeout()) + "\"\n"
+                to_string(m_Server->GetPurgeTimeout()) + "\"\n"
            "stat_interval=\"" +
-                NStr::NumericToString(m_Server->GetStatInterval()) + "\"\n"
+                to_string(m_Server->GetStatInterval()) + "\"\n"
            "job_counters_interval=\"" +
-                NStr::NumericToString(m_Server->GetJobCountersInterval()) +
+                to_string(m_Server->GetJobCountersInterval()) +
                 "\"\n"
            "max_client_data=\"" +
-                NStr::NumericToString(m_Server->GetMaxClientData()) + "\"\n"
+                to_string(m_Server->GetMaxClientData()) + "\"\n"
            "admin_host=\"" +
                 m_Server->GetAdminHosts().GetAsFromConfig() + "\"\n"
            "admin_client_name=\"" +
@@ -4685,8 +4658,7 @@ string CNetScheduleHandler::x_GetServerSection(void) const
            m_Server->GetGroupRegistrySettings().Serialize("group", "", "\n") +
            m_Server->GetScopeRegistrySettings().Serialize("scope", "", "\n") +
            "reserve_dump_space=\"" +
-                NStr::NumericToString(
-                        m_Server->GetReserveDumpSpace()) + "\"\n";
+                to_string(m_Server->GetReserveDumpSpace()) + "\"\n";
 }
 
 

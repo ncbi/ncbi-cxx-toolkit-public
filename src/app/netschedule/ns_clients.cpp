@@ -741,7 +741,7 @@ string CNSClient::Print(const string &               node_name,
     if (m_ControlPort == 0)
        buffer += "n/a\n";
     else
-       buffer += NStr::NumericToString(m_ControlPort) + "\n";
+       buffer += to_string(m_ControlPort) + "\n";
 
     if (m_Session.empty())
         buffer += "OK:  SESSION: n/a\n";
@@ -751,14 +751,14 @@ string CNSClient::Print(const string &               node_name,
     buffer += "OK:  TYPE: " + x_TypeAsString() + "\n";
 
     buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
-              NStr::NumericToString(m_NumberOfSubmitted) + "\n";
+              to_string(m_NumberOfSubmitted) + "\n";
 
     // The Print() member is called under a lock in the client registry so it
     // is safe here to get access to a const reference of the blacklisted jobs
     // vector
     const TNSBitVector &    wn_blacklist = m_WNData.GetBlacklistedJobsRef();
     buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
-              NStr::NumericToString(wn_blacklist.count()) + "\n";
+              to_string(wn_blacklist.count()) + "\n";
     if (verbose && wn_blacklist.any()) {
         buffer += "OK:  BLACKLISTED JOBS:\n";
 
@@ -777,7 +777,7 @@ string CNSClient::Print(const string &               node_name,
     // vector
     const TNSBitVector &  rd_blacklist = m_ReaderData.GetBlacklistedJobsRef();
     buffer += "OK:  NUMBER OF READ BLACKLISTED JOBS: " +
-              NStr::NumericToString(rd_blacklist.count()) + "\n";
+              to_string(rd_blacklist.count()) + "\n";
     if (verbose && rd_blacklist.any()) {
         buffer += "OK:  READ BLACKLISTED JOBS:\n";
 
@@ -792,7 +792,7 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF RUNNING JOBS: " +
-              NStr::NumericToString(m_WNData.m_Jobs.count()) + "\n";
+              to_string(m_WNData.m_Jobs.count()) + "\n";
     if (verbose && m_WNData.m_Jobs.any()) {
         buffer += "OK:  RUNNING JOBS:\n";
 
@@ -802,10 +802,10 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
-              NStr::NumericToString(m_WNData.m_NumberOfGiven) + "\n";
+              to_string(m_WNData.m_NumberOfGiven) + "\n";
 
     buffer += "OK:  NUMBER OF READING JOBS: " +
-              NStr::NumericToString(m_ReaderData.m_Jobs.count()) + "\n";
+              to_string(m_ReaderData.m_Jobs.count()) + "\n";
     if (verbose && m_ReaderData.m_Jobs.any()) {
         buffer += "OK:  READING JOBS:\n";
 
@@ -815,10 +815,10 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +
-              NStr::NumericToString(m_ReaderData.m_NumberOfGiven) + "\n";
+              to_string(m_ReaderData.m_NumberOfGiven) + "\n";
 
     buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
-              NStr::NumericToString(m_WNData.m_PrefAffinities.count()) + "\n";
+              to_string(m_WNData.m_PrefAffinities.count()) + "\n";
     if (verbose && m_WNData.m_PrefAffinities.any()) {
         buffer += "OK:  PREFERRED AFFINITIES:\n";
 
@@ -828,7 +828,7 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
-              NStr::NumericToString(m_WNData.m_WaitAffinities.count()) + "\n";
+              to_string(m_WNData.m_WaitAffinities.count()) + "\n";
     if (verbose && m_WNData.m_WaitAffinities.any()) {
         buffer += "OK:  REQUESTED AFFINITIES:\n";
 
@@ -838,7 +838,7 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF READER PREFERRED AFFINITIES: " +
-              NStr::NumericToString(m_ReaderData.m_PrefAffinities.count()) +
+              to_string(m_ReaderData.m_PrefAffinities.count()) +
               "\n";
     if (verbose && m_ReaderData.m_PrefAffinities.any()) {
         buffer += "OK:  READER PREFERRED AFFINITIES:\n";
@@ -849,7 +849,7 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF READER REQUESTED AFFINITIES: " +
-              NStr::NumericToString(m_ReaderData.m_WaitAffinities.count()) +
+              to_string(m_ReaderData.m_WaitAffinities.count()) +
               "\n";
     if (verbose && m_ReaderData.m_WaitAffinities.any()) {
         buffer += "OK:  READER REQUESTED AFFINITIES:\n";
@@ -860,10 +860,9 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF SOCKET WRITE ERRORS: " +
-              NStr::NumericToString(m_NumberOfSockErrors) + "\n"
+              to_string(m_NumberOfSockErrors) + "\n"
               "OK:  DATA: '" + NStr::PrintableString(m_ClientData) + "'\n"
-              "OK:  DATA VERSION: " +
-                    NStr::NumericToString(m_ClientDataVersion) + "\n";
+              "OK:  DATA VERSION: " + to_string(m_ClientDataVersion) + "\n";
 
     if (wn_gc_clients.find(node_name) == wn_gc_clients.end())
         buffer += "OK:  WN AFFINITIES GARBAGE COLLECTED: FALSE\n";

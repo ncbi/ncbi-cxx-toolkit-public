@@ -93,7 +93,7 @@ bool CJobGCRegistry::DeleteIfTimedOut(unsigned int            job_id,
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Testing life time of non-registered job (ID: " +
-                   NStr::NumericToString(job_id) + ")");
+                   to_string(job_id) + ")");
 
     if (current_time < attrs->second.m_LifeTime)
         return false;
@@ -116,7 +116,7 @@ void CJobGCRegistry::UpdateLifetime(unsigned int            job_id,
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Updating life time of non-registered job (ID: " +
-                   NStr::NumericToString(job_id) + ")");
+                   to_string(job_id) + ")");
 
     attrs->second.m_LifeTime = life_time;
 }
@@ -134,7 +134,7 @@ CJobGCRegistry::UpdateReadVacantTime(unsigned int            job_id,
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Updating read vacant time of non-registered job (ID: " +
-                   NStr::NumericToString(job_id) + ")");
+                   to_string(job_id) + ")");
 
     if (attrs->second.m_ReadVacantTime == kTimeNever)
         attrs->second.m_ReadVacantTime = read_vacant_time;
@@ -150,7 +150,7 @@ CNSPreciseTime  CJobGCRegistry::GetLifetime(unsigned int  job_id) const
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Retreiving life time of non-registered job (ID: " +
-                   NStr::NumericToString(job_id) + ")");
+                   to_string(job_id) + ")");
 
     return attrs->second.m_LifeTime;
 }

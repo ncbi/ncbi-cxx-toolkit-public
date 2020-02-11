@@ -203,8 +203,7 @@ public:
     unsigned int   GetPassport() const
     { return m_Passport; }
     string         GetAuthToken() const
-    { return NStr::NumericToString(m_Passport) + "_" +
-             NStr::NumericToString(m_Events.size()); }
+    { return to_string(m_Passport) + "_" + to_string(m_Events.size()); }
     TJobStatus     GetStatus() const
     { return m_Status; }
     CNSPreciseTime GetTimeout() const

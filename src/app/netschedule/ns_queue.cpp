@@ -1004,7 +1004,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
                    "The client '" + client.GetNode() +
                    "' exceeds the limit (" +
-                   NStr::NumericToString(aff_reg_settings.max_records) +
+                   to_string(aff_reg_settings.max_records) +
                    ") of the preferred affinities. Changed request ignored.");
     }
 
@@ -1077,7 +1077,7 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
                    "The client '" + client.GetNode() +
                    "' exceeds the limit (" +
-                   NStr::NumericToString(aff_reg_settings.max_records) +
+                   to_string(aff_reg_settings.max_records) +
                    ") of the preferred affinities. Set request ignored.");
     }
 
@@ -1677,22 +1677,9 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                            bool                 is_ns_rollback)
 {
     TJobStatus          old_status;
-    string              scope = client.GetScope();
     CNSPreciseTime      current_time = CNSPreciseTime::Current();
 
     CFastMutexGuard     guard(m_OperationLock);
-
-    // Consider the scope restrictions
-    if (scope.empty() || scope == kNoScopeOnly) {
-        // Both these cases should consider only the non-scope jobs
-        if (m_ScopeRegistry.GetAllJobsInScopes()[job_id] == true)
-            return CNetScheduleAPI::eJobNotFound;
-    } else {
-        // Consider only the jobs in the particular scope
-        if (m_ScopeRegistry.GetJobs(scope)[job_id] == false)
-            return CNetScheduleAPI::eJobNotFound;
-    }
-
 
     old_status = m_StatusTracker.GetStatus(job_id);
     if (old_status == CNetScheduleAPI::eJobNotFound)
@@ -4418,13 +4405,13 @@ string CQueue::PrintTransitionCounters(void) const
     output.reserve(4096);
     output.append(m_StatisticsCounters.PrintTransitions())
           .append("OK:garbage_jobs: ")
-          .append(NStr::NumericToString(GetJobsToDeleteCount()))
+          .append(to_string(GetJobsToDeleteCount()))
           .append(kNewLine)
           .append("OK:affinity_registry_size: ")
-          .append(NStr::NumericToString(m_AffinityRegistry.size()))
+          .append(to_string(m_AffinityRegistry.size()))
           .append(kNewLine)
           .append("OK:client_registry_size: ")
-          .append(NStr::NumericToString(m_ClientsRegistry.size()))
+          .append(to_string(m_ClientsRegistry.size()))
           .append(kNewLine);
     return output;
 }
@@ -4504,10 +4491,10 @@ string CQueue::PrintJobsStat(const CNSClientId &  client,
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
             result += "OK:" +
                       CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
-                      ": " + NStr::NumericToString(jobs_per_state[index]) + "\n";
+                      ": " + to_string(jobs_per_state[index]) + "\n";
             total += jobs_per_state[index];
         }
-        result += "OK:Total: " + NStr::NumericToString(total) + "\n";
+        result += "OK:Total: " + to_string(total) + "\n";
     }
     return result;
 }

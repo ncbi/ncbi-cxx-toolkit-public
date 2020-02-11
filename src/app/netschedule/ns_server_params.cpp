@@ -412,16 +412,16 @@ string SNSRegistryParameters::Serialize(const string &  name,
         plural = name + "s";
 
     return prefix + "max_" + plural + "=\"" +
-                NStr::NumericToString(max_records) + "\"" + suffix +
+                to_string(max_records) + "\"" + suffix +
            prefix + name + "_high_mark_percentage=\"" +
-                NStr::NumericToString(high_mark_percentage) + "\"" + suffix +
+                to_string(high_mark_percentage) + "\"" + suffix +
            prefix + name + "_low_mark_percentage=\"" +
-                NStr::NumericToString(low_mark_percentage) + "\"" + suffix +
+                to_string(low_mark_percentage) + "\"" + suffix +
            prefix + name + "_high_removal=\"" +
-                NStr::NumericToString(high_removal) + "\"" + suffix +
+                to_string(high_removal) + "\"" + suffix +
            prefix + name + "_low_removal=\"" +
-                NStr::NumericToString(low_removal) + "\"" + suffix +
+                to_string(low_removal) + "\"" + suffix +
            prefix + name + "_dirt_percentage=\"" +
-                NStr::NumericToString(dirt_percentage) + "\"" + suffix;
+                to_string(dirt_percentage) + "\"" + suffix;
 }
 

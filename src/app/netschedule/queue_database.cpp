@@ -184,8 +184,8 @@ void  CQueueDataBase::x_Open(bool  reinit)
     if (total_queues > m_MaxQueues) {
         string  msg = "The initial number of queues on the server exceeds the "
                       "configured max number of queues. Configured: " +
-                      NStr::NumericToString(m_MaxQueues) + ". Real: " +
-                      NStr::NumericToString(total_queues) + ". The limit will "
+                      to_string(m_MaxQueues) + ". Real: " +
+                      to_string(total_queues) + ". The limit will "
                       "be extended to accomodate all the queues.";
         LOG_POST(Note << msg);
         m_Server->RegisterAlert(eMaxQueues, msg);
@@ -296,7 +296,7 @@ void  CQueueDataBase::x_Open(bool  reinit)
         m_Server->RegisterAlert(eDumpLoadError,
                                 "There were error(s) loading the previous "
                                 "instance dump. Number of errors: " +
-                                NStr::NumericToString(queue_load_error_count) +
+                                to_string(queue_load_error_count) +
                                 ". See log for all the loading errors. "
                                 "Last error: " + last_queue_load_error);
         if (!m_Diskless)
@@ -917,9 +917,9 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
     if (to_add_count > available_count)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "New configuration slots requirement: " +
-                   NStr::NumericToString(to_add_count) +
+                   to_string(to_add_count) +
                    ". Number of available slots: " +
-                   NStr::NumericToString(available_count) + ".");
+                   to_string(available_count) + ".");
 
     // Here: validation is finished. There is enough resources for the new
     // configuration.
@@ -2834,8 +2834,7 @@ void CQueueDataBase::x_BackupDump(void)
     string      backup_dir_name;
     for ( ; ; ) {
         backup_dir_name = CDirEntry::DeleteTrailingPathSeparator(m_DumpPath) +
-                          "." +
-                          NStr::NumericToString(backup_number);
+                          "." + to_string(backup_number);
         if (!CDir(backup_dir_name).Exists())
             break;
         ++backup_number;

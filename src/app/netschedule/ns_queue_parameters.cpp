@@ -317,7 +317,7 @@ bool SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
                            NS_RegValName(sname,
                                          "client_registry_timeout_worker_node")
                            + ". It must be > " +
-                           NStr::NumericToString(double(wnode_timeout)));
+                           to_string(double(wnode_timeout)));
         double  fixed_timeout =
                 max(
                     max(double(default_client_registry_timeout_worker_node),
@@ -331,7 +331,7 @@ bool SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
                            NS_RegValName(sname,
                                          "client_registry_timeout_reader")
                            + ". It must be > " +
-                           NStr::NumericToString(double(reader_timeout)));
+                           to_string(double(reader_timeout)));
         double  fixed_timeout =
                 max(
                     max(double(default_client_registry_timeout_reader),
@@ -678,16 +678,16 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
 
         result.append(prefix).append("qclass").append(suffix).append(qclass).append(separator)
               .append(prefix).append("refuse_submits").append(suffix).append(NStr::BoolToString(refuse_submits)).append(separator)
-              .append(prefix).append("max_aff_slots").append(suffix).append(NStr::NumericToString(max_aff_slots)).append(separator)
-              .append(prefix).append("aff_slots_used").append(suffix).append(NStr::NumericToString(aff_slots_used)).append(separator)
-              .append(prefix).append("max_group_slots").append(suffix).append(NStr::NumericToString(max_group_slots)).append(separator)
-              .append(prefix).append("group_slots_used").append(suffix).append(NStr::NumericToString(group_slots_used)).append(separator)
-              .append(prefix).append("max_scope_slots").append(suffix).append(NStr::NumericToString(max_scope_slots)).append(separator)
-              .append(prefix).append("scope_slots_used").append(suffix).append(NStr::NumericToString(scope_slots_used)).append(separator)
-              .append(prefix).append("clients").append(suffix).append(NStr::NumericToString(clients)).append(separator)
-              .append(prefix).append("groups").append(suffix).append(NStr::NumericToString(groups)).append(separator)
-              .append(prefix).append("gc_backlog").append(suffix).append(NStr::NumericToString(gc_backlog)).append(separator)
-              .append(prefix).append("notif_count").append(suffix).append(NStr::NumericToString(notif_count)).append(separator);
+              .append(prefix).append("max_aff_slots").append(suffix).append(to_string(max_aff_slots)).append(separator)
+              .append(prefix).append("aff_slots_used").append(suffix).append(to_string(aff_slots_used)).append(separator)
+              .append(prefix).append("max_group_slots").append(suffix).append(to_string(max_group_slots)).append(separator)
+              .append(prefix).append("group_slots_used").append(suffix).append(to_string(group_slots_used)).append(separator)
+              .append(prefix).append("max_scope_slots").append(suffix).append(to_string(max_scope_slots)).append(separator)
+              .append(prefix).append("scope_slots_used").append(suffix).append(to_string(scope_slots_used)).append(separator)
+              .append(prefix).append("clients").append(suffix).append(to_string(clients)).append(separator)
+              .append(prefix).append("groups").append(suffix).append(to_string(groups)).append(separator)
+              .append(prefix).append("gc_backlog").append(suffix).append(to_string(gc_backlog)).append(separator)
+              .append(prefix).append("notif_count").append(suffix).append(to_string(notif_count)).append(separator);
 
         result.append(prefix).append("pause").append(suffix);
         if (pause_status == CQueue::ePauseWithPullback)
@@ -700,24 +700,24 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     }
 
     result.append(prefix).append("delete_request").append(suffix).append(NStr::BoolToString(delete_request)).append(separator)
-          .append(prefix).append("timeout").append(suffix).append(NStr::NumericToString(timeout.Sec())).append(separator)
+          .append(prefix).append("timeout").append(suffix).append(to_string(timeout.Sec())).append(separator)
           .append(prefix).append("notif_hifreq_interval").append(suffix).append(NS_FormatPreciseTimeAsSec(notif_hifreq_interval)).append(separator)
           .append(prefix).append("notif_hifreq_period").append(suffix).append(NS_FormatPreciseTimeAsSec(notif_hifreq_period)).append(separator)
-          .append(prefix).append("notif_lofreq_mult").append(suffix).append(NStr::NumericToString(notif_lofreq_mult)).append(separator)
+          .append(prefix).append("notif_lofreq_mult").append(suffix).append(to_string(notif_lofreq_mult)).append(separator)
           .append(prefix).append("notif_handicap").append(suffix).append(NS_FormatPreciseTimeAsSec(notif_handicap)).append(separator)
-          .append(prefix).append("dump_buffer_size").append(suffix).append(NStr::NumericToString(dump_buffer_size)).append(separator)
-          .append(prefix).append("dump_client_buffer_size").append(suffix).append(NStr::NumericToString(dump_client_buffer_size)).append(separator)
-          .append(prefix).append("dump_aff_buffer_size").append(suffix).append(NStr::NumericToString(dump_aff_buffer_size)).append(separator)
-          .append(prefix).append("dump_group_buffer_size").append(suffix).append(NStr::NumericToString(dump_group_buffer_size)).append(separator)
+          .append(prefix).append("dump_buffer_size").append(suffix).append(to_string(dump_buffer_size)).append(separator)
+          .append(prefix).append("dump_client_buffer_size").append(suffix).append(to_string(dump_client_buffer_size)).append(separator)
+          .append(prefix).append("dump_aff_buffer_size").append(suffix).append(to_string(dump_aff_buffer_size)).append(separator)
+          .append(prefix).append("dump_group_buffer_size").append(suffix).append(to_string(dump_group_buffer_size)).append(separator)
           .append(prefix).append("run_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(run_timeout)).append(separator)
           .append(prefix).append("read_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(read_timeout)).append(separator)
-          .append(prefix).append("failed_retries").append(suffix).append(NStr::NumericToString(failed_retries)).append(separator)
-          .append(prefix).append("read_failed_retries").append(suffix).append(NStr::NumericToString(read_failed_retries)).append(separator)
-          .append(prefix).append("max_jobs_per_client").append(suffix).append(NStr::NumericToString(max_jobs_per_client)).append(separator)
+          .append(prefix).append("failed_retries").append(suffix).append(to_string(failed_retries)).append(separator)
+          .append(prefix).append("read_failed_retries").append(suffix).append(to_string(read_failed_retries)).append(separator)
+          .append(prefix).append("max_jobs_per_client").append(suffix).append(to_string(max_jobs_per_client)).append(separator)
           .append(prefix).append("blacklist_time").append(suffix).append(NS_FormatPreciseTimeAsSec(blacklist_time)).append(separator)
           .append(prefix).append("read_blacklist_time").append(suffix).append(NS_FormatPreciseTimeAsSec(read_blacklist_time)).append(separator)
-          .append(prefix).append("max_input_size").append(suffix).append(NStr::NumericToString(max_input_size)).append(separator)
-          .append(prefix).append("max_output_size").append(suffix).append(NStr::NumericToString(max_output_size)).append(separator)
+          .append(prefix).append("max_input_size").append(suffix).append(to_string(max_input_size)).append(separator)
+          .append(prefix).append("max_output_size").append(suffix).append(to_string(max_output_size)).append(separator)
           .append(prefix).append("wnode_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(wnode_timeout)).append(separator)
           .append(prefix).append("reader_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(reader_timeout)).append(separator)
           .append(prefix).append("pending_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(pending_timeout)).append(separator)
@@ -725,15 +725,15 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
           .append(prefix).append("max_pending_read_wait_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout)).append(separator)
           .append(prefix).append("scramble_job_keys").append(suffix).append(NStr::BoolToString(scramble_job_keys)).append(separator)
           .append(prefix).append("client_registry_timeout_worker_node").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node)).append(separator)
-          .append(prefix).append("client_registry_min_worker_nodes").append(suffix).append(NStr::NumericToString(client_registry_min_worker_nodes)).append(separator)
+          .append(prefix).append("client_registry_min_worker_nodes").append(suffix).append(to_string(client_registry_min_worker_nodes)).append(separator)
           .append(prefix).append("client_registry_timeout_admin").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_admin)).append(separator)
-          .append(prefix).append("client_registry_min_admins").append(suffix).append(NStr::NumericToString(client_registry_min_admins)).append(separator)
+          .append(prefix).append("client_registry_min_admins").append(suffix).append(to_string(client_registry_min_admins)).append(separator)
           .append(prefix).append("client_registry_timeout_submitter").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_submitter)).append(separator)
-          .append(prefix).append("client_registry_min_submitters").append(suffix).append(NStr::NumericToString(client_registry_min_submitters)).append(separator)
+          .append(prefix).append("client_registry_min_submitters").append(suffix).append(to_string(client_registry_min_submitters)).append(separator)
           .append(prefix).append("client_registry_timeout_reader").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_reader)).append(separator)
-          .append(prefix).append("client_registry_min_readers").append(suffix).append(NStr::NumericToString(client_registry_min_readers)).append(separator)
+          .append(prefix).append("client_registry_min_readers").append(suffix).append(to_string(client_registry_min_readers)).append(separator)
           .append(prefix).append("client_registry_timeout_unknown").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_unknown)).append(separator)
-          .append(prefix).append("client_registry_min_unknowns").append(suffix).append(NStr::NumericToString(client_registry_min_unknowns)).append(separator);
+          .append(prefix).append("client_registry_min_unknowns").append(suffix).append(to_string(client_registry_min_unknowns)).append(separator);
 
     if (url_encoded) {
         result.append(prefix).append("program_name").append(suffix).append(NStr::URLEncode(program_name)).append(separator)
@@ -773,25 +773,25 @@ string SQueueParameters::ConfigSection(bool is_class) const
         result += "class=\"" + qclass + "\"\n";
 
     result +=
-    "timeout=\"" + NStr::NumericToString(timeout.Sec()) + "\"\n"
+    "timeout=\"" + to_string(timeout.Sec()) + "\"\n"
     "notif_hifreq_interval=\"" + NS_FormatPreciseTimeAsSec(notif_hifreq_interval) + "\"\n"
     "notif_hifreq_period=\"" + NS_FormatPreciseTimeAsSec(notif_hifreq_period) + "\"\n"
-    "notif_lofreq_mult=\"" + NStr::NumericToString(notif_lofreq_mult) + "\"\n"
+    "notif_lofreq_mult=\"" + to_string(notif_lofreq_mult) + "\"\n"
     "notif_handicap=\"" + NS_FormatPreciseTimeAsSec(notif_handicap) + "\"\n"
-    "dump_buffer_size=\"" + NStr::NumericToString(dump_buffer_size) + "\"\n"
-    "dump_client_buffer_size=\"" + NStr::NumericToString(dump_client_buffer_size) + "\"\n"
-    "dump_aff_buffer_size=\"" + NStr::NumericToString(dump_aff_buffer_size) + "\"\n"
-    "dump_group_buffer_size=\"" + NStr::NumericToString(dump_group_buffer_size) + "\"\n"
+    "dump_buffer_size=\"" + to_string(dump_buffer_size) + "\"\n"
+    "dump_client_buffer_size=\"" + to_string(dump_client_buffer_size) + "\"\n"
+    "dump_aff_buffer_size=\"" + to_string(dump_aff_buffer_size) + "\"\n"
+    "dump_group_buffer_size=\"" + to_string(dump_group_buffer_size) + "\"\n"
     "run_timeout=\"" + NS_FormatPreciseTimeAsSec(run_timeout) + "\"\n"
     "read_timeout=\"" + NS_FormatPreciseTimeAsSec(read_timeout) + "\"\n"
     "program=\"" + program_name + "\"\n"
-    "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
-    "read_failed_retries=\"" + NStr::NumericToString(read_failed_retries) + "\"\n"
-    "max_jobs_per_client=\"" + NStr::NumericToString(max_jobs_per_client) + "\"\n"
+    "failed_retries=\"" + to_string(failed_retries) + "\"\n"
+    "read_failed_retries=\"" + to_string(read_failed_retries) + "\"\n"
+    "max_jobs_per_client=\"" + to_string(max_jobs_per_client) + "\"\n"
     "blacklist_time=\"" + NS_FormatPreciseTimeAsSec(blacklist_time) + "\"\n"
     "read_blacklist_time=\"" + NS_FormatPreciseTimeAsSec(read_blacklist_time) + "\"\n"
-    "max_input_size=\"" + NStr::NumericToString(max_input_size) + "\"\n"
-    "max_output_size=\"" + NStr::NumericToString(max_output_size) + "\"\n"
+    "max_input_size=\"" + to_string(max_input_size) + "\"\n"
+    "max_output_size=\"" + to_string(max_output_size) + "\"\n"
     "subm_host=\"" + subm_hosts + "\"\n"
     "wnode_host=\"" + wnode_hosts + "\"\n"
     "reader_host=\"" + reader_hosts + "\"\n"
@@ -802,15 +802,15 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "max_pending_read_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout) + "\"\n"
     "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n"
     "client_registry_timeout_worker_node=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + "\"\n"
-    "client_registry_min_worker_nodes=\"" + NStr::NumericToString(client_registry_min_worker_nodes) + "\"\n"
+    "client_registry_min_worker_nodes=\"" + to_string(client_registry_min_worker_nodes) + "\"\n"
     "client_registry_timeout_admin=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_admin) + "\"\n"
-    "client_registry_min_admins=\"" + NStr::NumericToString(client_registry_min_admins) + "\"\n"
+    "client_registry_min_admins=\"" + to_string(client_registry_min_admins) + "\"\n"
     "client_registry_timeout_submitter=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_submitter) + "\"\n"
-    "client_registry_min_submitters=\"" + NStr::NumericToString(client_registry_min_submitters) + "\"\n"
+    "client_registry_min_submitters=\"" + to_string(client_registry_min_submitters) + "\"\n"
     "client_registry_timeout_reader=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_reader) + "\"\n"
-    "client_registry_min_readers=\"" + NStr::NumericToString(client_registry_min_readers) + "\"\n"
+    "client_registry_min_readers=\"" + to_string(client_registry_min_readers) + "\"\n"
     "client_registry_timeout_unknown=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_unknown) + "\"\n"
-    "client_registry_min_unknowns=\"" + NStr::NumericToString(client_registry_min_unknowns) + "\"\n";
+    "client_registry_min_unknowns=\"" + to_string(client_registry_min_unknowns) + "\"\n";
 
     for (map<string, string>::const_iterator  k = linked_sections.begin();
          k != linked_sections.end(); ++k)
@@ -970,7 +970,7 @@ SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_buffer_size") +
                            ". It must be not less than " +
-                           NStr::NumericToString(default_dump_buffer_size));
+                           to_string(default_dump_buffer_size));
         return default_dump_buffer_size; // Avoid too small buffer
     }
 
@@ -978,7 +978,7 @@ SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_buffer_size") +
                            ". It must be not larger than " +
-                           NStr::NumericToString(max_dump_buffer_size));
+                           to_string(max_dump_buffer_size));
         return max_dump_buffer_size;     // Avoid too large buffer
     }
     return val;
@@ -1000,8 +1000,7 @@ SQueueParameters::ReadDumpClientBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_client_buffer_size") +
                            ". It must be not less than " +
-                           NStr::NumericToString(
-                                        default_dump_client_buffer_size));
+                           to_string(default_dump_client_buffer_size));
         return default_dump_client_buffer_size;  // Avoid too small buffer
     }
 
@@ -1009,8 +1008,7 @@ SQueueParameters::ReadDumpClientBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_client_buffer_size") +
                            ". It must be not larger than " +
-                           NStr::NumericToString(
-                                        max_dump_client_buffer_size));
+                           to_string(max_dump_client_buffer_size));
         return max_dump_client_buffer_size;      // Avoid too large buffer
     }
     return val;
@@ -1031,8 +1029,7 @@ SQueueParameters::ReadDumpAffBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_aff_buffer_size") +
                            ". It must be not less than " +
-                           NStr::NumericToString(
-                                        default_dump_aff_buffer_size));
+                           to_string(default_dump_aff_buffer_size));
         return default_dump_aff_buffer_size; // Avoid too small buffer
     }
 
@@ -1040,8 +1037,7 @@ SQueueParameters::ReadDumpAffBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_aff_buffer_size") +
                            ". It must be not larger than " +
-                           NStr::NumericToString(
-                                        max_dump_aff_buffer_size));
+                           to_string(max_dump_aff_buffer_size));
         return max_dump_aff_buffer_size;     // Avoid too large buffer
     }
     return val;
@@ -1062,16 +1058,14 @@ SQueueParameters::ReadDumpGroupBufferSize(const IRegistry &  reg,
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_group_buffer_size") +
                            ". It must be not less than " +
-                           NStr::NumericToString(
-                                        default_dump_group_buffer_size));
+                           to_string(default_dump_group_buffer_size));
         return default_dump_group_buffer_size;   // Avoid too small buffer
     }
     if (val > int(max_dump_group_buffer_size)) {
         warnings.push_back(g_WarnPrefix +
                            NS_RegValName(sname, "dump_group_buffer_size") +
                            ". It must be not larger than " +
-                           NStr::NumericToString(
-                                        max_dump_group_buffer_size));
+                           to_string(max_dump_group_buffer_size));
         return max_dump_group_buffer_size;       // Avoid too large buffer
     }
     return val;
@@ -1131,10 +1125,9 @@ SQueueParameters::ReadProgram(const IRegistry &  reg,
         // See CXX-2617
         warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "program") +
                            ". The value length (" +
-                           NStr::NumericToString(val.size()) + " bytes) "
+                           to_string(val.size()) + " bytes) "
                            "exceeds the max allowed length (" +
-                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
-                           " bytes)");
+                           to_string(kMaxQueueLimitsSize - 1) + " bytes)");
         val = "";
     }
     return val;
@@ -1275,8 +1268,7 @@ SQueueParameters::ReadMaxInputSize(const IRegistry &  reg,
             warnings.push_back(g_WarnPrefix +
                                NS_RegValName(sname, "max_input_size") +
                                ". It must not be larger than " +
-                               NStr::NumericToString(
-                                                kNetScheduleMaxOverflowSize));
+                               to_string(kNetScheduleMaxOverflowSize));
             return kNetScheduleMaxOverflowSize;
         }
         return val;
@@ -1317,8 +1309,7 @@ SQueueParameters::ReadMaxOutputSize(const IRegistry &  reg,
             warnings.push_back(g_WarnPrefix +
                                NS_RegValName(sname, "max_output_size") +
                                ". It must not be larger than " +
-                               NStr::NumericToString(
-                                                kNetScheduleMaxOverflowSize));
+                               to_string(kNetScheduleMaxOverflowSize));
             return kNetScheduleMaxOverflowSize;
         }
         return val;
@@ -1340,10 +1331,9 @@ SQueueParameters::ReadSubmHosts(const IRegistry &  reg,
         // See CXX-2617
         warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "subm_host") +
                            ". The value length (" +
-                           NStr::NumericToString(val.size()) + " bytes) "
+                           to_string(val.size()) + " bytes) "
                            "exceeds the max allowed length (" +
-                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
-                           " bytes)");
+                           to_string(kMaxQueueLimitsSize - 1) + " bytes)");
         val = "";
     }
     return val;
@@ -1363,10 +1353,9 @@ SQueueParameters::ReadWnodeHosts(const IRegistry &  reg,
         // See CXX-2617
         warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "wnode_host") +
                            ". The value length (" +
-                           NStr::NumericToString(val.size()) + " bytes) "
+                           to_string(val.size()) + " bytes) "
                            "exceeds the max allowed length (" +
-                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
-                           " bytes)");
+                           to_string(kMaxQueueLimitsSize - 1) + " bytes)");
         val = "";
     }
     return val;
@@ -1386,10 +1375,9 @@ SQueueParameters::ReadReaderHosts(const IRegistry &  reg,
         // See CXX-2617
         warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "reader_host") +
                            ". The value length (" +
-                           NStr::NumericToString(val.size()) + " bytes) "
+                           to_string(val.size()) + " bytes) "
                            "exceeds the max allowed length (" +
-                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
-                           " bytes)");
+                           to_string(kMaxQueueLimitsSize - 1) + " bytes)");
         val = "";
     }
     return val;
@@ -1510,10 +1498,9 @@ SQueueParameters::ReadDescription(const IRegistry &  reg,
     if (descr.size() > kMaxDescriptionSize - 1) {
         warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "description") +
                            ". The value length (" +
-                           NStr::NumericToString(descr.size()) + " bytes) "
+                           to_string(descr.size()) + " bytes) "
                            "exceeds the max allowed length (" +
-                           NStr::NumericToString(kMaxDescriptionSize - 1) +
-                           " bytes)");
+                           to_string(kMaxDescriptionSize - 1) + " bytes)");
         descr = descr.substr(0, kMaxDescriptionSize - 1);
     }
     return descr;
@@ -1555,7 +1542,7 @@ SQueueParameters::ReadClientRegistryTimeoutWorkerNode(
                            NS_RegValName(sname,
                                          "client_registry_timeout_worker_node")
                            + ". It must be > " +
-                           NStr::NumericToString(double(wnode_timeout)));
+                           to_string(double(wnode_timeout)));
         return CNSPreciseTime(calc_default);
     }
     return CNSPreciseTime(val);
@@ -1702,7 +1689,7 @@ SQueueParameters::ReadClientRegistryTimeoutReader(const IRegistry &  reg,
                            NS_RegValName(sname,
                                          "client_registry_timeout_reader")
                            + ". It must be > " +
-                           NStr::NumericToString(double(reader_timeout)));
+                           to_string(double(reader_timeout)));
         CNSPreciseTime(calc_default);
     }
     return CNSPreciseTime(val);
@@ -1845,18 +1832,18 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
     if (prefixes.size() > kLinkedSectionsList - 1) {
         warnings.push_back("Validating config file: total length of the "
                            "serialized linked section prefixes (" +
-                           NStr::NumericToString(prefixes.size()) +
+                           to_string(prefixes.size()) +
                            " bytes) exceeds the limit (" +
-                           NStr::NumericToString(kLinkedSectionsList - 1) +
+                           to_string(kLinkedSectionsList - 1) +
                            "bytes) in the section " + sname);
         *linked_sections_ok = false;
     }
     if (sections.size() > kLinkedSectionsList - 1) {
         warnings.push_back("Validating config file: total length of the "
                            "serialized linked section names (" +
-                           NStr::NumericToString(prefixes.size()) +
+                           to_string(prefixes.size()) +
                            " bytes) exceeds the limit (" +
-                           NStr::NumericToString(kLinkedSectionsList - 1) +
+                           to_string(kLinkedSectionsList - 1) +
                            "bytes) in the section " + sname);
         *linked_sections_ok = false;
     }
@@ -1871,10 +1858,10 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
                 j != entries.end(); ++j) {
             if (j->size() > kLinkedSectionValueNameSize - 1) {
                 string  limit_as_str =
-                    NStr::NumericToString(kLinkedSectionValueNameSize - 1);
+                    to_string(kLinkedSectionValueNameSize - 1);
                 warnings.push_back("Validating config file: linked section [" +
                                    k->second + "]/" + *j + " name length (" +
-                                   NStr::NumericToString(j->size()) +
+                                   to_string(j->size()) +
                                    " bytes) exceeds the limit (" +
                                    limit_as_str + " bytes)");
                 *linked_sections_ok = false;
@@ -1882,10 +1869,10 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
             string  value = reg.GetString(k->second, *j, kEmptyStr);
             if (value.size() > kLinkedSectionValueSize - 1) {
                 string  limit_as_str =
-                    NStr::NumericToString(kLinkedSectionValueSize - 1);
+                    to_string(kLinkedSectionValueSize - 1);
                 warnings.push_back("Validating config file: linked section [" +
                                    k->second + "]/" + *j + " value length (" +
-                                   NStr::NumericToString(value.size()) +
+                                   to_string(value.size()) +
                                    " bytes) exceeds the limit (" +
                                    limit_as_str + " bytes)");
                 *linked_sections_ok = false;

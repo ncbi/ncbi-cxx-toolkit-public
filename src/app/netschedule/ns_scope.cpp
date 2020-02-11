@@ -208,7 +208,7 @@ CNSScopeRegistry::x_PrintOne(const string &  scope_name,
     buffer += "OK:SCOPE: '" +
               NStr::PrintableString(scope_name) + "'\n"
               "OK:  NUMBER OF JOBS: " +
-              NStr::NumericToString(jobs.count()) + "\n";
+              to_string(jobs.count()) + "\n";
 
     if (verbose) {
         if (jobs.any()) {

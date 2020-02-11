@@ -62,7 +62,7 @@ string  SNSNotificationAttributes::Print(
     buffer += "OK:CLIENT: '" + m_ClientNode + "'\n"
               "OK:  RECEPIENT ADDRESS: " +
                     CSocketAPI::gethostbyaddr(m_Address) + ":" +
-                    NStr::NumericToString(m_Port) + "\n"
+                    to_string(m_Port) + "\n"
               "OK:  LIFE TIME: " + NS_FormatPreciseTime(m_Lifetime) + "\n";
 
     buffer += "OK:  ANY JOB: ";
@@ -330,7 +330,7 @@ CNSNotificationList::BuildJobChangedNotification(
     notification +=
         m_JobChangeNotifConstPart + job_key +
         "&job_status=" + CNetScheduleAPI::StatusToString(job_status) +
-        "&last_event_index=" + NStr::NumericToString(job.GetLastEventIndex()) +
+        "&last_event_index=" + to_string(job.GetLastEventIndex()) +
         "&reason=";
 
     switch (reason) {
@@ -358,7 +358,7 @@ CNSNotificationList::BuildJobChangedNotification(
         notification +=
             "&msg=" + NStr::URLEncode(
                         progress_msg.substr(0, msg_size - truncate_count)) +
-            "&msg_truncated=" + NStr::NumericToString(truncate_count);
+            "&msg_truncated=" + to_string(truncate_count);
     } else {
         notification += "&msg=" + url_encoded_msg;
     }

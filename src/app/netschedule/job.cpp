@@ -395,7 +395,7 @@ void CJob::x_AppendId(string & dump) const
 {
     static string   prefix = "OK:id: ";
     dump.append(prefix)
-        .append(NStr::NumericToString(m_Id))
+        .append(to_string(m_Id))
         .append(kNewLine);
 }
 
@@ -495,7 +495,7 @@ void CJob::x_AppendSubmitNotifPort(string & dump) const
     static string   na_reply = prefix + "n/a" + kNewLine;
     if (m_SubmNotifPort != 0)
         dump.append(prefix)
-            .append(NStr::NumericToString(m_SubmNotifPort))
+            .append(to_string(m_SubmNotifPort))
             .append(kNewLine);
     else
         dump.append(na_reply);
@@ -528,7 +528,7 @@ void CJob::x_AppendListenerNotif(string & dump) const
         dump.append(prefix)
             .append(CSocketAPI::gethostbyaddr(m_ListenerNotifAddress))
             .append(colon)
-            .append(NStr::NumericToString(m_ListenerNotifPort))
+            .append(to_string(m_ListenerNotifPort))
             .append(kNewLine);
 }
 
@@ -563,7 +563,7 @@ void CJob::x_AppendEvents(string & dump) const
         unsigned int    addr = ev.GetNodeAddr();
 
         dump.append(prefix)
-            .append(NStr::NumericToString(event_no))
+            .append(to_string(event_no))
             .append(client);
         if (addr == 0)
             dump.append(ns);
@@ -575,7 +575,7 @@ void CJob::x_AppendEvents(string & dump) const
             .append(status)
             .append(CNetScheduleAPI::StatusToString(ev.GetStatus()))
             .append(ret_code)
-            .append(NStr::NumericToString(ev.GetRetCode()))
+            .append(to_string(ev.GetRetCode()))
             .append(timestamp);
 
         CNSPreciseTime  start = ev.GetTimestamp();
@@ -599,7 +599,7 @@ void CJob::x_AppendRunCounter(string & dump) const
 {
     static string   prefix = "OK:run_counter: ";
     dump.append(prefix)
-        .append(NStr::NumericToString(m_RunCount))
+        .append(to_string(m_RunCount))
         .append(kNewLine);
 }
 
@@ -607,7 +607,7 @@ void CJob::x_AppendReadCounter(string & dump) const
 {
     static string   prefix = "OK:read_counter: ";
     dump.append(prefix)
-        .append(NStr::NumericToString(m_ReadCount))
+        .append(to_string(m_ReadCount))
         .append(kNewLine);
 }
 
@@ -620,7 +620,7 @@ void CJob::x_AppendAffinity(const CNSAffinityRegistry &  aff_registry,
     static string   close_paren = "')";
     if (m_AffinityId != 0)
         dump.append(prefix)
-            .append(NStr::NumericToString(m_AffinityId))
+            .append(to_string(m_AffinityId))
             .append(open_paren)
             .append(NStr::PrintableString(aff_registry.GetTokenByID(m_AffinityId)))
             .append(close_paren)
@@ -638,7 +638,7 @@ void CJob::x_AppendGroup(const CNSGroupsRegistry & group_registry,
     static string   close_paren = "')";
     if (m_GroupId != 0)
         dump.append(prefix)
-            .append(NStr::NumericToString(m_GroupId))
+            .append(to_string(m_GroupId))
             .append(open_paren)
             .append(NStr::PrintableString(group_registry.ResolveGroup(m_GroupId)))
             .append(close_paren)
@@ -651,7 +651,7 @@ void CJob::x_AppendMask(string & dump) const
 {
     static string   prefix = "OK:mask: ";
     dump.append(prefix)
-        .append(NStr::NumericToString(m_Mask))
+        .append(to_string(m_Mask))
         .append(kNewLine);
 }
 

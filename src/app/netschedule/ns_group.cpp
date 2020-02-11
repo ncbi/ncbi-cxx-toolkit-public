@@ -200,8 +200,7 @@ string  CNSGroupsRegistry::ResolveGroup(unsigned int  group_id) const
 
     if (found == m_IDToAttr.end())
         NCBI_THROW(CNetScheduleException, eGroupNotFound,
-                   "Group with id " + NStr::NumericToString(group_id) +
-                   " is unknown");
+                   "Group with id " + to_string(group_id) + " is unknown");
 
     return *found->second->m_GroupToken;
 }
@@ -239,7 +238,7 @@ unsigned int  CNSGroupsRegistry::AddJobs(unsigned int    group_id,
     // The group does not exist. It is impossible to create it because
     // the group name is unknown here.
     NCBI_THROW(CNetScheduleException, eGroupNotFound,
-               "Group with id " + NStr::NumericToString(group_id) + " is unknown");
+               "Group with id " + to_string(group_id) + " is unknown");
 }
 
 
@@ -282,7 +281,7 @@ void  CNSGroupsRegistry::AddJob(unsigned int    group_id,
     // The group does not exist. It is impossible to create it because
     // the group name is unknown here.
     NCBI_THROW(CNetScheduleException, eGroupNotFound,
-               "Group with id " + NStr::NumericToString(group_id) + " is unknown");
+               "Group with id " + to_string(group_id) + " is unknown");
 }
 
 
@@ -295,7 +294,7 @@ void  CNSGroupsRegistry::AddJobToGroup(unsigned int    group_id,
 
     if (found == m_IDToAttr.end())
         throw runtime_error("Error while restoring jobs from the dump. "
-                    "The group with id " + NStr::NumericToString(group_id) +
+                    "The group with id " + to_string(group_id) +
                     " is not found in the loaded dictionary."
                     " (Lost group dictionary dump?)");
     found->second->m_Jobs.set_bit(job_id);
@@ -519,7 +518,7 @@ CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &  group_attr,
 
     buffer += "OK:GROUP: '" +
               NStr::PrintableString(*(group_attr.m_GroupToken)) + "'\n"
-              "OK:  ID: " + NStr::NumericToString(group_attr.m_GroupId) + "\n";
+              "OK:  ID: " + to_string(group_attr.m_GroupId) + "\n";
 
     if (verbose) {
         if (jobs.any()) {
@@ -537,8 +536,7 @@ CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &  group_attr,
             buffer += "OK:  JOBS: NONE\n";
     }
     else
-        buffer += "OK:  NUMBER OF JOBS: " +
-                  NStr::NumericToString(jobs.count()) + "\n";
+        buffer += "OK:  NUMBER OF JOBS: " + to_string(jobs.count()) + "\n";
 
     return buffer;
 }
@@ -575,9 +573,8 @@ void  CNSGroupsRegistry::x_DeleteSingleInMemory(TGroupIDToAttrMap::iterator  to_
     if (to_del_too == m_TokenToAttr.end()) {
         // Likely an internal error
         ERR_POST("Internal inconsistency detected. The group " +
-                 NStr::NumericToString(group_id) +
-                 " exists in the id->attr container and does "
-                 "not exist in the token->attr container.");
+                 to_string(group_id) + " exists in the id->attr container "
+                 "and does not exist in the token->attr container.");
     } else {
         m_TokenToAttr.erase(to_del_too);
     }

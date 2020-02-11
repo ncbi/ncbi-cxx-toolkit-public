@@ -216,8 +216,8 @@ void NS_ValidateServerSection(const IRegistry &  reg,
         if (port_val < port_low_limit || port_val > port_high_limit) {
             string  msg = "Invalid " + NS_RegValName(section, "port") +
                           " value. Allowed range: " +
-                          NStr::NumericToString(port_low_limit) +
-                          " to " + NStr::NumericToString(port_high_limit);
+                          to_string(port_low_limit) +
+                          " to " + to_string(port_high_limit);
             if (throw_port_exception)
                 NCBI_THROW(CNetScheduleException, eInvalidParameter, msg);
             warnings.push_back(msg);
@@ -240,12 +240,11 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                                                    max_connections_high_limit);
             // See the logic in SNS_Parameters::Read()::ns_server_params.cpp
             if (val < int(max_connections_low_limit))
-                message += " Value " + NStr::NumericToString(
+                message += " Value " + to_string(
                                 (int)((max_connections_low_limit +
                                        max_connections_high_limit) / 2));
             else
-                message += " Value " + NStr::NumericToString(
-                                            max_connections_high_limit);
+                message += " Value " + to_string(max_connections_high_limit);
             warnings.push_back(message + " will be used when restarted");
         }
     }
@@ -501,8 +500,7 @@ TQueueParams NS_ValidateClasses(const IRegistry &   reg,
             warnings.push_back(g_ValidPrefix + "section " + section_name +
                                " introduces a queue class which name length"
                                " exceeds the max allowed lenght of " +
-                               NStr::NumericToString(kMaxQueueNameSize - 1) +
-                               " bytes");
+                               to_string(kMaxQueueNameSize - 1) + " bytes");
             continue;
         }
 
@@ -546,8 +544,7 @@ void NS_ValidateQueues(const IRegistry &     reg,
             warnings.push_back(g_ValidPrefix + "section " + section_name +
                                " introduces a queue which name length"
                                " exceeds the max allowed lenght of " +
-                               NStr::NumericToString(kMaxQueueNameSize - 1) +
-                               " bytes");
+                               to_string(kMaxQueueNameSize - 1) + " bytes");
             continue;
         }
 
@@ -596,8 +593,8 @@ string NS_OutOfLimitMessage(const string &  section,
                             unsigned int  high_limit)
 {
     return g_ValidPrefix + NS_RegValName(section, entry) +
-           " is out of limits (" + NStr::NumericToString(low_limit) + "..." +
-           NStr::NumericToString(high_limit) + ")";
+           " is out of limits (" + to_string(low_limit) + "..." +
+           to_string(high_limit) + ")";
 
 }
 

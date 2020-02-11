@@ -594,7 +594,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
 
     buffer += "OK:AFFINITY: '" +
               NStr::PrintableString(*(jobs_affinity.m_AffToken)) + "'\n"
-              "OK:  ID: " + NStr::NumericToString(aff_id) + "\n";
+              "OK:  ID: " + to_string(aff_id) + "\n";
 
     if (verbose) {
         if (jobs.any()) {
@@ -612,8 +612,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
             buffer += "OK:  JOBS: NONE\n";
     }
     else
-        buffer += "OK:  NUMBER OF JOBS: " +
-                  NStr::NumericToString(jobs.count()) + "\n";
+        buffer += "OK:  NUMBER OF JOBS: " + to_string(jobs.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_WNClients.any()) {
@@ -629,8 +628,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF WN CLIENTS (PREFERRED): " +
-                  NStr::NumericToString(jobs_affinity.m_WNClients.count()) +
-                  "\n";
+                  to_string(jobs_affinity.m_WNClients.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_ReaderClients.any()) {
@@ -647,8 +645,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF READER CLIENTS (PREFERRED): " +
-                  NStr::NumericToString(jobs_affinity.m_ReaderClients.count()) +
-                  "\n";
+                  to_string(jobs_affinity.m_ReaderClients.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_WaitGetClients.any()) {
@@ -665,8 +662,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF CLIENTS (EXPLICIT WGET): " +
-                  NStr::NumericToString(jobs_affinity.
-                                        m_WaitGetClients.count()) + "\n";
+                  to_string(jobs_affinity.m_WaitGetClients.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_WaitReadClients.any()) {
@@ -683,8 +679,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF CLIENTS (EXPLICIT READ): " +
-                  NStr::NumericToString(jobs_affinity.
-                                        m_WaitReadClients.count()) + "\n";
+                  to_string(jobs_affinity.m_WaitReadClients.count()) + "\n";
 
     return buffer;
 }
@@ -702,7 +697,7 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
 
     if (found == m_JobsAffinity.end())
         throw runtime_error("Error while restoring jobs from the dump. "
-                 "The affinity with id " + NStr::NumericToString(aff_id) +
+                 "The affinity with id " + to_string(aff_id) +
                  " is not found in the loaded dictionary."
                  " (Lost affinity dictionary dump?)");
 

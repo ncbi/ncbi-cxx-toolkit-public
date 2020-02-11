@@ -735,7 +735,7 @@ string  CNetScheduleServer::x_GenerateGUID(void) const
     Int8        pid = CCurrentProcess::GetPid();
     Int8        current_time = time(0);
 
-    return NStr::NumericToString((pid << 32) | current_time);
+    return to_string((pid << 32) | current_time);
 }
 
 

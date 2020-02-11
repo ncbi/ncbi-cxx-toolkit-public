@@ -74,9 +74,8 @@ string SNSAlertAttributes::Serialize(void) const
                         NS_FormatPreciseTime(m_LastDetectedTimestamp) + "\n"
            "OK:acknowledged_time: " + acknowledged + "\n"
            "OK:on: " + NStr::BoolToString(m_On) + "\n"
-           "OK:count: " + NStr::NumericToString(m_Count) + "\n"
-           "OK:count_since_acknowledge: " +
-                          NStr::NumericToString(m_CountSinceAck) + "\n"
+           "OK:count: " + to_string(m_Count) + "\n"
+           "OK:count_since_acknowledge: " + to_string(m_CountSinceAck) + "\n"
            "OK:user: " + m_User + "\n"
            "OK:message: \"" + NStr::PrintableString(m_Message) + "\"";
 }
@@ -175,9 +174,8 @@ string CNSAlerts::GetURLEncoded(void) const
         result += "alert_" + x_TypeToId(k->first) + "=";
         if (!k->second.m_On)
             result += "-";
-        result += NStr::NumericToString(k->second.m_CountSinceAck) +
-                  "/" +
-                  NStr::NumericToString(k->second.m_Count);
+        result += to_string(k->second.m_CountSinceAck) +
+                  "/" + to_string(k->second.m_Count);
     }
     return result;
 }

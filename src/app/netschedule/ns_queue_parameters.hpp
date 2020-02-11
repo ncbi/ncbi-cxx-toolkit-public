@@ -243,8 +243,8 @@ void  AddParameterToDiff(CJsonNode &         output,
                          const TValueType &  value_to)
 {
     CJsonNode       values = CJsonNode::NewArrayNode();
-    values.AppendString(NStr::NumericToString(value_from));
-    values.AppendString(NStr::NumericToString(value_to));
+    values.AppendString(to_string(value_from));
+    values.AppendString(to_string(value_to));
     output.SetByKey(param_name, values);
 }
 
