@@ -40,7 +40,7 @@
 #  error "ncbi_os_unix.hpp can be used on UNIX platforms only"
 #endif
 
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 #  warning "This header currently defines a deprecated feature only; \
 please consider using <corelib/ncbi_process.hpp> instead"
 #endif

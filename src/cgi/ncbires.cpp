@@ -96,10 +96,8 @@ void CNcbiResource::HandleRequest( CCgiContext& ctx )
 									? ( defCom = true, GetDefaultCommand() )
 									: (*it)->Clone() );
 		cmd->Execute( ctx );
-#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 300  ||  defined(_IO_THROW)
     } catch( IOS_BASE::failure& /* e */  ) {
         throw;
-#endif
     } catch( std::exception& e ) {
 	    _TRACE( e.what() );
 		ctx.PutMsg( string("Error handling request: ") + e.what() );

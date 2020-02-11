@@ -90,7 +90,8 @@ namespace {
         #endif
         __declspec(thread)  xml::error_messages *   https_messages = NULL;
     #else
-        #if (defined(__APPLE__) || defined(__FreeBSD__)) && defined(__clang__)
+        #if (defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)) \
+            &&  defined(NCBI_COMPILER_ANY_CLANG)
             #ifndef HTTPS_ERRORS_USE_POD
                 #define HTTPS_ERRORS_USE_POD 1
             #endif

@@ -48,7 +48,8 @@
 
 #ifdef USE_CRC32C_INTEL
 # undef USE_CRC32C_INTEL // we'll define it again where available
-# if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC)
+# if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC) \
+    ||  defined(NCBI_COMPILER_ANY_CLANG)
 #  if defined(__x86_64__) || defined(__i386__)
 #   ifdef HAVE_CPUID_H
 #    include <cpuid.h>

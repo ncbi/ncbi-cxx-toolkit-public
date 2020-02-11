@@ -65,7 +65,7 @@ public:
 // copy constructor, so for those compilers it is private.
 // MSVC behaves different depending on a case. E.g. in case of the '?'
 // operator MSVC needs a copy constructor.
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 442
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 private:
 #else
 public:

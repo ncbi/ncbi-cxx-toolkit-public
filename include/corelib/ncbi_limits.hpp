@@ -212,7 +212,6 @@ struct SAutoMin
 static const SAutoMin kMin_Auto = {};
 
 
-#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 410
 #  define NCBI_FORBID_AUTOMINMAX_OPERATION(op, T1, T2) \
 template <typename T> \
 inline bool operator op(const T1&, const T2&) { \
@@ -232,7 +231,6 @@ NCBI_FORBID_AUTOMINMAX_OPERATIONS(<)
 NCBI_FORBID_AUTOMINMAX_OPERATIONS(<=)
 NCBI_FORBID_AUTOMINMAX_OPERATIONS(>)
 NCBI_FORBID_AUTOMINMAX_OPERATIONS(>=)
-#endif
 
 
 /// Generic template to get STD limits by a variable.

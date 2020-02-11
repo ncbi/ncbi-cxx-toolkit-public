@@ -448,11 +448,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
 #  undef NCBI_NO_READSOME
 #endif //NCBI_NO_READSOME
 
-#if   defined(NCBI_COMPILER_GCC)
-#  if NCBI_COMPILER_VERSION < 300
-#    define NCBI_NO_READSOME 1
-#  endif //NCBI_COMPILER_VERSION<300
-#elif defined(NCBI_COMPILER_MSVC)
+#if defined(NCBI_COMPILER_MSVC)
     /* MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided.
      * Now when we have worked around the issue by implementing fastopen()
      * in CNcbiFstreams and thus making them fully buffered, we can go back

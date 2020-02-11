@@ -151,49 +151,6 @@ public:
         return CTime(m_Value);
     }
 
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 340 && NCBI_COMPILER_VERSION < 400
-    operator char(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
-    }
-    operator unsigned char(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
-    }
-    operator unsigned short(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
-    }
-    operator short(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
-    }
-#if SIZEOF_LONG == 8
-    operator unsigned long int(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt8(m_Value));
-    }
-    operator long int(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt8(m_Value));
-    }
-#else
-    operator unsigned long int(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
-    }
-    // long already handled above
-#endif
-    operator unsigned long long(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt8(m_Value));
-    }
-    operator long long(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt8(m_Value));
-    }
-#endif
-
 private:
     const obj_type  m_Value;
 };
@@ -282,41 +239,6 @@ public:
     {
         return CTime(m_Value);
     }
-
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 400
-    operator char(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
-    }
-    operator unsigned char(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
-    }
-    operator unsigned short(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
-    }
-    operator short(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
-    }
-    operator unsigned long int(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt(m_Value));
-    }
-    operator long int(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
-    }
-    operator unsigned long long(void) const
-    {
-        return MakeCP<CP>(NStr::StringToUInt8(m_Value));
-    }
-    operator long long(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt8(m_Value));
-    }
-#endif
 
 private:
     obj_type  m_Value;

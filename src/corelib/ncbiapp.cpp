@@ -1256,13 +1256,11 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 #endif
         ) {
 #if defined(NCBI_COMPILER_GCC)  &&  defined(NCBI_OS_SOLARIS)
-#  if NCBI_COMPILER_VERSION >= 300
         _ASSERT(!m_CinBuffer);
         // Ugly workaround for ugly interaction between g++ and Solaris C RTL
         const size_t kCinBufSize = 5120;
         m_CinBuffer = new char[kCinBufSize];
         cin.rdbuf()->pubsetbuf(m_CinBuffer, kCinBufSize);
-#  endif
 #endif
     }
 #ifdef NCBI_OS_MSWIN

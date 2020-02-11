@@ -57,7 +57,7 @@ class CUTTPReaderTest
 {
 public:
     bool Test(size_t buffer_size)
-#if defined(__llvm__)  &&  !defined(__clang__)
+#if defined(NCBI_COMPILER_GCC)  &&  defined(__llvm__)
         __attribute__((noinline))
 #endif
         ;

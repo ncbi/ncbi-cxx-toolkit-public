@@ -43,11 +43,6 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //  CSoapServerApplication
 //
-#if defined(NCBI_COMPILER_GCC)
-#  if NCBI_COMPILER_VERSION < 300
-#    define SOAPSERVER_INTERNALSTORAGE
-#  endif
-#endif
 
 class CSoapServerApplication : public CCgiApplication
 {
@@ -55,28 +50,7 @@ public:
     typedef bool (CSoapServerApplication::*TWebMethod)(
         CSoapMessage& response, const CSoapMessage& request);
 
-#if defined(SOAPSERVER_INTERNALSTORAGE)
-// 'vector<TWebMethod>' looks simple,
-// but I could not make it compile on GCC 2.95
-    class Storage
-    {
-    public:
-        Storage(void);
-        Storage(const Storage& src);
-        ~Storage(void);
-        typedef const TWebMethod* const_iterator;
-        const_iterator begin(void) const;
-        const_iterator end(void) const;
-        void push_back(TWebMethod value);
-    private:
-        TWebMethod* m_Buffer;
-        size_t m_Capacity;
-        size_t m_Current;
-    };
-    typedef Storage TListeners;
-#else
     typedef vector<TWebMethod> TListeners;
-#endif
 
     CSoapServerApplication(const string& wsdl_filename,
                            const string& namespace_name);

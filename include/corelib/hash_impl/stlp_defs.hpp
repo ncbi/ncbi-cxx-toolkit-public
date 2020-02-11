@@ -164,20 +164,16 @@ NCBI_USING_NAMESPACE_STD;
 // Configuration dependent defines
 //
 
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 #  define _STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM 1
-#  if NCBI_COMPILER_VERSION < 340
-#    include <memory>
-#    define USE_NO_ALLOC_TRAITS
-#  endif
-#  if NCBI_COMPILER_VERSION < 304
-#    define NO_STD_CONSTRUCT
-#    define NO_STD_DESTROY
-#  endif
 #endif
 
 #ifdef NCBI_COMPILER_ICC
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
+#  define _STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM 1
+#endif
+
+#ifdef NCBI_COMPILER_ANY_CLANG
 #  define _STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM 1
 #endif
 

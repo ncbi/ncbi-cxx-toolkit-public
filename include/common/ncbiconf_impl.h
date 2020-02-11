@@ -49,6 +49,11 @@
  * @{
  */
 
+/* Convenience macro for use when the precise vendor and version
+   number don't matter. */
+#if defined(NCBI_COMPILER_APPLE_CLANG)  ||  defined(NCBI_COMPILER_LLVM_CLANG)
+#  define NCBI_COMPILER_ANY_CLANG 1
+#endif
 
 /* Threads configuration
  */
@@ -145,6 +150,16 @@
 #    define NCBI_PACKED_ENUM_END() NCBI_PACKED
 #  else
 #    define NCBI_PACKED_ENUM_END()
+#  endif
+#endif
+
+#ifndef NCBI_UNUSED
+#  if NCBI_HAS_CPP_ATTRIBUTE(unused)
+#    define NCBI_UNUSED [[unused]]
+#  elif __has_attribute(unused)
+#    define NCBI_UNUSED __attribute__((unused))
+#  else
+#    define NCBI_UNUSED
 #  endif
 #endif
 

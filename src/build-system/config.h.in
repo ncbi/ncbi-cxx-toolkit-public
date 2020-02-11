@@ -952,6 +952,9 @@
 #undef NCBI_COMPILER
 
 /* Compiler name */
+#undef NCBI_COMPILER_APPLE_CLANG
+
+/* Compiler name */
 #undef NCBI_COMPILER_COMPAQ
 
 /* Compiler name */
@@ -965,6 +968,9 @@
 
 /* Compiler name */
 #undef NCBI_COMPILER_KCC
+
+/* Compiler name */
+#undef NCBI_COMPILER_LLVM_CLANG
 
 /* Compiler name */
 #undef NCBI_COMPILER_MIPSPRO

@@ -176,8 +176,7 @@ namespace DummyNS { class CDummyClassToEatSemicolon; }
 #endif
 
 #if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
-#  if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 400  \
-      &&  !defined(__clang__)
+#  ifdef NCBI_COMPILER_GCC
 #    include <algorithm>
 #  endif
 // This template is used by some stl algorithms (sort, reverse...)

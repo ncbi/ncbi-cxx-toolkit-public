@@ -78,7 +78,9 @@ extern "C" {
 #undef NCBI_SWAP_POINTERS_EXTERN
 #undef NCBI_SLOW_ATOMIC_SWAP
 
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX)) || defined(NCBI_COMPILER_ICC)
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_WORKSHOP) \
+    ||  (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX)) \
+    ||  defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 #  define NCBI_COUNTER_ASM_OK 1
 #endif
 
@@ -112,10 +114,10 @@ extern "C" {
 #  endif
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
-#elif (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC))  &&  \
+#elif (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC) || \
+       defined(NCBI_COMPILER_ANY_CLANG))  && \
   ((defined(__sparc) && !defined(__sparcv9))  ||  \
-   ((defined(__i386) || defined(__sparc) || defined(__x86_64))  &&  \
-    !defined(__GLIBCPP__) /* < 3.0 or >= 3.4 */)  &&  \
+   defined(__i386)  ||  defined(__sparc)  ||  defined(__x86_64)  &&  \
    (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))
 #  if defined(__x86_64)
 #    define NCBI_COUNTER_64_BIT
@@ -206,20 +208,10 @@ extern "C" {
 #  ifdef __cplusplus
 }
 #  endif
-#elif defined(NCBI_OS_DARWIN)  &&  defined(NCBI_COMPILER_GCC)  &&  defined(__ppc__)  &&  defined(__OPTIMIZE__)  &&  NCBI_COMPILER_VERSION >= 420  &&  NCBI_COMPILER_VERSION < 430
-/* Work around a compiler bug by forcing use of an alternate implementation. */
 #elif defined(_CXXCONFIG)
-#  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514 /* 4.2 */
-#    include <ext/atomicity.h>
-#  else
-#    include <bits/atomicity.h>
-#  endif
+#  include <ext/atomicity.h>
    typedef _Atomic_word TNCBIAtomicValue;
-#  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20040419 /* 3.4; redundant? */
-#    define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
-#  else
-#    define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
-#  endif
+#  define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
 #elif defined(NCBI_COMPILER_COMPAQ)
 #  include <machine/builtins.h>
    typedef int TNCBIAtomicValue;

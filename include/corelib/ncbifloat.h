@@ -70,7 +70,7 @@ extern "C" {
 #  endif
 #  if __cplusplus >= 201103L  &&  defined(_GLIBCXX_CONSTEXPR)  \
     &&  !defined(NCBI_COMPILER_ICC)  &&  !defined(__MIC__)  \
-    &&  !defined(__clang__)
+    &&  !defined(NCBI_COMPILER_ANY_CLANG)
 #    define ISNAN_CONSTEXPR _GLIBCXX_CONSTEXPR
 #  else
 #    define ISNAN_CONSTEXPR

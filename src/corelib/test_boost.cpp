@@ -1247,7 +1247,7 @@ static const char* s_NcbiFeatures[] = {
 inline void
 CNcbiTestApplication::x_InitCommonParserVars(void)
 {
-    m_IniParser->AddSymbol("COMPILER_Clang",     IS_VAR_DEFINED(__clang__));
+    m_IniParser->AddSymbol("COMPILER_Clang",     IS_FLAG_DEFINED(COMPILER_ANY_CLANG));
     m_IniParser->AddSymbol("COMPILER_Compaq",    IS_FLAG_DEFINED(COMPILER_COMPAQ));
     m_IniParser->AddSymbol("COMPILER_Cray",      IS_FLAG_DEFINED(COMPILER_CRAY));
     m_IniParser->AddSymbol("COMPILER_GCC",       IS_FLAG_DEFINED(COMPILER_GCC));

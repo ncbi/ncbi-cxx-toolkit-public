@@ -1630,19 +1630,9 @@ void CDirEntry::SetUmask(TMode user_mode, TMode group_mode,
 
 #if defined(NCBI_OS_UNIX) && !defined(HAVE_EUIDACCESS) && !defined(EFF_ONLY_OK)
 
-// Work around a weird GCC 2.95 glitch which can result in confusing
-// calls to stat() with invocations of a (nonexistent) constructor.
-# if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
-#    define CAS_ARG1 void
-#    define CAS_CAST static_cast<const struct stat*>
-#  else
-#    define CAS_ARG1 struct stat
-#    define CAS_CAST
-#endif
-
-static bool s_CheckAccessStat(const CAS_ARG1* p, int mode)
+static bool s_CheckAccessStat(struct stat* p, int mode)
 {
-    const struct stat& st = *CAS_CAST(p);
+    const struct stat& st = *p;
     uid_t uid = geteuid();
 
     // Check user permissions

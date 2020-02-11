@@ -167,9 +167,6 @@ public:
 
     int CompareNocase(const CTempXStr<_TChar>& pattern) const
     {
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
-#  define CT_TOLOWER(x) tolower((unsigned)(x))
-#else
         const ctype<_TChar>& ct =
 
 #if defined(NCBI_COMPILER_WORKSHOP)
@@ -180,7 +177,6 @@ public:
             use_facet< ctype<_TChar> >(locale());
 #endif
 #  define CT_TOLOWER(x) ct.tolower(x)
-#endif
 
         size_t n = length();
         if (pattern.length() < n) {
@@ -207,11 +203,7 @@ private:
     }
     size_t x_length(void) const
     {
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
-        return (m_Length = string_char_traits<_TChar>::length(m_Data));
-#else
         return (m_Length = char_traits<_TChar>::length(m_Data));
-#endif
     }
     const _TChar* m_Data;
     mutable size_t  m_Length;
@@ -237,42 +229,26 @@ public:
     static
     int CompareCase(const basic_string<_TChar>& str, SIZE_TYPE pos, SIZE_TYPE n, const _TChar* pattern)
     {
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
-        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
-#else
         return str.compare(pos,n,pattern);
-#endif
     }
     template< typename _TChar >
     static
     int CompareCase(const _TChar* str, SIZE_TYPE pos, SIZE_TYPE n, const _TChar* pattern)
     {
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
-        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
-#else
         return basic_string<_TChar>(str).compare(pos,n,pattern);
-#endif
     }
 
     template< typename _TChar >
     static
     int CompareCase(const basic_string<_TChar>& str, SIZE_TYPE pos, SIZE_TYPE n, const basic_string<_TChar>& pattern)
     {
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
-        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
-#else
         return str.compare(pos,n,pattern);
-#endif
     }
     template< typename _TChar >
     static
     int CompareCase(const _TChar* str, SIZE_TYPE pos, SIZE_TYPE n, const basic_string<_TChar>& pattern)
     {
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
-        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
-#else
         return basic_string<_TChar>(str).compare(pos,n,pattern);
-#endif
     }
 // --------------------------------------------------------------------------
 // CompareNocase

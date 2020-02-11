@@ -32,7 +32,8 @@
 *
 */
 
-#if defined(NCBI_COMPILER_GCC) && defined(__i386)
+#if (defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)) \
+    &&  defined(__i386)
 # include <objmgr/impl/seq_vector_cvt_gcc_i386.hpp>
 #else
 # include <objmgr/impl/seq_vector_cvt_gen.hpp>

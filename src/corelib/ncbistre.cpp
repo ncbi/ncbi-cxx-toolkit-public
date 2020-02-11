@@ -133,12 +133,6 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims,
 }
 
 
-#ifdef NCBI_COMPILER_GCC
-#  if NCBI_COMPILER_VERSION < 300
-#    define NCBI_COMPILER_GCC29x
-#  endif
-#endif
-
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim,
                                  SIZE_TYPE* count)
 {
@@ -217,38 +211,11 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 {
     if (!os.good()  ||  is.bad())
         return false;
-#ifndef NCBI_COMPILER_GCC
     if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
         // NB: C++ Std says nothing about eofbit (27.6.1.3.27)
         return true;
     }
     os << is.rdbuf();
-#elif   NCBI_COMPILER_VERSION <= 330
-    // GCC stdlib++ version <= 3.3.0 has a bug in implementation of streamcopy,
-    // which wrongly assumes that showmanyc() (which is called when no read
-    // position is available for in_avail()) returns the number of bytes that
-    // have been placed in the buffer, so it tries to read right off gptr()
-    // that many bytes, causing bound conditions (ending up with SEGV).
-    // Note that this implementation here does not agree with the standard
-    // in that if insertion was not successful, the corresponding extraction
-    // would not be effected as have occurred.  Hopefully that's okay because
-    // GCC 3.3.0 is a very distant memory now.
-    do {
-        char buf[4096];
-        is.read(buf, sizeof(buf));
-        streamsize count = is.gcount();
-        if (!count)
-            break;
-        if (!os.write(buf, count))
-            break;
-    } while (is.good());
-#else
-    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
-        // NB: C++ Std says nothing about eofbit (27.6.1.3.27)
-        return true;
-    }
-    os << is.rdbuf();
-#endif
     return os.good()  &&  os.flush() ? true : false;
 }
 

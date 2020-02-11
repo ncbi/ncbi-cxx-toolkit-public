@@ -64,7 +64,9 @@ NCBI_XNCBI_EXPORT extern const wchar_t *const kEmptyWCStr;
 #endif
 
 /// Empty "C++" string.
-#if defined(NCBI_OS_MSWIN) || ( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
+#if defined(NCBI_OS_MSWIN)  \
+    ||  (defined(NCBI_OS_LINUX) \
+         &&  (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ANY_CLANG)))
 class CNcbiEmptyString
 {
 public:

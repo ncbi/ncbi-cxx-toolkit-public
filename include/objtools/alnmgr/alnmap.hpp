@@ -258,7 +258,7 @@ public:
         TNumchunk size(void) const { return TNumchunk(m_StartSegs.size()); };
 
     private:
-#if defined(NCBI_COMPILER_MSVC) || defined(__clang__) // kludge
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_COMPILER_ANY_CLANG) // kludge
         friend class CAlnMap;
 #elif defined(NCBI_COMPILER_WORKSHOP)  &&  NCBI_COMPILER_VERSION >= 550
         friend class CAlnMap;        

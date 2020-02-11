@@ -47,19 +47,25 @@
 #define NCBI_OS_UNIX 1
 
 /* Compiler name */
-#define NCBI_COMPILER "GCC"
+#define NCBI_COMPILER "APPLE_CLANG"
+
+/* Compiler name */
+#define NCBI_COMPILER_APPLE_CLANG 1
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_COMPAQ */
 
 /* Compiler name */
-#define NCBI_COMPILER_GCC 1
+/* #undef NCBI_COMPILER_GCC */
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_ICC */
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_KCC */
+
+/* Compiler name */
+/* #undef NCBI_COMPILER_LLVM_CLANG */
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_MIPSPRO */
@@ -71,9 +77,9 @@
 /* #undef NCBI_COMPILER_UNKNOWN */
 
 /* Compiler version as three-digit integer */
-#define NCBI_COMPILER_VERSION (__GNUC__ * 100 + \
-                               __GNUC_MINOR__ * 10 + \
-                               __GNUC_PATCHLEVEL__)
+#define NCBI_COMPILER_VERSION (__clang_major__ * 100 + \
+                               __clang_minor__ * 10 + \
+                               __clang_patchlevel__)
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_VISUALAGE */

@@ -211,7 +211,8 @@
  *
  * Uncomment to get warnings on using deprecated functions.
  */
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC)
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC) \
+    ||  defined(NCBI_COMPILER_ANY_CLANG)
 #  define MBEDTLS_DEPRECATED_WARNING
 #endif
 

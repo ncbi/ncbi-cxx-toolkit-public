@@ -2848,11 +2848,6 @@ string NStr::FormatVarargs(const char* format, va_list args)
         return kEmptyStr;
     }
 
-#elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
-    CNcbiOstrstream oss;
-    oss.vform(format, args);
-    return CNcbiOstrstreamToString(oss);
-
 #elif defined(HAVE_VSNPRINTF)
     // deal with implementation quirks
     SIZE_TYPE size = 1024;
@@ -3230,15 +3225,9 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
     }
     _ASSERT(beg < end  &&  end <= length);
 
-#if defined(NCBI_COMPILER_GCC)  &&  (NCBI_COMPILER_VERSION == 304)
-    // work around a library bug
-    str.replace(end, length, kEmptyStr);
-    str.replace(0, beg, kEmptyStr);
-#else
     if ( beg | (end - length) ) { // if either beg != 0 or end != length
         str.replace(0, length, str, beg, end - beg);
     }
-#endif
 }
 
 

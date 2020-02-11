@@ -135,7 +135,7 @@ private:
     char*          m_StrCurrFunctName;
 };
 
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 # define NCBI_CURRENT_FUNCTION  __PRETTY_FUNCTION__
 #else
 # define NCBI_CURRENT_FUNCTION  ""

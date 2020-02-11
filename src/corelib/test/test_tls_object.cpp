@@ -42,9 +42,7 @@
 
 USING_NCBI_SCOPE;
 
-#ifdef NCBI_COMPILER_GCC
-# define inline __inline__ __attribute__((always_inline))
-#endif
+#define inline NCBI_FORCEINLINE
 
 static CAtomicCounter alloc_count;
 static CAtomicCounter object_count;

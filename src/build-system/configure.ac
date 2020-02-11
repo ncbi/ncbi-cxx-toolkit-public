@@ -1116,8 +1116,19 @@ if test "$KCC" != "yes"; then
 fi
 
 
+#### Detect Clang compiler (which also masquerades as GCC)
+if test "$KCC" != "yes"  -a  "$ICC" != yes; then
+   clang_ver="`$real_CXX -v 2>&1 | grep clang | grep ' version '`"
+   if test -n "$clang_ver"; then
+      Clang=yes
+      GCC=no
+   fi
+fi
+
+
 #### Detect IBM VisualAge compiler
-if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
+  -a  "$Clang" != "yes" ; then
    vac_ver="`$real_CXX -qversion 2>&1`"
    case "$vac_ver" in
       *AIX* ) VAC="yes" ;;
@@ -1127,7 +1138,7 @@ fi
 
 #### Detect Compaq compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
-  -a  "$VAC" != "yes"; then
+  -a  "$Clang" != "yes"  -a  "$VAC" != "yes"; then
    ccc_ver="`$real_CXX -V 2>&1 | grep '^Compaq C++ V'`"
    case "$ccc_ver" in
       *Compaq* ) CCC="yes" ;;
@@ -1137,7 +1148,7 @@ fi
 
 #### Detect Cray compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
-  -a  "$VAC" != "yes" -a  "$CCC" != "yes"; then
+  -a  "$Clang" != "yes"  -a  "$VAC" != "yes" -a  "$CCC" != "yes"; then
    cce_ver="`$real_CXX -V 2>&1 | grep '^Cray'`"
    case "$cce_ver" in
       *Cray* ) CCE="yes" ;;
@@ -1169,6 +1180,22 @@ elif test "$ICC" = "yes" ; then
    ncbi_compiler="ICC"
    ncbi_compiler_ver="`echo $icc_ver | sed 's%.*Version \([[0-9.]]*\).*%\1%'`"
    NCBI_FEATURE(ICC)
+elif test "$Clang" = "yes" ; then
+   compiler_ver="$clang_ver"
+   case "$compiler_ver" in
+      *Apple* )
+         compiler=AppleClang
+         ncbi_compiler=APPLE_CLANG
+         NCBI_FEATURE(AppleClang)
+         ;;
+      * )
+         compiler=LLVMClang
+         ncbi_compiler=LLVM_CLANG
+         NCBI_FEATURE(LLVMClang)
+         ;;
+   esac
+   ncbi_compiler_ver="`echo $clang_ver | sed 's%.*version \([[0-9.]]*\).*%\1%'`"
+   NCBI_FEATURE(Clang)
 elif test "$VAC" = "yes" ; then
    compiler_ver="$vac_ver"
    compiler="VisualAge"
@@ -1267,7 +1294,7 @@ case "$compiler:$ncbi_compiler_ver" in
     WorkShop*:?.?? )   ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\)/\1\20/' ;;
     WorkShop*:[6-9].?) ncbi_compiler_sed='s/\([0-9]\)\.\([0-9\)/\10\20/' ;;
     ICC:??.? )  ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)/\1\20/' ;;
-    GCC:??.?.? | ICC:??.?.? | ICC:??.?.?.* )
+    GCC:??.?.? | ICC:??.?.? | ICC:??.?.?.* | *Clang:??.?.? )
        ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
     *:?.?.?)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9]\)\.\([0-9]\)/\1\2\3/' ;;
     *:?.??*)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\).*/\1\2/' ;;
@@ -1284,6 +1311,8 @@ if false; then
    AC_DEFINE(NCBI_COMPILER_GCC,       1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_KCC,       1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_ICC,       1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_APPLE_CLANG,1,[Compiler name])
+   AC_DEFINE(NCBI_COMPILER_LLVM_CLANG,1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_WORKSHOP,  1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_MIPSPRO,   1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_VISUALAGE, 1, [Compiler name])
@@ -1371,7 +1400,8 @@ if test "$with_mt" != "no" ; then
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
     solaris*:GCC             )  : ${MT_FLAG:="-pthreads"} ;;
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
-    *:Compaq | *:GCC | *:ICC )  : ${MT_FLAG:="-pthread"} ;;
+    *:Compaq | *:GCC | *:ICC | *Clang )
+                                : ${MT_FLAG:="-pthread"} ;;
     *:VisualAge              )  : ${MT_FLAG:="-qthreaded"} ;;
     * )
        msg="Do not know how to build MT-safe with compiler $CXX $compiler_ver"
@@ -1397,7 +1427,7 @@ if test "$with_mt" != "no" ; then
      solaris2.??:* | solaris*:GCC | *:Compaq | irix* | aix* | darwin* | cygwin*)
         NCBIATOMIC_LIB=
         ;;
-     *:GCC | *:ICC | linux*:KCC )
+     *:GCC | *:ICC | *Clang | linux*:KCC )
         case "$host_cpu" in
            i?86 | powerpc* | ppc* | x86_64 | sparc* ) NCBIATOMIC_LIB= ;;
            * ) NCBIATOMIC_LIB=xncbi ;;
@@ -1410,14 +1440,8 @@ if test "$with_mt" != "no" ; then
      * ) NCBIATOMIC_LIB=xncbi ;;
    esac
    case "$compiler" in
-      GCC )
-         if $CC -v 2>&1 | grep clang >/dev/null; then
-            :
-            # Will allegedly support -openmp at some point, but as of 3.4,
-            # just parses it as specifying an output filename: -o penmp.
-         else
-            : ${OPENMP_FLAGS=-fopenmp}
-         fi
+      GCC | LLVMClang ) # Not yet AppleClang, as of version 11.
+         : ${OPENMP_FLAGS=-fopenmp}
          ;;
       ICC )
          : ${OPENMP_FLAGS=-qopenmp -qopenmp-link=static}
@@ -1587,7 +1611,7 @@ case "$host_os:$compiler" in
    esac
    ;;
 
- darwin*:GCC)
+ darwin*:GCC | darwin*:*Clang )
    case `uname -m` in
       *64 ) : ${with_64=yes} ;;
       *   ) : ${with_64=no}  ;;
@@ -1602,10 +1626,11 @@ case "$host_os:$compiler" in
    else
       CONF_loadable_ext=".dylib"
    fi
-   if $CXX -v 2>&1 | grep -q Apple; then
+   if test "$compiler" = AppleClang \
+      ||  ("$compiler" = GCC  &&  $CXX -v 2>&1 | grep -q Apple) ; then
       CFLAGS="-fpascal-strings $CFLAGS"
       CXXFLAGS="-fpascal-strings $CXXFLAGS"
-      if $CXX -v 2>&1 | grep -q clang; then
+      if test "$compiler" = AppleClang; then
          try_old_sdks=no
       else
          try_old_sdks=$with_ncbi_public
@@ -1722,7 +1747,7 @@ changequote([, ])dnl
     mips*:GCC )
       ARCH_CFLAGS="-mips64"
       ;;
-    *:GCC )
+    *:GCC | *Clang )
       # May not work prior to GCC 3.1.
       ARCH_CFLAGS="-m64"
       case $host_os in darwin*) ARCH_CPPFLAGS="-m64" ;; esac
@@ -1751,7 +1776,7 @@ else
        mips*:GCC )
          ARCH_CFLAGS="-mipsn32"
          ;;
-       *:GCC )
+       *:GCC | *Clang )
          # May not work prior to GCC 3.1.
          ARCH_CFLAGS="-m32"
          case $host_os in darwin*) ARCH_CPPFLAGS="-m32" ;; esac
@@ -1837,7 +1862,7 @@ if test -n "$with_64"; then
 fi
 
 case "$host_os:$compiler" in
-   darwin*:GCC )
+   darwin*:GCC | darwin*Clang )
       AC_CACHE_CHECK([whether $CC supports -Wl,-rpath],
          ncbi_cv_prog_cc_wl_rpath,
          [orig_LDFLAGS=$LDFLAGS
@@ -1848,7 +1873,7 @@ case "$host_os:$compiler" in
       ;;
    cygwin* )
       ;;
-   *:GCC | *:ICC )
+   *:GCC | *:ICC | *Clang )
       AC_CACHE_CHECK([whether $CC has an option to export all symbols],
          ncbi_cv_prog_cc_export_all,
          [orig_LDFLAGS=$LDFLAGS
@@ -1923,8 +1948,9 @@ case "$ncbi_cv_prog_cc_whole_archive" in
       NO_WHOLE_ARCHIVE=
       ;;
 esac
-       
-if $CXX -v 2>&1 | grep -q clang; then
+
+case "$compiler" in
+ *Clang)
    CFLAGS="$CFLAGS -Wno-deprecated-register"
    CXXFLAGS="$CXXFLAGS -Wno-deprecated-register"
 
@@ -1944,9 +1970,11 @@ if $CXX -v 2>&1 | grep -q clang; then
           [ncbi_cv_prog_cxx_stdlib_libcxx=no])
        CXX=$orig_CXX])
    test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
-else
+   ;;
+ *)   
    ncbi_cv_prog_cxx_stdlib_libcxx=no
-fi
+   ;;
+esac
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
 
@@ -2050,7 +2078,7 @@ esac
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
     cygwin* ) with_lfs=no ;;
-    *:GCC:* | *:ICC:* ) : ${with_lfs=yes} ;;
+    *:GCC:* | *:ICC:* | *Clang:* ) : ${with_lfs=yes} ;;
 esac
 
 if test "$with_lfs" = "yes" ; then
@@ -2072,7 +2100,7 @@ wsrx="[[$wschars]]"
 #### Flags to enable (potentially unsafe) extra optimization.
 if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
    case "$compiler:$compiler_version" in
-      GCC:* )
+      GCC:* | *Clang:* )
         DEF_FAST_FLAGS="-O3 -finline-functions -fstrict-aliasing"
         # DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
         if test "$with_profiling" != "yes"; then
@@ -2140,11 +2168,11 @@ fi
 # Generate position-independent code (PIC)
 if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    case "$host_os:$compiler" in
-    darwin*:GCC )
+    darwin*:GCC | darwin*Clang )
       CFLAGS_DLL="-fno-common"
       CXXFLAGS_DLL="-fno-common"
       ;;
-    *:GCC | linux* )
+    *:GCC | *Clang | linux* )
       CFLAGS_DLL="-fPIC"
       CXXFLAGS_DLL="-fPIC"
       ;;
@@ -2162,7 +2190,7 @@ if test -z "$CONF_f_runpath" ; then
     solaris* )
       CONF_f_runpath="-R"
       ;;
-    linux*:[[GI]]CC | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
+    linux*:[[GI]]CC | linux*Clang | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
       CONF_f_runpath="-Wl,-rpath,"
       ;;
     irix*:* | linux*:KCC | *:Compaq )
@@ -2197,7 +2225,7 @@ else
 fi
 
 case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_libcxx" in
-  GCC:*:yes:no )
+  GCC:*:yes:no | *Clang:*:yes:no )
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
     case "$libstdcxx" in
        /*)
@@ -2210,7 +2238,7 @@ case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_lib
           ;;
     esac
     ;;
-  GCC:* )
+  GCC:* | *Clang:*:*:* )
     # Need to specify runpath for compiler-provided libraries
     major=6 # true for all supported versions at present
     found=false
@@ -2316,8 +2344,8 @@ fi
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
-    linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC \
-    | solaris*:GCC | osf*:* | darwin*:GCC | freebsd*:GCC )
+    linux*:GCC | linux*Clang | irix* | solaris*:WorkShop* | linux*:ICC \
+    | solaris*:GCC | osf* | darwin*:GCC | darwin*Clang | freebsd*:GCC | *:KCC )
       ;;
     * )
       echo
@@ -2390,6 +2418,15 @@ if test "$compiler" = "GCC" ; then
 fi
 
 
+#### Clang compiler::  common flags and definitions
+case "$compiler" in
+   *Clang ) 
+      CFLAGS="-Wall -Wno-format-y2k $CFLAGS"
+      CXXFLAGS="-Wall -Wno-format-y2k $CXXFLAGS"
+      ;;
+esac
+
+
 #### KAI compiler::  common flags and definitions
 if test "$compiler" = "KCC" ; then
    AR=${AR:="$CXX $MT_FLAG -o"}
@@ -2414,7 +2451,7 @@ fi
 
 #### How to ensure that the compiler will account for potential aliasing
 case "$compiler" in
-   GCC ) NO_STRICT_ALIASING=-fno-strict-aliasing ;;
+   GCC | *Clang ) NO_STRICT_ALIASING=-fno-strict-aliasing ;;
    ICC ) NO_STRICT_ALIASING='-falias -ffnalias' ;;
    WorkShop* ) NO_STRICT_ALIASING='-xalias_level=any' ;;
    * ) NO_STRICT_ALIASING=
@@ -2444,7 +2481,11 @@ fi
 
 ### Support for precompiled headers
 GCCPCH="#"
-if test "$compiler" = GCC -a "$with_pch" = "yes"; then
+if test "$with_pch" = "yes"; then
+   case "$compiler" in
+      GCC | *Clang ) ;;
+      * ) ncbi_cv_cxx_pch=no ;;
+   esac
    AC_CACHE_CHECK([whether $CXX supports precompiled headers], ncbi_cv_cxx_pch,
       [echo '#include <iostream>' > conftest.hpp
        echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD
@@ -2693,22 +2734,16 @@ if test -n "${with_build_root}" ; then
 fi
 
 signature_compiler=$compiler
-signature_compiler_version=$compiler_version
-if test "$compiler" = "GCC"; then
-   llvm_version=`$CXX -v 2>&1 | $EGREP 'clang|LLVM'`
-   case "$llvm_version" in
-      *clang* )
-         # Take the LLVM version from both "clang version X.Y (...) ..." and
-         # "$Vendor (LLVM|clang) version ... (...) (based on LLVM X.Y)"
-         sed='s/.*[[Mn]] \([[1-9]][[0-9.]]*\).*/\1/; s/\.//g; s/^..$/&0/'
-         signature_compiler=Clang
-         signature_compiler_version=`echo $llvm_version | sed -e "$sed"`
-         ;;
-      *LLVM* )
+case "$compiler" in
+   GCC )
+      if $CXX -v 2>&1 | $EGREP_Q 'LLVM'; then
          signature_compiler=LLVMGCC
-         ;;
-   esac
-fi
+      fi
+      ;;
+   *Clang )
+      signature_compiler=Clang
+      ;;
+esac
 
 ### Possibly add the version to the build directory name, but preseve
 ### the original default when reconfiguring.
@@ -2719,7 +2754,7 @@ if test -z "${build_root}" ; then
    build_root="${srcdir}/${signature_compiler}"
    case "$signature_compiler:$with_version" in
       *[[0-9]]:* | *:no) ;;
-      *) build_root=${build_root}${signature_compiler_version} ;;
+      *) build_root=${build_root}${compiler_version} ;;
    esac
    ncbi_cv_with_version=${with_version:-yes}
 else
@@ -2754,6 +2789,7 @@ if test "$with_profiling" = "yes" ; then
       Compaq)    PFFLAGS="-pg" ;;
       GCC)       PFFLAGS="-pg" ;;
       ICC)       PFFLAGS="-p" ;;
+      *Clang)    PFFLAGS="-pg" ;;
       KCC)       PFFLAGS="-pg" ;;
       MIPSpro73) PFFLAGS="" ;; # pixie(1) adds info at runtime
       MSVC)      PFFLAGS="/PROFILE" ;;
@@ -2773,7 +2809,7 @@ fi
 #### Code coverage
 if test "$with_code_coverage" = "yes"; then
    case "$compiler" in
-      GCC ) # including Clang
+      GCC | *Clang )
          COVFLAGS="--coverage"
          ;;
       * )
@@ -2853,7 +2889,7 @@ esac
 #### Overall configuration mode summary
 signature_hostname=`(hostname || uname -n) 2>/dev/null \
     | sed 's/\..*//; s/-/_/g; 1q'`
-signature="${signature_compiler}_${signature_compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
+signature="${signature_compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
 AC_DEFINE_UNQUOTED(NCBI_SIGNATURE, "$signature",
    [Build signature: compiler-name '_' compiler-version '-' configuration
    '--' platform-name '-' hostname])
@@ -2975,7 +3011,7 @@ has_dll_loadable="@# "
 ALLOW_UNDEF=
 FORBID_UNDEF=
 case "$compiler" in
- GCC | ICC )
+ GCC | ICC | *Clang)
    LINK_DLL="$LINK $ARCH_CFLAGS -shared -o" # possibly overridden below
    case "$host_os" in
       solaris* )
@@ -3253,15 +3289,15 @@ if test "$compiler" != "MSVC" ; then
 
    if test "${with_max_debug-no}" != "no"; then
       case "$compiler:$with_max_debug" in
-         GCC:thread ) sanitize=-fsanitize=thread ;;
-         GCC:yes    ) sanitize=-fsanitize=address; asan_sfx=ASan ;;
-         *:yes      ) ;;
-         *          )
+         GCC:thread | *Clang:thread ) sanitize=-fsanitize=thread ;;
+         GCC:yes | *Clang:yes ) sanitize=-fsanitize=address; asan_sfx=ASan ;;
+         *:yes ) ;;
+         * )
             AC_MSG_ERROR([--with-max-debug=$with_max_debug unimplemented for compiler $compiler])
             ;;
       esac
       case "$compiler" in
-         GCC )
+         GCC | *Clang )
             CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
             CFLAGS="-fstack-check $sanitize $CFLAGS"
             CXXFLAGS="-fstack-check $sanitize $CXXFLAGS"
@@ -3958,7 +3994,7 @@ if test $ncbi_cv_c_attribute_destructor = yes; then
 fi
 
 case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
-   GCC:*\ *\ -fvisibility* | ICC:*\ -fvisibility* ) ;;
+   GCC:*\ *\ -fvisibility* | ICC:*\ -fvisibility* | *Clang:*\ -fvisibility*) ;;
    * ) ncbi_cv_c_attribute_visibility_default=unnecessary ;;
 esac
 
@@ -4420,13 +4456,14 @@ fi
 
 #### Set compiler prefix (empty for vendor compilers)
 case "$signature_compiler:$ac_cv_have_decl__LIBCPP_VERSION" in
-   Clang:yes | LLVMGCC:yes )
-      compiler_pfx="${signature_compiler}-"
-      compiler_vpfx="${signature_compiler}${signature_compiler_version}-"
+   Clang:no | LLVMGCC:no )
+      compiler_pfx="GCC-"
+      : ${gccver=`$CXX -dumpversion`}
+      compiler_vpfx="GCC`echo $gccver | tr -d .`-"
       ;;
    Clang:* | *[[GIK]]CC:* )
-      compiler_pfx="${compiler}-"
-      compiler_vpfx="${compiler}${compiler_version}-"
+      compiler_pfx="${signature_compiler}-"
+      compiler_vpfx="${signature_compiler}${compiler_version}-"
       ;;
 esac
 
@@ -5610,7 +5647,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          # when using Boost at all.
          BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
          ;;
-      GCC*)
+      GCC* | *Clang* )
          # Some portions of Boost also have a lot of "unused" typedefs
          # from concept checking.
          BOOST_INCLUDE="$BOOST_INCLUDE -Wno-unused-local-typedefs"
@@ -5648,20 +5685,29 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
             *:VISUALAGE) BOOST_TAG="-xlc" ;;
             *:COMPAQ)    BOOST_TAG="-tru" ;;
             *:MSVC)      BOOST_TAG="-vc"  ;;
+            darwin*:*CLANG)
+               if test "x$ac_cv_have_decl__LIBCPP_VERSION" = xyes; then
+                  BOOST_TAG="-clang-darwin"
+               else
+                  BOOST_TAG="-xgcc"
+                  boost_comp_vers=`echo $gccver | cut -c1-2`
+               fi
+               ;;
+            *:*CLANG)
+               if test "x$ac_cv_have_decl__LIBCPP_VERSION" = xyes; then
+                  BOOST_TAG="-clang"
+               else
+                  BOOST_TAG="-gcc"
+                  boost_comp_vers=`echo $gccver | cut -c1-2`
+               fi
+               ;;
          esac
          case "$BOOST_TAG" in
             # Still valid for version 10.x and up?
-            -*gcc|-il ) boost_comp_vers=`echo $compiler_version | cut -c1-2` ;;
-            *         ) boost_comp_vers='' ;;
-         esac
-         case "$llvm_version:$ac_cv_have_decl__LIBCPP_VERSION" in
-            *clang*:yes )
-                case "$host_os" in
-                   darwin*) BOOST_TAG="-clang-darwin" ;;
-                   *)       BOOST_TAG="-clang" ;;
-                esac
-                boost_comp_vers=`echo $signature_compiler_version | cut -c1-2`
-            ;;
+            -*gcc|-il|-clang* )
+               : ${boost_comp_vers=`echo $compiler_version | cut -c1-2`}
+               ;;
+            * ) boost_comp_vers='' ;;
          esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
          test "$with_debug" = "no"   ||  BOOST_D=-d
@@ -6567,7 +6613,7 @@ if test "$with_sybase" = "no" ; then
 fi
 
 case "$host_os:$compiler:$compiler_version" in
-   linux*:GCC:*)
+   linux*:GCC:* | linux*:*Clang:* )
       : ${with_included_sss=yes}
    ;;
 esac

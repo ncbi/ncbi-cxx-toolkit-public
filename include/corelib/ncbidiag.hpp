@@ -439,26 +439,6 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, false> {
 inline void CheckErrSubcodeX(int)
 {}
 
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 350
-
-/// Issue compile-time error if error subcode given is not valid for given
-/// error code name.
-/// For early versions of gcc used a bit different design to make error
-/// message more clear to understand.
-///
-/// @sa ERR_POST_X
-#define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                  \
-    NCBI_NS_NCBI::CheckErrSubcodeX(                                   \
-        NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<              \
-              NCBI_ERRCODE_X_NAME(name), subcode,                     \
-              NCBI_MAX_ERR_SUBCODE_X_NAME(name),                      \
-              ((unsigned int)subcode >                                \
-                    (unsigned int)NCBI_MAX_ERR_SUBCODE_X_NAME(name))  \
-                                                       >::valid       \
-                                  )
-
-#else  // if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 350
-
 /// Issue compile-time error if error subcode given is not valid for given
 /// error code name.
 /// This design is used for all compilers except early versions of gcc.
@@ -475,8 +455,6 @@ inline void CheckErrSubcodeX(int)
                     (unsigned int)NCBI_MAX_ERR_SUBCODE_X_NAME(name))  \
                                                                    >) \
                                   )
-
-#endif  // if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 350 else
 
 /// Issue compile-time error if error subcode given is not valid for current
 /// error code.

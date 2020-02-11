@@ -152,12 +152,8 @@ CCompressionStream::~CCompressionStream(void)
 
         // Delete owned objects
         if ( m_Stream   &&   m_Ownership & fOwnStream ) {
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
-            // On GCC 2.9x ios::~ios() is protected
-#else
             delete m_Stream;
             m_Stream = 0;
-#endif
         }
         if ( m_Reader  &&  m_Ownership & fOwnReader ) {
             if ( m_Reader == m_Writer  &&  m_Ownership & fOwnWriter ) {

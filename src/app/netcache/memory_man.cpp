@@ -1515,7 +1515,7 @@ END_NCBI_SCOPE;
 
 void*
 operator new (size_t size)
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 throw (std::bad_alloc)
 #endif
 {
@@ -1530,7 +1530,7 @@ operator delete (void* ptr) throw ()
 
 void*
 operator new[] (size_t size)
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
 throw (std::bad_alloc)
 #endif
 {
