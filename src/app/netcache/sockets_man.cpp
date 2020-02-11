@@ -701,7 +701,7 @@ s_SaveSocket(CSrvSocketTask* task)
 void
 s_DeleteOldestSockets(TSockList& lst)
 {
-#ifdefined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
+#if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
     CSrvSocketTask* old_socks[s_OldSocksDelBatch];
     int old_active[s_OldSocksDelBatch];
 #else
