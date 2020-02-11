@@ -1,3 +1,10 @@
+Release 4.42.0 cloned from 4.41.0 (2020-02-11)
+
+    * NetSchedule: extend DUMP command (CXX-10344)
+    * NetSchedule to limit running slots by remote client IP (CXX-11138)
+    * NetSchedule -- if a job id is provided, then look for the job in all
+      scopes (CXX-11174)
+
 Release 4.41.0 based on SC-22 (2018-11-01)
 
     * Adding [server]/diskless configuration option
