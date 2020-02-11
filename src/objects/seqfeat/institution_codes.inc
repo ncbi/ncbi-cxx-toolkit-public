@@ -4018,7 +4018,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MAZHAR\ts\tMazhar Botanical Garden\t\t\t",
 "MB<DEU-Berlin>\ts\tMuseum of Natural History of Humboldt-University\t\t\t",
 "MB<DEU-Marburg>\ts\tPhilipps-Universitaet, Spezielle Botanik\t\t\t",
-"MB<PRT>\ts\tUniversidade de Lisboa\t\t\t",
+"MB<PRT>\ts\tMuseu Nacional de Histo&#769;ria e da Cie&#770;ncia de Lisboa, Universidade de Lisboa\t\t\t",
 "MBA\ts\tEnvironmental Protection Agency\t\t\t",
 "MBAB\ts\tMuseo Biblioteca Archivio\t\t\t",
 "MBAC\ts\tMuseo del Dipartimento di Biologia Animale dell'Universita\t\t\t",

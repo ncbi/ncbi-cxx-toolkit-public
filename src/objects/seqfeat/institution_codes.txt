@@ -3985,7 +3985,7 @@ MAY	s	Adygean State University, Department of Botany
 MAZHAR	s	Mazhar Botanical Garden			
 MB<DEU-Berlin>	s	Museum of Natural History of Humboldt-University			
 MB<DEU-Marburg>	s	Philipps-Universitaet, Spezielle Botanik			
-MB<PRT>	s	Universidade de Lisboa			
+MB<PRT>	s	Museu Nacional de Histo&#769;ria e da Cie&#770;ncia de Lisboa, Universidade de Lisboa			
 MBA	s	Environmental Protection Agency			
 MBAB	s	Museo Biblioteca Archivio			
 MBAC	s	Museo del Dipartimento di Biologia Animale dell'Universita			
