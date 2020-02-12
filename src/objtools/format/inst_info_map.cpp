@@ -49,7 +49,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
 
     static const string  s_acbr_base("http://www.acbr-database.at/BioloMICS.aspx?Link=T&DB=0&Table=0&Descr=");
     static const string  s_atcc_base("http://www.atcc.org/Products/All/");
-    static const string  s_bccm_base("http://bccm.belspo.be/catalogues/ulc-strain-details?ACCESSION_NUMBER=UCL");
+    static const string  s_bccm_base("http://bccm.belspo.be/catalogues/ulc-strain-details?ACCESSION_NUMBER=ULC");
     static const string  s_bcrc_base("https://catalog.bcrc.firdi.org.tw/BSAS_cart/controller?event=SEARCH&bcrc_no=");
     static const string  s_cas_base("http://collections.calacademy.org/herp/specimen/");
     static const string  s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
