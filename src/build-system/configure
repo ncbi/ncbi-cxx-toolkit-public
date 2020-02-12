@@ -10276,7 +10276,8 @@ LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
     linux*:GCC | linux*Clang | irix* | solaris*:WorkShop* | linux*:ICC \
-    | solaris*:GCC | osf* | darwin*:GCC | darwin*Clang | freebsd*:GCC | *:KCC )
+    | solaris*:GCC | osf* | darwin*:GCC | darwin*Clang | freebsd*:GCC \
+    | freebsd*Clang | *:KCC )
       ;;
     * )
       echo
