@@ -20,7 +20,7 @@ endif()
 
 set(_GLEW_VERSION "glew-1.5.8")
 
-get_filename_component(GLEW_CMAKE_DIR "$ENV{NCBI}/glew" REALPATH)
+get_filename_component(GLEW_CMAKE_DIR "$ENV{NCBI}/glew-1.5.8" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" GLEW_VERSION_STRING "${GLEW_CMAKE_DIR}")
 
 set(GLEW_FOUND True)
