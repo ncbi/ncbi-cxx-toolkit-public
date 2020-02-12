@@ -198,6 +198,68 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
     }
 }
 
+BOOST_AUTO_TEST_CASE(FetchSeq1q0)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(false);
+    int prev_min_map_quality = CBAMDataLoader::GetMinMapQualityParamDefault();
+    CBAMDataLoader::SetMinMapQualityParamDefault(0);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name, id;
+    TSeqPos from, to, align_count;
+
+    {
+        params.m_DirPath =
+            sx_GetPath("/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment");
+        //             "/1kg_pilot_data/data/NA19371/alignment");
+        bam_name = "NA10851.SLX.maq.SRP000031.2009_08.bam";
+        //bam_name = "NA19371.454.MOSAIK.SRP000033.2009_11.bam";
+        id = "NT_113960";
+        //id = "NC_000001.9";
+        from = 0;
+        to = 100000;
+        align_count = 6455; // including zero quality;
+    }
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    sx_CheckNames(scope, *loc, CDirEntry(bam_name).GetBase());
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
+    sel.SetSearchUnresolved();
+    CAlign_CI it(scope, *loc, sel);
+    if ( it ) {
+        cout << "Align count: "<<it.GetSize()<<endl;
+        if ( it.GetAnnot().IsNamed() ) {
+            cout << "Annot name: " << it.GetAnnot().GetName()<<endl;
+        }
+    }
+    BOOST_CHECK_EQUAL(align_count, it.GetSize());
+
+    for ( ; it; ++it ) {
+        const CSeq_align& align = *it;
+        ITERATE( CDense_seg::TIds, j, align.GetSegs().GetDenseg().GetIds() ) {
+            sx_CheckSeq(scope, idh, **j);
+        }
+    }
+    
+    CBAMDataLoader::SetMinMapQualityParamDefault(prev_min_map_quality);
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeq2)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(false);

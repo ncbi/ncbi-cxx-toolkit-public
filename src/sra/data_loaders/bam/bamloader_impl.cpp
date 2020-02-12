@@ -245,6 +245,27 @@ static inline string GetIncludeAlignTagsParam(void)
 }
 
 
+NCBI_PARAM_DECL(int, BAM_LOADER, MIN_MAP_QUALITY);
+NCBI_PARAM_DEF(int, BAM_LOADER, MIN_MAP_QUALITY, 1);
+
+int CBAMDataLoader::GetMinMapQualityParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, MIN_MAP_QUALITY)::GetDefault();
+}
+
+
+void CBAMDataLoader::SetMinMapQualityParamDefault(int param)
+{
+    NCBI_PARAM_TYPE(BAM_LOADER, MIN_MAP_QUALITY)::SetDefault(param);
+}
+
+
+static inline bool GetMinMapQualityParam(void)
+{
+    return CBAMDataLoader::GetMinMapQualityParamDefault();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBAMBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -714,7 +735,7 @@ CBamRefSeqInfo::CBamRefSeqInfo(CBamFileInfo* bam_file,
     : m_File(bam_file),
       m_RefSeqId(refseqid),
       m_RefSeq_id(seq_id),
-      m_MinMapQuality(1),
+      m_MinMapQuality(GetMinMapQualityParam()),
       m_LoadedRanges(false)
 {
     m_SpotIdDetector = new CDefaultSpotIdDetector();
