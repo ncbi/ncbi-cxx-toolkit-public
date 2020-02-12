@@ -154,8 +154,10 @@
 #endif
 
 #ifndef NCBI_UNUSED
-#  if NCBI_HAS_CPP_ATTRIBUTE(unused)
-#    define NCBI_UNUSED [[unused]]
+#  if NCBI_HAS_CPP_ATTRIBUTE(maybe_unused)
+#    define NCBI_UNUSED [[maybe_unused]]
+#  elif NCBI_HAS_CPP_ATTRIBUTE(gnu::unused)
+#    define NCBI_UNUSED [[gnu::unused]]
 #  elif __has_attribute(unused)
 #    define NCBI_UNUSED __attribute__((unused))
 #  else
