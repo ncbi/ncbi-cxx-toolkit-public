@@ -2190,7 +2190,8 @@ if test -z "$CONF_f_runpath" ; then
     solaris* )
       CONF_f_runpath="-R"
       ;;
-    linux*:[[GI]]CC | linux*Clang | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
+    linux*:[[GI]]CC | linux*Clang | *bsd*:GCC | *bsd*Clang | cygwin*:GCC \
+    | osf*:GCC )
       CONF_f_runpath="-Wl,-rpath,"
       ;;
     irix*:* | linux*:KCC | *:Compaq )
