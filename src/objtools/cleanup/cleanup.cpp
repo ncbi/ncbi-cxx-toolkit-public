@@ -288,7 +288,6 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry_Handle& seh,  Uin
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));
     CNewCleanup_imp clean_i(changes, options);
-    clean_i.SetScope(seh.GetScope());
     clean_i.ExtendedCleanupSeqEntryHandle(seh); // (m_Scope->GetSeq_annotHandle(sa));
     return changes;
 }
@@ -2686,7 +2685,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         any_changes |= SetGeneticCodes(*bi);
     }
 
-    CCleanup::ExtendedCleanup(entry, 0);
+    CCleanup::ExtendedCleanup(entry, options);
     return any_changes;
 }
 
