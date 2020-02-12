@@ -424,8 +424,7 @@ BOOST_AUTO_TEST_CASE(FetchQuerySequenceInfo)
 {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-
-    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, 129295));
+    CRef<CSeq_id> seqid(new CSeq_id("P01013.1"));
     CBlastServices::TSeqIdVector getseq_queries;
     getseq_queries.push_back(seqid);
     
@@ -627,7 +626,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts)
 {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string kDbName("ecoli");
+    const string kDbName("ecoli.aa");
     const char kSeqType('p');
     TGi ecoli_gis[] = { 1786182, 1786183, 1786184, 1786185,
         1786186, 1786187, 1786188, 1786189, 1786190, 1786191
