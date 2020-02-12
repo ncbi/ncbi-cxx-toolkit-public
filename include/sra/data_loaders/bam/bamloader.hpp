@@ -143,6 +143,9 @@ public:
     static string GetIncludeAlignTagsParamDefault(void);
     static void SetIncludeAlignTagsParamDefault(const string& param);
 
+    static int GetMinMapQualityParamDefault(void);
+    static void SetMinMapQualityParamDefault(int param);
+
     virtual double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const;
     
     virtual unsigned GetDefaultBlobCacheSizeLimit() const;
