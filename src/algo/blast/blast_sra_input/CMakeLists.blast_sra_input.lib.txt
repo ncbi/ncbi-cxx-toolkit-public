@@ -6,7 +6,7 @@ NCBI_begin_lib(blast_sra_input)
   NCBI_sources(blast_sra_input)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
   NCBI_requires(VDB)
-  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_uses_toolkit_libraries(sraread blastdb)
   NCBI_project_watchers(boratyng)
 NCBI_end_lib()
 
