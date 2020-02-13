@@ -303,7 +303,11 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
 
 void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
 {
-    const auto subtype = s_SubSourceStringToEnum.at(x_GetModName(mod_entry));
+    const auto& mod_name = x_GetModName(mod_entry);
+    const auto subtype = s_SubSourceStringToEnum.at(mod_name);
+    if (subtype == CSubSource::eSubtype_plasmid_name) {
+        m_pDescrCache->SetBioSource().SetGenome(CBioSource::eGenome_plasmid);
+    }
     const auto needs_no_text = CSubSource::NeedsNoText(subtype);
     CBioSource::TSubtype subsources;
     for (const auto& mod : mod_entry.second) {

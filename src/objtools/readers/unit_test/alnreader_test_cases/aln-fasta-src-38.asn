@@ -89,6 +89,7 @@ Seq-entry ::= set {
       },
       descr {
         source {
+          genome plasmid,
           org {
             taxname "val1",
             common "val1",
