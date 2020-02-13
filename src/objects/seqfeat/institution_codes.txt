@@ -430,7 +430,7 @@ BCCM/IHEM	c	Belgian Coordinated Collections of Microorganisms / IHEM Fungi colle
 BCCM/ITM	c	Belgian Coordinated Collections of Microorganisms / ITM Mycobacteria Collection	ITM		
 BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
 BCCM/MUCL	c	Belgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
-BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	UCL		
+BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	ULC	http://bccm.belspo.be/catalogues/ulc-strain-details?ACCESSION_NUMBER=	
 BCCN	c	Brucella Culture Collection			
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo			
 BCF	s	Universitat de Barcelona, Laboratori de Botanica			
@@ -3588,7 +3588,7 @@ KY	s	University of Kentucky
 KYM	s	University of Helsinki, Kymenlaakso Society of Naturalists			
 KYO	s	Kyoto University, Botany Department			
 KYUM<JPN>	s	Kyushu University Museum			
-L	sb	National Herbarium of the Netherlands (NHN)		 http://data.biodiversitydata.nl/naturalis/specimen/L.	
+L	sb	National Herbarium of the Netherlands (NHN)			
 LA	s	University of California			
 LABCC	c	Lactic acid bacteria culture collection			
 LAC	s	Xian Institute of Lacquer			
