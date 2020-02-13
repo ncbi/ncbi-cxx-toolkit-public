@@ -56,6 +56,11 @@
 #include <util/sequtil/sequtil_manip.hpp>
 #include <numeric>
 
+// backup functions for older VDB versions that do not have those
+static inline void KNSManagerSetSessionID(const void*, const void*) {}
+static inline void KNSManagerSetClientIP(const void*, const void*) {}
+static inline void KNSManagerSetPageHitID(const void*, const void*) {}
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -453,7 +458,6 @@ CBamMgr::CBamMgr(void)
                     "Cannot get KNSManager", rc);
     }
 
-#if 0
     CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
     if ( req_ctx.IsSetSessionID() ) {
         KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
@@ -464,7 +468,6 @@ CBamMgr::CBamMgr(void)
     if ( req_ctx.IsSetHitID() ) {
         KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
     }
-#endif
     
     if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
         string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
