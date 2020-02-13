@@ -85,6 +85,7 @@ protected:
 
 CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Group(0), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Xml(false), m_Print(false)
 {
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 
