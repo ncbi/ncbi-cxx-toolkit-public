@@ -75,6 +75,11 @@
 #include <cstring>
 #include <algorithm>
 
+// backup functions for older VDB versions that do not have those
+static inline void KNSManagerSetSessionID(const void*, const void*) {}
+static inline void KNSManagerSetClientIP(const void*, const void*) {}
+static inline void KNSManagerSetPageHitID(const void*, const void*) {}
+
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   VDBReader
@@ -430,7 +435,6 @@ DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 # define DECLARE_SDK_GET_GUARD() 
 #endif
 
-
 static
 rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
 {
@@ -529,7 +533,6 @@ void CVDBMgr::x_Init(void)
                            prefix.c_str(),
                            sdk_ver);
 
-#if 0
     CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
     if ( req_ctx.IsSetSessionID() ) {
         KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
@@ -540,7 +543,6 @@ void CVDBMgr::x_Init(void)
     if ( req_ctx.IsSetHitID() ) {
         KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
     }
-#endif
     
     // redirect VDB log to C++ Toolkit
     if ( s_GetDiagHandler() ) {
