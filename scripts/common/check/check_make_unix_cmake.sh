@@ -120,7 +120,8 @@ if test -f Makefile.out ; then
    x_compile_dir=`cd $x_import_root; pwd`
 else
    x_import_prj="no"
-   x_compile_dir="$x_build_dir"
+#   x_compile_dir="$x_build_dir"
+   x_compile_dir="$x_target_dir$x_buildcfg"
 fi
 
 if test -z "$x_list"; then
