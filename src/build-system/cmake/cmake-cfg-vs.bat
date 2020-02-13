@@ -233,7 +233,7 @@ if defined have_configure_ext_PreCMake (
 if not exist "%BUILD_ROOT%\build" (
   mkdir "%BUILD_ROOT%\build"
 )
-cd "%tree_root%\%BUILD_ROOT%\build"
+cd "%BUILD_ROOT%\build"
 
 REM echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
