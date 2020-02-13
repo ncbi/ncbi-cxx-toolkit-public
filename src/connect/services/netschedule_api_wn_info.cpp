@@ -231,8 +231,11 @@ CJsonNode g_GenericStatToJson(CNetServer server,
                 if (value.empty())
                     entity_info.SetByKey(key_norm, array_value =
                             CJsonNode::NewArrayNode());
-                else
-                    entity_info.SetByKey(key_norm, CJsonNode::GuessType(value));
+                else {
+                    const auto string_node = (topic == eNetScheduleStatClients) && (key_norm == "client_host");
+                    auto node = string_node ? CJsonNode::NewStringNode(value) : CJsonNode::GuessType(value);
+                    entity_info.SetByKey(key_norm, node);
+                }
             }
         }
     }
