@@ -313,7 +313,7 @@ void CRepeatLibrary::Read(CNcbiIstream& stream)
             //         die "Failed to extract a repeat name and length from line:\nLine $.: $_\n"
             //         unless defined $name and $name and defined $length and $length;
             //     }
-            repeat.m_RptName = value.substr(0, value.find(' '));
+            repeat.m_RptName = value.substr(0, value.find_first_of(" ;"));
             string bp(value.substr(value.rfind(';') + 1));
             NStr::TruncateSpacesInPlace(bp);
             repeat.m_RptLength = Convert(bp.substr(0, bp.find(' ')));
