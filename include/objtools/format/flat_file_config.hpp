@@ -56,6 +56,7 @@ class CKeywordsItem;
 class CSegmentItem;
 class CSourceItem;
 class CReferenceItem;
+class CCacheItem;
 class CCommentItem;
 class CPrimaryItem;
 class CFeatHeaderItem;
@@ -252,7 +253,8 @@ public:
         fGenbankBlocks_Contig     = (1u << 19),
         fGenbankBlocks_Wgs        = (1u << 20),
         fGenbankBlocks_Tsa        = (1u << 21),
-        fGenbankBlocks_Slash      = (1u << 22)
+        fGenbankBlocks_Slash      = (1u << 22),
+        fGenbankBlocks_Cache      = (1u << 23)
     };
 
     // types
@@ -325,6 +327,9 @@ public:
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CReferenceItem & ref_item );
+        virtual EAction notify( string & block_text,
+                                const CBioseqContext& ctx,
+                                const CCacheItem & cache_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CCommentItem & comment_item );

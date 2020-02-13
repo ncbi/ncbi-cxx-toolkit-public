@@ -184,6 +184,15 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
+    const CCacheItem & cache_item )
+{
+    return unified_notify(block_text, ctx,  cache_item, fGenbankBlocks_Cache);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
     const CCommentItem & comment_item ) 
 {
     return unified_notify(block_text, ctx,  comment_item, fGenbankBlocks_Comment);

@@ -69,6 +69,7 @@ public:
         eItem_Segment,
         eItem_Source,
         eItem_Reference,
+        eItem_Cache,
         eItem_Comment,
         eItem_Primary,
         eItem_FeatHeader,

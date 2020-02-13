@@ -49,6 +49,7 @@ class CVersionItem;
 class CKeywordsItem;
 class CSourceItem;
 class CReferenceItem;
+class CCacheItem;
 class CCommentItem;
 class CFeatHeaderItem;
 class CBaseCountItem;
@@ -85,6 +86,7 @@ public:
     virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os);
     virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
     virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os);
     virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
     virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);

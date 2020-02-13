@@ -53,6 +53,7 @@ class CKeywordsItem;
 class CSegmentItem;
 class CSourceItem;
 class CReferenceItem;
+class CCacheItem;
 class CCommentItem;
 class CFeatHeaderItem;
 class CFeatureItemBase;
@@ -96,6 +97,7 @@ public:
     virtual void FormatKeywords  (const CKeywordsItem&, IFlatTextOStream&)    {}
     virtual void FormatSource    (const CSourceItem&, IFlatTextOStream&)      {}
     virtual void FormatReference (const CReferenceItem&, IFlatTextOStream&)   {}
+    virtual void FormatCache     (const CCacheItem&, IFlatTextOStream&)       {}
     virtual void FormatComment   (const CCommentItem&, IFlatTextOStream&)     {}
     virtual void FormatBasecount (const CBaseCountItem&, IFlatTextOStream&)   {}
     virtual void FormatSequence  (const CSequenceItem&, IFlatTextOStream&)    {}

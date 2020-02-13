@@ -616,6 +616,27 @@ void CGenbankFormatter::FormatHtmlAnchor(
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// String Cache
+
+void CGenbankFormatter::FormatCache
+(const CCacheItem& csh,
+ IFlatTextOStream& text_os)
+{
+    if ( csh.Skip() ) {
+        return;
+    }
+
+    vector<string>* rcx = csh.GetCache();
+    if (rcx) {
+        for (auto& str : *rcx) {
+            text_os.AddLine(str);
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
 // Keywords
 
 void CGenbankFormatter::FormatKeywords

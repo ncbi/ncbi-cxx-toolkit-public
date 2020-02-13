@@ -224,6 +224,27 @@ void CEmblFormatter::FormatDefline
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// String Cache
+
+void CEmblFormatter::FormatCache
+(const CCacheItem& csh,
+ IFlatTextOStream& text_os)
+{
+    if ( csh.Skip() ) {
+        return;
+    }
+
+    vector<string>* rcx = csh.GetCache();
+    if (rcx) {
+        for (auto& str : *rcx) {
+            text_os.AddLine(str);
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
 // KW
 
 void CEmblFormatter::FormatKeywords

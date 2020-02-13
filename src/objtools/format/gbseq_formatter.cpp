@@ -672,6 +672,27 @@ void CGBSeqFormatter::FormatSource
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// String Cache
+
+void CGBSeqFormatter::FormatCache
+(const CCacheItem& csh,
+ IFlatTextOStream& text_os)
+{
+    if ( csh.Skip() ) {
+        return;
+    }
+
+    vector<string>* rcx = csh.GetCache();
+    if (rcx) {
+        for (auto& str : *rcx) {
+            text_os.AddLine(str);
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
 // Keywords
 
 void CGBSeqFormatter::FormatKeywords

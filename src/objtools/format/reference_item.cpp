@@ -96,6 +96,33 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
+CCacheItem::CCacheItem(CBioseqContext& ctx, TCache csh) :
+    m_Cache(csh),
+    CFlatItem(&ctx)
+{
+}
+
+IFlatItem::EItem CCacheItem::GetItemType(void) const
+{
+    return eItem_Cache;
+}
+
+const CCacheItem::TCache CCacheItem::GetCache(void) const 
+{ 
+    return m_Cache; 
+}
+
+
+
+void CCacheItem::Format
+(IFormatter& formatter,
+ IFlatTextOStream& text_os) const
+{
+    formatter.FormatCache(*this, text_os);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_sub)
 {

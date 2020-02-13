@@ -63,6 +63,25 @@ class CBioseqContext;
 class IFormatter;
 
 
+class NCBI_FORMAT_EXPORT CCacheItem : public CFlatItem
+{
+public:
+    // types
+    typedef vector<string>* TCache;
+
+    CCacheItem(CBioseqContext& ctx, TCache csh);
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+
+    const TCache GetCache(void) const;
+
+    virtual EItem GetItemType(void) const;
+private:
+
+    // data
+    TCache m_Cache;
+};
+
+
 class NCBI_FORMAT_EXPORT CReferenceItem : public CFlatItem
 {
 public:
