@@ -190,7 +190,6 @@ bool CGtfWriter::xWriteFeature(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    auto subtype = mf.GetFeatSubtype();
     switch(mf.GetFeatSubtype()) {
         default:
 			if (mf.GetFeatType() == CSeqFeatData::e_Rna) {

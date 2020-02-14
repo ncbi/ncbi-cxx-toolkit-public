@@ -208,7 +208,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        const auto& obj = **cit;
         ofstr << MSerial_AsnText << **cit;
         ofstr.flush();
     }

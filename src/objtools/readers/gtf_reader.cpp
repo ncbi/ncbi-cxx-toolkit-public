@@ -249,8 +249,6 @@ bool CGtfReader::xUpdateAnnotCds(
     CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    bool needXref = false;
-
     //
     // From the spec, the stop codon has _not_ been accounted for in any of the 
     //  coding regions. Hence, we will treat (pieces of) the stop codon just

@@ -1242,13 +1242,6 @@ bool CWriteUtil::CompareLocations(
     const CSeq_loc& rhl = rhs.GetLocation();
 
     //test1: id, alphabetical
-    if (!lhs  ||  !rhs) {
-        cout << "";
-    }
-    if (!lhl.GetId()  || !rhl.GetId()) {
-        const CSeq_feat& bad_feat = rhs.GetOriginalFeature();
-        cout << "";
-    }
     string lhs_id = CWriteUtil::GetStringId(lhl);
     string rhs_id = CWriteUtil::GetStringId(rhl);
     if (lhs_id != rhs_id) {
