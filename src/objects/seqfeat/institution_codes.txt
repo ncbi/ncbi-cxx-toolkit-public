@@ -425,7 +425,7 @@ BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de 
 BCC<THA>	c	BIOTEC Culture Collection			
 BCCDC	c	BC Centre for Disease Control			
 BCCM/DCG	c	Belgian Coordinated Collections of Microorganisms / DCG Diatoms Collection	DCG		
-BCCM/GENECORNER	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,LMBP		
+BCCM/GENECORNER	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,GeneCorner,LMBP		
 BCCM/IHEM	c	Belgian Coordinated Collections of Microorganisms / IHEM Fungi collection: Human & Animal Health	IHEM		
 BCCM/ITM	c	Belgian Coordinated Collections of Microorganisms / ITM Mycobacteria Collection	ITM		
 BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
@@ -5520,6 +5520,7 @@ PMAS	s	Pir Mehr Ali Shah Arid Agriculture University, Rawalpindi, Pakistan
 PMAU	s	Peterborough Museum and Art Gallery			
 PMB	s	Prirodnjacki Muzej Srpske Zemije			
 PMBC	s	Phuket Marine Biological Centre			
+PMC	c	Paris Museum Collection of Cyanobacteria			
 PMFP	s	Papeete Museum			
 PMG<BRA>	s	Horto Florestal			
 PMG<GBR>	s	Paisley Museum of Geological Collection			
