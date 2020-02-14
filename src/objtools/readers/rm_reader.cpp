@@ -333,6 +333,9 @@ void CRepeatLibrary::Read(CNcbiIstream& stream)
                 //         die "Failed to extract a repeat class from line:\nLine $.: $_\n" unless defined $class and $class;
                 //     }
                 repeat.m_RptClass = NStr::TruncateSpaces(value.substr(5));
+                if (repeat.m_RptClass.empty()) {
+                    repeat.m_RptClass = "Unknown";
+                }
             } else if (NStr::StartsWith(value, "SubType:")) {
                 // Perl equivalent from rpt_lib2repeat_q.pl:
                 //     if (m/^CC   +SubType:\s*((.*\S)*)\s*$/) {
