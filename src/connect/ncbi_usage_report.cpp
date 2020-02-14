@@ -41,6 +41,9 @@
 BEGIN_NCBI_SCOPE
 
 
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  Defaults
 //
@@ -134,7 +137,7 @@ void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
     SetAppVersion(version.Print());
 }
 
-void CUsageReportAPI::SetMaxAsyncThreads(unsigned n)
+void CUsageReportAPI::SetMaxThreads(unsigned n)
 {
     NCBI_PARAM_TYPE(USAGE_REPORT, MaxThreads)::SetDefault(n ? n : kDefault_MaxThreads);
 }
@@ -170,7 +173,7 @@ string CUsageReportAPI::GetAppVersion()
     return version;
 }
 
-unsigned CUsageReportAPI::GetMaxAsyncThreads()
+unsigned CUsageReportAPI::GetMaxThreads()
 {
     return NCBI_PARAM_TYPE(USAGE_REPORT, MaxThreads)::GetDefault();
 }
@@ -363,11 +366,9 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
     // Save URL
     m_URL = url.empty() ? CUsageReportAPI::GetURL() : url;
 
-#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
     // Create thread pool for async reporting
-    unsigned thread_pool_size = CUsageReportAPI::GetMaxAsyncThreads();
+    unsigned thread_pool_size = CUsageReportAPI::GetMaxThreads();
     m_ThreadPool.resize(thread_pool_size);
-#endif    
     
     // Enable reporter
     m_IsEnabled = true;
@@ -375,10 +376,8 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
 
 CUsageReport::~CUsageReport(void)
 {
-#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
     // Wait all running async jobs (if any) to finish
     Wait();
-#endif    
 }
 
 bool CUsageReport::IsEnabled()
@@ -386,6 +385,8 @@ bool CUsageReport::IsEnabled()
     return CUsageReportAPI::IsEnabled()  &&  m_IsEnabled;
 }
 
+
+// MT-safe
 bool CUsageReport::x_Send(const string& extra_params, int* http_status)
 {
     string url = m_URL + '?' + m_DefaultParams;
@@ -400,33 +401,7 @@ bool CUsageReport::x_Send(const string& extra_params, int* http_status)
     return response.GetStatusCode() == 200;
 }
 
-bool CUsageReport::Send(int* http_status)
-{
-    if ( !IsEnabled() ) {
-        if (http_status) {
-            *http_status = 0;
-        }
-        return false;
-    }
-    return x_Send(string(), http_status);
-}
-
-bool CUsageReport::Send(const CUsageReportParameters& params, int* http_status)
-{
-    if ( !IsEnabled() ) {
-        if (http_status) {
-            *http_status = 0;
-        }
-        return false;
-    }
-    return x_Send(params.ToString(), http_status);
-}
-
-
-#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
-
 // MT-safe
-//
 void CUsageReport::x_SendAsync(TJobPtr job)
 {
     _ASSERT(job);
@@ -462,7 +437,7 @@ void CUsageReport::x_SendAsync(TJobPtr job)
     }
 }
 
-void CUsageReport::SendAsync(void)
+void CUsageReport::Send(void)
 {
     if ( IsEnabled() ) {
         // Create new default job
@@ -474,25 +449,25 @@ void CUsageReport::SendAsync(void)
     }
 }
 
-void CUsageReport::SendAsync(CUsageReportParameters& params, EOwnership own)
+void CUsageReport::Send(CUsageReportParameters* params, EOwnership own)
 {
     if ( IsEnabled() ) {
         // Create new async job
         CUsageReportJob* job = new CUsageReportJob();
         job->x_SetOwnership(eTakeOwnership);
-        job->x_SetState(CUsageReportJob::eCreated);
         // Copy/move parameters to new job
         if (own == eTakeOwnership) {
-            dynamic_cast<CUsageReportParameters*>(job)->x_MoveFrom(params);
+            dynamic_cast<CUsageReportParameters*>(job)->x_MoveFrom(*params);
         } else {
-            dynamic_cast<CUsageReportParameters*>(job)->x_CopyFrom(params);
+            dynamic_cast<CUsageReportParameters*>(job)->x_CopyFrom(*params);
         }
+        job->x_SetState(CUsageReportJob::eCreated);
         // Report
         x_SendAsync(job);
     }
 }
 
-void CUsageReport::SendAsync(TJobPtr job, EOwnership own)
+void CUsageReport::Send(TJobPtr job, EOwnership own)
 {
     _ASSERT(job);
     if ( IsEnabled() ) {
@@ -541,7 +516,8 @@ void CUsageReport::x_AsyncHandler(TJobPtr job, int thread_pool_slot)
     m_ThreadPool[thread_pool_slot].m_state = eFinished;
 }
 
-#endif  // NCBI_USAGE_REPORT_ACYNC_SUPPORTED
+
+#endif  // NCBI_USAGE_REPORT_SUPPORTED
 
 
 END_NCBI_SCOPE

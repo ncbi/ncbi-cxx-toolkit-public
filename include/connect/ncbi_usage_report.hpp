@@ -45,16 +45,18 @@
  * @{
  */
 
+#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 700
+// No asynchronous reporting for GCC < 7.0.
+// std::thread doesn't support async handlers with arguments (at least as class method),
+#else 
+#  define NCBI_USAGE_REPORT_SUPPORTED 1
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 700
-// No asynchronous reporting for GCC < 7.0.
-// std::thread doesn't support async handlers with arguments (at least as class method).
-#else 
-#  define NCBI_USAGE_REPORT_ACYNC_SUPPORTED 1
-#endif
-
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -66,7 +68,7 @@ class CUsageReportBase
 {
 public:
     /// Defines what information should be reported by default by all reporters,
-    /// in addition to passed parameters in Send*() methods.
+    /// in addition to passed parameters for Send() method.
     /// @sa CUsageReportAPI::SetDefaultParameters(), CUsageReport
     enum EWhat {
         fEmpty      = 0,         ///< No defaults, all parameters should be specified
@@ -157,7 +159,7 @@ public:
     ///   Environment variable:
     ///       NCBI_USAGE_REPORT_URL=https://...
     ///
-    static void SetURL(const string& url);
+    static void   SetURL(const string& url);
     static string GetURL(void);
 
     /// Set application name for the usage reporters.
@@ -177,7 +179,7 @@ public:
     ///
     /// @sa CNcbiApplication::GetProgramDisplayName(), GetAppName
     ///
-    static void SetAppName(const string& name);
+    static void   SetAppName(const string& name);
     static string GetAppName(void);
 
     /// Set application version for the usage reporter(s).
@@ -197,14 +199,14 @@ public:
     ///
     /// @sa CNcbiApplicationAPI::GetVersion(), GetAppVersion
     ///
-    static void SetAppVersion(const string& version);
-    static void SetAppVersion(const CVersionInfo& version);
+    static void   SetAppVersion(const string& version);
+    static void   SetAppVersion(const CVersionInfo& version);
     static string GetAppVersion(void);
 
     /// Declare the maximum number of asynchronous threads per reporter.
     ///
     /// Affects all reporters created afterwards only.
-    /// Used by CUsageReport::SendAsync() methods.
+    /// Used by CUsageReport::Send() method.
     ///
     /// @note
     ///   Can be specified thought the global parameter:
@@ -216,10 +218,10 @@ public:
     /// @param
     ///   Maximum number of asynchronous threads per reporter.
     ///   0 - (re)set to default value.
-    /// @sa GetMaxAsyncThreads, CUsageReport::SendAsync()
+    /// @sa GetMaxThreads, CUsageReport::Send()
     ///
-    static void SetMaxAsyncThreads(unsigned n);
-    static unsigned GetMaxAsyncThreads();
+    static void     SetMaxThreads(unsigned n);
+    static unsigned GetMaxThreads();
 };
 
 
@@ -290,8 +292,8 @@ private:
 /// class from it and override the OnStateChange() method.
 ///
 /// @note
-///    This class is not MT safe, concurrent access to the same object
-///    may cause data races.
+///    This class is not MT safe by default, concurrent access to the same
+///    object may cause data races.
 ///
 /// @sa CUsageReportParameters, CUsageReport
 ///
@@ -325,11 +327,11 @@ public:
 
     /// Callback for async reporting. Calls on each state change.
     ///
-    /// CUsageReport::SendAsync() change job state during asynchronous reporting
+    /// CUsageReport::Send() change job state during asynchronous reporting
     /// and call this method on each change. This method can be overloaded
     /// to allow checking reporting progress or failures, see EState for a list of states.
     /// @sa 
-    ///   EState, CUsageReport::SendAsync()
+    ///   EState, CUsageReport::Send()
     virtual void OnStateChange(EState state) {};
 
     /// Copy constructor.
@@ -343,13 +345,13 @@ public:
 
 protected:
     /// Change current job state.
-    /// Used by CUsageReport::SendAsync() only. User cannot change state directly.
-    /// @sa EState, CUsageReport::SendAsync()
+    /// Used by CUsageReport::Send() only. User cannot change state directly.
+    /// @sa EState, CUsageReport::Send()
     void x_SetState(EState state);
 
     /// Set ownership status.
-    /// Used by CUsageReport::SendAsync() only. User cannot change this.
-    /// @sa EOwnership, CUsageReport::SendAsync()
+    /// Used by CUsageReport::Send() only. User cannot change this.
+    /// @sa EOwnership, CUsageReport::Send()
     void x_SetOwnership(EOwnership own) { m_Ownership = own; };
 
     /// Copy data from 'other' job.
@@ -389,14 +391,14 @@ private:
 ///    
 /// @note
 ///   Maximum number of threads for asynchronous reporting is controlled by
-///   CUsageReportAPI::SetMaxAsyncThreads(). It defines the number of threads
+///   CUsageReportAPI::SetMaxThreads(). It defines the number of threads
 ///   per reporter! If some reporter reaches the maximum number of concurrently
-///   running asynchronous threads, all new async jobs will be rejected until
-///   some previously started jobs finish its work.
+///   running asynchronous threads, all new report requests will be rejected
+///   until some previously started jobs finish its work.
 ///
 /// @note
-///   If any asynchronous reporting is used, you should call Wait() method 
-///   for that reporter before application exit, to allow them to finish.
+///   You should call Wait() method for each reporter before application exit,
+///   to allow all currently run asynchronous jobs to finish.
 ///   Otherwise, running in background threads can lead to unexpected results.
 ///   Behavior is undefined.
 ///
@@ -458,86 +460,57 @@ public:
     /// @sa CUsageReportAPI::SetEnabled, SetEnabled
     bool IsEnabled(void);
 
-
-    /////////////////////////////////////////////////////////////////////////
-    // Synchronous reporting
-
-    /// Report usage statistics (pinger, no extra parameters except defaults).
-    ///
-    /// Synchronous reporting. Run reporting immediately and don't return until
-    /// all done. It runs in the main thread, independently of any asynchronous
-    /// requests you may have.
-    ///
-    /// @param http_status
-    ///   Optional argument to get HTTP status of the last request.
-    ///   Useful for the error reporting.
-    ///   Sets to 0 if reporting API is disabled.
-    /// @return 
-    ///   TRUE on success, FALSE otherwise.
-    /// @sa 
-    ///   CUsageReportParameters, CUsageReportAPI::Enable(), SendAsync()
-    bool Send(int* http_status = nullptr);
-
-    /// Report usage statistics.
-    ///
-    /// Synchronous reporting. Run reporting immediately and don't return until
-    /// all done. It runs in the main thread, independently of any asynchronous
-    /// requests you may have.
-    ///
-    /// @param params
-    ///   Reporting parameters.
-    /// @param http_status
-    ///   Optional argument to get HTTP status of the last request.
-    ///   Useful for the error reporting.
-    ///   Sets to 0 if reporting API is disabled.
-    /// @return 
-    ///   TRUE on success, FALSE otherwise.
-    /// @sa 
-    ///   CUsageReportParameters, CUsageReportAPI::Enable()
-    bool Send(const CUsageReportParameters& params, int* http_status = nullptr);
-
-
-#if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
-
-    /////////////////////////////////////////////////////////////////////////
-    // Asynchronous reporting
-    
-
-    /// Report usage statistics asynchronously.
+    /// Report usage statistics (asynchronously), default parameters.
     ///
     /// Send usage statistics with default parameters in background,
     /// without blocking current thread execution.
     /// @sa 
-    ///   CUsageReportParameters, CUsageReportAPI::Enable()
-    void SendAsync(void);
+    ///   CUsageReportParameters, Enable(), Wait()
+    void Send(void);
 
-    /// Report usage statistics asynchronously.
+    /// Report usage statistics (asynchronously).
     ///
     /// Send usage statistics with specified parameters in background,
     /// without blocking current thread execution.
     /// @param params
-    ///   Additional parameters to report. Default parameters can be specified in the constructor.
-    /// @param own
-    ///   For MT-safety reporting parameters cannot be used "as is", because it can be
-    ///   accidentally changed in the middle of reporting process that can lead
-    ///   to incorrect result. And it is not worth to add additional MT-protection to 
-    ///   CUsageReportParameters class. So, reporting API can "copy" or "move" specified 
-    ///   parameters, and 'own' argument specify what to do here:
-    ///     - eTakeOwnership -- move parameters, makes 'params' object empty after this call;
-    ///     - eNoOwnership   -- copy parameters, leave 'params' objects in unchanged state.
-    ///   eNoOwnership is slower if you have many parameters, but it is more
-    ///   convenient to use if you report almost the same set of parameters and
-    ///   changes only few of them before each reporting.
-    ///   The "copy" behavior is set by default.
+    ///   Additional parameters to report.
+    ///   Default parameters can be specified in the CUsageReport constructor.
+    ///   The reporter copy parameters before asynchronously reporting them in background,
+    ///   so parameters object can be freely changed or destroyed after this call.
     /// @sa 
     ///   CUsageReportParameters, TWhat, CUsageReportJob::OnStateChange(), 
     ///   Enable(), Wait()
     ///
-    void SendAsync(CUsageReportParameters& params, EOwnership own = eNoOwnership);
+    void Send(CUsageReportParameters& params) { Send(&params, eNoOwnership); }
 
-    /// Report usage statistics asynchronously (advanced version).
+    /// Report usage statistics (asynchronously).
+    ///
+    /// Send usage statistics with specified parameters in background,
+    /// without blocking current thread execution.
+    /// Extended version with memory control.
+    /// @param params
+    ///   Additional parameters to report.
+    ///   Default parameters can be specified in the CUsageReport constructor.
+    /// @param own
+    ///   For MT-safety reporting parameters cannot be used "as is", because it can be
+    ///   accidentally changed in the middle of reporting process that can lead
+    ///   to incorrect result. So, reporting API can "copy" or "move" specified 
+    ///   parameters, and 'own' argument specify what to do here:
+    ///     - eTakeOwnership -- move parameters, makes 'params' object empty after this call;
+    ///     - eNoOwnership   -- copy parameters, leave 'params' objects in unchanged state.
+    ///   eNoOwnership is slower if you have many parameters, but it is more
+    ///   convenient to use if you report almost the same set of parameters each time
+    ///   and change only few of them before each reporting.
+    /// @sa 
+    ///   CUsageReportParameters, TWhat, CUsageReportJob::OnStateChange(), 
+    ///   Enable(), Wait()
+    ///
+    void Send(CUsageReportParameters* params, EOwnership own);
+
+    /// Report usage statistics (asynchronously) (advanced version).
     ///
     /// Send usage statistics in background without blocking current thread execution.
+    /// Allow to control reporting process and reporting errors.
     ///
     /// @param job_ptr
     ///   Pointer to CUsageReportJob based object. Note, that allocated object
@@ -561,26 +534,14 @@ public:
     ///   // Usage example
     ///   unique_ptr<CUsageReportJob_or_derived_class> job(new CUsageReportJob_or_derived_class());
     ///   job->Add(...);
-    ///   CUsageReport::Instance().SendAsync(job.release(), eTakeOwnership);
+    ///   CUsageReport::Instance().Send(job.release(), eTakeOwnership);
     /// @endcode
     ///
-    void SendAsync(CUsageReportJob* job_ptr, EOwnership own);
+    void Send(CUsageReportJob* job_ptr, EOwnership own);
 
     /// Wait all asynchronous reporting jobs to finish (if any).
+    /// Should be called once before an application exit.
     void Wait(void);
-
-#endif  // NCBI_USAGE_REPORT_ACYNC_SUPPORTED
-    
-
-private:
-    /// Send parameters string synchronously, returns HTTP status if specified. MT-safe.
-    bool x_Send(const string& extra_params, int* http_status);
-
-    using TJobPtr = CUsageReportJob*;
-    /// Send job asynchronously.
-    void x_SendAsync(TJobPtr job);
-    /// Handler for asynchronous job reporting in the separate thread. 
-    void x_AsyncHandler(TJobPtr job, int thread_pool_slot);
 
 private:
     /// Prevent copying.
@@ -589,13 +550,20 @@ private:
     friend class CUsageReportAPI;
 
 private:
+    /// Send parameters string synchronously, returns HTTP status if specified.
+    bool x_Send(const string& extra_params, int* http_status);    
+    /// Send job asynchronously
+    using TJobPtr = CUsageReportJob*;
+    void x_SendAsync(TJobPtr job);
+    /// Handler for asynchronous job reporting in the separate thread. 
+    void x_AsyncHandler(TJobPtr job, int thread_pool_slot);
+
+private:
     mutable bool m_IsEnabled;      ///< Enable/disable status
     string       m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded.
     string       m_URL;            ///< Reporting URL
 
- #if defined(NCBI_USAGE_REPORT_ACYNC_SUPPORTED)
-   // Async processing
-
+    // Async processing
     enum EThreadState {
         eReady,
         eRunning,
@@ -607,8 +575,6 @@ private:
         EThreadState m_state;
     };
     vector<SThread> m_ThreadPool;   ///< Async thread pool
-#endif  // NCBI_USAGE_REPORT_ACYNC_SUPPORTED
-    
     std::mutex      m_Usage_Mutex;  ///< MT-protection
 };
 
@@ -641,7 +607,7 @@ private:
         if (reporter.IsEnabled()) {                                 \
             unique_ptr<CUsageReportJob> job(new CUsageReportJob()); \
             job->Add("jsevent", (event)) args;                      \
-            reporter.SendAsync(job.release(), eTakeOwnership);      \
+            reporter.Send(job.release(), eTakeOwnership);      \
         }                                                           \
     }
 
@@ -654,9 +620,17 @@ private:
 ///
 #define NCBI_REPORT_USAGE_FINISH  CUsageReport::Instance().Wait()
 
+#else
+
+// Empty macro if no support usage reporting
+#define NCBI_REPORT_USAGE(event, ...)
+#define NCBI_REPORT_USAGE_START
+#define NCBI_REPORT_USAGE_FINISH
+
+#endif  // NCBI_USAGE_REPORT_SUPPORTED
+
 
 /* @} */
-
 
 END_NCBI_SCOPE
 
