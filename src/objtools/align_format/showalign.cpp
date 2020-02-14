@@ -4477,8 +4477,11 @@ void CDisplaySeqalign::x_GetDomainInfo(int row_num, int aln_stop,
                         if (alnFrom -
                             m_AV->GetAlnPosFromSeqPos(0, actualSeqStart - 1) > 1) {
                             //if so then use subject seq to get domain boundary
-                            alnFrom = m_AV->GetAlnPosFromSeqPos(1,
+                            int subj_aln_from = m_AV->GetAlnPosFromSeqPos(1,
                                                                 (int)(*iter)->subject_seqloc->GetInt().GetFrom());
+                            if (subj_aln_from >= 0) {
+                                alnFrom = subj_aln_from;
+                            }
                         }
                     }
 
@@ -4488,8 +4491,11 @@ void CDisplaySeqalign::x_GetDomainInfo(int row_num, int aln_stop,
                         (*iter)->is_subject_stop_valid) {
                         if (m_AV->GetAlnPosFromSeqPos(0, actualSeqStop + 1) - alnTo > 1) {
                             //if so then use subject seq to get domain boundary
-                            alnTo = m_AV->GetAlnPosFromSeqPos(1,
+                            int subj_aln_to = m_AV->GetAlnPosFromSeqPos(1,
                                                               (int)(*iter)->subject_seqloc->GetInt().GetTo());
+                            if (subj_aln_to >= 0) {
+                                alnTo = subj_aln_to;
+                            }
                         }
                     }
                     int actual_aln_from = min(alnFrom,last_aln_to +1);
