@@ -63,23 +63,4 @@
         } \
     }
 
-namespace ncbi {
-namespace grid {
-
-template <class TBase>
-class CVersionReporting : public TBase
-{
-public:
-    template<typename... Args>
-    CVersionReporting(Args&&... args) : TBase(std::forward<Args>(args)...)
-    {
-        auto& version = this->GetFullVersion();
-        auto package_version =  version.GetPackageVersion();
-        this->SetVersion(package_version);
-    }
-};
-
-}
-}
-
 #endif // CONNECT_SERVICES__APP_VERSION_INFO_HPP

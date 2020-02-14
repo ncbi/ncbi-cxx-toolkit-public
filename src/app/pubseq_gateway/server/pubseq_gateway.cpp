@@ -1361,7 +1361,7 @@ int main(int argc, const char* argv[])
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
 
 
-    int ret = grid::CVersionReporting<CPubseqGatewayApp>().AppMain(argc, argv, NULL, eDS_ToStdlog);
+    int ret = CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
     google::protobuf::ShutdownProtobufLibrary();
     return ret;
 }

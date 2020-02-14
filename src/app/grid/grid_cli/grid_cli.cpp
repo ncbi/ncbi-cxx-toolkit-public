@@ -1846,6 +1846,6 @@ void CGridCommandLineInterfaceApp::ReadFromCin()
 
 int main(int argc, const char* argv[])
 {
-    grid::CVersionReporting<CGridCommandLineInterfaceApp> app(argc, argv);
+    CGridCommandLineInterfaceApp app(argc, argv);
     return app.AppMain(1, argv);
 }

@@ -168,6 +168,13 @@ CNcbiApplicationAPI::CNcbiApplicationAPI(const SBuildInfo& build_info)
 
     // Create empty version info
     m_Version.Reset(new CVersionAPI(build_info));
+
+    // Set version equal to package one if still empty (might have TeamCity build number)
+    if (m_Version->GetVersionInfo().IsAny()) {
+        auto package_info = m_Version->GetPackageVersion();
+        m_Version->SetVersionInfo(new CVersionInfo(package_info));
+    }
+
 #if NCBI_SC_VERSION_PROXY != 0
     m_Version->AddComponentVersion("NCBI C++ Toolkit",
         NCBI_SC_VERSION_PROXY, 0, NCBI_SUBVERSION_REVISION_PROXY,

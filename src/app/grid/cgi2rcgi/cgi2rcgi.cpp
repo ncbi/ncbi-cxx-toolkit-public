@@ -1412,6 +1412,6 @@ int main(int argc, const char* argv[])
     GRID_APP_CHECK_VERSION_ARGS();
 
     GetDiagContext().SetOldPostFormat(false);
-    grid::CVersionReporting<CCgi2RCgiApp> app;
+    CCgi2RCgiApp app;
     return app.AppMain(argc, argv);
 }
