@@ -55,7 +55,7 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     CCleanup cleanup;
     if (flags.find('w') != string::npos)
     {
-        CCleanup::WGSCleanup(h_entry);
+        CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects);
         need_recalculate_index = true;
     }
     else
@@ -89,7 +89,7 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
             ++bi;
         }
     }
-    CCleanup::ExtendedCleanup(h_entry, 0);
+    CCleanup::ExtendedCleanup(h_entry, CCleanup::eClean_NoNcbiUserObjects);
 
 
     CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
