@@ -248,6 +248,7 @@ connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
 connssl needs3party $(ORIG_LIBS)
+creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
 crypto needs3party $(Z_LIBS)
@@ -980,6 +981,7 @@ ncbimla needs3party netcli
 ncbimmdb needs3party ncbiid1
 ncbimmdb needs3party ncbitool
 ncbimsc1 needs3party $(NCBI_C_ncbi)
+ncbiobj includes creaders
 ncbiobj needs3party $(NCBI_C_ncbi)
 ncbiprs needs3party ctutils
 ncbiprs needs3party ncbiindx
