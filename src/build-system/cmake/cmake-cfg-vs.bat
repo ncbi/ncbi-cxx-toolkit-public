@@ -226,19 +226,19 @@ if "%BUILD_ROOT%"=="" (
   )
 )
 
-cd "%tree_root%"
+cd /d "%tree_root%"
 if defined have_configure_ext_PreCMake (
   call "%extension%" :configure_ext_PreCMake
 )
 if not exist "%BUILD_ROOT%\build" (
   mkdir "%BUILD_ROOT%\build"
 )
-cd "%BUILD_ROOT%\build"
+cd /d "%BUILD_ROOT%\build"
 
 REM echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 
 :DONE
-cd %initial_dir%
+cd /d %initial_dir%
 endlocal
 exit /b 0
