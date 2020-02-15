@@ -449,9 +449,6 @@ gensvc_g needs xser
 geodataset needs biblio
 gif needs3party $(ORIG_LIBS)
 gif needs3party X11
-gl2ps needs3party $(OPENGL_LIBS)
-gl2ps needs3party $(ORIG_LIBS)
-gl2ps needs3party $(PNG_LIBS)
 gmap needs xlinear_prog
 gmap needs xmlwrapp
 gnomon_access needs $(SQLITE3_WRAPPER)
@@ -682,6 +679,7 @@ gui_objutils needs snputil
 gui_objutils needs xalgoalignutil
 gui_objutils needs xcgi
 gui_objutils needs xdiscrepancy
+gui_objutils needs xhtml
 gui_objutils needs xobjreadex
 gui_objutils needs xobjwrite
 gui_objutils needs xvalidate
@@ -691,7 +689,6 @@ gui_opengl needs3party $(FTGL_LIBS)
 gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
 gui_print needs gui_opengl
-gui_print needs3party $(GL2PS_LIBS)
 gui_utils needs $(COMPRESS_LIBS)
 gui_utils needs ncbi_xcache_netcache
 gui_utils needs tables
@@ -1355,8 +1352,15 @@ validation_details needs xobjwrite
 validation_results needs $(SEQ_LIBS)
 validation_results needs pub
 validation_results needs xmlwrapp
+var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
+variation_lib needs annotationproto
+variation_lib needs intvarutil
+variation_lib needs ncbi_xloader_blastdb
+variation_lib needs objannotation
+variation_lib needs refseq_aln_source
+variation_lib needs variation_utils
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
@@ -1378,7 +1382,7 @@ w_aln_crossaln needs w_hit_matrix
 w_aln_multi needs w_seq_graphic
 w_aln_score needs w_wx
 w_aln_table needs w_wx
-w_data needs w_wx
+w_data needs w_feedback
 w_edit needs align_format
 w_edit needs hydra_client
 w_edit needs pmcidconv_client
@@ -1400,7 +1404,7 @@ w_loaders needs hgvs
 w_loaders needs ncbi_xloader_blastdb
 w_loaders needs w_wx
 w_loaders needs xalgophytree
-w_macro_edit needs w_feedback
+w_macro_edit needs w_data
 w_object_list needs w_text_widget
 w_phylo_tree needs gui_graph
 w_phylo_tree needs w_data
