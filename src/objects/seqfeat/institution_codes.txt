@@ -6205,7 +6205,7 @@ SING	s	Singapore Botanic Gardens
 SINU	s	National University of Singapore, Biological Sciences Department			
 SIO	s	Scripps Institution of Oceanography			
 SIO:BIC	s	Scripps Institution of Oceanography, Benthic Invertebrates Collection	http://gdcmp1.ucsd.edu/benthic_invert/
-SIO:Marine Vertebrates	s	Scripps Institution of Oceanography, Marine Vertebrates Collection	http://portal.vertnet.org/o/sio/marine-vertebrates?id=sio-
+SIO:Marine Vertebrates	s	Scripps Institution of Oceanography, Marine Vertebrates Collection	http://collections.ucsd.edu/mv/fish/dsp_collection.php?cID=
 SITC	s	Sichuan Teachers College, Biology Department			
 SIU	s	Southern Illinois University, Plant Biology Department			
 SIUC	s	Research Museum of Zoology, Southern Illinois University at Carbondale			

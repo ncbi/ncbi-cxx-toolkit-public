@@ -6238,7 +6238,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SINU\ts\tNational University of Singapore, Biological Sciences Department\t\t\t",
 "SIO\ts\tScripps Institution of Oceanography\t\t\t",
 "SIO:BIC\ts\tScripps Institution of Oceanography, Benthic Invertebrates Collection\thttp://gdcmp1.ucsd.edu/benthic_invert/",
-"SIO:Marine Vertebrates\ts\tScripps Institution of Oceanography, Marine Vertebrates Collection\thttp://portal.vertnet.org/o/sio/marine-vertebrates?id=sio-",
+"SIO:Marine Vertebrates\ts\tScripps Institution of Oceanography, Marine Vertebrates Collection\thttp://collections.ucsd.edu/mv/fish/dsp_collection.php?cID=",
 "SITC\ts\tSichuan Teachers College, Biology Department\t\t\t",
 "SIU\ts\tSouthern Illinois University, Plant Biology Department\t\t\t",
 "SIUC\ts\tResearch Museum of Zoology, Southern Illinois University at Carbondale\t\t\t",
