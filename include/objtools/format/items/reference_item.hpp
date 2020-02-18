@@ -72,7 +72,7 @@ public:
     CCacheItem(CBioseqContext& ctx, TCache csh);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
-    const TCache GetCache(void) const;
+    TCache GetCache(void) const;
 
     virtual EItem GetItemType(void) const;
 private:
