@@ -3944,28 +3944,10 @@ AC_LANG_POP(C)
 
 # Avoid using unsupported (and noisily ignored) attributes.
 case "$compiler:$compiler_version" in
-   VisualAge:* )
+   VisualAge:* | WorkShop* )
       ncbi_cv_c_forceinline=inline
-      ;;
-   WorkShop* )
-      ncbi_cv_c_deprecation_syntax=none
-      ncbi_cv_c_forceinline=inline
-      ncbi_cv_c_noreturn=none
       ;;
 esac
-
-AC_CACHE_CHECK([syntax for marking deprecated functions],
-   ncbi_cv_c_deprecation_syntax,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[void f(void) __attribute__((__deprecated__)); void f(void) { }]],
-       [[f();]])],
-      [ncbi_cv_c_deprecation_syntax='__attribute__((__deprecated__))'],
-      [ncbi_cv_c_deprecation_syntax=none])])
-depr=$ncbi_cv_c_deprecation_syntax
-test "$depr" = "none"  &&  depr=""
-AC_DEFINE_UNQUOTED(NCBI_DEPRECATED, $depr,
-   [Define to whatever syntax, if any, your compiler supports for marking
-    functions as deprecated.])
 
 AC_LANG_PUSH(C)
 AC_CACHE_CHECK([how to force inlining],
@@ -3982,18 +3964,6 @@ test "$forceinline" = "no"  &&  forceinline=""
 AC_DEFINE_UNQUOTED(NCBI_FORCEINLINE, $forceinline,
    [Define to whatever syntax your compiler supports for marking functions
     as to be inlined even if they might not otherwise be.])
-
-AC_CACHE_CHECK([whether the C compiler supports __attribute__((destructor))],
-   ncbi_cv_c_attribute_destructor,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[void f(void) __attribute__((destructor)); void f(void) { }]],
-       [[f();]])],
-      [ncbi_cv_c_attribute_destructor=yes],
-      [ncbi_cv_c_attribute_destructor=no])])
-if test $ncbi_cv_c_attribute_destructor = yes; then
-   AC_DEFINE(HAVE_ATTRIBUTE_DESTRUCTOR, 1,
-      [Define to 1 if your C compiler supports __attribute__((destructor))])
-fi
 
 case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
    GCC:*\ *\ -fvisibility* | ICC:*\ -fvisibility* | *Clang:*\ -fvisibility*) ;;
@@ -4051,32 +4021,6 @@ if test -n "$restrict"; then
        `restrict' keyword.])
 fi
 
-AC_CACHE_CHECK([syntax for marking functions that never return],
-   ncbi_cv_c_noreturn,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[void f(void) __attribute__((__noreturn__)); void f(void) { }]],
-       [[f();]])],
-      [ncbi_cv_c_noreturn='__attribute__((__noreturn__))'],
-      [ncbi_cv_c_noreturn=none])])
-noret=$ncbi_cv_c_noreturn
-test "$noret" = "none"  &&  noret=""
-AC_DEFINE_UNQUOTED(NCBI_NORETURN, $noret,
-   [Define to whatever syntax, if any, your compiler supports for marking
-    functions that never return.])
-
-AC_CACHE_CHECK([syntax for marking functions whose result should be checked],
-   ncbi_cv_c_warn_unused_result,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[int f(void) __attribute__((warn_unused_result));]],
-       [[int status = f();]])],
-      [ncbi_cv_c_warn_unused_result='__attribute__((warn_unused_result))'],
-      [ncbi_cv_c_warn_unused_result=none])])
-wur=$ncbi_cv_c_warn_unused_result
-test "$wur" = "none"  &&  wur=""
-AC_DEFINE_UNQUOTED(NCBI_WARN_UNUSED_RESULT, $wur,
-   [Define to whatever syntax, if any, your compiler supports for marking
-    functions whose (status) result is important to check.])
-
 AC_CACHE_CHECK([syntax for declaring thread-local variables],
    ncbi_cv_c_tls_var,
    [ncbi_cv_c_tls_var=none
@@ -4092,18 +4036,6 @@ if test "$tls_var" != "none"; then
       [Define to whatever syntax your compiler supports for declaring
        thread-local variables, or leave undefined if it doesn't.])
 fi
-
-AC_CACHE_CHECK([syntax for marking types as packed to save memory],
-   ncbi_cv_c_packed,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
-       [[enum E { foo, bar } __attribute__((packed));]])],
-      [ncbi_cv_c_packed='__attribute__((__packed__))'],
-      [ncbi_cv_c_packed=none])])
-packed=$ncbi_cv_c_packed
-test "$packed" = "none"  &&  packed=""
-AC_DEFINE_UNQUOTED(NCBI_PACKED, $packed,
-   [Define to whatever syntax, if any, your compiler supports for marking
-    types as packed to save memory.])
 
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],

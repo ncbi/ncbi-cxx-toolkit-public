@@ -275,14 +275,6 @@ struct cxx_is_supported
 
 
 
-/// [[deprecated]] is not yet functional in GCC 5.x even in -std=gnu++14 mode
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 600
-#  define NCBI_STD_DEPRECATED(message)
-#else
-#  define NCBI_STD_DEPRECATED(message) [[deprecated (message)]]
-#endif
-
-
 /* @} */
 
 #endif /* NCBISTL__HPP */

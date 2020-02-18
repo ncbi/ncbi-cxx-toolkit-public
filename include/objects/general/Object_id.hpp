@@ -125,8 +125,8 @@ bool CObject_id::operator<(const CObject_id& id2) const
 }
 
 
-inline
 NCBI_WARN_UNUSED_RESULT
+inline
 bool CObject_id::GetId8(TId8& value) const
 {
     return GetIdType(value) == e_Id;
@@ -141,8 +141,8 @@ bool CObject_id::IsId8(void) const
 }
 
 
-inline
 NCBI_WARN_UNUSED_RESULT
+inline
 bool CObject_id::GetGi(TIntId& value) const
 {
 #ifdef NCBI_INT8_GI

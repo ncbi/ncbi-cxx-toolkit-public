@@ -137,9 +137,6 @@
 /* Define to 1 if you have the <atomic.h> header file. */
 /* #undef HAVE_ATOMIC_H */
 
-/* Define to 1 if your C compiler supports __attribute__((destructor)) */
-#define HAVE_ATTRIBUTE_DESTRUCTOR 1
-
 /* Define to 1 if your compiler supports
    __attribute__((visibility("default"))) */
 #define HAVE_ATTRIBUTE_VISIBILITY_DEFAULT 1
@@ -793,11 +790,6 @@
 /* Define to 1 when building binaries for public release. */
 /* #undef NCBI_BIN_RELEASE */
 
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions as deprecated. */
-#define NCBI_DEPRECATED __attribute__((__deprecated__))
-
-
 /* Define to whatever syntax your compiler supports for marking functions as
    to be inlined even if they might not otherwise be. */
 #define NCBI_FORCEINLINE inline __attribute__((always_inline))
@@ -816,14 +808,6 @@
 /* Define to 1 if stdio supports locking. */
 #define NCBI_HAVE_STDIO_LOCKED 1
 
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions that never return. */
-#define NCBI_NORETURN __attribute__((__noreturn__))
-
-/* Define to whatever syntax, if any, your compiler supports for marking types
-   as packed to save memory. */
-#define NCBI_PACKED __attribute__((packed))
-
 /* Define to whatever syntax, if any, your C compiler supports for marking
    pointers as restricted in the C99 sense. */
 #define NCBI_RESTRICT_C __restrict__
@@ -841,10 +825,6 @@
 
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1
-
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions whose (status) result is important to check. */
-#define NCBI_WARN_UNUSED_RESULT __attribute__ ((warn_unused_result))
 
 /* Define to 1 if the BSD-style netdb interface is reentrant. */
 /* #undef NETDB_REENTRANT */

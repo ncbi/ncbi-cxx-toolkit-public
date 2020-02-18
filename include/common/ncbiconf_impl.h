@@ -91,7 +91,11 @@
 /* New/nonstandard keywords and attributes
  */
 
-#if defined(__cplusplus)  &&  defined(__has_cpp_attribute)
+#if defined(__cplusplus)  &&  defined(__has_cpp_attribute) \
+    &&  ( !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 600)
+// Spurn modern standard [[...]] syntax under GCC 5.x, which overstates
+// its support for it.  (No great loss, since our wrapper macros can
+// readily substitute equivalent legacy __attribute__ syntax.)
 #  define NCBI_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
 #  define NCBI_HAS_CPP_ATTRIBUTE(x) 0
@@ -110,6 +114,25 @@
 #  define NCBI_RESTRICT
 #endif
 
+#ifdef NCBI_DEPRECATED
+#  undef NCBI_DEPRECATED
+#endif
+#if NCBI_HAS_CPP_ATTRIBUTE(deprecated) && 0
+// Favor legacy syntax for now, since compilers (at least GCC) can be pickier
+// about the placement of C++11-style [[deprecated]].
+#  define NCBI_DEPRECATED              [[deprecated]]
+#  define NCBI_STD_DEPRECATED(message) [[deprecated(message)]]
+#elif __has_attribute(deprecated)
+#  define NCBI_DEPRECATED              __attribute__((deprecated))
+#  define NCBI_STD_DEPRECATED(message) __attribute__((deprecated(message)))
+#elif defined(NCBI_COMPILER_MSVC)
+#  define NCBI_DEPRECATED              __declspec(deprecated)
+#  define NCBI_STD_DEPRECATED(message) __declspec(deprecated(message))
+#else
+#  define NCBI_DEPRECATED
+#  define NCBI_STD_DEPRECATED(message)
+#endif
+
 #ifndef NCBI_FORCEINLINE
 #  ifdef __cplusplus
 #    define NCBI_FORCEINLINE inline
@@ -118,16 +141,38 @@
 #  endif
 #endif
 
+#ifdef HAVE_ATTRIBUTE_DESTRUCTOR
+#  undef HAVE_ATTRIBUTE_DESTRUCTOR
+#endif
+#if __has_attribute(destructor)
+#  define HAVE_ATTRIBUTE_DESTRUCTOR 1
+#endif
+
 #ifndef NCBI_NORETURN
 #  if NCBI_HAS_CPP_ATTRIBUTE(noreturn)
 #    define NCBI_NORETURN [[noreturn]]
 #  elif __has_attribute(noreturn)
 #    define NCBI_NORETURN __attribute__((__noreturn__))
+#  elif defined(NCBI_COMPILER_MSVC)
+#    define NCBI_NORETURN __declspec(noreturn)
 #  else
 #    define NCBI_NORETURN
 #  endif
 #endif
 
+#ifdef NCBI_WARN_UNUSED_RESULT
+#  undef NCBI_WARN_UNUSED_RESULT
+#endif
+#if NCBI_HAS_CPP_ATTRIBUTE(nodiscard)
+#  define NCBI_WARN_UNUSED_RESULT [[nodiscard]]
+#elif __has_attribute(warn_unused_result)
+#  define NCBI_WARN_UNUSED_RESULT __attribute__(warn_unused_result)
+#elif defined(NCBI_COMPILER_MSVC)
+#  define NCBI_WARN_UNUSED_RESULT _Check_return_
+#else
+#  define NCBI_WARN_UNUSED_RESULT
+#endif
+    
 #if NCBI_HAS_CPP_ATTRIBUTE(fallthrough)
 #  define NCBI_FALLTHROUGH [[fallthrough]]
 #elif NCBI_HAS_CPP_ATTRIBUTE(gcc::fallthrough)
@@ -138,6 +183,17 @@
 #  define NCBI_FALLTHROUGH __attribute__ ((fallthrough))
 #else
 #  define NCBI_FALLTHROUGH
+#endif
+
+#ifdef NCBI_PACKED
+#  undef NCBI_PACKED
+#endif
+#if NCBI_HAS_CPP_ATTRIBUTE(packed)
+#  define NCBI_PACKED [[packed]]
+#elif __has_attribute(packed)
+#  define NCBI_PACKED __attribute__((packed))
+#else
+#  define NCBI_PACKED
 #endif
 
 /* Definition of packed enum type, to save some memory */

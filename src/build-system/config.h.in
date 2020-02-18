@@ -24,9 +24,6 @@
 /* Define to 1 if you have the <atomic.h> header file. */
 #undef HAVE_ATOMIC_H
 
-/* Define to 1 if your C compiler supports __attribute__((destructor)) */
-#undef HAVE_ATTRIBUTE_DESTRUCTOR
-
 /* Define to 1 if your compiler supports
    __attribute__((visibility("default"))) */
 #undef HAVE_ATTRIBUTE_VISIBILITY_DEFAULT
@@ -993,10 +990,6 @@
 /* This is the NCBI C++ Toolkit. */
 #undef NCBI_CXX_TOOLKIT
 
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions as deprecated. */
-#undef NCBI_DEPRECATED
-
 /* Define to 1 if building dynamic libraries by default. */
 #undef NCBI_DLL_BUILD
 
@@ -1034,10 +1027,6 @@
 /* Define to 1 to enable "ChaosMonkey" failure testing. */
 #undef NCBI_MONKEY
 
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions that never return. */
-#undef NCBI_NORETURN
-
 /* Operating system name */
 #undef NCBI_OS
 
@@ -1070,10 +1059,6 @@
 
 /* Define to 1 on Unix. */
 #undef NCBI_OS_UNIX
-
-/* Define to whatever syntax, if any, your compiler supports for marking types
-   as packed to save memory. */
-#undef NCBI_PACKED
 
 /* Define to the architecture size. */
 #undef NCBI_PLATFORM_BITS
@@ -1109,10 +1094,6 @@
 
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC
-
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions whose (status) result is important to check. */
-#undef NCBI_WARN_UNUSED_RESULT
 
 /* Define to 1 if the BSD-style netdb interface is reentrant. */
 #undef NETDB_REENTRANT

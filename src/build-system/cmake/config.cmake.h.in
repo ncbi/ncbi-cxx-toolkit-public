@@ -711,15 +711,12 @@
 #ifdef NCBI_COMPILER_MSVC
     typedef __int64 ssize_t;
     #define SIZEOF_SQLWCHAR     2
-    #define NCBI_DEPRECATED __declspec(deprecated)
-    #define NCBI_NORETURN   __declspec(noreturn)
     #define NCBI_FORCEINLINE __forceinline
     #define NCBI_TLS_VAR __declspec(thread)
     #define NCBI_RESTRICT_C
     #define NCBI_RESTRICT_CXX
     #define NCBI_PACKED_ENUM_TYPE(type)  : type
     #define NCBI_PACKED_ENUM_END()
-    #define NCBI_WARN_UNUSED_RESULT _Check_return_
     #define ICONV_CONST             const
     #define NETDB_REENTRANT                 1
     #ifndef HAVE_VSNPRINTF
@@ -762,20 +759,9 @@
 /* Define to 1 if `__tm_zone' is member of `struct tm'. */
 /* #undef HAVE_STRUCT_TM___TM_ZONE */
 
-/* Define to 1 if your C compiler supports __attribute__((destructor)) */
-    #define HAVE_ATTRIBUTE_DESTRUCTOR 1
-
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions as deprecated. */
-    #define NCBI_DEPRECATED __attribute__((__deprecated__))
-
 /* Define to whatever syntax your compiler supports for marking functions as
    to be inlined even if they might not otherwise be. */
     #define NCBI_FORCEINLINE inline __attribute__((always_inline))
-
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions that never return. */
-    #define NCBI_NORETURN __attribute__((__noreturn__))
 
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */
@@ -789,10 +775,6 @@
 /* Define to whatever syntax, if any, your C++ compiler supports for marking
    pointers as restricted in the C99 sense. */
     #define NCBI_RESTRICT_CXX __restrict__
-
-/* Define to whatever syntax, if any, your compiler supports for marking
-   functions whose (status) result is important to check. */
-    #undef NCBI_WARN_UNUSED_RESULT
 
 /* Define as const if the declaration of iconv() needs const. */
     #define ICONV_CONST 
@@ -1088,10 +1070,6 @@
 
 /* Define to 1 if building Java Native Interface bindings. */
 #undef NCBI_JNI
-
-/* Define to whatever syntax, if any, your compiler supports for marking types
-   as packed to save memory. */
-#undef NCBI_PACKED
 
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 #define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
