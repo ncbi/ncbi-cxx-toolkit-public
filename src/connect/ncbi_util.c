@@ -582,7 +582,8 @@ static void s_LOG_FileHandler(void* data, SLOG_Message* mess)
         }
         if (mess->level >= logdata->fatal_err) {
 #ifdef NDEBUG
-            exit(1);
+            fflush(0);
+            _exit(255);
 #else
             abort();
 #endif /*NDEBUG*/
