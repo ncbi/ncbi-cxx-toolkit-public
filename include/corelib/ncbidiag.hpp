@@ -1154,7 +1154,7 @@ public:
     TDiagPostFlags ResetPostFlags(TDiagPostFlags flags) const;
 
     /// Display fatal error message.
-    NCBI_XNCBI_EXPORT NCBI_NORETURN
+    NCBI_NORETURN NCBI_XNCBI_EXPORT
     static void DiagFatal(const CDiagCompileInfo& info,
                           const char* message);
     /// Display trouble error message.
@@ -1163,7 +1163,7 @@ public:
                             const char* message = NULL);
 
     /// Assert specified expression and report results.
-    NCBI_XNCBI_EXPORT NCBI_NORETURN
+    NCBI_NORETURN NCBI_XNCBI_EXPORT
     static void DiagAssert(const CDiagCompileInfo& info,
                            const char* expression,
                            const char* message = NULL);
@@ -1509,7 +1509,7 @@ extern void SetAbortHandler(FAbortHandler func = 0);
 ///
 /// Processes user abort handler and does not pop up assert windows
 /// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y").
-NCBI_XNCBI_EXPORT NCBI_NORETURN
+NCBI_NORETURN NCBI_XNCBI_EXPORT
 extern void Abort(void);
 
 /// Diagnostic trace setting.

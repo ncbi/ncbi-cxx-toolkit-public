@@ -641,7 +641,7 @@ enum ENull {
 
 
 // Default callback for null value - throws CCoreException.
-NCBI_XNCBI_EXPORT NCBI_NORETURN void g_ThrowOnNull(void);
+NCBI_NORETURN NCBI_XNCBI_EXPORT void g_ThrowOnNull(void);
 
 // Default callback template.
 template <class TValue>

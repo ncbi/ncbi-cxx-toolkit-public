@@ -411,7 +411,7 @@ const CNcbiDiag& Endm(const CNcbiDiag& diag)  {
 }
 
 // No-return version of Endm(), used in ERR_FATAL* set of macros
-NCBI_XNCBI_EXPORT NCBI_NORETURN
+NCBI_NORETURN NCBI_XNCBI_EXPORT
 void EndmFatal(const CNcbiDiag& diag);
 
 inline
