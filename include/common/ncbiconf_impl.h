@@ -125,7 +125,11 @@
 #  define NCBI_STD_DEPRECATED(message) [[deprecated(message)]]
 #elif __has_attribute(deprecated)
 #  define NCBI_DEPRECATED              __attribute__((deprecated))
-#  define NCBI_STD_DEPRECATED(message) __attribute__((deprecated(message)))
+#  if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 600
+#    define NCBI_STD_DEPRECATED(message)
+#  else
+#    define NCBI_STD_DEPRECATED(message) __attribute__((deprecated(message)))
+#  endif
 #elif defined(NCBI_COMPILER_MSVC)
 #  define NCBI_DEPRECATED              __declspec(deprecated)
 #  define NCBI_STD_DEPRECATED(message) /* __declspec(deprecated(message)) */
