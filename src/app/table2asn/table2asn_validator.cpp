@@ -224,6 +224,77 @@ void CTable2AsnValidator::ReportDiscrepancies()
     }
 }
 
+
+class CUpdateECNumbers 
+{
+public:
+    CUpdateECNumbers(CNcbiOstream& ostr) 
+        : m_Ostr(ostr) {}
+
+    void operator()(CSeq_feat& feat);
+private:
+    CNcbiOstream& m_Ostr;
+};
+
+
+void CUpdateECNumbers::operator()(CSeq_feat& feat) 
+{
+    if (!feat.IsSetData() ||
+        !feat.GetData().IsProt() ||
+        !feat.GetData().GetProt().IsSetEc()) {
+        return;
+    }
+
+    string label;
+    auto& EC = feat.SetData().SetProt().SetEc();
+    auto it = EC.begin();
+    while(it != EC.end())
+    {
+        switch (CProt_ref::GetECNumberStatus(*it))
+        {
+        case CProt_ref::eEC_deleted:
+            xGetLabel(feat, label);
+            m_Ostr << label << "\tEC number deleted\t" << *it << '\t' << endl;
+            it = EC.erase(it);
+            continue;
+            break;
+        case CProt_ref::eEC_replaced:
+        {
+            xGetLabel(feat, label);
+            const string& newvalue = CProt_ref::GetECNumberReplacement(*it);
+            bool is_split = newvalue.find('\t') != string::npos;
+            m_Ostr << label <<
+            (is_split ? "\tEC number split\t" : "\tEC number changed\t")
+            << *it << '\t' << newvalue << endl;
+            if (is_split) {
+                it = EC.erase(it);
+                continue;
+            }
+            *it = newvalue;
+        }
+        break;
+        case CProt_ref::eEC_unknown:
+            xGetLabel(feat, label);
+            m_Ostr << label << "\tEC number invalid\t" << *it << '\t' << endl;
+            break;
+        default:
+            break;
+        }
+        ++it;
+    }
+    if (EC.empty())
+    {
+        feat.SetData().SetProt().ResetEc();
+    }
+}
+
+
+void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry& entry) 
+{
+    VisitAllFeatures(entry, CUpdateECNumbers(m_context->GetOstream(".ecn")));
+}
+
+
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh)
 {
     string label;
