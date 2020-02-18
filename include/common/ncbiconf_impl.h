@@ -117,7 +117,8 @@
 #ifdef NCBI_DEPRECATED
 #  undef NCBI_DEPRECATED
 #endif
-#if NCBI_HAS_CPP_ATTRIBUTE(deprecated) && 0
+#if NCBI_HAS_CPP_ATTRIBUTE(deprecated)  || \
+  (defined(__cplusplus)  &&  defined(NCBI_COMPILER_MSVC))
 // Favor legacy syntax for now, since compilers (at least GCC) can be pickier
 // about the placement of C++11-style [[deprecated]].
 #  define NCBI_DEPRECATED              [[deprecated]]
