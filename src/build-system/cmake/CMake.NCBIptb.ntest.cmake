@@ -60,37 +60,38 @@ function(NCBI_internal_create_ncbi_checklist _variable _access)
     get_property(_checklist GLOBAL PROPERTY NCBI_PTBPROP_CHECKLIST)
     if(NOT "${_checklist}" STREQUAL "")
         list(SORT _checklist)
+        set(_checkdir ../check)
+        set(_listdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${_checkdir})
         if (WIN32 OR XCODE)
-            set(_listdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.check)
-            foreach(_cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
-                file(WRITE ${_listdir}/${_cfg}/check.sh.list ${_checklist})
-            endforeach()
+            set(VALGRIND_PATH "")
         else()
-            set(_listdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD})
-            file(WRITE ${_listdir}/check.sh.list ${_checklist})
+            set(VALGRIND_PATH "valgrind")
+        endif()
+        set(CHECK_TIMEOUT_MULT 1)
+        set(CHECK_OS_NAME "${HOST_OS}")
+        file(WRITE ${_listdir}/check.sh.list ${_checklist})
 
-            file(REMOVE_RECURSE ${NCBI_BUILD_ROOT}/status)
-            foreach( _comp IN LISTS NCBI_ALL_COMPONENTS)
-                file(WRITE ${NCBI_BUILD_ROOT}/status/${_comp}.enabled "")
-            endforeach()
+        if (EXISTS ${NCBI_BUILD_ROOT}/status)
+            file(REMOVE_RECURSE ${NCBI_BUILD_ROOT}/status/*)
+        else()
+            file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/status)
+        endif()
+        foreach( _comp IN LISTS NCBI_ALL_COMPONENTS)
+#            file(TOUCH ${NCBI_BUILD_ROOT}/status/${_comp}.enabled)
+            file(WRITE ${NCBI_BUILD_ROOT}/status/${_comp}.enabled "")
+        endforeach()
 
-            if (EXISTS "${NCBI_TREE_BUILDCFG}/check.cfg.in")
-                set(CHECK_TIMEOUT_MULT 1)
-                set(VALGRIND_PATH "valgrind")
-#                set(CHECK_OS_NAME "${CMAKE_HOST_SYSTEM}")
-                set(CHECK_OS_NAME "")
-                configure_file(${NCBI_TREE_BUILDCFG}/check.cfg.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/check.cfg @ONLY)
-            endif()
-            if (EXISTS "${NCBI_TREE_BUILDCFG}/sysdep.sh.in")
-                set(script_shell "#! /bin/sh")
-                set(TAIL_N "tail -n ")
-                configure_file(${NCBI_TREE_BUILDCFG}/sysdep.sh.in ${NCBI_BUILD_ROOT}/sysdep.sh @ONLY)
-                file(COPY ${NCBI_BUILD_ROOT}/sysdep.sh
-                     DESTINATION ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}
-                     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-                file(REMOVE ${NCBI_BUILD_ROOT}/sysdep.sh)
-            endif()
-
+        if (EXISTS "${NCBI_TREE_BUILDCFG}/check.cfg.in")
+            configure_file(${NCBI_TREE_BUILDCFG}/check.cfg.in ${_listdir}/check.cfg @ONLY)
+        endif()
+        if (EXISTS "${NCBI_TREE_BUILDCFG}/sysdep.sh.in")
+            set(script_shell "#! /bin/sh")
+            set(TAIL_N "tail -n ")
+            configure_file(${NCBI_TREE_BUILDCFG}/sysdep.sh.in ${NCBI_BUILD_ROOT}/sysdep.sh @ONLY)
+            file(COPY ${NCBI_BUILD_ROOT}/sysdep.sh
+                    DESTINATION ${_listdir}
+                    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+            file(REMOVE ${NCBI_BUILD_ROOT}/sysdep.sh)
         endif()
     endif()
 endfunction()
@@ -98,28 +99,111 @@ endfunction()
 ##############################################################################
 function(NCBI_internal_add_ncbi_checktarget)
     if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
-        set(SCRIPT_NAME "${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix.sh")
+        set(SCRIPT_NAME "${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix_cmake.sh")
     else()
-        set(SCRIPT_NAME "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix.sh")
+        set(SCRIPT_NAME "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix_cmake.sh")
     endif()
     set(WORKDIR ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD})
-#    get_filename_component(_build ${NCBI_BUILD_ROOT} NAME)
-    set(_build ${NCBI_SIGNATURE})
+    set(_checkdir ../check)
+    set(_checkroot ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${_checkdir})
 
-    add_custom_target(check
-        COMMAND ${SCRIPT_NAME} check.sh.list ${_build} ${WORKDIR} ${NCBI_TREE_ROOT} ${WORKDIR} check.sh
-        COMMAND ${CMAKE_COMMAND} -E echo "To run tests: cd ${WORKDIR}\; ./check.sh run"
-        DEPENDS ${SCRIPT_NAME}
-        SOURCES ${SCRIPT_NAME}
-        WORKING_DIRECTORY ${WORKDIR}
-    )
+    if (WIN32)
+        set(_knowndir "C:/Apps/Admin_Installs/Cygwin64/bin;C:/cygwin64/bin;$ENV{PATH}")
+        string(REPLACE "\\" "/" _knowndir "${_knowndir}")
+        foreach(_dir IN LISTS _knowndir)
+            if (NOT "${_dir}" STREQUAL "" AND EXISTS "${_dir}/sh.exe")
+                message(STATUS "Found Cygwin: ${_dir}")
+
+                string(REPLACE "/" "\\" _dir "${_dir}")
+                string(REPLACE ":" ""   _script "${SCRIPT_NAME}")
+                set(_script "/cygdrive/${_script}")
+                string(REPLACE ":" ""   _root "${NCBI_TREE_ROOT}")
+                set(_root "/cygdrive/${_root}")
+                set(_cmdstart set PATH=.$<SEMICOLON>${_dir}$<SEMICOLON>\%PATH\%& set DIAG_SILENT_ABORT=Y&)
+                set(_cmdstart ${_cmdstart} sh -c 'set -o igncr$<SEMICOLON>export SHELLOPTS$<SEMICOLON>)
+if(OFF)
+# on first build, RUN_CHECKS always creates check.sh in both configurations
+# subsequent builds do not create check.sh
+                foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+                    set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_${_cfg}} . ${_root} ${_checkdir} check.sh ${_cfg}')
+                    add_custom_command(OUTPUT "${_checkroot}/${_cfg}/check.sh"
+                        COMMAND ${_cmd}
+                        DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+                        WORKING_DIRECTORY ${WORKDIR}
+                        COMMENT "Creating ${_checkroot}/${_cfg}/check.sh"
+                    )
+                endforeach()
+
+                set(_cmd ${_cmdstart}${_checkroot}/$<CONFIG>/check.sh run')
+                add_custom_target(RUN_CHECKS
+                    COMMAND ${_cmd}
+                    DEPENDS "${_checkroot}/$<CONFIG>/check.sh"
+                    WORKING_DIRECTORY ${WORKDIR}
+                    COMMENT "Running tests"
+                    SOURCES "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+                )
+elseif(OFF)
+# on every build creates check.sh in one configuration, then runs it.
+                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_CFG} . ${_root} ${_checkdir} check.sh $<CONFIG>')
+                add_custom_target(RUN_CREATE_CHECKS
+                    COMMAND ${_cmd}
+                    DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+                    SOURCES "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+                    WORKING_DIRECTORY ${WORKDIR}
+                    COMMENT "Creating ${_checkroot}/<CONFIG>/check.sh"
+                )
+
+                set(_cmd ${_cmdstart}${_checkroot}/$<CONFIG>/check.sh run')
+                add_custom_target(RUN_CHECKS
+                    COMMAND ${_cmd}
+                    DEPENDS "${_checkroot}/$<CONFIG>/check.sh"
+                    WORKING_DIRECTORY ${WORKDIR}
+                    COMMENT "Running tests"
+                )
+                add_dependencies(RUN_CHECKS RUN_CREATE_CHECKS)
+else()
+# on every build creates check.sh in one configuration, then runs it.
+                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_CFG} . ${_root} ${_checkdir} check.sh $<CONFIG>)
+                set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run')
+                add_custom_target(RUN_CHECKS
+                    COMMAND ${_cmd}
+                    DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+                    SOURCES "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+                    WORKING_DIRECTORY ${WORKDIR}
+                    COMMENT "Preparing tests"
+                )
+endif()
+                return()
+            endif()
+        endforeach()
+        message("NOT FOUND Cygwin")
+    elseif(XCODE)
+        set(_cmdstart export DIAG_SILENT_ABORT=Y$<SEMICOLON>)
+        set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_CFG} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh $<CONFIG>)
+        set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
+        add_custom_target(RUN_CHECKS
+            COMMAND ${_cmd}
+            DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+            SOURCES "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+            WORKING_DIRECTORY ${WORKDIR}
+            COMMENT "Preparing tests"
+        )
+    else()
+        set(_cmdstart export DIAG_SILENT_ABORT=Y$<SEMICOLON>)
+        set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh$<SEMICOLON>)
+        set(_cmd ${_cmd}echo Running tests$<SEMICOLON>${_checkroot}/check.sh run)
+        add_custom_target(check
+            COMMAND ${_cmd}
+            DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
+            WORKING_DIRECTORY ${WORKDIR}
+            COMMENT "Preparing tests"
+        )
+    endif()
 endfunction()
 
 #############################################################################
 NCBI_register_hook(TARGET_ADDED  NCBI_internal_AddNCBITest)
 NCBI_register_hook(ALL_ADDED     NCBI_internal_create_ncbi_checklist)
 
-if(NOT WIN32 AND NOT XCODE)
-    NCBI_internal_add_ncbi_checktarget()
-endif()
+NCBI_internal_add_ncbi_checktarget()
 
