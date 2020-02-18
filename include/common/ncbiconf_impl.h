@@ -166,7 +166,7 @@
 #if NCBI_HAS_CPP_ATTRIBUTE(nodiscard)
 #  define NCBI_WARN_UNUSED_RESULT [[nodiscard]]
 #elif __has_attribute(warn_unused_result)
-#  define NCBI_WARN_UNUSED_RESULT __attribute__(warn_unused_result)
+#  define NCBI_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #elif defined(NCBI_COMPILER_MSVC)
 #  define NCBI_WARN_UNUSED_RESULT _Check_return_
 #else
