@@ -24,7 +24,6 @@ public:
     CTable2AsnValidator(CTable2AsnContext& ctx);
     void Validate(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags);
     void Cleanup(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry, const string& flags);
-    void UpdateECNumbers(objects::CSeq_entry_Handle seh);
     void UpdateECNumbers(objects::CSeq_entry& entry);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);

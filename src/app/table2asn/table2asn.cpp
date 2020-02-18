@@ -1041,7 +1041,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     if (!IsDryRun())
     {
-        m_validator->UpdateECNumbers(entry_edit_handle);
+        m_validator->UpdateECNumbers(*entry);
 
         if (!m_context.m_validate.empty())
         {
