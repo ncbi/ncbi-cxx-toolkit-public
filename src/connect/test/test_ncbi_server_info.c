@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     free((void*) server);
     free(info);
 
-    CORE_LOG(eLOG_Note, "TEST COMPLETED SUCCESSFULLY");
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }
