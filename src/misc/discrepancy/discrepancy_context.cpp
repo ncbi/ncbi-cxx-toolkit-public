@@ -66,7 +66,7 @@ void CDiscrepancyContext::SetSuspectRules(const string& name, bool read)
     if (!m_ProductRules || m_SuspectRules != name) {
         m_SuspectRules = name;
         if (read) {
-            m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+            m_ProductRules = NDiscrepancy::GetProductRules(m_SuspectRules);
         }
     }
 }
@@ -75,7 +75,7 @@ void CDiscrepancyContext::SetSuspectRules(const string& name, bool read)
 CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetProductRules()
 {
     if (!m_ProductRules) {
-        m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+        m_ProductRules = NDiscrepancy::GetProductRules(m_SuspectRules);
     }
     return m_ProductRules;
 }
@@ -84,7 +84,7 @@ CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetProductRules()
 CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetOrganelleProductRules()
 {
     if (!m_OrganelleProductRules) {
-        m_OrganelleProductRules = CSuspect_rule_set::GetOrganelleProductRules();
+        m_OrganelleProductRules = NDiscrepancy::GetOrganelleProductRules();
     }
     return m_OrganelleProductRules;
 }

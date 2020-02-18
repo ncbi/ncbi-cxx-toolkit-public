@@ -615,5 +615,119 @@ DISCREPANCY_SUMMARIZE(_SUSPECT_PRODUCT_NAMES)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+//////////////////////////////////////////////////////////////////////////
+
+static bool  s_OrganelleProductRulesInitialized = false;
+DEFINE_STATIC_FAST_MUTEX(s_OrganelleProductRulesMutex);
+static CRef<CSuspect_rule_set> s_OrganelleProductRules;
+
+static bool  s_ProductRulesInitialized = false;
+static string  s_ProductRulesFileName;
+DEFINE_STATIC_FAST_MUTEX(s_ProductRulesMutex);
+static CRef<CSuspect_rule_set> s_ProductRules;
+
+#define _FSM_RULES static const char* const s_Defaultorganelleproducts[]
+#define _FSM_EMIT static bool s_Defaultorganelleproducts_emit[]
+#define _FSM_HITS static map<size_t, vector<size_t>> s_Defaultorganelleproducts_hits
+#define _FSM_STATES static size_t s_Defaultorganelleproducts_states[]
+#include "organelle_products.inc"
+#undef _FSM_EMIT
+#undef _FSM_HITS
+#undef _FSM_STATES
+#undef _FSM_RULES
+
+
+static void s_InitializeOrganelleProductRules(const string& name)
+{
+    CFastMutexGuard GUARD(s_OrganelleProductRulesMutex);
+    if (s_OrganelleProductRulesInitialized) {
+        return;
+    }
+    s_OrganelleProductRules.Reset(new CSuspect_rule_set());
+    //string file = name.empty() ? g_FindDataFile("organelle_products.prt") : name;
+
+    if (!name.empty()) {
+        LOG_POST("Reading from " + name + " for organelle products");
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Open(name, eSerial_AsnText));
+        string header = in->ReadFileHeader();
+        in->Read(ObjectInfo(*s_OrganelleProductRules), CObjectIStream::eNoFileHeader);
+        s_OrganelleProductRules->SetPrecompiledData(0, 0, 0);
+    }
+    if (!s_OrganelleProductRules->IsSet()) {
+        //LOG_POST("Falling back on built-in data for organelle products");
+        size_t num_lines = sizeof(s_Defaultorganelleproducts) / sizeof(char *);
+        string all_rules = "";
+        for (size_t i = 0; i < num_lines; i++) {
+            all_rules += s_Defaultorganelleproducts[i];
+        }
+        CNcbiIstrstream istr(all_rules.c_str());
+        istr >> MSerial_AsnText >> *s_OrganelleProductRules;
+        s_OrganelleProductRules->SetPrecompiledData(s_Defaultorganelleproducts_emit, &s_Defaultorganelleproducts_hits, s_Defaultorganelleproducts_states);
+    }
+
+    s_OrganelleProductRulesInitialized = true;
+}
+
+
+#define _FSM_RULES static const char* const s_Defaultproductrules[]
+#define _FSM_EMIT static bool s_Defaultproductrules_emit[]
+#define _FSM_HITS static map<size_t, vector<size_t>> s_Defaultproductrules_hits
+#define _FSM_STATES static size_t s_Defaultproductrules_states[]
+#include "product_rules.inc"
+#undef _FSM_EMIT
+#undef _FSM_HITS
+#undef _FSM_STATES
+#undef _FSM_RULES
+
+
+static void s_InitializeProductRules(const string& name)
+{
+    CFastMutexGuard GUARD(s_ProductRulesMutex);
+    if (s_ProductRulesInitialized && name == s_ProductRulesFileName) {
+        return;
+    }
+    s_ProductRules.Reset(new CSuspect_rule_set());
+    s_ProductRulesFileName = name;
+    //string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
+
+    if (!name.empty()) {
+        LOG_POST("Reading from " + name + " for suspect product rules");
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Open(name, eSerial_AsnText));
+        string header = in->ReadFileHeader();
+        in->Read(ObjectInfo(*s_ProductRules), CObjectIStream::eNoFileHeader);
+        s_ProductRules->SetPrecompiledData(0, 0, 0);
+    }
+    if (!s_ProductRules->IsSet()) {
+        //LOG_POST("Falling back on built-in data for suspect product rules");
+        size_t num_lines = sizeof(s_Defaultproductrules) / sizeof(char *);
+        string all_rules = "";
+        for (size_t i = 0; i < num_lines; i++) {
+            all_rules += s_Defaultproductrules[i];
+        }
+        CNcbiIstrstream istr(all_rules.c_str());
+        istr >> MSerial_AsnText >> *s_ProductRules;
+        s_ProductRules->SetPrecompiledData(s_Defaultproductrules_emit, &s_Defaultproductrules_hits, s_Defaultproductrules_states);
+    }
+
+    s_ProductRulesInitialized = true;
+}
+
+
+CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name)
+{
+    s_InitializeOrganelleProductRules(name);
+    return CConstRef<CSuspect_rule_set>(s_OrganelleProductRules.GetPointer());
+}
+
+
+CConstRef<CSuspect_rule_set> GetProductRules(const string& name)
+{
+    s_InitializeProductRules(name);
+    return CConstRef<CSuspect_rule_set>(s_ProductRules.GetPointer());
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

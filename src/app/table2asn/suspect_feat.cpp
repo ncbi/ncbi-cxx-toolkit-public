@@ -79,7 +79,7 @@ CConstRef<CSuspect_rule> CFixSuspectProductName::x_FixSuspectProductName(string&
         if (found) {
             m_rules_filename = rules_env.data();
         }
-        m_rules = CSuspect_rule_set::GetProductRules(m_rules_filename);
+        m_rules = NDiscrepancy::GetProductRules(m_rules_filename);
     }
 
     if (m_rules.NotEmpty() && !m_rules->Get().empty()) 

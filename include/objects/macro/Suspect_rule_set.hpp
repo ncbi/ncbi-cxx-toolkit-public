@@ -60,9 +60,6 @@ public:
     // destructor
     ~CSuspect_rule_set(void);
 
-    static CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name = "");
-    static CConstRef<CSuspect_rule_set> GetProductRules(const string& name = "");
-
     void SetPrecompiledData(const bool* emit, const map<size_t, vector<size_t>>* hits, const size_t* states)
     {
         m_Precompiled_emit = emit;

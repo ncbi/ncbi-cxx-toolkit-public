@@ -35,7 +35,7 @@
 #include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/macro/Suspect_rule.hpp>
-
+#include <objects/macro/Suspect_rule_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -220,6 +220,8 @@ NCBI_DISCREPANCY_EXPORT bool IsShortrRNA(const objects::CSeq_feat& f, objects::C
 typedef std::function < CRef<objects::CSeq_feat>() > GetFeatureFunc;
 NCBI_DISCREPANCY_EXPORT string FixProductName(const objects::CSuspect_rule* rule, objects::CScope& scope, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds);
 
+NCBI_DISCREPANCY_EXPORT CConstRef<objects::CSuspect_rule_set> GetOrganelleProductRules(const string& name = "");
+NCBI_DISCREPANCY_EXPORT CConstRef<objects::CSuspect_rule_set> GetProductRules(const string& name = "");
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
