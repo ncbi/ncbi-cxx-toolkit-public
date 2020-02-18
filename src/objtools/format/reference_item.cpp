@@ -107,11 +107,6 @@ IFlatItem::EItem CCacheItem::GetItemType(void) const
     return eItem_Cache;
 }
 
-CCacheItem::TCache CCacheItem::GetCache(void) const 
-{ 
-    return m_Cache; 
-}
-
 
 
 void CCacheItem::Format
