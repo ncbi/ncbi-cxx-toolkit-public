@@ -970,7 +970,6 @@ for x_row in $x_tests; do
          test -d "$x_work_dir" || mkdir -p "$x_work_dir"
          cp -pf "$x_copy" "$x_work_dir"
       fi
-      test -f $x_copy  &&  cp -pf "$x_copy" "$x_work_dir"
       # Copy specified CHECK_COPY files/dirs
       if test ! -z "$x_files"; then
          test -d "$x_work_dir" || mkdir -p "$x_work_dir"
