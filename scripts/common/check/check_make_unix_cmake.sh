@@ -161,7 +161,9 @@ done
 #echo ----------------------------------------------------------------------
 
 #//////////////////////////////////////////////////////////////////////////
-mkdir -p "${x_target_dir}${x_buildcfg}"
+if test ! -d "${x_target_dir}${x_buildcfg}"; then
+  mkdir -p "${x_target_dir}${x_buildcfg}"
+fi
 cat > $x_out <<EOF
 #! /bin/sh
 
@@ -183,7 +185,7 @@ signature="$x_signature"
 sendmail=''
 domain='@ncbi.nlm.nih.gov'
 
-mkdir -p "\${checkdir}"
+test -d "\${checkdir}" || mkdir -p "\${checkdir}"
 #res_journal="\$script.journal"
 #res_log="\$script.log"
 #res_list="$x_list"
@@ -532,7 +534,7 @@ RunTest()
     x_ext="\$6"
     x_timeout="\$7"
     x_authors="\$8"
-    mkdir -p \${x_work_dir}
+    test -d \${x_work_dir} || mkdir -p \${x_work_dir}
 
     if test -f "/etc/nologin"; then
         echo "Nologin detected, probably host going to reboot. Skipping test:" \$x_name
@@ -964,13 +966,17 @@ for x_row in $x_tests; do
    if test "$x_import_prj" = "no"; then
       # Automatically copy .ini file if exists
       x_copy="$x_src_dir/$x_app.ini"
+      if test -f $x_copy; then
+         test -d "$x_work_dir" || mkdir -p "$x_work_dir"
+         cp -pf "$x_copy" "$x_work_dir"
+      fi
       test -f $x_copy  &&  cp -pf "$x_copy" "$x_work_dir"
       # Copy specified CHECK_COPY files/dirs
       if test ! -z "$x_files"; then
+         test -d "$x_work_dir" || mkdir -p "$x_work_dir"
          for i in $x_files ; do
             x_copy="$x_src_dir/$i"
             if test -f "$x_copy"  -o  -d "$x_copy"; then
-               mkdir -p "$x_work_dir"
                cp -prf "$x_copy" "$x_work_dir"
                test -d "$x_work_dir/$i" &&  find "$x_work_dir/$i" -name .svn -print | xargs rm -rf
             else
