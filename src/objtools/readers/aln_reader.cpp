@@ -671,14 +671,29 @@ CAlnReader::x_GetSequenceMolType(
     ILineErrorListener* pErrorListener
     )
 {
+    const auto& missingChars = GetMissing();
+    string seqChars = seqData;
+    if (!missingChars.empty()) {        
+        seqChars.erase(
+                remove_if(seqChars.begin(), seqChars.end(), 
+                [&](char c) { return missingChars.find(c) != string::npos;}), 
+                seqChars.end());
+    }
+
+    auto formatGuess = CFormatGuess::SequenceType(seqChars.data(), seqChars.length());
+    if (formatGuess == CFormatGuess::eProtein) {
+        return CSeq_inst::eMol_aa;
+    }
+
     //if alphabet contains full complement (26) of protein chars then
     // it's definitely protein. It may also contain stop-codon characters:
-    if (alphabet.size() >= 2*26) {
+    if (formatGuess == CFormatGuess::eUndefined &&
+        alphabet.size() >= 2*26) {
         return CSeq_inst::eMol_aa;
     }
     
-    auto posFirstT = seqData.find_first_of("Tt");
-    auto posFirstU = seqData.find_first_of("Uu");
+    auto posFirstT = seqChars.find_first_of("Tt");
+    auto posFirstU = seqChars.find_first_of("Uu");
     if (posFirstT != string::npos  &&  posFirstU != string::npos) {
         string msg = "Invalid Mol Type: "
                      "U and T cannot appear in the same nucleotide sequence. "
@@ -690,7 +705,7 @@ CAlnReader::x_GetSequenceMolType(
                      seqId, 0, msg);
 
 
-        //imposible NA- can't contain both
+        //impossible NA- can't contain both
         return CSeq_inst::eMol_aa;
     }
     return (posFirstU == string::npos  ?  CSeq_inst::eMol_dna : CSeq_inst::eMol_rna);
