@@ -117,25 +117,36 @@
 #ifdef NCBI_DEPRECATED
 #  undef NCBI_DEPRECATED
 #endif
-#if /* NCBI_HAS_CPP_ATTRIBUTE(deprecated)  || */ \
-  (defined(__cplusplus)  &&  defined(NCBI_COMPILER_MSVC))
-// Favor legacy syntax for now, since compilers (at least GCC) can be pickier
-// about the placement of C++11-style [[deprecated]].
-#  define NCBI_DEPRECATED              [[deprecated]]
-#  define NCBI_STD_DEPRECATED(message) [[deprecated(message)]]
-#elif __has_attribute(deprecated)
-#  define NCBI_DEPRECATED              __attribute__((deprecated))
-#  if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 600
-#    define NCBI_STD_DEPRECATED(message)
-#  else
-#    define NCBI_STD_DEPRECATED(message) __attribute__((deprecated(message)))
-#  endif
+/* C++11 [[deprecated]] and legacy synonyms aren't fully interchangeable;
+ * depending on the compiler and context, using one form rather than the
+ * other may yield a warning or even an outright error.  */
+#if __has_attribute(deprecated)
+#  define NCBI_LEGACY_DEPRECATED_0      __attribute__((deprecated))
+#  define NCBI_LEGACY_DEPRECATED_1(msg) __attribute__((deprecated(msg)))
 #elif defined(NCBI_COMPILER_MSVC)
-#  define NCBI_DEPRECATED              __declspec(deprecated)
-#  define NCBI_STD_DEPRECATED(message) /* __declspec(deprecated(message)) */
+#  define NCBI_LEGACY_DEPRECATED_0      __declspec(deprecated)
+#  define NCBI_LEGACY_DEPRECATED_1(msg) __declspec(deprecated(msg))
 #else
-#  define NCBI_DEPRECATED
+#  define NCBI_LEGACY_DEPRECATED_0
+#  define NCBI_LEGACY_DEPRECATED_1(msg)
+#endif
+#if NCBI_HAS_CPP_ATTRIBUTE(deprecated)  || \
+  (defined(__cplusplus)  &&  defined(NCBI_COMPILER_MSVC))
+#  define NCBI_STD_DEPRECATED_0          [[deprecated]]
+#  define NCBI_STD_DEPRECATED_1(message) [[deprecated(message)]]
+#else
+#  define NCBI_STD_DEPRECATED_0          NCBI_LEGACY_DEPRECATED_0
+#  define NCBI_STD_DEPRECATED_1(message) NCBI_LEGACY_DEPRECATED_1(message)
+#endif
+#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 600
+#  define NCBI_STD_DEPRECATED(message) NCBI_STD_DEPRECATED_1(message)
+#else
 #  define NCBI_STD_DEPRECATED(message)
+#endif
+#if 0
+#  define NCBI_DEPRECATED NCBI_STD_DEPRECATED_0
+#else
+#  define NCBI_DEPRECATED NCBI_LEGACY_DEPRECATED_0
 #endif
 
 #ifndef NCBI_FORCEINLINE
