@@ -69,15 +69,21 @@
 #define IS_SET(flags, mask)  (((flags) & (mask)) == (mask))
 
 
-BEGIN_NCBI_SCOPE
+#define PIPE_THROW(err, errtxt)                 \
+    {                                           \
+        int _err = (int) err;                   \
+        string _errstr(errtxt);                 \
+        throw x_FormatError(_err, _errstr);     \
+    }
 
+
+BEGIN_NCBI_SCOPE
 
 
 #if defined(NCBI_OS_MSWIN)
     // Timeout time slice (milliseconds)
     const unsigned long kWaitPrecision = 100;
 #endif
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -93,6 +99,24 @@ static STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
     to->sec  = from->usec / 1000000 + from->sec;
     to->usec = from->usec % 1000000;
     return to;
+}
+
+
+static string x_FormatError(int error, string& message)
+{
+    int dynamic = 0/*false*/;
+    const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
+                                                error, 0);
+    string retval;
+    if (result) {
+        retval = result;
+        if (dynamic) {
+            free((void*) result);
+        }
+    } else {
+        retval.swap(message);
+    }
+    return retval;
 }
 
 
@@ -164,48 +188,6 @@ static EIO_Status s_Close(CProcess& process, CPipe::TCreateFlags flags,
 
 
 #if defined(NCBI_OS_MSWIN)
-
-#define PIPE_THROW(err, errtxt)                 \
-    {                                           \
-        DWORD _err = err;                       \
-        string _errstr(errtxt);                 \
-        throw s_WinError(_err, _errstr);        \
-    }
-
-
-static string s_WinError(DWORD error, string& message)
-{
-    TXChar* errstr = NULL;
-    DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                               FORMAT_MESSAGE_FROM_SYSTEM     |
-                               FORMAT_MESSAGE_MAX_WIDTH_MASK  |
-                               FORMAT_MESSAGE_IGNORE_INSERTS,
-                               NULL, error,
-                               MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
-                               (TXChar*) &errstr, 0, NULL);
-    if (!rv  &&  errstr) {
-        ::LocalFree(errstr);
-        errstr = NULL;
-    }
-    int dynamic = 0/*false*/;
-    const char* result = ::NcbiMessagePlusError(&dynamic,
-                                                message.c_str(),
-                                                (int) error,
-                                                _T_CSTRING(errstr));
-    if (errstr) {
-        ::LocalFree(errstr);
-    }
-    string retval;
-    if (result) {
-        retval = result;
-        if (dynamic) {
-            free((void*) result);
-        }
-    } else {
-        retval.swap(message);
-    }
-    return retval;
-}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -848,35 +830,6 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 
 
 #elif defined(NCBI_OS_UNIX)
-
-#define PIPE_THROW(err, errtxt)                 \
-    {                                           \
-        int _err = err;                         \
-        string _errstr(errtxt);                 \
-        throw s_UnixError(_err, _errstr);       \
-    }
-
-
-static string s_UnixError(int error, string& message)
-{
-    const char* errstr = error ? strerror(error) : 0;
-    if (!errstr) {
-        errstr = "";
-    }
-    int dynamic = 0/*false*/;
-    const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
-                                                (int) error, errstr);
-    string retval;
-    if (result) {
-        retval = result;
-        if (dynamic) {
-            free((void*) result);
-        }
-    } else {
-        retval.swap(message);
-    }
-    return retval;
-}
 
 
 //////////////////////////////////////////////////////////////////////////////
