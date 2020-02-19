@@ -1642,13 +1642,12 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
-                            "The organism for your query sequence (i.e., human, mouse, etc.)",
-                            CArgDescriptions::eString, "human");
-    arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "human", "mouse", "rat", "rabbit", "rhesus_monkey"));
-
+                           "The organism for your query sequence. Supported organisms include human, mouse, rat, rabbit and rhesus_monkey for Ig and human and mouse for TCR. Custom organism is also supported but you need to supply your own germline annotations (see IgBLAST web site for details)",
+                           CArgDescriptions::eString, "human");
+    
     arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
-                            "Domain system to be used for segment annotation",
-                            CArgDescriptions::eString, "imgt");
+                           "Domain system to be used for segment annotation",
+                           CArgDescriptions::eString, "imgt");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
 
     arg_desc.AddDefaultKey(kArgIgSeqType, "sequence_type",
