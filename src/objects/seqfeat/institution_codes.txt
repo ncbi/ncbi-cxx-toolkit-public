@@ -758,6 +758,7 @@ BULU	s	Uludag University, Biology Department
 BUNH	s	University of Baghdad			
 BUNS	s	University of Novi Sad, Department of Biology and Ecology			
 BUPL	s	Bucknell University, Biology Department			
+BUQ	c	University of Balochistan, Quetta			
 BURD	s	University of Burdwan, Botany Department			
 BURI	s	Banasthali University			
 BURP	s	Burpee Museum of Natural History	BMNHC		

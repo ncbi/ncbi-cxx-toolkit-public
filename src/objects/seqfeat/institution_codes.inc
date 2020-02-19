@@ -791,6 +791,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BUNH\ts\tUniversity of Baghdad\t\t\t",
 "BUNS\ts\tUniversity of Novi Sad, Department of Biology and Ecology\t\t\t",
 "BUPL\ts\tBucknell University, Biology Department\t\t\t",
+"BUQ\tc\tUniversity of Balochistan, Quetta\t\t\t",
 "BURD\ts\tUniversity of Burdwan, Botany Department\t\t\t",
 "BURI\ts\tBanasthali University\t\t\t",
 "BURP\ts\tBurpee Museum of Natural History\tBMNHC\t\t",
