@@ -1626,6 +1626,7 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
             case eAllowXSiteConn:
+                MarkOptionAsExplicitlySet(eNoServerCheck);
                 CNetService::AllowXSiteConnections();
                 break;
 #endif
