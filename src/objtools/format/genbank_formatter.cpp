@@ -854,6 +854,13 @@ void CGenbankFormatter::FormatReference
 
     text_os.AddParagraph(l, ref.GetObject());
 
+    vector<string>* rc = ctx.GetRefCache();
+    if (rc) {
+        for (auto str : l) {
+            rc->push_back(str);
+        }
+    }
+
     text_os.Flush();
 }
 

@@ -861,14 +861,14 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 
     if ( args["faster"] ) {
 
-		try {
-            CNcbiOstream* flatfile_os = m_Os;
-			m_FFGenerator->Generate( seh, *flatfile_os, true);
-		}
-		catch (CException& e) {
-			ERR_POST(Error << e);
-			m_Exception = true;
-		}
+            try {
+                CNcbiOstream* flatfile_os = m_Os;
+                m_FFGenerator->Generate( seh, *flatfile_os, true, ! m_OnlyProts, ! m_OnlyNucs);
+            }
+            catch (CException& e) {
+                  ERR_POST(Error << e);
+                  m_Exception = true;
+            }
 
         return true;
     }

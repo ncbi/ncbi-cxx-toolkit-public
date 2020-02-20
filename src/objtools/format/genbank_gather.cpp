@@ -179,7 +179,17 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     }
     // GATHER_BLOCK(Source, CSourceItem);
     GATHER_VIA_FUNC(Sourcefeat, x_GatherSourceOrganism);
-    GATHER_VIA_FUNC(Reference, x_GatherReferences);
+    vector<string>* rc = ctx.GetRefCache();
+    if ( rc ) {
+        if ( rc->empty() ) {
+            GATHER_VIA_FUNC(Reference, x_GatherReferences);
+        } else {
+            item.Reset( new CCacheItem(ctx, rc) );
+            ItemOS() << item;
+        }
+    } else {
+        GATHER_VIA_FUNC(Reference, x_GatherReferences);
+    }
     GATHER_ANCHOR(Comment, "comment");
     GATHER_VIA_FUNC(Comment, x_GatherComments);
     GATHER_BLOCK(Primary, CPrimaryItem);

@@ -199,7 +199,8 @@ public:
         fUseAutoDef            = 1 << 12,
         fIgnoreExistingTitle   = 1 << 13,
         fGeneRNACDSFeatures    = 1 << 14,
-        fShowFtablePeptides    = 1 << 15
+        fShowFtablePeptides    = 1 << 15,
+        fUseReferenceCache     = 1 << 16
     };
 
     enum EView {
@@ -615,6 +616,7 @@ public:
     bool IgnoreExistingTitle   (void) const;
     bool GeneRNACDSFeatures    (void) const;
     bool ShowFtablePeptides    (void) const;
+    bool UseReferenceCache     (void) const;
 
     // setters
     void SetCustom(const TCustom& custom) { m_Custom = custom; }
@@ -630,6 +632,7 @@ public:
     CFlatFileConfig& SetIgnoreExistingTitle  (bool val = true);
     CFlatFileConfig& SetGeneRNACDSFeatures   (bool val = true);
     CFlatFileConfig& SetShowFtablePeptides   (bool val = true);
+    CFlatFileConfig& SetUseReferenceCache    (bool val = true);
 
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -819,6 +822,7 @@ CUSTOM_ARG_IMP(UseAutoDef)
 CUSTOM_ARG_IMP(IgnoreExistingTitle)
 CUSTOM_ARG_IMP(GeneRNACDSFeatures)
 CUSTOM_ARG_IMP(ShowFtablePeptides)
+CUSTOM_ARG_IMP(UseReferenceCache)
 
 #undef FLAG_ARG_IMP
 #undef FLAG_ARG_GET

@@ -597,7 +597,9 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CFlatItemOStream& item_os,
- bool useSeqEntryIndexing)
+ bool useSeqEntryIndexing,
+ bool doNuc,
+ bool doProt)
 {
     if (useSeqEntryIndexing) {
         m_Ctx->SetConfig().SetUseSeqEntryIndexer(true);
@@ -733,7 +735,7 @@ void CFlatFileGenerator::Generate
     }
 
     // this version of Gather calls method with internal Bioseq iterator
-    gatherer->Gather(*m_Ctx, *pItemOS, entry, useSeqEntryIndexing);
+    gatherer->Gather(*m_Ctx, *pItemOS, entry, useSeqEntryIndexing, doNuc, doProt);
 
     /// reset the context, but preserve our selector
     /// we do this a bit oddly since resetting the context erases the selector;
@@ -828,12 +830,14 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CNcbiOstream& os,
- bool useSeqEntryIndexing)
+ bool useSeqEntryIndexing,
+ bool doNuc,
+ bool doProt)
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(entry, *item_os, useSeqEntryIndexing);
+    Generate(entry, *item_os, useSeqEntryIndexing, doNuc, doProt);
 }
 
 

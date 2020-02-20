@@ -204,10 +204,12 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
 }
 
 
-void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
+void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, bool doNuc, bool doProt) const
 {
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
+
+    m_RefCache.clear();
 
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext( new CTopLevelSeqEntryContext(ctx.GetEntry()) );
 
@@ -222,13 +224,13 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem() );
     os << item;
-    x_GatherSeqEntry(ctx, topLevelSeqEntryContext);
+    x_GatherSeqEntry(ctx, topLevelSeqEntryContext, doNuc, doProt);
     item.Reset( new CEndItem() );
     os << item;
 }
 
 
-void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, bool useSeqEntryIndexing) const
+void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, bool useSeqEntryIndexing, bool doNuc, bool doProt) const
 {
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
@@ -246,7 +248,7 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CS
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem() );
     os << item;
-    x_GatherSeqEntry(ctx, entry, useSeqEntryIndexing, topLevelSeqEntryContext);
+    x_GatherSeqEntry(ctx, entry, useSeqEntryIndexing, topLevelSeqEntryContext, doNuc, doProt);
     item.Reset( new CEndItem() );
     os << item;
 }
@@ -264,7 +266,8 @@ CFlatGatherer::~CFlatGatherer(void)
 void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
     const CSeq_entry_Handle& entry,
     bool useSeqEntryIndexing,
-    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext,
+    bool doNuc, bool doProt) const
 {
     m_TopSEH = ctx.GetEntry();
     m_Feat_Tree.Reset(ctx.GetFeatTree());
@@ -285,7 +288,9 @@ void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
         bsh = *bioseq_it;
 
         if( this_seq ) {
-            x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+            if (( this_seq.IsNa() && doNuc ) || ( this_seq.IsAa() && doProt )) {
+                x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+            }
         }
 
         // move everything over by one
@@ -296,16 +301,21 @@ void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
 
     // we don't process the last ones, so we do that now
     if( this_seq ) {
-        x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+        if (( this_seq.IsNa() && doNuc ) || ( this_seq.IsAa() && doProt )) {
+            x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+        }
     }
     if( next_seq ) {
-        x_GatherBioseq(this_seq, next_seq, CBioseq_Handle(), topLevelSeqEntryContext);
+        if (( next_seq.IsNa() && doNuc ) || ( next_seq.IsAa() && doProt )) {
+            x_GatherBioseq(this_seq, next_seq, CBioseq_Handle(), topLevelSeqEntryContext);
+        }
     }
 } 
 
 
 void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
-    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext,
+    bool doNuc, bool doProt) const
 {
     m_TopSEH = ctx.GetEntry();
     m_Feat_Tree.Reset(ctx.GetFeatTree());
@@ -434,6 +444,14 @@ void CFlatGatherer::x_GatherBioseq(
         // display as a single bioseq (single section)
         m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, 0, 
             (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : NULL)));
+        if ( m_Context->UsingSeqEntryIndex() && cfg.UseReferenceCache() ) {
+            CRef<CSeqEntryIndex> idx = m_Context->GetSeqEntryIndex();
+            if (idx) {
+                if (! idx->DistributedReferences()) {
+                    m_Current->SetRefCache(&(this->RefCache()));
+                }
+            }
+        }
         m_Context->AddSection(m_Current);
         x_DoSingleSection(*m_Current);
     }
@@ -444,6 +462,7 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
 {
     CRef<CMasterContext> mctx(new CMasterContext(seq));
 
+    const CFlatFileConfig& cfg = Config();
     CScope* scope = &seq.GetScope();
     const CSeqMap& seqmap = seq.GetSeqMap();
 
@@ -460,6 +479,14 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
                 part.GetInst_Repr() : CSeq_inst::eRepr_not_set;
             if (repr != CSeq_inst::eRepr_virtual) {
                 m_Current.Reset(new CBioseqContext(part, *m_Context, mctx));
+                if ( m_Context->UsingSeqEntryIndex() && cfg.UseReferenceCache() ) {
+                    CRef<CSeqEntryIndex> idx = m_Context->GetSeqEntryIndex();
+                    if (idx) {
+                        if (! idx->DistributedReferences()) {
+                            m_Current->SetRefCache(&(this->RefCache()));
+                        }
+                    }
+                }
                 m_Context->AddSection(m_Current);
                 x_DoSingleSection(*m_Current);
             }
@@ -708,6 +735,96 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
 }
 
 
+void CFlatGatherer::x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs) const
+{
+    CScope& scope = m_Current->GetScope();
+    CBioseqContext& ctx = *m_Current;
+
+    CBioseq_Handle seq = GetBioseqFromSeqLoc(loc, scope);
+    if (!seq) {
+        return;
+    }
+
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (seq);
+    if (! bsx) return;
+
+    // gather references from descriptors
+    bsx->IterateDescriptors([this, &ctx, &scope, &refs, &idx, bsx](CDescriptorIndex& sdx) {
+        try {
+            CSeqdesc::E_Choice chs = sdx.GetType();
+            if (chs == CSeqdesc::e_Pub) {
+                const CSeqdesc& sd = sdx.GetSeqDesc();
+                if (sd.IsPub()) {
+                    const CPubdesc& pubdesc = sd.GetPub();
+                    if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                        return;
+                    }
+                    refs.push_back(CBioseqContext::TRef(new CReferenceItem(sd, *m_Current)));
+                }
+            }
+        } catch ( ... ) {
+        }
+    });
+
+    // also gather references from annotations
+    const CFlatFileConfig& cfg = ctx.Config();
+    if (! cfg.DisableAnnotRefs()) {
+         SAnnotSelector sel = m_Current->SetAnnotSelector();
+         for (CAnnot_CI annot_it(seq, sel);
+              annot_it; ++annot_it) {
+             if ( !annot_it->Seq_annot_IsSetDesc() ) {
+                 continue;
+             }
+             ITERATE (CSeq_annot::TDesc::Tdata, it,
+                      annot_it->Seq_annot_GetDesc().Get()) {
+                 if ( !(*it)->IsPub() ) {
+                     continue;
+                 }
+                 const CPubdesc& pubdesc = (*it)->GetPub();
+                 if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                     continue;
+                 }
+                 /*
+                 if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
+                     continue;
+                 }
+                 */
+                 CRef<CSeqdesc> desc(new CSeqdesc);
+                 desc->SetPub(const_cast<CPubdesc&>((*it)->GetPub()));
+                 refs.push_back(CBioseqContext::TRef
+                                (new CReferenceItem(*desc, *m_Current)));
+             }
+         }
+     }
+
+    // gather references from features
+    bsx->IterateFeatures([this, &ctx, &scope, &refs, bsx](CFeatureIndex& sfx) {
+        try {
+            if (sfx.GetType() == CSeqFeatData::e_Pub) {
+                const CSeq_feat& sf = sfx.GetMappedFeat().GetOriginalFeature();
+                if (sf.GetData().IsPub()) {
+                    const CPubdesc& pubdesc = sf.GetData().GetPub();
+                    if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                        return;
+                    }
+                    refs.push_back(CBioseqContext::TRef(new CReferenceItem(sf, *m_Current)));
+                }
+            }
+        } catch ( ... ) {
+        }
+    });
+
+    // add seq-submit citation
+    if (m_Current->GetSubmitBlock() != NULL) {
+        CBioseqContext::TRef ref(new CReferenceItem(*m_Current->GetSubmitBlock(),
+            *m_Current));
+        refs.push_back(ref);
+    }
+}
+
+
 void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
 {
     _ASSERT(m_Current->IsProt());
@@ -804,7 +921,12 @@ void CFlatGatherer::x_GatherReferences(void) const
 {
     TReferences& refs = m_Current->SetReferences();
 
-    x_GatherReferences(m_Current->GetLocation(), refs);
+    CBioseqContext& ctx = *m_Current;
+    if ( ctx.UsingSeqEntryIndex() ) {
+        x_GatherReferencesIdx(m_Current->GetLocation(), refs);
+    } else {
+        x_GatherReferences(m_Current->GetLocation(), refs);
+    }
 
     // if protein with no pubs, get pubs applicable to DNA location of CDS
     if (refs.empty()  &&  m_Current->IsProt()) {

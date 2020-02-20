@@ -125,6 +125,7 @@ CBioseqContext::CBioseqContext
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
+    m_RefCache(0),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
 {
@@ -187,6 +188,7 @@ CBioseqContext::CBioseqContext
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
+    m_RefCache(0),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
 {

@@ -269,6 +269,9 @@ public:
     const CPacked_seqpnt * GetOpticalMapPoints(void) const { 
         return m_pOpticalMapPoints; }
 
+   vector<string>* GetRefCache (void) const { return m_RefCache;   }
+   void            SetRefCache   (vector<string>* rc) { m_RefCache = rc; }
+
 private:
     void x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc);
     void x_SetId(void);
@@ -376,6 +379,7 @@ private:
     CRef<CSeq_loc_Mapper>   m_Mapper;
     CBioseq_Handle          m_Virtual;
     CFlatFileContext&       m_FFCtx;
+    mutable vector<string>* m_RefCache;
     CRef<CMasterContext>    m_Master;
     CRef<CTopLevelSeqEntryContext> m_TLSeqEntryCtx;
 };

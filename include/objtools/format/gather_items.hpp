@@ -62,9 +62,11 @@ public:
     // virtual constructor
     static CFlatGatherer* New(CFlatFileConfig::TFormat format);
 
-    virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const;
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
-                        const CSeq_entry_Handle& entry, bool useSeqEntryIndexing) const;
+                        bool doNuc = true, bool doProt = true) const;
+    virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
+                        const CSeq_entry_Handle& entry, bool useSeqEntryIndexing,
+                        bool doNuc = true, bool doProt = true) const;
 
     virtual void SetCanceledCallback(const ICanceled* pCanceledCallback) {
         m_pCanceledCallback = pCanceledCallback;
@@ -81,11 +83,15 @@ protected:
     CBioseqContext& Context      (void) const { return *m_Current; }
     const CFlatFileConfig& Config(void) const { return m_Context->GetConfig(); }
 
+    vector<string>& RefCache (void) const { return m_RefCache; }
+
     virtual void x_GatherSeqEntry(CFlatFileContext& ctx,
-        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
+        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>(),
+        bool doNuc = true, bool doProt = true ) const;
     virtual void x_GatherSeqEntry(CFlatFileContext& ctx,
         const CSeq_entry_Handle& entry, bool useSeqEntryIndexing,
-        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
+        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>(),
+        bool doNuc = true, bool doProt = true ) const;
 
     virtual void x_GatherBioseq(
         const CBioseq_Handle& prev_seq, const CBioseq_Handle& this_seq, const CBioseq_Handle& next_seq, 
@@ -112,6 +118,7 @@ protected:
     typedef CBioseqContext::TReferences TReferences;
     void x_GatherReferences(void) const;
     void x_GatherReferences(const CSeq_loc& loc, TReferences& refs) const;
+    void x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs) const;
     void x_GatherCDSReferences(TReferences& refs) const;
 
     // features
@@ -205,6 +212,8 @@ protected:
     mutable CRef<CFlatFileContext>   m_Context;
     mutable CRef<CBioseqContext>     m_Current;
     mutable TCommentVec              m_Comments;
+
+    mutable vector<string>           m_RefCache;
 
     mutable  CConstRef<CUser_object> m_FirstGenAnnotSCAD;
 
