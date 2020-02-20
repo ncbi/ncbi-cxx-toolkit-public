@@ -286,9 +286,8 @@ void CDiscrepancyContext::OutputXML(ostream& out, unsigned short flags)
                 sev = s;
             }
         }
-        TReportObjectList objs = tst.second->GetObjects();
         Indent(out, XML_INDENT);
-        out << "<test name=\"" << deunderscore(tst.first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst.first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
+        out << "<test name=\"" << deunderscore(tst.first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst.first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << rep.size() << "\">\n";
         RecursiveXML(out, rep, flags, XML_INDENT * 2);
         Indent(out, XML_INDENT);
         out << "</test>\n";
