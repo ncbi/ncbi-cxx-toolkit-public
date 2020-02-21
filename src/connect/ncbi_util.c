@@ -329,7 +329,7 @@ extern const char* NcbiMessagePlusError
     release = 0/*false*/;
     if (error > 0  &&  !descr) {
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
-        descr = UTIL_TcharToUtf8( _wcserror(error) );
+        descr = UTIL_TcharToUtf8(_wcserror(error));
         release = 1/*true*/;
 #else
         descr = strerror(error);
@@ -377,8 +377,15 @@ extern const char* NcbiMessagePlusError
     memcpy(buf + mlen, "{error=", 7);
     mlen += 7;
 
-    if (error)
-        mlen += (size_t) sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
+    if (error) {
+        mlen += (size_t) sprintf(buf + mlen,
+#ifdef NCBI_OS_MSWIN
+                                 error < 0x10000 ? "%d%s" : "0x%08X%s",
+#else
+                                                   "%d%s",
+#endif /*NCBI_OS_MSWIN*/
+                                 error, &","[!*descr]);
+    }
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
     if (release > 0)
