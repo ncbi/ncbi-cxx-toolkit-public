@@ -6500,6 +6500,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SPWH\ts\tMarine Biological Laboratory\t\t\t",
 "SQB\ts\tSociete quebecoise de bryologie\t\t\t",
 "SQF\ts\tUniversidad de Chile, Laboratorio de Botanica, Escuela de Quimica y Farmacia\t\t\t",
+"SQUCC\tc\tSultan Qaboos University Culture Collection\t\t\t",
 "SQUH\ts\tSultan Qaboos University\t\t\t",
 "SR\ts\tSichuan Institute of Natural Resources\t\t\t",
 "SRAICC\tc\tSRAI's culture collection\t\t\t",

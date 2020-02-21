@@ -6467,6 +6467,7 @@ SPTS	s	Southport Scientific Society
 SPWH	s	Marine Biological Laboratory			
 SQB	s	Societe quebecoise de bryologie			
 SQF	s	Universidad de Chile, Laboratorio de Botanica, Escuela de Quimica y Farmacia			
+SQUCC	c	Sultan Qaboos University Culture Collection			
 SQUH	s	Sultan Qaboos University			
 SR	s	Sichuan Institute of Natural Resources			
 SRAICC	c	SRAI's culture collection			
