@@ -196,8 +196,13 @@ bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
         recycle_job_context = true;
     }
     catch (CNetScheduleException& e) {
-        ERR_POST_X(65, "Could not commit " <<
-                job_context->m_Job.job_id << ": " << e.what());
+        if ((e.GetErrCode() == CNetScheduleException::eInvalidJobStatus) &&
+                e.GetMsg().find("job is in Canceled state") != string::npos) {
+            LOG_POST(Warning << "Could not commit " << job_context->m_Job.job_id << ": " << e.what());
+        } else {
+            ERR_POST_X(65, "Could not commit " << job_context->m_Job.job_id << ": " << e.what());
+        }
+
         recycle_job_context = true;
     }
     catch (exception& e) {

@@ -305,6 +305,11 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
                 // NetSchedule will still allow to commit this job.
                 break;
 
+            case CNetScheduleAPI::eCanceled:
+                LOG_POST(Warning << "Job " << m_Job.job_id << " has been canceled");
+                MarkJobAsLost();
+                return CNetScheduleAdmin::eShutdownImmediate;
+
             default:
                 // The worker node does not "own" the job any longer.
                 ERR_POST("Cannot proceed with job processing: job '" <<
