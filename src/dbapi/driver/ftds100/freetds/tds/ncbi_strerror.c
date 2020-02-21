@@ -316,13 +316,13 @@ static const char* s_StrErrorInternal(int error)
         const char* (*errfun)(int errnum);
     } errsup[] = {
 #  ifdef __GLIBC__
-        {DNS_BASE,              hstrerror},
+        { DNS_BASE, hstrerror    },
 #  endif /*__GLIBC__*/
 #  if defined(HAVE_GETADDRINFO)  ||  defined(HAVE_GETNAMEINFO)
-        {EAI_BASE,              gai_strerror},
+        { EAI_BASE, gai_strerror },
 #  endif /*HAVE_GETADDRINFO || HAVE_GETNAMEINFO*/
         /* Last dummy entry - must present */
-        {0, 0}
+        { 0,        0            }
     };
 #endif /*NCBI_OS_LINUX || NCBI_OS_CYGWIN*/
     size_t i;
