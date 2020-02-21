@@ -52,18 +52,6 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Service mapper types.
-///
-enum ESERV_Mapper {
-    fSERV_Local     = 0x01,
-    fSERV_Lbsmd     = 0x02,
-    fSERV_Dispd     = 0x04,
-    fSERV_Namerd    = 0x08,
-    fSERV_Linkerd   = 0x10
-};
-typedef unsigned int   TSERV_Mapper;    ///< Bitwise OR of ESERV_Mapper
-
-
 /// Attributes of a given service.
 ///
 class NCBI_XCONNECT_EXPORT CSERV_Info {
@@ -92,14 +80,11 @@ private:
 ///  Service name
 /// @param[in] types
 ///  Which service types to check
-/// @param[in] mapper_types
-///  Which mapper(s) to use
 /// @return
 ///  List of servers (ordered according to their rates)
 extern NCBI_XCONNECT_EXPORT
 vector<CSERV_Info> SERV_GetServers(const string& service,
-                                   TSERV_Type    types    = fSERV_Any,
-                                   TSERV_Mapper  mappers  = fSERV_Namerd);
+                                   TSERV_Type    types = fSERV_Any);
 
 
 END_NCBI_SCOPE

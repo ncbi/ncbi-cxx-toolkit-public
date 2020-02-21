@@ -46,8 +46,7 @@ BEGIN_NCBI_SCOPE
 // SERV_GetServers implementation
 extern
 vector<CSERV_Info> SERV_GetServers(const string& service,
-                                   TSERV_Type    types,
-                                   TSERV_Mapper  mappers)
+                                   TSERV_Type    types)
 {
     // Share core functionality with C-language CONNECT library.
     {
