@@ -91,9 +91,33 @@ static const STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 
 static string x_FormatError(int error, string& message)
 {
+    char* errstr;
+
+    _ASSERT(error);
+#ifdef NCBI_OS_MSWIN
+    TXChar* tmpstr = NULL;
+    DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                               FORMAT_MESSAGE_FROM_SYSTEM     |
+                               FORMAT_MESSAGE_MAX_WIDTH_MASK  |
+                               FORMAT_MESSAGE_IGNORE_INSERTS,
+                               NULL, (DWORD) error,
+                               MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                               (TXChar*) &tmpstr, 0, NULL);
+    if (!rv  &&  tmpstr) {
+        ::LocalFree(tmpstr);
+        errstr = 0;
+    } else if (!(errstr = UTIL_TcharToUtf8OnHeap(tmpstr))) {
+        errstr = "";
+    }
+#else
+    errstr = 0;
+#endif /*NCBI_OS_MSWIN*/
+
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
-                                                error, 0);
+                                                error, errstr);
+    UTIL_ReleaseBufferOnHeap(errstr);
+
     string retval;
     if (result) {
         retval = result;
