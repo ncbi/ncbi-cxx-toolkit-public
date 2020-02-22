@@ -4286,7 +4286,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MJCM\ts\tMuseo de Ciencias Naturales y Antropologicas \"Prof. Juan C.Moyano\" (Argentina)\t\t\t",
 "MJG<ARG>\ts\tMuseo Jorge Gerhold\t\t\t",
 "MJG<AUT>\ts\tLandesmuseum Joanneum\tLMJ<AUT>\t\t",
-"MJG<DEU>\ts\tJohannes Gutenberg-Universitat\t\t\t",
+"MJG<DEU>\ts\tMainz University herbarium, Johannes Gutenberg-Universitat\t\t\t",
 "MJH\ts\tMuzeul Judetean Hunedoara\t\t\t",
 "MJMO\ts\tUniversidad Centro Occidental, Decanato de Agronomia\t\t\t",
 "MJS\ts\tXiaolongshan Forestry Experiment Bureau\t\t\t",
