@@ -1279,6 +1279,27 @@ BOOST_AUTO_TEST_CASE(FetchSeqGnl4)
     BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
+BOOST_AUTO_TEST_CASE(FetchSeqGnl5)
+{
+    // ID-6054 : Has gnl id with tag identical to row number
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "VOLU01000001";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(scope.GetIds(idh)), "gnl|WGS:VOLU01|1");
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK(sx_EqualToGB(bh));
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:VOLU01|1");
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
+}
+
 #if 0
 const string s_ProteinFile = 
                     "/net/snowman/vol/export2/dondosha/SVN64/trunk/internal/c++/src/internal/ID/WGS/XXXX01";
@@ -1391,6 +1412,7 @@ BOOST_AUTO_TEST_CASE(FetchProt4)
                       s_ProteinProteinDescCount);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
                       s_ProteinProteinPubCount);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bsh.GetId()), "gnl|WGS:ABKN|OCAR_2138");
     BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1u);
 }
 
@@ -1450,13 +1472,14 @@ BOOST_AUTO_TEST_CASE(FetchProt11)
     BOOST_REQUIRE(bsh);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 9);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 1);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bsh.GetId()), "gnl|WGS:APHE|SEEN3RVX_05134");
     //BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
 
 BOOST_AUTO_TEST_CASE(FetchProt12)
 {
-    // WGS VDB with proteins: check non-existend scaffold
+    // WGS VDB with proteins: check non-existent scaffold
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
         return;
     }
@@ -1820,6 +1843,8 @@ BOOST_AUTO_TEST_CASE(FetchProt20a)
         BOOST_REQUIRE(contig_id);
         BOOST_CHECK_EQUAL(contig_id->AsFastaString(), "gb|AIDX01000002|");
     }
+    // Also check presence of gnl Seq-id
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bsh.GetId()), "gnl|WGS:AIDX|SCAZ3_06900");
 }
 
 

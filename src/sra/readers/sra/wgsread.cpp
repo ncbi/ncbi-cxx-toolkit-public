@@ -1453,9 +1453,6 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
     if ( id >= 0 && HasPatentId() ) {
         return GetPatentSeq_id(id);
     }
-    if ( id == row ) {
-        return null;
-    }
     if ( gnl_id_flags & fGnlId_NoWGSId ) {
         return null;
     }
@@ -1474,9 +1471,6 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
     int id = sx_GetStringId(str);
     if ( id >= 0 && HasPatentId() ) {
         return GetPatentSeq_id(id);
-    }
-    if ( id == row ) {
-        return null;
     }
     if ( cur.m_SEQID_GNL_PREFIX ) {
         return GetGeneralSeq_id(cur.SEQID_GNL_PREFIX(1), str);
@@ -1499,9 +1493,6 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
     if ( id >= 0 && HasPatentId() ) {
         return GetPatentSeq_id(id);
     }
-    if ( id == row ) {
-        return null;
-    }
     if ( cur.m_SEQID_GNL_PREFIX ) {
         return GetGeneralSeq_id(cur.SEQID_GNL_PREFIX(1), str);
     }
@@ -1522,9 +1513,6 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
     int id = sx_GetStringId(str);
     if ( id >= 0 && HasPatentId() ) {
         return GetPatentSeq_id(id);
-    }
-    if ( id == row ) {
-        return null;
     }
     if ( cur.m_SEQID_GNL_PREFIX ) {
         return GetGeneralSeq_id(cur.SEQID_GNL_PREFIX(1), str);
