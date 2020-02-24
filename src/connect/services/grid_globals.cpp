@@ -134,9 +134,12 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
 
         int total_time_limit = worker_node.GetTotalTimeLimit();
         if (total_time_limit > 0 &&  // time check requested
-                time(0) > worker_node.GetStartupTime() + total_time_limit)
+                time(0) > worker_node.GetStartupTime() + total_time_limit) {
+            ERR_POST(Warning << "The total runtime limit (" << total_time_limit <<
+                    ") has been reached. Shutting down..." );
             CGridGlobals::GetInstance().RequestShutdown(
                 CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
+        }
     }
 }
 
