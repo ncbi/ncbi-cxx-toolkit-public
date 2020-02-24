@@ -91,6 +91,7 @@ static const STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 
 static string x_FormatError(int error, string& message)
 {
+    static const char kNoDescr[] = "";
     const char* errstr;
 
     _ASSERT(error);
@@ -107,7 +108,7 @@ static string x_FormatError(int error, string& message)
         ::LocalFree((HLOCAL) tmpstr);
         errstr = 0;
     } else if (!(errstr = UTIL_TcharToUtf8OnHeap(tmpstr))) {
-        errstr = "";
+        errstr = kNoDescr;
     }
 #else
     errstr = 0;
@@ -116,7 +117,9 @@ static string x_FormatError(int error, string& message)
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
                                                 error, errstr);
-    UTIL_ReleaseBufferOnHeap(errstr);
+    if (errstr != kNoDescr) {
+        UTIL_ReleaseBufferOnHeap(errstr);
+    }
 
     string retval;
     if (result) {
