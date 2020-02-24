@@ -23,7 +23,7 @@ for s in stems:
         shutil.copy(x, install_dir + '/lib/' + os.path.basename(x))
 
 # Build wheels only on Linux (currently the only supported platform anyway).
-if sys.platform == 'linux2':
+if sys.platform.startswith('linux'):
     proj_src_dir = src_dir + '/src/dbapi/lang_bind/python'
     tmp_dir = install_dir + '/tmp'
     cpp_build = os.path.dirname(os.path.abspath(lib_dir))
