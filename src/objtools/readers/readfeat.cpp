@@ -573,6 +573,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "pseudo",               CFeatureTableReader_Imp::eQual_pseudo                },
     {  "pseudogene",           CFeatureTableReader_Imp::eQual_pseudogene            },
     {  "rad_map",              CFeatureTableReader_Imp::eQual_rad_map               },
+    {  "region_name",          CFeatureTableReader_Imp::eQual_region_name           },
     {  "regulatory_class",     CFeatureTableReader_Imp::eQual_regulatory_class      },
     {  "replace",              CFeatureTableReader_Imp::eQual_replace               },
     {  "ribosomal_slippage",   CFeatureTableReader_Imp::eQual_ribosomal_slippage    },
