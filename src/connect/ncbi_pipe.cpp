@@ -108,16 +108,16 @@ static string x_FormatError(int error, string& message)
 
     _ASSERT(error);
 #ifdef NCBI_OS_MSWIN
-    TXChar* tmpstr = NULL;
+    TCHAR* tmpstr = NULL;
     DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                FORMAT_MESSAGE_FROM_SYSTEM     |
                                FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                                FORMAT_MESSAGE_IGNORE_INSERTS,
                                NULL, (DWORD) error,
                                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                               (TXChar*) &tmpstr, 0, NULL);
+                               (LPTSTR) &tmpstr, 0, NULL);
     if (!rv  &&  tmpstr) {
-        ::LocalFree(tmpstr);
+        ::LocalFree((HLOCAL) tmpstr);
         errstr = 0;
     } else if (!(errstr = UTIL_TcharToUtf8OnHeap(tmpstr))) {
         errstr = "";
