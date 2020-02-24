@@ -69,16 +69,18 @@ public:
     // types
     typedef vector<string>* TCache;
 
-    CCacheItem(CBioseqContext& ctx, TCache csh);
+    CCacheItem(CBioseqContext& ctx, TCache csh, int length);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const TCache& GetCache(void) const { return m_Cache; }
+    const int GetLength(void) const { return m_Length; }
 
     virtual EItem GetItemType(void) const;
 private:
 
     // data
     TCache m_Cache;
+    int m_Length;
 };
 
 

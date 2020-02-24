@@ -628,7 +628,16 @@ void CGenbankFormatter::FormatCache
 
     vector<string>* rcx = csh.GetCache();
     if (rcx) {
+        int length = csh.GetLength();
+        string suffix = NStr::NumericToString(length) + ")";
         for (auto& str : *rcx) {
+            if (NStr::StartsWith (str, "REFERENCE ") && NStr::EndsWith (str, ")")) {
+                size_t pos = NStr::Find(str, " to ");
+                if (pos > 12) {
+                    text_os.AddLine(str.substr(0, pos + 4) + suffix);
+                    continue;
+                }
+            }
             text_os.AddLine(str);
         }
     }

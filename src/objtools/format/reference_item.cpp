@@ -96,8 +96,9 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
-CCacheItem::CCacheItem(CBioseqContext& ctx, TCache csh) :
+CCacheItem::CCacheItem(CBioseqContext& ctx, TCache csh, int length) :
     m_Cache(csh),
+    m_Length(length),
     CFlatItem(&ctx)
 {
 }
