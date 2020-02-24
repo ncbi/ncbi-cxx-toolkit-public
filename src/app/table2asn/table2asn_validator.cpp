@@ -50,19 +50,16 @@ CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CVali
 
 void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags)
 {
-    bool need_recalculate_index = false;
 
     CCleanup cleanup;
     if (flags.find('w') != string::npos)
     {
         CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects);
-        need_recalculate_index = true;
     }
     else
     if (flags.find('e') != string::npos)
     {
         CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
-        need_recalculate_index = true;
     }
     else
     {
@@ -93,12 +90,9 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
 
 
     CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
-
-    if (need_recalculate_index) {
-        CScope& scope = h_entry.GetScope();
-        scope.RemoveTopLevelSeqEntry(h_entry);
-        h_entry = scope.AddTopLevelSeqEntry(*entry);
-    }
+    CScope& scope = h_entry.GetScope();
+    scope.RemoveTopLevelSeqEntry(h_entry);
+    h_entry = scope.AddTopLevelSeqEntry(*entry);
 
     if (flags.find('f') != string::npos)
     {        
