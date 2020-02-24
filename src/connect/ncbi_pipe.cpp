@@ -104,7 +104,7 @@ static STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 
 static string x_FormatError(int error, string& message)
 {
-    char* errstr;
+    const char* errstr;
 
     _ASSERT(error);
 #ifdef NCBI_OS_MSWIN
