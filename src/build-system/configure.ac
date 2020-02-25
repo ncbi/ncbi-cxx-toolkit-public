@@ -3224,7 +3224,7 @@ mkdir -p "$builddir" "$build_root/lib" "$build_root/bin"
 if test "$no_create" != "yes"  -a  -f "${ncbiconf}" ; then
    echo
    echo "There is already a built \"${ncbiconf}\"!"
-   NCBI_CAUTION([Do you want to re-configure in \"${builddir}\"?])
+   NCBI_CAUTION([Do you want to re-configure in \"${builddir}\" (at your own risk)?])
    echo
 fi
 

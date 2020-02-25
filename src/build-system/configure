@@ -13897,7 +13897,7 @@ echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
        { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
 echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
     * )
-       echo "Do you want to re-configure in \"${builddir}\"? [y/N]"
+       echo "Do you want to re-configure in \"${builddir}\" (at your own risk)? [y/N]"
        read answer <& 7
        case "$answer" in
          [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
