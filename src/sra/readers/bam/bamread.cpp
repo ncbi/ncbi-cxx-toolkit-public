@@ -428,7 +428,7 @@ CRef<CSeq_id> sx_GetRefSeq_id(const string& str, IIdMapper* idmapper)
 static
 CRef<CSeq_id> sx_GetShortSeq_id(const string& str, IIdMapper* idmapper, bool external)
 {
-    if ( external ) {
+    if ( external || str.find('|') != NPOS ) {
         try {
             CRef<CSeq_id> id(new CSeq_id(str));
             return id;
