@@ -2783,6 +2783,14 @@ case "${with_debug}:${with_optimization}" in
       ;;
 esac
 
+if test "${with_max_debug-no}" != "no"; then
+   case "$NCBI_OLD_STATUS_DIR" in
+      *MaxDebug* ) max_tag=Max ;;
+      *Debug*    )             ;;
+      *          ) max_tag=Max ;;
+   esac
+fi
+
 
 #### Profiling; try to turn on both function weight and basic-block counting
 if test "$with_profiling" = "yes" ; then
@@ -2866,7 +2874,7 @@ fi
 
 #### Add "Release"/"Debug", "MT", "DLL", "64", "_p" suffixes to "${build_root}"
 if test "$with_suffix" != "no" ; then
-   build_root="${build_root}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}"
+   build_root="${build_root}-${max_tag}${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}"
 fi
 
 
