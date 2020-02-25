@@ -1489,9 +1489,11 @@ case "$host_os:$compiler" in
    ;;
 
  linux*:ICC )
-   # "incomplete type is not allowed" should be an error, not a warning!
+   # -we70: "incomplete type is not allowed" should be an error, not a warning!
+   # -wd2651: Suppress spurious "attribute does not apply to any entity"
+   #          when deprecating enum values (via NCBI_STD_DEPRECATED).
    CFLAGS="-we70 $CFLAGS"
-   CXXFLAGS="-we70 $CXXFLAGS"
+   CXXFLAGS="-we70 -wd2651 $CXXFLAGS"
    MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
    ;;
 
