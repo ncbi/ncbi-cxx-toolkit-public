@@ -104,11 +104,11 @@ static STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 
 static string x_FormatError(int error, string& message)
 {
-    static const char kNoDescr[] = "";
     const char* errstr;
 
     _ASSERT(error);
 #ifdef NCBI_OS_MSWIN
+    string errmsg;
     TCHAR* tmpstr = NULL;
     DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                FORMAT_MESSAGE_FROM_SYSTEM     |
@@ -117,11 +117,14 @@ static string x_FormatError(int error, string& message)
                                NULL, (DWORD) error,
                                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                (LPTSTR) &tmpstr, 0, NULL);
-    if (!rv  &&  tmpstr) {
+    if (rv  &&  tmpstr) {
+        errmsg = _T_CSTRING(tmpstr);
+        errstr = errmsg.c_str();
+    } else {
+        errstr = "";
+    }
+    if (tmpstr) {
         ::LocalFree((HLOCAL) tmpstr);
-        errstr = 0;
-    } else if (!(errstr = UTIL_TcharToUtf8OnHeap(tmpstr))) {
-        errstr = kNoDescr;
     }
 #else
     errstr = 0;
@@ -130,9 +133,6 @@ static string x_FormatError(int error, string& message)
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
                                                 error, errstr);
-    if (errstr != kNoDescr) {
-        UTIL_ReleaseBufferOnHeap(errstr);
-    }
 
     string retval;
     if (result) {
