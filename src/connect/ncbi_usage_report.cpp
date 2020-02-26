@@ -26,7 +26,7 @@
  * Author:  Vladislav Evgeniev, Vladimir Ivanov
  *
  * File Description:
- *   Log usage information to NCBI “pinger”.
+ *   Log usage information to NCBI "pinger".
  *
  */
 
@@ -56,7 +56,7 @@ const char* kDefault_URL = "https://www.ncbi.nlm.nih.gov/stat";
 const bool  kDefault_IsEnabled = false;
 
 // Maximum number of threads for asynchronous reporting.
-const unsigned kDefault_MaxThreads = 3;
+const unsigned kDefault_MaxQueueSize = 100;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -75,8 +75,8 @@ NCBI_PARAM_DEF_EX(string,   USAGE_REPORT, AppName, "", eParam_NoThread, NCBI_USA
 NCBI_PARAM_DECL(string,     USAGE_REPORT, AppVersion);
 NCBI_PARAM_DEF_EX(string,   USAGE_REPORT, AppVersion, "", eParam_NoThread, NCBI_USAGE_REPORT_APPVERSION);
 
-NCBI_PARAM_DECL(unsigned,   USAGE_REPORT, MaxThreads);
-NCBI_PARAM_DEF_EX(unsigned, USAGE_REPORT, MaxThreads, kDefault_MaxThreads, eParam_NoThread, NCBI_USAGE_REPORT_MAXTHREADS);
+NCBI_PARAM_DECL(unsigned,   USAGE_REPORT, MaxQueueSize);
+NCBI_PARAM_DEF_EX(unsigned, USAGE_REPORT, MaxQueueSize, kDefault_MaxQueueSize, eParam_NoThread, NCBI_USAGE_REPORT_MAXQUEUESIZE);
 
 
 
@@ -137,9 +137,9 @@ void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
     SetAppVersion(version.Print());
 }
 
-void CUsageReportAPI::SetMaxThreads(unsigned n)
+void CUsageReportAPI::SetMaxQueueSize(unsigned n)
 {
-    NCBI_PARAM_TYPE(USAGE_REPORT, MaxThreads)::SetDefault(n ? n : kDefault_MaxThreads);
+    NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::SetDefault(n ? n : kDefault_MaxQueueSize);
 }
 
 string CUsageReportAPI::GetURL()
@@ -173,9 +173,9 @@ string CUsageReportAPI::GetAppVersion()
     return version;
 }
 
-unsigned CUsageReportAPI::GetMaxThreads()
+unsigned CUsageReportAPI::GetMaxQueueSize()
 {
-    return NCBI_PARAM_TYPE(USAGE_REPORT, MaxThreads)::GetDefault();
+    return NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::GetDefault();
 }
 
 
@@ -200,7 +200,7 @@ unsigned CUsageReportAPI::GetMaxThreads()
 CUsageReportParameters& CUsageReportParameters::Add(const string& name, const string& value)
 {
     CHECK_USAGE_REPORT_PARAM_NAME(name);
-    (*m_Params.get())[NStr::URLEncode(name, NStr::eUrlEnc_URIQueryName)] = NStr::URLEncode(value, NStr::eUrlEnc_URIQueryValue);
+    m_Params[NStr::URLEncode(name, NStr::eUrlEnc_URIQueryName)] = NStr::URLEncode(value, NStr::eUrlEnc_URIQueryValue);
     return *this;
 }
 
@@ -213,7 +213,7 @@ string CUsageReportParameters::ToString() const
 {
     string result;
     bool first = true;
-    for (auto const &param : *m_Params) {
+    for (auto const &param : m_Params) {
         if (first) {
             first = false;
         } else {
@@ -226,13 +226,9 @@ string CUsageReportParameters::ToString() const
 
 void CUsageReportParameters::x_CopyFrom(const CUsageReportParameters& other)
 {
-    m_Params.reset(new TParams(*other.m_Params.get()));
+    m_Params = other.m_Params;
 }
 
-void CUsageReportParameters::x_MoveFrom(CUsageReportParameters& other)
-{
-    m_Params.reset(other.m_Params.release());
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -252,15 +248,6 @@ void CUsageReportJob::x_CopyFrom(const CUsageReportJob& other)
     CUsageReportParameters::x_CopyFrom(other);
     // Members
     m_State = other.m_State;
-}
-
-void CUsageReportJob::x_MoveFrom(CUsageReportJob& other)
-{
-    // Parent
-    CUsageReportParameters::x_MoveFrom(other);
-    // Members
-    m_State = other.m_State;
-    other.m_State = eInvalid;
 }
 
 
@@ -325,6 +312,7 @@ static string s_GetHost()
 // Usage MT-protection for CUsageReport
 #define MT_GUARD std::lock_guard<std::mutex> mt_usage_guard(m_Usage_Mutex)
 
+
 CUsageReport& CUsageReport::Instance(void)
 {
     static CUsageReport* usage_report = new CUsageReport(gs_DefaultParams);
@@ -340,7 +328,7 @@ void s_AddDefaultParam(CUsageReportParameters& params, const string& name, const
     params.Add(name, value);
 }
    
-CUsageReport::CUsageReport(TWhat what, const string& url)
+CUsageReport::CUsageReport(TWhat what, const string& url, unsigned max_queue_size)
 {
     // Set parameters reporting by default
 
@@ -363,157 +351,205 @@ CUsageReport::CUsageReport(TWhat what, const string& url)
     }
     m_DefaultParams = params.ToString();
 
-    // Save URL
-    m_URL = url.empty() ? CUsageReportAPI::GetURL() : url;
+    // Save arguments
+    m_URL          = url.empty() ? CUsageReportAPI::GetURL() : url;
+    m_MaxQueueSize = max_queue_size ? max_queue_size : CUsageReportAPI::GetMaxQueueSize();
 
-    // Create thread pool for async reporting
-    unsigned thread_pool_size = CUsageReportAPI::GetMaxThreads();
-    m_ThreadPool.resize(thread_pool_size);
-    
     // Enable reporter
-    m_IsEnabled = true;
+    m_IsEnabled   = true;
+    m_IsFinishing = false;
 }
 
 CUsageReport::~CUsageReport(void)
 {
-    // Wait all running async jobs (if any) to finish
-    Wait();
+    Finish();
 }
 
 bool CUsageReport::IsEnabled()
 {
-    return CUsageReportAPI::IsEnabled()  &&  m_IsEnabled;
+    return !m_IsFinishing  &&  m_IsEnabled  &&  CUsageReportAPI::IsEnabled();
 }
 
-
 // MT-safe
-bool CUsageReport::x_Send(const string& extra_params, int* http_status)
+bool CUsageReport::x_Send(const string& extra_params)
 {
+    // Silent mode -- discard all diagnostic messages from CHttpSession during this call.
+    // Affects current thread/function only.
+    CDiagCollectGuard diag_guard;
+
     string url = m_URL + '?' + m_DefaultParams;
     if (!extra_params.empty()) {
         url += '&' + extra_params;
     }
     CHttpSession session;
     CHttpResponse response = session.Get(url);
-    if (http_status) {
-        *http_status = response.GetStatusCode();
-    }
     return response.GetStatusCode() == 200;
 }
 
 // MT-safe
-void CUsageReport::x_SendAsync(TJobPtr job)
+void CUsageReport::x_SendAsync(TJobPtr job_ptr)
 {
-    _ASSERT(job);
+    _ASSERT(job_ptr);
     MT_GUARD;
 
-    // Thread pool: clear all finished jobs and find first available slot
-    int slot = -1;
-    for (int i = 0; i < (int)m_ThreadPool.size(); i++) {
-        auto& t = m_ThreadPool[i];
-        if (t.m_state == eFinished) {
-            if (t.m_thread.joinable()) {
-                t.m_thread.join();
-            }
-            t.m_state = eReady;
-        }
-        if (slot < 0  &&  t.m_state == eReady) {
-            // Remember first available slot
-            slot = i;
-        }
-    }
-    // Report or reject
-    if (slot >= 0) {
-        // Empty slot found, run a new reporting thread
-        m_ThreadPool[slot].m_state = eRunning;
-        m_ThreadPool[slot].m_thread = std::thread(&CUsageReport::x_AsyncHandler, std::ref(Instance()), job, slot);
-    }
-    else {
-        // Too much requests, rejecting
-        job->x_SetState(CUsageReportJob::eRejected);
-        if (job->GetOwnership() == eTakeOwnership) {
-            delete job;
+    // Check queue size
+    if ((unsigned)m_Queue.size() >= m_MaxQueueSize) {
+        job_ptr->x_SetState(CUsageReportJob::eRejected);
+        delete job_ptr;
+        return;
+    } 
+    // Run reporting thread if not running yet
+    if (m_Thread.get_id() == std::thread::id()) {
+        m_Thread = std::thread(&CUsageReport::x_ThreadHandler, std::ref(Instance()));
+        if ( !m_Thread.joinable() ) {
+            // Cannot start reporting thread, disable reporting.
+            Disable();
+            ERR_POST_ONCE(Warning << "CUsageReport:: Unable to start reporting thread, reporting has disabled");
         }
     }
+    // Add job to queue
+    m_Queue.push_back(job_ptr);
+    job_ptr->x_SetState(CUsageReportJob::eQueued);
+
+    // Notify reporting thread that it have data to process
+    m_ThreadSignal.notify_all();
 }
 
 void CUsageReport::Send(void)
 {
     if ( IsEnabled() ) {
-        // Create new default job
-        TJobPtr job = new CUsageReportJob();
-        job->x_SetOwnership(eTakeOwnership);
-        job->x_SetState(CUsageReportJob::eCreated);
-        // Report
-        x_SendAsync(job);
+        // Create new empty job and report it.
+        // Default parameters will be reported automatically.
+        x_SendAsync(new CUsageReportJob());
     }
 }
 
-void CUsageReport::Send(CUsageReportParameters* params, EOwnership own)
+void CUsageReport::Send(CUsageReportParameters& params)
 {
     if ( IsEnabled() ) {
-        // Create new async job
-        CUsageReportJob* job = new CUsageReportJob();
-        job->x_SetOwnership(eTakeOwnership);
-        // Copy/move parameters to new job
-        if (own == eTakeOwnership) {
-            dynamic_cast<CUsageReportParameters*>(job)->x_MoveFrom(*params);
-        } else {
-            dynamic_cast<CUsageReportParameters*>(job)->x_CopyFrom(*params);
-        }
-        job->x_SetState(CUsageReportJob::eCreated);
+        // Create new async job and copy parameters to it
+        CUsageReportJob* job_ptr = new CUsageReportJob();
+        dynamic_cast<CUsageReportParameters*>(job_ptr)->x_CopyFrom(params);
         // Report
-        x_SendAsync(job);
+        x_SendAsync(job_ptr);
     }
 }
 
-void CUsageReport::Send(TJobPtr job, EOwnership own)
+unsigned CUsageReport::GetQueueSize()
 {
-    _ASSERT(job);
-    if ( IsEnabled() ) {
-        job->x_SetOwnership(own);
-        // Report
-        x_SendAsync(job);
+    MT_GUARD;
+    return (unsigned)m_Queue.size();
+}
+
+void CUsageReport::ClearQueue(void)
+{
+    MT_GUARD;
+    x_ClearQueue();
+}
+
+// Internal version without locks
+void CUsageReport::x_ClearQueue(void)
+{
+    for (auto& job : m_Queue) {
+        job->x_SetState(CUsageReportJob::eCanceled);
+        delete job;
     }
-    else {
-        if (own == eTakeOwnership) {
-            delete job;
-        }
-    }
+    m_Queue.clear();
 }
 
 void CUsageReport::Wait(void)
 {
-    MT_GUARD;
-    // Awaiting for unfinished reporting threads
-    for (auto& t : m_ThreadPool) {
-        if (t.m_thread.joinable()) {
-            t.m_thread.join();
-            t.m_state = eReady;
+    while (true) {
+        if (m_IsFinishing) {
+            // Finishing, nothing to wait, queue is empty
+            return;
         }
+        // BIG FAT NOTE 1:
+        //
+        // Scope {{...}} below is necessary for guards to work correctly,
+        // otherwise deadlock can occurs (Linux, GCC).
+        {{
+            // BIG FAT NOTE 2:
+            //
+            // Signal reporting thread to unlock its wait() and process 
+            // remaining queue. Ideally 'mt_signal_guard' below should
+            // do this, and unlock conditional variable wait() on locking
+            // signal mutex there, but sometimes it doesn't happens (???), 
+            // that lead to deadlock. Noticed on Linux with GCC 5.4 and 7.3.
+            // Mostly repeatable on slow machines, where Wait() probably 
+            // starts earlier than reporting thread is up and ready to process queue.
+            //
+            // So, we use both, notify*() reporting thread and lock signal mutex
+            // at the same time. Locking signal mutex is not really necessary
+            // after that, but allow to minimize spinning in this loop,
+            // and allow to check queue between sending jobs only.
+            //
+            m_ThreadSignal.notify_all();
+            std::lock_guard<std::mutex> mt_signal_guard(m_ThreadSignal_Mutex);
+
+            // Check queue size
+            MT_GUARD;
+            if (m_Queue.empty()) {
+                return;
+            }
+        }}
     }
 }
 
+void CUsageReport::Finish(void)
+{
+    {{
+        MT_GUARD;
+        // Clear queue
+        x_ClearQueue();
+        // Signal reporting thread to terminate
+        m_IsFinishing = true;
+        m_ThreadSignal.notify_all();
+    }}
+    // Awaiting reporting thread to terminate
+    if (m_Thread.joinable()) {
+        m_Thread.join();
+    }
+}
+
+
 // Should be MT-safe and no locking -- or deadlock can occur.
 //
-void CUsageReport::x_AsyncHandler(TJobPtr job, int thread_pool_slot)
+void CUsageReport::x_ThreadHandler(void)
 {
-    // Send
-    job->x_SetState(CUsageReportJob::eRunning);
-    int http_status;
-    x_Send(job->ToString(), &http_status);
+    std::unique_lock<std::mutex> signal_lock(m_ThreadSignal_Mutex);
 
-    // Set result state
-    job->x_SetState(http_status == 200 ? CUsageReportJob::eCompleted : CUsageReportJob::eFailed);
+    while (true) {
+        // Awaiting for a signal from the main thread to proceed
+        m_ThreadSignal.wait(signal_lock);
 
-    // Destroy job if necessary
-    if (job->GetOwnership() == eTakeOwnership) {
-        delete job;
+        // Process all jobs in the queue
+        while (true) {
+            // Check on finishing flag between processing jobs
+            if (m_IsFinishing) {
+                return;
+            }
+            TJobPtr job = nullptr;
+            {{
+                MT_GUARD;
+                if (!m_Queue.empty()) {
+                    job = m_Queue.front();
+                    m_Queue.pop_front();
+                }
+            }}
+            if (job) {
+                // Send report
+                job->x_SetState(CUsageReportJob::eRunning);
+                bool res = x_Send(job->ToString());
+                // Set result state
+                job->x_SetState(res ? CUsageReportJob::eCompleted : CUsageReportJob::eFailed);
+            } 
+            else {
+                // No more jobs to send, go back to wait() a signal
+                break;
+            }
+        }
     }
-    // Report finishing state to main thread.
-    // It should be MT-safe to access thread pool slot associated with 
-    // the current thread, it doesn't changes while thread is executes.
-    m_ThreadPool[thread_pool_slot].m_state = eFinished;
 }
 
 

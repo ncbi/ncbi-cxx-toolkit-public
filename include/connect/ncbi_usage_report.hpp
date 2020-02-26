@@ -38,6 +38,7 @@
 #include <connect/ncbi_http_session.hpp>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 
 
  /** @addtogroup ServiceSupport
@@ -45,12 +46,15 @@
  * @{
  */
 
-#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 700
+//#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 700
 // No asynchronous reporting for GCC < 7.0.
 // std::thread doesn't support async handlers with arguments (at least as class method),
-#else 
-#  define NCBI_USAGE_REPORT_SUPPORTED 1
-#endif
+//#else 
+//#  define NCBI_USAGE_REPORT_SUPPORTED 1
+//#endif
+
+// Supported everywhere
+#define NCBI_USAGE_REPORT_SUPPORTED 1
 
 
 BEGIN_NCBI_SCOPE
@@ -99,7 +103,7 @@ public:
 ///    All methods are MT safe.
 /// @note
 ///   The usage reporting use default connection timeouts and maximum number
-///   of tries, specified by $CONN_TIMEOUT and $CONN_MAX_TRY environment
+///   of tries specified by $CONN_TIMEOUT and $CONN_MAX_TRY environment
 ///   variables, or [CONN]TIMEOUT and [CONN]MAX_TRY registry values accordingly.
 
 class NCBI_XCONNECT_EXPORT CUsageReportAPI : public CUsageReportBase
@@ -145,7 +149,7 @@ public:
     /// @sa 
     ///   TWhat, CUsageReport, CUsageReportParameters 
     ///
-    static void SetDefaultParameters(TWhat what = fDefault);
+    static void  SetDefaultParameters(TWhat what = fDefault);
     static TWhat GetDefaultParameters(void);
 
     /// Change CGI URL for reporting usage statistics.
@@ -203,7 +207,14 @@ public:
     static void   SetAppVersion(const CVersionInfo& version);
     static string GetAppVersion(void);
 
-    /// Declare the maximum number of asynchronous threads per reporter.
+    /// Declare the maximum reporting jobs queue size per reporter.
+    ///
+    /// Minimum value is 1. Value 0 sets queue to predefined size. 
+    /// Maximum value is unspecified, but be aware that too big queue size
+    /// takes more memory and affects reporting accuracy. All requests 
+    /// processes on first-in-first-out base, and if queue is almost full,
+    /// some newly added reports can become obsolete before the reporter
+    /// can send it to server. 
     ///
     /// Affects all reporters created afterwards only.
     /// Used by CUsageReport::Send() method.
@@ -212,16 +223,16 @@ public:
     ///   Can be specified thought the global parameter:
     ///   Registry file:
     ///       [USAGE_REPORT]
-    ///       MaxThreads = ...
+    ///       MaxQueueSize = ...
     ///   Environment variable:
-    ///       NCBI_USAGE_REPORT_MAXTHREADS=...
+    ///       NCBI_USAGE_REPORT_MAXQUEUESIZE=...
     /// @param
-    ///   Maximum number of asynchronous threads per reporter.
+    ///   Maximum number of reporting jobs in the queue per reporter.
     ///   0 - (re)set to default value.
-    /// @sa GetMaxThreads, CUsageReport::Send()
+    /// @sa GetMaxQueueSize, CUsageReport::Send()
     ///
-    static void     SetMaxThreads(unsigned n);
-    static unsigned GetMaxThreads();
+    static void     SetMaxQueueSize(unsigned n);
+    static unsigned GetMaxQueueSize();
 };
 
 
@@ -242,7 +253,7 @@ class NCBI_XCONNECT_EXPORT CUsageReportParameters
 {
 public:
     // Default constructor
-    CUsageReportParameters(void) : m_Params(new TParams) {};
+    CUsageReportParameters(void) {};
 
     /// Add argument
     /// Name must contain only alphanumeric chars or '_'.
@@ -258,24 +269,17 @@ public:
 
     /// Copy constructor.
     CUsageReportParameters(const CUsageReportParameters& other) { x_CopyFrom(other); }
-    /// Move assignment operator.
+    /// Copy assignment operator.
     CUsageReportParameters& operator=(const CUsageReportParameters& other) { x_CopyFrom(other); return *this; }
-    /// Move constructor.
-    CUsageReportParameters(CUsageReportParameters&& other) { x_MoveFrom(other); }
-    /// Move assignment operator.
-    CUsageReportParameters& operator=(CUsageReportParameters&& other) { x_MoveFrom(other); return *this; }
 
 protected:
     /// Copy parameters to another objects.
     void x_CopyFrom(const CUsageReportParameters& other);
-    /// Move parameters to another objects.
-    void x_MoveFrom(CUsageReportParameters& other);
-    friend class CUsageReport;
 
 private:
-    // Pointer to stored parameters (to avoid copying on move semantics)
-    using TParams = std::map<string, string>;
-    std::unique_ptr<TParams> m_Params;  
+    std::map<string, string> m_Params;   ///< Stored parameters
+
+    friend class CUsageReport;
 };
 
 
@@ -289,7 +293,10 @@ private:
 ///
 /// This is a base class, that DO NOTHING on failed or rejected reports.
 /// If you want some additional functionality you need to derive yours own
-/// class from it and override the OnStateChange() method.
+/// class from it and override the OnStateChange() method and.
+/// For derived class you can also need to define a copy constructor.
+/// But in the case of primitive members only default copy constructor
+/// should works.
 ///
 /// @note
 ///    This class is not MT safe by default, concurrent access to the same
@@ -302,28 +309,23 @@ class NCBI_XCONNECT_EXPORT CUsageReportJob : public CUsageReportParameters
 public:
     /// Job state
     enum EState {
-        eInvalid,    ///< Invalid (internal)
-        eCreated,    ///< Created, preparing to be send
+        eCreated,    ///< Initial state, not reported to OnStateChange()
+        eQueued,     ///< Added to queue (sending temporary postpones)
         eRunning,    ///< Ready to send
         eCompleted,  ///< Result: successfully sent
-        eFailed,     ///< Result: sending failed
-        eRejected    ///< Result: too many requests, all threads are busy
+        eFailed,     ///< Result: send failed
+        eCanceled,   ///< Result: canceled / removed from queue
+        eRejected    ///< Result: rejected / too many requests
     };
 
     /// Default constructor.
-    CUsageReportJob(void) : m_State(eInvalid), m_Ownership(eNoOwnership) {};
+    CUsageReportJob(void) : m_State(eCreated) {};
     /// Destructor
     virtual ~CUsageReportJob(void) {};
     
     /// Return current job state.
     /// @sa EState
     EState GetState() { return m_State; };
-
-    /// Return ownership status for this object.
-    /// if set to eTakeOwnership, the allocated memory will be freed automatically
-    /// at the end of lifetime of this job.
-    /// @sa EOwnership
-    EOwnership GetOwnership() { return m_Ownership; };
 
     /// Callback for async reporting. Calls on each state change.
     ///
@@ -338,33 +340,20 @@ public:
     CUsageReportJob(const CUsageReportJob& other) { x_CopyFrom(other); };
     /// Copy assignment operator.
     CUsageReportJob& operator=(const CUsageReportJob& other) { x_CopyFrom(other); return *this; };
-    /// Move constructor.
-    CUsageReportJob(CUsageReportJob&& other) { x_MoveFrom(other); };
-    /// Move assignment operator.
-    CUsageReportJob& operator=(CUsageReportJob&& other) { x_MoveFrom(other); return *this; };
-
+    
 protected:
-    /// Change current job state.
+    /// Set new job state.
     /// Used by CUsageReport::Send() only. User cannot change state directly.
     /// @sa EState, CUsageReport::Send()
     void x_SetState(EState state);
 
-    /// Set ownership status.
-    /// Used by CUsageReport::Send() only. User cannot change this.
-    /// @sa EOwnership, CUsageReport::Send()
-    void x_SetOwnership(EOwnership own) { m_Ownership = own; };
-
     /// Copy data from 'other' job.
     void x_CopyFrom(const CUsageReportJob& other);
-    /// Move data from 'other' job, 'other' became invalid.
-    void x_MoveFrom(CUsageReportJob& other);
-
-    friend class CUsageReport;
 
 private:
-    EState      m_State;      ///< Job state
-    EOwnership  m_Ownership;  ///< Defines if this job objects is owned
-                              ///< by CUsageReport API and memory should be freed on destruction.
+    EState m_State;  ///< Job state
+
+    friend class CUsageReport;
 };
 
 
@@ -383,24 +372,25 @@ private:
 ///   a global instance of the usage reporter. It will be created on first
 ///   usage and can be used from any thread and place in yours code, sharing 
 ///   the same resources. Of course you can directly create separate reporter,
-///   constructing CUsageReport class object on stack or heap. This scenario
-///   can be used for synchronous reporting. Indeed, asynchronous (background)
-///   reporting can be a problem, because it is impossible to control number
-///   of reporting threads, and can lead to excessive usage of resources
-///   if you have too many reporters.
+///   constructing CUsageReport class object on stack or heap.
 ///    
 /// @note
-///   Maximum number of threads for asynchronous reporting is controlled by
-///   CUsageReportAPI::SetMaxThreads(). It defines the number of threads
-///   per reporter! If some reporter reaches the maximum number of concurrently
-///   running asynchronous threads, all new report requests will be rejected
-///   until some previously started jobs finish its work.
+///   Maximum queue size for asynchronous reporting is controlled by
+///   CUsageReportAPI::SetMaxQueueSize(). If reporter unable to send reports
+///   as fast as it gets new request it puts received jobs into a temporary
+///   queue and process it in background. If reporter is overwhelmed with
+///   requests and queue reaches the maximum allowed size, all new requests
+///   will be rejected until it can send some already queued jobs to server 
+///  and free some space in the queue.
 ///
 /// @note
-///   You should call Wait() method for each reporter before application exit,
-///   to allow all currently run asynchronous jobs to finish.
-///   Otherwise, running in background threads can lead to unexpected results.
-///   Behavior is undefined.
+///   It is recommended to call Finish() method for each reporter before 
+///   an application exit, this allow to correctly clear queue and terminate
+///   reporting thread. Also, you can call Wait() before Finish() if you want
+///   to be sure that all queued jobs are processed, instead of discarding them. 
+///   If you don't call Finish(), terminating running in background threads
+///   can lead to unexpected results, depending on platform and used compiler,
+///   behavior is undefined.
 ///
 class NCBI_XCONNECT_EXPORT CUsageReport : public CUsageReportBase
 {
@@ -422,26 +412,33 @@ public:
     /// Constructor.
     ///
     /// Creates new reporting instance.
-    /// For general case we still recommend to use global usage reporter,
+    /// For general case we still recommend to use a single global usage reporter,
     /// one per application, accessible via CUsageReport::Instance().
     /// But, if you need to use different reporting URL or default parameters
-    /// for each reporter, you can create new instance yourself with needed parameters.
+    /// for each reporter, you can create new instance yourself with needed arguments.
     ///
     /// @param what
-    ///   Set of parameters, that should be reported by default. 
+    ///   Set of parameters that should be reported by default. 
     ///   If fDefault, global default API setting will be used, 
     ///   see CUsageReportAPI::SetDefaultParameters().
     /// @param url
     ///   Reporting URL. If not specified or empty, global API setting will be used, 
     ///   see CUsageReportAPI::SetURL().
+    /// @param max_queue_size
+    ///   Maximum reporting jobs queue size. If not specified or zero,
+    ///   global API setting will be used, see CUsageReportAPI::SetMaxQueueSize().
     /// @sa 
     ///   TWhat, Instance(), 
-    ///   CUsageReportAPI::SetDefaultParameters(), CUsageReportAPI::SetURL() 
+    ///   CUsageReportAPI::SetDefaultParameters(), CUsageReportAPI::SetURL(), 
+    ///   CUsageReportAPI::SetMaxQueueSize() 
     ///
-    CUsageReport(TWhat what = fDefault, const string& url = string());
+    CUsageReport(TWhat what = fDefault, const string& url = string(), unsigned max_queue_size = 0);
 
     /// Destructor.
-    /// Clean up the reporter, awaiting all current reporting sessions to finish.
+    /// Clean up the reporter, call Finish(), all queued and non-sent reporting
+    /// jobs will be destroyed.
+    /// @sa 
+    ///   Wait(), Finish()
     virtual ~CUsageReport(void);
 
     /// Enable or disable usage reporter (current instance only).
@@ -473,75 +470,81 @@ public:
     /// Send usage statistics with specified parameters in background,
     /// without blocking current thread execution.
     /// @param params
-    ///   Additional parameters to report.
-    ///   Default parameters can be specified in the CUsageReport constructor.
-    ///   The reporter copy parameters before asynchronously reporting them in background,
-    ///   so parameters object can be freely changed or destroyed after this call.
+    ///   Specifies extra parameters to report, in addition to default
+    ///   parameters specified in the CUsageReport constructor.
+    ///   The reporter copy parameters before asynchronously reporting
+    ///   them in background, so parameters object can be freely changed or 
+    ///   destroyed after this call.
+    /// @note
+    ///   This version do nothing on errors. If you want to control
+    ///   reporting progress and results you can use Send(CUsageReportJob&)
+    ///   version with your own class derived from CUsageReportJob.
     /// @sa 
-    ///   CUsageReportParameters, TWhat, CUsageReportJob::OnStateChange(), 
-    ///   Enable(), Wait()
+    ///   CUsageReportParameters, CUsageReportJob, TWhat, Enable(), Wait()
     ///
-    void Send(CUsageReportParameters& params) { Send(&params, eNoOwnership); }
-
-    /// Report usage statistics (asynchronously).
-    ///
-    /// Send usage statistics with specified parameters in background,
-    /// without blocking current thread execution.
-    /// Extended version with memory control.
-    /// @param params
-    ///   Additional parameters to report.
-    ///   Default parameters can be specified in the CUsageReport constructor.
-    /// @param own
-    ///   For MT-safety reporting parameters cannot be used "as is", because it can be
-    ///   accidentally changed in the middle of reporting process that can lead
-    ///   to incorrect result. So, reporting API can "copy" or "move" specified 
-    ///   parameters, and 'own' argument specify what to do here:
-    ///     - eTakeOwnership -- move parameters, makes 'params' object empty after this call;
-    ///     - eNoOwnership   -- copy parameters, leave 'params' objects in unchanged state.
-    ///   eNoOwnership is slower if you have many parameters, but it is more
-    ///   convenient to use if you report almost the same set of parameters each time
-    ///   and change only few of them before each reporting.
-    /// @sa 
-    ///   CUsageReportParameters, TWhat, CUsageReportJob::OnStateChange(), 
-    ///   Enable(), Wait()
-    ///
-    void Send(CUsageReportParameters* params, EOwnership own);
+    void Send(CUsageReportParameters& params);
 
     /// Report usage statistics (asynchronously) (advanced version).
     ///
     /// Send usage statistics in background without blocking current thread execution.
-    /// Allow to control reporting process and reporting errors.
+    /// You can use this version if you want to control reporting 
+    /// progress and get status of submitted reports. 
     ///
-    /// @param job_ptr
-    ///   Pointer to CUsageReportJob based object. Note, that allocated object
-    ///   should exist until usage reporting will finish its job in background,
-    ///   otherwise it can lead to memory corruption and unpredictable results.
-    ///   See ownership parameter.
-    ///   Also, you can derive your own class from CUsageReportJob if you want
-    ///   to control reporting status for asynchronous reporting.
-    /// @param own
-    ///   Ownership of the job object. If you don't want to control lifetime 
-    ///   of the job object yourself, you can allow the API to take care of it.
-    ///   Usually you don't know when background reporting task will be finished,
-    ///   so you can create job via new(), add parameters, and set ownership
-    ///   to eTakeOwnership. The API automatically free allocated memory when
-    ///   necessary. But if you want to deallocate memory yourself please use
-    ///   eNoOwnership value.
+    /// @param job
+    ///   Job to report, some object of type CUsageReportJob or derived from it.
+    ///   CUsageReportJob do nothing if something bad happens on reporting. 
+    ///   All errors are ignored and silenced. You need to derive your own class
+    ///   from CUsageReportJob if you want to control reporting status or store
+    ///   additional information. See CUsageReportJob description for details.
     /// @sa 
     ///   CUsageReportJob, CUsageReportJob::OnStateChange(), Enable(), Wait()
-    ///
     /// @code
     ///   // Usage example
-    ///   unique_ptr<CUsageReportJob_or_derived_class> job(new CUsageReportJob_or_derived_class());
-    ///   job->Add(...);
-    ///   CUsageReport::Instance().Send(job.release(), eTakeOwnership);
+    ///   CUsageReportJob_or_derived_class job;
+    ///   job.Add(...);
+    ///   CUsageReport::Instance().Send(job);
     /// @endcode
     ///
-    void Send(CUsageReportJob* job_ptr, EOwnership own);
+    template <typename TJob> void Send(TJob& job)
+    { 
+        if ( IsEnabled() ) {
+            CUsageReportJob* job_ptr = new TJob(job);
+            x_SendAsync(job_ptr);
+        }
+    }
 
-    /// Wait all asynchronous reporting jobs to finish (if any).
-    /// Should be called once before an application exit.
+    /// Get number of jobs in the queue -- number of unprocessed yet jobs.
+    unsigned GetQueueSize(void);
+
+    /// Remove all unprocessed reporting jobs from queue.
+    /// @sa 
+    ///   Finish(), WaitAndFinish()
+    void ClearQueue(void);
+
+    /// Wait until all queued jobs starts to process and queue is empty.
+    /// Can be called before Finish() to be sure that all queued requests
+    /// are processed and nothing is discarded.
+    /// @note
+    ///   It doesn't wait for already started job that is sending at the current moment.
+    ///   You still need to call Finish().
+    /// @sa 
+    ///   Finish(), ClearQueue()
     void Wait(void);
+
+    /// Finish reporting for the current reporting object.
+    /// All reporting jobs in the queue will be discarded and reporting
+    /// thread destroyed. If you want to wait all queued requests to finish,
+    /// call Wait() just before Finish().
+    /// @note
+    ///   Only queued requests will be discarded. It doesn't affect already
+    ///   started job, that is sending at the current moment (if any).
+    ///   Reporting thread will be destroyed immediately after finishing
+    ///   sending last started job.
+    /// @note
+    ///   The reporter become invalid after this call and shouldn't be used anymore.
+    /// @sa 
+    ///   ClearQueue(), Wait()
+    void Finish(void);
 
 private:
     /// Prevent copying.
@@ -550,32 +553,32 @@ private:
     friend class CUsageReportAPI;
 
 private:
-    /// Send parameters string synchronously, returns HTTP status if specified.
-    bool x_Send(const string& extra_params, int* http_status);    
-    /// Send job asynchronously
     using TJobPtr = CUsageReportJob*;
-    void x_SendAsync(TJobPtr job);
-    /// Handler for asynchronous job reporting in the separate thread. 
-    void x_AsyncHandler(TJobPtr job, int thread_pool_slot);
+
+    /// Send parameters string synchronously
+    bool x_Send(const string& extra_params);
+    /// Send job asynchronously
+    void x_SendAsync(TJobPtr job_ptr);
+    /// Handler for asynchronous job reporting 
+    void x_ThreadHandler(void);
+    /// Remove all unprocessed reporting jobs from queue - internal version
+    void x_ClearQueue(void);
 
 private:
-    mutable bool m_IsEnabled;      ///< Enable/disable status
-    string       m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded.
-    string       m_URL;            ///< Reporting URL
+    mutable bool  m_IsEnabled;      ///< Enable/disable status
+    mutable bool  m_IsFinishing;    ///< TRUE if Finish() has called and reporting thread should terminate
+    string        m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded
+    string        m_URL;            ///< Reporting URL
+    std::thread   m_Thread;         ///< Reporting thread
+    list<TJobPtr> m_Queue;          ///< Job queue
+    unsigned      m_MaxQueueSize;   ///< Maximum allowed queue size
 
-    // Async processing
-    enum EThreadState {
-        eReady,
-        eRunning,
-        eFinished
-    };
-    struct SThread {
-        SThread() :  m_state(eReady) {};
-        std::thread  m_thread;
-        EThreadState m_state;
-    };
-    vector<SThread> m_ThreadPool;   ///< Async thread pool
-    std::mutex      m_Usage_Mutex;  ///< MT-protection
+    std::mutex    m_Usage_Mutex;    ///< MT-protection to access members
+
+    /// Signal conditional variable for reporting thread synchronization
+    std::condition_variable m_ThreadSignal;
+    std::mutex m_ThreadSignal_Mutex;
+
 };
 
 
@@ -601,14 +604,14 @@ private:
 ///
 #define NCBI_REPORT_USAGE(event, ...) __NCBI_REPORT_USAGE(event, __VA_ARGS__)
 
-#define __NCBI_REPORT_USAGE(event, args)                            \
-    {                                                               \
-        CUsageReport& reporter = CUsageReport::Instance();          \
-        if (reporter.IsEnabled()) {                                 \
-            unique_ptr<CUsageReportJob> job(new CUsageReportJob()); \
-            job->Add("jsevent", (event)) args;                      \
-            reporter.Send(job.release(), eTakeOwnership);      \
-        }                                                           \
+#define __NCBI_REPORT_USAGE(event, args)                    \
+    {                                                       \
+        CUsageReport& reporter = CUsageReport::Instance();  \
+        if (reporter.IsEnabled()) {                         \
+            CUsageReportParameters params;                  \
+            params.Add("jsevent", (event)) args;            \
+            reporter.Send(params);                          \
+        }                                                   \
     }
 
 /// Enable usage statistics reporting (globally for all reporters).
@@ -616,15 +619,19 @@ private:
 #define NCBI_REPORT_USAGE_START  CUsageReportAPI::Enable()
 
 /// Finishing reporting via NCBI_REPORT_USAGE and global usage reporter,
-/// awaiting all asynchronous jobs to finish. Should be used before application exit.
 ///
-#define NCBI_REPORT_USAGE_FINISH  CUsageReport::Instance().Wait()
+#define NCBI_REPORT_USAGE_WAIT   CUsageReport::Instance().Wait()
+
+/// Finishing reporting via NCBI_REPORT_USAGE and global usage reporter,
+///
+#define NCBI_REPORT_USAGE_FINISH  CUsageReport::Instance().Finish()
 
 #else
 
 // Empty macro if no support usage reporting
 #define NCBI_REPORT_USAGE(event, ...)
 #define NCBI_REPORT_USAGE_START
+#define NCBI_REPORT_USAGE_WAIT
 #define NCBI_REPORT_USAGE_FINISH
 
 #endif  // NCBI_USAGE_REPORT_SUPPORTED
