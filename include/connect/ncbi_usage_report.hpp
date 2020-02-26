@@ -618,7 +618,7 @@ private:
 ///
 #define NCBI_REPORT_USAGE_START  CUsageReportAPI::Enable()
 
-/// Finishing reporting via NCBI_REPORT_USAGE and global usage reporter,
+/// Wait until all reports via NCBI_REPORT_USAGE will be processed.
 ///
 #define NCBI_REPORT_USAGE_WAIT   CUsageReport::Instance().Wait()
 
