@@ -73,7 +73,7 @@ public:
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const TCache& GetCache(void) const { return m_Cache; }
-    const int GetLength(void) const { return m_Length; }
+    int GetLength(void) const { return m_Length; }
 
     virtual EItem GetItemType(void) const;
 private:
