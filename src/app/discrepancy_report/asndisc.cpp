@@ -56,8 +56,6 @@ public:
 
 protected:
     string x_ConstructOutputName(const string& input);
-    string x_ConstructAutofixName(const string& input);
-    string x_ConstructMacroName(const string& input);
     string x_DefaultHeader();
     void x_ProcessFile(const string& filename, CDiscrepancySet& tests);
     void x_ParseDirectory(const string& name, bool recursive);
@@ -178,24 +176,6 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
         ext += ".xml";
     }
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
-}
-
-
-string CDiscRepApp::x_ConstructMacroName(const string& input)
-{
-    const CArgs& args = GetArgs();
-    CDirEntry fname(input);
-    string path = args["outdir"] ? args["outdir"].AsString() : fname.GetDir();
-    return CDirEntry::MakePath(path, fname.GetBase(), "macro.txt");
-}
-
-
-string CDiscRepApp::x_ConstructAutofixName(const string& input)
-{
-    const CArgs& args = GetArgs();
-    CDirEntry fname(input);
-    string path = args["outdir"] ? args["outdir"].AsString() : fname.GetDir();
-    return CDirEntry::MakePath(path, fname.GetBase(), "autofix.asn");
 }
 
 
@@ -563,23 +543,4 @@ int CDiscRepApp::Run(void)
 int main(int argc, const char* argv[])
 {
     return CDiscRepApp().AppMain(argc, argv);
-}
-
-// some functions for use when in a debugger
-using namespace ncbi;
-using namespace objects;
-
-void PS(const CSerialObject *obj, CNcbiOstream *out_strm = &cout)
-{
-    CNcbiOstream & real_strm = ( out_strm ? *out_strm : cout );
-    if( obj ) {
-        real_strm << noskipws << MSerial_AsnText << *obj << endl;
-    } else {
-        real_strm << "NULL" << endl;
-    }
-}
-
-CTempString *TMP_MK(const char *a_str)
-{
-    return new CTempString(a_str);
 }
