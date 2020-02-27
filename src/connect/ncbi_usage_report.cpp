@@ -400,7 +400,7 @@ void CUsageReport::x_SendAsync(TJobPtr job_ptr)
     } 
     // Run reporting thread if not running yet
     if (m_Thread.get_id() == std::thread::id()) {
-        m_Thread = std::thread(&CUsageReport::x_ThreadHandler, std::ref(Instance()));
+        m_Thread = std::thread(&CUsageReport::x_ThreadHandler, std::ref(*this));
         if ( !m_Thread.joinable() ) {
             // Cannot start reporting thread, disable reporting.
             Disable();
