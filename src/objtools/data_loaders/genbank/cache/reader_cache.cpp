@@ -1102,9 +1102,9 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     
     for ( size_t i = 0; i < blob_count; ++i ) {
         CRef<CBlob_id> id(new CBlob_id);
-        id->SetSat(str.ParseUint4());
-        id->SetSubSat(str.ParseUint4());
-        id->SetSatKey(str.ParseUint4());
+        id->SetSat(str.ParseInt4());
+        id->SetSubSat(str.ParseInt4());
+        id->SetSatKey(str.ParseInt4());
         CBlob_Info info(id, str.ParseUint4());
         CRef<CBlob_Annot_Info> annots_info;
         size_t name_count = str.ParseUint4();

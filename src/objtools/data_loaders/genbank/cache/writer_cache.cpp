@@ -384,9 +384,9 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         const CBlob_Info& info = *it;
         const CBlob_id& id = *info.GetBlob_id();
-        str.StoreUint4(id.GetSat());
-        str.StoreUint4(id.GetSubSat());
-        str.StoreUint4(id.GetSatKey());
+        str.StoreInt4(id.GetSat());
+        str.StoreInt4(id.GetSubSat());
+        str.StoreInt4(id.GetSatKey());
         str.StoreUint4(info.GetContentsMask());
         CConstRef<CBlob_Annot_Info> annot_info = info.GetAnnotInfo();
         if ( annot_info ) {
