@@ -34,33 +34,17 @@
  */
 
 #include <corelib/ncbistl.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <connect/ncbi_http_session.hpp>
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-
 
  /** @addtogroup ServiceSupport
  *
  * @{
  */
 
-//#if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 700
-// No asynchronous reporting for GCC < 7.0.
-// std::thread doesn't support async handlers with arguments (at least as class method),
-//#else 
-//#  define NCBI_USAGE_REPORT_SUPPORTED 1
-//#endif
-
-// Supported everywhere
-#define NCBI_USAGE_REPORT_SUPPORTED 1
-
-
 BEGIN_NCBI_SCOPE
-
-
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -75,12 +59,12 @@ public:
     /// in addition to passed parameters for Send() method.
     /// @sa CUsageReportAPI::SetDefaultParameters(), CUsageReport
     enum EWhat {
-        fEmpty      = 0,         ///< No defaults, all parameters should be specified
-                                 ///< via CUsageReportParameters directly
-        fAppName    = 1 << 1,    ///< Application name ("appname")
-        fAppVersion = 1 << 2,    ///< Application version ("version")
-        fOS         = 1 << 3,    ///< OS name ("os")
-        fHost       = 1 << 4,    ///< Host name ("host")
+        fNone       = 0,        ///< No defaults, all parameters should be specified
+                                ///< via CUsageReportParameters directly
+        fAppName    = 1 << 1,   ///< Application name ("appname")
+        fAppVersion = 1 << 2,   ///< Application version ("version")
+        fOS         = 1 << 3,   ///< OS name ("os")
+        fHost       = 1 << 4,   ///< Host name ("host")
         //
         fDefault    = fAppName | fAppVersion | fOS | fHost
     };
@@ -616,25 +600,16 @@ private:
 
 /// Enable usage statistics reporting (globally for all reporters).
 ///
-#define NCBI_REPORT_USAGE_START  CUsageReportAPI::Enable()
+#define NCBI_REPORT_USAGE_START   CUsageReportAPI::Enable()
 
 /// Wait until all reports via NCBI_REPORT_USAGE will be processed.
 ///
-#define NCBI_REPORT_USAGE_WAIT   CUsageReport::Instance().Wait()
+#define NCBI_REPORT_USAGE_WAIT    CUsageReport::Instance().Wait()
 
 /// Finishing reporting via NCBI_REPORT_USAGE and global usage reporter,
 ///
 #define NCBI_REPORT_USAGE_FINISH  CUsageReport::Instance().Finish()
 
-#else
-
-// Empty macro if no support usage reporting
-#define NCBI_REPORT_USAGE(event, ...)
-#define NCBI_REPORT_USAGE_START
-#define NCBI_REPORT_USAGE_WAIT
-#define NCBI_REPORT_USAGE_FINISH
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
 
 
 /* @} */

@@ -41,9 +41,6 @@
 BEGIN_NCBI_SCOPE
 
 
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
-
-
 /////////////////////////////////////////////////////////////////////////////
 //  Defaults
 //
@@ -533,8 +530,13 @@ void CUsageReport::x_ThreadHandler(void)
             {{
                 MT_GUARD;
                 if (!m_Queue.empty()) {
-                    job = m_Queue.front();
-                    m_Queue.pop_front();
+                    if (IsEnabled()) {
+                        job = m_Queue.front();
+                        m_Queue.pop_front();
+                    }
+                    else {
+                        x_ClearQueue();
+                    }
                 }
             }}
             if (job) {
@@ -551,9 +553,6 @@ void CUsageReport::x_ThreadHandler(void)
         }
     }
 }
-
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
 
 
 END_NCBI_SCOPE
