@@ -41,12 +41,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
-bool IsWholeWord(const string& str, const string& phrase);
-bool IsAllCaps(const string& str);
-bool IsAllLowerCase(const string& str);
-bool IsAllPunctuation(const string& str);
-string GetTwoFieldSubfield(const string& str, unsigned subfield);
-//bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<objects::CBioseq_set> > &bioseq_set_stack);
 void AddComment(objects::CSeq_feat& feat, const string& comment);
 string GetProductName(const objects::CSeq_feat& cds, objects::CScope& scope);
 

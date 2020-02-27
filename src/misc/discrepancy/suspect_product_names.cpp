@@ -61,6 +61,29 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(suspect_product_names);
 
 
+string GetTwoFieldSubfield(const string& str, unsigned subfield)
+{
+    string strtmp;
+    if (str.empty() || subfield > 2)  return "";
+    if (!subfield) return str;
+    else {
+        size_t pos = str.find(':');
+        if (pos == string::npos) {
+            if (subfield == 1) return str;
+            else return kEmptyStr;
+        }
+        else {
+            if (subfield == 1) return str.substr(0, pos);
+            else {
+                strtmp = CTempString(str).substr(pos + 1).empty();
+                if (!strtmp.empty()) return strtmp;
+                else return "";
+            }
+        }
+    }
+}
+
+
 static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = 0)
 {
     string str;
