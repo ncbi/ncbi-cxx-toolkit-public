@@ -29,12 +29,12 @@
  *   Sample for logging usage information via CUsageReport.
  *
  * This example is working, but not log anything to the Applog,
- * because we set our own wrong dummy URL, redefining real URL set by default.
- * So, all reports will fail actually.
+ * we set wrong dummy reporting URL, redefining real one for the sample purposes.
+ * So, all reports here will fail actually.
  *
  * Also, see ncbi_usage_report_sample.ini in the same directory for allowed
  * configuration options, or check CUsageReportAPI class, that have 
- * same options.
+ * corresponding options.
  *
  */
 
@@ -42,11 +42,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_usage_report.hpp>
 
-
 USING_NCBI_SCOPE;
-
-
-class CMyJob;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -59,19 +55,18 @@ public:
     virtual void Init();
     virtual int Run();
 
-    // Samples
-
-    // Global API configuration
+    /// Global API configuration example
     void ConfigureAPI();
 
-    // Using provided macro
-    void UsingMacro();
+    // Below are examples of 3 different usage patterns,
+    // all can be used separately or in conjunction with each other.
 
-    // Custom local reporters
-    void CustomReporters();
-
-    // Advanced reporting method with custom jobs and reporting Status control
-    void ReportingStatusControl();
+    /// Simplest way to report -- use provided macro
+    void Pattern_1_SimpleMacro();
+    /// Custom reporters
+    void Pattern_2_MultipleReporters();
+    /// Advanced reporting method with custom jobs and reporting status control
+    void Pattern_3_StatusControl();
 };
 
 
@@ -86,20 +81,22 @@ CUsageReportSampleApp::CUsageReportSampleApp()
 
 void CUsageReportSampleApp::Init()
 {
-    // Some application initialization
+    // Some application initialization ("Warning" for test purposes only)
     SetDiagPostLevel(eDiag_Warning);
-    // ...
 }
 
 
 int CUsageReportSampleApp::Run()
 {
+    // API configuration example
     ConfigureAPI();
-    UsingMacro();
-    CustomReporters();
-    ReportingStatusControl();
 
-    // Global reporter:
+    // Usage pattern
+    Pattern_1_SimpleMacro();
+    Pattern_2_MultipleReporters();
+    Pattern_3_StatusControl();
+
+    // Global reporter: 
     // Wait until all requests are reported. Optional.
     NCBI_REPORT_USAGE_WAIT;
     // Gracefully terminate reporting API. Optional.
@@ -114,19 +111,21 @@ void CUsageReportSampleApp::ConfigureAPI()
     // Global API configuration.
     //
     // Each call here is optional. 
-    // Any parameter can be set also via configuration file or environment variable.
+    // Any parameter can be set via configuration file or environment variable as well.
 
     // Set application name and version.
     // New values will NOT redefine CUsageReportSampleApp name and version
     // if specified (as we did, see constructor and Init()). But can be used
     // for any non-CNcbiApplication-based applications.
+    //
     CUsageReportAPI::SetAppName("usage_report_sample");
     CUsageReportAPI::SetAppVersion(CVersionInfo(4, 5, 6));
     // or set version as string
     CUsageReportAPI::SetAppVersion("4.5.6");
-    // Note, all 3 calls above don't have any effect in our case.
+    // Note again, all 3 calls above doesn't have any effect in our case.
 
-    // Set new default parameters to report:
+    // Set what should be reported by default with any report
+    // (if not changed OS name will be reported by default also)
     CUsageReportAPI::SetDefaultParameters(CUsageReportAPI::fAppName |
                                           CUsageReportAPI::fAppVersion |
                                           CUsageReportAPI::fHost);
@@ -135,26 +134,30 @@ void CUsageReportSampleApp::ConfigureAPI()
     // Think twice why you need to change default URL.
     CUsageReportAPI::SetURL("http://dummy/cgi");
 
-    // Change default queue size for storing jobs reporting in background.
+    // Change queue size for storing jobs reported in background.
     CUsageReportAPI::SetMaxQueueSize(20);
 
-    // And finally enable reporting API (globally for all reporters)
+    // And finally enable reporting API (global flag).
     CUsageReportAPI::Enable();
 }
 
 
-void CUsageReportSampleApp::UsingMacro()
+void CUsageReportSampleApp::Pattern_1_SimpleMacro()
 {
-    // Simple usage using provided macro.
+    // Simplest way to report -- use provided macro.
     // All macro use global API reporter and can be used from any thread, MT safe.
+    // No any control over reporting or checking status.
 
-    // Enable reporting (disabled by default).
+    // Enable reporting.
     // Can be enabled/disabled via configuration file or environment variable.
+    // Same as CUsageReportAPI::Enable() above -- we already enabled API there.
     NCBI_REPORT_USAGE_START;
 
     // First parameter automatically sets to "jsevent=eventname".
     // Below are some reports with variable number of parameters.
-    // Default parameters will be automatically added during sending.
+    // All default parameters like application name, version and etc 
+    // will be automatically added during sending data to server.
+    //
     NCBI_REPORT_USAGE("eventname");
     NCBI_REPORT_USAGE("eventname", .Add("tool_name", "ABC"));
     NCBI_REPORT_USAGE("eventname", .Add("tool_name", "DEF").Add("tool_version", 1));
@@ -174,7 +177,7 @@ void CUsageReportSampleApp::UsingMacro()
 }
 
 
-void CUsageReportSampleApp::CustomReporters()
+void CUsageReportSampleApp::Pattern_2_MultipleReporters()
 {
     // Custom local reporters.
     //
@@ -212,10 +215,11 @@ void CUsageReportSampleApp::CustomReporters()
 }
 
 
-void CUsageReportSampleApp::ReportingStatusControl()
+void CUsageReportSampleApp::Pattern_3_StatusControl()
 {
-    /// Custom reporting job
-    ///
+    // Advanced method with custom jobs and control for reporting process.
+
+    /// Example of a simple custom reporting job
     class CMyJob : public CUsageReportJob
     {
     public:
@@ -226,10 +230,9 @@ void CUsageReportSampleApp::ReportingStatusControl()
         virtual void OnStateChange(EState state) 
         {
             string state_str;
-
             switch (state) {
             case CUsageReportJob::eQueued:
-                // Job added to queue
+                // Job has added to queue
                 state_str = "Queued";
                 break;
             case CUsageReportJob::eRunning:
@@ -264,7 +267,7 @@ void CUsageReportSampleApp::ReportingStatusControl()
         /// For trivial classes like this it is not really necessary,
         /// default copy constructor can be used. But if you have pointers
         /// or any other data types that cannot be just copied, you need 
-        /// to implement copy constructor like this.
+        /// to implement it.
         ///
         CMyJob(const CMyJob& other) : CUsageReportJob(other) { 
             // Copy members:
@@ -275,17 +278,15 @@ void CUsageReportSampleApp::ReportingStatusControl()
         int m_ID;   ///< some job ID for example
     };
 
-    // Advanced method with custom jobs and control for reporting process.
-    // We will use global reporter here, but this apply to any reporter.
-
+    // We will use global reporter here, but this can be applied to any reporter.
     CUsageReport& reporter = CUsageReport::Instance(); 
 
-    // Because we set dummy URL to the reporter, bigger half of jobs will fails,
+    // Because we set dummy URL for our reporter, bigger half of jobs will fails,
     // and remaining part rejected, because current queue size is 20 only.
-    // See CUsageReportSampleApp::ConfigureAPI()
+    // The reporter will unable to process all, we add jobs faster.
     // 
     for (int i = 1; i < 40; i++) {
-        // Create custom job with ID equal to "i"
+        // Create custom job with ID equal to 'i'
         CMyJob job(i);
         // Add some extra parameters if necessary
         job.Add("p1", i*2); 
