@@ -401,6 +401,8 @@ namespace {
 
 void CPubseqReader::x_ConnectAtSlot(TConn conn_)
 {
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard guard(s_Mutex);
     if ( !m_Context ) {
         DBLB_INSTALL_DEFAULT_EX(eIfSet_KeepSilently);
         C_DriverMgr drvMgr;
