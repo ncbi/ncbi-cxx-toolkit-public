@@ -38,6 +38,7 @@
 #include <klib/rc.h>
 #include <klib/log.h>
 #include <klib/text.h>
+#include <klib/sra-release-version.h>
 #include <kfg/config.h>
 #include <kdb/manager.h>
 #include <kdb/kdb-priv.h>
@@ -435,12 +436,53 @@ DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 # define DECLARE_SDK_GET_GUARD() 
 #endif
 
+static string* s_VDBMsgPrefix;
+static CSafeStatic<string> s_VDBMsgPrefixStorage;
+
+static
+void s_InitVDBMsgPrefix(const VDBManager* mgr)
+{
+    if ( !s_VDBMsgPrefix ) {
+        SraReleaseVersion release_version;
+        SraReleaseVersionGet(&release_version);
+        CNcbiOstrstream s;
+        s << "VDB(";
+        s << (release_version.version>>24) << '.'
+          << ((release_version.version>>16)&0xff) << '.'
+          << (release_version.version&0xffff);
+        if ( release_version.revision != 0 ||
+             release_version.type != SraReleaseVersion::eSraReleaseVersionTypeFinal ) {
+            const char* type = "";
+            switch ( release_version.type ) {
+            case SraReleaseVersion::eSraReleaseVersionTypeDev:   type = "dev"; break;
+            case SraReleaseVersion::eSraReleaseVersionTypeAlpha: type = "a"; break;
+            case SraReleaseVersion::eSraReleaseVersionTypeBeta:  type = "b"; break;
+            case SraReleaseVersion::eSraReleaseVersionTypeRC:    type = "RC"; break;
+            default:                                             type = ""; break;
+            }
+            s << '-' << type << release_version.revision;
+        }
+        if ( 0 ) {
+            uint32_t manager_version = 0;
+            VDBManagerVersion(mgr, &manager_version);
+            s << " mgr "
+              << (manager_version>>24) << '.'
+              << ((manager_version>>16)&0xff) << '.'
+              << (manager_version&0xffff);
+        }
+        s << "): ";
+        *s_VDBMsgPrefixStorage = CNcbiOstrstreamToString(s);
+        s_VDBMsgPrefix = &*s_VDBMsgPrefixStorage;
+    }
+}
+
 static
 rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
 {
     CTempString msg(buffer, size);
     NStr::TruncateSpacesInPlace(msg);
     EDiagSev sev = eDiag_Error;
+    
     for ( SIZE_TYPE token_pos = 0, token_end; token_pos < msg.size(); token_pos = token_end + 1 ) {
         token_end = msg.find(' ', token_pos);
         if ( token_end == NPOS ) {
@@ -480,19 +522,19 @@ rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
         }
     }
     if ( sev == eDiag_Fatal ) {
-        ERR_POST_X(2, Fatal<<"VDB: "<<msg);
+        ERR_POST_X(2, Fatal<<*s_VDBMsgPrefix<<msg);
     }
     else if ( sev == eDiag_Warning ) {
-        ERR_POST_X(2, Warning<<"VDB: "<<msg);
+        ERR_POST_X(2, Warning<<*s_VDBMsgPrefix<<msg);
     }
     else if ( sev == eDiag_Info ) {
-        ERR_POST_X(2, Info<<"VDB: "<<msg);
+        ERR_POST_X(2, Info<<*s_VDBMsgPrefix<<msg);
     }
     else if ( sev == eDiag_Trace ) {
-        _TRACE("VDB: "<<msg);
+        _TRACE(*s_VDBMsgPrefix<<msg);
     }
     else {
-        ERR_POST_X(2, "VDB: "<<msg);
+        ERR_POST_X(2, *s_VDBMsgPrefix<<msg);
     }
     *written = size;
     return 0;
@@ -548,6 +590,7 @@ void CVDBMgr::x_Init(void)
     if ( s_GetDiagHandler() ) {
         KLogInit();
         KLogLevelSet(klogDebug);
+        s_InitVDBMsgPrefix(*this);
         KLogLibHandlerSet(VDBLogWriter, 0);
     }
 
