@@ -96,9 +96,10 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
-CCacheItem::CCacheItem(CBioseqContext& ctx, TCache csh, int length) :
+CCacheItem::CCacheItem(CBioseqContext& ctx, TCache csh, int length, bool is_prot) :
     m_Cache(csh),
     m_Length(length),
+    m_IsProt(is_prot),
     CFlatItem(&ctx)
 {
 }

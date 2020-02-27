@@ -630,11 +630,12 @@ void CGenbankFormatter::FormatCache
     if (rcx) {
         int length = csh.GetLength();
         string suffix = NStr::NumericToString(length) + ")";
+        string prefix = (csh.IsProt() ? "residues" : "bases");
         for (auto& str : *rcx) {
             if (NStr::StartsWith (str, "REFERENCE ") && NStr::EndsWith (str, ")")) {
-                size_t pos = NStr::Find(str, " to ");
-                if (pos > 12) {
-                    text_os.AddLine(str.substr(0, pos + 4) + suffix);
+                size_t pos = NStr::Find(str, " (");
+                if (pos > 10) {
+                    text_os.AddLine(str.substr(0, pos + 2) + prefix + " 1 to " + suffix);
                     continue;
                 }
             }

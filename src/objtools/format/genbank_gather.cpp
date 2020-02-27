@@ -186,7 +186,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         } else {
             CBioseq_Handle& bsh = ctx.GetHandle();
             const int length = bsh.GetBioseqLength();
-            item.Reset( new CCacheItem(ctx, rc, length) );
+            item.Reset( new CCacheItem(ctx, rc, length, bsh.IsAa()) );
             ItemOS() << item;
         }
     } else {
