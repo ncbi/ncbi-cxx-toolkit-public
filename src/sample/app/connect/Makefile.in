@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = ncbi_usage_report_sample
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
