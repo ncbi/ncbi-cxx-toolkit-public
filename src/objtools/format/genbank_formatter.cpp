@@ -634,7 +634,7 @@ void CGenbankFormatter::FormatCache
         for (auto& str : *rcx) {
             if (NStr::StartsWith (str, "REFERENCE ") && NStr::EndsWith (str, ")")) {
                 size_t pos = NStr::Find(str, " (");
-                if (pos > 10) {
+                if (pos > 10 && NStr::Find(str, "sites") == NPOS) {
                     text_os.AddLine(str.substr(0, pos + 2) + prefix + " 1 to " + suffix);
                     continue;
                 }
