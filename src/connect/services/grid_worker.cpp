@@ -167,11 +167,11 @@ private:
         CFastMutexGuard guard(m_Mutex);
         return m_StopFlag;
     }
-    bool x_IsAutoShutdownTime() const
+    unsigned x_GetIdleTimeIfShutdown() const
     {
         CFastMutexGuard guard(m_Mutex);
-        return m_AutoShutdown > 0 &&
-                m_AutoShutdownSW.Elapsed() > m_AutoShutdown;
+        auto elapsed = static_cast<unsigned>(m_AutoShutdownSW.Elapsed());
+        return (m_AutoShutdown && elapsed > m_AutoShutdown) ? elapsed : 0;
     }
 
     IWorkerNodeIdleTask* m_Task;
@@ -209,9 +209,8 @@ void* CWorkerNodeIdleThread::Main()
     SetCurrentThreadName(m_ThreadName);
 
     while (!m_ShutdownFlag) {
-        if ( x_IsAutoShutdownTime() ) {
-            LOG_POST_X(47, Info <<
-                "There are no more jobs to be done. Exiting.");
+        if (auto idle = x_GetIdleTimeIfShutdown()) {
+            LOG_POST_X(47, "Has been idle (no jobs to process) over " << idle << " seconds. Exiting.");
             CGridGlobals::GetInstance().RequestShutdown(
                     CNetScheduleAdmin::eShutdownImmediate);
             break;
@@ -229,9 +228,8 @@ void* CWorkerNodeIdleThread::Main()
         if (m_Task && !x_GetStopFlag()) {
             try {
                 do {
-                    if (x_IsAutoShutdownTime()) {
-                        LOG_POST_X(48, Info <<
-                            "There are no more jobs to be done. Exiting.");
+                    if (auto idle = x_GetIdleTimeIfShutdown()) {
+                        LOG_POST_X(47, "Has been idle (no jobs to process) over " << idle << " seconds. Exiting.");
                         CGridGlobals::GetInstance().RequestShutdown(
                             CNetScheduleAdmin::eShutdownImmediate);
                         m_ShutdownFlag = true;

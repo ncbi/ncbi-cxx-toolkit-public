@@ -91,7 +91,7 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
         ++m_JobsFailed;
         if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1 &&
                 grid_globals.GetShutdownLevel() < CNetScheduleAdmin::eShutdownImmediate) {
-            LOG_POST_X(2, "The maximum number of failed jobs (" <<
+            ERR_POST_X(2, Warning << "The maximum number of failed jobs (" <<
                           m_MaxFailuresAllowed << ") has been reached. "
                           "Shutting down..." );
             grid_globals.RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
@@ -130,10 +130,15 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
         }
 
         int total_time_limit = worker_node.GetTotalTimeLimit();
-        if (total_time_limit > 0 &&  // time check requested
-                time(0) > worker_node.GetStartupTime() + total_time_limit) {
-            ERR_POST(Warning << "The total runtime limit (" << total_time_limit << ") has been reached" );
-            grid_globals.RequestShutdown(CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
+
+        if (total_time_limit > 0) {  // time check requested
+            auto passed = static_cast<unsigned>(difftime(time(nullptr), worker_node.GetStartupTime()));
+
+            if (passed > total_time_limit) {
+                LOG_POST("The total runtime limit (" << total_time_limit <<
+                        " seconds) has been reached after " << passed << " seconds");
+                grid_globals.RequestShutdown(CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
+            }
         }
     }
 }
