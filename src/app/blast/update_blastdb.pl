@@ -570,7 +570,7 @@ name, description, size in gigabytes, date of last update (YYYY-MM-DD format).
 
 =item B<--blastdb_version>
 
-Specify which BLAST database version to download (default: 4).
+Specify which BLAST database version to download (default: 5).
 Supported values: 4, 5
 
 =item B<--passive>
