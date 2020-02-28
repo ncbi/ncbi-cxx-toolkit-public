@@ -330,6 +330,11 @@ if test -z "\$NCBI_TEST_DATA_PATH"; then
     export NCBI_TEST_DATA_PATH
 fi
 
+# Disable BOOST tests to catch asynchronous system failures
+# (signals on *NIX platforms or structured exceptions on Windows)
+BOOST_TEST_CATCH_SYSTEM_ERRORS=no
+export BOOST_TEST_CATCH_SYSTEM_ERRORS
+
 
 #//////////////////////////////////////////////////////////////////////////
 

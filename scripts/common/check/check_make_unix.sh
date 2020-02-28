@@ -344,6 +344,11 @@ export LSAN_OPTIONS
 TSAN_OPTIONS="suppressions=\${script_dir}/common/check/tsan.supp"
 export TSAN_OPTIONS
 
+# Disable BOOST tests to catch asynchronous system failures
+# (signals on *NIX platforms or structured exceptions on Windows)
+BOOST_TEST_CATCH_SYSTEM_ERRORS=no
+export BOOST_TEST_CATCH_SYSTEM_ERRORS
+
 # Export some global vars
 top_srcdir="\$root_dir"
 export top_srcdir
