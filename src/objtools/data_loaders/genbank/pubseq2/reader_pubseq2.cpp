@@ -407,9 +407,10 @@ static string s_GetCubbyUserName(const string& web_cookie)
 
 void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
 {
-    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
-    CFastMutexGuard guard(s_Mutex);
     if ( !m_Context ) {
+      DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+      CFastMutexGuard guard(s_Mutex);
+      if ( !m_Context ) {
         DBLB_INSTALL_DEFAULT();
         C_DriverMgr drvMgr;
         map<string,string> args;
@@ -443,6 +444,7 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
         if ( m_Timeout > 0 ) {
             m_Context->SetTimeout(m_Timeout);
         }
+      }
     }
 
     CPubseq2Validator validator(this, conn_, m_ExclWGSMaster);
