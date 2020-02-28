@@ -509,6 +509,8 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
                         for (auto& feat : annt->GetData().GetFtable()) {
                             if (feat->IsSetData() && feat->GetData().Which() == CSeqFeatData::e_Pub) {
                                 m_DistributedReferences = true;
+                            } else if (feat->IsSetCit()) {
+                                m_DistributedReferences = true;
                             }
                         }
                     }
@@ -550,6 +552,8 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
                     if (annt->IsFtable()) {
                         for (auto& feat : annt->GetData().GetFtable()) {
                             if (feat->IsSetData() && feat->GetData().Which() == CSeqFeatData::e_Pub) {
+                                m_DistributedReferences = true;
+                            } else if (feat->IsSetCit()) {
                                 m_DistributedReferences = true;
                             }
                         }
