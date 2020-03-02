@@ -2113,6 +2113,7 @@ void CBioseq_ScopeInfo::ResetId(void)
 {
     _ASSERT(HasObject());
     const_cast<CBioseq_Info&>(GetObjectInfo()).ResetId();
+    m_SynCache.Reset();
     x_GetScopeImpl().x_ClearCacheOnRemoveSeqId(CSeq_id_Handle(), *this);
     ITERATE ( TIds, it, GetIds() ) {
         x_GetTSE_ScopeInfo().x_UnindexBioseq(*it, this);
@@ -2129,6 +2130,7 @@ bool CBioseq_ScopeInfo::AddId(const CSeq_id_Handle& id)
         return false;
     }
     m_Ids.push_back(id);
+    m_SynCache.Reset();
     x_GetTSE_ScopeInfo().x_IndexBioseq(id, this);
     x_GetScopeImpl().x_ClearCacheOnNewData(info.GetTSE_Info(), id);
     return true;
@@ -2146,6 +2148,7 @@ bool CBioseq_ScopeInfo::RemoveId(const CSeq_id_Handle& id)
     x_GetScopeImpl().x_ClearCacheOnRemoveSeqId(id, *this);
     x_GetTSE_ScopeInfo().x_UnindexBioseq(id, this);
     m_Ids.erase(it);
+    m_SynCache.Reset();
     return true;
 }
 
