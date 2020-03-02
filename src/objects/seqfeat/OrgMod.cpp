@@ -379,6 +379,26 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
                     return true;
                 }
             }
+        } else if (erroneous_country) {
+            // check to see if country-requiring code is in synonyms
+            bool syn_is_miscapitalized = false;
+            string syn_correct_cap = "";
+            bool syn_needs_country = false;
+            bool syn_erroneous_country = false;
+            TInstitutionCodeMap::iterator it = FindInstitutionCode(inst_coll,
+                s_InstitutionCodeSynonymsMap, syn_is_miscapitalized, syn_correct_cap,
+                syn_needs_country, syn_erroneous_country);
+            if (it != s_InstitutionCodeSynonymsMap.end() && !syn_needs_country) {
+                TInstitutionCodeMap::iterator is = s_InstitutionCodeTypeMap.find(it->second);
+                if (is != s_InstitutionCodeTypeMap.end()) {
+                    is_miscapitalized = syn_is_miscapitalized;
+                    correct_cap = syn_correct_cap;
+                    needs_country = syn_needs_country;
+                    erroneous_country = syn_erroneous_country;
+                    voucher_type = is->second;
+                    return true;
+                }
+            }
         }
         voucher_type = ic->second;
         return true;
