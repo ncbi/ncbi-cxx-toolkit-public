@@ -436,14 +436,19 @@ public:
     EStatus Execute(void) override;
 
 protected:
-    TReply& GetReply(void) { return m_Reply; }
-    void SetStatus(EStatus status) { m_Status = status; }
+    void OnStatusChange(EStatus old) override;
 
-    virtual void DoExecute(void) = 0;
+    TReply& GetReply(void) { return m_Reply; }
+
+    virtual void DoExecute(void) {
+        if (!CheckReplyStatus()) return;
+        ReadReply();
+        if (m_Status == eExecuting) m_Status = eCompleted;
+    }
 
     bool IsCancelled(void) {
         if (IsCancelRequested()) {
-            SetStatus(eCanceled);
+            m_Status = eFailed;
             return true;
         }
         return false;
@@ -453,9 +458,9 @@ protected:
     void ReadReply(void);
     virtual void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) = 0;
 
-private:
-    EStatus m_Status;
     TReply m_Reply;
+    EStatus m_Status;
+private:
     CPSG_TaskGroup& m_Group;
 };
 
@@ -470,8 +475,8 @@ public:
         {
             CFastMutexGuard guard(m_Mutex);
             m_Tasks.insert(Ref(task));
+            m_Pool.AddTask(task);
         }
-        m_Pool.AddTask(task);
     }
 
     void PostFinished(CPSG_Task& task)
@@ -528,22 +533,31 @@ CPSG_Task::CPSG_Task(TReply reply, CPSG_TaskGroup& group)
 
 CPSG_Task::EStatus CPSG_Task::Execute(void)
 {
-    m_Status = eCompleted;
+    m_Status = eExecuting;
     try {
         DoExecute();
     }
-    catch (...) {}
-    m_Group.PostFinished(*this);
+    catch (...) {
+        return eFailed;
+    }
     return m_Status;
 }
 
+
+void CPSG_Task::OnStatusChange(EStatus old)
+{
+    EStatus status = GetStatus();
+    if (status == eCompleted || status == eFailed) {
+        m_Group.PostFinished(*this);
+    }
+}
 
 bool CPSG_Task::CheckReplyStatus(void)
 {
     EPSG_Status status = m_Reply->GetStatus(0);
     if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
         ReportStatus(m_Reply, status);
-        SetStatus(eFailed);
+        m_Status = eFailed;
         return false;
     }
     return true;
@@ -556,20 +570,32 @@ void CPSG_Task::ReadReply(void)
     for (;;) {
         if (IsCancelled()) return;
         auto reply_item = m_Reply->GetNextItem(DEFAULT_DEADLINE);
-        if (!reply_item) {
-            _TRACE("Request failed: null reply item");
-            continue;
-        }
-        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
-            break;
-        }
+        if (!reply_item) continue;
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
         if (IsCancelled()) return;
+
+        EPSG_Status status = reply_item->GetStatus(0);
+        if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
+            ReportStatus(reply_item, status);
+            m_Status = eFailed;
+            return;
+        }
+        if (status == EPSG_Status::eInProgress) {
+            status = reply_item->GetStatus(CDeadline::eInfinite);
+            if (IsCancelled()) return;
+        }
+        if (status != EPSG_Status::eSuccess) {
+            ReportStatus(reply_item, status);
+            m_Status = eFailed;
+            return;
+        }
         ProcessReplyItem(reply_item);
     }
     if (IsCancelled()) return;
     status = m_Reply->GetStatus(CDeadline::eInfinite);
     if (status != EPSG_Status::eSuccess) {
         ReportStatus(m_Reply, status);
+        m_Status = eFailed;
     }
 }
 
@@ -722,7 +748,7 @@ int CPSGDataLoader_Impl::GetSequenceState(const CSeq_id_Handle& idh)
         auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         auto reply = x_ProcessRequest(request);
-        blob_id = x_ProcessBlobReply(reply, nullptr, idh).blob_id;
+        blob_id = x_ProcessBlobReply(reply, nullptr, idh, true).blob_id;
         blob_info = m_BlobMap->FindBlob(blob_id);
     }
     return blob_info ? blob_info->blob_state : kNotFound;
@@ -761,15 +787,15 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
     }
     request->IncludeData(inc_data);
     auto reply = x_ProcessRequest(request);
-    CTSE_LoadLock load_lock = x_ProcessBlobReply(reply, data_source, idh).lock;
+    CTSE_Lock tse_lock = x_ProcessBlobReply(reply, data_source, idh, true).lock;
 
-    if (!load_lock || !load_lock.IsLoaded()) {
+    if (!tse_lock) {
         // FIXME: Exception?
         return locks;
         NCBI_THROW(CLoaderException, eLoaderFailed,
             "error loading blob for " + idh.AsString());
     }
-    locks.insert(load_lock);
+    locks.insert(tse_lock);
     return locks;
 }
 
@@ -789,7 +815,7 @@ CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
         auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         auto reply = x_ProcessRequest(request);
-        blob_id = x_ProcessBlobReply(reply, nullptr, idh).blob_id;
+        blob_id = x_ProcessBlobReply(reply, nullptr, idh, true).blob_id;
     }
     CRef<CPsgBlobId> ret;
     if (!blob_id.empty()) {
@@ -799,18 +825,289 @@ CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 }
 
 
-CTSE_LoadLock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgBlobId& blob_id)
+CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgBlobId& blob_id)
 {
+    CTSE_Lock ret;
+    if (!data_source) return ret;
+
     CPSG_BlobId bid(blob_id.ToPsgId());
     auto context = make_shared<CPsgClientContext>();
     auto request = make_shared<CPSG_Request_Blob>(bid, kEmptyStr, context);
     request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
     auto reply = x_ProcessRequest(request);
-    CTSE_LoadLock ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle()).lock;
-    if (!ret || !ret.IsLoaded()) {
+    ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true).lock;
+    if (!ret) {
         _TRACE("Failed to load blob for " << blob_id.ToPsgId());
     }
     return ret;
+}
+
+
+class CPSG_Blob_Task : public CPSG_Task
+{
+public:
+    CPSG_Blob_Task(
+        TReply reply,
+        CPSG_TaskGroup& group,
+        const CSeq_id_Handle& idh,
+        CDataSource* data_source,
+        CPSGDataLoader_Impl& loader)
+        : CPSG_Task(reply, group),
+        m_Id(idh),
+        m_DataSource(data_source),
+        m_Loader(loader)
+    {}
+
+    ~CPSG_Blob_Task(void) override {}
+
+    typedef map<string, shared_ptr<CPSG_BlobData>> TBlobDataMap;
+    typedef map<string, shared_ptr<CPSG_BlobInfo>> TBlobInfoMap;
+
+    CSeq_id_Handle m_Id;
+    shared_ptr<CPSG_BlobInfo> m_MainBlobInfo;
+    shared_ptr<CPSG_BlobInfo> m_SplitBlobInfo;
+    shared_ptr<CPSG_SkippedBlob> m_Skipped;
+    CPSGDataLoader_Impl::SReplyResult m_ReplyResult;
+    shared_ptr<SPsgBlobInfo> m_PsgBlobInfo;
+
+    shared_ptr<CPSG_BlobInfo> GetBlobInfo(const string& id) {
+        shared_ptr<CPSG_BlobInfo> ret;
+        TBlobInfoMap::iterator it = m_BlobInfo.find(id);
+        if (it != m_BlobInfo.end()) ret = it->second;
+        return ret;
+    }
+
+    shared_ptr<CPSG_BlobData> GetBlobData(const string& id) {
+        shared_ptr<CPSG_BlobData> ret;
+        TBlobDataMap::iterator it = m_BlobData.find(id);
+        if (it != m_BlobData.end()) ret = it->second;
+        return ret;
+    }
+
+    CPSGDataLoader_Impl::SReplyResult WaitForSkipped(void);
+
+protected:
+    void DoExecute(void) override;
+    void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override;
+
+private:
+    CDataSource* m_DataSource;
+    CPSGDataLoader_Impl& m_Loader;
+    TBlobInfoMap m_BlobInfo;
+    TBlobDataMap m_BlobData;
+};
+
+
+void CPSG_Blob_Task::DoExecute(void)
+{
+    if (!CheckReplyStatus()) return;
+    ReadReply();
+    if (m_Status == eFailed) return;
+    if (m_Skipped) {
+        m_Status = eCompleted;
+        return;
+    }
+
+    if (m_ReplyResult.blob_id.empty()) {
+        // If the source request was for blob rather than bioseq, there may be no bioseq info
+        // and blob_id stays empty.
+        if (m_Reply->GetRequest()->GetType() == "blob") {
+            shared_ptr<const CPSG_Request_Blob> blob_request = static_pointer_cast<const CPSG_Request_Blob>(m_Reply->GetRequest());
+            if (blob_request) {
+                m_ReplyResult.blob_id = blob_request->GetId();
+            }
+        }
+    }
+    if (m_ReplyResult.blob_id.empty()) {
+        m_Status = eFailed;
+        return;
+    }
+
+    CRef<CPsgBlobId> psg_main_id(new CPsgBlobId(m_ReplyResult.blob_id));
+    CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(psg_main_id);
+
+    CTSE_LoadLock load_lock;
+
+    m_MainBlobInfo = GetBlobInfo(m_ReplyResult.blob_id);
+    if (!m_MainBlobInfo) {
+        m_Status = eFailed;
+        return;
+    }
+
+    string split_info_id = m_MainBlobInfo->GetSplitInfoBlobId().Get();
+    if (!split_info_id.empty()) {
+        m_SplitBlobInfo = GetBlobInfo(split_info_id);
+    }
+
+    // Find or create main blob-info entry.
+    m_PsgBlobInfo = m_Loader.m_BlobMap->FindBlob(m_ReplyResult.blob_id);
+    if (!m_PsgBlobInfo) {
+        m_PsgBlobInfo = make_shared<SPsgBlobInfo>(*m_MainBlobInfo);
+        m_Loader.m_BlobMap->AddBlob(m_ReplyResult.blob_id, m_PsgBlobInfo);
+    }
+
+    if (!m_DataSource) {
+        // No data to load, just bioseq-info.
+        m_Status = eCompleted;
+        return;
+    }
+
+    // Read blob data (if any) and pass to the data source.
+    load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
+    if (!load_lock) {
+        m_Status = eFailed;
+        return;
+    }
+    if (load_lock && load_lock.IsLoaded()) {
+        m_ReplyResult.lock = load_lock;
+        m_Status = eCompleted;
+        return;
+    }
+
+    shared_ptr<CPSG_BlobInfo> blob_info = m_SplitBlobInfo ? m_SplitBlobInfo : m_MainBlobInfo;
+    auto blob_data = GetBlobData(blob_info->GetId().Get());
+    if (blob_data) {
+        m_Loader.x_ReadBlobData(*m_PsgBlobInfo, *blob_info, *blob_data, load_lock);
+    }
+    if (m_SplitBlobInfo) {
+        CTSE_Split_Info& tse_split_info = load_lock->GetSplitInfo();
+        CTSE_Chunk_Info::TChunkId cid = 0;
+        while (true) {
+            ++cid;
+            string ch_blob_id = m_PsgBlobInfo->GetBlobIdForChunk(cid);
+            if (ch_blob_id.empty()) break;
+            auto chunk_info = GetBlobInfo(ch_blob_id);
+            auto chunk_data = GetBlobData(ch_blob_id);
+            if (!chunk_info || !chunk_data) continue;
+
+            auto_ptr<CObjectIStream> in(CPSGDataLoader_Impl::GetBlobDataStream(*chunk_info, *chunk_data));
+            CRef<CID2S_Chunk> id2_chunk(new CID2S_Chunk);
+            *in >> *id2_chunk;
+            CTSE_Chunk_Info& chunk = tse_split_info.GetChunk(cid);
+            CSplitParser::Load(chunk, *id2_chunk);
+            chunk.SetLoaded();
+        }
+    }
+    m_ReplyResult.lock = load_lock;
+
+    m_Status = eCompleted;
+}
+
+
+void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
+{
+    switch (item->GetType()) {
+    case CPSG_ReplyItem::eBioseqInfo:
+    {
+        // Only one bioseq-info is allowed per reply.
+        shared_ptr<CPSG_BioseqInfo> bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(item);
+        m_ReplyResult.blob_id = bioseq_info->GetBlobId().Get();
+        m_Loader.m_BioseqCache->Add(*bioseq_info, m_Id);
+        break;
+    }
+    case CPSG_ReplyItem::eBlobInfo:
+    {
+        auto blob_info = static_pointer_cast<CPSG_BlobInfo>(item);
+        m_BlobInfo[blob_info->GetId().Get()] = blob_info;
+        break;
+    }
+    case CPSG_ReplyItem::eBlobData:
+    {
+        shared_ptr<CPSG_BlobData> data = static_pointer_cast<CPSG_BlobData>(item);
+        m_BlobData[data->GetId().Get()] = data;
+        break;
+    }
+    case CPSG_ReplyItem::eSkippedBlob:
+    {
+        // Only main blob can be skipped.
+        _ASSERT(!m_Skipped);
+        m_Skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
+}
+
+
+CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
+{
+    CPSGDataLoader_Impl::SReplyResult ret;
+    ret.blob_id = m_ReplyResult.blob_id;
+    if (!m_DataSource) return ret;
+
+    CRef<CPsgBlobId> psg_main_id(new CPsgBlobId(ret.blob_id));
+    CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(psg_main_id);
+    CTSE_LoadLock load_lock;
+    _ASSERT(m_Skipped);
+    CPSG_SkippedBlob::EReason skip_reason = m_Skipped->GetReason();
+    switch (skip_reason) {
+    case CPSG_SkippedBlob::eInProgress:
+    {
+        // Try to wait for the blob to be loaded.
+        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, CTimeout::eInfinite);
+        break;
+    }
+    case CPSG_SkippedBlob::eExcluded:
+    case CPSG_SkippedBlob::eSent:
+        // Check if the blob is already loaded, force loading if necessary.
+        load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
+        break;
+    default: // unknown
+        return ret;
+    }
+    if (load_lock && load_lock.IsLoaded()) {
+        m_Skipped.reset();
+        ret.lock = load_lock;
+    }
+    return ret;
+}
+
+
+void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets)
+{
+    if (!data_source) return;
+    auto context = make_shared<CPsgClientContext_Bulk>();
+    CPSG_TaskGroup group(*m_ThreadPool);
+    ITERATE(TTSE_LockSets, tse_set, tse_sets) {
+        const CSeq_id_Handle& id = tse_set->first;
+        CPSG_BioId bio_id = x_GetBioId(id);
+        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
+        request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eWholeTSE);
+        auto reply = x_ProcessRequest(request);
+        CRef<CPSG_Blob_Task> task(
+            new CPSG_Blob_Task(reply, group, id, data_source, *this));
+        group.AddTask(task);
+    }
+    // Waiting for skipped blobs can block all pool threads. To prevent this postpone
+    // waiting until all other tasks are completed.
+    typedef list<CRef<CPSG_Blob_Task>> TTasks;
+    TTasks skipped_tasks;
+    while (group.HasTasks()) {
+        CRef<CPSG_Blob_Task> task(group.GetTask<CPSG_Blob_Task>().GetNCPointerOrNull());
+        _ASSERT(task);
+        if (task->GetStatus() == CThreadPool_Task::eFailed) {
+            _TRACE("Failed to get blob for " << task->m_Id.AsString());
+            continue;
+        }
+        if (task->m_Skipped) {
+            skipped_tasks.push_back(task);
+            continue;
+        }
+        SReplyResult res = task->m_ReplyResult;
+        if (task->m_ReplyResult.lock) tse_sets[task->m_Id].insert(task->m_ReplyResult.lock);
+    }
+    NON_CONST_ITERATE(TTasks, it, skipped_tasks) {
+        CPSG_Blob_Task& task = **it;
+        SReplyResult result = task.WaitForSkipped();
+        if (!result.lock) {
+            // Force reloading blob
+            result = x_RetryBlobRequest(task.m_ReplyResult.blob_id, data_source, task.m_Id);
+        }
+        if (result.lock) tse_sets[task.m_Id].insert(result.lock);
+    }
 }
 
 
@@ -845,11 +1142,11 @@ void CPSG_LoadChunk_Task::DoExecute(void)
 {
     if (!CheckReplyStatus()) return;
     ReadReply();
-    if (GetStatus() == eFailed) return;
+    if (m_Status == eFailed) return;
 
     if (!m_BlobInfo || !m_BlobData) {
         _TRACE("Failed to get chunk info or data for blob-id " << m_Chunk->GetBlobId());
-        SetStatus(eFailed);
+        m_Status = eFailed;
         return;
     }
 
@@ -857,7 +1154,7 @@ void CPSG_LoadChunk_Task::DoExecute(void)
     auto_ptr<CObjectIStream> in(CPSGDataLoader_Impl::GetBlobDataStream(*m_BlobInfo, *m_BlobData));
     if (!in.get()) {
         _TRACE("Failed to open chunk data stream for blob-id " << m_BlobInfo->GetId().Get());
-        SetStatus(eFailed);
+        m_Status = eFailed;
         return;
     }
 
@@ -866,18 +1163,12 @@ void CPSG_LoadChunk_Task::DoExecute(void)
     CSplitParser::Load(*m_Chunk, *id2_chunk);
     m_Chunk->SetLoaded();
 
-    SetStatus(eCompleted);
+    m_Status = eCompleted;
 }
 
 
 void CPSG_LoadChunk_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
 {
-    EPSG_Status status = item->GetStatus(CDeadline::eInfinite);
-    if (status != EPSG_Status::eSuccess) {
-        ReportStatus(item, status);
-        SetStatus(eFailed);
-        return;
-    }
     switch (item->GetType()) {
     case CPSG_ReplyItem::eBlobInfo:
         m_BlobInfo = static_pointer_cast<CPSG_BlobInfo>(item);
@@ -947,20 +1238,7 @@ public:
     shared_ptr<CPSG_NamedAnnotInfo> m_AnnotInfo;
 
 protected:
-    void DoExecute(void) override {
-        if (!CheckReplyStatus()) return;
-        ReadReply();
-        if (GetStatus() == eFailed) return;
-        SetStatus(eCompleted);
-    }
-
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
-        EPSG_Status status = item->GetStatus(CDeadline::eInfinite);
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(item, status);
-            SetStatus(eFailed);
-            return;
-        }
         if (item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
             m_AnnotInfo = static_pointer_cast<CPSG_NamedAnnotInfo>(item);
         }
@@ -976,7 +1254,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
 {
     CDataLoader::TTSE_LockSet locks;
     if (!data_source || !sel || !sel->IsIncludedAnyNamedAnnotAccession()) {
-        return move(locks);
+        return locks;
     }
     const SAnnotSelector::TNamedAnnotAccessions& accs = sel->GetNamedAnnotAccessions();
     CPSG_BioId bio_id = x_GetBioId(idh);
@@ -986,9 +1264,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
     }
     auto context = make_shared<CPsgClientContext>();
     auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), annot_names, context);
-    x_SendRequest(request);
     auto reply = x_ProcessRequest(request);
-    if (!reply) return move(locks);
+    if (!reply) return locks;
 
     CPSG_TaskGroup group(*m_ThreadPool);
     CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
@@ -1001,11 +1278,14 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
             CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
             auto blob_id = info->GetBlobId();
             auto tse_lock = GetBlobById(data_source, CPsgBlobId(blob_id.Get()));
-            if (tse_lock.IsLoaded()) locks.insert(tse_lock);
+            if (tse_lock) locks.insert(tse_lock);
         }
     }
+    else {
+        _TRACE("Failed to load annotations for " << idh.AsString());
+    }
 
-    return move(locks);
+    return locks;
 }
 
 
@@ -1022,7 +1302,10 @@ void CPSGDataLoader_Impl::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret
     x_GetBulkBioseqInfo(CPSG_Request_Resolve::fCanonicalId, ids, loaded, infos);
     for (size_t i = 0; i < infos.size(); ++i) {
         if (!infos[i].get()) continue;
-        ret[i] = infos[i]->canonical;
+        CSeq_id_Handle idh = infos[i]->canonical;
+        if (idh.IsAccVer()) {
+            ret[i] = idh;
+        }
     }
 }
 
@@ -1063,250 +1346,53 @@ shared_ptr<CPSG_Reply> CPSGDataLoader_Impl::x_ProcessRequest(shared_ptr<CPSG_Req
 }
 
 
-class CPSG_Blob_Task : public CPSG_Task
+CPSGDataLoader_Impl::SReplyResult
+CPSGDataLoader_Impl::x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh)
 {
-public:
-    CPSG_Blob_Task(
-        TReply reply,
-        CPSG_TaskGroup& group,
-        const CSeq_id_Handle& idh,
-        CPSGBlobMap& blob_map,
-        CPSGBioseqCache& bioseq_cache)
-        : CPSG_Task(reply, group),
-          m_Id(idh),
-          m_BlobMap(blob_map),
-          m_BioseqCache(bioseq_cache)
-    {}
-
-    ~CPSG_Blob_Task(void) override {}
-
-    shared_ptr<CPSG_BioseqInfo> m_BioseqInfo;
-    shared_ptr<CPSG_BlobInfo> m_MainBlobInfo;
-    shared_ptr<CPSG_BlobInfo> m_SplitBlobInfo;
-    shared_ptr<CPSG_BlobInfo> m_NextBlobInfo;
-    shared_ptr<CPSG_BlobData> m_BlobData;
-    shared_ptr<CPSG_SkippedBlob> m_Skipped;
-    string m_MainBlobId;
-    string m_NextBlobId;
-    CDataLoader::TBlobId m_DataLoaderBlobId;
-    shared_ptr<SPsgBlobInfo> m_PsgBlobInfo;
-
-protected:
-    void DoExecute(void) override;
-    void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override;
-
-private:
-    CSeq_id_Handle m_Id;
-    CDataSource* m_DataSource;
-    CPSGBlobMap& m_BlobMap;
-    CPSGBioseqCache& m_BioseqCache;
-};
-
-
-void CPSG_Blob_Task::DoExecute(void)
-{
-    if (!CheckReplyStatus()) return;
-    ReadReply();
-    if (GetStatus() == eFailed) return;
-
-    if (!m_MainBlobInfo && m_NextBlobInfo) {
-        m_MainBlobInfo = m_NextBlobInfo;
-        m_MainBlobId = m_NextBlobId;
-        CRef<CPsgBlobId> psg_main_id(new CPsgBlobId(m_MainBlobId));
-        m_DataLoaderBlobId = CDataLoader::TBlobId(psg_main_id);
-        m_PsgBlobInfo = m_BlobMap.FindBlob(m_MainBlobId);
-        if (!m_PsgBlobInfo) {
-            m_PsgBlobInfo = make_shared<SPsgBlobInfo>(*m_MainBlobInfo);
-            m_BlobMap.AddBlob(m_MainBlobId, m_PsgBlobInfo);
-        }
-    }
-
-    SetStatus(eCompleted);
-}
-
-
-void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
-{
-    EPSG_Status status = item->GetStatus(0);
-    if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
-        ReportStatus(item, status);
-        SetStatus(eFailed);
-        return;
-    }
-
-    switch (item->GetType()) {
-    case CPSG_ReplyItem::eBioseqInfo:
-    {
-        // Only one bioseq-info is allowed per reply.
-        _ASSERT(!m_BioseqInfo);
-        if (status == EPSG_Status::eInProgress) {
-            status = item->GetStatus(CDeadline::eInfinite);
-        }
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(item, status);
-            SetStatus(eFailed);
-            return;
-        }
-        m_BioseqInfo = static_pointer_cast<CPSG_BioseqInfo>(item);
-        m_BioseqCache.Add(*m_BioseqInfo, m_Id);
-        string id = m_BioseqInfo->GetBlobId().Get();
-        _ASSERT(!m_MainBlobInfo || m_MainBlobId == id);
-        m_MainBlobId = id;
-        break;
-    }
-    case CPSG_ReplyItem::eBlobInfo:
-    {
-        if (status == EPSG_Status::eInProgress) {
-            status = item->GetStatus(CDeadline::eInfinite);
-        }
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(item, status);
-            SetStatus(eFailed);
-            return;
-        }
-        auto blob_info = static_pointer_cast<CPSG_BlobInfo>(item);
-        string id = blob_info->GetId().Get();
-        string split_blob_id = blob_info->GetSplitInfoBlobId().Get();
-        if (!split_blob_id.empty()) {
-            // Got blob with split info reference - it's the main blob.
-            _ASSERT(!m_MainBlobInfo);
-            m_MainBlobInfo = blob_info;
-            m_MainBlobId = id;
-        }
-        else {
-            // No split-info, can be the main blob-info (unsplit) or split-info. Save for later.
-            // Only one blob without split info is allowed.
-            _ASSERT(!m_NextBlobInfo);
-            m_NextBlobInfo = blob_info;
-            m_NextBlobId = id;
-        }
-        break;
-    }
-    case CPSG_ReplyItem::eBlobData:
-    {
-        m_BlobData = static_pointer_cast<CPSG_BlobData>(item);
-        break;
-    }
-    case CPSG_ReplyItem::eSkippedBlob:
-    {
-        if (status == EPSG_Status::eInProgress) {
-            status = item->GetStatus(CDeadline::eInfinite);
-        }
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(item, status);
-            SetStatus(eFailed);
-            return;
-        }
-        m_Skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
-        break;
-    }
-    default:
-    {
-        break;
-    }
-    }
-
-    if (m_NextBlobInfo) {
-        // Try to identify blob-info.
-        if (m_MainBlobInfo) {
-            // This is split blob-info.
-            m_SplitBlobInfo = m_NextBlobInfo;
-            m_NextBlobInfo.reset();
-        }
-        else if (!m_MainBlobId.empty()) {
-            if (m_NextBlobId == m_MainBlobId) {
-                m_MainBlobInfo = m_NextBlobInfo;
-            }
-            else {
-                m_SplitBlobInfo = m_NextBlobInfo;
-            }
-            m_NextBlobInfo.reset();
-        }
-    }
-
-    if (!m_DataLoaderBlobId && !m_MainBlobId.empty()) {
-        CRef<CPsgBlobId> psg_main_id(new CPsgBlobId(m_MainBlobId));
-        m_DataLoaderBlobId = CDataLoader::TBlobId(psg_main_id);
-    }
-
-    if (!m_MainBlobInfo) return;
-
-    // Find or create main blob-info entry.
-    if (!m_PsgBlobInfo) {
-        m_PsgBlobInfo = m_BlobMap.FindBlob(m_MainBlobId);
-        if (!m_PsgBlobInfo) {
-            m_PsgBlobInfo = make_shared<SPsgBlobInfo>(*m_MainBlobInfo);
-            m_BlobMap.AddBlob(m_MainBlobId, m_PsgBlobInfo);
-        }
-    }
+    CPSG_BlobId req_blob_id(blob_id);
+    auto context = make_shared<CPsgClientContext>();
+    auto blob_request = make_shared<CPSG_Request_Blob>(req_blob_id, kEmptyStr, context);
+    blob_request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
+    auto blob_reply = x_ProcessRequest(blob_request);
+    return x_ProcessBlobReply(blob_reply, data_source, req_idh, false);
 }
 
 
 CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
     shared_ptr<CPSG_Reply> reply,
     CDataSource* data_source,
-    CSeq_id_Handle req_idh)
+    CSeq_id_Handle req_idh,
+    bool retry)
 {
     SReplyResult ret;
 
     if (!reply) {
         _TRACE("Request failed: null reply");
-        return move(ret);
+        return ret;
     }
 
     CPSG_TaskGroup group(*m_ThreadPool);
     CRef<CPSG_Blob_Task> task(
-        new CPSG_Blob_Task(reply, group, req_idh, *m_BlobMap, *m_BioseqCache));
+        new CPSG_Blob_Task(reply, group, req_idh, data_source, *this));
     group.AddTask(task);
     group.WaitAll();
 
-    ret.blob_id = task->m_MainBlobId;
-    if (!data_source) return move(ret);
-
-    if (task->m_Skipped) {
-        CPSG_SkippedBlob::EReason skip_reason = task->m_Skipped->GetReason();
-        switch (skip_reason) {
-        case CPSG_SkippedBlob::eInProgress:
-        {
-            // Try to wait for the blob to be loaded.
-            ret.lock = data_source->GetLoadedTSE_Lock(task->m_DataLoaderBlobId, CTimeout::eInfinite);
-            break;
+    if (task->GetStatus() == CThreadPool_Task::eCompleted) {
+        if (task->m_Skipped) {
+            ret = task->WaitForSkipped();
+            if (!ret.lock && retry) {
+                // Force reloading blob
+                ret = x_RetryBlobRequest(task->m_ReplyResult.blob_id, data_source, req_idh);
+            }
         }
-        case CPSG_SkippedBlob::eExcluded:
-        case CPSG_SkippedBlob::eSent:
-            // Check if the blob is already loaded, force loading if necessary.
-            ret.lock = data_source->GetTSE_LoadLock(task->m_DataLoaderBlobId);
-            break;
-        default: // unknown
-            return move(ret);
+        else {
+            ret = task->m_ReplyResult;
         }
-        if (ret.lock && ret.lock.IsLoaded()) return move(ret);
-        // Request blob by blob-id.
-        CPSG_BlobId req_blob_id(task->m_SplitBlobInfo ? task->m_SplitBlobInfo->GetId().Get() : task->m_MainBlobId);
-        auto context = make_shared<CPsgClientContext>();
-        auto blob_request = make_shared<CPSG_Request_Blob>(req_blob_id, kEmptyStr, context);
-        blob_request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
-        auto blob_reply = x_ProcessRequest(blob_request);
-        return x_ProcessBlobReply(blob_reply, data_source, req_idh);
     }
-
-    if (!task->m_MainBlobInfo) {
-        _TRACE("Failed to get blob info for " << ret.blob_id);
-        return move(ret);
+    else {
+        _TRACE("Failed to load blob for " << req_idh.AsString());
     }
-    // Read blob data (if any) and pass to the data source.
-    if (!task->m_BlobData) {
-        _TRACE("Failed to get blob data for " << ret.blob_id);
-        return move(ret);
-    }
-
-    if (!ret.lock) {
-        ret.lock = data_source->GetTSE_LoadLock(task->m_DataLoaderBlobId);
-    }
-    if (ret.lock.IsLoaded()) return move(ret);
-    shared_ptr<CPSG_BlobInfo> blob_info = task->m_SplitBlobInfo ? task->m_SplitBlobInfo : task->m_MainBlobInfo;
-    x_ReadBlobData(*task->m_PsgBlobInfo, *blob_info, *task->m_BlobData, ret.lock);
-    return move(ret);
+    return ret;
 }
 
 
@@ -1321,20 +1407,7 @@ public:
     shared_ptr<CPSG_BioseqInfo> m_BioseqInfo;
 
 protected:
-    void DoExecute(void) override {
-        if (!CheckReplyStatus()) return;
-        ReadReply();
-        if (GetStatus() == eFailed) return;
-        SetStatus(eCompleted);
-    }
-
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
-        EPSG_Status status = item->GetStatus(CDeadline::eInfinite);
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(item, status);
-            SetStatus(eFailed);
-            return;
-        }
         if (item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
             m_BioseqInfo = static_pointer_cast<CPSG_BioseqInfo>(item);
         }
@@ -1345,7 +1418,9 @@ protected:
 shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Handle& idh)
 {
     shared_ptr<SPsgBioseqInfo> ret = m_BioseqCache->Get(idh);
-    if (ret) return ret;
+    if (ret) {
+        return ret;
+    }
 
     CPSG_BioId bio_id = x_GetBioId(idh);
     auto context = make_shared<CPsgClientContext>();
@@ -1364,99 +1439,11 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     group.WaitAll();
 
     if (task->GetStatus() != CThreadPool_Task::eCompleted || !task->m_BioseqInfo) {
-        _TRACE("Failed to get bioseq info for seq-id " << idh.AsString());
+        _TRACE("Failed to get bioseq info for " << idh.AsString());
         return nullptr;
     }
 
     return m_BioseqCache->Add(*task->m_BioseqInfo, idh);
-}
-
-
-CTSE_LoadLock CPSGDataLoader_Impl::x_LoadBlob(const SPsgBlobInfo& psg_blob_info, CDataSource& data_source)
-{
-    CRef<CPsgBlobId> psg_main_id(new CPsgBlobId(psg_blob_info.blob_id_main));
-    CDataLoader::TBlobId main_id(psg_main_id);
-    CTSE_LoadLock load_lock = data_source.GetTSE_LoadLock(main_id);
-    if (load_lock.IsLoaded()) return load_lock;
-
-    const string& psg_blob_id = psg_blob_info.GetDataBlobId();
-
-    shared_ptr<CPSG_BlobInfo> blob_info;
-    shared_ptr<CPSG_BlobData> blob_data;
-    x_GetBlobInfoAndData(psg_blob_id, blob_info, blob_data);
-
-    if (!blob_info || !blob_data) {
-        _TRACE("Failed to get blob info or data for blob-id " << psg_blob_id);
-        return load_lock;
-    }
-    x_ReadBlobData(psg_blob_info, *blob_info, *blob_data, load_lock);
-    return load_lock;
-}
-
-
-class CPSG_BlobInfoAndData_Task : public CPSG_Task
-{
-public:
-    CPSG_BlobInfoAndData_Task(TReply reply, CPSG_TaskGroup& group)
-        : CPSG_Task(reply, group) {}
-
-    ~CPSG_BlobInfoAndData_Task(void) override {}
-
-    shared_ptr<CPSG_BlobInfo> m_BlobInfo;
-    shared_ptr<CPSG_BlobData> m_BlobData;
-
-protected:
-    void DoExecute(void) override {
-        if (!CheckReplyStatus()) return;
-        ReadReply();
-        if (GetStatus() == eFailed) return;
-        SetStatus(eCompleted);
-    }
-
-    void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
-        EPSG_Status status = item->GetStatus(CDeadline::eInfinite);
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(item, status);
-            SetStatus(eFailed);
-            return;
-        }
-        switch (item->GetType()) {
-        case CPSG_ReplyItem::eBlobInfo:
-            m_BlobInfo = static_pointer_cast<CPSG_BlobInfo>(item);
-            break;
-        case CPSG_ReplyItem::eBlobData:
-            m_BlobData = static_pointer_cast<CPSG_BlobData>(item);
-            break;
-        default:
-            break;
-        }
-    }
-};
-
-
-void CPSGDataLoader_Impl::x_GetBlobInfoAndData(
-    const string& psg_blob_id,
-    shared_ptr<CPSG_BlobInfo>& blob_info,
-    shared_ptr<CPSG_BlobData>& blob_data)
-{
-    CPSG_BlobId blob_id(psg_blob_id);
-    auto context = make_shared<CPsgClientContext>();
-    auto request = make_shared<CPSG_Request_Blob>(blob_id, kEmptyStr, context);
-    auto reply = x_ProcessRequest(request);
-    if (!reply) {
-        _TRACE("Request failed: null reply");
-        return;
-    }
-
-    CPSG_TaskGroup group(*m_ThreadPool);
-    CRef<CPSG_BlobInfoAndData_Task> task(new CPSG_BlobInfoAndData_Task(reply, group));
-    group.AddTask(task);
-    group.WaitAll();
-
-    if (task->GetStatus() == CThreadPool_Task::eCompleted) {
-        blob_info = task->m_BlobInfo;
-        blob_data = task->m_BlobData;
-    }
 }
 
 
@@ -1573,15 +1560,14 @@ void CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
     }
     while (group.HasTasks()) {
         CRef<CPSG_BioseqInfo_Task> task = group.GetTask<CPSG_BioseqInfo_Task>();
-        if (!task) {
-            ERR_POST("Failed to load bulk bioseq info: null task.");
-            return;
-        }
+        _ASSERT(task);
         TTasks::const_iterator it = tasks.find(task);
-        if (it == tasks.end()) {
-            ERR_POST("Failed to load bulk bioseq info: unknown task.");
-            return;
+        _ASSERT(it != tasks.end());
+        if (task->GetStatus() == CThreadPool_Task::eFailed) {
+            _TRACE("Failed to load bioseq info for " << ids[it->second].AsString());
+            continue;
         }
+        _ASSERT(task->m_BioseqInfo);
         ret[it->second] = make_shared<SPsgBioseqInfo>(*task->m_BioseqInfo);
         loaded[it->second] = true;
     }

@@ -100,6 +100,7 @@ class CPsgClientThread;
 class CPSGBioseqCache;
 class CPSGBlobMap;
 class CPsgClientContext_Bulk;
+class CPSG_Blob_Task;
 
 
 class CPSGDataLoader_Impl : public CObject
@@ -111,6 +112,7 @@ public:
     typedef CDataLoader::TIds TIds;
     typedef CDataLoader::TGis TGis;
     typedef CDataLoader::TLoaded TLoaded;
+    typedef CDataLoader::TTSE_LockSets TTSE_LockSets;
 
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     int GetTaxId(const CSeq_id_Handle& idh);
@@ -123,12 +125,14 @@ public:
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
     CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
-    CTSE_LoadLock GetBlobById(CDataSource* data_source,
+    CTSE_Lock GetBlobById(CDataSource* data_source,
                               const CPsgBlobId& blob_id);
     void LoadChunk(CTSE_Chunk_Info& chunk_info);
     void LoadChunks(const CDataLoader::TChunkSet& chunks);
 
-    CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source, 
+    void GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets);
+
+    CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
                                                 const CSeq_id_Handle& idh,
                                                 const SAnnotSelector* sel,
                                                 CDataLoader::TProcessedNAs* processed_nas);
@@ -142,22 +146,21 @@ public:
 
     typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
 
-private:
     struct SReplyResult {
-        CTSE_LoadLock lock;
+        CTSE_Lock lock;
         string blob_id;
     };
+
+private:
+    friend class CPSG_Blob_Task;
 
     void x_SendRequest(shared_ptr<CPSG_Request> request);
     CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
     shared_ptr<CPSG_Reply> x_ProcessRequest(shared_ptr<CPSG_Request> request);
-    SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh);
+    SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh, bool retry);
+    SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
-    CTSE_LoadLock x_LoadBlob(const SPsgBlobInfo& psg_blob_info, CDataSource& data_source);
-    void x_GetBlobInfoAndData(
-        const string& psg_blob_id,
-        shared_ptr<CPSG_BlobInfo>& blob_info,
-        shared_ptr<CPSG_BlobData>& blob_data);
+    CTSE_Lock x_LoadBlob(const SPsgBlobInfo& psg_blob_info, CDataSource& data_source);
     void x_ReadBlobData(
         const SPsgBlobInfo& psg_blob_info,
         const CPSG_BlobInfo& blob_info,

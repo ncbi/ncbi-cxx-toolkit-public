@@ -280,6 +280,16 @@ public:
         {
             return IsGi()? TGi(m_Packed) : ZERO_GI;
         }
+    bool IsAccVer(void) const
+    {
+        if (IsGi()) return false;
+        auto seq_id = GetSeqId();
+        if (!seq_id) return false;
+        auto text_id = seq_id->GetTextseq_Id();
+        return text_id &&
+            text_id->IsSetAccession() &&
+            text_id->IsSetVersion();
+    }
     unsigned NCBI_SEQ_EXPORT GetHash(void) const;
 
     CSeq_id::EAccessionInfo IdentifyAccession(void) const

@@ -2704,11 +2704,7 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
     }
     
     if ( !(flags & CScope::fForceLoad) ) {
-        CConstRef<CSeq_id> id = idh.GetSeqId();
-        const CTextseq_id* text_id = id->GetTextseq_Id();
-        if ( text_id &&
-             text_id->IsSetAccession() &&
-             text_id->IsSetVersion() ) {
+        if ( idh.IsAccVer() ) {
             return idh;
         }
     }
@@ -3320,11 +3316,7 @@ void CScope_Impl::GetAccVers(TIds& ret,
     vector<bool> loaded(count);
     if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
-            CConstRef<CSeq_id> id = ids[i].GetSeqId();
-            const CTextseq_id* text_id = id->GetTextseq_Id();
-            if ( text_id &&
-                 text_id->IsSetAccession() &&
-                 text_id->IsSetVersion() ) {
+            if ( ids[i].IsAccVer() ) {
                 ret[i] = ids[i];
                 loaded[i] = true;
                 --remaining;

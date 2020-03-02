@@ -42,6 +42,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <sstream>
@@ -89,6 +90,7 @@ private:
     bool m_PrintBlobId = false;
     bool m_PrintData = false;
     bool m_AllIds = false;
+    string m_Bulk;
 
     CFastMutex m_IdsMutex;
     CRef<CScope> m_Scope;
@@ -155,9 +157,6 @@ void CPerfTestApp::Init(void)
     arg_desc->SetDependency("gi_from", CArgDescriptions::eRequires, "gi_to");
     arg_desc->SetDependency("gi_to", CArgDescriptions::eRequires, "gi_from");
 
-    arg_desc->AddDefaultKey("count", "RepeatCount",
-        "repeat test RepeatCount times",
-        CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("threads", "Threads",
         "number of threads to run (0 to run main thread only)",
         CArgDescriptions::eInteger, "0");
@@ -183,9 +182,9 @@ void CPerfTestApp::Init(void)
     arg_desc->AddFlag("print_data", "print TSE");
     arg_desc->AddFlag("all_ids", "fetch all seq-ids from each thread");
 
-    arg_desc->AddFlag("bulk_gi", "test bulk GetGis()");
-    arg_desc->AddFlag("bulk_acc", "test bulk GetAccVers()");
-    arg_desc->SetDependency("bulk_gi", CArgDescriptions::eExcludes, "bulk_acc");
+    arg_desc->AddOptionalKey("bulk", "what", "test bulk retrieval", CArgDescriptions::eString);
+    arg_desc->SetConstraint("bulk", &(*new CArgAllow_Strings,
+        "gi", "acc", "data", "bioseq"));
 
     arg_desc->AddOptionalKey("stat", "StatFile",
         "File with performace test outputs",
@@ -222,10 +221,7 @@ int CPerfTestApp::Run(void)
         return 0;
     }
 
-    bool bulk_gi = args["bulk_gi"];
-    bool bulk_acc = args["bulk_acc"];
-    int repeat_count = args["count"].AsInteger();
-    if (repeat_count <= 0) repeat_count = 1;
+    if (args["bulk"]) m_Bulk = args["bulk"].AsString();
     int thread_count = args["threads"].AsInteger();
     if (thread_count < 0) thread_count = 0;
     m_GetInfo = !args["skip_info"];
@@ -317,51 +313,45 @@ int CPerfTestApp::Run(void)
     m_NextId = m_Ids.begin();
     cout << "Testing " << m_Ids.size() << " seq-ids" << endl;
 
-    CStopWatch sw;
-    sw.Start();
-    for (int i = 0; i < repeat_count; ++i) {
-        CStopWatch sw2;
-        sw2.Start();
-
-        if (bulk_gi) {
-            CScope::TIds bulk_ids;
-            bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
-            CScope::TGIs gis = m_Scope->GetGis(bulk_ids);
-            if (m_PrintData) {
-                ITERATE(CScope::TGIs, gi, gis) {
-                    cout << *gi << endl;
-                }
+    if (m_Bulk == "gi") {
+        CScope::TIds bulk_ids;
+        bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
+        CScope::TGIs gis = m_Scope->GetGis(bulk_ids);
+        if (m_PrintData) {
+            ITERATE(CScope::TGIs, gi, gis) {
+                cout << *gi << endl;
             }
         }
-        else if (bulk_acc) {
-            CScope::TIds bulk_ids;
-            bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
-            CScope::TIds ids = m_Scope->GetAccVers(bulk_ids);
-            if (m_PrintData) {
-                ITERATE(CScope::TIds, id, ids) {
-                    cout << id->AsString() << endl;
-                }
+    }
+    else if (m_Bulk == "acc") {
+        CScope::TIds bulk_ids;
+        bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
+        CScope::TIds ids = m_Scope->GetAccVers(bulk_ids);
+        if (m_PrintData) {
+            ITERATE(CScope::TIds, id, ids) {
+                cout << id->AsString() << endl;
             }
+        }
+    }
+    else if (m_Bulk == "bioseq") {
+        CScope::TIds bulk_ids;
+        bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
+        m_Scope->GetBioseqHandles(bulk_ids);
+    }
+    else {
+        if (thread_count == 0) {
+            TestIds();
         }
         else {
-            if (thread_count == 0) {
-                TestIds();
+            vector<CRef<CThread>> threads;
+            for (int i = 0; i < thread_count; ++i) {
+                CRef<CThread> thr(new CTestThread(*this));
+                threads.push_back(thr);
+                thr->Run();
             }
-            else {
-                vector<CRef<CThread>> threads;
-                for (int i = 0; i < thread_count; ++i) {
-                    CRef<CThread> thr(new CTestThread(*this));
-                    threads.push_back(thr);
-                    thr->Run();
-                }
-                for (int i = 0; i < thread_count; ++i) {
-                    threads[i]->Join(nullptr);
-                }
+            for (int i = 0; i < thread_count; ++i) {
+                threads[i]->Join(nullptr);
             }
-        }
-
-        if (repeat_count > 1) {
-            cout << "Cycle " << i << " finished in " << sw2.AsSmartString() << endl;
         }
     }
 
@@ -379,16 +369,10 @@ int CPerfTestApp::Run(void)
     if (loader == "gb") cout << (args["pubseqos"] ? "/pubseqos" : "/id");
     cout << (args["no_split"] ? "/no_split" : "/split");
     cout << "; " << m_Ids.size() << " ids; ";
-    if (bulk_gi) {
-        cout << "bulk gi ";
-    }
-    else if (bulk_acc) {
-        cout << "bulk acc ";
-    }
-    else {
-        cout << thread_count << " thr; ";
-    }
-    cout << repeat_count << " rep";
+    string bulk = m_Bulk;
+    if (bulk.empty()) bulk = "none";
+    cout << "bulk " << bulk << "; ";
+    cout << thread_count << " thr; ";
     cout << endl;
 
     return 0;
@@ -397,9 +381,6 @@ int CPerfTestApp::Run(void)
 
 void CPerfTestApp::x_LoadIds(CNcbiIstream& in)
 {
-    CStopWatch sw;
-    sw.Start();
-
     while (in.good() && !in.eof()) {
         string line;
         getline(in, line);
@@ -428,7 +409,7 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
 {
     struct SPerfKey {
         string data;
-        string rep;
+        string bulk;
         string threads;
         string split;
         string loader;
@@ -436,6 +417,7 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
 
         SPerfKey(const string& key)
         {
+            // Done: r=96.1019; u=52.2656; s=3.01563; 'perf_ids1_gi'; gb/pubseqos/split; 7967 ids; bulk none; 0 thr;
             vector<string> parts;
             NStr::Split(key, " ;/'", parts, NStr::fSplit_Tokenize);
             if (parts.size() < 9) {
@@ -450,25 +432,25 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
             }
             split = parts[idx++];
             id_count = parts[idx++];
-            idx++;
+            idx += 2;
+            bulk = parts[idx++];
             threads = parts[idx++];
             idx++;
-            rep = parts[idx++];
         }
 
         static string GetTitleRow(bool csv)
         {
             stringstream os;
             if (csv) {
-                os << "name,rep,thr,loader,split,ids";
+                os << "name,loader,split,bulk,thr,ids";
             }
             else {
                 os << left
                     << setw(21) << "name"
-                    << setw(6) << "rep"
-                    << setw(6) << "thr"
                     << setw(13) << "loader"
                     << setw(10) << "split"
+                    << setw(8) << "bulk"
+                    << setw(6) << "thr"
                     << setw(7) << "ids";
             }
             return os.str();
@@ -478,15 +460,15 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
         {
             stringstream os;
             if (csv) {
-                os << data << ',' << rep << ',' << threads << ',' << loader << ',' << split << ',' << id_count;
+                os << data << ',' << loader << ',' << split << ',' << bulk << ',' << threads << ',' << id_count;
             }
             else {
                 os << left
                     << setw(20) << data << ' '
-                    << setw(5) << rep << ' '
-                    << setw(5) << threads << ' '
                     << setw(12) << loader << ' '
                     << setw(9) << split << ' '
+                    << setw(7) << bulk << ' '
+                    << setw(5) << threads << ' '
                     << setw(6) << id_count;
             }
             return os.str();
@@ -494,17 +476,16 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
 
         bool operator<(const SPerfKey& other) const
         {
+            if (bulk != other.bulk) return bulk < other.bulk;
             if (data != other.data) return data < other.data;
-            if (rep != other.rep) return rep < other.rep;
-            if (threads != other.threads) return threads < other.threads;
             if (split != other.split) return split < other.split;
+            if (threads != other.threads) return threads < other.threads;
             if (loader != other.loader) return loader  < other.loader;
             if (id_count != other.id_count) return id_count < other.id_count;
             return false;
         }
     };
 
-    // Done: r=1.07493; u=0.265625; s=0.109375; 'perf_ids1_acc'; gb/id/no_split; 7967 ids; 0 thr; 1 rep
     struct SPerfStat {
         double r;
         double u;
@@ -689,6 +670,13 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
             if (m_PrintData) {
                 atomic_out << MSerial_AsnText << *entry;
             }
+        }
+        if (m_Bulk == "data") {
+            // For sequences with segments in different TSEs this should create bulk request for blobs.
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idh);
+            CSeqVector v = bh.GetSeqVector();
+            string buf;
+            v.GetSeqData(v.begin(), v.end(), buf);
         }
     }
     catch (CException& ex) {

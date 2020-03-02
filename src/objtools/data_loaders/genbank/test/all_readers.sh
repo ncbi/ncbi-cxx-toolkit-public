@@ -107,6 +107,8 @@ init_cache() {
 
 exitcode=0
 failed=''
+GENBANK_LOADER_PSG=f
+export GENBANK_LOADER_PSG
 for method in $methods; do
     for cache in 1 2 3; do
         GENBANK_ALLOW_INCOMPLETE_COMMANDS=1
@@ -141,6 +143,23 @@ for method in $methods; do
         fi
     done
 done
+
+if disabled PSGLoader; then
+    echo "Skipping PSG loader test"
+else
+    GENBANK_LOADER_PSG=t
+    export GENBANK_LOADER_PSG
+    error=$?
+    if test $error -ne 0; then
+        echo "Test of PSG loader failed: $error"
+        exitcode=$error
+        failed="$failed PSG"
+        case $error in
+        # signal 1 (HUP), 2 (INTR), 9 (KILL), or 15 (TERM).
+            129|130|137|143) echo "Apparently killed"; break ;;
+        esac
+    fi
+fi
 
 if test $exitcode -ne 0; then
     echo "Failed tests:$failed"

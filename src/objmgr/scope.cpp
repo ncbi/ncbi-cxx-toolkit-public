@@ -402,7 +402,7 @@ CSeq_id_Handle CScope::x_GetAccVer(const TIds& ids)
 {
     CSeq_id_Handle ret;
     ITERATE ( TIds, iter, ids ) {
-        if ( !iter->IsGi() && iter->GetSeqId()->GetTextseq_Id() ) {
+        if (iter->IsAccVer()) {
             ret = *iter;
             break;
         }

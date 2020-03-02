@@ -88,6 +88,8 @@ public:
     void GetChunk(TChunk chunk) override;
     void GetChunks(const TChunkSet& chunks) override;
 
+    virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
+
     void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
     int GetTaxId(const CSeq_id_Handle& idh) override;
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh) override;

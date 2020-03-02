@@ -186,6 +186,12 @@ void CPSGDataLoader::GetChunks(const TChunkSet& chunks)
 }
 
 
+void CPSGDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
+{
+    m_Impl->GetBlobs(GetDataSource(), tse_sets);
+}
+
+
 CDataLoader::TTSE_Lock
 CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 {
@@ -342,7 +348,7 @@ CGBDataLoader::TRegisterLoaderInfo CPSGDataLoader::ConvertRegInfo(const TMaker::
 {
     TRegisterLoaderInfo ret;
     ret.Set(info.GetLoader(), info.IsCreated());
-    return move(ret);
+    return ret;
 }
 
 
