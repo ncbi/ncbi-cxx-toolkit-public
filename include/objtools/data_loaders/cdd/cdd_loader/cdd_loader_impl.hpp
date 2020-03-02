@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
+#include <objmgr/data_loader.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/cdd_access__.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/cdd_client.hpp>
 #include <map>
@@ -81,25 +82,28 @@ private:
 };
 
 
+class CCDDBlobCache;
+
 class CCDDDataLoader_Impl : public CObject
 {
 public:
     CCDDDataLoader_Impl(const CCDDDataLoader::SLoaderParams& params);
     ~CCDDDataLoader_Impl(void);
 
-    CRef<CCDDBlobId> GetBlobId(const CSeq_id_Handle& idh);
-    CRef<CSeq_entry> GetBlobById(const CCDDBlobId& blob_id);
+    typedef CDataLoader::TBlobId TBlobId;
+    typedef CDataLoader::TSeq_idSet TSeq_idSet;
+
+    CDataLoader::TTSE_LockSet GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds);
 
 private:
     typedef multimap<time_t, CRef<CCDDClient> > TClientPool;
     typedef TClientPool::iterator TClient;
     friend class CCDDClientGuard;
 
-    bool x_IsExcludedAccession(const CSeq_id& id);
+    bool x_IsValidId(const CSeq_id& id);
     TClient x_GetClient();
     void x_ReleaseClient(TClient& client);
     void x_DiscardClient(TClient& client);
-
     bool x_CheckReply(CRef<CCDD_Reply>& reply, int serial, CCDD_Reply::TReply::E_Choice choice);
 
     static int x_NextSerialNumber(void);
@@ -111,6 +115,7 @@ private:
     mutable CFastMutex  m_PoolLock;
     TClientPool         m_InUse;
     TClientPool         m_NotInUse;
+    unique_ptr<CCDDBlobCache> m_Cache;
 };
 
 END_SCOPE(objects)

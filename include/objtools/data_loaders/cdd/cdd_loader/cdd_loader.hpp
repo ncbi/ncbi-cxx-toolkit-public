@@ -80,11 +80,12 @@ public:
     static string GetLoaderNameFromArgs(void);
 
     TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
-    TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
-    TBlobId GetBlobIdFromString(const string& str) const override;
-    bool CanGetBlobById(void) const override;
-    TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
-
+    TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+        const SAnnotSelector* sel,
+        TProcessedNAs* processed_nas) override;
+    TTSE_LockSet GetOrphanAnnotRecordsNA(const TSeq_idSet& ids,
+        const SAnnotSelector* sel,
+        TProcessedNAs* processed_nas) override;
     CObjectManager::TPriority GetDefaultPriority(void) const override;
 
 private:

@@ -191,51 +191,31 @@ CCDDDataLoader::~CCDDDataLoader(void)
 }
 
 
-CDataLoader::TBlobId CCDDDataLoader::GetBlobId(const CSeq_id_Handle& idh)
-{
-    return TBlobId(m_Impl->GetBlobId(idh).GetPointerOrNull());
-}
-
-
-CDataLoader::TBlobId
-CCDDDataLoader::GetBlobIdFromString(const string& str) const
-{
-    return TBlobId(new CCDDBlobId(str));
-}
-
-
-bool CCDDDataLoader::CanGetBlobById(void) const
-{
-    return true;
-}
-
-
-CDataLoader::TTSE_Lock
-CCDDDataLoader::GetBlobById(const TBlobId& blob_id)
-{
-    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
-    if ( !load_lock.IsLoaded() ) {
-        const CCDDBlobId& cdd_id = dynamic_cast<const CCDDBlobId&>(*blob_id);
-        CRef<CSeq_entry> entry = m_Impl->GetBlobById(cdd_id);
-        if ( entry ) {
-            load_lock->SetName("CDD");
-            load_lock->SetSeq_entry(*entry);
-        }
-        load_lock.SetLoaded();
-    }
-    return load_lock;
-}
-
-
 CDataLoader::TTSE_LockSet
 CCDDDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
 {
     TTSE_LockSet locks;
-    TBlobId blob_id = GetBlobId(idh);
-    if (blob_id) {
-        locks.insert(GetBlobById(blob_id));
-    }
     return locks;
+}
+
+
+CDataLoader::TTSE_LockSet
+CCDDDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+    const SAnnotSelector* sel,
+    TProcessedNAs* processed_nas)
+{
+    TSeq_idSet ids;
+    ids.insert(idh);
+    return m_Impl->GetBlobBySeq_ids(ids, *GetDataSource());
+}
+
+
+CDataLoader::TTSE_LockSet
+CCDDDataLoader::GetOrphanAnnotRecordsNA(const TSeq_idSet& ids,
+    const SAnnotSelector* sel,
+    TProcessedNAs* processed_nas)
+{
+    return m_Impl->GetBlobBySeq_ids(ids, *GetDataSource());
 }
 
 
@@ -372,6 +352,75 @@ private:
 };
 
 
+const int kMaxCacheLifespanSeconds = 300;
+const size_t kMaxCacheSize = 1000;
+
+struct SCDDCacheInfo
+{
+    SCDDCacheInfo(const CSeq_id_Handle idh, CRef<CCDD_Reply_Get_Blob_By_Seq_Id> cdd_reply)
+        : id(idh), blob(cdd_reply), deadline(kMaxCacheLifespanSeconds) {}
+
+    CSeq_id_Handle id;
+    CRef<CCDD_Reply_Get_Blob_By_Seq_Id> blob;
+    CDeadline deadline;
+
+private:
+    SCDDCacheInfo(const SCDDCacheInfo&);
+    SCDDCacheInfo& operator=(const SCDDCacheInfo&);
+};
+
+
+class CCDDBlobCache
+{
+public:
+    CCDDBlobCache(void) {}
+    ~CCDDBlobCache(void) {}
+
+    typedef CRef<CCDD_Reply_Get_Blob_By_Seq_Id> TBlob;
+
+    TBlob Get(const CSeq_id_Handle& idh);
+    void Add(TBlob blob, CSeq_id_Handle idh);
+
+private:
+    typedef map<CSeq_id_Handle, shared_ptr<SCDDCacheInfo> > TIdMap;
+    typedef list<shared_ptr<SCDDCacheInfo> > TInfoQueue;
+
+    mutable CFastMutex m_Mutex;
+    TIdMap m_Ids;
+    TInfoQueue m_Infos;
+};
+
+
+CCDDBlobCache::TBlob CCDDBlobCache::Get(const CSeq_id_Handle& idh)
+{
+    CFastMutexGuard guard(m_Mutex);
+    auto found = m_Ids.find(idh);
+    if (found == m_Ids.end()) return TBlob();
+    shared_ptr<SCDDCacheInfo> info = found->second;
+    m_Infos.remove(info);
+    info->deadline = CDeadline(kMaxCacheLifespanSeconds);
+    m_Infos.push_back(info);
+    return info->blob;
+}
+
+
+void CCDDBlobCache::Add(TBlob blob, CSeq_id_Handle idh)
+{
+    CFastMutexGuard guard(m_Mutex);
+    auto found = m_Ids.find(idh);
+    if (found != m_Ids.end()) return;
+    // Create new entry.
+    shared_ptr<SCDDCacheInfo> info = make_shared<SCDDCacheInfo>(idh, blob);
+    while (!m_Infos.empty() && (m_Infos.size() > kMaxCacheSize || m_Infos.front()->deadline.IsExpired())) {
+        auto rm = m_Infos.front();
+        m_Infos.pop_front();
+        m_Ids.erase(rm->id);
+    }
+    m_Infos.push_back(info);
+    m_Ids[idh] = info;
+}
+
+
 int CCDDDataLoader_Impl::x_NextSerialNumber(void)
 {
     static CAtomicCounter_WithAutoInit s_Counter;
@@ -385,6 +434,7 @@ CCDDDataLoader_Impl::CCDDDataLoader_Impl(const CCDDDataLoader::SLoaderParams& pa
     m_PoolSoftLimit = params.m_PoolSoftLimit;
     m_PoolAgeLimit = params.m_PoolAgeLimit;
     m_ExcludeNucleotides = params.m_ExcludeNucleotides;
+    m_Cache.reset(new CCDDBlobCache);
 }
 
 
@@ -393,52 +443,69 @@ CCDDDataLoader_Impl::~CCDDDataLoader_Impl(void)
 }
 
 
-CRef<CCDDBlobId> CCDDDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
+CDataLoader::TTSE_LockSet
+CCDDDataLoader_Impl::GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds)
 {
-    CRef<CCDDBlobId> ret;
-    CConstRef<CSeq_id> id(idh.GetSeqId());
-    if (!id || x_IsExcludedAccession(*id)) return ret;
+    CDataLoader::TTSE_LockSet ret;
+    CCDDBlobCache::TBlob cdd_gb;
 
-    CCDDClientGuard client(*this);
-    try {
+    ITERATE(TSeq_idSet, id_it, ids) {
+        cdd_gb = m_Cache->Get(*id_it);
+        if (cdd_gb) break;
+    }
+
+    if (!cdd_gb) {
         int serial = x_NextSerialNumber();
-        CRef<CCDD_Reply> reply = client.Get().AskBlobId(serial, *id);
-        if (!x_CheckReply(reply, serial, CCDD_Reply::TReply::e_Get_blob_id)) return ret;
-        const CCDD_Reply_Get_Blob_Id& cdd_gb = reply->GetReply().GetGet_blob_id();
-        ret.Reset(new CCDDBlobId(cdd_gb.GetBlob_id()));
-    }
-    catch (exception& e) {
-        ERR_POST("CDD - blob-id request failed: " << e.what());
-        client.Discard();
-    }
-    catch (...) {
-        client.Discard();
-    }
-    return ret;
-}
+        CCDD_Request_Packet cdd_packet;
+        CRef<CCDD_Request> cdd_request(new CCDD_Request);
+        cdd_request->SetSerial_number(serial);
 
+        list<CRef<CSeq_id>>& req_ids = cdd_request->SetRequest().SetGet_blob_by_seq_ids();
+        ITERATE(TSeq_idSet, id_it, ids) {
+            CConstRef<CSeq_id> id(id_it->GetSeqId());
+            if (!x_IsValidId(*id)) continue;
+            CRef<CSeq_id> nc_id(new CSeq_id);
+            nc_id->Assign(*id);
+            req_ids.push_back(nc_id);
+        }
+        cdd_packet.Set().push_back(cdd_request);
 
-CRef<CSeq_entry> CCDDDataLoader_Impl::GetBlobById(const CCDDBlobId& blob_id)
-{
-    CRef<CSeq_entry> ret;
-    if (blob_id.IsEmpty()) return ret;
+        CCDDClientGuard client(*this);
+        CRef<CCDD_Reply> cdd_reply(new CCDD_Reply);
+        try {
+            client.Get().Ask(cdd_packet, *cdd_reply);
+            if (!x_CheckReply(cdd_reply, serial, CCDD_Reply::TReply::e_Get_blob_by_seq_id)) {
+                return ret;
+            }
+            cdd_gb.Reset(&cdd_reply->SetReply().SetGet_blob_by_seq_id());
 
-    CCDDClientGuard client(*this);
-
-    try {
-        int serial = x_NextSerialNumber();
-        CRef<CCDD_Reply> reply = client.Get().AskBlob(serial, blob_id.Get());
-        if (!x_CheckReply(reply, serial, CCDD_Reply::TReply::e_Get_blob)) return ret;
-        ret.Reset(new CSeq_entry);
-        ret->SetSet().SetSeq_set();
-        ret->SetAnnot().push_back(Ref(&reply->SetReply().SetGet_blob()));
+            CSeq_id_Handle cache_id = CSeq_id_Handle::GetHandle(cdd_gb->GetBlob_id().GetSeq_id());
+            m_Cache->Add(cdd_gb, cache_id);
+        }
+        catch (exception& e) {
+            ERR_POST("CDD - blob-by-seq-ids request failed: " << e.what());
+            client.Discard();
+        }
+        catch (...) {
+            client.Discard();
+        }
     }
-    catch (exception& e) {
-        ERR_POST("CDD - blob request failed: " << e.what());
-        client.Discard();
+
+    if (!cdd_gb) return ret;
+    CRef<CSeq_annot> annot(&cdd_gb->SetBlob());
+    CRef<CCDDBlobId> cdd_blob_id(new CCDDBlobId(cdd_gb->GetBlob_id().GetBlob_id()));
+    CDataLoader::TBlobId blob_id(cdd_blob_id);
+    CTSE_LoadLock load_lock = ds.GetTSE_LoadLock(blob_id);
+    if (!load_lock.IsLoaded()) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSet().SetSeq_set();
+        entry->SetAnnot().push_back(annot);
+        load_lock->SetName("CDD");
+        load_lock->SetSeq_entry(*entry);
+        load_lock.SetLoaded();
     }
-    catch (...) {
-        client.Discard();
+    if (load_lock.IsLoaded()) {
+        ret.insert(load_lock);
     }
     return ret;
 }
@@ -465,10 +532,30 @@ bool CCDDDataLoader_Impl::x_CheckReply(CRef<CCDD_Reply>& reply, int serial, CCDD
 }
 
 
-bool CCDDDataLoader_Impl::x_IsExcludedAccession(const CSeq_id& id)
+bool CCDDDataLoader_Impl::x_IsValidId(const CSeq_id& id)
 {
-    return m_ExcludeNucleotides
-        && (id.IdentifyAccession() & CSeq_id::fAcc_nuc) != 0;
+    switch (id.Which()) {
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Local:
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Patent:
+    case CSeq_id::e_General:
+    case CSeq_id::e_Gpipe:
+    case CSeq_id::e_Named_annot_track:
+        // These seq-ids are not used in CDD.
+        return false;
+    case CSeq_id::e_Gi:
+    case CSeq_id::e_Pdb:
+        // Non-text seq-ids present in CDD.
+        return true;
+    default:
+        break;
+    }
+    // For text seq-ids check accession type.
+    if (m_ExcludeNucleotides  &&  (id.IdentifyAccession() & CSeq_id::fAcc_nuc) != 0) return false;
+    return true;
 }
 
 
