@@ -97,14 +97,10 @@ public:
 string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
 {
     CArgDescriptions::PrintUsage(str, detailed);
-    if (detailed)
-    {
+    if (detailed) {
         str+="TESTS\n";
         const vector<string> Name = GetDiscrepancyNames();
         for (auto& nm: Name) {
-            if (nm[0] == '_') {
-                continue;
-            }
             str += "   ";
             str += nm;
             const vector<string> Alias = GetDiscrepancyAliases(nm);
@@ -494,10 +490,6 @@ int CDiscRepApp::Run(void)
     if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
 
     if (args["F"]) {
-        if (GetArgs()["a"] && GetArgs()["a"].AsString() == "c") {
-            ERR_POST("Options -F and -a c are mutually exclusive");
-            return 1;
-        }
         m_AutoFix = args["F"].AsBoolean();
     }
 
