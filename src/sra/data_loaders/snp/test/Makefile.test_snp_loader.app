@@ -11,8 +11,8 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(GRPC_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 
-CHECK_COPY = fix_ptis_url.sh test_snp_loader.ini
-CHECK_CMD = fix_ptis_url.sh test_snp_loader
+CHECK_COPY = test_snp_loader.ini
+CHECK_CMD = test_snp_loader
 CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche
