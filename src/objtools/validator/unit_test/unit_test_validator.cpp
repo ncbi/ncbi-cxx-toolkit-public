@@ -8156,7 +8156,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("BNHM");
     ambig.push_back("UI");
     ambig.push_back("KMK");
-    ambig.push_back("MZUT");
     ambig.push_back("MT");
     ambig.push_back("MP");
     ambig.push_back("NASC");
