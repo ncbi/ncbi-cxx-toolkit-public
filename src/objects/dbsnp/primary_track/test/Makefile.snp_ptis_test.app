@@ -1,10 +1,6 @@
-#################################
 # $Id$
 # Author:  Eugene Vasilchenko
-#################################
 
-# Build application "snp_test"
-#################################
 
 APP = snp_ptis_test
 SRC = snp_ptis_test
@@ -18,6 +14,6 @@ LIBS = $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(GRPC_INCLUDE)
 
 CHECK_CMD = snp_ptis_test
-CHECK_REQUIRES = in-house-resources -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche
