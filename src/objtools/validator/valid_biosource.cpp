@@ -849,7 +849,7 @@ const CSeq_entry *ctx)
         const COrgName& orgname = orgref.GetOrgname();
         const string& lineage = orgname.GetLineage();
         if (bsrc.GetGenome() == CBioSource::eGenome_kinetoplast) {
-            if (lineage.find("Kinetoplastida") == string::npos) {
+            if (lineage.find("Kinetoplastida") == string::npos && lineage.find("Kinetoplastea") == string::npos) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelleLocation,
                     "Only Kinetoplastida have kinetoplasts", obj, ctx);
             }
