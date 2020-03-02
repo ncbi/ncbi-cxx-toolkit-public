@@ -335,6 +335,13 @@ fi
 BOOST_TEST_CATCH_SYSTEM_ERRORS=no
 export BOOST_TEST_CATCH_SYSTEM_ERRORS
 
+# Check on linkerd and set backup
+if echo test | nc -w 1 linkerd 4142
+then
+   NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
+   export NCBI_CONFIG__ID2SNP__PTIS_NAME
+fi
+
 
 #//////////////////////////////////////////////////////////////////////////
 

@@ -444,6 +444,13 @@ case " \$FEATURES " in
          ;;
 esac
 
+# Check on linkerd and set backup
+if echo test | nc -w 1 linkerd 4142
+then
+   NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
+   export NCBI_CONFIG__ID2SNP__PTIS_NAME
+fi
+
 EOF
 
 if test -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib";  then
