@@ -171,6 +171,17 @@ GenerateDiffListFromBioSource(
     TBiosampleFieldDiffList& diffs);    // where to put list of "relevent" diffs
 //  << rw-905
 
+bool
+UpdateBiosourceFromBiosample(
+    const CBioSource& existingBioSource,
+    CBioSource& newBioource);
+
+bool
+UpdateBiosourceFromBiosample(
+    const TBiosampleFieldDiffList& diffs,
+    const CBioSource& existingBioSource,
+    CBioSource& newBioource);
+
 END_SCOPE(biosample_util)
 END_SCOPE(objects)
 END_NCBI_SCOPE

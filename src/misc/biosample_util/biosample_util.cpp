@@ -1389,30 +1389,174 @@ GenerateDiffListFromBioSource(
 //  ----------------------------------------------------------------------------
 bool
 GenerateDiffListFromBioSource(
-    const string& bioSampleAcc,
-    const CBioSource& bioSource,
-    CBioSource& bioSampleSource,
+    const string& existingBiosampleAcc,
+    const CBioSource& newBioSource,
+    CBioSource& proposedNewBioource,
     TBiosampleFieldDiffList& diffs)
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_descr> pSampleDescrs = biosample_util::GetBiosampleData(
-        bioSampleAcc, false, nullptr);
-    for (auto pSampleDesc: pSampleDescrs->Get()) {
-        const CSeqdesc& sampleDesc = *pSampleDesc; 
-        if (!sampleDesc.IsSource()) {
+    CRef<CSeq_descr> pExistingBiosampleDescrs = biosample_util::GetBiosampleData(
+        existingBiosampleAcc, false, nullptr);
+
+    bool assigned = false;
+    for (auto pExistingDesc: pExistingBiosampleDescrs->Get()) {
+        CSeqdesc& existingDesc = *pExistingDesc; 
+        if (!existingDesc.IsSource()) {
             continue;
         }
-        const CBioSource& sampleSource = sampleDesc.GetSource();
+        const CBioSource& existingSource = existingDesc.GetSource();
         diffs = GetFieldDiffs(
-            "biosample", "descriptors", bioSource, sampleSource);
+            "proposed", "existing", newBioSource, existingSource);
         if (!diffs.empty()) {
-            bioSampleSource.Assign(sampleSource);
+            if (!assigned) {
+                proposedNewBioource.Assign(newBioSource);
+                assigned = true;
+            }
+            UpdateBiosourceFromBiosample(diffs, existingSource, proposedNewBioource);
         }
         break;
     }
     return !diffs.empty();
 }
-// << rw-904
+// << rw-905
+
+//  ----------------------------------------------------------------------------
+bool
+UpdateBiosourceFromBiosample(
+    const CBioSource& existingBiosource,
+    CBioSource& newBiosource)
+//  ----------------------------------------------------------------------------
+{
+    if (existingBiosource.IsSetOrg()) {
+        const auto& existingOrg = existingBiosource.GetOrg();
+        if (existingOrg.IsSetTaxname()) {
+            if (!newBiosource.IsSetTaxname()) {
+                newBiosource.SetOrg().SetTaxname(existingOrg.GetTaxname());
+            }
+        }
+        auto existingTaxId = existingOrg.GetTaxId();
+        if (existingTaxId > 0) {
+            if (!newBiosource.IsSetOrg()  ||  newBiosource.GetOrg().GetTaxId() == 0) {
+                newBiosource.SetOrg().SetTaxId(existingTaxId);
+            }
+        }
+    }
+    if (existingBiosource.IsSetOrg()  &&  existingBiosource.GetOrg().IsSetOrgname()) {
+        const auto& existingOrgs = existingBiosource.GetOrg().GetOrgname().GetMod();
+        auto& newOrgs = newBiosource.SetOrg().SetOrgname().SetMod();
+        for (const auto& pExistingMod: existingOrgs) {
+            auto existingSubtype = pExistingMod->GetSubtype();
+            auto existingSubname = pExistingMod->GetSubname();
+            bool alreadyThere = false;
+            for (const auto& pNewMod: newOrgs) {
+                auto newSubtype = pNewMod->GetSubtype();
+                if ( newSubtype == existingSubtype) {
+                    alreadyThere = true;
+                    break;
+                }
+            }
+            if (alreadyThere) {
+                continue;
+            }
+            CRef<COrgMod> pNewMod(new COrgMod(existingSubtype, existingSubname));
+            newOrgs.push_back(pNewMod);
+            //auto existingAttrib = pExistingMod->GetAttrib();
+        }
+    }
+    if (existingBiosource.IsSetSubtype()) {
+        const auto& existingSubtypes = existingBiosource.GetSubtype();
+        for (const auto& pExistingSubSource: existingSubtypes) {
+            if (!pExistingSubSource->CanGetName()) {
+                continue;
+            }
+            auto existingSubtype = pExistingSubSource->GetSubtype();
+            //const auto& existingSubkey = CSubSource::GetSubtypeName(existingSubtype);
+            //const auto& existingSubvalue = pExistingSubSource->GetName();
+
+            if (newBiosource.HasSubtype(existingSubtype)) {
+                continue;
+            }
+            CRef<CSubSource> pNewSubsource(new CSubSource);
+            pNewSubsource->Assign(*pExistingSubSource);
+            newBiosource.SetSubtype().push_back(pNewSubsource);
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+CConstRef<CBiosampleFieldDiff>
+sGetDiffByFieldName(
+    const TBiosampleFieldDiffList& diffs,
+    const string& fieldName)
+//  ----------------------------------------------------------------------------
+{
+    for (const auto pDiff: diffs) {
+        if (pDiff->GetFieldName() == fieldName) {
+            return pDiff;
+        }
+    }
+    return CConstRef<CBiosampleFieldDiff>();
+}
+
+//  ----------------------------------------------------------------------------
+bool
+UpdateBiosourceFromBiosample(
+    const TBiosampleFieldDiffList& diffs,
+    const CBioSource& existingBiosource,
+    CBioSource& newBiosource)
+//  ----------------------------------------------------------------------------
+{
+    if (existingBiosource.IsSetOrg()) {
+        const auto& existingOrg = existingBiosource.GetOrg();
+        {{
+            auto fromDiff = sGetDiffByFieldName(diffs, "Organism Name");
+            if (fromDiff && !fromDiff->GetSrcVal().empty()) {
+                newBiosource.SetOrg().SetTaxname(existingOrg.GetTaxname());
+            }
+        }}
+        {{
+            auto fromDiff = sGetDiffByFieldName(diffs, "Tax ID");
+            auto existingTaxId = existingOrg.GetTaxId();
+            if (fromDiff  &&  existingTaxId > 0) {
+                newBiosource.SetOrg().SetTaxId(existingTaxId);
+            }
+        }}
+    }
+
+    if (existingBiosource.IsSetOrg()  &&  existingBiosource.GetOrg().IsSetOrgname()) {
+        const auto& existingOrgs = existingBiosource.GetOrg().GetOrgname().GetMod();
+        auto& newOrgs = newBiosource.SetOrg().SetOrgname().SetMod();
+        for (const auto& pExistingMod: existingOrgs) {
+            auto existingSubtype = pExistingMod->GetSubtype();
+            auto existingSubkey = COrgMod::GetSubtypeName(existingSubtype);
+            auto fromDiff = sGetDiffByFieldName(diffs, existingSubkey);
+            if (fromDiff  &&  !fromDiff->GetSrcVal().empty()) {
+                CRef<COrgMod> pNewMod(new COrgMod(existingSubtype, fromDiff->GetSrcVal()));
+                newOrgs.push_back(pNewMod);
+            }
+        }
+    }
+
+    if (existingBiosource.IsSetSubtype()) {
+        const auto& existingSubtypes = existingBiosource.GetSubtype();
+        auto& newSubtypes = newBiosource.SetSubtype();
+        for (const auto& pExistingSubSource: existingSubtypes) {
+            if (!pExistingSubSource->CanGetName()) {
+                continue;
+            }
+            auto existingSubtype = pExistingSubSource->GetSubtype();
+            const auto& existingSubkey = CSubSource::GetSubtypeName(existingSubtype);
+            auto pFromDiff = sGetDiffByFieldName(diffs, existingSubkey);
+            if (pFromDiff  &&  !pFromDiff->GetSrcVal().empty()) {
+                CRef<CSubSource> pNewSubsource(
+                    new CSubSource(existingSubtype, pFromDiff->GetSrcVal()));
+                newSubtypes.push_back(pNewSubsource);
+            }
+        }
+    }
+    return true;
+}
 
 END_SCOPE(biosample_util)
 END_SCOPE(objects)

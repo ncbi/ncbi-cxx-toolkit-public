@@ -159,6 +159,22 @@ PrintDiffList(
     ostr << endl;
 }
 
+#define DEBUG_DATA false
+//  ----------------------------------------------------------------------------
+void
+SaveBiosample(
+    const string& filename,
+    const CBioSource& bioSource)
+//  -----------------------------------------------------------------------------
+{
+    if (!DEBUG_DATA) {
+        return;
+    }
+    CNcbiOfstream ostr(filename);
+    MSerial_Format_AsnText asnText;
+    ostr << asnText << bioSource;
+    ostr.close();
+}
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_descr>
@@ -215,7 +231,7 @@ LoadBioSampleFromFile(
     try {
         pI->Read(ObjectInfo(*pDescrs));
     }
-    catch (CException& e) {
+    catch (CException&) {
         return pDescrs;
     }
     return pDescrs;
@@ -229,6 +245,9 @@ void CompareBioSampleAccessionToDescriptors(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_descr> pBioSample = LoadBioSampleFromAcc(bioSampleAcc);
+    if (!pBioSample) {
+        return;
+    }
     {{
         CNcbiOfstream sampleOut("biosample.asn1");
         DumpBioSample(sampleOut, *pBioSample);
@@ -248,10 +267,12 @@ void CompareBioSampleAccessionToBioSource(
     //CRef<CSeq_descr> pBioSample = LoadBioSampleFromAcc(bioSampleAcc);
     TBiosampleFieldDiffList diffs;
     CBioSource sampleSource;
+    
     if (biosample_util::GenerateDiffListFromBioSource(
         bioSampleAcc, bioSource, sampleSource, diffs)) {
         PrintDiffList(bioSampleAcc, diffs, cout);
     }
+    
 }
 
 
@@ -281,7 +302,7 @@ LoadBioSource(
     try {
         pI->Read(ObjectInfo(*pDescrs));
     }
-    catch (CException& e) {
+    catch (CException&) {
         return pDescrs;
     }
     return pDescrs;
@@ -505,14 +526,21 @@ CBsDiffApp::xCompareSeqEntryAccession(
         cerr << "Differ: Given sequence does not have a biosource." << endl;
         exit(1);
     }
+    SaveBiosample("biosample.asn1", *pBioSource);
     auto bioSampleAccessions = xGetBioSampleAccs(pSeqEntry);
     if (bioSampleAccessions.empty()) {
         cerr << "Differ: Given sequence does not contain biosample links."
                 << endl;
         exit(1);
     }
+    CBioSource fusedSource;
+    TBiosampleFieldDiffList diffs;
     for (auto bioSampleAcc: bioSampleAccessions) {
-        CompareBioSampleAccessionToBioSource(bioSampleAcc, *pBioSource);      
+        if (biosample_util::GenerateDiffListFromBioSource(
+                bioSampleAcc, *pBioSource, fusedSource, diffs)) {
+            PrintDiffList(bioSampleAcc, diffs, cout);
+            SaveBiosample("fusedsource.asn1", fusedSource);
+        }      
     }
 }
 
