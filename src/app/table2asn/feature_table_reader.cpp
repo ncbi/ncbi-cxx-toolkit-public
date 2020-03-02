@@ -761,7 +761,6 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     if (sequence::IsPseudo(cd_feature, *m_scope))
         return CRef<CSeq_entry>();
 
-    CBioseq_Handle bsh = m_scope->GetBioseqHandle(bioseq);
 
     CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, cd_feature);
 
@@ -772,6 +771,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     bool was_extended = false;
     if (replacement.Empty())
     {
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(bioseq);
         was_extended = CCleanup::ExtendToStopIfShortAndNotPartial(cd_feature, bsh);
 
         protein = CSeqTranslator::TranslateToProtein(cd_feature, *m_scope);
@@ -1847,6 +1847,172 @@ void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& en
         }
     );
 
+}
+
+
+void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
+{
+
+    if (!seq_entry.IsSet()) {
+        return;
+    }
+
+    auto& bioseq_set = seq_entry.SetSet();
+
+    _ASSERT(bioseq_set.IsSetClass());
+
+    if (bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
+        if (bioseq_set.IsSetSeq_set()) {
+            for (auto pEntry : bioseq_set.SetSeq_set()) {
+                if (pEntry) {
+                    MoveRegionsToProteins(*pEntry);
+                }
+            }
+        }
+        return;
+    }
+
+    if (!bioseq_set.IsSetAnnot()) { // coding regions appear in the set-level annotations
+        return;
+    }
+
+    CScope* pScope = nullptr;
+
+
+    _ASSERT(bioseq_set.IsSetSeq_set()); // should be a nuc-prot set
+
+    // Gather region features
+    list<CRef<CSeq_feat>> regions;
+    for (auto pSubEntry : bioseq_set.SetSeq_set()) {
+        _ASSERT(pSubEntry->IsSeq());
+        auto& seq = pSubEntry->SetSeq();
+        if (seq.IsNa()) {
+            if (seq.IsSetAnnot()) {
+                auto annot_it = seq.SetAnnot().begin();
+                while (annot_it != seq.GetAnnot().end()) {
+                    auto& annot = **annot_it;
+                    if (annot.IsFtable()) {
+                        auto& ftable = annot.SetData().SetFtable();
+                        auto boundary = 
+                            stable_partition(ftable.begin(), 
+                                             ftable.end(),
+                                             [](auto pFeat) {
+                                                return pFeat->IsSetData() &&
+                                                       pFeat->GetData().IsRegion();
+                                             });
+
+                        if (boundary != ftable.begin()) {
+                            regions.splice(regions.end(), ftable, ftable.begin(), boundary);
+                            if (ftable.empty()) {
+                                annot_it = seq.SetAnnot().erase(annot_it);
+                                continue;
+                            }
+                        }
+                    }
+                    ++annot_it;
+                }
+                if (regions.empty()) { // nothing to do here
+                    return; 
+                }
+            }
+        }
+    }
+
+    // Gather coding region annotations
+    list<CRef<CSeq_feat>> cdregions;
+    for (auto pAnnot : bioseq_set.GetAnnot()) {
+        if (pAnnot->IsFtable()) {
+            for (auto pFeat : pAnnot->GetData().GetFtable()) {
+                if (pFeat->IsSetData() &&
+                    pFeat->GetData().IsCdregion() &&
+                    pFeat->IsSetProduct()) { 
+                    cdregions.push_back(pFeat);
+                }
+            }
+        }
+    }
+    if (cdregions.empty()) {
+        return;
+    }
+
+    auto compareLocations = [](const CRef<CSeq_feat>& lhs,
+                                const CRef<CSeq_feat>& rhs) {
+        return (lhs->Compare(*rhs) < 0);
+    };
+
+    regions.sort(compareLocations);
+    cdregions.sort(compareLocations);
+
+    for (auto pRegion : regions) {
+        auto cdregion_it = cdregions.begin();
+        while (cdregion_it != cdregions.end()) {
+           auto pCdregion = *cdregion_it; 
+           if (sequence::Compare(
+                       pCdregion->GetLocation(), 
+                       pRegion->GetLocation(), 
+                       pScope, 
+                       sequence::fCompareOverlapping)
+                   == sequence::eContains) {
+             // cdregions.erase(cdregion_it);
+             // Don't want to erase cdregions until I'm sure they are not needed
+             // I need to ensure that sorting and mapping takes account of changes in 
+             // strand
+                CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
+                auto pMappedLoc = mapper.Map(pRegion->GetLocation());
+                pMappedLoc->ResetStrand();
+                if (pMappedLoc) {
+                    pRegion->SetLocation().Assign(*pMappedLoc);
+                }
+                break;
+           }
+           ++cdregion_it;
+        } 
+    }
+
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle tse = scope.AddTopLevelSeqEntry(seq_entry);
+    
+
+    for (auto pRegion : regions) {
+        const auto& loc = pRegion->GetLocation();
+        CSeq_id_Handle id_handle;
+        if (loc.IsWhole()) {
+            id_handle = CSeq_id_Handle::GetHandle(loc.GetWhole());
+        }   
+        else 
+        if (loc.IsInt()) {
+            id_handle = CSeq_id_Handle::GetHandle(loc.GetInt().GetId());
+        }
+        else
+        if (loc.IsPnt()) {
+            id_handle = CSeq_id_Handle::GetHandle(loc.GetPnt().GetId());
+        }
+        else {
+            continue;
+        }
+
+        auto protein_handle = scope.GetBioseqHandleFromTSE(id_handle, seq_entry);
+        if (!protein_handle) {
+            continue;
+        }
+
+        auto pAnnot = Ref(new CSeq_annot());
+        pAnnot->SetData().SetFtable().push_back(pRegion);
+        protein_handle.GetEditHandle().AttachAnnot(*pAnnot);
+    }
+
+    // start with the first region
+    // Get it's range. Only consider cdregion features that contain that range
+
+    // use sequence::Compare(loc1, loc2, scope, flags) to compare locations
+    // after we've matched region to cdregion, create a CSeq_loc_Mapper object 
+    // and map the region location onto the protein sequence. 
+    // Finally, place the region onto the protein sequence annotations. 
+
+
+    // I've removed the regions from the nucleotide sequence. 
+    // If it's not possible to match them to a protein, place them in the set-level annotation
 }
 
 
