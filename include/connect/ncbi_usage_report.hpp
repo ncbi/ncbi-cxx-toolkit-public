@@ -46,7 +46,7 @@
  */
 
 // API is available for MT builds only
-#if defined(_MT) || defined(_THREAD_SAFE)
+#if defined(NCBI_THREADS)
 #  define NCBI_USAGE_REPORT_SUPPORTED 1
 #endif
 
