@@ -1956,7 +1956,6 @@ FBUB	s	Universitat Bielefeld
 FBWA	s	Forstlichen Bundsversuchsanstalt			
 FC-DPV	s	Departmento de Paleontologia, Facultad de Ciencias			
 FCAB	s	Pontificia Universidade Catolica do Rio de Janeiro, Nucleo Interdisciplinar de Meio Ambiente			
-FCAP	s	Universidade Federal do Para			
 FCBP	c	First Fungal Culture Bank of Pakistan			
 FCDA	s	Fresno County Department of Agriculture			
 FCL<POL>	c	Fungal Culture Collection of Lublin (at Biochemistry Dept., UMCS)			
@@ -4706,7 +4705,7 @@ MZUR	s	Museo di Zoologia dell'Universita di Roma "La Sapienza"	MZUL
 MZUR:BAU	s	Museo di Zoologia dell'Universita di Roma "La Sapienza", Zoological collection of the Department of Biology and Biotechnology		
 MZUS	s	Musee de Zoologie de l'Universite de Strasbourg			
 MZUSP	s	Museu de Zoologia da Universidade de Sao Paulo			
-MZUT	s	Museo di Zoologia, Instituto di Zoologia e Anatomia Comparata Universita di Torino	MZUT<ITA-Torino>,MZUT<ITA-Turin>		
+MZUT	s	Museo di Zoologia, Instituto di Zoologia e Anatomia Comparata Universita di Torino	MZUT<ITA-Torino>		
 MZUTH	s	Museum of Zoology, University of Thessaloniki			
 MZUTI	s	Museo de Zoologia, Universidad Tecnologica Indoamerica			
 MZUVN	s	Musee Zool. Univ. et Ville de Nancy			
@@ -7090,6 +7089,7 @@ UFMT	s	Universidade Federal de Mato Grosso, Herbario Central
 UFNH	s	Utah Field House Natural History [address unknown]			
 UFOP	s	 Universidade Federal de Ouro Preto			
 UFP	s	Universidade Federal de Pernambuco, Departamento de Botanica			
+UFPA	sc	Universidade Federal do Para (Federal University of Para)			
 UFPB	s	Departamento de Sistematica e Ecologia			
 UFPEDA	c	Universidade Federal de Pernambuco			
 UFRG	s	Instituto de Biologia			
