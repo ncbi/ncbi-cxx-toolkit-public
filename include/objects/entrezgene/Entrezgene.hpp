@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/entrezgene/Entrezgene_.hpp>
 
+#include <objects/seqfeat/Gene_nomenclature.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -58,6 +60,15 @@ public:
     CEntrezgene(void);
     // destructor
     ~CEntrezgene(void);
+
+public:
+
+    // Find or assemble as much nomenclature information as we can from the
+    // data that are present.
+    CRef<CGene_nomenclature> GetNomenclature() const;
+
+    // Produce a standard description of the gene.
+    string GetDescription() const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -84,4 +95,4 @@ END_NCBI_SCOPE
 
 
 #endif // OBJECTS_ENTREZGENE_ENTREZGENE_HPP
-/* Original file checksum: lines: 86, chars: 2453, CRC32: 62e5311c */
+/* Original file checksum: lines: 140737443291734, chars: 2453, CRC32: 62e5311c */
