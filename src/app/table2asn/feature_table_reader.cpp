@@ -1878,7 +1878,6 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
     CScope* pScope = nullptr;
 
-
     _ASSERT(bioseq_set.IsSetSeq_set()); // should be a nuc-prot set
 
     // Gather region features
@@ -1970,38 +1969,58 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
     }
 
 
-    CScope scope(*CObjectManager::GetInstance());
-    CSeq_entry_Handle tse = scope.AddTopLevelSeqEntry(seq_entry);
-    
-
-    for (auto pRegion : regions) {
+    multimap<CRef<CSeq_id>, CRef<CSeq_feat>> mapped_regions;
+    for (auto pRegion :regions) {
+        auto pId = Ref(new CSeq_id());
         const auto& loc = pRegion->GetLocation();
-        CSeq_id_Handle id_handle;
-        if (loc.IsWhole()) {
-            id_handle = CSeq_id_Handle::GetHandle(loc.GetWhole());
-        }   
-        else 
-        if (loc.IsInt()) {
-            id_handle = CSeq_id_Handle::GetHandle(loc.GetInt().GetId());
-        }
-        else
-        if (loc.IsPnt()) {
-            id_handle = CSeq_id_Handle::GetHandle(loc.GetPnt().GetId());
-        }
-        else {
+        switch(loc.Which()) {
+        case CSeq_loc::e_Whole:
+            pId->Assign(loc.GetWhole());
+            break;
+        case CSeq_loc::e_Int:
+            pId->Assign(loc.GetInt().GetId());
+            break;
+        case CSeq_loc::e_Pnt:
+            pId->Assign(loc.GetPnt().GetId());
+            break;
+        default:
             continue;
         }
-
-        auto protein_handle = scope.GetBioseqHandleFromTSE(id_handle, seq_entry);
-        if (!protein_handle) {
-            continue;
-        }
-
-        auto pAnnot = Ref(new CSeq_annot());
-        pAnnot->SetData().SetFtable().push_back(pRegion);
-        protein_handle.GetEditHandle().AttachAnnot(*pAnnot);
+        mapped_regions.emplace(pId, pRegion);
     }
 
+    // Iterate over bioseqs 
+    for (auto pSubEntry : bioseq_set.SetSeq_set()) {
+        auto& bioseq = pSubEntry->SetSeq();
+        if (bioseq.IsNa()) {
+            continue;
+        }
+
+        CRef<CSeq_annot> pAnnot;
+        for (auto pId : bioseq.GetId()) {
+            auto it = mapped_regions.begin();
+            while (it != mapped_regions.end()) {
+                if (it->first->Compare(*pId) == CSeq_id::e_YES) {
+                    if (!pAnnot) {
+                       pAnnot = Ref(new CSeq_annot());
+                    }
+                    pAnnot->SetData().SetFtable().push_back(it->second);
+                    it = mapped_regions.erase(it);
+                    continue;
+                }
+                ++it;
+            }
+        }
+
+        if (pAnnot) {
+            bioseq.SetAnnot().push_back(pAnnot);
+        }
+        
+        if(mapped_regions.empty()) {
+            break;
+        }
+    }
+ 
     // start with the first region
     // Get it's range. Only consider cdregion features that contain that range
 
