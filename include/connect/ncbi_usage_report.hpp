@@ -39,12 +39,22 @@
 #include <thread>
 #include <condition_variable>
 
+
  /** @addtogroup ServiceSupport
  *
  * @{
  */
 
+// API is available for MT builds only
+#if defined(_MT) || defined(_THREAD_SAFE)
+#  define NCBI_USAGE_REPORT_SUPPORTED 1
+#endif
+
+
 BEGIN_NCBI_SCOPE
+
+
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -610,6 +620,16 @@ private:
 ///
 #define NCBI_REPORT_USAGE_FINISH  CUsageReport::Instance().Finish()
 
+
+#else
+
+// Empty macro if no support usage reporting
+#define NCBI_REPORT_USAGE(event, ...)
+#define NCBI_REPORT_USAGE_START
+#define NCBI_REPORT_USAGE_WAIT
+#define NCBI_REPORT_USAGE_FINISH
+
+#endif  // NCBI_USAGE_REPORT_SUPPORTED
 
 
 /* @} */

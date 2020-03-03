@@ -41,6 +41,9 @@
 BEGIN_NCBI_SCOPE
 
 
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  Defaults
 //
@@ -553,6 +556,9 @@ void CUsageReport::x_ThreadHandler(void)
         }
     }
 }
+
+
+#endif  // NCBI_USAGE_REPORT_SUPPORTED
 
 
 END_NCBI_SCOPE
