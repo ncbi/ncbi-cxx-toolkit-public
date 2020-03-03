@@ -56,18 +56,6 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(discrepancy_case);
 
 
-// _DUMMY
-
-DISCREPANCY_CASE(_DUMMY, SEQUENCE, 0, "performance testing")
-{
-}
-
-
-DISCREPANCY_SUMMARIZE(_DUMMY)
-{
-}
-
-
 // COUNT_NUCLEOTIDES
 
 DISCREPANCY_CASE(COUNT_NUCLEOTIDES, SEQUENCE, eOncaller | eSubmitter | eSmart | eBig, "Count nucleotide sequences")
