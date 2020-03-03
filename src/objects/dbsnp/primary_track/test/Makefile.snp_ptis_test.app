@@ -14,6 +14,6 @@ LIBS = $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(GRPC_INCLUDE)
 
 CHECK_CMD = snp_ptis_test
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = in-house-resources GRPC
 
 WATCHERS = vasilche
