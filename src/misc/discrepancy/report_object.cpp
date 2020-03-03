@@ -419,16 +419,6 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, C
 }
 
 
-string GetIdLabel(const CBioseq& seq)
-{
-    const CSeq_id* wid =
-        FindBestChoice(seq.GetId(), CSeq_id::BestRank).GetPointer();
-    string label;
-    wid->GetLabel(&label, NULL, CSeq_id::eContent);
-    return label;
-}
-
-
 string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
 {
     string label(kEmptyStr);
