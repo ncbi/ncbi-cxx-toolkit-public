@@ -108,8 +108,6 @@ int CUsageReportSampleApp::Run()
 
 void CUsageReportSampleApp::ConfigureAPI()
 {
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
-
     // Global API configuration.
     //
     // Each call here is optional. 
@@ -140,9 +138,7 @@ void CUsageReportSampleApp::ConfigureAPI()
     CUsageReportAPI::SetMaxQueueSize(20);
 
     // And finally enable reporting API (global flag).
-    CUsageReportAPI::Enable();
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
+    CUsageReportAPI::SetEnabled();
 }
 
 
@@ -183,8 +179,6 @@ void CUsageReportSampleApp::Pattern_1_SimpleMacro()
 
 void CUsageReportSampleApp::Pattern_2_MultipleReporters()
 {
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
-
     // Custom local reporters.
     //
     // We still recommend do use single global reporter, 
@@ -218,15 +212,11 @@ void CUsageReportSampleApp::Pattern_2_MultipleReporters()
 
     reporter1.Wait(); reporter1.Finish();
     reporter2.Wait(); reporter2.Finish();
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
 }
 
 
 void CUsageReportSampleApp::Pattern_3_StatusControl()
 {
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
-
     // Advanced method with custom jobs and control for reporting process.
 
     /// Example of a simple custom reporting job
@@ -307,8 +297,6 @@ void CUsageReportSampleApp::Pattern_3_StatusControl()
     // Waiting and finishing -- not yet, see Run()
     //reporter.Wait();
     //reporter.Finish();
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
 }
 
 

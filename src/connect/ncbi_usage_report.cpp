@@ -37,11 +37,7 @@
 #include <sstream>
 #include <atomic>
 
-
 BEGIN_NCBI_SCOPE
-
-
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -109,12 +105,18 @@ static bool gs_IsEnabled = NCBI_PARAM_TYPE(USAGE_REPORT, Enabled)::GetDefault();
 
 bool CUsageReportAPI::IsEnabled()
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     return gs_IsEnabled;
+#else
+    return false;
+#endif
 }
 
 void CUsageReportAPI::SetEnabled(bool enable)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     gs_IsEnabled = enable;
+#endif
 }
 
 void CUsageReportAPI::SetURL(const string& url)
@@ -199,8 +201,10 @@ unsigned CUsageReportAPI::GetMaxQueueSize()
 
 CUsageReportParameters& CUsageReportParameters::Add(const string& name, const string& value)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     CHECK_USAGE_REPORT_PARAM_NAME(name);
     m_Params[NStr::URLEncode(name, NStr::eUrlEnc_URIQueryName)] = NStr::URLEncode(value, NStr::eUrlEnc_URIQueryValue);
+#endif
     return *this;
 }
 
@@ -212,6 +216,8 @@ CUsageReportParameters& CUsageReportParameters::Add(const string& name, const ch
 string CUsageReportParameters::ToString() const
 {
     string result;
+
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     bool first = true;
     for (auto const &param : m_Params) {
         if (first) {
@@ -221,6 +227,7 @@ string CUsageReportParameters::ToString() const
         }
         result += (param.first + '=' += param.second);
     }
+#endif
     return result;
 }
 
@@ -249,7 +256,6 @@ void CUsageReportJob::x_CopyFrom(const CUsageReportJob& other)
     // Members
     m_State = other.m_State;
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -303,7 +309,6 @@ static string s_GetHost()
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CUsageReport::
@@ -330,8 +335,9 @@ void s_AddDefaultParam(CUsageReportParameters& params, const string& name, const
    
 CUsageReport::CUsageReport(TWhat what, const string& url, unsigned max_queue_size)
 {
-    // Set parameters reporting by default
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 
+    // Set parameters reporting by default
     if (what == fDefault) {
         what = CUsageReportAPI::GetDefaultParameters();
     }
@@ -358,21 +364,31 @@ CUsageReport::CUsageReport(TWhat what, const string& url, unsigned max_queue_siz
     // Enable reporter
     m_IsEnabled   = true;
     m_IsFinishing = false;
+
+#endif
 }
 
 CUsageReport::~CUsageReport(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     Finish();
+#endif
 }
 
 bool CUsageReport::IsEnabled()
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     return !m_IsFinishing  &&  m_IsEnabled  &&  CUsageReportAPI::IsEnabled();
+#else
+    return false;
+#endif
 }
 
 // MT-safe
 bool CUsageReport::x_Send(const string& extra_params)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+
     // Silent mode -- discard all diagnostic messages from CHttpSession during this call.
     // Affects current thread/function only.
     CDiagCollectGuard diag_guard;
@@ -384,11 +400,16 @@ bool CUsageReport::x_Send(const string& extra_params)
     CHttpSession session;
     CHttpResponse response = session.Get(url);
     return response.GetStatusCode() == 200;
+#else
+    return false;
+#endif
 }
 
 // MT-safe
 void CUsageReport::x_SendAsync(TJobPtr job_ptr)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+
     _ASSERT(job_ptr);
     MT_GUARD;
 
@@ -403,7 +424,7 @@ void CUsageReport::x_SendAsync(TJobPtr job_ptr)
         m_Thread = std::thread(&CUsageReport::x_ThreadHandler, std::ref(*this));
         if ( !m_Thread.joinable() ) {
             // Cannot start reporting thread, disable reporting.
-            Disable();
+            SetEnabled(false);
             ERR_POST_ONCE(Warning << "CUsageReport:: Unable to start reporting thread, reporting has disabled");
         }
     }
@@ -413,19 +434,24 @@ void CUsageReport::x_SendAsync(TJobPtr job_ptr)
 
     // Notify reporting thread that it have data to process
     m_ThreadSignal.notify_all();
+
+#endif
 }
 
 void CUsageReport::Send(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     if ( IsEnabled() ) {
         // Create new empty job and report it.
         // Default parameters will be reported automatically.
         x_SendAsync(new CUsageReportJob());
     }
+#endif
 }
 
 void CUsageReport::Send(CUsageReportParameters& params)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     if ( IsEnabled() ) {
         // Create new async job and copy parameters to it
         CUsageReportJob* job_ptr = new CUsageReportJob();
@@ -433,32 +459,43 @@ void CUsageReport::Send(CUsageReportParameters& params)
         // Report
         x_SendAsync(job_ptr);
     }
+#endif
 }
 
 unsigned CUsageReport::GetQueueSize()
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     MT_GUARD;
     return (unsigned)m_Queue.size();
+#else
+    return 0;
+#endif
 }
 
 void CUsageReport::ClearQueue(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     MT_GUARD;
     x_ClearQueue();
+#endif
 }
 
 // Internal version without locks
 void CUsageReport::x_ClearQueue(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     for (auto& job : m_Queue) {
         job->x_SetState(CUsageReportJob::eCanceled);
         delete job;
     }
     m_Queue.clear();
+#endif
 }
 
 void CUsageReport::Wait(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+
     while (true) {
         if (m_IsFinishing) {
             // Finishing, nothing to wait, queue is empty
@@ -494,10 +531,12 @@ void CUsageReport::Wait(void)
             }
         }}
     }
+#endif
 }
 
 void CUsageReport::Finish(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     {{
         MT_GUARD;
         // Clear queue
@@ -510,13 +549,14 @@ void CUsageReport::Finish(void)
     if (m_Thread.joinable()) {
         m_Thread.join();
     }
+#endif
 }
-
 
 // Should be MT-safe and no locking -- or deadlock can occur.
 //
 void CUsageReport::x_ThreadHandler(void)
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     std::unique_lock<std::mutex> signal_lock(m_ThreadSignal_Mutex);
 
     while (true) {
@@ -555,10 +595,8 @@ void CUsageReport::x_ThreadHandler(void)
             }
         }
     }
+#endif
 }
-
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
 
 
 END_NCBI_SCOPE

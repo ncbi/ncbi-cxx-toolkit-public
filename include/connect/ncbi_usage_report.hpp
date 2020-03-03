@@ -35,26 +35,25 @@
 
 #include <corelib/ncbistl.hpp>
 #include <connect/ncbi_http_session.hpp>
-#include <mutex>
-#include <thread>
-#include <condition_variable>
 
-
- /** @addtogroup ServiceSupport
- *
- * @{
- */
-
-// API is available for MT builds only
+// API is available for MT builds only, 
+// for single thread builds all API is available but disabled.
 #if defined(NCBI_THREADS)
 #  define NCBI_USAGE_REPORT_SUPPORTED 1
 #endif
 
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+#   include <mutex>
+#   include <thread>
+#   include <condition_variable>
+#endif
+
+/** @addtogroup ServiceSupport
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
-
-
-#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -120,14 +119,12 @@ public:
     ///   Environment variable:
     ///      NCBI_USAGE_REPORT_ENABLED=1/0
     ///
-    /// @sa Enable, Disable, CUsageReport
+    /// @sa SetEnabled(), CUsageReport
     ///
-    static void SetEnabled(bool enable);
-    static void Enable(void)  { SetEnabled(true);  }
-    static void Disable(void) { SetEnabled(false); }
+    static void SetEnabled(bool enable = true);
 
     /// Indicates whether global application usage statistics collection is enabled.
-    /// @sa Enable, Disable
+    /// @sa SetEnabled()
     static bool IsEnabled(void);
 
     /// Set default reporting parameters.
@@ -441,9 +438,7 @@ public:
     ///
     /// @sa CUsageReportAPI::SetEnabled(), IsEnabled()
     ///
-    void SetEnabled(bool enable) { m_IsEnabled = enable; }
-    void Enable(void)  { SetEnabled(true);  }
-    void Disable(void) { SetEnabled(false); }
+    void SetEnabled(bool enable = true) { m_IsEnabled = enable; }
 
     /// Indicates whether application usage statistics collection is enabled
     /// for a current reporter instance. Takes into account local status and global
@@ -456,7 +451,7 @@ public:
     /// Send usage statistics with default parameters in background,
     /// without blocking current thread execution.
     /// @sa 
-    ///   CUsageReportParameters, Enable(), Wait()
+    ///   CUsageReportParameters, SetEnabled(), Wait()
     void Send(void);
 
     /// Report usage statistics (asynchronously).
@@ -474,7 +469,7 @@ public:
     ///   reporting progress and results you can use Send(CUsageReportJob&)
     ///   version with your own class derived from CUsageReportJob.
     /// @sa 
-    ///   CUsageReportParameters, CUsageReportJob, TWhat, Enable(), Wait()
+    ///   CUsageReportParameters, CUsageReportJob, TWhat, SetEnabled(), Wait()
     ///
     void Send(CUsageReportParameters& params);
 
@@ -491,7 +486,7 @@ public:
     ///   from CUsageReportJob if you want to control reporting status or store
     ///   additional information. See CUsageReportJob description for details.
     /// @sa 
-    ///   CUsageReportJob, CUsageReportJob::OnStateChange(), Enable(), Wait()
+    ///   CUsageReportJob, CUsageReportJob::OnStateChange(), SetEnabled(), Wait()
     /// @code
     ///   // Usage example
     ///   CUsageReportJob_or_derived_class job;
@@ -560,19 +555,20 @@ private:
 
 private:
     mutable bool  m_IsEnabled;      ///< Enable/disable status
+
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     mutable bool  m_IsFinishing;    ///< TRUE if Finish() has called and reporting thread should terminate
     string        m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded
     string        m_URL;            ///< Reporting URL
     std::thread   m_Thread;         ///< Reporting thread
     list<TJobPtr> m_Queue;          ///< Job queue
     unsigned      m_MaxQueueSize;   ///< Maximum allowed queue size
-
     std::mutex    m_Usage_Mutex;    ///< MT-protection to access members
 
     /// Signal conditional variable for reporting thread synchronization
     std::condition_variable m_ThreadSignal;
     std::mutex m_ThreadSignal_Mutex;
-
+#endif
 };
 
 
@@ -610,7 +606,7 @@ private:
 
 /// Enable usage statistics reporting (globally for all reporters).
 ///
-#define NCBI_REPORT_USAGE_START   CUsageReportAPI::Enable()
+#define NCBI_REPORT_USAGE_START   CUsageReportAPI::SetEnabled()
 
 /// Wait until all reports via NCBI_REPORT_USAGE will be processed.
 ///
@@ -621,19 +617,9 @@ private:
 #define NCBI_REPORT_USAGE_FINISH  CUsageReport::Instance().Finish()
 
 
-#else
-
-// Empty macro if no support usage reporting
-#define NCBI_REPORT_USAGE(event, ...)
-#define NCBI_REPORT_USAGE_START
-#define NCBI_REPORT_USAGE_WAIT
-#define NCBI_REPORT_USAGE_FINISH
-
-#endif  // NCBI_USAGE_REPORT_SUPPORTED
-
-
 /* @} */
 
 END_NCBI_SCOPE
+
 
 #endif /* CONNECT___NCBI_USAGE_REPORT__HPP */
