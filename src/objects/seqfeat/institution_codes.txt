@@ -909,6 +909,7 @@ CCCM	c	Canadian Center for the Culture of Microorganisms
 CCCR	s	Federal University of Tocantins			
 CCCryo<DEU>	c	Culture Collection of Cryophilic Algae			
 CCCS	c	Culture Collection of Ciliates and their Symbionts			
+CCCT	c	 Coleccion Chilena de Cultivos Tipo-CCCT/UFRO			
 CCCZ	s	University of Malawi			
 CCDB<BRA>	s	Crustacean Collection of the Department of Biology	USP:CCDB		
 CCDM<CHN>	c	Culture Collection of Department of Microbiology			
@@ -3528,6 +3529,7 @@ KSEM	s	Kansas Snow Entomological Museum
 KSHS	s	Kochi Senior High School			
 KSK	s	Fitz Part Museum and Art Gallery			
 KSM	s	National Science Museum			
+KSNHM	s	Natural History Museum, Kishiwada City			
 KSO	s	Tweedside Physical and Antiquarian Society Museum			
 KSP	s	Pittsburg State University, Biology Department			
 KSPI	s	Kostanay State Pedagogical Institute			
