@@ -47,6 +47,7 @@
 #  endif
 #  include <crtdbg.h>
 #  include <stdio.h>
+#  define NOMINMAX
 #  include <windows.h>
 #  include <dbghelp.h>
 #  ifndef NCBI_MSWIN_NO_POPUP
