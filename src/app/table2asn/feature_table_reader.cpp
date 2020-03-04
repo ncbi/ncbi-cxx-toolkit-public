@@ -1913,6 +1913,43 @@ s_GetIdFromLocation(const CSeq_loc& loc)
 }
 
 
+struct SRegionIterators {
+    using TAnnotIt = list<CRef<CSeq_annot>>::iterator;
+    using TFeatIt = list<CRef<CSeq_feat>>::const_iterator;
+
+    TAnnotIt annot_it;
+    list<TFeatIt> feat_its;
+};
+
+
+static void 
+s_GatherRegionIterators(
+        list<CRef<CSeq_annot>>& annots,
+        list<SRegionIterators>& its)
+{   
+    its.clear();
+    for (auto annot_it = annots.begin(); 
+              annot_it != annots.end();
+              ++annot_it) {
+
+        const auto& annot = **annot_it;
+        if (annot.IsFtable()) {
+            const auto& ftable = annot.GetData().GetFtable();
+            list<SRegionIterators::TFeatIt> feat_its;
+            for (auto feat_it = ftable.begin(); feat_it != ftable.end(); ++feat_it) {
+                const auto& pFeat = *feat_it;
+                if (pFeat->IsSetData() &&
+                    pFeat->GetData().IsRegion()) {
+                    feat_its.push_back(feat_it);
+                }                
+            }
+            if (!feat_its.empty()) {
+                its.emplace_back(SRegionIterators{annot_it, move(feat_its)}); // fix this
+            }
+        }
+    }
+}
+
 
 void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 {
@@ -1948,39 +1985,37 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
     // Do this differently. 
     // Gather pairs of annotation and feature iterators
     list<CRef<CSeq_feat>> regions;
+    CRef<CBioseq> pNucSeq;
+    list<SRegionIterators> region_its;
+
     for (auto pSubEntry : bioseq_set.SetSeq_set()) {
         _ASSERT(pSubEntry->IsSeq());
         auto& seq = pSubEntry->SetSeq();
         if (seq.IsNa()) {
-            if (seq.IsSetAnnot()) {
-                auto annot_it = seq.SetAnnot().begin();
-                while (annot_it != seq.GetAnnot().end()) {
-                    auto& annot = **annot_it;
-                    if (annot.IsFtable()) {
-                        auto& ftable = annot.SetData().SetFtable();
-                        auto boundary = 
-                            stable_partition(ftable.begin(), 
-                                             ftable.end(),
-                                             [](auto pFeat) {
-                                                return pFeat->IsSetData() &&
-                                                       pFeat->GetData().IsRegion();
-                                             });
-
-                        if (boundary != ftable.begin()) {
-                            regions.splice(regions.end(), ftable, ftable.begin(), boundary);
-                            if (ftable.empty()) {
-                                annot_it = seq.SetAnnot().erase(annot_it);
-                                continue;
-                            }
-                        }
-                    }
-                    ++annot_it;
-                }
-                if (regions.empty()) { // nothing to do here
-                    return; 
-                }
+            if (!seq.IsSetAnnot()) {
+                return;
             }
+            pNucSeq = CRef<CBioseq>(&seq);
+            s_GatherRegionIterators(seq.SetAnnot(), region_its);
         }
+    }
+
+
+    if (!pNucSeq) {
+        return;
+    }
+
+    for (auto its : region_its) {
+        for (auto feat_it :its.feat_its) {
+            regions.push_back(*feat_it);
+            (*its.annot_it)->SetData().SetFtable().erase(feat_it);
+        }
+        if ((*its.annot_it)->GetData().GetFtable().empty()) {
+            pNucSeq->SetAnnot().erase(its.annot_it);
+        }
+    } 
+    if (pNucSeq->GetAnnot().empty()) {
+        pNucSeq->ResetAnnot();
     }
 
 
