@@ -71,7 +71,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     m_Args.push_back(arg);    
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, false, true));
-    m_BlastDbArgs->SetDatabaseMaskingSupport(true);
+    //  m_BlastDbArgs->SetDatabaseMaskingSupport(true);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
@@ -86,7 +86,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(new CGappedArgs);
     m_Args.push_back(arg);
 
-    m_HspFilteringArgs.Reset(new CHspFilteringArgs);
+    /*   m_HspFilteringArgs.Reset(new CHspFilteringArgs);
     arg.Reset(m_HspFilteringArgs);
     m_Args.push_back(arg);
 
@@ -95,7 +95,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
 
     arg.Reset(new COffDiagonalRangeArg);
     m_Args.push_back(arg);
-
+    */
     // Remove the search strategy as it's not needed in IgBLAST
     TBlastCmdLineArgs::iterator new_end = remove(m_Args.begin(), m_Args.end(), m_SearchStrategyArgs);
     m_Args.erase(new_end, m_Args.end());

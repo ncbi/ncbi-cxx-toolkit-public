@@ -73,7 +73,7 @@ CIgBlastpAppArgs::CIgBlastpAppArgs()
     m_Args.push_back(arg);    
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, false, true));
-    m_BlastDbArgs->SetDatabaseMaskingSupport(true);
+    //   m_BlastDbArgs->SetDatabaseMaskingSupport(true);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
@@ -88,10 +88,10 @@ CIgBlastpAppArgs::CIgBlastpAppArgs()
     TBlastCmdLineArgs::iterator new_end = remove(m_Args.begin(), m_Args.end(), m_SearchStrategyArgs);
     m_Args.erase(new_end, m_Args.end());
     m_SearchStrategyArgs.Reset(new CSearchStrategyArgs);
-
+    /*
     arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
     m_Args.push_back(arg);
-
+    */
     arg.Reset(new CMatrixNameArg);
     m_Args.push_back(arg);
 
@@ -100,14 +100,14 @@ CIgBlastpAppArgs::CIgBlastpAppArgs()
 
     arg.Reset(new CGappedArgs);
     m_Args.push_back(arg);
-
+    /*
     m_HspFilteringArgs.Reset(new CHspFilteringArgs);
     arg.Reset(m_HspFilteringArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
-
+    */
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);

@@ -172,41 +172,42 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                new CArgAllow_Doubles(0.0, 100.0));
     }
 
-    arg_desc.SetCurrentGroup("Restrict search or results");
-    arg_desc.AddOptionalKey(kArgQueryCovHspPerc, "float_value",
+    if (!m_IsIgBlast) {
+        arg_desc.SetCurrentGroup("Restrict search or results");
+        arg_desc.AddOptionalKey(kArgQueryCovHspPerc, "float_value",
                             "Percent query coverage per hsp",
                             CArgDescriptions::eDouble);
-    arg_desc.SetConstraint(kArgQueryCovHspPerc,
+        arg_desc.SetConstraint(kArgQueryCovHspPerc,
                            new CArgAllow_Doubles(0.0, 100.0));
 
-    arg_desc.AddOptionalKey(kArgMaxHSPsPerSubject, "int_value",
+        arg_desc.AddOptionalKey(kArgMaxHSPsPerSubject, "int_value",
                            "Set maximum number of HSPs per subject sequence to save for each query",
                            CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
+        arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
                            new CArgAllowValuesGreaterThanOrEqual(1));
 
-    arg_desc.SetCurrentGroup("Extension options");
-    // ungapped X-drop
-    // Default values: blastn=20, megablast=10, others=7
-    arg_desc.AddOptionalKey(kArgUngappedXDropoff, "float_value",
+        arg_desc.SetCurrentGroup("Extension options");
+        // ungapped X-drop
+        // Default values: blastn=20, megablast=10, others=7
+        arg_desc.AddOptionalKey(kArgUngappedXDropoff, "float_value",
                             "X-dropoff value (in bits) for ungapped extensions",
                             CArgDescriptions::eDouble);
-
-    // Tblastx is ungapped only.
-    if (!m_IsTblastx) {
+        
+        // Tblastx is ungapped only.
+        if (!m_IsTblastx) {
          // initial gapped X-drop
          // Default values: blastn=30, megablast=20, tblastx=0, others=15
-         arg_desc.AddOptionalKey(kArgGappedXDropoff, "float_value",
+            arg_desc.AddOptionalKey(kArgGappedXDropoff, "float_value",
                  "X-dropoff value (in bits) for preliminary gapped extensions",
                  CArgDescriptions::eDouble);
 
          // final gapped X-drop
          // Default values: blastn/megablast=50, tblastx=0, others=25
-         arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value",
+            arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value",
                          "X-dropoff value (in bits) for final gapped alignment",
                          CArgDescriptions::eDouble);
+        }
     }
-
     arg_desc.SetCurrentGroup("Statistical options");
     // effective search space
     // Default value is the real size
@@ -2118,8 +2119,14 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
     // database filename
-    arg_desc.AddOptionalKey(kArgDb, "database_name", "BLAST database name",
-                            CArgDescriptions::eString);
+    if (m_IsIgBlast){ 
+        arg_desc.AddOptionalKey(kArgDb, "database_name", "Optional additional database name",
+                                CArgDescriptions::eString);
+    } else {
+        arg_desc.AddOptionalKey(kArgDb, "database_name", "BLAST database name",
+                                CArgDescriptions::eString);
+    }
+
     arg_desc.SetCurrentGroup("");
 
     if (m_RequestMoleculeType) {
@@ -2159,7 +2166,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("Restrict search or results");
     // GI list
-    if (!m_IsRpsBlast) {
+    if (!m_IsRpsBlast && !m_IsIgBlast) {
         arg_desc.AddOptionalKey(kArgGiList, "filename",
                                 "Restrict search of database to list of GIs",
                                 CArgDescriptions::eString);
@@ -2271,7 +2278,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 #endif
 
     // There is no RPS-BLAST 2 sequences
-    if ( !m_IsRpsBlast && !m_IsKBlast) {
+    if ( !m_IsRpsBlast && !m_IsKBlast && !m_IsIgBlast) {
         arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
         // subject sequence input (for bl2seq)
         arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
@@ -2575,12 +2582,12 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgLineLength,
                            new CArgAllowValuesGreaterThanOrEqual(1));
 
-    // Produce HTML?
     if(!m_IsIgBlast){
+        // Produce HTML?
         arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
-    }
+        
     
-    arg_desc.AddOptionalKey(kArgSortHits, "sort_hits",
+        arg_desc.AddOptionalKey(kArgSortHits, "sort_hits",
                            "Sorting option for hits:\n"
                            "alignment view options:\n"
                            "  0 = Sort by evalue,\n"
@@ -2590,12 +2597,12 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            "  4 = Sort by query coverage\n"        
                            "Not applicable for outfmt > 4\n",
                            CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgSortHits,
+        arg_desc.SetConstraint(kArgSortHits,
                            new CArgAllowValuesBetween(CAlignFormatUtil::eEvalue,
                                                       CAlignFormatUtil::eQueryCoverage,
                                                       true));                           
     
-    arg_desc.AddOptionalKey(kArgSortHSPs, "sort_hsps",
+        arg_desc.AddOptionalKey(kArgSortHSPs, "sort_hsps",
                            "Sorting option for hps:\n"
                            "  0 = Sort by hsp evalue,\n"
                            "  1 = Sort by hsp score,\n"                            
@@ -2604,27 +2611,26 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            "  4 = Sort by hsp subject start\n"                           
                            "Not applicable for outfmt != 0\n",
                            CArgDescriptions::eInteger); 
-    arg_desc.SetConstraint(kArgSortHSPs,
+        arg_desc.SetConstraint(kArgSortHSPs,
                            new CArgAllowValuesBetween(CAlignFormatUtil::eHspEvalue,
                                                       CAlignFormatUtil::eSubjectStart,
-                                                      true));                                                                           
-
-    /// Hit list size, listed here for convenience only
-    arg_desc.SetCurrentGroup("Restrict search or results");
-    arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
+                                                      true));                                                                
+        /// Hit list size, listed here for convenience only
+        arg_desc.SetCurrentGroup("Restrict search or results");
+        arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
                             "Maximum number of aligned sequences to keep \n"
     						"(value of 5 or more is recommended)\n"
     						"Default = `" + NStr::IntToString(BLAST_HITLIST_SIZE) + "'",
                             CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgMaxTargetSequences,
+        arg_desc.SetConstraint(kArgMaxTargetSequences,
                            new CArgAllowValuesGreaterThanOrEqual(1));
-    arg_desc.SetDependency(kArgMaxTargetSequences,
+        arg_desc.SetDependency(kArgMaxTargetSequences,
                            CArgDescriptions::eExcludes,
                            kArgNumDescriptions);
-    arg_desc.SetDependency(kArgMaxTargetSequences,
+        arg_desc.SetDependency(kArgMaxTargetSequences,
                            CArgDescriptions::eExcludes,
                            kArgNumAlignments);
-
+    }
     arg_desc.SetCurrentGroup("");
 }
 
@@ -2812,7 +2818,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	if (args[kArgLineLength]) {
     	    m_LineLength = args[kArgLineLength].AsInteger();
     	}
-        if(args[kArgSortHits])
+        if(args.Exist(kArgSortHits) && args[kArgSortHits])
         {
        	    m_HitsSortOption = args[kArgSortHits].AsInteger();
         }
@@ -2840,7 +2846,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	m_NumDescriptions = hitlist_size;
     	m_NumAlignments = hitlist_size;
 
-        if(args[kArgSortHits]) {            
+        if(args.Exist(kArgSortHits) && args[kArgSortHits]) {            
             ERR_POST(Warning << "The parameter -sorthits is ignored for output formats > 4.");                    
         }
     }   
@@ -2850,7 +2856,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
     opt.SetHitlistSize(hitlist_size);
 
-    if(args[kArgSortHSPs]) 
+    if(args.Exist(kArgSortHSPs) && args[kArgSortHSPs]) 
     {
         int hspsSortOption = args[kArgSortHSPs].AsInteger();
         if(m_OutputFormat == ePairwise) {        
