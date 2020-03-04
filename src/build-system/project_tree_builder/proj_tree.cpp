@@ -33,6 +33,7 @@
 #include "proj_utils.hpp"
 #include "proj_builder_app.hpp"
 #include "msvc_prj_defines.hpp"
+#include "ptb_err_codes.hpp"
 
 #include <algorithm>
 
@@ -390,7 +391,7 @@ bool CCyclicDepends::AnalyzeProjItemNew(
                     str_chain += " - ";
                 }
                 str_chain += proj_id.Id();
-                LOG_POST( Warning << str_chain << ": Undefined project: " << proj_id.Id() );
+                PTB_WARNING_EX(kEmptyStr,ePTB_ProjectNotFound, str_chain << ": Undefined project: " << proj_id.Id() );
             }
         }
         return false;
@@ -453,7 +454,7 @@ void CCyclicDepends::AnalyzeProjItem(const CProjKey&  proj_id,
 {
     TProjects::const_iterator p = tree.find(proj_id);
     if (p == tree.end()) {
-        LOG_POST( Error << "Undefined project: " << proj_id.Id() );
+        PTB_WARNING_EX(kEmptyStr,ePTB_ProjectNotFound,"Undefined project: " << proj_id.Id() );
         return;
     }
     

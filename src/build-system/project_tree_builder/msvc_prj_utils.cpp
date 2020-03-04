@@ -96,7 +96,7 @@ void SaveIfNewer(const string& file_path, const CSerialObject& project)
     if ( !CDirEntry(file_path).Exists() ) {
         SaveToXmlFile(file_path, project);
         GetApp().RegisterGeneratedFile( file_path );
-        PTB_WARNING_EX(file_path, ePTB_FileModified,
+        PTB_INFO_EX(file_path, ePTB_FileModified,
                        "Project created");
         return;
     }

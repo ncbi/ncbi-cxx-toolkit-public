@@ -375,7 +375,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
     libinfo->m_libinfokey = libinfokey;
     libinfo->m_good = IsLibOk(*libinfo);
-    LOG_POST(Info << "Component " << libinfokey << ": " << (libinfo->m_good ? "good" : "bad"));
+    PTB_INFO("Component " << libinfokey << ": " << (libinfo->m_good ? "good" : "bad"));
     m_AllLibInfo.insert( map<string,SLibInfo>::value_type(libinfokey,*libinfo));
 }
 
@@ -520,7 +520,7 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
     } else {
         m_Choice = site.IsProvided(lib_3party) ? e3PartyLib : eLib;
     }
-    LOG_POST(Info << "LibChoice " << lib << "/" << lib_3party << " = " << (m_Choice == e3PartyLib ? lib_3party : lib));
+    PTB_INFO("LibChoice " << lib << "/" << lib_3party << " = " << (m_Choice == e3PartyLib ? lib_3party : lib));
 }
 
 
@@ -630,9 +630,10 @@ void CMsvcSite::GetLibInclude(const string& lib_id,
         return;
     } else {
         if (!lib_info.IsEmpty()) {
-            LOG_POST(Warning << lib_id << "|" << cfg_info.GetConfigFullName()
-                          << " unavailable: library include ignored: "
-                          << NStr::Join(lib_info.m_IncludeDir,";"));
+            PTB_WARNING_EX(kEmptyStr, ePTB_PathNotFound,
+                lib_id << "|" << cfg_info.GetConfigFullName()
+                << " unavailable: library include ignored: "
+                << NStr::Join(lib_info.m_IncludeDir,";"));
         }
     }
 }
@@ -903,7 +904,7 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         const string& macro = *m;
         if (!IsDescribed(macro)) {
             // add empty value
-            LOG_POST(Error << "Macro " << macro << " is not described");
+            PTB_ERROR_EX(kEmptyStr,ePTB_MacroUndefined,"Macro " << macro << " is not described");
         }
         list<string> components;
         GetComponents(macro, &components);
@@ -919,7 +920,7 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
                         res = true;
                     } else {
                         if (!lib_info.IsEmpty()) {
-                            LOG_POST(Warning << "Macro " << macro
+                            PTB_WARNING_EX(kEmptyStr, ePTB_MacroUndefined, "Macro " << macro
                                 << " cannot be resolved for "
                                 << component << "|" << config.GetConfigFullName());
                         }

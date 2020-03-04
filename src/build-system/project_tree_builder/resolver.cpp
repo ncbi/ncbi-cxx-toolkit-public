@@ -95,7 +95,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
         }
         end = data.find(")", start);
         if (end == string::npos) {
-            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + define);
+            PTB_WARNING_EX(kEmptyStr, ePTB_MacroInvalid, "Possibly incorrect MACRO definition in: " + define);
 	        resolved_def->push_back(define);
 	        return;
         }
@@ -161,7 +161,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
         }
         end = data.find(")", start);
         if (end == string::npos) {
-            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + define);
+            PTB_WARNING_EX(kEmptyStr, ePTB_MacroInvalid, "Possibly incorrect MACRO definition in: " + define);
 	        resolved_def->push_back(define);
 	        return;
         }

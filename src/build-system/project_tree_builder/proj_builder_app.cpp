@@ -310,8 +310,9 @@ struct PIsExcludedByProjectMakefile
             if ( IsSubdir(dir, project.m_SourcesBaseDir) ) {
                 // implicitly excluded from build
                 if (prj_context.GetMsvcProjectMakefile().IsExcludeProject(true)) {
-                    LOG_POST(Warning << "Excluded:  project " << project.m_Name
-                                << " by ProjectTree/ImplicitExclude");
+                    PTB_WARNING_EX(kEmptyStr, ePTB_ProjectExcluded,
+                        "Excluded:  project " << project.m_Name
+                        << " by ProjectTree/ImplicitExclude");
                     return true;
                 }
                 return false;
@@ -319,9 +320,10 @@ struct PIsExcludedByProjectMakefile
         }
         // implicitly included into build
         if (prj_context.GetMsvcProjectMakefile().IsExcludeProject(false)) {
-            LOG_POST(Warning << "Excluded:  project " << project.m_Name
-                        << " by Makefile." << project.m_Name << ".*."
-                        << GetApp().GetRegSettings().m_MakefilesExt);
+            PTB_WARNING_EX(kEmptyStr, ePTB_ProjectExcluded,
+                "Excluded:  project " << project.m_Name
+                << " by Makefile." << project.m_Name << ".*."
+                << GetApp().GetRegSettings().m_MakefilesExt);
             return true;
         }
         return false;
@@ -565,7 +567,7 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
             }
             str_chain += proj_id.Id();
         }
-        LOG_POST(Warning << str_chain);
+        PTB_WARNING_EX(kEmptyStr, ePTB_ConfigurationError, str_chain);
         reported = true;
         CCyclicDepends::TDependsChain::const_iterator i = cycle.end();
         const CProjKey& last = *(--i);
@@ -576,8 +578,8 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
                 CProjItem item = t->second;
                 item.m_Depends.remove(last);
                 tree[prev] = item;
-                LOG_POST(Warning << "Removing LIB dependency: "
-                               << prev.Id() << " - " << last.Id());
+                PTB_WARNING_EX(kEmptyStr, ePTB_FileModified,
+                    "Removing LIB dependency: " << prev.Id() << " - " << last.Id());
             }
         }
     }
@@ -592,23 +594,23 @@ int CProjBulderApp::Run(void)
 //    SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_All & ~eDPF_DateTime);
     SetDiagPostLevel(eDiag_Info);
-    LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
-    LOG_POST(Info << "Project tree builder version " + GetVersion().Print());
+    PTB_INFO("Started at " + CTime(CTime::eCurrent).AsString());
+    PTB_INFO("Project tree builder version " + GetVersion().Print());
 
     CStopWatch sw;
     sw.Start();
 
     // Get and check arguments
     ParseArguments();
-    LOG_POST(Info << "Project tags filter: " + m_ProjTags);
+    PTB_INFO("Project tags filter: " + m_ProjTags);
     if (m_InteractiveCfg && !Gui_ConfirmConfiguration())
     {
-        LOG_POST(Info << "Cancelled by request.");
+        PTB_INFO("Cancelled by request.");
         return 1;
     }
     else if (m_ConfirmCfg && !ConfirmConfiguration())
     {
-        LOG_POST(Info << "Cancelled by request.");
+        PTB_INFO("Cancelled by request.");
         return 1;
     }
     VerifyArguments();
@@ -647,7 +649,7 @@ int CProjBulderApp::Run(void)
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
     if (m_ExitCode != 0) {
-        LOG_POST(Info << "Cancelled by request.");
+        PTB_INFO("Cancelled by request.");
         return m_ExitCode;
     }
     configure.CreateConfH(const_cast<CMsvcSite&>(GetSite()), 
@@ -1076,7 +1078,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         if (p->second.m_MakeType == eMakeType_Excluded ||
             p->second.m_MakeType == eMakeType_ExcludedByReq) {
-            LOG_POST(Info << "For reference only: " << CreateProjectName(p->first));
+            PTB_INFO("For reference only: " << CreateProjectName(p->first));
             continue;
         }
         if (p->first.Type() == CProjKey::eDataSpec) {
@@ -1388,8 +1390,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 */
                 {
                     if (!SMakeProjectT::IsConfigurableDefine(id.Id())) {
-                        LOG_POST(Warning << "Project " + p->first.Id() + 
-                                 " depends on missing project " + id.Id());
+                        PTB_WARNING_EX(kEmptyStr, ePTB_ProjectNotFound,
+                            "Project " + p->first.Id() + " depends on missing project " + id.Id());
                     }
                     continue;
                 }
@@ -2368,9 +2370,9 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 
     // Subtree to build - projects filter
     string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
-    LOG_POST(Info << "Project list or subtree: " << subtree);
+    PTB_INFO("Project list or subtree: " << subtree);
     if (!CDirEntry(subtree).Exists()) {
-        LOG_POST(Info << "WARNING: " << subtree << " does not exist");
+        PTB_WARNING_EX(kEmptyStr, ePTB_PathNotFound, "subtree does not exist: "<< subtree);
     }
     m_ProjectTreeInfo->m_IProjectFilter.reset(
         new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src, subtree));
@@ -2861,7 +2863,7 @@ string CProjBulderApp::ProcessLocationMacros(string raw_data)
     while ((start = data.find("$(", done)) != string::npos) {
         end = data.find(")", start);
         if (end == string::npos) {
-            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + raw_data);
+            PTB_WARNING_EX(kEmptyStr, ePTB_MacroInvalid, "Possibly incorrect MACRO definition in: " + raw_data);
             return data;
         }
         raw_macro = data.substr(start,end-start+1);

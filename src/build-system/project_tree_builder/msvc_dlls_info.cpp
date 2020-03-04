@@ -412,7 +412,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         if (d == tree_src.m_Projects.end()) {
             d = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
             if (d == GetApp().GetWholeTree().m_Projects.end()) {
-                LOG_POST(Error << "DLL project not found: " << dll_id);
+                PTB_ERROR_EX(kEmptyStr, ePTB_ProjectNotFound, "DLL project not found: " << dll_id);
                 continue;
             }
         }

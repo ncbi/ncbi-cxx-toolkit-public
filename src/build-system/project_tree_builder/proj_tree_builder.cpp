@@ -91,7 +91,7 @@ struct PLibExclude
     bool operator() (const string& lib_id) const
     {
         if (m_ExcludedLib.find(lib_id) != m_ExcludedLib.end()) {
-            LOG_POST(Warning << "Project " << m_Prj << ": library excluded by request: " << lib_id);
+            PTB_WARNING_EX(kEmptyStr,ePTB_ProjectExcluded,"Project " << m_Prj << ": library excluded by request: " << lib_id);
             return true;
         }
         return false;
@@ -453,7 +453,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
                     if ( CDirEntry(dir).IsDir() ) {
                         include_dirs->push_back(dir);    
                     } else if (CDirEntry::IsAbsolutePath(dir)) {
-                        LOG_POST(Warning << "In " << source_base_dir << ": "
+                        PTB_WARNING_EX(kEmptyStr, ePTB_FileNotFound, "In " << source_base_dir << ": "
                             << flag << " = " << dir << ": "
                             << dir << " not found");
                         include_dirs->push_back(dir);    
@@ -1126,7 +1126,7 @@ string SMakeProjectT::ExtractConfigurableDefine (const string& define)
     start = define.find("@");
     end = define.find("@",start+1);
     if (end == string::npos) {
-        LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + define);
+        PTB_WARNING_EX(kEmptyStr, ePTB_MacroInvalid, "Possibly incorrect MACRO definition in: " + define);
         return define;
     }
     return define.substr(start,end-start+1);
@@ -1873,7 +1873,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     TFiles::const_iterator m = makedll.find(applib_mfilepath);
     if (m == makedll.end()) {
 
-        LOG_POST(Info << "Dll Makefile not found: " << applib_mfilepath);
+        PTB_WARNING_EX(kEmptyStr, ePTB_ProjectNotFound, "Dll Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
     CSimpleMakeFileContents::TContents::const_iterator k;
@@ -1882,7 +1882,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("DLL");
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
-        LOG_POST(Info << "No DLL specified in Makefile." << proj_name
+        PTB_WARNING_EX(kEmptyStr, ePTB_ConfigurationError, "No DLL specified in Makefile." << proj_name
                       << ".dll  at " << applib_mfilepath);
         return CProjKey();
     }
@@ -2057,7 +2057,7 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     
     TProjects::iterator p = tree->m_Projects.find(proj_id);
     if (p == tree->m_Projects.end()) {
-        LOG_POST(Error << "ASN project not found: " + proj_id.Id());
+        PTB_ERROR_EX(kEmptyStr, ePTB_ProjectNotFound, "ASN project not found: " + proj_id.Id());
         return CProjKey();
     }
     CProjItem& project = p->second;
@@ -2093,8 +2093,9 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         break;
     }
     if ( !CDirEntry(source_file_path).Exists() ) {
-        LOG_POST(
+        ERR_POST(
             (GetApp().IsScanningWholeTree() ? Warning : Error)
+             << MDiagFile(kEmptyStr)
             << "Data specification for ASN project not found: " << source_file_path);
         return CProjKey();
     }
@@ -2136,7 +2137,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     TFiles::const_iterator m = makefile.find(applib_mfilepath);
     if (m == makefile.end()) {
 
-        LOG_POST(Info << "AsnProject Makefile not found: " << applib_mfilepath);
+        PTB_WARNING_EX(kEmptyStr, ePTB_ProjectNotFound, "AsnProject Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
     const CSimpleMakeFileContents& fc = m->second;
@@ -2146,7 +2147,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         fc.m_Contents.find("ASN");
     if (k == fc.m_Contents.end()) {
 
-        LOG_POST(Info << "No ASN specified in Makefile: project " << proj_name
+        PTB_WARNING_EX(kEmptyStr, ePTB_ConfigurationError, "No ASN specified in Makefile: project " << proj_name
                       << "  at " << applib_mfilepath);
         return CProjKey();
     }
@@ -2211,7 +2212,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     k = fc.m_Contents.find("SRC");
     if (k == fc.m_Contents.end()) {
 
-        LOG_POST(Info << "No SRC specified in Makefile: project " << proj_name
+        PTB_WARNING_EX(kEmptyStr, ePTB_ConfigurationError, "No SRC specified in Makefile: project " << proj_name
                       << "  at " << applib_mfilepath);
         return CProjKey();
     }
@@ -2240,7 +2241,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     
     TProjects::iterator pid = tree->m_Projects.find(proj_id);
     if (pid == tree->m_Projects.end()) {
-        LOG_POST(Error << "ASN project not found: " << proj_id.Id()
+        PTB_WARNING_EX(kEmptyStr, ePTB_ProjectNotFound, "ASN project not found: " << proj_id.Id()
                        << " at " << applib_mfilepath);
         return CProjKey();
     }
@@ -2285,7 +2286,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     TFiles::const_iterator m = makemsvc.find(applib_mfilepath);
     if (m == makemsvc.end()) {
 
-        LOG_POST(Info << "Native Makefile not found: " << applib_mfilepath);
+        PTB_WARNING_EX(kEmptyStr, ePTB_ProjectNotFound, "Native Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
 
@@ -2300,7 +2301,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         if (k == m->second.m_Contents.end()  ||  
                                                k->second.empty()) {
 
-            LOG_POST(Info << "No MSVC_PROJ specified in Makefile: project " << proj_name
+            PTB_WARNING_EX(kEmptyStr, ePTB_ConfigurationError, "No MSVC_PROJ specified in Makefile: project " << proj_name
                           << "  at " << applib_mfilepath);
             return CProjKey();
         }
@@ -2338,7 +2339,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         k = m->second.m_Contents.find(vcproj_key);
         if (k == m->second.m_Contents.end()) {
 
-            LOG_POST(Info << "No " << vcproj_key <<" specified in Makefile: project " << proj_name
+            PTB_WARNING_EX(kEmptyStr, ePTB_ConfigurationError, "No " << vcproj_key <<" specified in Makefile: project " << proj_name
                           << "  at " << applib_mfilepath);
             return CProjKey();
         }
@@ -2758,14 +2759,14 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
                 NStr::Split(requires, LIST_SEPARATOR, items, NStr::fSplit_Tokenize);
                 for(const string& i : items) {
                     if (!GetApp().GetSite().IsProvided(i)) {
-                        LOG_POST(Info << "Custom metadata " << fileloc << " rejected because of unmet requirement: " << i);
+                        PTB_WARNING_EX(kEmptyStr, ePTB_FileExcluded, "Custom metadata " << fileloc << " rejected because of unmet requirement: " << i);
                         is_good = false;
                         break;
                     }
                 }
             }
             if (is_good) {
-                LOG_POST(Info << "Resolve macros using rules from " << fileloc);
+                PTB_INFO("Resolve macros using rules from " << fileloc);
 	            resolver.Append( sym, true);;
             }
         }
@@ -3298,7 +3299,7 @@ void CProjectTreeBuilder::ProcessMakeDllFile(const string& file_name,
     if ( !fc.m_Contents.empty()  ) {
         makefiles->m_Dll[file_name] = fc;
 	} else {
-        LOG_POST(Info << s << "rejected (is empty)");
+        PTB_INFO(s << "rejected (is empty)");
 	}
 }
 
