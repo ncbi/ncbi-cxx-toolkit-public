@@ -36,6 +36,7 @@ Contents: Contains input data
 #ifndef ALGO_BLAST_GUMBEL_PARAMS__INCLUDED_SLS_ALP_DATA
 #define ALGO_BLAST_GUMBEL_PARAMS__INCLUDED_SLS_ALP_DATA
 
+#include <ncbiconf.h>
 #include <complex>
 #include <iostream>
 #include <map>
