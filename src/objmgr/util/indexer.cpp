@@ -1895,6 +1895,10 @@ void CBioseqIndex::x_InitFeats (void)
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
             m_Scope->SetKeepExternalAnnotsForEdit();
+            // obey flag to hide CDD features by default in the web display
+            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
+                sel.ExcludeNamedAnnots("CDD");
+            }
 
         } else if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
 
