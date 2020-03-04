@@ -1850,6 +1850,70 @@ void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& en
 }
 
 
+static void s_MapRegionsToProduct(
+        const list<CRef<CSeq_feat>>& cdregions,
+        CScope* pScope,
+        list<CRef<CSeq_feat>>& regions)
+{
+    // Assumes we have already checked strandedness
+    for (auto pRegion : regions) {
+        auto cdregion_it = cdregions.begin();
+        while (cdregion_it != cdregions.end()) {
+           auto pCdregion = *cdregion_it; 
+           if (sequence::Compare(
+                       pCdregion->GetLocation(), 
+                       pRegion->GetLocation(), 
+                       pScope, 
+                       sequence::fCompareOverlapping)
+                   == sequence::eContains) {
+
+             // cdregions.erase(cdregion_it);
+             // Don't want to erase cdregions until I'm sure they are not needed
+             // I need to ensure that sorting and mapping takes account of changes in 
+             // strand
+                CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
+                auto pMappedLoc = mapper.Map(pRegion->GetLocation());
+                pMappedLoc->ResetStrand();
+                if (pMappedLoc) {
+                    pRegion->SetLocation().Assign(*pMappedLoc);
+                }
+                break;
+           }
+           ++cdregion_it;
+        }
+    } 
+}
+
+
+static const CSeq_id* 
+s_GetIdFromLocation(const CSeq_loc& loc)
+{
+    switch(loc.Which()) {
+    case CSeq_loc::e_Whole:
+        return &loc.GetWhole();
+    case CSeq_loc::e_Int:
+        return &(loc.GetInt().GetId());
+    case CSeq_loc::e_Pnt:
+        return &(loc.GetPnt().GetId());
+    case CSeq_loc::e_Packed_int:
+        if (!loc.GetPacked_int().Get().empty()) {
+            return &(loc.GetPacked_int().Get().front()->GetId());
+        }
+        break;
+    case CSeq_loc::e_Packed_pnt:
+        if (loc.GetPacked_pnt().IsSetId()) {
+            return &(loc.GetPacked_pnt().GetId());
+        }
+        break;
+    default:
+        break;
+    }
+
+    return nullptr;
+}
+
+
+
 void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 {
 
@@ -1881,6 +1945,8 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
     _ASSERT(bioseq_set.IsSetSeq_set()); // should be a nuc-prot set
 
     // Gather region features
+    // Do this differently. 
+    // Gather pairs of annotation and feature iterators
     list<CRef<CSeq_feat>> regions;
     for (auto pSubEntry : bioseq_set.SetSeq_set()) {
         _ASSERT(pSubEntry->IsSeq());
@@ -1917,6 +1983,7 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
         }
     }
 
+
     // Gather coding region annotations
     list<CRef<CSeq_feat>> cdregions;
     for (auto pAnnot : bioseq_set.GetAnnot()) {
@@ -1936,57 +2003,20 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
     auto compareLocations = [](const CRef<CSeq_feat>& lhs,
                                 const CRef<CSeq_feat>& rhs) {
-        return (lhs->Compare(*rhs) < 0);
+        return lhs->Compare(*rhs)<0;
     };
 
     regions.sort(compareLocations);
     cdregions.sort(compareLocations);
 
-    for (auto pRegion : regions) {
-        auto cdregion_it = cdregions.begin();
-        while (cdregion_it != cdregions.end()) {
-           auto pCdregion = *cdregion_it; 
-           if (sequence::Compare(
-                       pCdregion->GetLocation(), 
-                       pRegion->GetLocation(), 
-                       pScope, 
-                       sequence::fCompareOverlapping)
-                   == sequence::eContains) {
-             // cdregions.erase(cdregion_it);
-             // Don't want to erase cdregions until I'm sure they are not needed
-             // I need to ensure that sorting and mapping takes account of changes in 
-             // strand
-                CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
-                auto pMappedLoc = mapper.Map(pRegion->GetLocation());
-                pMappedLoc->ResetStrand();
-                if (pMappedLoc) {
-                    pRegion->SetLocation().Assign(*pMappedLoc);
-                }
-                break;
-           }
-           ++cdregion_it;
-        } 
-    }
+    s_MapRegionsToProduct(cdregions, pScope, regions);
 
-
-    multimap<CRef<CSeq_id>, CRef<CSeq_feat>> mapped_regions;
+    multimap<CConstRef<CSeq_id>, CRef<CSeq_feat>> mapped_regions;
     for (auto pRegion :regions) {
-        auto pId = Ref(new CSeq_id());
-        const auto& loc = pRegion->GetLocation();
-        switch(loc.Which()) {
-        case CSeq_loc::e_Whole:
-            pId->Assign(loc.GetWhole());
-            break;
-        case CSeq_loc::e_Int:
-            pId->Assign(loc.GetInt().GetId());
-            break;
-        case CSeq_loc::e_Pnt:
-            pId->Assign(loc.GetPnt().GetId());
-            break;
-        default:
-            continue;
+        auto pId = s_GetIdFromLocation(pRegion->GetLocation());
+        if (pId) {
+            mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
         }
-        mapped_regions.emplace(pId, pRegion);
     }
 
     // Iterate over bioseqs 
