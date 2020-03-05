@@ -1426,6 +1426,7 @@ void CSingleFeatValidator::x_ValidateGbquals()
                         break;
 
                     case CSeqFeatData::eQual_mobile_element:
+                    case CSeqFeatData::eQual_mobile_element_type:
                         if (is_imp && !CGb_qual::IsLegalMobileElementValue(val)) {
                             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MobileElementInvalidQualifier,
                                   val + " is not a legal value for qualifier " + qual_str);
