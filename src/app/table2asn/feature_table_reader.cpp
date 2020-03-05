@@ -1850,6 +1850,7 @@ void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& en
 }
 
 
+
 static void s_MapRegionsToProduct(
         const list<CRef<CSeq_feat>>& cdregions,
         CScope* pScope,
@@ -1951,6 +1952,65 @@ s_GatherRegionIterators(
 }
 
 
+static void s_MapRegionsToProduct(
+        const list<CRef<CSeq_feat>>& cdregions,
+        list<SRegionIterators>& region_its,
+        CScope* pScope,
+        multimap<CConstRef<CSeq_id>,CRef<CSeq_feat>>& mapped_regions)
+{
+
+    mapped_regions.clear();
+
+    for (auto its : region_its) {
+        auto& ftable = (*its.annot_it)->SetData().SetFtable();
+        for (auto region_it : its.feat_its) {
+    
+            auto pRegion = *region_it;
+            auto cdregion_it = cdregions.begin();
+            while (cdregion_it != cdregions.end()) {
+                auto pCdregion = *cdregion_it;
+                
+                const auto cdsStrand = 
+                    pCdregion->GetLocation().GetStrand();
+                const auto regionStrand = 
+                    pRegion->GetLocation().GetStrand();
+
+                if (cdsStrand != regionStrand &&
+                    cdsStrand != eNa_strand_both &&
+                    regionStrand != eNa_strand_both) {
+                    continue;
+                }
+                // Can do better than this
+                // Sort the features so that I don't have to compare every 
+                // region to every cdregion.
+                if (sequence::Compare(
+                            pCdregion->GetLocation(), 
+                            pRegion->GetLocation(), 
+                            pScope, 
+                            sequence::fCompareOverlapping)
+                            == sequence::eContains) {
+                    CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
+                    auto pMappedLoc = mapper.Map(pRegion->GetLocation());
+                    pMappedLoc->ResetStrand();
+
+                    if (pMappedLoc) {
+                        pRegion->SetLocation().Assign(*pMappedLoc);
+                        auto pId = s_GetIdFromLocation(pRegion->GetLocation());
+                        if (pId) {
+                            mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
+                            ftable.erase(region_it);
+                        }
+                    }
+                    break;
+                }
+                ++cdregion_it;
+            }
+        }
+    }
+
+}
+
+
 void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 {
 
@@ -1982,9 +2042,6 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
     _ASSERT(bioseq_set.IsSetSeq_set()); // should be a nuc-prot set
 
     // Gather region features
-    // Do this differently. 
-    // Gather pairs of annotation and feature iterators
-    list<CRef<CSeq_feat>> regions;
     CRef<CBioseq> pNucSeq;
     list<SRegionIterators> region_its;
 
@@ -2000,23 +2057,10 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
         }
     }
 
-
     if (!pNucSeq) {
         return;
     }
 
-    for (auto its : region_its) {
-        for (auto feat_it :its.feat_its) {
-            regions.push_back(*feat_it);
-            (*its.annot_it)->SetData().SetFtable().erase(feat_it);
-        }
-        if ((*its.annot_it)->GetData().GetFtable().empty()) {
-            pNucSeq->SetAnnot().erase(its.annot_it);
-        }
-    } 
-    if (pNucSeq->GetAnnot().empty()) {
-        pNucSeq->ResetAnnot();
-    }
 
 
     // Gather coding region annotations
@@ -2041,18 +2085,23 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
         return lhs->Compare(*rhs)<0;
     };
 
-    regions.sort(compareLocations);
     cdregions.sort(compareLocations);
 
-    s_MapRegionsToProduct(cdregions, pScope, regions);
-
     multimap<CConstRef<CSeq_id>, CRef<CSeq_feat>> mapped_regions;
-    for (auto pRegion :regions) {
-        auto pId = s_GetIdFromLocation(pRegion->GetLocation());
-        if (pId) {
-            mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
+    s_MapRegionsToProduct(cdregions, region_its, pScope, mapped_regions);
+
+    
+
+    for (auto its : region_its) {
+        if ((*its.annot_it)->GetData().GetFtable().empty()) {
+            pNucSeq->SetAnnot().erase(its.annot_it);
         }
+    } 
+    if (pNucSeq->GetAnnot().empty()) {
+        pNucSeq->ResetAnnot();
     }
+
+
 
     // Iterate over bioseqs 
     for (auto pSubEntry : bioseq_set.SetSeq_set()) {
