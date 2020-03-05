@@ -45,7 +45,9 @@ public:
         list<unique_ptr<SIter>> equiv; 
     };
 
-    using TLineMap = unordered_map<string, SLineInfo>;
+    //using TLineMap = unordered_map<string, SLineInfo>;
+    using TLineMap = map<CTempString, SLineInfo, PNocase_Generic<CTempString>>;
+
     struct SIter
     {
         using TVal = TLineMap::iterator;
@@ -63,7 +65,7 @@ public:
     void ReportUnusedIds(void);
 private:
     void x_ProcessLine(const CTempString& line, TModList& mods);
-    void x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc);
+    void x_RegisterLine(size_t lineNum, const CTempString& line, bool allowAcc);
     bool m_FileMapped=false;
     unique_ptr<CMemoryFileMap> m_pFileMap;
     vector<CTempString> m_ColumnNames;

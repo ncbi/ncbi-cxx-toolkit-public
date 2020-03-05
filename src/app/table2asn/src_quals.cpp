@@ -282,76 +282,177 @@ void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
     }
 }
 
+static pair<size_t,size_t> 
+s_IdTypeToNumFields(CSeq_id::E_Choice choice)
+{
+    switch(choice) {
+    case CSeq_id::e_Local:
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Gi:
+        return make_pair<size_t,size_t>(1,1);
+    case CSeq_id::e_Patent:
+        return make_pair<size_t,size_t>(3,3);
+    case CSeq_id::e_General:
+        return make_pair<size_t,size_t>(2,2);
+    default:
+        break;
+    }
+    return make_pair<size_t,size_t>(1,3);
+}
 
-void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, CTempString line, bool allowAcc)
+
+static bool 
+s_ParseFastaIdString(const CTempString& fastaString,
+    set<CTempString, PNocase_Generic<CTempString>>& idStrings) 
+{
+    idStrings.clear();
+
+    static const size_t minStubLength=2;
+    static const size_t maxStubLength=3;
+
+    using size_type = CTempString::size_type;
+    size_type fastaLength = fastaString.size();
+    size_type currentPos=0;
+    size_type idStartPos=0;
+    size_t currentField=0;
+    size_t currentMinField=0;
+    size_t currentMaxField=0;
+
+    while (currentPos < fastaLength) {
+        if (idStartPos == currentPos) {
+            auto nextBarPos = fastaString.find('|', currentPos);
+            if (nextBarPos == NPOS) {
+                return false;
+            }
+            const auto stubLength = nextBarPos - currentPos;
+            if (stubLength<minStubLength || stubLength>maxStubLength) {
+                return false;
+            }
+            const auto idType = 
+                CSeq_id::WhichInverseSeqId(fastaString.substr(currentPos, stubLength));
+            if (idType == CSeq_id::e_not_set) {
+                return false;
+            }
+            auto numFields = s_IdTypeToNumFields(idType);
+            currentMinField = numFields.first;
+            currentMaxField = numFields.second;
+            currentPos=nextBarPos+1;
+            continue;
+        }
+
+        _ASSERT(currentMinField <= currentMaxField);
+        if (currentField < currentMaxField) { 
+            auto nextBarPos = fastaString.find('|', currentPos);
+            if (nextBarPos == NPOS) {
+                if (currentField < currentMinField-1) {
+                    return false;
+                }
+                idStrings.emplace(fastaString.substr(idStartPos));
+                return true;
+            }
+            if (currentField >= currentMinField) {
+                auto length = nextBarPos-currentPos;
+                if (length>=minStubLength && length<=maxStubLength) {
+                    const auto idType = 
+                        CSeq_id::WhichInverseSeqId(fastaString.substr(currentPos, length));
+                    if (idType != CSeq_id::e_not_set) {
+                        auto numFields = s_IdTypeToNumFields(idType);
+                        currentMinField = numFields.first;
+                        currentMaxField = numFields.second;
+                        idStartPos=currentPos;
+                        currentField=0;
+                        currentPos=nextBarPos+1;
+                        continue;
+                    }
+                }
+            }
+            currentPos=nextBarPos+1;
+            ++currentField;
+        } 
+        else {
+            _ASSERT(currentField == currentMaxField);
+            idStrings.emplace(fastaString.substr(idStartPos, (currentPos-idStartPos)-1));
+            idStartPos=currentPos;
+            currentField=0;
+        }
+    }
+
+    if (currentField < currentMinField) {
+        return false;
+    }
+
+    if (fastaString[fastaLength-1] == '|') {
+        if (currentField < currentMaxField) {
+            _ASSERT(currentPos == fastaLength);
+            idStrings.emplace(fastaString.substr(idStartPos, (currentPos-idStartPos)-1));
+            return true;
+        }
+        return false;
+    }
+
+    return true;
+}
+
+
+void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, bool allowAcc)
 {
     CTempString idString, remainder;
     NStr::SplitInTwo(line, "\t", idString, remainder);
     NStr::TruncateSpacesInPlace(idString);
+    if (idString.empty()) {
+        return;
+    }
 
-    if (!idString.empty()) {
-        auto parseFlags =
-            allowAcc ?
-            CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal :
-            CSeq_id::fParse_AnyLocal;
-
-        list<CRef<CSeq_id>> ids;
-        try {
-            CSeq_id::ParseIDs(ids, idString, parseFlags);
+    if (count(begin(idString), end(idString), '|')<2) { // idString encodes a single id
+        auto rval = m_LineMap.emplace(idString, SLineInfo{lineNum, line});
+        if (!rval.second) {
+            CTempString seqId, remainder; // revisit this
+            NStr::SplitInTwo(line, "\t", seqId, remainder);
+            sReportDuplicateIds(m_pEC, 
+                m_pFileMap->GetFileName(),
+                lineNum,
+                rval.first->second.lineNum,
+                NStr::TruncateSpaces_Unsafe(seqId));
         }
-        catch (const CSeqIdException& e) {
-            sPostError(m_pEC,
-                    "In " + m_pFileMap->GetFileName() +
-                    ". Unable to parse " + idString + ".",
-                    "",
-                    lineNum);
-            return;
-        }
+        return; 
+    }
 
+    set<CTempString, PNocase_Generic<CTempString>> parsedIDs;
+    if (!s_ParseFastaIdString(idString, parsedIDs)){
+        sPostError(m_pEC,
+                "In " + m_pFileMap->GetFileName() +
+                ". Unable to parse " + idString + ".",
+                "",
+                lineNum);
+        return;
+    }
 
-        set<string> idSet;
-        if (ids.size() == 1 &&
-            ids.front()->IsLocal() &&
-            !NStr::StartsWith(idString, "lcl|", NStr::eNocase)) {
-            string idKey = idString;
-            s_PostProcessID(idKey);
-            idSet.emplace(idKey);
-        }
-        else {
-            for (const auto& pSeqId : ids) {
-                string idKey;
-                pSeqId->GetLabel(&idKey, nullptr, CSeq_id::eFasta);
-                s_PostProcessID(idKey);
-                idSet.emplace(idKey);
+    list<TLineMap::iterator> iterators;
+    for (auto id : parsedIDs) {
+        auto rval = m_LineMap.emplace(id, SLineInfo{lineNum, line});
+        if (!rval.second) {
+            CTempString seqId, remainder; // revisit this
+            NStr::SplitInTwo(line, "\t", seqId, remainder);
+            sReportDuplicateIds(m_pEC, 
+                m_pFileMap->GetFileName(),
+                lineNum,
+                rval.first->second.lineNum,
+                NStr::TruncateSpaces_Unsafe(seqId));
+            for (auto it : iterators) {
+                m_LineMap.erase(it);
             }
+            break;
         }
+        iterators.push_back(rval.first);
+    }
 
-
-        list<TLineMap::iterator> iterators;
-        for (auto idKey : idSet) {
-            auto rval = m_LineMap.emplace(idKey, SLineInfo{lineNum, line});
-            if (!rval.second) {
-                CTempString seqId, remainder; // revisit this
-                NStr::SplitInTwo(line, "\t", seqId, remainder);
-                sReportDuplicateIds(m_pEC, 
-                    m_pFileMap->GetFileName(),
-                    lineNum,
-                    rval.first->second.lineNum,
-                    NStr::TruncateSpaces_Unsafe(seqId));
-                for (auto it : iterators) {
-                    m_LineMap.erase(it);
-                }
-                break;
-            }
-            iterators.push_back(rval.first);
-        }
-
-        if (iterators.size()>1) {
-            for (auto current_it : iterators) {
-                for(auto other_it : iterators) {
-                    if (other_it != current_it) {
-                        current_it->second.equiv.emplace_back(new SIter(other_it));
-                    }
+    if (iterators.size()>1) {
+        for (auto current_it : iterators) {
+            for(auto other_it : iterators) {
+                if (other_it != current_it) {
+                    current_it->second.equiv.emplace_back(new SIter(other_it));
                 }
             }
         }
