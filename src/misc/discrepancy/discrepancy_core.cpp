@@ -87,6 +87,13 @@ string GetDiscrepancyDescr(const string& name)
 }
 
 
+TGroup GetDiscrepancyGroup(const string& name)
+{
+    string str = GetDiscrepancyCaseName(name);
+    return str.empty() ? 0 : CDiscrepancyConstructor::GetGroupTable()[str];
+}
+
+
 vector<string> GetDiscrepancyNames(TGroup group)
 {
     map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
