@@ -871,7 +871,8 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000307585.1", "SequenceNames"));
-
+    BOOST_CHECK(GenColl.NotNull());
+    
     // Make a Spec
     CGencollIdMapper::SIdSpec MapSpec;
     MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
@@ -891,6 +892,7 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     BOOST_CHECK(Result.NotNull());
     BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_018264.1"); 
 }
+
 
 BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat)
 {
@@ -946,6 +948,43 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat_Down)
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(Expected));
+}
+
+
+// Fix-up Bacteria chromosome names
+BOOST_AUTO_TEST_CASE(TestCase_BacteriaChromosomeNames)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000069185.1", "SequenceNames"));
+                              //CGCClient_GetAssemblyRequest::eLevel_scaffold));
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    // This users expect "1" to work, even though "1" is not in replicon.name
+    CSeq_loc OrigLoc;
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("1");
+    OrigLoc.SetInt().SetFrom(1);
+    OrigLoc.SetInt().SetTo(2);
+    
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_010397.1"); 
+    
+    OrigLoc.SetInt().SetId().SetLocal().SetId(1);
+    Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_010397.1"); 
+
+    // for the record, 'local str ""' is not valid
 }
 
 

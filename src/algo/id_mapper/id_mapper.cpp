@@ -381,10 +381,20 @@ CGencollIdMapper::x_Init(void)
 
     CTypeConstIterator<CGC_Replicon> ReplIter(*m_Assembly);
     for ( ; ReplIter; ++ReplIter) {
-        if (ReplIter->CanGetName() &&
-            !NStr::EndsWith(ReplIter->GetName(), "_random")
-           ) {
-            m_Chromosomes.push_back(ReplIter->GetName());
+        if (ReplIter->CanGetName() && !ReplIter->GetName().empty() ) {
+            if(!NStr::EndsWith(ReplIter->GetName(), "_random")) {
+                m_Chromosomes.push_back(ReplIter->GetName());
+            }
+        } else if(ReplIter->IsSetSequence() && ReplIter->GetSequence().IsSingle()) {
+            const CGC_Sequence& SingleSeq = ReplIter->GetSequence().GetSingle();
+            CConstRef<CSeq_id> SubNameId = SingleSeq.GetSubmitterName();
+            if(SubNameId.NotNull()) {
+                const string SubName = SingleSeq.GetSubmitterName()->GetSeqIdString();
+                if (!SubName.empty() && 
+                    !NStr::EndsWith(SubName, "_random" )) {
+                    m_Chromosomes.push_back(SubName);
+                }
+            }
         }
     }
     sort(m_Chromosomes.begin(), m_Chromosomes.end(), s_RevStrLenSort);
@@ -916,7 +926,6 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
         m_IdToSeqMap.erase(Found);
     }
     m_IdToSeqMap.insert(make_pair(Handle, Seq));
-    //cerr << "x_AddSeqToMap : " << Handle.AsString() << " is " << Seq->GetSeq_id().AsFastaString() << endl;
 
     {{
         CConstRef<CGC_Sequence> ParentSeq = Seq->GetParent();

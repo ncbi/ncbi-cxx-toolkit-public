@@ -1,5 +1,7 @@
 # $Id$
 
+REQUIRES = -Cygwin
+
 APP = unit_test_id_mapper
 
 SRC = unit_test_id_mapper
