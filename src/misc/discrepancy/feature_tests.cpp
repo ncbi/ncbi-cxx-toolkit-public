@@ -2065,23 +2065,25 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
         if ((*cds_it)->IsSetXref()) {
             auto rna_it = mrnas.cbegin();
             while (rna_it != mrnas.end()) {
-                auto& rnaid = (*rna_it)->GetId();
-                if (rnaid.IsLocal()) {
-                    for (auto xref : (*cds_it)->GetXref()) {
-                        if (xref->IsSetId()) {
-                            auto& id = xref->GetId();
-                            if (id.IsLocal()) {
-                                if (!id.GetLocal().Compare(rnaid.GetLocal())) {
-                                    mrna = *rna_it;
-                                    break;
+                if ((*rna_it)->IsSetId()) {
+                    auto& rnaid = (*rna_it)->GetId();
+                    if (rnaid.IsLocal()) {
+                        for (auto xref : (*cds_it)->GetXref()) {
+                            if (xref->IsSetId()) {
+                                auto& id = xref->GetId();
+                                if (id.IsLocal()) {
+                                    if (!id.GetLocal().Compare(rnaid.GetLocal())) {
+                                        mrna = *rna_it;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (mrna) {
-                    mrnas.erase(rna_it);
-                    break;
+                    if (mrna) {
+                        mrnas.erase(rna_it);
+                        break;
+                    }
                 }
                 ++rna_it;
             }
