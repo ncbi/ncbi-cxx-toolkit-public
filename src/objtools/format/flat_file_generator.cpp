@@ -601,6 +601,11 @@ void CFlatFileGenerator::Generate
  bool doNuc,
  bool doProt)
 {
+    // useSeqEntryIndexing argument also set by relevant flags in CFlatFileConfig
+    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
+        useSeqEntryIndexing = true;
+    }
+
     if (useSeqEntryIndexing) {
         m_Ctx->SetConfig().SetUseSeqEntryIndexer(true);
     } else {
@@ -609,7 +614,21 @@ void CFlatFileGenerator::Generate
 
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
-    if ( m_Ctx->GetConfig().BasicCleanup() )
+    const CFlatFileConfig& cfg = m_Ctx->GetConfig();
+
+    // doNuc and doProt arguments also set by relevant flags in CFlatFileConfig
+    if ( cfg.IsViewNuc() ) {
+        doNuc = true;
+    }
+    if ( cfg.IsViewProt() ) {
+        doProt = true;
+    }
+    if ( cfg.IsViewAll() ) {
+        doNuc = true;
+        doProt = true;
+    }
+
+    if ( cfg.BasicCleanup() )
     {
 
         entry.GetTopLevelEntry().GetCompleteObject();
@@ -664,7 +683,7 @@ void CFlatFileGenerator::Generate
     // If there is a ICancel callback, wrap the item_os so
     // that every call checks it.
     const ICanceled * pCanceled = 
-        m_Ctx->GetConfig().GetCanceledCallback();
+        cfg.GetCanceledCallback();
     if( pCanceled ) {
         pItemOS.Reset( 
             new CCancelableFlatItemOStreamWrapper(
@@ -675,7 +694,7 @@ void CFlatFileGenerator::Generate
     SAnnotSelector sel = m_Ctx->SetAnnotSelector();
     m_Ctx->SetEntry(entry);
 
-    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
+    if ( cfg.UseSeqEntryIndexer() ) {
         // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
         CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
         if (m_Ctx->UsingSeqEntryIndex()) {
@@ -693,19 +712,19 @@ void CFlatFileGenerator::Generate
             try {
                 CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
                 CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
-                if ( m_Ctx->GetConfig().OnlyNearFeatures() ) {
+                if ( cfg.OnlyNearFeatures() ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
-                if ( m_Ctx->GetConfig().HideSNPFeatures() ) {
+                if ( cfg.HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fHideSNPFeats;
                 }
-                if ( m_Ctx->GetConfig().HideCDDFeatures() ) {
+                if ( cfg.HideCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fHideCDDFeats;
                 }
-                if ( m_Ctx->GetConfig().ShowSNPFeatures() ) {
+                if ( cfg.ShowSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fShowSNPFeats;
                 }
-                if ( m_Ctx->GetConfig().ShowCDDFeatures() ) {
+                if ( cfg.ShowCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fShowCDDFeats;
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
@@ -721,7 +740,7 @@ void CFlatFileGenerator::Generate
         }
     }
 
-    CFlatFileConfig::TFormat format = m_Ctx->GetConfig().GetFormat();
+    CFlatFileConfig::TFormat format = cfg.GetFormat();
     CRef<CFlatItemFormatter> formatter(CFlatItemFormatter::New(format));
     if ( !formatter ) {
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
