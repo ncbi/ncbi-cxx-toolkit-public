@@ -859,6 +859,35 @@ void CFlatFileGenerator::Generate
     Generate(entry, *item_os, useSeqEntryIndexing, doNuc, doProt);
 }
 
+void CFlatFileGenerator::Generate
+(const CSeq_loc& loc,
+ CScope& scope,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing,
+ bool doNuc,
+ bool doProt)
+{
+    CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
+    if (!bsh) {
+        NCBI_THROW(CFlatException, eInvalidParam, "location not in scope");
+    }
+    CSeq_entry_Handle entry = bsh.GetParentEntry();
+    if (!entry) {
+        NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
+    }
+    CRef<CSeq_loc> location(new CSeq_loc);
+    location->Assign(loc);
+    m_Ctx->SetLocation(location);
+
+    CFlatFileConfig& cfg = m_Ctx->SetConfig();
+    if (cfg.IsStyleNormal()) {
+        cfg.SetStyleMaster();
+    }
+
+    Generate(entry, os, useSeqEntryIndexing, doNuc, doProt);
+}
+
+
 
 //void CFlatFileGenerator::Reset(void)
 //{
