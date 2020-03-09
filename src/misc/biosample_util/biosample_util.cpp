@@ -1364,7 +1364,7 @@ void PrintBioseqXML(CBioseq_Handle bh,
     }
 }
 
-//  rw-905 >>
+//  rw-905, rw-1010 >>
 //  ----------------------------------------------------------------------------
 void
 GenerateDiffListFromBioSource(
@@ -1387,38 +1387,78 @@ GenerateDiffListFromBioSource(
 }
 
 //  ----------------------------------------------------------------------------
+void
+SaveBiosample(
+    const string& filename,
+    const CBioSource& bioSource)
+//  -----------------------------------------------------------------------------
+{
+    CNcbiOfstream ostr(filename);
+    MSerial_Format_AsnText asnText;
+    ostr << asnText << bioSource;
+    ostr.close();
+}
+
+//  ----------------------------------------------------------------------------
+void
+SaveDesc(
+    const string& filename,
+    const CSeqdesc& desc)
+//  -----------------------------------------------------------------------------
+{
+    CNcbiOfstream ostr(filename);
+    MSerial_Format_AsnText asnText;
+    ostr << asnText << desc;
+    ostr.close();
+}
+
+//  ----------------------------------------------------------------------------
+void
+SaveDescr(
+    const string& filename,
+    const CSeq_descr& descr)
+//  -----------------------------------------------------------------------------
+{
+    CNcbiOfstream ostr(filename);
+    MSerial_Format_AsnText asnText;
+    ostr << asnText << descr;
+    ostr.close();
+}
+
+//  ----------------------------------------------------------------------------
 bool
 GenerateDiffListFromBioSource(
     const string& existingBiosampleAcc,
     const CBioSource& newBioSource,
-    CBioSource& proposedNewBioource,
+    CBioSource& proposedNewBiosource,
     TBiosampleFieldDiffList& diffs)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_descr> pExistingBiosampleDescrs = biosample_util::GetBiosampleData(
         existingBiosampleAcc, false, nullptr);
-
+    //SaveDescr("descriptors.asn1", *pExistingBiosampleDescrs);
     bool assigned = false;
     for (auto pExistingDesc: pExistingBiosampleDescrs->Get()) {
         CSeqdesc& existingDesc = *pExistingDesc; 
+        //SaveDesc("xxx.asn1", existingDesc);
         if (!existingDesc.IsSource()) {
             continue;
         }
         const CBioSource& existingSource = existingDesc.GetSource();
+        //SaveBiosample("existingSource.asn1", existingSource);
         diffs = GetFieldDiffs(
             "proposed", "existing", newBioSource, existingSource);
         if (!diffs.empty()) {
             if (!assigned) {
-                proposedNewBioource.Assign(newBioSource);
+                proposedNewBiosource.Assign(existingSource);
                 assigned = true;
             }
-            UpdateBiosourceFromBiosample(diffs, existingSource, proposedNewBioource);
+            //UpdateBiosourceFromBiosample(diffs, existingSource, proposedNewBiosource);
         }
         break;
     }
     return !diffs.empty();
 }
-// << rw-905
 
 //  ----------------------------------------------------------------------------
 bool
@@ -1557,6 +1597,7 @@ UpdateBiosourceFromBiosample(
     }
     return true;
 }
+// << rw-905, rw-1010
 
 END_SCOPE(biosample_util)
 END_SCOPE(objects)
