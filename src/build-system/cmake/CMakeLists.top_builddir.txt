@@ -3,10 +3,6 @@
 #############################################################################
 ##############################################################################
 
-if (NOT DEFINED NCBI_CMAKEPROJECT_NAME)
-  set(NCBI_CMAKEPROJECT_NAME ncbi_cpp)
-endif()
-
 set(NCBI_PTBCFG_KNOWN_FOLDERS
   dll
   corelib
@@ -32,8 +28,5 @@ set(NCBI_PTBCFG_KNOWN_FOLDERS
   ${NCBI_PTBCFG_KNOWN_FOLDERS}
 )
 
-project(${NCBI_CMAKEPROJECT_NAME})
-
 include(build-system/cmake/CMake.NCBItoolkit.cmake)
-
-NCBI_add_root_subdirectory( ${NCBI_PTBCFG_KNOWN_FOLDERS})
+NCBI_add_subdirectory( ${NCBI_PTBCFG_KNOWN_FOLDERS})
