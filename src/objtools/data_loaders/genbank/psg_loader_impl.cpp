@@ -434,6 +434,7 @@ public:
     ~CPSG_Task(void) override {}
 
     EStatus Execute(void) override;
+    virtual void Finish(void) = 0;
 
 protected:
     void OnStatusChange(EStatus old) override;
@@ -462,6 +463,24 @@ protected:
     EStatus m_Status;
 private:
     CPSG_TaskGroup& m_Group;
+};
+
+
+// It may happen that a CThreadPool's thread holds CRef to a task longer than
+// the loader exists. In this case the task needs to release some data
+// (e.g. load locks) before the loader is destroyed. The guard calls
+// Finish() to do the cleanup.
+class CPSG_Task_Guard
+{
+public:
+    CPSG_Task_Guard(CPSG_Task& task) : m_Task(&task) {}
+    ~CPSG_Task_Guard(void) { if (m_Task) m_Task->Finish(); }
+    void Resease(void) { m_Task.Reset(); }
+private:
+    CPSG_Task_Guard(const CPSG_Task_Guard&);
+    CPSG_Task_Guard& operator=(const CPSG_Task_Guard&);
+
+    CRef<CPSG_Task> m_Task;
 };
 
 
@@ -886,6 +905,17 @@ public:
 
     CPSGDataLoader_Impl::SReplyResult WaitForSkipped(void);
 
+    void Finish(void) override
+    {
+        m_MainBlobInfo.reset();
+        m_SplitBlobInfo.reset();
+        m_Skipped.reset();
+        m_ReplyResult = CPSGDataLoader_Impl::SReplyResult();
+        m_PsgBlobInfo.reset();
+        m_BlobInfo.clear();
+        m_BlobData.clear();
+    }
+
 protected:
     void DoExecute(void) override;
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override;
@@ -1085,9 +1115,11 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
     // waiting until all other tasks are completed.
     typedef list<CRef<CPSG_Blob_Task>> TTasks;
     TTasks skipped_tasks;
+    list<shared_ptr<CPSG_Task_Guard>> guards;
     while (group.HasTasks()) {
         CRef<CPSG_Blob_Task> task(group.GetTask<CPSG_Blob_Task>().GetNCPointerOrNull());
         _ASSERT(task);
+        guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         if (task->GetStatus() == CThreadPool_Task::eFailed) {
             _TRACE("Failed to get blob for " << task->m_Id.AsString());
             continue;
@@ -1126,6 +1158,12 @@ public:
         : CPSG_Task(reply, group), m_Chunk(chunk) {}
 
     ~CPSG_LoadChunk_Task(void) override {}
+
+    void Finish(void) override {
+        m_Chunk.Reset();
+        m_BlobInfo.reset();
+        m_BlobData.reset();
+    }
 
 protected:
     void DoExecute(void) override;
@@ -1214,6 +1252,7 @@ void CPSGDataLoader_Impl::LoadChunks(const CDataLoader::TChunkSet& chunks)
     }
 
     CPSG_TaskGroup group(*m_ThreadPool);
+    list<shared_ptr<CPSG_Task_Guard>> guards;
     while (!chunk_map.empty()) {
         auto reply = context->GetReply();
         if (!reply) continue;
@@ -1221,7 +1260,9 @@ void CPSGDataLoader_Impl::LoadChunks(const CDataLoader::TChunkSet& chunks)
         _ASSERT(chunk_it != chunk_map.end());
         CDataLoader::TChunk chunk = chunk_it->second;
         chunk_map.erase(chunk_it);
-        group.AddTask(new CPSG_LoadChunk_Task(reply, group, chunk));
+        CRef<CPSG_LoadChunk_Task> task(new CPSG_LoadChunk_Task(reply, group, chunk));
+        guards.push_back(make_shared<CPSG_Task_Guard>(*task));
+        group.AddTask(task);
     }
     group.WaitAll();
 }
@@ -1236,6 +1277,10 @@ public:
     ~CPSG_AnnotRecordsNA_Task(void) override {}
 
     shared_ptr<CPSG_NamedAnnotInfo> m_AnnotInfo;
+
+    void Finish(void) override {
+        m_AnnotInfo.reset();
+    }
 
 protected:
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
@@ -1269,6 +1314,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
 
     CPSG_TaskGroup group(*m_ThreadPool);
     CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
+    CPSG_Task_Guard guard(*task);
     group.AddTask(task);
     group.WaitAll();
 
@@ -1374,6 +1420,7 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
     CPSG_TaskGroup group(*m_ThreadPool);
     CRef<CPSG_Blob_Task> task(
         new CPSG_Blob_Task(reply, group, req_idh, data_source, *this));
+    CPSG_Task_Guard guard(*task);
     group.AddTask(task);
     group.WaitAll();
 
@@ -1406,6 +1453,10 @@ public:
 
     shared_ptr<CPSG_BioseqInfo> m_BioseqInfo;
 
+    void Finish(void) override {
+        m_BioseqInfo.reset();
+    }
+
 protected:
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
         if (item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
@@ -1435,6 +1486,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
 
     CPSG_TaskGroup group(*m_ThreadPool);
     CRef<CPSG_BioseqInfo_Task> task(new CPSG_BioseqInfo_Task(reply, group));
+    CPSG_Task_Guard guard(*task);
     group.AddTask(task);
     group.WaitAll();
 
@@ -1544,6 +1596,7 @@ void CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
     CPSG_TaskGroup group(*m_ThreadPool);
     typedef  map<CRef<CPSG_BioseqInfo_Task>, size_t> TTasks;
     TTasks tasks;
+    list<shared_ptr<CPSG_Task_Guard>> guards;
     while (!idx_map.empty()) {
         auto reply = context->GetReply();
         if (!reply) continue;
@@ -1555,6 +1608,7 @@ void CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         }
 
         CRef<CPSG_BioseqInfo_Task> task(new CPSG_BioseqInfo_Task(reply, group));
+        guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         tasks[task] = idx;
         group.AddTask(task);
     }
