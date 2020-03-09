@@ -1,4 +1,5 @@
 #!/bin/bash
 
-exec src/build-system/cmake/cmake-configure "$@"
-
+script_dir=`dirname $0`
+script_name=`basename $0`
+exec ${script_dir}/src/build-system/cmake/cmake-cfg-unix.sh --rootdir=$script_dir --caller=$script_name "$@"
