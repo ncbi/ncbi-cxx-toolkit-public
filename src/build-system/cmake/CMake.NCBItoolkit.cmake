@@ -2,6 +2,9 @@
 # $Id$
 #############################################################################
 
+if(NOT DEFINED NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED)
+set( NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED ON)
+
 if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
     if(NOT DEFINED XCODE)
         set(XCODE ON)
@@ -80,7 +83,13 @@ endif()
 if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
     set(_prefix "${NCBI_EXTERNAL_TREE_ROOT}/src/")
 else()
-    set(_prefix "")
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/CMake.NCBIptb.cmake")
+        set(_prefix "")
+    elseif (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/build-system/cmake/CMake.NCBIptb.cmake")
+        set(_prefix "src/")
+    else()
+        message(FATAL_ERROR "Cannot find NCBIptb build system in ${CMAKE_SOURCE_DIR}")
+    endif()
 endif()
 
 include(${_prefix}build-system/cmake/CMakeMacros.cmake)
@@ -108,3 +117,4 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
 endif()
 
 include(${_prefix}build-system/cmake/CMakeChecks.final-message.cmake)
+endif(NOT DEFINED NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED)
