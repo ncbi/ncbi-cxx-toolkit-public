@@ -203,6 +203,12 @@ if test \$? -eq 0; then
 else
   have_uptime=false
 fi
+which nc > /dev/null 2>&1
+if test \$? -eq 0; then
+  have_nc=true
+else
+  have_nc=false
+fi
 # Define both senses to accommodate shells lacking !
 is_run=false
 no_run=true
@@ -445,10 +451,12 @@ case " \$FEATURES " in
 esac
 
 # Check on linkerd and set backup
+if \${have_nc}; then
 if echo test | nc -w 1 linkerd 4142
 then
    NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
    export NCBI_CONFIG__ID2SNP__PTIS_NAME
+fi
 fi
 
 EOF
