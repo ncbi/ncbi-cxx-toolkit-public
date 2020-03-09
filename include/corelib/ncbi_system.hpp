@@ -380,14 +380,14 @@ public:
     ///   on current platform, or on error.
     static double GetUptime(void);
 
-    /// Return the amount of actual physical memory, in bytes.
+    /// Return the amount of actual/total physical memory, in bytes.
     /// On some platforms it can be less then installed physical memory,
     /// and represent a total usable RAM (physical RAM minus reserved and the kernel).
     /// @return
     ///   0, if cannot determine it on current platform, or if an error occurs.
     static Uint8 GetTotalPhysicalMemorySize(void);
 
-    /// Return the amount of available physical memory, in bytes.
+    /// Return the amount of physical memory currently available on the system ("free"), in bytes.
     /// @return
     ///   0, if cannot determine it on current platform, or on error.
     static Uint8 GetAvailPhysicalMemorySize(void);
