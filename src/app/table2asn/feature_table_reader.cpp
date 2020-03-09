@@ -1851,40 +1851,6 @@ void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& en
 
 
 
-static void s_MapRegionsToProduct(
-        const list<CRef<CSeq_feat>>& cdregions,
-        CScope* pScope,
-        list<CRef<CSeq_feat>>& regions)
-{
-    // Assumes we have already checked strandedness
-    for (auto pRegion : regions) {
-        auto cdregion_it = cdregions.begin();
-        while (cdregion_it != cdregions.end()) {
-           auto pCdregion = *cdregion_it; 
-           if (sequence::Compare(
-                       pCdregion->GetLocation(), 
-                       pRegion->GetLocation(), 
-                       pScope, 
-                       sequence::fCompareOverlapping)
-                   == sequence::eContains) {
-
-             // cdregions.erase(cdregion_it);
-             // Don't want to erase cdregions until I'm sure they are not needed
-             // I need to ensure that sorting and mapping takes account of changes in 
-             // strand
-                CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
-                auto pMappedLoc = mapper.Map(pRegion->GetLocation());
-                pMappedLoc->ResetStrand();
-                if (pMappedLoc) {
-                    pRegion->SetLocation().Assign(*pMappedLoc);
-                }
-                break;
-           }
-           ++cdregion_it;
-        }
-    } 
-}
-
 
 static const CSeq_id* 
 s_GetIdFromLocation(const CSeq_loc& loc)
@@ -1914,100 +1880,159 @@ s_GetIdFromLocation(const CSeq_loc& loc)
 }
 
 
-struct SRegionIterators {
-    using TAnnotIt = list<CRef<CSeq_annot>>::iterator;
-    using TFeatIt = list<CRef<CSeq_feat>>::const_iterator;
+struct SRegionIt {
+    using TFtable = list<CRef<CSeq_feat>>;
+    using TFeatIt = TFtable::const_iterator;
 
-    TAnnotIt annot_it;
-    list<TFeatIt> feat_its;
+    SRegionIt(TFtable& ftable, const TFeatIt& feat_it) 
+        : parentTable(ftable), it(feat_it) {}
+
+    TFtable& parentTable;
+    TFeatIt it;
+};
+
+
+using TAnnotIt = list<CRef<CSeq_annot>>::iterator;
+using TAnnotItList = list<TAnnotIt>;
+using TRegionItList = list<SRegionIt>;
+
+struct SRegionIts {
+    TRegionItList sense_regions;
+    TRegionItList antisense_regions;
 };
 
 
 static void 
 s_GatherRegionIterators(
-        list<CRef<CSeq_annot>>& annots,
-        list<SRegionIterators>& its)
-{   
-    its.clear();
-    for (auto annot_it = annots.begin(); 
-              annot_it != annots.end();
-              ++annot_it) {
+    list<CRef<CSeq_annot>>& annots,
+    TAnnotItList& annot_its,
+    SRegionIts& region_its)
+{
+    annot_its.clear();
+    region_its.sense_regions.clear();
+    region_its.antisense_regions.clear();
 
-        const auto& annot = **annot_it;
+    for (auto annot_it = begin(annots);
+              annot_it != end(annots);
+              ++annot_it) {
+        auto& annot = **annot_it;
         if (annot.IsFtable()) {
-            const auto& ftable = annot.GetData().GetFtable();
-            list<SRegionIterators::TFeatIt> feat_its;
-            for (auto feat_it = ftable.begin(); feat_it != ftable.end(); ++feat_it) {
+            auto& ftable = annot.SetData().SetFtable();
+            bool hasRegions = false;
+            for (auto feat_it = begin(ftable); feat_it != end(ftable); ++feat_it) {
                 const auto& pFeat = *feat_it;
                 if (pFeat->IsSetData() &&
                     pFeat->GetData().IsRegion()) {
-                    feat_its.push_back(feat_it);
-                }                
+
+                    if (pFeat->GetLocation().GetStrand() == eNa_strand_plus) {
+                        region_its.sense_regions.emplace_back(ftable, feat_it);
+                        hasRegions = true;
+                    }
+                    else 
+                    if (pFeat->GetLocation().GetStrand() == eNa_strand_minus) {
+                        region_its.antisense_regions.emplace_back(ftable, feat_it);
+                        hasRegions = true;
+                    }
+                }
             }
-            if (!feat_its.empty()) {
-                its.emplace_back(SRegionIterators{annot_it, move(feat_its)}); // fix this
+            if (hasRegions) {
+                annot_its.push_back(annot_it);
             }
         }
     }
 }
 
 
-static void s_MapRegionsToProduct(
-        const list<CRef<CSeq_feat>>& cdregions,
-        list<SRegionIterators>& region_its,
-        CScope* pScope,
-        multimap<CConstRef<CSeq_id>,CRef<CSeq_feat>>& mapped_regions)
+static void 
+s_GatherRegionIterators(
+    list<CRef<CSeq_annot>>& annots,
+    TAnnotItList& annot_its,
+    TRegionItList& region_its)
 {
+    annot_its.clear();
+    region_its.clear();
 
-    mapped_regions.clear();
-
-    for (auto its : region_its) {
-        auto& ftable = (*its.annot_it)->SetData().SetFtable();
-        for (auto region_it : its.feat_its) {
-    
-            auto pRegion = *region_it;
-            auto cdregion_it = cdregions.begin();
-            while (cdregion_it != cdregions.end()) {
-                auto pCdregion = *cdregion_it;
-                
-                const auto cdsStrand = 
-                    pCdregion->GetLocation().GetStrand();
-                const auto regionStrand = 
-                    pRegion->GetLocation().GetStrand();
-
-                if (cdsStrand != regionStrand &&
-                    cdsStrand != eNa_strand_both &&
-                    regionStrand != eNa_strand_both) {
-                    continue;
+    for (auto annot_it = begin(annots);
+              annot_it != end(annots);
+              ++annot_it) {
+        auto& annot = **annot_it;
+        if (annot.IsFtable()) {
+            auto& ftable = annot.SetData().SetFtable();
+            bool hasRegions = false;
+            for (auto feat_it = begin(ftable); feat_it != end(ftable); ++feat_it) {
+                const auto& pFeat = *feat_it;
+                if (pFeat->IsSetData() &&
+                    pFeat->GetData().IsRegion()) {
+                    region_its.emplace_back(ftable, feat_it);
+                    hasRegions=true;
                 }
-                // Can do better than this
-                // Sort the features so that I don't have to compare every 
-                // region to every cdregion.
-                if (sequence::Compare(
-                            pCdregion->GetLocation(), 
-                            pRegion->GetLocation(), 
-                            pScope, 
-                            sequence::fCompareOverlapping)
-                            == sequence::eContains) {
-                    CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
-                    auto pMappedLoc = mapper.Map(pRegion->GetLocation());
-                    pMappedLoc->ResetStrand();
-
-                    if (pMappedLoc) {
-                        pRegion->SetLocation().Assign(*pMappedLoc);
-                        auto pId = s_GetIdFromLocation(pRegion->GetLocation());
-                        if (pId) {
-                            mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
-                            ftable.erase(region_it);
-                        }
-                    }
-                    break;
-                }
-                ++cdregion_it;
+            }
+            if (hasRegions) {
+                annot_its.push_back(annot_it);
             }
         }
     }
+}
 
+
+
+
+static void s_MapRegionsToProduct(
+        const list<CRef<CSeq_feat>>& cdregions,
+        TRegionItList& region_its,
+        CScope* pScope,
+        multimap<CConstRef<CSeq_id>,CRef<CSeq_feat>>& mapped_regions)
+{
+    if (cdregions.empty() ||
+        region_its.empty()) {
+        return;
+    }
+
+    auto sorted_cdregions = cdregions; // sort the regions
+
+
+    for (auto region_it : region_its) {
+        auto pRegion = *(region_it.it);
+        const auto& regionLoc = pRegion->GetLocation();
+        auto regionStart = regionLoc.GetStart(eExtreme_Positional);
+        auto cdregion_it = sorted_cdregions.begin();
+        while (cdregion_it != sorted_cdregions.end()) {
+            auto pCdregion = *cdregion_it;
+         
+            const auto& cdsLoc = pCdregion->GetLocation();
+            if ((cdsLoc.GetStop(eExtreme_Positional) < regionStart) &&
+                 cdsLoc.GetStart(eExtreme_Positional) <= cdsLoc.GetStop(eExtreme_Positional)) { // only need to test this if the DNA is circular
+                cdregion_it = sorted_cdregions.erase(cdregion_it);
+                continue;
+            }
+
+
+            // Can do better than this
+            // Sort the features so that I don't have to compare every 
+            // region to every cdregion.
+            if (sequence::Compare(
+                        pCdregion->GetLocation(), 
+                        pRegion->GetLocation(), 
+                        pScope, 
+                        sequence::fCompareOverlapping)
+                    == sequence::eContains) {
+                CSeq_loc_Mapper mapper(*pCdregion, CSeq_loc_Mapper::eLocationToProduct, pScope);
+                auto pMappedLoc = mapper.Map(pRegion->GetLocation());
+                pMappedLoc->ResetStrand();
+
+                if (pMappedLoc) {
+                    pRegion->SetLocation().Assign(*pMappedLoc);
+                    auto pId = s_GetIdFromLocation(pRegion->GetLocation());
+                    if (pId) {
+                        mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
+                        region_it.parentTable.erase(region_it.it);
+                    }
+                }
+                break;
+            }
+            ++cdregion_it;
+        }
+    }
 }
 
 
@@ -2020,9 +2045,8 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
     auto& bioseq_set = seq_entry.SetSet();
 
-    _ASSERT(bioseq_set.IsSetClass());
-
-    if (bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
+    if (!bioseq_set.IsSetClass() || 
+        bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
         if (bioseq_set.IsSetSeq_set()) {
             for (auto pEntry : bioseq_set.SetSeq_set()) {
                 if (pEntry) {
@@ -2043,7 +2067,10 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
     // Gather region features
     CRef<CBioseq> pNucSeq;
-    list<SRegionIterators> region_its;
+    //list<SRegionIterators> region_its;
+    TAnnotItList annot_its;
+  //  TRegionItList region_its;
+    SRegionIts region_its;
 
     for (auto pSubEntry : bioseq_set.SetSeq_set()) {
         _ASSERT(pSubEntry->IsSeq());
@@ -2053,7 +2080,8 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
                 return;
             }
             pNucSeq = CRef<CBioseq>(&seq);
-            s_GatherRegionIterators(seq.SetAnnot(), region_its);
+            //s_GatherRegionIterators(seq.SetAnnot(), region_its);
+            s_GatherRegionIterators(seq.SetAnnot(), annot_its, region_its);
         }
     }
 
@@ -2064,43 +2092,64 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
 
     // Gather coding region annotations
-    list<CRef<CSeq_feat>> cdregions;
+    list<CRef<CSeq_feat>> sense_cdregions;
+    list<CRef<CSeq_feat>> antisense_cdregions;
+
     for (auto pAnnot : bioseq_set.GetAnnot()) {
         if (pAnnot->IsFtable()) {
             for (auto pFeat : pAnnot->GetData().GetFtable()) {
                 if (pFeat->IsSetData() &&
                     pFeat->GetData().IsCdregion() &&
                     pFeat->IsSetProduct()) { 
-                    cdregions.push_back(pFeat);
+
+                    if (pFeat->GetLocation().GetStrand() == eNa_strand_plus) {
+                        sense_cdregions.push_back(pFeat);
+                    }
+                    else 
+                    if (pFeat->GetLocation().GetStrand() == eNa_strand_minus) {
+                        antisense_cdregions.push_back(pFeat);
+                    }
                 }
             }
         }
     }
-    if (cdregions.empty()) {
+    if (sense_cdregions.empty() &&
+        antisense_cdregions.empty()) {
         return;
     }
 
-    auto compareLocations = [](const CRef<CSeq_feat>& lhs,
-                                const CRef<CSeq_feat>& rhs) {
-        return lhs->Compare(*rhs)<0;
-    };
+    auto cdsComparison = 
+        [](const CRef<CSeq_feat>& lhs,
+           const CRef<CSeq_feat>& rhs) {
+            return (lhs->GetLocation().GetStop(eExtreme_Positional) 
+                  < rhs->GetLocation().GetStop(eExtreme_Positional));
+        };
 
-    cdregions.sort(compareLocations);
+    auto regionComparison = 
+        [](const SRegionIt& lhs, 
+           const SRegionIt& rhs) {
+           return ((*lhs.it)->GetLocation().GetStart(eExtreme_Positional)
+               <   (*rhs.it)->GetLocation().GetStart(eExtreme_Positional));
+        };
+
+    sense_cdregions.sort(cdsComparison);
+    antisense_cdregions.sort(cdsComparison);
+
+    region_its.sense_regions.sort(regionComparison);
+    region_its.antisense_regions.sort(regionComparison);
 
     multimap<CConstRef<CSeq_id>, CRef<CSeq_feat>> mapped_regions;
-    s_MapRegionsToProduct(cdregions, region_its, pScope, mapped_regions);
+    s_MapRegionsToProduct(sense_cdregions, region_its.sense_regions, pScope, mapped_regions);
+    s_MapRegionsToProduct(antisense_cdregions, region_its.antisense_regions, pScope, mapped_regions);
 
-    
-
-    for (auto its : region_its) {
-        if ((*its.annot_it)->GetData().GetFtable().empty()) {
-            pNucSeq->SetAnnot().erase(its.annot_it);
+    for (auto annot_it : annot_its) {
+        if ((*annot_it)->GetData().GetFtable().empty()) {
+            pNucSeq->SetAnnot().erase(annot_it);
         }
     } 
     if (pNucSeq->GetAnnot().empty()) {
         pNucSeq->ResetAnnot();
     }
-
 
 
     // Iterate over bioseqs 
