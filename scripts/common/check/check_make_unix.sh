@@ -416,7 +416,7 @@ case " \$FEATURES " in
 esac
 
 # Check on linkerd and set backup
-if echo test | nc -w 1 linkerd 4142
+if echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
 then
    NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
    export NCBI_CONFIG__ID2SNP__PTIS_NAME
@@ -459,11 +459,16 @@ if test -n "\$NCBI_AUTOMATED_BUILD"; then
    fi
 fi
 
-# Check for ncbi_applog
+# Check for some executables
 have_ncbi_applog=false
 if (ncbi_applog generate) >/dev/null 2>&1; then
    have_ncbi_applog=true
 fi
+have_uptime=false
+if (which uptime) >/dev/null 2>&1; then
+   have_uptime=true
+fi
+
 
 #//////////////////////////////////////////////////////////////////////////
 
@@ -688,7 +693,11 @@ EOF_launch
                 \$launch_sh >\$x_log 2>&1
                 result=\$?
                 stop_time="\`date +'$x_date_format'\`"
-                load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+                if \${have_uptime}; then
+                    load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+                else
+                    load_avg="unavailable"
+                fi
                 rm \$launch_sh
 
                 LC_ALL=C sed -e '/ ["][$][@]["].*\$/ {

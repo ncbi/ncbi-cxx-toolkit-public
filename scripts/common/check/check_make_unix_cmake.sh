@@ -197,18 +197,6 @@ res_list="\${checkroot}/${x_out_name}.list"
 res_log="\${checkdir}/${x_out_name}.out"
 res_concat_err="\${checkdir}/${x_out_name}.out_err"
 
-which uptime > /dev/null 2>&1
-if test \$? -eq 0; then
-  have_uptime=true
-else
-  have_uptime=false
-fi
-which nc > /dev/null 2>&1
-if test \$? -eq 0; then
-  have_nc=true
-else
-  have_nc=false
-fi
 # Define both senses to accommodate shells lacking !
 is_run=false
 no_run=true
@@ -451,12 +439,10 @@ case " \$FEATURES " in
 esac
 
 # Check on linkerd and set backup
-if \${have_nc}; then
-if echo test | nc -w 1 linkerd 4142
+if echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
 then
    NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
    export NCBI_CONFIG__ID2SNP__PTIS_NAME
-fi
 fi
 
 EOF
@@ -495,11 +481,16 @@ if test -n "\$NCBI_AUTOMATED_BUILD"; then
    fi
 fi
 
-# Check for ncbi_applog
+# Check for some executables
 have_ncbi_applog=false
 if (ncbi_applog generate) >/dev/null 2>&1; then
    have_ncbi_applog=true
 fi
+have_uptime=false
+if (which uptime) >/dev/null 2>&1; then
+   have_uptime=true
+fi
+
 
 #//////////////////////////////////////////////////////////////////////////
 

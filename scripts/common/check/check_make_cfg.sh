@@ -336,7 +336,7 @@ BOOST_TEST_CATCH_SYSTEM_ERRORS=no
 export BOOST_TEST_CATCH_SYSTEM_ERRORS
 
 # Check on linkerd and set backup
-if echo test | nc -w 1 linkerd 4142
+if echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
 then
    NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
    export NCBI_CONFIG__ID2SNP__PTIS_NAME
@@ -531,8 +531,11 @@ RunTest() {
            \$check_exec $x_time \`eval echo \$xx_run\` > \$x_test_out.\$\$ 2>&1
            result=\$?
            stop_time="\`date +'$x_date_format'\`"
-           load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
-
+           if \${have_uptime}; then
+              load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+           else
+              load_avg="unavailable"
+           fi
            sed -e '/ ["][$][@]["].*\$/ {
                s/^.*: //
                s/ ["][$][@]["].*$//
