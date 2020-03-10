@@ -2547,6 +2547,43 @@ bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse)
 }
 
 
+typedef pair<size_t, bool> TRNALength;
+typedef map<string, TRNALength > TRNALengthMap;
+
+static const TRNALengthMap kTrnaLengthMap{
+    { "16S", { 1000, false } },
+    { "18S", { 1000, false } },
+    { "23S", { 2000, false } },
+    { "25S", { 1000, false } },
+    { "26S", { 1000, false } },
+    { "28S", { 3300, false } },
+    { "small", { 1000, false } },
+    { "large", { 1000, false } },
+    { "5.8S", { 130, true } },
+    { "5S", { 90, true } }
+    // possible problem: if it matches /25S/ it would also match /5S/
+    // luckily, if it fails the /5S/ rule it would fail the /25S/ rule
+};
+
+
+static bool s_CleanupIsShortrRNA(const CSeq_feat& f, CScope* scope) // used in feature_tests.cpp
+{
+    if (f.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
+        return false;
+    }
+    bool is_bad = false;
+    size_t len = sequence::GetLength(f.GetLocation(), scope);
+    string rrna_name = f.GetData().GetRna().GetRnaProductName();
+    ITERATE (TRNALengthMap, it, kTrnaLengthMap) {
+        SIZE_TYPE pos = NStr::FindNoCase(rrna_name, it->first);
+        if (pos != string::npos && len < it->second.first && !(it->second.second && f.IsSetPartial() && f.GetPartial()) ) {
+            is_bad = true;
+            break;
+        }
+    }
+    return is_bad;
+}
+
 bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options)
 {
     bool any_changes = false;
@@ -2677,6 +2714,44 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
             gene_h.Replace(*new_gene);
             any_changes = true;
         }
+    }
+
+    for (CFeat_CI rna_it(entry, SAnnotSelector(CSeqFeatData::e_Rna)); rna_it; ++rna_it) {
+
+        const CSeq_feat& rna_feat = *(rna_it->GetSeq_feat());
+        if (rna_feat.IsSetData() && rna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && !rna_feat.IsSetPartial() && s_CleanupIsShortrRNA(rna_feat, &(entry.GetScope()))) {
+
+            bool change_this_rrna = false;
+            CRef<CSeq_feat> new_rrna(new CSeq_feat());
+            new_rrna->Assign(*(rna_it->GetSeq_feat()));
+
+            const CSeq_loc& loc = rna_feat.GetLocation();
+            if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+              if (loc.GetStart(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
+                    new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
+                    change_this_rrna = true;
+                }
+                if (loc.GetStop(eExtreme_Biological) < 1) {
+                    new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
+                    change_this_rrna = true;
+                }
+            } else {
+                if (loc.GetStart(eExtreme_Biological) < 1) {
+                    new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
+                    change_this_rrna = true;
+                }
+                if (loc.GetStop(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
+                    new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
+                    change_this_rrna = true;
+                }
+            }
+
+            if (change_this_rrna) {
+                CSeq_feat_EditHandle rrna_h(*rna_it);
+                rrna_h.Replace(*new_rrna);
+                any_changes = true;
+            }
+       }
     }
 
     NormalizeDescriptorOrder(entry);
