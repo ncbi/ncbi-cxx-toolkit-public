@@ -25,7 +25,7 @@ if(NOT DEFINED NCBI_EXPERIMENTAL)
     if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
         set(NCBI_EXPERIMENTAL ON)
     else()
-        set(NCBI_EXPERIMENTAL OFF)
+        set(NCBI_EXPERIMENTAL ON)
     endif()
 endif()
 
