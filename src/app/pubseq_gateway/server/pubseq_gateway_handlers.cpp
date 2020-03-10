@@ -102,28 +102,49 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    try {
-        // Reply should use PSG protocol
-        resp.SetContentType(ePSGMime);
+    if (req.GetPath() == "/") {
+        // Special case: no path at all so provide a help message
+        try {
+            resp.SetContentType(eJsonMime);
+            resp.SetContentLength(m_HelpMessage.length());
+            resp.SendOk(m_HelpMessage.c_str(), m_HelpMessage.length(), false);
+            x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+        } catch (const exception &  exc) {
+            string      msg = "Exception when handling no path URL event: " +
+                              string(exc.what());
+            resp.SetContentType(ePlainTextMime);
+            resp.Send500("Internal Server Error", msg.c_str());
+            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+        } catch (...) {
+            resp.SetContentType(ePlainTextMime);
+            resp.Send500("Internal Server Error",
+                         "Unknown exception when handling no path URL event");
+            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+        }
+    } else {
+        try {
+            // Reply should use PSG protocol
+            resp.SetContentType(ePSGMime);
 
-        m_ErrorCounters.IncBadUrlPath();
-        x_SendMessageAndCompletionChunks(resp, kBadUrlMessage,
-                                         CRequestStatus::e400_BadRequest, eBadURL,
-                                         eDiag_Error);
+            m_ErrorCounters.IncBadUrlPath();
+            x_SendMessageAndCompletionChunks(resp, kBadUrlMessage,
+                                             CRequestStatus::e400_BadRequest, eBadURL,
+                                             eDiag_Error);
 
-        PSG_WARNING(kBadUrlMessage);
-        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
-    } catch (const exception &  exc) {
-        string      msg = "Exception when handling a bad URL event: " +
-                          string(exc.what());
-        resp.SetContentType(ePlainTextMime);
-        resp.Send500("Internal Server Error", msg.c_str());
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
-    } catch (...) {
-        resp.SetContentType(ePlainTextMime);
-        resp.Send500("Internal Server Error",
-                     "Unknown exception when handling a bad URL event");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+            PSG_WARNING(kBadUrlMessage);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        } catch (const exception &  exc) {
+            string      msg = "Exception when handling a bad URL event: " +
+                              string(exc.what());
+            resp.SetContentType(ePlainTextMime);
+            resp.Send500("Internal Server Error", msg.c_str());
+            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+        } catch (...) {
+            resp.SetContentType(ePlainTextMime);
+            resp.Send500("Internal Server Error",
+                         "Unknown exception when handling a bad URL event");
+            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+        }
     }
     return 0;
 }

@@ -332,6 +332,9 @@ private:
 
     EStartupDataState                   m_StartupDataState;
 
+    // Serialized JSON introspection message
+    string                              m_HelpMessage;
+
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;
 };

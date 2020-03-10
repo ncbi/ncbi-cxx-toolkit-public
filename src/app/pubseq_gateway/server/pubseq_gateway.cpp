@@ -51,6 +51,7 @@
 #include "pubseq_gateway_logging.hpp"
 #include "shutdown_data.hpp"
 #include "cass_monitor.hpp"
+#include "introspection.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -127,6 +128,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_StartupDataState(eNoCassConnection)
 {
     sm_PubseqApp = this;
+    m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
 }
 
 
