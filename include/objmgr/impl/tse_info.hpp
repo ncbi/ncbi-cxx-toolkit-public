@@ -427,44 +427,58 @@ public:
     void x_AddFeaturesById(TAnnotObjects& objects,
                            const SFeatIdIndex& index,
                            TFeatIdInt id,
-                           EFeatIdType id_type) const;
+                           EFeatIdType id_type,
+                           const CSeq_annot_Info* src_annot = 0) const;
     void x_AddFeaturesById(TAnnotObjects& objects,
                            CSeqFeatData::ESubtype subtype,
                            TFeatIdInt id,
-                           EFeatIdType id_type) const;
+                           EFeatIdType id_type,
+                           const CSeq_annot_Info* src_annot = 0) const;
     void x_AddAllFeaturesById(TAnnotObjects& objects,
                               TFeatIdInt id,
-                              EFeatIdType id_type) const;
+                              EFeatIdType id_type,
+                              const CSeq_annot_Info* src_annot = 0) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
                                     TFeatIdInt id,
-                                    EFeatIdType id_type) const;
+                                    EFeatIdType id_type,
+                                    const CSeq_annot_Info* src_annot = 0) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                                     TFeatIdInt id,
-                                    EFeatIdType id_type) const;
+                                    EFeatIdType id_type,
+                                    const CSeq_annot_Info* src_annot = 0) const;
     void x_AddFeaturesById(TAnnotObjects& objects,
                            const SFeatIdIndex& index,
                            const TFeatIdStr& id,
-                           EFeatIdType id_type) const;
+                           EFeatIdType id_type,
+                           const CSeq_annot_Info* src_annot = 0) const;
     void x_AddFeaturesById(TAnnotObjects& objects,
                            CSeqFeatData::ESubtype subtype,
                            const TFeatIdStr& id,
-                           EFeatIdType id_type) const;
+                           EFeatIdType id_type,
+                           const CSeq_annot_Info* src_annot = 0) const;
     void x_AddAllFeaturesById(TAnnotObjects& objects,
                               const TFeatIdStr& id,
-                              EFeatIdType id_type) const;
+                              EFeatIdType id_type,
+                              const CSeq_annot_Info* src_annot = 0) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
                                     const TFeatIdStr& id,
-                                    EFeatIdType id_type) const;
+                                    EFeatIdType id_type,
+                                    const CSeq_annot_Info* src_annot = 0) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                                     const TFeatIdStr& id,
-                                    EFeatIdType id_type) const;
+                                    EFeatIdType id_type,
+                                    const CSeq_annot_Info* src_annot = 0) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
                                     const TFeatId& id,
-                                    EFeatIdType id_type) const;
+                                    EFeatIdType id_type,
+                                    const CSeq_annot_Info* src_annot = 0) const;
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                                     const TFeatId& id,
-                                    EFeatIdType id_type) const;
-    TAnnotObjects x_GetFeaturesByLocus(const string& locus, bool tag) const;
+                                    EFeatIdType id_type,
+                                    const CSeq_annot_Info* src_annot = 0) const;
+    TAnnotObjects x_GetFeaturesByLocus(const string& locus,
+                                       bool tag,
+                                       const CSeq_annot_Info* src_annot = 0) const;
 
     typedef pair<CConstRef<CSeq_annot_Info>, CTSE_Lock> TSeq_annot_Lock;
     typedef pair<TSeq_annot_Lock, int> TSeq_feat_Lock;

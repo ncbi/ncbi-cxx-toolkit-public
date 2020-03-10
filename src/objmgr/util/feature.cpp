@@ -1518,13 +1518,13 @@ namespace {
                 if ( id.IsLocal() ) {
                     if ( const CSeqFeatData::ESubtype* type_ptr = link.GetMultiParentTypes() ) {
                         for ( ; *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
-                            if ( CSeq_feat_Handle feat1 = tse.GetFeatureWithId(*type_ptr, id.GetLocal()) ) {
+                            if ( CSeq_feat_Handle feat1 = tse.GetFeatureWithId(*type_ptr, id.GetLocal(), feat) ) {
                                 return feat1;
                             }
                         }
                     }
                     else {
-                        if ( CSeq_feat_Handle feat1 = tse.GetFeatureWithId(link.m_ParentType, id.GetLocal()) ) {
+                        if ( CSeq_feat_Handle feat1 = tse.GetFeatureWithId(link.m_ParentType, id.GetLocal(), feat) ) {
                             return feat1;
                         }
                     }
@@ -1534,7 +1534,7 @@ namespace {
                  xref.IsSetData() ) {
                 const CSeqFeatData& data = xref.GetData();
                 if ( data.IsGene() ) {
-                    CSeq_feat_Handle feat1 = tse.GetGeneByRef(data.GetGene());
+                    CSeq_feat_Handle feat1 = tse.GetGeneByRef(data.GetGene(), feat);
                     if ( feat1 ) {
                         return feat1;
                     }
@@ -2115,7 +2115,7 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
             continue;
         }
         vector<CSeq_feat_Handle> ff =
-            tse.GetFeaturesWithId(parent_type, id.GetLocal());
+            tse.GetFeaturesWithId(parent_type, id.GetLocal(), info.m_Feat);
         ITERATE ( vector<CSeq_feat_Handle>, fit, ff ) {
             CFeatInfo* parent = x_FindInfo(*fit);
             if ( !parent ) {
@@ -2144,7 +2144,7 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
                 const CSeqFeatData& data = xref.GetData();
                 if ( data.IsGene() ) {
                     vector<CSeq_feat_Handle> ff =
-                        tse.GetGenesByRef(data.GetGene());
+                        tse.GetGenesByRef(data.GetGene(), info.m_Feat);
                     ITERATE ( vector<CSeq_feat_Handle>, fit, ff ) {
                         CFeatInfo* gene = x_FindInfo(*fit);
                         if ( gene ) {

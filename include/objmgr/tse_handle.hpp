@@ -57,6 +57,7 @@ class CSeq_id;
 class CSeq_id_Handle;
 class CBlobIdKey;
 class CDataLoader;
+class CSeq_annot_Handle;
 class CSeq_feat_Handle;
 class CAnnotObject_Info;
 class CObject_id;
@@ -196,6 +197,7 @@ public:
 
     /// Find features by CObject_id (string or integer)
     typedef CObject_id TFeatureId;
+    // no context
     TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
                                         const TFeatureId& id) const;
     TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
@@ -208,11 +210,74 @@ public:
                                       const TFeatureId& id) const;
     CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
                                       const TFeatureId& id) const;
+    // Seq-annot context
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                                        const TFeatureId& id,
+                                        const CSeq_annot_Handle& src_annot) const;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                                        const TFeatureId& id,
+                                        const CSeq_annot_Handle& src_annot) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                          const TFeatureId& id,
+                                          const CSeq_annot_Handle& src_annot) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                          const TFeatureId& id,
+                                          const CSeq_annot_Handle& src_annot) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                      const TFeatureId& id,
+                                      const CSeq_annot_Handle& src_annot) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                      const TFeatureId& id,
+                                      const CSeq_annot_Handle& src_annot) const;
+    // Seq-feat context
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                                        const TFeatureId& id,
+                                        const CSeq_feat_Handle& src) const;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                                        const TFeatureId& id,
+                                        const CSeq_feat_Handle& src) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                          const TFeatureId& id,
+                                          const CSeq_feat_Handle& src) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                          const TFeatureId& id,
+                                          const CSeq_feat_Handle& src) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                      const TFeatureId& id,
+                                      const CSeq_feat_Handle& src) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                      const TFeatureId& id,
+                                      const CSeq_feat_Handle& src) const;
 
+
+    /// Find genes by locus, locus tag, or Gene-ref
+    // no context
     CSeq_feat_Handle GetGeneWithLocus(const string& locus, bool tag) const;
     TSeq_feat_Handles GetGenesWithLocus(const string& locus, bool tag) const;
     CSeq_feat_Handle GetGeneByRef(const CGene_ref& ref) const;
     TSeq_feat_Handles GetGenesByRef(const CGene_ref& ref) const;
+    // Seq-annot context
+    CSeq_feat_Handle GetGeneWithLocus(const string& locus,
+                                      bool tag,
+                                      const CSeq_annot_Handle& src_annot) const;
+    TSeq_feat_Handles GetGenesWithLocus(const string& locus,
+                                        bool tag,
+                                        const CSeq_annot_Handle& src_annot) const;
+    CSeq_feat_Handle GetGeneByRef(const CGene_ref& ref,
+                                  const CSeq_annot_Handle& src_annot) const;
+    TSeq_feat_Handles GetGenesByRef(const CGene_ref& ref,
+                                    const CSeq_annot_Handle& src_annot) const;
+    // Seq-feat context
+    CSeq_feat_Handle GetGeneWithLocus(const string& locus,
+                                      bool tag,
+                                      const CSeq_feat_Handle& src) const;
+    TSeq_feat_Handles GetGenesWithLocus(const string& locus,
+                                        bool tag,
+                                        const CSeq_feat_Handle& src) const;
+    CSeq_feat_Handle GetGeneByRef(const CGene_ref& ref,
+                                  const CSeq_feat_Handle& src) const;
+    TSeq_feat_Handles GetGenesByRef(const CGene_ref& ref,
+                                    const CSeq_feat_Handle& src) const;
 
     void Swap(CTSE_Handle& tse);
 

@@ -92,6 +92,8 @@ public:
     const CSeq_entry_Info& GetParentSeq_entry_Info(void) const;
     CSeq_entry_Info& GetParentSeq_entry_Info(void);
 
+    const CSeq_entry_Info& GetXrefTSE(void) const;
+
     typedef CSeq_annot TObject;
     CConstRef<TObject> GetCompleteSeq_annot(void) const;
     CConstRef<TObject> GetSeq_annotCore(void) const;

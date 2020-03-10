@@ -127,6 +127,12 @@ CSeq_entry_Info& CSeq_annot_Info::GetParentSeq_entry_Info(void)
 }
 
 
+const CSeq_entry_Info& CSeq_annot_Info::GetXrefTSE() const
+{
+    return GetParentSeq_entry_Info().GetXrefTSE();
+}
+
+
 void CSeq_annot_Info::x_ParentAttach(CBioseq_Base_Info& parent)
 {
     x_BaseParentAttach(parent);

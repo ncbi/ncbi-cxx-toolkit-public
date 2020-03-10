@@ -124,6 +124,43 @@ void CSeq_entry_Info::x_CheckWhich(E_Choice which) const
 }
 
 
+const CSeq_entry_Info& CSeq_entry_Info::GetXrefTSE() const
+{
+    if ( !HasParent_Info() ) {
+        return *this;
+    }
+    const CBioseq_set_Info* bss = 0;
+    if ( IsSet() ) {
+        bss = &GetSet();
+    }
+    else if ( HasParent_Info() ) {
+        bss = &GetParentBioseq_set_Info();
+    }
+    else {
+        return *this;
+    }
+    if ( bss->GetClass() == CBioseq_set::eClass_parts ) {
+        const CSeq_entry_Info& parent = bss->GetParentSeq_entry_Info();
+        if ( parent.HasParent_Info() ) {
+            bss = &parent.GetParentBioseq_set_Info();
+        }
+        else {
+            return parent;
+        }
+    }
+    if ( bss->GetClass() == CBioseq_set::eClass_segset ) {
+        const CSeq_entry_Info& parent = bss->GetParentSeq_entry_Info();
+        if ( parent.HasParent_Info() ) {
+            bss = &parent.GetParentBioseq_set_Info();
+        }
+        else {
+            return parent;
+        }
+    }
+    return bss->GetParentSeq_entry_Info();
+}
+
+
 const CBioseq_Info& CSeq_entry_Info::GetSeq(void) const
 {
     x_CheckWhich(CSeq_entry::e_Seq);

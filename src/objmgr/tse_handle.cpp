@@ -714,6 +714,112 @@ CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
 }
 
 
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                               const TFeatureId& id,
+                               const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id, src_annot_info));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                               const TFeatureId& id,
+                               const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id, src_annot_info));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                 const TFeatureId& id,
+                                 const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_xref, src_annot_info));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                 const TFeatureId& id,
+                                 const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_xref, src_annot_info));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                               const TFeatureId& id,
+                                               const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id, src_annot_info));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                               const TFeatureId& id,
+                                               const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id, src_annot_info));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                                                              const TFeatureId& id,
+                                                              const CSeq_feat_Handle& src) const
+{
+    return GetFeaturesWithId(type, id, src.GetAnnot());
+}
+
+
+CTSE_Handle::TSeq_feat_Handles CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                                                              const TFeatureId& id,
+                                                              const CSeq_feat_Handle& src) const
+{
+    return GetFeaturesWithId(subtype, id, src.GetAnnot());
+}
+
+
+CTSE_Handle::TSeq_feat_Handles CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                                                const TFeatureId& id,
+                                                                const CSeq_feat_Handle& src) const
+{
+    return GetFeaturesWithXref(type, id, src.GetAnnot());
+}
+
+
+CTSE_Handle::TSeq_feat_Handles CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                                                const TFeatureId& id,
+                                                                const CSeq_feat_Handle& src) const
+{
+    return GetFeaturesWithXref(subtype, id, src.GetAnnot());
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                               const TFeatureId& id,
+                                               const CSeq_feat_Handle& src) const
+{
+    return GetFeatureWithId(type, id, src.GetAnnot());
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                               const TFeatureId& id,
+                                               const CSeq_feat_Handle& src) const
+{
+    return GetFeatureWithId(subtype, id, src.GetAnnot());
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // gene id support
 CSeq_feat_Handle CTSE_Handle::GetGeneWithLocus(const string& locus,
@@ -728,6 +834,25 @@ CTSE_Handle::GetGenesWithLocus(const string& locus,
                                bool tag) const
 {
     return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesByLocus(locus, tag));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetGeneWithLocus(const string& locus,
+                                               bool tag,
+                                               const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesByLocus(locus, tag, src_annot_info));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetGenesWithLocus(const string& locus,
+                               bool tag,
+                               const CSeq_annot_Handle& src_annot) const
+{
+    const CSeq_annot_Info* src_annot_info = src_annot? &src_annot.x_GetInfo(): 0;
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesByLocus(locus, tag, src_annot_info));
 }
 
 
@@ -756,6 +881,66 @@ CTSE_Handle::GetGenesByRef(const CGene_ref& ref) const
         ret.insert(ret.end(), hh.begin(), hh.end());
     }
     return ret;
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetGeneByRef(const CGene_ref& ref,
+                                           const CSeq_annot_Handle& src_annot) const
+{
+    CSeq_feat_Handle feat;
+    if ( ref.IsSetLocus_tag() ) {
+        feat = GetGeneWithLocus(ref.GetLocus_tag(), true);
+    }
+    if ( !feat && ref.IsSetLocus() ) {
+        feat = GetGeneWithLocus(ref.GetLocus(), false);
+    }
+    return feat;
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetGenesByRef(const CGene_ref& ref,
+                           const CSeq_annot_Handle& src_annot) const
+{
+    TSeq_feat_Handles ret;
+    if ( ref.IsSetLocus_tag() ) {
+        GetGenesWithLocus(ref.GetLocus_tag(), true, src_annot).swap(ret);
+    }
+    if ( ref.IsSetLocus() ) {
+        TSeq_feat_Handles hh = GetGenesWithLocus(ref.GetLocus(), false, src_annot);
+        ret.insert(ret.end(), hh.begin(), hh.end());
+    }
+    return ret;
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetGeneWithLocus(const string& locus,
+                                               bool tag,
+                                               const CSeq_feat_Handle& src) const
+{
+    return GetGeneWithLocus(locus, tag, src.GetAnnot());
+}
+
+
+CTSE_Handle::TSeq_feat_Handles CTSE_Handle::GetGenesWithLocus(const string& locus,
+                                                              bool tag,
+                                                              const CSeq_feat_Handle& src) const
+{
+    return GetGenesWithLocus(locus, tag, src.GetAnnot());
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetGeneByRef(const CGene_ref& ref,
+                                           const CSeq_feat_Handle& src) const
+{
+    return GetGeneByRef(ref, src.GetAnnot());
+}
+
+
+CTSE_Handle::TSeq_feat_Handles CTSE_Handle::GetGenesByRef(const CGene_ref& ref,
+                                                          const CSeq_feat_Handle& src) const
+{
+    return GetGenesByRef(ref, src.GetAnnot());
 }
 
 
