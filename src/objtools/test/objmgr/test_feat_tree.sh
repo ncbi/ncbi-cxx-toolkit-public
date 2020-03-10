@@ -43,12 +43,23 @@ do_test() {
 
 d="$base/data"
 r="$base/res"
+x="$base/data3"
 for f in `cd "$d"; ls`; do
+    if test -f "$x/$f"; then
+	echo "Skipping test $d/$f replaced with $x/$f"
+	continue
+    fi
     do_test "$f" "$d" "$r"
 done
 
 d="$base/data2"
 r="$base/res2"
+for f in `cd "$d"; ls`; do
+    do_test "$f" "$d" "$r"
+done
+
+d="$base/data3"
+r="$base/res3"
 for f in `cd "$d"; ls`; do
     do_test "$f" "$d" "$r"
 done
