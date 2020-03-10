@@ -159,23 +159,6 @@ PrintDiffList(
     ostr << endl;
 }
 
-#define DEBUG_DATA false
-//  ----------------------------------------------------------------------------
-void
-SaveBiosample(
-    const string& filename,
-    const CBioSource& bioSource)
-//  -----------------------------------------------------------------------------
-{
-    if (!DEBUG_DATA) {
-        return;
-    }
-    CNcbiOfstream ostr(filename);
-    MSerial_Format_AsnText asnText;
-    ostr << asnText << bioSource;
-    ostr.close();
-}
-
 //  ----------------------------------------------------------------------------
 CRef<CSeq_descr>
 LoadBioSampleFromAcc(
@@ -185,16 +168,6 @@ LoadBioSampleFromAcc(
     CRef<CSeq_descr> pSeqDescrs = biosample_util::GetBiosampleData(
         bioSampleAcc, false, nullptr);
     return pSeqDescrs;
-}
-
-
-//  ----------------------------------------------------------------------------
-void DumpBioSample(
-    CNcbiOstream& ostr,
-    const CSeq_descr& bioSample)
-//  ----------------------------------------------------------------------------
-{
-    ostr << MSerial_Format_AsnText() << bioSample;
 }
 
 
@@ -239,27 +212,24 @@ LoadBioSampleFromFile(
 
 
 //  ----------------------------------------------------------------------------
-void CompareBioSampleAccessionToDescriptors(
+int CompareBioSampleAccessionToDescriptors(
     const string& bioSampleAcc,
     CRef<CSeq_descr> pDescriptorSet)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_descr> pBioSample = LoadBioSampleFromAcc(bioSampleAcc);
     if (!pBioSample) {
-        return;
+        cerr << "Differ: Unable to load biosample with given accession." << "\n";
+        return 1;
     }
-    {{
-        CNcbiOfstream sampleOut("biosample.asn1");
-        DumpBioSample(sampleOut, *pBioSample);
-        sampleOut.close();
-    }}
     TBiosampleFieldDiffList diffs;
     GenerateDiffListFromDescriptors(*pBioSample, *pDescriptorSet, diffs);
     PrintDiffList(bioSampleAcc, diffs, cout);
+    return 0;
 }
 
 //  ----------------------------------------------------------------------------
-void CompareBioSampleAccessionToBioSource(
+int CompareBioSampleAccessionToBioSource(
     const string& bioSampleAcc,
     const CBioSource& bioSource)
 //  ----------------------------------------------------------------------------
@@ -272,12 +242,12 @@ void CompareBioSampleAccessionToBioSource(
         bioSampleAcc, bioSource, sampleSource, diffs)) {
         PrintDiffList(bioSampleAcc, diffs, cout);
     }
-    
+    return 0;
 }
 
 
 //  ----------------------------------------------------------------------------
-void CompareBioSampleFileToDescriptors(
+int CompareBioSampleFileToDescriptors(
     const string& bioSampleFile,
     CRef<CSeq_descr> pDescriptorSet)
 //  ----------------------------------------------------------------------------
@@ -286,6 +256,7 @@ void CompareBioSampleFileToDescriptors(
     TBiosampleFieldDiffList diffs;
     GenerateDiffListFromDescriptors(*pBioSample, *pDescriptorSet, diffs);
     PrintDiffList("Source", diffs, cout);
+    return 0;
 }
 
 
@@ -320,11 +291,13 @@ public:
     virtual int  Run (void);
 
 private:
-    void xCompareSeqEntryAccession(
+    int xCompareSeqEntry(
+        const CRef<CSeq_entry>&);
+    int xCompareSeqEntryAccession(
         const string&);
-    void xCompareSeqEntryAccessionList(
+    int xCompareSeqEntryAccessionList(
         const string&);
-    void xCompareSeqEntryFile(
+    int xCompareSeqEntryFile(
         const string&);
 
     CRef<CSeq_entry> xLoadSeqEntry(
@@ -451,28 +424,23 @@ int CBsDiffApp::Run()
     }
 
     if (!seqEntryAcc.empty()) {
-        xCompareSeqEntryAccession(seqEntryAcc);
-        return 0;
+        return xCompareSeqEntryAccession(seqEntryAcc);
     }
 
     if (!seqEntryAccList.empty()) {
-        xCompareSeqEntryAccessionList(seqEntryAccList);
-        return 0;
+        return xCompareSeqEntryAccessionList(seqEntryAccList);
     }
 
     if (!seqEntryFile.empty()) {
-        xCompareSeqEntryFile(seqEntryFile);
-        return 0;
+        return xCompareSeqEntryFile(seqEntryFile);
     }
 
     CRef<CSeq_descr> pBioSource = LoadBioSource(bioSourceFile);
     if (!bioSampleAcc.empty()) {
-        CompareBioSampleAccessionToDescriptors(bioSampleAcc, pBioSource);
-        return 0;
+        return CompareBioSampleAccessionToDescriptors(bioSampleAcc, pBioSource);
     }
     if (!bioSampleFile.empty()) {
-        CompareBioSampleFileToDescriptors(bioSampleFile, pBioSource);
-        return 0;
+        return CompareBioSampleFileToDescriptors(bioSampleFile, pBioSource);
     }
     cerr << "Internal error: utility completed without doing anything." << endl;
     return 1;
@@ -502,7 +470,7 @@ CBsDiffApp::xLoadSeqEntry(
 
 
 //  ----------------------------------------------------------------------------
-void
+int
 CBsDiffApp::xCompareSeqEntryAccessionList(
     const string& filename)
 //  ----------------------------------------------------------------------------
@@ -514,15 +482,18 @@ CBsDiffApp::xCompareSeqEntryAccessionList(
         std::getline(ifstr, accession);
         if (!accession.empty()) {
             ++counter;
-            cout << "Processing accession \"" << accession << "\" (" 
+            cout << "Differ: Processing accession \"" << accession << "\" (" 
                  << counter << ") ---" << endl << endl;
-            xCompareSeqEntryAccession(accession);
+            if (!xCompareSeqEntryAccession(accession)) {
+                return 1;
+            }
         }
     }
+    return 0;
 }
 
 //  ----------------------------------------------------------------------------
-void
+int
 CBsDiffApp::xCompareSeqEntryFile(
     const string& seqEntryFile)
 //  ----------------------------------------------------------------------------
@@ -536,7 +507,8 @@ CBsDiffApp::xCompareSeqEntryFile(
     CObjectIStream* pI = CObjectIStream::Open( 
         serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     if (!pI) {
-        return;
+        cerr << "Differ: Unable to open input seq-entry file" << "\n";
+        return 1;
     }
     unique_ptr<CObjectIStream> pIs(pI);
     CRef<CSeq_entry> pSeqEntry(new CSeq_entry);
@@ -544,33 +516,14 @@ CBsDiffApp::xCompareSeqEntryFile(
         *pI >> *pSeqEntry;
     }
     catch (CException&) {
-        return;
+        cerr << "Differ: Unable to load input seq-entry from file" << "\n";
+        return 1;
     }
-    auto pBioSource = xGetBioSource(pSeqEntry);
-    if (!pBioSource) {
-        cerr << "Differ: Given sequence does not have a biosource." << endl;
-        exit(1);
-    }
-    SaveBiosample("biosample.asn1", *pBioSource);
-    auto bioSampleAccessions = xGetBioSampleAccs(pSeqEntry);
-    if (bioSampleAccessions.empty()) {
-        cerr << "Differ: Given sequence does not contain biosample links."
-                << endl;
-        exit(1);
-    }
-    CBioSource fusedSource;
-    TBiosampleFieldDiffList diffs;
-    for (auto bioSampleAcc: bioSampleAccessions) {
-        if (biosample_util::GenerateDiffListFromBioSource(
-                bioSampleAcc, *pBioSource, fusedSource, diffs)) {
-            PrintDiffList(bioSampleAcc, diffs, cout);
-            SaveBiosample("proposedSource.asn1", fusedSource);
-        }      
-    }
+    return xCompareSeqEntry(pSeqEntry);
 }
 
 //  ----------------------------------------------------------------------------
-void
+int
 CBsDiffApp::xCompareSeqEntryAccession(
     const string& accession)
 //  ----------------------------------------------------------------------------
@@ -582,19 +535,32 @@ CBsDiffApp::xCompareSeqEntryAccession(
     catch (CException&) {
         cerr << "Loader: Unable to retrieve seq_entry \"" << accession
                 << "\"." << endl;
-        exit(1);
+        return 1;
+    }
+    return xCompareSeqEntry(pSeqEntry);
+}
+
+
+//  ----------------------------------------------------------------------------
+int
+CBsDiffApp::xCompareSeqEntry(
+    const CRef<CSeq_entry>& pSeqEntry)
+//  ----------------------------------------------------------------------------
+{
+    if (!pSeqEntry) {
+        cerr << "Differ: Unable to load input seq-entry from file." << "\n";
+        return 1;
     }
     auto pBioSource = xGetBioSource(pSeqEntry);
     if (!pBioSource) {
         cerr << "Differ: Given sequence does not have a biosource." << endl;
-        exit(1);
+        return 1;
     }
-    SaveBiosample("biosample.asn1", *pBioSource);
     auto bioSampleAccessions = xGetBioSampleAccs(pSeqEntry);
     if (bioSampleAccessions.empty()) {
         cerr << "Differ: Given sequence does not contain biosample links."
                 << endl;
-        exit(1);
+        return 1;
     }
     CBioSource fusedSource;
     TBiosampleFieldDiffList diffs;
@@ -602,9 +568,9 @@ CBsDiffApp::xCompareSeqEntryAccession(
         if (biosample_util::GenerateDiffListFromBioSource(
                 bioSampleAcc, *pBioSource, fusedSource, diffs)) {
             PrintDiffList(bioSampleAcc, diffs, cout);
-            SaveBiosample("fusedsource.asn1", fusedSource);
         }      
     }
+    return 0;
 }
 
 
