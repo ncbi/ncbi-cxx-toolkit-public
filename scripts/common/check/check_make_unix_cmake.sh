@@ -439,8 +439,8 @@ case " \$FEATURES " in
 esac
 
 # Check on linkerd and set backup
-if echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
-then
+echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
+if test \$? -ne 0;  then
    NCBI_CONFIG__ID2SNP__PTIS_NAME="pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142"
    export NCBI_CONFIG__ID2SNP__PTIS_NAME
 fi
