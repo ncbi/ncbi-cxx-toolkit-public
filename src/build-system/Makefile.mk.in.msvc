@@ -13,6 +13,10 @@ PlatformToolset=v141
 ToolsVersion = 15.0
 VCProjectVersion = 15.0
 
+[Configuration.1600]
+PlatformToolset=v142
+ToolsVersion = 16.0
+
 
 [Compiler]
 PreprocessorDefinitions=
@@ -39,6 +43,9 @@ PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 [Compiler.1500]
+PreprocessorDefinitions=_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)
+
+[Compiler.1600]
 PreprocessorDefinitions=_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)
 
 
