@@ -47,7 +47,7 @@ class CThreadPool_ServiceThread;
 /// Functor to compare tasks by priority
 struct SThreadPool_TaskCompare {
     bool operator() (const CRef<CThreadPool_Task>& left,
-                     const CRef<CThreadPool_Task>& right)
+                     const CRef<CThreadPool_Task>& right) const
     {
         return left->GetPriority() < right->GetPriority();
     }

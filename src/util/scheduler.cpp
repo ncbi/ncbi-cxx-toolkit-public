@@ -105,7 +105,7 @@ public:
 struct PScheduler_QueueEvent_Compare
 {
     bool operator() (const CRef<CScheduler_QueueEvent>&  left,
-                     const CRef<CScheduler_QueueEvent>&  right)
+                     const CRef<CScheduler_QueueEvent>&  right) const
     {
         return left->exec_time < right->exec_time;
     }
