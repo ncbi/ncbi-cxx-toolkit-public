@@ -662,7 +662,7 @@ public:
         }
 
     template< class TDerived,
-              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+              class = typename std::enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
     CRef(const CRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), 0)
         {
