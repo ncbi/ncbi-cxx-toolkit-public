@@ -1386,43 +1386,20 @@ GenerateDiffListFromBioSource(
     }
 }
 
+//#define DUMP_DATA
 //  ----------------------------------------------------------------------------
 void
-SaveBiosample(
+SaveSerialObject(
     const string& filename,
-    const CBioSource& bioSource)
+    const CSerialObject& object)
 //  -----------------------------------------------------------------------------
 {
+#ifdef DUMP_DATA
     CNcbiOfstream ostr(filename);
     MSerial_Format_AsnText asnText;
-    ostr << asnText << bioSource;
+    ostr << asnText << object;
     ostr.close();
-}
-
-//  ----------------------------------------------------------------------------
-void
-SaveDesc(
-    const string& filename,
-    const CSeqdesc& desc)
-//  -----------------------------------------------------------------------------
-{
-    CNcbiOfstream ostr(filename);
-    MSerial_Format_AsnText asnText;
-    ostr << asnText << desc;
-    ostr.close();
-}
-
-//  ----------------------------------------------------------------------------
-void
-SaveDescr(
-    const string& filename,
-    const CSeq_descr& descr)
-//  -----------------------------------------------------------------------------
-{
-    CNcbiOfstream ostr(filename);
-    MSerial_Format_AsnText asnText;
-    ostr << asnText << descr;
-    ostr.close();
+#endif
 }
 
 //  ----------------------------------------------------------------------------
@@ -1434,26 +1411,27 @@ GenerateDiffListFromBioSource(
     TBiosampleFieldDiffList& diffs)
 //  ----------------------------------------------------------------------------
 {
+    SaveSerialObject("submittedSource.asn1", newBioSource);
     CRef<CSeq_descr> pExistingBiosampleDescrs = biosample_util::GetBiosampleData(
         existingBiosampleAcc, false, nullptr);
-    //SaveDescr("descriptors.asn1", *pExistingBiosampleDescrs);
+    SaveSerialObject("curatedDescriptors.asn1", *pExistingBiosampleDescrs);
     bool assigned = false;
     for (auto pExistingDesc: pExistingBiosampleDescrs->Get()) {
         CSeqdesc& existingDesc = *pExistingDesc; 
-        //SaveDesc("xxx.asn1", existingDesc);
         if (!existingDesc.IsSource()) {
             continue;
         }
         const CBioSource& existingSource = existingDesc.GetSource();
-        //SaveBiosample("existingSource.asn1", existingSource);
+        SaveSerialObject("curatedSource.asn1", existingSource);
         diffs = GetFieldDiffs(
-            "proposed", "existing", newBioSource, existingSource);
+            "submitted", "curated", newBioSource, existingSource);
         if (!diffs.empty()) {
             if (!assigned) {
                 proposedNewBiosource.Assign(existingSource);
                 assigned = true;
             }
             //UpdateBiosourceFromBiosample(diffs, existingSource, proposedNewBiosource);
+            SaveSerialObject("proposedSource.asn1", proposedNewBiosource);
         }
         break;
     }

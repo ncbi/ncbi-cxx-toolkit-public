@@ -322,6 +322,8 @@ public:
 private:
     void xCompareSeqEntryAccession(
         const string&);
+    void xCompareSeqEntryAccessionList(
+        const string&);
     void xCompareSeqEntryFile(
         const string&);
 
@@ -388,9 +390,16 @@ void CBsDiffApp::Init()
         "");
 
     arg_desc->AddDefaultKey(
+        "seq-entry-acc-list",
+        "seq_entry_accession_list",
+        "accession_list, containing multiple seq entry accessions",
+        CArgDescriptions::eString,
+        "");
+
+    arg_desc->AddDefaultKey(
         "seq-entry-file",
-        "seq_entry_accession_file",
-        "seq_entry_file, containing multiple seq entry accessions",
+        "seq_entry_file",
+        "file, containing seq entry in ASN.1 format",
         CArgDescriptions::eString,
         "");
 
@@ -414,9 +423,10 @@ int CBsDiffApp::Run()
     string bioSampleFile = args["biosample-file"].AsString();
     string bioSourceFile = args["biosource"].AsString();
     string seqEntryAcc = args["seq-entry-acc"].AsString();
+    string seqEntryAccList = args["seq-entry-acc-list"].AsString();
     string seqEntryFile = args["seq-entry-file"].AsString();
 
-    if (seqEntryAcc.empty()  &&  seqEntryFile.empty()) {
+    if (seqEntryAcc.empty()  &&  seqEntryAccList.empty()  &&  seqEntryFile.empty()) {
         if (bioSampleAcc.empty()  &&  bioSampleFile.empty()) {
             cerr << "Bad arguments: Need to uniquely specify biosample." << endl;
             return 1;
@@ -442,6 +452,11 @@ int CBsDiffApp::Run()
 
     if (!seqEntryAcc.empty()) {
         xCompareSeqEntryAccession(seqEntryAcc);
+        return 0;
+    }
+
+    if (!seqEntryAccList.empty()) {
+        xCompareSeqEntryAccessionList(seqEntryAccList);
         return 0;
     }
 
@@ -488,7 +503,7 @@ CBsDiffApp::xLoadSeqEntry(
 
 //  ----------------------------------------------------------------------------
 void
-CBsDiffApp::xCompareSeqEntryFile(
+CBsDiffApp::xCompareSeqEntryAccessionList(
     const string& filename)
 //  ----------------------------------------------------------------------------
 {
@@ -503,6 +518,54 @@ CBsDiffApp::xCompareSeqEntryFile(
                  << counter << ") ---" << endl << endl;
             xCompareSeqEntryAccession(accession);
         }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CBsDiffApp::xCompareSeqEntryFile(
+    const string& seqEntryFile)
+//  ----------------------------------------------------------------------------
+{
+    ESerialDataFormat serial = eSerial_AsnText;
+    CNcbiIstream* pInputStream = &NcbiCin;
+		
+    bool bDeleteOnClose = false;
+    pInputStream = new CNcbiIfstream(seqEntryFile.c_str(), ios::binary);
+    bDeleteOnClose = true;
+    CObjectIStream* pI = CObjectIStream::Open( 
+        serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
+    if (!pI) {
+        return;
+    }
+    unique_ptr<CObjectIStream> pIs(pI);
+    CRef<CSeq_entry> pSeqEntry(new CSeq_entry);
+    try {
+        *pI >> *pSeqEntry;
+    }
+    catch (CException&) {
+        return;
+    }
+    auto pBioSource = xGetBioSource(pSeqEntry);
+    if (!pBioSource) {
+        cerr << "Differ: Given sequence does not have a biosource." << endl;
+        exit(1);
+    }
+    SaveBiosample("biosample.asn1", *pBioSource);
+    auto bioSampleAccessions = xGetBioSampleAccs(pSeqEntry);
+    if (bioSampleAccessions.empty()) {
+        cerr << "Differ: Given sequence does not contain biosample links."
+                << endl;
+        exit(1);
+    }
+    CBioSource fusedSource;
+    TBiosampleFieldDiffList diffs;
+    for (auto bioSampleAcc: bioSampleAccessions) {
+        if (biosample_util::GenerateDiffListFromBioSource(
+                bioSampleAcc, *pBioSource, fusedSource, diffs)) {
+            PrintDiffList(bioSampleAcc, diffs, cout);
+            SaveBiosample("proposedSource.asn1", fusedSource);
+        }      
     }
 }
 
