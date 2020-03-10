@@ -374,12 +374,18 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
     if (!extend_len) {
         return eExtensibe_abut;
     }
-    if (strand == eNa_strand_minus) {
-        svec.GetSeqData(left - extend_len, left - extend_len + 3, codon); // may it be off by 1 nt?
-        if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
+    if (strand != eNa_strand_minus) {
+        svec.GetSeqData(left - extend_len, left - extend_len + 3, codon);
+        if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
             rval = eExtensibe_none;
         }
     }
+    //if (strand == eNa_strand_minus) {
+    //    svec.GetSeqData(left - extend_len, left - extend_len + 3, codon); // may it be off by 1 nt?
+    //    if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
+    //        rval = eExtensibe_none;
+    //    }
+    //}
     return rval;
 }
 
@@ -433,12 +439,18 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
     if (!extend_len) {
         return eExtensibe_abut;
     }
-    if (strand != eNa_strand_minus) {
+    if (strand == eNa_strand_minus) {
         svec.GetSeqData(right + extend_len - 3, right + extend_len, codon); // may it be off by 1 nt?
-        if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
+        if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
             rval = eExtensibe_none;
         }
     }
+    //if (strand != eNa_strand_minus) {
+    //    svec.GetSeqData(right + extend_len - 3, right + extend_len, codon); // may it be off by 1 nt?
+    //    if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
+    //        rval = eExtensibe_none;
+    //    }
+    //}
     return rval;
 }
 
@@ -553,7 +565,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
                 if (start > 0) {
                     TSeqPos extend_len = 0;
                     if (IsExtendableLeft(start, bioseq, &(context.GetScope()), extend_len, feat.GetLocation().GetStrand()) == eExtensibe_fixable) {
-                        //cout << "extend start: " << extend_len << "\n";
+                        cout << "extend start: " << extend_len << "\n";
                         add_this = extend_len > 0 && extend_len <= 3;
                     }
                 }
@@ -563,7 +575,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
                 if (stop < bioseq.GetLength() - 1) {
                     TSeqPos extend_len = 0;
                     if (IsExtendableRight(stop, bioseq, &(context.GetScope()), extend_len, feat.GetLocation().GetStrand()) == eExtensibe_fixable) {
-                        //cout << "extend end: " << extend_len << "\n";
+                        cout << "extend end: " << extend_len << "\n";
                         add_this = extend_len > 0 && extend_len <= 3;
                     }
                 }
