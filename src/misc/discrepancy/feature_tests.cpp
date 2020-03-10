@@ -325,6 +325,7 @@ enum EExtensibe {
     eExtensibe_abut = 2
 };
 
+
 EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len, ENa_strand strand)
 {
     bool circular = seq.IsSetInst() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
@@ -380,12 +381,6 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
             rval = eExtensibe_none;
         }
     }
-    //if (strand == eNa_strand_minus) {
-    //    svec.GetSeqData(left - extend_len, left - extend_len + 3, codon); // may it be off by 1 nt?
-    //    if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
-    //        rval = eExtensibe_none;
-    //    }
-    //}
     return rval;
 }
 
@@ -440,19 +435,14 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
         return eExtensibe_abut;
     }
     if (strand == eNa_strand_minus) {
-        svec.GetSeqData(right + extend_len - 3, right + extend_len, codon); // may it be off by 1 nt?
+        svec.GetSeqData(right + extend_len - 3, right + extend_len, codon);
         if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
             rval = eExtensibe_none;
         }
     }
-    //if (strand != eNa_strand_minus) {
-    //    svec.GetSeqData(right + extend_len - 3, right + extend_len, codon); // may it be off by 1 nt?
-    //    if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
-    //        rval = eExtensibe_none;
-    //    }
-    //}
     return rval;
 }
+
 
 // Cannot be extended and not abut the end or the gap
 bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
