@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/impl/criteria.hpp>
@@ -569,7 +570,13 @@ int BlastdbCopyApplication::Run(void)
 {
     int retval = 0;
     const CArgs& args = GetArgs();    
-
+    
+    if (!(args.Exist(kArgOutput) && args[kArgOutput].HasValue())) {
+        NCBI_THROW(CInputException, eInvalidInput,
+                   "Must specify " + kArgOutput);
+        
+    }
+   
     // Setup Logging
     if (args["logfile"]) {
         SetDiagPostLevel(eDiag_Info);
