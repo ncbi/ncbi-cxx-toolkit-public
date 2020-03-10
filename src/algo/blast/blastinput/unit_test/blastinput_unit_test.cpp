@@ -44,6 +44,7 @@
 
 #include <corelib/ncbienv.hpp>
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/blastinput/blast_input.hpp>
@@ -1469,6 +1470,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequences_OneEmpty)
 
 BOOST_AUTO_TEST_CASE(ReadMultipleTis)
 {
+    if (CGBDataLoader::IsUsingPSGLoader()) return;
     CNcbiIfstream infile("data/tis.txt");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
@@ -1522,6 +1524,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
 
 BOOST_AUTO_TEST_CASE(ReadSingleTi)
 {
+    if (CGBDataLoader::IsUsingPSGLoader()) return;
     CNcbiIfstream infile("data/ti.txt");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
@@ -1575,6 +1578,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
 
 BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
 {
+    if (CGBDataLoader::IsUsingPSGLoader()) return;
     CNcbiIfstream infile("data/accgis_nl.txt");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
