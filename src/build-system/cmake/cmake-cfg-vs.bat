@@ -65,7 +65,7 @@ echo                  examples:    --with-features="StrictGI"
 echo   --with-build-root=name   -- specify a non-default build directory name
 echo   --with-vs=N              -- use Visual Studio N generator 
 echo                  examples:    --with-vs=2017  (default)
-echo                               --with-vs=2015
+echo                               --with-vs=2019
 echo   --with-generator="X"     -- use generator X
 
 if defined have_configure_ext_Usage (
@@ -169,7 +169,12 @@ if not "%prebuilt_dir%"=="" (
   )
 )
 
+set CMAKE_GENERATOR_ARGS=
 if "%CMAKE_GENERATOR%"=="" (
+  if "%VISUAL_STUDIO%"=="2019" (
+    set CMAKE_GENERATOR=Visual Studio 16 2019
+    set CMAKE_GENERATOR_ARGS=-A x64
+  )
   if "%VISUAL_STUDIO%"=="2017" (
     set CMAKE_GENERATOR=Visual Studio 15 2017 Win64
   )
@@ -178,6 +183,9 @@ if "%CMAKE_GENERATOR%"=="" (
   )
 )
 set generator_name=%CMAKE_GENERATOR%
+if "%CMAKE_GENERATOR%"=="Visual Studio 16 2019" (
+  set generator_name=VS2019
+)
 if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017 Win64" (
   set generator_name=VS2017
 )
@@ -206,7 +214,7 @@ REM #########################################################################
 set CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
 
 if not "%CMAKE_GENERATOR%"=="" (
-  set CMAKE_ARGS=%CMAKE_ARGS% -G "%CMAKE_GENERATOR%"
+  set CMAKE_ARGS=%CMAKE_ARGS% -G "%CMAKE_GENERATOR%" %CMAKE_GENERATOR_ARGS%
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_COMPONENTS="%PROJECT_COMPONENTS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_FEATURES="%PROJECT_FEATURES%"
@@ -236,7 +244,11 @@ if not exist "%BUILD_ROOT%\build" (
 cd /d "%BUILD_ROOT%\build"
 
 REM echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
-"%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
+if exist "%tree_root%\CMakeLists.txt" (
+  "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%"
+) else (
+  "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
+)
 
 :DONE
 cd /d %initial_dir%
