@@ -103,6 +103,12 @@ protected:
         SeqIdResolver seqresolver = CReadUtil::AsSeqId,
         CReaderListener* pListener = nullptr);
 
+    CReaderBase(
+        const CReaderBase&) = delete;
+
+    CReaderBase(
+        CReaderBase&&) = delete;
+
 public:
     virtual ~CReaderBase();
 
