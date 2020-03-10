@@ -129,6 +129,9 @@ message("NCBI_TREE_BUILDCFG  = ${NCBI_TREE_BUILDCFG}")
 message("NCBI_TREE_CMAKECFG  = ${NCBI_TREE_CMAKECFG}")
 message("NCBI_TREE_COMMON_INCLUDE = ${NCBI_TREE_COMMON_INCLUDE}")
 endif()
+if(EXISTS ${NCBI_TREE_ROOT}/CMake.CustomConfig.txt)
+	include(${NCBI_TREE_ROOT}/CMake.CustomConfig.txt)
+endif()
 
 ############################################################################
 # OS-specific settings
