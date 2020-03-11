@@ -143,6 +143,45 @@ PrintDiffList(
     bool headerDone = false;
     for (auto diff: diffList) {
         if (!headerDone) {
+            PrintField(ostr, 20, "attribute");
+            PrintField(ostr, 40, "old_value");
+            PrintField(ostr, 40, "new_value");
+            ostr << endl << string(100, '-') << "\n";
+            headerDone = true;
+        }
+        auto attribute = diff->GetFieldName();
+        auto newValue = diff->GetSampleVal();
+        auto oldValue = diff->GetSrcVal();
+
+        if (oldValue.empty()  &&  !newValue.empty()) {
+            newValue = string("[[add]] ") + newValue;
+        }
+        if (!oldValue.empty()  &&  newValue.empty()) {
+            oldValue = string("[[delete]] ") + oldValue;
+        }
+
+        PrintField(ostr, 20, attribute);
+        PrintField(ostr, 40, oldValue);
+        PrintField(ostr, 40, newValue);
+        ostr << "\n";
+    }
+    ostr << "\n";
+}
+
+//  ----------------------------------------------------------------------------
+void
+PrintDiffListOld(
+    const string& source,
+    const TBiosampleFieldDiffList& diffList,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    if (diffList.empty()) {
+        return;
+    }
+    bool headerDone = false;
+    for (auto diff: diffList) {
+        if (!headerDone) {
             PrintField(ostr, 20, source);
             PrintField(ostr, 40, diff->GetBioSample());
             PrintField(ostr, 40, diff->GetSequenceId());
