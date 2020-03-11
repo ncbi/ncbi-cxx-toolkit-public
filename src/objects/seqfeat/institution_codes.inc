@@ -403,6 +403,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BABY\ts\tB. A. Bennett Herbarium, Yukon Government\t\t\t",
 "BAC<CHN>\ts\tBeijing Agricultural College\t\t\t",
 "BAC<UK>\ts\tBacup Natural History Society\t\t\t",
+"BACA\tc\tBank of Algae and Cyanobacteria of the Azores\t\t\t",
 "BACC\tc\tBrucella AFSSA Culture Collection\t\t\t",
 "BACH\ts\tBotswana College of Agriculture\t\t\t",
 "BACP\ts\tCEFYBO, Unidad Botanica\t\t\t",
