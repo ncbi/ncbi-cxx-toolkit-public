@@ -172,13 +172,14 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope *scope) const
     {
+        int opposite_row = m_Row >= 0 ? 1 - m_Row : m_Row;
         if (align.GetSegs().IsSpliced() &&
             align.GetSegs().GetSpliced().GetProduct_type() ==
             CSpliced_seg::eProduct_type_protein)
         {
             /// Protein alignment; just count frameshifts
             return m_Frameshifts ? align.GetNumFrameshifts(m_Row)
-                                 : align.GetNumGapOpenings(m_Row)
+                                 : align.GetNumGapOpenings(opposite_row)
                                  - align.GetNumFrameshifts(m_Row);
         }
 
@@ -199,7 +200,7 @@ public:
                          .IncludeFeatType(CSeqFeatData::e_Cdregion));
         return !feat_it ? 0 : (m_Frameshifts
             ? align.GetNumFrameshiftsWithinRange(feat_it->GetRange(), m_Row)
-            : align.GetNumGapOpeningsWithinRange(feat_it->GetRange(), m_Row)
+            : align.GetNumGapOpeningsWithinRange(feat_it->GetRange(), opposite_row)
             - align.GetNumFrameshiftsWithinRange(feat_it->GetRange(), m_Row));
     }
 
