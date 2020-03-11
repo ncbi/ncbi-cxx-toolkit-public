@@ -95,6 +95,7 @@ public:
     static void PrintHeader(ncbi::CNcbiOstream & stream, bool show_seq_id = true);
     void Print(ncbi::CNcbiOstream & stream, bool show_seq_id = true) const;
     void Print(ncbi::CNcbiOstream & stream, const CBiosampleFieldDiff& prev);
+    void PrettyPrint(ncbi::CNcbiOstream & stream, size_t keyWidth=20, size_t valueWidth=40) const;
     const string& GetSequenceId() const { return m_SequenceID; };
     void SetSequenceId(const string& id) { m_SequenceID = id; };
     const string& GetFieldName() const { return m_FieldName; };
@@ -181,6 +182,12 @@ UpdateBiosourceFromBiosample(
     const TBiosampleFieldDiffList& diffs,
     const CBioSource& existingBioSource,
     CBioSource& newBioource);
+
+void PrettyPrint(
+    const TBiosampleFieldDiffList& diffList,
+    CNcbiOstream& ostr,
+    size_t keyWidth = 20,
+    size_t valueWidth = 40);
 
 END_SCOPE(biosample_util)
 END_SCOPE(objects)

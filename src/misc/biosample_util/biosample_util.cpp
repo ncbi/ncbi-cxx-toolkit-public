@@ -391,6 +391,33 @@ void CBiosampleFieldDiff::Print(CNcbiOstream& stream, bool show_seq_id) const
 }
 
 
+void sPrintField(const string& value, size_t width, CNcbiOstream& ostr)
+{
+    auto formattedValue = (value + string(width, ' ')).substr(0, width);
+    ostr << formattedValue;
+}
+
+void CBiosampleFieldDiff::PrettyPrint(
+    CNcbiOstream& ostr,
+    size_t keyWidth,
+    size_t valueWidth) const
+{
+    auto attribute = GetFieldName();
+    auto newValue = GetSampleVal();
+    auto oldValue = GetSrcVal();
+
+    if (oldValue.empty()  &&  !newValue.empty()) {
+        newValue = string("[[add]] ") + newValue;
+    }
+    if (!oldValue.empty()  &&  newValue.empty()) {
+        oldValue = string("[[delete]] ") + oldValue;
+    }
+    sPrintField(attribute, keyWidth, ostr);
+    sPrintField(oldValue, valueWidth, ostr);
+    sPrintField(newValue, valueWidth, ostr);
+    ostr << "\n";
+}
+
 void CBiosampleFieldDiff::Print(ncbi::CNcbiOstream & stream, const CBiosampleFieldDiff& prev)
 {
     if (!NStr::EqualNocase(m_BiosampleID, prev.m_BiosampleID)) {
@@ -1386,7 +1413,7 @@ GenerateDiffListFromBioSource(
     }
 }
 
-//#define DUMP_DATA
+#define DUMP_DATA
 //  ----------------------------------------------------------------------------
 void
 SaveSerialObject(
@@ -1575,6 +1602,30 @@ UpdateBiosourceFromBiosample(
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+void PrettyPrint(
+    const TBiosampleFieldDiffList& diffList,
+    CNcbiOstream& ostr,
+    size_t keyWidth,
+    size_t valueWidth)
+//  ----------------------------------------------------------------------------
+{
+    sPrintField("attribute", keyWidth, ostr);
+    sPrintField("old_value", valueWidth, ostr);
+    sPrintField("new_value", valueWidth, ostr);
+    ostr << "\n";
+
+    ostr << string(keyWidth + 2 * valueWidth, '-') << "\n";
+
+    for (auto diff: diffList) {
+        diff->PrettyPrint(ostr, keyWidth, valueWidth);
+    }
+    ostr << "\n";
+}
+
+
+
 // << rw-905, rw-1010
 
 END_SCOPE(biosample_util)

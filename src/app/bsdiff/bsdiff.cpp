@@ -118,85 +118,14 @@ const char * BSDIFF_APP_VER = "1.0";
 
 //  ----------------------------------------------------------------------------
 void
-PrintField(
-    CNcbiOstream& ostr,
-    int width,
-    const string& value = "")
-//  ----------------------------------------------------------------------------
-{
-    string printField = (value + string(width, ' ')).substr(0, width-1) + ' ';
-    ostr << printField;
-}
-
-
-//  ----------------------------------------------------------------------------
-void
 PrintDiffList(
     const string& source,
     const TBiosampleFieldDiffList& diffList,
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    if (diffList.empty()) {
-        return;
-    }
-    bool headerDone = false;
-    for (auto diff: diffList) {
-        if (!headerDone) {
-            PrintField(ostr, 20, "attribute");
-            PrintField(ostr, 40, "old_value");
-            PrintField(ostr, 40, "new_value");
-            ostr << endl << string(100, '-') << "\n";
-            headerDone = true;
-        }
-        auto attribute = diff->GetFieldName();
-        auto newValue = diff->GetSampleVal();
-        auto oldValue = diff->GetSrcVal();
-
-        if (oldValue.empty()  &&  !newValue.empty()) {
-            newValue = string("[[add]] ") + newValue;
-        }
-        if (!oldValue.empty()  &&  newValue.empty()) {
-            oldValue = string("[[delete]] ") + oldValue;
-        }
-
-        PrintField(ostr, 20, attribute);
-        PrintField(ostr, 40, oldValue);
-        PrintField(ostr, 40, newValue);
-        ostr << "\n";
-    }
-    ostr << "\n";
-}
-
-//  ----------------------------------------------------------------------------
-void
-PrintDiffListOld(
-    const string& source,
-    const TBiosampleFieldDiffList& diffList,
-    CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{
-    if (diffList.empty()) {
-        return;
-    }
-    bool headerDone = false;
-    for (auto diff: diffList) {
-        if (!headerDone) {
-            PrintField(ostr, 20, source);
-            PrintField(ostr, 40, diff->GetBioSample());
-            PrintField(ostr, 40, diff->GetSequenceId());
-            ostr << endl << string(100, '-') << endl;
-            headerDone = true;
-        }
-        auto sampleVal(diff->GetSampleVal().empty() ? "---" : diff->GetSampleVal());
-        auto sourceVal(diff->GetSrcVal().empty() ? "---" : diff->GetSrcVal());
-        PrintField(ostr, 20, diff->GetFieldName());
-        PrintField(ostr, 40, sampleVal);
-        PrintField(ostr, 40, sourceVal);
-        ostr << endl;
-    }
-    ostr << endl;
-}
+    PrettyPrint(diffList, ostr, 20, 40);
+}    
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_descr>
