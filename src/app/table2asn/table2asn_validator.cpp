@@ -199,8 +199,7 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
 void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage)
 {
     m_discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
-    auto kind = m_context->m_discrepancy == eTriState_True ? NDiscrepancy::eSubmitter : NDiscrepancy::eTSA;
-    vector<string> names = NDiscrepancy::GetDiscrepancyNames(kind);
+    vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
     m_discrepancy->AddTests(names);
 
     CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));

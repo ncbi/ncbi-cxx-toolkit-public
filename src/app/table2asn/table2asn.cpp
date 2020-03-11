@@ -440,7 +440,13 @@ int CTbl2AsnApp::Run(void)
         m_context.m_GenomicProductSet = false;
         m_context.m_HandleAsSet = true;
         m_context.m_cleanup += "fU";
-        m_context.m_validate = "v";
+        m_context.m_validate = "v"; // do we still need that?
+        if (m_context.m_master_genome_flag.find('n') != string::npos) {
+            m_context.m_discrepancy_group = NDiscrepancy::eSubmitter;
+        }
+        else if (m_context.m_master_genome_flag.find('t') != string::npos) {
+            m_context.m_discrepancy_group = NDiscrepancy::eTSA;
+        }
     }
 
     m_reader.reset(new CMultiReader(m_context));
@@ -687,14 +693,14 @@ int CTbl2AsnApp::Run(void)
         }
         while ((p = m_context.m_validate.find("t")) != string::npos)
         {
-            m_context.m_discrepancy = eTriState_False;
+            //m_context.m_discrepancy = eTriState_False;
             m_context.m_validate.erase(p, 1);
         }
     }
 
-    if (args["Z"] && m_context.m_discrepancy == eTriState_Unknown)
+    if (args["Z"])
     {
-        m_context.m_discrepancy = eTriState_True;
+        m_context.m_run_discrepancy = true;
     }
 
     if (args["locus-tag-prefix"]  ||  args["no-locus-tags-needed"]) {
@@ -1049,7 +1055,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             m_validator->Validate(submit, entry, m_context.m_validate);
         }
 
-        if (m_context.m_discrepancy != eTriState_Unknown)
+        if (m_context.m_run_discrepancy)
         {
             m_validator->CollectDiscrepancies(*obj, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }

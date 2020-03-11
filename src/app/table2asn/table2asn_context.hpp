@@ -3,6 +3,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <objtools/edit/gaps_edit.hpp>
+#include <misc/discrepancy/discrepancy.hpp>
 
 #include "suspect_feat.hpp"
 
@@ -145,7 +146,8 @@ public:
     bool   m_verbose{ false };
     bool   m_augustus_fix{ false };
     bool   m_make_flatfile{ false };
-    ETriState m_discrepancy{ eTriState_Unknown };
+    bool   m_run_discrepancy{ false };
+    NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
 
     CRef<objects::CSeq_descr>  m_descriptors;
     unique_ptr<objects::edit::CRemoteUpdater>  m_remote_updater;
