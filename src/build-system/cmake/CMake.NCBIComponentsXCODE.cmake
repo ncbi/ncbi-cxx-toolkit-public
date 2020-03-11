@@ -46,6 +46,8 @@ else (APPLE)
 endif (APPLE)
 set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
+set(FOUNDATION_LIBS "-framework foundation")
+
 #############################################################################
 # Kerberos 5
 set(KRB5_LIBS "-framework Kerberos" -liconv)

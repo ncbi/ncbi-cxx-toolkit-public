@@ -897,6 +897,7 @@ APP_LDFLAGS
 DLL_LDFLAGS
 C_LIBS
 OBJCXX_LIBS
+FOUNDATION_LIBS
 GCCPCH
 RUNPATH_ORIGIN
 NO_STRICT_ALIASING
@@ -8785,6 +8786,7 @@ echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
 
    OBJCXX_CXXFLAGS='-x objective-c++'
    OBJCXX_LIBS='-lobjc'
+   FOUNDATION_LIBS='-framework Foundation'
 
    # New in macOS 10.12; don't attempt to use on older versions
    ac_cv_func_clock_gettime=no
@@ -54088,6 +54090,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -55137,8 +55140,8 @@ APP_LDFLAGS!$APP_LDFLAGS$ac_delim
 DLL_LDFLAGS!$DLL_LDFLAGS$ac_delim
 C_LIBS!$C_LIBS$ac_delim
 OBJCXX_LIBS!$OBJCXX_LIBS$ac_delim
+FOUNDATION_LIBS!$FOUNDATION_LIBS$ac_delim
 GCCPCH!$GCCPCH$ac_delim
-RUNPATH_ORIGIN!$RUNPATH_ORIGIN$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -55180,6 +55183,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+RUNPATH_ORIGIN!$RUNPATH_ORIGIN$ac_delim
 NO_STRICT_ALIASING!$NO_STRICT_ALIASING$ac_delim
 D_SFX!$D_SFX$ac_delim
 DEBUG_SFX!$DEBUG_SFX$ac_delim
@@ -55276,7 +55280,6 @@ SYBASE_DBLIBS!$SYBASE_DBLIBS$ac_delim
 MYSQL_INCLUDE!$MYSQL_INCLUDE$ac_delim
 MYSQL_LIBS!$MYSQL_LIBS$ac_delim
 BERKELEYDB_INCLUDE!$BERKELEYDB_INCLUDE$ac_delim
-BERKELEYDB_LIBS!$BERKELEYDB_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -55318,6 +55321,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BERKELEYDB_LIBS!$BERKELEYDB_LIBS$ac_delim
 BERKELEYDB_STATIC_LIBS!$BERKELEYDB_STATIC_LIBS$ac_delim
 BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
 BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
@@ -55414,7 +55418,6 @@ XALAN_INCLUDE!$XALAN_INCLUDE$ac_delim
 XALAN_LIBS!$XALAN_LIBS$ac_delim
 XALAN_STATIC_LIBS!$XALAN_STATIC_LIBS$ac_delim
 ZORBA_INCLUDE!$ZORBA_INCLUDE$ac_delim
-ZORBA_LIBS!$ZORBA_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -55456,6 +55459,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ZORBA_LIBS!$ZORBA_LIBS$ac_delim
 ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
@@ -55527,7 +55531,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 69; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 70; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

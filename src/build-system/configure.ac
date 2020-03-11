@@ -1690,6 +1690,7 @@ case "$host_os:$compiler" in
 
    OBJCXX_CXXFLAGS='-x objective-c++'
    OBJCXX_LIBS='-lobjc'
+   FOUNDATION_LIBS='-framework Foundation'
 
    # New in macOS 10.12; don't attempt to use on older versions
    ac_cv_func_clock_gettime=no
@@ -8877,6 +8878,7 @@ AC_SUBST(DLL_LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(C_LIBS)
 AC_SUBST(OBJCXX_LIBS)
+AC_SUBST(FOUNDATION_LIBS)
 AC_SUBST(GCCPCH)
 AC_SUBST(RUNPATH_ORIGIN)
 AC_SUBST(NO_STRICT_ALIASING)
