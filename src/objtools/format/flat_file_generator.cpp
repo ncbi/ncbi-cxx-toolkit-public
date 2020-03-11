@@ -597,9 +597,7 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CFlatItemOStream& item_os,
- bool useSeqEntryIndexing,
- bool doNuc,
- bool doProt)
+ bool useSeqEntryIndexing)
 {
     // useSeqEntryIndexing argument also set by relevant flags in CFlatFileConfig
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
@@ -615,6 +613,9 @@ void CFlatFileGenerator::Generate
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
     const CFlatFileConfig& cfg = m_Ctx->GetConfig();
+
+    bool doNuc = false;
+    bool doProt = false;
 
     // doNuc and doProt arguments also set by relevant flags in CFlatFileConfig
     if ( cfg.IsViewNuc() ) {
@@ -849,23 +850,19 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CNcbiOstream& os,
- bool useSeqEntryIndexing,
- bool doNuc,
- bool doProt)
+ bool useSeqEntryIndexing)
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(entry, *item_os, useSeqEntryIndexing, doNuc, doProt);
+    Generate(entry, *item_os, useSeqEntryIndexing);
 }
 
 void CFlatFileGenerator::Generate
 (const CSeq_loc& loc,
  CScope& scope,
  CNcbiOstream& os,
- bool useSeqEntryIndexing,
- bool doNuc,
- bool doProt)
+ bool useSeqEntryIndexing)
 {
     CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
     if (!bsh) {
@@ -884,7 +881,7 @@ void CFlatFileGenerator::Generate
         cfg.SetStyleMaster();
     }
 
-    Generate(entry, os, useSeqEntryIndexing, doNuc, doProt);
+    Generate(entry, os, useSeqEntryIndexing);
 }
 
 

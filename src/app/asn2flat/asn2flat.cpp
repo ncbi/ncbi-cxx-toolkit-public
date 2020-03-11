@@ -866,10 +866,10 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
                     CSeq_loc loc;
                     x_GetLocation( seh, args, loc );
                     CNcbiOstream* flatfile_os = m_Os;
-                    m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, ! m_OnlyProts, ! m_OnlyNucs);
+                    m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true);
                 } else {
                     CNcbiOstream* flatfile_os = m_Os;
-                    m_FFGenerator->Generate( seh, *flatfile_os, true, ! m_OnlyProts, ! m_OnlyNucs);
+                    m_FFGenerator->Generate( seh, *flatfile_os, true);
                 }
             }
             catch (CException& e) {
