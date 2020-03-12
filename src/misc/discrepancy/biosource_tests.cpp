@@ -2095,7 +2095,7 @@ DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, BIOSRC, eOncaller, "Duplicate PCR primer 
                 CPCRReactionSet::Tdata::const_iterator jt = it;
                 for (jt++; !done && jt != data.end(); jt++) {
                     if (FindDuplicatePrimers(**it, **jt)) {
-                        m_Objs["[n] BioSource[s] [has] duplicate primer pairs."].Add(*context.BiosourceObjRef(*biosrc/*, true*/)); // autofix does nothing!
+                        m_Objs["[n] BioSource[s] [has] duplicate primer pairs."].Add(*context.BiosourceObjRef(*biosrc));
                         done = true;
                     }
                 }
@@ -2110,36 +2110,6 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_PRIMER_SET)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
-
-static bool FixDuplicatePrimerSet(CBioSource& src)
-{
-    if (!src.CanGetPcr_primers() || !src.GetPcr_primers().CanGet()) {
-        return false;
-    }
-    bool fixed = false;
-    // todo
-    return fixed;
-}
-
-
-DISCREPANCY_AUTOFIX(DUPLICATE_PRIMER_SET)
-{
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
-    if (feat) {
-        if (FixDuplicatePrimerSet(const_cast<CSeq_feat*>(feat)->SetData().SetBiosrc())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("DUPLICATE_PRIMER_SET: [n] PCR primer set[s] removed", 1));
-        }
-    }
-    if (desc) {
-        if (FixDuplicatePrimerSet(const_cast<CSeqdesc*>(desc)->SetSource())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("DUPLICATE_PRIMER_SET: [n] PCR primer set[s] removed", 1));
-        }
-    }
-    return CRef<CAutofixReport>(0);
-}
 
 
 // METAGENOMIC
