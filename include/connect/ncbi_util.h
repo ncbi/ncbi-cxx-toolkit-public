@@ -157,6 +157,8 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 /** Get current function name.
  * @note Defined inside of either a method or a function body only.
  * See <corelib/ncbidiag.hpp> for definition of NCBI_CURRENT_FUNCTION.
+ * @sa
+ *  NCBI_CURRENT_FUNCTION
  */
 #if    defined(__GNUC__)                                       ||     \
       (defined(__MWERKS__)        &&  (__MWERKS__ >= 0x3000))  ||     \
@@ -179,8 +181,8 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 /** Set the log handle (no logging if "lg" is passed zero) -- to be used by
  * the core internals.
  * If there is an active log handler set already, and it is different from the
- * new one, then LOG_Delete is called for the old logger (that is, the one
- * being replaced).
+ * new one, then LOG_Delete is called internally for the old logger (that is,
+ * the one being replaced).
  * @param lg
  *  LOG handle as returned by LOG_Create, or NULL to stop logging
  * @sa
@@ -208,7 +210,8 @@ extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
  * @param cut_off
  *  Do not post messages with severity levels lower than specified
  * @param fatal_err
- *  Severity greater or equal to "fatal_err" always logs and aborts the program
+ *  Severity greater than or equal to the specified level always posts to log,
+ *  and then aborts the application
  * @param auto_close
  *  Do "fclose(fp)" when the LOG is reset/destroyed
  * @sa
@@ -238,7 +241,8 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE
  * @param cut_off
  *  Do not post messages with severity levels lower than specified
  * @param fatal_err
- *  Severity greater or equal to "fatal_err" always logs and aborts the program
+ *  Severity greater than or equal to the specified level always posts to log,
+ *  and then aborts the application
  * @return
  *  Return zero on error, non-zero on success
  * @sa
@@ -260,7 +264,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
 );
 
 
-/** LOG formatting flags: what parts of the message to actually appear.
+/** LOG formatting flags:  what parts of the message to actually appear.
  * @sa
  *   CORE_SetLOGFormatFlags
  */
@@ -272,7 +276,7 @@ enum ELOG_FormatFlag {
     fLOG_DateTime      = 0x8,
     fLOG_Function      = 0x10,
     fLOG_FullOctal     = 0x2000, /**< do not do reduction in octal data bytes*/
-    fLOG_OmitNoteLevel = 0x4000, /**< do not add NOTE if eLOG_Note is level  */
+    fLOG_OmitNoteLevel = 0x4000, /**< do not add "NOTE" if level is eLOG_Note*/
     fLOG_None          = 0x8000  /**< nothing but spec'd parts, msg and data */
 };
 typedef unsigned int TLOG_FormatFlags;  /**< bitwise OR of "ELOG_FormatFlag" */
@@ -284,7 +288,7 @@ extern NCBI_XCONNECT_EXPORT TLOG_FormatFlags CORE_SetLOGFormatFlags
 );
 
 
-/** Compose message using the "call_data" info.
+/** Compose a message using the "call_data" info.
  * Full log record format:
  *     mm/dd/yy HH:MM:SS "<file>", line <line>: [<module>::<function>] <level>: <message>
  *     \n----- [BEGIN] Raw Data (<raw_size> bytes) -----\n
