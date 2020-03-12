@@ -204,6 +204,7 @@ int CSRATestApp::Run(void)
                 if ( in ) {
                     CRef<CSeq_entry> entry(new CSeq_entry);
                     in >> MSerial_AsnText >> *entry;
+                    scope.ResetHistory();
                     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
                     bh = seh.GetTSE_Handle().GetBioseqHandle(idh);
                 }
