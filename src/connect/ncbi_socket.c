@@ -74,7 +74,6 @@
  */
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
-#include "ncbi_priv.h"
 #include "ncbi_once.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket_unix.h>
