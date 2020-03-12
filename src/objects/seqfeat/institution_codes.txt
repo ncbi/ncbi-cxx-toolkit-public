@@ -7425,6 +7425,7 @@ USPIY	s	K. D. Ushinsky Yaroslavl State Pedagogical University, Department of Bot
 USRC	s	University of Regina			
 USRCB	c	Ukrainian Scientific-Research Cell Bank.			
 USSC	s	U.S. Soil Conservation Service			
+USTCMS	c	University of Santo Tomas Collection of Microbial Strains			
 USTF	s	Technologische Faculteit			
 USTH	s	University of Santo Tomas			
 USTK	s	University of Science and Technology, Museum of Natural History			

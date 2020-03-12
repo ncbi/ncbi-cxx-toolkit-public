@@ -7458,6 +7458,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USRC\ts\tUniversity of Regina\t\t\t",
 "USRCB\tc\tUkrainian Scientific-Research Cell Bank.\t\t\t",
 "USSC\ts\tU.S. Soil Conservation Service\t\t\t",
+"USTCMS\tc\tUniversity of Santo Tomas Collection of Microbial Strains\t\t\t",
 "USTF\ts\tTechnologische Faculteit\t\t\t",
 "USTH\ts\tUniversity of Santo Tomas\t\t\t",
 "USTK\ts\tUniversity of Science and Technology, Museum of Natural History\t\t\t",
