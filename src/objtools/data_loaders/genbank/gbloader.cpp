@@ -154,6 +154,8 @@ CGBLoaderParams::CGBLoaderParams(const CGBLoaderParams& params)
       m_ParamTree(params.m_ParamTree),
       m_Preopen(params.m_Preopen),
       m_HasHUPIncluded(params.m_HasHUPIncluded),
+      m_WebCookie(params.m_WebCookie),
+      m_LoaderName(params.m_LoaderName),
       m_PSGServiceName(params.m_PSGServiceName),
       m_PSGNoSplit(params.m_PSGNoSplit)
 {
@@ -168,6 +170,8 @@ CGBLoaderParams& CGBLoaderParams::operator=(const CGBLoaderParams& params)
         m_ParamTree = params.m_ParamTree;
         m_Preopen = params.m_Preopen;
         m_HasHUPIncluded = params.m_HasHUPIncluded;
+        m_WebCookie = params.m_WebCookie;
+        m_LoaderName = params.m_LoaderName;
         m_PSGServiceName = params.m_PSGServiceName;
         m_PSGNoSplit = params.m_PSGNoSplit;
     }
