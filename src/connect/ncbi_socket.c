@@ -1251,7 +1251,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
         s_LocalHostAddress = s_gethostbyname_(0, 0, log);
     if (s_LocalHostAddress)
         return s_LocalHostAddress;
-    if (!s_Once  &&  reget != eOff  &&  CORE_Once(&s_Once)) {
+    if (reget != eOff  &&  CORE_Once(&s_Once)) {
         CORE_LOGF_X(9, reget == eDefault ? eLOG_Warning : eLOG_Error,
                     ("[SOCK::GetLocalHostAddress] "
                      " Cannot obtain local host address%s",
