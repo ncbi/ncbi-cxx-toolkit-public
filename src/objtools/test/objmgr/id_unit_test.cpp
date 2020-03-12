@@ -723,7 +723,10 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 
 BOOST_AUTO_TEST_CASE(CheckExtSTS)
 { 	 
-    if (CGBDataLoader::IsUsingPSGLoader()) return; 	 
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+        LOG_POST("Skipping ExtAnnot STS test with PSG data loader");
+        return;
+    }
     LOG_POST("Checking ExtAnnot STS"); 	 
     SAnnotSelector sel(CSeqFeatData::eSubtype_STS); 	 
     sel.SetResolveAll().SetAdaptiveDepth(); 	 
@@ -923,6 +926,10 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
 
 BOOST_AUTO_TEST_CASE(Test_HUP)
 {
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+        LOG_POST("Skipping HUP test with PSG data loader");
+        return;
+    }
     bool authorized;
     string user_name = CSystemInfo::GetUserName();
     if ( user_name == "vasilche" ) {
@@ -1030,7 +1037,6 @@ BOOST_AUTO_TEST_CASE(TestHistory)
 
 BOOST_AUTO_TEST_CASE(TestGBLoaderName)
 {
-    if (CGBDataLoader::IsUsingPSGLoader()) return;
     LOG_POST("Checking CGBDataLoader user-defined name");
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBLoaderParams params;
