@@ -312,5 +312,9 @@ mkdir -p ${BUILD_ROOT}/build
 cd ${BUILD_ROOT}/build 
 
 #echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
-eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"
+if [ -f "${tree_root}/CMakeLists.txt" ]; then
+  eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}"
+else
+  eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"
+fi
 cd ${initial_dir}
