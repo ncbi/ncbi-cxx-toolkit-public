@@ -37,6 +37,7 @@
 #ifdef NCBI_CXX_TOOLKIT
 #  include <corelib/ncbiatomic.h>
 #endif /*NCBI_CXX_TOOLKIT*/
+#include "ncbi_priv.h"
 
 
 /** Return non-zero (true) if "*once" had a value of NULL, and set the value to
@@ -51,11 +52,16 @@ inline
 static int/*bool*/ CORE_Once(void** once)
 {
     /* poor man's solution */
-    if (!*once) {
-        *once = (void*) 1;
-        return 1/*true*/;
-    } else
+    if (*once)
         return 0/*false*/;
+    CORE_LOCK_WRITE;
+    if (*once) {
+        CORE_UNLOCK;
+        return 0/*false*/;
+    }
+    *once = (void*) 1;
+    CORE_UNLOCK;
+    return 1/*true*/;
 }
 #endif /*NCBI_CXX_TOOLKIT*/
 
