@@ -402,9 +402,19 @@ CSeq_id_Handle CScope::x_GetAccVer(const TIds& ids)
 {
     CSeq_id_Handle ret;
     ITERATE ( TIds, iter, ids ) {
-        if (iter->IsAccVer()) {
-            ret = *iter;
-            break;
+        if ( iter->IsGi() ) {
+            // optimization to avoid calling GetSeqId() (it may be expensive)
+            continue;
+        }
+        if ( auto seq_id = iter->GetSeqId() ) { // need to hold CConstRef<>
+            if ( auto text_id = seq_id->GetTextseq_Id() ) {
+                // found some text id, it can be returned
+                ret = *iter;
+                if ( text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+                    // found acc.ver, stop searching
+                    break;
+                }
+            }
         }
     }
     return ret;
