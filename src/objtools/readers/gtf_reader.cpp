@@ -143,9 +143,8 @@ CGtfReader::CGtfReader(
     SeqIdResolver resolver,
     CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
-    CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver)
+    CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver, pRL)
 {
-    m_pMessageHandler = new CReaderMessageHandler(pRL);
 }
 //  ----------------------------------------------------------------------------
 CGtfReader::CGtfReader( 

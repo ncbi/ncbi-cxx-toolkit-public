@@ -165,9 +165,8 @@ CGff3Reader::CGff3Reader(
     SeqIdResolver resolver,
     CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
-    CGff2Reader( uFlags, name, title, resolver )
+    CGff2Reader( uFlags, name, title, resolver, pRL )
 {
-    m_pMessageHandler = new CReaderMessageHandler(pRL);
     CGff2Record::ResetId();
 }
 

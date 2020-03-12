@@ -68,7 +68,7 @@ CPslReader::xProcessData(
     CSeq_annot& annot) 
 //  ----------------------------------------------------------------------------
 {
-    CPslData pslData(m_pMessageHandler);
+    CPslData pslData(m_pMessageHandler.get());
     auto& aligns = annot.SetData().SetAlign();
     for (auto line: readerData) {
         CRef<CSeq_align> pSeqAlign(new CSeq_align);

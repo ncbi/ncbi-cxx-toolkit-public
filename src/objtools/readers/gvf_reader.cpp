@@ -154,9 +154,8 @@ CGvfReader::CGvfReader(
     const string& title,
     CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
-    CGff3Reader( uFlags, name, title )
+    CGff3Reader(uFlags, name, title, nullptr, pRL)
 {
-    m_pMessageHandler = new CReaderMessageHandler(pRL);
 }
 
 //  ----------------------------------------------------------------------------

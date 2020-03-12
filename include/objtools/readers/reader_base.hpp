@@ -368,11 +368,11 @@ protected:
     string m_AnnotTitle;
     string m_PendingLine;
 
-    CTrackData*  m_pTrackDefaults;
+    unique_ptr<CTrackData>  m_pTrackDefaults;
     ILineReader* m_pReader;
     ICanceled* m_pCanceler;
     SeqIdResolver mSeqIdResolve;
-    CReaderMessageHandler* m_pMessageHandler;
+    unique_ptr<CReaderMessageHandler> m_pMessageHandler;
 };
 
 END_objects_SCOPE

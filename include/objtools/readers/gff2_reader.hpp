@@ -73,7 +73,8 @@ public:
         int iFlags,
         const string& name = "",
         const string& title = "",
-        SeqIdResolver resolver = CReadUtil::AsSeqId);
+        SeqIdResolver resolver = CReadUtil::AsSeqId,
+        CReaderListener* pListener = nullptr);
 
     virtual ~CGff2Reader();
     

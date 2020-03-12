@@ -80,9 +80,10 @@ CGff2Reader::CGff2Reader(
     int iFlags,
     const string& name,
     const string& title,
-    SeqIdResolver seqidresolve):
+    SeqIdResolver resolver,
+    CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
-    CReaderBase(iFlags, name, title, seqidresolve),
+    CReaderBase(iFlags, name, title, resolver, pRL),
     m_pErrors(0),
     mCurrentFeatureCount(0),
     mParsingAlignment(false)

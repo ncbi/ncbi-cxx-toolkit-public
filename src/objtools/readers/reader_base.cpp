@@ -167,10 +167,10 @@ CReaderBase::CReaderBase(
     m_AnnotTitle(annotTitle),
     m_pReader(0),
     m_pCanceler(0),
-    mSeqIdResolve(seqidresolver)
+    mSeqIdResolve(seqidresolver),
+    m_pTrackDefaults(new CTrackData),
+    m_pMessageHandler(new CReaderMessageHandler(pListener))
 {
-    m_pTrackDefaults = new CTrackData;
-    m_pMessageHandler = new CReaderMessageHandler(pListener);
 }
 
 
@@ -178,7 +178,6 @@ CReaderBase::CReaderBase(
 CReaderBase::~CReaderBase()
 //  ----------------------------------------------------------------------------
 {
-    delete m_pTrackDefaults;
 }
 
 //  ----------------------------------------------------------------------------
