@@ -119,8 +119,10 @@ cd $prj_name
 #  echo ---- $d
 #done
 
-svn co $repository/$rep_src/$rep_sample/$prj_type $rep_src 1>/dev/null
+mkdir $rep_inc 2>/dev/null
+mkdir $rep_src 2>/dev/null
 svn co $repository/$rep_inc/$rep_sample/$prj_type $rep_inc 1>/dev/null 2>/dev/null
+svn co $repository/$rep_src/$rep_sample/$prj_type $rep_src 1>/dev/null
 find . -name ".svn" -exec rm -rf {} \; 1>/dev/null 2>/dev/null
 find $rep_src -name "Makefile.*" -exec rm -rf {} \; 1>/dev/null 2>/dev/null
 

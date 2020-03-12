@@ -126,6 +126,8 @@ if not exist %prj_name% (
 cd %prj_name%
 
 REM -------------------------------------------------------------------------
+mkdir %rep_inc% 2>NUL
+mkdir %rep_src% 2>NUL
 svn co %repository%/%rep_inc%/%rep_sample%/%prj_type& %rep_inc% >NUL 2>&1
 svn co %repository%/%rep_src%/%rep_sample%/%prj_type% %rep_src% >NUL
 for /f %%a in ('dir /s /a:h /b .svn') do (
