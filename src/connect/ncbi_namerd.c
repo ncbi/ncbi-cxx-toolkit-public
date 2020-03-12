@@ -37,7 +37,6 @@
 #include "ncbi_linkerd.h"
 #include "ncbi_namerd.h"
 #include "ncbi_once.h"
-#include "ncbi_priv.h"
 #include "parson.h"
 
 #include <connect/ncbi_buffer.h>
@@ -1075,7 +1074,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             } else {
                 static void* s_Once = 0;
                 if (CORE_Once(&s_Once)) {
-                    CORE_LOGF_X(eNSub_Json, eLOG_Warning,
+                    CORE_LOGF_X(eNSub_Json, eLOG_Trace,
                         ("Missing JSON {\"addrs[i].meta.expires\"} - "
                          "using current time (" FMT_TIME_T
                          ") + default expiration "
@@ -1094,13 +1093,12 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             extra = x_json_object_dotget_string(address, "meta.extra");
             if ( ! extra  ||  ! *extra) {
                 if (type & fSERV_Http) {
-                    CORE_LOG_X(eNSub_Json, eLOG_Error,
+                    CORE_LOG_X(eNSub_Json, eLOG_Trace,
                             "Namerd API did not return a path in meta.extra "
                             "JSON for an HTTP type server");
-                    extra = "/ERROR/namerd/API/did/not/return/a/path/in"
-                            "/meta.extra/JSON/for/an/HTTP/type/server";
+                    extra = "/";
                 } else if (type == fSERV_Ncbid) {
-                    CORE_LOG_X(eNSub_Json, eLOG_Warning,
+                    CORE_LOG_X(eNSub_Json, eLOG_Trace,
                             "Namerd API did not return args in meta.extra "
                             "JSON for an NCBID type server");
                     extra = "''";
