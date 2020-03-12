@@ -148,7 +148,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddFlag("LIST", "List the tests without execution");
 
     //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, u - Submitter, b - Big Sequence, f - FATAL, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART genomes, u - Genome Submitter, b - Big Sequence, f - FATAL, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("R", "SevCount", "Severity for Error in Return Code\n\tinfo(0)\n\twarning(1)\n\terror(2)\n\tcritical(3)\n\tfatal(4)\n\ttrace(5)", CArgDescriptions::eInteger);
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
