@@ -35,7 +35,7 @@ elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017")
         message(FATAL_ERROR "32 bit configurations not supported")
     endif()
 else()
-    message(WARNING "Generator ${CMAKE_GENERATOR} not tested")
+#    message(WARNING "Generator ${CMAKE_GENERATOR} not tested")
     set(NCBI_ThirdPartyCompiler vs2017.64)
 endif()
 
