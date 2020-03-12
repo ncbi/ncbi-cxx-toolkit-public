@@ -3022,7 +3022,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Miscellaneous options");
 #ifdef NCBI_THREADS
     const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
-    const int kMaxValue = static_cast<int>(GetCpuCount());
+    const int kMaxValue = static_cast<int>(CSystemInfo::GetCpuCount());
     const int kDfltValue = m_NumThreads != CThreadable::kMinNumThreads
         ? std::min<int>(m_NumThreads, kMaxValue) : kMinValue;
 
@@ -3047,7 +3047,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
-    const int kMaxValue = static_cast<int>(GetCpuCount());
+    const int kMaxValue = static_cast<int>(CSystemInfo::GetCpuCount());
 
     if (args.Exist(kArgNumThreads) &&
         args[kArgNumThreads].HasValue()) {  // could be cancelled by the exclusion in CRemoteArgs
