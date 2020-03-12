@@ -143,18 +143,12 @@ REM create configure script
 ) >%cfg_cfg%
 
 REM modify CMakeLists.txt
-cd %rep_src%
 (
-    echo cmake_minimum_required^(VERSION 3.3^)
-    echo:
+    echo cmake_minimum_required^(VERSION 3.7^)
     echo project^(%prj_name%^)
-    echo:
     echo include^(%toolkit:\=/%/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
-    echo:
-    type %prj_prj%
-) >%prj_tmp%
-del %prj_prj%
-move /Y %prj_tmp% %prj_prj% >NUL
+    echo add_subdirectory^(%rep_src%^)
+) >%prj_prj%
 REM #########################################################################
 
 echo Created project %prj_name%
