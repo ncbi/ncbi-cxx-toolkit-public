@@ -361,7 +361,7 @@ INetStorageObjectState* CObj::StartRead(void* buf, size_t count, size_t* bytes_r
 
 void CObj::RemoveOldCopyIfExists(ILocation* current)
 {
-    auto f = [&](ILocation* l)
+    auto f = [&current](ILocation* l)
     {
         // Do not remove object from current location
         if (typeid(*l) == typeid(*current)) throw 0;
