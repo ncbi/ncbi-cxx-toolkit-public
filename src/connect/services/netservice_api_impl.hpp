@@ -112,7 +112,8 @@ public:
     CNetServer::SAddress m_EnforcedServer;
 
     // LBSM affinity name and value
-    pair<string, const char*> m_LBSMAffinity;
+    using TLBSMAffinity = pair<string, const char*>;
+    TLBSMAffinity m_LBSMAffinity;
 
     TNetServerByAddress m_Servers;
     CFastMutex m_ServerMutex;
@@ -272,6 +273,11 @@ private:
 #endif
 };
 
+struct CNetServiceDiscovery
+{
+    using TServers = vector<pair<CNetServer::SAddress, double>>;
+};
+
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 {
     enum EServiceType {
@@ -298,6 +304,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     static SNetServiceImpl* Clone(SNetServerInPool* server, SNetServiceImpl* prototype);
     static SNetServiceImpl* Clone(const string& service_name, SNetServiceImpl* prototype);
+
+    static CNetServiceDiscovery::TServers Discover(const string& service_name, unsigned types,
+            shared_ptr<void>& net_info, SNetServerPoolImpl::TLBSMAffinity lbsm_affinity,
+            int try_count, unsigned long retry_delay);
 
 private:
     // Construct a new object.
@@ -374,7 +384,7 @@ private:
     unsigned m_ConnectionMaxRetries;
     unsigned long m_ConnectionRetryDelay;
 
-    shared_ptr<SConnNetInfo> m_NetInfo;
+    shared_ptr<void> m_NetInfo;
 };
 
 struct SNetServiceMap {

@@ -917,6 +917,44 @@ void CNetService::ExecOnAllServers(const string& cmd)
         (*it).ExecWithRetry(cmd, false);
 }
 
+CNetServiceDiscovery::TServers SNetServiceImpl::Discover(const string& service_name, unsigned types,
+        shared_ptr<void>& net_info, SNetServerPoolImpl::TLBSMAffinity lbsm_affinity,
+        int try_count, unsigned long retry_delay)
+{
+    CNetServiceDiscovery::TServers rv;
+
+    // Query the Load Balancer.
+    for (;;) {
+        if (!net_info) {
+            net_info.reset(ConnNetInfo_Create(service_name.c_str()), ConnNetInfo_Destroy);
+        }
+
+        if (auto it = make_c_unique(SERV_OpenP(service_name.c_str(), types, SERV_LOCALHOST, 0, 0.0,
+                        static_cast<const SConnNetInfo*>(net_info.get()), NULL, 0, 0 /*false*/,
+                        lbsm_affinity.first.c_str(), lbsm_affinity.second), SERV_Close)) {
+
+            while (auto info = SERV_GetNextInfoEx(it.get(), 0)) {
+                if (info->time > 0 && info->time != NCBI_TIME_INFINITE && info->rate != 0.0) {
+                    rv.emplace_back(CNetServer::SAddress(info->host, info->port), info->rate);
+                }
+            }
+
+            break;
+        }
+
+        // FIXME Retry logic can be removed as soon as LBSMD with
+        // packet compression is installed universally.
+        if (--try_count < 0) {
+            break;
+        }
+
+        ERR_POST_X(4, "Could not find LB service name '" << service_name << "', will retry after delay");
+        SleepMilliSec(retry_delay);
+    }
+
+    return rv;
+}
+
 void SNetServiceImpl::DiscoverServersIfNeeded()
 {
     if (m_ServiceType == eServiceNotDefined) {
@@ -937,35 +975,11 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             // does not contain up-to-date server list, thus it needs
             // to be created anew.
 
-            // Query the Load Balancer.
-            SERV_ITER srv_it;
+            const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby |
+                fSERV_IncludeReserved | fSERV_IncludeSuppressed;
 
-            // FIXME Retry logic can be removed as soon as LBSMD with
-            // packet compression is installed universally.
-            int try_count = TServConn_MaxFineLBNameRetries::GetDefault();
-            for (;;) {
-                if (!m_NetInfo) {
-                    const auto s = m_ServiceName.c_str();
-                    m_NetInfo.reset(ConnNetInfo_Create(s), ConnNetInfo_Destroy);
-                }
-
-                srv_it = SERV_OpenP(m_ServiceName.c_str(),
-                        fSERV_Standalone |
-                        fSERV_IncludeStandby |
-                        fSERV_IncludeReserved |
-                        fSERV_IncludeSuppressed,
-                    SERV_LOCALHOST, 0, 0.0, m_NetInfo.get(), NULL, 0, 0 /*false*/,
-                    m_ServerPool->m_LBSMAffinity.first.c_str(),
-                    m_ServerPool->m_LBSMAffinity.second);
-
-                if (srv_it != 0 || --try_count < 0)
-                    break;
-
-                ERR_POST_X(4, "Could not find LB service name '" <<
-                    m_ServiceName <<
-                        "', will retry after delay");
-                SleepMilliSec(m_ConnectionRetryDelay);
-            }
+            auto discovered = Discover(m_ServiceName, types, m_NetInfo, m_ServerPool->m_LBSMAffinity,
+                    TServConn_MaxFineLBNameRetries::GetDefault(), m_ConnectionRetryDelay);
 
             SDiscoveredServers* server_group = m_DiscoveredServers;
 
@@ -979,8 +993,6 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
 
             CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
 
-            const SSERV_Info* sinfo;
-
             TNetServerList& servers = server_group->m_Servers;
             TNetServerList::size_type number_of_regular_servers = 0;
             TNetServerList::size_type number_of_standby_servers = 0;
@@ -988,40 +1000,35 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
 
             // Fill the 'servers' array in accordance with the layout
             // described above the SDiscoveredServers::m_Servers declaration.
-            while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
-                if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
-                        sinfo->rate != 0.0) {
-                    SNetServerInPool* server = m_ServerPool->
-                            FindOrCreateServerImpl(CNetServer::SAddress(sinfo->host, sinfo->port));
-                    server->m_ThrottleStats.Discover();
+            for (const auto& d : discovered) {
+                SNetServerInPool* server = m_ServerPool->FindOrCreateServerImpl(d.first);
+                server->m_ThrottleStats.Discover();
 
-                    TServerRate server_rate(server, sinfo->rate);
+                TServerRate server_rate(server, d.second);
 
-                    if (sinfo->rate > 0)
-                        servers.insert(servers.begin() +
-                            number_of_regular_servers++, server_rate);
-                    else if (sinfo->rate < max_standby_rate ||
-                            sinfo->rate <= LBSMD_PENALIZED_RATE_BOUNDARY)
-                        servers.push_back(server_rate);
+                if (d.second > 0)
+                    servers.insert(servers.begin() +
+                        number_of_regular_servers++, server_rate);
+                else if (d.second < max_standby_rate ||
+                        d.second <= LBSMD_PENALIZED_RATE_BOUNDARY)
+                    servers.push_back(server_rate);
+                else {
+                    servers.insert(servers.begin() +
+                        number_of_regular_servers, server_rate);
+                    if (d.second == max_standby_rate)
+                        ++number_of_standby_servers;
                     else {
-                        servers.insert(servers.begin() +
-                            number_of_regular_servers, server_rate);
-                        if (sinfo->rate == max_standby_rate)
-                            ++number_of_standby_servers;
-                        else {
-                            max_standby_rate = sinfo->rate;
-                            number_of_standby_servers = 1;
-                        }
+                        max_standby_rate = d.second;
+                        number_of_standby_servers = 1;
                     }
                 }
+            }
 
             server_group->m_SuppressedBegin = servers.begin() +
                 (number_of_regular_servers > 0 ?
                     number_of_regular_servers : number_of_standby_servers);
 
             server_mutex_lock.Release();
-
-            SERV_Close(srv_it);
         }
     }
 }
