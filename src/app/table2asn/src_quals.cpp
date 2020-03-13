@@ -221,7 +221,7 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
         }
     }
 
-
+/*
     for (const auto& id : id_strings) {
         auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
@@ -235,6 +235,24 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
             return true;
         }
     }
+*/
+
+    for (const auto& id : id_strings) {
+        auto it = m_LineMap.find(id);
+        if (it != m_LineMap.end()) {
+            CTempString* linePtr = it->second.linePtr;
+            CTempString& line  =  linePtr ? *linePtr : it->second.line;
+            if (!line.empty()) {
+                x_ProcessLine(line, mods);
+                auto lineNum = it->second.lineNum;
+                m_ProcessedIdsToLineNum.emplace(id, lineNum);
+                line.clear();
+                return true;
+            }
+        }
+    }
+
+
 
     for (const auto& id : id_strings) {
         auto it = m_ProcessedIdsToLineNum.find(id);
@@ -256,7 +274,9 @@ void CMemorySrcFileMap::ReportUnusedIds()
     if (!Empty()) {
         map<size_t, CTempString> unusedLines;
         for (const auto& entry : m_LineMap) { 
-            unusedLines.emplace(entry.second.lineNum, entry.second.line);    
+            if (!entry.second.line.empty()) {
+                unusedLines.emplace(entry.second.lineNum, entry.second.line);    
+            }
         }
 
         for (const auto& entry : unusedLines) {
@@ -429,9 +449,18 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, 
         return;
     }
 
-    list<TLineMap::iterator> iterators;
+    CTempString* linePtr=nullptr;
     for (auto id : parsedIDs) {
-        auto rval = m_LineMap.emplace(id, SLineInfo{lineNum, line});
+        pair<TLineMap::iterator,bool> rval;
+        if (linePtr) {
+            rval = m_LineMap.emplace(id, SLineInfo{lineNum});
+            rval.first->second.linePtr = linePtr;   
+        }
+        else {
+            rval = m_LineMap.emplace(id, SLineInfo{lineNum, line});
+            linePtr = &rval.first->second.line;
+        }
+
         if (!rval.second) {
             CTempString seqId, remainder; // revisit this
             NStr::SplitInTwo(line, "\t", seqId, remainder);
@@ -440,21 +469,9 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, 
                 lineNum,
                 rval.first->second.lineNum,
                 NStr::TruncateSpaces_Unsafe(seqId));
-            for (auto it : iterators) {
-                m_LineMap.erase(it);
-            }
-            break;
-        }
-        iterators.push_back(rval.first);
-    }
 
-    if (iterators.size()>1) {
-        for (auto current_it : iterators) {
-            for(auto other_it : iterators) {
-                if (other_it != current_it) {
-                    current_it->second.equiv.emplace_back(new SIter(other_it));
-                }
-            }
+            linePtr->clear();
+            break;
         }
     }
 }

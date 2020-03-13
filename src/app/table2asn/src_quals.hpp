@@ -37,23 +37,13 @@ class CMemorySrcFileMap
 public:
     using TModList = CModHandler::TModList;
 
-    struct SIter;
-
     struct SLineInfo {
         size_t lineNum;
         CTempString line;
-        list<unique_ptr<SIter>> equiv; 
+        CTempString* linePtr = nullptr;
     };
 
-    //using TLineMap = unordered_map<string, SLineInfo>;
     using TLineMap = map<CTempString, SLineInfo, PNocase_Generic<CTempString>>;
-
-    struct SIter
-    {
-        using TVal = TLineMap::iterator;
-        SIter(const TLineMap::iterator& v) : val(v) {}
-        TLineMap::iterator val;
-    };
 
     CMemorySrcFileMap(ILineErrorListener* pEC)
         : m_pEC(pEC) {}
