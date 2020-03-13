@@ -243,13 +243,12 @@ CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
 }
 
 
-#ifdef NCBI_NON_POD_TYPE_STL_ITERATORS
-
 CAnnotObject_Info::~CAnnotObject_Info()
 {
     Reset();
 }
 
+#ifdef NCBI_NON_POD_TYPE_STL_ITERATORS
 
 CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
     : m_Seq_annot_Info(info.m_Seq_annot_Info),

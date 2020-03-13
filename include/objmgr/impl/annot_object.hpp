@@ -33,6 +33,7 @@
 *
 */
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
@@ -132,10 +133,13 @@ public:
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                       const SAnnotTypeSelector& sel);
 
-#ifdef NCBI_NON_POD_TYPE_STL_ITERATORS
     ~CAnnotObject_Info();
+#ifdef NCBI_NON_POD_TYPE_STL_ITERATORS
     CAnnotObject_Info(const CAnnotObject_Info& info);
     CAnnotObject_Info& operator=(const CAnnotObject_Info& info);
+#else
+    CAnnotObject_Info(const CAnnotObject_Info& info) = delete;
+    CAnnotObject_Info& operator=(const CAnnotObject_Info& info) = delete;
 #endif
 
     // state check
