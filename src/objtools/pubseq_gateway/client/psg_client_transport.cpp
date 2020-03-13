@@ -46,6 +46,7 @@
 #include <utility>
 #include <functional>
 #include <numeric>
+#include <cmath>
 
 #include <uv.h>
 
@@ -986,9 +987,9 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 
 /** SPSG_IoSession */
 
-SPSG_IoSession::SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetServer::SAddress& address) :
+SPSG_IoSession::SPSG_IoSession(SPSG_AsyncQueue& queue, uv_loop_t* loop, const CNetServer::SAddress& address) :
     m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
-    m_Io(io),
+    m_Queue(queue),
     m_Tcp(loop, address,
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
@@ -1019,7 +1020,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error
 
     if (retries) {
         // Return to queue for a re-send
-        if (m_Io->queue.Push(move(req))) {
+        if (m_Queue.Push(move(req))) {
             debug_printout << retries << error << endl;
             return true;
         }
@@ -1155,43 +1156,28 @@ void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
     }
 }
 
-bool SPSG_IoSession::ProcessRequest()
+bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
-    while((m_Requests.size() < m_Session.GetMaxStreams())) {
-        shared_ptr<SPSG_Request> req;
+    auto stream_id = m_Session.Submit(req);
 
-        if (!m_Io->queue.Pop(req)) {
-            return true;
-        }
-
-        m_Io->space->NotifyOne();
-
-        auto stream_id = m_Session.Submit(req);
-
-        if (stream_id < 0) {
-            Retry(req, stream_id);
-            Reset(stream_id);
-            return false;
-        }
-
-        PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
-        m_Requests.emplace(stream_id, move(req));
-
-        if (!Send()) {
-            return false;
-        }
+    if (stream_id < 0) {
+        Retry(req, stream_id);
+        Reset(stream_id);
+        return false;
     }
 
-    return false;
+    PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
+    m_Requests.emplace(stream_id, move(req));
+    return Send();
 }
 
 void SPSG_IoSession::RequestComplete(TRequests::iterator& it)
 {
-    if ((m_Requests.size() == m_Session.GetMaxStreams())) {
+    if (IsFull()) {
         // Continue processing of requests in the IO thread queue on next UV loop iteration
-        m_Io->queue.Send();
+        m_Queue.Send();
     }
 
     it = m_Requests.erase(it);
@@ -1257,56 +1243,153 @@ void SPSG_IoThread::OnShutdown(uv_async_t*)
 
 void SPSG_IoThread::OnQueue(uv_async_t*)
 {
-    for (auto it = m_Servers.begin(); it != m_Servers.end(); ++it) {
-        if (it->discovered && it->session.TryCatch(&SPSG_IoSession::ProcessRequest, false)) {
-            if (m_Servers.size() > 1) {
-                // Put yet unused sessions to the beginning to be used first next time
-                m_Servers.splice(m_Servers.begin(), m_Servers, next(it), m_Servers.end());
-            }
+    size_t servers = 0;
 
-            return;
+    for (auto& server : m_Servers) {
+        server.available = server.rate;
+
+        if (server.available) {
+            ++servers;
         }
     }
+
+    auto d = m_Random.first;
+    auto i = m_Servers.begin();
+    auto next_i = [&]() { if (++i == m_Servers.end()) i = m_Servers.begin(); };
+
+    // We have to find available server first and then get a request,
+    // as we may not be able to put the request back into the queue after (if it's full)
+    while (servers) {
+        auto rate = d(m_Random.second);
+        _DEBUG_ARG(const auto original_rate = rate);
+
+        for (;;) {
+            // Skip all servers already marked unavailable in this iteration
+            while (!i->available) {
+                next_i();
+            }
+
+            _DEBUG_ARG(const auto& server_name = i->address.AsString());
+
+            // Server has no room for a request
+            if (i->session.IsFull()) {
+                PSG_IO_THREAD_TRACE("Server '" << server_name << "' has no room for a request");
+
+            // Server is available
+            } else {
+                rate -= i->rate;
+
+                if (rate >= 0.0) {
+                    // Check remaining rate against next available server
+                    next_i();
+                    continue;
+                }
+
+                shared_ptr<SPSG_Request> req;
+
+                if (!queue.Pop(req)) {
+                    PSG_IO_THREAD_TRACE("No [more] requests pending");
+                    return;
+                }
+
+                space->NotifyOne();
+
+                _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
+
+                if (i->session.TryCatch(&SPSG_IoSession::ProcessRequest, false, req)) {
+                    PSG_IO_THREAD_TRACE("Server '" << server_name << "' processed request " <<
+                            req_id << " with rate = " << original_rate);
+                    break;
+                } else {
+                    PSG_IO_THREAD_TRACE("Server '" << server_name << "' failed to process request " <<
+                            req_id << " with rate = " << original_rate);
+                }
+            }
+
+            // Server is unavailable
+            --servers;
+            i->available = false;
+            d = uniform_real_distribution<>(d.min() + i->rate);
+            break;
+        }
+    }
+
+    PSG_IO_THREAD_TRACE("No servers available [anymore]");
 }
 
 void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 {
-    try {
-        _DEBUG_ARG(const auto& service_name = m_Service.GetServiceName());
-        vector<CNetServer::SAddress> discovered;
+    const auto kRegularRate = nextafter(0.009, 1.0);
+    const auto kStandbyRate = 0.001;
 
-        // Gather all discovered addresses
-        for (auto it = m_Service.Iterate(CNetService::eRoundRobin); it; ++it) {
-            discovered.emplace_back((*it).GetAddress());
-        }
+    const auto& service_name = m_Service.GetServiceName();
+    auto discovered = m_Service();
 
-        // Update existing sessions
-        for (auto& server : m_Servers) {
-            const auto& address = server.address;
-            auto it = find(discovered.begin(), discovered.end(), address);
-            auto in_service = it != discovered.end();
+    auto regular_total = 0.0;
+    auto standby_total = 0.0;
 
-            if (in_service) {
-                discovered.erase(it);
-            }
+    // Accumulate regular and standby rates to normalize server rates later
+    for (auto& server : discovered) {
+        _DEBUG_ARG(const auto& server_name = server.first.AsString());
 
-            if (server.discovered != in_service) {
-                server.discovered = in_service;
-                PSG_IO_THREAD_TRACE("Host '" << address.AsString() << "' " <<
-                        (in_service ? "added to" : "removed from") << " service '" << service_name << '\'');
-            }
-        }
+        if (server.second >= kRegularRate) {
+            regular_total += server.second;
+            PSG_IO_THREAD_TRACE("Server '" << server_name << "' with rate " << server.second << " considered regular");
 
-        // Add sessions for newly discovered addresses
-        for (auto& address : discovered) {
-            m_Servers.emplace_back(this, handle->loop, address);
-            PSG_IO_THREAD_TRACE("Host '" << address.AsString() << "' added to service '" << service_name << '\'');
+        } else if (server.second >= kStandbyRate) {
+            standby_total += server.second;
+            PSG_IO_THREAD_TRACE("Server '" << server_name << "' with rate " << server.second << " considered standby");
+
+        } else {
+            PSG_IO_THREAD_TRACE("Server '" << server_name << "' with rate " << server.second << " ignored");
         }
     }
-    catch(...) {
-        ERR_POST("failure in timer");
+
+    if (!regular_total && !standby_total) {
+        ERR_POST("No servers in service '" << service_name << '\'');
+        return;
     }
 
+    const auto min_rate = regular_total ? kRegularRate : kStandbyRate;
+    const auto rate_total = regular_total ? regular_total : standby_total;
+
+    // Update existing servers
+    for (auto& server : m_Servers) {
+        auto address_same = [&](CNetServiceDiscovery::TServer& s) { return s.first == server.address; };
+        auto it = find_if(discovered.begin(), discovered.end(), address_same);
+
+        _DEBUG_ARG(const auto& server_name = server.address.AsString());
+
+        if ((it == discovered.end()) || (it->second < min_rate)) {
+            server.rate = 0.0;
+            PSG_IO_THREAD_TRACE("Server '" << server_name << "' disabled in service '" << service_name << '\'');
+
+        } else {
+            auto rate = it->second / rate_total;
+
+            if (server.rate != rate) {
+                // This has to be before the rate change for the condition to work (uses old rate)
+                PSG_IO_THREAD_TRACE("Server '" << server_name <<
+                        (server.rate ? "' updated in service '" : "' enabled in service '" ) <<
+                        service_name << "' with rate = " << rate);
+
+                server.rate = rate;
+            }
+
+            // Reset rate to avoid adding the server below
+            it->second = 0.0;
+        }
+    }
+
+    // Add new servers
+    for (auto& server : discovered) {
+        if (server.second >= min_rate) {
+            auto rate = server.second / rate_total;
+            m_Servers.emplace_back(queue, handle->loop, server.first, rate);
+            PSG_IO_THREAD_TRACE("Server '" << server.first.AsString() << "' added to service '" <<
+                    service_name << "' with rate = " << rate);
+        }
+    }
 }
 
 void SPSG_IoThread::OnRequestTimer(uv_timer_t* handle)
@@ -1341,10 +1424,8 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(const string& service_name) : m_RequestCo
     m_Barrier(TPSG_NumIo::GetDefault() + 1),
     m_ClientId("&client_id=" + GetDiagContext().GetStringUID())
 {
-    auto service = CNetService::Create("psg", service_name, kEmptyStr);
-
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
-        m_Io.emplace_back(new SPSG_IoThread(service, m_Barrier, &m_Space));
+        m_Io.emplace_back(new SPSG_IoThread(service_name, m_Barrier, &m_Space));
     }
 
     m_Barrier.Wait();

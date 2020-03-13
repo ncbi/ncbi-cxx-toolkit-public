@@ -145,6 +145,22 @@ class NCBI_XCONNECT_EXPORT CNetService
     static CNetService Create(const string& api_name, const string& service_name, const string& client_name);
 };
 
+class NCBI_XCONNECT_EXPORT CNetServiceDiscovery
+{
+public:
+    CNetServiceDiscovery(const string& service_name);
+
+    using TServer = pair<CNetServer::SAddress, double>;
+    using TServers = vector<TServer>;
+    TServers operator()();
+
+    const string& GetServiceName() const { return m_ServiceName; }
+
+private:
+    const string m_ServiceName;
+    shared_ptr<void> m_NetInfo;
+};
+
 /// This class is for use by the grid_cli utility only.
 /// @internal
 class NCBI_XCONNECT_EXPORT IExecToJson

@@ -56,6 +56,7 @@
 #include <mutex>
 #include <chrono>
 #include <sstream>
+#include <random>
 
 #include <nghttp2/nghttp2.h>
 #include <uv.h>
@@ -667,16 +668,41 @@ private:
     unsigned m_Seconds = 0;
 };
 
-struct SPSG_IoThread;
+struct SPSG_AsyncQueue : SPSG_UvAsync
+{
+    using TRequest = shared_ptr<SPSG_Request>;
+
+    bool Pop(TRequest& request)
+    {
+        return m_Queue.PopMove(request);
+    }
+
+    bool Push(TRequest&& request)
+    {
+        if (m_Queue.PushMove(request)) {
+            Send();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    using SPSG_UvAsync::Send;
+
+private:
+    CMPMCQueue<TRequest> m_Queue;
+};
+
 
 struct SPSG_IoSession
 {
-    SPSG_IoSession(SPSG_IoThread* io, uv_loop_t* loop, const CNetServer::SAddress& address);
+    SPSG_IoSession(SPSG_AsyncQueue& queue, uv_loop_t* loop, const CNetServer::SAddress& address);
 
     void StartClose();
 
-    bool ProcessRequest();
+    bool ProcessRequest(shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
+    bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
     template <typename TReturn, class ...TArgs1, class ...TArgs2>
     TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs1...), TReturn error, TArgs2&&... args)
@@ -701,6 +727,9 @@ struct SPSG_IoSession
 
 private:
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
+
+    SPSG_IoSession(SPSG_IoSession&&) = delete;
+    SPSG_IoSession& operator=(SPSG_IoSession&&) = delete;
 
     void OnConnect(int status);
     void OnWrite(int status);
@@ -757,47 +786,24 @@ private:
     }
 
     const TPSG_RequestTimeout m_RequestTimeout;
-    SPSG_IoThread* m_Io;
+    SPSG_AsyncQueue& m_Queue;
     SPSG_UvTcp m_Tcp;
     SPSG_NgHttp2Session m_Session;
 
     TRequests m_Requests;
 };
 
-struct SPSG_AsyncQueue : SPSG_UvAsync
-{
-    using TRequest = shared_ptr<SPSG_Request>;
-
-    bool Pop(TRequest& request)
-    {
-        return m_Queue.PopMove(request);
-    }
-
-    bool Push(TRequest&& request)
-    {
-        if (m_Queue.PushMove(request)) {
-            Send();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    using SPSG_UvAsync::Send;
-
-private:
-    CMPMCQueue<TRequest> m_Queue;
-};
-
 struct SPSG_Server
 {
     SPSG_IoSession session;
     const CNetServer::SAddress address;
-    bool discovered = true;
+    double rate;
+    bool available = true;
 
-    SPSG_Server(SPSG_IoThread* io, uv_loop_t* loop, CNetServer::SAddress a) :
-        session(io, loop, a),
-        address(move(a))
+    SPSG_Server(SPSG_AsyncQueue& queue, uv_loop_t* loop, CNetServer::SAddress a, double r) :
+        session(queue, loop, a),
+        address(move(a)),
+        rate(r)
     {}
 };
 
@@ -808,9 +814,10 @@ struct SPSG_IoThread
     SPSG_AsyncQueue queue;
     TSpaceCV* space;
 
-    SPSG_IoThread(CNetService service, SPSG_UvBarrier& barrier, TSpaceCV* s) :
+    SPSG_IoThread(const string& service, SPSG_UvBarrier& barrier, TSpaceCV* s) :
         space(s),
         m_Service(service),
+        m_Random(piecewise_construct, {}, make_tuple(random_device()())),
         m_Thread(s_Execute, this, ref(barrier))
     {}
 
@@ -852,11 +859,12 @@ private:
         io->Execute(barrier);
     }
 
-    list<SPSG_Server> m_Servers;
+    deque<SPSG_Server> m_Servers;
     SPSG_UvAsync m_Shutdown;
     SPSG_UvTimer m_Timer;
     SPSG_UvTimer m_RequestTimer;
-    CNetService m_Service;
+    CNetServiceDiscovery m_Service;
+    pair<uniform_real_distribution<>, default_random_engine> m_Random;
     thread m_Thread;
 };
 

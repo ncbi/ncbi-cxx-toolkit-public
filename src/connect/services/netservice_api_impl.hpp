@@ -273,11 +273,6 @@ private:
 #endif
 };
 
-struct CNetServiceDiscovery
-{
-    using TServers = vector<pair<CNetServer::SAddress, double>>;
-};
-
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 {
     enum EServiceType {

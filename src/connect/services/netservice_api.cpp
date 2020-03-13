@@ -1513,6 +1513,18 @@ CNetService CNetService::Create(const string& api_name, const string& service_na
             registry_builder, sections);
 }
 
+CNetServiceDiscovery::CNetServiceDiscovery(const string& service_name) :
+    m_ServiceName(service_name)
+{
+    struct Init : CConnIniter {} init;
+}
+
+CNetServiceDiscovery::TServers CNetServiceDiscovery::operator()()
+{
+    const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;
+    return SNetServiceImpl::Discover(m_ServiceName, types, m_NetInfo, SNetServerPoolImpl::TLBSMAffinity(), 0, 0);
+}
+
 void g_AppendClientIPSessionIDHitID(string& cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
