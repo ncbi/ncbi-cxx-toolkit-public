@@ -1250,18 +1250,18 @@ void SPSG_IoThread::OnShutdown(uv_async_t*)
     m_Timer.Close();
     m_RequestTimer.Close();
 
-    for (auto& session : m_Sessions) {
-        session.StartClose();
+    for (auto& server : m_Servers) {
+        server.session.StartClose();
     }
 }
 
 void SPSG_IoThread::OnQueue(uv_async_t*)
 {
-    for (auto it = m_Sessions.begin(); it != m_Sessions.end(); ++it) {
-        if (it->discovered && it->TryCatch(&SPSG_IoSession::ProcessRequest, false)) {
-            if (m_Sessions.size() > 1) {
+    for (auto it = m_Servers.begin(); it != m_Servers.end(); ++it) {
+        if (it->discovered && it->session.TryCatch(&SPSG_IoSession::ProcessRequest, false)) {
+            if (m_Servers.size() > 1) {
                 // Put yet unused sessions to the beginning to be used first next time
-                m_Sessions.splice(m_Sessions.begin(), m_Sessions, next(it), m_Sessions.end());
+                m_Servers.splice(m_Servers.begin(), m_Servers, next(it), m_Servers.end());
             }
 
             return;
@@ -1281,8 +1281,8 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
         }
 
         // Update existing sessions
-        for (auto& session : m_Sessions) {
-            const auto& address = session.address;
+        for (auto& server : m_Servers) {
+            const auto& address = server.address;
             auto it = find(discovered.begin(), discovered.end(), address);
             auto in_service = it != discovered.end();
 
@@ -1290,8 +1290,8 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
                 discovered.erase(it);
             }
 
-            if (session.discovered != in_service) {
-                session.discovered = in_service;
+            if (server.discovered != in_service) {
+                server.discovered = in_service;
                 PSG_IO_THREAD_TRACE("Host '" << address.AsString() << "' " <<
                         (in_service ? "added to" : "removed from") << " service '" << service_name << '\'');
             }
@@ -1299,7 +1299,7 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
         // Add sessions for newly discovered addresses
         for (auto& address : discovered) {
-            m_Sessions.emplace_back(this, handle->loop, address);
+            m_Servers.emplace_back(this, handle->loop, address);
             PSG_IO_THREAD_TRACE("Host '" << address.AsString() << "' added to service '" << service_name << '\'');
         }
     }
@@ -1311,8 +1311,8 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
 void SPSG_IoThread::OnRequestTimer(uv_timer_t* handle)
 {
-    for (auto& session : m_Sessions) {
-        session.CheckRequestExpiration();
+    for (auto& server : m_Servers) {
+        server.session.CheckRequestExpiration();
     }
 }
 
@@ -1331,7 +1331,7 @@ void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
 
     loop.Run();
 
-    m_Sessions.clear();
+    m_Servers.clear();
 }
 
 

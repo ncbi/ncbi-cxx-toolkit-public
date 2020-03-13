@@ -789,6 +789,18 @@ private:
     CMPMCQueue<TRequest> m_Queue;
 };
 
+struct SPSG_Server
+{
+    SPSG_IoSession session;
+    const CNetServer::SAddress address;
+    bool discovered = true;
+
+    SPSG_Server(SPSG_IoThread* io, uv_loop_t* loop, CNetServer::SAddress a) :
+        session(io, loop, a),
+        address(move(a))
+    {}
+};
+
 struct SPSG_IoThread
 {
     using TSpaceCV = SPSG_CV<1000>;
@@ -805,8 +817,6 @@ struct SPSG_IoThread
     ~SPSG_IoThread();
 
 private:
-    struct SSession;
-
     void OnShutdown(uv_async_t* handle);
     void OnQueue(uv_async_t* handle);
     void OnTimer(uv_timer_t* handle);
@@ -842,23 +852,12 @@ private:
         io->Execute(barrier);
     }
 
-    list<SSession> m_Sessions;
+    list<SPSG_Server> m_Servers;
     SPSG_UvAsync m_Shutdown;
     SPSG_UvTimer m_Timer;
     SPSG_UvTimer m_RequestTimer;
     CNetService m_Service;
     thread m_Thread;
-};
-
-struct SPSG_IoThread::SSession : SPSG_IoSession
-{
-    const CNetServer::SAddress address;
-    bool discovered = true;
-
-    SSession(SPSG_IoThread* io, uv_loop_t* loop, CNetServer::SAddress a) :
-        SPSG_IoSession(io, loop, a),
-        address(move(a))
-    {}
 };
 
 struct SPSG_IoCoordinator
