@@ -324,6 +324,9 @@ void CheckAutoDefOptions
     if (opts.GetKeep3UTRs()) {
         expected_num_fields++;
     }
+    if (opts.GetKeepRepeatRegion()) {
+        expected_num_fields++;
+    }
     if (!NStr::IsBlank(opts.GetCustomFeatureClause())) {
         expected_num_fields++;
     }
@@ -2594,6 +2597,65 @@ BOOST_AUTO_TEST_CASE(Test_GB_8604)
     // show when not suppressing
     AddTitle(entry, "Sebaea microphylla proannomuricatin G, annomuricatin G region, (PamG) gene, partial cds.");
     CheckDeflineMatches(entry);
+}
+
+CRef<CSeq_feat> MakeRegulatoryFeature(const string& reg_class, const string& comment, TSeqPos start_pos, CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_feat> reg = unit_test_util::AddMiscFeature(entry);
+    reg->SetData().SetImp().SetKey("regulatory");
+    reg->SetComment(comment);
+    reg->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("regulatory_class", reg_class)));
+    reg->SetLocation().SetInt().SetFrom(start_pos);
+    reg->SetLocation().SetInt().SetTo(start_pos + 4);
+    return reg;
+}
+
+CRef<CSeq_feat> MakeRptRegion(const string& rpt_type, TSeqPos start_pos, CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_feat> reg = unit_test_util::AddMiscFeature(entry);
+    reg->ResetComment();
+    reg->SetData().SetImp().SetKey("repeat_region");
+    reg->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("rpt_type", rpt_type)));
+    reg->SetLocation().SetInt().SetFrom(start_pos);
+    reg->SetLocation().SetInt().SetTo(start_pos + 4);
+    return reg;
+}
+
+
+void TestRepeatRegion(CRef<CSeq_entry> entry)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDefWithTaxonomy autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
+
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetKeepRepeatRegion(true);
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_GB_8854)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> rpt = MakeRptRegion("long_terminal_repeat", 15, entry);
+    AddTitle(entry, "Sebaea microphylla LTR repeat region.");
+    TestRepeatRegion(entry);
+
+    CRef<CSeq_feat> reg1 = MakeRegulatoryFeature("CAAT_signal", "U3 region", 0, entry);
+    CRef<CSeq_feat> reg2 = MakeRegulatoryFeature("TATA_box", "U3 region", 5, entry);
+    CRef<CSeq_feat> reg3 = MakeRegulatoryFeature("polyA_signal_sequence", "R-region", 10, entry);
+
+    TestRepeatRegion(entry);
 }
 
 END_SCOPE(objects)
