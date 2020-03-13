@@ -40,7 +40,9 @@ static string           kTimeRangeEnd("TimeRangeEnd");
 const unsigned long     kMaxBlobSize = 1024L*1024L*1024L*8L;   // 8 GB
 
 
-CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram)
+CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
+                             const string &  name,
+                             const string &  description)
 {
     static string   kBins("Bins");
     static string   kStart("Start");
@@ -50,8 +52,14 @@ CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram)
     static string   kUpperAnomaly("UpperAnomaly");
     static string   kTotalCount("TotalCount");
     static string   kValueSum("ValueSum");
+    static string   kName("name");
+    static string   kDescription("description");
 
     CJsonNode       ret(CJsonNode::NewObjectNode());
+    ret.SetString(kName, name);
+    ret.SetString(kDescription, description);
+
+
     CJsonNode       bins(CJsonNode::NewArrayNode());
 
     size_t          bin_count =  histogram.GetNumberOfBins();
@@ -86,7 +94,9 @@ CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram)
 
 CJsonNode CPSGTimingBase::SerializeSeries(int  most_ancient_time,
                                           int  most_recent_time,
-                                          unsigned long  tick_span) const
+                                          unsigned long  tick_span,
+                                          const string &  name,
+                                          const string &  description) const
 {
     CJsonNode                   ret(CJsonNode::NewArrayNode());
     TPSGTiming::TTimeBins       bins = m_PSGTiming->GetHistograms();
@@ -116,7 +126,7 @@ CJsonNode CPSGTimingBase::SerializeSeries(int  most_ancient_time,
         }
 
         // Histogram is within the range. Take the counters.
-        CJsonNode   slice = SerializeHistogram(bin.histogram);
+        CJsonNode   slice = SerializeHistogram(bin.histogram, name, description);
         slice.SetInteger(kTimeRangeStart, histogram_start_time);
         slice.SetInteger(kTimeRangeEnd, histogram_end_time);
         ret.Append(slice);
@@ -130,7 +140,9 @@ CJsonNode CPSGTimingBase::SerializeSeries(int  most_ancient_time,
 
 CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
                                             int  most_recent_time,
-                                            unsigned long  tick_span) const
+                                            unsigned long  tick_span,
+                                            const string &  name,
+                                            const string &  description) const
 {
     TPSGTiming::TTimeBins       bins = m_PSGTiming->GetHistograms();
     TOnePSGTiming               combined_histogram = bins.front().
@@ -179,7 +191,7 @@ CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
         return CJsonNode::NewObjectNode();
     }
 
-    CJsonNode   ret = SerializeHistogram(combined_histogram);
+    CJsonNode   ret = SerializeHistogram(combined_histogram, name, description);
     ret.SetInteger(kTimeRangeStart, actual_recent_time);
     ret.SetInteger(kTimeRangeEnd, actual_ancient_time);
     return ret;
@@ -309,11 +321,15 @@ static string   kEndBlobSize("MaxBlobSize");
 
 CJsonNode CBlobRetrieveTiming::SerializeCombined(int  most_ancient_time,
                                                  int  most_recent_time,
-                                                 unsigned long  tick_span) const
+                                                 unsigned long  tick_span,
+                                                 const string &  name,
+                                                 const string &  description) const
 {
     CJsonNode       timing = CPSGTimingBase::SerializeCombined(most_ancient_time,
                                                                most_recent_time,
-                                                               tick_span);
+                                                               tick_span,
+                                                               name,
+                                                               description);
     timing.SetInteger(kStartBlobSize, m_MinBlobSize);
     timing.SetInteger(kEndBlobSize, m_MaxBlobSize);
     return timing;
@@ -322,14 +338,18 @@ CJsonNode CBlobRetrieveTiming::SerializeCombined(int  most_ancient_time,
 
 CJsonNode CBlobRetrieveTiming::SerializeSeries(int  most_ancient_time,
                                                int  most_recent_time,
-                                               unsigned long  tick_span) const
+                                               unsigned long  tick_span,
+                                               const string &  name,
+                                               const string &  description) const
 {
     static string   kBins("Bins");
 
     CJsonNode   ret(CJsonNode::NewObjectNode());
     ret.SetByKey(kBins, CPSGTimingBase::SerializeSeries(most_ancient_time,
                                                         most_recent_time,
-                                                        tick_span));
+                                                        tick_span,
+                                                        name,
+                                                        description));
     ret.SetInteger(kStartBlobSize, m_MinBlobSize);
     ret.SetInteger(kEndBlobSize, m_MaxBlobSize);
     return ret;
@@ -547,43 +567,224 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
 
     // fill the map between the histogram name and where it is stored
     m_NamesMap = {
-        { "LookupLmdbSi2csiFound", m_LookupLmdbSi2csiTiming[0].get() },
-        { "LookupLmdbSi2csiNotFound", m_LookupLmdbSi2csiTiming[1].get() },
-        { "LookupLmdbBioseqInfoFound", m_LookupLmdbBioseqInfoTiming[0].get() },
-        { "LookupLmdbBioseqInfoNotFound", m_LookupLmdbBioseqInfoTiming[1].get() },
-        { "LookupLmdbBlobPropFound", m_LookupLmdbBlobPropTiming[0].get() },
-        { "LookupLmdbBlobPropNotFound", m_LookupLmdbBlobPropTiming[1].get() },
-        { "LookupCassSi2csiFound", m_LookupCassSi2csiTiming[0].get() },
-        { "LookupCassSi2csiNotFound", m_LookupCassSi2csiTiming[1].get() },
-        { "LookupCassBioseqInfoFound", m_LookupCassBioseqInfoTiming[0].get() },
-        { "LookupCassBioseqInfoNotFound", m_LookupCassBioseqInfoTiming[1].get() },
-        { "LookupCassBlobPropFound", m_LookupCassBlobPropTiming[0].get() },
-        { "LookupCassBlobPropNotFound", m_LookupCassBlobPropTiming[1].get() },
-        { "ResolutionLmdbFound", m_ResolutionLmdbTiming[0].get() },
-        { "ResolutionLmdbNotFound", m_ResolutionLmdbTiming[1].get() },
-        { "ResolutionCassFound", m_ResolutionCassTiming[0].get() },
-        { "ResolutionCassNotFound", m_ResolutionCassTiming[1].get() },
-        { "NARetrieveFound", m_NARetrieveTiming[0].get() },
-        { "NARetrieveNotFound", m_NARetrieveTiming[1].get() },
-        { "SplitHistoryRetrieveFound", m_SplitHistoryRetrieveTiming[0].get() },
-        { "SplitHistoryRetrieveNotFound", m_SplitHistoryRetrieveTiming[1].get() },
-        { "HugeBlobRetrieval", m_HugeBlobRetrievalTiming.get() },
-        { "BlobRetrievalNotFound", m_NotFoundBlobRetrievalTiming.get() },
-        { "ResolutionError", m_ResolutionErrorTiming.get() },
-        { "ResolutionNotFound", m_ResolutionNotFoundTiming.get() },
-        { "ResolutionFoundInCache", m_ResolutionFoundInCacheTiming.get() },
-        { "ResolutionFoundCassandraIn1Try", m_ResolutionFoundCassandraTiming[0].get() },
-        { "ResolutionFoundCassandraIn2Tries", m_ResolutionFoundCassandraTiming[1].get() },
-        { "ResolutionFoundCassandraIn3Tries", m_ResolutionFoundCassandraTiming[2].get() },
-        { "ResolutionFoundCassandraIn4Tries", m_ResolutionFoundCassandraTiming[3].get() },
-        { "ResolutionFoundCassandraIn5OrMoreTries", m_ResolutionFoundCassandraTiming[4].get() }
+        { "LookupLmdbSi2csiFound",
+          SInfo(m_LookupLmdbSi2csiTiming[0].get(),
+                "si2csi LMDB cache found",
+                "The timing of si2csi LMDB cache lookup "
+                "when a record was found"
+               )
+        },
+        { "LookupLmdbSi2csiNotFound",
+          SInfo(m_LookupLmdbSi2csiTiming[1].get(),
+                "si2csi LMDB cache not found",
+                "The timing of si2csi LMDB cache lookup "
+                "when there was no record found"
+               )
+        },
+        { "LookupLmdbBioseqInfoFound",
+          SInfo(m_LookupLmdbBioseqInfoTiming[0].get(),
+                "bioseq info LMDB cache found",
+                "The timing of bioseq info LMDB cache lookup "
+                "when a record was found"
+               )
+        },
+        { "LookupLmdbBioseqInfoNotFound",
+          SInfo(m_LookupLmdbBioseqInfoTiming[1].get(),
+                "bioseq info LMDB cache not found",
+                "The timing of bioseq info LMDB cache lookup "
+                "when there was no record found"
+               )
+        },
+        { "LookupLmdbBlobPropFound",
+          SInfo(m_LookupLmdbBlobPropTiming[0].get(),
+                "blob properties LMDB cache found",
+                "The timing of blob properties LMDB cache lookup "
+                "when a record was found"
+               )
+        },
+        { "LookupLmdbBlobPropNotFound",
+          SInfo(m_LookupLmdbBlobPropTiming[1].get(),
+                "blob properties LMDB cache not found",
+                "The timing of blob properties LMDB cache lookup "
+                "when there was no record found"
+               )
+        },
+        { "LookupCassSi2csiFound",
+          SInfo(m_LookupCassSi2csiTiming[0].get(),
+                "si2csi Cassandra found",
+                "The timing of si2csi Cassandra lookup "
+                "when a record was found"
+               )
+        },
+        { "LookupCassSi2csiNotFound",
+          SInfo(m_LookupCassSi2csiTiming[1].get(),
+                "si2csi Cassandra not found",
+                "The timing of si2csi Cassandra lookup "
+                "when there was no record found"
+               )
+        },
+        { "LookupCassBioseqInfoFound",
+          SInfo(m_LookupCassBioseqInfoTiming[0].get(),
+                "bioseq info Cassandra found",
+                "The timing of bioseq info Cassandra lookup "
+                "when a record was found"
+               )
+        },
+        { "LookupCassBioseqInfoNotFound",
+          SInfo(m_LookupCassBioseqInfoTiming[1].get(),
+                "bioseq info Cassandra not found",
+                "The timing of bioseq info Cassandra lookup "
+                "when there was no record found"
+               )
+        },
+        { "LookupCassBlobPropFound",
+          SInfo(m_LookupCassBlobPropTiming[0].get(),
+                "blob properties Cassandra found",
+                "The timing of blob properties Cassandra lookup "
+                "when a record was found"
+               )
+        },
+        { "LookupCassBlobPropNotFound",
+          SInfo(m_LookupCassBlobPropTiming[1].get(),
+                "blob properties Cassandra not found",
+                "The timing of blob properties Cassandra lookup "
+                "when there was no record found"
+               )
+        },
+        { "ResolutionLmdbFound",
+          SInfo(m_ResolutionLmdbTiming[0].get(),
+                "LMDB resolution succeeded",
+                "The timing of a seq id successful resolution "
+                "when only LMDB cache was used (only the LMDB lookup time)"
+               )
+        },
+        { "ResolutionLmdbNotFound",
+          SInfo(m_ResolutionLmdbTiming[1].get(),
+                "LMDB resolution not found",
+                "The timing of a seq id unsuccessful resolution "
+                "when all the tries in LMDB cache led to nothing"
+               )
+        },
+        { "ResolutionCassFound",
+          SInfo(m_ResolutionCassTiming[0].get(),
+                "Cassandra resolution succeeded",
+                "The timing of a seq id successful resolution "
+                "when only Cassandra was used (regardless how many queries were "
+                "made to Cassandra)"
+               )
+        },
+        { "ResolutionCassNotFound",
+          SInfo(m_ResolutionCassTiming[1].get(),
+                "Cassandra resolution not found",
+                "The timing of a seq id unsuccessful resolution "
+                "when all the tries in Cassandra led to nothing"
+               )
+        },
+        { "NARetrieveFound",
+          SInfo(m_NARetrieveTiming[0].get(),
+                "Named annotations found",
+                "The timing of named annotations successful retrieval"
+               )
+        },
+        { "NARetrieveNotFound",
+          SInfo(m_NARetrieveTiming[1].get(),
+                "Named annotations not found",
+                "The timing of named annotations retrieval "
+                "when nothing was found"
+               )
+        },
+        { "SplitHistoryRetrieveFound",
+          SInfo(m_SplitHistoryRetrieveTiming[0].get(),
+                "Split history found",
+                "The timing of split history successful retrieval"
+               )
+        },
+        { "SplitHistoryRetrieveNotFound",
+          SInfo(m_SplitHistoryRetrieveTiming[1].get(),
+                "Split history not found",
+                "The timing of split history retrieval "
+                "when nothing was found"
+               )
+        },
+        { "HugeBlobRetrieval",
+          SInfo(m_HugeBlobRetrievalTiming.get(),
+                "Huge blob retrieval",
+                "The timing of the very large blob retrieval"
+               )
+        },
+        { "BlobRetrievalNotFound",
+          SInfo(m_NotFoundBlobRetrievalTiming.get(),
+                "Blob retrieval not found",
+                "The timing of blob retrieval when a blob was not found"
+               )
+        },
+        { "ResolutionError",
+          SInfo(m_ResolutionErrorTiming.get(),
+                "Resolution error",
+                "The timing of a case when an error was detected while resolving seq id"
+               )
+        },
+        { "ResolutionNotFound",
+          SInfo(m_ResolutionNotFoundTiming.get(),
+                "Resolution not found",
+                "The timing of a case when resolution of a seq id did not succeed "
+                "(regardless it was cache, Cassandra or both)"
+               )
+        },
+        { "ResolutionFoundInCache",
+          SInfo(m_ResolutionFoundInCacheTiming.get(),
+                "Resolution succeeded using cache",
+                "The timing of a seq id successful resolution "
+                "when cache was used (starts at the request is received)"
+               )
+        },
+        { "ResolutionFoundCassandraIn1Try",
+          SInfo(m_ResolutionFoundCassandraTiming[0].get(),
+                "Resolution succeeded via Cassandra (1 try)",
+                "The timing of a seq id resolution in Cassandra when "
+                "1 try was required"
+               )
+        },
+        { "ResolutionFoundCassandraIn2Tries",
+          SInfo(m_ResolutionFoundCassandraTiming[1].get(),
+                "Resolution succeeded via Cassandra (2 tries)",
+                "The timing of a seq id resolution in Cassandra when "
+                "2 tries were required"
+               )
+        },
+        { "ResolutionFoundCassandraIn3Tries",
+          SInfo(m_ResolutionFoundCassandraTiming[2].get(),
+                "Resolution succeeded via Cassandra (3 tries)",
+                "The timing of a seq id resolution in Cassandra when "
+                "3 tries were required"
+               )
+        },
+        { "ResolutionFoundCassandraIn4Tries",
+          SInfo(m_ResolutionFoundCassandraTiming[3].get(),
+                "Resolution succeeded via Cassandra (4 tries)",
+                "The timing of a seq id resolution in Cassandra when "
+                "4 tries were required"
+               )
+        },
+        { "ResolutionFoundCassandraIn5OrMoreTries",
+          SInfo(m_ResolutionFoundCassandraTiming[4].get(),
+                "Resolution succeeded via Cassandra (5 tries or more)",
+                "The timing of a seq id resolution in Cassandra when "
+                "5 or more tries were required"
+               )
+        }
     };
 
     for (auto & retieve_timing : m_BlobRetrieveTiming) {
-        string      name = "BlobRetrievalFrom" +
-                           to_string(retieve_timing->GetMinBlobSize()) + "To" +
-                           to_string(retieve_timing->GetMaxBlobSize());
-        m_NamesMap[name] = retieve_timing.get();
+        string      min_size_str = to_string(retieve_timing->GetMinBlobSize());
+        string      max_size_str = to_string(retieve_timing->GetMaxBlobSize());
+        string      id = "BlobRetrievalFrom" + min_size_str + "To" + max_size_str;
+        string      name = "Blob retrieval (size: " +
+                        min_size_str + " to " + max_size_str + ")";
+        string      description = "The timing of a blob retrieval when "
+                        "the blob size is between " + min_size_str +
+                        " and " + max_size_str + " bytes";
+        m_NamesMap[id] = SInfo(retieve_timing.get(), name, description);
     }
 }
 
@@ -801,9 +1002,12 @@ COperationTiming::Serialize(int  most_ancient_time,
     if (histogram_names.empty()) {
         for (const auto &  name_to_histogram : m_NamesMap) {
             ret.SetByKey(name_to_histogram.first,
-                         name_to_histogram.second->SerializeCombined(most_ancient_time,
-                                                                     most_recent_time,
-                                                                     tick_span));
+                         name_to_histogram.second.m_Timing->SerializeCombined(
+                             most_ancient_time,
+                             most_recent_time,
+                             tick_span,
+                             name_to_histogram.second.m_Name,
+                             name_to_histogram.second.m_Description));
         }
     } else {
         for (const auto &  name : histogram_names) {
@@ -812,9 +1016,11 @@ COperationTiming::Serialize(int  most_ancient_time,
             if (iter != m_NamesMap.end()) {
                 ret.SetByKey(
                     histogram_name,
-                    iter->second->SerializeSeries(most_ancient_time,
-                                                  most_recent_time,
-                                                  tick_span));
+                    iter->second.m_Timing->SerializeSeries(most_ancient_time,
+                                                           most_recent_time,
+                                                           tick_span,
+                                                           iter->second.m_Name,
+                                                           iter->second.m_Description));
             }
         }
     }

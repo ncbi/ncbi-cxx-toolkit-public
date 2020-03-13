@@ -91,7 +91,9 @@ typedef CHistogramTimeSeries<uint64_t, uint64_t, uint64_t>  TPSGTiming;
 
 
 // Returns a serialized dictionary
-CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram);
+CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
+                             const string &  name,
+                             const string &  description);
 
 
 // The base class for all the collected statistics.
@@ -136,10 +138,14 @@ class CPSGTimingBase
         // Generic serialization to json
         virtual CJsonNode SerializeCombined(int  most_ancient_time,
                                             int  most_recent_time,
-                                            unsigned long  tick_span) const;
+                                            unsigned long  tick_span,
+                                            const string &  name,
+                                            const string &  description) const;
         virtual CJsonNode SerializeSeries(int  most_ancient_time,
                                           int  most_recent_time,
-                                          unsigned long  tick_span) const;
+                                          unsigned long  tick_span,
+                                          const string &  name,
+                                          const string &  description) const;
 
     protected:
         unique_ptr<TPSGTiming>      m_PSGTiming;
@@ -213,10 +219,14 @@ class CBlobRetrieveTiming : public CPSGTimingBase
     public:
         virtual CJsonNode SerializeCombined(int  most_ancient_time,
                                             int  most_recent_time,
-                                            unsigned long  tick_span) const;
+                                            unsigned long  tick_span,
+                                            const string &  name,
+                                            const string &  description) const;
         virtual CJsonNode SerializeSeries(int  most_ancient_time,
                                           int  most_recent_time,
-                                          unsigned long  tick_span) const;
+                                          unsigned long  tick_span,
+                                          const string &  name,
+                                          const string &  description) const;
 
         unsigned long GetMinBlobSize(void) const
         { return m_MinBlobSize; }
@@ -353,8 +363,26 @@ class COperationTiming
         // 1, 2, 3, 4, 5+ trips to cassandra
         vector<unique_ptr<CResolutionTiming>>               m_ResolutionFoundCassandraTiming;
 
+        struct SInfo {
+            CPSGTimingBase *    m_Timing;
+            string              m_Name;
+            string              m_Description;
 
-        map<string, CPSGTimingBase *>                       m_NamesMap;
+            SInfo() :
+                m_Timing(nullptr)
+            {}
+
+            SInfo(CPSGTimingBase *  timing,
+                  const string &  name, const string &  description) :
+                m_Timing(timing), m_Name(name), m_Description(description)
+            {}
+
+            SInfo(const SInfo &) = default;
+            SInfo & operator=(const SInfo &) = default;
+            SInfo(SInfo &&) = default;
+            SInfo & operator=(SInfo &&) = default;
+        };
+        map<string, SInfo>                                  m_NamesMap;
 
         mutable mutex                                       m_Lock; // reset-rotate-serialize lock
 };

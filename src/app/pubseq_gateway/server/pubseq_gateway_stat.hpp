@@ -36,6 +36,22 @@
 #include <connect/services/json_over_uttp.hpp>
 USING_NCBI_SCOPE;
 
+void AppendValueNode(CJsonNode &  dict,
+                     const string &  id,
+                     uint64_t  value,
+                     const string &  name,
+                     const string &  description);
+void AppendValueNode(CJsonNode &  dict,
+                     const string &  id,
+                     bool  value,
+                     const string &  name,
+                     const string &  description);
+void AppendValueNode(CJsonNode &  dict,
+                     const string &  id,
+                     const string &  value,
+                     const string &  name,
+                     const string &  description);
+
 
 // The class is used to collect information about errors
 class CPubseqGatewayErrorCounters

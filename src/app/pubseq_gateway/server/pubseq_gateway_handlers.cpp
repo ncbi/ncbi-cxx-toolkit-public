@@ -1020,21 +1020,34 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 
         CJsonNode                       reply(CJsonNode::NewObjectNode());
 
-        reply.SetInteger("CassandraActiveStatementsCount",
-                         m_CassConnection->GetActiveStatements());
-        reply.SetInteger("NumberOfConnections",
-                         m_TcpDaemon->NumOfConnections());
-        reply.SetInteger("ActiveRequestCount",
-                         g_ShutdownData.m_ActiveRequestCount);
-        reply.SetBoolean("ShutdownRequested",
-                         g_ShutdownData.m_ShutdownRequested);
+        AppendValueNode(reply, "CassandraActiveStatementsCount",
+                        static_cast<uint64_t>(m_CassConnection->GetActiveStatements()),
+                        "Cassandra active statements counter",
+                        "Number of the currently active Cassandra queries");
+        AppendValueNode(reply, "NumberOfConnections",
+                        static_cast<uint64_t>(m_TcpDaemon->NumOfConnections()),
+                        "Cassandra connections counter",
+                        "Number of the connections to Cassandra");
+        AppendValueNode(reply, "ActiveRequestCount",
+                        static_cast<uint64_t>(g_ShutdownData.m_ActiveRequestCount.load()),
+                        "Active requests counter",
+                        "Number of the currently active client requests");
+        AppendValueNode(reply, "ShutdownRequested",
+                        g_ShutdownData.m_ShutdownRequested,
+                        "Shutdown requested flag",
+                        "Shutdown requested flag");
+
         if (g_ShutdownData.m_ShutdownRequested) {
             auto        now = chrono::steady_clock::now();
-            reply.SetInteger("GracefulShutdownExpiredInSec",
-                              std::chrono::duration_cast<std::chrono::seconds>
-                                (g_ShutdownData.m_Expired - now).count());
+            uint64_t    sec = std::chrono::duration_cast<std::chrono::seconds>
+                                (g_ShutdownData.m_Expired - now).count();
+            AppendValueNode(reply, "GracefulShutdownExpiredInSec", sec,
+                            "Graceful shutdown expiration",
+                            "Graceful shutdown expiration in seconds from now");
         } else {
-            reply.SetString("GracefulShutdownExpiredInSec", "n/a");
+            AppendValueNode(reply, "GracefulShutdownExpiredInSec", "n/a",
+                            "Graceful shutdown expiration",
+                            "Graceful shutdown expiration in seconds from now");
         }
 
         m_ErrorCounters.PopulateDictionary(reply);
