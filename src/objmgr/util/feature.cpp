@@ -2245,7 +2245,7 @@ static EStrandMatchRule s_GetStrandMatchRule(const STypeLink& link,
 
 struct SBestInfoLess
 {
-    bool operator()(const SBestInfo& info1, const SBestInfo& info2) {
+    bool operator()(const SBestInfo& info1, const SBestInfo& info2) const {
         if (info1.m_Info  &&  info2.m_Info) {
             if (info1.m_Quality != info2.m_Quality) {
                 return info1.m_Quality > info2.m_Quality;
@@ -2340,7 +2340,7 @@ struct SChildLess
 {
     typedef CDisambiguator::TChildren::const_iterator TChild;
 
-    bool operator()(const TChild& c1, const TChild& c2) {
+    bool operator()(const TChild& c1, const TChild& c2) const {
         const TChild::value_type& cr1 = *c1;
         const TChild::value_type& cr2 = *c2;
         if (cr1.first == cr2.first) return false;
