@@ -1045,7 +1045,7 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
                             "Graceful shutdown expiration",
                             "Graceful shutdown expiration in seconds from now");
         } else {
-            AppendValueNode(reply, "GracefulShutdownExpiredInSec", "n/a",
+            AppendValueNode(reply, "GracefulShutdownExpiredInSec", string("n/a"),
                             "Graceful shutdown expiration",
                             "Graceful shutdown expiration in seconds from now");
         }
