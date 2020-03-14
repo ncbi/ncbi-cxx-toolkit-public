@@ -135,7 +135,10 @@ typedef   int   ssize_t;
 #define NETDB_REENTRANT                 1
 
 #if _MSC_VER >= 1400
-
+// need to include some standard header to get all debugging macros
+# ifdef __cplusplus
+#  include <cstdint>
+# endif
 /* Suppress 'deprecated' warning for STD functions */
 #if !defined(_CRT_NONSTDC_DEPRECATE)
 #define _CRT_NONSTDC_DEPRECATE(x)
