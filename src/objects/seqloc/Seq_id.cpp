@@ -1143,6 +1143,19 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
     } else {
         ITERATE (TPairs, wit, submap.wildcards) {
             if (NStr::MatchesMask(pfx, wit->first)) {
+                bool bad_match = false; // Limit ? to matching letters
+                SIZE_TYPE pos = wit->first.find('?');
+                while (pos != NPOS) {
+                    if ( !isalnum(pfx[pos]) ) {
+                        bad_match = true;
+                        break;
+                    } else {
+                        pos = wit->first.find('?', pos + 1);
+                    }
+                }
+                if (bad_match) {
+                    continue;
+                }
                 if (key_used  &&  acc_or_pfx != wit->first) {
                     *key_used = wit->first;
                 }
