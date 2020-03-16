@@ -68,7 +68,12 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     else
     if (flags.find('e') != string::npos)
     {
-        CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
+        if (submit) {
+            cleanup.ExtendedCleanup(*submit, CCleanup::eClean_SyncGenCodes);
+        }
+        else {
+          cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
+        }
     }
     else
     {
