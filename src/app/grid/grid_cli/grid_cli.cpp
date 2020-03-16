@@ -59,6 +59,7 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
     m_NetStorage(eVoid),
     m_NetStorageByKey(eVoid)
 {
+    DisableArgDescriptions();
 }
 
 #ifdef _DEBUG
@@ -1848,5 +1849,5 @@ void CGridCommandLineInterfaceApp::ReadFromCin()
 int main(int argc, const char* argv[])
 {
     CGridCommandLineInterfaceApp app(argc, argv);
-    return app.AppMain(1, argv);
+    return app.AppMain(argc, argv);
 }
