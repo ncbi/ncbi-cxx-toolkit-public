@@ -136,9 +136,6 @@ public:
 #ifdef NCBI_NON_POD_TYPE_STL_ITERATORS
     CAnnotObject_Info(const CAnnotObject_Info& info);
     CAnnotObject_Info& operator=(const CAnnotObject_Info& info);
-//#else
-//    CAnnotObject_Info(const CAnnotObject_Info& info) = delete;
-//    CAnnotObject_Info& operator=(const CAnnotObject_Info& info) = delete;
 #endif
 
     // state check
