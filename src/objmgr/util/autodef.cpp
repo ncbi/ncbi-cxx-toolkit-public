@@ -323,7 +323,8 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause,
     }
     
     // keep LTRs only if requested or lonely and not in parent
-    if (!m_Options.GetKeepLTRs() && !main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_LTR)) {
+    if (!m_Options.GetKeepLTRs() && !m_Options.GetKeepRepeatRegion() && 
+        !main_clause->IsFeatureTypeLonely(CSeqFeatData::eSubtype_LTR)) {
         main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_LTR);
     }
            
