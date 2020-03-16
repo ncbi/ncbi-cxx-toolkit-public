@@ -994,7 +994,7 @@ void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
                     grid_ctx.GetPersistentEntries().begin();
                 it != grid_ctx.GetPersistentEntries().end(); ++it)
             hidden_fields += "<INPUT TYPE=\"HIDDEN\" NAME=\"" + it->first
-                    + "\" VALUE=\"" + it->second + "\">\n";
+                    + "\" VALUE=\"" + NStr::HtmlEncode(it->second) + "\">\n";
         m_Page->AddTagMap("HIDDEN_FIELDS",
             new CHTMLPlainText(hidden_fields, true));
     }
