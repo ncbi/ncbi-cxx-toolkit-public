@@ -813,6 +813,18 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         return m_FilterBits;
     }
 
+    /// Exclude features with empty gene xref:
+    /// xref { { data gene { } } }
+    SAnnotSelector& SetExcludeIfGeneIsSuppressed(bool exclude = true)
+    {
+        m_ExcludeIfGeneIsSuppressed = exclude;
+        return *this;
+    }
+    bool GetExcludeIfGeneIsSuppressed(void) const
+    {
+        return m_ExcludeIfGeneIsSuppressed;
+    }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -865,6 +877,7 @@ protected:
     CBioseq_Handle        m_IgnoreFarLocationsForSorting;
     TBitFilter            m_FilterMask;
     TBitFilter            m_FilterBits;
+    bool                  m_ExcludeIfGeneIsSuppressed;
 };
 
 

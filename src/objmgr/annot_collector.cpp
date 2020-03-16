@@ -3030,6 +3030,29 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
 }
 
 
+static inline
+bool sx_GeneIsSuppressed(const CSeq_feat& feat)
+{
+    if ( feat.IsSetXref() ) {
+        const CSeq_feat::TXref& xrefs = feat.GetXref();
+        if ( xrefs.size() == 1 ) {
+            const CSeqFeatXref& xref = *xrefs[0];
+            if ( xref.IsSetData() ) {
+                const CSeqFeatData& data = xref.GetData();
+                if ( data.IsGene() ) {
+                    const CGene_ref& gene = data.GetGene();
+                    if ( !gene.IsSetLocus() && !gene.IsSetLocus_tag() ) {
+                        // feature has single empty gene xref
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                                      const SIdAnnotObjs*   objs,
                                      CTSE_Info::TAnnotLockReadGuard& guard,
@@ -3115,6 +3138,16 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     const CAnnotObject_Info& annot_info =
                         *aoit->second.m_AnnotObject_Info;
 
+                    // special filtering
+                    if ( m_Selector->GetExcludeIfGeneIsSuppressed() &&
+                         annot_info.IsFeat() ) {
+                        if ( annot_info.IsRegular() ) {
+                            if ( sx_GeneIsSuppressed(annot_info.GetFeat()) ) {
+                                continue;
+                            }
+                        }
+                    }
+                    
                     // Collect types
                     if (m_Selector->m_CollectTypes) {
                         if (x_MatchLimitObject(annot_info)  &&
