@@ -92,6 +92,32 @@ struct CSeq_id_find_pred
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+static const char* sc_SupportedRawDbtags[] = {
+    "ATGC",
+    "BCMHGSC",
+    "BERKELEY",
+    "CELERA",
+    "GSDB",
+    "HOOD",
+    "LANLCHGS",
+    "LRG",
+    "MIPS",
+    "NCBI_GENOMES",
+    "NCBI_MITO",
+    "PGEC",
+    "SGD",
+    "SHGC",
+    "SRA",
+    "TIGR",
+    "UOKNOR",
+    "UWGC",
+    "WASHU",
+    "WIBR",
+    "WUGSC"
+};
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(CStaticArraySet<string>, kSupportedRawDbtags,
+                                  sc_SupportedRawDbtags);
+
 
 // CSeqIdException
 const char* CSeqIdException::GetErrCodeString(void) const
@@ -2094,6 +2120,21 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         case e_Gi:
             return Set(type, the_id);
         case e_not_set:
+        {
+            // Check for general IDs, albeit only with well-known
+            // database names like SRA.
+            SIZE_TYPE colon_pos = the_id.find(':');
+            if (colon_pos != NPOS) {
+                string db = the_id.substr(0, colon_pos);
+                NStr::ToUpper(db);
+                // const auto& whitelist = (*s_Guide)->general;
+                const auto& whitelist = kSupportedRawDbtags;
+                if (whitelist.find(db) != whitelist.end()) {
+                    // Reextract prefix to preserve case.
+                    return Set(e_General, the_id.substr(0, colon_pos),
+                               the_id.substr(colon_pos + 1));
+                }                
+            }
             if ((flags & fParse_ValidLocal) != 0
                 &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
                      ||  IsValidLocalID(the_id))) {
@@ -2102,6 +2143,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                 NCBI_THROW(CSeqIdException, eFormat,
                            "Malformatted ID " + string(the_id));
             }
+        }
         case e_Prf:
             // technically a name/locus, not an accession!
             return Set(type, kEmptyStr, the_id);
