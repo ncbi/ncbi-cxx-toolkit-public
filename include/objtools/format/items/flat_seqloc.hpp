@@ -83,7 +83,7 @@ public:
     // required even when location consists of a single interval.
     CFlatSeqLoc(const CSeq_loc& loc, CBioseqContext& ctx, 
                 TType type = eType_location, bool show_all_accns = false,
-                bool add_join = false);
+                bool add_join = false, bool suppress_accession = false);
 
     const string&     GetString(void)    const { return m_String;    }
     
@@ -106,19 +106,20 @@ private:
 
     bool x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
-        bool show_all_accns = false, bool join_whole_loc = false);
+        bool show_all_accns = false, bool join_whole_loc = false,
+        bool suppress_accession = false);
     bool x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
-        bool show_all_accns = false);
+        bool show_all_accns = false, bool suppress_accession = false);
     bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
-        bool show_all_accns = false);
+        bool show_all_accns = false, bool suppress_accession = false);
     bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
         EHTML html, EForce force = eForce_None, ESource source = eSource_Other,
-        bool show_all_accns = false);
+        bool show_all_accns = false, bool suppress_accession = false);
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type,
-        bool show_all_accns = false);
+        bool show_all_accns = false, bool suppress_accession = false);
 
     bool x_IsAccessionVersion( CSeq_id_Handle id );
 

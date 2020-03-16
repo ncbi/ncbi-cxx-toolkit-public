@@ -150,7 +150,8 @@ CFlatSeqLoc::CFlatSeqLoc
  CBioseqContext& ctx,
  TType type,
  bool show_all_accns,
- bool add_join)
+ bool add_join,
+ bool suppress_accession)
 {
     // load the map that caches conversion to accession, because
     // it's *much* faster when done in bulk vs. one at a time.
@@ -208,9 +209,9 @@ CFlatSeqLoc::CFlatSeqLoc
     CNcbiOstrstream oss;
     if (s_NeedsFlattening (loc)) {
         CConstRef<CSeq_loc> flat = s_FlattenLoc (loc);
-        x_Add(*flat, oss, ctx, type, true, show_all_accns, add_join);
+        x_Add(*flat, oss, ctx, type, true, show_all_accns, add_join, suppress_accession);
     } else {
-        x_Add(loc, oss, ctx, type, true, show_all_accns, add_join);
+        x_Add(loc, oss, ctx, type, true, show_all_accns, add_join, suppress_accession);
     }
     ((string)CNcbiOstrstreamToString(oss)).swap( m_String );
 }
@@ -223,7 +224,8 @@ bool CFlatSeqLoc::x_Add
  TType type,
  bool show_comp,
  bool show_all_accns,
- bool add_join)
+ bool add_join,
+ bool suppress_accession)
 {
     CScope& scope = ctx.GetScope();
     const CBioseq_Handle& seq = ctx.GetHandle();
@@ -238,7 +240,7 @@ bool CFlatSeqLoc::x_Add
         if ( show_comp  &&  GetStrand(loc, &scope) == eNa_strand_minus ) {
             CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(loc, &scope));
             oss << "complement(";
-            x_Add(*rev_loc, oss, ctx, type, false, show_all_accns, add_join);
+            x_Add(*rev_loc, oss, ctx, type, false, show_all_accns, add_join, suppress_accession);
             oss << ')';
             return true;
         }
@@ -292,7 +294,7 @@ bool CFlatSeqLoc::x_Add
     {{
         if (add_join)
             oss << prefix;
-        x_AddID(loc.GetWhole(), oss, ctx, type, show_all_accns);
+        x_AddID(loc.GetWhole(), oss, ctx, type, show_all_accns, suppress_accession);
         TSeqPos len = sequence::GetLength(loc, &scope);
         oss << "1";
         if (len > 1) {
@@ -306,7 +308,7 @@ bool CFlatSeqLoc::x_Add
     {{
         if (add_join)
             oss << prefix;
-        x_Add(loc.GetInt(), oss, ctx, type, show_comp, show_all_accns);
+        x_Add(loc.GetInt(), oss, ctx, type, show_comp, show_all_accns, suppress_accession);
         if (add_join)
             oss << ')';
         break;
@@ -319,7 +321,7 @@ bool CFlatSeqLoc::x_Add
         const char* delim = "";
         ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             oss << delim;
-            if (!x_Add(**it, oss, ctx, type, show_comp, show_all_accns)) {
+            if (!x_Add(**it, oss, ctx, type, show_comp, show_all_accns, suppress_accession)) {
                 delim = "";
             } else {
                 delim = ",";
@@ -332,7 +334,7 @@ bool CFlatSeqLoc::x_Add
     {{
         if (add_join)
             oss << prefix;
-        x_Add(loc.GetPnt(), oss, ctx, type, show_comp, show_all_accns);
+        x_Add(loc.GetPnt(), oss, ctx, type, show_comp, show_all_accns, suppress_accession);
         if (add_join)
             oss << ')';
         break;
@@ -341,7 +343,7 @@ bool CFlatSeqLoc::x_Add
     {{
         const CPacked_seqpnt& ppnt  = loc.GetPacked_pnt();
         ENa_strand strand = ppnt.IsSetStrand() ? ppnt.GetStrand() : eNa_strand_unknown;
-        x_AddID(ppnt.GetId(), oss, ctx, type, show_all_accns);
+        x_AddID(ppnt.GetId(), oss, ctx, type, show_all_accns, suppress_accession);
         if (strand == eNa_strand_minus  &&  show_comp) {
             oss << "complement(";
         }
@@ -350,7 +352,7 @@ bool CFlatSeqLoc::x_Add
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
             const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : 0;
-            if (!x_Add(*it, fuzz, oss, ( ctx.Config().DoHTML() ? eHTML_Yes : eHTML_None ), eForce_None, eSource_Other, show_all_accns )) {
+            if (!x_Add(*it, fuzz, oss, ( ctx.Config().DoHTML() ? eHTML_Yes : eHTML_None ), eForce_None, eSource_Other, show_all_accns, suppress_accession )) {
                 delim = "";
             } else {
                 delim = ",";
@@ -406,7 +408,7 @@ bool CFlatSeqLoc::x_Add
                  delim = "";
              } else {
                  // add the actual location
-                 if (!x_Add(this_loc, oss, ctx, type, show_comp, show_all_accns)) {
+                 if (!x_Add(this_loc, oss, ctx, type, show_comp, show_all_accns, false, suppress_accession)) {
                      delim = "";
                  } else {
                      delim = ",";
@@ -435,7 +437,7 @@ bool CFlatSeqLoc::x_Add
         oss << "one-of(";
         ITERATE (CSeq_loc_equiv::Tdata, it, loc.GetEquiv().Get()) {
             oss << delim;
-            if (!x_Add(**it, oss, ctx, type, show_comp, show_all_accns)) {
+            if (!x_Add(**it, oss, ctx, type, show_comp, show_all_accns, suppress_accession)) {
                 delim = "";
             } else {
                 delim = ",";
@@ -453,10 +455,10 @@ bool CFlatSeqLoc::x_Add
         if (add_join)
             oss << prefix;
         oss << "bond(";
-        x_Add(bond.GetA(), oss, ctx, type, show_comp, show_all_accns);
+        x_Add(bond.GetA(), oss, ctx, type, show_comp, show_all_accns, suppress_accession);
         if ( bond.CanGetB() ) {
             oss << ",";
-            x_Add(bond.GetB(), oss, ctx, type, show_comp, show_all_accns);
+            x_Add(bond.GetB(), oss, ctx, type, show_comp, show_all_accns, suppress_accession);
         }
         oss << ")";
         if (add_join)
@@ -509,7 +511,8 @@ bool CFlatSeqLoc::x_Add
  CBioseqContext& ctx,
  TType type,
  bool show_comp,
- bool show_all_accns)
+ bool show_all_accns,
+ bool suppress_accession)
 {
     bool do_html = ctx.Config().DoHTML();
 
@@ -524,7 +527,7 @@ bool CFlatSeqLoc::x_Add
     if (comp) {
         oss << "complement(";
     }
-    x_AddID(si.GetId(), oss, ctx, type, show_all_accns);
+    x_AddID(si.GetId(), oss, ctx, type, show_all_accns, suppress_accession);
 
     // get the fuzz we need, but certain kinds of fuzz do not belong in an interval
     const CSeq_interval::TFuzz_from *from_fuzz = (si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0);
@@ -554,7 +557,8 @@ bool CFlatSeqLoc::x_Add
  CBioseqContext& ctx,
  TType type,
  bool show_comp,
- bool show_all_accns)
+ bool show_all_accns,
+ bool suppress_accession)
 {
     if ( !pnt.CanGetPoint() ) {
         return false;
@@ -565,7 +569,7 @@ bool CFlatSeqLoc::x_Add
         pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp;
 
     TSeqPos pos = pnt.GetPoint();
-    x_AddID(pnt.GetId(), oss, ctx, type, show_all_accns);
+    x_AddID(pnt.GetId(), oss, ctx, type, show_all_accns, suppress_accession);
     if( is_comp ) {
         oss << "complement(";
     }
@@ -588,7 +592,8 @@ bool CFlatSeqLoc::x_Add
  EHTML html,
  EForce force,
  ESource source,
- bool show_all_accns)
+ bool show_all_accns,
+ bool suppress_accession)
 {
     // need to convert to 1-based coordinates
     pnt += 1;
@@ -683,7 +688,8 @@ void CFlatSeqLoc::x_AddID
  CNcbiOstrstream& oss,
  CBioseqContext& ctx,
  TType type,
- bool show_all_accns)
+ bool show_all_accns,
+ bool suppress_accession)
 {
     const bool do_html = ( ctx.Config().DoHTML() && type == eType_assembly);
 
@@ -694,6 +700,10 @@ void CFlatSeqLoc::x_AddID
             }
             return;
         }
+    }
+
+    if (suppress_accession) {
+        return;
     }
 
     CConstRef<CSeq_id> idp;

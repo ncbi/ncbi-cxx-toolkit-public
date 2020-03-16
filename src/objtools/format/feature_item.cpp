@@ -981,9 +981,11 @@ CFeatureItemBase::CFeatureItemBase
 (const CMappedFeat& feat,
  CBioseqContext& ctx,
  CRef<feature::CFeatTree> ftree,
- const CSeq_loc* loc) :
+ const CSeq_loc* loc,
+ bool suppressAccession) :
     CFlatItem(&ctx), m_Feat(feat), m_Feat_Tree(ftree), m_Loc(loc ? loc :
-                                         (feat ? &feat.GetLocation() : NULL))
+                                         (feat ? &feat.GetLocation() : NULL)),
+    m_SuppressAccession(suppressAccession)
 {
     if (m_Feat) {
         x_SetObject(m_Feat.GetOriginalFeature());
@@ -1000,7 +1002,7 @@ CFeatureItemBase::CFeatureItemBase
 CConstRef<CFlatFeature> CFeatureItemBase::Format(void) const
 {
     CRef<CFlatFeature> ff(new CFlatFeature(GetKey(),
-                          *new CFlatSeqLoc(GetLoc(), *GetContext()),
+                          *new CFlatSeqLoc(GetLoc(), *GetContext(), CFlatSeqLoc::eType_location, false, false, this->IsSuppressAccession()),
                           m_Feat));
     if ( ff ) {
         x_FormatQuals(*ff);
@@ -1103,8 +1105,9 @@ CFeatureItem::CFeatureItem
  CRef<feature::CFeatTree> ftree,
  const CSeq_loc* loc,
  EMapped mapped,
+ bool suppressAccession,
  CConstRef<CFeatureItem> parentFeatureItem) :
-    CFeatureItemBase(feat, ctx, ftree, loc), m_Mapped(mapped)
+    CFeatureItemBase(feat, ctx, ftree, loc, suppressAccession), m_Mapped(mapped)
 {
     x_GatherInfoWithParent(ctx, parentFeatureItem);
 }

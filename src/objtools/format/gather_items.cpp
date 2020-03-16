@@ -3572,7 +3572,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             loc2->Assign(*feat_loc);
             loc2->SetId(*loc.GetId());
  
-            item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree) );
+            item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
             out << item;
 
             // Add more features depending on user preferences

@@ -106,9 +106,10 @@ protected:
         const CSeq_loc* loc,
         CRef<feature::CFeatTree> ftree,
         CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped,
+        bool suppressAccession = false,
         CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() ) const
     {
-        return new CFeatureItem( feat, ctx, ftree, loc, mapped, parentFeatureItem );
+        return new CFeatureItem( feat, ctx, ftree, loc, mapped, suppressAccession, parentFeatureItem );
     };
 
     // source/organism

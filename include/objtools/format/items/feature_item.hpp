@@ -126,11 +126,14 @@ public:
         return m_Feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
     }
 
+    bool IsSuppressAccession(void) const { return m_SuppressAccession; }
+
 protected:
 
     // constructor
     CFeatureItemBase(const CMappedFeat& feat, CBioseqContext& ctx,
-                     CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = 0);
+                     CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = 0,
+                     bool suppressAccession = false);
 
     virtual void x_AddQuals(CBioseqContext& ctx) = 0;
     virtual void x_FormatQuals(CFlatFeature& ff) const = 0;
@@ -138,6 +141,7 @@ protected:
     CMappedFeat              m_Feat;
     CRef<feature::CFeatTree> m_Feat_Tree;
     CConstRef<CSeq_loc>      m_Loc;
+    bool                     m_SuppressAccession;
 };
 
 
@@ -161,6 +165,7 @@ public:
                  CRef<feature::CFeatTree> ftree,
                  const CSeq_loc* loc,
                  EMapped mapped = eMapped_not_mapped,
+                 bool suppressAccession = false,
                  CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() );
 
     virtual ~CFeatureItem() {};
@@ -337,6 +342,7 @@ protected:
     mutable TQuals                 m_Quals;
     mutable TQualVec               m_FTableQuals;
     EMapped                        m_Mapped;
+    // bool                           m_SuppressAccession;
     mutable string                 m_Gene;
     // Note that this holds the gene xref as specified in the original
     // ASN file.  It does NOT hold any genes found by overlap, etc.
