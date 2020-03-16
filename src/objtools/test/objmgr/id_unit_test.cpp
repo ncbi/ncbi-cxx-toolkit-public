@@ -853,6 +853,18 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckSuppressedGene)
+{
+    LOG_POST("Checking features with suppressed gene");
+    SAnnotSelector sel;
+    sel.SetResolveAll().SetAdaptiveDepth();
+    auto scope = s_InitScope();
+    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354)), 8u);
+    sel.SetExcludeIfGeneIsSuppressed();
+    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354)), 6u);
+}
+
+
 static CRef<CBioseq> s_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
 
 {
