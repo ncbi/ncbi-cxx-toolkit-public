@@ -85,9 +85,9 @@ CGenomicCollectionsService::CGenomicCollectionsService(const CArgs& args)
 {
     x_ConfigureConnection();
     
-    if (args.Exist(s_GcCacheParamStr) && 
-        args[s_GcCacheParamStr].HasValue()) {
-        x_ConfigureCache(args[s_GcCacheParamStr].AsString());
+    if (args.Exist("gc-cache") && 
+        args["gc-cache"].HasValue()) {
+        x_ConfigureCache(args["gc-cache"].AsString());
     }
 }
 
@@ -316,11 +316,10 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
 void CGenomicCollectionsService::AddArguments(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Assembly cache options");
-    arg_desc.AddOptionalKey(s_GcCacheParamStr, "gc_cache_file",
+    arg_desc.AddOptionalKey("gc-cache", "gc_cache_file",
                             "Full path for local gencoll assembly cache", CArgDescriptions::eString);
 }
 
-const string CGenomicCollectionsService::s_GcCacheParamStr = "gc-cache";
 void CGenomicCollectionsService::x_ConfigureCache(const string& cache_file) 
 {
     if(!cache_file.empty() && CFile(cache_file).Exists()) {

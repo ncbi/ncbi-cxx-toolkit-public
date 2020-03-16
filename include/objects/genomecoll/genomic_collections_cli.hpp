@@ -240,7 +240,6 @@ private:
 
     void x_ConfigureConnection();
 
-    static const string s_GcCacheParamStr; // "gc-cache" 
     void x_ConfigureCache(const string& cache_file);
     string m_CacheFile;
     auto_ptr<CSQLITE_Connection> m_CacheConn;
