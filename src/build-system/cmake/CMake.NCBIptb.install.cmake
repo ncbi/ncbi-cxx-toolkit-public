@@ -223,7 +223,7 @@ function(NCBI_internal_install_root _variable _access)
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
 
-if(ON)
+if(OFF)
 # must be removed
     install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
