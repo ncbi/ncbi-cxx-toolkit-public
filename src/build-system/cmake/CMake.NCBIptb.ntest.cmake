@@ -124,7 +124,7 @@ function(NCBI_internal_add_ncbi_checktarget)
 if(OFF)
 # on first build, RUN_CHECKS always creates check.sh in both configurations
 # subsequent builds do not create check.sh
-                foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+                foreach(_cfg ${NCBI_CONFIGURATION_TYPES})
                     set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_${_cfg}} . ${_root} ${_checkdir} check.sh ${_cfg}')
                     add_custom_command(OUTPUT "${_checkroot}/${_cfg}/check.sh"
                         COMMAND ${_cmd}

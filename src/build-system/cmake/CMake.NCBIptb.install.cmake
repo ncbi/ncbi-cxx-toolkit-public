@@ -83,7 +83,7 @@ function(NCBI_internal_install_target _variable _access)
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR ${_all_subdirs})
 
     if (WIN32 OR XCODE)
-        foreach(_cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
+        foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
             if (DEFINED _dest_ar)
                 install(
                     TARGETS ${NCBI_PROJECT}
@@ -183,7 +183,7 @@ function(NCBI_internal_install_root _variable _access)
     endif()
 
     if (WIN32 OR XCODE)
-        foreach(_cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
+        foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
             install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
                 CONFIGURATIONS ${_cfg}
                 DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
