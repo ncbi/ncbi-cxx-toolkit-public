@@ -24593,7 +24593,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_793)
     TestRepliconTaxname(CSubSource::eSubtype_plasmid_name, true);
     TestRepliconForbiddenWords(CSubSource::eSubtype_plasmid_name, true);
 
-    TestOneReplicon(CSubSource::eSubtype_plasmid_name, "pCHRO.01", "", eDiag_Info, "");
+//    TestOneReplicon(CSubSource::eSubtype_plasmid_name, "pCHRO.01", "", eDiag_Info, "");
 
 }
 
