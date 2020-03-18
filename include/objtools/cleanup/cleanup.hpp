@@ -372,7 +372,8 @@ public:
 /// Performs WGS specific cleanup
 /// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated
-    static bool WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins = true, Uint4 options = 0);
+    static bool WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins = true, Uint4 options = 0,
+        bool run_extended_cleanup = true);
 
 /// For table2asn -c s
 /// Adds an exception of "low-quality sequence region" to coding regions

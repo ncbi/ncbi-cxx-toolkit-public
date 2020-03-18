@@ -58,33 +58,12 @@ CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CVali
 
 void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags)
 {
-
-    CCleanup cleanup;
     if (flags.find('w') != string::npos)
     {
-        CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects);
-        xForceUpdateHandle(h_entry);
+        CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects, false);
     }
-    else
-    if (flags.find('e') != string::npos)
-    {
-        if (submit) {
-            cleanup.ExtendedCleanup(*submit, CCleanup::eClean_SyncGenCodes);
-        }
-        else {
-          cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
-        }
-    }
-    else
-    {
-        if (submit)
-            cleanup.BasicCleanup(*submit, CCleanup::eClean_SyncGenCodes);
-        else
-            cleanup.BasicCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
 
-        if (flags.find('U') != string::npos)
-            cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
-    }
+    // ignore 'e' flag, run ExtendedCleanup() uncoditionally - but only after 'x'
 
     if (flags.find('d') != string::npos) {
         CCleanup::CleanupCollectionDates(h_entry, true);
@@ -100,7 +79,13 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
             ++bi;
         }
     }
-    CCleanup::ExtendedCleanup(h_entry, CCleanup::eClean_NoNcbiUserObjects);
+    CCleanup cleanup;
+    if (submit) {
+        cleanup.ExtendedCleanup(*submit, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+    }
+    else {
+        cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+    }
     xForceUpdateHandle(h_entry);
 
     if (flags.find('f') != string::npos)

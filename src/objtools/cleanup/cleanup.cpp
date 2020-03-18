@@ -2584,7 +2584,7 @@ static bool s_CleanupIsShortrRNA(const CSeq_feat& f, CScope* scope) // used in f
     return is_bad;
 }
 
-bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options)
+bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options, bool run_extended_cleanup)
 {
     bool any_changes = false;
 
@@ -2760,7 +2760,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         any_changes |= SetGeneticCodes(*bi);
     }
 
-    CCleanup::ExtendedCleanup(entry, options);
+    if (run_extended_cleanup) {
+        CCleanup::ExtendedCleanup(entry, options);
+    }
     return any_changes;
 }
 
