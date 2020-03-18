@@ -431,7 +431,6 @@ void CBAMDataLoader_Impl::OpenBAMFiles()
             bam_info = iter->second;
             bam_info->AddRefSeq(info.m_BamSeqLabel, info.m_SeqId);
         }
-        CBamRefSeqInfo* seq_info = bam_info->GetRefSeqInfo(info.m_SeqId);
         if ( !info.m_CovFileName.empty() ) {
             string file_name = m_DirPath + info.m_CovFileName;
             if ( !CFile(file_name).Exists() ) {
@@ -439,7 +438,9 @@ void CBAMDataLoader_Impl::OpenBAMFiles()
                            "no cov file: \""+file_name+"\"");
             }
             else {
-                seq_info->SetCovFileName(file_name);
+                if ( CBamRefSeqInfo* seq_info = bam_info->GetRefSeqInfo(info.m_SeqId) ) {
+                    seq_info->SetCovFileName(file_name);
+                }
             }
         }
     }
@@ -650,7 +651,14 @@ void CBamFileInfo::AddRefSeq(const string& refseq_label,
         LOG_POST_X(9, Info << "CBAMDataLoader(" << m_BamName << "): "
                    "Found "<<refseq_label<<" -> "<<refseq_id);
     }
-    m_RefSeqs[refseq_id] = new CBamRefSeqInfo(this, refseq_label, refseq_id);
+    auto& slot = m_RefSeqs[refseq_id];
+    if ( slot ) {
+        ERR_POST_X(15, "CBAMDataLoader::AddSeqRef: "
+                   "duplicate Seq-id "<<refseq_id<<" for ref "<<refseq_label<<" in "<<GetBamName());
+    }
+    else {
+        slot = new CBamRefSeqInfo(this, refseq_label, refseq_id);
+    }
 }
 
 
