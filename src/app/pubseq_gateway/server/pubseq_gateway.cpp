@@ -232,6 +232,8 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_StatScaleType = registry.GetString("STATISTICS", "type", kStatScaleType);
     m_TickSpan = registry.GetInt("STATISTICS", "tick_span", kTickSpan);
 
+    x_ReadIdToNameAndDescriptionConfiguration(registry, "COUNTERS");
+
     // It throws an exception in case of inability to start
     x_ValidateArgs();
 }
@@ -377,6 +379,9 @@ int CPubseqGatewayApp::Run(void)
     if (populated)
         OpenCache();
 
+    // m_IdToNameAndDescription was populated at the time of
+    // dealing with arguments
+    UpdateIdToNameDescription(m_IdToNameAndDescription);
 
     auto purge_size = round(float(m_ExcludeCacheMaxSize) *
                             float(m_ExcludeCachePurgePercentage) / 100.0);
@@ -1347,6 +1352,28 @@ void CPubseqGatewayApp::x_InsufficientArguments(
                                      eInsufficientArguments, eDiag_Error);
     PSG_WARNING(err_msg);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+}
+
+
+void CPubseqGatewayApp::x_ReadIdToNameAndDescriptionConfiguration(
+                                                    const IRegistry &  reg,
+                                                    const string &  section)
+{
+    list<string>            entries;
+    reg.EnumerateEntries(section, &entries);
+
+    for(const auto &  value_id : entries) {
+        string      name_and_description = reg.Get(section, value_id);
+        string      name;
+        string      description;
+        if (NStr::SplitInTwo(name_and_description, ":::", name, description,
+                             NStr::fSplit_ByPattern)) {
+            m_IdToNameAndDescription[value_id] = {name, description};
+        } else {
+            PSG_WARNING("Malformed counter [" << section << "]/" << name <<
+                        " information. Expected <name>:::<description");
+        }
+    }
 }
 
 

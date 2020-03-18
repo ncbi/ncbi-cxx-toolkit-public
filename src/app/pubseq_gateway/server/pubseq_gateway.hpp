@@ -197,6 +197,11 @@ public:
         return m_StartupDataState;
     }
 
+    map<string, tuple<string, string>>  GetIdToNameAndDescriptionMap(void) const
+    {
+        return m_IdToNameAndDescription;
+    }
+
 private:
     struct SRequestParameter
     {
@@ -273,6 +278,8 @@ private:
                           HST::CHttpReply<CPendingOperation> &  resp);
     bool x_IsDBOK(HST::CHttpRequest &  req,
                   HST::CHttpReply<CPendingOperation> &  resp);
+    void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
+                                                   const string &  section);
 
 private:
     string                              m_Si2csiDbFile;
@@ -334,6 +341,9 @@ private:
 
     // Serialized JSON introspection message
     string                              m_HelpMessage;
+
+    // Configured counter/statistics ID to name/description
+    map<string, tuple<string, string>>  m_IdToNameAndDescription;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

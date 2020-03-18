@@ -38,6 +38,7 @@
 
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
+#include "stat_counters.hpp"
 
 #include "shutdown_data.hpp"
 extern SShutdownData    g_ShutdownData;
@@ -1020,34 +1021,25 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 
         CJsonNode                       reply(CJsonNode::NewObjectNode());
 
-        AppendValueNode(reply, "CassandraActiveStatementsCount",
-                        static_cast<uint64_t>(m_CassConnection->GetActiveStatements()),
-                        "Cassandra active statements counter",
-                        "Number of the currently active Cassandra queries");
-        AppendValueNode(reply, "NumberOfConnections",
-                        static_cast<uint64_t>(m_TcpDaemon->NumOfConnections()),
-                        "Cassandra connections counter",
-                        "Number of the connections to Cassandra");
-        AppendValueNode(reply, "ActiveRequestCount",
-                        static_cast<uint64_t>(g_ShutdownData.m_ActiveRequestCount.load()),
-                        "Active requests counter",
-                        "Number of the currently active client requests");
-        AppendValueNode(reply, "ShutdownRequested",
-                        g_ShutdownData.m_ShutdownRequested,
-                        "Shutdown requested flag",
-                        "Shutdown requested flag");
+        AppendValueNode(reply, kCassandraActiveStatementsCount,
+                        static_cast<uint64_t>(
+                            m_CassConnection->GetActiveStatements()));
+        AppendValueNode(reply, kNumberOfConnections,
+                        static_cast<uint64_t>(
+                            m_TcpDaemon->NumOfConnections()));
+        AppendValueNode(reply, kActiveRequestCount,
+                        static_cast<uint64_t>(
+                            g_ShutdownData.m_ActiveRequestCount.load()));
+        AppendValueNode(reply, kShutdownRequested,
+                        g_ShutdownData.m_ShutdownRequested);
 
         if (g_ShutdownData.m_ShutdownRequested) {
             auto        now = chrono::steady_clock::now();
             uint64_t    sec = std::chrono::duration_cast<std::chrono::seconds>
                                 (g_ShutdownData.m_Expired - now).count();
-            AppendValueNode(reply, "GracefulShutdownExpiredInSec", sec,
-                            "Graceful shutdown expiration",
-                            "Graceful shutdown expiration in seconds from now");
+            AppendValueNode(reply, kGracefulShutdownExpiredInSec, sec);
         } else {
-            AppendValueNode(reply, "GracefulShutdownExpiredInSec", string("n/a"),
-                            "Graceful shutdown expiration",
-                            "Graceful shutdown expiration in seconds from now");
+            AppendValueNode(reply, kGracefulShutdownExpiredInSec, string("n/a"));
         }
 
         m_ErrorCounters.PopulateDictionary(reply);

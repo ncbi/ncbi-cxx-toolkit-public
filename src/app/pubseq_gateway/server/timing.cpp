@@ -33,6 +33,7 @@
 
 #include "timing.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "pubseq_gateway.hpp"
 
 static string           kTimeRangeStart("TimeRangeStart");
 static string           kTimeRangeEnd("TimeRangeEnd");
@@ -785,6 +786,18 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                         "the blob size is between " + min_size_str +
                         " and " + max_size_str + " bytes";
         m_NamesMap[id] = SInfo(retieve_timing.get(), name, description);
+    }
+
+    // Overwrite the default names and descriptions with what came from
+    // the configuration
+    auto        app = CPubseqGatewayApp::GetInstance();
+    auto        id_to_name_and_desc = app->GetIdToNameAndDescriptionMap();
+
+    for (const auto &  item : id_to_name_and_desc) {
+        if (m_NamesMap.find(item.first) != m_NamesMap.end()) {
+            m_NamesMap[item.first].m_Name = get<0>(item.second);
+            m_NamesMap[item.first].m_Description = get<1>(item.second);
+        }
     }
 }
 
