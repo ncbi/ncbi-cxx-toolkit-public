@@ -1,4 +1,13 @@
-Release 1.8.666666 (2020-01-30)
+Release 1.8.7 (2020-03-18)
+
+    * PSG - if no path is specified then send back a help page (CXX-11225)
+    * PSG -- for counters and other metrics also send a detailed explanation
+      (CXX-11224)
+    * PSG: identify the source of ResolutionError (CXX-11173)
+    * CNcbiApplication -- use package version (if any) if the app version
+      is not specified (CXX-11166)
+
+Release 1.8.6 (2020-01-30)
 
     * PSG (Statistics) -- allow to specify the time period (CXX-11013)
     * PSG (Statistics) -- replace CHistogram with CHistogramTimeSeries
