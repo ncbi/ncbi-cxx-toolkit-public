@@ -81,6 +81,34 @@ s_RevStrLenSort(const string& A, const string& B)
     return (B.length() < A.length());
 }
 
+bool
+s_IsNumericString(const string& A)
+{
+    ITERATE(string, CharIter, A) {
+        if(!isdigit(*CharIter)) 
+            return false;
+    }
+    return true;
+}
+
+size_t
+s_CountNumeric(const string& A) 
+{
+    size_t Result = 0;
+    ITERATE(string, CharIter, A) {
+        if(isdigit(*CharIter))
+            Result++;
+    }
+    return Result;
+}
+
+bool 
+s_HasMoreDigits(const string& Name, const string& Chromo) 
+{
+    return (s_CountNumeric(Name) > s_CountNumeric(Chromo));
+}
+
+
 CGencollIdMapper::CGencollIdMapper(CConstRef<CGC_Assembly> SourceAsm)
 {
     //m_IdToSeqMap.reserve(300007);
@@ -1431,15 +1459,23 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
 
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.end();
     ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
+        bool IsNumeric = s_IsNumericString(*ChromoIter);
+
         if (NStr::Find(IdStr, *ChromoIter) != NPOS) {
             size_t Start = NStr::Find(IdStr, *ChromoIter);
             size_t End = Start + ChromoIter->length()-1;
-            if( (Start > 0 && isdigit(IdStr[Start-1])) ||
-                (End+1 < IdStr.length() && isdigit(IdStr[End+1])) ) {
+            if(IsNumeric && 
+               ((Start > 0 && isdigit(IdStr[Start-1])) ||
+                (End+1 < IdStr.length() && isdigit(IdStr[End+1])) )) {
                 // Matching region is in a run of digits, and not
                 // the entire run of digits. Does not count.
                 continue;
             }
+
+            if(IsNumeric && s_HasMoreDigits(IdStr, *ChromoIter)) {
+                continue;
+            }
+
             CRef<CSeq_id> Temp(new CSeq_id());
             Temp->SetLocal().SetStr() = *ChromoIter;
             // If we have a pattern, double check it.

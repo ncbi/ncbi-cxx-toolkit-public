@@ -988,4 +988,46 @@ BOOST_AUTO_TEST_CASE(TestCase_BacteriaChromosomeNames)
 }
 
 
+// Fix-up Bacteria chromosome names
+BOOST_AUTO_TEST_CASE(TestCase_CXX_11251)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000001405.39", "SequenceNames"));
+                              //CGCClient_GetAssemblyRequest::eLevel_scaffold));
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    // 
+    CSeq_loc OrigLoc;
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("chrUn_KI270752v1");
+    OrigLoc.SetInt().SetFrom(1);
+    OrigLoc.SetInt().SetTo(2);
+    
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.IsNull());
+    if(Result.NotNull())
+        BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "KI270752.1"); 
+    
+    // 
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("Contig_2_5.15315");
+    OrigLoc.SetInt().SetFrom(1);
+    OrigLoc.SetInt().SetTo(2);
+    
+    Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.IsNull());
+    if(Result.NotNull())    
+        BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_000002.12"); 
+    
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
