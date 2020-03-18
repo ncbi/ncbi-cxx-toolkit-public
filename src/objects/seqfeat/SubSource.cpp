@@ -2737,6 +2737,10 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
     if (NStr::Equal(value, "F") || NStr::Equal(value, "F factor") || NStr::Equal(value, "F plasmid")) {
         return true;
     }
+    if (NStr::Equal(value, "Plasmid R") || NStr::Equal(value, "plasmid R") ||
+        NStr::Equal(value, "Plasmid F") || NStr::Equal(value, "plasmid F")) {
+        return true;
+    }
     return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
 }
 
