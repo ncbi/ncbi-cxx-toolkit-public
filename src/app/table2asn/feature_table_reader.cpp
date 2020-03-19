@@ -260,7 +260,7 @@ namespace
         CBioseq_Handle b_found;
         do
         {
-            id_label = id_base + "_" + NStr::NumericToString(offset);
+            id_label = edit::GetIdHashOrValue(id_base, offset);
             id->SetLocal().SetStr(id_label);
             b_found = scope.GetBioseqHandle(*id);
             offset++;
