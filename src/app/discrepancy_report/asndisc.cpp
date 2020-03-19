@@ -175,21 +175,20 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
 }
 
 
-auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CXX open the ticket 
+static auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
 {
     auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
     CCompressStream::EMethod method;
     
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
-    switch (format)
-    {
+    switch (format) {
         case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
         case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
         case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
         default:                   method = CCompressStream::eNone;      break;
     }
-    if (method != CCompressStream::eNone)
-    {
+    compressed = method != CCompressStream::eNone;
+    if (compressed) {
         InputStream.reset(new CDecompressIStream(*InputStream.release(), method, CCompressStream::fDefault, eTakeOwnership));
         format = CFormatGuess::Format(*InputStream);
     }
@@ -223,8 +222,9 @@ string CDiscRepApp::x_DefaultHeader()
 
 void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
-    auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname);
-    tests.ParseStream(*in, fname, x_DefaultHeader());
+    bool compressed = false;
+    auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname, compressed);
+    tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
 }
 
 
@@ -300,7 +300,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         for (auto& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
-                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()) + " " + fname);
             }
             x_ProcessFile(fname, *Tests);
         }

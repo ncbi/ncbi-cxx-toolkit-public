@@ -365,7 +365,7 @@ INIT_DISCREPANCY_TYPE(STRING)
     void ParseObject(const CBioseq_set& root);
     void ParseObject(const CSeq_entry& root);
     void ParseObject(const CSeq_submit& root);
-    void ParseStream(CObjectIStream& stream, const string& fname, const string& default_header = kEmptyStr);
+    void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr);
     void ParseStrings(const string& fname);
     void TestString(const string& str);
     unsigned Summarize(void);
@@ -864,6 +864,7 @@ string Path() { return m_Parent ? m_Parent->Path() + " => " + TypeName(m_Type) +
     void PushNode(EObjType);
     void PopNode() { m_CurrentNode.Reset(m_CurrentNode->m_Parent); }
 
+    bool m_Skip;
     CRef<CParseNode> m_RootNode;
     CRef<CParseNode> m_CurrentNode;
     bool IsPseudo(const CParseNode& node);

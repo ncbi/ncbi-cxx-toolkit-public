@@ -168,7 +168,7 @@ void CDiscrepancyContext::PushNode(EObjType type)
 bool CDiscrepancyContext::Skip()
 {
     // Not skipping the first child or nuc-prot children
-    return m_CurrentNode->m_Type == eSeqSet && !m_CurrentNode->m_Repeat && m_CurrentNode->m_Children.size();
+    return m_Skip && m_CurrentNode->m_Type == eSeqSet && !m_CurrentNode->m_Repeat && m_CurrentNode->m_Children.size();
 }
 
 
@@ -190,8 +190,9 @@ void CDiscrepancyContext::ParseStrings(const string& fname)
 }
 
 
-void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fname, const string& default_header)
+void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header)
 {
+    m_Skip = skip;
     CObjectTypeInfo(CType<CBioseq_set>()).SetLocalReadHook(stream, new CReadHook_Bioseq_set(this));
     CObjectTypeInfo(CType<CBioseq_set>()).FindMember("class").SetLocalReadHook(stream, new CReadHook_Bioseq_set_class(this));
     CObjectTypeInfo(CType<CBioseq>()).SetLocalReadHook(stream, new CReadHook_Bioseq(this));
@@ -232,7 +233,9 @@ void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fnam
     }
     position = stream.GetStreamPos();
     Extend(*m_CurrentNode, stream);
-    stream.SetStreamPos(position);
+    if (m_Skip) {
+        stream.SetStreamPos(position);
+    }
 }
 
 
