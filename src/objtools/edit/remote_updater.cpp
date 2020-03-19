@@ -71,17 +71,12 @@ namespace
 
 int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
 {
+
     ITERATE(CPub_equiv::Tdata, item_it, arr)
     {
         if ((**item_it).IsPmid())
         {
             return (**item_it).GetPmid().Get();
-        }
-        else
-        if ((**item_it).IsMuid())
-        {
-            int id = (**item_it).GetMuid();
-            return mlaClient.AskUidtopmid(id);
         }
     }
     return 0;
