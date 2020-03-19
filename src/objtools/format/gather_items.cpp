@@ -3096,31 +3096,43 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             }
 
             // handle gaps
-            const int feat_end   = feat_loc->GetStop(eExtreme_Positional);
+            const int feat_end = feat_loc->GetStop(eExtreme_Positional);
             int feat_start = feat_loc->GetStart(eExtreme_Positional);
             if( feat_start > feat_end ) {
                 feat_start -= loc_len;
             }
 
-            while (gap_data.has_gap && gap_data.gap_start < feat_start) {
-                const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start < gap_data.gap_end) );
-                if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+            bool has_gap = gap_data.has_gap;
+            int gap_start = gap_data.gap_start;
+            int gap_end = gap_data.gap_end;
+            while (has_gap && gap_start <= feat_start) {
+                const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
+                const bool gapMatch = ( subtype == CSeqFeatData::eSubtype_gap && feat_start == gap_start && feat_end == gap_end - 1 );
+                if ( noGapSizeProblem && ! gapMatch ) {
                     item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
                                 gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
                     out << item;
                 }
                 if (gap_data.next_gap < gap_data.num_gaps) {
                     s_SetGapIdxData (gap_data, gaps);
+                    has_gap = gap_data.has_gap;
+                    gap_start = gap_data.gap_start;
+                    gap_end = gap_data.gap_end;
                 } else {
                     gap_data.has_gap = false;
+                    has_gap = false;
                 }
             }
 
-            if (gap_data.has_gap && gap_data.gap_start == feat_start && feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) {
+            if (has_gap && gap_start == feat_start && subtype == CSeqFeatData::eSubtype_gap) {
                 if (gap_data.next_gap < gap_data.num_gaps) {
                     s_SetGapIdxData (gap_data, gaps);
+                    has_gap = gap_data.has_gap;
+                    gap_start = gap_data.gap_start;
+                    gap_end = gap_data.gap_end;
                 } else {
                     gap_data.has_gap = false;
+                    has_gap = false;
                 }
                 // return; // continue;
             }
