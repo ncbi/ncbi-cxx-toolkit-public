@@ -146,7 +146,7 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetOrphanAnnotRecordsNA(const CSeq_
     const SAnnotSelector* sel,
     TProcessedNAs* processed_nas)
 {
-    return m_Impl->GetAnnotRecordsNA(GetDataSource(), idh, sel, processed_nas);
+    return CDataLoader::TTSE_LockSet();
 }
 
 
