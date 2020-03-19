@@ -691,13 +691,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
                 case CPub::e_Muid:
                     {
                         const int muid = pub.GetMuid();
-
-                        const int pmid = mlaClient.AskUidtopmid(muid);
-                        if( pmid > 0 ) {
-                            CPubMedId req(pmid);
-                            CMLAClient::TReply reply;
-                            new_pub = mlaClient.AskGetpubpmid(req, &reply);
-                        }
+                        // RW-1040: removed mlaClient.AskUidtopmid and AskGetpubpmid
                     }
                     break;
                 default:
