@@ -223,10 +223,20 @@ function(NCBI_internal_install_root _variable _access)
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
 
-if (NOT "$ENV{NCBITMP_INSTALL_CHECK}" STREQUAL "")
-    install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
+    if ($ENV{NCBITMP_INSTALL_CHECK})
+        install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
-endif()
+    else()
+        if (WIN32 OR XCODE)
+            install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
+                REGEX "${NCBI_BUILD_ROOT}/check/.*/.*/[^/]" EXCLUDE
+            )
+        else()
+            install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
+                REGEX "${NCBI_BUILD_ROOT}/check/.*/[^/]" EXCLUDE
+            )
+        endif()
+    endif()
 
 #install build info files
     set(_files "${NCBI_TREE_ROOT}/build_info;${NCBI_TREE_ROOT}/checkout_info")
