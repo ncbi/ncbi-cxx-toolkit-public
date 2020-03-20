@@ -678,21 +678,20 @@ protected:
 };
 
 
-auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // One more copy!!!
+auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed) // One more copy!!!
 {
     auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname.c_str(), ios::binary));
     CCompressStream::EMethod method;
 
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
-    switch (format)
-    {
-    case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
-    case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
-    case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
-    default:                   method = CCompressStream::eNone;      break;
+    switch (format) {
+        case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
+        case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
+        case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
+        default:                   method = CCompressStream::eNone;      break;
     }
-    if (method != CCompressStream::eNone)
-    {
+    compressed = method != CCompressStream::eNone;
+    if (compressed) {
         InputStream.reset(new CDecompressIStream(*InputStream.release(), method, CCompressStream::fDefault, eTakeOwnership));
         format = CFormatGuess::Format(*InputStream);
     }
@@ -700,12 +699,12 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // One more
     auto_ptr<CObjectIStream> objectStream;
     switch (format)
     {
-    case CFormatGuess::eBinaryASN:
-    case CFormatGuess::eTextASN:
-        objectStream.reset(CObjectIStream::Open(format == CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream.release(), eTakeOwnership));
-        break;
-    default:
-        break;
+        case CFormatGuess::eBinaryASN:
+        case CFormatGuess::eTextASN:
+            objectStream.reset(CObjectIStream::Open(format == CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream.release(), eTakeOwnership));
+            break;
+        default:
+            break;
     }
     return objectStream;
 }
@@ -764,39 +763,22 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
             break;
         }
     }
-
-#if 0
-    for (auto& fix : fixes) {
-        vector<CRefNode*> V;
-        for (CRefNode* node = fix->m_Ref; node; node = node->m_Parent) V.push_back(node);
-        reverse(V.begin(), V.end());
-        cout << "\nAUTOFIX: " << fix->m_Ref->GetText() << "\n";
-        for (auto x : V) cout << ">> " << TypeName(x->m_Type) << " (" << x->m_Index << ") ";
-        V.clear();
-        for (CRefNode* node = fix->m_Fix; node; node = node->m_Parent) V.push_back(node);
-        reverse(V.begin(), V.end());
-        cout << "\nAT:      " << fix->m_Fix->GetText() << "\n";
-        for (auto x : V) cout << ">> " << TypeName(x->m_Type) << " (" << x->m_Index << ") ";
-        cout << "\n";
-    }
-#endif
+    bool compressed = false;
+    auto_ptr<CObjectIStream> in = OpenUncompressedStream(path, compressed);
 
     int dot = path.find_last_of('.');
     int slash = path.find_last_of("/\\");
-    string fixed_path = dot > slash ? path.substr(0, dot) + ".autofix" + path.substr(dot) : path + ".autofix";
+    string fixed_path = !compressed && dot > slash ? path.substr(0, dot) + ".autofix" + path.substr(dot) : path + ".autofix.sqn";
 
-    auto_ptr<CObjectIStream> in = OpenUncompressedStream(path);
+    string header = in->ReadFileHeader();
+    in = OpenUncompressedStream(path, compressed);
     auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, fixed_path));
     CObjectStreamCopier copier(*in, *out);
-
-    CNcbiStreampos position = in->GetStreamPos();
-    string header = in->ReadFileHeader();
-    in->SetStreamPos(position);
 
     if (header.empty()) {
         header = default_header;
     }
-    cout << "Reading " << header << "\n";
+    //cout << "Reading " << header << "\n";
 
     m_Fixes = &fixes;
     m_RootNode.Reset(new CParseNode(eFile, 0));
