@@ -2019,6 +2019,7 @@ FIDS	s	Great Lakes Forest Research Laboratory, Forest Insect and Disease Survey
 FIEC	s	Freshwater Institute			
 FIOC	s	Fundacao Instituto Oswaldo Cruz			
 FIOC:ColTryp	c	Fundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors		
+Fiocruz/COLPROT	c	Colecao de Protozoarios da FIOCRUZ			
 FIP	s	Florida Institute of Paleontology			
 FIPF	s	Universita di Firenze			
 FIPIA	s	Institut Teknologi Bandung, Jurusan Biologi			
@@ -5755,7 +5756,7 @@ RBR	s	Universidade Federal Rural do Rio de Janeiro, Departamento de Botanica
 RBS	s	Royal Botanic Society			
 RBY	s	East Divisional Library			
 RC CCM	c	Resource Centre Culture Collection of Microorganisms (St. Petersburg State University)			
-RCAM	s	Rutgers University, Biology Department			
+RCAM	c	Russian Collection of Agricultural Microorganisms			
 RCAT	c	Regional Collection of Animal Viruses and Tissue Cultures			
 RCB	c	RIKEN Cell Bank			
 RCC	c	Roscoff Culture Collection			
@@ -7304,6 +7305,7 @@ UOG:BIO	b	University of Guelph, Biodiversity Institute of Ontario
 UOG:DEBU	s	University of Guelph, Ontario Insect Collection		
 UOIC	s	University of Oregon			
 UOJ	s	Universidad del Oriente, Departamento de Agronomia			
+UOK	s	University of Kurdistan			
 UOM	s	University of Missouri			
 UOMNH	s	University of Oregon, Museum of Natural History			
 UOMZ	s	University of Oklahoma, Stovall Museum of Zoology			
