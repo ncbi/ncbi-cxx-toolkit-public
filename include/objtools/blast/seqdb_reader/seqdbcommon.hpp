@@ -84,8 +84,10 @@ public:
         eMemErr,
 
         /// DB version error
-        eVersionErr
+        eVersionErr,
 
+        /// No Tax Id Found
+        eTaxidErr
     };
 
     /// Get a message describing the situation leading to the throw.
