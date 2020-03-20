@@ -1960,9 +1960,8 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
     auto& bioseq_set = seq_entry.SetSet();
 
-    _ASSERT(bioseq_set.IsSetClass());
-
-    if (bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
+    if (!bioseq_set.IsSetClass() ||
+        bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
         if (bioseq_set.IsSetSeq_set()) {
             for (auto pEntry : bioseq_set.SetSeq_set()) {
                 if (pEntry) {
