@@ -156,6 +156,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
     // Recursion counter needs to be decremented on both success and failure.
     CCounterGuard recursion_guard(&m_RecursionCount);
 
+    const string& request_name  = ( request.GetThisTypeInfo() != NULL 
+                                ? ("("+request.GetThisTypeInfo()->GetName()+")") : "(no_request_type)");
+
     // Reset headers from previous requests if any.
     m_RetryCtx.Reset();
     double max_span = m_RetryDelay.GetAsDouble()*m_RetryLimit;
@@ -165,7 +168,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
     // through an exception.
     for (;;) {
         if ( IsCanceled() ) {
-            NCBI_THROW(CRPCClientException, eFailed, "Request canceled");
+            NCBI_THROW(CRPCClientException, eFailed, "Request canceled "+request_name);
         }
         try {
             SetAffinity(x_GetAffinity(request));
@@ -182,7 +185,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             }
             m_Stream->peek(); // send data, read response headers
             if (!m_Stream->good()  &&  !m_Stream->eof()) {
-                NCBI_THROW(CRPCClientException, eFailed, "Connection stream is in bad state");
+                NCBI_THROW(CRPCClientException, eFailed, "Connection stream is in bad state "+request_name);
             }
             if (m_RetryCtx.IsSetContentOverride()  &&
                 m_RetryCtx.GetContentOverride() == CHttpRetryContext::eFromResponse) {
@@ -230,12 +233,13 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             NCBI_THROW(CRPCClientException, eFailed,
                        "Failed to receive reply after " +
                        NStr::NumericToString(m_RetryCount) +
-                       (m_RetryCount == 1 ? " try" : " tries"));
+                       (m_RetryCount == 1 ? " try" : " tries") + 
+                       " " + request_name );
         }
         if ( m_RetryCtx.IsSetStop() ) {
             NCBI_THROW(CRPCClientException, eFailed,
                 "Retrying request stopped by the server: " +
-                m_RetryCtx.GetStopReason());
+                m_RetryCtx.GetStopReason() + " " + request_name);
         }
         CTimeSpan delay = x_GetRetryDelay(span);
         if ( !delay.IsEmpty() ) {
@@ -245,16 +249,17 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             if (limit_by_time  &&  span <= 0) {
                 NCBI_THROW(CRPCClientException, eFailed,
                     "Failed to receive reply in " +
-                    CTimeSpan(max_span).AsSmartString());
+                    CTimeSpan(max_span).AsSmartString() +
+                    " " + request_name);
             }
         }
         // Always reconnect on retry.
         if ( IsCanceled() ) {
-            NCBI_THROW(CRPCClientException, eFailed, "Request canceled");
+            NCBI_THROW(CRPCClientException, eFailed, "Request canceled "+request_name);
         }
         try {
             Reset();
-        } STD_CATCH_ALL_XX(Serial_RPCClient, 1 ,"CRPCClient_Base::Reset()");
+        } STD_CATCH_ALL_XX(Serial_RPCClient, 1 ,"CRPCClient_Base::Reset()"+request_name);
     }
     // Reset retry context when done.
     m_RetryCtx.Reset();
