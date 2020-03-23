@@ -73,23 +73,23 @@ NCBI_PARAM_DEF_EX(int, WGS, REPORT_SEQ_STATE_ERROR,
                   DEFAULT_REPORT_SEQ_STATE_ERROR,
                   eParam_NoThread, WGS_REPORT_SEQ_STATE_ERROR);
 
-static bool GetReportError(int report_level)
+static bool GetReportError(int report_level, int sub_day)
 {
     // optionally report error only when day of month is divisible by 5
     return ( (report_level >= 2) ||
-             (report_level == 1 && CTime(CTime::eCurrent).Day() % 5 == 0) );
+             (report_level == 1 && CTime(CTime::eCurrent).Day() % 5 == sub_day) );
 }
 
 static bool GetReportGeneralIdError(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(WGS, REPORT_GENERAL_ID_ERROR)> s_Value;
-    return GetReportError(s_Value->Get());
+    return GetReportError(s_Value->Get(), 2);
 }
 
 static bool GetReportSeqStateError(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(WGS, REPORT_SEQ_STATE_ERROR)> s_Value;
-    return GetReportError(s_Value->Get());
+    return GetReportError(s_Value->Get(), 0);
 }
 
 enum EMasterDescrType
@@ -245,7 +245,6 @@ bool sx_EqualGeneralId(const CSeq_id& gen1, const CSeq_id& gen2)
     if ( gen1.Equals(gen2) ) {
         return true;
     }
-    return false;
     // allow partial match in Dbtag.db like "WGS:ABBA" vs "WGS:ABBA01"
     if ( !gen1.IsGeneral() || !gen2.IsGeneral() ) {
         return false;
@@ -253,10 +252,19 @@ bool sx_EqualGeneralId(const CSeq_id& gen1, const CSeq_id& gen2)
     const CDbtag& id1 = gen1.GetGeneral();
     const CDbtag& id2 = gen2.GetGeneral();
     if ( !id1.GetTag().Equals(id2.GetTag()) ) {
-        return false;
+        CObject_id::TId8 value1, value2;
+        if ( !id1.GetTag().GetId8(value1) ||
+             !id2.GetTag().GetId8(value2) ||
+             value1 != value2 ) {
+            return false;
+        }
     }
     const string& db1 = id1.GetDb();
     const string& db2 = id2.GetDb();
+    if ( db1 == db2 ) {
+        return true;
+    }
+    return false;
     size_t len = min(db1.size(), db2.size());
     if ( db1.substr(0, len) != db2.substr(0, len) ) {
         return false;
