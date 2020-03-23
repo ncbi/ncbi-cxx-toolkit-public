@@ -509,7 +509,7 @@ public:
     virtual int AppliesTo(int mask=0xFFFFFFFF);
 
     // When adding new errors to this enum, also update s_msg[]
-    enum {
+    enum EErrCode {
         // Errors within one line (detected in CAgpRow)
         E_ColumnCount=1 ,
         E_EmptyColumn   ,
@@ -543,6 +543,7 @@ public:
         E_UnusedScaf,           // CAgpValidateReader
         E_SameGapLength,        // CAgpValidateReader
         E_InvalidBarInId,       // CAgpValidateReader
+        E_SingletonCompBeginsAt1AndMinusOri,
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.

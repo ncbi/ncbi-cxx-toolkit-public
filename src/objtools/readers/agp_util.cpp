@@ -39,7 +39,112 @@
 
 BEGIN_NCBI_SCOPE
 
-//// class CAgpErr
+thread_local map<CAgpErr::EErrCode, string> 
+s_msg_map = {
+    // Content Errors (codes 1..20)
+    {CAgpErr::E_ColumnCount, "expecting 9 tab-separated columns"},
+    {CAgpErr::E_EmptyColumn, "column X is empty"},
+    {CAgpErr::E_EmptyLine, "empty line"},
+    {CAgpErr::E_InvalidValue, "invalid value for X"},
+    {CAgpErr::E_InvalidLinkage, "invalid linkage"},
+
+    {CAgpErr::E_MustBePositive, "X must be a positive integer"},
+    {CAgpErr::E_MustFitSeqPosType, "X must not exceed 4294967294"}, // std::numeric_limits<TSeqPos>::max()
+    {CAgpErr::E_ObjEndLtBeg, "object_end is less than object_beg"},
+    {CAgpErr::E_CompEndLtBeg, "component_end is less than component_beg"},
+    {CAgpErr::E_ObjRangeNeGap, "object range length not equal to the gap length"},
+    {CAgpErr::E_ObjRangeNeComp, "object range length not equal to component range length"},
+
+    {CAgpErr::E_DuplicateObj, "duplicate object "},
+    {CAgpErr::E_ObjMustBegin1, "first line of an object must have object_beg=1"},
+    {CAgpErr::E_PartNumberNot1, "first line of an object must have part_number=1"},
+    {CAgpErr::E_PartNumberNotPlus1, "part number (column 4) != previous part number + 1"},
+    {CAgpErr::E_UnknownOrientation, "'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold"},
+
+    {CAgpErr::E_ObjBegNePrevEndPlus1, "object_beg != previous object_end + 1"},
+    {CAgpErr::E_NoValidLines, "no valid AGP lines"},
+    {CAgpErr::E_SameConseqGaps, "consequtive gaps lines with the same type and linkage"},
+    {CAgpErr::E_ScafBreakingGap, "in \"Scaffold from component\" file, invalid scaffold-breaking gap"},
+    {CAgpErr::E_WithinScafGap, "in \"Chromosome from scaffold\" file, invalid \"within-scaffold\" gap"},
+
+    {CAgpErr::E_UnknownScaf, "scaffold X was not defined in any of \"Scaffold from component\" files"},
+    {CAgpErr::E_UnusedScaf, "scaffold X is not used in any of \"Chromosome from scaffold\" files"},
+    {CAgpErr::E_SameGapLength, "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)"},
+    // "'|' character can only follow a recognized Seq-id type",
+    {CAgpErr::E_InvalidBarInId, "invalid use of \"|\" character"},
+    {CAgpErr::E_Last, ""},
+
+    // Content Warnings
+    {CAgpErr::W_GapObjEnd, "gap at the end of object (OK if X is the circular chromosome/plasmid)"},
+    {CAgpErr::W_GapObjBegin, "gap at the beginning of object "},
+    {CAgpErr::W_ConseqGaps, "two consequtive gap lines (e.g. a gap at the end of "
+                            "a scaffold, two non scaffold-breaking gaps, ...)"},
+    {CAgpErr::W_ObjNoComp,  "no components in object"},
+    {CAgpErr::W_SpansOverlap, "the span overlaps a previous span for this component"},
+
+    {CAgpErr::W_SpansOrder, "component span appears out of order"},
+    {CAgpErr::W_DuplicateComp, "duplicate component with non-draft type"},
+    {CAgpErr::W_LooksLikeGap, "line with component_type X appears to be a gap line and not a component line"},
+    {CAgpErr::W_LooksLikeComp, "line with component_type X appears to be a component line and not a gap line"},
+    {CAgpErr::W_ExtraTab, "extra tab or space at the end of line"},
+
+    {CAgpErr::W_GapLineMissingCol9, "gap line missing column 9 (null)"},
+    {CAgpErr::W_NoEolAtEof, "missing line separator at the end of file"},
+    {CAgpErr::W_GapLineIgnoredCol9, "extra text in the column 9 of the gap line"},
+    {CAgpErr::W_ObjOrderNotNumerical, "object names appear sorted, but not in a numerical order"},
+    {CAgpErr::W_CompIsWgsTypeIsNot, "component_id looks like a WGS accession, component_type is not W"},
+
+    {CAgpErr::W_CompIsNotWgsTypeIs, "component_id looks like a non-WGS accession, yet component_type is W"},
+    // ? "component_id looks like a protein accession"
+    {CAgpErr::W_ObjEqCompId, "object name (column 1) is the same as component_id (column 6)"},
+    // from Paul Kitts:
+    // Size for a gap of unknown length is not 100 bases. The International Sequence
+    // Database Collaboration uses a length of 100 bases for all gaps of unknown length.
+    {CAgpErr::W_GapSizeNot100, "gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)"},
+    {CAgpErr::W_BreakingGapSameCompId, "same component_id found on different scaffolds"},
+    // "component X is not used in full in a single-component scaffold",
+    // "only a part of component X is included in a singleton scaffold",
+    // "not the whole length of the component is included in a singleton scaffold",
+    // "singleton scaffold includes only X bases of Y in the component Z",
+    // "only X out of Y bases of component Z are used in the singleton scaffold",
+    // "singleton scaffold includes only a part of the component",
+    // "singleton scaffold include the whole component",
+    // "singleton scaffold includes only part of the component"
+    {CAgpErr::W_UnSingleCompNotInFull, "in unplaced singleton scaffold, component is not used in full"}, // (X out of Y bp)
+
+    {CAgpErr::W_UnSingleOriNotPlus, "in unplaced singleton scaffold, component orientation is not \"+\""},
+    {CAgpErr::W_ShortGap, "gap shorter than 10 bp"},
+    {CAgpErr::W_SpaceInObjName, "space in object name "},
+    {CAgpErr::W_CommentsAfterStart, "comments only allowed at the beginning of the file in AGP 2.0"},
+    {CAgpErr::W_OrientationZeroDeprecated, "orientation '0' is deprecated in AGP 2.0;  use '?' instead"},
+
+    {CAgpErr::W_NaLinkageExpected, "linkage (column 9) should be 'na' for a gap with linkage 'no' (AGP 2.0)"},
+    {CAgpErr::W_OldGapType, "old gap type; not used in AGP 2.0"},
+    {CAgpErr::W_AssumingVersion, "assuming AGP version X"},
+    {CAgpErr::W_ScafNotInFull, "in \"Chromosome from scaffold\" file, scaffold is not used in full"},
+    {CAgpErr::W_MissingLinkage, "missing linkage evidence (column 9) (AGP 2.0)"},  // W_Last
+
+
+    {CAgpErr::W_AGPVersionCommentInvalid, "AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0"},
+    {CAgpErr::W_AGPVersionCommentUnnecessary, "ignoring AGP version comment - version already set to X"},
+    {CAgpErr::W_DuplicateEvidence, "linkage evidence term X appears more than once"},
+    {CAgpErr::W_CompIsNotHtgTypeIs, "component_id X is not an HTG accession, but is used with component_type A, D, or F"},
+    {CAgpErr::W_SingletonsOnly, "all objects are singletons with component_beg=1"},
+
+    {CAgpErr::W_GnlId, "\"gnl|\" prefix in X is deprecated inside AGP files (no \"prefix|\" is best)"},
+    {CAgpErr::W_CompIsLocalTypeNotW, "component_id X is a not an accession, but is used with component_type other than W"},
+    // GenBank-related errors
+    {CAgpErr::G_InvalidCompId, "invalid component_id"},
+    {CAgpErr::G_NotInGenbank, "component_id not in GenBank"},
+    {CAgpErr::G_NeedVersion, "component_id X is ambiguous without an explicit version"},
+    {CAgpErr::G_CompEndGtLength, "component_end greater than sequence length"},
+    {CAgpErr::G_DataError, "sequence data is invalid or unavailable"},
+
+    {CAgpErr::G_TaxError, "taxonomic data is not available"},
+    {CAgpErr::G_InvalidObjId, "object X not found in FASTA file(s)"},
+    {CAgpErr::G_BadObjLen, "final object_end (column 3) not equal to object length in FASTA file(s)"},
+    {CAgpErr::G_NsWithinCompSpan, "run(s) of Ns within the component span"},
+};
 
 // When updating s_msg, also update the enum that indexes into this
 const CAgpErr::TStr CAgpErr::s_msg[]= {
@@ -77,8 +182,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)",
     // "'|' character can only follow a recognized Seq-id type",
     "invalid use of \"|\" character",
-
-    kEmptyCStr,
+    
+    "singleton object has component_beg=1 and in minus orientation",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -169,9 +274,12 @@ CAgpErr::CAgpErr()
 {
 }
 
-const char* CAgpErr::GetMsg(int code)
+const char* CAgpErr::GetMsg(int code) 
 {
-    if(code>0 && code<G_Last) return s_msg[code];
+    auto it = s_msg_map.find(static_cast<EErrCode>(code));
+    if (it != s_msg_map.end()) {
+        return it->second.c_str();
+    }
     return NcbiEmptyCStr;
 }
 
@@ -1368,8 +1476,8 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
         //" != G_Last+1 "+i2s(G_Last+1)).c_str() );
     NCBI_ASSERT( string(GetMsg(E_Last))=="",
         "CAgpErrEx -- GetMsg(E_Last) not empty" );
-    NCBI_ASSERT( string(GetMsg( (E_Last-1) ))!="",
-        "CAgpErrEx -- GetMsg(E_Last-1) is empty" );
+//    NCBI_ASSERT( string(GetMsg( (E_Last-1) ))!="",
+//        "CAgpErrEx -- GetMsg(E_Last-1) is empty" );
     NCBI_ASSERT( string(GetMsg(W_Last))=="",
         "CAgpErrEx -- GetMsg(W_Last) not empty" );
     NCBI_ASSERT( string(GetMsg( (W_Last-1) ))!="",

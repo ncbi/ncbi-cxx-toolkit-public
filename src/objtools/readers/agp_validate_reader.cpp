@@ -480,6 +480,12 @@ void CAgpValidateReader::OnScaffoldEnd()
     m_SingleCompScaffolds++;
     if(m_gapsInLastScaffold) m_SingleCompScaffolds_withGaps++;
 
+
+    if (m_prev_orientation=='-' &&
+        m_prev_component_beg==1) {
+        m_AgpErr->Msg(CAgpErrEx::E_SingletonCompBeginsAt1AndMinusOri, CAgpErr::fAtPrevLine);
+    }
+
     if((m_unplaced || NStr::StartsWith(m_prev_row->GetObject(), "un", NStr::eNocase) ) && m_prev_orientation) {
       if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
 
