@@ -550,8 +550,11 @@ sub get_curl_path
         return $path if (-f $path);
     }
     if ($^O =~ /mswin/i) {
-        chomp(my $retval = `where curl`);
-        return $retval if (-f $retval);
+        my $retval = `where curl`;
+        if (defined $retval) {
+            chomp($retval);
+            return $retval if (-f $retval);
+        }
     }
     return undef;
 }
