@@ -125,7 +125,7 @@ private:
 class CTabularFormatter_SeqId : public CTabularFormatter::IFormatter
 {
 public:
-    CTabularFormatter_SeqId(int row, objects::sequence::EGetIdType id_type, bool tag_only = false);
+    CTabularFormatter_SeqId(int row, objects::sequence::EGetIdType id_type, bool tag_only = false, bool protein = false);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
@@ -135,6 +135,7 @@ private:
     int m_Row;
     objects::sequence::EGetIdType m_GetIdType;
     bool m_TagOnly;
+    bool m_Protein;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -718,17 +719,31 @@ private:
 };
 
 
-class CTabularFormatter_Frameshifts : public CTabularFormatter::IFormatter
+class CTabularFormatter_Indels : public CTabularFormatter::IFormatter
 {
 public:
-    CTabularFormatter_Frameshifts();
+    enum EIndelType { e_Frameshifts, e_NonFrameshifts, e_All };
+    CTabularFormatter_Indels(EIndelType indel_type);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
                const objects::CSeq_align& align);
 
 private:
+    EIndelType m_IndelType;
+};
 
+class CTabularFormatter_GeneSymbol : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_GeneSymbol(int row);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    int m_Row;
 };
 
 

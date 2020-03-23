@@ -110,10 +110,12 @@ void CTabularFormatter_AllSeqIds::Print(CNcbiOstream& ostr,
 
 CTabularFormatter_SeqId::CTabularFormatter_SeqId(int row,
                                                  sequence::EGetIdType id_type,
-                                                 bool tag_only)
+                                                 bool tag_only,
+                                                 bool protein)
 : m_Row(row)
 , m_GetIdType(id_type)
 , m_TagOnly(tag_only)
+, m_Protein(protein)
 {
 }
 
@@ -144,7 +146,9 @@ void CTabularFormatter_SeqId::PrintHelpText(CNcbiOstream& ostr) const
 
 void CTabularFormatter_SeqId::PrintHeader(CNcbiOstream& ostr) const
 {
-    if (m_Row == 0) {
+    if (m_Protein) {
+        ostr << "protein";
+    } else if (m_Row == 0) {
         ostr << "query";
     } else if (m_Row == 1) {
         ostr << "subject";
@@ -159,6 +163,19 @@ void CTabularFormatter_SeqId::Print(CNcbiOstream& ostr,
 {
     CSeq_id_Handle idh =
         CSeq_id_Handle::GetHandle(align.GetSeq_id(m_Row));
+    if (m_Protein) {
+        CBioseq_Handle bsh = m_Scores->GetScope().GetBioseqHandle(idh);
+        if (!bsh) {
+            ostr << "NA";
+            return;
+        }
+        CFeat_CI feat_iter(bsh, CSeqFeatData::e_Cdregion);
+        if (!feat_iter) {
+            ostr << "NA";
+            return;
+        } 
+        idh = CSeq_id_Handle::GetHandle(*feat_iter->GetProduct().GetId());
+    }
     CSeq_id_Handle best =
         sequence::GetId(idh, m_Scores->GetScope(), m_GetIdType);
     if ( !best ) {
@@ -2298,34 +2315,110 @@ void CTabularFormatter_Traceback::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
-CTabularFormatter_Frameshifts::CTabularFormatter_Frameshifts()
+CTabularFormatter_Indels::CTabularFormatter_Indels(EIndelType indel_type)
+: m_IndelType(indel_type)
 {
 }
 
 
-void CTabularFormatter_Frameshifts::PrintHelpText(CNcbiOstream& ostr) const
+void CTabularFormatter_Indels::PrintHelpText(CNcbiOstream& ostr) const
 {
-    ostr << "List of frameshift indels";
+    switch (m_IndelType) {
+    case e_Frameshifts:
+        ostr << "List of frameshift indels";
+        break;
+
+    case e_NonFrameshifts:
+        ostr << "List of non-frameshifting indels";
+        break;
+
+    default:
+        ostr << "List of all indels";
+        break;
+    }
 }
 
-void CTabularFormatter_Frameshifts::PrintHeader(CNcbiOstream& ostr) const
+void CTabularFormatter_Indels::PrintHeader(CNcbiOstream& ostr) const
 {
-    ostr << "frameshifts";
+    switch (m_IndelType) {
+    case e_Frameshifts:
+        ostr << "frameshifts";
+        break;
+
+    case e_NonFrameshifts:
+        ostr << "non-frameshift indels";
+        break;
+
+    default:
+        ostr << "indels";
+        break;
+    }
 }
 
 
-void CTabularFormatter_Frameshifts::Print(CNcbiOstream& ostr,
+void CTabularFormatter_Indels::Print(CNcbiOstream& ostr,
                                         const CSeq_align& align)
 {
-    vector<CSeq_align::SIndel> frameshifts = align.GetFrameshifts();
+    vector<CSeq_align::SIndel> indels;
+    switch (m_IndelType) {
+    case e_Frameshifts:
+        indels = align.GetFrameshifts();
+        break;
+
+    case e_NonFrameshifts:
+        indels = align.GetNonFrameshifts();
+        break;
+
+    default:
+        indels = align.GetIndels();
+        break;
+    }
+
     bool first = true;
-    for (const CSeq_align::SIndel &frameshift : frameshifts) {
+    for (const CSeq_align::SIndel &indel : indels) {
         if (!first) {
             ostr << ',';
         }
-        ostr << frameshift.AsString();
+        ostr << indel.AsString();
         first = false;
     }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+CTabularFormatter_GeneSymbol::CTabularFormatter_GeneSymbol(int row)
+: m_Row(row)
+{
+}
+
+
+void CTabularFormatter_GeneSymbol::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Gene symbol for " << (m_Row == 0 ? "query" : "subject");
+}
+
+void CTabularFormatter_GeneSymbol::PrintHeader(CNcbiOstream& ostr) const
+{
+    ostr << (m_Row == 0 ? "query" : "subject") << "_gene_symbol";
+}
+
+
+void CTabularFormatter_GeneSymbol::Print(CNcbiOstream& ostr,
+                                        const CSeq_align& align)
+{
+    CBioseq_Handle bsh = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(m_Row));
+    if ( !bsh ) {
+        ostr << "NA";
+        return;
+    }
+    CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
+    if (!gene_it || !gene_it->GetData().GetGene().IsSetLocus()) {
+        ostr << "NA";
+        return;
+    }
+
+    ostr << gene_it->GetData().GetGene().GetLocus();
 }
 
 
@@ -2370,6 +2463,12 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("sseqid", sseqid);
     formatter.RegisterField("sacc", sseqid);
     formatter.RegisterField("saccver", sseqid);
+
+    IFormatter *prot_seqid =
+        new CTabularFormatter_SeqId(0, sequence::eGetId_Best, false, true);
+    formatter.RegisterField("prot_seqid", prot_seqid);
+    formatter.RegisterField("prot_acc", prot_seqid);
+    formatter.RegisterField("prot_accver", prot_seqid);
 
     IFormatter *sallseqid =
         new CTabularFormatter_AllSeqIds(1);
@@ -2518,7 +2617,13 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("btop",
             new CTabularFormatter_Traceback);
     formatter.RegisterField("frameshifts",
-            new CTabularFormatter_Frameshifts);
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_Frameshifts));
+    formatter.RegisterField("nonframeshifts",
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_NonFrameshifts));
+    formatter.RegisterField("indels",
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_All));
+    formatter.RegisterField("gene_symbol",
+            new CTabularFormatter_GeneSymbol(0));
     formatter.RegisterField("qasmunit", new CTabularFormatter_AssemblyInfo(0,
                                    CTabularFormatter_AssemblyInfo::eUnit,
                                    CTabularFormatter_AssemblyInfo::eName));

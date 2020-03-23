@@ -1686,6 +1686,73 @@ public:
     }
 };
 
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_Partial : public CScoreLookup::IScore
+{
+public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "1 if rna Seq-feat based on this alignment is partial; "
+            "0 if it is complete";
+    }
+
+    virtual EComplexity GetComplexity() const { return eHard; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        CFeatureGenerator generator(*scope);
+        generator.SetAllowedUnaligned(10);
+
+        CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+        CSeq_annot annot;
+        CBioseq_set bset;
+        generator.ConvertAlignToAnnot(*clean_align, annot, bset);
+        for (const CRef<CSeq_feat> &feat : annot.GetData().GetFtable()) {
+            if (feat->GetData().IsRna()) {
+                return feat->IsSetPartial() && feat->GetPartial();
+            }
+        }
+
+        NCBI_THROW(CException, eUnknown,
+                   "Can't generate rna sequence from alignment");
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_RibosomalSlippage : public CScoreLookup::IScore
+{
+public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "1 if query is a mRNA and its coding region has ribosomal "
+            "slippage; 0 otherwise";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
+    
+        CFeat_CI feat_it(bsh, CSeqFeatData::e_Cdregion);
+        return feat_it && feat_it->IsSetExcept_text() &&
+               feat_it->GetExcept_text().find("ribosomal slippage") != string::npos;
+    }
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -1965,6 +2032,16 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("min_indel_to_splice",
           CIRef<IScore>(new CScore_IndelToSplice())));
+    
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("partial",
+          CIRef<IScore>(new CScore_Partial())));
+    
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("ribosomal_slippage",
+          CIRef<IScore>(new CScore_RibosomalSlippage())));
     
     m_Scores.insert
         (TScoreDictionary::value_type
