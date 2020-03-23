@@ -48,7 +48,7 @@ use constant USER => "anonymous";
 use constant PASSWORD => "anonymous";
 use constant DEBUG => 0;
 use constant MAX_DOWNLOAD_ATTEMPTS => 3;
-use constant EXIT_FAILURE => 2;
+use constant EXIT_FAILURE => 1;
 
 use constant AWS_URL => "http://s3.amazonaws.com";
 use constant AMI_URL => "http://169.254.169.254/latest/meta-data/local-hostname";
@@ -73,19 +73,21 @@ my $opt_showall = undef;
 my $opt_show_version = 0;
 my $opt_decompress = 0;
 my $opt_source;
+my $opt_legacy_exit_code = 0;
 my $opt_nt = &get_num_cores();
-my $result = GetOptions("verbose+"      =>  \$opt_verbose,
-                        "quiet"         =>  \$opt_quiet,
-                        "force"         =>  \$opt_force_download,
-                        "passive:s"     =>  \$opt_passive,
-                        "timeout=i"     =>  \$opt_timeout,
-                        "showall:s"     =>  \$opt_showall,
-                        "version"       =>  \$opt_show_version,
-                        "blastdb_version:i"=>  \$opt_blastdb_ver,
-                        "decompress"    =>  \$opt_decompress,
-                        "source=s"      =>  \$opt_source,
-                        "num_threads=i" =>  \$opt_nt,
-                        "help"          =>  \$opt_help);
+my $result = GetOptions("verbose+"          =>  \$opt_verbose,
+                        "quiet"             =>  \$opt_quiet,
+                        "force"             =>  \$opt_force_download,
+                        "passive:s"         =>  \$opt_passive,
+                        "timeout=i"         =>  \$opt_timeout,
+                        "showall:s"         =>  \$opt_showall,
+                        "version"           =>  \$opt_show_version,
+                        "blastdb_version:i" =>  \$opt_blastdb_ver,
+                        "decompress"        =>  \$opt_decompress,
+                        "source=s"          =>  \$opt_source,
+                        "num_threads=i"     =>  \$opt_nt,
+                        "legacy_exit_code"  =>  \$opt_legacy_exit_code,
+                        "help"              =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
 pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
@@ -196,20 +198,20 @@ if ($location ne "NCBI") {
                 my $aws_cmd = "$awscli s3 cp ";
                 $aws_cmd .= "--only-show-errors " unless $opt_verbose >= 3;
                 print $fh join("\n", @files2download);
-                # FIXME xargs -a only works on linux
-                $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -n 1 -I{}";
+                $cmd = "/usr/bin/xargs -P $opt_nt -n 1 -I{}";
                 $cmd .= " -t" if $opt_verbose > 3;
                 $cmd .= " $aws_cmd {} .";
+                $cmd .= " <$fh " ;
             } else { # fall back to  curl
                 my $url = $location eq "AWS" ? AWS_URL : GCS_URL;
                 s,gs://,$url/, foreach (@files2download);
                 s,s3://,$url/, foreach (@files2download);
                 if ($opt_nt > 1 and -f "/usr/bin/xargs") {
                     print $fh join("\n", @files2download);
-                    # FIXME xargs -a only works on linux
-                    $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -n 1";
+                    $cmd = "/usr/bin/xargs -P $opt_nt -n 1";
                     $cmd .= " -t" if $opt_verbose > 3;
                     $cmd .= " /usr/bin/curl -sOR";
+                    $cmd .= " <$fh " ;
                 } else {
                     $cmd = "/usr/bin/curl -sR";
                     $cmd .= " -O $_" foreach (@files2download);
@@ -234,6 +236,9 @@ if ($location ne "NCBI") {
                 $exit_code = &decompress($_);
                 last if ($exit_code != 1);
             }
+        }
+        unless ($opt_legacy_exit_code) {
+            $exit_code = ($exit_code == 1 ? 0 : $exit_code);
         }
     }
     $ftp->quit();
@@ -549,6 +554,11 @@ update_blastdb.pl [options] blastdb ...
 
 =over 2
 
+=item B<--source>
+
+Location to download BLAST databases from (default: auto-detect closest location).
+Supported values: ncbi, aws, or gcp.
+
 =item B<--decompress>
 
 Downloads, decompresses the archives in the current working directory, and
@@ -605,6 +615,14 @@ Prints this script's version. Overrides all other options.
 Sets the number of cores to utilize to perform downloads in parallel when data comes from GCS.
 Defaults to all cores (Linux and macos only).
 
+=item B<--legacy_exit_code>
+
+Enables exit codes from prior to version 581818, BLAST+ 2.10.0 release, for
+downloads from NCBI only. This option is meant to be used by legacy applications that rely
+on this exit codes:
+0 for successful operations that result in no downloads, 1 for successful
+downloads, and 2 for errors.
+
 =back
 
 =head1 DESCRIPTION
@@ -614,8 +632,7 @@ command line from the NCBI ftp site.
 
 =head1 EXIT CODES
 
-This script returns 0 on successful operations that result in no downloads, 1
-on successful operations that downloaded files, and 2 on errors.
+This script returns 0 on successful operations and non-zero on errors.
 
 =head1 BUGS
 
