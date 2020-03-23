@@ -1,0 +1,9 @@
+# $Id$
+ifeq ($(OSTYPE),darwin)
+  # LDFLAGS_DLL += -all_load
+  STATIC_PB_LIBS = $(wildcard $(PROTOBUF_BIN)/../lib*/libprotobuf$(D_SFX).a)
+  ifneq ($(STATIC_PB_LIBS),)
+     FORCE_PROTOBUF = -Wl,-force_load,$(firstword $(STATIC_PB_LIBS))
+     GRPC_LIBS := $(GRPC_LIBS:-lprotobuf%=$(FORCE_PROTOBUF))
+  endif
+endif
