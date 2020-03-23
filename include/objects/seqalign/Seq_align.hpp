@@ -256,6 +256,14 @@ public:
     TSeqPos         GetNumFrameshiftsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
                                                   TDim row = -1) const;
 
+    /// Retrieves descriptions of all indels on a given row
+    /// @throws CSeqalignException if alignment type is not supported
+    vector<SIndel>  GetIndels(TDim row = -1) const;
+    vector<SIndel>  GetIndelsWithinRange(const TSeqRange &range,
+                                              TDim row = -1) const;
+    vector<SIndel>  GetIndelsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                               TDim row = -1) const;
+
     /// Retrieves descriptions of all frameshifts on a given row; i.e.
     /// all gaps with a length that is not a multiple of 3.
     /// @throws CSeqalignException if alignment type is not supported
@@ -263,6 +271,15 @@ public:
     vector<SIndel>  GetFrameshiftsWithinRange(const TSeqRange &range,
                                               TDim row = -1) const;
     vector<SIndel>  GetFrameshiftsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                               TDim row = -1) const;
+
+    /// Retrieves descriptions of all non-frameshift indels on a given row; i.e.
+    /// all gaps with a length that is a multiple of 3.
+    /// @throws CSeqalignException if alignment type is not supported
+    vector<SIndel>  GetNonFrameshifts(TDim row = -1) const;
+    vector<SIndel>  GetNonFrameshiftsWithinRange(const TSeqRange &range,
+                                              TDim row = -1) const;
+    vector<SIndel>  GetNonFrameshiftsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
                                                TDim row = -1) const;
 
     /// Retrieves the locations of aligned bases in the given row, excluding

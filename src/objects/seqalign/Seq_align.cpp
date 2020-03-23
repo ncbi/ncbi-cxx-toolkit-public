@@ -1593,8 +1593,9 @@ string CSeq_align::SIndel::AsString() const
 }
 
 static vector<CSeq_align::SIndel>
-s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
-                    const CRangeCollection<TSeqPos> &ranges)
+s_GetIndels(const CSeq_align& align, CSeq_align::TDim row,
+            const CRangeCollection<TSeqPos> &ranges,
+            bool include_frameshifts, bool include_non_frameshifts)
 {
     vector<CSeq_align::SIndel> results;
     if (ranges.empty()) {
@@ -1629,9 +1630,9 @@ s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
                     . SetSegs().SetDisc().Set().push_back(segment);
                 }
                 vector<CSeq_align::SIndel> before_origin_frameshifts =
-                    s_GetFrameshifts(before_origin, row, ranges),
+                    s_GetIndels(before_origin, row, ranges, include_frameshifts, include_non_frameshifts),
                                            after_origin_frameshifts =
-                    s_GetFrameshifts(after_origin, row, ranges);
+                    s_GetIndels(after_origin, row, ranges, include_frameshifts, include_non_frameshifts);
                 results = before_origin_frameshifts;
                 results.insert(results.end(), after_origin_frameshifts.begin(),
                                               after_origin_frameshifts.end());
@@ -1682,7 +1683,9 @@ s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
                             }
                         }
                     }
-                    if (gap_len % 3) {
+                    if ((include_frameshifts && gap_len % 3 != 0) ||
+                        (include_non_frameshifts && gap_len % 3 == 0))
+                    {
                         TSignedSeqPos genomic_gap_start = ds.GetStarts()[i*ds.GetDim() + 1];
                         CSeq_align::TDim inserted_row = 1;
                         if (genomic_gap_start < 0) {
@@ -1704,41 +1707,77 @@ s_GetFrameshifts(const CSeq_align& align, CSeq_align::TDim row,
 
 TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
 {
-    return s_GetFrameshifts(*this, row,
-                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()))
+    return s_GetIndels(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()), true, false)
            .size();
 }
 
 TSeqPos CSeq_align::GetNumFrameshiftsWithinRange(
     const TSeqRange &range, TDim row) const
 {
-    return s_GetFrameshifts(*this, row, CRangeCollection<TSeqPos>(range))
+    return s_GetIndels(*this, row, CRangeCollection<TSeqPos>(range), true, false)
            .size();
 }
 
 TSeqPos CSeq_align::GetNumFrameshiftsWithinRanges(
     const CRangeCollection<TSeqPos> &ranges, TDim row) const
 {
-    return s_GetFrameshifts(*this, row, ranges)
+    return s_GetIndels(*this, row, ranges, true, false)
            .size();
 }
 
 vector<CSeq_align::SIndel> CSeq_align::GetFrameshifts(TDim row) const
 {
-    return s_GetFrameshifts(*this, row,
-                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()));
+    return s_GetIndels(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()), true, false);
 }
 
 vector<CSeq_align::SIndel> CSeq_align::GetFrameshiftsWithinRange(
     const TSeqRange &range, TDim row) const
 {
-    return s_GetFrameshifts(*this, row, CRangeCollection<TSeqPos>(range));
+    return s_GetIndels(*this, row, CRangeCollection<TSeqPos>(range), true, false);
 }
 
 vector<CSeq_align::SIndel> CSeq_align::GetFrameshiftsWithinRanges(
     const CRangeCollection<TSeqPos> &ranges, TDim row) const
 {
-    return s_GetFrameshifts(*this, row, ranges);
+    return s_GetIndels(*this, row, ranges, true, false);
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetNonFrameshifts(TDim row) const
+{
+    return s_GetIndels(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()), false, true);
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetNonFrameshiftsWithinRange(
+    const TSeqRange &range, TDim row) const
+{
+    return s_GetIndels(*this, row, CRangeCollection<TSeqPos>(range), false, true);
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetNonFrameshiftsWithinRanges(
+    const CRangeCollection<TSeqPos> &ranges, TDim row) const
+{
+    return s_GetIndels(*this, row, ranges, false, true);
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetIndels(TDim row) const
+{
+    return s_GetIndels(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()), true, true);
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetIndelsWithinRange(
+    const TSeqRange &range, TDim row) const
+{
+    return s_GetIndels(*this, row, CRangeCollection<TSeqPos>(range), true, true);
+}
+
+vector<CSeq_align::SIndel> CSeq_align::GetIndelsWithinRanges(
+    const CRangeCollection<TSeqPos> &ranges, TDim row) const
+{
+    return s_GetIndels(*this, row, ranges, true, true);
 }
 
 
