@@ -891,23 +891,25 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
     // Check if the sequence is circular
     TSeqPos circular_length = kInvalidSeqPos;
-    const CSeq_id* circular_id = NULL;
+    CConstRef<CSeq_id> circular_id;
     if ( bioseq_handle ) {
         if ( bioseq_handle.IsSetInst_Topology() &&
              bioseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
             circular_length = bioseq_handle.GetBioseqLength();
-            circular_id = bioseq_handle.GetSeqId().GetPointer();
+            circular_id = bioseq_handle.GetSeqId();
         }
     }
     else {
         try {
+            const CSeq_id* loc_id = nullptr;
             try {
-                loc.CheckId(circular_id);
+                loc.CheckId(loc_id);
             }
             catch (exception&) {
-                circular_id = 0;
+                loc_id = 0;
             }
-            if ( circular_id ) {
+            if ( loc_id ) {
+                circular_id.Reset(loc_id);
                 CBioseq_Handle bseq_handle = scope.GetBioseqHandle(*circular_id);
                 if ( bseq_handle && bseq_handle.IsSetInst_Topology() &&
                      bseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
