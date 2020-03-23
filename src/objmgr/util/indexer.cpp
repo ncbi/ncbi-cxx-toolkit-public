@@ -1968,6 +1968,10 @@ void CBioseqIndex::x_InitFeats (void)
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
         }
+        if ((m_Flags & CSeqEntryIndex::fHideGapFeats) != 0) {
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_assembly_gap);
+        }
 
         bool onlyGeneRNACDS = false;
         if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {

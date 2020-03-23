@@ -106,7 +106,8 @@ public:
         fHideMiscFeats =    64,
         fShowSNPFeats =    128,
         fShowCDDFeats =    256,
-        fGeneRNACDSOnly =  512
+        fGeneRNACDSOnly =  512,
+        fHideGapFeats =   1024
     };
     typedef int TFlags; // Binary "OR" of EFlags
 

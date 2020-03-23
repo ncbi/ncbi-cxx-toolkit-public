@@ -2494,6 +2494,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         }
         if ( cfg.HideGapFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_assembly_gap);
         }
         if (ctx.IsNuc()) {
             sel.ExcludeFeatType(CSeqFeatData::e_Het);
@@ -3026,7 +3027,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
     gap_data.num_gaps = gaps.size();
     gap_data.next_gap = 0;
 
-    if (gap_data.num_gaps > 0) {
+    if (gap_data.num_gaps > 0 && ! ctx.Config().HideGapFeatures()) {
         s_SetGapIdxData (gap_data, gaps);
     }
 
