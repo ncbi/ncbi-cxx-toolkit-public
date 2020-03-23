@@ -61,7 +61,7 @@ USING_SCOPE(objects);
 #define PILEUP_NAME_SUFFIX " pileup graphs"
 
 // 0 - never, 1 - every 5th day, 2 - always
-#define DEFAULT_REPORT_GENERAL_ID_ERROR 1
+#define DEFAULT_REPORT_GENERAL_ID_ERROR 2
 #define DEFAULT_REPORT_SEQ_STATE_ERROR 1
 
 NCBI_PARAM_DECL(int, WGS, REPORT_GENERAL_ID_ERROR);
