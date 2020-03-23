@@ -149,7 +149,7 @@ REM modify CMakeLists.txt
     echo cmake_minimum_required^(VERSION 3.7^)
     echo project^(%prj_name%^)
     echo include^(%toolkit:\=/%/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
-    echo add_subdirectory^(%rep_src%^)
+    echo NCBI_add_subdirectory^(%rep_src%^)
 ) >%prj_prj%
 REM #########################################################################
 
