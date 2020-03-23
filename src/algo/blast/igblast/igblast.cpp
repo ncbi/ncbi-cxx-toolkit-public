@@ -55,7 +55,8 @@ static int max_allowed_VJ_distance_with_D = 225;
 static int max_allowed_VJ_distance_without_D = 50;
 static int max_allowed_VD_distance = 120;
 static int max_allowed_j_deletion = 32;
-static int extend_length = 30;
+static int extend_length5end = 30;
+static int extend_length3end = 15;
 static int max_J_length = 70;
 static int max_allowed_V_end_to_J_end = max_allowed_VJ_distance_with_D + max_J_length;
 static int max_v_j_overlap = 7;
@@ -157,7 +158,7 @@ void CIgBlast::x_ScreenByAlignLength(CRef<CSearchResultSet> & results, int lengt
 }
 
 
-void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
+void CIgBlast::x_ExtendAlign5end(CRef<CSearchResultSet> & results){
     
     NON_CONST_ITERATE(CSearchResultSet, result, *results) {
 
@@ -183,7 +184,7 @@ void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
                 if (score >= highest_score)  { //top hits
                     highest_score = score;
                     extend_strand = (*align)->GetSeqStrand(0);
-                    desired_len = min(extend_length, 
+                    desired_len = min(extend_length5end, 
                                       (*align)->GetSegs().GetDenseg().GetStarts()[1]);
                     
                     if ((*align)->GetSeqStrand(0) == eNa_strand_minus) {
@@ -242,6 +243,86 @@ void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
     }
 }
 
+void CIgBlast::x_ExtendAlign3end(CRef<CSearchResultSet> & results){
+    
+    NON_CONST_ITERATE(CSearchResultSet, result, *results) {
+
+        if ((*result)->HasAlignments()) {
+            CSeq_align_set::Tdata & align_list = (*result)->SetSeqAlign()->Set();
+            int desired_len = 0; 
+            int actual_len = 0;
+            int top_hit_actual_len = 0;
+            ENa_strand extend_strand = eNa_strand_plus;
+            int highest_score = 0; 
+
+            NON_CONST_ITERATE(CSeq_align_set::Tdata, align, align_list) {
+
+                // cerr << "before=" << MSerial_AsnText << **align << endl;
+
+                //extend germline match up to some positions at 5' end.  Extend length is 
+                //set by comparing to top hit or top hit equivalents
+
+                int score = 0;
+                (*align)->GetNamedScore(CSeq_align::eScore_Score, score);
+                
+                if (score >= highest_score)  { //top hits
+                    highest_score = score;
+                    extend_strand = (*align)->GetSeqStrand(0);
+                   
+                    int j_stop = m_Scope->GetBioseqHandle((*align)->GetSeq_id(1)).GetBioseqLength() - 1;
+                    int j_align_stop = (*align)->GetSegs().GetDenseg().GetSeqStop(1);
+                    desired_len = min(extend_length3end, 
+                                      j_stop - j_align_stop);
+                    
+                    if ((*align)->GetSeqStrand(0) == eNa_strand_minus) {
+                     
+                        int query_align_start = (*align)->GetSegs().GetDenseg().GetSeqStart(0);
+                        int allowed_query_length = query_align_start;
+
+                        top_hit_actual_len = min(desired_len, allowed_query_length);
+                    } else {
+                        int query_stop = m_Scope->GetBioseqHandle((*align)->GetSeq_id(0)).GetBioseqLength() - 1;
+                        int allowed_query_length = query_stop - (*align)->GetSegs().GetDenseg().GetSeqStop(0);
+                        top_hit_actual_len = min(desired_len, allowed_query_length);  
+                    
+                    }
+                } 
+                    
+                if ((*align)->GetSeqStrand(0) == eNa_strand_minus) {
+                    
+                    int query_align_start = (*align)->GetSegs().GetDenseg().GetSeqStart(0);
+                    int allowed_query_length = query_align_start;
+                    actual_len = min(allowed_query_length, top_hit_actual_len);
+                        
+                } else {
+                    int query_stop = m_Scope->GetBioseqHandle((*align)->GetSeq_id(0)).GetBioseqLength() - 1;
+                    int allowed_query_length = query_stop - (*align)->GetSegs().GetDenseg().GetSeqStop(0);
+                    actual_len = min(top_hit_actual_len, allowed_query_length);  
+                                     
+                }
+            
+                //only extend if it has the same strand as the top hit
+                if (actual_len > 0 && (*align)->GetSeqStrand(0) == extend_strand) {
+                    if (extend_strand == eNa_strand_minus) {
+                       
+                      int num_seg = (*align)->GetSegs().GetDenseg().GetNumseg();
+                      int num_dim = (*align)->GetSegs().GetDenseg().GetDim();
+                      (*align)->SetSegs().SetDenseg().SetStarts()[num_seg*num_dim - 2] -= actual_len;
+                      (*align)->SetSegs().SetDenseg().SetLens()[num_seg-1] += actual_len;
+
+                    } else {
+                        int num_seg = (*align)->GetSegs().GetDenseg().GetNumseg();
+                        (*align)->SetSegs().SetDenseg().SetLens()[num_seg-1] += actual_len;
+                       
+                    } 
+                }
+                // cerr << "after=" << MSerial_AsnText << **align << endl;
+            }
+               
+        }
+    }
+}
+
 CRef<CSearchResultSet>
 CIgBlast::Run()
 {
@@ -258,8 +339,8 @@ CIgBlast::Run()
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
          blast.SetNumberOfThreads(m_NumThreads);
         results[0] = blast.Run();
-        if (m_IgOptions->m_ExtendAlign){
-            x_ExtendAlign(results[0]);
+        if (m_IgOptions->m_ExtendAlign5end){
+            x_ExtendAlign5end(results[0]);
         }
         x_ScreenByAlignLength(results[0], m_IgOptions->m_MinVLength);
         x_ConvertResultType(results[0]);
@@ -283,8 +364,8 @@ CIgBlast::Run()
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         blast.SetNumberOfThreads(m_NumThreads);
         results[3] = blast.Run();
-        if (m_IgOptions->m_ExtendAlign){
-            x_ExtendAlign(results[3]);
+        if (m_IgOptions->m_ExtendAlign5end){
+            x_ExtendAlign5end(results[3]);
         }
         x_ScreenByAlignLength(results[3], m_IgOptions->m_MinVLength);
         s_SortResultsByEvalue(results[3]);
@@ -305,6 +386,9 @@ CIgBlast::Run()
                 blast.SetNumberOfThreads(m_NumThreads);
                 results[gene] = blast.Run();
                 if (gene == 2){
+                    if (m_IgOptions->m_ExtendAlign3end){
+                        x_ExtendAlign3end(results[gene]);
+                    }
                     x_ScreenByAlignLength(results[gene], m_IgOptions->m_MinJLength);
                 }
                 x_ConvertResultType(results[gene]);

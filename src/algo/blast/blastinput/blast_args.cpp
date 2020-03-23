@@ -1659,7 +1659,9 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the search only be for V segment (effective only for non-germline database search using -db option)?", true);
 
-    arg_desc.AddFlag(kArgExtendAlign, "Extend V gene alignment at 5' end", true);
+    arg_desc.AddFlag(kArgExtendAlign5end, "Extend V gene alignment at 5' end", true);
+
+    arg_desc.AddFlag(kArgExtendAlign3end, "Extend V gene alignment at 3' end", true);
 
     arg_desc.AddDefaultKey(kArgMinVLength, "Min_V_Length",
                            "Minimal required V gene length",
@@ -1728,7 +1730,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_Origin = args[kArgGLOrigin].AsString();
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
-    m_IgOptions->m_ExtendAlign = args.Exist(kArgExtendAlign) ? args[kArgExtendAlign] : false;
+    m_IgOptions->m_ExtendAlign5end = args.Exist(kArgExtendAlign5end) ? args[kArgExtendAlign5end] : false;
+    m_IgOptions->m_ExtendAlign3end = args.Exist(kArgExtendAlign3end) ? args[kArgExtendAlign3end] : false;
     m_IgOptions->m_DetectOverlap = args.Exist(kArgDetectOverlap) ? args[kArgDetectOverlap] : false;
     m_IgOptions->m_MinVLength = args[kArgMinVLength].AsInteger();
     if (args.Exist(kArgMinJLength) && args[kArgMinJLength]) {

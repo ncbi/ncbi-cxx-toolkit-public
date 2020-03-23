@@ -307,7 +307,9 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLDomainSystem;
 /// Arugment to specify if Igblast alignment should restrict to V seg
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
 /// Arugment to specify if Igblast alignment should be extends at 5' end
-NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign;
+NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign5end;
+/// Arugment to specify if Igblast alignment should be extends at 3' end
+NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign3end;
 /// Arugment to to detect overlap at vdj junction
 NCBI_BLASTINPUT_EXPORT extern const string kArgDetectOverlap;
 ///Argument to specify minimal required V length

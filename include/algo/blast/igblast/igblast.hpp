@@ -79,7 +79,8 @@ public:
     int  m_NumAlign[3];              // number of VDJ alignments to show
     bool m_FocusV;                   // should alignment restrict to V
     bool m_Translate;                // should translation be displayed
-    bool m_ExtendAlign;
+    bool m_ExtendAlign5end;
+    bool m_ExtendAlign3end;
     int m_MinVLength;
     int m_MinJLength;
     bool m_DetectOverlap;
@@ -376,7 +377,8 @@ private:
                      int iq,
                      bool va_or_vd_as_heavy_chain);
 
-    void x_ExtendAlign(CRef<CSearchResultSet> & results);
+    void x_ExtendAlign5end(CRef<CSearchResultSet> & results);
+    void x_ExtendAlign3end(CRef<CSearchResultSet> & results);
     void x_ScreenByAlignLength(CRef<CSearchResultSet> & results, int length);
     void x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot);
     void x_ProcessDJResult(CRef<CSearchResultSet>& results_V, 
