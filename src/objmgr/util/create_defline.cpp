@@ -1483,11 +1483,11 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
         joiner.Add("location", "chromosome", eHideType);
         joiner.Add("chromosome", m_Chromosome, eHideType);
     } else if ( !m_LinkageGroup.empty()) {
-        joiner.Add("location", "linkage-group", eHideType);
-        joiner.Add("linkage-group", m_LinkageGroup, eHideType);
+        joiner.Add("location", "linkage group", eHideType);
+        joiner.Add("linkage group", m_LinkageGroup, eHideType);
     } else if ( !m_Plasmid.empty()) {
         joiner.Add("location", m_Organelle, eHideType); //"plasmid"
-        joiner.Add("plasmid-name", m_Plasmid, eHideType);
+        joiner.Add("plasmid name", m_Plasmid, eHideType);
     } else if (! m_Organelle.empty()) {
         joiner.Add("location", m_Organelle, eHideType);
     }
@@ -2600,6 +2600,8 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
     }
     if (! m_Chromosome.empty()) {
         joiner.Add("chromosome", m_Chromosome);
+    } else if ( !m_LinkageGroup.empty()) {
+        joiner.Add("linkage group", m_LinkageGroup);
     }
     if (! m_Clone.empty()) {
         string clnbuf;
@@ -3301,7 +3303,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
         joiner.Add("chromosome", m_Chromosome);
     }
     if (m_IsPlasmid || !m_Plasmid.empty()) {
-        joiner.Add("plasmid-name", m_Plasmid);
+        joiner.Add("plasmid name", m_Plasmid);
     }
     if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
         joiner.Add("completeness", CTempString("complete"));
