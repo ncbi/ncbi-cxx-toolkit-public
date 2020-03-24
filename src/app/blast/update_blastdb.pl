@@ -120,10 +120,6 @@ if ($opt_show_version) {
     exit($exit_code);
 }
 my $curl = &get_curl_path();
-unless (defined $curl) {
-    print "$0 depends on curl, please install this utility before proceeding.";
-    exit(EXIT_FAILURE);
-}
 
 my $location = "NCBI";
 # If provided, the source takes precedence over any attempts to determine the closest location
@@ -139,9 +135,13 @@ if (defined($opt_source)) {
     my $gcp_cmd = "$curl --connect-timeout 1 -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL;
     my $aws_cmd = "$curl --connect-timeout 1 -sfo /dev/null " . AMI_URL;
     print "$gcp_cmd\n" if DEBUG;
-    $location = "GCP" if (system($gcp_cmd) == 0);
+    $location = "GCP" if (defined($curl) and system($gcp_cmd) == 0);
     print "$aws_cmd\n" if DEBUG;
-    $location = "AWS" if (system($aws_cmd) == 0);
+    $location = "AWS" if (defined($curl) and system($aws_cmd) == 0);
+}
+if ($location =~ /aws|gcp/i and not defined $curl) {
+    print "Error: $0 depends on curl to fetch data from cloud storage, please install this utility to access these data sources.\n";
+    exit(EXIT_FAILURE);
 }
 
 my $ftp;
