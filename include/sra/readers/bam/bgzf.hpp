@@ -94,17 +94,26 @@ public:
     CPagedFile(const string& file_name);
     ~CPagedFile();
 
+#define USE_RANGE_CACHE 1
+#ifdef USE_RANGE_CACHE
+    typedef CBinaryRangeCacheWithLock<TFilePos, CPagedFilePage> TPageCache;
+#else
     typedef CCacheWithLock<TFilePos, CPagedFilePage> TPageCache;
+#endif
     typedef TPageCache::CLock TPage;
 
+    // return page that contains the file position
     TPage GetPage(TFilePos pos);
 
     pair<Uint8, double> GetReadStatistics() const;
+    void SetPreviousReadStatistics(const pair<Uint8, double>& stats);
+    // estimate best next page size to read using collected statistics
+    size_t GetNextPageSizePow2() const;
 
 private:
     void x_AddReadStatistics(Uint8 bytes, double seconds);
     
-    void x_ReadPage(CPagedFilePage& page, TFilePos file_pos);
+    void x_ReadPage(CPagedFilePage& page, TFilePos file_pos, size_t size);
 
     CFastMutex m_Mutex;
     
@@ -118,6 +127,8 @@ private:
 
     volatile Uint8 m_TotalReadBytes;
     volatile double m_TotalReadSeconds;
+    Uint8 m_PreviousReadBytes;
+    double m_PreviousReadSeconds;
 };
 
 
@@ -315,6 +326,10 @@ public:
     pair<Uint8, double> GetReadStatistics() const
         {
             return m_File->GetReadStatistics();
+        }
+    void SetPreviousReadStatistics(const pair<Uint8, double>& stats)
+        {
+            m_File->SetPreviousReadStatistics(stats);
         }
 
     pair<Uint8, double> GetUncompressStatistics() const;

@@ -1512,6 +1512,7 @@ void CBamRawDb::Open(const string& bam_path, const string& index_path)
 {
     m_Index.Read(index_path);
     m_File = new CBGZFFile(bam_path);
+    m_File->SetPreviousReadStatistics(m_Index.GetReadStatistics());
     CBGZFStream stream(*m_File);
     m_Header.Read(stream);
 }

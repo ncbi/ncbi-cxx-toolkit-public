@@ -63,14 +63,22 @@ enum EFileMode {
 };
 static const EFileMode kFileMode = eUseVDBFile;
 static const bool kCheckBlockCRC32 = true;
-static const size_t kSegmentSize = 4<<20; // 4 MB
+#ifdef USE_RANGE_CACHE
+static const size_t kSegmentSizePow2Max = 22; // 4 MB
+static const size_t kSegmentSizePow2Min = 18; // 256 KB
+static const double kMaxBufferSeconds = .5;
+#endif
 
+#ifndef USE_RANGE_CACHE
+static const size_t kSegmentSizePow2 = 22; // 4 MB
+static const size_t kSegmentSize = 1 << kSegmentSizePow2;
 
 static inline
 CPagedFile::TFilePos s_GetPagePos(CPagedFile::TFilePos file_pos)
 {
     return file_pos - file_pos % kSegmentSize;
 }
+#endif
 
 
 const char* CBGZFException::GetErrCodeString(void) const
@@ -104,7 +112,9 @@ CPagedFilePage::~CPagedFilePage()
 CPagedFile::CPagedFile(const string& file_name)
     : m_PageCache(new TPageCache(10)),
       m_TotalReadBytes(0),
-      m_TotalReadSeconds(0)
+      m_TotalReadSeconds(0),
+      m_PreviousReadBytes(0),
+      m_PreviousReadSeconds(0)
 {
     switch ( kFileMode ) {
     case eUseFileIO:
@@ -134,12 +144,20 @@ CPagedFile::~CPagedFile()
 
 CPagedFile::TPage CPagedFile::GetPage(TFilePos file_pos)
 {
+#ifdef USE_RANGE_CACHE
+    size_t size_pow2 = GetNextPageSizePow2();
+    TPage page = m_PageCache->get_lock(file_pos, size_pow2);
+    TFilePos page_pos = page.get_range().GetFrom();
+    size_t page_size = page.get_range().GetLength();
+#else
     TFilePos page_pos = s_GetPagePos(file_pos);
     TPage page = m_PageCache->get_lock(page_pos);
+    size_t page_size = kSegmentSize;
+#endif
     if ( page->GetFilePos() != page_pos ) {
         CFastMutexGuard guard(page.GetValueMutex());
         if ( page->GetFilePos() != page_pos ) {
-            x_ReadPage(*page, page_pos);
+            x_ReadPage(*page, page_pos, page_size);
         }
     }
     if ( !page->Contains(file_pos) ) {
@@ -162,6 +180,37 @@ pair<Uint8, double> CPagedFile::GetReadStatistics() const
 }
 
 
+void CPagedFile::SetPreviousReadStatistics(const pair<Uint8, double>& stats)
+{
+    m_PreviousReadBytes = stats.first;
+    m_PreviousReadSeconds = stats.second;
+}
+
+
+size_t CPagedFile::GetNextPageSizePow2() const
+{
+    const Uint8 add_read_bytes = 1000000; // 100KB
+    const double add_read_bytes_per_second = 8e6; // 8 MBps
+    
+    pair<Uint8, double> stats = GetReadStatistics();
+    stats.first += m_PreviousReadBytes;
+    stats.second += m_PreviousReadSeconds;
+
+    Uint8 read_bytes = stats.first + m_PreviousReadBytes + add_read_bytes;
+    double read_seconds = stats.second + m_PreviousReadSeconds +
+        add_read_bytes/add_read_bytes_per_second;
+    double seconds_per_byte = read_seconds/read_bytes;
+
+    size_t size_pow2 = kSegmentSizePow2Max;
+    double seconds = (size_t(1)<<size_pow2)*seconds_per_byte;
+    while ( seconds > kMaxBufferSeconds && size_pow2 > kSegmentSizePow2Min ) {
+        size_pow2 -= 1;
+        seconds *= .5;
+    }
+    return size_pow2;
+}
+
+
 void CPagedFile::x_AddReadStatistics(Uint8 bytes, double seconds)
 {
     CFastMutexGuard guard(m_Mutex);
@@ -170,9 +219,8 @@ void CPagedFile::x_AddReadStatistics(Uint8 bytes, double seconds)
 }
 
 
-void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
+void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos, size_t size)
 {
-    size_t size = kSegmentSize;
     if ( m_MemFile ) {
         page.m_Ptr = (const char*)m_MemFile->Map(file_pos, size);
         page.m_MemFile = m_MemFile.get();
@@ -205,8 +253,8 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
             double seconds = sw.Elapsed();
             x_AddReadStatistics(bytes, seconds);
             if ( s_GetDebug() >= 3 ) {
-                LOG_POST(Info<<"BGZF: Read page "<<file_pos/kSegmentSize<<
-                         " @ "<<file_pos<<" in "<<seconds<<" sec"
+                LOG_POST(Info<<"BGZF: Read page @ "<<file_pos
+                         <<" "<<bytes<<" bytes in "<<seconds<<" sec"
                          " speed: "<<bytes/(seconds*(1<<20))<<" MB/s");
             }
         }
