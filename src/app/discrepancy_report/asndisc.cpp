@@ -162,7 +162,7 @@ void CDiscRepApp::Init(void)
 };
 
 
-string CDiscRepApp::x_ConstructOutputName(const string& input)
+string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_START
 {
     const CArgs& args = GetArgs();
     CDirEntry fname(input);
@@ -172,7 +172,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
         ext += ".xml";
     }
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
-}
+} // LCOV_EXCL_END
 
 
 static auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
@@ -245,7 +245,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 }
 
 
-unsigned CDiscRepApp::x_ProcessOne(const string& fname)
+unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
 {
     unsigned severity = 0;
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
@@ -272,7 +272,7 @@ unsigned CDiscRepApp::x_ProcessOne(const string& fname)
         m_Xml ? Tests->OutputXML(cout, flags) : Tests->OutputText(cout, m_Fat, false);
     }
     return severity;
-}
+} // LCOV_EXCL_END
 
 
 unsigned CDiscRepApp::x_ProcessAll(const string& outname)
@@ -502,12 +502,12 @@ int CDiscRepApp::Run(void)
     unsigned severity = 0;
     if (args["o"]) {
         if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
-            ERR_POST("Input and output files should be different");
-            return 1;
+            ERR_POST("Input and output files should be different"); // LCOV_EXCL_START
+            return 1; // LCOV_EXCL_END
         }
         severity = x_ProcessAll(args["o"].AsString());
     }
-    else {
+    else { // LCOV_EXCL_START
         int count = 0;
         for (auto& f : m_Files) {
             ++count;
@@ -517,7 +517,7 @@ int CDiscRepApp::Run(void)
             unsigned sev = x_ProcessOne(f);
             severity = sev > severity ? sev : severity;
         }
-    }
+    } // LCOV_EXCL_END
     if (args["R"]) {
         auto r = args["R"].AsInteger();
         if (r < 1 || (r < 2 && severity > 0) || severity > 1) {
