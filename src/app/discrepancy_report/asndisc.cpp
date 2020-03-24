@@ -300,7 +300,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         for (auto& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
-                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()) + " " + fname);
+                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
             x_ProcessFile(fname, *Tests);
         }
