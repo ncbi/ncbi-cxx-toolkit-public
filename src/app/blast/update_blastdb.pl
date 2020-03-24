@@ -132,12 +132,15 @@ if (defined($opt_source)) {
         $location = "AWS";
     }
 } else {
-    my $gcp_cmd = "$curl --connect-timeout 1 -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL;
-    my $aws_cmd = "$curl --connect-timeout 1 -sfo /dev/null " . AMI_URL;
-    print "$gcp_cmd\n" if DEBUG;
-    $location = "GCP" if (defined($curl) and system($gcp_cmd) == 0);
-    print "$aws_cmd\n" if DEBUG;
-    $location = "AWS" if (defined($curl) and system($aws_cmd) == 0);
+    # Try to auto-detect whether we're on the cloud
+    if (defined($curl)) {
+        my $gcp_cmd = "$curl --connect-timeout 1 -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL;
+        my $aws_cmd = "$curl --connect-timeout 1 -sfo /dev/null " . AMI_URL;
+        print "$gcp_cmd\n" if DEBUG;
+        $location = "GCP" if (system($gcp_cmd) == 0);
+        print "$aws_cmd\n" if DEBUG;
+        $location = "AWS" if (system($aws_cmd) == 0);
+    }
 }
 if ($location =~ /aws|gcp/i and not defined $curl) {
     print "Error: $0 depends on curl to fetch data from cloud storage, please install this utility to access these data sources.\n";
