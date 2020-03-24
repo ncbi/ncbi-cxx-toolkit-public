@@ -39,8 +39,8 @@
 
 BEGIN_NCBI_SCOPE
 
-thread_local map<CAgpErr::EErrCode, string> 
-s_msg_map = {
+const CAgpErr::TMsgMap 
+CAgpErr::sMessageMap = {
     // Content Errors (codes 1..20)
     {CAgpErr::E_ColumnCount, "expecting 9 tab-separated columns"},
     {CAgpErr::E_EmptyColumn, "column X is empty"},
@@ -72,6 +72,7 @@ s_msg_map = {
     {CAgpErr::E_SameGapLength, "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)"},
     // "'|' character can only follow a recognized Seq-id type",
     {CAgpErr::E_InvalidBarInId, "invalid use of \"|\" character"},
+    {CAgpErr::E_SingletonCompBeginsAt1AndMinusOri, "singleton object has component_beg=1 and in minus orientation"},
     {CAgpErr::E_Last, ""},
 
     // Content Warnings
@@ -276,8 +277,8 @@ CAgpErr::CAgpErr()
 
 const char* CAgpErr::GetMsg(int code) 
 {
-    auto it = s_msg_map.find(static_cast<EErrCode>(code));
-    if (it != s_msg_map.end()) {
+    auto it = sMessageMap.find(static_cast<EErrCode>(code));
+    if (it != sMessageMap.end()) {
         return it->second.c_str();
     }
     return NcbiEmptyCStr;

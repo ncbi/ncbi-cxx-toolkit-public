@@ -508,7 +508,7 @@ public:
     virtual string GetErrorMessage(int mask=0xFFFFFFFF);
     virtual int AppliesTo(int mask=0xFFFFFFFF);
 
-    // When adding new errors to this enum, also update s_msg[]
+    // When adding new errors to this enum, also update sMessageMap
     enum EErrCode {
         // Errors within one line (detected in CAgpRow)
         E_ColumnCount=1 ,
@@ -623,7 +623,11 @@ public:
 
 protected:
     typedef const char* TStr;
-    static const TStr s_msg[];
+    NCBI_STD_DEPRECATED("") static const TStr s_msg[];
+
+    using TMsgMap = map<EErrCode,string>;
+    static const TMsgMap sMessageMap;
+
     static string FormatMessage(const string& msg, const string& details);
 
     string m_messages;
