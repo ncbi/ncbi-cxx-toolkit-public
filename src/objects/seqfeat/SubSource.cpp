@@ -2741,7 +2741,18 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
         NStr::Equal(value, "Plasmid F") || NStr::Equal(value, "plasmid F")) {
         return true;
     }
-    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
+    string val = value;
+    string tax = taxname;
+    if (NStr::StartsWith(value, "Plasmid ") || NStr::StartsWith(value, "plasmid ")) {
+        val = value.substr(8, value.length());
+    }
+    if (NStr::StartsWith(taxname, "Plasmid ") || NStr::StartsWith(taxname, "plasmid ")) {
+        tax = taxname.substr(8, taxname.length());
+    }
+    if (NStr::StartsWith(tax, val)) {
+        return true;
+    }
+    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(val, tax);
 }
 
 
