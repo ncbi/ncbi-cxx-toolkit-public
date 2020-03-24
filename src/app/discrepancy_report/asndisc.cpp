@@ -172,7 +172,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_STAR
         ext += ".xml";
     }
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
-} // LCOV_EXCL_END
+} // LCOV_EXCL_STOP
 
 
 static auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
@@ -272,7 +272,7 @@ unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
         m_Xml ? Tests->OutputXML(cout, flags) : Tests->OutputText(cout, m_Fat, false);
     }
     return severity;
-} // LCOV_EXCL_END
+} // LCOV_EXCL_STOP
 
 
 unsigned CDiscRepApp::x_ProcessAll(const string& outname)
@@ -503,7 +503,7 @@ int CDiscRepApp::Run(void)
     if (args["o"]) {
         if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
             ERR_POST("Input and output files should be different"); // LCOV_EXCL_START
-            return 1; // LCOV_EXCL_END
+            return 1; // LCOV_EXCL_STOP
         }
         severity = x_ProcessAll(args["o"].AsString());
     }
@@ -517,7 +517,7 @@ int CDiscRepApp::Run(void)
             unsigned sev = x_ProcessOne(f);
             severity = sev > severity ? sev : severity;
         }
-    } // LCOV_EXCL_END
+    } // LCOV_EXCL_STOP
     if (args["R"]) {
         auto r = args["R"].AsInteger();
         if (r < 1 || (r < 2 && severity > 0) || severity > 1) {
