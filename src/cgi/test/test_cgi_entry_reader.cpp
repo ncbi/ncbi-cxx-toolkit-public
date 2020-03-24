@@ -119,6 +119,8 @@ static void s_TestEntry(const string& name, CCgiEntry& e)
 
 int CTestCgiEntryReaderApplication::ProcessRequest(CCgiContext& ctx)
 {
+    ctx.GetResponse().RequireWriteHeader(false);
+
     CCgiRequest& req = ctx.GetRequest();
 
     for (;;) {
