@@ -503,8 +503,8 @@ int CDiscRepApp::Run(void)
     if (args["o"]) {
         if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
             ERR_POST("Input and output files should be different"); // LCOV_EXCL_START
-            return 1; // LCOV_EXCL_STOP
-        }
+            return 1;
+        } // LCOV_EXCL_STOP
         severity = x_ProcessAll(args["o"].AsString());
     }
     else { // LCOV_EXCL_START
