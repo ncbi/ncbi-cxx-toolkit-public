@@ -397,7 +397,7 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
         [this, name, value](bool /*is_repeated*/) {
             string sql = "INSERT INTO maintenance.settings (domain, name, value) VALUES(?, ?, ?)";
             shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            qry->SetSQL(sql, 2);
+            qry->SetSQL(sql, 3);
             qry->BindStr(0, m_Keyspace);
             qry->BindStr(1, name);
             qry->BindStr(2, value);
@@ -427,7 +427,7 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
             return true;
         }
     );
-
+    
     bool rslt1 = false;
     string value1 = "";
     
@@ -435,7 +435,7 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
         [this, name, &value1, &rslt1](bool is_repeated) {
             string sql = "SELECT value FROM maintenance.settings WHERE domain = ? AND name = ?";
             shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            qry->SetSQL(sql, 1);
+            qry->SetSQL(sql, 2);
             qry->BindStr(0, m_Keyspace);
             qry->BindStr(1, name);
             CassConsistency cons = is_repeated && m_Conn->GetFallBackRdConsistency() ?
@@ -450,14 +450,14 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
         }
     );
 
-    //return rslt;
+    return rslt;
     
-    if( rslt && rslt1)
-    {
-      if( !value.compare( value1)) return true;
-    }
+    //if( rslt && rslt1)
+    //{
+    //  if( !value.compare( value1)) return true;
+    //}
     
-    return false;
+    //return false;
 }
 
 END_IDBLOB_SCOPE
