@@ -1,4 +1,4 @@
-#! /bin/sh -x
+#! /bin/sh
 # $Id$
 
 $CHECK_EXEC test_ncbi_system general
