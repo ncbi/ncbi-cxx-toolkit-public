@@ -7613,7 +7613,8 @@ VORG	s	Voronezh State University, Faculty of Geography and Geoecology
 VPB	c	Veterinary Pathology and Bacteriology Collection			
 VPCI	c	Fungal Culture Collection			
 VPH	s	Van Pharmaceutical Herbarium, Yuzuncu Yil University			
-VPI	sc	Virginia Polytechnic Institute and State University			
+VPI	sc	Virginia Polytechnic Institute and State University	VTMH		
+VPI:F	s	Virginia Polytechnic Institute and State University, Fungal Collection	
 VPIC	s	Virginia Polytechnic Institute and State University			
 VPIMM	s	Virginia Polytechnic University, Mammal Museum			
 VPM	s	Volgograd Provincial Museum			
