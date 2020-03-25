@@ -493,6 +493,9 @@ int CDiscRepApp::Run(void)
         m_AutoFix = args["F"].AsBoolean();
     }
 
+    // run in deterministic order for TC tests
+    sort(m_Files.begin(), m_Files.end());
+
     CRef<CObjectManager> ObjMgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *ObjMgr, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
     m_Scope.Reset(new CScope (*ObjMgr));
