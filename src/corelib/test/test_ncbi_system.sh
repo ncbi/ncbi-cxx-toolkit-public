@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/sh -x
 # $Id$
 
 $CHECK_EXEC test_ncbi_system general
@@ -22,7 +22,7 @@ case "`uname -s`" in
    test $test_cpu -eq 255  -o  $test_cpu -eq 158  ||  exit 1
    ;;
  Linux )
-   test $test_mem -eq 0    -o  $test_mem -eq 255  ||  exit 1
+   test $test_mem -eq 0    -o  $test_mem -eq 66  -o  $test_mem -eq 255  ||  exit 1
    test $test_cpu -eq 255  -o  $test_cpu -eq 137  ||  exit 1
    ;;
  Darwin | FreeBSD )

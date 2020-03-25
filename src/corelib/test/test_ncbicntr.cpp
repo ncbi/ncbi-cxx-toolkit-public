@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
+#include <atomic>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -50,7 +51,7 @@ protected:
     virtual bool TestApp_Exit(void);
 private:
     CAtomicCounter  m_ACounter;
-    int             m_NCounter;
+    atomic<int>     m_NCounter;
 };
 
 
