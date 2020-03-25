@@ -2709,6 +2709,9 @@ bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const strin
 
 bool CSubSource::IsChromosomeNameValid(const string& value, const string& taxname)
 {
+    if (NStr::IsBlank(value)) {
+        return false;
+    }
     if (NStr::StartsWith(value, "LG", NStr::eNocase)) {
         return false;
     } else {
@@ -2719,6 +2722,9 @@ bool CSubSource::IsChromosomeNameValid(const string& value, const string& taxnam
 
 bool CSubSource::IsLinkageGroupNameValid(const string& value, const string& taxname)
 {
+    if (NStr::IsBlank(value)) {
+        return false;
+    }
     return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
 }
 
@@ -2728,6 +2734,9 @@ bool CSubSource::IsLinkageGroupNameValid(const string& value, const string& taxn
 //   19. Exception- megaplasmid is legal
 bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
 {
+    if (NStr::IsBlank(value)) {
+        return false;
+    }
     if (NStr::Equal(value, "megaplasmid")) {
         return true;
     }
@@ -2750,6 +2759,9 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
         tax = taxname.substr(8, taxname.length());
     }
     if (NStr::StartsWith(tax, val)) {
+        if (NStr::Equal(tax, taxname) && NStr::Equal(val, value)) {
+            return false;
+        }
         return true;
     }
     return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(val, tax);
