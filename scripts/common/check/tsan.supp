@@ -2,14 +2,16 @@
 race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
 race:^ncbi::CSafeStatic<ncbi::CParam
 
+
 ################################################################
 # grichenk CXX-10544
 
 # false positive
 race:^ncbi::CSafeStatic<ncbi::CTls
+race:^ncbi::CTlsBase::x_SetValue
 
 # error, just not important - ignore (whole test)
-race:corelib/test/test_ncbidiag_mt_new_fmt.cpp
+race:corelib/test/test_ncbidiag_mt.cpp
 
 # This one is actually a race, the only possible consequence is 
 # an additional message about temporary suspending log output. 
@@ -26,6 +28,7 @@ race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
 # NOTE: ThreadSanitizer doesn't work with test_ncbi_system,
 #       that have limits tests that incompatible with sanitizer. 
 signal:corelib/test/test_ncbi_system.cpp
+
 
 
 ################################################################
