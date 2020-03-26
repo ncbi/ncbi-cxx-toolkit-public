@@ -1103,6 +1103,7 @@ AVRO_STATIC_LIBS
 CEREAL_INCLUDE
 MONGODB_STATIC_LIBS
 MONGODB3_STATIC_LIBS
+GMOCK_STATIC_LIBS
 LMDB_LIB
 LMDB_STATIC_LIBS
 LIBUV_STATIC_LIBS
@@ -49847,6 +49848,13 @@ _ACEOF
 
 
 
+if test -n "$GMOCK_LIBS"; then
+   if test -f "$GMOCK_LIBDIR/libgmock-static.a"; then
+      GMOCK_STATIC_LIBS="-L$GMOCK_LIBDIR -lgmock-static -lgtest-static"
+   else
+      GMOCK_STATIC_LIBS=$GMOCK_LIBS
+   fi
+fi
 
 
 # LAPACK
@@ -54091,6 +54099,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -55469,6 +55478,7 @@ AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
+GMOCK_STATIC_LIBS!$GMOCK_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
 LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
@@ -55531,7 +55541,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 70; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 71; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

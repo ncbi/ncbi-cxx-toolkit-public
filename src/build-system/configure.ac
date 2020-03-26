@@ -7977,6 +7977,13 @@ NCBI_CHECK_THIRD_PARTY_LIB(gmock,
        char** my_argv;
        testing::InitGoogleMock(&my_argc, my_argv);])],
    [-lgtest])
+if test -n "$GMOCK_LIBS"; then
+   if test -f "$GMOCK_LIBDIR/libgmock-static.a"; then
+      GMOCK_STATIC_LIBS="-L$GMOCK_LIBDIR -lgmock-static -lgtest-static"
+   else
+      GMOCK_STATIC_LIBS=$GMOCK_LIBS
+   fi
+fi
 
 
 # LAPACK
@@ -9093,6 +9100,7 @@ AC_SUBST(AVRO_STATIC_LIBS)
 AC_SUBST(CEREAL_INCLUDE)
 AC_SUBST(MONGODB_STATIC_LIBS)
 AC_SUBST(MONGODB3_STATIC_LIBS)
+AC_SUBST(GMOCK_STATIC_LIBS)
 AC_SUBST(LMDB_LIB)
 AC_SUBST(LMDB_STATIC_LIBS)
 AC_SUBST(LIBUV_STATIC_LIBS)
