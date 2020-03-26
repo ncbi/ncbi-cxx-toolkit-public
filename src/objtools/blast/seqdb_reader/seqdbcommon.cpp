@@ -2679,7 +2679,7 @@ bool IsStringId(const CSeq_id & id)
 	    case CSeq_id::e_General:
 	    {
 	    	const CDbtag & dbt = id.GetGeneral();
-            if (dbt.CanGetDb() && ((dbt.GetDb() == "PIG") || (dbt.GetDb() == "ti"))) {
+            if (dbt.CanGetDb() && (dbt.GetDb() == "PIG")) {
             	return false;
             }
 	    }
