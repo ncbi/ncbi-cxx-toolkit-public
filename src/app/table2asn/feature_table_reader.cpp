@@ -2010,7 +2010,8 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
             if (!pMappedLoc) {
                 continue;
             }
-            pRegion->SetLocation().Assign(*pMappedLoc);
+            pRegion->ResetLocation();
+            pRegion->SetLocation(*pMappedLoc);
             auto pId = s_GetIdFromLocation(*pMappedLoc);
             if (pId) {
                 mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
