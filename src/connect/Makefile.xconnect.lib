@@ -12,8 +12,9 @@ SRC      = $(SRC_C) $(SRC_CXX) $(SRC_TLS)
 UNIX_SRC = $(LOCAL_LBSM)
 
 LIB      = xconnect
-PROJ_TAG = core
 
 LIBS     = $(NETWORK_LIBS) $(ORIG_LIBS)
+
+PROJ_TAG = core
 
 WATCHERS = lavr mcelhany

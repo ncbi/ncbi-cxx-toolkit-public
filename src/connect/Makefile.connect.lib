@@ -14,8 +14,10 @@ SRC      = $(SRC_C)
 UNIX_SRC = $(LOCAL_LBSM)
 
 LIB      = connect
-PROJ_TAG = core mod_loadinfo mod_caf
 
 LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
+LD_FLAGS = $(ORIG_LDFLAGS) $(AS_NEEDED)
+
+PROJ_TAG = core mod_loadinfo mod_caf
 
 WATCHERS = lavr mcelhany
