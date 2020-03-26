@@ -37,12 +37,21 @@
 
 #if defined(NCBI_OS_MSWIN)
 
+#    define NcbiSys_close        _close
+#    define NcbiSys_fileno       _fileno
+#    define NcbiSys_fstat        _fstat64
+#    define NcbiSys_lseek        _lseek
+#    define NcbiSys_setmode      _setmode
+#    define NcbiSys_swab         _swab
+#    define NcbiSys_tzset        _tzset
+#    define NcbiSys_umask        _umask
+#    define NcbiSys_write        _write
+
 #  if defined(_UNICODE)
 
 #    define NcbiSys_chdir        _wchdir
 #    define NcbiSys_chmod        _wchmod
 #    define NcbiSys_creat        _wcreat
-#    define NcbiSys_fstat        _fstat64
 #    define NcbiSys_fopen        _wfopen
 #    define NcbiSys_getcwd       _wgetcwd
 #    define NcbiSys_getenv       _wgetenv
@@ -52,6 +61,11 @@
 #    define NcbiSys_remove       _wremove
 #    define NcbiSys_rename       _wrename
 #    define NcbiSys_rmdir        _wrmdir
+#    define NcbiSys_spawnv       _wspawnv
+#    define NcbiSys_spawnve      _wspawnve
+#    define NcbiSys_spawnvp      _wspawnvp
+#    define NcbiSys_spawnve      _wspawnve
+#    define NcbiSys_spawnvpe     _wspawnvpe
 #    define NcbiSys_stat         _wstat64
 #    define NcbiSys_strcmp        wcscmp
 #    define NcbiSys_strdup       _wcsdup
@@ -64,26 +78,30 @@
 #  else // _UNICODE
 
 #    define NcbiSys_chdir        _chdir
-#    define NcbiSys_chmod         chmod
+#    define NcbiSys_chmod        _chmod
 #    define NcbiSys_creat        _creat
-#    define NcbiSys_fstat        _fstat64
 #    define NcbiSys_fopen         fopen
-#    define NcbiSys_getcwd        getcwd
+#    define NcbiSys_getcwd       _getcwd
 #    define NcbiSys_getenv        getenv
-#    define NcbiSys_mkdir         mkdir
+#    define NcbiSys_mkdir        _mkdir
 #    define NcbiSys_open         _open
 #    define NcbiSys_putenv       _putenv
 #    define NcbiSys_remove        remove
 #    define NcbiSys_rename        rename
-#    define NcbiSys_rmdir         rmdir
+#    define NcbiSys_rmdir        _rmdir
+#    define NcbiSys_spawnv       _spawnv
+#    define NcbiSys_spawnve      _spawnve
+#    define NcbiSys_spawnvp      _spawnvp
+#    define NcbiSys_spawnve      _spawnve
+#    define NcbiSys_spawnvpe     _spawnvpe
 #    define NcbiSys_stat         _stat64
 #    define NcbiSys_strcmp        strcmp
-#    define NcbiSys_strdup        strdup
+#    define NcbiSys_strdup       _strdup
 #    define NcbiSys_strerror      strerror
 #    define NcbiSys_strerror_s    strerror_s
 #    define NcbiSys_system        system
-#    define NcbiSys_tempnam       tempnam
-#    define NcbiSys_unlink        unlink
+#    define NcbiSys_tempnam      _tempnam
+#    define NcbiSys_unlink       _unlink
 
 #  endif // _UNICODE
 
@@ -91,22 +109,35 @@
 
 #  define NcbiSys_chdir         chdir
 #  define NcbiSys_chmod         chmod
+#  define NcbiSys_close         close
 #  define NcbiSys_creat         creat
+#  define NcbiSys_fileno        fileno
 #  define NcbiSys_fstat         fstat
 #  define NcbiSys_fopen         fopen
 #  define NcbiSys_getcwd        getcwd
 #  define NcbiSys_getenv        getenv
+#  define NcbiSys_lseek         lseek
 #  define NcbiSys_mkdir         mkdir
 #  define NcbiSys_open          open
 #  define NcbiSys_putenv        putenv
 #  define NcbiSys_remove        remove
 #  define NcbiSys_rename        rename
 #  define NcbiSys_rmdir         rmdir
+#  define NcbiSys_setmode       setmode
+#  define NcbiSys_spawnv        spawnv
+#  define NcbiSys_spawnve       spawnve
+#  define NcbiSys_spawnvp       spawnvp
+#  define NcbiSys_spawnve       spawnve
+#  define NcbiSys_spawnvpe      spawnvpe
 #  define NcbiSys_stat          stat
 #  define NcbiSys_strdup        strdup
 #  define NcbiSys_strerror      strerror
+#  define NcbiSys_swab          swab
 #  define NcbiSys_tempnam       tempnam
+#  define NcbiSys_tzset         tzset
+#  define NcbiSys_umask         umask
 #  define NcbiSys_unlink        unlink
+#  define NcbiSys_write         write
 
 #endif // NCBI_OS_MSWIN
 
