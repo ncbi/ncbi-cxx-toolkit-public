@@ -524,8 +524,8 @@ static TCRC32Table s_CRC32CTableReverse[TABLES_COUNT];
 // calculating CRC32 for bytes with only one bit set,
 // and then xoring all CRC32 of lowest bit and CRC32 of remaining bits
 // to get CRC32 of whole number.
-// First part is done by calling s_CalcByteCRC32 or s_CalcByteCRC32ZIP for
-// each bit.
+// First part is done by calling s_CalcByteCRC32Forward or
+// s_CalcByteCRC32Reverse for each bit.
 // Second pass is universal for any CRC32 and is performed by function
 // s_FillMultiBitsCRC().
 
@@ -535,7 +535,7 @@ Uint4 s_CalcByteCRC32Forward(size_t byte, Uint4 polynomial)
 {
     Uint4 byteCRC = byte << 24;
     for ( int j = 0;  j < 8;  ++j ) {
-        if ( byteCRC & 0x80000000L )
+        if ( byteCRC & 0x80000000U )
             byteCRC = (byteCRC << 1) ^ polynomial;
         else
             byteCRC = (byteCRC << 1);
@@ -942,7 +942,7 @@ static inline
 bool get_cpuid(unsigned level,
                unsigned *a, unsigned *b, unsigned *c, unsigned *d)
 {
-    if ( get_cpuid_max(level & 0x80000000) < level) {
+    if ( get_cpuid_max(level & 0x80000000U) < level) {
         return false;
     }
     call_cpuid (level, a, b, c, d);
