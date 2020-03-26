@@ -265,14 +265,14 @@ CNCBINode* CPager::GetItemInfo(void) const
         int firstItem = m_DisplayPage * m_PageSize + 1;
         int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
         if (firstItem != endItem) {
-            sprintf(buf, "Items %'d - %'d", firstItem, endItem);
+            sprintf(buf, "Items %d - %d", firstItem, endItem);
             node->AppendChild(new CHTMLPlainText(buf));
         } else {
-            sprintf(buf, "Item %'d", firstItem);
+            sprintf(buf, "Item %d", firstItem);
             node->AppendChild(new CHTMLPlainText(buf));
         }
         if( m_view != eTabs ) {
-            sprintf(buf, " of %'d", m_ItemCount);
+            sprintf(buf, " of %d", m_ItemCount);
             node->AppendChild(new CHTMLPlainText(buf));
         }
     }
@@ -458,7 +458,7 @@ void CPagerViewButtons::CreateSubNodes()
     div->AppendChild(new CHTMLPlainText("of"));
     div->AppendChild(new CHTML_nbsp);
     char buf[1024];
-    sprintf(buf, "%'d", lastPage + 1);
+    sprintf(buf, "%d", lastPage + 1);
     div->AppendChild(new CHTMLPlainText(buf));
     InsertAt(0, column++, div);
     

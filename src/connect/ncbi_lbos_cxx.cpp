@@ -34,6 +34,7 @@
 #include <sstream>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbisys.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_socket.hpp>
 #include "ncbi_lbosp.hpp"
@@ -371,7 +372,7 @@ SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
 {
     SLbosConfigure res;
     if (lbos_answer == NULL) {
-        lbos_answer = strdup("");
+        lbos_answer = NcbiSys_strdup("");
     }
     string body = lbos_answer;
     

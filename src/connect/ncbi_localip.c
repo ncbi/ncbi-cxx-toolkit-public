@@ -42,7 +42,8 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
-#if   defined(NCBI_OS_UNIX)
+
+#if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  include <sys/types.h>
 #  include <netinet/in.h>
@@ -56,6 +57,11 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_LocalIP
 
+#if defined(NCBI_OS_UNIX)
+#  define NcbiSys_access    access
+#elif defined(NCBI_OS_MSWIN)
+#  define NcbiSys_access   _access
+#endif /*NCBI_OS_...*/
 
 #ifndef   INADDR_LOOPBACK
 #  define INADDR_LOOPBACK  0x7F000001
@@ -249,7 +255,7 @@ static void s_LoadLocalIPs(void)
                 file = kFile[n];
             else if (strcasecmp(file, REG_CONN_LOCAL_IPS_DISABLE) == 0)
                 break;
-            if (access(file, R_OK) == 0  &&
+            if (NcbiSys_access(file, R_OK) == 0  &&
                 x_LoadLocalIPs(FILE_CreateConnector(file, 0), file)) {
                 return;
             }

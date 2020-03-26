@@ -36,6 +36,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
+#include <corelib/ncbisys.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -88,7 +89,7 @@ static char* s_VT_Descr(CONNECTOR connector)
             cmd_line += '"';
         }
     }
-    return strdup(cmd_line.c_str());
+    return NcbiSys_strdup(cmd_line.c_str());
 }
 
 

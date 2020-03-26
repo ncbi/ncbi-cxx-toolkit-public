@@ -31,6 +31,8 @@
 #include <ncbi_pch.hpp>
 #include <html/html.hpp>
 #include <html/error_codes.hpp>
+#include <corelib/ncbisys.hpp>
+
 
 
 #define NCBI_USE_ERRCODE_X   Html_Lib
@@ -49,7 +51,7 @@ void CHTMLHelper::SetNL(const string& nl)
     if (sm_newline != kDefaultNL) {
         free((char*)sm_newline);
     }
-    sm_newline = strdup(nl.c_str());
+    sm_newline = NcbiSys_strdup(nl.c_str());
 }
 
 
