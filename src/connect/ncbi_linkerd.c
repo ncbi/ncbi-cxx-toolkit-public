@@ -618,29 +618,29 @@ extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
         return eLGHP_NotSet;
     }
 
-    colon = strchr(http_proxy, (int)':');
+    if (strncasecmp(http_proxy, "http://", 7) == 0)
+        http_proxy += 7;
+
+    colon = strchr(http_proxy, ':');
     if ( ! colon) {
         CORE_LOG_X(eLSub_BadData, eLOG_Critical,
-                   "http_proxy didn't include colon.");
+                   "http_proxy doesn't seem to include port number.");
         return eLGHP_Fail;
     }
 
-    if (colon == http_proxy)
-    {
+    if (colon == http_proxy) {
         CORE_LOG_X(eLSub_BadData, eLOG_Critical,
                    "http_proxy has no host part.");
         return eLGHP_Fail;
     }
 
-    if (http_proxy + len < colon + 1)
-    {
+    if (http_proxy + len < colon + 1) {
         CORE_LOG_X(eLSub_BadData, eLOG_Critical,
                    "http_proxy host too long.");
         return eLGHP_Fail;
     }
 
-    if (sscanf(colon + 1, "%hu", &port) != 1)
-    {
+    if (sscanf(colon + 1, "%hu", &port) != 1) {
         CORE_LOG_X(eLSub_BadData, eLOG_Critical,
                    "http_proxy port not an unsigned short.");
         return eLGHP_Fail;
