@@ -666,7 +666,7 @@ private:
     static void sx_SetThreadPid(TPid pid);
 #endif
 
-    static volatile unsigned int sm_ThreadsCount;  ///< Total amount of threads
+    static atomic<unsigned int> sm_ThreadsCount;  ///< Total amount of threads
 
     /// initalize new thread id, must be called from Wrapper().
     void x_InitializeThreadId(void);

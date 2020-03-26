@@ -427,7 +427,7 @@ CExitThreadException::~CExitThreadException(void)
 // will not proceed until after the appropriate Run() is finished.
 DEFINE_STATIC_FAST_MUTEX(s_ThreadMutex);
 
-volatile unsigned int CThread::sm_ThreadsCount = 0;
+atomic<unsigned int> CThread::sm_ThreadsCount(0);
 
 
 // Internal storage for thread objects and related variables/functions
