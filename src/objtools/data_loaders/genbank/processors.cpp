@@ -1123,9 +1123,9 @@ CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
             // no Seq-entry in reply, probably private data
             entry.second |= CBioseq_Handle::fState_no_data;
         }
-        if ( info.GetSuppress() ) {
+        if ( info.GetSuppress() & 5 ) { // suppressed(=1) & temporary(=4)
             entry.second |=
-                (info.GetSuppress() & 4)
+                (info.GetSuppress() == 4)
                 ? CBioseq_Handle::fState_suppress_temp
                 : CBioseq_Handle::fState_suppress_perm;
         }

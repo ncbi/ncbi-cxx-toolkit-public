@@ -1233,8 +1233,8 @@ void CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                     CDB_Int v;
                     dbr->GetItem(&v);
                     _TRACE("suppress: "<<v.Value());
-                    if ( v.Value() ) {
-                        ret.blob_state |= (v.Value() & 4)
+                    if ( v.Value() & 5 ) { // suppressed(=1) & temporary(=4)
+                        ret.blob_state |= (v.Value() == 4)
                             ? CBioseq_Handle::fState_suppress_temp
                             : CBioseq_Handle::fState_suppress_perm;
                     }

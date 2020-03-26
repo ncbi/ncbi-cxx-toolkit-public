@@ -500,9 +500,9 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
     if ( info.GetBlob_state() < 0 ) {
         state |= CBioseq_Handle::fState_dead;
     }
-    if ( info.GetSuppress() > 0 ) {
+    if ( info.GetSuppress() & 5 ) { // suppressed(=1) & temporary(=4)
         state |=
-            (info.GetSuppress() & 4)
+            (info.GetSuppress() == 4)
             ? CBioseq_Handle::fState_suppress_temp
             : CBioseq_Handle::fState_suppress_perm;
     }
