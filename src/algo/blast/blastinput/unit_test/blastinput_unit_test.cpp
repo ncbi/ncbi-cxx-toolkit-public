@@ -1470,7 +1470,6 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequences_OneEmpty)
 
 BOOST_AUTO_TEST_CASE(ReadMultipleTis)
 {
-    if (CGBDataLoader::IsUsingPSGLoader()) return;
     CNcbiIfstream infile("data/tis.txt");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
@@ -1524,7 +1523,6 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
 
 BOOST_AUTO_TEST_CASE(ReadSingleTi)
 {
-    if (CGBDataLoader::IsUsingPSGLoader()) return;
     CNcbiIfstream infile("data/ti.txt");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
@@ -1578,7 +1576,6 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
 
 BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
 {
-    if (CGBDataLoader::IsUsingPSGLoader()) return;
     CNcbiIfstream infile("data/accgis_nl.txt");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
