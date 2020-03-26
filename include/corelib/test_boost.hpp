@@ -44,6 +44,7 @@
 #include <corelib/expr.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbisys.hpp>
 
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
