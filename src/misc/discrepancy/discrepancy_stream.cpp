@@ -201,40 +201,47 @@ void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fnam
     m_RootNode->m_Ref->m_Text = fname;
     m_CurrentNode.Reset(m_RootNode);
 
-    string header = stream.ReadFileHeader();
-    if (header.empty()) {
-        header = default_header;
-    }
-    //cout << "Reading " << header << "\n";
-
     CNcbiStreampos position;
 
-    if (header == CSeq_submit::GetTypeInfo()->GetName()) {
-        PushNode(eSubmit);
-        CRef<CSeq_submit> ss(new CSeq_submit);
-        stream.Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
-        m_CurrentNode->m_Obj.Reset(ss);
+    while (true) {
+        string header = stream.ReadFileHeader();
+        if (header.empty()) {
+            header = default_header;
+        }
+        //cout << "Reading " << header << "\n";
+        PushNode(eNone);
+
+        if (header == CSeq_submit::GetTypeInfo()->GetName()) {
+            PushNode(eSubmit);
+            CRef<CSeq_submit> ss(new CSeq_submit);
+            stream.Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+            m_CurrentNode->m_Obj.Reset(ss);
+            PopNode();
+        }
+        else if (header == CSeq_entry::GetTypeInfo()->GetName()) {
+            CRef<CSeq_entry> se(new CSeq_entry);
+            stream.Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+        }
+        else if (header == CBioseq_set::GetTypeInfo()->GetName()) {
+            CRef<CBioseq_set> set(new CBioseq_set);
+            stream.Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
+        }
+        else if (header == CBioseq::GetTypeInfo()->GetName()) {
+            CRef<CBioseq> seq(new CBioseq);
+            stream.Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
+        }
+        else {
+            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); // LCOV_EXCL_LINE
+        }
+        position = stream.GetStreamPos();
+        Extend(*m_CurrentNode, stream);
+        if (m_Skip) {
+            stream.SetStreamPos(position);
+        }
         PopNode();
-    }
-    else if (header == CSeq_entry::GetTypeInfo()->GetName()) {
-        CRef<CSeq_entry> se(new CSeq_entry);
-        stream.Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-    }
-    else if (header == CBioseq_set::GetTypeInfo()->GetName()) {
-        CRef<CBioseq_set> set(new CBioseq_set);
-        stream.Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
-    }
-    else if (header == CBioseq::GetTypeInfo()->GetName()) {
-        CRef<CBioseq> seq(new CBioseq);
-        stream.Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
-    }
-    else {
-        NCBI_THROW(CException, eUnknown, "Unsupported type " + header); // LCOV_EXCL_LINE
-    }
-    position = stream.GetStreamPos();
-    Extend(*m_CurrentNode, stream);
-    if (m_Skip) {
-        stream.SetStreamPos(position);
+        if (stream.EndOfData()) {
+            break;
+        }
     }
 }
 
@@ -790,6 +797,8 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
     CObjectTypeInfo(CType<CSeq_annot>()).SetLocalCopyHook(copier, new CCopyHook_Seq_annot(this));
     CObjectTypeInfo(CType<CSubmit_block>()).SetLocalCopyHook(copier, new CCopyHook_Submit_block(this));
 
+    PushNode(eNone);
+
     if (header == CSeq_submit::GetTypeInfo()->GetName()) {
         PushNode(eSubmit);
         copier.Copy(CSeq_submit::GetTypeInfo());
@@ -807,6 +816,7 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
     else {
         NCBI_THROW(CException, eUnknown, "Unsupported type " + header); // LCOV_EXCL_LINE
     }
+    PopNode();
 }
 
 
