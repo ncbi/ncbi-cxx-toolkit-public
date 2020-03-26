@@ -1,0 +1,8 @@
+[
+{
+    "reply": "Error",
+    "errors": [
+        "Invalid blob id in the 'exclude_blobs' parameter comma separated list. Received: 'in.valid'. Expected format 'sat.sat_key' where both 'sat' and 'sat_key' are integers."
+    ]
+}
+]

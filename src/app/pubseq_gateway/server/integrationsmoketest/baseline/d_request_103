@@ -1,0 +1,21 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": "ref|NW_003285567.1|",
+    "other_ids": [
+        "gnl|ASM:GCF_000004345.1|C59236869",
+        "gnl|REF_WGS:ACTA01|C59236869",
+        "gi|295720530",
+        "gpp|GPS_000535975.1|"
+    ],
+    "molecule_type": "dna",
+    "length": 112,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": "4.185301617",
+    "tax_id": 9646,
+    "hash": 1226768067,
+    "date_changed": "12/30/2016 13:59:00",
+    "gi": 295720530
+}
+]

@@ -1,0 +1,19 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": "ref|NW_012192805.1|",
+    "other_ids": [
+        "gnl|REF_WGS:JOOM01|SUPERCONT1.225",
+        "gi|817747779"
+    ],
+    "molecule_type": "dna",
+    "length": 1591,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": "4.350079240",
+    "tax_id": 5857,
+    "hash": -1997116675,
+    "date_changed": "01/22/2020 17:40:00",
+    "gi": 817747779
+}
+]

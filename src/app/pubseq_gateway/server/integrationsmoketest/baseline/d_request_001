@@ -1,0 +1,19 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": "gb|BV712388.1|",
+    "other_ids": [
+        "gnl|DBSTS|843431",
+        "gi|124280692"
+    ],
+    "molecule_type": "dna",
+    "length": 578,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": "4.16393808",
+    "tax_id": 381124,
+    "hash": 1189497440,
+    "date_changed": "11/24/2019 19:46:00",
+    "gi": 124280692
+}
+]

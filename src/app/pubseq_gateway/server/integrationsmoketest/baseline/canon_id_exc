@@ -1,0 +1,17 @@
+[
+{
+    "reply": "BioseqInfo",
+    "other_ids": [
+        "gi|1778878"
+    ],
+    "molecule_type": "dna",
+    "length": 3182,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": "4.66360584",
+    "tax_id": 781,
+    "hash": -773122180,
+    "date_changed": "03/06/2012 17:18:00",
+    "gi": 1778878
+}
+]

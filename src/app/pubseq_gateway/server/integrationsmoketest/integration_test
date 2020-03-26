@@ -1,0 +1,107 @@
+#!/bin/env python3
+import os
+import sys
+from distutils.spawn import find_executable
+
+NO_UDC_ROBOT = 1
+NO_PSG_CLIENT = 2
+MALFORMED_ARGUMENTS = 3
+
+
+"""Driver to run udc and psg_client"""
+
+def isUDCParent():
+    """Returns True if it was a UDC process which ran this script"""
+    ppid = os.getppid()
+    if ppid == 1:
+        # It is init
+        return False
+
+    fname = '/proc/' + str(ppid) + '/cmdline'
+    cmdline = open(fname, 'r').read()
+    return '/udc' in cmdline.lower()
+
+
+def driveUDC():
+    """First stage: check the prerequisites:
+       - the udc robot file
+       - the psg_client
+       - service spec
+       run udc approprietely"""
+    dirname = os.path.abspath(os.path.dirname(sys.argv[0])) + os.path.sep
+    robotFile = dirname + 'udc.robot'
+    if not os.path.exists(robotFile):
+        print('UDC robot file is not found. Expected here: ' + robotFile,
+              file=sys.stderr)
+        return NO_UDC_ROBOT
+
+    # Check the psg_client availability
+    if find_executable('psg_client') is None:
+        print('psg_client is not found', file=sys.stderr)
+        return NO_PSG_CLIENT
+
+    if len(sys.argv) != 2:
+        exename = os.path.basename(sys.argv[0])
+        print('Unexpected number of arguments\nUsage: ' +
+              exename + ' <service to connect to>', file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    service = sys.argv[1]
+    retCode = os.system('udc -v SERVICE:' + service + ' ' + dirname)
+    return retCode
+
+
+def drivePSGClient():
+    """Run the psg_client with the appropriate arguments"""
+    # Need to suppress -i
+    # Need to suppress -logfile <file>
+    # Need to suppress -h
+    # Need to take out -o <file> and use file for redirection
+    params = sys.argv[1:]
+    if '-h' in params:
+        print('Unexpected argument: -h is supposed only for interactive calls',
+              file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    if '-i' in params:
+        params.remove('-i')
+
+    if '-logfile' in params:
+        index = params.index('-logfile')
+        params.pop(index)
+        params.pop(index)
+
+    if '-o' not in params:
+        print('Unexpected arguments: -o <file> is not found',
+              file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    index = params.index('-o')
+    params.pop(index)
+    outputFile = params.pop(index)
+
+    if '-service' not in params:
+        print('Unexpected arguments: -service <file> is not found',
+              file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    index = params.index('-service')
+    params.pop(index)
+    service = params.pop(index)
+
+    # The -service <...> parameter must be after the command however
+    # the udc robot inserts it as the first argument.
+    # The removing the parameter and inserting it right after the command helps
+    params.insert(1, service)
+    params.insert(1, '-service')
+
+    cmdline = 'psg_client ' + ' '.join(params) + ' > ' + outputFile + ' 2>&1'
+    retCode = os.system(cmdline)
+    return retCode
+
+
+if not isUDCParent():
+    sys.exit(driveUDC())
+
+sys.exit(drivePSGClient())
+

@@ -1,0 +1,25 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": "gb|AAA05806.1|",
+    "other_ids": [
+        "bbs|65136",
+        "bbm|164040",
+        "gi|238806"
+    ],
+    "molecule_type": "aa",
+    "length": 117,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": "4.8091",
+    "tax_id": 0,
+    "hash": -1400003729,
+    "date_changed": "09/13/2001 20:26:41",
+    "gi": 238806
+},
+{
+    "reply": "SkippedBlob",
+    "id": "4.8091",
+    "reason": "Excluded"
+}
+]

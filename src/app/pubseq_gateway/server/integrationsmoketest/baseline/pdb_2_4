@@ -1,0 +1,18 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": "pdb|1VU9|A| ",
+    "other_ids": [
+        "gi|508121192"
+    ],
+    "molecule_type": "aa",
+    "length": 231,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": "5.53089115",
+    "tax_id": 11676,
+    "hash": -1255311630,
+    "date_changed": "06/14/2013 14:41:00",
+    "gi": 508121192
+}
+]
