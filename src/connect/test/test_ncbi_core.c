@@ -354,6 +354,14 @@ static void TEST_UTIL_Log(void)
 }
 
 
+static void TEST_UTIL_CRC32(void)
+{
+    unsigned int chksum = UTIL_CRC32_Update(0,
+                                            "abcdefghijklmnopqrstuvwxyz", 26);
+    verify(chksum == 0x3BC2A463);  /* see src/util/test/test_checksum.cpp */
+}
+
+
 /* NOTE: closes STDIN */
 static void TEST_CORE_GetUsername(void)
 {
@@ -443,6 +451,7 @@ static void TEST_CORE_GetVMPageSize(void)
 static void TEST_UTIL(void)
 {
     DO_TEST(TEST_UTIL_Log);
+    DO_TEST(TEST_UTIL_CRC32);
     DO_TEST(TEST_CORE_GetUsername);
     DO_TEST(TEST_UTIL_MatchesMask);
     DO_TEST(TEST_CORE_GetVMPageSize);
