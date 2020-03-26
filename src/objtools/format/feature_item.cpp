@@ -1680,9 +1680,12 @@ void CFeatureItem::x_AddQualsIdx(
             // gene_ref = feat_gene_xref;
             CRef<CFeatureIndex> ft = bsx->GetFeatIndex (m_Feat);
             if (! ft) {
-                // RW-985 fix for RW-943 dropping xrefs on sig_peptide and mat_peptide
                 if (parentFeatureItem) {
+                    // RW-985 fix for RW-943 dropping xrefs on sig_peptide and mat_peptide
                     ft = bsx->GetFeatIndex (parentFeatureItem->GetFeat());
+                } else {
+                    // SF-3276 BAM94483 coded_by CDS was not getting xref'd gene
+                    ft = bsx->GetFeatureForProduct();
                 }
             }
             if (ft) {
