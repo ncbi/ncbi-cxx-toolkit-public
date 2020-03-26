@@ -1849,7 +1849,7 @@ void CFeatureTableReader::ChangeDeltaProteinToRawProtein(objects::CSeq_entry& en
 
 }
 
-
+/*
 static void s_MapRegionsToProduct(
         const list<CRef<CSeq_feat>>& cdregions,
         CScope* pScope,
@@ -1883,7 +1883,7 @@ static void s_MapRegionsToProduct(
         }
     } 
 }
-
+*/
 
 static const CSeq_id* 
 s_GetIdFromLocation(const CSeq_loc& loc)
@@ -1972,11 +1972,6 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
         return;
     }
 
-    if (!bioseq_set.IsSetAnnot()) { // coding regions appear in the set-level annotations
-        return;
-    }
-
-    
     _ASSERT(bioseq_set.IsSetSeq_set()); // should be a nuc-prot set
 
     // Gather region features
