@@ -1671,7 +1671,7 @@ int CGridCommandLineInterfaceApp::Run()
         if (IsOptionAcceptedButNotSet(eOutputFile)) {
             m_Opts.output_stream = stdout;
 #ifdef WIN32
-            setmode(fileno(stdout), O_BINARY);
+            _setmode(_fileno(stdout), O_BINARY);
 #endif
         }
     }
@@ -1842,7 +1842,7 @@ void CGridCommandLineInterfaceApp::ReadFromCin()
 {
     m_Opts.input_stream = &NcbiCin;
 #ifdef WIN32
-    setmode(fileno(stdin), O_BINARY);
+    _setmode(_fileno(stdin), O_BINARY);
 #endif
 }
 

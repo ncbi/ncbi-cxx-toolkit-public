@@ -725,8 +725,8 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
     pipe.OpenSelf();
 
 #ifdef WIN32
-    setmode(fileno(stdin), O_BINARY);
-    setmode(fileno(stdout), O_BINARY);
+    _setmode(_fileno(stdin), O_BINARY);
+    _setmode(_fileno(stdout), O_BINARY);
 #endif
 
     char read_buf[AUTOMATION_IO_BUFFER_SIZE];
