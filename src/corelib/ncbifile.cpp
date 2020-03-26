@@ -1610,8 +1610,8 @@ void CDirEntry::GetUmask(TMode* user_mode, TMode* group_mode,
 #ifdef HAVE_GETUMASK
     mode_t mode = getumask();
 #else
-    mode_t mode = umask(0);
-    umask(mode);
+    mode_t mode = NcbiSys_umask(0);
+    NcbiSys_umask(mode);
 #endif //HAVE_GETUMASK
     ModeFromModeT(mode, user_mode, group_mode, other_mode, special);
 }
@@ -1624,7 +1624,7 @@ void CDirEntry::SetUmask(TMode user_mode, TMode group_mode,
                             (group_mode == fDefault) ? 0 : group_mode,
                             (other_mode == fDefault) ? 0 : other_mode,
                             special);
-    umask(mode);
+    NcbiSys_umask(mode);
 }
 
 
@@ -5944,23 +5944,23 @@ int s_FExtend(int fd, Uint8 new_size)
         return 0;
     }
     // Save current position
-    off_t current_pos = lseek(fd, 0, SEEK_CUR);
+    off_t current_pos = NcbiSys_lseek(fd, 0, SEEK_CUR);
     if (current_pos < 0) {
         return errno;
     }
     // Set position beyond EOF, one byte less than necessary,
     // and write single zero byte.
-    off_t pos = lseek(fd, (off_t)new_size - 1, SEEK_SET);
+    off_t pos = NcbiSys_lseek(fd, (off_t)new_size - 1, SEEK_SET);
     if (pos < 0) {
         return errno;
     }
-    while (write(fd, "\0", 1) < 0) {
+    while (NcbiSys_write(fd, "\0", 1) < 0) {
         if (errno != EINTR) {
             return errno;
         }
     }
     // Restore current position
-    pos = lseek(fd, current_pos, SEEK_SET);
+    pos = NcbiSys_lseek(fd, current_pos, SEEK_SET);
     if (pos < 0) {
         return errno;
     }
@@ -5986,7 +5986,7 @@ void CMemoryFileMap::x_Create(Uint8 size)
     }
     // and fill it with zeros
     int errcode = s_FExtend(fd, size);
-    close(fd);
+    NcbiSys_close(fd);
     if (errcode) {
 #if defined(NCBI_OS_MSWIN)
         string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
@@ -6016,7 +6016,7 @@ void CMemoryFileMap::x_Extend(Uint8 size, Uint8 new_size)
     }
     // and extend it with zeros
     int errcode = s_FExtend(fd, new_size);
-    close(fd);
+    NcbiSys_close(fd);
     if (errcode) {
 #if defined(NCBI_OS_MSWIN)
         string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
@@ -6722,7 +6722,7 @@ Uint8 CFileIO::GetFilePos(void) const
         return (Uint8)pos.QuadPart;
     }
 #elif defined(NCBI_OS_UNIX)
-    off_t pos = lseek(m_Handle, 0, SEEK_CUR);
+    off_t pos = NcbiSys_lseek(m_Handle, 0, SEEK_CUR);
     if (pos != -1L) {
         return (Uint8)pos;
     }
@@ -6740,7 +6740,7 @@ void CFileIO::SetFilePos(Uint8 position) const
     ofs.QuadPart = position;
     bool res = (SetFilePointerEx(m_Handle, ofs, NULL, FILE_BEGIN) == TRUE);
 #elif defined(NCBI_OS_UNIX)
-    bool res = (lseek(m_Handle, (off_t)position, SEEK_SET) != -1);
+    bool res = (NcbiSys_lseek(m_Handle, (off_t)position, SEEK_SET) != -1);
 #endif
     if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,
@@ -6786,7 +6786,7 @@ void CFileIO::SetFilePos(Int8 offset, EPositionMoveMethod move_method) const
         default:
             _TROUBLE;
     }
-    bool res = (lseek(m_Handle, (off_t)offset, from) != -1);
+    bool res = (NcbiSys_lseek(m_Handle, (off_t)offset, from) != -1);
 #endif
     if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,

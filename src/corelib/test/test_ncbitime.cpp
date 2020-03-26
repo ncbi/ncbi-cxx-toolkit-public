@@ -38,6 +38,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbisys.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -2421,7 +2422,7 @@ int main()
     SetDiagPostLevel(eDiag_Info);
 
     // Reinit global timezone variables
-    tzset();
+    NcbiSys_tzset();
 
     // Run tests
     try {

@@ -1272,10 +1272,10 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
     }
 #ifdef NCBI_OS_MSWIN
     if ((m_StdioFlags & fBinaryCin) != 0) {
-        setmode(fileno(stdin), O_BINARY);
+        NcbiSys_setmode(NcbiSys_fileno(stdin), O_BINARY);
     }
     if ((m_StdioFlags & fBinaryCout) != 0) {
-        setmode(fileno(stdout), O_BINARY);
+        NcbiSys_setmode(NcbiSys_fileno(stdout), O_BINARY);
     }
 #endif
 }

@@ -48,21 +48,6 @@
 
 #define NCBI_USE_ERRCODE_X   Corelib_System
 
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-#  define NcbiSys_spawnv    _wspawnv
-#  define NcbiSys_spawnve   _wspawnve
-#  define NcbiSys_spawnvp   _wspawnvp
-#  define NcbiSys_spawnve   _wspawnve
-#  define NcbiSys_spawnvpe  _wspawnvpe
-#else
-#  define NcbiSys_spawnv      spawnv
-#  define NcbiSys_spawnve     spawnve
-#  define NcbiSys_spawnvp     spawnvp
-#  define NcbiSys_spawnve     spawnve
-#  define NcbiSys_spawnvpe    spawnvpe
-#endif
-
-
 BEGIN_NCBI_SCOPE
 
 

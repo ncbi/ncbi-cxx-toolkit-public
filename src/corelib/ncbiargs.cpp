@@ -707,7 +707,7 @@ void CArg_InputFile::x_Open(CArgValue::TFileFlags flags) const
 
     if (AsString() == "-") {
 #if defined(NCBI_OS_MSWIN)
-        setmode(fileno(stdin), (mode & IOS_BASE::binary) ? O_BINARY : O_TEXT);
+        NcbiSys_setmode(NcbiSys_fileno(stdin), (mode & IOS_BASE::binary) ? O_BINARY : O_TEXT);
 #endif
         m_Ios  = &cin;
     } else if ( !AsString().empty() ) {
@@ -767,7 +767,7 @@ void CArg_OutputFile::x_Open(CArgValue::TFileFlags flags) const
 
     if (AsString() == "-") {
 #if defined(NCBI_OS_MSWIN)
-        setmode(fileno(stdout), (mode & IOS_BASE::binary) ? O_BINARY : O_TEXT);
+        NcbiSys_setmode(NcbiSys_fileno(stdout), (mode & IOS_BASE::binary) ? O_BINARY : O_TEXT);
 #endif
         m_Ios = &cout;
     } else if ( !AsString().empty() ) {

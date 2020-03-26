@@ -6324,7 +6324,7 @@ CDiagFileHandleHolder::CDiagFileHandleHolder(const string& fname,
 CDiagFileHandleHolder::~CDiagFileHandleHolder(void)
 {
     if (m_Handle >= 0) {
-        close(m_Handle);
+        NcbiSys_close(m_Handle);
     }
 }
 
@@ -6377,7 +6377,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         // This feature of automatic log rotation will work correctly only on
         // Unix with only one CFileHandleDiagHandler for each physical file.
         // This is how it was requested to work by Denis Vakatov.
-        long pos = lseek(m_Handle->GetHandle(), 0, SEEK_CUR);
+        long pos = NcbiSys_lseek(m_Handle->GetHandle(), 0, SEEK_CUR);
         long limit = s_LogSizeLimit->Get();
         if (limit > 0  &&  pos > limit) {
             CFile f(GetLogName());
@@ -6436,7 +6436,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
                 continue;
             }
             string str = ComposeMessage(*it, 0);
-            if (write(new_handle->GetHandle(), str.data(), str.size()))
+            if (NcbiSys_write(new_handle->GetHandle(), str.data(), str.size()))
                 {/*dummy*/}
         }
         m_Messages.reset();
@@ -6487,7 +6487,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 
     if (handle) {
         string str = ComposeMessage(mess, 0);
-        if (write(handle->GetHandle(), str.data(), str.size()))
+        if (NcbiSys_write(handle->GetHandle(), str.data(), str.size()))
             {/*dummy*/}
  
         handle->RemoveReference();
@@ -6526,7 +6526,7 @@ void CFileHandleDiagHandler::WriteMessage(const char*   buf,
         s_ReopenEntered->Add(-1);
     }
 
-    if (write(m_Handle->GetHandle(), buf, len))
+    if (NcbiSys_write(m_Handle->GetHandle(), buf, len))
         {/*dummy*/}
 
     // Skip collecting m_Messages - we don't have the original SDiagMessage

@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbisys.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/stream_utils.hpp>
 #if defined(NCBI_OS_UNIX)
@@ -648,7 +649,7 @@ EEncodingForm ReadIntoUtf8(
         case eEncodingForm_Utf16Foreign:
             {
                 char buf[buf_size];
-                swab(tmp,buf,n);
+                NcbiSys_swab(tmp,buf,n);
                 memcpy(tmp, buf, n);
             }
             // no break here
