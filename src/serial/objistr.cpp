@@ -93,7 +93,7 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
          ((openFlags & eSerial_StdWhenDash) && fileName == "-") ||
          ((openFlags & eSerial_StdWhenStd) && fileName == "stdin") ) {
 #if defined(NCBI_OS_MSWIN)
-        setmode(fileno(stdin), (format == eSerial_AsnBinary) ? O_BINARY : O_TEXT);
+        NcbiSys_setmode(NcbiSys_fileno(stdin), (format == eSerial_AsnBinary) ? O_BINARY : O_TEXT);
 #endif
         return CRef<CByteSource>(new CStreamByteSource(NcbiCin));
     }
@@ -1731,7 +1731,7 @@ char* CObjectIStream::ReadCString(void)
 {
     string s;
     ReadString(s);
-    return strdup(s.c_str());
+    return NcbiSys_strdup(s.c_str());
 }
 
 void CObjectIStream::ReadStringStore(string& s)

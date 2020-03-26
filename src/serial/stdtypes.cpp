@@ -1386,7 +1386,7 @@ public:
             _ASSERT(CParent::Get(dst) != value);
             free(const_cast<char*>(CParent::Get(dst)));
             if ( value )
-                CParent::Get(dst) = NotNull(strdup(value));
+                CParent::Get(dst) = NotNull(NcbiSys_strdup(value));
             else
                 CParent::Get(dst) = 0;
         }
@@ -1435,7 +1435,7 @@ void CPrimitiveTypeInfoCharPtr<T>::SetValueString(TObjectPtr objectPtr,
                                                   const string& value) const
 {
     CCharPtrFunctions<TObjectPtr>::Get(objectPtr) =
-        NotNull(strdup(value.c_str()));
+        NotNull(NcbiSys_strdup(value.c_str()));
 }
 
 TTypeInfo CStdTypeInfo<char*>::GetTypeInfo(void)

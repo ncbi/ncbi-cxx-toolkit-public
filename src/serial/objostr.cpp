@@ -92,7 +92,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
          ((openFlags & eSerial_StdWhenDash) && fileName == "-") ||
          ((openFlags & eSerial_StdWhenStd) && fileName == "stdout") ) {
 #if defined(NCBI_OS_MSWIN)
-        setmode(fileno(stdout), (format == eSerial_AsnBinary) ? O_BINARY : O_TEXT);
+        NcbiSys_setmode(NcbiSys_fileno(stdout), (format == eSerial_AsnBinary) ? O_BINARY : O_TEXT);
 #endif
         outStream = &NcbiCout;
         deleteStream = false;

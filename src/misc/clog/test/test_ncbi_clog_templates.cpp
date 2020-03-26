@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbisys.hpp>
 #include <util/xregexp/regexp_template_tester.hpp>
 #include "../ncbi_c_log_p.h"
 
@@ -82,12 +83,12 @@ void CTest::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     // Reset environment variables that can affect test output
-    putenv((char*)"SERVER_PORT=");
-    putenv((char*)"HTTP_NCBI_SID=");
-    putenv((char*)"HTTP_NCBI_PHID=");
-    putenv((char*)"NCBI_LOG_SESSION_ID=");
-    putenv((char*)"NCBI_LOG_HIT_ID=");
-    putenv((char*)"NCBI_CONFIG__LOG__FILE=");
+    NcbiSys_putenv((char*)"SERVER_PORT=");
+    NcbiSys_putenv((char*)"HTTP_NCBI_SID=");
+    NcbiSys_putenv((char*)"HTTP_NCBI_PHID=");
+    NcbiSys_putenv((char*)"NCBI_LOG_SESSION_ID=");
+    NcbiSys_putenv((char*)"NCBI_LOG_HIT_ID=");
+    NcbiSys_putenv((char*)"NCBI_CONFIG__LOG__FILE=");
 }
 
 
@@ -205,7 +206,7 @@ void s_TestCase_PHID_Req_subhit_2(void)
 void s_TestCase_PHID_Req_subhit_3(void)
 {
     char* subhitid;
-    putenv((char*)"HTTP_NCBI_PHID=SOME_ENV_PHID");
+    NcbiSys_putenv((char*)"HTTP_NCBI_PHID=SOME_ENV_PHID");
 
     NcbiLog_AppStart(NULL);
     NcbiLog_AppRun();
@@ -228,7 +229,7 @@ void s_TestCase_PHID_Req_subhit_3(void)
     GETSUBHIT;
     NcbiLog_AppStop(0);
 
-    putenv((char*)"HTTP_NCBI_PHID=");
+    NcbiSys_putenv((char*)"HTTP_NCBI_PHID=");
 }
 
 
@@ -262,7 +263,7 @@ void CTest::RunTest(CTempString name, FTestCase testcase)
 
     // Redirect stderr to file
     ::fflush(stderr);
-    int saved_stderr = ::dup(fileno(stderr));
+    int saved_stderr = NcbiSys_dup(NcbiSys_fileno(stderr));
     if (!::freopen(log_path.c_str(), "w", stderr)) {
         _TROUBLE;
     }
@@ -286,10 +287,10 @@ void CTest::RunTest(CTempString name, FTestCase testcase)
     
     // Restore original stderr
     ::fflush(stderr);
-    if (::dup2(saved_stderr, fileno(stderr)) < 0) {
+    if (NcbiSys_dup2(saved_stderr, NcbiSys_fileno(stderr)) < 0) {
         _TROUBLE;
     }
-    close(saved_stderr);
+    NcbiSys_close(saved_stderr);
     clearerr(stderr);
 
     // Compare output
