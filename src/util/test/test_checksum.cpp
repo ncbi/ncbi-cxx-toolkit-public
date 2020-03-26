@@ -1,4 +1,4 @@
-﻿/*  $Id$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -66,7 +66,7 @@ public:
     // Check that method is supported by CHash class
     bool IsHashMethod(EMethodDef method);
     // Check that method is supported by CChecksum class
-    bool IsChecksumhMethod(EMethodDef method);
+    bool IsChecksumMethod(EMethodDef method);
 
     /// Checksum computation results
     union SValue {
@@ -170,7 +170,7 @@ bool CChecksumTestApp::IsHashMethod(EMethodDef method)
 }
 
 
-bool CChecksumTestApp::IsChecksumhMethod(EMethodDef method)
+bool CChecksumTestApp::IsChecksumMethod(EMethodDef method)
 {
     switch ( method ) {
     case eCRC32:
@@ -233,8 +233,6 @@ bool CChecksumTestApp::VerifySum(const string& data_origin, CChecksumBase& sum, 
 }
 
 
-// Not testing CRCs for now, since I can't find an external
-// implementation that agrees with what we have.
 // Note: MD5 test cases from RFC 1321
 
 bool CChecksumTestApp::SelfTest_Str()
@@ -245,6 +243,10 @@ bool CChecksumTestApp::SelfTest_Str()
         vector<SCase> cases;
     };
     vector<STest> s_Tests = {
+        { 
+            // The standard test vector
+            "123456789", {{ eCRC32ZIP, { 0xCBF43926 },  "" }}
+        },
         { // CChecksum::Reset() test, except hash methods, that compute hash even for empty strings
           "", {
             { eCRC32,          { 0 },           "" },
@@ -369,7 +371,7 @@ bool CChecksumTestApp::SelfTest_Str()
                 hash.Calculate(test.str.data(), test.str.size());
                 ok &= VerifySum("string '" + NStr::PrintableString(test.str) + "'", hash, testcase);
             }
-            if ( IsChecksumhMethod(testcase.method) ) {
+            if ( IsChecksumMethod(testcase.method) ) {
                 CChecksum sum((CChecksum::EMethod)testcase.method);
                 ComputeStrSum(test.str.data(), test.str.size(), sum);
                 ok &= VerifySum("string '" + NStr::PrintableString(test.str) + "'", sum, testcase);
@@ -556,7 +558,7 @@ bool CChecksumTestApp::SelfTest_Big()
             hash.Calculate(file_data.data(), file_data.size());
             ok &= VerifySum("Hash for file", hash, testcase);
         }
-        if ( IsChecksumhMethod(testcase.method) ) {
+        if ( IsChecksumMethod(testcase.method) ) {
             for (size_t offset = 0; offset < kOffsets; ++offset) {
                 CChecksum sum((CChecksum::EMethod)testcase.method);
                 ComputeBigSum(random, file_data, offset, sum);
