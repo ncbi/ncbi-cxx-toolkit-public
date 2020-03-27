@@ -38,6 +38,8 @@
 #if defined(NCBI_OS_MSWIN)
 
 #    define NcbiSys_close        _close
+#    define NcbiSys_dup          _dup
+#    define NcbiSys_dup2         _dup2
 #    define NcbiSys_fileno       _fileno
 #    define NcbiSys_fstat        _fstat64
 #    define NcbiSys_lseek        _lseek
@@ -111,6 +113,8 @@
 #  define NcbiSys_chmod         chmod
 #  define NcbiSys_close         close
 #  define NcbiSys_creat         creat
+#  define NcbiSys_dup           dup
+#  define NcbiSys_dup2          dup2
 #  define NcbiSys_fileno        fileno
 #  define NcbiSys_fstat         fstat
 #  define NcbiSys_fopen         fopen
