@@ -988,7 +988,7 @@ static const SStringNumericValues s_Str2NumNonPosixTests[] = {
 
 BOOST_AUTO_TEST_CASE(s_StringToDouble)
 {
-    char* prevlocal = NcbiSys_strdup(setlocale(LC_NUMERIC,NULL));
+    char* prevlocal = NcbiSysChar_strdup(setlocale(LC_NUMERIC,NULL));
     if (!setlocale(LC_NUMERIC,"deu")) {
         if (!setlocale(LC_NUMERIC,"de")) {
             if (!setlocale(LC_NUMERIC,"de_DE")) {
