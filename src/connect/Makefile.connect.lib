@@ -16,7 +16,7 @@ UNIX_SRC = $(LOCAL_LBSM)
 LIB      = connect
 
 LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
-LD_FLAGS = $(ORIG_LDFLAGS) $(AS_NEEDED)
+LDFLAGS  = $(ORIG_LDFLAGS) $(AS_NEEDED)
 
 PROJ_TAG = core mod_loadinfo mod_caf
 
