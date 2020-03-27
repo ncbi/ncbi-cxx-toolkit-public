@@ -51,7 +51,7 @@ void CHTMLHelper::SetNL(const string& nl)
     if (sm_newline != kDefaultNL) {
         free((char*)sm_newline);
     }
-    sm_newline = NcbiSys_strdup(nl.c_str());
+    sm_newline = NcbiSysChar_strdup(nl.c_str());
 }
 
 

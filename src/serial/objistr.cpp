@@ -1731,7 +1731,7 @@ char* CObjectIStream::ReadCString(void)
 {
     string s;
     ReadString(s);
-    return NcbiSys_strdup(s.c_str());
+    return NcbiSysChar_strdup(s.c_str());
 }
 
 void CObjectIStream::ReadStringStore(string& s)

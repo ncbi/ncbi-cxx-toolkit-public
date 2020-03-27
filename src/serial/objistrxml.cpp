@@ -1250,7 +1250,7 @@ char* CObjectIStreamXml::ReadCString(void)
     }
     string str;
     ReadTagData(str);
-    return NcbiSys_strdup(str.c_str());
+    return NcbiSysChar_strdup(str.c_str());
 }
 
 bool CObjectIStreamXml::ReadCDSection(string& str)
