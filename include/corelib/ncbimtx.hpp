@@ -945,7 +945,7 @@ typedef TWriteLockGuard                             CWriteLockGuard;
 /// NOTE about recursive locks by the same thread:
 ///  - W-after-W and R-after-R are okay.
 ///  - R-after-W is considered to be a recursive Write-lock.
-///  - W-after-R is not allowed; note that if  _DEBUG is not defined we do not
+///  - W-after-R is not allowed; note that if _DEBUG is not defined we do not
 ///    always catch W-after-R, and deadlock may happen. Test your application
 ///    in _DEBUG mode first!
 
