@@ -87,8 +87,8 @@ public:
 #define NCBI_IO_CHECK(errnum)                                           \
     do {                                                                \
         if ((errnum) != eIO_Success) {                                  \
-            throw CIO_Exception(DIAG_COMPILE_INFO,                      \
-                  0, (CIO_Exception::EErrCode)(errnum), "IO error.");   \
+            NCBI_THROW(CIO_Exception,                                   \
+                       (CIO_Exception::EErrCode)(errnum), "IO error."); \
         }                                                               \
     } while (0)
 
