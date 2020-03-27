@@ -571,11 +571,10 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-static void s_LOG_FileHandler(void* data, SLOG_Message* mess)
+static void s_LOG_FileHandler(void* data, const SLOG_Message* mess)
 {
     SLogData* logdata = (SLogData*) data;
-    assert(logdata  &&  logdata->fp);
-    assert(mess);
+    assert(logdata->fp);
 
     if (mess->level >= logdata->cut_off  ||
         mess->level >= logdata->fatal_err) {
@@ -610,7 +609,7 @@ static void s_LOG_FileCleanup(void* data)
 {
     SLogData* logdata = (SLogData*) data;
 
-    assert(logdata  &&  logdata->fp);
+    assert(logdata->fp);
     if (logdata->auto_close)
         fclose(logdata->fp);
     else

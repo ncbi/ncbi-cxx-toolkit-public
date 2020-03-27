@@ -38,11 +38,11 @@
 #include "ncbi_priv.h"
 #include "ncbi_socketp.h"
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_monkey.hpp>
-#include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Core
 
@@ -57,11 +57,49 @@ static TCORE_Set s_CORE_Set = 0;
  *                              Registry                               *
  ***********************************************************************/
 
+
+static string x_Reg(const char* section, const char* name,
+                    const char* value = 0,
+                    EREG_Storage storage = eREG_Transient)
+{
+    string x_section;
+    if (section)
+        x_section = '[' + string(section) + ']';
+    else
+        x_section = "<NULL>";
+    string x_name;
+    if (name)
+        x_name = '"' + string(name) + '"';
+    else
+        x_name = "<NULL>";
+    string x_value;
+    if (value)
+        x_value = "=\"" + string(value) + '"';
+    string x_storage;
+    if (value) {
+        switch (int(storage)) {
+        case eREG_Transient:
+            x_storage = ", <Transient>";
+            break;
+        case eREG_Persistent:
+            x_storage = ", <Persistent>";
+            break;
+        default:
+            x_storage = ", <" + NStr::IntToString(int(storage)) + '>';
+            break;
+        }
+    }
+    return x_section + x_name + x_value + x_storage;
+}
+
+
 extern "C" {
 static int s_REG_Get(void* user_data,
                       const char* section, const char* name,
                       char* value, size_t value_size) THROWS_NONE
 {
+    _TRACE("s_REG_Get(" + NStr::PtrToString(user_data) + ", "
+           + x_Reg(section, name) + ')');
     int result = 0/*assume error, including truncation*/;
     try {
         string item
@@ -76,7 +114,9 @@ static int s_REG_Get(void* user_data,
         } else
             result = -1/*unmodified*/;
     }
-    NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
+    NCBI_CATCH_ALL_X(1, "s_REG_Get(" + NStr::PtrToString(user_data) + ", "
+                     + x_Reg(section, name)
+                     + ") failed");
     return result;
 }
 }
@@ -87,6 +127,9 @@ static int s_REG_Set(void* user_data,
                      const char* section, const char* name,
                      const char* value, EREG_Storage storage) THROWS_NONE
 {
+    _TRACE("s_REG_" + string(value ? "Set" : "Unset") + '('
+           + NStr::PtrToString(user_data) + ", "
+           + x_Reg(section, name, value ? value : "", storage) + ')');
     int result = 0;
     try {
         IRWRegistry* reg = static_cast<IRWRegistry*> (user_data);
@@ -101,7 +144,10 @@ static int s_REG_Set(void* user_data,
                           ? CNcbiRegistry::fPersistent
                           : CNcbiRegistry::fTransient));
     }
-    NCBI_CATCH_ALL_X(2, "s_REG_Set() failed");
+    NCBI_CATCH_ALL_X(2, "s_REG_" + string(value ? "Set" : "Unset") + '('
+                     + NStr::PtrToString(user_data) + ", "
+                     + x_Reg(section, name, value ? value : "", storage)
+                     + ") failed");
     return result;
 }
 }
@@ -110,16 +156,19 @@ static int s_REG_Set(void* user_data,
 extern "C" {
 static void s_REG_Cleanup(void* user_data) THROWS_NONE
 {
+    _TRACE("s_REG_Cleanup(" + NStr::PtrToString(user_data) + ')');
     try {
         static_cast<const IRegistry*> (user_data)->RemoveReference();
     }
-    NCBI_CATCH_ALL_X(3, "s_REG_Cleanup() failed");
+    NCBI_CATCH_ALL_X(3, "s_REG_Cleanup("
+                     + NStr::PtrToString(user_data) + ") failed");
 }
 }
 
 
 extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 {
+    _TRACE("REG_cxx2c(" + NStr::PtrToString(reg) + ')');
     if (!reg)
         return 0;
     if (pass_ownership)
@@ -132,6 +181,7 @@ extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 
 extern REG REG_cxx2c(const IRWRegistry* reg, bool pass_ownership)
 {
+    _TRACE("REG_cxx2c(const " + NStr::PtrToString(reg) + ')');
     if (!reg)
         return 0;
     if (pass_ownership)
@@ -146,13 +196,45 @@ extern REG REG_cxx2c(const IRWRegistry* reg, bool pass_ownership)
  *                                Logger                               *
  ***********************************************************************/
 
-extern "C" {
-static void s_LOG_Handler(void*       /*data*/,
-                          SLOG_Message* mess) THROWS_NONE
+
+static string x_Log(ELOG_Level level)
 {
+    string x_level;
+    switch (int(level)) {
+        case eLOG_Trace:
+            x_level = "Trace";
+            break;
+        case eLOG_Note:
+            x_level = "Note";
+            break;
+        case eLOG_Warning:
+            x_level = "Warning";
+            break;
+        case eLOG_Error:
+            x_level = "Error";
+            break;
+        case eLOG_Critical:
+            x_level = "Critical";
+            break;
+        case eLOG_Fatal:
+            x_level = "Fatal";
+            break;
+        default:
+            x_level = NStr::IntToString(int(level));
+            break;
+    }
+    return x_level;
+}
+
+
+extern "C" {
+static void s_LOG_Handler(void*             /*data*/,
+                          const SLOG_Message* mess) THROWS_NONE
+{
+    _TRACE("s_LOG_Handler(" + x_Log(mess->level) + ')');
     try {
         EDiagSev level;
-        switch (mess->level) {
+        switch (int(mess->level)) {
         case eLOG_Trace:
             level = eDiag_Trace;
             break;
@@ -196,13 +278,14 @@ static void s_LOG_Handler(void*       /*data*/,
                 "\n#################### [END] Raw Data";
         }
     }
-    NCBI_CATCH_ALL_X(4, "s_LOG_Handler() failed");
+    NCBI_CATCH_ALL_X(4, "s_LOG_Handler(" + x_Log(mess->level) + ") failed");
 }
 }
 
 
 extern LOG LOG_cxx2c(void)
 {
+    _TRACE("LOG_cxx2c()");
     return LOG_Create(0, s_LOG_Handler, 0, 0);
 }
 
@@ -211,13 +294,42 @@ extern LOG LOG_cxx2c(void)
  *                               MT-Lock                               *
  ***********************************************************************/
 
-extern "C" {
-static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
-    THROWS_NONE
+
+static string x_Lock(EMT_Lock how)
 {
+    string x_how;
+    switch (int(how)) {
+    case eMT_Lock:
+        x_how = "Lock";
+        break;
+    case eMT_LockRead:
+        x_how = "ReadLock";
+        break;
+    case eMT_Unlock:
+        x_how = "Unlock";
+        break;
+    case eMT_TryLock:
+        x_how = "TryLock";
+        break;
+    case eMT_TryLockRead:
+        x_how = "TryLockRead";
+        break;
+    default:
+        x_how = NStr::IntToString(int(how));
+        break;
+    }
+    return x_how;
+}
+
+
+extern "C" {
+static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
+{
+    _TRACE("s_LOCK_Handler(" + NStr::PtrToString(user_data) + ", "
+           + x_Lock(how) + ')');
     try {
         CRWLock* lock = static_cast<CRWLock*> (user_data);
-        switch (how) {
+        switch (int(how)) {
         case eMT_Lock:
             lock->WriteLock();
             break;
@@ -241,7 +353,8 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
         }
         return 1/*true*/;
     }
-    NCBI_CATCH_ALL_X(5, "s_LOCK_Handler() failed");
+    NCBI_CATCH_ALL_X(5, "s_LOCK_Handler(" + NStr::PtrToString(user_data) + ", "
+                     + x_Lock(how) + ") failed");
     return 0/*false*/;
 }
 }
@@ -250,16 +363,19 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
 extern "C" {
 static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
 {
+    _TRACE("s_LOCK_Cleanup(" + NStr::PtrToString(user_data) + ')');
     try {
         delete static_cast<CRWLock*> (user_data);
     }
-    NCBI_CATCH_ALL_X(6, "s_LOCK_Cleanup() failed");
+    NCBI_CATCH_ALL_X(6, "s_LOCK_Cleanup("
+                     + NStr::PtrToString(user_data) + ") failed");
 }
 }
 
 
 extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 {
+    _TRACE("MT_LOCK_cxx2c(" + NStr::PtrToString(lock) + ')');
     return MT_LOCK_Create(static_cast<void*> (lock ? lock : new CRWLock),
                           s_LOCK_Handler,
                           !lock  ||  pass_ownership ? s_LOCK_Cleanup : 0);
@@ -269,6 +385,8 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 /***********************************************************************
  *                               App Name                              *
  ***********************************************************************/
+
+
 extern "C" {
 static const char* s_GetAppName(void)
 {
@@ -281,6 +399,8 @@ static const char* s_GetAppName(void)
 /***********************************************************************
  *                           NCBI Request ID                           *
  ***********************************************************************/
+
+
 extern "C" {
 static char* s_GetRequestID(ENcbiRequestID reqid)
 {
@@ -306,6 +426,8 @@ static char* s_GetRequestID(ENcbiRequestID reqid)
 /***********************************************************************
  *                          NCBI Request DTab                          *
  ***********************************************************************/
+
+
 extern "C" {
 static const char* s_GetRequestDTab(void)
 {
@@ -319,6 +441,7 @@ static const char* s_GetRequestDTab(void)
 /***********************************************************************
  *                         CRAZY MONKEY CALLS                          *
  ***********************************************************************/
+
 
 #ifdef NCBI_MONKEY
 extern "C" {
@@ -426,14 +549,15 @@ static volatile enum EConnectInit {
 } s_ConnectInit = eConnectInit_Intact;
 
 
-
 /***********************************************************************
  *                                 Fini                                *
  ***********************************************************************/
 
+
 extern "C" {
 static void s_Fini(void) THROWS_NONE
 {
+    _TRACE("CONNECT::s_Fini()");
     s_CORE_Set &= ~g_CORE_Set;
     if (s_CORE_Set & eCORE_SetSSL)
         SOCK_SetupSSL(0);
@@ -453,6 +577,7 @@ static void s_Fini(void) THROWS_NONE
  *                                 Init                                *
  ***********************************************************************/
 
+
 DEFINE_STATIC_FAST_MUTEX(s_ConnectInitMutex);
 
 /* NB: gets called under a lock */
@@ -462,6 +587,12 @@ static void s_Init(const IRWRegistry* reg  = 0,
                    TConnectInitFlags  flag = 0,
                    EConnectInit       how  = eConnectInit_Weak)
 {
+    _TRACE("CONNECT::s_Init("
+           + NStr::PtrToString(reg)                         + ", "
+           + NStr::PtrToString((void*) ssl)                 + "(), "
+           + NStr::PtrToString(lock)                        + ", 0x"
+           + NStr::UIntToString((unsigned int) flag, 0, 16) + ", "
+           + NStr::IntToString(int(how))                    + ')');
     _ASSERT(how != eConnectInit_Intact);
 
     TCORE_Set set = 0;
@@ -513,6 +644,11 @@ extern void CONNECT_Init(const IRWRegistry* reg,
                          FSSLSetup          ssl)
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
+    _TRACE("CONNECT_Init("
+           + NStr::PtrToString(reg)                         + ", "
+           + NStr::PtrToString(lock)                        + ", 0x"
+           + NStr::UIntToString((unsigned int) flag, 0, 16) + ", "
+           + NStr::PtrToString((void*) ssl)                 + "())");
     try {
         g_CORE_Set = 0;
         s_Init(reg, flag & eConnectInit_NoSSL ? 0 :

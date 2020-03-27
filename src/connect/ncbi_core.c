@@ -382,8 +382,8 @@ extern LOG LOG_Delete(LOG lg)
 
 
 extern void LOG_WriteInternal
-(LOG           lg,
- SLOG_Message* mess
+(LOG                 lg,
+ const SLOG_Message* mess
  )
 {
     assert(!mess->raw_size  ||  mess->raw_data);
@@ -397,9 +397,10 @@ extern void LOG_WriteInternal
 
         LOG_UNLOCK;
 
-        if (mess->dynamic  &&  mess->message)
-            free((void*) mess->message);
     }
+
+    if (mess->dynamic  &&  mess->message)
+        free((void*) mess->message);
 
     /* unconditional exit/abort on fatal error */
     if (mess->level == eLOG_Fatal) {

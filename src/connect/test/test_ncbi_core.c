@@ -54,7 +54,7 @@
 extern "C" {
     static int/*bool*/ TEST_CORE_LockHandler(void* data, EMT_Lock how);
     static void        TEST_CORE_LockCleanup(void* data);
-    static void        TEST_CORE_LogHandler (void* data, SLOG_Message* mess);
+    static void        TEST_CORE_LogHandler (void* data, const SLOG_Message* mess);
     static void        TEST_CORE_LogCleanup (void* data);
 }
 #endif /* __cplusplus */
@@ -208,7 +208,7 @@ static void TEST_CORE_Lock(void)
 static int TEST_CORE_LogData;
 
 /* FLOG_Handler */
-static void TEST_CORE_LogHandler(void* data, SLOG_Message* mess)
+static void TEST_CORE_LogHandler(void* data, const SLOG_Message* mess)
 {
     printf("TEST_CORE_LogHandler(round %d):\n", TEST_CORE_LogData);
     printf("   Message: %s\n", mess->message ? mess->message : "?");

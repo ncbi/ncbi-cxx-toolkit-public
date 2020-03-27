@@ -359,8 +359,8 @@ typedef struct {
  *  SLOG_Message, LOG_Create, LOG_Reset, LOG_WriteInternal
  */
 typedef void (*FLOG_Handler)
-(void*         data,
- SLOG_Message* mess
+(void*               data,
+ const SLOG_Message* mess
  );
 
 
@@ -491,14 +491,16 @@ extern NCBI_XCONNECT_EXPORT void LOG_Write
  * @note
  *  Do not call this function directly, if possible.  Instead, use the
  *  LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
+ * @warning
+ *  This call free()s "mess->message" when "mess->dynamic" is set non-zero!
  * @param lg
  *  A log handle previously obtained from LOG_Create
  * @sa
  *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_Write
  */
 extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
-(LOG           lg,
- SLOG_Message* mess
+(LOG                 lg,
+ const SLOG_Message* mess
  );
 
 
