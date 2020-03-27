@@ -89,7 +89,7 @@ static char* s_VT_Descr(CONNECTOR connector)
             cmd_line += '"';
         }
     }
-    return NcbiSys_strdup(cmd_line.c_str());
+    return NcbiSysChar_strdup(cmd_line.c_str());
 }
 
 

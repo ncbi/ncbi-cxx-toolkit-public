@@ -83,12 +83,12 @@ void CTest::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     // Reset environment variables that can affect test output
-    NcbiSys_putenv((char*)"SERVER_PORT=");
-    NcbiSys_putenv((char*)"HTTP_NCBI_SID=");
-    NcbiSys_putenv((char*)"HTTP_NCBI_PHID=");
-    NcbiSys_putenv((char*)"NCBI_LOG_SESSION_ID=");
-    NcbiSys_putenv((char*)"NCBI_LOG_HIT_ID=");
-    NcbiSys_putenv((char*)"NCBI_CONFIG__LOG__FILE=");
+    NcbiSysChar_putenv((char*)"SERVER_PORT=");
+    NcbiSysChar_putenv((char*)"HTTP_NCBI_SID=");
+    NcbiSysChar_putenv((char*)"HTTP_NCBI_PHID=");
+    NcbiSysChar_putenv((char*)"NCBI_LOG_SESSION_ID=");
+    NcbiSysChar_putenv((char*)"NCBI_LOG_HIT_ID=");
+    NcbiSysChar_putenv((char*)"NCBI_CONFIG__LOG__FILE=");
 }
 
 
@@ -206,7 +206,7 @@ void s_TestCase_PHID_Req_subhit_2(void)
 void s_TestCase_PHID_Req_subhit_3(void)
 {
     char* subhitid;
-    NcbiSys_putenv((char*)"HTTP_NCBI_PHID=SOME_ENV_PHID");
+    NcbiSysChar_putenv((char*)"HTTP_NCBI_PHID=SOME_ENV_PHID");
 
     NcbiLog_AppStart(NULL);
     NcbiLog_AppRun();
@@ -229,7 +229,7 @@ void s_TestCase_PHID_Req_subhit_3(void)
     GETSUBHIT;
     NcbiLog_AppStop(0);
 
-    NcbiSys_putenv((char*)"HTTP_NCBI_PHID=");
+    NcbiSysChar_putenv((char*)"HTTP_NCBI_PHID=");
 }
 
 

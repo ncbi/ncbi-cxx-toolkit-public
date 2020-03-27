@@ -372,7 +372,7 @@ SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
 {
     SLbosConfigure res;
     if (lbos_answer == NULL) {
-        lbos_answer = NcbiSys_strdup("");
+        lbos_answer = NcbiSysChar_strdup("");
     }
     string body = lbos_answer;
     
