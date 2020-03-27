@@ -96,6 +96,12 @@ if (WIN32)
             set(CMAKE_C_FLAGS_RELEASEDLL "/MD /Zi")
             set(CMAKE_C_FLAGS_RELEASEMT  "/MT /Zi")
 
+            set(CMAKE_EXE_LINKER_FLAGS_DEBUGDLL   "/DEBUG")
+            set(CMAKE_EXE_LINKER_FLAGS_DEBUGMT    "/DEBUG")
+
+            set(CMAKE_SHARED_LINKER_FLAGS_DEBUGDLL   "/DEBUG")
+            set(CMAKE_SHARED_LINKER_FLAGS_DEBUGMT    "/DEBUG")
+
         else()
             set(CMAKE_CXX_FLAGS_DEBUGDLL   "/MP /MDd /Zi /Od /RTC1 /D_DEBUG")
             set(CMAKE_CXX_FLAGS_DEBUGMT    "/MP /MTd /Zi /Od /RTC1 /D_DEBUG")
@@ -132,7 +138,7 @@ if (WIN32)
 		set(NCBI_DEFAULT_USEPCH OFF)
     endif()
 
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -D_UNICODE)
+#    add_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -D_UNICODE)
     if(BUILD_SHARED_LIBS)
         add_definitions(-DNCBI_DLL_BUILD)
     endif()
