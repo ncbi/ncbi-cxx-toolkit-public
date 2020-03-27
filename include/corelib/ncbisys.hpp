@@ -146,14 +146,77 @@
 #endif // NCBI_OS_MSWIN
 
 
+
+/// C++ Toolkit Unicode is different, all strings are still char*
+
+#if defined(NCBI_OS_MSWIN)
+
+#  define NcbiSysChar_chdir        _chdir
+#  define NcbiSysChar_creat        _creat
+#  define NcbiSysChar_fopen         fopen
+#  define NcbiSysChar_getcwd       _getcwd
+#  define NcbiSysChar_getenv        getenv
+#  define NcbiSysChar_mkdir        _mkdir
+#  define NcbiSysChar_open         _open
+#  define NcbiSysChar_putenv       _putenv
+#  define NcbiSysChar_remove        remove
+#  define NcbiSysChar_rename        rename
+#  define NcbiSysChar_rmdir        _rmdir
+#  define NcbiSysChar_spawnv       _spawnv
+#  define NcbiSysChar_spawnve      _spawnve
+#  define NcbiSysChar_spawnvp      _spawnvp
+#  define NcbiSysChar_spawnve      _spawnve
+#  define NcbiSysChar_spawnvpe     _spawnvpe
+#  define NcbiSysChar_stat         _stat64
+#  define NcbiSysChar_strcmp        strcmp
+#  define NcbiSysChar_strdup       _strdup
+#  define NcbiSysChar_strerror      strerror
+#  define NcbiSysChar_strerror_s    strerror_s
+#  define NcbiSysChar_system        system
+#  define NcbiSysChar_tempnam      _tempnam
+#  define NcbiSysChar_unlink       _unlink
+
+#else // NCBI_OS_MSWIN
+
+#  define NcbiSysChar_chdir         chdir
+#  define NcbiSysChar_creat         creat
+#  define NcbiSysChar_fstat         fstat
+#  define NcbiSysChar_fopen         fopen
+#  define NcbiSysChar_getcwd        getcwd
+#  define NcbiSysChar_getenv        getenv
+#  define NcbiSysChar_lseek         lseek
+#  define NcbiSysChar_mkdir         mkdir
+#  define NcbiSysChar_open          open
+#  define NcbiSysChar_putenv        putenv
+#  define NcbiSysChar_remove        remove
+#  define NcbiSysChar_rename        rename
+#  define NcbiSysChar_rmdir         rmdir
+#  define NcbiSysChar_setmode       setmode
+#  define NcbiSysChar_spawnv        spawnv
+#  define NcbiSysChar_spawnve       spawnve
+#  define NcbiSysChar_spawnvp       spawnvp
+#  define NcbiSysChar_spawnve       spawnve
+#  define NcbiSysChar_spawnvpe      spawnvpe
+#  define NcbiSysChar_stat          stat
+#  define NcbiSysChar_strdup        strdup
+#  define NcbiSysChar_strerror      strerror
+#  define NcbiSysChar_tempnam       tempnam
+#  define NcbiSysChar_unlink        unlink
+
+#endif // NCBI_OS_MSWIN
+
+
+
+
+
 // TNcbiSys_(f)stat structures
 
 #if defined(NCBI_OS_MSWIN)
-    typedef struct _fstat64 TNcbiSys_fstat;
-    typedef struct _stat64  TNcbiSys_stat;
+typedef struct _fstat64 TNcbiSys_fstat;
+typedef struct _stat64  TNcbiSys_stat;
 #else
-    typedef struct stat     TNcbiSys_fstat;
-    typedef struct stat     TNcbiSys_stat;
+typedef struct stat     TNcbiSys_fstat;
+typedef struct stat     TNcbiSys_stat;
 #endif
 
 
