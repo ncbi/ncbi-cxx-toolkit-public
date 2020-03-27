@@ -2675,7 +2675,10 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 // see SQD-1535 and SQD-3496
                 if (typ == CSeqFeatData::e_Cdregion ||
                     (typ == CSeqFeatData::e_Rna &&
-                    sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA))
+                    sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA) ||
+                    (typ == CSeqFeatData::e_Prot &&
+                     sfdata.GetProt().IsSetProcessed() &&
+                     sfdata.GetProt().GetProcessed() == CProt_ref::eProcessed_mature))
                 try {
                     CBioseq::TId ids;
                     CSeq_id::ParseIDs(ids, val,                                
@@ -2700,7 +2703,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                                 sfp->SetProduct().SetWhole(*best);
                         } 
                        // else {
-                            x_AddGBQualToFeature (sfp, qual, val); // Temporary hack for GB-7030
+                        x_AddGBQualToFeature (sfp, qual, val); // Temporary hack for GB-7030
                        // }                                          // This logic should be moved into cleanup or objtools/edit
                     }
                     return true;
