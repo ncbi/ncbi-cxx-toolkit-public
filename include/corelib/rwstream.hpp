@@ -92,8 +92,9 @@ BEGIN_NCBI_SCOPE
 ///     CRstream, the underlying IReader must fully implement the
 ///     PendingCount() method.
 /// @warning
-///     The eRW_Error return code from any method of the underlying IReader is
-///     converted to an exception thrown.  That would make the stream to catch
+///     The eRW_Error return code from any method of the underlying IReader may
+///     get converted to an exception thrown if the requested I/O operation
+///     cannot advance any data in stream.  That would make the stream to catch
 ///     it, and to set ios_base::badbit (ios_base::bad() returns true), then
 ///     perhaps to re-throw the exception (if so allowed by the stream).  Note
 ///     that accessing streambuf's methods directly won't shield from throwing
@@ -141,8 +142,9 @@ private:
 ///     at least one byte to the output device.  If unable to output anything,
 ///     it must never return eRW_Success.
 /// @warning
-///     The eRW_Error return code from any method of the underlying IWriter is
-///     converted to an exception thrown.  That would make the stream to catch
+///     The eRW_Error return code from any method of the underlying IWriter may
+///     get converted to an exception thrown if the requested I/O operation
+///     cannot advance any data in stream.  That would make the stream to catch
 ///     it, and to set ios_base::badbit (ios_base::bad() returns true), then
 ///     perhaps to re-throw the exception (if so allowed by the stream).  Note
 ///     that accessing streambuf's methods directly won't shield from throwing

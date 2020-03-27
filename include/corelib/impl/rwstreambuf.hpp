@@ -157,8 +157,8 @@ protected:
     CT_CHAR_TYPE*     m_pBuf;
     CT_CHAR_TYPE      x_Buf;
 
-    CT_POS_TYPE       x_GPos;    ///< get position [for istream.tellg()]
-    CT_POS_TYPE       x_PPos;    ///< put position [for ostream.tellp()]
+    CT_POS_TYPE       x_GPos;    ///< get position [for istream::tellg()]
+    CT_POS_TYPE       x_PPos;    ///< put position [for ostream::tellp()]
 
     bool              x_Eof;     ///< whether at EOF
     bool              x_Err;     ///< whether there was a _write_ error

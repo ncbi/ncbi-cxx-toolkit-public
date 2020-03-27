@@ -115,7 +115,7 @@ public:
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
     /// This method gets called by RStream buffer destructor to return buffered
-    /// yet still unread (from the stream) portion of data  back to the device.
+    /// yet still unread (from the stream) portion of data back to the device.
     /// It's semantically equivalent to CStreamUtils::Pushback() with the only
     /// difference that IReader can only assume the ownership of "buf" when
     /// "del_ptr" is passed non-NULL.
