@@ -972,6 +972,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCM-CIBE\tc\tEscuela Superior Politecnica del Litoral\t\t\t",
 "CCM<CHN>\ts\tChangchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica\t\t\t",
 "CCM<USA-MT>\ts\tCarter County Museum\t\t\t",
+"CCMA-UFSCar\tc\tCulture Collection of Freshwater Microalgae\t\t\t",
 "CCMAC\tc\tCulture Collection of Macromycetes (Basidiomycotina and Ascomycotina)\t\t\t",
 "CCMCU\tc\tCulture Collection of Microorganisms\t\t\t",
 "CCMF\tc\tUniversity of Portsmouth\t\t\t",

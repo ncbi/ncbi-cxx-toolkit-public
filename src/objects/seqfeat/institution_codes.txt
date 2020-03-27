@@ -939,6 +939,7 @@ CCM-A	c	Coleccion de Cultivos Microbianos
 CCM-CIBE	c	Escuela Superior Politecnica del Litoral			
 CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
 CCM<USA-MT>	s	Carter County Museum			
+CCMA-UFSCar	c	Culture Collection of Freshwater Microalgae			
 CCMAC	c	Culture Collection of Macromycetes (Basidiomycotina and Ascomycotina)			
 CCMCU	c	Culture Collection of Microorganisms			
 CCMF	c	University of Portsmouth			
