@@ -50,7 +50,7 @@
 
 
 /******************************************************************************
- *  IO status
+ *  I/O status
  */
 
 extern const char* IO_StatusStr(EIO_Status status)
@@ -66,8 +66,9 @@ extern const char* IO_StatusStr(EIO_Status status)
         "Closed"
     };
 
-    assert(eIO_Success <= status  &&  status <= eIO_Closed);
-    return eIO_Success <= status  &&  status <= eIO_Closed
+    assert(eIO_Success <= status  &&  status < EIO_N_STATUS
+           &&  kStatusStr[status]);
+    return eIO_Success <= status  &&  status < EIO_N_STATUS
         ? kStatusStr[status]
         : 0;
 }
