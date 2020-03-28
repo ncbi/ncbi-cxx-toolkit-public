@@ -836,6 +836,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         CORE_UNLOCK;
         return buf;
     }
+    CORE_UNLOCK;
 #  endif /*NCBI_OS_MSWIN*/
 
 #else
