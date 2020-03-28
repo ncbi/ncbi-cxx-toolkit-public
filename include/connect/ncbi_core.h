@@ -110,7 +110,7 @@ typedef enum {
  *  be changed in this header.  On the other hand, user code should not rely
  *  on the values of these constants, either.
  * @warning
- *  Careful with an unfortunate naming similatiry of eIO_Close from this set
+ *  Careful with an unfortunate naming similarity of eIO_Close from this set
  *  and eIO_Closed from EIO_Status -- do not mix the two!
  * @sa
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
@@ -126,7 +126,7 @@ typedef enum {
 
 /** I/O status.
  * @warning
- *  Careful with an unfortunate naming similatiry of eIO_Closed from this set
+ *  Careful with an unfortunate naming similarity of eIO_Closed from this set
  *  and eIO_Close from EIO_Event -- do not mix the two!
  */
 typedef enum {
