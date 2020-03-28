@@ -532,7 +532,6 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 #define NCBI_EXCEPTION_EMPTY_NAME
 
-// NCBI_THROW(foo).SetModule("aaa");
 /// Generic macro to make an exception, given the exception class,
 /// error code and message string.
 #define NCBI_EXCEPTION(exception_class, err_code, message)           \
