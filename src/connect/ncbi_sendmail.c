@@ -297,12 +297,10 @@ static void x_Sendmail_InitEnv(void)
 #endif /*NCBI_OS_UNIX && !NCBI_OS_CYGWIN*/
     }
 
-    CORE_LOCK_WRITE;
     s_MxTimeout.sec  = (unsigned int)  tmo;
     s_MxTimeout.usec = (unsigned int)((tmo - s_MxTimeout.sec) * 1000000.0);
     strcpy(s_MxHost, buf);
     s_MxPort = (unsigned short) port;
-    CORE_UNLOCK;
 }
 
 
