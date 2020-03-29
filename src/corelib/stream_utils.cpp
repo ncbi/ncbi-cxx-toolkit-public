@@ -495,7 +495,7 @@ static streamsize s_Readsome(CNcbiIstream& is,
     _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
     if ( !is.good() ) {
-        is.setstate(is.rdstate() | NcbiFailbit);
+        is.setstate(NcbiFailbit);
         return 0; // simulate construction of sentry in standard readsome()
     }
     // Special case: GCC had no readsome() prior to ver 3.0;
@@ -524,7 +524,7 @@ static streamsize s_Readsome(CNcbiIstream& is,
 #  ifdef __llvm__
     // https://llvm.org/bugs/show_bug.cgi?id=28217
     if ( !is.good() ) {
-        is.setstate(is.rdstate() | NcbiFailbit);
+        is.setstate(NcbiFailbit);
         return 0; // simulate construction of sentry in standard readsome()
     }
 #  endif //__llvm__
