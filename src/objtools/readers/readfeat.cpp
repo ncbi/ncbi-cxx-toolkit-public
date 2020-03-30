@@ -2701,10 +2701,18 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                             CRef<CSeq_id> best = GetBestId(ids);
                             if (!best.Empty())
                                 sfp->SetProduct().SetWhole(*best);
-                        } 
-                       // else {
-                        x_AddGBQualToFeature (sfp, qual, val); // Temporary hack for GB-7030
-                       // }                                          // This logic should be moved into cleanup or objtools/edit
+                            x_AddGBQualToFeature(sfp, qual, val);
+                            
+                        }
+                        else if
+                        (typ == CSeqFeatData::e_Prot) { // Mat-peptide
+                            auto pBestId = GetBestId(ids);
+                            if (pBestId)
+                               sfp->SetProduct().SetWhole(*pBestId); 
+                        }
+                        else {
+                            x_AddGBQualToFeature (sfp, qual, val); // Temporary hack for GB-7030
+                       }                                          // This logic should be moved into cleanup or objtools/edit
                     }
                     return true;
                 } catch( CSeqIdException & ) {
