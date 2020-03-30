@@ -645,7 +645,8 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return ConvertProteinToImp(fh);
     }
 
-    bool require_frame = !fh.GetLocation().IsPartialStart(eExtreme_Biological);
+    //bool require_frame = !fh.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool require_frame = false;
     if (!require_frame) {
         ITERATE(CBioseq::TId, id_it, parent_bsh.GetBioseqCore()->GetId()) {
             if ((*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
@@ -654,11 +655,8 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
             }
         }
     }
-    
 
     CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope(), require_frame);
-
-
 
     if (!prot_loc) {
         return false;
