@@ -757,7 +757,6 @@ static void s_SetProtRef(const CSeq_feat& cds,
 
 CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_entry_h, const CBioseq& bioseq, CSeq_feat& cd_feature)
 {
-
     if (sequence::IsPseudo(cd_feature, *m_scope))
         return CRef<CSeq_entry>();
 
@@ -1004,6 +1003,7 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBiose
 {
     // sort and number ids
     CSeq_entry& entry = *(CSeq_entry*)entry_h.GetEditHandle().GetSeq_entryCore().GetPointerOrNull();
+
     PostProcessFeatureTable(entry, seq_ftable);
     for (CSeq_annot::TData::TFtable::iterator feat_it = seq_ftable.begin(); seq_ftable.end() != feat_it;)
     {
@@ -2010,7 +2010,6 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
             if (!pMappedLoc) {
                 continue;
             }
-            pRegion->ResetLocation();
             pRegion->SetLocation(*pMappedLoc);
             auto pId = s_GetIdFromLocation(*pMappedLoc);
             if (pId) {
