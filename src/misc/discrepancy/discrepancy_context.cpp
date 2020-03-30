@@ -647,6 +647,7 @@ void CDiscrepancyContext::ClearFeatureList(void)
     m_Feat_RNAs.clear();
     m_FeatExons.clear();
     m_FeatIntrons.clear();
+    m_FeatMisc.clear();
 }
 
 
