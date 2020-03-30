@@ -584,6 +584,19 @@ void RescueProtProductQual(CSeq_feat& feat)
 }
 
 
+static CConstRef<CSeq_feat> s_GetCdsByProduct(CScope& scope, const CSeq_loc& product) 
+{
+    const bool feat_by_product = true;
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion, feat_by_product);
+    CFeat_CI fi(scope, product, sel);
+    if (fi) {
+        return ConstRef(&(fi->GetOriginalFeature()));
+    }
+    return CConstRef<CSeq_feat>();
+};
+
+
+
 bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 {
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
@@ -610,21 +623,42 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return false;
     }
 
-    CConstRef<CSeq_feat> cds = sequence::GetOverlappingCDS(fh.GetLocation(), fh.GetScope());
+    CConstRef<CSeq_feat> cds;
+    bool matched_by_product = false;
+
+    if (fh.IsSetProduct() &&
+        fh.GetData().IsProt() &&
+        fh.GetData().GetProt().IsSetProcessed() &&
+        fh.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_mature) {
+        cds = s_GetCdsByProduct(fh.GetScope(), fh.GetProduct());
+        if (cds) {
+            matched_by_product = true;
+        }
+    }
+
+    if (!matched_by_product) {
+        cds = sequence::GetOverlappingCDS(fh.GetLocation(), fh.GetScope());
+    }
     if (!cds || !cds->IsSetProduct()) {
         // there is no overlapping coding region feature, so there is no appropriate
         // protein sequence to move to
         return ConvertProteinToImp(fh);
     }
 
-    bool require_frame = false;
-    ITERATE(CBioseq::TId, id_it, parent_bsh.GetBioseqCore()->GetId()) {
-        if ((*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
-            require_frame = true;
-            break;
+    bool require_frame = !fh.GetLocation().IsPartialStart(eExtreme_Biological);
+    if (!require_frame) {
+        ITERATE(CBioseq::TId, id_it, parent_bsh.GetBioseqCore()->GetId()) {
+            if ((*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
+                require_frame = true;
+                break;
+            }
         }
     }
+    
+
     CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope(), require_frame);
+
+
 
     if (!prot_loc) {
         return false;
@@ -652,6 +686,9 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     new_feat->ResetLocation();
     new_feat->SetLocation(*prot_loc);
     SetFeaturePartial(*new_feat);
+    if (matched_by_product) {
+        new_feat->ResetProduct();
+    }
 
     CSeq_feat_EditHandle edh(fh);
     edh.Replace(*new_feat);
