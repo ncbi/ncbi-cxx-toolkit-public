@@ -60,7 +60,7 @@ public:
 };
 
 
-/// IO exception. 
+/// I/O exception. 
 ///
 /// @sa EIO_Status
 class NCBI_XCONNECT_EXPORT CIO_Exception
@@ -88,7 +88,7 @@ public:
     do {                                                                \
         if ((errnum) != eIO_Success) {                                  \
             NCBI_THROW(CIO_Exception,                                   \
-                       (CIO_Exception::EErrCode)(errnum), "IO error."); \
+                       CIO_Exception::EErrCode(errnum), "I/O error");   \
         }                                                               \
     } while (0)
 

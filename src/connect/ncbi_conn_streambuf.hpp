@@ -61,6 +61,7 @@ public:
                     CT_CHAR_TYPE* ptr, size_t size);
     virtual   ~CConn_Streambuf()    { Close();  delete[] m_WriteBuf; }
 
+    EIO_Status Open    (void);
     CONN       GetCONN (void) const { return m_Conn;                 }
     EIO_Status Close   (void)       { return x_Close(true);          }
     EIO_Status Status  (EIO_Event direction = eIO_Open) const;
@@ -140,8 +141,8 @@ private:
     bool                m_Initial;   // if still reading the initial data block
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
 
-    CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
-    CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
+    CT_POS_TYPE         x_GPos;      // get position [for istream::tellg()]
+    CT_POS_TYPE         x_PPos;      // put position [for ostream::tellp()]
 
     void                x_Init(const STimeout* timeout, size_t buf_size,
                                CConn_IOStream::TConn_Flags flags,

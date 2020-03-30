@@ -434,9 +434,6 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     _ASSERT(n  &&  result != eRW_Success  &&  x_Err);
 
-    if (result == eRW_Error)
-        throw IOS_BASE::failure("eRW_Error");
-
     if ( pbase() ) {
         x_written = (size_t)(epptr() - pptr());
         if ( x_written ) {
@@ -448,6 +445,8 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
     }
 
+    if (!n_written  &&  result == eRW_Error)
+        throw IOS_BASE::failure("eRW_Error");
     return (streamsize) n_written;
 }
 

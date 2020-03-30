@@ -281,7 +281,6 @@ public:
     CONN               GetCONN(void) const;
 
 protected:
-    void x_Init(CONN conn, TConn_Flags flags);
     void x_Destroy(void);
 
 private:
@@ -336,7 +335,7 @@ inline CConn_IOStream& operator>> (CConn_IOStream& is,
                                    const CConn_IOStreamSetReadTimeout& s)
 {
     if (is.good()  &&  is.SetTimeout(eIO_Read, s.GetTimeout()) != eIO_Success)
-        is.clear(IOS_BASE::badbit);
+        is.clear(NcbiBadbit);
     return is;
 }
 
@@ -365,7 +364,7 @@ inline CConn_IOStream& operator<< (CConn_IOStream& os,
                                    const CConn_IOStreamSetWriteTimeout& s)
 {
     if (os.good()  &&  os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success)
-        os.clear(IOS_BASE::badbit);
+        os.clear(NcbiBadbit);
     return os;
 }
 

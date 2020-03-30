@@ -42,6 +42,7 @@
 #include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,7 +59,9 @@ CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                                   timeout, buf_size, flgs,
                                                   ptr, size))
 {
-    x_Init(m_CSb->GetCONN(), flgs);
+    init(Status() != eIO_Success
+         ? 0  // according to the standard (27.4.4.1.3), badbit is set here
+         : m_CSb);
 }
 
 
@@ -70,7 +73,9 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                                   timeout, buf_size, flgs,
                                                   ptr, size))
 {
-    x_Init(conn, flgs);
+    init(Status() != eIO_Success
+         ? 0  // according to the standard (27.4.4.1.3), badbit is set here
+         : m_CSb);
 }
 
 
@@ -131,32 +136,15 @@ EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 
 EIO_Status CConn_IOStream::Pushback(const CT_CHAR_TYPE* data, streamsize size)
 {
-    return m_CSb ? m_CSb->Pushback(data, size) : eIO_NotSupported;
+    EIO_Status status = m_CSb ? m_CSb->Pushback(data, size) : eIO_NotSupported;
+    if (status != eIO_Success)
+        clear(NcbiBadbit);
+    return status;
 }
 
 EIO_Status CConn_IOStream::Close(void)
 {
     return m_CSb ? m_CSb->Close() : eIO_Closed;
-}
-
-
-void CConn_IOStream::x_Init(CONN conn, TConn_Flags flgs)
-{
-    if (conn) {
-        EIO_Status status;
-        if (!(flgs & fConn_DelayOpen)) {
-            SOCK s/*dummy*/;
-            // NB: CONN_Write(0 bytes) could have caused the same effect
-            (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
-            status  = CONN_Status(conn, eIO_Open);
-        } else
-            status  = eIO_Success;
-        if (status == eIO_Success) {
-            init(m_CSb);
-            return;
-        }
-    }
-    init(0); // according to the standard (27.4.4.1.3), badbit is set here
 }
 
 
@@ -444,14 +432,14 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     if (url  &&  !ConnNetInfo_ParseURL(x_net_info.get(), url)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_HttpStream::CConn_HttpStream(): "
-                   " Bad URL");
+                   " Bad URL \"" + string(url) + '"');
     }
     if (host) {
         size_t len;
         if ((len = *host ? strlen(host) : 0) >= sizeof(x_net_info->host)) {
             NCBI_THROW(CIO_Exception, eInvalidArg,
                        "CConn_HttpStream::CConn_HttpStream(): "
-                       " Host too long");
+                       " Host too long \"" + string(host) + '"');
         }
         memcpy(x_net_info->host, host, ++len);
     }
@@ -460,18 +448,25 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     if (path  &&  !ConnNetInfo_SetPath(x_net_info.get(), path)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_HttpStream::CConn_HttpStream(): "
-                   " Path too long");
+                   " Path too long \"" + string(path) + '"');
     }
     if (args  &&  !ConnNetInfo_SetArgs(x_net_info.get(), args)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_HttpStream::CConn_HttpStream(): "
-                   " Args too long");
+                   " Args too long \"" + string(args) + '"');
     }
     if (user_header  &&  *user_header
         &&  !ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header)) {
-        NCBI_THROW(CIO_Exception, eInvalidArg,
+        int x_dynamic = 0;
+        const char* x_message = NcbiMessagePlusError(&x_dynamic,
+                                                     "Cannot set user header",
+                                                     errno, 0);
+        string message(x_message);
+        if (x_dynamic)
+            free((void*) x_message);
+        NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream(): "
-                   " Cannot set user header");
+                   " " + message);
     }
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
@@ -1198,7 +1193,7 @@ void CConn_FTPDownloadStream::x_InitDownload(const string& file, Uint8 offset)
         status  = Status(eIO_Write);
     }
     if (status != eIO_Success)
-        setstate(NcbiBadbit);
+        clear(NcbiBadbit);
 }
 
 
@@ -1236,11 +1231,15 @@ void CConn_FTPUploadStream::x_InitUpload(const string& file, Uint8 offset)
     EIO_Status status;
     if (offset) {
         write("REST ", 5) << NStr::UInt8ToString(offset) << NcbiFlush;
-        status = Status(eIO_Write);
+        status  = Status(eIO_Write);
     } else
-        status = eIO_Success;
-    if (good()  &&  status == eIO_Success)
+        status  = eIO_Success;
+    if (good()  &&  status == eIO_Success) {
         write("STOR ", 5) << file << NcbiFlush;
+        status  = Status(eIO_Write);
+    }
+    if (status != eIO_Success)
+        clear(NcbiBadbit);
 }
 
 
@@ -1347,21 +1346,6 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         }
     }
     return 0;
-}
-
-
-const char* CIO_Exception::GetErrCodeString(void) const
-{
-    switch (GetErrCode()) {
-    case eTimeout:       return "eIO_Timeout";
-    case eInterrupt:     return "eIO_Interrupt";
-    case eInvalidArg:    return "eIO_InvalidArg";
-    case eNotSupported:  return "eIO_NotSupported";
-    case eUnknown:       return "eIO_Unknown";
-    case eClosed:        return "eIO_Closed";
-    default:             break;
-    }
-    return CException::GetErrCodeString();
 }
 
 

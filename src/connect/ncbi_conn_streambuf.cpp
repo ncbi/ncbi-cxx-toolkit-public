@@ -44,6 +44,13 @@
 BEGIN_NCBI_SCOPE
 
 
+static inline bool x_IsThrowable(EIO_Status status)
+{
+    _ASSERT(status != eIO_Success);
+    return status != eIO_Timeout  &&  status != eIO_Closed ? true : false;
+}
+
+
 string CConn_Streambuf::x_Message(const char* msg)
 {
     const char* type = m_Conn ? CONN_GetType    (m_Conn) : 0;
@@ -140,7 +147,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
                              CConn_IOStream::TConn_Flags flgs,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
-    _ASSERT(m_Status == eIO_Success);
+    _ASSERT(m_Conn  &&  m_Status == eIO_Success);
 
     if (timeout != kDefaultTimeout) {
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Open,      timeout) ==eIO_Success);
@@ -182,6 +189,13 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
     cb.data = this;
     CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, &m_Cb);
     m_CbValid = true;
+
+    if (!(flgs & CConn_IOStream::fConn_DelayOpen)) {
+        SOCK s/*dummy*/;
+        // NB: CONN_Write(0 bytes) could have caused the same effect
+        (void) CONN_GetSOCK(m_Conn, &s);  // Prompt CONN to actually open
+        m_Status = CONN_Status(m_Conn, eIO_Open);
+    }
 }
 
 
@@ -271,17 +285,34 @@ EIO_Status CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
 }
 
 
-EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data, streamsize size)
+CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* buf, streamsize buf_size)
 {
-    if (!m_Conn)
-        return eIO_Closed;
-
-    if ((!m_Initial  &&  (m_Status = x_Pushback()) != eIO_Success)
-        ||  (m_Status = CONN_Pushback(m_Conn, data, size)) != eIO_Success) {
-        ERR_POST_X(14, x_Message("Pushback(): "
-                                 " CONN_Pushback() failed"));
+    if (buf  ||  buf_size) {
+        NCBI_THROW(CConnException, eConn,
+                   "CConn_Streambuf::setbuf() only allowed with (0, 0)");
     }
-    return m_Status;
+
+    if (m_Conn) {
+        if (!m_Initial  &&  x_Pushback() != eIO_Success) {
+            ERR_POST_X(11, Critical << x_Message("setbuf(): "
+                                                 " Read data pending"));
+        }
+        if (x_Sync() != 0) {
+            ERR_POST_X(12, Critical << x_Message("setbuf(): "
+                                                 " Write data pending"));
+        }
+    }
+    setp(0, 0);
+
+    delete[] m_WriteBuf;
+    m_WriteBuf = 0;
+
+    m_ReadBuf  = &x_Buf;
+    m_BufSize  = 1;
+
+    if (!m_Conn  ||  !m_Initial)
+        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
+    return this;
 }
 
 
@@ -317,6 +348,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(4, x_Message("overflow(): "
                                     " CONN_Write() failed"));
+            if (x_IsThrowable(m_Status))
+                NCBI_IO_CHECK(m_Status);
             return CT_EOF;
         }
     } else if (!CT_EQ_INT_TYPE(c, CT_EOF)) {
@@ -328,6 +361,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(5, x_Message("overflow(): "
                                     " CONN_Write(1) failed"));
+            if (x_IsThrowable(m_Status))
+                NCBI_IO_CHECK(m_Status);
             return CT_EOF;
         }
         x_PPos += (CT_OFF_TYPE) 1;
@@ -338,6 +373,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     if ((m_Status = CONN_Flush(m_Conn)) != eIO_Success) {
         ERR_POST_X(9, x_Message("overflow(): "
                                 " CONN_Flush() failed"));
+        if (x_IsThrowable(m_Status))
+            NCBI_IO_CHECK(m_Status);
         return CT_EOF;
     }
     return CT_NOT_EOF(CT_EOF);
@@ -358,7 +395,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
     do {
         if (pbase()) {
             if (n  &&  pbase() + n < epptr()) {
-                // Would entirely fit into the buffer not causing an overflow
+                // would entirely fit into the buffer not causing an overflow
                 x_written = (size_t)(epptr() - pptr());
                 if (x_written > n)
                     x_written = n;
@@ -421,6 +458,8 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
     }
 
+    if (!n_written  &&  x_IsThrowable(m_Status))
+        NCBI_IO_CHECK(m_Status);
     return (streamsize) n_written;
 }
 
@@ -452,6 +491,8 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         if (m_Status != eIO_Closed) {
             ERR_POST_X(8, x_Message("underflow(): "
                                     " CONN_Read() failed"));
+            if (x_IsThrowable(m_Status))
+                NCBI_IO_CHECK(m_Status);
         }
         return CT_EOF;
     }
@@ -537,12 +578,16 @@ streamsize CConn_Streambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
         n       -= x_read;
     } while (n);
 
+    if (!n_read  &&  x_IsThrowable(m_Status))
+        NCBI_IO_CHECK(m_Status);
     return (streamsize) n_read;
 }
 
 
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
+    _ASSERT(egptr() >= gptr());
+
     return m_Conn ? x_Read(buf, m) : 0;
 }
 
@@ -588,6 +633,8 @@ streamsize CConn_Streambuf::showmanyc(void)
             _ASSERT(0);
             /*FALLTHRU*/
         default:
+            if (x_IsThrowable(m_Status))
+                NCBI_IO_CHECK(m_Status);
             break;
         }
         return       0;  // no data available immediately
@@ -606,37 +653,6 @@ int CConn_Streambuf::sync(void)
         return -1;
     _ASSERT(pbase() == pptr());
     return 0;
-}
-
-
-CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* buf, streamsize buf_size)
-{
-    if (buf  ||  buf_size) {
-        NCBI_THROW(CConnException, eConn,
-                   "CConn_Streambuf::setbuf() only allowed with (0, 0)");
-    }
-
-    if (m_Conn) {
-        if (!m_Initial  &&  x_Pushback() != eIO_Success) {
-            ERR_POST_X(11, Critical << x_Message("setbuf(): "
-                                                 " Read data pending"));
-        }
-        if (x_Sync() != 0) {
-            ERR_POST_X(12, Critical << x_Message("setbuf(): "
-                                                 " Write data pending"));
-        }
-    }
-    setp(0, 0);
-
-    delete[] m_WriteBuf;
-    m_WriteBuf = 0;
-
-    m_ReadBuf  = &x_Buf;
-    m_BufSize  = 1;
-
-    if (!m_Conn  ||  !m_Initial)
-        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
-    return this;
 }
 
 
@@ -664,6 +680,20 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
 }
 
 
+EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data, streamsize size)
+{
+    if (!m_Conn)
+        return eIO_Closed;
+
+    if ((!m_Initial  &&  (m_Status = x_Pushback()) != eIO_Success)
+        ||  (m_Status = CONN_Pushback(m_Conn, data, size)) != eIO_Success) {
+        ERR_POST_X(14, x_Message("Pushback(): "
+                                 " CONN_Pushback() failed"));
+    }
+    return m_Status;
+}
+
+
 const char* CConnException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -671,6 +701,21 @@ const char* CConnException::GetErrCodeString(void) const
     default:     break;
     }
     return CException::GetErrCodeString();
+}
+
+
+const char* CIO_Exception::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eTimeout:       return "eIO_Timeout";
+    case eInterrupt:     return "eIO_Interrupt";
+    case eInvalidArg:    return "eIO_InvalidArg";
+    case eNotSupported:  return "eIO_NotSupported";
+    case eUnknown:       return "eIO_Unknown";
+    case eClosed:        return "eIO_Closed";
+    default:             break;
+    }
+    return CConnException::GetErrCodeString();
 }
 
 
