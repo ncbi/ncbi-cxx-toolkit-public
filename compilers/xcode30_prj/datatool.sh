@@ -107,7 +107,7 @@ fi
 if test ! -x "$DATATOOL_EXE"; then
   echo "=============================================================================="
   echo Building $DT locally, please wait
-  cmd="`dirname $0`/xcodebuild.sh -project $PTB_SLN -target $DT -configuration ReleaseDLL -arch `uname -m`"
+  cmd="xcodebuild -project $PTB_SLN -target $DT -configuration ReleaseDLL -arch `uname -m`"
   echo "$cmd"
   echo "=============================================================================="
   if test "${NCBICONF_MSVC}" != ""; then

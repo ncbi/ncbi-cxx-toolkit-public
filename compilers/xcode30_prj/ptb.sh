@@ -167,7 +167,7 @@ test -z "$PTB_PROJECT" && PTB_PROJECT=${PTB_PROJECT_REQ}
 if test ! -x "$PTB_EXE"; then
   echo "=============================================================================="
   echo Building project tree builder locally, please wait
-  cmd="`dirname $0`/xcodebuild.sh -project $PTB_SLN -target $DT -target $ptbname -configuration ReleaseDLL -arch $PTB_PLATFORM"
+  cmd="xcodebuild -project $PTB_SLN -target $DT -target $ptbname -configuration ReleaseDLL -arch $PTB_PLATFORM"
   echo "$cmd"
   echo "=============================================================================="
   if test "${NCBICONF_MSVC}" != ""; then
