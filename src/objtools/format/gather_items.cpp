@@ -768,56 +768,67 @@ void CFlatGatherer::x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs
         }
     });
 
-    if (! idx->DistributedReferences()) {
-
-        // also gather references from annotations
-        const CFlatFileConfig& cfg = ctx.Config();
-        if (! cfg.DisableAnnotRefs()) {
-             SAnnotSelector sel = m_Current->SetAnnotSelector();
-             for (CAnnot_CI annot_it(seq, sel);
-                  annot_it; ++annot_it) {
-                 if ( !annot_it->Seq_annot_IsSetDesc() ) {
+    // also gather references from annotations on master SEP
+    const CFlatFileConfig& cfg = ctx.Config();
+    if (! cfg.DisableAnnotRefs()) {
+         // SAnnotSelector sel = m_Current->SetAnnotSelector();
+         SAnnotSelector sel;
+         for (CAnnot_CI annot_it(seq, sel);
+              annot_it; ++annot_it) {
+             if ( !annot_it->Seq_annot_IsSetDesc() ) {
+                 continue;
+             }
+             ITERATE (CSeq_annot::TDesc::Tdata, it,
+                      annot_it->Seq_annot_GetDesc().Get()) {
+                 if ( !(*it)->IsPub() ) {
                      continue;
                  }
-                 ITERATE (CSeq_annot::TDesc::Tdata, it,
-                          annot_it->Seq_annot_GetDesc().Get()) {
-                     if ( !(*it)->IsPub() ) {
-                         continue;
-                     }
-                     const CPubdesc& pubdesc = (*it)->GetPub();
-                     if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
-                         continue;
-                     }
-                     /*
-                     if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
-                         continue;
-                     }
-                     */
-                     CRef<CSeqdesc> desc(new CSeqdesc);
-                     desc->SetPub(const_cast<CPubdesc&>((*it)->GetPub()));
-                     refs.push_back(CBioseqContext::TRef
-                                    (new CReferenceItem(*desc, *m_Current)));
+                 const CPubdesc& pubdesc = (*it)->GetPub();
+                 if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                     continue;
                  }
+                 /*
+                 if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
+                     continue;
+                 }
+                 */
+                 CRef<CSeqdesc> desc(new CSeqdesc);
+                 desc->SetPub(const_cast<CPubdesc&>((*it)->GetPub()));
+                 refs.push_back(CBioseqContext::TRef
+                                (new CReferenceItem(*desc, *m_Current)));
              }
          }
+     }
 
-        // gather references from features
-        bsx->IterateFeatures([this, &ctx, &scope, &refs, bsx](CFeatureIndex& sfx) {
-            try {
-                if (sfx.GetType() == CSeqFeatData::e_Pub) {
-                    const CSeq_feat& sf = sfx.GetMappedFeat().GetOriginalFeature();
-                    if (sf.GetData().IsPub()) {
-                        const CPubdesc& pubdesc = sf.GetData().GetPub();
-                        if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
-                            return;
-                        }
-                        refs.push_back(CBioseqContext::TRef(new CReferenceItem(sf, *m_Current)));
-                    }
-                }
-            } catch ( ... ) {
+    // gather references from features on master SEP
+    CFeat_CI fci(scope, loc, CSeqFeatData::e_Pub);
+    for ( ; fci; ++fci) {
+        const CSeq_feat& sf = fci->GetOriginalFeature();
+        if (sf.GetData().IsPub()) {
+            const CPubdesc& pubdesc = sf.GetData().GetPub();
+            if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                return;
             }
-        });
+            refs.push_back(CBioseqContext::TRef(new CReferenceItem(sf, *m_Current)));
+        }
     }
+    /*
+    bsx->IterateFeatures([this, &ctx, &scope, &refs, bsx](CFeatureIndex& sfx) {
+        try {
+            if (sfx.GetType() == CSeqFeatData::e_Pub) {
+                const CSeq_feat& sf = sfx.GetMappedFeat().GetOriginalFeature();
+                if (sf.GetData().IsPub()) {
+                    const CPubdesc& pubdesc = sf.GetData().GetPub();
+                    if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                        return;
+                    }
+                    refs.push_back(CBioseqContext::TRef(new CReferenceItem(sf, *m_Current)));
+                }
+            }
+        } catch ( ... ) {
+        }
+    });
+    */
 
     // add seq-submit citation
     if (m_Current->GetSubmitBlock() != NULL) {
