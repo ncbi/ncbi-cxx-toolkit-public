@@ -495,6 +495,7 @@ sub get_latest_dir
         print STDERR "ERROR: Missing file $url, please try again or report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(EXIT_FAILURE);
     }
+    print "$source latest-dir: '$retval'\n" if DEBUG;
     return $retval;
 }
 
