@@ -122,6 +122,8 @@ static void s_on_ipc_connection(uv_stream_t *  ipc, int  status)
 
     assert(ipc->type == UV_NAMED_PIPE);
 
+    // Here the pipe must be intialized with ipc == 1 because the further
+    // call of uv_write2(...) sends a handle and thus must use ipc == 1
     int     e = uv_pipe_init(ipc->loop, (uv_pipe_t*)&pc->m_PeerHandle, 1);
     if (e != 0) {
         free(pc);
@@ -179,7 +181,9 @@ int uv_export_start(uv_loop_t *  loop, uv_stream_t *  handle,
         uv_sem_init(&worker->m_Sem, 0);
     }
 
-    int     e = uv_pipe_init(loop, &exp->m_Ipc, 1);
+    // Here the pipe must be initialized with ipc == 0 because otherwise
+    // listening on it is impossible
+    int     e = uv_pipe_init(loop, &exp->m_Ipc, 0);
     if (e)
         goto error;
 
