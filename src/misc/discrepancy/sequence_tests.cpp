@@ -854,20 +854,6 @@ void CopyNode(CReportNode& new_home, CReportNode& original)
 }
 
 
-void AddSubFieldReport(CReportNode& node, const string& field_name, const string& top_label, CReportNode& m_Objs)
-{
-    bool this_present = true;
-    bool this_same = true;
-    AnalyzeField(node, this_present, this_same);
-    string new_label = field_name + " " + GetSummaryLabel(this_present, this_same);
-    for (auto& s : node.GetMap()){
-        for (auto& q : s.second->GetObjects()) {
-            m_Objs[top_label][new_label][s.first].Add(*q);
-        }
-    }
-}
-
-
 string AdjustDBLinkFieldName(const string& orig_field_name)
 {
     if (NStr::Equal(orig_field_name, "BioSample")) {
