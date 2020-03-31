@@ -15,4 +15,4 @@ REQUIRES = Boost.Test.Included objects
 CHECK_CMD = collection_scores_unit_test -input-binary -seq-entry data/collection_score_entries.asnb -aligns data/collection_score_blast.asnb
 CHECK_COPY = data
 
-WATCHERS = kotliaro
+WATCHERS = whlavina

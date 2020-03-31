@@ -16,4 +16,4 @@ REQUIRES = Boost.Test.Included LIBXML LIBXSLT
 
 CHECK_CMD =
 
-WATCHERS = kotliaro
+WATCHERS = whlavina
