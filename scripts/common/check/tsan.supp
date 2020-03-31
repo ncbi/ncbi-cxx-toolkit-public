@@ -36,3 +36,30 @@ signal:corelib/test/test_ncbi_system.cpp
 
 # error, just not important - ignore (whole test)
 race:corelib/test/test_tls_object.cpp
+
+
+################################################################
+# lavr CXX-11285
+
+# test_ncbi_trigger -- confirmed false-positive by Anton (emails)
+race:^TRIGGER_Reset
+
+# thread leak in test_ncbi_trigger, probably can be rewritten
+thread:test_ncbi_trigger
+
+# Setting the shutdown flag doesn't need to be protected (by vakatov)
+race:^ncbi::CTestServer::ShutdownRequested()
+
+# This is for statistics purposes only.
+race:^s_Create
+
+# Debugging aid. For lock check consistency
+race:^g_NCBI_CoreCheckLock
+
+# Pre-check followed by lock-and-check-and-modify
+race:^ncbi::CConnIniter::CConnIniter()
+race:^s_InitAPI_
+
+
+
+
