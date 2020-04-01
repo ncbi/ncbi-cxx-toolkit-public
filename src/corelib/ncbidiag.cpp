@@ -7663,7 +7663,6 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
     }
     for (; !pile.empty(); pile.pop()) {
         pex = pile.top();
-        if (pex == main_pex) continue;
         string text(s_GetExceptionText(pex));
         const CStackTrace* stacktrace = pex->GetStackTrace();
         if ( stacktrace ) {
