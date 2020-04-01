@@ -67,13 +67,14 @@ BEGIN_NCBI_SCOPE
 /// Define use of C++ exception specification mechanism:
 ///   "f(void) throw();"       <==  "f(void) THROWS_NONE;"
 ///   "g(void) throw(e1,e2);"  <==  "f(void) THROWS((e1,e2));"
-#if defined(NCBI_USE_THROW_SPEC)
+#ifdef NCBI_USE_THROW_SPEC
 #  define THROWS_NONE throw()
-#  define THROWS(x) throw x
+#  define THROWS(x)   throw x
 #else
 #  define THROWS_NONE
 #  define THROWS(x)
 #endif
+
 
 /// ABORT_ON_THROW controls if program should be aborted.
 #define ABORT_ON_THROW "ABORT_ON_THROW"
@@ -184,11 +185,12 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Example:
 /// -  RETHROW_TRACE;
-#  define RETHROW_TRACE do { \
-    _TRACE("EXCEPTION: re-throw"); \
-    NCBI_NS_NCBI::DoThrowTraceAbort(); \
-    throw; \
-} while(0)
+#  define RETHROW_TRACE                         \
+    do {                                        \
+        _TRACE("EXCEPTION: re-throw");          \
+        NCBI_NS_NCBI::DoThrowTraceAbort();      \
+        throw;                                  \
+    } while(0)
 
 /// Throw trace.
 ///
@@ -200,9 +202,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Example:
 /// -  THROW0_TRACE("Throw just a string");
 /// -  THROW0_TRACE(runtime_error("message"));
-#  define THROW0_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO, \
-        exception_object, #exception_object)
+#  define THROW0_TRACE(exception_object)                                \
+    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,                     \
+                                 exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -219,9 +221,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// -  THROW0p_TRACE(complex(1,2));
 /// @sa
 ///   THROW0np_TRACE
-#  define THROW0p_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO, \
-        exception_object, #exception_object)
+#  define THROW0p_TRACE(exception_object)                               \
+    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,                    \
+                                  exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -239,9 +241,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// -  THROW0np_TRACE(vector<char>());
 /// @sa
 ///   THROW0p_TRACE
-#  define THROW0np_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO, \
-        exception_object, #exception_object)
+#  define THROW0np_TRACE(exception_object)                              \
+    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,                   \
+                                   exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -255,9 +257,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Example:
 /// -  THROW1_TRACE(runtime_error, "Something is weird...");
-#  define THROW1_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO, \
-        exception_class(exception_arg), #exception_class)
+#  define THROW1_TRACE(exception_class, exception_arg)                  \
+    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,                     \
+                                 exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
@@ -275,9 +277,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// -  THROW1p_TRACE(int, 32);
 /// @sa
 ///   THROW1np_TRACE
-#  define THROW1p_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,    \
-        exception_class(exception_arg), #exception_class)
+#  define THROW1p_TRACE(exception_class, exception_arg)                 \
+    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,                    \
+                                  exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
@@ -295,16 +297,16 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Example:
 /// -  THROW1np_TRACE(CUserClass, "argument");
-#  define THROW1np_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,    \
-        exception_class(exception_arg), #exception_class)
+#  define THROW1np_TRACE(exception_class, exception_arg)                \
+    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,                   \
+                                   exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// arguments. The class argument need not be derived from std::exception as
 /// a new class object is constructed using the specified class name and
 /// initialization arguments.
@@ -318,16 +320,16 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// -  THROW_TRACE(CParseException, ("Some parse error", 123));
 /// @sa
 ///   THROW1_TRACE
-#  define THROW_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,    \
-        exception_class exception_args, #exception_class)
+#  define THROW_TRACE(exception_class, exception_args)                  \
+    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,                     \
+                                 exception_class exception_args, #exception_class)
 
 /// Throw trace.
 ///
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// arguments. The class argument need not be derived from std::exception as
 /// a new class object is constructed using the specified class name and
 /// initialization arguments.
@@ -341,16 +343,16 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// - THROWp_TRACE(complex, (2, 3));
 /// @sa
 ///   THROW1p_TRACE
-#  define THROWp_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,    \
-        exception_class exception_args, #exception_class)
+#  define THROWp_TRACE(exception_class, exception_args)                 \
+    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,                    \
+                                  exception_class exception_args, #exception_class)
 
 /// Throw trace.
 ///
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// argument. The class argument need not be derived from std::exception as
 /// a new class object is constructed using the specified class name and
 /// initialization argument.
@@ -363,33 +365,33 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// Example:
 /// -  THROWnp_TRACE(CUserClass, (arg1, arg2));
-#  define THROWnp_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,    \
-        exception_class exception_args, #exception_class)
+#  define THROWnp_TRACE(exception_class, exception_args)                \
+    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,                   \
+                                   exception_class exception_args, #exception_class)
 
 #else  /* _DEBUG */
 
 // No trace/debug versions of these macros.
 
-#  define RETHROW_TRACE \
+#  define RETHROW_TRACE                                     \
     throw
-#  define THROW0_TRACE(exception_object) \
+#  define THROW0_TRACE(exception_object)                    \
     throw exception_object
-#  define THROW0p_TRACE(exception_object) \
+#  define THROW0p_TRACE(exception_object)                   \
     throw exception_object
-#  define THROW0np_TRACE(exception_object) \
+#  define THROW0np_TRACE(exception_object)                  \
     throw exception_object
-#  define THROW1_TRACE(exception_class, exception_arg) \
+#  define THROW1_TRACE(exception_class, exception_arg)      \
     throw exception_class(exception_arg)
-#  define THROW1p_TRACE(exception_class, exception_arg) \
+#  define THROW1p_TRACE(exception_class, exception_arg)     \
     throw exception_class(exception_arg)
-#  define THROW1np_TRACE(exception_class, exception_arg) \
+#  define THROW1np_TRACE(exception_class, exception_arg)    \
     throw exception_class(exception_arg)
-#  define THROW_TRACE(exception_class, exception_args) \
+#  define THROW_TRACE(exception_class, exception_args)      \
     throw exception_class exception_args
-#  define THROWp_TRACE(exception_class, exception_args) \
+#  define THROWp_TRACE(exception_class, exception_args)     \
     throw exception_class exception_args
-#  define THROWnp_TRACE(exception_class, exception_args) \
+#  define THROWnp_TRACE(exception_class, exception_args)    \
     throw exception_class exception_args
 
 #endif  /* else!_DEBUG */
@@ -459,7 +461,6 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 #define NCBI_CATCH_ALL_X(err_subcode, message)                \
     NCBI_CATCH_ALL_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
-
 /// Standard handling of "exception"-derived exceptions
 /// with given error code name and given error subcode placed in diagnostics
 ///
@@ -505,7 +506,6 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     STD_CATCH_ALL_XX(err_name, err_subcode, message)
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 // CException: useful macros
 
@@ -527,7 +527,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     NCBI_EXCEPTION_VAR_EX(name, 0, exception_class, err_code, message)
 
 /// Throw an existing exception object
-#define NCBI_EXCEPTION_THROW(exception_var) \
+#define NCBI_EXCEPTION_THROW(exception_var)                          \
     throw (exception_var)
 
 #define NCBI_EXCEPTION_EMPTY_NAME
@@ -558,12 +558,12 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     NCBI_THROW(NCBI_NS_NCBI::CException, eUnknown, message)
 
 /// The same as NCBI_THROW but with message processed as output to ostream.
-#define NCBI_THROW_FMT(exception_class, err_code, message)  \
+#define NCBI_THROW_FMT(exception_class, err_code, message)      \
     NCBI_THROW(exception_class, err_code, FORMAT(message))
 
 /// Throw a "user exception" with message processed as output to ostream.
 /// See NCBI_USER_THROW for details.
-#define NCBI_USER_THROW_FMT(message)  \
+#define NCBI_USER_THROW_FMT(message)                            \
     NCBI_THROW_FMT(NCBI_NS_NCBI::CException, eUnknown, message)
 
 /// Generic macro to make an exception, given the exception class,
@@ -594,13 +594,13 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     throw; }  while (0)
 
 /// Generate a report on the exception.
-#define NCBI_REPORT_EXCEPTION(title, ex) \
-    NCBI_NS_NCBI::CExceptionReporter::ReportDefault \
+#define NCBI_REPORT_EXCEPTION(title, ex)                        \
+    NCBI_NS_NCBI::CExceptionReporter::ReportDefault             \
         (DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
 
 /// Generate a report on the exception with default error code and
 /// given subcode.
-#define NCBI_REPORT_EXCEPTION_X(err_subcode, title, ex)                  \
+#define NCBI_REPORT_EXCEPTION_X(err_subcode, title, ex)                 \
     NCBI_REPORT_EXCEPTION_XX(NCBI_USE_ERRCODE_X, err_subcode, title, ex)
 
 /// Generate a report on the exception with default error code and
@@ -610,7 +610,6 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     NCBI_NS_NCBI::CExceptionReporter::ReportDefaultEx                \
     (NCBI_ERRCODE_X_NAME(err_name), err_subcode,                     \
      DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1335,6 +1334,7 @@ public:
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CCoreException, CException);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
