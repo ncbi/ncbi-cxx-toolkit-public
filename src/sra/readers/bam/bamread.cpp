@@ -355,8 +355,10 @@ string CSrzPath::FindAccPath(const string& acc, EMissing missing)
 }
 
 
-NCBI_PARAM_DECL(bool, BAM, CIGAR_IN_ALIGN_EXT);
-NCBI_PARAM_DEF(bool, BAM, CIGAR_IN_ALIGN_EXT, true);
+namespace {
+    NCBI_PARAM_DECL(bool, BAM, CIGAR_IN_ALIGN_EXT);
+    NCBI_PARAM_DEF(bool, BAM, CIGAR_IN_ALIGN_EXT, true);
+}
 
 
 static bool s_GetCigarInAlignExt(void)
@@ -501,7 +503,7 @@ static const SVDBSeverityTag kSeverityTags[] = {
     { "debug:", Trace },
     { "fatal:", Fatal },
 };
-const SVDBSeverityTag* s_GetVDNSeverityTag(CTempString token)
+static const SVDBSeverityTag* s_GetVDBSeverityTag(CTempString token)
 {
     if ( !token.empty() && token[token.size()-1] == ':' ) {
         for ( auto& tag : kSeverityTags ) {
@@ -525,7 +527,7 @@ rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
         if ( token_end == NPOS ) {
             token_end = msg.size();
         }
-        if ( auto tag = s_GetVDNSeverityTag(CTempString(msg, token_pos, token_end-token_pos)) ) {
+        if ( auto tag = s_GetVDBSeverityTag(CTempString(msg, token_pos, token_end-token_pos)) ) {
             sev_manip = tag->manip;
             break;
         }
