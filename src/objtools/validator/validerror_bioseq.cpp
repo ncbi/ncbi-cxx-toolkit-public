@@ -1469,6 +1469,54 @@ void CValidError_bioseq::ValidateBioseqContext(
                 "Expected submission citation is missing for this Bioseq", seq);
     }
 
+    //  RW-1053 check sig_peptides and mat_peptides with instantiated products
+    if (seq.IsAa()) {
+
+        SAnnotSelector sel(CSeqFeatData::eSubtype_mat_peptide_aa);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa);
+        try {
+            for (CFeat_CI feat_ci(bsh, sel); feat_ci;  ++feat_ci) {
+
+                const CSeq_feat& matpeptide = feat_ci->GetOriginalFeature();
+                if (matpeptide.IsSetProduct()) {
+                    const CSeq_loc& loc = matpeptide.GetLocation();
+                    const CSeq_loc& prd = matpeptide.GetProduct();
+
+                    int matlen = GetLength(loc, m_Scope);
+                    int prdlen = GetLength(prd, m_Scope);
+                    if (matlen != prdlen) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA,
+                                "Mat_peptide does not match length of instantiated product",
+                                matpeptide);
+                     }
+
+                    CSeqVector mat_vec(loc, *m_Scope, CBioseq_Handle::eCoding_Iupac);
+                    CSeqVector prd_vec(prd, *m_Scope, CBioseq_Handle::eCoding_Iupac);
+
+                    int len = matlen;
+                    if (len > prdlen) {
+                        len = prdlen;
+                    }
+
+                    for (TSeqPos i = 0; i < len; ++i) {
+                        CSeqVectorTypes::TResidue m_res = mat_vec[i];
+                        CSeqVectorTypes::TResidue p_res = prd_vec[i];
+
+                        if (m_res != p_res) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA,
+                                    "Mismatch in mat_peptide (" + string(1, (char)m_res) + ") and instantiated product (" + \
+                                     string(1, (char)p_res) + ") at position " + NStr::NumericToString(i + 1),
+                                    matpeptide);
+                       }
+                    }
+                }
+            }
+
+        }
+        catch (CException& e) {
+        }
+    }
 }
 
 
