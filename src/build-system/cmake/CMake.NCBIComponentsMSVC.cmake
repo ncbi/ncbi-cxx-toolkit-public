@@ -64,9 +64,9 @@ if (${NCBI_ThirdPartyCompiler} STREQUAL "vs2017.64" OR ${NCBI_ThirdPartyCompiler
     set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
     set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.26.0)
     set(NCBI_ThirdParty_Sybase     ${NCBI_ThirdPartyBasePath}/sybase/${NCBI_ThirdPartyCompiler}/15.5)
-    set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/cxx_toolkit/2.9)
+    set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/cxx_toolkit/2.10)
         set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
-        set(NCBI_ThirdParty_VDB_ARCH     x86_64/vs2017.64)
+        set(NCBI_ThirdParty_VDB_ARCH     x86_64/v141)
 
     set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python252)
 #    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
