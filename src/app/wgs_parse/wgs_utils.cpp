@@ -60,20 +60,20 @@ CScope& GetScope()
 
 size_t GetMaxAccessionLen(size_t accession_num, size_t prefix_len)
 {
+	static const int MAX_EIGHT_DIGITS_NUM = 99999999;
     static const int MAX_SEVEN_DIGITS_NUM = 9999999;
     static const int MAX_SIX_DIGITS_NUM = 999999;
     static const size_t OLD_PREFIX_LEN = 4;
 
-    size_t max_accession_len = 6;
-    if (accession_num > MAX_SEVEN_DIGITS_NUM) {
+    size_t max_accession_len = prefix_len == OLD_PREFIX_LEN ? 6 : 7;
+	if (accession_num > MAX_EIGHT_DIGITS_NUM) {
+		max_accession_len = 9;
+	}
+	else if (accession_num > MAX_SEVEN_DIGITS_NUM) {
         max_accession_len = 8;
     }
     else if (accession_num > MAX_SIX_DIGITS_NUM) {
         max_accession_len = 7;
-    }
-
-    if (prefix_len > OLD_PREFIX_LEN) {
-        ++max_accession_len;
     }
 
     return max_accession_len;
