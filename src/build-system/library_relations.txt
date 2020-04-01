@@ -400,7 +400,6 @@ gc_common needs xutil
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
 gc_organism needs gpipe_attr
-gc_organism needs taxon1
 gc_schedule needs ncbi_xcache_netcache
 gc_utils needs $(GPIPE_COMMON_LIBS)
 gc_utils needs gc_common
@@ -505,6 +504,7 @@ gpipe_asn_proc needs xalgoalignutil
 gpipe_asn_proc needs xalgognomon
 gpipe_asn_proc needs xmergetree
 gpipe_attr needs gpipe_property
+gpipe_attr needs taxon1
 gpipe_best_placement needs gpipe_alnutil
 gpipe_best_placement needs xalgoalignutil
 gpipe_blast needs $(BLAST_INPUT_LIBS)
