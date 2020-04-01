@@ -1477,9 +1477,9 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
         try {
             bsh = scope.GetBioseqHandle(sf.GetLocation());
         }
-        catch (CException&) {
+        catch (CException&) { // LCOV_EXCL_START
             return false;
-        }
+        } // LCOV_EXCL_STOP
         CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
         if (src) {
             source = &src->GetSource();
@@ -1792,9 +1792,10 @@ bool StopAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
         if (vec.size() && vec.IsInGap(0)) {
             return true;
         }
-    } catch (CException& ) {
-        // unable to calculate
     }
+    catch (CException& ) { // LCOV_EXCL_START
+        // unable to calculate
+    } // LCOV_EXCL_STOP
     return false;
 }
 
@@ -1821,9 +1822,10 @@ bool StartAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
         if (vec.IsInGap(0)) {
             return true;
         }
-    } catch (CException& ) {
-        // unable to calculate
     }
+    catch (CException& ) { // LCOV_EXCL_START
+        // unable to calculate
+    } // LCOV_EXCL_STOP
     return false;
 }
 

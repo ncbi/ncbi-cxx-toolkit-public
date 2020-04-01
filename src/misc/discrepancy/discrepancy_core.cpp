@@ -316,10 +316,10 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
     try {
         Visit(obj, context);
     }
-    catch (CException& e) {
+    catch (CException& e) { // LCOV_EXCL_START
         string ss = "EXCEPTION caught: "; ss += e.what();
         m_Objs[ss];
-    }
+    } // LCOV_EXCL_STOP
 }
 
 

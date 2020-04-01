@@ -154,7 +154,7 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/C
                             collection_year = date->GetStd().GetYear();
                         }
                     }
-                    catch (...) {}
+                    catch (...) {} // LCOV_EXCL_LINE
                     break;
                 }
             }
