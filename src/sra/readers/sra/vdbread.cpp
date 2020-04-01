@@ -120,7 +120,7 @@ DEFINE_SRA_REF_TRAITS(VDatabase, const);
 DEFINE_SRA_REF_TRAITS(VTable, const);
 DEFINE_SRA_REF_TRAITS(VCursor, const);
 DEFINE_SRA_REF_TRAITS(KIndex, const);
-DEFINE_SRA_REF_TRAITS(KConfig, const);
+DEFINE_SRA_REF_TRAITS(KConfig, );
 DEFINE_SRA_REF_TRAITS(KDBManager, const);
 DEFINE_SRA_REF_TRAITS(KNSManager, );
 DEFINE_SRA_REF_TRAITS(VFSManager, );
@@ -144,11 +144,20 @@ CKConfig::CKConfig(void)
 
 CKConfig::CKConfig(const CVDBMgr& mgr)
 {
-    *x_InitPtr() = VFSManagerGetConfig(CVFSManager(mgr));
+    *x_InitPtr() = const_cast<KConfig*>(VFSManagerGetConfig(CVFSManager(mgr)));
     if ( rc_t rc = KConfigAddRef(*this) ) {
         *x_InitPtr() = 0;
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot get reference to KConfig", rc);
+    }
+}
+
+
+CKConfig::CKConfig(EMake /*make*/)
+{
+    if ( rc_t rc = KConfigMake(x_InitPtr(), NULL) ) {
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot create KConfig singleton", rc);
     }
 }
 
@@ -213,6 +222,16 @@ CKDBManager::CKDBManager(const CVDBMgr& mgr)
 
 /////////////////////////////////////////////////////////////////////////////
 // CKNSManager
+
+
+CKNSManager::CKNSManager(EMake /*make*/)
+{
+    if ( rc_t rc = KNSManagerMake(x_InitPtr()) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot make KNSManager", rc);
+    }
+}
 
 
 CKNSManager::CKNSManager(const CVFSManager& mgr)
@@ -420,10 +439,6 @@ string CVDBMgr::FindAccPath(const string& acc) const
 //# define GUARD_SDK_GET
 #endif
 
-#if defined GUARD_SDK || defined GUARD_SDK_GET
-DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
-#endif
-
 #ifdef GUARD_SDK
 # define DECLARE_SDK_GUARD() CFastMutexGuard guard(sx_SDKMutex)
 #else
@@ -436,17 +451,23 @@ DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 # define DECLARE_SDK_GET_GUARD() 
 #endif
 
-static string* s_VDBMsgPrefix;
-static CSafeStatic<string> s_VDBMsgPrefixStorage;
+
+/////////////////////////////////////////////////////////////////////////////
+// VDB library initialization code
+// similar code is located in bamread.cpp
+/////////////////////////////////////////////////////////////////////////////
+
+DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
+
+static char s_VDBVersion[32]; // enough for 255.255.65535-dev4000000000
 
 static
-void s_InitVDBMsgPrefix(const VDBManager* mgr)
+void s_InitVDBVersion()
 {
-    if ( !s_VDBMsgPrefix ) {
+    if ( !s_VDBVersion[0] ) {
         SraReleaseVersion release_version;
         SraReleaseVersionGet(&release_version);
-        CNcbiOstrstream s;
-        s << "VDB(";
+        CNcbiOstrstream s(s_VDBVersion, sizeof(s_VDBVersion));
         s << (release_version.version>>24) << '.'
           << ((release_version.version>>16)&0xff) << '.'
           << (release_version.version&0xffff);
@@ -462,18 +483,33 @@ void s_InitVDBMsgPrefix(const VDBManager* mgr)
             }
             s << '-' << type << release_version.revision;
         }
-        if ( 0 ) {
-            uint32_t manager_version = 0;
-            VDBManagerVersion(mgr, &manager_version);
-            s << " mgr "
-              << (manager_version>>24) << '.'
-              << ((manager_version>>16)&0xff) << '.'
-              << (manager_version&0xffff);
-        }
-        s << "): ";
-        *s_VDBMsgPrefixStorage = CNcbiOstrstreamToString(s);
-        s_VDBMsgPrefix = &*s_VDBMsgPrefixStorage;
+        s << ends;
     }
+}
+
+struct SVDBSeverityTag {
+    const char* tag;
+    CNcbiDiag::FManip manip;
+};
+static const SVDBSeverityTag kSeverityTags[] = {
+    { "err:", Error },
+    { "int:", Error },
+    { "sys:", Error },
+    { "info:", Info },
+    { "warn:", Warning },
+    { "debug:", Trace },
+    { "fatal:", Fatal },
+};
+const SVDBSeverityTag* s_GetVDNSeverityTag(CTempString token)
+{
+    if ( !token.empty() && token[token.size()-1] == ':' ) {
+        for ( auto& tag : kSeverityTags ) {
+            if ( token == tag.tag ) {
+                return &tag;
+            }
+        }
+    }
+    return 0;
 }
 
 static
@@ -481,100 +517,74 @@ rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
 {
     CTempString msg(buffer, size);
     NStr::TruncateSpacesInPlace(msg);
-    EDiagSev sev = eDiag_Error;
+    CNcbiDiag::FManip sev_manip = Error;
     
     for ( SIZE_TYPE token_pos = 0, token_end; token_pos < msg.size(); token_pos = token_end + 1 ) {
         token_end = msg.find(' ', token_pos);
         if ( token_end == NPOS ) {
             token_end = msg.size();
         }
-        CTempString token(msg, token_pos, token_end-token_pos);
-        if ( token.empty() ) {
-            continue;
-        }
-        if ( token == "fatal:" ) {
-            sev = eDiag_Fatal;
-            break;
-        }
-        if ( token == "sys:" ) {
-            sev = eDiag_Error;
-            break;
-        }
-        if ( token == "int:" ) {
-            sev = eDiag_Error;
-            break;
-        }
-        if ( token == "err:" ) {
-            sev = eDiag_Error;
-            break;
-        }
-        if ( token == "warn:" ) {
-            sev = eDiag_Warning;
-            break;
-        }
-        if ( token == "info:" ) {
-            sev = eDiag_Info;
-            break;
-        }
-        if ( token == "debug:" ) {
-            sev = eDiag_Trace;
+        if ( auto tag = s_GetVDNSeverityTag(CTempString(msg, token_pos, token_end-token_pos)) ) {
+            sev_manip = tag->manip;
             break;
         }
     }
-    if ( sev == eDiag_Fatal ) {
-        ERR_POST_X(2, Fatal<<*s_VDBMsgPrefix<<msg);
-    }
-    else if ( sev == eDiag_Warning ) {
-        ERR_POST_X(2, Warning<<*s_VDBMsgPrefix<<msg);
-    }
-    else if ( sev == eDiag_Info ) {
-        ERR_POST_X(2, Info<<*s_VDBMsgPrefix<<msg);
-    }
-    else if ( sev == eDiag_Trace ) {
-        _TRACE(*s_VDBMsgPrefix<<msg);
+    if ( sev_manip == Trace ) {
+        _TRACE("VDB "<<s_VDBVersion<<": "<<msg);
     }
     else {
-        ERR_POST_X(2, *s_VDBMsgPrefix<<msg);
+        ERR_POST_X(2, sev_manip<<"VDB "<<s_VDBVersion<<": "<<msg);
     }
     *written = size;
     return 0;
 }
 
 
-void CVDBMgr::x_Init(void)
+static CKConfig s_InitProxyConfig()
 {
-    if ( rc_t rc = VDBManagerMakeRead(x_InitPtr(), 0) ) {
-        *x_InitPtr() = 0;
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot open VDBManager", rc);
+    CKConfig config(null);
+    if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
+        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
+        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
+        if ( !host.empty() && port != 0 ) {
+            config = CKConfig(CKConfig::eMake);
+            string path = host + ':' + NStr::IntToString(port);
+            if ( rc_t rc = KConfigWriteString(config,
+                                              "/http/proxy/path", path.c_str()) ) {
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot set KConfig proxy path", rc);
+            }
+            if ( rc_t rc = KConfigWriteBool(config,
+                                            "/http/proxy/enabled", true) ) {
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot set KConfig proxy enabled", rc);
+            }
+        }
     }
-    uint32_t sdk_ver;
-    if ( rc_t rc = VDBManagerVersion(*this, &sdk_ver) ) {
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot get VDBManager version", rc);
-    }
-    CKNSManager kns_mgr(CVFSManager(*this));
-    CNcbiOstrstream str;
-    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-    if ( app ) {
-        str << app->GetAppName() << ": " << app->GetVersion().Print() << "; ";
-    }
-#if NCBI_PACKAGE
-    str << "Package: " << NCBI_PACKAGE_NAME << ' ' <<
-        NCBI_PACKAGE_VERSION << "; ";
-#endif
-    str << "C++ ";
-#ifdef NCBI_PRODUCTION_VER
-    str << NCBI_PRODUCTION_VER << "/";
-#endif
-#ifdef NCBI_DEVELOPMENT_VER
-    str << NCBI_DEVELOPMENT_VER;
-#endif
-    string prefix = CNcbiOstrstreamToString(str);
-    KNSManagerSetUserAgent(kns_mgr, "%s; SRA Toolkit %V",
-                           prefix.c_str(),
-                           sdk_ver);
+    return config;
+}
 
+
+/* set in s_InitProxyConfig()
+static void s_InitProxyKNS(KNSManager* kns_mgr)
+{
+    if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
+        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
+        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
+        if ( !host.empty() && port != 0 ) {
+            if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot set KNSManager proxy parameters", rc);
+            }
+            KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
+        }
+    }
+}
+*/
+
+
+static void s_InitAllKNS(KNSManager* kns_mgr)
+{
     CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
     if ( req_ctx.IsSetSessionID() ) {
         KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
@@ -585,33 +595,107 @@ void CVDBMgr::x_Init(void)
     if ( req_ctx.IsSetHitID() ) {
         KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
     }
-    
-    // redirect VDB log to C++ Toolkit
-    if ( s_GetDiagHandler() ) {
-        KLogInit();
-        KLogLevelSet(klogDebug);
-        s_InitVDBMsgPrefix(*this);
-        KLogLibHandlerSet(VDBLogWriter, 0);
-    }
-
-    if ( app ) {
-        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
-        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
-        if ( !host.empty() && port != 0 ) {
-            if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
-                NCBI_THROW2(CSraException, eInitFailed,
-                            "Cannot set KNSManager proxy parameters", rc);
-            }
-            KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
-        }
-
-        if ( app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
-            if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
-                NCBI_THROW2(CSraException, eInitFailed,
-                            "Cannot enable all HTTPS certificates in KNSManager", rc);
-            }
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+    if ( app && app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
+        if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
+            NCBI_THROW2(CSraException, eInitFailed,
+                        "Cannot enable all HTTPS certificates in KNSManager", rc);
         }
     }
+    {{ // set user agent
+        CNcbiOstrstream str;
+        if ( app ) {
+            str << app->GetAppName() << ": " << app->GetVersion().Print() << "; ";
+        }
+#if NCBI_PACKAGE
+        str << "Package: " << NCBI_PACKAGE_NAME << ' ' <<
+            NCBI_PACKAGE_VERSION << "; ";
+#endif
+        str << "C++ ";
+#ifdef NCBI_PRODUCTION_VER
+        str << NCBI_PRODUCTION_VER << "/";
+#endif
+#ifdef NCBI_DEVELOPMENT_VER
+        str << NCBI_DEVELOPMENT_VER;
+#endif
+        string prefix = CNcbiOstrstreamToString(str);
+        KNSManagerSetUserAgent(kns_mgr, "%s; VDB %s",
+                               prefix.c_str(),
+                               s_VDBVersion);
+    }}
+}
+
+
+static void s_InitStaticKNS(KNSManager* kns_mgr)
+{
+    s_InitAllKNS(kns_mgr);
+}
+
+
+static void s_InitLocalKNS(KNSManager* kns_mgr)
+{
+    s_InitAllKNS(kns_mgr);
+    /*
+    if ( 1 ) { // log effective http parameters
+        const String* path = 0;
+        if ( KNSManagerGetHTTPProxyPath(kns_mgr, &path) ) {
+            LOG_POST("CVDBMgr: HTTP proxy path is not set");
+        }
+        else {
+            LOG_POST("CVDBMgr: HTTP proxy path: "<<
+                     CTempString(path->addr, path->size));
+            StringWhack(path);
+        }
+        bool enabled = KNSManagerGetHTTPProxyEnabled(kns_mgr);
+        LOG_POST("CVDBMgr: HTTP proxy "<<(enabled? "enabled": "disabled"));
+        bool allow_all_certs = false;
+        KNSManagerGetAllowAllCerts(kns_mgr, &allow_all_certs);
+        LOG_POST("CVDBMgr: allow all certificates "<<(allow_all_certs? "true": "false"));
+
+        const char* agent = 0;
+        if ( KNSManagerGetUserAgent(&agent) ) {
+            LOG_POST("CVDBMgr: user agent is not set");
+        }
+        else {
+            LOG_POST("CVDBMgr: user agent: "<<agent);
+        }
+    }
+    */
+}
+
+
+static void s_VDBInit()
+{
+    CFastMutexGuard guard(sx_SDKMutex);
+    static bool initialized = false;
+    if ( !initialized ) {
+        s_InitVDBVersion();
+        // redirect VDB log to C++ Toolkit
+        if ( s_GetDiagHandler() ) {
+            KLogInit();
+            KLogLevelSet(klogDebug);
+            KLogLibHandlerSet(VDBLogWriter, 0);
+        }
+        CKConfig config = s_InitProxyConfig();
+        CKNSManager kns_mgr(CKNSManager::eMake);
+        s_InitStaticKNS(kns_mgr);
+        initialized = true;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// end of VDB library initialization code
+/////////////////////////////////////////////////////////////////////////////
+        
+void CVDBMgr::x_Init(void)
+{
+    s_VDBInit();
+    if ( rc_t rc = VDBManagerMakeRead(x_InitPtr(), 0) ) {
+        *x_InitPtr() = 0;
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot open VDBManager", rc);
+    }
+    s_InitLocalKNS(CKNSManager(CVFSManager(*this)));
 }
 
 

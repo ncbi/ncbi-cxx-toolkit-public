@@ -59,7 +59,7 @@ DECLARE_SRA_REF_TRAITS(VDatabase, const);
 DECLARE_SRA_REF_TRAITS(VTable, const);
 DECLARE_SRA_REF_TRAITS(VCursor, const);
 DECLARE_SRA_REF_TRAITS(KIndex, const);
-DECLARE_SRA_REF_TRAITS(KConfig, const);
+DECLARE_SRA_REF_TRAITS(KConfig, );
 DECLARE_SRA_REF_TRAITS(KDBManager, const);
 DECLARE_SRA_REF_TRAITS(KNSManager, );
 DECLARE_SRA_REF_TRAITS(VFSManager, );
@@ -102,6 +102,10 @@ public:
     explicit CKNSManager(ENull /*null*/)
         {
         }
+    enum EMake {
+        eMake
+    };
+    explicit CKNSManager(EMake make);
 };
 
 
@@ -169,7 +173,7 @@ private:
 
 
 class NCBI_SRAREAD_EXPORT CKConfig
-    : public CSraRef<const KConfig>
+    : public CSraRef<KConfig>
 {
 public:
     NCBI_DEPRECATED_CTOR(CKConfig(void));
@@ -177,6 +181,10 @@ public:
     explicit CKConfig(ENull /*null*/)
         {
         }
+    enum EMake {
+        eMake
+    };
+    explicit CKConfig(EMake make);
 
     // Commit changes made into config file
     void Commit() const;
