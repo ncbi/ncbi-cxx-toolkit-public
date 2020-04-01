@@ -198,7 +198,7 @@ ERW_Result CRWStreambuf::x_Pushback(void)
             14, "CRWStreambuf::Pushback(): IReader::Pushback()",
             result = eRW_Error);
         if (result == eRW_Error)
-            throw IOS_BASE::failure("eRW_Error");
+            THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
         if (result == eRW_Success)
             m_pBuf = 0;
         x_Eof = false;
@@ -312,7 +312,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             x_Err    = true;
             x_ErrPos = x_GetPPos();
             if (result == eRW_Error)
-                throw IOS_BASE::failure("eRW_Error");
+                THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
             return CT_EOF;
         }
     } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
@@ -329,7 +329,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             x_Err    = true;
             x_ErrPos = x_GetPPos();
             if (result == eRW_Error)
-                throw IOS_BASE::failure("eRW_Error");
+                THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
             return CT_EOF;
         }
         x_PPos += (CT_OFF_TYPE) 1;
@@ -348,7 +348,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         x_Err    = true;
         x_ErrPos = x_GetPPos();
         if (result == eRW_Error)
-            throw IOS_BASE::failure("eRW_Error");
+            THROWp_TRACE(IOS_BASE::failure,("eRW_Error"));
         return CT_EOF;
     default:
         break;
@@ -446,7 +446,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
     }
 
     if (!n_written  &&  result == eRW_Error)
-        throw IOS_BASE::failure("eRW_Error");
+        THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
     return (streamsize) n_written;
 }
 
@@ -483,7 +483,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     if ( !n_read ) {
         _ASSERT(result != eRW_Success);
         if (result == eRW_Error)
-            throw IOS_BASE::failure("eRW_Error");
+            THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
         if (result == eRW_Eof)
             x_Eof = true;
         return CT_EOF;
@@ -572,7 +572,7 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
     } while ( n );
 
     if (!n_read  &&  result == eRW_Error)
-        throw IOS_BASE::failure("eRW_Error");
+        THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
     else if (result == eRW_Eof)
         x_Eof = true;
 
@@ -614,7 +614,7 @@ streamsize CRWStreambuf::showmanyc(void)
     case eRW_Success:
         return count;
     case eRW_Error:
-        throw IOS_BASE::failure("eRW_Error");
+        THROWp_TRACE(IOS_BASE::failure, ("eRW_Error"));
     default:
         break;
     }
