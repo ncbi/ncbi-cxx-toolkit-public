@@ -314,9 +314,9 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  *    then "as-is");
  * 2. Registry key "param" in the section "[service]";
  * 3. Environment setting "param" (in all upper-case);
- * 4. Registry key "param" (with leading "CONN_" stripped) in the default
+ * 4. Registry key "param" (with the leading "CONN_" stripped) in the default
  *    section "[CONN]".
- * Steps 1 & 2 skipped for "service" passed as NULL or empty ("").
+ * Steps 1 & 2 skipped for "service" passed as either NULL or empty ("").
  * Steps 3 & 4 skipped for a non-empty "service" and a "param" that already
  *             begins with "CONN_".
  * If the found match's value has enveloping quotes (either single '' or
@@ -380,7 +380,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  * of the form <service>_CONN_<NAME>; then in the current corelib registry, in
  * the section 'service' by using the CONN_<NAME> key; then in the environment
  * variable again, but using the name CONN_<NAME>; and finally in the default
- * registry section (DEF_CONN_REG_SECTION), using just <NAME>. If service
+ * registry section (DEF_CONN_REG_SECTION), using just <NAME>.  If the service
  * is NULL or empty then the first 2 steps in the above lookup are skipped.
  *
  * For default values see right above, within macros DEF_CONN_<NAME>.
@@ -760,10 +760,10 @@ extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED SOCK URL_Connect
 /* Discard all input data before (and including) the first occurrence of a
  * "pattern".  If "discard" is not NULL then add the stripped data (including
  * the "pattern") to it.  If "n_discarded" is not NULL then "*n_discarded"
- * will return the number of actually stripped bytes.  If there was some excess
+ * will get the number of actually stripped bytes.  If there was some excess
  * read, push it back to the original source (and not count as discarded).
- * NOTE: If "pattern_size" == 0, then "pattern" is ignored (assumed to be NULL)
- * and the stripping continues until EOF;  if "pattern" is NULL and
+ * NOTE:  If "pattern_size" == 0, then "pattern" is ignored (and assumed to be
+ * NULL), and the stripping continues until EOF;  if "pattern" is NULL and
  * "pattern_size" is not 0, then exactly "pattern_size" bytes will have
  * attempted to be stripped (unless an I/O error occurs prematurely).
  */
