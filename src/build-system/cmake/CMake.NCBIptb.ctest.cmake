@@ -57,7 +57,7 @@ function(NCBI_internal_add_cmake_test _test)
         set(_extra -DXCODE=TRUE)
     endif()
     get_filename_component(_ext ${NCBITEST_${_test}_CMD} EXT)
-    if("${_ext}" STREQUAL ".sh")
+    if("${_ext}" STREQUAL ".sh" OR "${_ext}" STREQUAL ".bash")
         if (WIN32)
             set(NCBITEST_${_test}_REQUIRES ${NCBITEST_${_test}_REQUIRES} CygwinTest)
             if(NCBI_REQUIRE_CygwinTest_FOUND)
@@ -94,7 +94,7 @@ function(NCBI_internal_add_cmake_test _test)
         return()
     endif()
 
-    set(_auto $ENV{NCBI_AUTOMATED_BUILD})
+    set(_auto ENV{NCBI_AUTOMATED_BUILD})
     if(_auto)
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}

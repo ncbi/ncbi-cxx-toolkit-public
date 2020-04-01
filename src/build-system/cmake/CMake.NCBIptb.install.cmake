@@ -223,7 +223,7 @@ function(NCBI_internal_install_root _variable _access)
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
 
-    if ($ENV{NCBITMP_INSTALL_CHECK})
+    if (ENV{NCBITMP_INSTALL_CHECK})
         install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
     else()
