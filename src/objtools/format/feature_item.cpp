@@ -1702,11 +1702,17 @@ void CFeatureItem::x_AddQualsIdx(
                                 if (feat_gene_xref->GetLocus() == gr->GetLocus()) {
                                     gene_feat = &(mf.GetMappedFeature());
                                     gene_ref = &(mf.GetData().GetGene());
+                                } else {
+                                    // RW-985
+                                    gene_ref = feat_gene_xref;
                                 }
                             } else if (feat_gene_xref->IsSetLocus_tag() && gr->IsSetLocus_tag()) {
                                 if (feat_gene_xref->GetLocus_tag() == gr->GetLocus_tag()) {
                                     gene_feat = &(mf.GetMappedFeature());
                                     gene_ref = &(mf.GetData().GetGene());
+                                } else {
+                                    // RW-985
+                                    gene_ref = feat_gene_xref;
                                 }
                             }
                         }
