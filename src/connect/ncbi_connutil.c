@@ -2255,13 +2255,14 @@ static EIO_Status s_StripToPattern
         if ( n_discarded )
             *n_discarded = n_count;
     } else {
-        assert(pattern_size); 
+        assert(pattern_size);
+        --pattern_size;
         n_read = 0;
         for (;;) {
             /* read; search for the pattern; store/count the discarded data */
             size_t x_read, n_stored;
 
-            assert(n_read < pattern_size);
+            assert(n_read <= pattern_size);
             status = io_func(stream, buf + n_read, buf_size - n_read,
                              &x_read, eIO_Read);
             if (!x_read) {
@@ -2270,14 +2271,16 @@ static EIO_Status s_StripToPattern
             }
             n_stored = n_read + x_read;
 
-            if (n_stored >= pattern_size) {
+            if (n_stored > pattern_size) {
                 /* search for the pattern */
-                size_t n_check = n_stored - pattern_size + 1;
-                const char* b;
-                for (b = buf;  n_check;  ++b, --n_check) {
-                    if (*b != *((const char*) pattern))
+                size_t n_check;
+                const char* b = buf;
+                for (n_check = n_stored - pattern_size;  n_check;  --n_check) {
+                    if (*b++ != *((const char*) pattern))
                         continue;
-                    if (memcmp(b, pattern, pattern_size) == 0)
+                    if (!pattern_size)
+                        break; /*found*/
+                    if (memcmp(b, pattern + 1, pattern_size) == 0)
                         break; /*found*/
                 }
                 if ( n_check ) {
@@ -2306,11 +2309,11 @@ static EIO_Status s_StripToPattern
                 status = eIO_Unknown;
                 break;
             }
-            if (n_stored >= pattern_size) {
-                n_read    = pattern_size - 1;
+            if (n_stored > pattern_size) {
+                n_read   = pattern_size;
                 memmove(buf, buf + n_stored - n_read, n_read);
             } else
-                n_read    = n_stored;
+                n_read   = n_stored;
         }
     }
 
