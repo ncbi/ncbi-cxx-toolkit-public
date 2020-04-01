@@ -36,32 +36,15 @@
 #include <sra/readers/bam/bamread_base.hpp>
 
 #include <kfs/file.h>
-struct VFSManager;
 struct VPath;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CVDBMgr;
+class CBamVFSManager;
 
-SPECIALIZE_BAM_REF_TRAITS(VFSManager, );
 SPECIALIZE_BAM_REF_TRAITS(VPath, );
 SPECIALIZE_BAM_REF_TRAITS(KFile, const);
-
-
-class NCBI_BAMREAD_EXPORT CBamVFSManager
-    : public CBamRef<VFSManager>
-{
-    typedef CBamRef<VPath> TParent;
-public:
-    CBamVFSManager(void)
-        {
-            x_Init();
-        }
-
-private:
-    void x_Init();
-};
 
 
 class NCBI_BAMREAD_EXPORT CBamVDBPath

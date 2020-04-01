@@ -36,8 +36,10 @@
 #include <util/simple_buffer.hpp>
 
 #include <klib/rc.h>
-#include <klib/writer.h>
+#include <klib/log.h>
 #include <klib/text.h>
+#include <klib/sra-release-version.h>
+#include <kfg/config.h>
 #include <vfs/path.h>
 #include <vfs/manager.h>
 #include <kns/manager.h>
@@ -56,6 +58,11 @@
 #include <util/sequtil/sequtil_manip.hpp>
 #include <numeric>
 
+#ifndef NCBI_THROW2_FMT
+# define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \
+    throw NCBI_EXCEPTION2(exception_class, err_code, FORMAT(message), extra)
+#endif
+
 // backup functions for older VDB versions that do not have those
 static inline void KNSManagerSetSessionID(const void*, const void*) {}
 static inline void KNSManagerSetClientIP(const void*, const void*) {}
@@ -67,13 +74,16 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
+DEFINE_BAM_REF_TRAITS(VFSManager, );
 DEFINE_BAM_REF_TRAITS(AlignAccessMgr, const);
 DEFINE_BAM_REF_TRAITS(AlignAccessDB,  const);
 DEFINE_BAM_REF_TRAITS(AlignAccessRefSeqEnumerator, );
 DEFINE_BAM_REF_TRAITS(AlignAccessAlignmentEnumerator, );
 DEFINE_BAM_REF_TRAITS(BAMFile, const);
 DEFINE_BAM_REF_TRAITS(BAMAlignment, const);
+SPECIALIZE_BAM_REF_TRAITS(KConfig, );
 SPECIALIZE_BAM_REF_TRAITS(KNSManager, );
+DEFINE_BAM_REF_TRAITS(KConfig, );
 DEFINE_BAM_REF_TRAITS(KNSManager, );
 
 
@@ -443,32 +453,125 @@ CRef<CSeq_id> sx_GetShortSeq_id(const string& str, IIdMapper* idmapper, bool ext
 }
 
 
-CBamMgr::CBamMgr(void)
-{
-    if ( rc_t rc = AlignAccessMgrMake(x_InitPtr()) ) {
-        *x_InitPtr() = 0;
-        NCBI_THROW2(CBamException, eInitFailed,
-                    "Cannot create AlignAccessMgr", rc);
-    }
-    
-    CBamVFSManager vfs_mgr;
-    CBamRef<KNSManager> kns_mgr;
-    if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {
-        NCBI_THROW2(CBamException, eInitFailed,
-                    "Cannot get KNSManager", rc);
-    }
+/////////////////////////////////////////////////////////////////////////////
+// VDB library initialization code
+// similar code is located in vdbread.cpp
+/////////////////////////////////////////////////////////////////////////////
 
-    CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
-    if ( req_ctx.IsSetSessionID() ) {
-        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
+
+static char s_VDBVersion[32]; // enough for 255.255.65535-dev4000000000
+
+static
+void s_InitVDBVersion()
+{
+    if ( !s_VDBVersion[0] ) {
+        SraReleaseVersion release_version;
+        SraReleaseVersionGet(&release_version);
+        CNcbiOstrstream s(s_VDBVersion, sizeof(s_VDBVersion));
+        s << (release_version.version>>24) << '.'
+          << ((release_version.version>>16)&0xff) << '.'
+          << (release_version.version&0xffff);
+        if ( release_version.revision != 0 ||
+             release_version.type != SraReleaseVersion::eSraReleaseVersionTypeFinal ) {
+            const char* type = "";
+            switch ( release_version.type ) {
+            case SraReleaseVersion::eSraReleaseVersionTypeDev:   type = "dev"; break;
+            case SraReleaseVersion::eSraReleaseVersionTypeAlpha: type = "a"; break;
+            case SraReleaseVersion::eSraReleaseVersionTypeBeta:  type = "b"; break;
+            case SraReleaseVersion::eSraReleaseVersionTypeRC:    type = "RC"; break;
+            default:                                             type = ""; break;
+            }
+            s << '-' << type << release_version.revision;
+        }
+        s << ends;
     }
-    if ( req_ctx.IsSetClientIP() ) {
-        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+}
+
+struct SVDBSeverityTag {
+    const char* tag;
+    CNcbiDiag::FManip manip;
+};
+static const SVDBSeverityTag kSeverityTags[] = {
+    { "err:", Error },
+    { "int:", Error },
+    { "sys:", Error },
+    { "info:", Info },
+    { "warn:", Warning },
+    { "debug:", Trace },
+    { "fatal:", Fatal },
+};
+const SVDBSeverityTag* s_GetVDNSeverityTag(CTempString token)
+{
+    if ( !token.empty() && token[token.size()-1] == ':' ) {
+        for ( auto& tag : kSeverityTags ) {
+            if ( token == tag.tag ) {
+                return &tag;
+            }
+        }
     }
-    if ( req_ctx.IsSetHitID() ) {
-        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
-    }
+    return 0;
+}
+
+static
+rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
+{
+    CTempString msg(buffer, size);
+    NStr::TruncateSpacesInPlace(msg);
+    CNcbiDiag::FManip sev_manip = Error;
     
+    for ( SIZE_TYPE token_pos = 0, token_end; token_pos < msg.size(); token_pos = token_end + 1 ) {
+        token_end = msg.find(' ', token_pos);
+        if ( token_end == NPOS ) {
+            token_end = msg.size();
+        }
+        if ( auto tag = s_GetVDNSeverityTag(CTempString(msg, token_pos, token_end-token_pos)) ) {
+            sev_manip = tag->manip;
+            break;
+        }
+    }
+    if ( sev_manip == Trace ) {
+        _TRACE("VDB "<<s_VDBVersion<<": "<<msg);
+    }
+    else {
+        ERR_POST(sev_manip<<"VDB "<<s_VDBVersion<<": "<<msg);
+    }
+    *written = size;
+    return 0;
+}
+
+
+static CBamRef<KConfig> s_InitProxyConfig()
+{
+    CBamRef<KConfig> config;
+    if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
+        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
+        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
+        if ( !host.empty() && port != 0 ) {
+            if ( rc_t rc = KConfigMake(config.x_InitPtr(), NULL) ) {
+                NCBI_THROW2(CBamException, eInitFailed,
+                            "Cannot create KConfig singleton", rc);
+            }
+            string path = host + ':' + NStr::IntToString(port);
+            if ( rc_t rc = KConfigWriteString(config,
+                                              "/http/proxy/path", path.c_str()) ) {
+                NCBI_THROW2(CBamException, eInitFailed,
+                            "Cannot set KConfig proxy path", rc);
+            }
+            if ( rc_t rc = KConfigWriteBool(config,
+                                            "/http/proxy/enabled", true) ) {
+                NCBI_THROW2(CBamException, eInitFailed,
+                            "Cannot set KConfig proxy enabled", rc);
+            }
+        }
+    }
+    return config;
+}
+
+
+/* set in s_InitProxyConfig()
+static void s_InitProxyKNS(KNSManager* kns_mgr)
+{
     if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
         string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
         int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
@@ -479,13 +582,154 @@ CBamMgr::CBamMgr(void)
             }
             KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
         }
-        
-        if ( app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
-            if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
-                NCBI_THROW2(CBamException, eInitFailed,
-                            "Cannot enable all HTTPS certificates in KNSManager", rc);
-            }
+    }
+}
+*/
+
+
+static void s_InitAllKNS(KNSManager* kns_mgr)
+{
+    CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
+    if ( req_ctx.IsSetSessionID() ) {
+        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+    }
+    if ( req_ctx.IsSetClientIP() ) {
+        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+    }
+    if ( req_ctx.IsSetHitID() ) {
+        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
+    }
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+    if ( app && app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
+        if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
+            NCBI_THROW2(CBamException, eInitFailed,
+                        "Cannot enable all HTTPS certificates in KNSManager", rc);
         }
+    }
+    {{ // set user agent
+        CNcbiOstrstream str;
+        if ( app ) {
+            str << app->GetAppName() << ": " << app->GetVersion().Print() << "; ";
+        }
+#if NCBI_PACKAGE
+        str << "Package: " << NCBI_PACKAGE_NAME << ' ' <<
+            NCBI_PACKAGE_VERSION << "; ";
+#endif
+        str << "C++ ";
+#ifdef NCBI_PRODUCTION_VER
+        str << NCBI_PRODUCTION_VER << "/";
+#endif
+#ifdef NCBI_DEVELOPMENT_VER
+        str << NCBI_DEVELOPMENT_VER;
+#endif
+        string prefix = CNcbiOstrstreamToString(str);
+        KNSManagerSetUserAgent(kns_mgr, "%s; VDB %s",
+                               prefix.c_str(),
+                               s_VDBVersion);
+    }}
+}
+
+
+static void s_InitStaticKNS(KNSManager* kns_mgr)
+{
+    s_InitAllKNS(kns_mgr);
+}
+
+
+static void s_InitLocalKNS(KNSManager* kns_mgr)
+{
+    s_InitAllKNS(kns_mgr);
+    /*
+    if ( 1 ) { // log effective http parameters
+        const String* path = 0;
+        if ( KNSManagerGetHTTPProxyPath(kns_mgr, &path) ) {
+            LOG_POST("CVDBMgr: HTTP proxy path is not set");
+        }
+        else {
+            LOG_POST("CVDBMgr: HTTP proxy path: "<<
+                     CTempString(path->addr, path->size));
+            StringWhack(path);
+        }
+        bool enabled = KNSManagerGetHTTPProxyEnabled(kns_mgr);
+        LOG_POST("CVDBMgr: HTTP proxy "<<(enabled? "enabled": "disabled"));
+        bool allow_all_certs = false;
+        KNSManagerGetAllowAllCerts(kns_mgr, &allow_all_certs);
+        LOG_POST("CVDBMgr: allow all certificates "<<(allow_all_certs? "true": "false"));
+
+        const char* agent = 0;
+        if ( KNSManagerGetUserAgent(&agent) ) {
+            LOG_POST("CVDBMgr: user agent is not set");
+        }
+        else {
+            LOG_POST("CVDBMgr: user agent: "<<agent);
+        }
+    }
+    */
+}
+
+
+NCBI_PARAM_DECL(int, VDB, DIAG_HANDLER);
+NCBI_PARAM_DEF(int, VDB, DIAG_HANDLER, 1);
+
+
+static int s_GetDiagHandler(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(VDB, DIAG_HANDLER)> s_Value;
+    return s_Value->Get();
+}
+
+
+static void s_VDBInit()
+{
+    CFastMutexGuard guard(sx_SDKMutex);
+    static bool initialized = false;
+    if ( !initialized ) {
+        s_InitVDBVersion();
+        // redirect VDB log to C++ Toolkit
+        if ( s_GetDiagHandler() ) {
+            KLogInit();
+            KLogLevelSet(klogDebug);
+            KLogLibHandlerSet(VDBLogWriter, 0);
+        }
+        auto config = s_InitProxyConfig();
+        CBamRef<KNSManager> kns_mgr;
+        if ( rc_t rc = KNSManagerMake(kns_mgr.x_InitPtr()) ) {
+            NCBI_THROW2(CBamException, eInitFailed,
+                        "Cannot create KNSManager singleton", rc);
+        }
+        s_InitStaticKNS(kns_mgr);
+        initialized = true;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// end of VDB library initialization code
+/////////////////////////////////////////////////////////////////////////////
+        
+
+void CBamVFSManager::x_Init()
+{
+    s_VDBInit();
+    if ( rc_t rc = VFSManagerMake(x_InitPtr()) ) {
+        NCBI_THROW2_FMT(CBamException, eInitFailed,
+                        "CBamVFSManager: "
+                        "cannot get VFSManager", rc);
+    }
+    CBamRef<KNSManager> kns_mgr;
+    if ( rc_t rc = VFSManagerGetKNSMgr(*this, kns_mgr.x_InitPtr()) ) {
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot get KNSManager", rc);
+    }
+    s_InitLocalKNS(kns_mgr);
+}
+
+
+CBamMgr::CBamMgr(void)
+{
+    if ( rc_t rc = AlignAccessMgrMake(m_AlignAccessMgr.x_InitPtr()) ) {
+        *m_AlignAccessMgr.x_InitPtr() = 0;
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot create AlignAccessMgr", rc);
     }
 }
 
@@ -536,7 +780,8 @@ bool s_IsSysPath(const string& s)
 #endif
 
 
-static VPath* sx_GetVPath(const string& path)
+static VPath* sx_GetVPath(const CBamVFSManager& mgr,
+                          const string& path)
 {
 #ifdef NCBI_OS_MSWIN
     // SRA SDK doesn't work with UNC paths with backslashes:
@@ -563,7 +808,6 @@ static VPath* sx_GetVPath(const string& path)
     const char* c_path = path.c_str();
 #endif
 
-    CBamVFSManager mgr;
     VPath* kpath;
     if ( rc_t rc = VFSManagerMakePath(mgr, &kpath, c_path) ) {
         NCBI_THROW2(CBamException, eInitFailed,
@@ -582,8 +826,11 @@ struct VPathReleaser
 CBamDb::SAADBImpl::SAADBImpl(const CBamMgr& mgr,
                              const string& db_name)
 {
-    AutoPtr<VPath, VPathReleaser> kdb_name(sx_GetVPath(db_name));
-    if ( rc_t rc = AlignAccessMgrMakeBAMDB(mgr, m_DB.x_InitPtr(), kdb_name.get()) ) {
+    AutoPtr<VPath, VPathReleaser> kdb_name(sx_GetVPath(mgr.GetVFSManager(),
+                                                       db_name));
+    if ( rc_t rc = AlignAccessMgrMakeBAMDB(mgr.GetAlignAccessMgr(),
+                                           m_DB.x_InitPtr(),
+                                           kdb_name.get()) ) {
         *m_DB.x_InitPtr() = 0;
         NCBI_THROW3(CBamException, eInitFailed,
                     "Cannot open BAM DB", rc, db_name);
@@ -594,9 +841,12 @@ CBamDb::SAADBImpl::SAADBImpl(const CBamMgr& mgr,
                              const string& db_name,
                              const string& idx_name)
 {
-    AutoPtr<VPath, VPathReleaser> kdb_name (sx_GetVPath(db_name));
-    AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(idx_name));
-    if ( rc_t rc = AlignAccessMgrMakeIndexBAMDB(mgr, m_DB.x_InitPtr(),
+    AutoPtr<VPath, VPathReleaser> kdb_name (sx_GetVPath(mgr.GetVFSManager(),
+                                                        db_name));
+    AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(mgr.GetVFSManager(),
+                                                        idx_name));
+    if ( rc_t rc = AlignAccessMgrMakeIndexBAMDB(mgr.GetAlignAccessMgr(),
+                                                m_DB.x_InitPtr(),
                                                 kdb_name.get(),
                                                 kidx_name.get()) ) {
         *m_DB.x_InitPtr() = 0;

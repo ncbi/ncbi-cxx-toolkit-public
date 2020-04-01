@@ -195,7 +195,7 @@ public:
         : m_Object(0)
         {
         }
-    explicit CBamRef(const TSelf& ref)
+    CBamRef(const TSelf& ref)
         : m_Object(s_AddRef(ref))
         {
         }

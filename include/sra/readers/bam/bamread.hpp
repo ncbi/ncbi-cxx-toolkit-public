@@ -48,6 +48,8 @@
 #include <sra/readers/bam/bamread_base.hpp>
 #include <unordered_map>
 
+struct VFSManager;
+
 //#include <align/bam.h>
 struct BAMFile;
 struct BAMAlignment;
@@ -68,6 +70,8 @@ class CBioseq;
 class CSeq_align;
 class CSeq_id;
 class CBamFileAlign;
+class CBamMgr;
+class CBamDb;
 
 
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessMgr, const);
@@ -76,6 +80,7 @@ SPECIALIZE_BAM_REF_TRAITS(AlignAccessRefSeqEnumerator, );
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessAlignmentEnumerator, );
 SPECIALIZE_BAM_REF_TRAITS(BAMFile, const);
 SPECIALIZE_BAM_REF_TRAITS(BAMAlignment, const);
+SPECIALIZE_BAM_REF_TRAITS(VFSManager, );
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -142,11 +147,39 @@ class CBamDb;
 class CBamRefSeqIterator;
 class CBamAlignIterator;
 
+
+class NCBI_BAMREAD_EXPORT CBamVFSManager
+    : public CBamRef<VFSManager>
+{
+    typedef CBamRef<VPath> TParent;
+public:
+    CBamVFSManager(void)
+        {
+            x_Init();
+        }
+
+private:
+    void x_Init();
+};
+
+
 class NCBI_BAMREAD_EXPORT CBamMgr
-    : public CBamRef<const AlignAccessMgr>
 {
 public:
     CBamMgr(void);
+
+    const CBamVFSManager& GetVFSManager() const
+    {
+        return m_VFSMgr;
+    }
+    const CBamRef<const AlignAccessMgr>& GetAlignAccessMgr() const
+    {
+        return m_AlignAccessMgr;
+    }
+
+private:
+    CBamRef<const AlignAccessMgr> m_AlignAccessMgr;
+    CBamVFSManager m_VFSMgr;
 };
 
 class NCBI_BAMREAD_EXPORT CBamDb

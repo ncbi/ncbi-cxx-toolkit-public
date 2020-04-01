@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <sra/readers/bam/vdbfile.hpp>
+#include <sra/readers/bam/bamread.hpp>
 
 #include <kfs/file.h>
 #include <vfs/manager.h>
@@ -50,19 +51,8 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
-DEFINE_BAM_REF_TRAITS(VFSManager, );
 DEFINE_BAM_REF_TRAITS(VPath, );
 DEFINE_BAM_REF_TRAITS(KFile, const);
-
-
-void CBamVFSManager::x_Init()
-{
-    if ( rc_t rc = VFSManagerMake(x_InitPtr()) ) {
-        NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CBamVFSManager: "
-                        "cannot get VFSManager", rc);
-    }
-}
 
 
 #ifdef NCBI_OS_MSWIN
