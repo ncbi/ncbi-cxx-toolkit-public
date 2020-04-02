@@ -218,6 +218,12 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
    TInterruptFnPtr interrupt_search, SBlastProgress* progress_info,
                                       size_t num_threads);
 
+NCBI_XBLAST_EXPORT
+BlastSeqSrcSetRangesArg *
+BLAST_SetupPartialFetching(EBlastProgramType program_number,
+                           BlastSeqSrc* seq_src,
+                           const BlastHSPList** hsp_list,
+                           Int4 num_hsplists);
 #ifdef __cplusplus
 }
 #endif

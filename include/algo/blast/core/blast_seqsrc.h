@@ -228,10 +228,10 @@ BlastSeqSrcSetRangesArgNew(Int4 num_ranges);
  */
 Int2
 BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg, 
-                                Int4 begin, Int4 end);
+                                Int4 begin, Int4 end, Int4 len);
 
 /** free setrangearg */
-void 
+BlastSeqSrcSetRangesArg *
 BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg * arg);
 
 
@@ -278,6 +278,8 @@ typedef struct BlastSeqSrcGetSeqArg {
      * (using BlastSeqBlkNew or BlastSetUp_SeqBlkNew), else its contents are 
      * freed (using BlastSequenceBlkClean) and the structure is reused [out]*/
     BLAST_SequenceBlk* seq;
+
+    BlastSeqSrcSetRangesArg* ranges;
 } BlastSeqSrcGetSeqArg;
 
 /* Return values from BlastSeqSrcGetSequence */

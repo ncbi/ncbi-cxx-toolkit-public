@@ -451,16 +451,21 @@ BlastSeqSrcSetRangesArgNew(Int4 num_ranges)
     return retv;
 }
 
-void
+BlastSeqSrcSetRangesArg *
 BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg *arg)
 {
-    sfree(arg->ranges);
-    sfree(arg);
+	if (arg) {
+		if (arg->ranges) {
+			sfree(arg->ranges);
+		}
+		sfree(arg);
+	}
+    return NULL;
 }
 
 Int2
 BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
-                                Int4 begin, Int4 end)
+                                Int4 begin, Int4 end, Int4 len)
 {
     ASSERT(arg);
     if ((arg->num_ranges+2) > arg->capacity) {
@@ -473,7 +478,7 @@ BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
         arg->capacity = new_size;
     }
     begin = MAX(0, begin - BLAST_SEQSRC_OVERHANG);
-    end += BLAST_SEQSRC_OVERHANG;
+    end = MIN(end + BLAST_SEQSRC_OVERHANG, len);
     arg->ranges[arg->num_ranges++] = begin;
     arg->ranges[arg->num_ranges++] = end;
     return 0;

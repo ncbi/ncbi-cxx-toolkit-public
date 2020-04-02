@@ -1320,7 +1320,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
 /** Attempts to set up partial fetching, if it fails (e.g.: due to memory
  * allocation failure), it cleans up and exits silently.
  */
-void
+BlastSeqSrcSetRangesArg *
 BLAST_SetupPartialFetching(EBlastProgramType program_number,
                            BlastSeqSrc* seq_src,
                            const BlastHSPList** hsplist_array,
@@ -1330,6 +1330,7 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
     Int4 num_hsps = 0, i = 0, j = 0;
     BlastSeqSrcSetRangesArg *arg = NULL;
     Boolean succeeded = TRUE;
+    Int4 len = BlastSeqSrcGetSeqLen(seq_src, &oid);
     ASSERT(BlastSeqSrcGetSupportsPartialFetching(seq_src));
 
     /* pre-allocate space for ranges */
@@ -1358,7 +1359,7 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
                     begin = begin_new;
                 }
             }
-            if (BlastSeqSrcSetRangesArgAddRange(arg, begin, end)) {
+            if (BlastSeqSrcSetRangesArgAddRange(arg, begin, end, len)) {
                 succeeded = FALSE;
                 break;
             }
@@ -1367,9 +1368,10 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
 
     if (succeeded) {
         BlastSeqSrcSetRangesArgBuild(arg);
-        BlastSeqSrcSetSeqRanges(seq_src, arg);
+        return arg;
     }
-    BlastSeqSrcSetRangesArgFree(arg);
+    arg = BlastSeqSrcSetRangesArgFree(arg);
+    return NULL;
 }
 
 Int2
@@ -1516,7 +1518,7 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
 #pragma omp parallel for default(none) num_threads(actual_num_threads) schedule(guided) if (actual_num_threads > 1) \
         shared(retval, thread_data, batches, score_params, program_number, sbp, hit_params, pattern_blk, query, ext_params, query_info, default_db_genetic_code, has_been_interrupted, interrupt_search, progress_info)
         for (i = 0; i < batches->num_batches; i++) {
-            BlastSeqSrcGetSeqArg seq_arg = {0,};
+            BlastSeqSrcGetSeqArg seq_arg = {0,0,0,0,NULL,NULL};
             Int4 hsplist_itr = 0;
             Int2 status = 0;
             int tid = 0;
@@ -1553,8 +1555,9 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
             if (perform_traceback) {
 
                 /* set up partial fetching */
+            	BlastSeqSrcSetRangesArg* ranges= NULL;
                 if (perform_partial_fetch) {
-                    BLAST_SetupPartialFetching(program_number, seqsrc,
+                    ranges = BLAST_SetupPartialFetching(program_number, seqsrc,
                                             (const BlastHSPList**)batch->hsplist_array,
                                             batch->num_hsplists);
                 }
@@ -1563,6 +1566,7 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
                 seq_arg.encoding = encoding;
                 seq_arg.check_oid_exclusion = TRUE;
                 seq_arg.reset_ranges = FALSE;
+                seq_arg.ranges = ranges;
 
                 if (BlastSeqSrcGetSequence(seqsrc, &seq_arg) < 0) {
                     batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);

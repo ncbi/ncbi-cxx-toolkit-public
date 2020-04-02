@@ -463,7 +463,8 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                        BlastHSPList* hsp_list,
                        const BlastScoringOptions* scoring_options,
                        const Uint1* gen_code_string,
-                       const BlastScoreBlk* sbp)
+                       const BlastScoreBlk* sbp,
+                       BlastSeqSrcSetRangesArg * ranges)
 {
     Uint1* query = NULL;
     Uint1* query_nomask = NULL;
@@ -484,6 +485,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         seq_arg.oid = hsp_list->oid;
         seq_arg.encoding = encoding;
         seq_arg.check_oid_exclusion = TRUE;
+        seq_arg.ranges = ranges;
         status = BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
         ASSERT(status == 0);
         (void)status; /* to pacify compiler warning */
@@ -1354,7 +1356,8 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
                              EBlastProgramType program_number,
                              const BlastSeqSrc* seqSrc,
                              Int4 default_db_genetic_code,
-                             Int4 subject_index)
+                             Int4 subject_index,
+                             BlastSeqSrcSetRangesArg * ranges)
 {
     BlastKappa_SequenceInfo * seq_info;  /* BLAST-specific sequence
                                             information */
@@ -1371,6 +1374,7 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
         memset((void*) &seq_info->seq_arg, 0, sizeof(seq_info->seq_arg));
         seq_info->seq_arg.oid = self->index = subject_index;
         seq_info->seq_arg.check_oid_exclusion = TRUE;
+        seq_info->seq_arg.ranges = ranges;
 
         if( program_number == eBlastTypeTblastn ) {
             seq_info->seq_arg.encoding = eBlastEncodingNcbi4na;
@@ -2518,12 +2522,6 @@ static void s_ClearHeap(BlastCompo_Heap * self)
     }
 }
 
-extern void
-BLAST_SetupPartialFetching(EBlastProgramType program_number,
-                           BlastSeqSrc* seq_src,
-                           const BlastHSPList** hsp_list,
-                           Int4 num_hsplists);
-
 /**
  * Free a BlastGapAlignStruct copy created by s_BlastGapAlignStruct_Copy
  *
@@ -3517,9 +3515,10 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 
                 query_index = localMatch->query_index;
                 context_index = query_index * numFrames;
+                BlastSeqSrcSetRangesArg * ranges = NULL;
                 /* Get the sequence for this match */
                 if (seqSrc && BlastSeqSrcGetSupportsPartialFetching(seqSrc)) {
-                    BLAST_SetupPartialFetching(
+                    ranges = BLAST_SetupPartialFetching(
                             program_number,
                             (BlastSeqSrc*) seqSrc,
                             (const BlastHSPList**)&localMatch,
@@ -3537,7 +3536,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                             program_number,
                             seqSrc,
                             default_db_genetic_code,
-                            localMatch->oid
+                            localMatch->oid,
+                            ranges
                     );
                     if (*pStatusCode != 0) {
                         /*
@@ -3670,7 +3670,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                             hsp_list,
                             scoringParams->options,
                             genetic_code_string,
-                            sbp
+                            sbp,
+                            ranges
                     );
                     if (!seqSrc) {
                         goto query_loop_cleanup;
@@ -3713,6 +3714,7 @@ match_loop_cleanup:
                     localMatch->oid = hsp_list->oid;
                 }
                 hsp_list = Blast_HSPListFree(hsp_list);
+                ranges = BlastSeqSrcSetRangesArgFree(ranges);
 
                 if (*pStatusCode != 0) {
                     for (context_index = 0;

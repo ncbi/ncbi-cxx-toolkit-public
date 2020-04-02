@@ -337,19 +337,43 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     /* This occurs if the pre-selected partial sequence in the traceback stage
      * was too small to perform the traceback. Only do this for nucleotide
      * sequences as proteins are not long enough to be of significance */
-    if (args->reset_ranges && datap->isProtein == false)
-        seqdb.RemoveOffsetRanges(oid);
+    if (args->reset_ranges && datap->isProtein == false) {
+    	args->ranges = BlastSeqSrcSetRangesArgFree(args->ranges);
+    }
 
     const char *buf;
-    len = (datap->copied)
-           /* This will consume and clear datap->seq_ranges */
-        ?  seqdb.GetAmbigSeqAlloc(oid,
-                                  const_cast<char **>(&buf),
-                                  has_sentinel_byte,
-                                  eMalloc,
-                                  ((datap->mask_type == eHardSubjMasking) ?
-                                       &(datap->seq_ranges) : NULL))
-        :  seqdb.GetSequence(oid, &buf);
+    len = 0;
+    if (datap->copied) {
+    	if ( datap->isProtein || args->ranges == NULL){
+          len = seqdb.GetAmbigSeqAlloc(oid,
+                                 const_cast<char **>(&buf),
+                                 has_sentinel_byte,
+                                 eMalloc,
+                                 ((datap->mask_type == eHardSubjMasking) ?
+                                		 &(datap->seq_ranges) : NULL));
+
+    	}
+    	else {
+    		CSeqDB::TSequenceRanges partial_ranges;
+    		for (int i=0; i< args->ranges->num_ranges; ++i) {
+    			CSeqDB::TSequenceRanges::value_type v;
+    			v.first = args->ranges->ranges[i*2];
+    			v.second = args->ranges->ranges[i*2+1];
+    		    partial_ranges.push_back(v);
+    		}
+    		len = seqdb.GetAmbigPartialSeq(oid,
+                                   const_cast<char **>(&buf),
+                                   has_sentinel_byte,
+                                   eMalloc,
+                                   &partial_ranges,
+                                   ((datap->mask_type == eHardSubjMasking) ?
+                                		 &(datap->seq_ranges) : NULL));
+
+    	}
+    }
+    else {
+        len = seqdb.GetSequence(oid, &buf);
+    }
 
     if (len <= 0) return BLAST_SEQSRC_ERROR;
 
@@ -410,6 +434,9 @@ s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
         else seqdb.RetSequence((const char**)&args->seq->sequence);
         args->seq->sequence_allocated = FALSE;
         args->seq->sequence = NULL;
+    }
+    if (args->ranges) {
+    	args->ranges = NULL;
     }
 }
 
