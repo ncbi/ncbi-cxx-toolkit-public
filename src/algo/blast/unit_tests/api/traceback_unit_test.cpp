@@ -1120,6 +1120,7 @@ BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
 	free(hsp_list);
 }
 
+#ifdef _OPENMP
 BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
 	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("data/long_seqs", false);
     const EBlastEncoding encoding = Blast_TracebackGetEncoding(eBlastTypeBlastn);
@@ -1177,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
     free(seq_arg_array);
     free(hsp_list_array);
 }
-
+#endif
 BOOST_AUTO_TEST_SUITE_END()
 
 /*
