@@ -3849,7 +3849,6 @@ ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc&
     }
     // note - have to add 3 to prevent negative result from subtraction
     TSeqPos mod1 = (pos1 + 3 - frame) %3;
-    TSeqPos mod2 = (pos2 + 3 - frame) %3;
 
     if ( mod1 != 0 && loc.IsPartialStart(eExtreme_Biological) 
          && cds.GetLocation().IsPartialStart(eExtreme_Biological) 
@@ -3859,9 +3858,14 @@ ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc&
         // start is out of frame - it's before the coding region begins
         mod1 = 1;
     }
+    if (loc.IsPartialStart(eExtreme_Biological)) {
+        mod1 = 0;
+    }
+
 
     TSeqPos cds_len = sequence::GetLength (cds.GetLocation(), &(cds.GetScope()));
 
+    TSeqPos mod2 = (pos2 + 3 - frame) %3;
     if ( mod2 != 0 && loc.IsPartialStop(eExtreme_Biological) 
          && cds.GetLocation().IsPartialStop(eExtreme_Biological) 
          && pos2 == cds_len) {
@@ -3874,13 +3878,19 @@ ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc&
         // stop is out of frame - it's after the coding region ends
         mod2 = 1;
     }
-
-    if (loc.IsPartialStart(eExtreme_Biological)) {
-        mod1 = 0;
-    }
     if (loc.IsPartialStop(eExtreme_Biological)) {
         mod2 = 2;
     }
+/*
+    // Would this work just as well?
+    if (loc.IsPartialStop(eExtreme_Biological)) {
+        mod2 = 2;
+    }
+    else if 
+    (pos2 <= frame || pos2 > cds_len) {
+        mod2 = 1;
+    }
+*/
 
     if ( (mod1 != 0)  &&  (mod2 != 2) ) {
         return eLocationInFrame_BadStartAndStop;
