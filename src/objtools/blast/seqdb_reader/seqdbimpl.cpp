@@ -796,6 +796,33 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
+int CSeqDBImpl::GetAmbigPartialSeq(int                oid,
+                                   char            ** buffer,
+                                   int                nucl_code,
+                                   ESeqDBAllocType    alloc_type,
+                                   CSeqDB::TSequenceRanges  * partial_ranges,
+                                   CSeqDB::TSequenceRanges  * masks) const
+{
+	   CHECK_MARKER();
+	    CSeqDBLockHold locked(m_Atlas);
+
+	    m_Atlas.Lock(locked);
+	    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+
+	    int vol_oid = 0;
+	    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+	        return vol->GetAmbigPartialSeq(vol_oid,
+	                                       buffer,
+	                                       nucl_code,
+	                                       alloc_type,
+	                                       partial_ranges,
+	                                       masks,
+	                                       locked);
+	    }
+
+	    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
+}
+
 list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
 {
     CHECK_MARKER();

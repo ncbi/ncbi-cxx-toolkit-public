@@ -391,6 +391,14 @@ public:
                     CSeqDB::TSequenceRanges * masks,
                     CSeqDBLockHold  & locked) const;
 
+    int GetAmbigPartialSeq(int                oid,
+                           char            ** buffer,
+                           int                nucl_code,
+                           ESeqDBAllocType    alloc_type,
+                           CSeqDB::TSequenceRanges  * partial_ranges,
+                           CSeqDB::TSequenceRanges  * masks,
+                           CSeqDBLockHold  & locked) const;
+
     /// Get the Seq-ids associated with a sequence.
     ///
     /// This method returns a list containing all the CSeq_id objects

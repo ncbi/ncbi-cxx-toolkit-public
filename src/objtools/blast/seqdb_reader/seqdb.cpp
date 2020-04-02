@@ -604,6 +604,24 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
     return rv;
 }
 
+int CSeqDB::GetAmbigPartialSeq(int                oid,
+                               char            ** buffer,
+                               int                nucl_code,
+                               ESeqDBAllocType    strategy,
+                               TSequenceRanges  * partial_ranges,
+                               TSequenceRanges  * masks) const
+{
+
+	if ((strategy != eMalloc) && (strategy != eNew)) {
+	        NCBI_THROW(CSeqDBException,
+	                   eArgErr,
+	                   "Invalid allocation strategy specified.");
+	    }
+
+    int rv = m_Impl->GetAmbigPartialSeq(oid, buffer, nucl_code, strategy, partial_ranges, masks);
+	return rv;
+}
+
 string CSeqDB::GetTitle() const
 {
     return m_Impl->GetTitle();

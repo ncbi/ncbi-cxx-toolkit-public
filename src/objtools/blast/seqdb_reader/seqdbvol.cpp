@@ -1494,6 +1494,71 @@ static void s_SeqDBMaskSequence(char                    * seq,
     }
 }
 
+int CSeqDBVol::GetAmbigPartialSeq(int                oid,
+                                  char            ** buffer,
+                                  int                nucl_code,
+                                  ESeqDBAllocType    alloc_type,
+                                  CSeqDB::TSequenceRanges  * partial_ranges,
+                                  CSeqDB::TSequenceRanges  * masks,
+                                  CSeqDBLockHold  & locked) const
+{
+
+	if ((partial_ranges == NULL) || (partial_ranges->size() == 0)) {
+        NCBI_THROW(CSeqDBException, eFileErr, "Error: Empty partial fetching ranges.");
+	}
+
+    const char * tmp(0);
+    int base_length = x_GetSequence(oid, &tmp, false, false);
+	if (base_length < 1) {
+	    NCBI_THROW(CSeqDBException, eFileErr, "Error: could not get sequence or range.");
+	}
+
+
+    int num_ranges = partial_ranges->size();
+    if ((*partial_ranges)[num_ranges - 1].second > base_length) {
+        NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
+    }
+
+    bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
+    *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type, locked);
+    char *seq = *buffer + (sentinel ? 1 : 0);
+
+    vector<Int4> ambchars;
+	x_GetAmbChar(oid, ambchars);
+    ITERATE(CSeqDB::TSequenceRanges, riter, *(partial_ranges)) {
+    	int begin(riter->first);
+        int end(riter->second);
+
+	    if (begin) seq[begin - 1] = (char) FENCE_SENTRY;
+	    if (end < base_length) seq[end] = (char) FENCE_SENTRY;
+	}
+
+    //cerr << "Oid: " << oid << endl;
+
+    ITERATE(CSeqDB::TSequenceRanges, riter, *(partial_ranges)) {
+        SSeqDBSlice slice(max(0, (int)riter->first), min(base_length, (int)riter->second));
+	    //cerr << "Use range set: " << riter->first << "\t" << riter->second << "\t" << "length: " << base_length << endl;
+	    s_SeqDBMapNA2ToNA8(tmp, seq, slice);
+	    s_SeqDBRebuildDNA_NA8(seq, ambchars, slice);
+	    s_SeqDBMaskSequence(seq, masks, (char)14, slice);
+	    if (sentinel){
+	    	s_SeqDBMapNcbiNA8ToBlastNA8(seq, slice);
+	    }
+	}
+
+	if (sentinel) {
+	    (*buffer)[0] = (char)15;
+	    (*buffer)[base_length+1] = (char)15;
+	}
+	if (masks) {
+		masks->clear();
+	}
+    return base_length;
+}
+
+
+
+
 /// List of offset ranges as begin/end pairs.
 typedef set< pair<int, int> > TRangeVector;
 
@@ -1519,7 +1584,6 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
         NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
 
     SSeqDBSlice range = region ? (*region) : SSeqDBSlice(0, base_length);
-
     base_length = range.end - range.begin;
 
     if (base_length < 1)
@@ -1557,8 +1621,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
          || CSeqDBRangeList::ImmediateLength() >= base_length)
             use_range_set = false;
 
-        if (! use_range_set) {
-
+        if (!use_range_set) {
             s_SeqDBMapNA2ToNA8(tmp, seq, range);
             s_SeqDBRebuildDNA_NA8(seq, ambchars, range);
             s_SeqDBMaskSequence(seq, masks, (char)14, range);

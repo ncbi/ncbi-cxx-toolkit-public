@@ -762,6 +762,13 @@ public:
                          ESeqDBAllocType    strategy,
                          TSequenceRanges  * masks = NULL) const;
 
+    int GetAmbigPartialSeq(int                oid,
+                           char            ** buffer,
+                           int                nucl_code,
+                           ESeqDBAllocType    strategy,
+                           TSequenceRanges  * partial_ranges,
+                           TSequenceRanges  * masks = NULL) const;
+
     /// Returns any resources associated with the sequence.
     ///
     /// Calls to GetSequence (but not GetBioseq())
