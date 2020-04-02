@@ -2280,7 +2280,7 @@ static EIO_Status s_StripToPattern
                         continue;
                     if (!pattern_size)
                         break; /*found*/
-                    if (memcmp(b, pattern + 1, pattern_size) == 0)
+                    if (memcmp(b, (const char*)pattern + 1, pattern_size) == 0)
                         break; /*found*/
                 }
                 if ( n_check ) {
