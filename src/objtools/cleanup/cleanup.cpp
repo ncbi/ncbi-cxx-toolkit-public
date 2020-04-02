@@ -595,6 +595,33 @@ static CConstRef<CSeq_feat> s_GetCdsByProduct(CScope& scope, const CSeq_loc& pro
     return CConstRef<CSeq_feat>();
 };
 
+static CConstRef<CSeq_feat> s_GetCdsByLocation(CScope& scope, const CSeq_loc& feat_loc)
+{
+    sequence::TFeatScores cdsScores;
+    sequence::GetOverlappingFeatures(
+            feat_loc, 
+            CSeqFeatData::e_Cdregion,
+            CSeqFeatData::eSubtype_cdregion,
+            sequence::eOverlap_Contained, 
+            cdsScores, 
+            scope);
+
+    if (cdsScores.empty()) {
+        return CConstRef<CSeq_feat>();
+    }
+
+    if (!feat_loc.IsPartialStart(eExtreme_Biological)) {
+        for (auto cdsScore : cdsScores) {
+            if (feature::IsLocationInFrame(scope.GetSeq_featHandle(*cdsScore.second), feat_loc)
+                    == feature::eLocationInFrame_InFrame) {
+                return cdsScore.second;
+            }
+        }
+    }
+        
+    return cdsScores.front().second;
+}
+
 
 
 bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
@@ -635,33 +662,8 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
             matched_by_product = true;
         }
     }
-
     if (!matched_by_product) {
-        sequence::TFeatScores featScores;
-        sequence::GetOverlappingFeatures(
-                fh.GetLocation(), 
-                CSeqFeatData::e_Cdregion,
-                CSeqFeatData::eSubtype_cdregion,
-                sequence::eOverlap_Contained, 
-                featScores, 
-                fh.GetScope());
-
-        if (!featScores.empty()) {
-            if (!fh.GetLocation().IsPartialStart(eExtreme_Biological)) {
-                for (auto featScore : featScores) {
-                    if (feature::IsLocationInFrame(fh.GetScope().GetSeq_featHandle(*featScore.second), fh.GetLocation())
-                            == feature::eLocationInFrame_InFrame) {
-                        cds = featScore.second;
-                        break;
-                    }
-                }
-            }
-            if (!cds) {
-                cds = featScores.front().second;
-            }
-        }
-        
-        //cds = sequence::GetOverlappingCDS(fh.GetLocation(), fh.GetScope());
+        cds = s_GetCdsByLocation(fh.GetScope(), fh.GetLocation());
     }
     if (!cds || !cds->IsSetProduct()) {
         // there is no overlapping coding region feature, so there is no appropriate
