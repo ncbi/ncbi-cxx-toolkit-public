@@ -1156,7 +1156,6 @@ BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
         seq_arg_array[i] = seq_arg;
 
         BlastSeqSrcGetSequence(seq_src, seq_arg);
-        int tid = omp_get_thread_num();
         seq_arg->ranges = BlastSeqSrcSetRangesArgFree(seq_arg->ranges);
         seq_src = BlastSeqSrcFree(seq_src);
     }
