@@ -637,7 +637,19 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     }
 
     if (!matched_by_product) {
-        cds = sequence::GetOverlappingCDS(fh.GetLocation(), fh.GetScope());
+        sequence::TFeatScores featScores;
+        sequence::GetOverlappingFeatures(
+                fh.GetLocation(), 
+                CSeqFeatData::e_Cdregion,
+                CSeqFeatData::eSubtype_cdregion,
+                sequence::eOverlap_Contained, 
+                featScores, 
+                fh.GetScope());
+
+        if (!featScores.empty()) {
+            cds = featScores.front().second;
+        }
+        //cds = sequence::GetOverlappingCDS(fh.GetLocation(), fh.GetScope());
     }
     if (!cds || !cds->IsSetProduct()) {
         // there is no overlapping coding region feature, so there is no appropriate
@@ -645,7 +657,6 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return ConvertProteinToImp(fh);
     }
 
-    //bool require_frame = !fh.GetLocation().IsPartialStart(eExtreme_Biological);
     bool require_frame = false;
     if (!require_frame) {
         ITERATE(CBioseq::TId, id_it, parent_bsh.GetBioseqCore()->GetId()) {
