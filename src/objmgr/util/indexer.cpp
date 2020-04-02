@@ -1929,8 +1929,8 @@ void CBioseqIndex::x_InitFeats (void)
             // includes barrier between RefSeq and INSD accession types
             sel.SetAdaptiveDepth(true);
 
-            // calling AddUnnamedAnnots no longer suppresses tRNA features in a ("tRNAscan-SE") named annot
-            sel.AddUnnamedAnnots();
+            // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
+            // sel.AddUnnamedAnnots();
 
             // allow external SNPs - testing for now, probably needs to be in external policy
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
@@ -1975,11 +1975,6 @@ void CBioseqIndex::x_InitFeats (void)
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_assembly_gap);
         }
 
-        bool onlyGeneRNACDS = false;
-        if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {
-            onlyGeneRNACDS = true;
-        }
-
         // additional common settings
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
            .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
@@ -1989,6 +1984,11 @@ void CBioseqIndex::x_InitFeats (void)
 
         // request exception to capture fetch failure
         sel.SetFailUnresolved();
+
+        bool onlyGeneRNACDS = false;
+        if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {
+            onlyGeneRNACDS = true;
+        }
 
         // variables for setting m_BestProteinFeature
         TSeqPos longest = 0;
