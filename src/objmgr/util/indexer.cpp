@@ -1143,10 +1143,12 @@ void CBioseqIndex::x_InitGaps (void)
 
         SSeqMapSelector sel;
 
-        size_t resolveCount = 1;
+        size_t resolveCount = 0;
+        /*
         if (m_Policy == CSeqEntryIndex::eInternal) {
             resolveCount = 0;
         }
+        */
 
         sel.SetFlags(CSeqMap::fFindGap)
            .SetResolveCount(resolveCount);
