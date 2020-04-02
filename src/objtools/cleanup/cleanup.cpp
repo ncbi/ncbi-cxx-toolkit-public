@@ -647,8 +647,20 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
                 fh.GetScope());
 
         if (!featScores.empty()) {
-            cds = featScores.front().second;
+            if (!fh.GetLocation().IsPartialStart(eExtreme_Biological)) {
+                for (auto featScore : featScores) {
+                    if (feature::IsLocationInFrame(fh.GetScope().GetSeq_featHandle(*featScore.second), fh.GetLocation())
+                            == feature::eLocationInFrame_InFrame) {
+                        cds = featScore.second;
+                        break;
+                    }
+                }
+            }
+            if (!cds) {
+                cds = featScores.front().second;
+            }
         }
+        
         //cds = sequence::GetOverlappingCDS(fh.GetLocation(), fh.GetScope());
     }
     if (!cds || !cds->IsSetProduct()) {
