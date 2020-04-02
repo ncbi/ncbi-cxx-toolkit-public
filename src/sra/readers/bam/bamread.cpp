@@ -355,10 +355,8 @@ string CSrzPath::FindAccPath(const string& acc, EMissing missing)
 }
 
 
-namespace {
-    NCBI_PARAM_DECL(bool, BAM, CIGAR_IN_ALIGN_EXT);
-    NCBI_PARAM_DEF(bool, BAM, CIGAR_IN_ALIGN_EXT, true);
-}
+NCBI_PARAM_DECL(bool, BAM, CIGAR_IN_ALIGN_EXT);
+NCBI_PARAM_DEF(bool, BAM, CIGAR_IN_ALIGN_EXT, true);
 
 
 static bool s_GetCigarInAlignExt(void)
@@ -670,8 +668,10 @@ static void s_InitLocalKNS(KNSManager* kns_mgr)
 }
 
 
-NCBI_PARAM_DECL(int, VDB, DIAG_HANDLER);
-NCBI_PARAM_DEF(int, VDB, DIAG_HANDLER, 1);
+namespace {
+    NCBI_PARAM_DECL(int, VDB, DIAG_HANDLER);
+    NCBI_PARAM_DEF(int, VDB, DIAG_HANDLER, 1);
+}
 
 
 static int s_GetDiagHandler(void)
