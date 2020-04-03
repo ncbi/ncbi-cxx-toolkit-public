@@ -225,7 +225,7 @@ ANKO	s	Forest Research Institute, Turkey
 ANLW	s	Amt Der Niederosterreichischen Landsregierung			
 ANMR	c	Asian Network on Microbial Researches			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
-ANSP	s	Academy of Natural Sciences of Philadelphia			
+ANSP	s	Academy of Natural Sciences of Philadelphia	ANSDU		
 ANSP:FISH	s	Academy of Natural Sciences of Philadelphia, Ichthyology Collection		
 ANSP:HRP	s	Academy of Natural Sciences of Philadelphia, Herpetology collection		
 ANSP:Malacology	s	Academy of Natural Sciences of Philadelphia, Malacology Collection		
@@ -930,6 +930,7 @@ CCG<GHN>	s	University of Cape Coast, Botany Department
 CCGB	c	Culture Collection of Bacillus and Related Genera (Instituto Oswaldo Cruz)			
 CCGVCC	c	China Centre for General Viruses Culture Collection			
 CCH	s	University of Arizona South, Agricultural Extension Service			
+CChRGM	c	Chilean Collection of Microbial Genetic Resources	RGM		
 CCIAL	c	Cultures Cells for Institute Adolfo Lutz			
 CCIBSO	c	Culture Collection IBSO			
 CCIBt	c	Culture Collection at the Institute of Botany, Sao Paulo			
