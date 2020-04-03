@@ -107,7 +107,7 @@ Quote() {
 
 do_help="no"
 unknown=""
-while [ $# != 0 ]; do
+while [ $# -ne 0 ]; do
   case "$1" in 
     --help|-help|help|-h)
       do_help="yes"
@@ -238,8 +238,12 @@ if test "$CMAKE_GENERATOR" = "Xcode"; then
   CC=
   CXX=
 else
-  CC=$CMAKE_C_COMPILER
-  CXX=$CMAKE_CXX_COMPILER
+  if [ -z "$CC" ]; then
+    CC=$CMAKE_C_COMPILER
+  fi
+  if [ -z "$CXX" ]; then
+    CXX=$CMAKE_CXX_COMPILER
+  fi
   if [ -z "$CC" ]; then
     CC=`which gcc 2>/dev/null`
     if test $? -ne 0; then
@@ -252,15 +256,19 @@ else
       CXX=""
     fi
   fi
-  if [ -n "$CC" ]; then
-    if test $host_os = "Darwin"; then
-      CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
-      CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
-    else
-      CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
-      CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
-    fi
+fi
+
+if [ -n "$CC" ]; then
+  if test $host_os = "Darwin"; then
+    CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
+    CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
+  else
+    CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
+    CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
   fi
+else
+  CC_NAME="CXX"
+  CC_VERSION=""
 fi
 ############################################################################# 
 
@@ -308,13 +316,18 @@ fi
 
 cd ${tree_root}
 Check_function_exists configure_ext_PreCMake && configure_ext_PreCMake
+# true to debug
+if false; then
+  echo mkdir -p ${BUILD_ROOT}/build 
+  echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
+else
 mkdir -p ${BUILD_ROOT}/build 
 cd ${BUILD_ROOT}/build 
 
-#echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 if [ -f "${tree_root}/CMakeLists.txt" ]; then
   eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}"
 else
   eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"
+fi
 fi
 cd ${initial_dir}
