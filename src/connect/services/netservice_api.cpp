@@ -1521,6 +1521,15 @@ CNetServiceDiscovery::CNetServiceDiscovery(const string& service_name) :
 
 CNetServiceDiscovery::TServers CNetServiceDiscovery::operator()()
 {
+    string host, port;
+
+    // Single server "discovery"
+    if (NStr::SplitInTwo(m_ServiceName, ":", host, port)) {
+        if (auto p = NStr::StringToNumeric<unsigned short>(port, NStr::fConvErr_NoThrow)) {
+            return { TServer(CNetServer::SAddress(move(host), p), 1.0) };
+        }
+    }
+
     const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;
     return SNetServiceImpl::Discover(m_ServiceName, types, m_NetInfo, SNetServerPoolImpl::TLBSMAffinity(), 0, 0);
 }
