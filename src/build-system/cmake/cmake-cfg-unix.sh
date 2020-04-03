@@ -263,8 +263,12 @@ if [ -n "$CC" ]; then
     CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
     CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
   else
-    CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
-    CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+    CC_NAME=`$CC --version | awk 'NR==1{print $1}' | tr '[:lower:]' '[:upper:]'`
+    if $CXX -dumpversion > /dev/null 2>&1; then
+      CC_VERSION=`$CC -dumpversion | awk 'BEGIN{FS="."} { print $1 $2 $3}'`
+    else
+      CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+    fi
   fi
 else
   CC_NAME="CXX"

@@ -21,7 +21,7 @@ Usage() {
 }
 
 if test $# -eq 0 -o "$1" = "-h"; then
-  Usage 0
+  Usage
   exit 0
 fi
 
@@ -57,7 +57,9 @@ case "$1" in
          * )
            cat <<EOF
 ERROR:  cannot find GCC version $1; you may need to adjust PATH explicitly.
+or try one of these:
 EOF
+ls /opt/ncbi/gcc
            exit 1
            ;;
        esac
