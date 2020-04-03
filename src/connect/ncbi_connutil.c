@@ -2225,7 +2225,7 @@ static EIO_Status s_StripToPattern
         return eIO_Unknown;
 
     if (!pattern) {
-        /* read/discard the specified # of bytes or until EOF */
+        /* read/discard the specified # of bytes (*) or until EOF */
         size_t n_count = 0;
         char* xx_buf = buf;
         do {
@@ -2237,7 +2237,7 @@ static EIO_Status s_StripToPattern
             if (discard) {
                 if (!n_count  &&  pattern_size) {
                     assert(buf_size == pattern_size);
-                    /* first time enqueue the entire "buf" */
+                    /* first time enqueue the entire "buf" (case (*) above) */
                     if (BUF_AppendEx(discard, buf, buf_size, buf, n_read))
                         buf = 0/*mark it not to be free()'d at the end*/;
                     else
@@ -2255,6 +2255,7 @@ static EIO_Status s_StripToPattern
         if ( n_discarded )
             *n_discarded = n_count;
     } else {
+        /* pattern search case */
         assert(pattern_size);
         --pattern_size;
         n_read = 0;
@@ -2276,7 +2277,7 @@ static EIO_Status s_StripToPattern
                 size_t n_check;
                 const char* b = buf;
                 for (n_check = n_stored - pattern_size;  n_check;  --n_check) {
-                    if (*b++ != *((const char*) pattern))
+                    if (*b++ != *((const char*)pattern))
                         continue;
                     if (!pattern_size)
                         break; /*found*/
@@ -2338,6 +2339,7 @@ static EIO_Status s_CONN_IO
         assert(stream);
         return CONN_Pushback((CONN) stream, buf, size);
     default:
+        assert(0);
         break;
     }
     return eIO_InvalidArg;
@@ -2368,6 +2370,7 @@ static EIO_Status s_SOCK_IO
     case eIO_Write:
         return SOCK_Pushback((SOCK) stream, buf, size);
     default:
+        assert(0);
         break;
     }
     return eIO_InvalidArg;
@@ -2402,6 +2405,7 @@ static EIO_Status s_BUF_IO
         b = (BUF) stream;
         return BUF_Pushback(&b, buf, size) ? eIO_Success : eIO_Unknown;
     default:
+        assert(0);
         break;
     }
     return eIO_InvalidArg;
