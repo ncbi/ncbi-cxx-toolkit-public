@@ -259,6 +259,12 @@ typedef SSIZE_T	ssize_t;
  * (Posix semaphores are not robust.)
  */
 #ifndef MDB_USE_ROBUST
+#  ifdef __CYGWIN__
+#    define MDB_USE_ROBUST	0
+#  endif
+#endif
+
+#ifndef MDB_USE_ROBUST
 /* Android currently lacks Robust Mutex support. So does glibc < 2.4. */
 # if defined(MDB_USE_POSIX_MUTEX) && (defined(ANDROID) || \
 	(defined(__GLIBC__) && GLIBC_VER < 0x020004))

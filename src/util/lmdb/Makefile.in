@@ -1,6 +1,6 @@
 # $Id$
 
-REQUIRES = LocalLMDB -Cygwin
+REQUIRES = LocalLMDB
 
 LIB_PROJ = lmdb
 APP_PROJ = lmdb_test1 lmdb_test2 lmdb_test3 lmdb_test4 lmdb_test5
