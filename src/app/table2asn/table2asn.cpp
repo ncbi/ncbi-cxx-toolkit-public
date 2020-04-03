@@ -960,7 +960,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     fr.MergeCDSFeatures(*entry);
 
     entry->Parentize();
-    fr.MoveRegionsToProteins(*entry);
+    fr.MoveProteinSpecificFeats(*entry);
 
     m_context.CorrectCollectionDates(*entry);
 

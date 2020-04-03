@@ -46,7 +46,9 @@ public:
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
    CRef<objects::CSeq_entry> m_replacement_protein;
 
-   void MoveRegionsToProteins(objects::CSeq_entry& seq_set);
+   void MoveRegionsToProteins(objects::CSeq_entry& entry);
+   void MoveProteinSpecificFeats(objects::CSeq_entry& entry);
+
    void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
    void MakeGapsFromFeatures(objects::CSeq_entry& entry);
    void MakeGapsFromFeatures(objects::CBioseq& bioseq);
