@@ -1714,6 +1714,9 @@ void CFeatureItem::x_AddQualsIdx(
                                     // RW-985
                                     gene_ref = feat_gene_xref;
                                 }
+                            } else {
+                                // SF-3822 - map locus in xref to desc in gene
+                                gene_ref = feat_gene_xref;
                             }
                         }
                     }
