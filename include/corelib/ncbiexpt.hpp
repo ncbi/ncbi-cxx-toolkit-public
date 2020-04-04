@@ -91,65 +91,63 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 NCBI_XNCBI_EXPORT
 extern void DoThrowTraceAbort(void);
 
-/// Print the specified debug message.
-NCBI_XNCBI_EXPORT
-extern void DoDbgPrint(const CDiagCompileInfo& info, const char* message);
-
-/// Print the specified debug message.
-NCBI_XNCBI_EXPORT
-extern void DoDbgPrint(const CDiagCompileInfo& info, const string& message);
-
-/// Print the specified debug messages.
-NCBI_XNCBI_EXPORT
-extern void DoDbgPrint(const CDiagCompileInfo& info,
-                       const char* msg1, const char* msg2);
-
 #if defined(_DEBUG)
 
-/// Templated function for printing debug message.
+/// Templated function for logging debug message and "abort()"ing the
+/// program if set so by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
-/// Print debug message for the specified exception type.
+/// The specified "e" object is assumed to have the "what()" method defined,
+/// just like as an std::exception-based exception type.
+///
+/// @sa
+///   DbgPrintP(), DbgPrintNP(), SetThrowTraceAbort(), DoThrowTraceAbort()
 template<typename T>
 inline
 const T& DbgPrint(const CDiagCompileInfo& info,
                   const T& e, const char* e_str)
 {
-    DoDbgPrint(info, e_str, e.what());
+    CNcbiDiag(info, eDiag_Trace) << e_str << ": " << e.what();
+    DoThrowTraceAbort();
     return e;
 }
 
-/// Print debug message for "const char*" object.
+/// Specialization to log debug message for "const char*" object.
 inline
 const char* DbgPrint(const CDiagCompileInfo& info,
                      const char* e, const char* )
 {
-    DoDbgPrint(info, e);
+    CNcbiDiag(info, eDiag_Trace) << e;
+    DoThrowTraceAbort();
     return e;
 }
 
-/// Print debug message for "char*" object.
+/// Specialization to log debug message for "char*" object.
 inline
 char* DbgPrint(const CDiagCompileInfo& info,
                char* e, const char* )
 {
-    DoDbgPrint(info, e);
+    CNcbiDiag(info, eDiag_Trace) << e;
+    DoThrowTraceAbort();
     return e;
 }
 
-/// Print debug message for "std::string" object.
+/// Spcialization to log debug message for "std::string" object.
 inline
 const string& DbgPrint(const CDiagCompileInfo& info,
                        const string& e, const char* )
 {
-    DoDbgPrint(info, e);
+    CNcbiDiag(info, eDiag_Trace) << e;
+    DoThrowTraceAbort();
     return e;
 }
 
-/// Create diagnostic stream for printing specified message and "abort()" the
-/// program if set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+/// Templated function for logging debug message and "abort()"ing the
+/// program if set so by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
+/// The exception passed in "e" is assumed "Printable" (w/operator << defined).
 ///
 /// @sa
-///   SetThrowTraceAbort(), DoThrowTraceAbort()
+///   DbgPrint(), DbgPrintNP(), SetThrowTraceAbort(), DoThrowTraceAbort()
 template<typename T>
 inline
 const T& DbgPrintP(const CDiagCompileInfo& info, const T& e,const char* e_str)
@@ -159,18 +157,19 @@ const T& DbgPrintP(const CDiagCompileInfo& info, const T& e,const char* e_str)
     return e;
 }
 
-/// Create diagnostic stream for printing specified message.
+/// Templated function for logging debug message and and "abort()"ing the
+/// program if set so by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
-/// Similar to DbgPrintP except that "abort()" not executed.
+/// The exception passed in "e" is just passed through ("Non-Printable").
+///
 /// @sa
-///   DbgPrintP()
+///   DbgPrint, DbgPrintP(), SetThrowTraceAbort(), DoThrowTraceAbort()
 template<typename T>
 inline
-const T& DbgPrintNP(const CDiagCompileInfo& info,
-                    const T& e,
-                    const char* e_str)
+const T& DbgPrintNP(const CDiagCompileInfo& info, const T& e,const char* e_str)
 {
-    DoDbgPrint(info, e_str);
+    CNcbiDiag(info, eDiag_Trace) << e_str;
+    DoThrowTraceAbort();
     return e;
 }
 
@@ -194,25 +193,30 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing. F irst the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Argument can be a simple string, or an exception object.
+/// Argument can be a simple string, or an exception object (with the "what()"
+/// method defined).
+///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
 /// Example:
 /// -  THROW0_TRACE("Throw just a string");
 /// -  THROW0_TRACE(runtime_error("message"));
+/// @sa
+///   THROW0p_TRACE, THROW1_TRACE, THROW_TRACE
 #  define THROW0_TRACE(exception_object)                                \
     throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,                     \
                                  exception_object, #exception_object)
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing.  First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Argument can be any printable object; that is, any object with a defined
-/// output operator.
+/// Argument can be any printable object;  that is, any object with a defined
+/// output operator <<.
 ///
 /// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
@@ -220,106 +224,109 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// -  THROW0p_TRACE(123);
 /// -  THROW0p_TRACE(complex(1,2));
 /// @sa
-///   THROW0np_TRACE
+///   THROW0_TRACE, THROW0np_TRACE, THROW1p_TRACE, THROWp_TRACE
 #  define THROW0p_TRACE(exception_object)                               \
     throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,                    \
                                   exception_object, #exception_object)
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing.  First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Argument can be any printable object; that is, any object with a defined
-/// output operator.
+/// Argument can be any object (including non-printable).
 ///
-/// Similar to THROW0p_TRACE except that program is not "aborted" when
-/// exception is thrown, and argument type can be an aggregate type such as
-/// Vector<T> where T is a printable argument.
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
 /// Example:
 /// -  THROW0np_TRACE(vector<char>());
 /// @sa
-///   THROW0p_TRACE
+///   THROW0p_TRACE, THROW1np_TRACE, THROWnp_TRACE
 #  define THROW0np_TRACE(exception_object)                              \
     throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,                   \
                                    exception_object, #exception_object)
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing.  First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
 /// Arguments can be any exception class with the specified initialization
-/// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and
-/// initialization argument.
+/// argument.  The class argument can be either a string or derived from
+/// std::exception (with the "what()" method defined).
+///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
 /// Example:
 /// -  THROW1_TRACE(runtime_error, "Something is weird...");
+/// -  THROW1_TRACE(string,        "Some error message");
+/// @sa
+///   THROW1p_TRACE, THROW0_TRACE, THROW_TRACE
 #  define THROW1_TRACE(exception_class, exception_arg)                  \
     throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,                     \
                                  exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing.  First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
-/// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and
-/// initialization argument.
+/// Arguments can be any exception class with the specified initialization
+/// argument and an output operator << defined.  The class argument need not be
+/// derived from std::exception as a new class object is constructed using the
+/// specified class name and initialization argument.
 ///
 /// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
 /// Example:
 /// -  THROW1p_TRACE(int, 32);
 /// @sa
-///   THROW1np_TRACE
+///   THROW1_TRACE, THROW1np_TRACE, THROW0p_TRACE, THROWp_TRACE
 #  define THROW1p_TRACE(exception_class, exception_arg)                 \
     throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,                    \
                                   exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing.  First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
-/// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and
-/// initialization argument.
+/// Arguments can be any exception class with the specified initialization
+/// argument.  The class argument need not be derived from std::exception as a
+/// new class object is constructed using the specified class name and
+/// initialization argument, then just passed through.
 ///
-/// Similar to THROW1p_TRACE except that program is not "aborted" when
-/// exception is thrown, and argument type can be an aggregate type such as
-/// Vector<T> where T is a printable argument.
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
 /// Example:
 /// -  THROW1np_TRACE(CUserClass, "argument");
+/// @sa
+///   THROW1p_TRACE, THROW0np_TRACE, THROWnp_TRACE
 #  define THROW1np_TRACE(exception_class, exception_arg)                \
     throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,                   \
                                    exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
-/// Combines diagnostic message trace and exception throwing. First the
+/// Combines diagnostic message trace and exception throwing. F irst the
 /// diagnostic message is printed, and then exception is thrown.
 ///
 /// Arguments can be any exception class with the specified initialization
-/// arguments. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and
-/// initialization arguments.
+/// arguments.  The class argument can be either a string or derived from
+/// std::exception (with the "what()" method defined).
 ///
 /// Similar to THROW1_TRACE except that the exception class can have multiple
 /// initialization arguments instead of just one.
 ///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
 /// Example:
+/// -  THROW_TRACE(string, ("Some error"));
 /// -  THROW_TRACE(bad_alloc, ());
 /// -  THROW_TRACE(runtime_error, ("Something is weird..."));
 /// -  THROW_TRACE(CParseException, ("Some parse error", 123));
 /// @sa
-///   THROW1_TRACE
+///   THROWp_TRACE, THROW0_TRACE, THROW1_TRACE
 #  define THROW_TRACE(exception_class, exception_args)                  \
     throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,                     \
                                  exception_class exception_args, #exception_class)
@@ -330,19 +337,19 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// diagnostic message is printed, and then exception is thrown.
 ///
 /// Arguments can be any exception class with the specified initialization
-/// arguments. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and
-/// initialization arguments.
-///
-/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+/// arguments and an output operator << defined. The class argument need not be
+/// derived from std::exception as a new class object is constructed using the
+/// specified class name and initialization arguments.
 ///
 /// Similar to THROW1p_TRACE except that the exception class can have multiple
 /// initialization arguments instead of just one.
 ///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
 /// Example:
 /// - THROWp_TRACE(complex, (2, 3));
 /// @sa
-///   THROW1p_TRACE
+///   THROW_TRACE, THROWnp_TRACE, THROW1p_TRACE, THROW0p_TRACE
 #  define THROWp_TRACE(exception_class, exception_args)                 \
     throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,                    \
                                   exception_class exception_args, #exception_class)
@@ -353,25 +360,26 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// diagnostic message is printed, and then exception is thrown.
 ///
 /// Arguments can be any exception class with the specified initialization
-/// argument. The class argument need not be derived from std::exception as
-/// a new class object is constructed using the specified class name and
-/// initialization argument.
+/// argument.  The class argument need not be derived from std::exception as a
+/// new class object is constructed using the specified class name and
+/// initialization arguments, then just passed through.
 ///
-/// Argument type can be an aggregate type such as Vector<T> where T is a
-/// printable argument.
+/// Similar to THROW1np_TRACE except that the exception class can have multiple
+/// initialization arguments instead of just one.
 ///
-/// Similar to THROWp_TRACE except that program is not "aborted" when
-/// exception is thrown.
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 ///
 /// Example:
 /// -  THROWnp_TRACE(CUserClass, (arg1, arg2));
+/// @sa
+///   THROWp_TRACE, THROW1np_TRACE, THROW0np_TRACE
 #  define THROWnp_TRACE(exception_class, exception_args)                \
     throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,                   \
                                    exception_class exception_args, #exception_class)
 
 #else  /* _DEBUG */
 
-// No trace/debug versions of these macros.
+// Release-mode versions of the above macros: no trace logging, and no abort().
 
 #  define RETHROW_TRACE                                     \
     throw
@@ -1363,7 +1371,7 @@ public:
 // to let them satisfy TErrorStr without a wrapper.  However, they
 // don't all agree on what form the wrapper should take. :-/
 NCBI_XNCBI_EXPORT
-extern const char*  Ncbi_strerror(int errnum);
+extern const char* Ncbi_strerror(int errnum);
 
 #ifdef NCBI_COMPILER_GCC
 inline int         NcbiErrnoCode(void)      { return errno; }
