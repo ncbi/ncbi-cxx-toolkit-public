@@ -186,14 +186,14 @@ int CNCBITestConnStreamApp::Run(void)
     srand(g_NCBI_ConnectRandomSeed);
 
 
-    LOG_POST(Info << "Test 0 of 11: Checking error log setup");
+    LOG_POST(Info << "Test 0 of 12: Checking error log setup");
 
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
     LOG_POST(Info << "Test 0 passed\n");
 
 
-    LOG_POST(Info << "Test 1 of 11: Memory stream");
+    LOG_POST(Info << "Test 1 of 12: Memory stream");
 
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
@@ -335,7 +335,7 @@ int CNCBITestConnStreamApp::Run(void)
              << (int) size << " byte(s) transferred\n");
 
 
-    LOG_POST(Info << "Test 2 of 11: Socket stream");
+    LOG_POST(Info << "Test 2 of 12: Socket stream");
 
     bool secure = rand() & 1 ? true : false;
     if (!(net_info = ConnNetInfo_Create(0)))
@@ -373,7 +373,7 @@ int CNCBITestConnStreamApp::Run(void)
     }
 
 
-    LOG_POST(Info << "Test 3 of 11: FTP download");
+    LOG_POST(Info << "Test 3 of 12: FTP download");
 
     CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
@@ -408,7 +408,7 @@ int CNCBITestConnStreamApp::Run(void)
              << " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST(Info << "Test 4 of 11: FTP upload");
+    LOG_POST(Info << "Test 4 of 12: FTP upload");
 
     EIO_Status status;
     string ftpuser, ftppass, ftpfile;
@@ -503,7 +503,7 @@ int CNCBITestConnStreamApp::Run(void)
         LOG_POST(Info << "Test 4 skipped\n");
 
 
-    LOG_POST(Info << "Test 5 of 11: FTP peculiarities");
+    LOG_POST(Info << "Test 5 of 12: FTP peculiarities");
 
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
@@ -595,7 +595,7 @@ int CNCBITestConnStreamApp::Run(void)
     }}
 
 
-    LOG_POST(Info << "Test 6 of 11: Big buffer bounce via HTTP");
+    LOG_POST(Info << "Test 6 of 12: Big buffer bounce via HTTP");
 
     ConnNetInfo_Destroy(net_info);
     if (!(net_info = ConnNetInfo_Create(0)))
@@ -652,7 +652,7 @@ int CNCBITestConnStreamApp::Run(void)
     ios.clear();
 
 
-    LOG_POST(Info << "Test 7 of 11: Random bounce");
+    LOG_POST(Info << "Test 7 of 12: Random bounce");
 
     if (!(ios << buf1.get()))
         ERR_POST(Fatal << "Cannot send data");
@@ -697,7 +697,7 @@ int CNCBITestConnStreamApp::Run(void)
     ios.clear();
 
 
-    LOG_POST(Info << "Test 8 of 11: Truly binary bounce");
+    LOG_POST(Info << "Test 8 of 12: Truly binary bounce");
 
     for (i = 0;  i < kBufferSize;  i++)
         buf1.get()[i] = (char)(255/*rand() % 256*/);
@@ -726,6 +726,7 @@ int CNCBITestConnStreamApp::Run(void)
         ERR_POST(Fatal << "Not entirely bounced, mismatch position: " << i+1);
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
+    ios.Close();
 
     LOG_POST(Info << "Test 8 passed\n");
 
@@ -733,7 +734,7 @@ int CNCBITestConnStreamApp::Run(void)
     buf2.reset(0);
 
 
-    LOG_POST(Info << "Test 9 of 11: NcbiStreamCopy()");
+    LOG_POST(Info << "Test 9 of 12: NcbiStreamCopy()");
 
     ofstream null(DEV_NULL);
     assert(null);
@@ -747,9 +748,10 @@ int CNCBITestConnStreamApp::Run(void)
         ERR_POST(Fatal << "Test 9 failed");
     else
         LOG_POST(Info << "Test 9 passed\n");
+    /* http will be closed by return from main() */
 
 
-    LOG_POST(Info << "Test 10 of 11: HTTP status code and text");
+    LOG_POST(Info << "Test 10 of 12: HTTP status code and text");
 
     CConn_HttpStream bad_http("https://www.ncbi.nlm.nih.gov/blah");
     int    code = bad_http.GetStatusCode();
@@ -771,11 +773,12 @@ int CNCBITestConnStreamApp::Run(void)
     NcbiCout << "Status(good) = " << code << ' ' << text << NcbiEndl;
     if (code != 200  ||  text.empty())
         ERR_POST(Fatal << "Test 10 failed");
+    good_http.Close();
 
     LOG_POST(Info << "Test 10 passed\n");
 
 
-    LOG_POST(Info << "Test 11 of 11: HTTP If-Modified-Since");
+    LOG_POST(Info << "Test 11 of 12: HTTP If-Modified-Since");
 
     CConn_HttpStream modified("https://www.ncbi.nlm.nih.gov/Service"
                               "/index.html",
@@ -790,9 +793,57 @@ int CNCBITestConnStreamApp::Run(void)
         ERR_POST(Fatal << "Non-empty response\n" << ftpfile);
     if (modified.GetStatusCode() != 304)
         ERR_POST(Fatal << "Non-304 response");
+    modified.Close();
 
     LOG_POST(Info << "Test 11 passed\n");
 
+
+    LOG_POST(Info << "Test 12 of 12: Service connector with SOCK");
+
+    SOCK sock;
+    string hello("Hello, World!");
+    CConn_ServiceStream echo("bounce", fSERV_Standalone);
+    if (!(sock = echo.GetSOCK()))
+        ERR_POST(Fatal << "Unable to get SOCK. Test 12 failed");
+    if (!(echo << hello << NcbiEndl))
+        ERR_POST(Fatal << "Unable to send. Test 12 failed");
+    if ((status = SOCK_Status(sock, eIO_Write)) != eIO_Success) {
+        ERR_POST(Fatal << "SOCK write status " << IO_StatusStr(status)
+                 << ". Test 12 failed");
+    }
+    if (!getline(echo, ftpfile))
+        ERR_POST(Fatal << "Unable to receive. Test 12 failed");
+    if (ftpfile != hello) {
+        ERR_POST(Fatal << '"' << hello << "\" != \"" << ftpfile
+                 << "\". Test 12 failed");
+    }
+    if (hello != ftpfile)
+        ERR_POST(Fatal << "Stream data mismatch. Test 12 failed");
+    hello += '\n';
+    status = SOCK_Write(sock, hello.c_str(), hello.size(),
+                        &size, eIO_WritePersist);
+    if (status != eIO_Success) {
+        ERR_POST(Fatal << "SOCK write failed (" << IO_StatusStr(status)
+                 << "). Test 12 failed");
+    }
+    char smallbuf[80];
+    status = SOCK_Read(sock, smallbuf, sizeof(smallbuf) - 1,
+                       &size, eIO_ReadPlain);
+    if (status != eIO_Success  ||  size > hello.size()) {
+        ERR_POST(Fatal << "SOCK read failed ("
+                 << (status != eIO_Success ? IO_StatusStr(status) : "too long")
+                 << "). Test 12 failed");
+    }
+    smallbuf[size] = '\0';
+    if (NStr::strncasecmp(hello.c_str(), smallbuf, strlen(smallbuf)) != 0)
+        ERR_POST(Fatal << "SOCK data mismatch. Test 12 failed");
+    m = size_t(echo.tellp()) << 1;
+    n = size_t(SOCK_GetPosition(sock, eIO_Write));
+    if (n != m)
+        ERR_POST(Fatal << "Position mismatch. Test 12 failed");
+    echo.Close();
+
+    LOG_POST(Info << "Test 12 passed\n");
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     return 0/*okay*/;

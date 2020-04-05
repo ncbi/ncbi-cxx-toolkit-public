@@ -1182,14 +1182,17 @@ extern EIO_Status CONN_GetSOCK(CONN conn, SOCK* sock)
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     x_conn = conn->meta.list;
-    if (x_conn  &&  x_conn->meta  &&  x_conn->meta->get_type
-        &&  x_conn->meta->get_type(x_conn->meta->c_get_type)
-        == g_kNcbiSockNameAbbr) {
-        /* HACK * HACK * HACK */
-        SOCK* x_sock = (SOCK*) x_conn->handle;
-        if (x_sock) {
-            *sock = *x_sock;
-            return eIO_Success;
+    if (x_conn  &&  x_conn->meta  &&  x_conn->meta->get_type) {
+        const char* type = x_conn->meta->get_type(x_conn->meta->c_get_type);
+        if (type == g_kNcbiSockNameAbbr
+            ||  ((type = strrchr(type, '/')) != 0
+                 &&  strcmp(++type, g_kNcbiSockNameAbbr) == 0)) {
+            /* HACK * HACK * HACK */
+            SOCK* x_sock = (SOCK*) x_conn->handle;
+            if (x_sock) {
+                *sock = *x_sock;
+                return eIO_Success;
+            }
         }
     }
     return eIO_Closed;
