@@ -837,7 +837,7 @@ int CNCBITestConnStreamApp::Run(void)
                  << "). Test 12 failed");
     }
     smallbuf[size] = '\0';
-    if (NStr::strncasecmp(hello.c_str(), smallbuf, strlen(smallbuf)) != 0)
+    if (strncasecmp(hello.c_str(), smallbuf, strlen(smallbuf)) != 0)
         ERR_POST(Fatal << "SOCK data mismatch. Test 12 failed");
     m = size_t(echo.tellp()) << 1;
     n = size_t(SOCK_GetPosition(sock, eIO_Write));
