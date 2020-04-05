@@ -242,8 +242,18 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
                                  " Cannot finalize implicitly"
                                  ", data loss may result"));
             }
-        } else if (sync() != 0)
-            status = m_Status != eIO_Success ? m_Status : eIO_Unknown;
+        } else {
+            bool synced = false;
+            try {
+                if (sync() == 0)
+                    synced = true;
+            }
+            catch (...) {
+                ;
+            }
+            if (!synced)
+                status = m_Status != eIO_Success ? m_Status : eIO_Unknown;
+        }
     }
     setp(0, 0);
 
