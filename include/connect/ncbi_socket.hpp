@@ -451,6 +451,8 @@ public:
     /// Access to the underlying "SOCK"
     SOCK GetSOCK(void) const;
 
+    bool IsEmpty(void) const { return !m_Socket; }
+
     virtual
     POLLABLE GetPOLLABLE(void) const { return POLLABLE_FromSOCK(m_Socket); }
 
@@ -661,6 +663,8 @@ public:
 
     /// Access to the underlying "LSOCK"
     LSOCK GetLSOCK(void) const;
+
+    bool IsEmpty(void) const { return !m_Socket; }
 
     virtual
     POLLABLE GetPOLLABLE(void) const { return POLLABLE_FromLSOCK(m_Socket); }
