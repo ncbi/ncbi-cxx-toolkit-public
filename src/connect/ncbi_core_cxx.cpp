@@ -111,6 +111,9 @@ static int s_REG_Get(void* user_data,
             else
                 result = 1/*success*/;
             strncpy0(value, item.data(), len);
+            _TRACE("s_REG_Get(" + NStr::PtrToString(user_data) + ", "
+                   + x_Reg(section, name) + ") = \"" + string(value)
+                   + (result ? "\"" : "\" <Truncated>"));
         } else
             result = -1/*unmodified*/;
     }

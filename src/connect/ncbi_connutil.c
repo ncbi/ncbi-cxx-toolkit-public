@@ -215,13 +215,14 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 }
 
 
-static const char* s_GetValue(const char* svc, size_t len,
+static const char* s_GetValue(const char* svc, size_t svclen,
                               const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
 {
-    const char* retval = x_GetValue(svc, len, param,
+    const char* retval = x_GetValue(svc, svclen, param,
                                     value, value_size, def_value, generic);
     if (retval) {
+        size_t len;
         /* strip enveloping quotes, if any */
         if (*value  &&  (len = strlen(value)) > 1
             &&  (*value == '"'  ||  *value == '\'')
@@ -231,6 +232,13 @@ static const char* s_GetValue(const char* svc, size_t len,
             value[len] = '\0';
         }
         assert(retval == value);
+    }
+    if (*value  ||  (retval  &&  *retval)) {
+        CORE_TRACEF(("ConnNetInfo(%.*s%s%s=\"%s\"): %s%s%s",
+                     (int) svclen, svc ? svc : "", svclen ? ", " : "",
+                     param, value,
+                     &"\""[!retval], retval ? retval : "NULL",
+                     &"\""[!retval]));
     }
     return retval;
 }
@@ -383,7 +391,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     *value = '\0';                                                      \
     if (!s_GetValue(service, len,                                       \
                     name, value, sizeof(value), def_value, &generic))   \
-        goto err
+        goto err/*memory or truncation error*/
 
     char str[(CONN_PATH_LEN + 1)/2];
     int/*bool*/ generic;
