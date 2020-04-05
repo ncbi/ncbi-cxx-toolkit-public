@@ -779,25 +779,28 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             empty = m_Fwd.empty()  &&  !m_FwdFB.empty();
             temp = "OK: ";
             if (!empty) {
-                stable_sort(m_Fwd.begin(),   m_Fwd.end());
                 temp += NStr::UInt8ToString(m_Fwd.size());
+                stable_sort(m_Fwd.begin(),   m_Fwd.end());
             }
-            size_t down = 0;
-            if (!m_FwdFB.empty()) {
+            size_t up = m_FwdFB.size();
+            if (up) {
                 stable_sort(m_FwdFB.begin(), m_FwdFB.end());
                 if (!empty)
                     temp += " + ";
-                temp += NStr::UInt8ToString(m_FwdFB.size());
+                temp += NStr::UInt8ToString(up);
+                size_t down = 0;
                 ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_FwdFB) {
                     if (cp->status != eIO_Success)
                         ++down;
                 }
-                if (down)
+                if (down) {
                     temp += " - " + NStr::UInt8ToString(down);
+                    up -= down;
+                }
             }
-            down -= m_Fwd.size() + m_FwdFB.size();
-            if (down) {
-                temp += -down == 1 ? " port" : " ports";
+            up += m_Fwd.size();
+            if (up) {
+                temp += up == 1 ? " port" : " ports";
                 empty = false;
             } else
                 empty = true;

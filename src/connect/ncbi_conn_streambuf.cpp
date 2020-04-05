@@ -164,25 +164,25 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
     if (buf_size) {
         m_WriteBuf = new
             CT_CHAR_TYPE[buf_size
-                         << !(flgs & (CConn_IOStream::fConn_ReadUnbuffered |
-                                      CConn_IOStream::fConn_WriteUnbuffered))];
+                         << ((flgs & (CConn_IOStream::fConn_ReadUnbuffered |
+                                      CConn_IOStream::fConn_WriteUnbuffered))
+                             ? 0 : 1)];
         if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
-            m_BufSize = buf_size;
-        if (flgs & CConn_IOStream::fConn_WriteUnbuffered)
-            buf_size = 0;
+            m_BufSize =  buf_size;
+        if (  flgs & CConn_IOStream::fConn_WriteUnbuffered)
+            buf_size  =  0;
         if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
-            m_ReadBuf = m_WriteBuf + buf_size;
-    } /* else see ctor */
-
-    if (buf_size)
+            m_ReadBuf =  m_WriteBuf + buf_size;
         setp(m_WriteBuf, m_WriteBuf + buf_size);
-    /* else setp(0, 0) */
+    }/* else
+        setp(0, 0) */
+
     if (ptr) {
         m_Initial = true;
         setg(ptr,        ptr,       ptr + size);   // Initial get area
     } else
         setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);    // Empty get area
-    _ASSERT(m_ReadBuf  &&  m_BufSize);
+    _ASSERT(m_ReadBuf  &&  m_BufSize);             // NB: See ctor
 
     SCONN_Callback cb;
     cb.func = x_OnClose; /* NCBI_FAKE_WARNING: WorkShop */

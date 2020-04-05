@@ -126,6 +126,12 @@
 #  endif /*IN_CLASSA_MAX<=IN_LOOPBACKNET*/
 #endif /*IN_CLASSA_MAX*/
 
+#ifdef NCBI_COMPILER_MSVC
+#  define sys_gethostname(a, b)  gethostname(a, (int)(b))
+#else
+#  define sys_gethostname        gethostname
+#endif
+
 
 #ifdef NCBI_MONKEY
 /* A hack - we assume that SOCK variable is named "sock" in the code.
@@ -1059,7 +1065,7 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
     CORE_TRACE("[SOCK::gethostname]");
 
     name[0] = name[namesize - 1] = '\0';
-    if (gethostname(name, namesize) != 0) {
+    if (sys_gethostname(name, namesize) != 0) {
         if (log) {
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);

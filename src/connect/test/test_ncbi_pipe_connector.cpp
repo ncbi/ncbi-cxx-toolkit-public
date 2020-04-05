@@ -53,6 +53,18 @@
 #include "test_assert.h"  // This header must go last
 
 
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+/* Microsoft does not want to use POSIX name, not to accept POSIX compliance */
+#  define sys_read(a, b, c)    _read(a, b, (unsigned int)(c))
+#  define sys_write(a, b, c)   _write(a, b, (unsigned int)(c))
+#  define sys_fileno           _fileno
+#else
+#  define sys_read              read
+#  define sys_write             write
+#  define sys_fileno            fileno
+#endif /*NCBI_COMPILER_MSVC && _MSC_VER>=1400*/
+
+
 USING_NCBI_SCOPE;
 
 
@@ -92,7 +104,7 @@ static string s_ReadLine(FILE* fs)
     string str;
     for (;;) {
         char    c;
-        ssize_t cnt = ::read(fileno(fs), &c, 1);
+        ssize_t cnt = ::sys_read(sys_fileno(fs), &c, 1);
         if (cnt <= 0)
             break;
         assert(cnt == 1);
@@ -112,14 +124,14 @@ static void s_WriteLine(FILE* fs, string str)
     size_t      size = str.size();
     const char* data = str.c_str();
     do { 
-        ssize_t cnt = ::write(fileno(fs), data + written, size - written);
+        ssize_t cnt = ::sys_write(sys_fileno(fs), data + written, size - written);
         if (cnt <= 0)
             break;
         written += cnt;
     } while (written < size);
     if (written == size) {
         static const char eol[] = { '\n' };
-        (void) ::write(fileno(fs), eol, sizeof(eol));
+        (void) ::sys_write(fileno(fs), eol, sizeof(eol));
     }
 }
 

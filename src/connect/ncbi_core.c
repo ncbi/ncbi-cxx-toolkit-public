@@ -66,9 +66,9 @@ extern const char* IO_StatusStr(EIO_Status status)
         "Closed"
     };
 
-    assert(eIO_Success <= status  &&  status < EIO_N_STATUS
+    assert(eIO_Success <= (int) status  &&  (int) status < EIO_N_STATUS
            &&  kStatusStr[status]);
-    return eIO_Success <= status  &&  status < EIO_N_STATUS
+    return eIO_Success <= (int) status  &&  (int) status < EIO_N_STATUS
         ? kStatusStr[status]
         : 0;
 }

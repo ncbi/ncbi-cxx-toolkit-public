@@ -206,6 +206,7 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
 #endif
 
 
+#if 0 /*FIXME*/
 /* Performance / integrity improvements:
  * 1. flag is to keep byte-size of the previous block (instead of the magic);
  * 2. since sizes always have last nibble zero, use that in the flag field as
@@ -254,6 +255,7 @@ static unsigned int x_PrevBit(TNCBI_Size size)
 {
     return x_Parity(size) ? HEAP_PREV_BIT : 0;
 }
+#endif /*0*/
 
 
 extern HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
