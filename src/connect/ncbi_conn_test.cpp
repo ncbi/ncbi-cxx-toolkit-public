@@ -864,13 +864,6 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
 }
 
 
-static inline SOCK x_GetSOCK(const CConn_IOStream* s)
-{
-    SOCK sock;
-    return CONN_GetSOCK(s->GetCONN(), &sock) == eIO_Success ? sock : 0;
-}
-
-
 EIO_Status CConnTest::CheckFWConnections(string* reason)
 {
     static const STimeout kZeroTmo = { 0, 0 };
@@ -983,14 +976,14 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             }
             if (status != eIO_Success)
                 break;
+            vector<CSocketAPI::SPoll>  poll;
             vector< AutoPtr<CSocket> >  sock;
-            vector<CSocketAPI::SPoll>   poll;
             ITERATE(vector<CFWCheck>, ck, fwck) {
                 CConn_IOStream* fw = ck->first.get();
                 if (!fw  ||  ck->second->status != eIO_Success)
                     continue;
                 AutoPtr<CSocket> s(new CSocket);
-                s->Reset(x_GetSOCK(fw), eNoOwnership, eCopyTimeoutsFromSOCK);
+                s->Reset(fw->GetSOCK(), eNoOwnership, eCopyTimeoutsFromSOCK);
                 sock.push_back(s);
                 poll.push_back(CSocketAPI::SPoll(sock.back().get(), eIO_Read));
             }

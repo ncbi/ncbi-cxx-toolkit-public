@@ -134,6 +134,14 @@ EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 }
 
 
+EIO_Status CConn_IOStream::Fetch(const STimeout* timeout)
+{
+    CONN conn = GET_CONN(m_CSb);
+    return !conn  ||  !flush()
+        ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
+}
+
+
 EIO_Status CConn_IOStream::Pushback(const CT_CHAR_TYPE* data, streamsize size)
 {
     EIO_Status status = m_CSb ? m_CSb->Pushback(data, size) : eIO_NotSupported;
@@ -142,9 +150,25 @@ EIO_Status CConn_IOStream::Pushback(const CT_CHAR_TYPE* data, streamsize size)
     return status;
 }
 
+
+SOCK CConn_IOStream::GetSOCK(void)
+{
+    SOCK sock;
+    CONN conn = GET_CONN(m_CSb);
+    if (!conn  ||  CONN_GetSOCK(conn, &sock) != eIO_Success)
+        sock = 0;
+    return sock;
+}
+
+
 EIO_Status CConn_IOStream::Close(void)
 {
-    return m_CSb ? m_CSb->Close() : eIO_Closed;
+    if (!m_CSb)
+        return eIO_Closed;
+    EIO_Status status = m_CSb->Close();
+    if (status != eIO_Success  ||  status != eIO_Closed)
+        clear(NcbiBadbit);
+    return status;
 }
 
 
@@ -631,15 +655,6 @@ CConn_HttpStream::~CConn_HttpStream()
 }
 
 
-// NB: see CConn_ServiceStream::Fetch()
-EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
-{
-    CONN conn = GetCONN();
-    return !conn  ||  !flush()
-        ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
-}
-
-
 // NB:  must never be upcalled (directly or indirectly) from any stream ctor
 //      for SHTTP_StatusData may yet be unbuilt (and the header field invalid)!
 static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
@@ -825,25 +840,6 @@ CConn_ServiceStream::~CConn_ServiceStream()
 {
     // Explicitly destroy so that the callbacks are not called out of context.
     x_Destroy();
-}
-
-
-// NB: see CConn_HttpStream::Fetch()
-EIO_Status CConn_ServiceStream::Fetch(const STimeout* timeout)
-{
-    CONN conn = GetCONN();
-    return !conn  ||  !flush()
-        ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
-}
-
-
-SOCK CConn_ServiceStream::GetSOCK(void)
-{
-    SOCK sock;
-    CONN conn = GetCONN();
-    if (!conn  ||  CONN_GetSOCK(conn, &sock) != eIO_Success)
-        sock = 0;
-    return sock;
 }
 
 
@@ -1114,7 +1110,7 @@ EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
 {
     const STimeout* r_timeout = kInfiniteTimeout/*0*/;
     const STimeout* w_timeout = kInfiniteTimeout/*0*/;
-    static char block[16384]; /*NB:shared sink*/
+    static char sink[16384]; /*NB:shared sink*/
     CONN conn = GetCONN();
     if (conn) {
         size_t n;
@@ -1123,19 +1119,19 @@ EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
         _VERIFY(SetTimeout(eIO_Read,  timeout) == eIO_Success);
         _VERIFY(SetTimeout(eIO_Write, timeout) == eIO_Success);
         // Cause any upload-in-progress to abort
-        CONN_Read (conn, block, sizeof(block), &n, eIO_ReadPlain);
+        CONN_Read(conn, sink, sizeof(sink), &n, eIO_ReadPlain);
         // Cause any command-in-progress to abort
         CONN_Write(conn, "NOOP\n", 5, &n, eIO_WritePersist);
     }
     clear();
-    while (read(block, sizeof(block)))
+    while (read(sink, sizeof(sink)))
         ;
     if (!conn)
         return eIO_Closed;
     EIO_Status status;
     do {
         size_t n;
-        status = CONN_Read(conn, block, sizeof(block), &n, eIO_ReadPersist);
+        status = CONN_Read(conn, sink, sizeof(sink), &n, eIO_ReadPersist);
     } while (status == eIO_Success);
     _VERIFY(CONN_SetTimeout(conn, eIO_Read,  r_timeout) == eIO_Success);
     _VERIFY(CONN_SetTimeout(conn, eIO_Write, w_timeout) == eIO_Success);

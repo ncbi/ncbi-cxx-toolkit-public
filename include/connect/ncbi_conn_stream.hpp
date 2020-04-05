@@ -225,7 +225,7 @@ public:
     /// @sa
     ///   CONN_SetTimeout, SetReadTimeout, SetWriteTimeout
     EIO_Status         SetTimeout(EIO_Event       direction,
-                                 const STimeout* timeout) const;
+                                  const STimeout* timeout) const;
 
     /// @return
     ///   Connection timeout for "direction"
@@ -242,6 +242,9 @@ public:
     ///   CONN_Status
     EIO_Status         Status(EIO_Event direction = eIO_Close) const;
 
+    /// Flush the stream and fetch the response (w/o extracting any user data)
+    EIO_Status         Fetch(const STimeout* timeout = kDefaultTimeout);
+
     /// Return the specified data "data" of size "size" into the underlying
     /// connection CONN.
     /// If there is any non-empty pending input sequence (internal read buffer)
@@ -255,6 +258,9 @@ public:
     /// @sa
     ///   CONN_Pushback
     EIO_Status         Pushback(const CT_CHAR_TYPE* data, streamsize size);
+
+    /// Get underlying SOCK, if available (e.g. after Fetch())
+    SOCK               GetSOCK(void);
 
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render the stream unusable for further I/O.
@@ -608,9 +614,6 @@ public:
 
     ~CConn_HttpStream();
 
-    /// Flush the stream and fetch the response (w/o extracting any user data)
-    EIO_Status        Fetch(const STimeout* timeout = kDefaultTimeout);
-
     /// Get the last seen HTTP status code
     int               GetStatusCode(void) const { return m_StatusData.code; }
 
@@ -688,9 +691,6 @@ public:
 
     ~CConn_ServiceStream();
 
-    /// Flush the stream and fetch the response (w/o extracting any user data)
-    EIO_Status        Fetch(const STimeout* timeout = kDefaultTimeout);
-
     /// Get the last seen HTTP status code, if available
     int               GetStatusCode(void) const { return m_CBD.status.code; }
 
@@ -699,9 +699,6 @@ public:
 
     /// Get the last seen HTTP status text, if available
     const string&     GetHTTPHeader(void) const { return m_CBD.status.header; }
-
-    /// Get underlying SOCK, if available (e.g. after Fetch())
-    SOCK              GetSOCK(void);
 
 public:
     /// Helper class
