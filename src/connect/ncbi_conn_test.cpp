@@ -977,17 +977,12 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             if (status != eIO_Success)
                 break;
             vector<CSocketAPI::SPoll>  poll;
-            vector< AutoPtr<CSocket> >  sock;
             ITERATE(vector<CFWCheck>, ck, fwck) {
                 CConn_IOStream* fw = ck->first.get();
                 if (!fw  ||  ck->second->status != eIO_Success)
                     continue;
-                AutoPtr<CSocket> s(new CSocket);
-                s->Reset(fw->GetSOCK(), eNoOwnership, eCopyTimeoutsFromSOCK);
-                sock.push_back(s);
-                poll.push_back(CSocketAPI::SPoll(sock.back().get(), eIO_Read));
+                poll.push_back(CSocketAPI::SPoll(&fw->GetSocket(), eIO_Read));
             }
-            _ASSERT(poll.size() == sock.size());
             if (!poll.size())
                 break;
             status = CSocketAPI::Poll(poll, net_info->timeout);
