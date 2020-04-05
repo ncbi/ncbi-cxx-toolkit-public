@@ -66,16 +66,17 @@
  ***********************************************************************/
 
 enum EFTP_Feature {                /* NB: values must occupy 12 bits at most */
-    fFtpFeature_NOOP =  0x001,     /* all implementations MUST support       */
-    fFtpFeature_SYST =  0x002,
-    fFtpFeature_SITE =  0x004,
-    fFtpFeature_FEAT =  0x008,
-    fFtpFeature_MDTM =  0x010,
-    fFtpFeature_SIZE =  0x020,
-    fFtpFeature_REST =  0x040,
-    fFtpFeature_MLSx =  0x080,
-    fFtpFeature_EPRT =  0x100,
-    fFtpFeature_EPSV = 0x1000,
+    fFtpFeature_NOOP =  0x001,     /* all implementations MUST support RFC959*/
+    fFtpFeature_SYST =  0x002,     /* RFC 959                                */
+    fFtpFeature_SITE =  0x004,     /* RFC 959, 1123                          */
+    fFtpFeature_FEAT =  0x008,     /* RFC 3659                               */
+    fFtpFeature_MDTM =  0x010,     /* RFC 3659                               */
+    fFtpFeature_SIZE =  0x020,     /* RFC 3659                               */
+    fFtpFeature_REST =  0x040,     /* RFC 3659, NB: FEAT                     */
+    fFtpFeature_MLSx =  0x080,     /* RFC 3659                               */
+    fFtpFeature_EPRT =  0x100,     /* RFC 2428                               */
+    fFtpFeature_MFF  =  0x200,     /* draft-somers-ftp-mfxx-04, NB: FEAT     */
+    fFtpFeature_EPSV = 0x1000,     /* RFC 2428                               */
     fFtpFeature_APSV = 0x3000      /* EPSV ALL -- a la "APSV" from RFC 1579  */
 };
 typedef unsigned short TFTP_Features; /* bitwise OR of EFtpFeature */
@@ -464,7 +465,7 @@ static EIO_Status x_FTPHelpCB(SFTPConnector* xxx, int code,
             else
                 xxx->feat &= (TFTP_Features)(~fFtpFeature_EPRT);
         }
-        if ((s = x_4Word(line, "EPSV")) != 0) {  /* RFC 2428 (cf 1579) */
+        if ((s = x_4Word(line, "EPSV")) != 0) {  /* RFC 2428 (cf RFC 1579) */
             if (s[4 + strspn(s + 4, " \t")] != '*')
                 xxx->feat |=                  fFtpFeature_EPSV;
             else
@@ -498,7 +499,9 @@ static EIO_Status x_FTPFeatCB(SFTPConnector* xxx, int code,
     if (!lineno)
         return code == 211 ? eIO_Success : eIO_NotSupported;
     if (code  &&  strlen(line) >= 4
-        &&  (!line[4]  ||  isspace((unsigned char) line[4]))) {
+        &&  (!line[4]
+             ||  isspace((unsigned char) line[3])
+             ||  isspace((unsigned char) line[4]))) {
         assert(code == 211);
         if      (strncasecmp(line, "MDTM", 4) == 0)
             xxx->feat |= fFtpFeature_MDTM;
@@ -512,6 +515,10 @@ static EIO_Status x_FTPFeatCB(SFTPConnector* xxx, int code,
             xxx->feat |= fFtpFeature_EPRT;
         else if (strncasecmp(line, "EPSV", 4) == 0)
             xxx->feat |= fFtpFeature_EPSV;
+        else if (strncasecmp(line, "MFMT", 4) == 0)
+            xxx->feat |= fFtpFeature_MFF;   /* fFtpFeature_MFF not yet supp */
+        else if (strncasecmp(line, "MFF ", 4) == 0)
+            xxx->feat |= fFtpFeature_MFF;   /* NB: modify facts must follow */
     }
     return eIO_Success;
 }
