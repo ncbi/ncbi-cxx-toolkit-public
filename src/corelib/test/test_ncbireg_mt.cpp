@@ -40,6 +40,14 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+/* Microsoft does not want to use POSIX name, not to accept POSIX compliance */
+#  define sys_putenv  _putenv
+#  define sys_strdup  _strdup
+#else
+#  define sys_putenv   putenv
+#  define sys_strdup   strdup
+#endif /*NCBI_COMPILER_MSVC && _MSC_VER>=1400*/
 USING_NCBI_SCOPE;
 
 
@@ -330,7 +338,7 @@ bool CTestRegApp::TestApp_Init(void)
         // Put some variables to test CNcbiEnvironment
         for (unsigned i = 0; i < s_NumThreads*10; i++) {
             string e = "TESTENV" + NStr::IntToString(i) + "=value";
-            putenv(strdup(e.c_str()));
+            sys_putenv(sys_strdup(e.c_str()));
         }
     }
 

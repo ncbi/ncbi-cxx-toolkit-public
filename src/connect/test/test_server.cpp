@@ -84,7 +84,7 @@ public:
 
     /// Increment the count of client connections received, and return
     /// the new value.
-    int  RegisterClient(void) { return m_ClientCount.Add(1); }
+    int  RegisterClient(void) { return int(m_ClientCount.Add(1)); }
 
     /// Return the (cumulative) connection limit originally supplied
     /// to the constructor.

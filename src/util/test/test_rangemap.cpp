@@ -173,7 +173,7 @@ CTestRangeMap::TRange CTestRangeMap::RandomRange(void) const
 {
     int len = m_Random.GetRand(1, m_RangeLength);
     for ( int i = 0; i < 4; ++i ) {
-        len = len * ((double)m_Random.GetRand()/m_Random.GetMax());
+        len *= int((double(m_Random.GetRand())/m_Random.GetMax()));
         if ( len == 0 )
             len = 1;
     }

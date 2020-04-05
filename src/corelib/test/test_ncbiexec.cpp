@@ -44,6 +44,13 @@
 
 #include <common/test_assert.h> // This header must go last
 
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+ /* Microsoft does not want to use POSIX name, not to accept POSIX compliance */
+#  define sys_strdup  _strdup
+#else
+#  define sys_strdup   strdup
+#endif /*NCBI_COMPILER_MSVC && _MSC_VER>=1400*/
+
 
 USING_NCBI_SCOPE;
 
@@ -116,7 +123,7 @@ int CTest::Run(void)
 
     // Initialization of variables and structures
 
-    char* app_c = strdup(app.c_str());
+    char* app_c = sys_strdup(app.c_str());
     assert( app_c != 0 );
 
     const char* app_p  = "ls";
@@ -144,7 +151,7 @@ int CTest::Run(void)
 #endif
         if (path.size()) {
             path_setting += path;
-            my_env[0] = strdup(path_setting.c_str());
+            my_env[0] = sys_strdup(path_setting.c_str());
         }
     }}
 

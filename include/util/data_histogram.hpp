@@ -1151,7 +1151,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t index,
 {
     if (m_TimeBins.size() <= index + 1) {
         // There is not enough bins. Need to add one
-        x_AppendBin(m_TimeBins.front().histogram, pow(2, index));
+        x_AppendBin(m_TimeBins.front().histogram, TTicks(1) << index);
 
         // Move from index to index + 1
         auto    next_it = current_it;
@@ -1166,7 +1166,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t index,
     auto next_it = current_it;
     ++next_it;
 
-    if (next_it->n_ticks == pow(2, index)) {
+    if (next_it->n_ticks == TTicks(1) << index) {
         // Half full bin; make it full and just accumulate
         next_it->n_ticks *= 2;
         next_it->histogram.StealCountersFrom(current_it->histogram);

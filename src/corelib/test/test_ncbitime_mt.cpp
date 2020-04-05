@@ -38,11 +38,18 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-USING_NCBI_SCOPE;
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+ /* Microsoft does not want to use POSIX name, not to accept POSIX compliance */
+#  define sys_tzset  _tzset
+#else
+#  define sys_tzset   tzset
+#endif /*NCBI_COMPILER_MSVC && _MSC_VER>=1400*/
 
 #if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
 #  define TIMEZONE_IS_UNDEFINED  1
 #endif
+
+USING_NCBI_SCOPE;
 
 
 template<class A, class B>
@@ -770,6 +777,6 @@ bool CTestRegApp::TestApp_Exit(void)
 int main(int argc, const char* argv[]) 
 {
     // Reinit global timezone variables
-    tzset();
+    sys_tzset();
     return CTestRegApp().AppMain(argc, argv);
 }
