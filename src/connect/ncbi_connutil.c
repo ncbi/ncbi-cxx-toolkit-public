@@ -234,9 +234,8 @@ static const char* s_GetValue(const char* svc, size_t svclen,
         assert(retval == value);
     }
     if (*value  ||  (retval  &&  *retval)) {
-        CORE_TRACEF(("ConnNetInfo(%.*s%s%s=\"%s\"): %s%s%s",
-                     (int) svclen, svc ? svc : "", svclen ? ", " : "",
-                     param, value,
+        CORE_TRACEF(("ConnNetInfo(%s%.*s%s%s=\"%s\"): %s%s%s", &"\""[!svclen],
+                     (int) svclen, svc, svclen ? "\", " : "", param, value,
                      &"\""[!retval], retval ? retval : "NULL",
                      &"\""[!retval]));
     }
