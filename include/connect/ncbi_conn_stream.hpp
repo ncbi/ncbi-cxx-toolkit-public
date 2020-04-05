@@ -74,6 +74,7 @@
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
+#include <connect/ncbi_socket.hpp>
 #include <util/icanceled.hpp>
 #include <utility>
 
@@ -88,7 +89,6 @@ BEGIN_NCBI_SCOPE
 
 
 class CConn_Streambuf;  // Forward declaration
-class CSocket;          // Forward declaration
 
 
 const size_t kConn_DefaultBufSize = 16384;  ///< I/O buffer size per direction
@@ -262,6 +262,10 @@ public:
     /// Get underlying SOCK, if available (e.g. after Fetch())
     SOCK               GetSOCK(void);
 
+    /// Get CSocket, if available (else empty).  The returned CSocket doesn't
+    /// own the underlying SOCK, and is valid for as long as the stream exists.
+    CSocket&           GetSocket(void);
+
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render the stream unusable for further I/O.
     /// Can be used at places where reaching end-of-scope for the stream
@@ -294,6 +298,7 @@ private:
 
     // Cancellation
     SCONN_Callback        m_CB[4];
+    CSocket               m_Socket;
     CConstIRef<ICanceled> m_Canceled;
     static EIO_Status x_IsCanceled(CONN conn, TCONN_Callback type, void* data);
 
@@ -372,6 +377,13 @@ inline CConn_IOStream& operator<< (CConn_IOStream& os,
     if (os.good()  &&  os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success)
         os.clear(NcbiBadbit);
     return os;
+}
+
+
+inline CSocket& CConn_IOStream::GetSocket(void)
+{
+    m_Socket.Reset(GetSOCK(), eNoOwnership, eCopyTimeoutsFromSOCK);
+    return m_Socket;
 }
 
 

@@ -40,7 +40,6 @@
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API  1  // Pick up MS-Win DLL linkage
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <errno.h>
 #include <stdlib.h>
