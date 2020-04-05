@@ -571,7 +571,7 @@ typedef int (*FREG_Get)
  * @param name
  *  Key name to add to the section
  * @param value
- *  Key value to associate with the key
+ *  Key value to associate with the key (NULL to deassociate, i.e. unset)
  * @param storage
  *  How to store the new setting, temporarily or permanently
  * @return
@@ -721,7 +721,7 @@ extern NCBI_XCONNECT_EXPORT const char* REG_Get
  * @param name
  *  Name to store the value under
  * @param value
- *  The value to store
+ *  The value to store (NULL to unset the parameter)
  * @param storage
  *  Whether to store temporarily or permanently
  * @return
