@@ -91,6 +91,19 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 NCBI_XNCBI_EXPORT
 extern void DoThrowTraceAbort(void);
 
+/// Print the specified debug message.
+NCBI_XNCBI_EXPORT
+extern void DoDbgPrint(const CDiagCompileInfo& info, const char* message);
+
+/// Print the specified debug message.
+NCBI_XNCBI_EXPORT
+extern void DoDbgPrint(const CDiagCompileInfo& info, const string& message);
+
+/// Print the specified debug messages.
+NCBI_XNCBI_EXPORT
+extern void DoDbgPrint(const CDiagCompileInfo& info,
+                       const char* msg1, const char* msg2);
+
 #if defined(_DEBUG)
 
 /// Templated function for logging debug message and "abort()"ing the
@@ -106,8 +119,7 @@ inline
 const T& DbgPrint(const CDiagCompileInfo& info,
                   const T& e, const char* e_str)
 {
-    CNcbiDiag(info, eDiag_Trace) << e_str << ": " << e.what();
-    DoThrowTraceAbort();
+    DoDbgPrint(info, e_str, e.what());
     return e;
 }
 
@@ -116,8 +128,7 @@ inline
 const char* DbgPrint(const CDiagCompileInfo& info,
                      const char* e, const char* )
 {
-    CNcbiDiag(info, eDiag_Trace) << e;
-    DoThrowTraceAbort();
+    DoDbgPrint(info, e);
     return e;
 }
 
@@ -126,8 +137,7 @@ inline
 char* DbgPrint(const CDiagCompileInfo& info,
                char* e, const char* )
 {
-    CNcbiDiag(info, eDiag_Trace) << e;
-    DoThrowTraceAbort();
+    DoDbgPrint(info, e);
     return e;
 }
 
@@ -136,8 +146,7 @@ inline
 const string& DbgPrint(const CDiagCompileInfo& info,
                        const string& e, const char* )
 {
-    CNcbiDiag(info, eDiag_Trace) << e;
-    DoThrowTraceAbort();
+    DoDbgPrint(info, e);
     return e;
 }
 
@@ -168,8 +177,7 @@ template<typename T>
 inline
 const T& DbgPrintNP(const CDiagCompileInfo& info, const T& e,const char* e_str)
 {
-    CNcbiDiag(info, eDiag_Trace) << e_str;
-    DoThrowTraceAbort();
+    DoDbgPrint(info, e_str);
     return e;
 }
 

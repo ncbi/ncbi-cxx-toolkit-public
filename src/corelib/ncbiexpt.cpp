@@ -83,6 +83,26 @@ extern void DoThrowTraceAbort(void)
 }
 
 
+extern void DoDbgPrint(const CDiagCompileInfo &info, const char* message)
+{
+    CNcbiDiag(info, eDiag_Trace) << message;
+    DoThrowTraceAbort();
+}
+
+extern void DoDbgPrint(const CDiagCompileInfo &info, const string& message)
+{
+    CNcbiDiag(info, eDiag_Trace) << message;
+    DoThrowTraceAbort();
+}
+
+extern void DoDbgPrint(const CDiagCompileInfo &info,
+                       const char* msg1, const char* msg2)
+{
+    CNcbiDiag(info, eDiag_Trace) << msg1 << ": " << msg2;
+    DoThrowTraceAbort();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Stack trace control
 
