@@ -313,7 +313,7 @@ struct SPSG_Reply
 
         SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
 
-        EState GetState() const volatile { return m_State; }
+        const volatile atomic<EState>& GetState() const volatile { return m_State; }
         string GetError();
 
         bool InProgress() const volatile { return m_State == eInProgress; }

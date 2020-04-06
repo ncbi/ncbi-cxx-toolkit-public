@@ -68,9 +68,10 @@ private:
             return x_WaitUntil() || !deadline.IsExpired();
         }
 
-        bool WaitUntil(const atomic_bool& stopped, const CDeadline& deadline)
+        template <typename T = bool>
+        bool WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
         {
-            return x_WaitUntil() || (!stopped && !deadline.IsExpired());
+            return x_WaitUntil() || (a != v ? rv : !deadline.IsExpired());
         }
 
     private:
@@ -106,7 +107,8 @@ private:
             return deadline.IsInfinite() ? x_Wait() : x_Wait(x_GetTP(deadline));
         }
 
-        bool WaitUntil(const atomic_bool& stopped, const CDeadline& deadline)
+        template <typename T = bool>
+        bool WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
         {
             const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
             const clock::duration wait = chrono::milliseconds(WAIT_MS);
@@ -121,9 +123,9 @@ private:
                     return true;
                 }
             }
-            while (!stopped);
+            while (a == v);
 
-            return false;
+            return rv;
         }
 
     private:
