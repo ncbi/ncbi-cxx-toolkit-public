@@ -37,6 +37,8 @@ signal:corelib/test/test_ncbi_system.cpp
 # error, just not important - ignore (whole test)
 race:corelib/test/test_tls_object.cpp
 
+# false positive -- last CRef release
+race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
 
 ################################################################
 # lavr CXX-11285
