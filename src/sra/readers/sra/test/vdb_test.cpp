@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <sra/readers/sra/csraread.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <insdc/sra.h>
@@ -308,7 +308,7 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
         unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
                              file, line, code, rc, buffer1);
         int exit_code = 1;
-        if ( write(2, buffer2, len) != len ) {
+        if ( NcbiSys_write(2, buffer2, len) != len ) {
             ++exit_code;
         }
         exit(exit_code);
@@ -931,8 +931,8 @@ int CCSRATestApp::Run(void)
                                  << MSerial_AsnText << *seq << endl;
                         char buf[1024];
                         for ( int t = 0; t < 10; ++t ) {
-                            size_t mem0, rss0, shr0;
-                            GetMemoryUsage(&mem0, &rss0, &shr0);
+                            CCurrentProcess::SMemoryUsage mem0;
+                            CCurrentProcess::GetMemoryUsage(mem0);
                             vector< CRef<CBioseq> > bb;
                             vector<CSeq_id_Handle> hh;
                             for ( int i = 0; i < 100000; ++i ) {
@@ -940,20 +940,20 @@ int CCSRATestApp::Run(void)
                                 sprintf(buf, "lcl|%d", 136780466+i);
                                 hh.push_back(CSeq_id_Handle::GetHandle(buf));
                             }
-                            size_t mem1, rss1, shr1;
-                            GetMemoryUsage(&mem1, &rss1, &shr1);
-                            NcbiCout << "mem: " << mem0 << " -> " << mem1
-                                     << " = " << mem1-mem0 << endl;
-                            NcbiCout << "rss: " << rss0 << " -> " << rss1
-                                     << " = " << rss1-rss0 << endl;
-                            NcbiCout << "shr: " << shr0 << " -> " << shr1
-                                     << " = " << shr1-shr0 << endl;
+                            CCurrentProcess::SMemoryUsage mem1;
+                            CCurrentProcess::GetMemoryUsage(mem1);
+                            NcbiCout << "mem: " << mem0.total << " -> " << mem1.total
+                                     << " = " << mem1.total-mem0.total << endl;
+                            NcbiCout << "rss: " << mem0.resident << " -> " << mem1.resident
+                                     << " = " << mem1.resident-mem0.resident << endl;
+                            NcbiCout << "shr: " << mem0.shared << " -> " << mem1.shared
+                                     << " = " << mem1.shared-mem0.shared << endl;
                         }
                         NcbiCout << "With general:"
                                  << MSerial_AsnText << *seq2 << endl;
                         for ( int t = 0; t < 10; ++t ) {
-                            size_t mem0, rss0, shr0;
-                            GetMemoryUsage(&mem0, &rss0, &shr0);
+                            CCurrentProcess::SMemoryUsage mem0;
+                            CCurrentProcess::GetMemoryUsage(mem0);
                             vector< CRef<CBioseq> > bb;
                             vector<CSeq_id_Handle> hh;
                             for ( int i = 0; i < 100000; ++i ) {
@@ -961,14 +961,14 @@ int CCSRATestApp::Run(void)
                                 sprintf(buf, "gnl|SRA|SRR389414.%d.1", 136780466+i);
                                 hh.push_back(CSeq_id_Handle::GetHandle(buf));
                             }
-                            size_t mem1, rss1, shr1;
-                            GetMemoryUsage(&mem1, &rss1, &shr1);
-                            NcbiCout << "mem: " << mem0 << " -> " << mem1
-                                     << " = " << mem1-mem0 << endl;
-                            NcbiCout << "rss: " << rss0 << " -> " << rss1
-                                     << " = " << rss1-rss0 << endl;
-                            NcbiCout << "shr: " << shr0 << " -> " << shr1
-                                     << " = " << shr1-shr0 << endl;
+                            CCurrentProcess::SMemoryUsage mem1;
+                            CCurrentProcess::GetMemoryUsage(mem1);
+                            NcbiCout << "mem: " << mem0.total << " -> " << mem1.total
+                                     << " = " << mem1.total-mem0.total << endl;
+                            NcbiCout << "rss: " << mem0.resident << " -> " << mem1.resident
+                                     << " = " << mem1.resident-mem0.resident << endl;
+                            NcbiCout << "shr: " << mem0.shared << " -> " << mem1.shared
+                                     << " = " << mem1.shared-mem0.shared << endl;
                         }
                         break;
                     }
