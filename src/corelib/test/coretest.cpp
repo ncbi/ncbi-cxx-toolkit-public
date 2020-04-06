@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(TestException_AuxTrace)
             // BW___WS53
             // Sigh.  WorkShop 5.3 is stupid, and complains about
             // const char* vs. const char[15] without this cast.
-            THROW0_TRACE((const char*) "Throw a string");
+            THROW_TRACE_SIMPLE((const char*) "Throw a string");
         } catch (const char* /*e*/) {
             RETHROW_TRACE;
         }
@@ -467,14 +467,14 @@ BOOST_AUTO_TEST_CASE(TestException_AuxTrace)
     }
 
     try {
-        THROW_TRACE(bad_alloc, ());
+        THROW_TRACE_SIMPLE(bad_alloc());
     }
-    STD_CATCH ("THROW_TRACE  bad_alloc ---> ");
+    STD_CATCH ("THROW_TRACE_SIMPLE  bad_alloc ---> ");
 
     try {
-        THROW_TRACE(runtime_error, ("Some message..."));
+        THROW_TRACE_ARGS(runtime_error, "Some message...");
     }
-    STD_CATCH ("THROW_TRACE  runtime_error ---> ");
+    STD_CATCH ("THROW_TRACE_ARGS  runtime_error ---> ");
 
     try {
         NCBI_THROW2(CParseTemplException<CCoreException>,eErr,
@@ -805,7 +805,7 @@ BOOST_AUTO_TEST_CASE(TestThrowTrace)
     SetDiagTrace(eDT_Enable);
     NcbiCerr << "The following lines should be equal pairs:" << NcbiEndl;
     try {
-        THROW1_TRACE(runtime_error, "Message");
+        THROW_TRACE_ARGS(runtime_error, "Message");
     }
     catch (...) {
         CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);
@@ -813,7 +813,7 @@ BOOST_AUTO_TEST_CASE(TestThrowTrace)
     }
     string mess = "ERROR";
     try {
-        THROW1_TRACE(runtime_error, mess);
+        THROW_TRACE_ARGS(runtime_error, mess);
     }
     catch (...) {
         CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(TestThrowTrace)
     }
     int i = 123;
     try {
-        THROW0p_TRACE(i);
+        THROW_TRACE_ABORT(i);
     }
     catch (...) {
         CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);

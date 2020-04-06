@@ -702,7 +702,7 @@ TGi CId1FetchApp::LookUpFlatSeqID(const string& s)
     CSeq_id::E_Choice type = static_cast<CSeq_id::E_Choice>(atoi(s.c_str()));
     SIZE_TYPE pos = s.find_first_of(":=(");
     if (pos == NPOS) {
-        THROW0_TRACE(runtime_error("Malformatted flat ID " + s));
+        THROW_TRACE_ARGS(runtime_error, "Malformatted flat ID " + s);
     }
     string data = s.substr(pos + 1);
 
