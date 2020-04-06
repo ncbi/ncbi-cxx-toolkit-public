@@ -87,7 +87,7 @@ class CNamedPipeHandle;
 /// without path, then CNamedPipe* classes automaticaly convert it to
 /// OS-specific default pipe name:
 //      \\.\pipe\pipe_name,       (MS Windows)
-//      /tmp/pipe_name,           (UNIX)
+//      [/var]/tmp/pipe_name,     (UNIX; will use "." as last-resort fallback)
 ///
 /// Initially all timeouts are infinite.
 ///

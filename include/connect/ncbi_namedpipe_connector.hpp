@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 /// Create CNamedPipe-based CONNECTOR.
 ///
 /// Create new CONNECTOR structure to handle a data transfer between two
-/// process over nemed pipe.  Return NULL on error.
+/// processes through a named pipe.  Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
  size_t        pipesize = 0/**< use default */

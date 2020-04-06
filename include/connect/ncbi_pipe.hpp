@@ -32,10 +32,10 @@
  */
 
 /// @file ncbi_pipe.hpp
-/// Portable class to work with process pipes.
+/// Portable class to work with a spawned process via pipes.
 ///
 /// Defines classes: 
-///    CPipe - class to work with pipes
+///    CPipe - class to work with a spawned process via pipes
 ///
 /// Implemented for: UNIX, MS-Windows
 
@@ -64,10 +64,10 @@ class CPipeHandle;
 ///
 /// CPipe --
 ///
-/// Launch a child process with pipes connected to its standard I/O.
+/// Spawn a child process (command) with pipes attached to its standard I/O.
 ///
-/// A program can read from stdin/stderr and write to stdin of the
-/// executed child process using the Read/Write methods of the pipe object.
+/// The application can then read from stdin/stderr and write to stdin of the
+/// launched child process using the Read/Write methods of the pipe object.
 ///
 /// @sa
 ///   CNamedPipe, CExec
