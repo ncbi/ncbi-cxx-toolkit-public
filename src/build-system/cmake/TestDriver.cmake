@@ -75,7 +75,7 @@ if(WIN32)
     set(ENV{PATH}    "${_cfg_bin}\\${NCBITEST_CONFIG};${_cfg_lib}\\${NCBITEST_CONFIG};${_scripts}$ENV{PATH}")
     set(ENV{CFG_BIN} "${_cfg_bin}\\${NCBITEST_CONFIG}")
     set(ENV{CFG_LIB} "${_cfg_lib}\\${NCBITEST_CONFIG}")
-    if(ENV{NCBI_AUTOMATED_BUILD})
+    if($ENV{NCBI_AUTOMATED_BUILD})
         set(ENV{DIAG_SILENT_ABORT} "Y")
     endif()
 

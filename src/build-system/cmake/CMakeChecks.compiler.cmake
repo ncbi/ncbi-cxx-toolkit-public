@@ -145,7 +145,7 @@ if (WIN32)
 
     if(NOT DEFINED NCBI_DEFAULT_USEPCH)
 		set(NCBI_DEFAULT_USEPCH ON)
-        if (ENV{NCBI_AUTOMATED_BUILD})
+        if ($ENV{NCBI_AUTOMATED_BUILD})
 			set(NCBI_DEFAULT_USEPCH OFF)
 		endif()
     endif()

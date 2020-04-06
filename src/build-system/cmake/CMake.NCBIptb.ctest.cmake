@@ -104,7 +104,7 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_TIMEOUT=${_timeout}
         -DNCBITEST_BINDIR=../${NCBI_DIRNAME_RUNTIME}
         -DNCBITEST_SOURCEDIR=../../${NCBI_DIRNAME_SRC}/${_xoutdir}
-        -DNCBITEST_OUTDIR=../${NCBI_DIRNAME_TESTING}/${_xoutdir}
+        -DNCBITEST_OUTDIR=../${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_xoutdir}
         -DNCBITEST_ASSETS=${_assets}
         ${_extra}
         -P "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake"
@@ -136,4 +136,10 @@ function(NCBI_internal_AddCMakeTest _variable _access)
 endfunction()
 
 #############################################################################
+function(NCBI_internal_FinalizeCMakeTest)
+    file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})
+endfunction()
+
+#############################################################################
 NCBI_register_hook(TARGET_ADDED NCBI_internal_AddCMakeTest)
+NCBI_register_hook(ALL_ADDED    NCBI_internal_FinalizeCMakeTest)
