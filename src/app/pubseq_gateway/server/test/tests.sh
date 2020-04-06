@@ -1,24 +1,111 @@
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=yes&seq_id=CBRG44L02&fmt=json&all_info=yes" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 100000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get_na?fmt=json&all_info=yes&seq_id=NW_017890465&psg_protocol=yes&names=NA000122202.1,invalid" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get?seq_id=3150015&seq_id_type=12&tse=orig" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 100000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get?seq_id=bbm%7C164040" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 100000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=yes&seq_id=SPUUN_WGA87311_2%7C&fmt=json&all_info=yes" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/getblob?blob_id=33.32435367" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get?seq_id=123791" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get_tse_chunk?tse_id=47.67890130&chunk=4&split_version=1563374207" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get_tse_chunk?tse_id=47.67890130&chunk=500&split_version=1" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get_na?fmt=json&all_info=yes&seq_id=NW_017890465&psg_protocol=yes&names=NA000122.1" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/getblob?blob_id=4.509567&tse=whole" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get?seq_id=164040&seq_id_type=3&exclude_blobs=1.1,4.8091,3.3" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=yes&seq_id=817747779&seq_id_type=12&fmt=protobuf&all_info=yes" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ADMIN/status" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ADMIN/config" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ADMIN/info" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/notservingurl" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=yes&seq_id=nonexisting" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=yes&seq_id=RCU83448&seq_id_type=12" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/resolve?psg_protocol=no&seq_id=817747779&seq_id_type=12&fmt=json&all_info=yes" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/getblob?blob_id=4.1" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ADMIN/get_alerts" &); done
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "http://nctest11:2180/ID/get_tse_chunk?tse_id=4.340865818&chunk=96&split_version=1565299085" &); done
+outdir="`pwd`/stressoutput"
+aggregate="`pwd`/aggregate.py"
+url="http://tonka1:2180"
+
+# Waits for h2load to finish; exit if failed;
+# aggregate all output; remove output files
+finilize() {
+    while [ 0 != `ps -ef | grep ${USER} | grep h2load | grep -v grep | wc -l` ]; do sleep 1; done
+    ${aggregate} ${outdir} aggr.${1}.json || exit 1
+    rm -rf ${outdir}/*.out
+}
+
+mkdir -p ${outdir}
+rm -rf ${outdir}/*
+
+echo "resolve CBRG44L02..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=yes&seq_id=CBRG44L02&fmt=json&all_info=yes" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-CBRG44L02"
+
+echo "resolve XP_015453951..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-XP_015453951"
+
+echo "resolve SPUUN_WGA87311_2|..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 100000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=yes&seq_id=SPUUN_WGA87311_2%7C&fmt=json&all_info=yes" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-SPUUN_WGA87311_2"
+
+echo "resolve 817747779-protobuf..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=yes&seq_id=817747779&seq_id_type=12&fmt=protobuf&all_info=yes" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-817747779-protobuf"
+
+echo "resolve nonexisting..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=yes&seq_id=nonexisting" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-nonexisting"
+
+echo "resolve RCU83448..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=yes&seq_id=RCU83448&seq_id_type=12" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-RCU83448"
+
+echo "resolve 817747779-json..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/resolve?psg_protocol=no&seq_id=817747779&seq_id_type=12&fmt=json&all_info=yes" > ${outdir}/h2load.${i}.out &); done
+finilize "resolve-817747779-json"
+
+echo "get_na NW_017890465 NA000122202.1,invalid..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 100000 -c 4 -t 4 -m 4  "${url}/ID/get_na?fmt=json&all_info=yes&seq_id=NW_017890465&psg_protocol=yes&names=NA000122202.1,invalid" > ${outdir}/h2load.${i}.out &); done
+finilize "get_na-NW_017890465-1"
+
+echo "get_na NW_017890465 NA0001222.1..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_na?fmt=json&all_info=yes&seq_id=NW_017890465&psg_protocol=yes&names=NA000122.1" > ${outdir}/h2load.${i}.out &); done
+finilize "get_na-NW_017890465-2"
+
+echo "get 3150015..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=3150015&seq_id_type=12&tse=orig" > ${outdir}/h2load.${i}.out &); done
+finilize "get-3150015"
+
+echo "get bbm|164040..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 100000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=bbm%7C164040" > ${outdir}/h2load.${i}.out &); done
+finilize "get-bbm-164040"
+
+echo "get 123791..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=123791" > ${outdir}/h2load.${i}.out &); done
+finilize "get-123791"
+
+echo "get 164040..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=164040&seq_id_type=3&exclude_blobs=1.1,4.8091,3.3" > ${outdir}/h2load.${i}.out &); done
+finilize "get-164040"
+
+echo "getblob 33.32435367..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=33.32435367" > ${outdir}/h2load.${i}.out &); done
+finilize "getblob-33-32435367"
+
+echo "getblob 4.509567..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=4.509567&tse=whole" > ${outdir}/h2load.${i}.out &); done
+finilize "getblob-4-509567"
+
+echo "getblob 4.1..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=4.1" > ${outdir}/h2load.${i}.out &); done
+finilize "getblob-4-1"
+
+echo "get_tse_chunk 47.67890130-1563374207..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=47.67890130&chunk=4&split_version=1563374207" > ${outdir}/h2load.${i}.out &); done
+finilize "get_tse_chunk-47-67890130-1563374207"
+
+echo "get_tse_chunk 47.67890130-1..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=47.67890130&chunk=500&split_version=1" > ${outdir}/h2load.${i}.out &); done
+finilize "get_tse_chunk-47-67890130-1"
+
+echo "get_tse_chunk 4.340865818-1565299085..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=4.340865818&chunk=96&split_version=1565299085" > ${outdir}/h2load.${i}.out &); done
+finilize "get_tse_chunk-4-340865818-1565299085"
+
+echo "status..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/status" > ${outdir}/h2load.${i}.out &); done
+finilize "status"
+
+echo "config..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/config" > ${outdir}/h2load.${i}.out &); done
+finilize "config"
+
+echo "info..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/info" > ${outdir}/h2load.${i}.out &); done
+finilize "info"
+
+echo "get_alerts..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/get_alerts" > ${outdir}/h2load.${i}.out &); done
+finilize "get_alerts"
+
+echo "notservingurl..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/notservingurl" > ${outdir}/h2load.${i}.out &); done
+finilize "notservingurl"
+
