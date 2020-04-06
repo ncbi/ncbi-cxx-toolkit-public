@@ -592,12 +592,15 @@ static void s_InitAllKNS(KNSManager* kns_mgr)
     CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
     if ( req_ctx.IsSetSessionID() ) {
         KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+        KNSManagerSetSessionID("", "");
     }
     if ( req_ctx.IsSetClientIP() ) {
         KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+        KNSManagerSetClientIP("", "");
     }
     if ( req_ctx.IsSetHitID() ) {
         KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
+        KNSManagerSetPageHitID("", "");
     }
     CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     if ( app && app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
