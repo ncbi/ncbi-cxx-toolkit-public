@@ -2356,7 +2356,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
 
 {
     CSeqFeatData&          sfdata = sfp->SetData ();
-    CSeqFeatData::E_Choice typ = sfdata.Which ();
+    CSeqFeatData::E_Choice featType = sfdata.Which ();
 
     const CSeqFeatData::EQualifier qual_type =
         CSeqFeatData::GetQualifierType(qual);
@@ -2368,7 +2368,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
         }
     }
 
-    if (typ == CSeqFeatData::e_Biosrc) {
+    if (featType == CSeqFeatData::e_Biosrc) {
 
         TOrgRefMap::const_iterator o_iter = sm_OrgRefKeys.find (qual.c_str ());
         if (o_iter != sm_OrgRefKeys.end ()) {
@@ -2401,7 +2401,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
     TQualMap::const_iterator q_iter = sm_QualKeys.find (lqual.c_str ());
     if (q_iter != sm_QualKeys.end ()) {
         EQual qtype = q_iter->second;
-        switch (typ) {
+        switch (featType) {
             case CSeqFeatData::e_Gene:
                 if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
                 break;
@@ -2628,7 +2628,9 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
             case eQual_go_component:
             case eQual_go_function:
             case eQual_go_process:
-                if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
+                if (featType == CSeqFeatData::e_Gene || 
+                    featType == CSeqFeatData::e_Cdregion || 
+                    featType == CSeqFeatData::e_Rna) {
                     try {
                         CReadUtil::AddGeneOntologyTerm(*sfp, qual, val);
                     }
@@ -2645,7 +2647,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 return false;
             case eQual_transcript_id:
                 {
-                    if (typ == CSeqFeatData::e_Rna &&
+                    if (featType == CSeqFeatData::e_Rna &&
                         sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA) {
                         try {
                             CBioseq::TId ids;
@@ -2673,19 +2675,19 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 }
             case eQual_protein_id:
                 // see SQD-1535 and SQD-3496
-                if (typ == CSeqFeatData::e_Cdregion ||
-                    (typ == CSeqFeatData::e_Rna &&
+                if (featType == CSeqFeatData::e_Cdregion ||
+                    (featType == CSeqFeatData::e_Rna &&
                     sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA) ||
-                    (typ == CSeqFeatData::e_Prot &&
+                    (featType == CSeqFeatData::e_Prot &&
                      sfdata.GetProt().IsSetProcessed() &&
                      sfdata.GetProt().GetProcessed() == CProt_ref::eProcessed_mature))
                 try {
                     CBioseq::TId ids;
                     CSeq_id::ParseIDs(ids, val,                                
-                            CSeq_id::fParse_ValidLocal
-                            | CSeq_id::fParse_PartialOK);
-                    if (ids.size()>0) {
-                        if (typ == CSeqFeatData::e_Cdregion) {
+                            CSeq_id::fParse_ValidLocal |
+                            CSeq_id::fParse_PartialOK);
+                    if (!ids.empty()) { 
+                        if (featType == CSeqFeatData::e_Cdregion) {
                             for (const auto& id : ids) {
                                 auto id_string = id->GetSeqIdString(true);
                                 auto res = m_ProcessedProteinIds.insert(id_string);
@@ -2697,22 +2699,18 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                                         );
                                 }
                             }
-
-                            CRef<CSeq_id> best = GetBestId(ids);
-                            if (!best.Empty())
-                                sfp->SetProduct().SetWhole(*best);
-                            x_AddGBQualToFeature(sfp, qual, val);
-                            
                         }
-                        else if
-                        (typ == CSeqFeatData::e_Prot) { // Mat-peptide
+                        
+                        if (featType != CSeqFeatData::e_Rna) { 
                             auto pBestId = GetBestId(ids);
-                            if (pBestId)
-                               sfp->SetProduct().SetWhole(*pBestId); 
+                            if (pBestId) {
+                                sfp->SetProduct().SetWhole(*pBestId);
+                            }
                         }
-                        else {
-                            x_AddGBQualToFeature (sfp, qual, val); // Temporary hack for GB-7030
-                       }                                          // This logic should be moved into cleanup or objtools/edit
+
+                        if (featType != CSeqFeatData::e_Prot) { 
+                            x_AddGBQualToFeature(sfp, qual, val);
+                        }
                     }
                     return true;
                 } catch( CSeqIdException & ) {
