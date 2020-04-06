@@ -52,13 +52,20 @@
  * @{
  */
 
-
-#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
-
+#if defined(NCBI_OS_MSWIN)
 #  ifndef _MSC_VER
 #    error "This toolkit is not buildable with a compiler other than MSVC."
 #  endif
+#  include <ntverp.h>
+#  if VER_PRODUCTBUILD > 9600
+    // Windows 10+ SDK
+#  else
+    // Windows 8.1 SDK or older
+#    pragma warning (disable : 4091)
+#  endif
+#endif
 
+#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
 
 /* Dumping ground for Windows-specific stuff
  */
