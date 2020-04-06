@@ -1683,8 +1683,9 @@ s_GetIndels(const CSeq_align& align, CSeq_align::TDim row,
                             }
                         }
                     }
-                    if ((include_frameshifts && gap_len % 3 != 0) ||
-                        (include_non_frameshifts && gap_len % 3 == 0))
+                    if (gap_len > 0 &&
+                       ((include_frameshifts && gap_len % 3 != 0) ||
+                        (include_non_frameshifts && gap_len % 3 == 0)))
                     {
                         TSignedSeqPos genomic_gap_start = ds.GetStarts()[i*ds.GetDim() + 1];
                         CSeq_align::TDim inserted_row = 1;
