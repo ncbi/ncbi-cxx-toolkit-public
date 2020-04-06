@@ -103,7 +103,7 @@ CUsageReportAPI::TWhat CUsageReportAPI::GetDefaultParameters(void)
 
 static bool gs_IsEnabled = NCBI_PARAM_TYPE(USAGE_REPORT, Enabled)::GetDefault();
 
-bool CUsageReportAPI::IsEnabled()
+bool CUsageReportAPI::IsEnabled(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
     return gs_IsEnabled;
@@ -139,17 +139,17 @@ void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
     SetAppVersion(version.Print());
 }
 
-void CUsageReportAPI::SetMaxQueueSize(unsigned n)
+void CUsageReportAPI::SetMaxQueueSize(unsigned int n)
 {
     NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::SetDefault(n ? n : kDefault_MaxQueueSize);
 }
 
-string CUsageReportAPI::GetURL()
+string CUsageReportAPI::GetURL(void)
 {
     return NCBI_PARAM_TYPE(USAGE_REPORT, URL)::GetDefault();
 }
 
-string CUsageReportAPI::GetAppName()
+string CUsageReportAPI::GetAppName(void)
 {
     string name;
     CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
@@ -162,7 +162,7 @@ string CUsageReportAPI::GetAppName()
     return name;
 }
 
-string CUsageReportAPI::GetAppVersion()
+string CUsageReportAPI::GetAppVersion(void)
 {
     string version;
     CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
@@ -175,7 +175,7 @@ string CUsageReportAPI::GetAppVersion()
     return version;
 }
 
-unsigned CUsageReportAPI::GetMaxQueueSize()
+unsigned CUsageReportAPI::GetMaxQueueSize(void)
 {
     return NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::GetDefault();
 }
@@ -186,6 +186,7 @@ unsigned CUsageReportAPI::GetMaxQueueSize()
 /// CUsageReportParameters::
 ///
 
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
 #ifdef _DEBUG
     inline void s_CheckName(const string& name)
     {
@@ -197,6 +198,7 @@ unsigned CUsageReportAPI::GetMaxQueueSize()
     #define CHECK_USAGE_REPORT_PARAM_NAME s_CheckName
 #else 
     #define CHECK_USAGE_REPORT_PARAM_NAME(name) 
+#endif
 #endif
 
 CUsageReportParameters& CUsageReportParameters::Add(const string& name, const string& value)
@@ -213,7 +215,7 @@ CUsageReportParameters& CUsageReportParameters::Add(const string& name, const ch
     return Add(name, string(value));
 }
 
-string CUsageReportParameters::ToString() const
+string CUsageReportParameters::ToString(void) const
 {
     string result;
 
@@ -263,7 +265,8 @@ void CUsageReportJob::x_CopyFrom(const CUsageReportJob& other)
 /// Helpers
 ///
 
-static string s_GetOS()
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+static string s_GetOS(void)
 {
     // Check NCBI_OS first, configure can define OS name already
 #if defined(NCBI_OS)
@@ -302,11 +305,12 @@ static string s_GetOS()
     return string();        // Unknown environment
 }
 
-static string s_GetHost()
+static string s_GetHost(void)
 {
     CDiagContext& ctx = GetDiagContext();
     return ctx.GetHost();
 }
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -368,14 +372,14 @@ CUsageReport::CUsageReport(TWhat what, const string& url, unsigned max_queue_siz
 #endif
 }
 
-CUsageReport::~CUsageReport(void)
+CUsageReport::~CUsageReport()
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
     Finish();
 #endif
 }
 
-bool CUsageReport::IsEnabled()
+bool CUsageReport::IsEnabled(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
     return !m_IsFinishing  &&  m_IsEnabled  &&  CUsageReportAPI::IsEnabled();
@@ -462,7 +466,7 @@ void CUsageReport::Send(CUsageReportParameters& params)
 #endif
 }
 
-unsigned CUsageReport::GetQueueSize()
+unsigned CUsageReport::GetQueueSize(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
     MT_GUARD;
