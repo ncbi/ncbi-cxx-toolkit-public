@@ -869,7 +869,7 @@ int CCSRATestApp::Run(void)
                 double k_min = 0, k_max = 1e9;
                 for ( TVDBRowId row = it.GetInfo().m_RowFirst; row <= it.GetInfo().m_RowLast; ++row ) {
                     Uint1 b = graph->GetGraph().GetByte().GetValues()[size_t(row-it.GetInfo().m_RowFirst)];
-                    size_t a = it.GetAlignCountAtPos(row*csra_db.GetRowSize());
+                    size_t a = it.GetAlignCountAtPos(TSeqPos(row*csra_db.GetRowSize()));
                     total_count_a += a;
                     if ( a > max_a ) {
                         max_a = a;
