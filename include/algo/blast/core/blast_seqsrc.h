@@ -220,12 +220,14 @@ typedef struct BlastSeqSrcSetRangesArg {
 } BlastSeqSrcSetRangesArg;
 
 /** new setrangearg */
+NCBI_XBLAST_EXPORT
 BlastSeqSrcSetRangesArg *
 BlastSeqSrcSetRangesArgNew(Int4 num_ranges);
 
 /** add new range 
  * @return 0 in case of success, otherwise 1
  */
+NCBI_XBLAST_EXPORT
 Int2
 BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg, 
                                 Int4 begin, Int4 end, Int4 len);
@@ -237,6 +239,7 @@ BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg * arg);
 
 
 /** build BlastSeqSrcSetRangesArg from range list*/
+NCBI_XBLAST_EXPORT
 void
 BlastSeqSrcSetRangesArgBuild(BlastSeqSrcSetRangesArg *arg);
 
