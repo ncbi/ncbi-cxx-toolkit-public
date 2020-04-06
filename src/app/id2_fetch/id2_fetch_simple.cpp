@@ -273,7 +273,7 @@ void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
         }
     }}
     if ( GetArgs()["HUP"] ) {
-        string user_name = GetProcessUserName();
+        string user_name = CSystemInfo::GetUserName();
         LOG_POST("Setting cubby_user = "<<user_name);
         // Using a formal parameter is typically better practice, but
         // likely won't work here (a custom Open Server).
