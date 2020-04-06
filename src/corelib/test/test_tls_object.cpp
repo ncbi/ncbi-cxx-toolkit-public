@@ -35,7 +35,7 @@
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiatomic.hpp>
-#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <vector>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -138,15 +138,15 @@ void message(const char* msg,
                  <<'\n'<<setw(40) << msg1 << ": "<< t1 * 1e9/(double)COUNT << " usec"
                  <<'\n'<<setw(40) << msg2 << ": "<< t2 * 1e9/(double)COUNT << " usec");
     }
-    size_t total, resident, shared;
-    if ( GetMemoryUsage(&total, &resident, &shared) ) {
-        max_total = max(max_total, total);
-        max_resident = max(max_resident, resident);
-        max_shared = max(max_shared, shared);
+    CCurrentProcess::SMemoryUsage mem;
+    if ( CCurrentProcess::GetMemoryUsage(mem) ) {
+        max_total = max(max_total, mem.total);
+        max_resident = max(max_resident, mem.resident);
+        max_shared = max(max_shared, mem.shared);
         if ( 0 ) {
             LOG_POST("Alloc: "<<alloc_count.Get()<<
                      " "<<object_count.Get()<<'\n'<<
-                     "Current memory: "<<total<<" "<<resident<<" "<<shared);
+                     "Current memory: "<<mem.total<<" "<<mem.resident<<" "<<mem.shared);
         }
     }
 }
@@ -595,10 +595,10 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
         return true;
     }
     NCBI_CATCH_ALL("Test failed");
-    size_t total, resident, shared;
-    if ( GetMemoryUsage(&total, &resident, &shared) ) {
+    CCurrentProcess::SMemoryUsage mem;
+    if ( CCurrentProcess::GetMemoryUsage(mem) ) {
         ERR_POST("Alloc: "<<alloc_count.Get()<<" "<<object_count.Get()<<'\n'<<
-                 "Memory: "<<total<<" "<<resident<<" "<<shared);
+                 "Memory: "<<mem.total<<" "<<mem.resident<<" "<<mem.shared);
     }
     return false;
 }
