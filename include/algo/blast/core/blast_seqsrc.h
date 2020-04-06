@@ -231,6 +231,7 @@ BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
                                 Int4 begin, Int4 end, Int4 len);
 
 /** free setrangearg */
+NCBI_XBLAST_EXPORT
 BlastSeqSrcSetRangesArg *
 BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg * arg);
 
