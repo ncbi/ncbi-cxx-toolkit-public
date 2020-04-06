@@ -3,6 +3,9 @@ import os
 import sys
 from distutils.spawn import find_executable
 
+if 'VIRTUAL_ENV' in os.environ:
+    os.environ['PYTHONPATH']=os.environ['VIRTUAL_ENV']
+
 NO_UDC_ROBOT = 1
 NO_PSG_CLIENT = 2
 MALFORMED_ARGUMENTS = 3
@@ -48,6 +51,11 @@ def driveUDC():
 
     service = sys.argv[1]
     retCode = os.system('udc -v SERVICE:' + service + ' ' + dirname)
+    if retCode != 0:
+        low=retCode&0xFF
+        hi=(retCode>>8)&0xFF
+        if low==0:
+            retCode=hi
     return retCode
 
 
