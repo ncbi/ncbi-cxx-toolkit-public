@@ -340,7 +340,7 @@ void CInGroupThread::SyncPoint(void)
 void* CInGroupThread::Main(void)
 {
     m_Group.ThreadWait();
-    s_ThreadIdxTLS.SetValue(reinterpret_cast<int*>(m_Idx));
+    s_ThreadIdxTLS.SetValue(reinterpret_cast<int*>((intptr_t)m_Idx));
     // Run the test
     if ( s_Application != 0  &&  s_Application->Thread_Run(m_Idx) ) {
         m_Group.ThreadComplete();
