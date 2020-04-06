@@ -63,7 +63,7 @@ USING_SCOPE(objects);
 
 NCBI_PARAM_DECL(bool, TEST, TRACE);
 NCBI_PARAM_DEF_EX(bool, TEST, TRACE, false,
-                  eParam_NoThread, TEST_TRACE);
+                  eParam_NoThread, TEST_TRACE_POST);
 
 
 static
@@ -74,7 +74,7 @@ bool s_IsTraceEnabled()
 }
 
 
-#define TRACE_POST(msg) if ( !s_IsTraceEnabled() ); else LOG_POST(msg)
+#define TEST_TRACE_POST(msg) if ( !s_IsTraceEnabled() ); else LOG_POST(msg)
 
 
 static CRandom s_Random;
@@ -132,7 +132,7 @@ const char* s_GetGBReader()
     }
     if ( !env ) {
         // assume default ID2
-        TRACE_POST("Assuming default reader ID2");
+        TEST_TRACE_POST("Assuming default reader ID2");
         env = "ID2";
     }
     return env;
@@ -145,11 +145,11 @@ bool s_CalcHaveID2(void)
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ||
          NStr::EndsWith(env, "pubseqos", NStr::eNocase) ) {
         // non-ID2 based readers
-        TRACE_POST("No ID2, env=\""<<env<<"\"");
+        TEST_TRACE_POST("No ID2, env=\""<<env<<"\"");
         return false;
     }
     else {
-        TRACE_POST("ID2, env=\""<<env<<"\"");
+        TEST_TRACE_POST("ID2, env=\""<<env<<"\"");
         return true;
     }
 }
@@ -159,11 +159,11 @@ bool s_CalcHaveID1(void)
 {
     const char* env = s_GetGBReader();
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ) {
-        TRACE_POST("ID1, env=\""<<env<<"\"");
+        TEST_TRACE_POST("ID1, env=\""<<env<<"\"");
         return true;
     }
     else {
-        TRACE_POST("No ID1, env=\""<<env<<"\"");
+        TEST_TRACE_POST("No ID1, env=\""<<env<<"\"");
         return false;
     }
 }
@@ -238,7 +238,7 @@ struct all_orders {
         
         void start_scope()
             {
-                TRACE_POST("Start");
+                TEST_TRACE_POST("Start");
                 scope = s_InitScope();
             }
 
@@ -331,7 +331,7 @@ struct random_orders {
         
         void start_scope()
             {
-                TRACE_POST("Start");
+                TEST_TRACE_POST("Start");
                 s_RandomShuffle (std::begin(ops), std::end(ops));
                 scope = s_InitScope();
             }
@@ -410,24 +410,24 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
     for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
-            TRACE_POST("GetGi");
+            TEST_TRACE_POST("GetGi");
             BOOST_CHECK(!op->GetGi(id, kThrowNoData));
             break;
         case 1:
-            TRACE_POST("GetGiThrow");
+            TEST_TRACE_POST("GetGiThrow");
             BOOST_CHECK_THROW(op->GetGi(id, kThrowNoSeq), CObjMgrException);
             break;
         case 2:
-            TRACE_POST("GetGiBulk");
+            TEST_TRACE_POST("GetGiBulk");
             BOOST_CHECK(!op->GetGis(idvec, kThrowNoData)[0]);
             break;
         case 3:
-            TRACE_POST("GetGiBulkThrow");
+            TEST_TRACE_POST("GetGiBulkThrow");
             BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoSeq), CObjMgrException);
             break;
         }
         if ( op.last ) {
-            TRACE_POST("GetIds");
+            TEST_TRACE_POST("GetIds");
             BOOST_CHECK(op->GetIds(id).empty());
         }
     }
@@ -444,24 +444,24 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAcc)
     for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
-            TRACE_POST("GetAccVer");
+            TEST_TRACE_POST("GetAccVer");
             BOOST_CHECK(!op->GetAccVer(id, kThrowNoData));
             break;
         case 1:
-            TRACE_POST("GetAccVerThrow");
+            TEST_TRACE_POST("GetAccVerThrow");
             BOOST_CHECK_THROW(op->GetAccVer(id, kThrowNoSeq), CObjMgrException);
             break;
         case 2:
-            TRACE_POST("GetAccVerBulk");
+            TEST_TRACE_POST("GetAccVerBulk");
             BOOST_CHECK(!op->GetAccVers(idvec, kThrowNoData)[0]);
             break;
         case 3:
-            TRACE_POST("GetAccVerBulkThrow");
+            TEST_TRACE_POST("GetAccVerBulkThrow");
             BOOST_CHECK_THROW(op->GetAccVers(idvec, kThrowNoSeq), CObjMgrException);
             break;
         }
         if ( op.last ) {
-            TRACE_POST("GetIds");
+            TEST_TRACE_POST("GetIds");
             BOOST_CHECK(op->GetIds(id).empty());
         }
     }
@@ -478,35 +478,35 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAll)
     for ( auto op : random_orders<8>(10) ) {
         switch ( op.op ) {
         case 0:
-            TRACE_POST("GetAccVer");
+            TEST_TRACE_POST("GetAccVer");
             BOOST_CHECK(!op->GetAccVer(id));
             break;
         case 1:
-            TRACE_POST("GetAccVerBulk");
+            TEST_TRACE_POST("GetAccVerBulk");
             BOOST_CHECK(!op->GetAccVers(idvec, kThrowNoData)[0]);
             break;
         case 2:
-            TRACE_POST("GetAccVerBulkThrow");
+            TEST_TRACE_POST("GetAccVerBulkThrow");
             BOOST_CHECK_THROW(op->GetAccVers(idvec, kThrowNoSeq), CObjMgrException);
             break;
         case 3:
-            TRACE_POST("GetGi");
+            TEST_TRACE_POST("GetGi");
             BOOST_CHECK(!op->GetGi(id));
             break;
         case 4:
-            TRACE_POST("GetGiBulk");
+            TEST_TRACE_POST("GetGiBulk");
             BOOST_CHECK(!op->GetGis(idvec, kThrowNoData)[0]);
             break;
         case 5:
-            TRACE_POST("GetGiBulkThrow");
+            TEST_TRACE_POST("GetGiBulkThrow");
             BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoSeq), CObjMgrException);
             break;
         case 6:
-            TRACE_POST("GetIds");
+            TEST_TRACE_POST("GetIds");
             BOOST_CHECK(op->GetIds(id).empty());
             break;
         case 7:
-            TRACE_POST("GetBioseqHandle");
+            TEST_TRACE_POST("GetBioseqHandle");
             BOOST_CHECK(!op->GetBioseqHandle(id));
             break;
         }
@@ -524,28 +524,28 @@ BOOST_AUTO_TEST_CASE(CheckNoAcc)
     for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
-            TRACE_POST("GetAccVer");
+            TEST_TRACE_POST("GetAccVer");
             BOOST_CHECK(!op->GetAccVer(id, kThrowNoSeq));
             break;
         case 1:
-            TRACE_POST("GetAccVer");
+            TEST_TRACE_POST("GetAccVer");
             BOOST_CHECK_THROW(op->GetAccVer(id, kThrowNoData), CObjMgrException);
             break;
         case 2:
-            TRACE_POST("GetAccVerBulk");
+            TEST_TRACE_POST("GetAccVerBulk");
             BOOST_CHECK(!op->GetAccVers(idvec, kThrowNoSeq)[0]);
             break;
         case 3:
-            TRACE_POST("GetAccVerBulkThrow");
+            TEST_TRACE_POST("GetAccVerBulkThrow");
             BOOST_CHECK_THROW(op->GetAccVers(idvec, kThrowNoData), CObjMgrException);
             break;
         }
         if ( op.last ) {
-            TRACE_POST("GetGi");
+            TEST_TRACE_POST("GetGi");
             BOOST_CHECK(op->GetGi(id, kThrowNoSeq));
-            TRACE_POST("GetIds");
+            TEST_TRACE_POST("GetIds");
             BOOST_CHECK(!op->GetIds(id).empty());
-            TRACE_POST("GetBioseqHandle");
+            TEST_TRACE_POST("GetBioseqHandle");
             BOOST_CHECK(op->GetBioseqHandle(id));
         }
     }
