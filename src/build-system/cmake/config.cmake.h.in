@@ -267,6 +267,8 @@
 /* Define to 1 if your localtime_r returns a struct tm*. */
 #define HAVE_FUNC_LOCALTIME_R_TM 1
 
+#cmakedefine HAVE_LOCALTIME_R 1
+
 /* Define to 1 if you have the `getaddrinfo' function. */
 #cmakedefine HAVE_GETADDRINFO 1
 
