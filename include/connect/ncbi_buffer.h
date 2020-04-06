@@ -95,7 +95,9 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Size(BUF buf);
  * Prepend a block of data (of the specified size) at the beginning of the
  * buffer (to be read first).  Note that unlike BUF_Pushback(), in this call
  * the data is not copied into the buffer but instead is just linked in from
- * the original location.  Return non-zero (true) if succeeded, zero (false)
+ * the original location.  The "base" argument contains a pointer to be
+ * "free()"d when the data chunk is done with (it also may be NULL for no
+ * action to be taken).  Return non-zero (true) if succeeded, zero (false)
  * if failed.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_PrependEx
@@ -123,11 +125,13 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Prepend
  * Append a block of data (of the specified size) past the end of the buffer
  * (to be read last).  Note that unlike BUF_Write(), in this call the data is
  * not copied to the buffer but instead is just linked in from the original
- * location.  Return non-zero (true) if succeeded, zero (false) if failed.
+ * location.  The "base" argument contains a pointer to be "free()"d when the
+ * data chunk is done with (it also may be NULL for no action to be taken).
+ * Return non-zero (true) if succeeded, zero (false) if failed.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_AppendEx
 (BUF*   pBuf,
- void*  base,       /* base to be "free"d when the chunk is unlinked        */
+ void*  base,       /* base to be "free"d when the buffer chunk is unlinked */
  size_t alloc_size, /* usable size of "data" (0 to make the use read-only)  */
  void*  data,       /* points to data to be appended by linking in the list */
  size_t size        /* size of "data" occupied                              */
@@ -230,7 +234,7 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAtCB
  * data from the "buf".
  * Return the # of copied-and/or-removed bytes (can be less than "size").
  * NOTE: if "buf"  == NULL then do nothing and return 0
- *       if "data" == NULL then do not copy data anywhere(still, remove it)
+ *       if "data" == NULL then do not copy data anywhere (still, remove it)
  */
 extern NCBI_XCONNECT_EXPORT size_t BUF_Read
 (BUF         buf,

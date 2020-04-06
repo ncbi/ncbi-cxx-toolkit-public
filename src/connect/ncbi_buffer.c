@@ -350,7 +350,7 @@ extern size_t BUF_PeekAtCB(BUF      buf,
         return 0/*nothing*/;
     assert(buf->list  &&  buf->last);
 
-    /* special treatment for the NULL callback */
+    /* special treatment for NULL callback */
     if (!callback) {
         todo = buf->size - pos;
         return todo < size ? todo : size;
