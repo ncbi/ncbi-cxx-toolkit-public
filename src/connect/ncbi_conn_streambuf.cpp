@@ -44,10 +44,17 @@
 BEGIN_NCBI_SCOPE
 
 
+/*ARGSUSED*/
 static inline bool x_IsThrowable(EIO_Status status)
 {
     _ASSERT(status != eIO_Success);
+#if NCBI_COMPILER_GCC  &&  NCBI_COMPILER_VERSION < 600
+    // C++ STL has a bug that sentry ctro does not include try/catch, so it
+    // leaks the exceptions instead of setting badbit as the standard requires.
+    return false;
+#else
     return status != eIO_Timeout  &&  status != eIO_Closed ? true : false;
+#endif // NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION<600
 }
 
 
