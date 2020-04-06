@@ -2333,7 +2333,7 @@ void CTabularFormatter_Indels::PrintHelpText(CNcbiOstream& ostr) const
         break;
 
     default:
-        ostr << "List of all indels";
+        ostr << "List of all indels wihin CDS";
         break;
     }
 }
@@ -2350,7 +2350,7 @@ void CTabularFormatter_Indels::PrintHeader(CNcbiOstream& ostr) const
         break;
 
     default:
-        ostr << "indels";
+        ostr << "indels in cds";
         break;
     }
 }
@@ -2359,18 +2359,36 @@ void CTabularFormatter_Indels::PrintHeader(CNcbiOstream& ostr) const
 void CTabularFormatter_Indels::Print(CNcbiOstream& ostr,
                                         const CSeq_align& align)
 {
+        CBioseq_Handle bsh = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(0));
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
+        if (bsh.GetBioseqMolType() !=  CSeq_inst::eMol_rna) {
+            NCBI_THROW(CException, eUnknown, "Not RNA alignments");
+        }
+    
+        /// Only display frameshifts within cdregion
+        CFeat_CI feat_it(bsh,
+                         SAnnotSelector()
+                         .IncludeFeatType(CSeqFeatData::e_Cdregion));
+        if (!feat_it) {
+            return;
+        }
+
     vector<CSeq_align::SIndel> indels;
     switch (m_IndelType) {
     case e_Frameshifts:
-        indels = align.GetFrameshifts();
+        indels = align.GetFrameshiftsWithinRange(feat_it->GetRange());
         break;
 
     case e_NonFrameshifts:
-        indels = align.GetNonFrameshifts();
+        indels = align.GetNonFrameshiftsWithinRange(feat_it->GetRange());
         break;
 
     default:
-        indels = align.GetIndels();
+        indels = align.GetIndelsWithinRange(feat_it->GetRange());
         break;
     }
 
@@ -2620,7 +2638,7 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_Indels(CTabularFormatter_Indels::e_Frameshifts));
     formatter.RegisterField("nonframeshifts",
             new CTabularFormatter_Indels(CTabularFormatter_Indels::e_NonFrameshifts));
-    formatter.RegisterField("indels",
+    formatter.RegisterField("cds_indels",
             new CTabularFormatter_Indels(CTabularFormatter_Indels::e_All));
     formatter.RegisterField("gene_symbol",
             new CTabularFormatter_GeneSymbol(0));
