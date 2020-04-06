@@ -1951,32 +1951,6 @@ s_GatherRegionIterators(
 }
 
 
-static bool s_MoveProteinSpecificFeats(CSeq_entry& entry) 
-{
-    if (entry.IsSeq()) {
-        return false;
-    }
-
-    auto& bioseq_set = entry.SetSet();
-    if (!bioseq_set.IsSetSeq_set()) {
-        return false;
-    }
-
-    bool any_change = false;
-    if (!bioseq_set.IsSetClass() ||
-         bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
-        for (auto pSubEntry : bioseq_set.SetSeq_set()) {
-            if (pSubEntry) {
-                any_change |= s_MoveProteinSpecificFeats(*pSubEntry);
-            }
-        } 
-        return any_change;
-    }
-
-    return CCleanup::MoveProteinSpecificFeats(CScope(*CObjectManager::GetInstance()).AddTopLevelSeqEntry(entry));
-}
-
-
 void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 {
     if (!seq_entry.IsSet()) {
@@ -2081,6 +2055,32 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
             break;
         }
     }
+}
+
+static bool s_MoveProteinSpecificFeats(CSeq_entry& entry) 
+{ // Wrapper function called recursively to make sure that 
+  // that only a single nuc-prot set is in scope at any time
+    if (entry.IsSeq()) {
+        return false;
+    }
+
+    auto& bioseq_set = entry.SetSet();
+    if (!bioseq_set.IsSetSeq_set()) {
+        return false;
+    }
+
+    bool any_change = false;
+    if (!bioseq_set.IsSetClass() ||
+         bioseq_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
+        for (auto pSubEntry : bioseq_set.SetSeq_set()) {
+            if (pSubEntry) {
+                any_change |= s_MoveProteinSpecificFeats(*pSubEntry);
+            }
+        } 
+        return any_change;
+    }
+
+    return CCleanup::MoveProteinSpecificFeats(CScope(*CObjectManager::GetInstance()).AddTopLevelSeqEntry(entry));
 }
 
 
