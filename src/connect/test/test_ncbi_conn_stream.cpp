@@ -123,6 +123,7 @@ void CNCBITestConnStreamApp::Init(void)
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
+    // NB: CONNECT_Init() can be used alternatively for applications
     
     // Create and populate test registry
     CNcbiRegistry& reg = GetRWConfig();
