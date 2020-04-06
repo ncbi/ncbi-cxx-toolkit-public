@@ -1121,7 +1121,6 @@ BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
 
 BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
 	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("data/long_seqs", false);
-    const EBlastEncoding encoding = Blast_TracebackGetEncoding(eBlastTypeBlastn);
     const int kMaxNum = 36;
     const int kRangeLen = 10000;
     int kOid = 4;
@@ -1129,7 +1128,7 @@ BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
 
     BlastSeqSrcGetSeqArg seq_arg_ref;
     seq_arg_ref.oid = kOid;
-    seq_arg_ref.encoding = encoding;
+    seq_arg_ref.encoding = Blast_TracebackGetEncoding(eBlastTypeBlastn);
     seq_arg_ref.reset_ranges = false;
     seq_arg_ref.check_oid_exclusion = true;
     seq_arg_ref.seq = NULL;
@@ -1147,7 +1146,7 @@ BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
         BlastSeqSrc* seq_src = BlastSeqSrcCopy(seqSrc);
         BlastSeqSrcGetSeqArg* seq_arg = (BlastSeqSrcGetSeqArg*) calloc (1, sizeof(BlastSeqSrcGetSeqArg));
         seq_arg->oid = hsp_list->oid;
-        seq_arg->encoding = encoding;
+        seq_arg->encoding = Blast_TracebackGetEncoding(eBlastTypeBlastn);
         seq_arg->reset_ranges = false;
         seq_arg->check_oid_exclusion = true;
         seq_arg->seq = NULL;
