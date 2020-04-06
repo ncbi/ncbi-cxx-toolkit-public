@@ -529,7 +529,7 @@ bool operator==(const TAlignColl& coll, const SARanges& expected)
         }
     }
     for ( size_t i = 0; i < expected.size(); ++i ) {
-        if ( expected[i] != coll[i] ) { /* NCBI_FAKE_WARNING: deprecated */
+        if ( expected[i] != coll[i] ) { /* NCBI_FAKE_WARNING */
             return false;
         }
     }
