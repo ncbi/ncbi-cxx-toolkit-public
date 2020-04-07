@@ -40,6 +40,7 @@ race:corelib/test/test_tls_object.cpp
 # false positive -- last CRef release
 race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
 
+
 ################################################################
 # lavr CXX-11285
 
@@ -52,16 +53,18 @@ thread:test_ncbi_trigger
 # Setting the shutdown flag doesn't need to be protected (by vakatov)
 race:^ncbi::CTestServer::ShutdownRequested()
 
-# This is for statistics purposes only.
-race:^s_Create
+# This is for statistics purposes only. /connect/ncbi_socket.c
+race:^s_Create$
 
-# Debugging aid. For lock check consistency
-race:^g_NCBI_CoreCheckLock
+# Debugging aid. For lock check consistency /connect/ncbi_socket.c
+race:^g_NCBI_CoreCheckLock$
 
-# Pre-check followed by lock-and-check-and-modify
+# Pre-check followed by lock-and-check-and-modify. /connect/ncbi_socket.c
 race:^ncbi::CConnIniter::CConnIniter()
-race:^s_InitAPI_
+race:^s_InitAPI_$
 
+# This is a debugging aid, code sanity check. /connect/ncbi_core.c
+race:^MT_LOCK_AddRef$
 
 
 
