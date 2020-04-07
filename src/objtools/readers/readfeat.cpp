@@ -2701,14 +2701,14 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                             }
                         }
                         
-                        if (featType != CSeqFeatData::e_Rna) { 
+                        if (featType != CSeqFeatData::e_Rna) { // mRNA only has a protein_id qualifier
                             auto pBestId = GetBestId(ids);
                             if (pBestId) {
                                 sfp->SetProduct().SetWhole(*pBestId);
                             }
                         }
 
-                        if (featType != CSeqFeatData::e_Prot) { 
+                        if (featType != CSeqFeatData::e_Prot) { // Mat-peptide has an instantiated product, but no qualifier
                             x_AddGBQualToFeature(sfp, qual, val);
                         }
                     }
