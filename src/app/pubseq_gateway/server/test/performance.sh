@@ -76,11 +76,11 @@ for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 
 finilize "getblob-small-db.${suffix}"
 
 echo "getblob large in cache..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=33.32435367&use_cache=yes" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 2000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=4.509567&use_cache=yes" > ${outdir}/h2load.${i}.out &); done
 finilize "getblob-large-cache.${suffix}"
 
 echo "getblob large in db..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=33.32435367&use_cache=no" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 2000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=4.509567&use_cache=no" > ${outdir}/h2load.${i}.out &); done
 finilize "getblob-large-db.${suffix}"
 
 echo "get small in cache..."
@@ -92,10 +92,10 @@ for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 
 finilize "get-small-db.${suffix}"
 
 echo "get large in cache..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=3150015&use_cache=yes" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 2000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=3150015&use_cache=yes" > ${outdir}/h2load.${i}.out &); done
 finilize "get-large-cache.${suffix}"
 
 echo "get large in db..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=3150015&use_cache=no" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 2000 -c 4 -t 4 -m 4  "${url}/ID/get?seq_id=3150015&use_cache=no" > ${outdir}/h2load.${i}.out &); done
 finilize "get-large-db.${suffix}"
 
