@@ -38,6 +38,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <util/random_gen.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #include <common/test_assert.h>  // This header must go last
 
@@ -45,6 +46,9 @@
 USING_NCBI_SCOPE;
 
 CRandom s_RNG;
+DEFINE_STATIC_MUTEX(s_RNG_Mutex);
+#define RNG_LOCK CMutexGuard LOCK(s_RNG_Mutex)
+
 
 class CThreadPoolTester : public CNcbiApplication
 {
@@ -52,6 +56,7 @@ protected:
     void Init(void);
     int  Run (void);
 };
+
 
 void CThreadPoolTester::Init(void)
 {
@@ -79,6 +84,7 @@ void CThreadPoolTester::Init(void)
 
     SetupArgDescriptions(arg_desc.release());
 
+    RNG_LOCK;
     s_RNG.SetSeed(CCurrentProcess::GetPid());
 }
 
@@ -101,7 +107,11 @@ private:
 
 void CTestRequest::Process(void)
 {
-    int duration = s_RNG.GetRand(0, m_MaxProcessingTime);
+    int duration;
+    {{
+        RNG_LOCK;
+        duration = s_RNG.GetRand(0, m_MaxProcessingTime);
+    }}
     //LOG_POST("Request " << m_Serial << ": " << duration);
     SleepMilliSec(duration);
     //LOG_POST("Request " << m_Serial << " complete");

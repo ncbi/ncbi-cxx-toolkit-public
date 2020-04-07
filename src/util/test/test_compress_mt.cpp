@@ -62,7 +62,7 @@ const size_t  kBufLen = 45 KB;
 class CTest : public CThreadedApp
 {
 public:
-    bool Thread_Init(int idx);
+    bool TestApp_Init(void);
     bool Thread_Run(int idx);
     bool TestApp_Args(CArgDescriptions& args);
 
@@ -101,19 +101,7 @@ private:
 
 
 
-bool CTest::TestApp_Args(CArgDescriptions& args)
-{
-    args.SetUsageContext(GetArguments().GetProgramBasename(),
-                         "Test compression library in MT mode");
-    args.AddDefaultPositional
-        ("lib", "Compression library to test", CArgDescriptions::eString, "all");
-    args.SetConstraint
-        ("lib", &(*new CArgAllow_Strings, "all", "z", "bz2", "lzo"));
-    return true;
-}
-
-
-bool CTest::Thread_Init(int)
+bool CTest::TestApp_Init()
 {
     SetDiagPostLevel(eDiag_Error);
     // To see all output, uncomment next line:
@@ -123,6 +111,18 @@ bool CTest::Thread_Init(int)
     m_AllowOstrstream = true;
     m_AllowStrstream  = true;
 
+    return true;
+}
+
+
+bool CTest::TestApp_Args(CArgDescriptions& args)
+{
+    args.SetUsageContext(GetArguments().GetProgramBasename(),
+                         "Test compression library in MT mode");
+    args.AddDefaultPositional
+        ("lib", "Compression library to test", CArgDescriptions::eString, "all");
+    args.SetConstraint
+        ("lib", &(*new CArgAllow_Strings, "all", "z", "bz2", "lzo"));
     return true;
 }
 
