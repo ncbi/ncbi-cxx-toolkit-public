@@ -748,8 +748,8 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
 
 IUrlEncoder* CUrl::GetDefaultEncoder(void)
 {
-    static CDefaultUrlEncoder* s_DefaultEncoder = new CDefaultUrlEncoder();
-    return s_DefaultEncoder;
+    static CSafeStatic<CDefaultUrlEncoder> s_DefaultEncoder;
+    return &s_DefaultEncoder.Get();
 }
 
 
