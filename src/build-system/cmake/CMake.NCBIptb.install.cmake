@@ -223,10 +223,10 @@ function(NCBI_internal_install_root _variable _access)
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
 
+# test results
     if ($ENV{NCBITMP_INSTALL_CHECK})
         install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}")
         install( DIRECTORY ${NCBI_BUILD_ROOT}/testing DESTINATION "${_dest}")
-        install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary/ DESTINATION "${_dest}/testing")
     else()
         if (WIN32 OR XCODE)
             install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
@@ -242,8 +242,12 @@ function(NCBI_internal_install_root _variable _access)
 #            install( DIRECTORY ${NCBI_BUILD_ROOT}/testing DESTINATION "${_dest}"
 #                REGEX "${NCBI_BUILD_ROOT}/testing/.*/[^/]" EXCLUDE
 #            )
-#            install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary/ DESTINATION "${_dest}")
         endif()
+    endif()
+    if (WIN32 OR XCODE)
+        install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary/ DESTINATION "${_dest}/testing/$<CONFIG>")
+    else()
+        install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary/ DESTINATION "${_dest}/testing")
     endif()
 
 #install build info files

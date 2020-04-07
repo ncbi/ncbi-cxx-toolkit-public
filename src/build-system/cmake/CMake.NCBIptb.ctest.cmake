@@ -79,13 +79,6 @@ function(NCBI_internal_add_cmake_test _test)
     string(REPLACE ";" " " _args    "${NCBITEST_${_test}_ARG}")
     string(REPLACE ";" " " _assets   "${_assets}")
 
-    file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    if (WIN32 OR XCODE)
-        set(_outdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_xoutdir})
-    else()
-        set(_outdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/${_xoutdir})
-    endif()
-
     NCBI_internal_process_cmake_test_requires(${_test})
     if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
         if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
@@ -94,8 +87,13 @@ function(NCBI_internal_add_cmake_test _test)
         return()
     endif()
 
-    set(_auto ENV{NCBI_AUTOMATED_BUILD})
-    if(_auto)
+    file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
+    if (WIN32 OR XCODE)
+        set(_outdir ../${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_xoutdir})
+    else()
+        set(_outdir ../${NCBI_DIRNAME_TESTING}/${_xoutdir})
+    endif()
+
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
         -DNCBITEST_CONFIG=$<CONFIG>
@@ -104,26 +102,12 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_TIMEOUT=${_timeout}
         -DNCBITEST_BINDIR=../${NCBI_DIRNAME_RUNTIME}
         -DNCBITEST_SOURCEDIR=../../${NCBI_DIRNAME_SRC}/${_xoutdir}
-        -DNCBITEST_OUTDIR=../${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_xoutdir}
+        -DNCBITEST_OUTDIR=${_outdir}
         -DNCBITEST_ASSETS=${_assets}
         ${_extra}
         -P "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake"
         WORKING_DIRECTORY .
     )
-    else()
-    add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
-        -DNCBITEST_NAME=${_test}
-        -DNCBITEST_CONFIG=$<CONFIG>
-        -DNCBITEST_COMMAND=${NCBITEST_${_test}_CMD}
-        -DNCBITEST_ARGS=${_args}
-        -DNCBITEST_TIMEOUT=${_timeout}
-        -DNCBITEST_BINDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        -DNCBITEST_SOURCEDIR=${NCBI_CURRENT_SOURCE_DIR}
-        -DNCBITEST_OUTDIR=${_outdir}
-        -DNCBITEST_ASSETS=${_assets}
-        ${_extra}
-        -P "${NCBITEST_DRIVER}")
-    endif()
 endfunction()
 
 ##############################################################################
@@ -138,6 +122,7 @@ endfunction()
 #############################################################################
 function(NCBI_internal_FinalizeCMakeTest)
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})
+    file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary)
 endfunction()
 
 #############################################################################
