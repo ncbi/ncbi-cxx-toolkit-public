@@ -4,6 +4,7 @@ db/sqlite
 serial$
 serial/impl$
 serial/datatool
+serial/grpc_integration
 algo$
 algo/blast$
 algo/blast/api
