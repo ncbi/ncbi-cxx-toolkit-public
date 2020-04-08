@@ -268,7 +268,7 @@ const string& DbgPrintEx(const CDiagCompileInfo& info, const string& str, const 
 ///   THROW_TRACE_SIMPLE
 #  define THROW_TRACE_ARGS(exception_class, ...) \
     throw NCBI_NS_NCBI::DbgPrintEx(DIAG_COMPILE_INFO, \
-                                 exception_class(__VA_ARGS__), #exception_class)
+                                   exception_class(__VA_ARGS__), #exception_class)
 
 
 /////////////////////////////////
@@ -423,7 +423,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// argument. The class argument need not be derived from std::exception but
 /// must have stream output operator defined.
 ///
@@ -442,7 +442,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// argument. The class argument need not be derived from std::exception,
 /// class name is printed.
 ///
@@ -483,7 +483,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// argument. The class argument need not be derived from std::exception but
 /// must have stream output operator defined.
 ///
@@ -505,7 +505,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Combines diagnostic message trace and exception throwing. First the
 /// diagnostic message is printed, and then exception is thrown.
 ///
-/// Arguments can be any exception class with a the specified initialization
+/// Arguments can be any exception class with the specified initialization
 /// argument. The class argument need not be derived from std::exception,
 /// class name is printed.
 ///
