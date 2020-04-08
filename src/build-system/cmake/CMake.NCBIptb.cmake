@@ -61,6 +61,7 @@
 ##              NCBI_set_test_assets(list of assets) - required files and directories
 ##              NCBI_set_test_timeout(seconds)
 ##              NCBI_set_test_requires(list of components)
+##              NCBI_set_test_resources(list of test resources)
 ##          NCBI_end_test()
 ##
 ##    NCBI_end_lib(result) or NCBI_end_app(result) - argument 'result' is optional
@@ -535,6 +536,20 @@ endmacro()
 ##############################################################################
 macro(NCBI_set_test_requires)
     set(NCBITEST_${NCBI_${NCBI_PROJECT}_TEST}_REQUIRES "${ARGV}")
+endmacro()
+
+##############################################################################
+macro(NCBI_set_test_resources)
+    set(NCBITEST_${NCBI_${NCBI_PROJECT}_TEST}_RESOURCES "${ARGV}")
+endmacro()
+
+##############################################################################
+macro(NCBI_define_test_resource _name _amount)
+    if(DEFINED NCBITEST_RESOURCE_${_name}_AMOUNT)
+        message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}: Test resource ${_name} already defined")
+    endif()
+    set(NCBITEST_RESOURCE_${_name}_AMOUNT ${_amount})
+    set_property(GLOBAL PROPERTY NCBITEST_RESOURCE_${_name}_COUNT 0)
 endmacro()
 
 ##############################################################################

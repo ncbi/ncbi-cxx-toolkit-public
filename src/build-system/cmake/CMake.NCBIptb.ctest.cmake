@@ -12,6 +12,7 @@
 ##############################################################################
 # Testing
 set(NCBITEST_DRIVER "${NCBI_TREE_CMAKECFG}/TestDriver.cmake")
+NCBI_define_test_resource(ServiceMapper 8)
 enable_testing()
 
 if (WIN32)
@@ -49,6 +50,34 @@ macro(NCBI_internal_process_cmake_test_requires _test)
 endmacro()
 
 ##############################################################################
+macro(NCBI_internal_process_cmake_test_resources _test)
+    set(_all ${NCBITEST__RESOURCES} ${NCBITEST_${_test}_RESOURCES})
+    if (NOT "${_all}" STREQUAL "")
+        list(REMOVE_DUPLICATES _all)
+    endif()
+
+    foreach(_res IN LISTS _all)
+        if(DEFINED NCBITEST_RESOURCE_${_res}_AMOUNT)
+            get_property(_count  GLOBAL PROPERTY NCBITEST_RESOURCE_${_res}_COUNT)
+            if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+                message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} uses resource ${_res} (${NCBITEST_RESOURCE_${_res}_AMOUNT})")
+            endif()
+            set_tests_properties(${_test} PROPERTIES RESOURCE_LOCK "NCBITEST_RESOURCE_${_res}_${_count}")
+            math(EXPR _count "${_count} + 1")
+            if("${_count}" GREATER_EQUAL "${NCBITEST_RESOURCE_${_res}_AMOUNT}")
+                set(_count 0)
+            endif()
+            set_property(GLOBAL PROPERTY NCBITEST_RESOURCE_${_res}_COUNT ${_count})
+        else()
+            if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+                message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} uses resource ${_res} (1)")
+            endif()
+            set_tests_properties(${_test} PROPERTIES RESOURCE_LOCK "NCBITEST_RESOURCE_${_res}")
+        endif()
+    endforeach()
+endmacro()
+
+##############################################################################
 function(NCBI_internal_add_cmake_test _test)
     if( NOT DEFINED NCBITEST_${_test}_CMD)
         set(NCBITEST_${_test}_CMD ${NCBI_${NCBI_PROJECT}_OUTPUT})
@@ -82,7 +111,7 @@ function(NCBI_internal_add_cmake_test _test)
     NCBI_internal_process_cmake_test_requires(${_test})
     if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
         if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
-            message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} of project ${NCBI_PROJECT} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
+            message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
         endif()
         return()
     endif()
@@ -108,6 +137,8 @@ function(NCBI_internal_add_cmake_test _test)
         -P "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake"
         WORKING_DIRECTORY .
     )
+
+    NCBI_internal_process_cmake_test_resources(${_test})
 endfunction()
 
 ##############################################################################
