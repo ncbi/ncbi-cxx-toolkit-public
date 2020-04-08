@@ -53,6 +53,24 @@ CID2Client::~CID2Client(void)
 }
 
 
+void CID2Client::JustAsk(const CID2_Request_Packet& packet)
+{
+    static const STimeout kZeroTimeout = { 0, 0 };
+    Connect();
+    (*m_Out) << packet;
+    dynamic_cast<CConn_ServiceStream&>(*m_Stream).Fetch(&kZeroTimeout);
+}
+
+
+void CID2Client::JustAsk(const CID2_Request& request)
+{
+    static const STimeout kZeroTimeout = { 0, 0 };
+    Connect();
+    WriteRequest(*m_Out, request);
+    dynamic_cast<CConn_ServiceStream&>(*m_Stream).Fetch(&kZeroTimeout);
+}
+
+
 void CID2Client::WriteRequest(CObjectOStream& out, const TRequest& request)
 {
     // send a packet with single request

@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CID2_Request_Packet;
+
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_ID2_EXPORT CID2Client : public CID2Client_Base
 {
@@ -65,6 +67,11 @@ public:
     typedef vector< CRef<TReply> > TReplies;
     const TReplies& GetAllReplies(void)
     { return m_Replies; }
+
+    void JustAsk(const CID2_Request_Packet& packet);
+    void JustAsk(const CID2_Request& request);
+    void JustFetch(CID2_Reply& reply)
+        { ReadReply(*m_In, reply); }
 
 protected:
     // ID2 requires requests to be sent in ID2-Request-Packet that may hold
