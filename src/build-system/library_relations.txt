@@ -300,6 +300,7 @@ dbassist needs dbapi
 dbassist needs dbloadb
 dbassist needs ncbi_xdbapi_ftds
 dbassist_cgi includes dbassist
+dbgap_data_access needs xid_pubseqos
 dbgap_data_access needs xid_utils
 dbinfoasncpp_g needs xser
 dbldasn_g needs splitdbasn_g
@@ -765,6 +766,7 @@ lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
 lds2 needs3party $(SQLITE3_LIBS)
+linkos_utils needs xid_pubseqos
 linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs $(SQLITE3_WRAPPER)
@@ -989,6 +991,7 @@ ncbiprscxx needs gui_utils
 ncbiprscxx needs ncbi_xdbapi_ftds
 ncbiprscxx needs ncbiindxcxx
 ncbiprscxx needs taxon1
+ncbiprscxx needs xid_pubseqos
 ncbiprscxx needs xid_utils
 ncbiprscxx needs3party $(GENBANK_THIRD_PARTY_LIBS)
 ncbiprsn needs3party ctutils
@@ -1000,6 +1003,7 @@ ncbiprsncxx needs gui_utils
 ncbiprsncxx needs ncbi_xdbapi_ftds
 ncbiprsncxx needs ncbiindxcxx
 ncbiprsncxx needs taxon1
+ncbiprsncxx needs xid_pubseqos
 ncbiprsncxx needs xid_utils
 ncbiprsncxx needs3party $(GENBANK_THIRD_PARTY_LIBS)
 ncbispel needs3party netcli
@@ -1023,6 +1027,7 @@ netentr needs3party netcli
 netstorage needs ncbi_xcache_netcache
 nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
+notary needs xid_pubseqos
 notary needs xid_utils
 notary needs3party $(KRB5_LIBS)
 notary needs3party $(OPENSSL_LIBS)
@@ -1642,9 +1647,17 @@ xgridcgi needs xconnserv
 xgridcgi needs xhtml
 xhtml needs xncbi
 xid_estsub needs taxon1
+xid_estsub needs xid_pubseqos
 xid_estsub needs xid_utils
 xid_estsub needs xregexp
 xid_mapper needs $(SOBJMGR_LIBS)
+xid_pubseqos needs $(COMPRESS_LIBS)
+xid_pubseqos needs $(CONNEXT)
+xid_pubseqos needs dbapi_driver
+xid_pubseqos needs xcgi
+xid_pubseqos needs xmlwrapp
+xid_pubseqos needs xobjutil
+xid_pubseqos needs xslt_libxml
 xid_utils needs $(COMPRESS_LIBS)
 xid_utils needs $(CONNEXT)
 xid_utils needs dbapi_driver
@@ -1653,9 +1666,11 @@ xid_utils needs xmlwrapp
 xid_utils needs xobjutil
 xid_utils needs xslt_libxml
 xid_utils_noncorelib needs txclient
+xid_utils_noncorelib needs xid_pubseqos
 xid_utils_noncorelib needs xid_utils
 xid_wgs needs xncbi
 xid_wgs needs3party $(VDB_LIBS)
+xid_wgsdb needs xid_pubseqos
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
@@ -1668,6 +1683,7 @@ xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlcgi needs sssutils
 xmlcgi needs xhtml
+xmlcgi needs xid_pubseqos
 xmlcgi needs xid_utils
 xmlreaders needs xmlwrapp
 xmlwrapp needs xconnect
@@ -1731,6 +1747,7 @@ xslt needs3party $(ORIG_LIBS)
 xslt_libxml needs xncbi
 xslt_libxml needs3party $(LIBXML_LIBS)
 xslt_libxml needs3party $(LIBXSLT_LIBS)
+xslt_xalan needs xid_pubseqos
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
