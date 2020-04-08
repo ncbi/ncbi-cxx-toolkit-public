@@ -10,6 +10,8 @@ dbapi
 html
 internal/align_model$
 internal/ID/utils$
+internal/ID/utils/wgs$
+internal/ID/utils/wgs/format$
 internal/mapview/objects
 internal/blast/DistribDbSupport
 internal/blast/GumbelParams

@@ -28,6 +28,8 @@ internal/gpipe/objects/gencoll_load$
 internal/gpipe/objects/genomecoll$
 internal/txserver
 internal/ID/utils$
+internal/ID/utils/wgs$
+internal/ID/utils/wgs/format$
 internal/mapview/objects
 misc/grid_cgi$
 misc/xmlwrapp
