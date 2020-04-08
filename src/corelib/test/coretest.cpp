@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(TestThrowTrace)
     }
     int i = 123;
     try {
-        THROW_TRACE_ABORT(i);
+        THROW_TRACE_SIMPLE(i);
     }
     catch (...) {
         CDiagCompileInfo dci(__FILE__, __LINE__ - 3, NCBI_CURRENT_FUNCTION);
