@@ -2,6 +2,7 @@
 # $Id$
 #############################################################################
 
+NCBI_set_test_resources(ServiceMapper)
 NCBI_add_app(
   test_objmgr_data test_objmgr_data_mt
   test_objmgr_mem test_seqvector_ci seqvec_bench test_annot_ci

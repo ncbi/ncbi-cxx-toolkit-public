@@ -8,7 +8,7 @@ NCBI_begin_app(test_bulkinfo_mt)
   NCBI_project_watchers(vasilche)
 
   NCBI_set_test_assets(bad_len.ids wgs.ids all_readers.sh ref)
-  NCBI_set_test_timeout(400)
+  NCBI_set_test_timeout(800)
   NCBI_add_test(all_readers.sh test_bulkinfo_mt -type gi -reference ref/0.gi.txt)
   NCBI_add_test(all_readers.sh test_bulkinfo_mt -type acc -reference ref/0.acc.txt)
   NCBI_add_test(all_readers.sh test_bulkinfo_mt -type label -reference ref/0.label.txt)
