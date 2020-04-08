@@ -8,6 +8,7 @@ NCBI_begin_app(objmgr_perf_test)
   NCBI_set_test_assets(perf_ids1_acc perf_ids1_gi perf_ids2_acc perf_ids2_gi perf_ids3_acc perf_ids3_gi)
   NCBI_set_test_timeout(300)
 
+  NCBI_set_test_resources(ServiceMapper)
   NCBI_add_test(objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb)
   NCBI_add_test(objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb -pubseqos)
   NCBI_add_test(objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb -no_split)
