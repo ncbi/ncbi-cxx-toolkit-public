@@ -88,6 +88,8 @@ public:
                                EIO_Event direction = eIO_ReadWrite);
     const STimeout* GetTimeout(EIO_Event direction = eIO_Read) const;
 
+    EIO_Status AsyncConnect(void* handle_buf, size_t handle_size);
+
 protected:
     virtual string GetAffinity(const TRequest& /*request*/) const
     {
@@ -124,6 +126,12 @@ protected:
     static bool sx_IsSpecial(const STimeout* timeout);
 
     const STimeout*          m_Timeout; ///< Cloned if not special.
+
+private:
+    SConnNetInfo* x_GetConnNetInfo(const char* service,
+                                   SSERVICE_Extra* x_extra);
+
+    unique_ptr<CConn_ServiceStream> m_AsyncStream;    
 };
 
 
@@ -140,14 +148,10 @@ struct Deleter<SConnNetInfo>
 
 template<class TRequest, class TReply>
 inline
-void CRPCClient<TRequest, TReply>::x_Connect(void)
+SConnNetInfo* CRPCClient<TRequest, TReply>::x_GetConnNetInfo
+(const char* service, SSERVICE_Extra* x_extra)
 {
-    if ( m_RetryCtx.IsSetUrl() ) {
-        x_ConnectURL(m_RetryCtx.GetUrl());
-        return;
-    }
-    _ASSERT( !m_Service.empty() );
-    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(m_Service.c_str()));
+    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(service));
     if ( !m_Args.empty() ) {
         if ( !ConnNetInfo_AppendArg(net_info.get(), m_Args.c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
@@ -159,12 +163,21 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending retry context arguments");
         }
-    }
-    else if (!m_Affinity.empty()) {
+    } else if (service != nullptr  &&  !m_Affinity.empty()) {
         if ( !ConnNetInfo_PostOverrideArg(net_info.get(), m_Affinity.c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending request affinity");
         }
+    }
+    if (x_extra != nullptr) {
+        // Install callback for parsing headers.
+        memset(x_extra, 0, sizeof(*x_extra));
+        x_extra->data = &m_RetryCtx;
+        x_extra->parse_header = sx_ParseHeader;
+        x_extra->flags = fHTTP_NoAutoRetry;
+    }
+    if (service == nullptr) {
+        return net_info.release();
     }
     const char* user_header = GetContentTypeHeader(GetFormat());
     if (user_header != NULL  &&  *user_header != '\0') {
@@ -173,13 +186,26 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
                 "Error sending user header");
         }
     }
+    return net_info.release();
+}
 
-    // Install callback for parsing headers.
+template<class TRequest, class TReply>
+inline
+void CRPCClient<TRequest, TReply>::x_Connect(void)
+{
+    if (m_AsyncStream.get() != nullptr) {
+        m_AsyncStream->SetTimeout(eIO_Open, m_Timeout);
+        m_AsyncStream->SetTimeout(eIO_ReadWrite, m_Timeout);
+        x_SetStream(m_AsyncStream.release());
+        return;
+    } else if ( m_RetryCtx.IsSetUrl() ) {
+        x_ConnectURL(m_RetryCtx.GetUrl());
+        return;
+    }
+    _ASSERT( !m_Service.empty() );
     SSERVICE_Extra x_extra;
-    memset(&x_extra, 0, sizeof(x_extra));
-    x_extra.data = &m_RetryCtx;
-    x_extra.parse_header = sx_ParseHeader;
-    x_extra.flags = fHTTP_NoAutoRetry;
+    AutoPtr<SConnNetInfo> net_info(x_GetConnNetInfo(m_Service.c_str(),
+                                                    &x_extra));
 
     unique_ptr<CConn_ServiceStream> stream
         (new CConn_ServiceStream
@@ -195,20 +221,7 @@ template<class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
 {
-    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0));
-    ConnNetInfo_ParseURL(net_info.get(), url.c_str());
-    if ( !m_Args.empty() ) {
-        if ( !ConnNetInfo_PostOverrideArg(net_info.get(), m_Args.c_str(), 0) ) {
-            NCBI_THROW(CRPCClientException, eArgs,
-                "Error sending additional request arguments");
-        }
-    }
-    if ( m_RetryCtx.IsSetArgs() ) {
-        if ( !ConnNetInfo_PostOverrideArg(net_info.get(), m_RetryCtx.GetArgs().c_str(), 0) ) {
-            NCBI_THROW(CRPCClientException, eArgs,
-                "Error sending retry context arguments");
-        }
-    }
+    AutoPtr<SConnNetInfo> net_info(x_GetConnNetInfo(NULL, NULL));
     unique_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info.get(),
         GetContentTypeHeader(GetFormat()),
         sx_ParseHeader, // callback
@@ -267,6 +280,41 @@ const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
     else {
         return m_Timeout;
     }
+}
+
+
+template<class TRequest, class TReply>
+inline
+EIO_Status CRPCClient<TRequest, TReply>::AsyncConnect(void* handle_buf,
+                                                      size_t handle_size)
+{
+    static const STimeout kZeroTimeout = { 0, 0 };
+    _ASSERT( !m_Service.empty() );
+    SSERVICE_Extra x_extra;
+    AutoPtr<SConnNetInfo> net_info(x_GetConnNetInfo(m_Service.c_str(),
+                                                    &x_extra));
+
+    m_AsyncStream.reset(
+        new CConn_ServiceStream(m_Service, fSERV_Any, net_info.get(), &x_extra,
+                                &kZeroTimeout));
+    if (m_Timeout == kDefaultTimeout) {
+        m_Timeout = kInfiniteTimeout;
+    }
+    EIO_Status status = m_AsyncStream->Status();
+    if ( m_Canceler.NotNull() ) {
+        m_AsyncStream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
+    }
+    if (handle_buf != nullptr) {
+        CONN conn = m_AsyncStream->GetCONN();
+        if (conn != nullptr) {
+            SOCK sock = nullptr;
+            if ((status = CONN_GetSOCK(conn, &sock)) == eIO_Success
+                &&  sock != nullptr) {
+                status = SOCK_GetOSHandle(sock, handle_buf, handle_size);
+            }
+        }
+    }
+    return status;
 }
 
 
