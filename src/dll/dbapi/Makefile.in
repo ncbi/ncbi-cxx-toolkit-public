@@ -4,7 +4,6 @@ SUB_PROJ =  \
     dbapi_util_blobstore \
     ncbi_dbapi \
     ncbi_dbapi_driver \
-    ncbi_xcache_dbapi \
     ncbi_xdbapi_ctlib \
     ncbi_xdbapi_dblib \
     ncbi_xdbapi_ftds \

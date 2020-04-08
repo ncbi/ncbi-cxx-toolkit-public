@@ -11,5 +11,5 @@ if (APPLE AND NOT XCODE)
 endif ()
 
 NCBI_add_library(dbapi)
-NCBI_add_subdirectory(driver simple cache lang_bind test)
+NCBI_add_subdirectory(driver simple lang_bind test)
 
