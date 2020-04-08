@@ -1484,22 +1484,22 @@ CVcfReader::xAssignVariantProps(
     //byte F4
     it = infos.find("OTH");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eFrequency_based_validation_above_5pct_all; 
+        props.SetFrequency_based_validation() |= VP::eFrequency_based_validation_above_5pct_all;
         infos.erase(it);
     }
     it = infos.find("G5A");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eFrequency_based_validation_above_5pct_1plus; 
+        props.SetFrequency_based_validation() |= VP::eFrequency_based_validation_above_5pct_1plus; 
         infos.erase(it);
     }
     it = infos.find("VLD");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eFrequency_based_validation_validated; 
+        props.SetFrequency_based_validation() |= VP::eFrequency_based_validation_validated;
         infos.erase(it);
     }
     it = infos.find("MUT");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eFrequency_based_validation_is_mutation; 
+        props.SetFrequency_based_validation() |= VP::eFrequency_based_validation_is_mutation;
         infos.erase(it);
     }
     it = infos.find("GMAF");
