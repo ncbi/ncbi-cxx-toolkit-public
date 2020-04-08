@@ -2210,57 +2210,75 @@ static EIO_Status s_StripToPattern
  size_t*     n_discarded)
 {
     char*      buf;
-    EIO_Status status;
     size_t     n_read;
     size_t     buf_size;
     char       x_buf[4096];
+    EIO_Status retval, status;
 
     /* check args */
     if ( n_discarded )
         *n_discarded = 0;
     if (!stream)
         return eIO_InvalidArg;
-    if (!pattern_size)
-        pattern = 0;
+
+    if (!pattern_size) {
+        pattern   = 0;
+        buf_size  = sizeof(x_buf);
+    } else
+        buf_size  = pattern ? pattern_size << 1 : pattern_size;
 
     /* allocate a temporary read buffer */
-    buf_size = pattern ? pattern_size << 1 : pattern_size;
-    if (buf_size <= sizeof(x_buf)  &&  (pattern  ||  !pattern_size)) {
+    if (buf_size <= sizeof(x_buf)  &&  pattern) {
         buf_size  = sizeof(x_buf);
         buf = x_buf;
     } else if (!(buf = (char*) malloc(buf_size)))
         return eIO_Unknown;
 
+    retval = eIO_Success;
     if (!pattern) {
-        /* read/discard the specified # of bytes (*) or until EOF */
-        size_t n_count = 0;
+        /* read/discard the specified # of bytes or until EOF */
         char* xx_buf = buf;
-        do {
+        for (;;) {
             status = io_func(stream, xx_buf, buf_size, &n_read, eIO_Read);
+            assert(buf_size  &&  n_read <= buf_size);
             if (!n_read) {
                 assert(status != eIO_Success);
+                retval = status;
                 break;
             }
             if (discard) {
-                if (!n_count  &&  pattern_size) {
-                    assert(buf_size == pattern_size);
-                    /* first time enqueue the entire "buf" (case (*) above) */
-                    if (BUF_AppendEx(discard, buf, buf_size, buf, n_read))
+                if (xx_buf == buf) {
+                    /* enqueue the entire buffer when new */
+                    if (BUF_AppendEx(discard, buf, buf_size, xx_buf, n_read))
                         buf = 0/*mark it not to be free()'d at the end*/;
                     else
-                        status = eIO_Unknown;
-                } else if (!BUF_Write(discard, xx_buf, n_read))
-                    status = eIO_Unknown;
+                        retval = status = eIO_Unknown;
+                } else /*NB:zero-copy,can't fail!*/
+                    verify(BUF_Write(discard, xx_buf, n_read));
             }
-            n_count += n_read;
-            if (pattern_size) {
-                if (!(buf_size -= n_read))
+            if ( n_discarded )
+                *n_discarded += n_read;
+            if (!(buf_size -= n_read)) {
+                if (pattern_size)
                     break;
-                xx_buf += n_read;
+                if (status != eIO_Success) {
+                    retval  = status;
+                    break;
+                }
+                buf_size = sizeof(x_buf);
+                if (!buf  &&  !(buf = (char*) malloc(buf_size))) {
+                    retval  = eIO_Unknown;
+                    break;
+                }
+                xx_buf  = buf;
+                continue;
             }
-        } while (status == eIO_Success);
-        if ( n_discarded )
-            *n_discarded = n_count;
+            if (status != eIO_Success) {
+                retval  = status;
+                break;
+            } else
+                xx_buf += n_read;
+        }
     } else {
         /* pattern search case */
         assert(pattern_size);
@@ -2270,11 +2288,13 @@ static EIO_Status s_StripToPattern
             /* read; search for the pattern; store/count the discarded data */
             size_t x_read, n_stored;
 
-            assert(n_read <= pattern_size);
+            assert(n_read <= pattern_size  &&  n_read < buf_size);
             status = io_func(stream, buf + n_read, buf_size - n_read,
                              &x_read, eIO_Read);
+            assert(x_read <= buf_size - n_read);
             if (!x_read) {
                 assert(status != eIO_Success);
+                retval = status;
                 break;
             }
             n_stored = n_read + x_read;
@@ -2296,16 +2316,15 @@ static EIO_Status s_StripToPattern
                     size_t x_discarded = (size_t)(b - buf) + pattern_size;
                     if (discard  &&  !BUF_Write(discard, buf + n_read,
                                                 x_discarded - n_read)) {
-                        status = eIO_Unknown;
+                        retval = status = eIO_Unknown;
                     }
                     if ( n_discarded )
                         *n_discarded += x_discarded - n_read;
                     /* return the unused portion to the stream */
-                    EIO_Status st
-                        = io_func(stream, buf + x_discarded,
-                                  n_stored - x_discarded, 0, eIO_Write);
-                    if (status == eIO_Success)
-                        status  = st;
+                    status = io_func(stream, buf + x_discarded,
+                                     n_stored - x_discarded, 0, eIO_Write);
+                    if (retval == eIO_Success)
+                        retval  = status;
                     break;
                 }
             }
@@ -2314,7 +2333,11 @@ static EIO_Status s_StripToPattern
             if ( n_discarded )
                 *n_discarded += x_read;
             if (discard  &&  !BUF_Write(discard, buf + n_read, x_read)) {
-                status = eIO_Unknown;
+                retval = eIO_Unknown;
+                break;
+            }
+            if (status != eIO_Success) {
+                retval  = status;
                 break;
             }
             if (n_stored > pattern_size) {
@@ -2328,7 +2351,7 @@ static EIO_Status s_StripToPattern
     /* cleanup & exit */
     if (buf  &&  buf != x_buf)
         free(buf);
-    return status;
+    return retval;
 }
 
 
@@ -2343,7 +2366,6 @@ static EIO_Status s_CONN_IO
     case eIO_Read:
         return CONN_Read((CONN) stream, buf, size, n_read, eIO_ReadPlain);
     case eIO_Write:
-        assert(stream);
         return CONN_Pushback((CONN) stream, buf, size);
     default:
         assert(0);
@@ -2406,7 +2428,7 @@ static EIO_Status s_BUF_IO
     switch (what) {
     case eIO_Read:
         *n_read = BUF_Read((BUF) stream, buf, size);
-        return *n_read ? eIO_Success : eIO_Closed;
+        return *n_read  ||  !size ? eIO_Success : eIO_Closed;
     case eIO_Write:
         assert(stream);
         b = (BUF) stream;

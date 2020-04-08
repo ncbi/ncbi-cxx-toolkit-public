@@ -757,7 +757,7 @@ extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED SOCK URL_Connect
  );
 
 
-/* Discard all input data before (and including) the first occurrence of a
+/** Discard all input data before (and including) the first occurrence of a
  * "pattern".  If "discard" is not NULL then add the stripped data (including
  * the "pattern") to it.  If "n_discarded" is not NULL then "*n_discarded"
  * will get the number of actually stripped bytes.  If there was some excess
@@ -766,6 +766,22 @@ extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED SOCK URL_Connect
  * NULL), and the stripping continues until EOF;  if "pattern" is NULL and
  * "pattern_size" is not 0, then exactly "pattern_size" bytes will have
  * attempted to be stripped (unless an I/O error occurs prematurely).
+ *
+ * @return eIO_Success when the requested operation has completed successfully
+ * (pattern found, or the requested number of bytes was skipped, including when
+ * either was followed by the end-of-file condition), and if the "discard"
+ * buffer was provided, then everything skipped has been successfully stored in
+ * it.  Otherwise, return other error code, and store everything read / skipped
+ * thus far in the "discard" buffer, if provided.  Naturally, it never returns
+ * eIO_Success when requested to skip through the end of file, but eIO_Closed
+ * when the EOF has been reached.  Note that memory allocation errors (such as
+ * unable to save skipped data in the "discard" buffer) will be assigned the
+ * eIO_Unknown code -- which as well can be returned from the failing I/O).
+ *
+ * @note To distiguish the nature of eIO_Unknown (whether it is I/O or memory)
+ * one can check the grow of the buffer size after the call, and compare it to
+ * the value of "*n_discarded": if they agree, there was an I/O error, not the
+ * buffer's.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_StripToPattern
 (CONN        conn,
