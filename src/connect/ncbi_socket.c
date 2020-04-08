@@ -2930,7 +2930,7 @@ static EIO_Status s_Recv(SOCK    sock,
 static EIO_Status s_WritePending(SOCK, const struct timeval*, int, int);
 
 
-/* Read/Peek data from the socket.  Return eIO_Success if some data have been
+/* Read/Peek data from the socket.  Return eIO_Success iff some data have been
  * read.  Return other (error) code if an error/EOF occurred (zero bytes read).
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves.)

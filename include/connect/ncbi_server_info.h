@@ -279,7 +279,7 @@ extern NCBI_XCONNECT_EXPORT char*       SERV_WriteInfo
  *           in the first place, regardless of its rate, yet if that rate is as
  *           large as the percentage (expressed by the absolute value of this
  *           coefficient) of the average rate coefficient of all other servers
- *           for the same service.  In other words, -5 instructs to ignore
+ *           for the same service.  In other words, -5 instructs not to pick on
  *           the locally run server only if its rate is less than 5% of average
  *           status of the remaining servers for the same service.
  *
@@ -306,7 +306,7 @@ extern NCBI_XCONNECT_EXPORT char*       SERV_WriteInfo
  *       L={yes|no}     [default is set by SERV_SetLocalServerDefault()]
  *           Local servers are accessible only by local clients (from within
  *           the Intranet) or direct clients of LBSMD, and are not accessible
- *           by the outside users (i.e. via network dispatching).
+ *           by the outside users (e.g. via network dispatching).
  *
  *    Private server:
  *       P=no           (default)
