@@ -1942,6 +1942,27 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.AddNamedAnnots("CDD");
             }
             m_Scope->SetKeepExternalAnnotsForEdit();
+
+        } else if (m_Policy == CSeqEntryIndex::eIncremental) {
+
+            sel.SetResolveAll();
+            // flatfile generator now needs to do its own exploration of far delta components
+            // and needs to implement barrier between RefSeq and INSD accession types
+            sel.SetResolveDepth(1);
+
+            // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
+            // sel.AddUnnamedAnnots();
+
+            // allow external SNPs - testing for now, probably needs to be in external policy
+            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
+                sel.IncludeNamedAnnotAccession("SNP");
+                sel.AddNamedAnnots("SNP");
+            }
+            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
+                sel.IncludeNamedAnnotAccession("CDD");
+                sel.AddNamedAnnots("CDD");
+            }
+            m_Scope->SetKeepExternalAnnotsForEdit();
         }
 
         // bit flags exclude specific features
