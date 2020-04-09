@@ -1945,6 +1945,20 @@ void CBioseqIndex::x_InitFeats (void)
 
         } else if (m_Policy == CSeqEntryIndex::eIncremental) {
 
+            // do not fetch features from underlying sequence component records
+            if (m_Surrogate) {
+                // delta with sublocation needs to map features from original Bioseq
+                sel.SetResolveAll();
+                sel.SetResolveDepth(1);
+                sel.SetExcludeExternal();
+            } else {
+                // otherwise limit collection to local records in top-level Seq-entry
+                sel.SetResolveAll();
+                sel.SetResolveDepth(0);
+                sel.SetExcludeExternal();
+            }
+
+            /*
             sel.SetResolveAll();
             // flatfile generator now needs to do its own exploration of far delta components
             // and needs to implement barrier between RefSeq and INSD accession types
@@ -1963,6 +1977,7 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.AddNamedAnnots("CDD");
             }
             m_Scope->SetKeepExternalAnnotsForEdit();
+            */
         }
 
         // bit flags exclude specific features
