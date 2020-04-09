@@ -794,7 +794,6 @@ CAlnScannerNexus::xImportAlignmentData(
     }
 
     if (!commandTokens.empty()) {
-        auto commandStartLine =  commandTokens.front().mNumLine;
         string description = 
             "Terminating semicolon missing from command. Commands in a Nexus file must end with a semicolon.";
         throw SShowStopper(

@@ -290,18 +290,6 @@ sReportError(
 }
 
 
-static void 
-sReportError(
-    ILineErrorListener* pEC,
-    EDiagSev severity,
-    const string& seqId,
-    int lineNumber,
-    const string& message,
-    ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
-{
-    sReportError(pEC, severity, eReader_Alignment, 0, seqId, lineNumber, message, problemType);
-}
-
 void CAlnReader::Read(
     TReadFlags readFlags,
     ncbi::objects::ILineErrorListener* pErrorListener)
@@ -403,7 +391,6 @@ void CAlnReader::x_VerifyAlignmentInfo(
         "Only one sequence was detected in the alignment file. An alignment file must contain more than one sequence.");
     }
 
-    const auto numSequences = alignmentInfo.NumSequences();
 
     m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
 
@@ -750,9 +737,6 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
     m_Entry = new CSeq_entry();
     CRef<CSeq_align> seq_align = GetSeqAlign(fasta_flags, pErrorListener);
 
-    const CDense_seg& denseg = seq_align->GetSegs().GetDenseg();
-    _ASSERT(denseg.GetIds().size() == m_Dim);
-
     CRef<CSeq_annot> seq_annot (new CSeq_annot);
     seq_annot->SetData().SetAlign().push_back(seq_align);
 
@@ -768,7 +752,6 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
 
         // seq-id(s)
         auto& ids = pSubEntry->SetSeq().SetId();
-        //ids.push_back(denseg.GetIds()[row_i]);
         ids = m_Ids[row_i];
 
         // mol

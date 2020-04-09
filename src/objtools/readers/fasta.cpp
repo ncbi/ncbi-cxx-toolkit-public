@@ -220,7 +220,6 @@ inline static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags, FIdCheck f_idcheck)
     : m_LineReader(&reader), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator()), 
       m_gapNmin(0), m_gap_Unknown_length(0),
       m_MaxIDLength(kMax_UI4),
       m_fIdCheck(f_idcheck)
@@ -237,7 +236,6 @@ CFastaReader::CFastaReader(const string& path, TFlags flags, FIdCheck f_idcheck)
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags, FIdCheck f_idcheck)
     : CReaderBase(fBaseFlags), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator), 
       m_gapNmin(0), m_gap_Unknown_length(0),
       m_MaxIDLength(kMax_UI4),
       m_fIdCheck(f_idcheck)

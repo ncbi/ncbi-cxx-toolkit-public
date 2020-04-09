@@ -113,7 +113,6 @@ CAlnScannerClustal::xImportAlignmentData(
     bool firstBlock = true;
     int  numSeqs = 0;
     int  seqCount = 0;
-    int  maxSeqCount = 0;
 
     string line;
     int lineCount = 0;

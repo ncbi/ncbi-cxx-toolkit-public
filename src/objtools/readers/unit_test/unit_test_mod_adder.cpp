@@ -151,7 +151,6 @@ private:
 static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos)
 { // Copied from CSourceModParser
     size_t i = start;
-    bool found = false;
 
     eq_pos = CTempString::npos;
     const char* s = line.data() + start;
@@ -195,30 +194,6 @@ static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, 
     }
     return false;
 };
-
-
-static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
-{
-    size_t pos = 0;
-    while(pos < title.size()) {
-        size_t lb_pos, end_pos, eq_pos;
-        lb_pos = pos;
-        if (sFindBrackets(title, lb_pos, end_pos, eq_pos))
-        {            
-            if (eq_pos < end_pos) {
-                CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
-                CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
-                mods.emplace(key, value);
-            }
-            pos = end_pos + 1;
-        }
-        else
-        { 
-            break;
-        }
-    }
-    return !mods.empty();
-}
 
 
 static CRef<CBioseq> sCreateSkeletonBioseq(void)

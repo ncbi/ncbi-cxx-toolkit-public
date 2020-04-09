@@ -350,23 +350,6 @@ TSeqPos CFastaDeflineReader::ParseRange(
     return TSeqPos(s.length() - pos);
 }
 
-static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
-{
-    switch( c ) {
-    case 'A':
-    case 'C':
-    case 'G':
-    case 'T':
-    case 'a':
-    case 'c':
-    case 'g':
-    case 't':
-        return true;
-    default:
-        return false;
-    }
-}
-
 
 class CIdErrorReporter
 {
@@ -507,7 +490,6 @@ bool CFastaDeflineReader::ParseIDs(
         return true;
     }
 
-    TSeqPos num_ids = 0;
     // be generous overall, and give raw local IDs the benefit of the
     // doubt for now
     CSeq_id::TParseFlags flags
@@ -527,7 +509,8 @@ bool CFastaDeflineReader::ParseIDs(
             for (auto& ch : local_copy)
                 if (ch == ',')
                     ch = '_';
-            num_ids = CSeq_id::ParseIDs(ids, local_copy, flags);
+
+            CSeq_id::ParseIDs(ids, local_copy, flags);
 
             const string errMessage = 
                 "Near line " + NStr::NumericToString(info.lineNumber) 
@@ -545,7 +528,7 @@ bool CFastaDeflineReader::ParseIDs(
         }
         else
         {
-            num_ids = CSeq_id::ParseIDs(ids, s, flags);
+            CSeq_id::ParseIDs(ids, s, flags);
         }
     } catch (CSeqIdException&) {
         // swap(ids, old_ids);

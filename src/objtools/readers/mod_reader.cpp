@@ -798,7 +798,6 @@ bool CTitleParser::HasMods(const CTempString& title)
 bool CTitleParser::x_FindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos)
 { // Copied from CSourceModParser
     size_t i = start;
-    bool found = false;
 
     eq_pos = CTempString::npos;
     const char* s = line.data() + start;
