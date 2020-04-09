@@ -1,7 +1,0 @@
-# $Id$
-
-LIB_PROJ = ncbi_xcache_dbapi
-SUB_PROJ = test admintool
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
