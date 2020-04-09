@@ -133,10 +133,13 @@ bool CGffBaseColumns::InitializeFeature(
     SeqIdResolver seqidresolve ) const
     //  ----------------------------------------------------------------------------
 {
-    return (
-        xInitFeatureLocation(flags, pFeature, seqidresolve)  &&
-        xInitFeatureData(flags, pFeature)  &&
-        xInitFeatureId(flags, pFeature));
+    if (!xInitFeatureLocation(flags, pFeature, seqidresolve)) {
+        return false;
+    }
+    if (!xInitFeatureData(flags, pFeature)) {
+        return false;
+    }
+    return xInitFeatureId(flags, pFeature);
 }
 
 //  ============================================================================

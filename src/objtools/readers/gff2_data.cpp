@@ -1147,33 +1147,25 @@ bool CGff2Record::xInitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
-    bool invalidFeaturesToRegion = !(flags & CGff2Reader::fGenbankMode);
-
-    string gbkey;
-    if (GetAttribute("gbkey", gbkey)) {
-        if (gbkey == "Src") {
-            pFeature->SetData().SetBiosrc();
+    if (Type() == "region") {
+        string gbkey;
+        if (GetAttribute("gbkey", gbkey)) {
+            if (gbkey == "Src") {
+                pFeature->SetData().SetBiosrc();
+                return true;
+            }
+            // regardless of gbkey (rw-1062)
+            pFeature->SetData().SetRegion();
             return true;
         }
-    }
-
-    if (Type() == "ncRNA") {
-        string qual_type;
-        //if(GetAttribute("ncrna_class", qual_type)) {
-        //    if (qual_type == "other") {
-        //        qual_type = "ncRNA";
-        //    }
-        //    if (CSoMap::SoTypeToFeature(
-        //        qual_type, *pFeature, invalidFeaturesToRegion)) {
-        //        return true;
-        //    }
-        //}
     }
 
     auto recognizedType = Type();
     if (recognizedType == "start_codon"  || recognizedType == "stop_codon") {
         recognizedType = "cds";
     }
+
+    bool invalidFeaturesToRegion = !(flags & CGff2Reader::fGenbankMode);
     if (!CSoMap::SoTypeToFeature(
         recognizedType, *pFeature, invalidFeaturesToRegion)) {
         string message = "Bad data line: Invalid feature type \"" + recognizedType + "\"";

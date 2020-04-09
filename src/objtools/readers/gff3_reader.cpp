@@ -399,6 +399,9 @@ bool CGff3Reader::xUpdateAnnotFeature(
     if (type == "mrna") {
         return xUpdateAnnotMrna(record, pFeature, annot, pEC);
     }
+    if (type == "region") {
+        return xUpdateAnnotRegion(record, pFeature, annot, pEC);
+    }
     return xUpdateAnnotGeneric(record, pFeature, annot, pEC);
 }
 
@@ -825,7 +828,45 @@ bool CGff3Reader::xUpdateAnnotGene(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    return xUpdateAnnotGeneric(record, pFeature, annot, pEC);
+    CRef<CSeq_feat> pUnderConstruction(new CSeq_feat);
+    if (xFindFeatureUnderConstruction(record, pUnderConstruction)) {
+        return record.UpdateFeature(m_iFlags, pUnderConstruction);
+    }
+
+    if (!xInitializeFeature(record, pFeature)) {
+        return false;
+    }
+    if (! xAddFeatureToAnnot(pFeature, annot)) {
+        return false;
+    }
+    string strId;
+    if ( record.GetAttribute("ID", strId)) {
+        m_MapIdToFeature[strId] = pFeature;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotRegion(
+    const CGff2Record& record,
+    CRef<CSeq_feat> pFeature,
+    CSeq_annot& annot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+
+    if (! xAddFeatureToAnnot(pFeature, annot)) {
+        return false;
+    }
+    string strId;
+    if ( record.GetAttribute("ID", strId)) {
+        mIdToSeqIdMap[strId] = record.Id();
+        m_MapIdToFeature[strId] = pFeature;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

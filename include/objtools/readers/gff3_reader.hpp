@@ -150,6 +150,12 @@ protected:
         CSeq_annot&,
         ILineErrorListener*);
 
+    virtual bool xUpdateAnnotRegion(
+        const CGff2Record&,
+        CRef<CSeq_feat>,
+        CSeq_annot&,
+        ILineErrorListener*);
+
     virtual bool xUpdateAnnotGeneric(
         const CGff2Record&,
         CRef<CSeq_feat>,
