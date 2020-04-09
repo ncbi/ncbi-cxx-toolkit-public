@@ -1,3 +1,26 @@
+Performance testing
+-------------------
+These tests let to compare h2load collected values for two instances of the PSG server.
+Here is a typical scenario:
+
+- run PSG instance v1
+- modify performance.sh with the required host:port
+- rm -rf ./perf/
+- run ./performance.sh old
+  this will create ./perf/, run tests against PSG v1, collect h2load output and merge it
+- stop PSG v1
+- run PSG v2
+- run ./performance.sh new
+- run ./perf-diff.py ./perf
+  this will print on the stdout the difference for each test case between v1 and v2
+
+If the h2load aggregation data is required only for one version then run performance.sh
+once and then
+./perf-one.py ./perf  
+
+
+
+
 Unit tests
 ----------
 
