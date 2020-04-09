@@ -41,6 +41,7 @@
 #include <corelib/ncbiexec.hpp>
 #include <util/xregexp/regexp.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 
@@ -292,15 +293,6 @@ void CMsvcConfigure::WriteExtraDefines(CMsvcSite& site, const string& root_dir, 
 }
 
 
-#if defined(NCBI_OS_MSWIN)
-#  if defined(_UNICODE)
-#    define NcbiSys_strdup   _wcsdup
-#  else
-#    define NcbiSys_strdup   strdup
-#  endif
-#else
-#  define NcbiSys_strdup     strdup
-#endif
 
 void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, const SConfigInfo& config)
 {
