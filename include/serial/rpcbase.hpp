@@ -115,7 +115,7 @@ protected:
 
     /// Connect to a URL.  (Discouraged; please establish and use a
     /// suitable named service if possible.)
-            void x_ConnectURL(const string& url);
+    void x_ConnectURL(const string& url);
 
     // CConn_HttpStream callback for parsing headers.
     // 'user_data' must point to an instance of CRPCConnStatus.
@@ -219,7 +219,7 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
 
 template<class TRequest, class TReply>
 inline
-void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
+void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& /*url_unused*/)
 {
     AutoPtr<SConnNetInfo> net_info(x_GetConnNetInfo(NULL, NULL));
     unique_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info.get(),
