@@ -17,7 +17,7 @@
 
 set(NCBI_COMPONENT_MSWin_FOUND YES)
 #to debug
-#set(NCBI_TRACE_COMPONENT_GRPC ON)
+#set(NCBI_TRACE_COMPONENT_PYTHON ON)
 #############################################################################
 # common settings
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
@@ -68,7 +68,7 @@ if (${NCBI_ThirdPartyCompiler} STREQUAL "vs2017.64" OR ${NCBI_ThirdPartyCompiler
         set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
         set(NCBI_ThirdParty_VDB_ARCH     x86_64/v141)
 
-    set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python252)
+    set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python)
 #    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
 #    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
     set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1-ncbi1)
@@ -168,7 +168,7 @@ function(NCBI_define_component _name)
         endif()
 
         if (NOT _found)
-            set(_locations lib)
+            set(_locations lib libs)
             foreach(_libdir IN LISTS _locations)
                 set(_found YES)
                 if(NCBI_TRACE_COMPONENT_${_name})
@@ -423,7 +423,7 @@ endif()
 
 #############################################################################
 # PYTHON
-NCBI_define_component(PYTHON)
+NCBI_define_component(PYTHON python3.lib python38.lib)
 
 ##############################################################################
 # GRPC/PROTOBUF
