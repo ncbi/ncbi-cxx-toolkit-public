@@ -1,3 +1,7 @@
+Release 1.9.0 (2020-04-09)
+
+    * Updated libuv 1.35.0, datastax 2.15.1, lmdb 0.9.24 (CXX-11268)
+
 Release 1.8.7 (2020-03-18)
 
     * PSG - if no path is specified then send back a help page (CXX-11225)
