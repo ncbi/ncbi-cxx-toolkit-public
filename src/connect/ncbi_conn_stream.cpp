@@ -133,24 +133,20 @@ EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 }
 
 
-CConn_IOStream& CConn_IOStream::Fetch(const STimeout* timeout)
+EIO_Status CConn_IOStream::Fetch(const STimeout* timeout)
 {
+    EIO_Status status;
     CONN conn = GET_CONN(m_CSb);
-    if (!conn)
+    if (!conn) {
         setstate(NcbiBadbit);
-    else if (!flush())
+        status = eIO_NotSupported;
+    } else if (!flush()) {
         _ASSERT(!good());
-    else switch (m_CSb->Fetch(timeout)) {
-    case eIO_Success:
-        break;
-    case eIO_Closed:
+        if ((status = Status()) == eIO_Success)
+            status = eIO_Unknown;
+    } else if ((status = m_CSb->Fetch(timeout)) == eIO_Closed)
         setstate(NcbiEofbit);
-        break;
-    default:
-        setstate(NcbiFailbit);
-        break;
-    }
-    return *this;
+    return status;
 }
 
 

@@ -722,6 +722,7 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
     };
     if (!m_Conn)
         return eIO_Closed;
+
     if (timeout == kDefaultTimeout) {
         // HACK * HACK * HACK
         timeout = ((SMetaConnector*) m_Conn)->default_timeout;
@@ -729,6 +730,7 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
         if (!timeout)
             timeout = &kDefConnTimeout;
     }
+
     if ((m_Status = CONN_Wait(m_Conn, eIO_Read, timeout)) != eIO_Success) {
         char tmo[40];
         if (m_Status == eIO_Timeout && timeout && timeout != &kDefConnTimeout)
