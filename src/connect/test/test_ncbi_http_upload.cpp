@@ -290,7 +290,7 @@ int CTestHttpUploadApp::Run(void)
     ERR_POST(Info << "Upload verified (attempt " << (ntry + 1) << ')');
 
     ConnNetInfo_Destroy(net_info);
-    ERR_POST(Info << "TEST COMPLETED SUCCESSFULLY");
+    ERR_POST(Info << "TEST completed successfully");
     return 0/*okay*/;
 }
 

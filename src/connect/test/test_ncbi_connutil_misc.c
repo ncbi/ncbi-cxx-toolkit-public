@@ -671,7 +671,7 @@ int main(void)
     TEST_ConnNetInfo();
     TEST_DoubleConv();
 
-    CORE_LOG(eLOG_Note, "All tests completed successfully");
+    CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
 }

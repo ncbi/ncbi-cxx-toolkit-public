@@ -152,7 +152,7 @@ public:
             _ASSERT(memcmp(digest, tests[i].digest, sizeof(digest)) == 0);
         }
 
-        LOG_POST(Info << "All tests completed successfully");
+        LOG_POST(Info << "TEST completed successfully");
         return 0;
     }
 };
