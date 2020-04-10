@@ -243,7 +243,6 @@ public:
     EIO_Status         Status(EIO_Event direction = eIO_Close) const;
 
     /// Flush the stream and fetch the response (w/o extracting any user data).
-    /// Use Status() with a direction other than eIO_Close in case of an error.
     CConn_IOStream&    Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Return the specified data "data" of size "size" into the underlying
