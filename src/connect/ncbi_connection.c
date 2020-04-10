@@ -61,6 +61,7 @@
                      : 0);                                                 \
       char stbuf[80];                                                      \
       if ((EIO_Status) status == eIO_Timeout  &&  timeout) {               \
+          assert(timeout != kDefaultTimeout);                              \
           sprintf(stbuf, "%s[%u.%06u]", ststr,                             \
                   (unsigned int)(timeout->sec + timeout->usec / 1000000),  \
                   (unsigned int)               (timeout->usec % 1000000)); \
@@ -109,7 +110,7 @@
       if (conn->magic != CONNECTION_MAGIC) {                            \
           static const STimeout* timeout = 0/*dummy*/;                  \
           CONN_LOG_EX(subcode, func_name, eLOG_Critical,                \
-                      "Corrupted connection handle", 0);                \
+                      "Corrupt connection handle", 0);                  \
           assert(0);                                                    \
       }                                                                 \
   } while (0)
@@ -610,10 +611,8 @@ extern EIO_Status CONN_Wait
 
     CONN_NOT_NULL(13, Wait);
 
-    if ((event != eIO_Read  &&  event != eIO_Write)
-        ||  timeout == kDefaultTimeout) {
+    if (event != eIO_Read  &&  event != eIO_Write)
         return eIO_InvalidArg;
-    }
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
@@ -625,6 +624,10 @@ extern EIO_Status CONN_Wait
         return eIO_Success;
 
     /* call current connector's "WAIT" method */
+    if (timeout == kDefaultTimeout) {
+        timeout  = conn->meta.default_timeout;
+        assert(timeout != kDefaultTimeout);
+    }
     status = conn->meta.wait
         ? conn->meta.wait(conn->meta.c_wait, event, timeout)
         : eIO_NotSupported;
@@ -636,7 +639,7 @@ extern EIO_Status CONN_Wait
         switch (status) {
         case eIO_Timeout:
             if (!timeout)
-                level = eLOG_Warning;
+                level = eLOG_Error; /*impossible*/
             else if (timeout->sec | timeout->usec)
                 level = eLOG_Trace;
             else

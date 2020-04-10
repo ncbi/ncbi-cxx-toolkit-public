@@ -159,7 +159,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
  * @note  If "timeout" is NULL (aka kInfiniteTimeout) then set the timeout to
           be infinite.
  * @note  If "timeout" is kDefaultTimeout then an underlying,
- *        CONNECTOR-specific value is used (this is the default).
+ *        CONNECTOR-specific value is used.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
 (CONN            conn,    /**< [in] connection handle */
