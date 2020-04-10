@@ -34,7 +34,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <stdlib.h>
 #include <time.h>
 #include "../ncbi_ansi_ext.h"
