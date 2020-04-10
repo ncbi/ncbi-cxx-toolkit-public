@@ -129,30 +129,72 @@ int CNCBITestHttpStreamApp::Run(void)
     _ASSERT(n > 0);
 
     CCanceled canceled;
-    CConn_HttpStream http(args[1].AsString(), eReqMethod_Any11);
+    CConn_HttpStream http(args[1].AsString(), eReqMethod_Any11,
+                          kEmptyStr/*user-header*/, fHTTP_NoAutoRetry);
     http.SetCanceledCallback(&canceled);
 
-    size_t i = 1;
-    for (;;) {
-        if (!NcbiStreamCopy(NcbiCout, http))
-            return 2;
-        NcbiCout << NcbiEndl;
-        if (http.Status() == eIO_Interrupt)
-            return 3;
-        if (http.Status() != eIO_Closed)
-            return 2;
-        http.clear();  //  just in case
+    int retval = -1;
+    for (size_t i = 1; ;) {
+        string response;
+        bool copied = false;
+        try {
+            CNcbiOstrstream temp;
+            copied = NcbiStreamCopy(temp, http);
+            NcbiCerr << "\tTEMP   good:\t" << int(temp.good()) << NcbiEndl
+                     << "\tTEMP    eof:\t" << int(temp.eof())  << NcbiEndl
+                     << "\tTEMP   fail:\t" << int(temp.fail()) << NcbiEndl
+                     << "\tTEMP    bad:\t" << int(temp.bad())  << NcbiEndl;
+            string(CNcbiOstrstreamToString(temp)).swap(response);
+        }
+        NCBI_CATCH_ALL("NcbiStreamCopy() failed");
+        EIO_Status status = http.Status();
+        NcbiCerr << "\tStatus code:\t" << http.GetStatusCode() << NcbiEndl
+                 << "\tStatus text:\t" << http.GetStatusText() << NcbiEndl
+                 << "\tI/O  status:\t" << IO_StatusStr(status)
+                 << '(' << int(status) << ')'                  << NcbiEndl
+                 << "\tHTTP   good:\t" << int(http.good())     << NcbiEndl
+                 << "\tHTTP    eof:\t" << int(http.eof())      << NcbiEndl
+                 << "\tHTTP   fail:\t" << int(http.fail())     << NcbiEndl
+                 << "\tHTTP    bad:\t" << int(http.bad())      << NcbiEndl
+                 << "\tCopy result:\t" << (copied ? 'Y' : 'N') << NcbiEndl
+                 << "\tBody   size:\t" << response.size()      << NcbiEndl
+                 << NcbiEndl;
+        if (!copied) {
+            retval = EIO_N_STATUS + 1;
+            break;
+        }
+        NcbiCout << response << NcbiEndl;
+        retval = int(http.Status());
+        if (retval == eIO_Success)
+            retval  = EIO_N_STATUS;
+        if (retval != eIO_Closed)
+            break;
+        retval = 0/*eIO_Success*/;
         if (i >= n)
             break;
+        http.clear();
         http.SetURL(args[++i].AsString());
     }
-
-    return 0;
+    if (retval)
+        ERR_POST(Error << "Test failed");
+    else
+        LOG_POST(Info << "TEST COMPLETED SUCCESSFULLY");
+    return retval;
 }
 
 
 END_NCBI_SCOPE
 
+
+
+/* To test chunked input, run in the console:
+ *
+ * nc -l -p 8812 -c 'echo -e -n "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n8\r\n-World\r\n\r\n0\r\n\r\n"'
+ *
+ * Start the test with this URL:
+ *
+ * "http://localhost:8812"
+ */
 
 int main(int argc, const char* argv[])
 {
