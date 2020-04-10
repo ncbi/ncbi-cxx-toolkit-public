@@ -387,7 +387,7 @@ string CException::ReportAll(TDiagPostFlags flags) const
         CExceptionReporter::ReportDefault(CDiagCompileInfo(0, 0,
                                            NCBI_CURRENT_FUNCTION),
                                           "(background reporting)",
-                                          *this, eDPF_Trace);
+                                          *this, eDPF_Exception);
         m_InReporter = false;
     }
     return CNcbiOstrstreamToString(os);

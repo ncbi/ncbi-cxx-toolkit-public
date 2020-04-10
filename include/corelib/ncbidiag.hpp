@@ -737,6 +737,9 @@ enum EDiagPostFlag {
                               eDPF_SerialNo,
 #endif
 
+    /// Default flags to use for exception formatting.
+    eDPF_Exception = eDPF_Trace | eDPF_ErrorID,
+
     /// Print the posted message only; without severity, location, prefix, etc.
     eDPF_Log                = 0,
 

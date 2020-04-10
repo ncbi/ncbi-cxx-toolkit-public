@@ -952,23 +952,23 @@ public:
     /// reporter as set with CExceptionReporter::SetDefault.
     void Report(const CDiagCompileInfo& info,
                 const string& title, CExceptionReporter* reporter = 0,
-                TDiagPostFlags flags = eDPF_Trace) const;
+                TDiagPostFlags flags = eDPF_Exception) const;
 
     /// Report this exception only.
     ///
     /// Report as a string this exception only. No backlog is attached.
-    string ReportThis(TDiagPostFlags flags = eDPF_Trace) const;
+    string ReportThis(TDiagPostFlags flags = eDPF_Exception) const;
 
     /// Report all exceptions.
     ///
     /// Report as a string all exceptions. Include full backlog.
-    string ReportAll (TDiagPostFlags flags = eDPF_Trace) const;
+    string ReportAll (TDiagPostFlags flags = eDPF_Exception) const;
 
     /// Report "standard" attributes.
     ///
     /// Report "standard" attributes (file, line, type, err.code, user message)
     /// into the "out" stream (this exception only, no backlog).
-    void ReportStd(ostream& out, TDiagPostFlags flags = eDPF_Trace) const;
+    void ReportStd(ostream& out, TDiagPostFlags flags = eDPF_Exception) const;
 
     /// Report "non-standard" attributes.
     ///
@@ -1419,19 +1419,19 @@ public:
     /// Report exception using default reporter.
     static void ReportDefault(const CDiagCompileInfo& info,
                               const string& title, const std::exception& ex,
-                              TDiagPostFlags flags = eDPF_Trace);
+                              TDiagPostFlags flags = eDPF_Exception);
 
     /// Report exception using default reporter and particular error code and
     /// subcode when writing to diagnostics.
     static void ReportDefaultEx(int err_code, int err_subcode,
                                 const CDiagCompileInfo& info,
                                 const string& title, const std::exception& ex,
-                                TDiagPostFlags flags = eDPF_Trace);
+                                TDiagPostFlags flags = eDPF_Exception);
 
     /// Report CException with _this_ reporter
     virtual void Report(const char* file, int line,
                         const string& title, const CException& ex,
-                        TDiagPostFlags flags = eDPF_Trace) const = 0;
+                        TDiagPostFlags flags = eDPF_Exception) const = 0;
 private:
     static const CExceptionReporter* sm_DefHandler; ///< Default handler
     static bool                      sm_DefEnabled; ///< Default enable flag
@@ -1457,7 +1457,7 @@ public:
     /// Report specified exception on output stream.
     virtual void Report(const char* file, int line,
                         const string& title, const CException& ex,
-                        TDiagPostFlags flags = eDPF_Trace) const;
+                        TDiagPostFlags flags = eDPF_Exception) const;
 private:
     ostream& m_Out;   ///< Output stream
 };
