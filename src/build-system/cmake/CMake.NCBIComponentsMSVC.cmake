@@ -423,7 +423,7 @@ endif()
 
 #############################################################################
 # PYTHON
-NCBI_define_component(PYTHON python3.lib python38.lib)
+#NCBI_define_component(PYTHON python3.lib python38.lib)
 
 ##############################################################################
 # GRPC/PROTOBUF
