@@ -32,7 +32,9 @@
  * @file ncbi_service_cxx.hpp
  *   Backward-compatible forwarding header for <connect/ncbi_service.hpp>
  *
- *   @warning Use <connect/ncbi_service.hpp> directly instead!
+ *   @warning *** Use <connect/ncbi_service.hpp> directly instead! ***
+ *
+ *   @warning OBSOLESCENT -- WILL BE DELETED SOON -- DO NOT USE!!
  *
  */
 

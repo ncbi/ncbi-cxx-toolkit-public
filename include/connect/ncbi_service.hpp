@@ -34,13 +34,10 @@
  *
  */
 
-#include <string>
-#include <vector>
-
 #include <corelib/ncbistl.hpp>
-
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_service.h>
+#include <vector>
 
 
 /** @addtogroup UtilityFunc
