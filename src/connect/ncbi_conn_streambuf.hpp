@@ -75,6 +75,9 @@ public:
     /// has been pushed back to the connection.
     EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size);
 
+    /// @sa CConn_IOStream::Fetch
+    EIO_Status Fetch(const STimeout* timeout);
+
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
@@ -152,7 +155,7 @@ private:
 
     static EIO_Status   x_OnClose(CONN conn, TCONN_Callback type, void* data);
 
-    string              x_Message(const char* msg);
+    string              x_Message(const CTempString msg);
 
     SCONN_Callback      m_Cb;
 };

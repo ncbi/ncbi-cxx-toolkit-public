@@ -116,14 +116,14 @@ EIO_Status CConn_IOStream::SetTimeout(EIO_Event       direction,
                                       const STimeout* timeout) const
 {
     CONN conn = GET_CONN(m_CSb);
-    return conn ? CONN_SetTimeout(conn, direction, timeout) : eIO_Closed;
+    return conn ? CONN_SetTimeout(conn, direction, timeout) : eIO_NotSupported;
 }
 
 
 const STimeout* CConn_IOStream::GetTimeout(EIO_Event direction) const
 {
     CONN conn = GET_CONN(m_CSb);
-    return conn ? CONN_GetTimeout(conn, direction) : 0;
+    return conn ? CONN_GetTimeout(conn, direction) : 0/*kInfiniteTimeout*/;
 }
 
 
@@ -133,11 +133,24 @@ EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 }
 
 
-EIO_Status CConn_IOStream::Fetch(const STimeout* timeout)
+CConn_IOStream& CConn_IOStream::Fetch(const STimeout* timeout)
 {
     CONN conn = GET_CONN(m_CSb);
-    return !conn  ||  !flush()
-        ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
+    if (!conn)
+        setstate(NcbiBadbit);
+    else if (!flush())
+        _ASSERT(!good());
+    else switch (m_CSb->Fetch(timeout)) {
+    case eIO_Success:
+        break;
+    case eIO_Closed:
+        setstate(NcbiEofbit);
+        break;
+    default:
+        setstate(NcbiFailbit);
+        break;
+    }
+    return *this;
 }
 
 
@@ -183,7 +196,7 @@ EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
 {
     CONN conn = GET_CONN(m_CSb);
     if (!conn)
-        return eIO_Closed;
+        return eIO_NotSupported;
 
     bool isset = m_Canceled.NotNull() ? 1 : 0;
 

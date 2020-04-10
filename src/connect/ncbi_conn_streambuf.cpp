@@ -48,17 +48,17 @@ BEGIN_NCBI_SCOPE
 static inline bool x_IsThrowable(EIO_Status status)
 {
     _ASSERT(status != eIO_Success);
-#if NCBI_COMPILER_GCC  &&  NCBI_COMPILER_VERSION < 600
+#if NCBI_COMPILER_GCC  &&  NCBI_COMPILER_VERSION < 700
     // C++ STL has a bug that sentry ctro does not include try/catch, so it
     // leaks the exceptions instead of setting badbit as the standard requires.
     return false;
 #else
     return status != eIO_Timeout  &&  status != eIO_Closed ? true : false;
-#endif // NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION<600
+#endif // NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION<700
 }
 
 
-string CConn_Streambuf::x_Message(const char* msg)
+string CConn_Streambuf::x_Message(const CTempString msg)
 {
     const char* type = m_Conn ? CONN_GetType    (m_Conn) : 0;
     char*       text = m_Conn ? CONN_Description(m_Conn) : 0;
@@ -627,6 +627,7 @@ streamsize CConn_Streambuf::showmanyc(void)
     if (timeout == kDefaultTimeout) {
         // HACK * HACK * HACK
         tmo = ((SMetaConnector*) m_Conn)->default_timeout;
+        _ASSERT(tmo != kDefaultTimeout);
     } else
         tmo = timeout;
 
@@ -706,6 +707,36 @@ EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data, streamsize size)
         ||  (m_Status = CONN_Pushback(m_Conn, data, size)) != eIO_Success) {
         ERR_POST_X(14, x_Message("Pushback(): "
                                  " CONN_Pushback() failed"));
+    }
+    return m_Status;
+}
+
+
+EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
+{
+    static const STimeout kDefConnTimeout = {
+        (unsigned int)
+          DEF_CONN_TIMEOUT,
+        (unsigned int)
+        ((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT) * 1.0e6)
+    };
+    if (!m_Conn)
+        return eIO_Closed;
+    if (timeout == kDefaultTimeout) {
+        // HACK * HACK * HACK
+        timeout = ((SMetaConnector*) m_Conn)->default_timeout;
+        _ASSERT(timeout != kDefaultTimeout);
+        if (!timeout)
+            timeout = &kDefConnTimeout;
+    }
+    if ((m_Status = CONN_Wait(m_Conn, eIO_Read, timeout)) != eIO_Success) {
+        char tmo[40];
+        if (m_Status == eIO_Timeout && timeout && timeout != &kDefConnTimeout)
+            ::sprintf(tmo, "%u.%06us", timeout->sec, timeout->usec);
+        else
+            *tmo = '\0';
+        ERR_POST_X(15, x_Message("Fetch(): "
+                                 " CONN_Wait(" + string(tmo) + ") failed"));
     }
     return m_Status;
 }
