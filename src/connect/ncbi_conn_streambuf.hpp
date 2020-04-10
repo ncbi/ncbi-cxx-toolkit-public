@@ -76,7 +76,7 @@ public:
     EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size);
 
     /// @sa CConn_IOStream::Fetch
-    EIO_Status Fetch(const STimeout* timeout);
+    EIO_Status Fetch   (const STimeout* timeout);
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -130,34 +130,34 @@ protected:
     EIO_Status  x_Pushback(void);
 
 private:
-    CONN                m_Conn;      // underlying connection handle
+    CONN              m_Conn;      // underlying connection handle
 
-    CT_CHAR_TYPE*       m_WriteBuf;  // I/O arena (set as 0 if unbuffered)
-    CT_CHAR_TYPE*       m_ReadBuf;   // read buffer or &x_Buf (if unbuffered)
-    size_t              m_BufSize;   // of m_ReadBuf (1 if unbuffered)
+    CT_CHAR_TYPE*     m_WriteBuf;  // I/O arena (set as 0 if unbuffered)
+    CT_CHAR_TYPE*     m_ReadBuf;   // read buffer or &x_Buf (if unbuffered)
+    size_t            m_BufSize;   // of m_ReadBuf (1 if unbuffered)
 
-    EIO_Status          m_Status;    // status of last I/O completed by CONN
+    EIO_Status        m_Status;    // status of last I/O completed by CONN
 
-    bool                m_Tie;       // always flush before reading
-    bool                m_Close;     // if to actually close CONN in dtor
-    bool                m_CbValid;   // if m_Cb is in valid state
-    bool                m_Initial;   // if still reading the initial data block
-    CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
+    bool              m_Tie;       // always flush before reading
+    bool              m_Close;     // if to actually close CONN in dtor
+    bool              m_CbValid;   // if m_Cb is in valid state
+    bool              m_Initial;   // if still reading the initial data block
+    CT_CHAR_TYPE      x_Buf;       // default m_ReadBuf for unbuffered stream
 
-    CT_POS_TYPE         x_GPos;      // get position [for istream::tellg()]
-    CT_POS_TYPE         x_PPos;      // put position [for ostream::tellp()]
+    CT_POS_TYPE       x_GPos;      // get position [for istream::tellg()]
+    CT_POS_TYPE       x_PPos;      // put position [for ostream::tellp()]
 
-    void                x_Init(const STimeout* timeout, size_t buf_size,
-                               CConn_IOStream::TConn_Flags flags,
-                               CT_CHAR_TYPE* ptr, size_t size);
+    void              x_Init(const STimeout* timeout, size_t buf_size,
+                             CConn_IOStream::TConn_Flags flags,
+                             CT_CHAR_TYPE* ptr, size_t size);
 
-    EIO_Status          x_Close(bool close);
+    EIO_Status        x_Close(bool close);
 
-    static EIO_Status   x_OnClose(CONN conn, TCONN_Callback type, void* data);
+    static EIO_Status x_OnClose(CONN conn, TCONN_Callback type, void* data);
 
-    string              x_Message(const CTempString msg);
+    string            x_Message(const CTempString msg);
 
-    SCONN_Callback      m_Cb;
+    SCONN_Callback    m_Cb;
 };
 
 
