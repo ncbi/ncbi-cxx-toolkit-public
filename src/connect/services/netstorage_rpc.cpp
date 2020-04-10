@@ -1261,6 +1261,10 @@ void SNetStorageObjectRPC::SIState::Close()
 
     ExitState();
     m_UTTPReader.Reset();
+
+    if (!Eof()) {
+        m_Context.m_Connection->Abort();
+    }
 }
 
 void SNetStorageObjectRPC::SOState::Close()
