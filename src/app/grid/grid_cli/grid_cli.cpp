@@ -1316,7 +1316,7 @@ int CGridCommandLineInterfaceApp::Run()
             UnsetDiagPostFlag(eDPF_LongFilename);
             SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
             // Print conn data
-            putenv(s_ConnDebugEnv);
+            NcbiSys_putenv(s_ConnDebugEnv);
             // Enable data logging
             reg.Set(netservice_api_section, "connection_data_logging", "true");
         }
