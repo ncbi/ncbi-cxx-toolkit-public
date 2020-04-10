@@ -1,3 +1,15 @@
+Apr 10, 2020
+Release 1.16.0
+
+*Added ability to use custom organism.  
+
+*Added ability to extend J gene alignment at 3' end.
+
+*Added the AIRR complete_vdj field.
+
+*Deleted parameters that are used for standard BLAST but not for IgBLAST.
+
+
 Jan 21, 2020
 Release 1.15.0
 *Added support for the FWR4 annotation.
