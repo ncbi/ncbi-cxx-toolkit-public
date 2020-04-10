@@ -1173,6 +1173,7 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
     //fwr4
     if (annot->m_JDomain[1] > 0) {
         int j_fwr4end_offset = m_AnnotationInfo.GetFwr4EndOffset(sid);
+        annot->m_JDomain[4] = j_fwr4end_offset;
         if (j_fwr4end_offset >= 0) {
             int j_fwr4end = m_Scope->GetBioseqHandle(align->GetSeq_id(1)).GetBioseqLength() - j_fwr4end_offset - 1;
             CAlnMap j_map(align->GetSegs().GetDenseg()); 

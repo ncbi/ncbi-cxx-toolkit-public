@@ -1978,7 +1978,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         string d_evalue_str = NcbiEmptyString;
         string j_evalue_str = NcbiEmptyString;
 
-
+        m_AirrData["complete_vdj"] = "F";
         if (m_TopAlign_V) {
             m_TopAlign_V->GetNamedScore(CSeq_align::eScore_BitScore, v_score);
             m_TopAlign_V->GetNamedScore(CSeq_align::eScore_EValue, v_evalue);
@@ -2051,6 +2051,15 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             
             m_AirrData["j_germline_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1) + 1);
             m_AirrData["j_germline_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(1) + 1);
+            const CBioseq_Handle& germline_j_bh = 
+                    scope.GetBioseqHandle(m_TopAlign_J->GetSeq_id(1));
+            int j_length = germline_j_bh.GetBioseqLength();
+            if (m_AirrData["v_germline_start"] != NcbiEmptyString && 
+                NStr::StringToInt(m_AirrData["v_germline_start"]) == 1 &&
+                NStr::StringToInt(m_AirrData["j_germline_end"]) >= j_length - max(0, annot->m_JDomain[4])) {
+
+                m_AirrData["complete_vdj"] = "T";
+            }
             if (m_TopAlign_D) {
                 int np_len = 0;
                 string np_seq = NcbiEmptyString;
