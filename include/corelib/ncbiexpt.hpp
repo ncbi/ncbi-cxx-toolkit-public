@@ -202,7 +202,7 @@ typename enable_if<ncbi_throw_trace::is_non_printable<T>::value, const T&>::type
     return t;
 }
 
-// Need overload for non-const char*? See old style DbpPrint() definitions.
+// Need overload for non-const char*? See old style DbgPrint() definitions.
 inline
 char* DbgPrintEx(const CDiagCompileInfo& info, char* str, const char*)
 {
