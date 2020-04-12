@@ -1670,6 +1670,11 @@ xid_utils_noncorelib needs xid_pubseqos
 xid_utils_noncorelib needs xid_utils
 xid_wgs needs xncbi
 xid_wgs needs3party $(VDB_LIBS)
+xid_wgs_format needs $(XFORMAT_LIBS)
+xid_wgs_format needs ncbi_xloader_wgs
+xid_wgs_format needs xalnmgr
+xid_wgs_format needs xid_wgs
+xid_wgs_format needs xid_wgsdb
 xid_wgsdb needs xid_pubseqos
 xid_wgsdb needs xid_utils
 ximage needs xncbi
