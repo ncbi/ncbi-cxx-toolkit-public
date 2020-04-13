@@ -3901,6 +3901,7 @@ string CCountries::NewFixCountry (const string& test)
         return input;
     }
     if (IsValid(input)) {
+        CCountries::ChangeExtraColonsToCommas(input);
         return input;
     }
     string new_country = WholeCountryFix(input);
@@ -3927,6 +3928,8 @@ string CCountries::NewFixCountry (const string& test)
         NStr::SplitInTwo(valid_country,":",str1,str2);
         if (!str1.empty() && !str2.empty() && !NStr::StartsWith(str2," "))
             new_country = str1+": "+str2;
+
+        CCountries::ChangeExtraColonsToCommas(new_country);
     }   
     else if(!valid_country.empty() && !too_many_countries)
     {
@@ -3956,7 +3959,9 @@ string CCountries::NewFixCountry (const string& test)
             new_country += ", ";
         if (!after.empty())
             new_country += after;
+        CCountries::ChangeExtraColonsToCommas(new_country);
     }
+
     return new_country;
 }
 
@@ -4250,7 +4255,6 @@ string CSubSource::AutoFix(TSubtype subtype, const string& value)
     switch (subtype) {
         case CSubSource::eSubtype_country:
             new_val = CCountries::NewFixCountry(value);
-            CCountries::ChangeExtraColonsToCommas(new_val);
             break;
         case CSubSource::eSubtype_collection_date:
             new_val = FixDateFormat(value);

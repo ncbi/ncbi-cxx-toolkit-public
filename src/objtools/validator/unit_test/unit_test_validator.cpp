@@ -20881,9 +20881,11 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Whiteford Burrows, Gower, Wales"), "United Kingdom: Wales, Whiteford Burrows, Gower");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Burma"), "Myanmar");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Siam"), "Thailand");
-//    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("AA:BB:CC"), "");
-//    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("AA:BB:Southern China"), "");
-//    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("UK: Whiteford Burrows: Gower: Wales"), "United Kingdom: Whiteford Burrows, Gower, Wales");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("AA:BB:CC"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("AA:BB:Southern China"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("UK: Whiteford Burrows: Gower: Wales"), "United Kingdom: Whiteford Burrows, Gower, Wales");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA:DE:Dover"), "USA:DE,Dover");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Burma:A:B"), "Burma:A,B");
 }
 
 
