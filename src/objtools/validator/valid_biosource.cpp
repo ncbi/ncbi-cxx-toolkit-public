@@ -1362,6 +1362,30 @@ static bool s_HasMetagenomeSource(const COrg_ref& org)
 }
 
 
+bool CValidError_imp::s_IsSalmonellaGenus(const string& taxname)
+{
+    bool rval = false;
+    auto pos = NStr::Find(taxname, " ");
+    if (pos == string::npos) {
+        if (NStr::EqualNocase(taxname, "Salmonella")) {
+            rval = true;
+        }
+    } else if (pos > 0 && NStr::EqualNocase(taxname.substr(0, pos), "Salmonella")) {
+        rval = true;
+    }
+    return rval;
+}
+
+EDiagSev CValidError_imp::x_SalmonellaErrorLevel()
+{
+    if (m_IsRefSeq) {
+        return eDiag_Warning;
+    } else {
+        return eDiag_Error;
+    }
+}
+
+
 void CValidError_imp::ValidateOrgRef
 (const COrg_ref&    orgref,
 const CSerialObject& obj,
@@ -1460,6 +1484,7 @@ const CSeq_entry *ctx)
     // determine if variety is present and in taxname - if so,
     // can ignore missing subspecies
     // also look for specimen-voucher (nat-host) if identical to taxname
+    bool has_serovar = false;
     FOR_EACH_ORGMOD_ON_ORGNAME(it, orgname)
     {
         if (!(*it)->IsSetSubtype() || !(*it)->IsSetSubname()) {
@@ -1498,9 +1523,23 @@ const CSeq_entry *ctx)
                     obj, ctx);
             }
 
+        } else if (subtype == COrgMod::eSubtype_serotype) {
+            // RW-1063
+            if (s_IsSalmonellaGenus(taxname)) {
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadOrgMod,
+                    "Salmonella organisms should use serovar instead of serotype.",
+                    obj, ctx);
+            }
+        } else if (subtype == COrgMod::eSubtype_serovar) {
+            // RW-1064
+            has_serovar = true;
         }
     }
-
+    if (!has_serovar && s_IsSalmonellaGenus(taxname)) {
+        PostObjErr(x_SalmonellaErrorLevel(), eErr_SEQ_DESCR_BadOrgMod,
+            "Salmonella organisms should have serovar.",
+            obj, ctx);
+    }
 }
 
 

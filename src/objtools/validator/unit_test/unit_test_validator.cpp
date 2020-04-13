@@ -8248,7 +8248,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("UCS");
     ambig.push_back("CN");
     ambig.push_back("PCM");
-    ambig.push_back("MB");
     ambig.push_back("MU");
     ambig.push_back("ISC");
     ambig.push_back("CIB");
@@ -20882,6 +20881,9 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Whiteford Burrows, Gower, Wales"), "United Kingdom: Wales, Whiteford Burrows, Gower");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Burma"), "Myanmar");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Siam"), "Thailand");
+//    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("AA:BB:CC"), "");
+//    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("AA:BB:Southern China"), "");
+//    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("UK: Whiteford Burrows: Gower: Wales"), "United Kingdom: Whiteford Burrows, Gower, Wales");
 }
 
 
@@ -24864,6 +24866,75 @@ BOOST_AUTO_TEST_CASE(Test_VR_875)
 
     CLEAR_ERRORS
 }
+
+BOOST_AUTO_TEST_CASE(Test_RW_1063)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_serotype, "an innocuous value");
+    STANDARD_SETUP
+
+    // no errors, because not salmonella
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no salmonella errors because not first word
+    unit_test_util::SetTaxname(entry, "Badforyou Salmonella");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    unit_test_util::SetTaxname(entry, "Salmonella");
+    eval = validator.Validate(seh, options);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "TaxonomyLookupProblem", "Organism name is 'Salmonella', taxonomy ID should be '590' but is '592768'"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "TaxonomyIsSpeciesProblem", "Taxonomy lookup reports is_species_level FALSE"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should have serovar."));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    unit_test_util::SetTaxname(entry, "Salmonella badforyou");
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should have serovar."));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().push_back(unit_test_util::BuildRefSeqId());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "BadOrgMod", "Salmonella organisms should have serovar."));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // presence of serovar silences warning
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_serovar, "different value");
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
 
 #if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)
