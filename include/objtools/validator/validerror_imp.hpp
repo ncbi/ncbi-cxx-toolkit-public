@@ -452,6 +452,9 @@ private:
 
     void GatherTentativeName (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& usr_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& usr_feats);
 
+    static bool s_IsSalmonellaGenus(CTempString taxname);
+    inline EDiagSev x_SalmonellaErrorLevel();
+
     typedef struct {
         bool chk;
         bool unmarked_strand;
