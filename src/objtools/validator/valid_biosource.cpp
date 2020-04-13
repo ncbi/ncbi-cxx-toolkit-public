@@ -1362,7 +1362,7 @@ static bool s_HasMetagenomeSource(const COrg_ref& org)
 }
 
 
-bool CValidError_imp::s_IsSalmonellaGenus(CTempString taxname)
+bool CValidError_imp::s_IsSalmonellaGenus(const string& taxname)
 {
     bool rval = false;
     auto pos = NStr::Find(taxname, " ");
