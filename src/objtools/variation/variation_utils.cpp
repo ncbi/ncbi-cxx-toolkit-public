@@ -203,13 +203,13 @@ void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
                         continue;
                     }
                     asserted_ref = delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                    ref_at_location = x_GetRefAlleleFromVP(vp, scope, (TSeqPos) asserted_ref.length());
+                    ref_at_location = x_GetRefAlleleFromVP(vp, scope, static_cast<TSeqPos>(asserted_ref.length()));
                     delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(ref_at_location);
                 }
             }
         }
         vp.SetSeq().SetSeq_data().SetIupacna().Set(ref_at_location);
-        vp.SetSeq().SetLength((CSeq_literal::TLength) ref_at_location.length());
+        vp.SetSeq().SetLength(static_cast<CSeq_literal::TLength>(ref_at_location.length()));
         
         if(x_FixAlleles(var,asserted_ref,ref_at_location)) {
             x_AddRefAlleleFixFlag(var);
@@ -393,7 +393,7 @@ bool CVariationUtilities::x_FixAlleles(CVariation_ref& vr, string asserted_ref, 
             |CVariation_inst::eObservation_variant);
 
         CRef<CSeq_literal> literal(new CSeq_literal);
-        literal->SetLength((CSeq_literal::TLength) asserted_ref.size());
+        literal->SetLength(static_cast<CSeq_literal::TLength>(asserted_ref.size()));
 
         CRef<CSeq_data> data(new CSeq_data);
         data->SetIupacna().Set(asserted_ref);
@@ -510,7 +510,7 @@ bool CVariationUtilities::x_FixAlleles(CVariation& variation, string asserted_re
 
 
         CRef<CSeq_literal> literal(new CSeq_literal);
-        literal->SetLength((CSeq_literal::TLength)asserted_ref.size());
+        literal->SetLength(static_cast<CSeq_literal::TLength>(asserted_ref.size()));
 
         CRef<CSeq_data> data(new CSeq_data);
         data->SetIupacna().Set(asserted_ref);
@@ -957,7 +957,7 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
             string ref;
             vector<string> alts;
             CVariationUtilities::GetVariationRefAlt(var, ref,  alts);
-            TSeqPos deletion_size = (TSeqPos) ref.size();
+            TSeqPos deletion_size = static_cast<TSeqPos>(ref.size());
             ResetFullyShifted(variation, loc, sep, type, deletion_size);
             ERR_POST(Trace << "Reset full shifted var" << MSerial_AsnText << var);
         }
@@ -1111,7 +1111,7 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
             //Alter the SeqLoc
             ModifyLocation(loc,
                 sep, CVariation_inst::eType_del,
-                (TSeqPos) ref_allele.size());
+                static_cast<TSeqPos>(ref_allele.size()));
 
             //on parent object
             SetShiftFlag(variation);
@@ -1171,7 +1171,7 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
         string ref;
         vector<string> alts;
         CVariationUtilities::GetVariationRefAlt(vref, ref,  alts);
-        TSeqPos deletion_size = (TSeqPos) ref.size();
+        TSeqPos deletion_size = static_cast<TSeqPos>(ref.size());
         ResetFullyShifted(feat, featloc, sep, type, deletion_size);
         ERR_POST(Trace << "Reset full shifted feat" << MSerial_AsnText << feat);
     }
@@ -1332,7 +1332,7 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
         
         //Alter the SeqLoc
         ModifyLocation(featloc, sep,
-            CVariation_inst::eType_del, (TSeqPos) ref_allele.size());
+            CVariation_inst::eType_del, static_cast<TSeqPos>(ref_allele.size()));
 
         SetShiftFlag(feat);
 	}
@@ -1916,7 +1916,7 @@ namespace
         
         CRef<CSeq_literal> literal = Ref(new CSeq_literal);
         delta->SetSeq().SetLiteral(*literal);
-        literal->SetLength((CSeq_literal::TLength) deleted_seq.length());
+        literal->SetLength(static_cast<CSeq_literal::TLength>(deleted_seq.length()));
         
         CRef<CSeq_data> seq_data = Ref(new CSeq_data);
         literal->SetSeq_data(*seq_data);
