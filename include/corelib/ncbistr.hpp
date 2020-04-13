@@ -3064,7 +3064,7 @@ public:
     enum EJsonEncode {
         eJsonEnc_UTF8,     ///< Encode all characters above 0x80 to \uXXXX form. 
                            ///< https://tools.ietf.org/html/rfc7159#section-8.1
-        eJsonEnc_Quoted    ///< Quote resulting string. All Unicode symbols left as is.
+        eJsonEnc_Quoted    ///< Quote resulting string. Keep all Unicode symbols ss is.
                            ///< https://tools.ietf.org/html/rfc7159#section-7
     };
     /// Encode a string for JSON.
