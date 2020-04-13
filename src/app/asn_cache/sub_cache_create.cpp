@@ -1459,7 +1459,9 @@ CAsnSubCacheCreateApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index
             /// We already have this blob in the sub-cache; invalidate index data, so
             /// it won't be copied; it still needs to be included in output
             *(*iter)->second = m_BlankIndexData;
-            m_output_seq_ids.insert((*iter)->first.m_Idh);
+            if (m_cached_seq_ids.count((*iter)->first.m_Idh)) {
+                m_output_seq_ids.insert((*iter)->first.m_Idh);
+            }
             index_map.erase(*iter);
         }
     }
