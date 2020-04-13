@@ -8108,90 +8108,6 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
     }
 }
 
-/*
-void CValidError_bioseq::ValidateTwintrons(
-    const CBioseq& bioseq)
-{
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
-    if (!bsh) return;
-    SAnnotSelector sel(CSeqFeatData::eSubtype_intron);
-    try {
-        for (CFeat_CI feat_ci(bsh, sel); feat_ci;  ++feat_ci) {
-            bool twintron = false;
-            const CSeq_feat& const_feat = feat_ci->GetOriginalFeature();
-            const CSeq_loc& loc = const_feat.GetLocation();
-            int num_intervals = 0;
-            int num_intervals_dup = 0;
-            Int4 left = 0;
-            Int4 right = 0;
-            Int4 start = 0;
-            Int4 stop = 0;
-            for (CSeq_loc_CI curr(loc); curr; ++curr) {
-                num_intervals++;
-                const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
-                if (part.IsInt()) {
-                    const CSeq_interval& ivl = part.GetInt();
-                    if (left == 0) {
-                        left = ivl.GetTo();
-                    }
-                    right = ivl.GetFrom();
-                } else if (part.IsPnt()) {
-                    const CSeq_point& pnt = part.GetPnt();
-                    if (left == 0) {
-                        left = pnt.GetPoint();
-                    }
-                    right = pnt.GetPoint();
-                }
-            }
-            if (num_intervals == 1) continue;
-            if (num_intervals == 2) {
-               CFeat_CI feat_ci_dup = feat_ci;
-               ++feat_ci_dup;
-               if (feat_ci_dup) {
-                   const CSeq_feat& const_feat_dup = feat_ci_dup->GetOriginalFeature();
-                   const CSeq_loc& loc_dup = const_feat_dup.GetLocation();
-                   for (CSeq_loc_CI curr(loc_dup); curr; ++curr) {
-                       num_intervals_dup++;
-                        const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
-                        const CSeq_interval& ivl = part.GetInt();
-                        if (start == 0) {
-                            start = ivl.GetTo();
-                        }
-                        stop = ivl.GetFrom();
-                   }
-                   if (num_intervals_dup == 1) {
-                       if (stop == left + 1 && start == right - 1) {
-                           twintron = true;
-                       }
-                   }
-               }
-            }
-            EDiagSev sev = eDiag_Error;
-            if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
-                sev = eDiag_Warning;
-            }
-            if (twintron) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultiIntervalIntron,
-                         "Multi-interval intron contains possible twintron",
-                          const_feat);
-            } else {
-                PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
-                         "An intron should not have multiple intervals",
-                          const_feat);
-            }
-        }
-    }
-    catch (CException& e) {
-        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
-            if (! IsSelfReferential(bioseq)) {
-                LOG_POST(Error << "ValidateTwintrons error: " << e.what());
-            }
-        }
-    }
-}
-*/
-
-
 static vector<int> s_LocationToStartStopPairs(const CSeq_loc& loc) {
 
     vector<int> intervalpoints;
@@ -8223,7 +8139,7 @@ static vector<int> s_LocationToStartStopPairs(const CSeq_loc& loc) {
 }
 
 
-static bool s_SubsequentIntron(CFeat_CI feat_ci_dup, Int4 start, Int4 stop)
+static bool s_SubsequentIntron(CFeat_CI feat_ci_dup, Int4 start, Int4 stop, Int4 max)
 {
     ++feat_ci_dup;
 
@@ -8247,6 +8163,9 @@ static bool s_SubsequentIntron(CFeat_CI feat_ci_dup, Int4 start, Int4 stop)
                 continue;
             }
             if (start + 1 == fr && stop - 1 == to) {
+                return true;
+            }
+            if (start + 1 == fr && to == max) {
                 return true;
             }
             if (to > stop) {
@@ -8274,31 +8193,6 @@ void CValidError_bioseq::ValidateTwintrons(
 
             vector<int> intervalpoints = s_LocationToStartStopPairs(loc);
 
-            /*
-            CSeq_loc_CI curr(loc);
-            while (curr) {
-                const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
-                if (part.IsInt()) {
-                    const CSeq_interval& ivl = part.GetInt();
-                    intervalpoints.push_back(ivl.GetFrom());
-                    intervalpoints.push_back(ivl.GetTo());
-                } else if (part.IsPacked_int()) {
-                    ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
-                        const CSeq_interval& ivl = **it;
-                        intervalpoints.push_back(ivl.GetFrom());
-                        intervalpoints.push_back(ivl.GetTo());
-                        ++curr;
-                    }
-                    continue;
-                } else if (part.IsPnt()) {
-                    const CSeq_point& pnt = part.GetPnt();
-                    intervalpoints.push_back(pnt.GetPoint());
-                    intervalpoints.push_back(pnt.GetPoint());
-                }
-                ++curr;
-            }
-            */
-
             int len = intervalpoints.size();
             if (len < 4) {
               continue;
@@ -8312,7 +8206,7 @@ void CValidError_bioseq::ValidateTwintrons(
                 Int4 intR = intervalpoints[pos + 1];
 
                 CFeat_CI feat_ci_dup = feat_ci;
-                if (! s_SubsequentIntron(feat_ci_dup, intL, intR)) {
+                if (! s_SubsequentIntron(feat_ci_dup, intL, intR, intervalpoints[max])) {
                     twintron = false;
                     break;
                 }
