@@ -46,6 +46,7 @@ BEGIN_SCOPE(objects)
     class CSeq_align;
     class CSeq_annot;
     class CBioseq_set;
+    class CBioseq_Handle;
 END_SCOPE(objects)
 
 class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
@@ -183,6 +184,9 @@ public:
     static CRef<objects::CSeq_loc> s_ProjectCDS(const objects::CSeq_align& spliced_aln, 
                                                 const objects::CSeq_loc& product_cds_loc,
                                                 bool convert_overlaps = true);
+    static void CreateMicroIntrons(
+                                                objects::CScope& scope,
+                                                objects::CBioseq_Handle bsh);
 
 private:
     struct SImplementation;

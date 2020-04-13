@@ -91,12 +91,16 @@
 #include <objtools/writers/aln_writer.hpp>
 #include <objtools/writers/psl_writer.hpp>
 
+#include <algo/sequence/gene_model.hpp>
+
 #include <misc/data_loaders_util/data_loaders_util.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
+
 
 //#define CANCELER_CODE
 #if defined(CANCELER_CODE)
@@ -420,6 +424,7 @@ bool CAnnotWriterApp::xTryProcessInputId(
     }
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(args["id"].AsString());
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
+    CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
     if (!args["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
@@ -628,6 +633,7 @@ bool CAnnotWriterApp::xTryProcessBioseq(
         return false;
     }
     CBioseq_Handle bsh = scope.AddBioseq(bioseq);
+    CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
