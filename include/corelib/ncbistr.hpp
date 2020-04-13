@@ -3046,7 +3046,7 @@ public:
     /// Decode HTML entities and character references.
     ///
     /// @param str
-    ///   String to be decoded, which containes characted or numeric HTML entities
+    ///   String to be decoded, which contains characters or numeric HTML entities
     /// @param encoding
     ///   Encoding of the input string
     /// @return
@@ -3060,8 +3060,24 @@ public:
     /// or empty string if suitable HTML entity was not found
     static string HtmlEntity(TUnicodeSymbol uch);
 
+    /// URL-encode flags
+    enum EJsonEncode {
+        eJsonEnc_UTF8,     ///< Encode all characters above 0x80 to \uXXXX form. 
+                           ///< https://tools.ietf.org/html/rfc7159#section-8.1
+        eJsonEnc_Quoted    ///< Quote resulting string. All Unicode symbols left as is.
+                           ///< https://tools.ietf.org/html/rfc7159#section-7
+    };
     /// Encode a string for JSON.
-    static string JsonEncode(const CTempString str);
+    ///
+    /// @param str
+    ///   The string to encode
+    /// @param encoding
+    ///   Specifies how to encode string. There are 2 approaches, with representing whole
+    ///   string as UTF-8 encoded string, or leave all Unicode symbols "as is", 
+    ///   but the resulting string  will be put in double quotes.
+    /// @return
+    ///   JSON encoded string
+    static string JsonEncode(const CTempString str, EJsonEncode encoding = eJsonEnc_UTF8);
 
     /// Quotes a string in Bourne Again Shell (BASH) syntax, in a way
     /// that disallows non-printable characters in the result.
@@ -3078,13 +3094,9 @@ public:
     /// URL-encode flags
     enum EUrlEncode {
         eUrlEnc_SkipMarkChars,    ///< Do not convert chars like '!', '(' etc.
-        eUrlEnc_ProcessMarkChars, ///< Convert all non-alphanum chars,
-                                  ///< spaces are converted to '+'
-        eUrlEnc_PercentOnly,      ///< Convert all non-alphanum chars including
-                                  ///< space and '%' to %## format
-        eUrlEnc_Path,             ///< Same as ProcessMarkChars but preserves
-                                  ///< valid path characters ('/', '.')
-
+        eUrlEnc_ProcessMarkChars, ///< Convert all non-alphanumeric chars, spaces are converted to '+'
+        eUrlEnc_PercentOnly,      ///< Convert all non-alphanumeric chars including space and '%' to %## format
+        eUrlEnc_Path,             ///< Same as ProcessMarkChars but preserves valid path characters ('/', '.')
         eUrlEnc_URIScheme,        ///< Encode scheme part of an URI.
         eUrlEnc_URIUserinfo,      ///< Encode userinfo part of an URI.
         eUrlEnc_URIHost,          ///< Encode host part of an URI.
@@ -3092,9 +3104,7 @@ public:
         eUrlEnc_URIQueryName,     ///< Encode query part of an URI, arg name.
         eUrlEnc_URIQueryValue,    ///< Encode query part of an URI, arg value.
         eUrlEnc_URIFragment,      ///< Encode fragment part of an URI.
-
         eUrlEnc_Cookie,           ///< Same as SkipMarkChars with encoded ','
-
         eUrlEnc_None              ///< Do not encode
     };
     /// URL decode flags
@@ -3137,14 +3147,11 @@ public:
         { return SQLEncode(str, eSqlEnc_Plain); }
 
     /// URL-decode string
-    static string URLDecode(const CTempString str,
-                            EUrlDecode flag = eUrlDec_All);
+    static string URLDecode(const CTempString str, EUrlDecode flag = eUrlDec_All);
     /// URL-decode string to itself
-    static void URLDecodeInPlace(string& str,
-                                 EUrlDecode flag = eUrlDec_All);
+    static void URLDecodeInPlace(string& str, EUrlDecode flag = eUrlDec_All);
     /// Check if the string needs the requested URL-encoding
-    static bool NeedsURLEncoding(const CTempString str,
-                                EUrlEncode flag = eUrlEnc_SkipMarkChars);
+    static bool NeedsURLEncoding(const CTempString str, EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// Check if the string contains a valid IP address
     static bool IsIPAddress(const CTempStringEx str);

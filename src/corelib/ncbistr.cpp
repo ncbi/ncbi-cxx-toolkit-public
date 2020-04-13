@@ -4610,15 +4610,26 @@ string NStr::HtmlDecode(const CTempString str, EEncoding encoding, THtmlDecode* 
 }
 
 
-string NStr::JsonEncode(const CTempString str)
 // http://www.json.org/
+
+string NStr::JsonEncode(const CTempString str, EJsonEncode encoding)
 {
     string result;
-    SIZE_TYPE i;
     // wild guess...
-    result.reserve(str.size());
+    result.reserve(str.size()+2);
 
-    for (i = 0;  i < str.size();  i++) {
+    auto encode_char = [&](char c) 
+    { 
+        static const char* charmap = "0123456789abcdef";
+        result.append("\\u00");
+        Uint1 ch = c;
+        unsigned hi = ch >> 4;
+        unsigned lo = ch & 0xF;
+        result.append(1, charmap[hi]);
+        result.append(1, charmap[lo]);
+    };
+
+    for (auto i = 0;  i < str.size();  i++) {
         char c = str[i];
         switch ( c ) {
         case '"':
@@ -4628,19 +4639,21 @@ string NStr::JsonEncode(const CTempString str)
             result.append("\\\\");
             break;
         default:
-            if ((unsigned int)c < 0x20 || (unsigned int)c >= 0x80) {
-                static const char* charmap = "0123456789abcdef";
-                result.append("\\u00");
-                Uint1 ch = c;
-                unsigned hi = ch >> 4;
-                unsigned lo = ch & 0xF;
-                result.append(1, charmap[hi]);
-                result.append(1, charmap[lo]);
+            if ((unsigned int)c < 0x20) {
+                // Control characters U+0000 through U+001F
+                encode_char(c);
             } else {
-                result.append(1, c);
+                if (encoding == eJsonEnc_UTF8  &&  (unsigned int)c >= 0x80) {
+                    encode_char(c);
+                } else {
+                    result.append(1, c);
+                }
             }
             break;
         }
+    }
+    if (encoding == eJsonEnc_Quoted) {
+        return '"' + result + '"';
     }
     return result;
 }
