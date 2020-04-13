@@ -34,7 +34,7 @@
 #ifndef _OBJTOOLS_LISTENER_HPP_
 #define _OBJTOOLS_LISTENER_HPP_
 
-#include <corelib/ncbi_message.hpp>
+#include <corelib/ncbistd.hpp>
 #include <objtools/logging/message.hpp>
 
 BEGIN_NCBI_SCOPE

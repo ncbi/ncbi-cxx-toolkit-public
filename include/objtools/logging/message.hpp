@@ -33,23 +33,32 @@
 #ifndef _OBJTOOLS_MESSAGE_HPP_
 #define _OBJTOOLS_MESSAGE_HPP_
 
-#include <corelib/ncbi_message.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) 
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT IObjtoolsMessage : public IMessage
+class NCBI_XOBJUTIL_EXPORT IObjtoolsMessage 
 //  ============================================================================
 {
 public:
     virtual ~IObjtoolsMessage(void) = default;
+
+    virtual IObjtoolsMessage *Clone(void) const = 0;
+
+    virtual void Write(CNcbiOstream& out) const = 0;
 
     virtual void Dump(CNcbiOstream& out) const = 0;
 
     virtual void WriteAsXML(CNcbiOstream& out) const = 0;
 
     virtual void DumpAsXML(CNcbiOstream& out) const = 0;
+
+    virtual string GetText(void) const = 0;
+    virtual EDiagSev GetSeverity(void) const = 0;
+    virtual int GetCode(void) const = 0;
+    virtual int GetSubCode(void) const = 0;
 };
 
 
@@ -63,7 +72,7 @@ public:
 
     virtual CObjtoolsMessage *Clone(void) const;
 
-    virtual string Compose(void) const;
+    NCBI_DEPRECATED virtual string Compose(void) const;
 
     virtual void Write(CNcbiOstream& out) const;
 

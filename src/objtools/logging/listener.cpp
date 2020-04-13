@@ -52,7 +52,7 @@ CObjtoolsListener::~CObjtoolsListener() = default;
 bool 
 CObjtoolsListener::PutMessage(const IObjtoolsMessage& message)
 {
-    m_Messages.emplace_back(dynamic_cast<IObjtoolsMessage*>(message.Clone()));
+    m_Messages.emplace_back(message.Clone());
     return true;
 }
 

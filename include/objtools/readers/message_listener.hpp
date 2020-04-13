@@ -51,13 +51,14 @@ public:
     virtual ~ILineErrorListener() {}
 
     // IListener::Post() implementation
+/*
     virtual void Post(const IMessage& message)
     {
         const ILineError* le = dynamic_cast<const ILineError*>(&message);
         if (!le) return;
         PutError(*le);
     }
-
+*/
     /// Store error in the container, and 
     /// return true if error was stored fine, and
     /// return false if the caller should terminate all further processing.
@@ -74,13 +75,12 @@ public:
     }
     
     // IListener::Get() implementation
-    virtual const IMessage& Get(size_t index) const
-    { return const_cast<ILineErrorListener*>(this)->GetError(index); }
+    virtual const ILineError& Get(size_t index) const
+    { return this->GetError(index); }
 
     /// 0-based error retrieval.
     virtual const ILineError&
-    GetError(
-        size_t ) =0;
+    GetError(size_t ) const =0;
 
     virtual size_t Count(void) const = 0;
 
@@ -105,7 +105,7 @@ public:
         const Uint8 iNumDone = 0,
         const Uint8 iNumTotal = 0 ) = 0;
 
-    virtual const IMessage& GetMessage(size_t index) const
+    virtual const ILineError& GetMessage(size_t index) const
     { return Get(index); }
 
     virtual void Clear(void)
@@ -150,7 +150,7 @@ public:
     
     const ILineError&
     GetError(
-        size_t uPos ) { 
+        size_t uPos ) const { 
             return *dynamic_cast<ILineError*>(m_Errors[ uPos ].get()); }
     
     virtual void Dump()
