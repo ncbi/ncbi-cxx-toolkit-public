@@ -722,13 +722,13 @@ CTaxon1::GetOrgRef(TTaxId tax_id,
                 blast_name.assign( pData->GetBlast_name().front() );
             }
 	    if( is_specified ) {
-		*is_specified = pData->GetOrg().GetOrgname().IsFormalName();
-// 		bool specified = false;
-// 		if( GetNodeProperty( tax_id, "specified_inh", specified ) ) {
-// 		    *is_specified = specified;
-// 		} else {
-// 		    return null;
-// 		}		
+		//*is_specified = pData->GetOrg().GetOrgname().IsFormalName();
+ 		bool specified = false;
+ 		if( GetNodeProperty( tax_id, "specified_inh", specified ) ) {
+ 		    *is_specified = specified;
+ 		} else {
+ 		    return null;
+ 		}		
 	    }
             return CConstRef<COrg_ref>(&pData->GetOrg());
         }
