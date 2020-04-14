@@ -183,7 +183,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
  * writing (depending on "event"), until timeout expires, or until any error.
  * @note  "timeout" can also be one of the two special values:
  *        * NULL (for infinite timeout, also known as kInfiniteTimeout);
- *        * kDefaultTimeout (CONNECTOR-defined).
+ *        * kDefaultTimeout (CONNECTOR-specific).
  * @sa
  *  CONN_Read, CONN_Write
  */

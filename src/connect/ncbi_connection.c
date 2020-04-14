@@ -219,8 +219,6 @@ static EIO_Status x_Callback(CONN conn, ECONN_Callback type, unsigned int flag)
     assert(!flag  ||  (type == eCONN_OnTimeout
                        &&  (flag | eIO_ReadWrite) == eIO_ReadWrite));
     assert(conn  &&  idx < CONN_N_CALLBACKS);
-    if (conn->state == eCONN_Unusable)
-        return eIO_Closed;
     if (!(func = conn->cb[idx].func))
         return type == eCONN_OnTimeout ? eIO_Timeout : eIO_Success;
     data = conn->cb[idx].data;
@@ -267,7 +265,8 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
     EIO_Status status;
     CONNECTOR  x_conn;
 
-    assert(conn->meta.list  ||  conn->state == eCONN_Unusable);
+    assert(!close  ||  !connector);
+    assert(!conn->meta.list == !(conn->state != eCONN_Unusable));
 
     /* flush connection first, if open */
     status = conn->meta.list  &&  conn->state == eCONN_Open
@@ -281,7 +280,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
                 break;
             status = eIO_NotSupported;
             CONN_LOG(4, ReInit, eLOG_Critical, "Partial re-init not allowed");
-            conn->state = eCONN_Bad;
+            conn->state = eCONN_Corrupt;
             return status;
         }
     }
@@ -976,7 +975,7 @@ extern EIO_Status CONN_Read
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
-        return status;
+        return status == eIO_Closed ? eIO_Unknown : status;
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     /* flush pending unwritten output data (if any) */
@@ -1027,7 +1026,7 @@ extern EIO_Status CONN_ReadLine
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
-        return status;
+        return status == eIO_Closed ? eIO_Unknown : status;
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     len = 0;
