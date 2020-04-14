@@ -1841,9 +1841,6 @@ static void s_SignedBase10ToString(string&                 out_str,
     char  buffer[kBufSize+2];
     char* pos = buffer + kBufSize;
     
-    if (svalue < 0) {
-        value = static_cast<unsigned long>(-svalue);
-    }
     if ((flags & NStr::fWithCommas)) {
         int cnt = -1;
         do {
@@ -1878,15 +1875,11 @@ void NStr::IntToString(string& out_str, int svalue,
         CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
-    unsigned int value = static_cast<unsigned int>(svalue);
-   
     if ( base == 10  ) {
-        if ( svalue < 0 ) {
-            value = static_cast<unsigned int>(-svalue);
-        }
+        unsigned int value = static_cast<unsigned int>(svalue<0?-svalue:svalue);
         s_SignedBase10ToString(out_str, value, svalue, flags, base);
     } else {
-        s_UnsignedOtherBaseToString(out_str, value, flags, base);
+        s_UnsignedOtherBaseToString(out_str, static_cast<unsigned int>(svalue), flags, base);
     }
     errno = 0;
 }
@@ -1899,15 +1892,11 @@ void NStr::LongToString(string& out_str, long svalue,
         CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
-    unsigned long value = static_cast<unsigned long>(svalue);
-   
     if ( base == 10  ) {
-        if ( svalue < 0 ) {
-            value = static_cast<unsigned long>(-svalue);
-        }
+        unsigned int value = static_cast<unsigned int>(svalue<0?-svalue:svalue);
         s_SignedBase10ToString(out_str, value, svalue, flags, base);
     } else {
-        s_UnsignedOtherBaseToString(out_str, value, flags, base);
+        s_UnsignedOtherBaseToString(out_str, static_cast<unsigned long>(svalue), flags, base);
     }
     errno = 0;
 }
