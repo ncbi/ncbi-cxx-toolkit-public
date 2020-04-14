@@ -514,6 +514,11 @@ void CMultiReaderApp::Init(void)
         true);
         
     arg_desc->AddFlag(
+        "cleanup",
+        "clean up output but without genbank specific extensions",
+        true);
+        
+    arg_desc->AddFlag(
         "euk",
         "in -genbank mode, generate any missing mRNA features",
         true);
@@ -1377,6 +1382,10 @@ void CMultiReaderApp::xPostProcessAnnot(
     static unsigned int startingFeatureId = 1;
 
     if (!args["genbank"].AsBoolean()  &&  !args["genbank-no-locus-tags"].AsBoolean()) {
+        if (args["cleanup"]) {
+            CCleanup cleanup;
+            CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
+        }
 		return;
 	}
 
