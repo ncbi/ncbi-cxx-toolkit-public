@@ -306,10 +306,6 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_LOCAL_IPS_DISABLE  "NONE"
 
 
-/** DEF_CONN_TIMEOUT as an STimeout structure */
-extern const STimeout g_NcbiDefConnTimeout;
-
-
 /* Lookup "param" in the registry / environment.
  * If "param" does not begin with "CONN_", then "CONN_" gets prepended
  * automatically in all lookups listed below, unless otherwise noted.

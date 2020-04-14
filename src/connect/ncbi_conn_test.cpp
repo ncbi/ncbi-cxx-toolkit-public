@@ -64,20 +64,19 @@ static const char kFWSign[] =
     "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
 
 
-const STimeout CConnTest::kTimeout = {
-    (unsigned int)  DEF_CONN_TIMEOUT,
-    (unsigned int)((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT)
-                   * (double) kMicroSecondsPerSecond)
-};
-
-
-inline bool operator > (const STimeout* t1, const STimeout& t2)
+inline static bool operator > (const STimeout* t1, const STimeout& t2)
 {
     if (!t1)
         return true;
     return
         t1->sec + t1->usec / (double) kMicroSecondsPerSecond >
         t2.sec  + t2.usec  / (double) kMicroSecondsPerSecond;
+}
+
+
+inline static bool x_Large(const STimeout* t)
+{
+    return t > g_NcbiDefConnTimeout;
 }
 
 
@@ -93,7 +92,7 @@ CConnTest::CConnTest(const STimeout* timeout,
 void CConnTest::SetTimeout(const STimeout* timeout)
 {
     if (timeout) {
-        x_Timeout = timeout == kDefaultTimeout ? kTimeout : *timeout;
+        x_Timeout = timeout == kDefaultTimeout ? g_NcbiDefConnTimeout : *timeout;
         m_Timeout = &x_Timeout;
     } else
         m_Timeout = kInfiniteTimeout/*0*/;
@@ -595,7 +594,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += "]CONN_SERVICE_NAME=\"";
                 temp += str;
                 temp += "\" from your configuration\n";
-            } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
+            } else if (status != eIO_Timeout  ||  x_Large(m_Timeout))
                 temp += "; please contact " + HELP_EMAIL + '\n';
         }
         if (status != eIO_Timeout) {
@@ -812,7 +811,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         }
     } else if (status == eIO_Timeout) {
         temp = x_TimeoutMsg();
-        if (m_Timeout > kTimeout)
+        if (x_Large(m_Timeout))
             temp += "You may want to contact " + HELP_EMAIL;
     } else
         temp = "Please contact " + HELP_EMAIL;
@@ -1273,7 +1272,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                     temp += "The most likely reason for the failure is that"
                         " your firewall is still blocking ports as reported"
                         " above\n";
-                } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
+                } else if (status != eIO_Timeout  ||  x_Large(m_Timeout))
                     temp += "Please contact " + HELP_EMAIL + '\n';
                 SERV_Close(iter);
             }

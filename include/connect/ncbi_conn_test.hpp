@@ -215,9 +215,6 @@ protected:
     /// Extended info of the last step IO
     const string&      GetCheckPoint(void) const { return m_CheckPoint; }
 
-    /// Default timeout value
-    static const STimeout kTimeout;
-
     /// As supplied in constructor
     const STimeout*       m_Timeout;
     CNcbiOstream*         m_Output;
