@@ -54,7 +54,8 @@ BEGIN_NCBI_NAMESPACE;
 
 
 // Digits (up to base 36)
-static const char kDigit[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const char kDigitUpper[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const char kDigitLower[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 
 static inline
@@ -1778,52 +1779,42 @@ size_t NStr::StringToSizet(const CTempString str,
 }
 
 
-
 /// @internal
-static void s_SignedToString(string&                 out_str,
-                             unsigned long           value,
-                             long                    svalue,
-                             NStr::TNumToStringFlags flags,
-                             int                     base)
+template <typename T>
+static void s_UnsignedOtherBaseToString(string&                 out_str,
+                                        T                       value,
+                                        NStr::TNumToStringFlags flags,
+                                        int                     base)
 {
-    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
-    char  buffer[kBufSize];
-    char* pos = buffer + kBufSize;
-    
-    if ( base == 10 ) {
-        if ( svalue < 0 ) {
-            value = static_cast<unsigned long>(-svalue);
-        }
-        
-        if ( (flags & NStr::fWithCommas) ) {
-            int cnt = -1;
-            do {
-                if (++cnt == 3) {
-                    *--pos = ',';
-                    cnt = 0;
-                }
-                unsigned long a = '0'+value;
-                value /= 10;
-                *--pos = char(a - value*10);
-            } while ( value );
-        }
-        else {
-            do {
-                unsigned long a = '0'+value;
-                value /= 10;
-                *--pos = char(a - value*10);
-            } while ( value );
-        }
+    _ASSERT(base != 10);
 
-        if (svalue < 0)
-            *--pos = '-';
-        else if (flags & NStr::fWithSign)
-            *--pos = '+';
-    }
-    else if ( base == 16 ) {
+    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
+    char  buffer[kBufSize + 2]; // +2 for fWithRadix
+    char* pos = buffer + kBufSize;
+    const char* kDigit = (flags & NStr::fUseLowercase) ? kDigitLower : kDigitUpper;
+
+    out_str.erase();
+
+    if ( base == 16 ) {
+        if ( flags & NStr::fWithRadix ) {
+            out_str.append("0x");
+        }
         do {
             *--pos = kDigit[value % 16];
             value /= 16;
+        } while ( value );
+    }
+    else if ( base == 8 ) {
+        if ( flags & NStr::fWithRadix ) {
+            out_str.append("0");
+        }
+        if ( value == 0 ) {
+            // to prevent "00"
+            return;
+        }
+        do {
+            *--pos = kDigit[value % 8];
+            value /= 8;
         } while ( value );
     }
     else {
@@ -1832,6 +1823,50 @@ static void s_SignedToString(string&                 out_str,
             value /= base;
         } while ( value );
     }
+    out_str.append(pos, buffer + kBufSize - pos);
+}
+
+
+/// @internal
+static void s_SignedBase10ToString(string&                 out_str,
+                                   unsigned long           value,
+                                   long                    svalue,
+                                   NStr::TNumToStringFlags flags,
+                                   int                     base)
+{
+    _ASSERT(base == 10);
+
+    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
+    char  buffer[kBufSize+2];
+    char* pos = buffer + kBufSize;
+    
+    if (svalue < 0) {
+        value = static_cast<unsigned long>(-svalue);
+    }
+    if ((flags & NStr::fWithCommas)) {
+        int cnt = -1;
+        do {
+            if (++cnt == 3) {
+                *--pos = ',';
+                cnt = 0;
+            }
+            unsigned long a = '0' + value;
+            value /= 10;
+            *--pos = char(a - value * 10);
+        } while (value);
+    }
+    else {
+        do {
+            unsigned long a = '0' + value;
+            value /= 10;
+            *--pos = char(a - value * 10);
+        } while (value);
+    }
+
+    if (svalue < 0)
+        *--pos = '-';
+    else if (flags & NStr::fWithSign)
+        *--pos = '+';
 
     out_str.assign(pos, buffer + kBufSize - pos);
 }
@@ -1845,11 +1880,15 @@ void NStr::IntToString(string& out_str, int svalue,
         return;
     }
     unsigned int value = static_cast<unsigned int>(svalue);
-    
-    if ( base == 10  &&  svalue < 0 ) {
-        value = static_cast<unsigned int>(-svalue);
+   
+    if ( base == 10  ) {
+        if ( svalue < 0 ) {
+            value = static_cast<unsigned int>(-svalue);
+        }
+        s_SignedBase10ToString(out_str, value, svalue, flags, base);
+    } else {
+        s_UnsignedOtherBaseToString(out_str, value, flags, base);
     }
-    s_SignedToString(out_str, value, svalue, flags, base);
     errno = 0;
 }
 
@@ -1862,11 +1901,15 @@ void NStr::LongToString(string& out_str, long svalue,
         return;
     }
     unsigned long value = static_cast<unsigned long>(svalue);
-    
-    if ( base == 10  &&  svalue < 0 ) {
-        value = static_cast<unsigned long>(-svalue);
+   
+    if ( base == 10  ) {
+        if ( svalue < 0 ) {
+            value = static_cast<unsigned long>(-svalue);
+        }
+        s_SignedBase10ToString(out_str, value, svalue, flags, base);
+    } else {
+        s_UnsignedOtherBaseToString(out_str, value, flags, base);
     }
-    s_SignedToString(out_str, value, svalue, flags, base);
     errno = 0;
 }
 
@@ -1883,6 +1926,7 @@ void NStr::ULongToString(string&          out_str,
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
+    out_str.erase();
 
     if ( base == 10 ) {
         if ( (flags & fWithCommas) ) {
@@ -1908,21 +1952,11 @@ void NStr::ULongToString(string&          out_str,
         if ( (flags & fWithSign) ) {
             *--pos = '+';
         }
-    }
-    else if ( base == 16 ) {
-        do {
-            *--pos = kDigit[value % 16];
-            value /= 16;
-        } while ( value );
+        out_str.assign(pos, buffer + kBufSize - pos);
     }
     else {
-        do {
-            *--pos = kDigit[value % base];
-            value /= base;
-        } while ( value );
+        s_UnsignedOtherBaseToString(out_str, value, flags, base);
     }
-
-    out_str.assign(pos, buffer + kBufSize - pos);
     errno = 0;
 }
 
@@ -1936,34 +1970,20 @@ void NStr::ULongToString(string&          out_str,
 #define PRINT_INT8_CHUNK_SIZE 9
 
 /// @internal
-static char* s_PrintUint8(char*                   pos,
-                          Uint8                   value,
-                          NStr::TNumToStringFlags flags,
-                          int                     base)
+static char* s_PrintBase10Uint8(char*                   pos,
+                                Uint8                   value,
+                                NStr::TNumToStringFlags flags)
 {
-    if ( base == 10 ) {
-        if ( (flags & NStr::fWithCommas) ) {
-            int cnt = -1;
+    if ( (flags & NStr::fWithCommas) ) {
+        int cnt = -1;
 #ifdef PRINT_INT8_CHUNK
-            // while n doesn't fit in Uint4 process the number
-            // by 9-digit chunks within 32-bit Uint4
-            while ( value & ~Uint8(Uint4(~0)) ) {
-                Uint4 chunk = Uint4(value);
-                value /= PRINT_INT8_CHUNK;
-                chunk -= PRINT_INT8_CHUNK*Uint4(value);
-                char* end = pos - PRINT_INT8_CHUNK_SIZE - 2; // 9-digit chunk should have 2 commas
-                do {
-                    if (++cnt == 3) {
-                        *--pos = ',';
-                        cnt = 0;
-                    }
-                    Uint4 a = '0'+chunk;
-                    chunk /= 10;
-                    *--pos = char(a-10*chunk);
-                } while ( pos != end );
-            }
-            // process all remaining digits in 32-bit number
+        // while n doesn't fit in Uint4 process the number
+        // by 9-digit chunks within 32-bit Uint4
+        while ( value & ~Uint8(Uint4(~0)) ) {
             Uint4 chunk = Uint4(value);
+            value /= PRINT_INT8_CHUNK;
+            chunk -= PRINT_INT8_CHUNK*Uint4(value);
+            char* end = pos - PRINT_INT8_CHUNK_SIZE - 2; // 9-digit chunk should have 2 commas
             do {
                 if (++cnt == 3) {
                     *--pos = ',';
@@ -1972,61 +1992,60 @@ static char* s_PrintUint8(char*                   pos,
                 Uint4 a = '0'+chunk;
                 chunk /= 10;
                 *--pos = char(a-10*chunk);
-            } while ( chunk );
-#else
-            do {
-                if (++cnt == 3) {
-                    *--pos = ',';
-                    cnt = 0;
-                }
-                Uint8 a = '0'+value;
-                value /= 10;
-                *--pos = char(a - 10*value);
-            } while ( value );
-#endif
+            } while ( pos != end );
         }
-        else {
-#ifdef PRINT_INT8_CHUNK
-            // while n doesn't fit in Uint4 process the number
-            // by 9-digit chunks within 32-bit Uint4
-            while ( value & ~Uint8(Uint4(~0)) ) {
-                Uint4 chunk = Uint4(value);
-                value /= PRINT_INT8_CHUNK;
-                chunk -= PRINT_INT8_CHUNK*Uint4(value);
-                char* end = pos - PRINT_INT8_CHUNK_SIZE;
-                do {
-                    Uint4 a = '0'+chunk;
-                    chunk /= 10;
-                    *--pos = char(a-10*chunk);
-                } while ( pos != end );
-            }
-            // process all remaining digits in 32-bit number
-            Uint4 chunk = Uint4(value);
-            do {
-                Uint4 a = '0'+chunk;
-                chunk /= 10;
-                *--pos = char(a-10*chunk);
-            } while ( chunk );
-#else
-            do {
-                Uint8 a = '0'+value;
-                value /= 10;
-                *--pos = char(a-10*value);
-            } while ( value );
-#endif
-        }
-    }
-    else if ( base == 16 ) {
+        // process all remaining digits in 32-bit number
+        Uint4 chunk = Uint4(value);
         do {
-            *--pos = kDigit[value % 16];
-            value /= 16;
+            if (++cnt == 3) {
+                *--pos = ',';
+                cnt = 0;
+            }
+            Uint4 a = '0'+chunk;
+            chunk /= 10;
+            *--pos = char(a-10*chunk);
+        } while ( chunk );
+#else
+        do {
+            if (++cnt == 3) {
+                *--pos = ',';
+                cnt = 0;
+            }
+            Uint8 a = '0'+value;
+            value /= 10;
+            *--pos = char(a - 10*value);
         } while ( value );
+#endif
     }
     else {
+#ifdef PRINT_INT8_CHUNK
+        // while n doesn't fit in Uint4 process the number
+        // by 9-digit chunks within 32-bit Uint4
+        while ( value & ~Uint8(Uint4(~0)) ) {
+            Uint4 chunk = Uint4(value);
+            value /= PRINT_INT8_CHUNK;
+            chunk -= PRINT_INT8_CHUNK*Uint4(value);
+            char* end = pos - PRINT_INT8_CHUNK_SIZE;
+            do {
+                Uint4 a = '0'+chunk;
+                chunk /= 10;
+                *--pos = char(a-10*chunk);
+            } while ( pos != end );
+        }
+        // process all remaining digits in 32-bit number
+        Uint4 chunk = Uint4(value);
         do {
-            *--pos = kDigit[value % base];
-            value /= base;
+            Uint4 a = '0'+chunk;
+            chunk /= 10;
+            *--pos = char(a-10*chunk);
+        } while ( chunk );
+#else
+        do {
+            Uint8 a = '0'+value;
+            value /= 10;
+            *--pos = char(a-10*value);
         } while ( value );
+#endif
     }
     return pos;
 }
@@ -2041,22 +2060,20 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
     }
     Uint8 value;
     if (base == 10) {
+        const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
+        char  buffer[kBufSize];
+
         value = static_cast<Uint8>(svalue<0?-svalue:svalue);
-    } else {
-        value = static_cast<Uint8>(svalue);
-    }
-    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
-    char  buffer[kBufSize];
-
-    char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
-
-    if (base == 10) {
+        char* pos = s_PrintBase10Uint8(buffer + kBufSize, value, flags);
         if (svalue < 0)
             *--pos = '-';
         else if (flags & fWithSign)
             *--pos = '+';
+        out_str.assign(pos, buffer + kBufSize - pos);
+    } else {
+        value = static_cast<Uint8>(svalue);
+        s_UnsignedOtherBaseToString(out_str, value, flags, base);
     }
-    out_str.assign(pos, buffer + kBufSize - pos);
     errno = 0;
 }
 
@@ -2068,15 +2085,18 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
         CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
-    const SIZE_TYPE kBufSize = CHAR_BIT  * sizeof(value);
-    char  buffer[kBufSize];
+    if (base == 10) {
+        const SIZE_TYPE kBufSize = CHAR_BIT  * sizeof(value);
+        char  buffer[kBufSize];
 
-    char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
-
-    if ( (base == 10)  &&  (flags & fWithSign) ) {
-        *--pos = '+';
+        char* pos = s_PrintBase10Uint8(buffer + kBufSize, value, flags);
+        if ( flags & fWithSign ) {
+            *--pos = '+';
+        }
+        out_str.assign(pos, buffer + kBufSize - pos);
+    } else {
+        s_UnsignedOtherBaseToString(out_str, value, flags, base);
     }
-    out_str.assign(pos, buffer + kBufSize - pos);
     errno = 0;
 }
 
@@ -2121,7 +2141,7 @@ void NStr::UInt8ToString_DataSize(string& out_str,
             if (value < s_Coefs[suff_idx])
                 break;
         }
-        num_start = s_PrintUint8(buffer + kBufSize, value, 0, 10);
+        num_start = s_PrintBase10Uint8(buffer + kBufSize, value, 0);
         num_start[-1] = '0';
         dot_ptr = buffer + kBufSize - 3 * suff_idx;
         digs_pre_dot = Uint4(dot_ptr - num_start);
@@ -2185,7 +2205,7 @@ try_another_suffix:
             ++suff_idx;
             goto try_another_suffix;
         }
-        num_start = s_PrintUint8(buffer + kBufSize, whole_num, 0, 10);
+        num_start = s_PrintBase10Uint8(buffer + kBufSize, whole_num, 0);
         num_start[-1] = '0';
         digs_pre_dot = Uint4(buffer + kBufSize - num_start);
         if (max_digits - digs_pre_dot >= 3  &&  (flags & fDS_NoDecimalPoint)
@@ -2194,7 +2214,7 @@ try_another_suffix:
             Uint4 new_suff = suff_idx - 1;
 try_even_more_suffix:
             Uint8 new_num = value / s_Coefs[new_suff - 1];
-            char* new_start = s_PrintUint8(buffer + kBufSize / 2, new_num, 0, 10);
+            char* new_start = s_PrintBase10Uint8(buffer + kBufSize / 2, new_num, 0);
             Uint4 new_digs = Uint4(buffer + kBufSize / 2 - new_start);
             if (new_digs <= max_digits) {
                 if (max_digits - digs_pre_dot >= 3  &&  new_suff != 1) {

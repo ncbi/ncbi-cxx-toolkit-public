@@ -268,40 +268,42 @@ public:
     ///   If specified base in the *ToString() methods is not default 10,
     ///   that some flags like fWithSign and fWithCommas will be ignored.
     enum ENumToStringFlags {
-        fWithSign                = (1 <<  6),  ///< Prefix the output value with a sign
-        fWithCommas              = (1 <<  7),  ///< Use commas as thousands separator
-        fDoubleFixed             = (1 <<  8),  ///< Use n.nnnn format for double
-        fDoubleScientific        = (1 <<  9),  ///< Use scientific format for double
-        fDoublePosix             = (1 << 10),  ///< Use C locale
+        fUseLowercase            = (1 <<  4),     ///< Use lowercase letters for string representation for bases above 10
+        fWithRadix               = (1 <<  5),     ///< Prefix the output value with radix for "well-known" bases like 8 ("0") and 16 ("0x")
+        fWithSign                = (1 <<  6),     ///< Prefix the output value with a sign ('+'/'-')
+        fWithCommas              = (1 <<  7),     ///< Use commas as thousands separator
+        fDoubleFixed             = (1 <<  8),     ///< DoubleToString*(): Use n.nnnn format for double conversions
+        fDoubleScientific        = (1 <<  9),     ///< DoubleToString*(): Use scientific format for double conversions
+        fDoublePosix             = (1 << 10),     ///< DoubleToString*(): Use C locale  for double conversions
         fDoubleGeneral           = fDoubleFixed | fDoubleScientific,
         // Additional flags to convert "software" qualifiers (see UInt8ToString_DataSize)
-        fDS_Binary               = (1 << 11),
-        fDS_NoDecimalPoint       = (1 << 12),
-        fDS_PutSpaceBeforeSuffix = (1 << 13),
-        fDS_ShortSuffix          = (1 << 14),
-        fDS_PutBSuffixToo        = (1 << 15)
+        fDS_Binary               = (1 << 11),     ///< UInt8ToString_DataSize(): Use 1024 as a kilobyte factor, not 1000.
+        fDS_NoDecimalPoint       = (1 << 12),     ///< UInt8ToString_DataSize(): Do not add a decimal point ("10KB" vs "10.0KB")
+        fDS_PutSpaceBeforeSuffix = (1 << 13),     ///< UInt8ToString_DataSize(): Add space between value and qualifiers, like "10.0 KB"
+        fDS_ShortSuffix          = (1 << 14),     ///< UInt8ToString_DataSize(): Use short suffix, like "10.0K"
+        fDS_PutBSuffixToo        = (1 << 15)      ///< UInt8ToString_DataSize(): Use "B" suffix for small bytes values.
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
     /// String to number conversion flags.
     enum EStringToNumFlags {
-        fMandatorySign           = (1 << 17),  ///< See 'ENumToStringFlags::fWithSign'
-        fAllowCommas             = (1 << 18),  ///< See 'ENumToStringFlags::fWithCommas'
-        fAllowLeadingSpaces      = (1 << 19),  ///< Can have leading spaces
+        fMandatorySign           = (1 << 17),     ///< Check on mandatory sign. See 'ENumToStringFlags::fWithSign'.
+        fAllowCommas             = (1 << 18),     ///< Allow commas. See 'ENumToStringFlags::fWithCommas'.
+        fAllowLeadingSpaces      = (1 << 19),     ///< Ignore leading spaces in converted string.
         fAllowLeadingSymbols     = (1 << 20) | fAllowLeadingSpaces,
-                                               ///< Can have leading non-nums
-        fAllowTrailingSpaces     = (1 << 21),  ///< Can have trailing spaces
+                                                  ///< Ignore leading non-numeric characters.
+        fAllowTrailingSpaces     = (1 << 21),     ///< Ignore trailing space characters.
         fAllowTrailingSymbols    = (1 << 22) | fAllowTrailingSpaces,
-                                               ///< Can have trailing non-nums
-        fDecimalPosix            = (1 << 23),  ///< For decimal point, use C locale
-        fDecimalPosixOrLocal     = (1 << 24),  ///< For decimal point, try both C and current locale
-        fDecimalPosixFinite      = (1 << 25),  ///< Keep result finite and normalized:
-                                               ///< if DBL_MAX < result < INF,     result becomes DBL_MAX
-                                               ///< if       0 < result < DBL_MIN, result becomes DBL_MIN
+                                                  ///< Ignore trailing non-numerics characters.
+        fDecimalPosix            = (1 << 23),     ///< StringToDouble*(): For decimal point, use C locale.
+        fDecimalPosixOrLocal     = (1 << 24),     ///< StringToDouble*(): For decimal point, try both C and current locale.
+        fDecimalPosixFinite      = (1 << 25),     ///< StringToDouble*(): Keep result finite and normalized:
+                                                  ///< if DBL_MAX < result < INF,     result becomes DBL_MAX
+                                                  ///< if       0 < result < DBL_MIN, result becomes DBL_MIN
         // Additional flags to convert "software" qualifiers (see StringToUInt8_DataSize)
-        fDS_ForceBinary          = (1 << 26),
-        fDS_ProhibitFractions    = (1 << 27),
-        fDS_ProhibitSpaceBeforeSuffix = (1 << 28)
+        fDS_ForceBinary          = (1 << 26),     ///< StringToUInt8_DataSize(): Use 1024 as a kilobyte factor regardless of suffix, like "KB" or "KiB".
+        fDS_ProhibitFractions    = (1 << 27),     ///< StringToUInt8_DataSize(): Ignore any fraction part of a value, "1.2K" ~ "1K"
+        fDS_ProhibitSpaceBeforeSuffix = (1 << 28) ///< StringToUInt8_DataSize(): Do not allow spaces between value and suffix, like "10 K".
     };
     typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
 

@@ -1054,18 +1054,27 @@ struct SRadixTest {
         if ( *s1 == 'x' )  s1++;
         while (*s2 == '0') { s2++; n--; };
 
+        // Use case-insensitive comparison for base 16
+        if (base == 16) {
+            return (NStr::strncasecmp(s1, s2, n) == 0);
+        }
         return (NStr::strncmp(s1, s2, n) == 0);
     }
 };
 
 static const SRadixTest s_RadixTests[] = {
     { "A",         16, 10 },
+    { "a",         16, 10 },
     { "0xA",       16, 10 },
+    { "0xa",       16, 10 },
     { "B9",        16, 185 },
+    { "b9",        16, 185 },
     { "C5D",       16, 3165 },
     { "FFFF",      16, 65535 },
+    { "ffff",      16, 65535 },
     { "17ABCDEF",  16, 397135343 },
     { "BADBADBA",  16, 3134959034U },
+    { "badbadba",  16, 3134959034U },
     { "7",          8, 7 },
     { "17",         8, 15 },
     { "177",        8, 127 },
@@ -1124,7 +1133,6 @@ BOOST_AUTO_TEST_CASE(s_StringToNum_Radix)
         catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
-
 
         // UInt
         try {
