@@ -61,7 +61,7 @@ void CObjtoolsMessage::Write(CNcbiOstream& out) const
 {
     out << "                " <<  
         s_GetSeverityName(GetSeverity())
-        << ":\n" 
+        << ":\n"; 
     out << "Problem:        " <<  
         GetText() << "\n";
     out << endl;
