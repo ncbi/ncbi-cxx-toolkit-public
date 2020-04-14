@@ -83,6 +83,7 @@ void CObjtoolsMessage::WriteAsXML(CNcbiOstream& out) const
 
 void CObjtoolsMessage::DumpAsXML(CNcbiOstream& out) const 
 {
+    WriteAsXML(out);
 }
 
 string CObjtoolsMessage::GetText(void) const 
