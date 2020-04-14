@@ -1893,7 +1893,7 @@ void NStr::LongToString(string& out_str, long svalue,
         return;
     }
     if ( base == 10  ) {
-        unsigned int value = static_cast<unsigned int>(svalue<0?-svalue:svalue);
+        unsigned long value = static_cast<unsigned long>(svalue<0?-svalue:svalue);
         s_SignedBase10ToString(out_str, value, svalue, flags, base);
     } else {
         s_UnsignedOtherBaseToString(out_str, static_cast<unsigned long>(svalue), flags, base);
