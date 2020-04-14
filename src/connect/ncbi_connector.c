@@ -59,7 +59,7 @@ extern EIO_Status METACONN_Remove
                 break;
         }
         if (!x_conn) {
-            EIO_Status status = eIO_Unknown;
+            EIO_Status status = eIO_InvalidArg;
             METACONN_LOG(34, eLOG_Error,
                          "[METACONN_Remove]  Connector is not in connection");
             return status;
@@ -88,15 +88,18 @@ extern EIO_Status METACONN_Insert
     assert(meta  &&  connector);
 
     if (connector->next  ||  !connector->setup) {
-        EIO_Status status = eIO_Unknown;
-        METACONN_LOG(33, eLOG_Error,
-                     "[METACONN_Insert]  Connector is in use/uninitable");
+        EIO_Status status = connector->next ? eIO_Unknown : eIO_InvalidArg;
+        METACONN_LOG(33, connector->next ? eLOG_Error : eLOG_Critical,
+                     connector->next
+                     ? "[METACONN_Insert]  Connector is in use"
+                     : "[METACONN_Insert]  Connector is not initable");
         return status;
     }
 
     connector->meta = meta;
     connector->setup(connector);
-    assert(meta->default_timeout != kDefaultTimeout);
+    if (meta->default_timeout == kDefaultTimeout)
+        meta->default_timeout  = &g_NcbiDefConnTimeout;
     connector->next = meta->list;
     meta->list = connector;
 

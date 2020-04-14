@@ -48,6 +48,14 @@
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
 
+const STimeout g_NcbiDefConnTimeout = {
+    (unsigned int)
+      DEF_CONN_TIMEOUT,
+    (unsigned int)
+    ((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT) * 1.0e6)
+};
+
+
 static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
 
 
@@ -523,18 +531,18 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     val = *str ? (long) strlen(str) : 0;
     if (val < 3  ||  8 < val
         ||  strncasecmp(str, "infinite", (size_t) val) != 0) {
-        if (!*str  || (dbl = NCBI_simple_atof(str, &e)) < 0.0  || errno  || *e)
-            dbl = DEF_CONN_TIMEOUT;
-        info->tmo.sec      = (unsigned int)  dbl;
-        info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
-        if (dbl  &&  !(info->tmo.sec | info->tmo.usec))
-            info->tmo.usec = 1/*protect from underflow*/;
-        info->timeout      = &info->tmo;
+        if (*str && (dbl = NCBI_simple_atof(str, &e)) >= 0.0 && !errno && *e) {
+            info->tmo.sec      = (unsigned int)  dbl;
+            info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1.0e6);
+            if (dbl  &&  !(info->tmo.sec | info->tmo.usec))
+                info->tmo.usec = 1/*protect from underflow*/;
+        } else
+            info->tmo          = g_NcbiDefConnTimeout;
+        info->timeout = &info->tmo;
     } else
-        info->timeout      = kInfiniteTimeout/*0*/;
+        info->timeout = kInfiniteTimeout/*0*/;
 
     /* HTTP user header */
-    info->http_user_header = 0;
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
     if (!x_StrcatCRLF((char**) &info->http_user_header, str))
         goto err;
@@ -543,8 +551,9 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     *str = '\0';
     s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
                DEF_CONN_HTTP_REFERER, &generic);
-    info->http_referer = *str ? strdup(str) : 0;
     assert(generic);
+    if (*str)
+        info->http_referer = strdup(str);
 
     /* credentials */
     info->credentials = 0;

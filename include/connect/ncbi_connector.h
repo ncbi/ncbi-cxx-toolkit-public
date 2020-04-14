@@ -54,15 +54,19 @@ struct SConnectorTag;
 typedef struct SConnectorTag* CONNECTOR;  /**< connector handle */
 
 
+/** DEF_CONN_TIMEOUT as STimeout */
+extern const STimeout g_NcbiDefConnTimeout;
+
+
 /* Function type definitions for the connector method table.
- * The arguments & the behavior of "FConnector***" functions are mostly just
- * the same as those for their counterparts "CONN_***" in ncbi_connection.h.
- * First argument of these functions accepts a real connector handle rather
+ * The arguments & behavior of "FConnector***" functions are mostly just the
+ * same as those for their counterparts "CONN_***" in ncbi_connection.h.  The
+ * first argument of these functions accepts the real connector handle rather
  * than an upper-level connection handle("CONN").
  * In every call that takes STimeout as an argument, the argument can be either
  * NULL (for infinite timeout, kInfiniteTimeout) or a valid non-NULL pointer
  * that points to a finite timeout structure.  Note that kDefaultTimeout gets
- * resolved at the level of the connection and does not get passed through.
+ * resolved at the level of the connection, and is never passed through.
  */
 
 
@@ -80,8 +84,8 @@ typedef       char* (*FConnectorDescr)
  );
 
 
-/** Open connection.  Used to setup all related data structures,
- * but not necessarily has to actually open the data channel.
+/** Open connection.  Used to setup all related data structures, but not
+ * necessarily has to actually open the data channel.
  * @note  Regardless of the returned status, the connection is considered open
  *        (so this call doesn't get re-issued) after this call returns.
  */
@@ -93,9 +97,9 @@ typedef EIO_Status (*FConnectorOpen)
 
 /** Wait until either read or write (dep. on the "direction" value) becomes
  * available, or until "timeout" expires, or until error occurs.
+ * @note  The passed "event" is guaranteed to be either eIO_Read or eIO_Write.
  * @note  FConnectorWait() is guaranteed to be called after FConnectorOpen(),
  *        and only if the latter succeeded (returned eIO_Success).
- * @note  The passed "event" is guaranteed to be either eIO_Read or eIO_Write.
  */
 typedef EIO_Status (*FConnectorWait)
 (CONNECTOR       connector,
@@ -106,9 +110,10 @@ typedef EIO_Status (*FConnectorWait)
 
 /** Write to connector.
  * The passed "n_written" is always non-NULL, and "*n_written" is always zero.
- * The number of bytes actually written gets returned in "*n_written".
- * It may not return eIO_Success if no data at all have been written (unless
- * "size" was passed as 0).
+ * Upon return, the number of bytes actually written must get reflected in
+ * "*n_written", and it may never be greater than "size".
+ * @warning  This call may not return eIO_Success if no data at all have been
+ *           written (unless "size" was passed as 0).
  * @note  FConnectorWrite() is guaranteed to be called after FConnectorOpen(),
  *        and only if the latter succeeded (returned eIO_Success).
  */
@@ -132,10 +137,15 @@ typedef EIO_Status (*FConnectorFlush)
 
 
 /** Read from connector.
- * The passed "n_read" is always non-NULL, and "*n_read" is always zero.
- * The number of bytes actually read bytes gets returned in "*n_read".
- * It may not return eIO_Success if no data at all have been read (unless
- * "size" was passed 0).
+ * The passed "n_read" is always non-NULL, and "*n_read" is always zero.  Upon
+ * return, the number of bytes actually read must get reflected in "*n_read",
+ * and it may never be greater than "size".
+ * @warning  This call may not return eIO_Success if no data at all have been
+             read (unless "size" was passed 0).
+ * @note  This call should use the eIO_Closed return code solely to indicate
+ *        true EOF in data;  and never for other read errors (such as transport
+ *        or medium issues of any sort, such as being unable to open an
+ *        underlying connection, if any;  or being unable to negotiate it).
  * @note  FConnectorRead() is guaranteed to be called after FConnectorOpen(),
  *        and only if the latter succeeded (returned eIO_Success).
  */
@@ -149,11 +159,11 @@ typedef EIO_Status (*FConnectorRead)
 
 
 /** Obtain last I/O completion code from the transport level (connector).
+ * @note  "direction" is guaranteed to be either eIO_Read or eIO_Write.
+ * @note  This call should return eIO_Success in case of nonexistent or
+ *        yet-incomplete low level transport, if any.
  * @note  FConnectorStatus() is guaranteed to be called after FConnectorOpen(),
  *        and only if the latter succeeded (returned eIO_Success).
- * @note  "direction" is guaranteed to be either eIO_Read or eIO_Write.
- * @note  Should return eIO_Success in case of inexistent (incomplete)
- *        low level transport, if any.
  */
 typedef EIO_Status (*FConnectorStatus)
 (CONNECTOR       connector,
@@ -162,11 +172,11 @@ typedef EIO_Status (*FConnectorStatus)
           
 
 /** Close data link (if any) and cleanup related data structures.
- * @note  FConnectorClose() is guaranteed to be called after FConnectorOpen(),
- *        and only if the latter succeeded (returned eIO_Success).
  * @note  FConnectorFlush() gets called before FConnectorClose() automatically.
  * @note  It may return eIO_Closed to indicate an unusual close condition.
- * @note  The same connector may now be either re-opened / re-used or recylced.
+ * @note  The same connector may now be either re-opened / reused or recycled.
+ * @note  FConnectorClose() is guaranteed to be called after FConnectorOpen(),
+ *        and only if the latter succeeded (returned eIO_Success).
  */
 typedef EIO_Status (*FConnectorClose)
 (CONNECTOR       connector,
@@ -175,7 +185,7 @@ typedef EIO_Status (*FConnectorClose)
 
 
 /** Standard set of connector methods to handle a connection (corresponding
- * connectors are also here), part of connection handle("CONN").
+ * connectors are also in here), part of the connection handle ("CONN").
  * @sa
  *  CONN
  */
@@ -195,18 +205,18 @@ typedef struct {
 } SMetaConnector;
 
 
-#define _CONN_TWO2ONE(a, b)   a##b
-
 #define CONN_SET_METHOD(meta, method, function, connector) \
     do {                                                   \
-        meta->method                   = function;         \
-        meta->_CONN_TWO2ONE(c_,method) = connector;        \
+        meta->method     = function;                       \
+        meta->c_##method = connector;                      \
     } while (0)
 
 
 #define CONN_SET_DEFAULT_TIMEOUT(meta, timeout)            \
     do {                                                   \
-        if (timeout) {                                     \
+        if (timeout == kDefaultTimeout) {                  \
+            meta->default_timeout = &g_NcbiDefConnTimeout; \
+        } else if (timeout) {                              \
             meta->default_tmo     = *timeout;              \
             meta->default_timeout = &meta->default_tmo;    \
         } else                                             \
@@ -223,9 +233,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Insert
  );
 
 
-/** Delete given "connector" all its descendants (all connectors if
- * "connector" is 0) from the connections's list of connectors.
- * FDestroy (if defined) gets called for each removed connector.
+/** Delete given "connector" all its descendants (all connectors if "connector"
+ * is NULL) from the connections's list of connectors.  FDestroy (if defined)
+ * gets called for each removed connector.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Remove
 (SMetaConnector* meta,
