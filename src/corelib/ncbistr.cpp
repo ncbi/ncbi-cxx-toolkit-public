@@ -1851,16 +1851,14 @@ static void s_SignedBase10ToString(string&                 out_str,
                 *--pos = ',';
                 cnt = 0;
             }
-            unsigned long a = '0' + value;
+            *--pos = '0' + value % 10;
             value /= 10;
-            *--pos = char(a - value * 10);
         } while (value);
     }
     else {
         do {
-            unsigned long a = '0' + value;
+            *--pos = '0' + value % 10;
             value /= 10;
-            *--pos = char(a - value * 10);
         } while (value);
     }
 
@@ -1937,16 +1935,14 @@ void NStr::ULongToString(string&          out_str,
                     *--pos = ',';
                     cnt = 0;
                 }
-                unsigned long a = '0'+value;
+                *--pos = '0' + value % 10;
                 value /= 10;
-                *--pos = char(a - value*10);
             } while ( value );
         }
         else {
             do {
-                unsigned long a = '0'+value;
+                *--pos = '0' + value % 10;
                 value /= 10;
-                *--pos = char(a - value*10);
             } while ( value );
         }
 
@@ -1990,9 +1986,8 @@ static char* s_PrintBase10Uint8(char*                   pos,
                     *--pos = ',';
                     cnt = 0;
                 }
-                Uint4 a = '0'+chunk;
+                *--pos = '0' + chunk % 10;
                 chunk /= 10;
-                *--pos = char(a-10*chunk);
             } while ( pos != end );
         }
         // process all remaining digits in 32-bit number
@@ -2002,9 +1997,8 @@ static char* s_PrintBase10Uint8(char*                   pos,
                 *--pos = ',';
                 cnt = 0;
             }
-            Uint4 a = '0'+chunk;
+            *--pos = '0' + chunk % 10;
             chunk /= 10;
-            *--pos = char(a-10*chunk);
         } while ( chunk );
 #else
         do {
@@ -2012,9 +2006,8 @@ static char* s_PrintBase10Uint8(char*                   pos,
                 *--pos = ',';
                 cnt = 0;
             }
-            Uint8 a = '0'+value;
+            *--pos = '0' + value % 10;
             value /= 10;
-            *--pos = char(a - 10*value);
         } while ( value );
 #endif
     }
@@ -2028,23 +2021,20 @@ static char* s_PrintBase10Uint8(char*                   pos,
             chunk -= PRINT_INT8_CHUNK*Uint4(value);
             char* end = pos - PRINT_INT8_CHUNK_SIZE;
             do {
-                Uint4 a = '0'+chunk;
+                *--pos = '0' + chunk % 10;
                 chunk /= 10;
-                *--pos = char(a-10*chunk);
             } while ( pos != end );
         }
         // process all remaining digits in 32-bit number
         Uint4 chunk = Uint4(value);
         do {
-            Uint4 a = '0'+chunk;
+            *--pos = '0' + chunk % 10;
             chunk /= 10;
-            *--pos = char(a-10*chunk);
         } while ( chunk );
 #else
         do {
-            Uint8 a = '0'+value;
+            *--pos = '0' + value % 10;
             value /= 10;
-            *--pos = char(a-10*value);
         } while ( value );
 #endif
     }
