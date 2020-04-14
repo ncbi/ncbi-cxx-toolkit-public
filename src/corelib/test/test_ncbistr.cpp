@@ -1039,7 +1039,7 @@ struct SRadixTest {
     bool Same(const string& s) const
     {
         if ( s.empty() ) {
-            return true;
+            return false;
         }
         const char* s1 = str;
         const char* s2 = s.c_str();
@@ -1063,6 +1063,7 @@ struct SRadixTest {
 };
 
 static const SRadixTest s_RadixTests[] = {
+    { "0",         16, 0 },
     { "A",         16, 10 },
     { "a",         16, 10 },
     { "0xA",       16, 10 },
@@ -1075,6 +1076,8 @@ static const SRadixTest s_RadixTests[] = {
     { "17ABCDEF",  16, 397135343 },
     { "BADBADBA",  16, 3134959034U },
     { "badbadba",  16, 3134959034U },
+    { "0",          8, 0 },
+    { "0",          8, 0 },
     { "7",          8, 7 },
     { "17",         8, 15 },
     { "177",        8, 127 },
@@ -1123,11 +1126,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum_Radix)
                     BOOST_CHECK(errno != kTestErrno);
                 }
                 BOOST_CHECK_EQUAL((Uint8)val, test->value);
-                BOOST_CHECK(test->Same(str));
                 if ( test->base ) {
+                    BOOST_CHECK(test->Same(str));
                     NStr::NumericToString(str, val, 0, test->base);
+                    BOOST_CHECK(test->Same(str));
                 }
-                BOOST_CHECK(test->Same(str));
             }
         }
         catch (CException&) {
@@ -1147,11 +1150,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum_Radix)
                     BOOST_CHECK(errno != kTestErrno);
                 }
                 BOOST_CHECK_EQUAL(val, test->value);
-                BOOST_CHECK(test->Same(str));
                 if ( test->base ) {
+                    BOOST_CHECK(test->Same(str));
                     NStr::NumericToString(str, val, 0, test->base);
+                    BOOST_CHECK(test->Same(str));
                 }
-                BOOST_CHECK(test->Same(str));
             }
         }
         catch (CException&) {
@@ -1171,11 +1174,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum_Radix)
                     BOOST_CHECK(errno != kTestErrno);
                 }
                 BOOST_CHECK_EQUAL((Uint8)val, test->value);
-                BOOST_CHECK(test->Same(str));
                 if ( test->base ) {
+                    BOOST_CHECK(test->Same(str));
                     NStr::NumericToString(str, val, 0, test->base);
+                    BOOST_CHECK(test->Same(str));
                 }
-                BOOST_CHECK(test->Same(str));
             }
         }
         catch (CException&) {
@@ -1194,11 +1197,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum_Radix)
                 BOOST_CHECK(errno != kTestErrno);
             }
             BOOST_CHECK_EQUAL(val, test->value);
-            BOOST_CHECK(test->Same(str));
             if ( test->base ) {
+                BOOST_CHECK(test->Same(str));
                 NStr::NumericToString(str, val, 0, test->base);
+                BOOST_CHECK(test->Same(str));
             }
-            BOOST_CHECK(test->Same(str));
         }
         catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);

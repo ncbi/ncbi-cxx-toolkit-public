@@ -1799,6 +1799,7 @@ static void s_UnsignedOtherBaseToString(string&                 out_str,
         if ( flags & NStr::fWithRadix ) {
             out_str.append("0x");
         }
+
         do {
             *--pos = kDigit[value % 16];
             value /= 16;
@@ -1807,10 +1808,10 @@ static void s_UnsignedOtherBaseToString(string&                 out_str,
     else if ( base == 8 ) {
         if ( flags & NStr::fWithRadix ) {
             out_str.append("0");
-        }
-        if ( value == 0 ) {
-            // to prevent "00"
-            return;
+            if ( value == 0 ) {
+                // to prevent "00"
+                return;
+            }
         }
         do {
             *--pos = kDigit[value % 8];
