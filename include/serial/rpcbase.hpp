@@ -218,7 +218,9 @@ inline
 void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
 {
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(nullptr));
-    ConnNetInfo_ParseURL(net_info.get(), url.c_str());
+    if ( !ConnNetInfo_ParseURL(net_info.get(), url.c_str()) ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Error parsing URL " + url);
+    }
     x_FillConnNetInfo(*net_info, nullptr);
     unique_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info.get(),
         GetContentTypeHeader(GetFormat()),
