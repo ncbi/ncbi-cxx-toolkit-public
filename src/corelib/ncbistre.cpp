@@ -579,8 +579,7 @@ istream& istream::read(char *s, streamsize n)
             setstate(failbit);
         } 
     } catch (...) {
-        setstate(failbit);
-        throw;
+        setstate(badbit | failbit);
     }
 
     return *this;
@@ -606,7 +605,7 @@ EEncodingForm ReadIntoUtf8(
     char tmp[buf_size+2];
     Uint2* us = reinterpret_cast<Uint2*>(tmp);
 
-// check for Byte Order Mark
+    // check for Byte Order Mark
     const int bom_max = 4;
     memset(tmp,0,bom_max);
     input.read(tmp,bom_max);
@@ -614,7 +613,7 @@ EEncodingForm ReadIntoUtf8(
     {
         int bom_len=0;
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
-        if (n >= 3 && uc[0] == 0xEF && uc[1] == 0xBB && uc[2] == 0xBF) {
+        if (n >= 3  &&  uc[0] == 0xEF  &&  uc[1] == 0xBB  &&  uc[2] == 0xBF) {
             ef_bom = eEncodingForm_Utf8;
             uc[0] = uc[3];
             bom_len=3;
@@ -628,19 +627,19 @@ EEncodingForm ReadIntoUtf8(
             us[0] = us[1];
             bom_len=2;
         }
-        if (ef == eEncodingForm_Unknown || ef == ef_bom) {
+        if (ef == eEncodingForm_Unknown  ||  ef == ef_bom) {
             ef = ef_bom;
             n -= bom_len;
         }
         // else proceed at user's risk
     }
 
-// keep reading
+    // keep reading
     while (n != 0  ||  (input.good()  &&  !input.eof())) {
 
         if (n == 0) {
             input.read(tmp, buf_size);
-            n = (int)input.gcount();
+            n = (int) input.gcount();
             result->reserve(max(result->capacity(), result->size() + n));
         }
         tmp[n] = '\0';
@@ -649,7 +648,7 @@ EEncodingForm ReadIntoUtf8(
         case eEncodingForm_Utf16Foreign:
             {
                 char buf[buf_size];
-                NcbiSys_swab(tmp,buf,n);
+                NcbiSys_swab(tmp, buf, n);
                 memcpy(tmp, buf, n);
             }
             // no break here
@@ -657,11 +656,11 @@ EEncodingForm ReadIntoUtf8(
             {
                 Uint2* u = us;
 #if 0
-                for (n = n/2; n--; ++u) {
+                for (n = n/2;  n--;  ++u) {
                     result->Append(*u);
                 }
 #else
-                *result += CUtf8::AsUTF8(u,n/2);
+                *result += CUtf8::AsUTF8(u, n/2);
 #endif
             }
             break;
@@ -674,14 +673,14 @@ EEncodingForm ReadIntoUtf8(
             *result += CUtf8::AsUTF8(tmp,eEncoding_Windows_1252);
             break;
         case eEncodingForm_Utf8:
-//            result->Append(tmp,eEncoding_UTF8);   
+            //result->Append(tmp,eEncoding_UTF8);   
             result->append(tmp,n);
             break;
         default:
             if (what_if_no_bom == eNoBOM_GuessEncoding) {
                 if (n == bom_max) {
                     input.read(tmp + n, buf_size - n);
-                    n += (int)input.gcount();
+                    n += (int) input.gcount();
                     result->reserve(max(result->capacity(), result->size() + n));
                 }
                 tmp[n] = '\0';
@@ -691,8 +690,8 @@ EEncodingForm ReadIntoUtf8(
                 case eEncoding_Unknown:
                     if (CUtf8::GetValidBytesCount( CTempString(tmp, n)) != 0) {
                         ef = eEncodingForm_Utf8;
-                        //result->Append(tmp,enc);
-                        *result += CUtf8::AsUTF8(tmp,enc);
+                        //result->Append(tmp, enc);
+                        *result += CUtf8::AsUTF8(tmp, enc);
                     }
                     else {
                         NCBI_THROW(CCoreException, eCore,
@@ -705,13 +704,13 @@ EEncodingForm ReadIntoUtf8(
                 case eEncoding_Ascii:
                 case eEncoding_ISO8859_1:
                 case eEncoding_Windows_1252:
-                    //result->Append(tmp,enc);
+                    //result->Append(tmp, enc);
                     *result += CUtf8::AsUTF8(tmp,enc);
                     break;
                 }
             } else {
-//                result->Append(tmp,eEncoding_UTF8);
-                result->append(tmp,n);
+                //result->Append(tmp, eEncoding_UTF8);
+                result->append(tmp, n);
             }
             break;
         }
@@ -728,14 +727,14 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
     if (input.good()) {
         const int bom_max = 4;
         char tmp[bom_max];
-        memset(tmp,0,bom_max);
+        memset(tmp, 0, bom_max);
         Uint2* us = reinterpret_cast<Uint2*>(tmp);
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
         input.get(tmp[0]);
-        int n = (int)input.gcount();
-        if (n == 1 && (uc[0] == 0xEF || uc[0] == 0xFE || uc[0] == 0xFF)) {
+        int n = (int) input.gcount();
+        if (n == 1  &&  (uc[0] == 0xEF  ||  uc[0] == 0xFE  ||  uc[0] == 0xFF)){
             input.get(tmp[1]);
-            if (input.gcount()==1) {
+            if (input.gcount() == 1) {
                 ++n;
                 if (us[0] == 0xFEFF) {
                     ef = eEncodingForm_Utf16Native;
@@ -743,7 +742,7 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
                     ef = eEncodingForm_Utf16Foreign;
                 } else if (uc[1] == 0xBB) {
                     input.get(tmp[2]);
-                    if (input.gcount()==1) {
+                    if (input.gcount() == 1) {
                         ++n;
                         if (uc[2] == 0xBF) {
                             ef = eEncodingForm_Utf8;
@@ -754,13 +753,13 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
         }
         if (ef == eEncodingForm_Unknown) {
             if (n > 1) {
-                CStreamUtils::Pushback(input,tmp,n);
+                CStreamUtils::Pushback(input, tmp, n);
             } else if (n == 1) {
                 input.unget();
             }
         } else {
             if (discard_bom == eBOM_Keep) {
-                CStreamUtils::Pushback(input,tmp,n);
+                CStreamUtils::Pushback(input, tmp, n);
             }
         }
     }
@@ -826,7 +825,7 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 
     SIZE_TYPE end = str.max_size();
     if ( is.width() )
-        end = (int)end < is.width() ? end : is.width(); 
+        end = (streamsize) end < is.width() ? end : is.width(); 
 
     SIZE_TYPE i = 0;
     for (ch = is.rdbuf()->sbumpc();
