@@ -61,9 +61,9 @@ void CObjtoolsMessage::Write(CNcbiOstream& out) const
 {
     out << "                " <<  
         s_GetSeverityName(GetSeverity())
-        << ":" << endl;
+        << ":\n" 
     out << "Problem:        " <<  
-        GetText() << endl;
+        GetText() << "\n";
     out << endl;
 }
 
@@ -85,6 +85,7 @@ void CObjtoolsMessage::DumpAsXML(CNcbiOstream& out) const
 {
     WriteAsXML(out);
 }
+
 
 string CObjtoolsMessage::GetText(void) const 
 { 
