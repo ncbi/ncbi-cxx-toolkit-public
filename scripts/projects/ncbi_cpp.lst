@@ -12,6 +12,7 @@ internal/align_model$
 internal/ID/utils$
 internal/ID/utils/wgs$
 internal/ID/utils/wgs/format$
+internal/ID/ipg
 internal/mapview/objects
 internal/blast/DistribDbSupport
 internal/blast/GumbelParams

@@ -26,6 +26,7 @@ internal/gpipe
 internal/ID/utils$
 internal/ID/utils/wgs$
 internal/ID/utils/wgs/format$
+internal/ID/ipg
 internal/misc
 internal/portal
 internal/snp
