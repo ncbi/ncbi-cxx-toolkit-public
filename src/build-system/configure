@@ -51441,7 +51441,8 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-nghttp2_session_client_new(NULL, NULL, NULL);
+nghttp2_error_callback cb;
+         const char* s = nghttp2_http2_strerror(NGHTTP2_ERR_EOF);
   ;
   return 0;
 }

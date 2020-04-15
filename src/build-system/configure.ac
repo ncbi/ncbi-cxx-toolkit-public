@@ -8154,7 +8154,8 @@ fi
 NCBI_RPATHIFY(NGHTTP2_LIBPATH, $NGHTTP2_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
    [AC_LANG_PROGRAM([[#include <nghttp2/nghttp2.h>]],
-       [[nghttp2_session_client_new(NULL, NULL, NULL);]])])
+       [[nghttp2_error_callback cb;
+         const char* s = nghttp2_http2_strerror(NGHTTP2_ERR_EOF);]])])
 if test "$with_nghttp2" != no -a \
      -f "$NGHTTP2_LIBDIR/libnghttp2-static.a"; then
    NGHTTP2_STATIC_LIBS="-L$NGHTTP2_LIBDIR -lnghttp2-static"
