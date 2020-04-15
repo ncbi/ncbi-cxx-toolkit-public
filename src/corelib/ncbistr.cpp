@@ -4629,8 +4629,7 @@ string NStr::JsonEncode(const CTempString str, EJsonEncode encoding)
         result.append(1, charmap[lo]);
     };
 
-    for (SIZE_TYPE i = 0;  i < str.size();  i++) {
-        char c = str[i];
+    for (auto c : str) {
         switch ( c ) {
         case '"':
             result.append("\\\"");
