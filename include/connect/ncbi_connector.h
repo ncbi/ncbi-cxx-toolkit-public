@@ -95,7 +95,7 @@ typedef EIO_Status (*FConnectorOpen)
  );
 
 
-/** Wait until either read or write (dep. on the "direction" value) becomes
+/** Wait until either read or write (depending on the "event" value) becomes
  * available, or until "timeout" expires, or until error occurs.
  * @note  The passed "event" is guaranteed to be either eIO_Read or eIO_Write.
  * @note  FConnectorWait() is guaranteed to be called after FConnectorOpen(),
@@ -144,8 +144,8 @@ typedef EIO_Status (*FConnectorFlush)
              read (unless "size" was passed 0).
  * @note  This call should use the eIO_Closed return code solely to indicate
  *        true EOF in data;  and never for other read errors (such as transport
- *        or medium issues of any sort, such as being unable to open an
- *        underlying connection, if any;  or being unable to negotiate it).
+ *        or medium issues of any sort, like being unable to open a file or an
+ *        underlying connection, if any;  or being unable to negotiate).
  * @note  FConnectorRead() is guaranteed to be called after FConnectorOpen(),
  *        and only if the latter succeeded (returned eIO_Success).
  */

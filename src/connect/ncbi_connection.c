@@ -355,10 +355,9 @@ static EIO_Status s_Open(CONN conn)
     switch (conn->state) {
     case eCONN_Unusable:
         return eIO_InvalidArg;
-    case eCONN_Bad:
-        return eIO_Closed;
     case eCONN_Cancel:
         return eIO_Interrupt;
+    case eCONN_Bad:
     case eCONN_Corrupt:
         return eIO_Unknown;
     default:
@@ -396,7 +395,7 @@ static EIO_Status s_Open(CONN conn)
         if (conn->state == eCONN_Closed)
             conn->state  = eCONN_Bad;
     }
-    return status;
+    return status == eIO_Closed ? eIO_Unknown : status;
 }
 
 
@@ -975,7 +974,7 @@ extern EIO_Status CONN_Read
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
-        return status == eIO_Closed ? eIO_Unknown : status;
+        return status;
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     /* flush pending unwritten output data (if any) */
@@ -1026,7 +1025,7 @@ extern EIO_Status CONN_ReadLine
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
-        return status == eIO_Closed ? eIO_Unknown : status;
+        return status;
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     len = 0;
