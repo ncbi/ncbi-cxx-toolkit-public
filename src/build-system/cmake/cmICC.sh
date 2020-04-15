@@ -40,6 +40,7 @@ case "$1" in
      if $intel_root/Compiler/$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=$intel_root/Compiler/$1/bin/$CXX
        CC=$intel_root/Compiler/$1/bin/$CC
+       gccver=7.3.0
      else
 echo "ERROR:  cannot find ICC version $1; you may need to adjust PATH explicitly."
 echo "or try one of these:"
@@ -58,5 +59,24 @@ EOF
     exit 1
 fi
 
+# Intel C++ Compiler: GCC* Compatibility and Interoperability
+# https://software.intel.com/en-us/cpp-compiler-developer-guide-and-reference-gcc-compatibility-and-interoperability
+
+for gcc in /opt/ncbi/gcc/${gccver}/bin/gcc /usr/local/gcc/${gccver}/bin/gcc; do
+  if test -x $gcc; then
+    NCBI_COMPILER_GCCNAME="$gcc"
+    case $gcc in
+        /opt/* )
+            NCBI_COMPILER_GCCLIB="/opt/ncbi/gcc/${gccver}/lib64"
+            ;;
+        /usr/* )
+            NCBI_COMPILER_GCCLIB="/usr/lib64/gcc-${gccver}"
+            ;;
+    esac
+    break
+  fi
+done
+export NCBI_COMPILER_GCCNAME NCBI_COMPILER_GCCLIB
 export CC CXX
+
 exec ${script_dir}/cmake-cfg-unix.sh --rootdir=$script_dir/../../.. --caller=$script_name "$@"
