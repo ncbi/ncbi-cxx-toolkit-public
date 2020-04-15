@@ -6,4 +6,9 @@ ifeq ($(OSTYPE),darwin)
      FORCE_PROTOBUF = -Wl,-force_load,$(firstword $(STATIC_PB_LIBS))
      GRPC_LIBS := $(GRPC_LIBS:-lprotobuf%=$(FORCE_PROTOBUF))
   endif
+  STATIC_GRPCPP_LIBS = $(wildcard $(GRPC_BIN)/../lib*/libgrpc++.a)
+  ifneq ($(STATIC_GRPCPP_LIBS),)
+    FORCE_GRPCPP = -Wl,-force_load,$(firstword $(STATIC_GRPCPP_LIBS))
+    GRPC_LIBS := $(GRPC_LIBS:-lgrpc++=$(FORCE_GRPCPP))
+  endif
 endif
