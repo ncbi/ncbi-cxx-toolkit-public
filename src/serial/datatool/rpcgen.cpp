@@ -464,11 +464,16 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         if (dynamic_cast<const CNullDataType*>(rep_type)) {
             rep_class = "void";
             null_rep  = true;
-        } else if ( !rep_type->GetParentType()  &&  !rep_type->IsStdType() ) {
-            rep_class = ns.GetNamespaceRef(CNamespace::KNCBINamespace)
-                + "CRef<" + rep_type->ClassName() + '>';
-            use_cref  = true;
-            code.CPPIncludes().insert(rep_type->FileName());
+        } else if ( !rep_type->GetParentType() ) {
+            if ( rep_type->IsStdType() ) {
+                rep_class = rep_type->ClassName();
+                code.HPPIncludes().insert(rep_type->FileName());
+            } else {
+                rep_class = ns.GetNamespaceRef(CNamespace::KNCBINamespace)
+                    + "CRef<" + rep_type->ClassName() + '>';
+                use_cref  = true;
+                code.CPPIncludes().insert(rep_type->FileName());
+            }
         } else {
             TTypeStr typestr = rep_type->GetFullCType();
             typestr->GeneratePointerTypeCode(code);
