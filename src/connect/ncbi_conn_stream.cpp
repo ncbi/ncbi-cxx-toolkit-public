@@ -140,12 +140,8 @@ EIO_Status CConn_IOStream::Fetch(const STimeout* timeout)
     if (!conn) {
         setstate(NcbiBadbit);
         status = eIO_NotSupported;
-    } else if (!flush()) {
-        _ASSERT(!good());
-        if ((status = Status()) == eIO_Success)
-            status = eIO_Unknown;
-    } else if ((status = m_CSb->Fetch(timeout)) == eIO_Closed)
-        setstate(NcbiEofbit);
+    } else
+        status = m_CSb->Fetch(timeout);
     return status;
 }
 
@@ -418,6 +414,31 @@ CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
 }
 
 
+// NB:  Must never be upcalled (directly or indirectly) from any stream ctor!
+EHTTP_HeaderParse SHTTP_StatusData::Parse(const char* header)
+{
+    int c, n;
+    m_Code = 0;
+    m_Text.clear();
+    m_Header = header;
+    if (sscanf(header, "%*s %u%n", &c, &n) < 1)
+        return eHTTP_HeaderError;
+    const char* str = m_Header.c_str() + n;
+    str += strspn(str, " \t");
+    const char* eol = strchr(str, '\n');
+    if (!eol)
+        eol = str + strlen(str);
+    while (eol > str) {
+        if (!isspace((unsigned char) eol[-1]))
+            break;
+        --eol;
+    }
+    m_Code = c;
+    m_Text.assign(str, (size_t)(eol - str));
+    return eHTTP_HeaderSuccess;
+}
+
+
 template<>
 struct Deleter<SConnNetInfo>
 {
@@ -658,33 +679,8 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 
 CConn_HttpStream::~CConn_HttpStream()
 {
-    // Explicitly destroy so that the callbacks are not called out of context.
+    // Explicitly destroy so that the callbacks are not called out of context
     x_Destroy();
-}
-
-
-// NB:  must never be upcalled (directly or indirectly) from any stream ctor
-//      for SHTTP_StatusData may yet be unbuilt (and the header field invalid)!
-static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
-                                           SHTTP_StatusData& data)
-{
-    int c, n;
-    data.header = header;
-    if (sscanf(header, "%*s %u%n", &c, &n) < 1)
-        return eHTTP_HeaderError;
-    const char* str = data.header.c_str() + n;
-    str += strspn(str, " \t");
-    const char* eol = strchr(str, '\n');
-    if (!eol)
-        eol = str + strlen(str);
-    while (eol > str) {
-        if (!isspace((unsigned char) eol[-1]))
-            break;
-        --eol;
-    }
-    data.code = c;
-    data.text.assign(str, (size_t)(eol - str));
-    return eHTTP_HeaderSuccess;
 }
 
 
@@ -696,6 +692,7 @@ int CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
     bool modified;
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
     if (count == (unsigned int)(-1)  &&  !http->m_URL.empty()) {
+        http->m_StatusData.Clear();
         if (!ConnNetInfo_ParseURL(net_info, http->m_URL.c_str()))
             return 0/*failure*/;
         http->m_URL.erase();
@@ -725,10 +722,10 @@ EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
                                                   int         code)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
-    EHTTP_HeaderParse rv = s_ParseHttpHeader(header, http->m_StatusData);
+    EHTTP_HeaderParse rv = http->m_StatusData.Parse(header);
     if (rv != eHTTP_HeaderSuccess)
         return rv;
-    _ASSERT(!code  ||  code == http->m_StatusData.code);
+    _ASSERT(!code  ||  code == http->m_StatusData.m_Code);
     return http->m_UserParseHeader
         ? http->m_UserParseHeader(header, http->m_UserData, code)
         : eHTTP_HeaderSuccess;
@@ -757,8 +754,19 @@ s_ServiceConnectorBuilder(const char*                           service,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
                    " Out of memory");
     }
-    if (user_header  &&  *user_header)
-        ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
+    if (user_header  &&  *user_header
+        &&  !ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header)) {
+        int x_dynamic = 0;
+        const char* x_message = NcbiMessagePlusError(&x_dynamic,
+                                                     "Cannot set user header",
+                                                     errno, 0);
+        string message(x_message);
+        if (x_dynamic)
+            free((void*) x_message);
+        NCBI_THROW(CIO_Exception, eUnknown,
+                   "CConn_ServiceStream::CConn_ServiceStream(): "
+                   " " + message);
+    }
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
     if (extra)
@@ -823,7 +831,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          size_t                buf_size)
     : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
-                                               0, //net_info
+                                               0, // net_info
                                                user_header.c_str(),
                                                extra,
                                                &m_CBD,
@@ -846,7 +854,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 
 CConn_ServiceStream::~CConn_ServiceStream()
 {
-    // Explicitly destroy so that the callbacks are not called out of context.
+    // Explicitly destroy so that the callbacks are not called out of context
     x_Destroy();
 }
 
@@ -854,6 +862,7 @@ CConn_ServiceStream::~CConn_ServiceStream()
 void CConn_ServiceStream::x_Reset(void* data)
 {
     SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
+    cbd->status.Clear();
     cbd->extra.reset(cbd->extra.data);
 }
 
@@ -863,6 +872,7 @@ int/*bool*/ CConn_ServiceStream::x_Adjust(SConnNetInfo* net_info,
                                           unsigned int  count)
 {
     SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
+    cbd->status.Clear();
     return cbd->extra.adjust(net_info, cbd->extra.data, count);
 }
 
@@ -878,10 +888,10 @@ EHTTP_HeaderParse CConn_ServiceStream::x_ParseHeader(const char* header,
                                                      void* data, int code)
 {
     SSERVICE_CBData* cbd = static_cast<SSERVICE_CBData*>(data);
-    EHTTP_HeaderParse rv = s_ParseHttpHeader(header, cbd->status);
+    EHTTP_HeaderParse rv = cbd->status.Parse(header);
     if (rv != eHTTP_HeaderSuccess)
         return rv;
-    _ASSERT(!code  ||  code == cbd->status.code);
+    _ASSERT(!code  ||  code == cbd->status.m_Code);
     return cbd->extra.parse_header
         ? cbd->extra.parse_header(header, cbd->extra.data, code)
         : eHTTP_HeaderSuccess;
@@ -1026,9 +1036,9 @@ EIO_Status CConn_PipeStream::Close(void)
         return Status(eIO_Write);
     // NB:  This can lead to wrong order for a close callback, if any fired by
     // CConn_IOStream::Close():  the callback will be late and actually coming
-    // _after_ the pipe gets closed here.  There's no way to avoid this...
+    // _after_ the pipe gets closed here.  There's no easy way to avoid this...
     EIO_Status status = m_Pipe->Close(&m_ExitCode);
-    CConn_IOStream::Close();
+    (void) CConn_IOStream::Close();
     return status;
 }
 

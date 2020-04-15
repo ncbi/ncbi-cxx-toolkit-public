@@ -45,9 +45,6 @@
 BEGIN_NCBI_SCOPE
 
 
-class CDiagCompileInfo;  // Forward declaration
-
-
 class CConn_Streambuf : public CConn_StreambufBase
 {
 public:
@@ -155,7 +152,8 @@ private:
 
     static EIO_Status x_OnClose(CONN conn, TCONN_Callback type, void* data);
 
-    string            x_Message(const CTempString msg);
+    string            x_Message(const CTempString msg,
+                                EIO_Status status = eIO_Success);
 
     SCONN_Callback    m_Cb;
 };

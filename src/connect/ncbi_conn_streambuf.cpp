@@ -48,17 +48,28 @@ BEGIN_NCBI_SCOPE
 static inline bool x_IsThrowable(EIO_Status status)
 {
     _ASSERT(status != eIO_Success);
-#if NCBI_COMPILER_GCC  &&  NCBI_COMPILER_VERSION < 700
-    // C++ STL has a bug that sentry ctro does not include try/catch, so it
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 700
+    // GCC C++ STL has a bug that sentry ctor does not include try/catch, so it
     // leaks the exceptions instead of setting badbit as the standard requires.
     return false;
 #else
-    return status != eIO_Timeout  &&  status != eIO_Closed ? true : false;
+    return status != eIO_Timeout ? true : false;
 #endif // NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION<700
 }
 
 
-string CConn_Streambuf::x_Message(const CTempString msg)
+static inline bool x_CheckConn(CONN conn)
+{
+    if (conn)
+        return true;
+#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_GCC >= 700
+    NCBI_IO_CHECK(eIO_Closed);
+#endif // !NCBI_COMPILER_GCC || NCBI_COMPILER_VERSION>=700
+    return false;
+}
+
+
+string CConn_Streambuf::x_Message(const CTempString msg, EIO_Status status)
 {
     const char* type = m_Conn ? CONN_GetType    (m_Conn) : 0;
     char*       text = m_Conn ? CONN_Description(m_Conn) : 0;
@@ -76,7 +87,7 @@ string CConn_Streambuf::x_Message(const CTempString msg)
         result += ')';
     }
     result += ": ";
-    result += IO_StatusStr(m_Status);
+    result += IO_StatusStr(status ? status : m_Status);
     return result;
 }
 
@@ -154,7 +165,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
                              CConn_IOStream::TConn_Flags flgs,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
-    _ASSERT(m_Conn  &&  m_Status == eIO_Success);
+    _ASSERT(m_Status == eIO_Success);
 
     if (timeout != kDefaultTimeout) {
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Open,      timeout) ==eIO_Success);
@@ -256,10 +267,10 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
                     synced = true;
             }
             catch (...) {
-                ;
+                _ASSERT(!synced);
             }
             if (!synced)
-                status = m_Status != eIO_Success ? m_Status : eIO_Unknown;
+                _VERIFY((status = m_Status) != eIO_Success);
         }
     }
     setp(0, 0);
@@ -295,7 +306,6 @@ EIO_Status CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
                                       void*          data)
 {
     CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);
-
     _ASSERT(type == eCONN_OnClose  &&  sb  &&  conn);
     _ASSERT(!sb->m_Conn  ||  sb->m_Conn == conn);
     return sb->x_Close(false);
@@ -335,7 +345,7 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* buf, streamsize buf_size)
 
 CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 {
-    if (!m_Conn)
+    if (!x_CheckConn(m_Conn))
         return CT_EOF;
 
     size_t n_written;
@@ -400,7 +410,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
 streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 {
-    if (!m_Conn  ||  m < 0)
+    if (!x_CheckConn(m_Conn)  ||  m < 0)
         return 0;
 
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
@@ -485,7 +495,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 {
     _ASSERT(gptr() >= egptr());
 
-    if (!m_Conn)
+    if (!x_CheckConn(m_Conn))
         return CT_EOF;
 
     // flush output buffer, if tied up to it
@@ -595,7 +605,7 @@ streamsize CConn_Streambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
         n       -= x_read;
     } while (n);
 
-    if (!n_read  &&  x_IsThrowable(m_Status))
+    if (!n_read  &&  m_Status != eIO_Closed  &&  x_IsThrowable(m_Status))
         NCBI_IO_CHECK(m_Status);
     return (streamsize) n_read;
 }
@@ -605,7 +615,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     _ASSERT(egptr() >= gptr());
 
-    return m_Conn ? x_Read(buf, m) : 0;
+    return x_CheckConn(m_Conn) ? x_Read(buf, m) : 0;
 }
 
 
@@ -615,7 +625,7 @@ streamsize CConn_Streambuf::showmanyc(void)
 
     _ASSERT(gptr() >= egptr());
 
-    if (!m_Conn)
+    if (!x_CheckConn(m_Conn))
         return -1L;
 
     // flush output buffer, if tied up to it
@@ -714,12 +724,6 @@ EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data, streamsize size)
 
 EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
 {
-    static const STimeout kDefConnTimeout = {
-        (unsigned int)
-          DEF_CONN_TIMEOUT,
-        (unsigned int)
-        ((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT) * 1.0e6)
-    };
     if (!m_Conn)
         return eIO_Closed;
 
@@ -728,16 +732,52 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
         timeout = ((SMetaConnector*) m_Conn)->default_timeout;
         _ASSERT(timeout != kDefaultTimeout);
         if (!timeout)
-            timeout = &kDefConnTimeout;
+            timeout = &g_NcbiDefConnTimeout;
     }
 
+    // Flush connection first
+    if (pbase() < pptr()) {
+        const STimeout* x_tmo = CONN_GetTimeout(m_Conn, eIO_Write);
+        _VERIFY(CONN_SetTimeout(m_Conn, eIO_Write, timeout) == eIO_Success);
+        EIO_Status status;
+        bool synced = false;
+        try {
+            if (sync() == 0)
+                synced = true;
+            status = m_Status;
+        }
+        catch (const CIO_Exception& ex) {
+            status = EIO_Status(ex.GetErrCode());
+            _ASSERT(!synced);
+        }
+        catch (...) {
+            _VERIFY(CONN_SetTimeout(m_Conn, eIO_Write, x_tmo) == eIO_Success);
+            throw;
+        }
+        _VERIFY(CONN_SetTimeout(m_Conn, eIO_Write, x_tmo) == eIO_Success);
+     
+        if (!synced) {
+            char tmo[40];
+            _ASSERT(status != eIO_Success);
+            if (status == eIO_Timeout)
+                ::sprintf(tmo, "%u.%06us", timeout->sec, timeout->usec);
+            else
+                *tmo = '\0';
+            ERR_POST_X(15, x_Message("Fetch(): "
+                                     " Failed to flush(" + string(tmo) + ')',
+                                     status));
+            return status;
+        }
+    }
+
+    // Wait for input next
     if ((m_Status = CONN_Wait(m_Conn, eIO_Read, timeout)) != eIO_Success) {
         char tmo[40];
-        if (m_Status == eIO_Timeout && timeout && timeout != &kDefConnTimeout)
+        if (m_Status == eIO_Timeout)
             ::sprintf(tmo, "%u.%06us", timeout->sec, timeout->usec);
         else
             *tmo = '\0';
-        ERR_POST_X(15, x_Message("Fetch(): "
+        ERR_POST_X(16, x_Message("Fetch(): "
                                  " CONN_Wait(" + string(tmo) + ") failed"));
     }
     return m_Status;

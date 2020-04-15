@@ -106,9 +106,10 @@ const size_t kConn_DefaultBufSize = 16384;  ///< I/O buffer size per direction
 /// that any input attempt first flushes any pending output from the internal
 /// buffers.  The fConn_Untie flag can be used to untie the I/O directions.
 ///
-/// @note CConn_IOStream implementation utilizes some connection callbacks on
-///       the underlying CONN object.  Care must be taken when intercepting the
-///       callbacks using the native CONN API.
+/// @note
+///   CConn_IOStream implementation utilizes some connection callbacks on the
+///   underlying CONN object.  Care must be taken when intercepting the
+///   callbacks using the native CONN API.
 /// @sa
 ///   CONN_SetCallback
 
@@ -125,28 +126,28 @@ public:
     } EConn_Flag;
     typedef unsigned int TConn_Flags;       ///< bitwise OR of EConn_Flag
 
-    /// Create a stream based on a CONN, which is to be closed upon stream
-    /// dtor only if "close" parameter is passed as "true".
+    /// Create a stream based on a CONN, which is to be closed upon stream dtor
+    //// only if "close" parameter is passed as "true".
     ///
     /// @param conn
-    ///  A C object of type CONN (ncbi_connection.h) on top of which the stream
-    ///  is being constructed.  May not be NULL.
+    ///   A C object of type CONN (ncbi_connection.h) on top of which the
+    ///   stream is being constructed.  May not be NULL.
     /// @param close
-    ///  True if to close CONN automatically (otherwise CONN remains open)
+    ///   True if to close CONN automatically (otherwise CONN remains open)
     /// @param timeout
-    ///  Default I/O timeout
+    ///   Default I/O timeout
     /// @param buf_size
-    ///  Default size of underlying stream buffer's I/O arena (per direction)
+    ///   Default size of underlying stream buffer's I/O arena (per direction)
     /// @param flags
-    ///  Specifies whether to tie input and output (a tied stream flushes all
-    ///  pending output prior to doing any input) and what to buffer
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @param ptr
-    ///  Specifies data which will be read from the stream prior to extracting
-    ///  from the actual connection
+    ///   Specifies data which will be read from the stream prior to extracting
+    ///   from the actual connection
     /// @param size
-    ///  The size of the area pointed to by the "ptr" argument
+    ///   The size of the area pointed to by the "ptr" argument
     /// @sa
-    ///  CONN, ncbi_connection.h
+    ///   CONN, ncbi_connection.h
     ///
     CConn_IOStream
     (CONN            conn,
@@ -163,38 +164,39 @@ public:
     {
     public:
         /// @param connector
-        ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which a
-        ///  stream will be constructed.  NULL CONNECTOR indicates an error (if
-        ///  none is passed in the second argument, eIO_Unknown results).
+        ///   A C object of type CONNECTOR (ncbi_connector.h) on top of which a
+        ///   stream will be constructed.  NULL CONNECTOR indicates an error
+        ///   (if none is passed in the second argument, eIO_Unknown results).
         /// @param status
-        ///  I/O status to use in the underlying streambuf (e.g. when CONNECTOR
-        ///  is NULL), and if non-eIO_Success will also cause a non-NULL
-        ///  CONNECTOR (if any passed in the first argument) to be destroyed.
+        ///   I/O status to use in the underlying streambuf (e.g. when
+        ///   CONNECTOR is NULL), and if non-eIO_Success will also cause a
+        ///   non-NULL CONNECTOR (if any passed in the first argument) to be
+        ///   destroyed.
         /// @sa
-        ///  CONNECTOR, ncbi_connector.h
+        ///   CONNECTOR, ncbi_connector.h
         TConnector(CONNECTOR connector, EIO_Status status = eIO_Success)
             : TConnPair(connector, status != eIO_Success ? status :
                         connector ? eIO_Success : eIO_Unknown)
         { }
     };
 protected:
-    /// Create a stream based on a CONNECTOR --
-    /// only for internal use in derived classes.
+    /// Create a stream based on a CONNECTOR -- only for internal use in
+    /// derived classes.
     ///
     /// @param connector
-    ///  CONNECTOR coupled with an error code (if any)
+    ///   CONNECTOR coupled with an error code (if any)
     /// @param timeout
-    ///  Default I/O timeout
+    ///   Default I/O timeout
     /// @param buf_size
-    ///  Default size of underlying stream buffer's I/O arena (per direction)
+    ///   Default size of underlying stream buffer's I/O arena (per direction)
     /// @param flags
-    ///  Specifies whether to tie input and output (a tied stream flushes all
-    ///  pending output prior to doing any input) and what to buffer
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @param ptr
-    ///  Specifies data, which will be read from the stream prior to extracting
-    ///  from the actual connection
+    ///   Specifies data, which will be read from the stream prior to
+    ///   extracting from the actual connection
     /// @param size
-    ///  The size of the area pointed to by the "ptr" argument
+    ///   The size of the area pointed to by the "ptr" argument
     CConn_IOStream
     (const TConnector& connector,
      const STimeout*   timeout  = kDefaultTimeout,
@@ -243,6 +245,11 @@ public:
     EIO_Status         Status(EIO_Event direction = eIO_Close) const;
 
     /// Flush the stream and fetch the response (w/o extracting any user data).
+    /// @return
+    ///   eIO_Success if the operation was successful, and some input
+    ///   (including empty) will be available upon read.
+    /// @note
+    ///   Status eIO_Closed does not necessarily mean proper EOF here. 
     EIO_Status         Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Return the specified data "data" of size "size" into the underlying
@@ -268,24 +275,26 @@ public:
 
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render the stream unusable for further I/O.
-    /// Can be used at places where reaching end-of-scope for the stream
-    /// would be impractical.
+    /// @note
+    ///   Can be used at places where reaching end-of-scope for the stream
+    ///   would be impractical.
     /// @sa
     ///   CONN_Close
     virtual EIO_Status Close(void);
 
     /// Cancellation support.
-    /// @note ICanceled implementation must be derived from CObject as its
-    /// first superclass.
+    /// @note
+    ///   The ICanceled implementation must be derived from CObject as its
+    ///   first superclass.
     /// @sa
     ///   ICanceled
     EIO_Status         SetCanceledCallback(const ICanceled* canceled);
 
     /// @return
     ///   Internal CONNection handle, which is still owned and used by the
-    ///   stream (or NULL if no such handle exists)
+    ///   stream (or NULL if no such handle exists).
     /// @note
-    ///   Connection can have additional flags set for I/O processing
+    ///   Connection can have additional flags set for I/O processing.
     /// @sa
     ///   CONN, ncbi_connection.h, CONN_GetFlags
     CONN               GetCONN(void) const;
@@ -405,17 +414,17 @@ public:
     /// Create a direct connection to host:port.
     ///
     /// @param host
-    ///  Host to connect to
+    ///   Host to connect to
     /// @param port
-    ///  ... and port number
+    ///   ... and port number
     /// @param max_try
-    ///  Number of attempts
+    ///   Number of attempts
     /// @param timeout
-    ///  Default I/O timeout
+    ///   Default I/O timeout
     /// @param buf_size
-    ///  Default buffer size
+    ///   Default buffer size
     /// @sa
-    ///  CConn_IOStream
+    ///   CConn_IOStream
     CConn_SocketStream
     (const string&   host,                        ///< host to connect to
      unsigned short  port,                        ///< ... and port number
@@ -427,23 +436,23 @@ public:
     /// block of the specified "size".
     ///
     /// @param host
-    ///  Host to connect to
+    ///   Host to connect to
     /// @param port
-    ///  ... and port number
+    ///   ... and port number
     /// @param data
-    ///  Pointer to block of data to send once connection is ready
+    ///   Pointer to block of data to send once connection is ready
     /// @param size
-    ///  Size of the data block to send (or 0 if to send nothing)
+    ///   Size of the data block to send (or 0 if to send nothing)
     /// @param flags
-    ///  Socket flags
+    ///   Socket flags
     /// @param max_try
-    ///  Number of attempts
+    ///   Number of attempts
     /// @param timeout
-    ///  Default I/O timeout
+    ///   Default I/O timeout
     /// @param buf_size
-    ///  Default buffer size
+    ///   Default buffer size
     /// @sa
-    ///  CConn_IOStream
+    ///   CConn_IOStream
     CConn_SocketStream
     (const string&   host,                        ///< host to connect to
      unsigned short  port,                        ///< ... and port number
@@ -470,19 +479,19 @@ public:
     /// http_push_auth                  -- whether to push credentials at once
     ///
     /// @param net_info
-    ///  Connection point and proxy tunnel location
+    ///   Connection point and proxy tunnel location
     /// @param data
-    ///  Pointer to block of data to send once connection is ready
+    ///   Pointer to block of data to send once connection is ready
     /// @param size
-    ///  Size of the data block to send (or 0 if to send nothing)
+    ///   Size of the data block to send (or 0 if to send nothing)
     /// @param flags
-    ///  Socket flags
+    ///   Socket flags
     /// @param timeout
-    ///  Default I/O timeout
+    ///   Default I/O timeout
     /// @param buf_size
-    ///  Default buffer size
+    ///   Default buffer size
     /// @sa
-    ///  CConn_IOStream, SConnNetInfo
+    ///   CConn_IOStream, SConnNetInfo
     CConn_SocketStream
     (const SConnNetInfo& net_info,
      const void*         data     = 0,
@@ -502,9 +511,9 @@ public:
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
     /// @param sock
-    ///  Socket to build the stream on
+    ///   Socket to build the stream on
     /// @sa
-    ///  SOCK, ncbi_socket.h
+    ///   CConn_IOStream, ncbi_socket.h, SOCK_CreateConnectorOnTop
     CConn_SocketStream
     (SOCK            sock,         ///< socket
      EOwnership      if_to_own,    ///< whether stream to own "sock" param
@@ -518,9 +527,9 @@ public:
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
     /// @param socket
-    ///  Socket to build the stream up on
+    ///   Socket to build the stream up on
     /// @sa
-    ///  CSocket, ncbi_socket.hpp
+    ///   CConn_IOStream, ncbi_socket.hpp, SOCK_CreateConnectorOnTop
     CConn_SocketStream
     (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
      const STimeout* timeout  = kDefaultTimeout,
@@ -531,10 +540,14 @@ public:
 
 /// Helper class to fetch HTTP status code and text
 struct SHTTP_StatusData {
-    int         code;
-    CTempString text;
-    string      header;
-    SHTTP_StatusData(void) : code(0) { }
+    int         m_Code;
+    CTempString m_Text;
+    string      m_Header;
+
+    SHTTP_StatusData(void) : m_Code(0) { }
+    EHTTP_HeaderParse Parse(const char* header);
+    void              Clear(void)
+    { m_Code = 0; m_Text.clear(); m_Header = kEmptyStr; }
 };
 
 
@@ -566,7 +579,7 @@ struct SHTTP_StatusData {
 /// latter value is kept at SConnNetInfo::timeout).
 ///
 /// @sa
-///  HTTP_CreateConnector
+///   CConn_IOStream, HTTP_CreateConnector, ConnNetInfo_Create
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
@@ -627,13 +640,13 @@ public:
     ~CConn_HttpStream();
 
     /// Get the last seen HTTP status code
-    int               GetStatusCode(void) const { return m_StatusData.code; }
+    int               GetStatusCode(void) const {return m_StatusData.m_Code;}
 
     /// Get the last seen HTTP status text
-    const CTempString GetStatusText(void) const { return m_StatusData.text; }
+    const CTempString GetStatusText(void) const {return m_StatusData.m_Text;}
 
     /// Get the entire HTTP header as received
-    const string&     GetHTTPHeader(void) const { return m_StatusData.header; }
+    const string&     GetHTTPHeader(void) const {return m_StatusData.m_Header;}
 
     /// Set new URL to hit next
     void              SetURL(const string& url) { m_URL = url; }
@@ -671,15 +684,15 @@ private:
 /// (details: <connect/ncbi_server_info.h>).
 ///
 /// Additional specifications can be passed in an SConnNetInfo structure,
-/// otherwise created by using the service name as a registry section
-/// to obtain the information from (details: <connect/ncbi_connutil.h>).
+/// otherwise created by using the service name as a registry section to obtain
+/// the information from (details: <connect/ncbi_connutil.h>).
 ///
 /// Provided "timeout" is set at the connection level, and if different from
 /// kDefaultTimeout, it overrides the value supplied by an underlying connector
 /// (the latter value is kept in SConnNetInfo::timeout).
 ///
 /// @sa
-///  SERVICE_CreateConnector
+///   SERVICE_CreateConnector
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
@@ -704,13 +717,13 @@ public:
     ~CConn_ServiceStream();
 
     /// Get the last seen HTTP status code, if available
-    int               GetStatusCode(void) const { return m_CBD.status.code; }
+    int               GetStatusCode(void) const {return m_CBD.status.m_Code;}
 
     /// Get the last seen HTTP status text, if available
-    const CTempString GetStatusText(void) const { return m_CBD.status.text; }
+    const CTempString GetStatusText(void) const {return m_CBD.status.m_Text;}
 
     /// Get the last seen HTTP status text, if available
-    const string&     GetHTTPHeader(void) const { return m_CBD.status.header; }
+    const string&     GetHTTPHeader(void) const {return m_CBD.status.m_Header;}
 
 public:
     /// Helper class
@@ -744,7 +757,7 @@ private:
 /// In-memory stream (a la strstream or stringstream)
 ///
 /// @sa
-///  MEMORY_CreateConnector
+///   MEMORY_CreateConnector
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
@@ -797,8 +810,9 @@ protected:
 ///
 /// CConn_PipeStream for command piping
 ///
-/// @note Exercise caution when operating on the underlying pipe while it's
-/// being in use as it may cause undefined behavior.
+/// @note
+///   Exercise caution when operating on the underlying pipe while it's  being
+///   in use as it may cause undefined behavior.
 ///
 /// Provided "timeout" is set at the connection level if different from
 /// kDefaultTimeout (which is infinite for this class by default).
@@ -870,7 +884,7 @@ public:
 /// (the latter value is kept at SConnNetInfo::timeout).
 ///
 /// @sa
-///  FTP_CreateConnector
+///   FTP_CreateConnector
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_FtpStream : public CConn_IOStream
@@ -896,16 +910,18 @@ public:
      size_t               buf_size = kConn_DefaultBufSize
      );
 
-    /// Abort any command in progress, read and discard all input data,
+    /// Abort any command in progress, read and discard all input data, and
     /// clear stream error state when successful (eIO_Success returns).
-    /// @note The call empties both the stream and the underlying CONN.
+    /// @note
+    ///   The call empties both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
 };
 
 
 /// CConn_FtpStream specialization (ctor) for download
 ///
-/// @note the order of parameters vs generic CConn_FtpStream ctor
+/// @attention
+///   Pay attention to the order of parameters vs generic CConn_FtpStream ctor.
 ///
 class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 {
@@ -919,7 +935,7 @@ public:
      unsigned short       port     = 0, ///< 0 means default (21 for FTP)
      TFTP_Flags           flag     = 0,
      const SFTP_Callback* cmcb     = 0,
-     Uint8                offset   = 0, ///< file offset to begin download from
+     Uint8                offset   = 0, ///< file offset to begin download at
      const STimeout*      timeout  = kDefaultTimeout,
      size_t               buf_size = kConn_DefaultBufSize
      );
@@ -928,7 +944,7 @@ public:
     (const SConnNetInfo&  net_info,
      TFTP_Flags           flag     = 0,
      const SFTP_Callback* cmcb     = 0,
-     Uint8                offset   = 0, ///< file offset to begin download from
+     Uint8                offset   = 0, ///< file offset to begin download at
      const STimeout*      timeout  = kDefaultTimeout,
      size_t               buf_size = kConn_DefaultBufSize
      );
@@ -975,7 +991,8 @@ protected:
 /// Given the URL, open the data source and make it available for reading.
 /// See <connect/ncbi_connutil.h> for supported schemes.
 ///
-/// @warning Writing to the resultant stream is undefined.
+/// @warning
+///   Writing to the resultant stream is undefined.
 ///
 extern NCBI_XCONNECT_EXPORT
 CConn_IOStream* NcbiOpenURL(const string& url,
