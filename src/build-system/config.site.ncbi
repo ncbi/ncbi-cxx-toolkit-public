@@ -349,6 +349,13 @@ esac
 
 # : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
 
+for x in `set | fgrep "_PATH=${NCBI-/nonexistent}/"`; do
+    d=`echo "$x" | cut -d= -f2`
+    if test \! -d "$d"; then
+        eval unset "`echo "$x" | cut -d= -f1`"
+    fi
+done
+
 try_local
 
 case "$ncbi_platform" in
