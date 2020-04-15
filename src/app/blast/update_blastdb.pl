@@ -633,10 +633,10 @@ Produce no output (default: false). Overrides the B<--verbose> option.
 
 Prints this script's version. Overrides all other options.
 
-=item B<--num_cores>
+=item B<--num_threads>
 
-Sets the number of cores to utilize to perform downloads in parallel when data comes from GCS.
-Defaults to all cores (Linux and macos only).
+Sets the number of threads to utilize to perform downloads in parallel when data comes from the cloud.
+Defaults to use all available CPUs on the machine (Linux and macos only).
 
 =item B<--legacy_exit_code>
 
