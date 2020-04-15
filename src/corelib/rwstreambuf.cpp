@@ -149,6 +149,19 @@ static inline EOwnership x_IfToOwnWriter(const IReader* r, const IWriter* w,
 }
 
 
+static inline bool x_CheckRW(const void* rw)
+{
+    if ( rw )
+        return true;
+#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 700
+    // GCC C++ STL has a bug that sentry ctor does not include try/catch, so it
+    // leaks the exceptions instead of setting badbit as the standard requires.
+    THROW1_TRACE(IOS_BASE::failure, "eRW_NotImplemented");
+#endif // !NCBI_COMPILER_GCC || NCBI_COMPILER_VERSION>=700
+    return false;
+}
+
+
 CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
@@ -274,7 +287,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 {
     _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
 
-    if ( !m_Writer )
+    if ( !x_CheckRW(m_Writer.get()) )
         return CT_EOF;
 
     size_t n_written;
@@ -342,7 +355,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         m_Writer->Flush(),
         7, "CRWStreambuf::overflow(): IWriter::Flush()",
         result = eRW_Error);
-    switch (result) {
+    switch ( result ) {
     case eRW_Eof:
     case eRW_Error:
         x_Err    = true;
@@ -362,7 +375,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 {
     _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
 
-    if (!m_Writer  ||  m < 0)
+    if (!x_CheckRW(m_Writer.get())  ||  m < 0)
         return 0;
 
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
@@ -374,7 +387,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
     ERW_Result result;
 
     do {
-        if (pbase()) {
+        if ( pbase() ) {
             if (n  &&  pbase() + n < epptr()) {
                 // Would entirely fit into the buffer not causing an overflow
                 x_written = (size_t)(epptr() - pptr());
@@ -455,7 +468,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 {
     _ASSERT(gptr() >= egptr());
 
-    if ( !m_Reader )
+    if ( !x_CheckRW(m_Reader.get()) )
         return CT_EOF;
 
     // Flush output buffer, if tied up to it
@@ -482,10 +495,16 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     _ASSERT(n_read <= m_BufSize);
     if ( !n_read ) {
         _ASSERT(result != eRW_Success);
-        if (result == eRW_Error)
+        switch ( result ) {
+        case eRW_Error:
             THROW1_TRACE(IOS_BASE::failure, "eRW_Error");
-        if (result == eRW_Eof)
+            break;
+        case eRW_Eof:
             x_Eof = true;
+            break;
+        default:
+            break;
+        }
         return CT_EOF;
     }
 
@@ -499,7 +518,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 
 streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 {
-    _ASSERT(m_Reader);
+    _ASSERT( m_Reader );
 
     // Flush output buffer, if tied up to it
     if (!(m_Flags & fUntie)  &&  x_Sync() != 0)
@@ -528,7 +547,7 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
     } else
         n_read = 0;
 
-    if (x_Eof)
+    if ( x_Eof )
         return (streamsize) n_read;
 
     ERW_Result result;
@@ -584,7 +603,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     _ASSERT(egptr() >= gptr());
 
-    return m_Reader ? x_Read(buf, m) : 0;
+    return x_CheckRW(m_Reader.get()) ? x_Read(buf, m) : 0;
 }
 
 
@@ -592,14 +611,14 @@ streamsize CRWStreambuf::showmanyc(void)
 {
     _ASSERT(gptr() >= egptr());
 
-    if ( !m_Reader )
+    if ( !x_CheckRW(m_Reader.get()) )
         return -1L;
 
     // Flush output buffer, if tied up to it
     if (!(m_Flags & fUntie))
         x_Sync();
 
-    if (x_Eof)
+    if ( x_Eof )
         return 0;
 
     size_t count = 0;
@@ -608,7 +627,7 @@ streamsize CRWStreambuf::showmanyc(void)
         m_Reader->PendingCount(&count),
         12, "CRWStreambuf::showmanyc(): IReader::PendingCount()",
         result = eRW_Error);
-    switch (result) {
+    switch ( result ) {
     case eRW_NotImplemented:
         return 0;
     case eRW_Success:
@@ -624,7 +643,7 @@ streamsize CRWStreambuf::showmanyc(void)
 
 int CRWStreambuf::sync(void)
 {
-    if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
+    if ( CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF) )
         return -1;
     _ASSERT(pbase() == pptr());
     return 0;
