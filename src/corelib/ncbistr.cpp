@@ -4629,7 +4629,7 @@ string NStr::JsonEncode(const CTempString str, EJsonEncode encoding)
         result.append(1, charmap[lo]);
     };
 
-    for (auto i = 0;  i < str.size();  i++) {
+    for (SIZE_TYPE i = 0;  i < str.size();  i++) {
         char c = str[i];
         switch ( c ) {
         case '"':
