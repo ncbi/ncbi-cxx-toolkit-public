@@ -101,7 +101,7 @@ int main(int argc, const char* argv[])
         if (!*e  ||  (v = NCBI_simple_atof(e, &e)) < 0.0  ||  errno  ||  *e)
             break;
         net_info->tmo.sec  = (unsigned int)  v;
-        net_info->tmo.usec = (unsigned int)((v - net_info->tmo.sec) * 1e6);
+        net_info->tmo.usec = (unsigned int)((v - net_info->tmo.sec) * 1.0e6);
         net_info->timeout  = &net_info->tmo;
     }
     case 4: { /* max_try  */

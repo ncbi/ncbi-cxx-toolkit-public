@@ -37,11 +37,11 @@
 #define NCBI_USE_ERRCODE_X   Connect_Conn
 
 /* Standardized logging message */
-#define METACONN_LOG(subcode, level, message)                       \
-    CORE_LOGF_X(subcode, level,                                     \
-                ("%s (connector \"%s\", error \"%s\")", message,    \
-                 meta->get_type                                     \
-                 ? meta->get_type(meta->c_get_type)                 \
+#define METACONN_LOG(subcode, level, message)       \
+    CORE_LOGF_X(subcode, level,                     \
+                ("%s (\"%s\"): %s", message,        \
+                 meta->get_type                     \
+                 ? meta->get_type(meta->c_get_type) \
                  : "UNDEF", IO_StatusStr(status)))
 
 

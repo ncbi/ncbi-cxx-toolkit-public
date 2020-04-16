@@ -531,7 +531,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     val = *str ? (long) strlen(str) : 0;
     if (val < 3  ||  8 < val
         ||  strncasecmp(str, "infinite", (size_t) val) != 0) {
-        if (*str && (dbl = NCBI_simple_atof(str, &e)) >= 0.0 && !errno && *e) {
+        if (*str && (dbl = NCBI_simple_atof(str, &e)) >= 0.0 && !errno && !*e){
             info->tmo.sec      = (unsigned int)  dbl;
             info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1.0e6);
             if (dbl  &&  !(info->tmo.sec | info->tmo.usec))

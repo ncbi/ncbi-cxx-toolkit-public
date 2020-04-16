@@ -47,11 +47,11 @@
 
 /* Standard error report
  */
-#define TEST_LOG(status, descr)                                     \
-  CORE_LOGF(status == eIO_Success ? eLOG_Note :                     \
-            status == eIO_Closed  ? eLOG_Warning :                  \
-            eLOG_Error,                                             \
-            ("%s (status: \"%s\")", descr, IO_StatusStr(status)))
+#define TEST_LOG(status, descr)                         \
+    CORE_LOGF(status == eIO_Success ? eLOG_Note    :    \
+              status == eIO_Closed  ? eLOG_Warning :    \
+              eLOG_Error,                               \
+              ("%s (%s)", descr, IO_StatusStr(status)))
 
 
 /* TESTs
@@ -114,7 +114,7 @@ static void s_MultiBouncePrint
         fflush(data_file);
     }
 
-    for (i = 0;  i < 5;  i++) {
+    for (i = 0;  i < 5;  ++i) {
         s_SingleBouncePrint(conn, data_file);
     }
 
@@ -148,16 +148,16 @@ static void s_SingleBounceCheck
     {{
         size_t k = 0, j = 0;
         size_t i;
-        for (i = 0;  k != sizeof(buf);  i++) {
+        for (i = 0;  k != sizeof(buf);  ++i) {
             /* prepare output data */
             size_t n_write, n_written;
-            for (n_write = 0;  n_write < i;  n_write++, k++) {
+            for (n_write = 0;  n_write < i;  ++n_write, ++k) {
                 assert(k < sizeof(buf));
                 buf[n_write] = sym[j++ % sizeof(sym)];
             }
             assert(k < sizeof(buf));
             if ( n_write ) {
-                buf[n_write++] = '\n';  k++;
+                buf[n_write++] = '\n';  ++k;
             }
             buf[n_write] = '\0';
 
@@ -288,14 +288,14 @@ static void s_SingleBounceCheck
         const char* x_buf = buf;
         size_t k = 0, j = 0;
         size_t i;
-        for (i = 1;  k != sizeof(buf);  i++) {
+        for (i = 1;  k != sizeof(buf);  ++i) {
             size_t n;
-            for (n = 0;  n < i;  n++, k++) {
+            for (n = 0;  n < i;  ++n, ++k) {
                 if (k == sizeof(buf))
                     break;
                 assert(*x_buf++ == sym[j++ % sizeof(sym)]);
             }
-            assert(*x_buf++ == '\n');  k++;
+            assert(*x_buf++ == '\n');  ++k;
         }
     }}
 
@@ -332,7 +332,8 @@ static void s_SingleBounceCheck
 
 static void s_DummySetup(CONNECTOR connector)
 {
-    connector->meta->default_timeout = kInfiniteTimeout;
+    /* invalid setting on purpose */
+    connector->meta->default_timeout = kDefaultTimeout;
 }
 
 
@@ -354,22 +355,27 @@ void CONN_TestConnector
 
     memset(&dummy, 0, sizeof(dummy));
 
-    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Starting...");
+    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Pretest starting...");
 
     /* Fool around with dummy connector / connection
      */
-    assert(CONN_Create(0,      &conn) != eIO_Success  &&  !conn);
-    assert(CONN_Create(&dummy, &conn) != eIO_Success  &&  !conn);
+    assert(CONN_Create(0,      &conn)  != eIO_Success  &&  !conn);
+    assert(CONN_Create(&dummy, &conn)  != eIO_Success  &&  !conn);
     dummy.setup = s_DummySetup;
-    assert(CONN_Create(&dummy, &conn) == eIO_Success);
-    assert(CONN_Flush (conn)          != eIO_Success);
-    assert(CONN_ReInit(conn, 0)       == eIO_Success);
-    assert(CONN_ReInit(conn, 0)       != eIO_Success);
-    assert(CONN_ReInit(conn, &dummy)  == eIO_Success);
-    assert(CONN_Flush (conn)          != eIO_Success);
-    assert(CONN_ReInit(conn, &dummy)  == eIO_Success);
-    assert(CONN_ReInit(conn, 0)       == eIO_Success);
-    assert(CONN_Close (conn)          == eIO_Success);
+    assert(CONN_Create(&dummy, &conn)  == eIO_Success);
+    assert(dummy.meta->default_timeout == &g_NcbiDefConnTimeout);
+    assert(CONN_Flush (conn)           != eIO_Success);
+    assert(CONN_ReInit(conn, 0)        == eIO_Success);
+    assert(CONN_ReInit(conn, 0)        != eIO_Success);
+    assert(CONN_ReInit(conn, &dummy)   == eIO_Success);
+    assert(CONN_Flush (conn)           != eIO_Success);
+    assert(CONN_ReInit(conn, &dummy)   == eIO_Success);
+    assert(CONN_ReInit(conn, 0)        == eIO_Success);
+    assert(CONN_Close (conn)           == eIO_Success);
+
+    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Pretest completed");
+
+    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Starting...");
 
     /* CREATE new connection on the base of the connector, set
      * TIMEOUTs, try to RECONNECT, WAIT for the connection is writable
