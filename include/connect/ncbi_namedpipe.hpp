@@ -40,10 +40,8 @@
 
 #include <connect/ncbi_core_cxx.hpp>
 
-#if defined(NCBI_OS_MSWIN)
-#elif defined(NCBI_OS_UNIX)
-#else
-#  error "Class CNamedPipe is supported only on Windows and Unix"
+#if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
+#  error "The CNamedPipe class is supported only on Windows and Unix"
 #endif
 
 
@@ -103,10 +101,6 @@ public:
     /// Destructor. 
     virtual ~CNamedPipe();
 
-    // Implemented in derived specializations (Client/Server).
-    virtual EIO_Status Open  (const string&, const STimeout*, size_t) = 0;
-    virtual EIO_Status Create(const string&, const STimeout*, size_t) = 0;
-         
     /// Close pipe connection.
     ///
     /// The pipe handle becomes invalid after this function call,
@@ -118,22 +112,21 @@ public:
     /// Always return eIO_Success if some data were read (regardless of pipe
     /// conditions that may include EOF/error).
     //  Return other (error) code only if no data at all could be obtained.
-    /// Return in the "n_read" the number of bytes actually read, which may be
-    /// less than requested "count" if an error occurs or if the end of
-    /// the pipe file stream is encountered before reaching count.
+    /// Return via "n_read" the number of bytes actually read (which can be
+    /// smaller than the requested "count").
     EIO_Status Read(void* buf, size_t count, size_t* n_read = 0);
 
     /// Write data to the pipe.
     ///
     /// Return eIO_Success if some data were written.
     /// Return other (error) code only if no data at all could be written.
-    /// Return in the "n_written" the number of bytes actually written,
-    /// which may be less than "count" if an error occurs or write times out.
+    /// Return via "n_written" the number of bytes actually written (which can
+    /// be smaller than the requested "count").
     /// NOTE:
-    ///    On MS Windows client/server must not attempt to write
-    ///    a data block, whose size exceeds the pipe buffer size specified
-    ///    on other side of the pipe at the time of creation:  any such
-    ///    block will be rejected for writing and an error will result.
+    ///    On MS-Windows client/server should not attempt to write a data
+    ///    block, whose size exceeds the pipe buffer size specified at the
+    ///    other side of the pipe at the time of creation:  any such block can
+    ///    be rejected for writing, and an error may result.
     EIO_Status Write(const void* buf, size_t count, size_t* n_written = 0);
 
 
@@ -142,20 +135,20 @@ public:
     /// Return eIO_Success if within the specified time, an operation
     /// requested in "event" (which can be either of eIO_Read, eIO_Write, or
     /// eIO_ReadWrite) can be completed without blocking.
-    /// Pipe must be in connected state for this method to work; otherwise
-    /// eIO_Closed results.
+    /// Pipe must be in connected state for this method to work;  otherwise
+    /// eIO_Unknown results.
     /// Note that non-blocking is not guaranteed for more than one byte of
-    /// data (i.e. following Read or Write may complete with only one
+    /// data (i.e. the following Read or Write may complete with only one
     /// byte read or written, successfully).
     EIO_Status Wait(EIO_Event event, const STimeout* timeout);
 
 
     /// Return (for the specified "direction"):
-    ///   eIO_Closed     -- if the pipe is closed;
+    ///   eIO_Closed     -- if the pipe is closed for I/O;
+    ///   eIO_Timeout    -- if the last I/O timed out;
     ///   eIO_Unknown    -- if an error was detected during the last I/O;
     ///   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write;
     ///   eIO_Success    -- otherwise.
-    /// Note that eIO_Timeout does not get returned.
     EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O (see Open|Read|Write functions).
@@ -174,13 +167,14 @@ public:
     ///    closed or SetTimeout() is called for this pipe.
     const STimeout* GetTimeout(EIO_Event event) const;
 
-    bool IsClientSide(void) const;
-    bool IsServerSide(void) const;
+    bool IsClientSide(void) const { return  m_IsClientSide; }
+
+    bool IsServerSide(void) const { return !m_IsClientSide; }
 
     /// Return real named pipe name.
     ///
     /// @sa Open, Create
-    const string& GetName(void) const;
+    const string& GetName(void) const { return m_PipeName; }
 
 protected:
     // Set pipe name (expand it if necessary)
@@ -190,12 +184,14 @@ protected:
     size_t            m_PipeSize;          ///< pipe size
     string            m_PipeName;          ///< pipe name
     bool              m_IsClientSide;      ///< client/server-side pipe
-    CNamedPipeHandle* m_NamedPipeHandle;   ///< os-specific handle
+    CNamedPipeHandle* m_NamedPipeHandle;   ///< OS-specific handle
 
     /// Timeouts
     const STimeout*   m_OpenTimeout;       ///< eIO_Open
     const STimeout*   m_ReadTimeout;       ///< eIO_Read
     const STimeout*   m_WriteTimeout;      ///< eIO_Write
+
+private:
     STimeout          m_OpenTimeoutValue;  ///< storage for m_OpenTimeout
     STimeout          m_ReadTimeoutValue;  ///< storage for m_ReadTimeout
     STimeout          m_WriteTimeoutValue; ///< storage for m_WriteTimeout
@@ -234,14 +230,9 @@ public:
                      size_t          pipesize = 0/*use default*/);
 
     /// Open a client-side pipe connection.
-    ///
-    /// NOTE: Should not be called if already opened.
-    virtual EIO_Status Open(const string&   pipename,
-                            const STimeout* timeout  = kDefaultTimeout,
-                            size_t          pipesize = 0/*use default*/);
-
-    // Always returns eIO_Unknown in this class.
-    virtual EIO_Status Create(const string&, const STimeout*, size_t);
+    EIO_Status Open(const string&   pipename,
+                    const STimeout* timeout  = kDefaultTimeout,
+                    size_t          pipesize = 0/*use default*/);
 };
  
 
@@ -266,68 +257,41 @@ public:
     /// This constructor just calls Create().
     /// NOTES:
     ///   - See CNamedPipe class description about pipe names;
-    ///   - Timeout from the argument becomes new timeout for a listening;
-    ///   - The "pipebufsize" specify a maxium size of data block that can
+    ///   - Timeout from the argument becomes new timeout for listening;
+    ///   - The "pipesize" specify a maxium size of data block that can
     ///     be transmitted through the pipe.  The actual buffer size reserved
     ///     for each end of the named pipe is the specified size rounded
-    ///     up to the next allocation boundary.
+    ///     up to the next allocation boundary (usually).
     CNamedPipeServer(const string&   pipename,
                      const STimeout* timeout  = kDefaultTimeout,
                      size_t          pipesize = 0/*use default*/);
 
     /// Create a server-side pipe.
-    ///
-    /// NOTE: Should not be called if already created.
-    virtual EIO_Status Create(const string&   pipename,
-                              const STimeout* timeout  = kDefaultTimeout,
-                              size_t          pipesize = 0/*use default*/);
-
-    /// Always returns eIO_Unknown in this class.
-    virtual EIO_Status Open(const string&, const STimeout*, size_t);
+    EIO_Status Create(const string&   pipename,
+                      const STimeout* timeout  = kDefaultTimeout,
+                      size_t          pipesize = 0/*use default*/);
 
     /// Listen a pipe for new client connection.
     ///
-    /// Wait until new client will be connected or open timeout has been
-    /// expired.
-    /// Return eIO_Success when client is connected.
-    /// Return eIO_Timeout, if open timeout expired before any client
-    /// initiate connection. Any other return code indicates some failure.
+    /// Wait until new client is connected or open timeout has expired.
+    /// Return eIO_Success when a client is connected and I/O may begin.
+    /// Return eIO_Timeout, if open timeout had expired before any client
+    /// initiated connection.  Any other return code indicates some failure.
     EIO_Status Listen(void);
 
-    /// Disconnect a connected client.
+    /// Disconnect the client.
     ///
-    /// Disconnect the server end of a named pipe instance from a client
-    /// process. Reinitialize the pipe for waiting a new client.
-    /// Return eIO_Success if client is disconnected and pipe is reinitialized.
+    /// Disconnect the server end of a named pipe instance from the client.
+    /// Reinitialize the pipe for waiting for another new client.
+    /// Return eIO_Success if client is disconnected and pipe is reset.
     /// Any other return code indicates some failure.
     EIO_Status Disconnect(void);
 };
 
 
-/* @} */
-
-
-// Inline
-
-
-inline bool CNamedPipe::IsClientSide(void) const
-{
-    return m_IsClientSide;
-}
-
-
-inline bool CNamedPipe::IsServerSide(void) const
-{
-    return !m_IsClientSide;
-}
-
-
-inline const string& CNamedPipe::GetName(void) const
-{
-    return m_PipeName;
-}
-
-
 END_NCBI_SCOPE
+
+
+/* @} */
 
 #endif  /* CORELIB__NCBI_NAMEDPIPE__HPP */

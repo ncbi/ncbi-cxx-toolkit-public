@@ -82,9 +82,6 @@ static EIO_Status s_VT_Open
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    if (!xxx->pipe) {
-        return eIO_Unknown;  // blame operator "new" :-/
-    }
     return xxx->pipe->Open(xxx->pipename, timeout, xxx->pipesize);
 }
 

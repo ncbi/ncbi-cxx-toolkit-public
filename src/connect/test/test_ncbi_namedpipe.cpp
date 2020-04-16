@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -42,11 +43,11 @@
 #  undef pipe
 #endif /*pipe*/
 
-
 #define DEFAULT_TIMEOUT  5
 
 
 USING_NCBI_SCOPE;
+
 
 // Test pipe name
 #if defined(NCBI_OS_MSWIN)
@@ -58,7 +59,6 @@ const string kPipeName = "./.ncbi_test_pipename";
 const size_t kNumSubBlobs = 10;
 const size_t kSubBlobSize = 10*1024;
 const size_t kBlobSize    = kNumSubBlobs * kSubBlobSize;
-
 
 
 ////////////////////////////////
@@ -77,8 +77,9 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t buf_size,
         status = pipe.Read((char*) buf + n_read_total,
                            buf_size - n_read_total, &x_read);
         ERR_POST(Info <<
-                 "Read from pipe: " + 
-                 NStr::UIntToString((unsigned int) x_read) + " bytes");
+                 "Read from pipe: "
+                 + NStr::UIntToString((unsigned int) x_read) + " byte(s): "
+                 + string(IO_StatusStr(status)));
         n_read_total += x_read;
     } while (status == eIO_Success  &&  n_read_total < msg_size);
 
@@ -102,8 +103,9 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
         status = pipe.Write((char*) buf + n_written_total,
                            size - n_written_total, &x_written);
         ERR_POST(Info <<
-                 "Write to pipe: " + 
-                 NStr::UIntToString((unsigned int) x_written) + " bytes");
+                 "Write to pipe: "
+                 + NStr::UIntToString((unsigned int) x_written) + " byte(s): "
+                 + string(IO_StatusStr(status)));
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
 
@@ -195,14 +197,15 @@ int CTest::Run(void)
     }
     ERR_POST(Info << "Using pipe name: " + m_PipeName);
 
+    ::srand(time(0) ^ NCBI_CONNECT_SRAND_ADDEND);
     if (args["timeout"].HasValue()) {
         double tv = args["timeout"].AsDouble();
         m_Timeout.sec  = (unsigned int)  tv;
-        m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * 1000000);
+        m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * kMicroSecondsPerSecond);
     }
     if (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
-        for (int i = 1;  i <= 3;  i++) {
+        for (int i = 1;  i <= 3;  ++i) {
             Client(i);
         }
     }
@@ -226,7 +229,9 @@ int CTest::Run(void)
 
 void CTest::Client(int num)
 {
-    ERR_POST(Info << "Start client " + NStr::IntToString(num) + "...");
+    if (::rand() & 1)
+        SleepMilliSec(500);
+    ERR_POST(Info << "Starting client " + NStr::IntToString(num) + "...");
 
     CNamedPipeClient pipe;
     assert(pipe.IsClientSide());
@@ -234,7 +239,11 @@ void CTest::Client(int num)
     assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
-    assert(pipe.Open(m_PipeName,kDefaultTimeout,kSubBlobSize) == eIO_Success);
+    EIO_Status status = pipe.Open(m_PipeName, kDefaultTimeout, kSubBlobSize);
+    if (status != eIO_Success) {
+        ERR_POST(Error << IO_StatusStr(status));
+        _TROUBLE;
+    }
 
     char buf[kSubBlobSize];
     size_t n_read    = 0;
@@ -244,7 +253,6 @@ void CTest::Client(int num)
     {{
         assert(s_WritePipe(pipe, "Hello", 5, &n_written) == eIO_Success);
         assert(n_written == 5);
-
         assert(s_ReadPipe(pipe, buf, sizeof(buf), 2, &n_read) == eIO_Success);
         assert(n_read == 2);
         assert(::memcmp(buf, "OK", 2) == 0);
@@ -255,26 +263,32 @@ void CTest::Client(int num)
         // Send a very big binary blob
         size_t i;
         unsigned char* blob = (unsigned char*) ::malloc(kBlobSize + 1);
-        for (i = 0; i < kBlobSize; i++) {
+        for (i = 0;  i < kBlobSize;  ++i) {
             blob[i] = (unsigned char) i;
         }
-        for (i = 0; i < kNumSubBlobs; i++) {
+        for (i = 0;  i < kNumSubBlobs;  ++i) {
             assert(s_WritePipe(pipe, blob + i*kSubBlobSize, kSubBlobSize,
                                &n_written) == eIO_Success);
             assert(n_written == kSubBlobSize);
         }
-        // Receive back a very big binary blob
+        // Receive the blob back
         ::memset(blob, 0, kBlobSize);
         assert(s_ReadPipe(pipe, blob, kBlobSize + 1, kBlobSize, &n_read)
                == eIO_Success);
-        // Check its content
-        for (i = 0; i < kBlobSize; i++) {
+        // Check its contents
+        for (i = 0;  i < kBlobSize;  ++i) {
             assert(blob[i] == (unsigned char) i);
         }
         ::free(blob);
-        ERR_POST(Info << "Blob test is OK...");
+        ERR_POST(Info << "Blob test is OK!");
     }}
-
+    if (::rand() & 1)
+        SleepMilliSec(500);
+    status = pipe.Close();
+    if (status != eIO_Success) {
+        ERR_POST(Error << IO_StatusStr(status));
+        _TROUBLE;
+    }
     ERR_POST(Info << "TEST completed successfully");
 }
 
@@ -285,11 +299,11 @@ void CTest::Client(int num)
 
 void CTest::Server(void)
 {
-    ERR_POST(Info << "Start server...");
+    ERR_POST(Info << "Starting server...");
 
     char buf[kSubBlobSize];
-    size_t   n_read    = 0;
-    size_t   n_written = 0;
+    size_t n_read    = 0;
+    size_t n_written = 0;
 
     CNamedPipeServer pipe(m_PipeName, &m_Timeout, kSubBlobSize + 512);
 
@@ -297,21 +311,21 @@ void CTest::Server(void)
     assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
-    for (;;) {
-        ERR_POST(Info << "Listening pipe...");
+    for (int n = 1;  n <= 100;  ++n) {
+        if (::rand() & 1)
+            SleepMilliSec(500);
+        ERR_POST(Info << "Listening pipe " + NStr::IntToString(n) + "...");
 
         EIO_Status status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            ERR_POST(Info << "Client connected...");
+            ERR_POST(Info << "Client connected!");
 
             // "Hello" test
             {{
-                assert(s_ReadPipe(pipe, buf, sizeof(buf), 5, &n_read)
-                       == eIO_Success);
+                assert(s_ReadPipe(pipe, buf, sizeof(buf), 5, &n_read) == eIO_Success);
                 assert(n_read == 5);
                 assert(memcmp(buf, "Hello", 5) == 0);
-
                 assert(s_WritePipe(pipe, "OK", 2, &n_written) == eIO_Success);
                 assert(n_written == 2);
             }}
@@ -327,11 +341,11 @@ void CTest::Server(void)
                 assert(n_read == kBlobSize);
  
                 // Check its content
-                for (i = 0; i < kBlobSize; i++) {
-                    assert(blob[i] == (unsigned char)i);
+                for (i = 0;  i < kBlobSize;  ++i) {
+                    assert(blob[i] == (unsigned char) i);
                 }
-                // Write back a received big blob
-                for (i = 0; i < kNumSubBlobs; i++) {
+                // Write the blob back
+                for (i = 0;  i < kNumSubBlobs;  ++i) {
                     assert(s_WritePipe(pipe, blob + i*kSubBlobSize,
                                        kSubBlobSize, &n_written)
                            == eIO_Success);
@@ -339,10 +353,16 @@ void CTest::Server(void)
                 }
                 ::memset(blob, 0, kBlobSize);
                 ::free(blob);
-                ERR_POST(Info << "Blob test is OK...");
+                ERR_POST(Info << "Blob test is OK!");
             }}
-            ERR_POST(Info << "Client disconnected...");
-            assert(pipe.Disconnect() == eIO_Success);
+            if (::rand() & 1)
+                SleepMilliSec(500);
+            ERR_POST(Info << "Disconnecting client...");
+            status = pipe.Disconnect();
+            if (status != eIO_Success) {
+                ERR_POST(Error << IO_StatusStr(status));
+                _TROUBLE;
+            }
             break;
 
         case eIO_Timeout:
@@ -350,6 +370,7 @@ void CTest::Server(void)
             break;
 
         default:
+            ERR_POST(Error << IO_StatusStr(status));
             _TROUBLE;
         }
     }
