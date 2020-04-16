@@ -42,6 +42,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 
@@ -428,6 +429,29 @@ bool CBedWriter::WriteAnnot(
     }
 }
 
+//  ----------------------------------------------------------------------------
+bool CBedWriter::WriteSeqEntryHandle(
+    CSeq_entry_Handle seh,
+    const string& strAssemblyName,
+    const string& strAssemblyAccession )
+//  ----------------------------------------------------------------------------
+{
+    CBedTrackRecord track;
+
+    SAnnotSelector sel;
+    for (CAnnot_CI aci(seh, sel); aci; ++aci) {
+        auto sah = *aci;
+        if (track.Assign(*sah.GetCompleteSeq_annot()) ) {
+            track.Write(m_Os);
+        }
+
+        if (!xWriteAnnotFeatureTable(track, sah)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CBedWriter::xWriteAnnotFeatureTable(
@@ -437,7 +461,19 @@ bool CBedWriter::xWriteAnnotFeatureTable(
 {
     SAnnotSelector sel = SetAnnotSelector();
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
-    for (CFeat_CI pMf(sah, sel); pMf; ++pMf ) {
+    auto result = xWriteAnnotFeatureTable(track, sah);
+    m_Scope.RemoveSeq_annot(sah);
+    return result;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CBedWriter::xWriteAnnotFeatureTable(
+    const CBedTrackRecord& track,
+    const CSeq_annot_Handle& sah)
+//  ----------------------------------------------------------------------------
+{
+    for (CFeat_CI pMf(sah, SAnnotSelector()); pMf; ++pMf ) {
         if (IsCanceled()) {
             NCBI_THROW(
                 CObjWriterException,
@@ -445,11 +481,9 @@ bool CBedWriter::xWriteAnnotFeatureTable(
                 "Processing terminated by user");
         }
         if (!xWriteFeature(track, *pMf)) {
-            m_Scope.RemoveSeq_annot(sah);
             return false;
         }
     }
-    m_Scope.RemoveSeq_annot(sah);
     return true;
 }
 
@@ -463,8 +497,22 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
     CThreeFeatManager threeFeatManager;
     CBedFeatureRecord bedRecord;
 
-    SAnnotSelector sel = SetAnnotSelector();
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
+    auto result = xWriteAnnotThreeFeatData(track, sah);
+    m_Scope.RemoveSeq_annot(sah);
+    return result;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedWriter::xWriteAnnotThreeFeatData(
+    const CBedTrackRecord& track,
+    const CSeq_annot_Handle& sah)
+//  ----------------------------------------------------------------------------
+{
+    CThreeFeatManager threeFeatManager;
+    CBedFeatureRecord bedRecord;
+
+    SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI pMf(sah, sel);
     for ( ; pMf; ++pMf ) {
         if (IsCanceled()) {
@@ -487,7 +535,6 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
             break;
         }
     }
-    m_Scope.RemoveSeq_annot(sah);
     if (!pMf) {
         while (threeFeatManager.GetAnyRecord(bedRecord)) {
             continue;
@@ -545,6 +592,9 @@ bool CBedWriter::xWriteFeature(
 //  ----------------------------------------------------------------------------
 {
     CBedFeatureRecord record;
+    if (!record.AssignName(mf)) {
+        return false;
+    }
     if (!record.AssignDisplayData( mf, track.UseScore())) {
 //          feature did not contain display data ---
 //          Is there any alternative way to populate some of the bed columns?

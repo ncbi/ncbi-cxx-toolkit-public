@@ -40,6 +40,7 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 
 #include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/write_util.hpp>
@@ -72,6 +73,72 @@ CBedFeatureRecord::CBedFeatureRecord():
 CBedFeatureRecord::~CBedFeatureRecord()
 //  ----------------------------------------------------------------------------
 {
+}
+
+//  ----------------------------------------------------------------------------
+const CGene_ref&
+sGetClosestGeneRef(
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    static const CGene_ref noRef;
+    if (mf.GetData().IsGene()) {
+        return mf.GetData().GetGene();
+    }
+    if (mf.IsSetXref()) {
+        const auto& xrefs = mf.GetXref();
+        for (auto it = xrefs.begin(); it != xrefs.end(); ++it) {
+            const auto& xref = **it;
+            if (xref.CanGetData() && xref.GetData().IsGene()) {
+                return xref.GetData().GetGene();
+            }
+        }
+    }
+    CMappedFeat gene = feature::GetBestGeneForFeat(mf);
+    if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
+        return gene.GetData().GetGene();
+    }
+    return noRef;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CBedFeatureRecord::AssignName(
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    //auto featType = mf.GetFeatSubtype();
+    //if (featType == CSeqFeatData::eSubtype_gene) {
+    //    cerr << "";
+    //}
+    if (mf.GetData().IsRegion()) {
+        m_strName = mf.GetData().GetRegion();
+        std::transform(m_strName.begin(), m_strName.end(), m_strName.begin(),
+            [](char c) -> char { return std::isspace(c) ? '_' : c; });
+        return true;
+    }
+    const auto& geneRef = sGetClosestGeneRef(mf);
+    if (geneRef.IsSetLocus()) {
+        m_strName = geneRef.GetLocus();
+        return true;
+    }
+    if (geneRef.IsSetLocus_tag()) {
+        m_strName = geneRef.GetLocus_tag();
+        return true;
+    }
+
+    // try harder only if the given feature itself is a gene:
+    if (!mf.GetData().IsGene()) {
+        return true;
+    }
+    if (geneRef.IsSetDesc()) {
+        m_strName = geneRef.GetDesc();
+    }
+    if (geneRef.IsSetSyn()) {
+        m_strName = geneRef.GetSyn().front();
+        return true;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -279,17 +346,18 @@ bool CBedFeatureRecord::SetLocation(
     return false;
 }
 
-
 //  -----------------------------------------------------------------------------
 bool CBedFeatureRecord::SetName(
     const CSeqFeatData& data)
 //  -----------------------------------------------------------------------------
 {
-    if (!data.IsRegion()) {
-        return false;
+    if (data.IsRegion()) {
+        m_strName = data.GetRegion();
+        return true;
     }
-    m_strName = data.GetRegion();
-    return true;
+    if (data.IsGene()) {
+    } 
+    return false;
 }
 
 //  -----------------------------------------------------------------------------

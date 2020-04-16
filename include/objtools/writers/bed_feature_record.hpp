@@ -51,6 +51,8 @@ public:
 
     bool AssignLocation(CScope&, const CSeq_interval&);
     bool AssignDisplayData(const CMappedFeat&, bool);
+    bool AssignName(const CMappedFeat&);
+
     bool Write(CNcbiOstream&, unsigned int);
 
     bool SetLocation(const CSeq_loc&);

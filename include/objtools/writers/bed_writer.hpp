@@ -94,6 +94,11 @@ public:
 
 //    virtual SAnnotSelector GetAnnotSelector();
 
+    bool WriteSeqEntryHandle(
+        CSeq_entry_Handle seh,
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
+
 protected:
     bool xWriteAnnotFeatureTable(
         const CBedTrackRecord&,
@@ -102,6 +107,14 @@ protected:
     bool xWriteAnnotThreeFeatData(
         const CBedTrackRecord&,
         const CSeq_annot&);
+
+    bool xWriteAnnotFeatureTable(
+        const CBedTrackRecord&,
+        const CSeq_annot_Handle&);
+
+    bool xWriteAnnotThreeFeatData(
+        const CBedTrackRecord&,
+        const CSeq_annot_Handle&);
 
     bool xWriteFeature(
         const CBedTrackRecord&, 
