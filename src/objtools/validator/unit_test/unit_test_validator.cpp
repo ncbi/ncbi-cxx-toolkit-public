@@ -24937,6 +24937,14 @@ BOOST_AUTO_TEST_CASE(Test_RW_1063)
 
     CLEAR_ERRORS
 
+    unit_test_util::SetTaxname(entry, "Salmonella badforyou different value");
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
