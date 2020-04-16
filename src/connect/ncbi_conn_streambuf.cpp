@@ -320,9 +320,11 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* buf, streamsize buf_size)
     }
 
     if (m_Conn) {
-        if (!m_Initial  &&  x_Pushback() != eIO_Success) {
+        EIO_Status status;
+        if (!m_Initial  &&  (status = x_Pushback()) != eIO_Success) {
             ERR_POST_X(11, Critical << x_Message("setbuf(): "
-                                                 " Read data pending"));
+                                                 " Read data pending",
+                                                 status));
         }
         if (x_Sync() != 0) {
             ERR_POST_X(12, Critical << x_Message("setbuf(): "
@@ -735,7 +737,7 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
             timeout = &g_NcbiDefConnTimeout;
     }
 
-    // Flush connection first
+    // flush buffer first
     if (pbase() < pptr()) {
         const STimeout* x_tmo = CONN_GetTimeout(m_Conn, eIO_Write);
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Write, timeout) == eIO_Success);
@@ -746,7 +748,7 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
                 synced = true;
             status = m_Status;
         }
-        catch (const CIO_Exception& ex) {
+        catch (CIO_Exception& ex) {
             status = EIO_Status(ex.GetErrCode());
             _ASSERT(!synced);
         }
@@ -770,7 +772,11 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
         }
     }
 
-    // Wait for input next
+    // check if input is already pending
+    if (gptr() < egptr())
+        return eIO_Success;
+
+    // wait for some input
     if ((m_Status = CONN_Wait(m_Conn, eIO_Read, timeout)) != eIO_Success) {
         char tmo[40];
         if (m_Status == eIO_Timeout)
