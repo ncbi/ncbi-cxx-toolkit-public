@@ -53,7 +53,19 @@ CSnpPtisClient::~CSnpPtisClient()
 bool CSnpPtisClient::IsEnabled()
 {
 #ifdef HAVE_LIBGRPC
-    return CGRPCClientContext::IsImplemented();
+    if ( !CGRPCClientContext::IsImplemented() ) {
+        return false;
+    }
+    // check if there's valid address
+    int source;
+    auto addr = g_NCBI_GRPC_GetAddress("ID2SNP", "PTIS_NAME", nullptr, &source);
+#ifndef NCBI_OS_LINUX
+    if ( source == CParamBase::eSource_Default ) {
+        // default grpc link to linkerd daemon works on Linux only
+        return false;
+    }
+#endif
+    return !addr.empty();
 #else
     return false;
 #endif
