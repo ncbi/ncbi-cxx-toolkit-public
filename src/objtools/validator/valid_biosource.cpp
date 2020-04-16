@@ -1533,7 +1533,7 @@ const CSeq_entry *ctx)
             // RW-1064
             if (NStr::Find(taxname, subname) == string::npos) {
                 PostObjErr(x_SalmonellaErrorLevel(), eErr_SEQ_DESCR_BadOrgMod,
-                    "Salmonella organism name should contain serovar.",
+                    "Salmonella organism name should contain the serovar value.",
                     obj, ctx);
             }            
         }

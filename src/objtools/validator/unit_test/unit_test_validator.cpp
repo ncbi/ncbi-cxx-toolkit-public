@@ -8715,7 +8715,7 @@ void CheckUnbalancedParenthesesOrgMod(COrgMod::TSubtype subtype, const string& v
     //AddChromosomeNoLocation(expected_errors, entry);
     if (subtype == COrgMod::eSubtype_serovar) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod",
-            "Salmonella organism name should contain serovar."));
+            "Salmonella organism name should contain the serovar value."));
     }
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -24932,7 +24932,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1063)
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "OrganismNotFound",
         "Organism not found in taxonomy database"));
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
-    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "BadOrgMod", "Salmonella organism name should contain serovar."));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "BadOrgMod", "Salmonella organism name should contain the serovar value."));
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
