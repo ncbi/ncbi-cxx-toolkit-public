@@ -4886,7 +4886,9 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 /////////////////////////////////////////////////////////////////////////////
 //  CNcbiEmptyString::
 //
-#if !defined(NCBI_OS_MSWIN) && !( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
+#if !defined(NCBI_OS_MSWIN)  &&  \
+    !(defined(NCBI_OS_LINUX)  &&  \
+      (defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)))
 inline
 const string& CNcbiEmptyString::Get(void)
 {

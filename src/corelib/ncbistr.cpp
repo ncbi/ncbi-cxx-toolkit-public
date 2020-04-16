@@ -82,7 +82,9 @@ const char* const kNcbiProductionVersionString
 #endif
 
 
-#if !defined(NCBI_OS_MSWIN) && !( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
+#if !defined(NCBI_OS_MSWIN)  &&  \
+    !(defined(NCBI_OS_LINUX)  &&  \
+      (defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)))
 const string* CNcbiEmptyString::m_Str = 0;
 const string& CNcbiEmptyString::FirstGet(void) {
     static const string s_Str = "";
