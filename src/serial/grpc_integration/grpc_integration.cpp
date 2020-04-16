@@ -458,15 +458,16 @@ bool CGRPCServerCallbacks::x_IsRealRequest(const grpc::ServerContext* sctx)
 /// (in order of priority):
 /// - Config file entry "[section] variable"
 /// - Environment variables: env_var_name (if not empty/NULL);
-///   then "NCBI_CONFIG__<section>__<name>"; then "grpc_proxy"
+///   then "NCBI_CONFIG__<section>__<name>"; then "GRPC_PROXY"
 /// - The hard-coded NCBI default "linkerd:4142"
 string g_NCBI_GRPC_GetAddress(const char* section,
                               const char* variable,
-                              const char* env_var_name)
+                              const char* env_var_name,
+                              int* value_source)
 {
-    auto addr = g_GetConfigString(section, variable, env_var_name, nullptr);
+    auto addr = g_GetConfigString(section, variable, env_var_name, nullptr, value_source);
     if ( addr.empty() ) {
-        addr = g_GetConfigString(nullptr, nullptr, "grpc_proxy", "linkerd:4142");
+        addr = g_GetConfigString(nullptr, nullptr, "GRPC_PROXY", "linkerd:4142", value_source);
     }
     return addr;
 }

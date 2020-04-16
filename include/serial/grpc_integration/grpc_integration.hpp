@@ -107,11 +107,13 @@ public:
 /// (in order of priority):
 /// - Config file entry "[section] variable"
 /// - Environment variables: env_var_name (if not empty/NULL);
-///   then "NCBI_CONFIG__<section>__<name>"; then "grpc_proxy"
+///   then "NCBI_CONFIG__<section>__<name>"; then "GRPC_PROXY"
 /// - The hard-coded NCBI default "linkerd:4142"
+/// The value_source (if not null) will get CParamBase::EParamSource value
 string g_NCBI_GRPC_GetAddress(const char* section,
                               const char* variable,
-                              const char* env_var_name = nullptr);
+                              const char* env_var_name = nullptr,
+                              int* value_source = nullptr);
 
 END_NCBI_SCOPE
 
