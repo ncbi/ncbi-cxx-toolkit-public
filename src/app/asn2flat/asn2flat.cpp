@@ -512,7 +512,7 @@ int CAsn2FlatApp::Run(void)
             CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fSRA;
         CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
 
-        if (args["enable-external"] && ! args["no-external"]) {
+        if (( args["enable-external"] && ! args["no-external"] ) || args["policy"].AsString() == "external" ) {
             CGBDataLoader* gb_loader = dynamic_cast<CGBDataLoader*>(CObjectManager::GetInstance()->FindDataLoader("GBLOADER"));
             if (gb_loader) {
                 // needed to find remote features when reading local ASN.1 file
@@ -968,7 +968,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 
         if ( flatfile_os == NULL ) continue;
 
-        if (m_PSGMode && args["enable-external"])
+        if (m_PSGMode && ( args["enable-external"] || args["policy"].AsString() == "external" ))
             x_AddSNPAnnots(bsh);
 
         // generate flat file
