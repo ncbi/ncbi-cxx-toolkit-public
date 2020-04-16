@@ -446,6 +446,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
         }
     }
     const char* dvalue = default_value? default_value: "";
+    if ( src ) *src = default_value? CParamBase::eSource_Default: CParamBase::eSource_NotSet;
 #ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
