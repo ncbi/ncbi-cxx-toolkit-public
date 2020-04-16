@@ -1413,7 +1413,7 @@ GenerateDiffListFromBioSource(
     }
 }
 
-#define DUMP_DATA
+//#define DUMP_DATA
 //  ----------------------------------------------------------------------------
 void
 SaveSerialObject(
