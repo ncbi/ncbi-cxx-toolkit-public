@@ -26,10 +26,10 @@
  * Author:  Vladimir Alekseyev, Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Implement CONNECTOR for a FILE stream
+ *   Implement CONNECTOR for a FILE stream (assuming regular files only)
  *
- *   See in "connectr.h" for the detailed specification of the underlying
- *   connector("CONNECTOR", "SConnectorTag") methods and structures.
+ *   See <connect/connector.h> for the detailed specification of the
+ *   connector's methods and structures.
  *
  */
 
@@ -154,7 +154,7 @@ static EIO_Status s_VT_Open
             return eIO_InvalidArg;
         }
         if (!(xxx->fout = fopen(xxx->ofname, mode)))
-            return eIO_Unknown;
+            return eIO_Closed;
         if (xxx->attr.w_mode == eFCM_Seek  &&  xxx->attr.w_pos
             &&  fseek(xxx->fout, (long) xxx->attr.w_pos, SEEK_SET) != 0) {
             fclose(xxx->fout);
@@ -170,7 +170,7 @@ static EIO_Status s_VT_Open
                 fclose(xxx->fout);
                 xxx->fout = 0;
             }
-            return eIO_Unknown;
+            return eIO_Closed;
         }
         if (xxx->attr.r_pos
             &&  fseek(xxx->finp, (long) xxx->attr.r_pos, SEEK_SET) != 0) {
@@ -249,7 +249,7 @@ static EIO_Status s_VT_Read
     assert(*n_read == 0);
 
     if (!xxx->finp)
-        return eIO_Closed;
+        return eIO_Unknown;
     if (!size)
         return eIO_Success;
 
