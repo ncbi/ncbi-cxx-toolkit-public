@@ -350,6 +350,9 @@ esac
 # : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
 
 for x in `set | fgrep "_PATH=${NCBI-/nonexistent}/"`; do
+    case "$ncbi_platform" in
+        FreeBSD64* ) echo "$x" | od -c >&2 ;;
+    esac
     d=`echo "$x" | cut -d= -f2`
     if test \! -d "$d"; then
         eval unset "`echo "$x" | cut -d= -f1`"
