@@ -8713,6 +8713,10 @@ void CheckUnbalancedParenthesesOrgMod(COrgMod::TSubtype subtype, const string& v
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
             "Unbalanced parentheses in orgmod '" + val + "'"));
     //AddChromosomeNoLocation(expected_errors, entry);
+    if (subtype == COrgMod::eSubtype_serovar) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod",
+            "Salmonella organism name should contain serovar."));
+    }
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
@@ -24898,7 +24902,6 @@ BOOST_AUTO_TEST_CASE(Test_RW_1063)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
         "TaxonomyIsSpeciesProblem", "Taxonomy lookup reports is_species_level FALSE"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should have serovar."));
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
@@ -24908,7 +24911,6 @@ BOOST_AUTO_TEST_CASE(Test_RW_1063)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
         "Organism not found in taxonomy database"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod", "Salmonella organisms should have serovar."));
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
@@ -24920,17 +24922,17 @@ BOOST_AUTO_TEST_CASE(Test_RW_1063)
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "OrganismNotFound",
         "Organism not found in taxonomy database"));
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
-    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "BadOrgMod", "Salmonella organisms should have serovar."));
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 
-    // presence of serovar silences warning
+    // presence of serovar
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_serovar, "different value");
     eval = validator.Validate(seh, options);
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "OrganismNotFound",
         "Organism not found in taxonomy database"));
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "BadOrgMod", "Salmonella organisms should use serovar instead of serotype."));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "BadOrgMod", "Salmonella organism name should contain serovar."));
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
