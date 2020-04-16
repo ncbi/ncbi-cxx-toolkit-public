@@ -189,7 +189,8 @@
 #  define NCBI_WARN_UNUSED_RESULT
 #endif
     
-#if NCBI_HAS_CPP_ATTRIBUTE(fallthrough)
+#if NCBI_HAS_CPP_ATTRIBUTE(fallthrough)  &&  \
+    (!defined(__clang__)  ||  __clang_major__ > 7  ||  __cplusplus >= 201703L)
 #  define NCBI_FALLTHROUGH [[fallthrough]]
 #elif NCBI_HAS_CPP_ATTRIBUTE(gcc::fallthrough)
 #  define NCBI_FALLTHROUGH [[gcc::fallthrough]]
