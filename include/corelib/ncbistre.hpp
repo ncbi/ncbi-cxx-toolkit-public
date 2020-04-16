@@ -66,7 +66,8 @@
 #  if defined(NCBI_USE_OLD_IOSTREAM)
 #    undef NCBI_USE_OLD_IOSTREAM
 #  endif
-#  if defined(NCBI_COMPILER_GCC)
+#  if defined(NCBI_COMPILER_GCC)  ||  \
+    (defined(NCBI_COMPILER_ANY_CLANG)  &&  defined(__GLIBCXX__))
 // Don't bug us about including <strstream>.
 #    define _CPP_BACKWARD_BACKWARD_WARNING_H 1
 #    define _BACKWARD_BACKWARD_WARNING_H 1
