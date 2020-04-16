@@ -73,8 +73,10 @@ BEGIN_NCBI_SCOPE
 #define PSG_UV_WRITE_TRACE(message)        _TRACE(message)
 #define PSG_UV_TCP_TRACE(message)          _TRACE(message)
 #define PSG_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
+#define PSG_THROTTLING_TRACE(message)      _TRACE(message)
 #define PSG_IO_SESSION_TRACE(message)      _TRACE(message)
-#define PSG_IO_THREAD_TRACE(message)       _TRACE(message)
+#define PSG_IO_TRACE(message)              _TRACE(message)
+#define PSG_DISCOVERY_TRACE(message)       _TRACE(message)
 
 template <class TType>
 struct SPSG_ThreadSafe : SPSG_CV<0>
@@ -526,7 +528,7 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
         data = d;
     }
 
-    void Send()
+    void Signal()
     {
         if (auto rc = uv_async_send(this)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_async_send failed " << uv_strerror(rc));
@@ -536,15 +538,24 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
 
 struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
 {
-    void Init(void* d, uv_loop_t* l, uv_timer_cb cb, uint64_t timeout, uint64_t repeat)
+    SPSG_UvTimer(void* d, uv_timer_cb cb, uint64_t t, uint64_t r) :
+        m_Cb(cb),
+        m_Timeout(t),
+        m_Repeat(r)
+    {
+        data = d;
+    }
+
+    void Init(uv_loop_t* l)
     {
         if (auto rc = uv_timer_init(l, this)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_init failed " << uv_strerror(rc));
         }
+    }
 
-        data = d;
-
-        if (auto rc = uv_timer_start(this, cb, timeout, repeat)) {
+    void Start()
+    {
+        if (auto rc = uv_timer_start(this, m_Cb, m_Timeout, m_Repeat)) {
             NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_start failed " << uv_strerror(rc));
         }
     }
@@ -557,6 +568,11 @@ struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
 
         SPSG_UvHandle<uv_timer_t>::Close();
     }
+
+private:
+    uv_timer_cb m_Cb;
+    const uint64_t m_Timeout;
+    const uint64_t m_Repeat;
 };
 
 struct SPSG_UvBarrier
@@ -680,23 +696,118 @@ struct SPSG_AsyncQueue : SPSG_UvAsync
     bool Push(TRequest&& request)
     {
         if (m_Queue.PushMove(request)) {
-            Send();
+            Signal();
             return true;
         } else {
             return false;
         }
     }
 
-    using SPSG_UvAsync::Send;
+    using SPSG_UvAsync::Signal;
 
 private:
     CMPMCQueue<TRequest> m_Queue;
 };
 
+struct SPSG_ThrottleParams
+{
+    struct SThreshold
+    {
+        size_t numerator = 0;
+        size_t denominator = 1;
+        constexpr static size_t kMaxDenominator = 128;
+
+        SThreshold(string error_rate);
+    };
+
+    const volatile uint64_t period;
+    TPSG_ThrottleMaxFailures max_failures;
+    TPSG_ThrottleUntilDiscovery until_discovery;
+    SThreshold threshold;
+
+    SPSG_ThrottleParams();
+};
+
+struct SPSG_Throttling
+{
+    SPSG_Throttling(const CNetServer::SAddress& address, SPSG_ThrottleParams p, uv_loop_t* l);
+
+    bool Active() const { return m_Active != eOff; }
+    bool AddSuccess() { return AddResult(true); }
+    bool AddFailure() { return AddResult(false); }
+    void StartClose();
+
+    void Discovered()
+    {
+        if (!Configured()) return;
+
+        EThrottling expected = eUntilDiscovery;
+
+        if (m_Active.compare_exchange_strong(expected, eOff)) {
+            ERR_POST(Warning << "Disabling throttling for server " << m_Address.AsString() << " after wait and rediscovery");
+        }
+    }
+
+private:
+    struct SStats
+    {
+        SPSG_ThrottleParams params;
+        unsigned failures = 0;
+        pair<bitset<SPSG_ThrottleParams::SThreshold::kMaxDenominator>, size_t> threshold_reg;
+
+        SStats(SPSG_ThrottleParams p) : params(p) {}
+
+        bool Adjust(const CNetServer::SAddress& address, bool result);
+        void Reset();
+    };
+    enum EThrottling { eOff, eOnTimer, eUntilDiscovery };
+
+    uint64_t Configured() const { return m_Stats.GetMTSafe().params.period; }
+    bool AddResult(bool result) { return Configured() && (Active() || Adjust(result)); }
+    bool Adjust(bool result);
+
+    static void s_OnSignal(uv_async_t* handle)
+    {
+        auto that = static_cast<SPSG_Throttling*>(handle->data);
+        that->m_Timer.Start();
+    }
+
+    static void s_OnTimer(uv_timer_t* handle)
+    {
+        auto that = static_cast<SPSG_Throttling*>(handle->data);
+        auto new_value = that->m_Stats.GetLock()->params.until_discovery ? eUntilDiscovery : eOff;
+        that->m_Active.store(new_value);
+
+        if (new_value == eOff) {
+            ERR_POST(Warning << "Disabling throttling for server " << that->m_Address.AsString() << " after wait");
+        }
+    }
+
+    const CNetServer::SAddress& m_Address;
+    SPSG_ThreadSafe<SStats> m_Stats;
+    atomic<EThrottling> m_Active;
+    SPSG_UvTimer m_Timer;
+    SPSG_UvAsync m_Signal;
+};
+
+struct SPSG_Server
+{
+    const CNetServer::SAddress address;
+    atomic<double> rate;
+    SPSG_Throttling throttling;
+
+    SPSG_Server(CNetServer::SAddress a, double r, SPSG_ThrottleParams p, uv_loop_t* l) :
+        address(move(a)),
+        rate(r),
+        throttling(address, move(p), l)
+    {}
+};
 
 struct SPSG_IoSession
 {
-    SPSG_IoSession(SPSG_AsyncQueue& queue, uv_loop_t* loop, const CNetServer::SAddress& address);
+    SPSG_Server& server;
+
+    SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop);
 
     void StartClose();
 
@@ -793,79 +904,147 @@ private:
     TRequests m_Requests;
 };
 
-struct SPSG_Server
+template <class TImpl>
+struct SPSG_Thread : public TImpl
 {
-    SPSG_IoSession session;
-    const CNetServer::SAddress address;
-    double rate;
-    bool available = true;
-
-    SPSG_Server(SPSG_AsyncQueue& queue, uv_loop_t* loop, CNetServer::SAddress a, double r) :
-        session(queue, loop, a),
-        address(move(a)),
-        rate(r)
+    template <class... TArgs>
+    SPSG_Thread(SPSG_UvBarrier& barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
+        TImpl(forward<TArgs>(args)...),
+        m_Timer(this, s_OnTimer, timeout, repeat),
+        m_Thread(s_Execute, this, ref(barrier))
     {}
+
+    ~SPSG_Thread()
+    {
+        if (m_Thread.joinable()) {
+            m_Shutdown.Signal();
+            m_Thread.join();
+        }
+    }
+
+private:
+    static void s_OnShutdown(uv_async_t* handle)
+    {
+        SPSG_Thread* io = static_cast<SPSG_Thread*>(handle->data);
+        io->m_Shutdown.Close();
+        io->m_Timer.Close();
+        io->TImpl::OnShutdown(handle);
+    }
+
+    static void s_OnTimer(uv_timer_t* handle)
+    {
+        SPSG_Thread* io = static_cast<SPSG_Thread*>(handle->data);
+        io->TImpl::OnTimer(handle);
+    }
+
+    static void s_Execute(SPSG_Thread* io, SPSG_UvBarrier& barrier)
+    {
+        SPSG_UvLoop loop;
+
+        io->TImpl::OnExecute(loop);
+        io->m_Shutdown.Init(io, &loop, s_OnShutdown);
+        io->m_Timer.Init(&loop);
+        io->m_Timer.Start();
+
+        barrier.Wait();
+
+        loop.Run();
+
+        io->TImpl::AfterExecute();
+    }
+
+    SPSG_UvAsync m_Shutdown;
+    SPSG_UvTimer m_Timer;
+    thread m_Thread;
 };
 
-struct SPSG_IoThread
+struct SPSG_Servers : protected deque<SPSG_Server>
+{
+    using TBase = deque<SPSG_Server>;
+    using TTS = SPSG_ThreadSafe<SPSG_Servers>;
+
+    // Only methods that do not use/change size can be used directly
+    using TBase::begin;
+    using TBase::end;
+    using TBase::operator[];
+
+    SPSG_Servers() : m_Size(0) {}
+
+    template <class... TArgs>
+    void emplace_back(TArgs&&... args)
+    {
+        TBase::emplace_back(forward<TArgs>(args)...);
+        ++m_Size;
+    }
+
+    size_t size() const volatile { return m_Size; }
+
+private:
+    atomic_size_t m_Size;
+};
+
+struct SPSG_IoImpl
 {
     using TSpaceCV = SPSG_CV<1000>;
 
     SPSG_AsyncQueue queue;
     TSpaceCV* space;
 
-    SPSG_IoThread(const string& service, SPSG_UvBarrier& barrier, TSpaceCV* s) :
+    SPSG_IoImpl(TSpaceCV* s, SPSG_Servers::TTS& servers) :
         space(s),
-        m_Service(service),
-        m_Random(piecewise_construct, {}, make_tuple(random_device()())),
-        m_Thread(s_Execute, this, ref(barrier))
+        m_Servers(servers),
+        m_Random(piecewise_construct, {}, forward_as_tuple(random_device()()))
     {}
 
-    ~SPSG_IoThread();
+protected:
+    void OnShutdown(uv_async_t* handle);
+    void OnTimer(uv_timer_t* handle);
+    void OnExecute(uv_loop_t& loop);
+    void AfterExecute();
 
 private:
-    void OnShutdown(uv_async_t* handle);
-    void OnQueue(uv_async_t* handle);
-    void OnTimer(uv_timer_t* handle);
-    void OnRequestTimer(uv_timer_t* handle);
-    void Execute(SPSG_UvBarrier& barrier);
-
-    static void s_OnShutdown(uv_async_t* handle)
+    void CheckForNewServers(uv_async_t* handle)
     {
-        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
-        io->OnShutdown(handle);
+        const auto servers_size = m_Servers.GetMTSafe().size();
+        const auto sessions_size = m_Sessions.size();
+
+        if (servers_size > sessions_size) {
+            AddNewServers(servers_size, sessions_size, handle);
+        }
     }
+
+    void AddNewServers(size_t servers_size, size_t sessions_size, uv_async_t* handle);
+    void OnQueue(uv_async_t* handle);
 
     static void s_OnQueue(uv_async_t* handle)
     {
-        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
+        SPSG_IoImpl* io = static_cast<SPSG_IoImpl*>(handle->data);
+        io->CheckForNewServers(handle);
         io->OnQueue(handle);
     }
 
-    static void s_OnTimer(uv_timer_t* handle)
-    {
-        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
-        io->OnTimer(handle);
-    }
-
-    static void s_OnRequestTimer(uv_timer_t* handle)
-    {
-        SPSG_IoThread* io = static_cast<SPSG_IoThread*>(handle->data);
-        io->OnRequestTimer(handle);
-    }
-
-    static void s_Execute(SPSG_IoThread* io, SPSG_UvBarrier& barrier)
-    {
-        io->Execute(barrier);
-    }
-
-    deque<SPSG_Server> m_Servers;
-    SPSG_UvAsync m_Shutdown;
-    SPSG_UvTimer m_Timer;
-    SPSG_UvTimer m_RequestTimer;
-    CNetServiceDiscovery m_Service;
+    SPSG_Servers::TTS& m_Servers;
+    deque<pair<SPSG_IoSession, double>> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
-    thread m_Thread;
+};
+
+struct SPSG_DiscoveryImpl
+{
+    SPSG_DiscoveryImpl(const string& service, SPSG_Servers::TTS& servers) :
+        m_Service(service),
+        m_Servers(servers)
+    {}
+
+protected:
+    void OnShutdown(uv_async_t*);
+    void OnTimer(uv_timer_t* handle);
+    void OnExecute(uv_loop_t&) {}
+    void AfterExecute() {}
+
+private:
+    CNetServiceDiscovery m_Service;
+    SPSG_Servers::TTS& m_Servers;
+    SPSG_ThrottleParams m_ThrottleParams;
 };
 
 struct SPSG_IoCoordinator
@@ -878,8 +1057,10 @@ struct SPSG_IoCoordinator
     const string& GetClientId() const { return m_ClientId; }
 
 private:
-    SPSG_IoThread::TSpaceCV m_Space;
-    vector<unique_ptr<SPSG_IoThread>> m_Io;
+    SPSG_IoImpl::TSpaceCV m_Space;
+    SPSG_Servers::TTS m_Servers;
+    SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
+    vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;
     SPSG_UvBarrier m_Barrier;

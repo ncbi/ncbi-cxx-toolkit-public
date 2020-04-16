@@ -68,6 +68,10 @@ NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
 NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
+NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
+NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
+NCBI_PARAM_DEF(bool,     PSG, throttle_hold_until_active_in_lb,            false);
+NCBI_PARAM_DEF(string,   PSG, throttle_by_connection_error_rate,           "");
 
 NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
 {
@@ -987,14 +991,15 @@ ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
 
 /** SPSG_IoSession */
 
-SPSG_IoSession::SPSG_IoSession(SPSG_AsyncQueue& queue, uv_loop_t* loop, const CNetServer::SAddress& address) :
+SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop) :
+    server(s),
     m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
     m_Queue(queue),
-    m_Tcp(loop, address,
+    m_Tcp(loop, s.address,
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
             bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
-    m_Session(address.AsString(), this, s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+    m_Session(s.address.AsString(), this, s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
 {
 }
 
@@ -1028,6 +1033,9 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error
 
     debug_printout << error << endl;
     req->reply->reply_item.GetLock()->state.AddError(error);
+    server.throttling.AddFailure();
+    PSG_THROTTLING_TRACE("Server '" << server.address.AsString() << "' failed to process request '" <<
+            debug_printout.id << '\'');
     return false;
 }
 
@@ -1038,9 +1046,10 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
 
     if (it != m_Requests.end()) {
         auto& req = it->second;
+        auto& debug_printout = req->reply->debug_printout;
 
         SContextSetter setter(req);
-        req->reply->debug_printout << error_code << endl;
+        debug_printout << error_code << endl;
 
         // If there is an error and the request is allowed to Retry
         if (error_code) {
@@ -1051,6 +1060,9 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             }
         } else {
             req->reply->SetSuccess();
+            server.throttling.AddSuccess();
+            PSG_THROTTLING_TRACE("Server '" << server.address.AsString() << "' processed request '" <<
+                    debug_printout.id << "' successfully");
         }
 
         RequestComplete(it);
@@ -1163,8 +1175,11 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
     auto stream_id = m_Session.Submit(req);
 
     if (stream_id < 0) {
-        Retry(req, stream_id);
-        Reset(stream_id);
+        // Do not reset all requests unless throttling has been activated
+        if (!Retry(req, stream_id) && server.throttling.Active()) {
+            Reset(stream_id);
+        }
+
         return false;
     }
 
@@ -1177,7 +1192,7 @@ void SPSG_IoSession::RequestComplete(TRequests::iterator& it)
 {
     if (IsFull()) {
         // Continue processing of requests in the IO thread queue on next UV loop iteration
-        m_Queue.Send();
+        m_Queue.Signal();
     }
 
     it = m_Requests.erase(it);
@@ -1219,105 +1234,250 @@ void SPSG_IoSession::Reset(SPSG_Error error)
 }
 
 
-/** SPSG_IoThread */
+/** SPSG_ThrottleParams */
 
-SPSG_IoThread::~SPSG_IoThread()
+SPSG_ThrottleParams::SThreshold::SThreshold(string error_rate)
 {
-    if (m_Thread.joinable()) {
-        m_Shutdown.Send();
-        m_Thread.join();
+    if (error_rate.empty()) return;
+
+    string numerator_str, denominator_str;
+
+    if (!NStr::SplitInTwo(error_rate, "/", numerator_str, denominator_str)) return;
+
+    const auto flags = NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces;
+
+    int n = NStr::StringToInt(numerator_str, flags);
+    int d = NStr::StringToInt(denominator_str, flags);
+
+    if (n > 0) numerator = static_cast<size_t>(n);
+    if (d > 1) denominator = static_cast<size_t>(d);
+
+    if (denominator > kMaxDenominator) {
+        numerator = (numerator * kMaxDenominator) / denominator;
+        denominator = kMaxDenominator;
     }
 }
 
-void SPSG_IoThread::OnShutdown(uv_async_t*)
+uint64_t s_SecondsToMs(double seconds)
+{
+    return seconds > 0.0 ? static_cast<uint64_t>(seconds * milli::den) : 0;
+}
+
+SPSG_ThrottleParams::SPSG_ThrottleParams() :
+    period(s_SecondsToMs(TPSG_ThrottlePeriod::GetDefault())),
+    max_failures(TPSG_ThrottleMaxFailures::eGetDefault),
+    until_discovery(TPSG_ThrottleUntilDiscovery::eGetDefault),
+    threshold(TPSG_ThrottleThreshold::GetDefault())
+{
+}
+
+
+/** SPSG_Throttling */
+
+SPSG_Throttling::SPSG_Throttling(const CNetServer::SAddress& address, SPSG_ThrottleParams p, uv_loop_t* l) :
+    m_Address(address),
+    m_Stats(move(p)),
+    m_Active(eOff),
+    m_Timer(this, s_OnTimer, Configured(), 0)
+{
+    m_Timer.Init(l);
+    m_Signal.Init(this, l, s_OnSignal);
+}
+
+void SPSG_Throttling::StartClose()
+{
+    m_Signal.Close();
+    m_Timer.Close();
+}
+
+bool SPSG_Throttling::Adjust(bool result)
+{
+    auto stats_locked = m_Stats.GetLock();
+
+    if (stats_locked->Adjust(m_Address, result)) {
+        m_Active.store(eOnTimer);
+
+        // We cannot start throttle timer from any thread (it's not thread-safe),
+        // so we use async signal to start timer in the discovery thread
+        m_Signal.Signal();
+        return true;
+    }
+
+    return false;
+}
+
+bool SPSG_Throttling::SStats::Adjust(const CNetServer::SAddress& address, bool result)
+{
+    if (result) {
+        failures = 0;
+
+    } else if (params.max_failures && (++failures >= params.max_failures)) {
+        ERR_POST(Warning << "Server '" << address.AsString() <<
+                "' reached the maximum number of failures in a row (" << params.max_failures << ')');
+        Reset();
+        return true;
+    }
+
+    if (params.threshold.numerator > 0) {
+        auto& reg = threshold_reg.first;
+        auto& index = threshold_reg.second;
+        const auto failure = !result;
+
+        if (reg[index] != failure) {
+            reg[index] = failure;
+
+            if (failure && (reg.count() >= params.threshold.numerator)) {
+                ERR_POST(Warning << "Server '" << address.AsString() << "' is considered bad/overloaded ("
+                        << params.threshold.numerator << '/' << params.threshold.denominator << ')');
+                Reset();
+                return true;
+            }
+        }
+
+        if (++index >= params.threshold.denominator) index = 0;
+    }
+
+    return false;
+}
+
+void SPSG_Throttling::SStats::Reset()
+{
+    failures = 0;
+    threshold_reg.first.reset();
+}
+
+
+/** SPSG_IoImpl */
+
+void SPSG_IoImpl::OnShutdown(uv_async_t*)
 {
     queue.Close();
-    m_Shutdown.Close();
-    m_Timer.Close();
-    m_RequestTimer.Close();
 
-    for (auto& server : m_Servers) {
-        server.session.StartClose();
+    for (auto& session : m_Sessions) {
+        session.first.StartClose();
     }
 }
 
-void SPSG_IoThread::OnQueue(uv_async_t*)
+void SPSG_DiscoveryImpl::OnShutdown(uv_async_t*)
 {
-    size_t servers = 0;
+    auto servers_locked = m_Servers.GetLock();
+    auto& servers = *servers_locked;
 
-    for (auto& server : m_Servers) {
-        server.available = server.rate;
+    for (auto& server : servers) {
+        server.throttling.StartClose();
+    }
+}
 
-        if (server.available) {
-            ++servers;
+void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_async_t* handle)
+{
+    _ASSERT(servers_size > sessions_size);
+
+    // Add new session(s) if new server(s) have been added
+    auto servers_locked = m_Servers.GetLock();
+    auto& servers = *servers_locked;
+
+    for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
+        auto& server = servers[servers_size - new_servers];
+        auto session_params = forward_as_tuple(server, queue, handle->loop);
+        m_Sessions.emplace_back(piecewise_construct, move(session_params), forward_as_tuple(0.0));
+        PSG_IO_TRACE("Session for server '" << server.address.AsString() << "' was added");
+    }
+}
+
+void SPSG_IoImpl::OnQueue(uv_async_t*)
+{
+    size_t sessions = 0;
+
+    for (auto& session : m_Sessions) {
+        auto& server = session.first.server;
+        auto& rate = session.second;
+        rate = server.throttling.Active() ? 0.0 : server.rate.load();
+
+        if (rate) {
+            ++sessions;
         }
     }
 
     auto d = m_Random.first;
-    auto i = m_Servers.begin();
-    auto next_i = [&]() { if (++i == m_Servers.end()) i = m_Servers.begin(); };
+    auto i = m_Sessions.begin();
+    auto next_i = [&]() { if (++i == m_Sessions.end()) i = m_Sessions.begin(); };
 
-    // We have to find available server first and then get a request,
+    // We have to find available session first and then get a request,
     // as we may not be able to put the request back into the queue after (if it's full)
-    while (servers) {
+    while (sessions) {
         auto rate = d(m_Random.second);
         _DEBUG_ARG(const auto original_rate = rate);
 
         for (;;) {
-            // Skip all servers already marked unavailable in this iteration
-            while (!i->available) {
+            // Skip all sessions already marked unavailable in this iteration
+            while (!i->second) {
                 next_i();
             }
 
-            _DEBUG_ARG(const auto& server_name = i->address.AsString());
+            // These references depend on i and can only be used if it stays the same
+            auto& session = i->first;
+            auto& server = session.server;
+            auto& session_rate = i->second;
 
-            // Server has no room for a request
-            if (i->session.IsFull()) {
-                PSG_IO_THREAD_TRACE("Server '" << server_name << "' has no room for a request");
+            _DEBUG_ARG(const auto& server_name = server.address.AsString());
 
-            // Server is available
+            // Session has no room for a request
+            if (session.IsFull()) {
+                PSG_IO_TRACE("Server '" << server_name << "' has no room for a request");
+
+            // Session is available
             } else {
-                rate -= i->rate;
+                rate -= session_rate;
 
                 if (rate >= 0.0) {
-                    // Check remaining rate against next available server
+                    // Check remaining rate against next available session
                     next_i();
                     continue;
                 }
 
-                shared_ptr<SPSG_Request> req;
+                // Checking if throttling has been activated in a different thread
+                if (!server.throttling.Active()) {
+                    shared_ptr<SPSG_Request> req;
 
-                if (!queue.Pop(req)) {
-                    PSG_IO_THREAD_TRACE("No [more] requests pending");
-                    return;
-                }
+                    if (!queue.Pop(req)) {
+                        PSG_IO_TRACE("No [more] requests pending");
+                        return;
+                    }
 
-                space->NotifyOne();
+                    space->NotifyOne();
 
-                _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
+                    _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
+                    bool result = session.TryCatch(&SPSG_IoSession::ProcessRequest, false, req);
 
-                if (i->session.TryCatch(&SPSG_IoSession::ProcessRequest, false, req)) {
-                    PSG_IO_THREAD_TRACE("Server '" << server_name << "' processed request " <<
-                            req_id << " with rate = " << original_rate);
-                    break;
-                } else {
-                    PSG_IO_THREAD_TRACE("Server '" << server_name << "' failed to process request " <<
-                            req_id << " with rate = " << original_rate);
+                    if (result) {
+                        PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
+                                req_id << "' with rate = " << original_rate);
+                        break;
+                    } else {
+                        PSG_IO_TRACE("Server '" << server_name << "' failed to process request '" <<
+                                req_id << "' with rate = " << original_rate);
+
+                        if (!server.throttling.Active()) {
+                            break;
+                        }
+                    }
                 }
             }
 
-            // Server is unavailable
-            --servers;
-            i->available = false;
-            d = uniform_real_distribution<>(d.min() + i->rate);
+            // Session is unavailable
+            --sessions;
+            d = uniform_real_distribution<>(d.min() + session_rate);
+            session_rate = 0.0;
             break;
         }
     }
 
-    PSG_IO_THREAD_TRACE("No servers available [anymore]");
+    // Continue processing of requests in the IO thread queue on next UV loop iteration
+    queue.Signal();
+    PSG_IO_TRACE("No sessions available [anymore]");
 }
 
-void SPSG_IoThread::OnTimer(uv_timer_t* handle)
+void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 {
     const auto kRegularRate = nextafter(0.009, 1.0);
     const auto kStandbyRate = 0.001;
@@ -1334,14 +1494,14 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
         if (server.second >= kRegularRate) {
             regular_total += server.second;
-            PSG_IO_THREAD_TRACE("Server '" << server_name << "' with rate " << server.second << " considered regular");
+            PSG_DISCOVERY_TRACE("Server '" << server_name << "' with rate " << server.second << " considered regular");
 
         } else if (server.second >= kStandbyRate) {
             standby_total += server.second;
-            PSG_IO_THREAD_TRACE("Server '" << server_name << "' with rate " << server.second << " considered standby");
+            PSG_DISCOVERY_TRACE("Server '" << server_name << "' with rate " << server.second << " considered standby");
 
         } else {
-            PSG_IO_THREAD_TRACE("Server '" << server_name << "' with rate " << server.second << " ignored");
+            PSG_DISCOVERY_TRACE("Server '" << server_name << "' with rate " << server.second << " ignored");
         }
     }
 
@@ -1353,8 +1513,11 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
     const auto min_rate = regular_total ? kRegularRate : kStandbyRate;
     const auto rate_total = regular_total ? regular_total : standby_total;
 
+    auto servers_locked = m_Servers.GetLock();
+    auto& servers = *servers_locked;
+
     // Update existing servers
-    for (auto& server : m_Servers) {
+    for (auto& server : servers) {
         auto address_same = [&](CNetServiceDiscovery::TServer& s) { return s.first == server.address; };
         auto it = find_if(discovered.begin(), discovered.end(), address_same);
 
@@ -1362,14 +1525,15 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
 
         if ((it == discovered.end()) || (it->second < min_rate)) {
             server.rate = 0.0;
-            PSG_IO_THREAD_TRACE("Server '" << server_name << "' disabled in service '" << service_name << '\'');
+            PSG_DISCOVERY_TRACE("Server '" << server_name << "' disabled in service '" << service_name << '\'');
 
         } else {
+            server.throttling.Discovered();
             auto rate = it->second / rate_total;
 
             if (server.rate != rate) {
                 // This has to be before the rate change for the condition to work (uses old rate)
-                PSG_IO_THREAD_TRACE("Server '" << server_name <<
+                PSG_DISCOVERY_TRACE("Server '" << server_name <<
                         (server.rate ? "' updated in service '" : "' enabled in service '" ) <<
                         service_name << "' with rate = " << rate);
 
@@ -1385,47 +1549,43 @@ void SPSG_IoThread::OnTimer(uv_timer_t* handle)
     for (auto& server : discovered) {
         if (server.second >= min_rate) {
             auto rate = server.second / rate_total;
-            m_Servers.emplace_back(queue, handle->loop, server.first, rate);
-            PSG_IO_THREAD_TRACE("Server '" << server.first.AsString() << "' added to service '" <<
+            servers.emplace_back(server.first, rate, m_ThrottleParams, handle->loop);
+            PSG_DISCOVERY_TRACE("Server '" << server.first.AsString() << "' added to service '" <<
                     service_name << "' with rate = " << rate);
         }
     }
 }
 
-void SPSG_IoThread::OnRequestTimer(uv_timer_t* handle)
+void SPSG_IoImpl::OnTimer(uv_timer_t*)
 {
-    for (auto& server : m_Servers) {
-        server.session.CheckRequestExpiration();
+    for (auto& session : m_Sessions) {
+        session.first.CheckRequestExpiration();
     }
 }
 
-void SPSG_IoThread::Execute(SPSG_UvBarrier& barrier)
+void SPSG_IoImpl::OnExecute(uv_loop_t& loop)
 {
-    SPSG_UvLoop loop;
-
     queue.Init(this, &loop, s_OnQueue);
-    m_Shutdown.Init(this, &loop, s_OnShutdown);
-    m_Timer.Init(this, &loop, s_OnTimer, 0, TPSG_RebalanceTime::GetDefault() * milli::den);
+}
 
-    // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-    m_RequestTimer.Init(this, &loop, s_OnRequestTimer, milli::den, milli::den);
-
-    barrier.Wait();
-
-    loop.Run();
-
-    m_Servers.clear();
+void SPSG_IoImpl::AfterExecute()
+{
+    m_Sessions.clear();
 }
 
 
 /** SPSG_IoCoordinator */
 
-SPSG_IoCoordinator::SPSG_IoCoordinator(const string& service_name) : m_RequestCounter(0), m_RequestId(1),
-    m_Barrier(TPSG_NumIo::GetDefault() + 1),
+SPSG_IoCoordinator::SPSG_IoCoordinator(const string& service_name) :
+    m_Discovery(m_Barrier, 0, s_SecondsToMs(TPSG_RebalanceTime::GetDefault()), service_name, m_Servers),
+    m_RequestCounter(0),
+    m_RequestId(1),
+    m_Barrier(TPSG_NumIo::GetDefault() + 2),
     m_ClientId("&client_id=" + GetDiagContext().GetStringUID())
 {
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
-        m_Io.emplace_back(new SPSG_IoThread(service_name, m_Barrier, &m_Space));
+        // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, milli::den, milli::den, &m_Space, m_Servers));
     }
 
     m_Barrier.Wait();

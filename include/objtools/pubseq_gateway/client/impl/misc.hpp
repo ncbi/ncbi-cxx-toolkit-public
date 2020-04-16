@@ -387,6 +387,18 @@ using TPSG_RequestsPerIo = PSG_PARAM_VALUE_TYPE(PSG, requests_per_io);
 NCBI_PARAM_DECL(unsigned, PSG, request_retries);
 using TPSG_RequestRetries = PSG_PARAM_VALUE_TYPE(PSG, request_retries);
 
+NCBI_PARAM_DECL(double, PSG, throttle_relaxation_period);
+using TPSG_ThrottlePeriod = NCBI_PARAM_TYPE(PSG, throttle_relaxation_period);
+
+NCBI_PARAM_DECL(unsigned, PSG, throttle_by_consecutive_connection_failures);
+using TPSG_ThrottleMaxFailures = PSG_PARAM_VALUE_TYPE(PSG, throttle_by_consecutive_connection_failures);
+
+NCBI_PARAM_DECL(bool, PSG, throttle_hold_until_active_in_lb);
+using TPSG_ThrottleUntilDiscovery = PSG_PARAM_VALUE_TYPE(PSG, throttle_hold_until_active_in_lb);
+
+NCBI_PARAM_DECL(string, PSG, throttle_by_connection_error_rate);
+using TPSG_ThrottleThreshold = NCBI_PARAM_TYPE(PSG, throttle_by_connection_error_rate);
+
 enum class EPSG_DebugPrintout { eNone, eSome, eAll };
 NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
 using TPSG_DebugPrintout = PSG_PARAM_VALUE_TYPE(PSG, debug_printout);
