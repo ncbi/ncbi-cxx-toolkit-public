@@ -1857,7 +1857,7 @@ if test -n "$with_64"; then
    AC_CACHE_CHECK([whether this system supports --with(out)-64],
       ncbi_cv_sys_with64_ok,
       [AC_LINK_IFELSE([
-          AC_LANG_PROGRAM([#include <string>],
+          AC_LANG_PROGRAM([@%:@include <string>],
                           [std::string* sp = new std::string("foo");])],
           ncbi_cv_sys_with64_ok=yes, ncbi_cv_sys_with64_ok=no)])
    if test "$ncbi_cv_sys_with64_ok" = no; then
@@ -1968,7 +1968,7 @@ case "$compiler" in
       ncbi_cv_prog_cxx_stdlib_libcxx,
       [orig_CXX=$CXX
        CXX="$orig_CXX -stdlib=libc++"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <stdexcept>],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <stdexcept>],
              [std::logic_error le("Inconceivable!");])],
           [ncbi_cv_prog_cxx_stdlib_libcxx=yes],
           [ncbi_cv_prog_cxx_stdlib_libcxx=no])
@@ -1980,7 +1980,7 @@ case "$compiler" in
    ;;
 esac
 
-AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
+AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [@%:@include <iosfwd>])
 
 AC_CACHE_CHECK([how to enable C++ '14 features in $CXX],
    ncbi_cv_prog_cxx_14,
@@ -1988,7 +1988,7 @@ AC_CACHE_CHECK([how to enable C++ '14 features in $CXX],
     ncbi_cv_prog_cxx_14=no
     for x in -std=gnu++14 ''; do
        CXX="$orig_CXX $x"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <list>],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <list>],
           [std::list<int> l; auto it = std::cbegin(l);])],
           [ncbi_cv_prog_cxx_14=$x])
           test "x$ncbi_cv_prog_cxx_14" = "xno"  ||  break
@@ -2028,7 +2028,7 @@ if test "${with_sse42-$with_optimization}" = yes; then
        CC="$CC -msse4.2"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
-              [#include <smmintrin.h>],
+              [@%:@include <smmintrin.h>],
               [__m128i v;  _mm_cmpgt_epi64(v, v);])],
           [ncbi_cv_prog_c_sse42=yes],
           [ncbi_cv_prog_c_sse42=no])])
@@ -2051,7 +2051,7 @@ if test "${with_sse42-$with_optimization}" = yes; then
       [CXX="$CXX -msse4.2"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
-              [#include <smmintrin.h>],
+              [@%:@include <smmintrin.h>],
               [__m128i v;  _mm_cmpgt_epi64(v, v);])],
           [ncbi_cv_prog_cxx_sse42=yes],
           [ncbi_cv_prog_cxx_sse42=no])])
@@ -2493,7 +2493,7 @@ if test "$with_pch" = "yes"; then
       * ) ncbi_cv_cxx_pch=no ;;
    esac
    AC_CACHE_CHECK([whether $CXX supports precompiled headers], ncbi_cv_cxx_pch,
-      [echo '#include <iostream>' > conftest.hpp
+      [echo '@%:@include <iostream>' > conftest.hpp
        echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD
        if $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD 2>&1 \
          &&  test -f conftest.hpp.gch; then
@@ -2564,8 +2564,8 @@ if test "$with_strip" = yes; then
           esac
        else
           AC_LANG_CONFTEST([AC_LANG_PROGRAM(
-                               [[#include <iostream>
-                                 #include <typeinfo>
+                               [[@%:@include <iostream>
+                                 @%:@include <typeinfo>
                                  struct SomeStruct { };]],
                                [[std::cout << typeid(SomeStruct).name();]])])
           echo $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS -o conftest$ac_exeext \
@@ -2601,10 +2601,10 @@ if test "$with_distcc" = "yes" ; then
    if test -n "$DISTCC" ; then
       # Test distcc reasonably thoroughly to avoid possible gotchas.
       cat > distcctest.c << EOF
-#include <stddef.h>
-#if !defined(__GNUC__)  &&  !defined(offsetof)
-#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
-#endif
+@%:@include <stddef.h>
+@%:@if !defined(__GNUC__)  &&  !defined(offsetof)
+@%:@  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
+@%:@endif
 struct S { int x; };
 int f() { return offsetof(struct S, x); }
 EOF
@@ -3479,7 +3479,7 @@ esac
 # AC_CHECK_TYPES is insufficient, as linking may still fail :-/
 AC_CACHE_CHECK([for wstring], ac_cv_type_wstring_linkable,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-       [[#include <string>
+       [[@%:@include <string>
          using std::wstring;]],
        [[wstring ws, ws2; ws.find_first_of(ws2);]])],
        [ac_cv_type_wstring_linkable=yes], [ac_cv_type_wstring_linkable=no])])
@@ -3488,8 +3488,8 @@ if test "$ac_cv_type_wstring_linkable" = "yes"; then
       [Define to 1 if the system has the type `wstring'.])
 fi
 
-AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
-#include <sys/socket.h>])
+AC_CHECK_TYPES(socklen_t,,,[@%:@include <sys/types.h>
+@%:@include <sys/socket.h>])
 AC_CHECK_HEADERS(atomic.h cpuid.h dlfcn.h ieeefp.h poll.h sys/epoll.h \
                  sys/mount.h sys/sockio.h sys/statvfs.h sys/sysinfo.h \
                  sys/vfs.h x86intrin.h)
@@ -3510,7 +3510,7 @@ if test "$ac_cv_header_cxxabi_h" = "yes"; then
    AC_CHECK_DECL(abi::__cxa_demangle,
       [AC_DEFINE(HAVE_CXA_DEMANGLE, 1,
         [Define to 1 if `abi::__cxa_demangle' is available from <cxxabi.h>.])],
-      [], [[#include <cxxabi.h>]])
+      [], [[@%:@include <cxxabi.h>]])
 fi
 
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
@@ -3518,7 +3518,7 @@ fi
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
    [ncbi_cv_func_gethostbyname_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
+       [[@%:@include <netdb.h>]],
        [[
          void*           dummy = (void*) &gethostbyname_r;
          char            buf[1024];
@@ -3532,7 +3532,7 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
     )
     if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
+       [[@%:@include <netdb.h>]],
        [[
          void*           dummy = (void*) &gethostbyname_r;
          char            buf[1024];
@@ -3559,9 +3559,9 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
    [ncbi_cv_func_gethostbyaddr_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[
-         #include <netdb.h>
-         #include <sys/types.h>
-         #include <sys/socket.h>
+         @%:@include <netdb.h>
+         @%:@include <sys/types.h>
+         @%:@include <sys/socket.h>
        ]],
        [[
          void* dummy = (void*) &gethostbyaddr_r;
@@ -3579,9 +3579,9 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
     if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[
-         #include <netdb.h>
-         #include <sys/types.h>
-         #include <sys/socket.h>
+         @%:@include <netdb.h>
+         @%:@include <sys/types.h>
+         @%:@include <sys/socket.h>
        ]],
        [[
          void* dummy = (void*) &gethostbyaddr_r;
@@ -3610,7 +3610,7 @@ fi
 AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
    [ncbi_cv_func_getservbyname_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
+       [[@%:@include <netdb.h>]],
        [[
          void*           dummy = (void*) &getservbyname_r;
          char            buf[1024];
@@ -3624,7 +3624,7 @@ AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
     )
     if test "$ncbi_cv_func_getservbyname_r" = "no" ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
+       [[@%:@include <netdb.h>]],
        [[
          void*           dummy = (void*) &getservbyname_r;
          char            buf[1024];
@@ -3650,8 +3650,8 @@ fi
 AC_CACHE_CHECK([for getpwuid_r], ncbi_cv_func_getpwuid_r,
    [ncbi_cv_func_getpwuid_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <unistd.h>
-         #include <pwd.h>]],
+       [[@%:@include <unistd.h>
+         @%:@include <pwd.h>]],
        [[struct passwd bpw;
          char buf[1024];
          char *dir = getpwuid_r(getuid(), &bpw, buf, sizeof(buf))->pw_dir;
@@ -3659,8 +3659,8 @@ AC_CACHE_CHECK([for getpwuid_r], ncbi_cv_func_getpwuid_r,
        [ncbi_cv_func_getpwuid_r=4])
     if test "$ncbi_cv_func_getpwuid_r" = "no" ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <unistd.h>
-         #include <pwd.h>]],
+       [[@%:@include <unistd.h>
+         @%:@include <pwd.h>]],
        [[struct passwd *pw, bpw;
          char buf[1024];
          getpwuid_r(getuid(), &bpw, buf, sizeof(buf), &pw);
@@ -3679,7 +3679,7 @@ fi
 AC_CACHE_CHECK([for getlogin_r], ncbi_cv_func_getlogin_r,
    [ncbi_cv_func_getlogin_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <unistd.h>]],
+       [[@%:@include <unistd.h>]],
        [[char buf[64]; /* return */ getlogin_r(buf, 64);]])],
        [ncbi_cv_func_getlogin_r=yes], [ncbi_cv_func_getlogin_r=no])])
 if test $ncbi_cv_func_getlogin_r = yes; then
@@ -3694,8 +3694,8 @@ if test "$ac_cv_func_localtime_r" = "yes" ; then
    AC_CACHE_CHECK(return type of localtime_r, ac_cv_func_which_localtime_r,
       [AC_COMPILE_IFELSE(
           [AC_LANG_PROGRAM(
-             [[#include <unistd.h>
-               #include <time.h>]],
+             [[@%:@include <unistd.h>
+               @%:@include <time.h>]],
              [[struct tm mytm;
                time_t t;
                int y = localtime_r(&t, &mytm)->tm_year;]])],
@@ -3713,7 +3713,7 @@ fi
 AC_CACHE_CHECK([whether pthread mutexes are available],
    ncbi_cv_func_pthread_mutex,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-       [[#include <pthread.h>
+       [[@%:@include <pthread.h>
          pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;]],
        [[pthread_mutex_lock(&mutex); pthread_mutex_unlock(&mutex);]])],
       [ncbi_cv_func_pthread_mutex=yes], [ncbi_cv_func_pthread_mutex=no])])
@@ -3741,17 +3741,17 @@ test "$ac_cv_func_select" = yes  ||  ncbi_cv_func_select_updates_timeout=no
 AC_CACHE_CHECK([whether select updates the timeout when interrupted],
                ncbi_cv_func_select_updates_timeout,
    [AC_RUN_IFELSE([AC_LANG_PROGRAM(
-       [[#include <signal.h>
-         #include <sys/types.h>
-         #ifdef HAVE_SYS_SELECT_H
-         #  include <sys/select.h>
-         #endif
-         #ifdef HAVE_SYS_TIME_H
-         #  include <sys/time.h>
-         #endif
-         #ifdef HAVE_UNISTD_H
-         #  include <unistd.h>
-         #endif
+       [[@%:@include <signal.h>
+         @%:@include <sys/types.h>
+         @%:@ifdef HAVE_SYS_SELECT_H
+         @%:@  include <sys/select.h>
+         @%:@endif
+         @%:@ifdef HAVE_SYS_TIME_H
+         @%:@  include <sys/time.h>
+         @%:@endif
+         @%:@ifdef HAVE_UNISTD_H
+         @%:@  include <unistd.h>
+         @%:@endif
          RETSIGTYPE handler(int sig) { alarm(0); }]],
        [[struct timeval timeout = { 5, 0 };
          signal(SIGALRM, &handler);
@@ -3778,7 +3778,7 @@ if test "$ac_cv_func_strcasecmp" = yes; then
    AC_CACHE_CHECK([whether strcasecmp treats letters as lowercase],
                   ncbi_cv_func_strcasecmp_lc,
       [AC_RUN_IFELSE([AC_LANG_PROGRAM(
-          [[#include <string.h>]],
+          [[@%:@include <string.h>]],
           [[return strcasecmp("A", "_") <= 0;]])],
           [ncbi_cv_func_strcasecmp_lc=yes], [ncbi_cv_func_strcasecmp_lc=no],
           [ncbi_cv_func_strcasecmp_lc=yes])])
@@ -3790,7 +3790,7 @@ fi
 
 AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <sys/sysinfo.h>]],
+       [[@%:@include <sys/sysinfo.h>]],
        [[
          void* dummy = (void*) &sysinfo;
          struct sysinfo* info = 0;
@@ -3811,12 +3811,12 @@ AC_CHECK_FUNCS(getloadavg)
 AC_CACHE_CHECK([for readdir_r], ncbi_cv_func_readdir_r,
    [ncbi_cv_func_readdir_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <dirent.h>]],
+       [[@%:@include <dirent.h>]],
        [[DIR* dir; struct dirent* entry; readdir_r(dir, entry, &entry);]])],
        [ncbi_cv_func_readdir_r=3])
     if test "$ncbi_cv_func_readdir_r" = "no" ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <dirent.h>]],
+       [[@%:@include <dirent.h>]],
        [[DIR* dir; struct dirent* entry; readdir_r(dir, entry);]])],
        [ncbi_cv_func_readdir_r=2])
     fi])
@@ -3829,7 +3829,7 @@ fi
 
 AC_CACHE_CHECK([whether stdio supports locking], ncbi_cv_c_stdio_locked,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-      [[#include <stdio.h>]],
+      [[@%:@include <stdio.h>]],
       [[int c;
         flockfile(stdin);
         c = getc_unlocked(stdin);
@@ -3855,18 +3855,18 @@ AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(void*)
-AC_CHECK_SIZEOF(wchar_t, [], [#include <wchar.h>])
+AC_CHECK_SIZEOF(wchar_t, [], [@%:@include <wchar.h>])
 AC_CHECK_SIZEOF(__int64)
 AC_CHECK_TYPES([intptr_t, uintptr_t])
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
       [Define to 1 if `sin_len' is a member of `struct sockaddr_in'.])],
-   [], [#include <sys/types.h>
-        #include <netinet/in.h>])
+   [], [@%:@include <sys/types.h>
+        @%:@include <netinet/in.h>])
 
 AC_CHECK_MEMBERS([struct tm.tm_zone, struct tm.__tm_zone], [], [],
-   [#include <time.h>])
+   [@%:@include <time.h>])
 
 
 AC_CACHE_CHECK([whether function prototypes can use throw(...)],
@@ -3886,7 +3886,7 @@ fi
 AC_CACHE_CHECK([for ios(_base)::register_callback],
    ncbi_cv_func_ios_register_callback,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <iostream>]],
+       [[@%:@include <iostream>]],
        [[std::cout.register_callback(0, std::ios::erase_event);]])],
        [ncbi_cv_func_ios_register_callback=yes],
        [ncbi_cv_func_ios_register_callback=no])])
@@ -3897,8 +3897,8 @@ fi
 
 
 AC_CACHE_CHECK([for SysV semaphores], ncbi_cv_sys_semaphores,
-   AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <sys/types.h>
-#include <sys/sem.h>],
+   AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <sys/types.h>
+@%:@include <sys/sem.h>],
       [struct sembuf buf; int id = semget(0x1234, 0, IPC_CREAT);
        buf.sem_op = SEM_UNDO;])],
       [ncbi_cv_sys_semaphores=yes], [ncbi_cv_sys_semaphores=no]))
@@ -3909,8 +3909,8 @@ fi
 
 AC_CHECK_TYPE([union semun],
    AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if you have `union semun'.]),
-   [], [#include <sys/types.h>
-#include <sys/sem.h>])
+   [], [@%:@include <sys/types.h>
+@%:@include <sys/sem.h>])
 
 
 AC_CACHE_CHECK([which way the stack grows], ncbi_cv_sys_stack_dir,
@@ -3929,10 +3929,10 @@ AC_LANG_PUSH(C)
 AC_CACHE_CHECK([whether the preprocessor supports C99-style variadic macros],
    ncbi_cv_cpp_std_varargs,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#define foo(...) 1
-         #if foo(x,y,z) != 1
-         #error failed
-         #endif]], [])],
+       [[@%:@define foo(...) 1
+         @%:@if foo(x,y,z) != 1
+         @%:@error failed
+         @%:@endif]], [])],
        [ncbi_cv_cpp_std_varargs=yes], [ncbi_cv_cpp_std_varargs=no])])
 if test "$ncbi_cv_cpp_std_varargs" = yes; then
    AC_DEFINE(HAVE_CPP_STD_VARARGS, 1,
@@ -3942,10 +3942,10 @@ fi
 AC_CACHE_CHECK([whether the preprocessor supports GNU-style variadic macros],
    ncbi_cv_cpp_gnu_varargs,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#define foo(args...) 1
-         #if foo(x,y,z) != 1
-         #error failed
-         #endif]], [])],
+       [[@%:@define foo(args...) 1
+         @%:@if foo(x,y,z) != 1
+         @%:@error failed
+         @%:@endif]], [])],
        [ncbi_cv_cpp_gnu_varargs=yes], [ncbi_cv_cpp_gnu_varargs=no])])
 if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
    AC_DEFINE(HAVE_CPP_GNU_VARARGS, 1,
@@ -4053,14 +4053,14 @@ fi
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
    ncbi_cv_decl_fionbio_needs_bsd_comp,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[ #include <sys/types.h>
-          #include <sys/ioctl.h> ]],
+       [[ @%:@include <sys/types.h>
+          @%:@include <sys/ioctl.h> ]],
        [[ int request = FIONBIO; ]])],
        [ncbi_cv_decl_fionbio_needs_bsd_comp=no],
        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-           [[ #define BSD_COMP 1
-              #include <sys/types.h>
-              #include <sys/ioctl.h> ]],
+           [[ @%:@define BSD_COMP 1
+              @%:@include <sys/types.h>
+              @%:@include <sys/ioctl.h> ]],
            [[ int request = FIONBIO; ]])],
            [ncbi_cv_decl_fionbio_needs_bsd_comp=yes],
            [ncbi_cv_decl_fionbio_needs_bsd_comp="never defined at all"])])])
@@ -4072,18 +4072,18 @@ fi
 AC_CACHE_CHECK([whether INADDR_NONE is defined], ncbi_cv_decl_inaddr_none,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[
-         #ifdef HAVE_SYS_TYPES_H
-         #include <sys/types.h>
-         #endif
-         #ifdef HAVE_SYS_SOCKET_H
-         #include <sys/socket.h>
-         #endif
-         #ifdef HAVE_NETINET_IN_H
-         #include <netinet/in.h>
-         #endif
-         #ifdef HAVE_ARPA_INET_H
-         #include <arpa/inet.h>
-         #endif
+         @%:@ifdef HAVE_SYS_TYPES_H
+         @%:@include <sys/types.h>
+         @%:@endif
+         @%:@ifdef HAVE_SYS_SOCKET_H
+         @%:@include <sys/socket.h>
+         @%:@endif
+         @%:@ifdef HAVE_NETINET_IN_H
+         @%:@include <netinet/in.h>
+         @%:@endif
+         @%:@ifdef HAVE_ARPA_INET_H
+         @%:@include <arpa/inet.h>
+         @%:@endif
        ]],
        [[ unsigned long addr = INADDR_NONE; ]])],
        [ncbi_cv_decl_inaddr_none=yes], [ncbi_cv_decl_inaddr_none=no])])
@@ -4094,7 +4094,7 @@ fi
 
 AC_CACHE_CHECK([whether unaligned reads are permissible],
                ncbi_cv_sys_unaligned_reads,
-   [AC_RUN_IFELSE([AC_LANG_PROGRAM([[ #include <stdio.h> ]],
+   [AC_RUN_IFELSE([AC_LANG_PROGRAM([[ @%:@include <stdio.h> ]],
        [[ unsigned int a[2] = { 0x01234567, 0x89abcdef };
           fprintf(stderr, "%x\n", *(unsigned int*)((char*)a + 1)); ]])],
        [ncbi_cv_sys_unaligned_reads=yes],
@@ -4132,7 +4132,7 @@ AC_CACHE_CHECK([whether $CC supports -funsafe-math-optimizations],
 
 AC_CACHE_CHECK([whether $CC supports -msse4.1], ncbi_cv_cc_sse4_1,
    [CFLAGS="$orig_CFLAGS -msse4.1"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <emmintrin.h>],
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <emmintrin.h>],
           [double v __attribute__((__vector_size__(16)));
            __builtin_ia32_shufpd(v, v, 1);])],
        [ncbi_cv_cc_sse4_1=yes], [ncbi_cv_cc_sse4_1=no])])
@@ -4140,7 +4140,7 @@ AC_CACHE_CHECK([whether $CC supports -msse4.1], ncbi_cv_cc_sse4_1,
 AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
    [CFLAGS="$orig_CFLAGS -maes"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-          [#include <wmmintrin.h>
+          [@%:@include <wmmintrin.h>
            typedef long long TAESVec __attribute__((__vector_size__(16)));
            TAESVec f(TAESVec v, TAESVec w) {
               return __builtin_ia32_aesdec128(v, w);
@@ -4233,7 +4233,7 @@ AC_CACHE_CHECK([for res_search in -lresolv], ac_cv_lib_resolv_res_search,
    [orig_LIBS=$LIBS
     LIBS="-lresolv $NETWORK_LIBS $orig_LIBS"
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
-       [[#include <resolv.h>]],
+       [[@%:@include <resolv.h>]],
        [[unsigned char ans[256];
          int st = res_search("foo.bar", 1, 1, ans, sizeof(ans));]])],
        [ac_cv_lib_resolv_res_search=yes], [ac_cv_lib_resolv_res_search=no])
@@ -4249,7 +4249,7 @@ LIBS="$NETWORK_LIBS $orig_LIBS"
 AC_CHECK_FUNCS(inet_ntoa_r)
 AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>]],
+       [[@%:@include <netdb.h>]],
        [[struct addrinfo *p; getaddrinfo("foo", "bar", p, &p);]])],
        [ac_cv_func_getaddrinfo=yes], [ac_cv_func_getaddrinfo=no])])
 test "$ac_cv_func_getaddrinfo" = "yes" && \
@@ -4257,9 +4257,9 @@ test "$ac_cv_func_getaddrinfo" = "yes" && \
             [Define to 1 if you have the `getaddrinfo' function.])
 AC_CACHE_CHECK([for getnameinfo], ac_cv_func_getnameinfo,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-       [[#include <netdb.h>
-         #include <sys/types.h>
-         #include <sys/socket.h>]],
+       [[@%:@include <netdb.h>
+         @%:@include <sys/types.h>
+         @%:@include <sys/socket.h>]],
        [[struct sockaddr p; char buf[256], buf2[256];
          getnameinfo(&p, sizeof(p), buf, 256, buf2, 256, 0);]])],
        [ac_cv_func_getnameinfo=yes], [ac_cv_func_getnameinfo=no])])
@@ -4334,10 +4334,10 @@ fi
 AC_CHECK_FUNCS([clock_gettime nanosleep pthread_cond_timedwait_relative_np \
                 pthread_condattr_setclock sched_yield])
 AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_SGI_CYCLE, CLOCK_REALTIME], [], [],
-   [[#include <time.h>
-     #ifdef HAVE_SYS_TIME_H
-     #  include <sys/time.h>
-     #endif]])
+   [[@%:@include <time.h>
+     @%:@ifdef HAVE_SYS_TIME_H
+     @%:@  include <sys/time.h>
+     @%:@endif]])
 
 dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
@@ -4346,8 +4346,8 @@ AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
    ac_cv_search_iconv=no
    AC_LINK_IFELSE(
       [AC_LANG_PROGRAM(
-         [[#include <stdlib.h>
-           #include <iconv.h>]],
+         [[@%:@include <stdlib.h>
+           @%:@include <iconv.h>]],
          [[iconv_t cd = iconv_open("","");
            iconv(cd,NULL,NULL,NULL,NULL);
            iconv_close(cd);]])],
@@ -4357,8 +4357,8 @@ AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
          LIBS="-l$l $orig_LIBS"
          AC_LINK_IFELSE(
             [AC_LANG_PROGRAM(
-                [[#include <stdlib.h>
-                  #include <iconv.h>]],
+                [[@%:@include <stdlib.h>
+                  @%:@include <iconv.h>]],
                 [[iconv_t cd = iconv_open("","");
                   iconv(cd,NULL,NULL,NULL,NULL);
                   iconv_close(cd);]])],
@@ -4374,17 +4374,17 @@ if test "x$ac_cv_search_iconv" != xno; then
    AC_MSG_CHECKING([for iconv declaration])
    AC_CACHE_VAL(am_cv_proto_iconv, [
       AC_COMPILE_IFELSE([[
-#include <stdlib.h>
-#include <iconv.h>
+@%:@include <stdlib.h>
+@%:@include <iconv.h>
 extern
-#ifdef __cplusplus
+@%:@ifdef __cplusplus
 "C"
-#endif
-#if defined(__STDC__) || defined(__cplusplus)
+@%:@endif
+@%:@if defined(__STDC__) || defined(__cplusplus)
 size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
-#else
+@%:@else
 size_t iconv();
-#endif
+@%:@endif
 ]], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
       am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"])
    am_cv_proto_iconv=`echo "[$]am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
@@ -4418,28 +4418,28 @@ no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
 
 : ${with_libunwind:=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libunwind, LIBUNWIND, unwind,
- [[AC_LANG_PROGRAM([#include <unwind.h>
-                    #include <stdlib.h>],
+ [[AC_LANG_PROGRAM([@%:@include <unwind.h>
+                    @%:@include <stdlib.h>],
       [[_Unwind_Trace_Fn f; _Unwind_Backtrace(f, NULL);]])]])
 LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libdw, LIBDW, dw,
- [[AC_LANG_PROGRAM([#include <elfutils/libdw.h>],
+ [[AC_LANG_PROGRAM([@%:@include <elfutils/libdw.h>],
       [[Dwarf* d = dwarf_begin(17, DWARF_C_READ);]])]])
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
- [[AC_LANG_PROGRAM([#ifdef HAVE_LIBUNWIND
-                    #  define BACKWARD_HAS_UNWIND 1
-                    #else
-                    #  define BACKWARD_HAS_BACKTRACE 1
-                    #endif
-                    #ifdef HAVE_LIBDW
-                    #  define BACKWARD_HAS_DW 1
-                    #endif
-                    #include <backward.hpp>],
+ [[AC_LANG_PROGRAM([@%:@ifdef HAVE_LIBUNWIND
+                    @%:@  define BACKWARD_HAS_UNWIND 1
+                    @%:@else
+                    @%:@  define BACKWARD_HAS_BACKTRACE 1
+                    @%:@endif
+                    @%:@ifdef HAVE_LIBDW
+                    @%:@  define BACKWARD_HAS_DW 1
+                    @%:@endif
+                    @%:@include <backward.hpp>],
       [[backward::StackTrace st; st.load_here(32);]])]],
  [], [], [$LIBUNWIND_INCLUDE $LIBDW_INCLUDE])
 
@@ -4450,7 +4450,7 @@ if test "$with_backward_cpp_sig" = yes; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
- [[AC_LANG_PROGRAM([#include <zlib.h>],
+ [[AC_LANG_PROGRAM([@%:@include <zlib.h>],
       [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])]])
 if test -z "$Z_LIBS"; then
    zlocal=util/compress/zlib
@@ -4465,7 +4465,7 @@ if test -z "$Z_LIBS"; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(bz2,
- [[AC_LANG_PROGRAM([#include <bzlib.h>],
+ [[AC_LANG_PROGRAM([@%:@include <bzlib.h>],
       [[BZFILE* fp; char buf[1024]; int err;
         int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))]])]])
 if test -z "$BZ2_LIBS"; then
@@ -4484,7 +4484,7 @@ if test -d "$LZO_PATH"; then
    NCBI_FIX_DIR(LZO_PATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(lzo, LZO, lzo2,
- [[AC_LANG_PROGRAM([#include <lzo/lzo1x.h>],
+ [[AC_LANG_PROGRAM([@%:@include <lzo/lzo1x.h>],
       [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
 if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
         -a \( -f "$LZO_PATH/lib$bit64_sfx/liblzo2-static.a" \
@@ -4497,7 +4497,7 @@ if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     test "x$p" = "x/usr"  ||  PCRE_PATH=$p
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(pcre,
- [[AC_LANG_PROGRAM([#include <pcre.h>],
+ [[AC_LANG_PROGRAM([@%:@include <pcre.h>],
    [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])]])
 if test -z "$PCRE_LIBS"; then
    pcrelocal=util/regexp
@@ -4528,7 +4528,7 @@ if test "x${with_mbedtls-no}" != xno; then
       NCBI_FIX_DIR(MBEDTLS_PATH)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB(mbedtls,
-      [[AC_LANG_PROGRAM([#include <mbedtls/ssl.h>],
+      [[AC_LANG_PROGRAM([@%:@include <mbedtls/ssl.h>],
            [[mbedtls_ssl_context ssl; mbedtls_ssl_init(&ssl);]])]],
       [[-lmbedx509 -lmbedcrypto $Z_LIBS]])
    if test -n "$MBEDTLS_LIBS" -a -f "$MBEDTLS_PATH/lib/libmbedtls-static.a" \
@@ -4560,7 +4560,7 @@ if test "x$with_gmp" != xno; then
       NCBI_FIX_DIR(GMP_PATH)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB(gmp,
-      [[AC_LANG_PROGRAM([#include <gmp.h>],
+      [[AC_LANG_PROGRAM([@%:@include <gmp.h>],
            [[mpz_t x; mpz_init(x);]])]])
 fi
 if test "$with_gmp" = no; then
@@ -4595,9 +4595,9 @@ else
    AS_UNSET(GCRYPT_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gcrypt,
- [[AC_LANG_PROGRAM([[#include <gcrypt.h>
-                     #include <pthread.h>
-                     #include <errno.h>
+ [[AC_LANG_PROGRAM([[@%:@include <gcrypt.h>
+                     @%:@include <pthread.h>
+                     @%:@include <errno.h>
                      GCRY_THREAD_OPTION_PTHREAD_IMPL;]],
    [[gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);]])]],
  $GCRYPT_CONFIG_LIBS)
@@ -4630,7 +4630,7 @@ if test "x$with_nettle" != xno; then
       NCBI_RPATHIFY(NETTLE_LIBPATH, $NETTLE_LIBDIR)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB_EX(nettle, NETTLE, hogweed,
-      [[AC_LANG_PROGRAM([#include <nettle/sexp.h>],
+      [[AC_LANG_PROGRAM([@%:@include <nettle/sexp.h>],
            [[struct sexp_iterator it;
              sexp_iterator_first(&it, 0, (const uint8_t*) NULL);]])]],
       [-lnettle], [$GMP_LIBS])
@@ -4688,7 +4688,7 @@ else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
- [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
+ [[AC_LANG_PROGRAM([[@%:@include <gnutls/gnutls.h>]],
    [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
  [$GNUTLS_CONFIG_LIBS], [$GCRYPT_LIBS $NETTLE_LIBS $GMP_LIBS])
 if test "x$with_gnutls" != xno; then
@@ -4738,7 +4738,7 @@ if test "x$with_gnutls" != xno; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
- [[AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+ [[AC_LANG_PROGRAM([[@%:@include <openssl/ssl.h>]],
    [[SSL_library_init();]])]],
  -lcrypto)
 
@@ -4775,12 +4775,12 @@ else
    KRB5_CONFIG_LIBS=$KRB5_LIBS
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(krb5, KRB5, gssapi_krb5,
- [[AC_LANG_PROGRAM([[#include <time.h>
-#ifdef HAVE_INTTYPES_H
-#  include <inttypes.h>
-#endif
+ [[AC_LANG_PROGRAM([[@%:@include <time.h>
+@%:@ifdef HAVE_INTTYPES_H
+@%:@  include <inttypes.h>
+@%:@endif
 extern "C" {
-#include <gssapi/gssapi_krb5.h>
+@%:@include <gssapi/gssapi_krb5.h>
 }]],
    [[OM_uint32 min_stat;
      gss_buffer_desc buf;
@@ -4794,7 +4794,7 @@ fi
 
 
 NCBI_CHECK_THIRD_PARTY_LIB(curl,
-   [AC_LANG_PROGRAM([#include <curl/curl.h>],
+   [AC_LANG_PROGRAM([@%:@include <curl/curl.h>],
        [char* v = curl_version();])])
 
 
@@ -5010,7 +5010,7 @@ if test "$with_sybase" != "no" ; then
       [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
        LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <ctpublic.h>]],
+          [[@%:@include <ctpublic.h>]],
           [[CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ]])],
           [ncbi_cv_lib_sybase=yes], [ncbi_cv_lib_sybase=no])])
 
@@ -5029,8 +5029,8 @@ if test "$with_sybase" != "no" ; then
           LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[
-              #include <sybfront.h>
-              #include <sybdb.h>
+              @%:@include <sybfront.h>
+              @%:@include <sybdb.h>
              ]],
              [[
               LOGINREC*  x_login     = 0;
@@ -5106,8 +5106,8 @@ if test "$with_ftds" != "no" ; then
           LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
             [[
-             #include <sybdb.h>
-             #include <tds.h>
+             @%:@include <sybdb.h>
+             @%:@include <tds.h>
             ]],
             [[
              LOGINREC*  x_login     = 0;
@@ -5182,7 +5182,7 @@ if test "$with_mysql" != "no" ; then
          [CPPFLAGS="$MYSQL_INCLUDE $orig_CPPFLAGS"
           LIBS="$MYSQL_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <mysql.h>]],
+          [[@%:@include <mysql.h>]],
           [[MYSQL *p;  p = mysql_init(p);]])],
           [ncbi_cv_lib_mysql=yes], [ncbi_cv_lib_mysql=no])])
       if test "$ncbi_cv_lib_mysql" = no; then
@@ -5255,8 +5255,8 @@ if test "$with_bdb" != "no" ; then
       [CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
        LIBS="$BERKELEYDB_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <db.h>
-            #include <stdlib.h>]],
+          [[@%:@include <db.h>
+            @%:@include <stdlib.h>]],
           [[ DB* dbp;  db_create(&dbp, NULL, 0);  dbp->app_private = 0; ]])],
           [ncbi_cv_lib_berkeley_db=yes], [ncbi_cv_lib_berkeley_db=no])])
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
@@ -5266,7 +5266,7 @@ if test "$with_bdb" != "no" ; then
          ncbi_cv_lib_berkeley_db_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
 cat >/dev/null <<_NCBI_EOF
-#include <db.h>
+@%:@include <db.h>
 _NCBI_EOF
 get_DB_VERSION() {
     grep '^[^#]' <<_NCBI_EOF
@@ -5326,7 +5326,7 @@ else
       [CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
        LIBS="$BERKELEYDB_CXX_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <db_cxx.h>]],
+          [[@%:@include <db_cxx.h>]],
           [[DbEnv env(0);  Db db(&env, 0);  db.set_app_private(NULL);]])],
           [ncbi_cv_lib_berkeley_db_cxx=yes],
           [ncbi_cv_lib_berkeley_db_cxx=no])])
@@ -5359,7 +5359,7 @@ case "$ODBC_PATH" in
    AC_CACHE_CHECK([for ODBC libraries${ODBC_PATH:+ in $ODBC_PATH}],
       ncbi_cv_lib_odbc,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <sql.h>]],
+          [[@%:@include <sql.h>]],
           [[SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*) "x";
             SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);]])],
           [ncbi_cv_lib_odbc=yes], [ncbi_cv_lib_odbc=no])])
@@ -5369,17 +5369,17 @@ case "$ODBC_PATH" in
       NCBI_MISSING_PACKAGE(odbc)
    else
       # odbcss.h isn't self-contained :-/
-      AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
+      AC_CHECK_HEADERS(odbcss.h, [], [], [@%:@include <sql.h>])
 
       AC_CHECK_FUNCS(SQLGetPrivateProfileString)
       AC_CHECK_TYPES([SQLLEN, SQLROWOFFSET, SQLROWSETSIZE, SQLSETPOSIROW],,,
-         [#include <sqltypes.h>])
-      AC_CHECK_SIZEOF(SQLWCHAR, [], [#include <sqltypes.h>])
+         [@%:@include <sqltypes.h>])
+      AC_CHECK_SIZEOF(SQLWCHAR, [], [@%:@include <sqltypes.h>])
 
       AC_CACHE_CHECK([whether SQLColAttribute's last argument is an SQLLEN *],
          ncbi_cv_func_sqlcolattribute_sqllen,
          [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-            [[#include <sql.h>
+            [[@%:@include <sql.h>
               SQLRETURN SQL_API SQLColAttribute
                 (SQLHSTMT sh, SQLUSMALLINT cn, SQLUSMALLINT fi, SQLPOINTER ca,
                  SQLSMALLINT bl, SQLSMALLINT *sl, SQLLEN *na);]],
@@ -5465,8 +5465,8 @@ if test "$with_perl" != "no" ; then
       AC_CACHE_CHECK([for usable Perl libraries], [ncbi_cv_lib_perl],
          [AC_LINK_IFELSE([AC_LANG_PROGRAM(
                 [[
-#include <EXTERN.h>
-#include <perl.h>]],
+@%:@include <EXTERN.h>
+@%:@include <perl.h>]],
                 [[PerlInterpreter* p = perl_alloc();]])],
              [ncbi_cv_lib_perl=yes], [ncbi_cv_lib_perl=no])])
    fi
@@ -5556,7 +5556,7 @@ if test "$with_boost" != "no"; then
          ncbi_cv_lib_boost_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
 cat >/dev/null <<_NCBI_EOF
-#include <boost/version.hpp>
+@%:@include <boost/version.hpp>
 _NCBI_EOF
 get_BOOST_VERSION() {
     grep '^[^#]' <<_NCBI_EOF
@@ -5731,7 +5731,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_REGEX_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/regex.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/regex.hpp>]],
               [[throw boost::regex_error(boost::regex_constants::error_stack);]])],
           [ncbi_cv_lib_boost_regex=yes], [ncbi_cv_lib_boost_regex=no])])
 
@@ -5739,7 +5739,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE -DBOOST_ERROR_CODE_HEADER_ONLY $orig_CPPFLAGS"
       LIBS="$RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/spirit.hpp>
+          [AC_LANG_PROGRAM([[@%:@include <boost/spirit.hpp>
                              using namespace boost::spirit;
                              struct MyGrammar : public grammar<MyGrammar>
                              {
@@ -5768,7 +5768,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_SYSTEM_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/system/error_code.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/system/error_code.hpp>]],
               [[const char * s = boost::system::system_category().name();]])],
           [ncbi_cv_lib_boost_system=yes],
           [ncbi_cv_lib_boost_system=no
@@ -5788,7 +5788,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $BOOST_SYSTEM_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/chrono.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/chrono.hpp>]],
               [[boost::chrono::system_clock::now();]])],
           [ncbi_cv_lib_boost_chrono=yes],
           [ncbi_cv_lib_boost_chrono=no])])
@@ -5806,7 +5806,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_FILESYSTEM_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/filesystem.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/filesystem.hpp>]],
               [[return boost::filesystem::portable_name("foo");]])],
           [ncbi_cv_lib_boost_filesystem=yes],
           [ncbi_cv_lib_boost_filesystem=no])])
@@ -5822,7 +5822,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_IOSTREAMS_LIBS $Z_LIBS $BZ2_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/iostreams/device/file_descriptor.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/iostreams/device/file_descriptor.hpp>]],
               [[boost::iostreams::file_descriptor fd;]])],
           [ncbi_cv_lib_boost_iostreams=yes],
           [ncbi_cv_lib_boost_iostreams=no])])
@@ -5839,7 +5839,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_PROGRAM_OPTIONS_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/program_options.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/program_options.hpp>]],
               [[boost::program_options::option_description od;]])],
           [ncbi_cv_lib_boost_program_options=yes],
           [ncbi_cv_lib_boost_program_options=no])])
@@ -5856,8 +5856,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_SERIALIZATION_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/archive/text_oarchive.hpp>
-                             #include <iostream>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/archive/text_oarchive.hpp>
+                             @%:@include <iostream>]],
               [[boost::archive::text_oarchive oa(std::cout);]])],
           [ncbi_cv_lib_boost_serialization=yes],
           [ncbi_cv_lib_boost_serialization=no])])
@@ -5901,11 +5901,11 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
         fi
         [AC_LINK_IFELSE(
            [AC_LANG_SOURCE(
-              [[#ifdef NCBI_BOOST_NOT_INCLUDED
-                #  include <boost/test/unit_test.hpp>
-                #else
-                #  include <boost/test/included/unit_test.hpp>
-                #endif
+              [[@%:@ifdef NCBI_BOOST_NOT_INCLUDED
+                @%:@  include <boost/test/unit_test.hpp>
+                @%:@else
+                @%:@  include <boost/test/included/unit_test.hpp>
+                @%:@endif
                 using boost::unit_test::test_suite;
                 static void s_Test1(void) { BOOST_CHECK(1 == 1); }
                 test_suite* init_unit_test_suite(int, char*[])
@@ -5934,7 +5934,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_THREAD_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/thread.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <boost/thread.hpp>]],
               [[boost::mutex m; boost::mutex::scoped_lock l(m);]])],
           [ncbi_cv_lib_boost_thread=yes], [ncbi_cv_lib_boost_thread=no])])
 else
@@ -6097,7 +6097,7 @@ if test "$with_ncbi_c" != "no" ; then
       [CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
        LIBS="$NCBI_C_LIBPATH $NCBI_C_ncbi $NETWORK_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <ncbi.h>]],
+          [[@%:@include <ncbi.h>]],
           [[ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ]])],
           [ncbi_cv_lib_ctools=yes], [ncbi_cv_lib_ctools=no])])
    if test "$ncbi_cv_lib_ctools" = no; then
@@ -6187,11 +6187,11 @@ if test "$with_opengl" != "no"; then
        LIBS="$OPENGL_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[
-           #ifdef NCBI_OS_DARWIN
-           #  include <OpenGL/gl.h>
-           #else
-           #  include <GL/gl.h>
-           #endif
+           @%:@ifdef NCBI_OS_DARWIN
+           @%:@  include <OpenGL/gl.h>
+           @%:@else
+           @%:@  include <GL/gl.h>
+           @%:@endif
           ]],
           [[glBegin(0);]])],
           [ncbi_cv_lib_opengl=yes], [ncbi_cv_lib_opengl=no])])
@@ -6332,8 +6332,8 @@ else
          AC_CACHE_CHECK([for GLEW multi-context (MX) support],
             ncbi_cv_lib_glew_mx,
             [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-               [[#define GLEW_MX 1
-                 #include <GL/glew.h>]],
+               [[@%:@define GLEW_MX 1
+                 @%:@include <GL/glew.h>]],
                [[glewContextInit(NULL);]])],
              [ncbi_cv_lib_glew_mx=yes], [ncbi_cv_lib_glew_mx=no])])
           if test $ncbi_cv_lib_glew_mx = yes; then
@@ -6446,7 +6446,7 @@ if test "$with_wxwidgets" != "no" ; then
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <wx/combobox.h>
+             [[@%:@include <wx/combobox.h>
                class CMyComboBox : public wxComboBox {};]],
              [[CMyComboBox cb; cb.Clear();]])],
              [ncbi_cv_lib_wxwidgets=yes], [ncbi_cv_lib_wxwidgets=no])
@@ -6533,7 +6533,7 @@ if test "$with_fastcgi" != "no" ; then
       ncbi_cv_lib_fcgi,
       [CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <fcgiapp.h>]],
+          [[@%:@include <fcgiapp.h>]],
           [[ (void) FCGX_IsCGI(); ]])],
           [ncbi_cv_lib_fcgi=yes], [ncbi_cv_lib_fcgi=no])])
    if test "$ncbi_cv_lib_fcgi" = "no"; then
@@ -6629,7 +6629,7 @@ else
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <hashtab.hpp>]],
+             [[@%:@include <hashtab.hpp>]],
              [[ (new C_HashTab(123))->Clear(); ]])],
              [ncbi_cv_lib_sssutils=yes], [ncbi_cv_lib_sssutils=no])])
       if test "$ncbi_cv_lib_sssutils" = yes; then
@@ -6662,7 +6662,7 @@ else
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <cslink.hpp>]],
+             [[@%:@include <cslink.hpp>]],
              [[ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ]])],
              [ncbi_cv_lib_sssdb=yes], [ncbi_cv_lib_sssdb=no])])
       if test "$ncbi_cv_lib_sssdb" = "yes"; then
@@ -6709,7 +6709,7 @@ if test "$with_sp" != "no" ; then
       [CPPFLAGS="$SP_INCLUDE $orig_CPPFLAGS"
        LIBS="$SP_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <SGMLApplication.h>]],
+          [[@%:@include <SGMLApplication.h>]],
           [[ SP_API::SGMLApplication app; ]])],
           [ncbi_cv_lib_sp=yes], [ncbi_cv_lib_sp=no])])
    if test "$ncbi_cv_lib_sp" = "no"; then
@@ -6762,7 +6762,7 @@ if test "$with_orbacus" != no; then
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
        LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <OB/CORBA.h>]],
+          [[@%:@include <OB/CORBA.h>]],
           [[
             int c = 0;
             char* v[] = { NULL };
@@ -6820,7 +6820,7 @@ if test "$with_icu" != "no" ; then
           CPPFLAGS="$ICU_INCLUDE $orig_CPPFLAGS"
           LIBS="$ICU_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
-            [[#include <unicode/unistr.h>]],
+            [[@%:@include <unicode/unistr.h>]],
             [[int32_t i = UNICODE_STRING_SIMPLE("foo").indexOf('f');]])],
             [ncbi_cv_lib_icu=yes], [ncbi_cv_lib_icu=no])
        else
@@ -6854,7 +6854,7 @@ fi
 
 ### XML/XSL libraries
 NCBI_CHECK_THIRD_PARTY_LIB(expat,
- AC_LANG_PROGRAM([#include <expat.h>],
+ AC_LANG_PROGRAM([@%:@include <expat.h>],
     [XML_Parser parser = XML_ParserCreate("utf-8");]))
 if test -f "${EXPAT_PATH}/lib${bit64_sfx}/libexpat-static.a"; then
    EXPAT_STATIC_LIBS="-L${EXPAT_PATH}/lib${bit64_sfx} -lexpat-static"
@@ -6867,7 +6867,7 @@ if test -d "$SABLOT_PATH"; then
    NCBI_FIX_DIR(SABLOT_PATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(sablot,
- AC_LANG_PROGRAM([#include <sablot.h>],
+ AC_LANG_PROGRAM([@%:@include <sablot.h>],
     [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
  $EXPAT_LIBS)
 if test -f "${SABLOT_PATH}/lib${bit64_sfx}/libsablot-static.a"; then
@@ -6926,7 +6926,7 @@ if test "$with_libxml" != "no"; then
       LIBS="$LIBXML_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
          [AC_LANG_PROGRAM(
-             [#include <libxml/parser.h>],
+             [@%:@include <libxml/parser.h>],
              [xmlDocPtr doc = xmlParseFile("foo.xml");])],
       [ncbi_cv_lib_libxml=yes], [ncbi_cv_lib_libxml=no])])
    if test "$ncbi_cv_lib_libxml" = "no"; then
@@ -6958,7 +6958,7 @@ fi
 
 : ${LIBXSLT_PATH=$LIBXML_PATH}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxslt, LIBXSLT, xslt,
- [AC_LANG_PROGRAM([#include <libxslt/xslt.h>], [xsltInit()])],
+ [AC_LANG_PROGRAM([@%:@include <libxslt/xslt.h>], [xsltInit()])],
  [], [$LIBXML_LIBS $Z_LIBS], [$LIBXML_INCLUDE])
 
 # XXX - they might be in different directories in some setups
@@ -6982,7 +6982,7 @@ else
    exslt_autodep=
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
- [AC_LANG_PROGRAM([#include <libexslt/exslt.h>], [exsltRegisterAll()])],
+ [AC_LANG_PROGRAM([@%:@include <libexslt/exslt.h>], [exsltRegisterAll()])],
  [$exslt_autodep], [$LIBXSLT_LIBS $LIBXML_LIBS $Z_LIBS], [$LIBXSLT_INCLUDE])
 
 # XXX - they might be in different directories in some setups
@@ -7032,7 +7032,7 @@ if test "$with_xerces" != no; then
       [CPPFLAGS="$XERCES_INCLUDE $orig_CPPFLAGS"
        LIBS="$XERCES_LIBS $ICU_LIBS $orig_LIBS"
        AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <xercesc/dom/DOM.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <xercesc/dom/DOM.hpp>]],
              [[xercesc::DOMImplementation* impl
                = xercesc::DOMImplementationRegistry::getDOMImplementation
                  (xercesc::XMLString::transcode("XML 1.0"));]])],
@@ -7093,7 +7093,7 @@ if test "$with_xalan" != no; then
       [CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
        LIBS="$XALAN_LIBS $XERCES_LIBS $ICU_LIBS $orig_LIBS"
        AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <xalanc/XalanTransformer/XalanTransformer.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <xalanc/XalanTransformer/XalanTransformer.hpp>]],
              [[xalanc::XalanTransformer::initialize();]])],
           ncbi_cv_lib_xalan_c=yes, ncbi_cv_lib_xalan_c=no)])
    if test $ncbi_cv_lib_xalan_c = yes; then
@@ -7161,7 +7161,7 @@ if test "$with_zorba" != no; then
       [CPPFLAGS="$ZORBA_INCLUDE $orig_CPPFLAGS"
        LIBS="$ZORBA_LIBS $orig_LIBS"
        AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <zorba/zorba.h>]],
+          [AC_LANG_PROGRAM([[@%:@include <zorba/zorba.h>]],
              [[zorba::Version v = zorba::Zorba::version();]])],
           ncbi_cv_lib_zorba=yes, ncbi_cv_lib_zorba=no)])
    if test $ncbi_cv_lib_zorba = yes; then
@@ -7203,7 +7203,7 @@ else
 fi
 NCBI_RPATHIFY(SQLITE3_LIBPATH, $SQLITE3_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
- AC_LANG_PROGRAM([#include <sqlite3.h>],
+ AC_LANG_PROGRAM([@%:@include <sqlite3.h>],
     [sqlite3_pcache_methods m;
      int status = sqlite3_config(SQLITE_CONFIG_GETPCACHE, &m);]))
 if test -n "$SQLITE3_LIBS"; then
@@ -7336,7 +7336,7 @@ if test "$with_vdb" != "no" ; then
       LIBS="$orig_LIBS $VDB_LIBS"
       AC_CACHE_CHECK([for ncbi-vdb$in_path], ncbi_cv_lib_ncbi_vdb,
          AC_LINK_IFELSE([
-            AC_LANG_PROGRAM([#include <sra/sradb.h>],
+            AC_LANG_PROGRAM([@%:@include <sra/sradb.h>],
                [const SRAMgr* mgr; SRAMgrMakeRead(&mgr);])],
             [ncbi_cv_lib_ncbi_vdb=yes], [ncbi_cv_lib_ncbi_vdb=no]))
       if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
@@ -7420,8 +7420,8 @@ if test "$with_ngs" != "no" ; then
    done
    NCBI_RPATHIFY(NGS_LIBPATH, [$NGS_LIBDIR])
    NCBI_CHECK_THIRD_PARTY_LIB_EX(ngs, NGS, ncbi-ngs-c++,
-      [[AC_LANG_PROGRAM([[#include <ncbi-vdb/NGS.hpp>
-                          #include <ngs-bam/ngs-bam.hpp>]],
+      [[AC_LANG_PROGRAM([[@%:@include <ncbi-vdb/NGS.hpp>
+                          @%:@include <ngs-bam/ngs-bam.hpp>]],
            [[ncbi::NGS::setAppVersionString("conftest.0.0.0");
              ngs::ReadCollection coll
              = NGS_BAM::openReadCollection("foo.bam");]])]],
@@ -7445,7 +7445,7 @@ fi
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
 NCBI_CHECK_THIRD_PARTY_LIB(oechem,
- AC_LANG_PROGRAM([#include <oechem.h>],
+ AC_LANG_PROGRAM([@%:@include <oechem.h>],
     [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
   -loeiupac -loedepict -loechem -loesystem -loeplatform -lz, $NETWORK_LIBS)
 if test -n "$OECHEM_LIBS"; then
@@ -7485,8 +7485,8 @@ if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
    fi
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
-  [[AC_LANG_PROGRAM([[#include <sys/types.h>
-                      #include <drmaa.h>]],
+  [[AC_LANG_PROGRAM([[@%:@include <sys/types.h>
+                      @%:@include <drmaa.h>]],
      [[char buf[1024]; drmaa_init("SGE", buf, sizeof(buf));]])]])
 
 
@@ -7506,7 +7506,7 @@ elif test -d "$MUPARSER_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(muparser,
-  [[AC_LANG_PROGRAM([[#include <muParser.h>]],
+  [[AC_LANG_PROGRAM([[@%:@include <muParser.h>]],
      [[mu::Parser parser;]])]])
 
 
@@ -7526,7 +7526,7 @@ if test -d "$HDF5_PATH"; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(hdf5, HDF5, hdf5_cpp,
-  [[AC_LANG_PROGRAM([[#include <H5Cpp.h>]],
+  [[AC_LANG_PROGRAM([[@%:@include <H5Cpp.h>]],
      [[H5::H5Library::open();]])]],
   [-lhdf5])
 
@@ -7535,10 +7535,10 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(hdf5, HDF5, hdf5_cpp,
 # : ${JPEG_PATH=/usr/sfw}
 # Grr... jpeglib.h isn't especially well-behaved.
 NCBI_CHECK_THIRD_PARTY_LIB(jpeg,
- AC_LANG_PROGRAM([#include <sys/types.h>
-                  #include <stdio.h>
+ AC_LANG_PROGRAM([@%:@include <sys/types.h>
+                  @%:@include <stdio.h>
                   extern "C" {
-                  #include <jpeglib.h>
+                  @%:@include <jpeglib.h>
                   }],
     [struct jpeg_decompress_struct cinfo;
      struct jpeg_error_mgr         jerr;
@@ -7547,14 +7547,14 @@ NCBI_CHECK_THIRD_PARTY_LIB(jpeg,
 
 # : ${PNG_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(png,
- AC_LANG_PROGRAM([#include <png.h>],
+ AC_LANG_PROGRAM([@%:@include <png.h>],
     [png_structp png_ptr
       = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
  ]), $Z_LIBS, [], $Z_INCLUDE)
 
 # : ${TIFF_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(tiff,
- AC_LANG_PROGRAM([#include <tiffio.h>],
+ AC_LANG_PROGRAM([@%:@include <tiffio.h>],
     [TIFF* tiff = TIFFOpen("foo", "r");]), $Z_LIBS, $JPEG_LIBS)
 ## etc.
 
@@ -7562,13 +7562,13 @@ NCBI_CHECK_THIRD_PARTY_LIB(tiff,
 with_ungif=$with_gif
 NCBI_CHECK_THIRD_PARTY_LIB(gif,
  AC_LANG_PROGRAM([extern "C" {
-                  #include <gif_lib.h>
+                  @%:@include <gif_lib.h>
                   }],
     [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
 if test "$with_gif" = "no"; then
    NCBI_CHECK_THIRD_PARTY_LIB(ungif,
     AC_LANG_PROGRAM([extern "C" {
-                     #include <gif_lib.h>
+                     @%:@include <gif_lib.h>
                      }],
        [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
 else
@@ -7579,7 +7579,7 @@ fi
 
 case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
 NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
- AC_LANG_PROGRAM([#include <X11/xpm.h>],
+ AC_LANG_PROGRAM([@%:@include <X11/xpm.h>],
     [XpmImage image; XpmInfo info;
      XpmReadFileToXpmImage("foo", &image, &info);]), $X_LIBS -lX11, [],
     $X_CFLAGS)
@@ -7600,7 +7600,7 @@ if test "$with_gl2ps" != "no"; then
       NCBI_FIX_DIR(GL2PS_PATH)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB(gl2ps,
-    AC_LANG_PROGRAM([#include <gl2ps.h>],
+    AC_LANG_PROGRAM([@%:@include <gl2ps.h>],
        [gl2psSpecial(GL2PS_SVG, "foo")]),
     [], [$OPENGL_LIBS $PNG_LIBS $Z_LIBS], [$OPENGL_INCLUDE])
 fi
@@ -7634,7 +7634,7 @@ if test "$with_freetype" != "no" ; then
          [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"
           AC_COMPILE_IFELSE(
              [AC_LANG_PROGRAM(
-                 [[#include <ft2build.h>]], [])],
+                 [[@%:@include <ft2build.h>]], [])],
              [ncbi_cv_lib_freetype_fix_include=no],
              [ncbi_cv_lib_freetype_fix_include=yes])])
       if test "$ncbi_cv_lib_freetype_fix_include" = yes; then
@@ -7646,8 +7646,8 @@ if test "$with_freetype" != "no" ; then
           LIBS="$FREETYPE_LIBS $orig_LIBS"
           AC_LINK_IFELSE(
              [AC_LANG_PROGRAM(
-                 [[#include <ft2build.h>
-                   #include FT_FREETYPE_H]],
+                 [[@%:@include <ft2build.h>
+                   @%:@include FT_FREETYPE_H]],
                  [[FT_Select_Charmap(NULL, ft_encoding_unicode);]])],
              [ncbi_cv_lib_freetype=yes], [ncbi_cv_lib_freetype=no])])
       if test "$ncbi_cv_lib_freetype" = no; then
@@ -7683,12 +7683,12 @@ NCBI_FIX_DIR(FTGL_LIBDIR)
 NCBI_RPATHIFY(FTGL_LIBPATH, $FTGL_LIBDIR)
 
 NCBI_CHECK_THIRD_PARTY_LIB(ftgl,
-  [[AC_LANG_PROGRAM([[#include <FTGL/ftgl.h>]], [[FTSimpleLayout layout;]])]],
+  [[AC_LANG_PROGRAM([[@%:@include <FTGL/ftgl.h>]], [[FTSimpleLayout layout;]])]],
   [$FREETYPE_LIBS], [], [$FREETYPE_INCLUDE])
 
 
 NCBI_CHECK_THIRD_PARTY_LIB(magic,
-   [AC_LANG_PROGRAM([#include <magic.h>],
+   [AC_LANG_PROGRAM([@%:@include <magic.h>],
        [magic_t m = magic_open(17);])])
 
 
@@ -7715,7 +7715,7 @@ done
 NCBI_RPATHIFY(MIMETIC_LIBPATH, $MIMETIC_LIBDIR)
 
 NCBI_CHECK_THIRD_PARTY_LIB(mimetic,
-   [AC_LANG_PROGRAM([#include <mimetic/mimetic.h>],
+   [AC_LANG_PROGRAM([@%:@include <mimetic/mimetic.h>],
        [mimetic::MimeEntity me;])])
 
 
@@ -7747,7 +7747,7 @@ AC_PATH_PROG(GSOAP_SOAPCPP2, soapcpp2, [], $GSOAP_BINDIR:$PATH)
 AC_PATH_PROG(GSOAP_WSDL2H,   wsdl2h,   [], $GSOAP_BINDIR:$PATH)
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoapssl++,
-   [AC_LANG_PROGRAM([#include <stdsoap2.h>
+   [AC_LANG_PROGRAM([@%:@include <stdsoap2.h>
         SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultcode(struct soap*)
         { return NULL; }
         SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultsubcode(struct soap*)
@@ -7790,7 +7790,7 @@ if test "$with_avro" != no; then
    fi
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(avro, AVRO, avrocpp,
-   [AC_LANG_PROGRAM([#include <avro/Node.hh>],
+   [AC_LANG_PROGRAM([@%:@include <avro/Node.hh>],
       [avro::Name name("foo");])],
    [$BOOST_LIBPATH $BOOST_FILESYSTEM_LIBS $BOOST_SYSTEM_LIBS $BOOST_PROGRAM_OPTIONS_LIBS $BOOST_IOSTREAMS_LIBS $RT_LIBS $Z_LIBS $BZ2_LIBS],
    [],
@@ -7820,8 +7820,8 @@ if test "$with_cereal" != no; then
    AC_CACHE_CHECK([for USC Cereal$in_cereal], ncbi_cv_lib_cereal,
       [CPPFLAGS="$CEREAL_INCLUDE $orig_CPPFLAGS"
        AC_COMPILE_IFELSE(
-          [AC_LANG_PROGRAM([[#include <iostream>
-                             #include <cereal/archives/binary.hpp>]],
+          [AC_LANG_PROGRAM([[@%:@include <iostream>
+                             @%:@include <cereal/archives/binary.hpp>]],
                            [[cereal::BinaryOutputArchive
                              archive(std::cout);]])],
           [ncbi_cv_lib_cereal=yes], [ncbi_cv_lib_cereal=no])])
@@ -7836,8 +7836,8 @@ fi
 
 # SASL 2
 NCBI_CHECK_THIRD_PARTY_LIB(sasl2,
- [[AC_LANG_PROGRAM([[#include <stdlib.h>
-                     #include <sasl/sasl.h>]],
+ [[AC_LANG_PROGRAM([[@%:@include <stdlib.h>
+                     @%:@include <sasl/sasl.h>]],
    [[sasl_client_init(NULL);]])]])
 
 
@@ -7857,7 +7857,7 @@ fi
 # need Boost rpath
 NCBI_RPATHIFY(MONGODB_LIBPATH, $MONGODB_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb, MONGODB, mongoclient,
-   [AC_LANG_PROGRAM([#include <mongo/client/dbclient.h>],
+   [AC_LANG_PROGRAM([@%:@include <mongo/client/dbclient.h>],
       [std::vector<mongo::HostAndPort> v;
        mongo::DBClientReplicaSet client("foo", v);
        client.connect();])],
@@ -7903,7 +7903,7 @@ if $m3pc --exists >/dev/null 2>&1; then
       [$no_usr_lib])
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb3, MONGODB3, mongocxx,
-   [AC_LANG_PROGRAM([#include <mongocxx/client.hpp>],
+   [AC_LANG_PROGRAM([@%:@include <mongocxx/client.hpp>],
       [mongocxx::client mongo_client;])],
    [], [$MONGODB3_FULL_LIBS],
    [$MONGODB3_FULL_INCLUDE $BOOST_INCLUDE])
@@ -7947,7 +7947,7 @@ else
    LEVELDB_LIBDIR=$LEVELDB_PATH/lib
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(leveldb,
-  [AC_LANG_PROGRAM([[#include <leveldb/db.h>
+  [AC_LANG_PROGRAM([[@%:@include <leveldb/db.h>
                      using namespace leveldb;]],
      [[DB* db; Status status = DB::Open(Options(), "foo", &db);]])])
 
@@ -7973,7 +7973,7 @@ if test -d "$GMOCK_PATH"; then
 fi
 NCBI_RPATHIFY(GMOCK_LIBPATH, $GMOCK_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(gmock,
-   [AC_LANG_PROGRAM([#include <gmock/gmock.h>],
+   [AC_LANG_PROGRAM([@%:@include <gmock/gmock.h>],
       [int    my_argc;
        char** my_argv;
        testing::InitGoogleMock(&my_argc, my_argv);])],
@@ -8002,11 +8002,11 @@ AC_CHECK_HEADERS(lapacke.h lapacke/lapacke.h clapack.h Accelerate/Accelerate.h)
 AC_LANG_POP(C)
 if test "$ac_cv_header_clapack_h:$ac_cv_header_Accelerate_Accelerate_h" != no:no; then
    AC_CHECK_TYPES([__CLPK_integer], [], [],
-      [[#ifdef HAVE_CLAPACK_H
-        #  include <clapack.h>
-        #else
-        #  include <Accelerate/Accelerate.h>
-        #endif]])
+      [[@%:@ifdef HAVE_CLAPACK_H
+        @%:@  include <clapack.h>
+        @%:@else
+        @%:@  include <Accelerate/Accelerate.h>
+        @%:@endif]])
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(lapack,
@@ -8016,7 +8016,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(lapack,
 
 # LMDB
 NCBI_CHECK_THIRD_PARTY_LIB(lmdb,
-   [AC_LANG_PROGRAM([[#include <lmdb.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <lmdb.h>]],
       [[MDB_env *env; return mdb_env_create(&env);]])],
    [$THREAD_LIBS])
 if test -z "$LMDB_LIBS"; then
@@ -8064,7 +8064,7 @@ if test -d "$LIBUV_PATH"; then
 fi
 NCBI_RPATHIFY(LIBUV_LIBPATH, $LIBUV_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libuv, LIBUV, uv,
-   [AC_LANG_PROGRAM([[#include <uv.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <uv.h>]],
       [[uv_mutex_t m; return uv_mutex_init(&m);]])])
 if test "$with_libuv" != no -a -f "$LIBUV_LIBDIR/libuv-static.a"; then
     LIBUV_STATIC_LIBS="-L$LIBUV_LIBDIR -luv-static"
@@ -8096,7 +8096,7 @@ if test -d "$LIBSSH2_PATH"; then
 fi
 NCBI_RPATHIFY(LIBSSH2_LIBPATH, $LIBSSH2_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libssh2, LIBSSH2, ssh2,
-   [AC_LANG_PROGRAM([[#include <libssh2.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <libssh2.h>]],
       [[return libssh2_init(LIBSSH2_INIT_NO_CRYPTO);]])],
    [$OPENSSL_LIBS])
 if test "$with_libssh2" != no -a -f "$LIBSSH2_LIBDIR/libssh2-static.a"; then
@@ -8124,7 +8124,7 @@ if test -d "$CASSANDRA_PATH"; then
    done
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(cassandra,
-   [AC_LANG_PROGRAM([[#include <cassandra.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <cassandra.h>]],
       [[CassCluster* c = cass_cluster_new();]])],
    [$LIBSSH2_LIBS $LIBUV_LIBS])
 if test "$with_cassandra" != no -a \
@@ -8154,7 +8154,7 @@ if test -d "$NGHTTP2_PATH"; then
 fi
 NCBI_RPATHIFY(NGHTTP2_LIBPATH, $NGHTTP2_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
-   [AC_LANG_PROGRAM([[#include <nghttp2/nghttp2.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <nghttp2/nghttp2.h>]],
        [[nghttp2_error_callback cb;
          const char* s = nghttp2_http2_strerror(NGHTTP2_ERR_EOF);]])])
 if test "$with_nghttp2" != no -a \
@@ -8185,7 +8185,7 @@ if test -d "$H2O_PATH"; then
    done
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(h2o,
-   [AC_LANG_PROGRAM([[#include <h2o.h>>]],
+   [AC_LANG_PROGRAM([[@%:@include <h2o.h>>]],
        [[h2o_init_request(NULL, NULL, NULL);]])],
    [$LIBUV_LIBS $OPENSSL_LIBS $Z_LIBS], [], [$LIBUV_INCLUDE])
 if test "$with_h2o" != no -a \
@@ -8210,7 +8210,7 @@ CPPFLAGS="$orig_CPPFLAGS $INFLUXDB_INCLUDE"
 AC_CACHE_CHECK([for influxdb-cpp$in_path],
    ncbi_cv_lib_influxdb,
    [AC_COMPILE_IFELSE(
-       [AC_LANG_PROGRAM([[#include <influxdb.hpp>]],
+       [AC_LANG_PROGRAM([[@%:@include <influxdb.hpp>]],
            [[auto& b = influxdb_cpp::builder().meas("foo");]])],
        ncbi_cv_lib_influxdb=yes, ncbi_cv_lib_influxdb=no)])
 if test $ncbi_cv_lib_influxdb = yes; then
@@ -8222,7 +8222,7 @@ fi
 
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
-   [AC_LANG_PROGRAM([[#include <xlsxwriter.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <xlsxwriter.h>]],
       [[lxw_workbook* wb = workbook_new("conftest.xlsx");]])],
    [], [$Z_LIBS])
 if test "$with_libxlsxwriter" != no -a \
@@ -8257,7 +8257,7 @@ fi
 : ${PROTOBUF_PATH=$GRPC_PATH}
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$D_SFX],
-   [AC_LANG_PROGRAM([[#include <google/protobuf/type.pb.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <google/protobuf/type.pb.h>]],
        [[google::protobuf::Type t;]])],
    [], [$Z_LIBS])
 if test -n "$PROTOBUF_LIBS"; then
@@ -8284,7 +8284,7 @@ if test "$with_mt" = no; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
-   [AC_LANG_PROGRAM([[#include <grpc++/grpc++.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <grpc++/grpc++.h>]],
        [[return grpc::Version().size();]])],
    [-lgrpc -lgpr $PROTOBUF_LIBS -lcares], [$GRPC_LDEP $Z_LIBS],
    [$PROTOBUF_INCLUDE])
@@ -8339,8 +8339,8 @@ if test -d "$AWS_SDK_PATH"; then
    done
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(aws_sdk, AWS_SDK, aws-cpp-sdk-s3,
-   [AC_LANG_PROGRAM([[#include <aws/s3/S3Client.h>
-                      #include <aws/ec2/EC2Client.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <aws/s3/S3Client.h>
+                      @%:@include <aws/ec2/EC2Client.h>]],
        [[Aws::S3::S3Client s3cli;
          Aws::EC2::EC2Client ec2cli;]])],
    [-laws-cpp-sdk-ec2 -laws-cpp-sdk-core], [$CURL_LIBS $OPENSSL_LIBS $Z_LIBS])
@@ -8352,7 +8352,7 @@ else
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(hiredis,
-   [AC_LANG_PROGRAM([[#include <hiredis/hiredis.h>]],
+   [AC_LANG_PROGRAM([[@%:@include <hiredis/hiredis.h>]],
        [[redisReader* r = redisReaderCreate();]])])
 if test "$with_hiredis" != no \
       -a -f "$HIREDIS_PATH/lib/libhiredis-static.a"; then
