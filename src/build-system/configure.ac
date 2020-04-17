@@ -4373,7 +4373,8 @@ if test "x$ac_cv_search_iconv" != xno; then
     of the standard libraries.])
    AC_MSG_CHECKING([for iconv declaration])
    AC_CACHE_VAL(am_cv_proto_iconv, [
-      AC_COMPILE_IFELSE([[
+      AC_COMPILE_IFELSE([
+         AC_LANG_SOURCE([
 @%:@include <stdlib.h>
 @%:@include <iconv.h>
 extern
@@ -4385,7 +4386,7 @@ size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, si
 @%:@else
 size_t iconv();
 @%:@endif
-]], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
+])], am_cv_proto_iconv_arg1="", am_cv_proto_iconv_arg1="const")
       am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"])
    am_cv_proto_iconv=`echo "[$]am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
    AC_MSG_RESULT([$]{ac_t:-
@@ -4418,29 +4419,29 @@ no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
 
 : ${with_libunwind:=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libunwind, LIBUNWIND, unwind,
- [[AC_LANG_PROGRAM([@%:@include <unwind.h>
-                    @%:@include <stdlib.h>],
-      [[_Unwind_Trace_Fn f; _Unwind_Backtrace(f, NULL);]])]])
+ [AC_LANG_PROGRAM([@%:@include <unwind.h>
+                   @%:@include <stdlib.h>],
+      [[_Unwind_Trace_Fn f; _Unwind_Backtrace(f, NULL);]])])
 LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libdw, LIBDW, dw,
- [[AC_LANG_PROGRAM([@%:@include <elfutils/libdw.h>],
-      [[Dwarf* d = dwarf_begin(17, DWARF_C_READ);]])]])
+ [AC_LANG_PROGRAM([@%:@include <elfutils/libdw.h>],
+      [[Dwarf* d = dwarf_begin(17, DWARF_C_READ);]])])
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
- [[AC_LANG_PROGRAM([@%:@ifdef HAVE_LIBUNWIND
-                    @%:@  define BACKWARD_HAS_UNWIND 1
-                    @%:@else
-                    @%:@  define BACKWARD_HAS_BACKTRACE 1
-                    @%:@endif
-                    @%:@ifdef HAVE_LIBDW
-                    @%:@  define BACKWARD_HAS_DW 1
-                    @%:@endif
-                    @%:@include <backward.hpp>],
-      [[backward::StackTrace st; st.load_here(32);]])]],
+ [AC_LANG_PROGRAM([@%:@ifdef HAVE_LIBUNWIND
+                   @%:@  define BACKWARD_HAS_UNWIND 1
+                   @%:@else
+                   @%:@  define BACKWARD_HAS_BACKTRACE 1
+                   @%:@endif
+                   @%:@ifdef HAVE_LIBDW
+                   @%:@  define BACKWARD_HAS_DW 1
+                   @%:@endif
+                   @%:@include <backward.hpp>],
+      [[backward::StackTrace st; st.load_here(32);]])],
  [], [], [$LIBUNWIND_INCLUDE $LIBDW_INCLUDE])
 
 
@@ -4450,8 +4451,8 @@ if test "$with_backward_cpp_sig" = yes; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
- [[AC_LANG_PROGRAM([@%:@include <zlib.h>],
-      [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])]])
+ [AC_LANG_PROGRAM([@%:@include <zlib.h>],
+      [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])])
 if test -z "$Z_LIBS"; then
    zlocal=util/compress/zlib
    AC_MSG_NOTICE([using local zlib copy in $zlocal])
@@ -4465,9 +4466,9 @@ if test -z "$Z_LIBS"; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(bz2,
- [[AC_LANG_PROGRAM([@%:@include <bzlib.h>],
+ [AC_LANG_PROGRAM([@%:@include <bzlib.h>],
       [[BZFILE* fp; char buf[1024]; int err;
-        int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))]])]])
+        int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))]])])
 if test -z "$BZ2_LIBS"; then
    bzlocal=util/compress/bzip2
    AC_MSG_NOTICE([using local bzlib copy in $bzlocal])
@@ -4484,8 +4485,8 @@ if test -d "$LZO_PATH"; then
    NCBI_FIX_DIR(LZO_PATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(lzo, LZO, lzo2,
- [[AC_LANG_PROGRAM([@%:@include <lzo/lzo1x.h>],
-      [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
+ [AC_LANG_PROGRAM([@%:@include <lzo/lzo1x.h>],
+      [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])])
 if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
         -a \( -f "$LZO_PATH/lib$bit64_sfx/liblzo2-static.a" \
               -o -f "$LZO_PATH/lib/liblzo2-static.a" \); then
@@ -4497,8 +4498,8 @@ if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     test "x$p" = "x/usr"  ||  PCRE_PATH=$p
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(pcre,
- [[AC_LANG_PROGRAM([@%:@include <pcre.h>],
-   [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])]])
+ [AC_LANG_PROGRAM([@%:@include <pcre.h>],
+   [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])])
 if test -z "$PCRE_LIBS"; then
    pcrelocal=util/regexp
    AC_MSG_NOTICE([using local PCRE copy in $pcrelocal])
@@ -4528,8 +4529,8 @@ if test "x${with_mbedtls-no}" != xno; then
       NCBI_FIX_DIR(MBEDTLS_PATH)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB(mbedtls,
-      [[AC_LANG_PROGRAM([@%:@include <mbedtls/ssl.h>],
-           [[mbedtls_ssl_context ssl; mbedtls_ssl_init(&ssl);]])]],
+      [AC_LANG_PROGRAM([@%:@include <mbedtls/ssl.h>],
+           [[mbedtls_ssl_context ssl; mbedtls_ssl_init(&ssl);]])],
       [[-lmbedx509 -lmbedcrypto $Z_LIBS]])
    if test -n "$MBEDTLS_LIBS" -a -f "$MBEDTLS_PATH/lib/libmbedtls-static.a" \
       -a "x$with_static_mbedtls" = xyes; then
@@ -4560,8 +4561,8 @@ if test "x$with_gmp" != xno; then
       NCBI_FIX_DIR(GMP_PATH)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB(gmp,
-      [[AC_LANG_PROGRAM([@%:@include <gmp.h>],
-           [[mpz_t x; mpz_init(x);]])]])
+      [AC_LANG_PROGRAM([@%:@include <gmp.h>],
+           [[mpz_t x; mpz_init(x);]])])
 fi
 if test "$with_gmp" = no; then
    AS_UNSET(GMP_INCLUDE)
@@ -4595,11 +4596,11 @@ else
    AS_UNSET(GCRYPT_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gcrypt,
- [[AC_LANG_PROGRAM([[@%:@include <gcrypt.h>
+ [AC_LANG_PROGRAM([[@%:@include <gcrypt.h>
                      @%:@include <pthread.h>
                      @%:@include <errno.h>
                      GCRY_THREAD_OPTION_PTHREAD_IMPL;]],
-   [[gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);]])]],
+   [[gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);]])],
  $GCRYPT_CONFIG_LIBS)
 if test "x$with_gcrypt" != xno -a -n "$GCRYPT_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GCRYPT_LIBS, [echo $GCRYPT_CONFIG_LIBS], [$no_usr_lib])
@@ -4630,9 +4631,9 @@ if test "x$with_nettle" != xno; then
       NCBI_RPATHIFY(NETTLE_LIBPATH, $NETTLE_LIBDIR)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB_EX(nettle, NETTLE, hogweed,
-      [[AC_LANG_PROGRAM([@%:@include <nettle/sexp.h>],
+      [AC_LANG_PROGRAM([@%:@include <nettle/sexp.h>],
            [[struct sexp_iterator it;
-             sexp_iterator_first(&it, 0, (const uint8_t*) NULL);]])]],
+             sexp_iterator_first(&it, 0, (const uint8_t*) NULL);]])],
       [-lnettle], [$GMP_LIBS])
 fi
 if test "$with_nettle" = no; then
@@ -4688,8 +4689,8 @@ else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
- [[AC_LANG_PROGRAM([[@%:@include <gnutls/gnutls.h>]],
-   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
+ [AC_LANG_PROGRAM([[@%:@include <gnutls/gnutls.h>]],
+   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])],
  [$GNUTLS_CONFIG_LIBS], [$GCRYPT_LIBS $NETTLE_LIBS $GMP_LIBS])
 if test "x$with_gnutls" != xno; then
    AC_CHECK_FUNCS([gnutls_certificate_set_verify_function \
@@ -4738,8 +4739,8 @@ if test "x$with_gnutls" != xno; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
- [[AC_LANG_PROGRAM([[@%:@include <openssl/ssl.h>]],
-   [[SSL_library_init();]])]],
+ [AC_LANG_PROGRAM([[@%:@include <openssl/ssl.h>]],
+   [[SSL_library_init();]])],
  -lcrypto)
 
 OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
@@ -4775,7 +4776,7 @@ else
    KRB5_CONFIG_LIBS=$KRB5_LIBS
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(krb5, KRB5, gssapi_krb5,
- [[AC_LANG_PROGRAM([[@%:@include <time.h>
+ [AC_LANG_PROGRAM([[@%:@include <time.h>
 @%:@ifdef HAVE_INTTYPES_H
 @%:@  include <inttypes.h>
 @%:@endif
@@ -4784,7 +4785,7 @@ extern "C" {
 }]],
    [[OM_uint32 min_stat;
      gss_buffer_desc buf;
-     gss_release_buffer(&min_stat, &buf);]])]],
+     gss_release_buffer(&min_stat, &buf);]])],
  $KRB5_CONFIG_LIBS)
 if test "x$with_krb5" != xno; then
    AC_CHECK_FUNCS([error_message])
@@ -5506,7 +5507,8 @@ if test "${with_jni-no}" != "no"; then
    AC_CHECK_HEADER(jni.h,
       [AC_DEFINE(NCBI_JNI, 1,
           [Define to 1 if building Java Native Interface bindings.])
-       NCBI_FEATURE([JDK Ncbi-JNI])
+       NCBI_FEATURE([JDK])
+       NCBI_FEATURE([Ncbi-JNI])
        JDK_PATH=$_JTOPDIR
        ncbi_java=ncbi_java],
       [JDK_INCLUDE=''
@@ -6854,8 +6856,8 @@ fi
 
 ### XML/XSL libraries
 NCBI_CHECK_THIRD_PARTY_LIB(expat,
- AC_LANG_PROGRAM([@%:@include <expat.h>],
-    [XML_Parser parser = XML_ParserCreate("utf-8");]))
+ [AC_LANG_PROGRAM([@%:@include <expat.h>],
+    [XML_Parser parser = XML_ParserCreate("utf-8");])])
 if test -f "${EXPAT_PATH}/lib${bit64_sfx}/libexpat-static.a"; then
    EXPAT_STATIC_LIBS="-L${EXPAT_PATH}/lib${bit64_sfx} -lexpat-static"
 else
@@ -6867,8 +6869,8 @@ if test -d "$SABLOT_PATH"; then
    NCBI_FIX_DIR(SABLOT_PATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(sablot,
- AC_LANG_PROGRAM([@%:@include <sablot.h>],
-    [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
+ [AC_LANG_PROGRAM([@%:@include <sablot.h>],
+    [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);])],
  $EXPAT_LIBS)
 if test -f "${SABLOT_PATH}/lib${bit64_sfx}/libsablot-static.a"; then
    SABLOT_STATIC_LIBS="-L${SABLOT_PATH}/lib${bit64_sfx} -lsablot-static $EXPAT_STATIC_LIBS"
@@ -7203,9 +7205,9 @@ else
 fi
 NCBI_RPATHIFY(SQLITE3_LIBPATH, $SQLITE3_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
- AC_LANG_PROGRAM([@%:@include <sqlite3.h>],
+ [AC_LANG_PROGRAM([@%:@include <sqlite3.h>],
     [sqlite3_pcache_methods m;
-     int status = sqlite3_config(SQLITE_CONFIG_GETPCACHE, &m);]))
+     int status = sqlite3_config(SQLITE_CONFIG_GETPCACHE, &m);])])
 if test -n "$SQLITE3_LIBS"; then
    CPPFLAGS="$SQLITE3_INCLUDE $orig_CPPFLAGS"
    AC_CHECK_HEADER(sqlite3async.h,
@@ -7420,11 +7422,11 @@ if test "$with_ngs" != "no" ; then
    done
    NCBI_RPATHIFY(NGS_LIBPATH, [$NGS_LIBDIR])
    NCBI_CHECK_THIRD_PARTY_LIB_EX(ngs, NGS, ncbi-ngs-c++,
-      [[AC_LANG_PROGRAM([[@%:@include <ncbi-vdb/NGS.hpp>
+      [AC_LANG_PROGRAM([[@%:@include <ncbi-vdb/NGS.hpp>
                           @%:@include <ngs-bam/ngs-bam.hpp>]],
            [[ncbi::NGS::setAppVersionString("conftest.0.0.0");
              ngs::ReadCollection coll
-             = NGS_BAM::openReadCollection("foo.bam");]])]],
+             = NGS_BAM::openReadCollection("foo.bam");]])],
       [-lngs-bam-c++ -lngs-adapt-c++ -lngs-c++], $VDB_LIBS, $extra_inc)
    if test -n "$NGS_LIBS"; then
       if test -f "$NGS_LIBDIR/libncbi-ngs-c++-static.a"; then
@@ -7445,8 +7447,8 @@ fi
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
 NCBI_CHECK_THIRD_PARTY_LIB(oechem,
- AC_LANG_PROGRAM([@%:@include <oechem.h>],
-    [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
+ [AC_LANG_PROGRAM([@%:@include <oechem.h>],
+    [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();])],
   -loeiupac -loedepict -loechem -loesystem -loeplatform -lz, $NETWORK_LIBS)
 if test -n "$OECHEM_LIBS"; then
    OECHEM_LIBS=`echo $OECHEM_LIBS | sed -e 's/-loechem \(.*-loechem .*\)/\1/'`
@@ -7485,9 +7487,9 @@ if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
    fi
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
-  [[AC_LANG_PROGRAM([[@%:@include <sys/types.h>
-                      @%:@include <drmaa.h>]],
-     [[char buf[1024]; drmaa_init("SGE", buf, sizeof(buf));]])]])
+  [AC_LANG_PROGRAM([[@%:@include <sys/types.h>
+                     @%:@include <drmaa.h>]],
+     [[char buf[1024]; drmaa_init("SGE", buf, sizeof(buf));]])])
 
 
 ### muParser
@@ -7506,8 +7508,8 @@ elif test -d "$MUPARSER_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(muparser,
-  [[AC_LANG_PROGRAM([[@%:@include <muParser.h>]],
-     [[mu::Parser parser;]])]])
+  [AC_LANG_PROGRAM([[@%:@include <muParser.h>]],
+     [[mu::Parser parser;]])])
 
 
 ### hdf5
@@ -7526,8 +7528,8 @@ if test -d "$HDF5_PATH"; then
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(hdf5, HDF5, hdf5_cpp,
-  [[AC_LANG_PROGRAM([[@%:@include <H5Cpp.h>]],
-     [[H5::H5Library::open();]])]],
+  [AC_LANG_PROGRAM([[@%:@include <H5Cpp.h>]],
+     [[H5::H5Library::open();]])],
   [-lhdf5])
 
 
@@ -7535,42 +7537,42 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(hdf5, HDF5, hdf5_cpp,
 # : ${JPEG_PATH=/usr/sfw}
 # Grr... jpeglib.h isn't especially well-behaved.
 NCBI_CHECK_THIRD_PARTY_LIB(jpeg,
- AC_LANG_PROGRAM([@%:@include <sys/types.h>
-                  @%:@include <stdio.h>
-                  extern "C" {
-                  @%:@include <jpeglib.h>
-                  }],
+ [AC_LANG_PROGRAM([@%:@include <sys/types.h>
+                   @%:@include <stdio.h>
+                   extern "C" {
+                   @%:@include <jpeglib.h>
+                   }],
     [struct jpeg_decompress_struct cinfo;
      struct jpeg_error_mgr         jerr;
      cinfo.err = jpeg_std_error(&jerr);
- ]))
+ ])])
 
 # : ${PNG_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(png,
- AC_LANG_PROGRAM([@%:@include <png.h>],
+ [AC_LANG_PROGRAM([@%:@include <png.h>],
     [png_structp png_ptr
       = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
- ]), $Z_LIBS, [], $Z_INCLUDE)
+ ])], $Z_LIBS, [], $Z_INCLUDE)
 
 # : ${TIFF_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(tiff,
- AC_LANG_PROGRAM([@%:@include <tiffio.h>],
-    [TIFF* tiff = TIFFOpen("foo", "r");]), $Z_LIBS, $JPEG_LIBS)
+ [AC_LANG_PROGRAM([@%:@include <tiffio.h>],
+    [TIFF* tiff = TIFFOpen("foo", "r");])], $Z_LIBS, $JPEG_LIBS)
 ## etc.
 
 # Paths?
 with_ungif=$with_gif
 NCBI_CHECK_THIRD_PARTY_LIB(gif,
- AC_LANG_PROGRAM([extern "C" {
+ [AC_LANG_PROGRAM([extern "C" {
                   @%:@include <gif_lib.h>
                   }],
-    [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
+    [GifFileType* fp = DGifOpenFileName("foo");])], $X_LIBS -lX11)
 if test "$with_gif" = "no"; then
    NCBI_CHECK_THIRD_PARTY_LIB(ungif,
-    AC_LANG_PROGRAM([extern "C" {
+    [AC_LANG_PROGRAM([extern "C" {
                      @%:@include <gif_lib.h>
                      }],
-       [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
+       [GifFileType* fp = DGifOpenFileName("foo");])], $X_LIBS -lX11)
 else
    AC_DEFINE(HAVE_LIBUNGIF, 1, [Define to 1 if libungif is available.])
    UNGIF_INCLUDE=$GIF_INCLUDE
@@ -7579,9 +7581,9 @@ fi
 
 case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
 NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
- AC_LANG_PROGRAM([@%:@include <X11/xpm.h>],
+ [AC_LANG_PROGRAM([@%:@include <X11/xpm.h>],
     [XpmImage image; XpmInfo info;
-     XpmReadFileToXpmImage("foo", &image, &info);]), $X_LIBS -lX11, [],
+     XpmReadFileToXpmImage("foo", &image, &info);])], $X_LIBS -lX11, [],
     $X_CFLAGS)
 # The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
@@ -7600,8 +7602,8 @@ if test "$with_gl2ps" != "no"; then
       NCBI_FIX_DIR(GL2PS_PATH)
    fi
    NCBI_CHECK_THIRD_PARTY_LIB(gl2ps,
-    AC_LANG_PROGRAM([@%:@include <gl2ps.h>],
-       [gl2psSpecial(GL2PS_SVG, "foo")]),
+    [AC_LANG_PROGRAM([@%:@include <gl2ps.h>],
+       [gl2psSpecial(GL2PS_SVG, "foo")])],
     [], [$OPENGL_LIBS $PNG_LIBS $Z_LIBS], [$OPENGL_INCLUDE])
 fi
 if test -n "$GL2PS_LIBS" -a -f "$GL2PS_PATH/lib/libgl2ps-static.a"; then
@@ -7683,7 +7685,7 @@ NCBI_FIX_DIR(FTGL_LIBDIR)
 NCBI_RPATHIFY(FTGL_LIBPATH, $FTGL_LIBDIR)
 
 NCBI_CHECK_THIRD_PARTY_LIB(ftgl,
-  [[AC_LANG_PROGRAM([[@%:@include <FTGL/ftgl.h>]], [[FTSimpleLayout layout;]])]],
+  [AC_LANG_PROGRAM([[@%:@include <FTGL/ftgl.h>]], [[FTSimpleLayout layout;]])],
   [$FREETYPE_LIBS], [], [$FREETYPE_INCLUDE])
 
 
@@ -7836,9 +7838,9 @@ fi
 
 # SASL 2
 NCBI_CHECK_THIRD_PARTY_LIB(sasl2,
- [[AC_LANG_PROGRAM([[@%:@include <stdlib.h>
-                     @%:@include <sasl/sasl.h>]],
-   [[sasl_client_init(NULL);]])]])
+ [AC_LANG_PROGRAM([[@%:@include <stdlib.h>
+                    @%:@include <sasl/sasl.h>]],
+   [[sasl_client_init(NULL);]])])
 
 
 # legacy MongoDB

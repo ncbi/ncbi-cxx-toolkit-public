@@ -28889,6 +28889,12 @@ else
 
       cat >conftest.$ac_ext <<_ACEOF
 
+         /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <stdlib.h>
 #include <iconv.h>
 extern
@@ -29078,7 +29084,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <unwind.h>
-                    #include <stdlib.h>
+                   #include <stdlib.h>
 int
 main ()
 {
@@ -29433,14 +29439,14 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #ifdef HAVE_LIBUNWIND
-                    #  define BACKWARD_HAS_UNWIND 1
-                    #else
-                    #  define BACKWARD_HAS_BACKTRACE 1
-                    #endif
-                    #ifdef HAVE_LIBDW
-                    #  define BACKWARD_HAS_DW 1
-                    #endif
-                    #include <backward.hpp>
+                   #  define BACKWARD_HAS_UNWIND 1
+                   #else
+                   #  define BACKWARD_HAS_BACKTRACE 1
+                   #endif
+                   #ifdef HAVE_LIBDW
+                   #  define BACKWARD_HAS_DW 1
+                   #endif
+                   #include <backward.hpp>
 int
 main ()
 {
@@ -36763,7 +36769,8 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_JNI 1
 _ACEOF
 
-                 WithFeatures="$WithFeatures${WithFeaturesSep}JDK Ncbi-JNI"; WithFeaturesSep=" "
+                 WithFeatures="$WithFeatures${WithFeaturesSep}JDK"; WithFeaturesSep=" "
+                 WithFeatures="$WithFeatures${WithFeaturesSep}Ncbi-JNI"; WithFeaturesSep=" "
        JDK_PATH=$_JTOPDIR
        ncbi_java=ncbi_java
 else
@@ -45286,7 +45293,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/types.h>
-                      #include <drmaa.h>
+                     #include <drmaa.h>
 int
 main ()
 {
@@ -45874,10 +45881,10 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/types.h>
-                  #include <stdio.h>
-                  extern "C" {
-                  #include <jpeglib.h>
-                  }
+                   #include <stdio.h>
+                   extern "C" {
+                   #include <jpeglib.h>
+                   }
 int
 main ()
 {
@@ -48801,7 +48808,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <stdlib.h>
-                     #include <sasl/sasl.h>
+                    #include <sasl/sasl.h>
 int
 main ()
 {

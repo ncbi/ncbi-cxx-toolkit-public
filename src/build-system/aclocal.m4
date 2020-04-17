@@ -237,7 +237,7 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
     AC_CACHE_CHECK([for lib$3$in_path], ncbi_cv_lib_$1,
        CPPFLAGS="$7 [$]$2_INCLUDE $orig_CPPFLAGS"
        LIBS="[$]$2_LIBS $6 $orig_LIBS"
-       [AC_LINK_IFELSE($4, [ncbi_cv_lib_$1=yes], [ncbi_cv_lib_$1=no])])
+       [AC_LINK_IFELSE([$4], [ncbi_cv_lib_$1=yes], [ncbi_cv_lib_$1=no])])
     if test "$ncbi_cv_lib_$1" = "no"; then
        NCBI_MISSING_PACKAGE($1)
     fi
