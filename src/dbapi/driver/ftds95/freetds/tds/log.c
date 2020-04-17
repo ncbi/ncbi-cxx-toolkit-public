@@ -55,7 +55,10 @@ int tds_g_append_mode = 0;
 static char *g_dump_filename = NULL;
 /** Tell if TDS debug logging is turned on or off */
 int tds_write_dump = 0;
-NCBI_TLS_VAR int tdsdump_elided;
+#ifdef NCBI_TLS_VAR
+NCBI_TLS_VAR
+#endif
+int tdsdump_elided;
 static FILE *g_dumpfile = NULL;	/* file pointer for dump log          */
 static tds_mutex g_dump_mutex = TDS_MUTEX_INITIALIZER;
 

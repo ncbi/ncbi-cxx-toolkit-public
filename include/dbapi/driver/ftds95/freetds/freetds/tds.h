@@ -1464,7 +1464,11 @@ void tdsdump_do_log(const char* file, unsigned int level_line,
 extern int tds_write_dump;
 extern int tds_debug_flags;
 extern int tds_g_append_mode;
-extern NCBI_TLS_VAR int tdsdump_elided;
+extern
+#ifdef NCBI_TLS_VAR
+NCBI_TLS_VAR
+#endif
+int tdsdump_elided;
 
 /* net.c */
 TDSERRNO tds_open_socket(TDSSOCKET * tds, struct tds_addrinfo *ipaddr, unsigned int port, int timeout, int *p_oserr);
