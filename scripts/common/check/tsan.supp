@@ -30,7 +30,6 @@ race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
 signal:corelib/test/test_ncbi_system.cpp
 
 
-
 ################################################################
 # vasilche CXX-10546
 
@@ -67,4 +66,10 @@ race:^s_InitAPI_$
 race:^MT_LOCK_AddRef$
 
 
+
+################################################################
+# ucko CXX-11303
+
+# the race is real, but AFAICT harmless in this context
+race:^tds_socket_write /src/dbapi/driver/ftds100/freetds/tds/net.c
 
