@@ -36,7 +36,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
-#include <corelib/ncbisys.hpp>
+#include "ncbi_ansi_ext.h"
 
 
 USING_NCBI_SCOPE;
@@ -48,12 +48,12 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CPipe*              pipe;      // pipe handle; non-NULL
-    string              cmd;       // program to execute
-    vector<string>      args;      // program arguments
-    CPipe::TCreateFlags flags;     // pipe create flags
-    bool                own_pipe;  // true if pipe is owned
-    size_t              pipe_size;
+    CPipe*              pipe;       // pipe handle; non-NULL
+    string              cmd;        // program to execute
+    vector<string>      args;       // program arguments
+    CPipe::TCreateFlags flags;      // pipe create flags
+    bool                own_pipe;   // true if pipe is owned
+    size_t              pipe_size;  // pipe size
 } SPipeConnector;
 
 
@@ -76,20 +76,37 @@ static char* s_VT_Descr(CONNECTOR connector)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     string cmd_line(xxx->cmd);
-    ITERATE (vector<string>, arg, xxx->args) {
+    for (auto arg : xxx->args) {
         if ( !cmd_line.empty() ) {
-            cmd_line += " ";
+            cmd_line += ' ';
         }
-        bool quote = arg->find(' ') != NPOS ? true : false;
-        if ( quote ) {
-            cmd_line += '"';
+        string quote;
+        bool replace = false;
+        if (arg.find(' ')         == NPOS) {
+            ;
+        } else if (arg.find('"')  == NPOS) {
+            quote = string(1, '"');
+        } else if (arg.find('\'') == NPOS) {
+            quote = string(1, '\'');
+        } else {
+            quote = string(1, '"');
+            replace = true;
         }
-        cmd_line     += *arg;
-        if ( quote ) {
-            cmd_line += '"';
+        string tmp;
+        if (replace) {
+            tmp = arg;
+            _ASSERT(!quote.empty());
+            NStr::ReplaceInPlace(tmp, quote, '\\' + quote);
+        }
+        if ( !quote.empty() ) {
+            cmd_line += quote;
+        }
+        cmd_line     += replace ? tmp : arg;
+        if ( !quote.empty() ) {
+            cmd_line += quote;
         }
     }
-    return NcbiSysChar_strdup(cmd_line.c_str());
+    return strdup(cmd_line.c_str());
 }
 
 
@@ -98,9 +115,6 @@ static EIO_Status s_VT_Open
  const STimeout* /*timeout*/)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    if (!xxx->pipe) {
-        return eIO_Unknown;  // blame operator "new" :-/
-    }
     return xxx->pipe->Open(xxx->cmd, xxx->args, xxx->flags,
                            kEmptyStr, NULL, xxx->pipe_size);
 }
@@ -130,9 +144,7 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    if (xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
-        return eIO_Unknown;
-    }
+    _VERIFY(xxx->pipe->SetTimeout(eIO_Write, timeout) == eIO_Success);
     return xxx->pipe->Write(buf, size, n_written);
 }
 
@@ -145,9 +157,7 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
-        return eIO_Unknown;
-    }
+    _VERIFY(xxx->pipe->SetTimeout(eIO_Read, timeout) == eIO_Success);
     return xxx->pipe->Read(buf, size, n_read);
 }
 
@@ -166,7 +176,7 @@ static EIO_Status s_VT_Close
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    xxx->pipe->SetTimeout(eIO_Close, timeout);
+    _VERIFY(xxx->pipe->SetTimeout(eIO_Close, timeout) == eIO_Success);
     return xxx->pipe->Close();
 }
 

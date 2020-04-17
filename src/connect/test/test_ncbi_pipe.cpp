@@ -43,7 +43,7 @@
 #  include <signal.h>
 #  include <unistd.h>
 #else
-#   error "Pipe tests configured for Windows and Unix only."
+#   error "CPipe tests configured for Windows and Unix only."
 #endif
 
 #include "test_assert.h"  // This header must go last
@@ -52,7 +52,7 @@
 USING_NCBI_SCOPE;
 
 
-#define IO_TIMEOUT  5
+#define DEFAULT_TIMEOUT  5
 
 
 // Test exit code
@@ -275,11 +275,11 @@ int CTest::Run(void)
     CPipe pipe;
     const CPipe::TCreateFlags share = CPipe::fStdErr_Share;
 
-    static const STimeout iotimeout = { IO_TIMEOUT, 0 };
+    static const STimeout timeout = { DEFAULT_TIMEOUT, 0 };
 
-    assert(pipe.SetTimeout(eIO_Read,  &iotimeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &iotimeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Close, &iotimeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Close, &timeout) == eIO_Success);
 
 
     // Check bad executable
@@ -296,9 +296,9 @@ int CTest::Run(void)
 
     assert(pipe.SetReadHandle(CPipe::eStdIn) == eIO_InvalidArg);
     assert(pipe.SetReadHandle(CPipe::eStdErr) == eIO_Success);
-    assert(pipe.Read(buf, sizeof(buf), NULL) == eIO_Closed);
+    assert(pipe.Read(buf, sizeof(buf), NULL) == eIO_Unknown);
     assert(pipe.SetReadHandle(CPipe::eStdOut) == eIO_Success);
-    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Closed);
+    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Unknown);
     assert(n_written == 0);
 
     total = 0;
@@ -320,7 +320,7 @@ int CTest::Run(void)
     args.push_back(NStr::IntToString(eStreamRead));
     ERR_POST(Info << "TEST:  Unidirectional stream read");
     CConn_PipeStream ios(app.c_str(), args,
-                         CPipe::fStdIn_Close | share, 0, &iotimeout);
+                         CPipe::fStdIn_Close | share, 0, &timeout);
     s_ReadStream(ios);
 
     status = ios.GetPipe().Close(&exitcode);
@@ -336,7 +336,7 @@ int CTest::Run(void)
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdOut_Close | share) == eIO_Success);
 
-    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
+    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
     assert(n_read == 0);
     str = "Child, are you ready?";
     assert(s_WritePipe(pipe, str.c_str(), str.length(),
@@ -374,9 +374,9 @@ int CTest::Run(void)
              << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
-    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
+    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
     assert(n_read == 0);
-    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Closed);
+    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Unknown);
     assert(n_written == 0);
 
 
@@ -384,10 +384,10 @@ int CTest::Run(void)
     args.clear();
     args.push_back(NStr::IntToString(eStream));
     ERR_POST(Info << "TEST:  Bidirectional stream");
-    CConn_PipeStream ps(app.c_str(), args, share, 0, &iotimeout);
+    CConn_PipeStream ps(app.c_str(), args, share, 0, &timeout);
 
     NcbiCout << endl;
-    for (int i = 5; i<=10; i++) {
+    for (int i = 5;  i <= 10;  ++i) {
         int value; 
         NcbiCout << "How much is " << i << "*" << i << "?\t" << flush;
         ps << i << endl;
@@ -428,7 +428,7 @@ int CTest::Run(void)
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
-        assert(process.Kill((IO_TIMEOUT / 2) * 1000));
+        assert(process.Kill((DEFAULT_TIMEOUT / 2) * 1000));
         assert(!process.IsAlive());
     }}
 
@@ -463,7 +463,7 @@ int CTest::Run(void)
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         CProcess::CExitInfo exitinfo;
-        exitcode = process.Wait(IO_TIMEOUT * 1000, &exitinfo);
+        exitcode = process.Wait(DEFAULT_TIMEOUT * 1000, &exitinfo);
         string infostr;
         if (exitinfo.IsPresent()) {
             if (exitinfo.IsExited()) {
@@ -576,7 +576,7 @@ int main(int argc, const char* argv[])
         ::signal(SIGPIPE, SIG_IGN);
 #endif /*NCBI_OS_UNIX*/
         ERR_POST(Info << "--- CPipe sleeping test ---");
-        SleepMilliSec(IO_TIMEOUT * 1500);
+        SleepMilliSec(DEFAULT_TIMEOUT * 1500);
         ERR_POST(Info << "--- CPipe sleeping test done ---");
         exit(kTestResult);
     }}

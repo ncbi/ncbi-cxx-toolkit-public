@@ -91,7 +91,7 @@ static string x_FormatError(int error, string& message)
 
 #ifdef NCBI_OS_MSWIN
     string errmsg;
-    if (error) {
+    if ( error ) {
         TCHAR* tmpstr = NULL;
         DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                    FORMAT_MESSAGE_FROM_SYSTEM     |
@@ -106,7 +106,7 @@ static string x_FormatError(int error, string& message)
         } else {
             errstr = "";
         }
-        if (tmpstr) {
+        if ( tmpstr ) {
             ::LocalFree((HLOCAL) tmpstr);
         }
     } else
@@ -118,9 +118,9 @@ static string x_FormatError(int error, string& message)
                                                 error, errstr);
 
     string retval;
-    if (result) {
+    if ( result ) {
         retval = result;
-        if (dynamic) {
+        if ( dynamic ) {
             free((void*) result);
         }
     } else {
@@ -146,13 +146,21 @@ static string s_FormatErrorMessage(const string& where, const string& what)
 #if defined(NCBI_OS_MSWIN)
 
 
+const unsigned long kWaitPrecision = 100;  // Timeout time slice (milliseconds)
+
+
+static inline bool x_DisconnectError(DWORD error)
+{
+    return (error == ERROR_NO_DATA      ||
+            error == ERROR_BROKEN_PIPE  ||
+            error == ERROR_PIPE_NOT_CONNECTED ? true : false);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CNamedPipeHandle -- MS Windows version
 //
-
-const unsigned long kWaitPrecision = 100;  // Timeout time slice (milliseconds)
-
 
 class CNamedPipeHandle
 {
@@ -246,7 +254,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                  NULL);
 
             if (m_Pipe != INVALID_HANDLE_VALUE) {
-                DWORD mode = PIPE_NOWAIT;  // non-blocking
+                DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;  // non-blocking
                 if ( !::SetNamedPipeHandleState(m_Pipe, &mode, NULL, NULL) ) {
                     NAMEDPIPE_THROW(::GetLastError(),
                                     "Name pipe \"" + m_PipeName
@@ -506,19 +514,16 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
     unsigned long x_sleep = 1;
     for (;;) {
         if ( !::PeekNamedPipe(m_Pipe, NULL, 0, NULL, in_avail, NULL) ) {
+            _ASSERT(!*in_avail);
             // Has peer closed the connection?
             DWORD error = ::GetLastError();
-            if (error == ERROR_BROKEN_PIPE  ||
-                error == ERROR_PIPE_NOT_CONNECTED) {
-                m_ReadStatus  = eIO_Closed;
-                m_WriteStatus = eIO_Closed;
-                if (error == ERROR_PIPE_NOT_CONNECTED) {
-                    return eIO_Closed;
-                }
-            } else {
+            if ( !x_DisconnectError(error) ) {
                 m_ReadStatus = eIO_Unknown;
+                return eIO_Unknown;
             }
-            return eIO_Unknown;
+            m_ReadStatus  = eIO_Closed;
+            m_WriteStatus = eIO_Closed;
+            return eIO_Closed;
         }
         if ( *in_avail ) {
             break;
@@ -633,13 +638,11 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         unsigned long x_sleep = 1;
         for (;;) {
             if ( !::WriteFile(m_Pipe, buf, to_write, &bytes_written, NULL) ) {
-                // NB:  status == eIO_Unknown
                 m_WriteStatus = eIO_Unknown;
                 if ( !bytes_written ) {
+                    // NB:  status == eIO_Unknown
                     DWORD error = ::GetLastError();
-                    if (error == ERROR_NO_DATA      ||
-                        error == ERROR_BROKEN_PIPE  ||
-                        error == ERROR_PIPE_NOT_CONNECTED) {
+                    if ( x_DisconnectError(error) ) {
                         m_ReadStatus  = eIO_Closed;
                         m_WriteStatus = eIO_Closed;
                         status        = eIO_Closed;

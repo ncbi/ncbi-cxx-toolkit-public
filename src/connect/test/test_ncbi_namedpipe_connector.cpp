@@ -43,6 +43,7 @@
 
 USING_NCBI_SCOPE;
 
+
 // Test pipe name
 #if defined(NCBI_OS_MSWIN)
     const char* kPipeName = "\\\\.\\pipe\\ncbi\\test_namedpipe";

@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(test_ncbi_namedpipe_connector )
+NCBI_begin_app(test_ncbi_namedpipe_connector)
   NCBI_sources(test_ncbi_namedpipe_connector ncbi_conntest)
   NCBI_uses_toolkit_libraries(xconnect)
   NCBI_project_watchers(lavr)

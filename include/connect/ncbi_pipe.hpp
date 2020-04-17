@@ -75,7 +75,7 @@ class CPipeHandle;
 class NCBI_XCONNECT_EXPORT CPipe : protected CConnIniter
 {
 public:
-    /// Flags for creating standard I/O handles of child process.
+    /// Flags for creating standard I/O handles of the child process.
     /// @note@  Flags pertaining to the same stdio handle processed in the
     ///         order of their appearance in the definition below.
     ///
@@ -121,7 +121,7 @@ public:
         eStdErr    = fStdErr,
         eDefault   = fDefault   ///< see SetReadHandle()
     };
-    typedef unsigned int TChildPollMask;  ///< bit-wise OR of "EChildIOHandle"
+    typedef unsigned int TChildPollMask;  ///< bitwise OR of "EChildIOHandle"
 
     /// Constructor.
     CPipe(size_t pipe_size = 0/*use default*/);
@@ -204,11 +204,11 @@ public:
 
     /// Open the standard streams of the current process.
     ///
-    /// The standard input stream is opened as if it's the output
-    /// stream of a child process, so it can be read from.  Similarly,
-    /// the standard output stream is opened as if it's a child input
-    /// stream, so it can be written.  The standard error stream is left
-    /// untouched.
+    /// The standard input stream is opened as if it's the output stream of a
+    /// child process, so it can be read from.  Similarly, the standard output
+    /// stream is opened as if it's a child input stream, so it can be written.
+    /// The standard error stream is left untouched.
+    /// Throw CPipeExcepionon on errors.
     ///
     /// @sa
     ///   Read, Write, Close
@@ -219,8 +219,9 @@ public:
     /// Sever communication channel with the spawned child process, and then
     /// wait for the process to terminate.
     ///
-    /// @note A CPipe opened with OpenSelf() always closes with eIO_Success,
-    /// and *exitcode returns as 0 (yet the current process continues to run).
+    /// @note
+    ///   A CPipe opened with OpenSelf() always closes with eIO_Success, and
+    ///   *exitcode returns as 0 (yet the current process continues to run).
     ///
     /// @param exitcode
     ///   Pointer to store the exit code at, if the child process terminated
@@ -486,22 +487,22 @@ public:
                             size_t                pipe_size    = 0/*default*/);
 
 protected:
-    size_t         m_PipeSize;          ///< Pipe size
+    size_t          m_PipeSize;          ///< Pipe size
 
-    CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles
-    EChildIOHandle m_ReadHandle;        ///< Default read handle
+    CPipeHandle*    m_PipeHandle;        ///< Internal OS-specific pipe handle
+    EChildIOHandle  m_ReadHandle;        ///< Default handle used for read
 
     // Last I/O status
-    EIO_Status     m_ReadStatus;        ///< Last read status
-    EIO_Status     m_WriteStatus;       ///< Last write status
+    EIO_Status      m_ReadStatus;        ///< Last read status
+    EIO_Status      m_WriteStatus;       ///< Last write status
 
     // Timeouts
-    STimeout*      m_ReadTimeout;       ///< eIO_Read timeout
-    STimeout*      m_WriteTimeout;      ///< eIO_Write timeout
-    STimeout*      m_CloseTimeout;      ///< eIO_Close timeout
-    STimeout       m_ReadTimeoutValue;  ///< Storage for m_ReadTimeout
-    STimeout       m_WriteTimeoutValue; ///< Storage for m_WriteTimeout
-    STimeout       m_CloseTimeoutValue; ///< Storage for m_CloseTimeout
+    const STimeout* m_ReadTimeout;       ///< eIO_Read timeout
+    const STimeout* m_WriteTimeout;      ///< eIO_Write timeout
+    const STimeout* m_CloseTimeout;      ///< eIO_Close timeout
+    STimeout        m_ReadTimeoutValue;  ///< Storage for m_ReadTimeout
+    STimeout        m_WriteTimeoutValue; ///< Storage for m_WriteTimeout
+    STimeout        m_CloseTimeoutValue; ///< Storage for m_CloseTimeout
 
 private:
     // Disable copy constructor and assignment

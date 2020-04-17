@@ -197,7 +197,7 @@ int CTest::Run(void)
     }
     ERR_POST(Info << "Using pipe name: " + m_PipeName);
 
-    ::srand(time(0) ^ NCBI_CONNECT_SRAND_ADDEND);
+    ::srand((unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND);
     if (args["timeout"].HasValue()) {
         double tv = args["timeout"].AsDouble();
         m_Timeout.sec  = (unsigned int)  tv;
@@ -229,8 +229,9 @@ int CTest::Run(void)
 
 void CTest::Client(int num)
 {
-    if (::rand() & 1)
+    if (::rand() & 1) {
         SleepMilliSec(500);
+    }
     ERR_POST(Info << "Starting client " + NStr::IntToString(num) + "...");
 
     CNamedPipeClient pipe;
@@ -282,13 +283,23 @@ void CTest::Client(int num)
         ::free(blob);
         ERR_POST(Info << "Blob test is OK!");
     }}
-    if (::rand() & 1)
+    if (::rand() & 1) {
         SleepMilliSec(500);
+    }  
+    if (::rand() & 1) {
+        status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+        if (status == eIO_Success) {
+            _TROUBLE;
+        }
+        ERR_POST(Error << IO_StatusStr(status));
+    }
     status = pipe.Close();
     if (status != eIO_Success) {
         ERR_POST(Error << IO_StatusStr(status));
         _TROUBLE;
     }
+    status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+    _ASSERT(status == eIO_Unknown);
     ERR_POST(Info << "TEST completed successfully");
 }
 
@@ -312,8 +323,9 @@ void CTest::Server(void)
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
     for (int n = 1;  n <= 100;  ++n) {
-        if (::rand() & 1)
+        if (::rand() & 1) {
             SleepMilliSec(500);
+        }
         ERR_POST(Info << "Listening pipe " + NStr::IntToString(n) + "...");
 
         EIO_Status status = pipe.Listen();
@@ -355,14 +367,25 @@ void CTest::Server(void)
                 ::free(blob);
                 ERR_POST(Info << "Blob test is OK!");
             }}
-            if (::rand() & 1)
+            if (::rand() & 1) {
                 SleepMilliSec(500);
+            }
+            if (::rand() & 1) {
+                status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+                if (status == eIO_Success) {
+                    _TROUBLE;
+                }
+                ERR_POST(Error << IO_StatusStr(status));
+            }
             ERR_POST(Info << "Disconnecting client...");
             status = pipe.Disconnect();
             if (status != eIO_Success) {
                 ERR_POST(Error << IO_StatusStr(status));
                 _TROUBLE;
             }
+            status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+            _ASSERT(status == eIO_Unknown);
+            ERR_POST(Info << "Round completed successfully!");
             break;
 
         case eIO_Timeout:

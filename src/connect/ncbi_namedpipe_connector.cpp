@@ -48,9 +48,9 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CNamedPipeClient* pipe;         // pipe handle; non-NULL
-    string            pipename;     // pipe name
-    size_t            pipesize;     // pipe size
+    CNamedPipeClient* pipe;      // pipe handle; non-NULL
+    string            pipename;  // pipe name
+    size_t            pipesize;  // pipe size
 } SNamedPipeConnector;
 
 
@@ -105,9 +105,7 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    if (xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
-        return eIO_Unknown;
-    }
+    _VERIFY(xxx->pipe->SetTimeout(eIO_Write, timeout) == eIO_Success);
     return xxx->pipe->Write(buf, size, n_written);
 }
 
@@ -120,9 +118,7 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
-        return eIO_Unknown;
-    }
+    _VERIFY(xxx->pipe->SetTimeout(eIO_Read, timeout) == eIO_Success);
     return xxx->pipe->Read(buf, size, n_read);
 }
 

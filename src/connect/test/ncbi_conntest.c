@@ -35,6 +35,7 @@
 #include <connect/ncbi_connector.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
+#include <stdlib.h>
 #include <string.h>
 
 #include "test_assert.h"  /* This header must go last */
@@ -150,7 +151,7 @@ static void s_SingleBounceCheck
         size_t i;
         for (i = 0;  k != sizeof(buf);  ++i) {
             /* prepare output data */
-            size_t n_write, n_written;
+            size_t n_write, n_written, n;
             for (n_write = 0;  n_write < i;  ++n_write, ++k) {
                 assert(k < sizeof(buf));
                 buf[n_write] = sym[j++ % sizeof(sym)];
@@ -161,6 +162,7 @@ static void s_SingleBounceCheck
             }
             buf[n_write] = '\0';
 
+            n = 0;
             do { /* persistently */
                 /* WAIT... sometimes */
                 if (n_write % 5 == 3) {
@@ -170,7 +172,10 @@ static void s_SingleBounceCheck
                                  "[s_SingleBounceCheck]  CONN_Wait(write)"
                                  " failed, retrying...");
                         assert(status == eIO_Timeout);
+                        if (n++ < 5)
+                            continue;
                     }
+                    assert(status == eIO_Success);
                 }
 
                 /* WRITE */
@@ -182,9 +187,11 @@ static void s_SingleBounceCheck
                              " failed, retrying...");
                     assert(n_written < n_write);
                     assert(status == eIO_Timeout);
-                } else {
-                    assert(n_written == n_write);
+                    if (n++ < 5)
+                        continue;
                 }
+                assert(status == eIO_Success);
+                assert(n_written == n_write);
             } while (status != eIO_Success);
         }
     }}
@@ -349,9 +356,12 @@ void CONN_TestConnector
  FILE*           data_file,
  TTestConnFlags  flags)
 {
-    EIO_Status status;
-    SConnector dummy;
-    CONN       conn;
+    char        buf[128];
+    EIO_Status  status;
+    SConnector  dummy;
+    CONN        conn;
+    const char* type;
+    char*       desc;
 
     memset(&dummy, 0, sizeof(dummy));
 
@@ -393,6 +403,14 @@ void CONN_TestConnector
         TEST_LOG(status, "[CONN_TestConnector]  CONN_Wait(write) failed");
         assert(status == eIO_Timeout);
     }
+    type = CONN_GetType(conn);
+    desc = CONN_Description(conn);
+    sprintf(buf, "[CONN_TestConnector]  %s: %s%.80s%s",
+            type ? type : "<NULL>", !desc ? "" : "'", !desc ? "NULL" : desc,
+            !desc ? "" : strlen(desc) > 80 ? "'..." : "'");
+    TEST_LOG(status, buf);
+    if (desc)
+        free(desc);
 
     /* Run the specified TESTs
      */

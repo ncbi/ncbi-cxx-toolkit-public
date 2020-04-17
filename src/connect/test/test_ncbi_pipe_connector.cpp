@@ -41,13 +41,21 @@
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_util.h>
+#include "../ncbi_priv.h"
+#include "ncbi_conntest.h"
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
+#  include <fcntl.h>  // For _O_BINARY
+#  define DEVNULL   "NUL"
+// On Windows can't do large pipe transactions because of limited pipe size
+#  define CONNTEST  fTC_MultiBouncePrint
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
+#  define DEVNULL   "/dev/null"
+#  define CONNTEST  fTC_Everything
 #else
-#   error "Pipe tests configured for Windows and Unix only."
+#  error "CPipe tests configured for Windows and Unix only."
 #endif
 
 #include "test_assert.h"  // This header must go last
@@ -163,6 +171,8 @@ int CTest::Run(void)
     size_t      n_written;
     EIO_Status  status;
 
+    ::srand((unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND);
+
     // Run the test
     ERR_POST(Info << "Starting PIPE CONNECTOR test...");
 
@@ -187,7 +197,7 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Write(conn, buf, kBufferSize, &n_written, eIO_WritePersist);
-    assert(status == eIO_Closed);
+    assert(status == eIO_Unknown);
     assert(n_written == 0);
 
     size_t total = 0;
@@ -214,7 +224,7 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_Write, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
-    assert(status == eIO_Closed);
+    assert(status == eIO_Unknown);
     assert(n_read == 0);
 
     str = "Child, are you ready?";
@@ -226,8 +236,6 @@ int CTest::Run(void)
 
 
     // Bidirectional pipe
-    args.clear();
-    args.push_back("one");
     args.push_back("two");
     connector = PIPE_CreateConnector(app, args, CPipe::fStdErr_Share);
     assert(connector);
@@ -256,6 +264,30 @@ int CTest::Run(void)
     assert(n_read == 0);
     assert(CONN_Close(conn) == eIO_Success);
 
+
+    // Bidirectional standard CONNECTOR test
+#ifdef NCBI_OS_UNIX
+    if (::rand() & 1) {
+        cmd = "cat";
+        args.clear();
+    } else
+#endif // NCBI_OS_UNIX
+    {
+        cmd = app;
+        args.push_back("3");
+    }
+    FILE* logfile = fopen(DEVNULL, "ab");
+    assert(logfile);
+
+    connector = PIPE_CreateConnector(cmd, args, CPipe::fStdErr_Share);
+    assert(connector);
+
+    CONN_TestConnector(connector, &kTimeout, logfile, CONNTEST);
+
+    fclose(logfile);
+
+
+    // All done!
     ERR_POST(Info << "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
@@ -269,7 +301,7 @@ int CTest::Run(void)
 int main(int argc, const char* argv[])
 {
     // Invalid arguments
-    if (argc > 3) {
+    if (argc > 4) {
         exit(1);
     }
 
@@ -301,5 +333,24 @@ int main(int argc, const char* argv[])
         exit(0);
     }
 
+    // Spawned process for bidirectional standard test
+    if (argc == 4) {
+#ifdef NCBI_OS_MSWIN
+        _setmode(_fileno(stdin),  _O_BINARY);
+        _setmode(_fileno(stdout), _O_BINARY);
+#endif // NCBI_OS_MSWIN
+        ERR_POST(Info << "--- PIPE CONNECTOR bidirectional standard test ---");
+        // NB: NcbiStreamCopy(cout, cin) can't be used because of bufferring
+        do {
+            int c;
+            if ((c = cin.get()) != EOF) {
+                cout.put(c).flush();
+            }
+        } while (cin  &&  cout);
+        ERR_POST(Info << "--- PIPE CONNECTOR bidirectional standard test done ---");
+        exit(0);
+    }
+
+    ERR_POST(Fatal << "Huh?");
     return -1;
 }
