@@ -8309,9 +8309,10 @@ fi
 case "$compiler:$ncbi_compiler_ver" in
     WorkShop*:?.?? )   ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\)/\1\20/' ;;
     WorkShop*:[6-9].?) ncbi_compiler_sed='s/\([0-9]\)\.\([0-9\)/\10\20/' ;;
-    ICC:??.? )  ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)/\1\20/' ;;
+    [GI]CC:??.? ) ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)/\1\20/' ;;
     GCC:??.?.? | ICC:??.?.? | ICC:??.?.?.* | *Clang:??.?.? )
        ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
+    GCC:?? )    ncbi_compiler_sed='s/\([0-9][0-9]\)/\100/' ;;
     *:?.?.?)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9]\)\.\([0-9]\)/\1\2\3/' ;;
     *:?.??*)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\).*/\1\2/' ;;
     *:?.?)      ncbi_compiler_sed='s/\([0-9]\).\([0-9]\)/\1\20/' ;;
