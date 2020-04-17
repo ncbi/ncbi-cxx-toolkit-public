@@ -293,6 +293,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
     for (size_t i = 0;  i < count;  ++i) {
       for (int extra = 0;  extra < 4;  ++extra) {
         const SStringNumericValues* test = &s_Str2NumTests[i];
+        
         CTempString str;
         string extra_str;
         if ( !extra ) {
@@ -706,7 +707,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         }
       }
     }
-// TGi
+
+    // TGi
     {
         TIntId id = 123;
         TGi gi(id), gi2, gi3;
@@ -725,6 +727,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         BOOST_CHECK(n2 == n3);
     }
 }
+
 
 struct SStringDoublePosixTest
 {
