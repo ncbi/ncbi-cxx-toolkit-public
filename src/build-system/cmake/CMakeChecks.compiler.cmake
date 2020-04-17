@@ -292,7 +292,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 
 #
 # OpenMP
-if (NOT XCODE)
+if (NOT XCODE AND NOT NCBI_COMPILER_LLVM_CLANG)
 find_package(OpenMP)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
 ## message("OpenMP_CXX_SPEC_DATE: ${OpenMP_CXX_SPEC_DATE}")
@@ -311,6 +311,27 @@ endif()
 option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
 option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
 
+#----------------------------------------------------------------------------
+# flags may be set by configuration scripts
+if(NOT "$ENV{NCBI_COMPILER_C_FLAGS}" STREQUAL "")
+    set(NCBI_COMPILER_C_FLAGS "$ENV{NCBI_COMPILER_C_FLAGS}" CACHE STRING "Cache preset C_FLAGS" FORCE)
+endif()
+if(NOT "$ENV{NCBI_COMPILER_CXX_FLAGS}" STREQUAL "")
+    set(NCBI_COMPILER_CXX_FLAGS "$ENV{NCBI_COMPILER_CXX_FLAGS}" CACHE STRING "Cache preset CXX_FLAGS" FORCE)
+endif()
+if(NOT "$ENV{NCBI_COMPILER_EXE_LINKER_FLAGS}" STREQUAL "")
+    set(NCBI_COMPILER_EXE_LINKER_FLAGS "$ENV{NCBI_COMPILER_EXE_LINKER_FLAGS}" CACHE STRING "Cache preset EXE_LINKER_FLAGS" FORCE)
+endif()
+if(NOT "$ENV{NCBI_COMPILER_SHARED_LINKER_FLAGS}" STREQUAL "")
+    set(NCBI_COMPILER_SHARED_LINKER_FLAGS "$ENV{NCBI_COMPILER_SHARED_LINKER_FLAGS}" CACHE STRING "Cache preset SHARED_LINKER_FLAGS" FORCE)
+endif()
+
+set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${NCBI_COMPILER_C_FLAGS}")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${NCBI_COMPILER_CXX_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${NCBI_COMPILER_EXE_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${NCBI_COMPILER_SHARED_LINKER_FLAGS}")
+#----------------------------------------------------------------------------
+
 if (NOT WIN32)
     if(NCBI_COMPILER_ICC)
         if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
@@ -318,30 +339,18 @@ if (NOT WIN32)
         endif()
         set(_ggdb "-g")
         set(_ggdb1 "")
-        if(NOT "$ENV{NCBI_COMPILER_GCCNAME}" STREQUAL "")
-            set(NCBI_COMPILER_GCCNAME "$ENV{NCBI_COMPILER_GCCNAME}" CACHE STRING "Cache GCCNAME" FORCE)
-        endif()
-        if(NOT "$ENV{NCBI_COMPILER_GCCLIB}" STREQUAL "")
-            set(NCBI_COMPILER_GCCLIB "$ENV{NCBI_COMPILER_GCCLIB}" CACHE STRING "Cache GCCLIB" FORCE)
-        endif()
+# Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
+# stop short, as can otherwise happen.
+        add_definitions(-D_GCC_NEXT_LIMITS_H)
 # -we70: "incomplete type is not allowed" should be an error, not a warning!
 # -wd2651: Suppress spurious "attribute does not apply to any entity"
 #          when deprecating enum values (via NCBI_STD_DEPRECATED).
         set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651")
-# Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
-# stop short, as can otherwise happen.
-        add_definitions(-D_GCC_NEXT_LIMITS_H)
         set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
-        if(NOT "${NCBI_COMPILER_GCCNAME}" STREQUAL "")
-            set(CMAKE_C_FLAGS             "${CMAKE_C_FLAGS} -gcc-name=${NCBI_COMPILER_GCCNAME}")
-            set(CMAKE_CXX_FLAGS           "${CMAKE_CXX_FLAGS} -gcc-name=${NCBI_COMPILER_GCCNAME}")
-            set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -gcc-name=${NCBI_COMPILER_GCCNAME}")
-            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -gcc-name=${NCBI_COMPILER_GCCNAME}")
-        endif()
-        if(NOT "${NCBI_COMPILER_GCCLIB}" STREQUAL "")
-            set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${NCBI_COMPILER_GCCLIB}")
-            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,${NCBI_COMPILER_GCCLIB}")
+    elseif(NCBI_COMPILER_LLVM_CLANG)
+        if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
+            set(NCBI_COMPILER_COMPONENTS GCC730)
         endif()
     else()
         set(_ggdb "-ggdb3")

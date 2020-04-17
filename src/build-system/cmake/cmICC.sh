@@ -64,19 +64,23 @@ fi
 
 for gcc in /opt/ncbi/gcc/${gccver}/bin/gcc /usr/local/gcc/${gccver}/bin/gcc; do
   if test -x $gcc; then
-    NCBI_COMPILER_GCCNAME="$gcc"
+    gccname="$gcc"
     case $gcc in
         /opt/* )
-            NCBI_COMPILER_GCCLIB="/opt/ncbi/gcc/${gccver}/lib64"
+            lib64="/opt/ncbi/gcc/${gccver}/lib64"
             ;;
         /usr/* )
-            NCBI_COMPILER_GCCLIB="/usr/lib64/gcc-${gccver}"
+            lib64="/usr/lib64/gcc-${gccver}"
             ;;
     esac
     break
   fi
 done
-export NCBI_COMPILER_GCCNAME NCBI_COMPILER_GCCLIB
+NCBI_COMPILER_C_FLAGS="-gcc-name=${gccname}"
+NCBI_COMPILER_CXX_FLAGS="-gcc-name=${gccname}"
+NCBI_COMPILER_EXE_LINKER_FLAGS="-gcc-name=${gccname} -Wl,-rpath,${lib64}"
+NCBI_COMPILER_SHARED_LINKER_FLAGS="-gcc-name=${gccname} -Wl,-rpath,${lib64}"
+export NCBI_COMPILER_C_FLAGS NCBI_COMPILER_CXX_FLAGS NCBI_COMPILER_EXE_LINKER_FLAGS NCBI_COMPILER_SHARED_LINKER_FLAGS
 export CC CXX
 
 exec ${script_dir}/cmake-cfg-unix.sh --rootdir=$script_dir/../../.. --caller=$script_name "$@"

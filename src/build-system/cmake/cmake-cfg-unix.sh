@@ -259,24 +259,33 @@ else
 fi
 
 if [ -n "$CC" ]; then
-  if test $host_os = "Darwin"; then
-    CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
-    CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
-  else
-    CC_NAME=`$CC --version | awk 'NR==1{print $1}' | tr '[:lower:]' '[:upper:]'`
-    if $CXX -dumpversion > /dev/null 2>&1; then
-      CC_VERSION=`$CC -dumpversion | awk 'BEGIN{FS="."} { print $1 $2 $3}'`
-    else
-      CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
-    fi
-  fi
+  ccname=`basename $CC`
+  case "$ccname" in
+    clang*)
+      CC_NAME="Clang"
+      CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+    ;;
+    *)
+      if test $host_os = "Darwin"; then
+        CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
+        CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
+      else
+        CC_NAME=`$CC --version | awk 'NR==1{print $1}' | tr '[:lower:]' '[:upper:]'`
+        if $CXX -dumpversion > /dev/null 2>&1; then
+          CC_VERSION=`$CC -dumpversion | awk 'BEGIN{FS="."} { print $1 $2 $3}'`
+        else
+          CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+        fi
+      fi
+    ;;
+  esac
 else
   CC_NAME="CXX"
   CC_VERSION=""
 fi
 ############################################################################# 
 
-CMAKE_ARGS=-DNCBI_EXPERIMENTAL=$NCBI_EXPERIMENTAL
+CMAKE_ARGS="$CMAKE_ARGS -DNCBI_EXPERIMENTAL=$NCBI_EXPERIMENTAL"
 
 if [ -n "$CC" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"
@@ -301,6 +310,11 @@ CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 if test "$CMAKE_GENERATOR" != "Xcode"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
+fi
+
+#CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+if [ -n "$NCBI_COMPILER_EXE_LINKER_FLAGS" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${NCBI_COMPILER_EXE_LINKER_FLAGS}")"
 fi
 
 if [ -z "$BUILD_ROOT" ]; then

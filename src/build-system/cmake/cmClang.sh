@@ -53,5 +53,19 @@ EOF
     exit 1
 fi
 
+gccver=7.3.0
+if test -x /opt/ncbi/gcc/${gccver}/bin/gcc; then
+  inc1="/opt/ncbi/gcc/${gccver}/include/c++/${gccver}"
+  inc2="/opt/ncbi/gcc/${gccver}/include/c++/${gccver}/x86_64-redhat-linux-gnu"
+  inc3="/opt/ncbi/gcc/${gccver}/include/c++/${gccver}/backward"
+  libgnu="/opt/ncbi/gcc/${gccver}/lib/gcc/x86_64-redhat-linux-gnu/${gccver}"
+  lib64="/opt/ncbi/gcc/${gccver}/lib64"
+  NCBI_COMPILER_C_FLAGS="-nostdinc++ -isystem ${inc1} -isystem ${inc2} -isystem ${inc3}"
+  NCBI_COMPILER_CXX_FLAGS="-nostdinc++ -isystem ${inc1} -isystem ${inc2} -isystem ${inc3}"
+  NCBI_COMPILER_EXE_LINKER_FLAGS="-L${libgnu} -B${libgnu} -L${lib64} -Wl,-rpath,${lib64}"
+  NCBI_COMPILER_SHARED_LINKER_FLAGS="${NCBI_COMPILER_EXE_LINKER_FLAGS}"
+fi
+export NCBI_COMPILER_C_FLAGS NCBI_COMPILER_CXX_FLAGS NCBI_COMPILER_EXE_LINKER_FLAGS NCBI_COMPILER_SHARED_LINKER_FLAGS
 export CC CXX
+
 exec ${script_dir}/cmake-cfg-unix.sh --rootdir=$script_dir/../../.. --caller=$script_name "$@"
