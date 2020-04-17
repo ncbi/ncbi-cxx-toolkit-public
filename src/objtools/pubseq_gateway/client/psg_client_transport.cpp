@@ -130,18 +130,23 @@ void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
     ERR_POST(Message << id << ": " << NStr::PrintableString(os.str()));
 }
 
-const char* s_NgHttp2Error(int error_code)
+template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
+const char* s_NgHttp2Error(TInt error_code)
 {
-    try {
-        return error_code < 0 ? nghttp2_strerror(error_code) : nghttp2_http2_strerror(error_code);
-    } catch (...) {
-        return "Unknown error";
-    }
+    return error_code < 0 ?
+        nghttp2_strerror(static_cast<int>(error_code)) :
+        nghttp2_http2_strerror(static_cast<uint32_t>(error_code));
+}
+
+template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
+const char* s_LibuvError(TInt error_code)
+{
+    return uv_strerror(static_cast<int>(error_code));
 }
 
 void SDebugPrintout::Print(uint32_t error_code)
 {
-    ERR_POST(Message << id << ": Closed with status " << s_NgHttp2Error(error_code));
+    ERR_POST(Message << id << ": Closed with status " << nghttp2_http2_strerror(error_code));
 }
 
 void SDebugPrintout::Print(unsigned retries, const SPSG_Error& error)
@@ -180,17 +185,17 @@ string SPSG_Error::Build(EError error, const char* details)
     return ss.str();
 }
 
-string SPSG_Error::Build(int error)
+string SPSG_Error::Build(ssize_t error)
 {
     stringstream ss;
     ss << "nghttp2 error: " << s_NgHttp2Error(error) << " (" << error << ")";
     return ss.str();
 }
 
-string SPSG_Error::Build(int error, const char* details)
+string SPSG_Error::Build(ssize_t error, const char* details)
 {
     stringstream ss;
-    ss << "libuv error: " << details << " - " << uv_strerror(error) << " (" << error << ")";
+    ss << "libuv error: " << details << " - " << s_LibuvError(error) << " (" << error << ")";
     return ss.str();
 }
 
@@ -500,7 +505,7 @@ int SPSG_UvWrite::Write(uv_stream_t* handle, uv_write_cb cb)
 
     uv_buf_t buf;
     buf.base = data.data();
-    buf.len = data.size();
+    buf.len = static_cast<decltype(buf.len)>(data.size());
 
     auto try_rv = uv_try_write(handle, &buf, 1);
 
@@ -712,13 +717,13 @@ void SPSG_UvTcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 {
     m_ReadBuffer.resize(suggested_size);
     buf->base = m_ReadBuffer.data();
-    buf->len = m_ReadBuffer.size();
+    buf->len = static_cast<decltype(buf->len)>(m_ReadBuffer.size());
 }
 
 void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
-        PSG_UV_TCP_TRACE(this << " read failed: " << uv_strerror(nread));
+        PSG_UV_TCP_TRACE(this << " read failed: " << s_LibuvError(nread));
         Close();
     } else {
         PSG_UV_TCP_TRACE(this << " read: " << nread);
@@ -841,7 +846,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_dat
     PSG_NGHTTP2_SESSION_TRACE(this << " created");
 }
 
-ssize_t SPSG_NgHttp2Session::Init()
+int SPSG_NgHttp2Session::Init()
 {
     if (m_Session) return 0;
 

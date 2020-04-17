@@ -877,7 +877,7 @@ bool s_GetZoomLevels(const CJsonNode& annot_data, CPSG_NamedAnnotInfo::TZoomLeve
 
         if (!zoom_level.IsInteger()) return false;
 
-        result.push_back(zoom_level.AsInteger());
+        result.push_back(static_cast<unsigned>(zoom_level.AsInteger()));
     }
 
     return true;
@@ -976,20 +976,20 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     assert(m_Impl->reply);
 
     auto& reply_item = m_Impl->reply->reply_item;
-    auto& state = reply_item.GetMTSafe().state;
+    auto& reply_state = reply_item.GetMTSafe().state;
 
     do {
-        bool was_in_progress = state.InProgress();
+        bool was_in_progress = reply_state.InProgress();
 
         if (auto items_locked = m_Impl->reply->items.GetLock()) {
             auto& items = *items_locked;
 
             for (auto& item_ts : items) {
-                const auto& state = item_ts.GetMTSafe().state;
+                const auto& item_state = item_ts.GetMTSafe().state;
 
-                if (state.Returned()) continue;
+                if (item_state.Returned()) continue;
 
-                if (state.Empty()) {
+                if (item_state.Empty()) {
                     auto item_locked = item_ts.GetLock();
                     auto& item = *item_locked;
 
@@ -1007,7 +1007,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
         }
     }
-    while (reply_item.WaitUntil(state.GetState(), deadline, SPSG_Reply::SState::eInProgress, true));
+    while (reply_item.WaitUntil(reply_state.GetState(), deadline, SPSG_Reply::SState::eInProgress, true));
 
     return {};
 }

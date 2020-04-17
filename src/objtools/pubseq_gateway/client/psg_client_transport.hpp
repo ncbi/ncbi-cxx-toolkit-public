@@ -57,6 +57,7 @@
 #include <chrono>
 #include <sstream>
 #include <random>
+#include <type_traits>
 
 #include <nghttp2/nghttp2.h>
 #include <uv.h>
@@ -128,8 +129,8 @@ struct SPSG_Error : string
 
 private:
     static string Build(EError error, const char* details);
-    static string Build(int error);
-    static string Build(int error, const char* details);
+    static string Build(ssize_t error);
+    static string Build(ssize_t error, const char* details);
 };
 
 struct SPSG_Args : CUrlArgs
@@ -650,8 +651,10 @@ private:
         void operator=(const string& v);
     };
 
-    ssize_t Init();
-    ssize_t x_DelOnError(ssize_t rv)
+    int Init();
+
+    template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
+    TInt x_DelOnError(TInt rv)
     {
         if (rv < 0) {
             nghttp2_session_del(m_Session);
