@@ -854,6 +854,6 @@ DATA_LOADERS_UTIL_LIB = data_loaders_util \
                         $(ncbi_xloader_wgs) $(ncbi_xloader_csra) \
                         $(SRAREAD_LIBS)
 
-DATA_LOADERS_UTIL_LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
-                         $(BERKELEYDB_LIBS) $(SQLITE3_LIBS) $(FTDS_LIBS) \
+DATA_LOADERS_UTIL_LIBS = $(SQLITE3_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
+                         $(BERKELEYDB_LIBS) $(FTDS_LIBS) \
                          $(VDB_LIBS) $(BLAST_THIRD_PARTY_LIBS)
