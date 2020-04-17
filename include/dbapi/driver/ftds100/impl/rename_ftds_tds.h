@@ -351,6 +351,7 @@
 #define tdsdump_col                     tdsdump_col_ver100
 #define tdsdump_do_dump_buf             tdsdump_do_dump_buf_ver100
 #define tdsdump_do_log                  tdsdump_do_log_ver100
+#define tdsdump_elided                  tdsdump_elided_ver100
 #define tdsdump_isopen                  tdsdump_isopen_ver100
 #define tdsdump_off                     tdsdump_off_ver100
 #define tdsdump_on                      tdsdump_on_ver100

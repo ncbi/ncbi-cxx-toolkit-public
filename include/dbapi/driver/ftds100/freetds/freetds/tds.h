@@ -1556,14 +1556,17 @@ void tdsdump_do_log(const char* file, unsigned int level_line,
 #endif
 #endif
 ;
-#define TDSDUMP_LOG_FAST if (TDS_UNLIKELY(tds_write_dump)) tdsdump_do_log
+#define TDSDUMP_LOG_FAST \
+    if (TDS_UNLIKELY(tds_write_dump && !tdsdump_elided)) tdsdump_do_log
 #define tdsdump_log TDSDUMP_LOG_FAST
-#define TDSDUMP_BUF_FAST if (TDS_UNLIKELY(tds_write_dump)) tdsdump_do_dump_buf
+#define TDSDUMP_BUF_FAST \
+    if (TDS_UNLIKELY(tds_write_dump && !tdsdump_elided)) tdsdump_do_dump_buf
 #define tdsdump_dump_buf TDSDUMP_BUF_FAST
 
 extern int tds_write_dump;
 extern int tds_debug_flags;
 extern int tds_g_append_mode;
+extern NCBI_TLS_VAR int tdsdump_elided;
 
 
 /* net.c */
