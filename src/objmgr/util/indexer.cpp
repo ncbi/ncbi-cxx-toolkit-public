@@ -1896,6 +1896,17 @@ void CBioseqIndex::x_InitFeats (void)
             // same as eAdaptive, except also allows external annots
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
+            // needs to be here
+            sel.AddUnnamedAnnots();
+            // allow external SNPs
+            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
+                sel.IncludeNamedAnnotAccession("SNP");
+                sel.AddNamedAnnots("SNP");
+            }
+            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
+                sel.IncludeNamedAnnotAccession("CDD");
+                sel.AddNamedAnnots("CDD");
+            }
             m_Scope->SetKeepExternalAnnotsForEdit();
             // obey flag to hide CDD features by default in the web display
             if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
