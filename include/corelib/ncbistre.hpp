@@ -498,29 +498,34 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
                                     string::size_type* count = NULL);
 
 
-/// Copy entire contents of stream "is" into "os".
+/// Copy the entire contents of stream "is" to stream "os".
 /// @return
 /// "true" if the operation was successful, i.e. "is" had been read entirely
 /// with all of its _available_ contents (including none) written to "os";
 /// "false" if either extraction from "is" or insertion into "os" failed.
 ///
-/// Note that input ("is") stream state is not always asserted accurately:  in
-/// particular, upon successful completion "is.eof()" may not necessarily be
-/// true.  The call may throw exceptions only if they are enabled on the
-/// respective stream(s).
+/// The call may throw exceptions only if they are enabled on the respective
+/// stream(s).
 ///
-/// Note that the call is an extension to the standard
+/// @note The call is an extension to the standard
 /// ostream& ostream::operator<<(streambuf*),
 /// which severely lacks error checking (esp. for partial write failures).
 ///
-/// NOTE that the call (as well as the mentioned STL counterpart) provides
-/// only a mechanism of delivering data to the destination stream(buf) "os";
+/// @note Input ("is") stream state is not always asserted accurately:  in
+/// particular, upon successful completion "is.eof()" may not necessarily be
+/// true;  or, in case of fatal read errors "is" may not have its "is.bad()"
+/// state set (however, the return code should still be "false" to properly
+/// indicate the copy failure in this case).
+///
+/// @attention This call (as well as the mentioned STL counterpart) provides
+/// only the mechanism of delivering data to the destination stream(buf) "os";
 /// and a successful return result does not generally guarantee that the data
 /// have yet reached the physical destination.  Other "os"-specific API must be
 /// performed to assure the data integrity at the receiving device:  such as
-/// checking for errors after doing a "close()" on an ofstream "os".  E.g. data
-/// uploading into the Toolkit FTP stream must be finalized with a read for the
-/// byte count delivered;  otherwise, it may not work correctly.
+/// checking for errors after doing a "close()" (if "os" is an ofstream, for
+/// example).  For instance, uploading into the Toolkit FTP stream must be
+/// finalized with a read for the byte count delivered;  otherwise, it may not
+///  work correctly.
 /// @sa
 ///   CConn_IOStream
 NCBI_XNCBI_EXPORT
