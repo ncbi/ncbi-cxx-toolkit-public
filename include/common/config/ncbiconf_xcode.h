@@ -821,7 +821,7 @@
 
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */
-/* #undef NCBI_TLS_VAR */
+#define NCBI_TLS_VAR __thread
 
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1
