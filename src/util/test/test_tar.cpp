@@ -37,7 +37,6 @@
 #include <util/compress/tar.hpp>
 #include <util/compress/stream_util.hpp>
 #ifdef TEST_CONN_TAR
-#  define NCBI_CONN_STREAM_EXPERIMENTAL_API
 #  include <connect/ncbi_conn_stream.hpp>
 #endif // TEST_CONN_TAR
 #include <errno.h>

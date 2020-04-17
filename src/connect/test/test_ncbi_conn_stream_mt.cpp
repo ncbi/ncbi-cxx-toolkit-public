@@ -35,7 +35,6 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/test_mt.hpp>
-#define NCBI_CONN_STREAM_EXPERIMENTAL_API
 #include <connect/ncbi_conn_stream.hpp>
 
 #include "test_assert.h"  // This header must go last

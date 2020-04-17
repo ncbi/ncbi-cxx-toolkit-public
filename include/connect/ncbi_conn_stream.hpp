@@ -127,7 +127,7 @@ public:
     typedef unsigned int TConn_Flags;       ///< bitwise OR of EConn_Flag
 
     /// Create a stream based on a CONN, which is to be closed upon stream dtor
-    //// only if "close" parameter is passed as "true".
+    /// but only if "close" parameter is passed as "true".
     ///
     /// @param conn
     ///   A C object of type CONN (ncbi_connection.h) on top of which the
@@ -181,7 +181,7 @@ public:
     };
 protected:
     /// Create a stream based on a CONNECTOR -- only for internal use in
-    /// derived classes.
+    /// derived classes.  The CONNECTOR always gets closed by stream dtor.
     ///
     /// @param connector
     ///   CONNECTOR coupled with an error code (if any)
@@ -311,6 +311,7 @@ private:
     CConstIRef<ICanceled> m_Canceled;
     static EIO_Status x_IsCanceled(CONN conn, TCONN_Callback type, void* data);
 
+private:
     // Disable copy constructor and assignment
     CConn_IOStream(const CConn_IOStream&);
     CConn_IOStream& operator= (const CConn_IOStream&);
@@ -411,7 +412,7 @@ inline CSocket& CConn_IOStream::GetSocket(void)
 class NCBI_XCONNECT_EXPORT CConn_SocketStream : public CConn_IOStream
 {
 public:
-    /// Create a direct connection to host:port.
+    /// Create a direct connection with host:port.
     ///
     /// @param host
     ///   Host to connect to
@@ -432,8 +433,9 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
 
-    /// Create a direct connection to "host:port" and pass an initial "data"
-    /// block of the specified "size".
+    /// Create a direct connection with "host:port" and send an initial "data"
+    /// block of the specified "size" first;  the remaining communication can
+    /// proceed as usual.
     ///
     /// @param host
     ///   Host to connect to
@@ -460,6 +462,41 @@ public:
      size_t          size     = 0,                ///< size of the data block
      TSOCK_Flags     flags    = fSOCK_LogDefault, ///< see ncbi_socket.h
      unsigned short  max_try  = DEF_CONN_MAX_TRY, ///< number of attempts
+     const STimeout* timeout  = kDefaultTimeout,
+     size_t          buf_size = kConn_DefaultBufSize);
+
+    /// This variant uses an existing socket "sock" to build a stream upon it.
+    /// The caller may retain the ownership of "sock" by passing "if_to_own" as
+    /// "eNoOwnership" to the stream constructor -- in that case, the socket
+    /// "sock" will not be closed / destroyed upon stream destruction, and can
+    /// further be used (including proper closing when no longer needed).
+    /// Otherwise, "sock" becomes invalid once the stream is closed/destroyed.
+    /// NOTE:  To maintain data integrity and consistency, "sock" should not
+    ///        be used elsewhere while it is also being in use by the stream.
+    /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
+    ///
+    /// @param sock
+    ///   Socket to build the stream on
+    /// @sa
+    ///   CConn_IOStream, ncbi_socket.h, SOCK_CreateConnectorOnTop
+    CConn_SocketStream
+    (SOCK            sock,         ///< socket
+     EOwnership      if_to_own,    ///< whether stream to own "sock" param
+     const STimeout* timeout  = kDefaultTimeout,
+     size_t          buf_size = kConn_DefaultBufSize);
+
+    /// This variant uses an existing CSocket to build a stream up on it.
+    /// NOTE:  this always revokes all ownership of the "socket"'s internals
+    /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
+    /// is thrown if the internal SOCK is not owned by the passed CSocket.
+    /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
+    ///
+    /// @param socket
+    ///   Socket to build the stream up on
+    /// @sa
+    ///   CConn_IOStream, ncbi_socket.hpp, SOCK_CreateConnectorOnTop
+    CConn_SocketStream
+    (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
 
@@ -499,41 +536,6 @@ public:
      TSOCK_Flags         flags    = fSOCK_LogDefault,
      const STimeout*     timeout  = kDefaultTimeout,
      size_t              buf_size = kConn_DefaultBufSize);
-
-    /// This variant uses an existing socket "sock" to build a stream upon it.
-    /// The caller may retain the ownership of "sock" by passing "if_to_own" as
-    /// "eNoOwnership" to the stream constructor -- in that case, the socket
-    /// "sock" will not be closed / destroyed upon stream destruction, and can
-    /// further be used (including proper closing when no longer needed).
-    /// Otherwise, "sock" becomes invalid once the stream is closed/destroyed.
-    /// NOTE:  To maintain data integrity and consistency, "sock" should not
-    ///        be used elsewhere while it is also being in use by the stream.
-    /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
-    ///
-    /// @param sock
-    ///   Socket to build the stream on
-    /// @sa
-    ///   CConn_IOStream, ncbi_socket.h, SOCK_CreateConnectorOnTop
-    CConn_SocketStream
-    (SOCK            sock,         ///< socket
-     EOwnership      if_to_own,    ///< whether stream to own "sock" param
-     const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
-
-    /// This variant uses an existing CSocket to build a stream up on it.
-    /// NOTE:  this always revokes all ownership of the "socket"'s internals
-    /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
-    /// is thrown if the internal SOCK is not owned by the passed CSocket.
-    /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
-    ///
-    /// @param socket
-    ///   Socket to build the stream up on
-    /// @sa
-    ///   CConn_IOStream, ncbi_socket.hpp, SOCK_CreateConnectorOnTop
-    CConn_SocketStream
-    (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
-     const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
 };
 
 
@@ -544,10 +546,18 @@ struct SHTTP_StatusData {
     CTempString m_Text;
     string      m_Header;
 
-    SHTTP_StatusData(void) : m_Code(0) { }
+    SHTTP_StatusData(void) : m_Code(0)
+    { }
+
     EHTTP_HeaderParse Parse(const char* header);
+
     void              Clear(void)
     { m_Code = 0; m_Text.clear(); m_Header = kEmptyStr; }
+
+private:
+    // Disable copy constructor and assignment
+    SHTTP_StatusData(const SHTTP_StatusData&);
+    SHTTP_StatusData& operator= (const SHTTP_StatusData&);
 };
 
 
@@ -590,7 +600,7 @@ public:
      const string&       path,
      const string&       args         = kEmptyStr,
      const string&       user_header  = kEmptyStr,
-     unsigned short      port         = 0, ///< 0 means default(eg 80 for HTTP)
+     unsigned short      port         = 0, ///< default(e.g. 80=HTTP/443=HTTPS)
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      size_t              buf_size     = kConn_DefaultBufSize
@@ -640,10 +650,10 @@ public:
     ~CConn_HttpStream();
 
     /// Get the last seen HTTP status code
-    int               GetStatusCode(void) const {return m_StatusData.m_Code;}
+    int               GetStatusCode(void) const {return m_StatusData.m_Code;  }
 
     /// Get the last seen HTTP status text
-    const CTempString GetStatusText(void) const {return m_StatusData.m_Text;}
+    const CTempString GetStatusText(void) const {return m_StatusData.m_Text;  }
 
     /// Get the entire HTTP header as received
     const string&     GetHTTPHeader(void) const {return m_StatusData.m_Header;}
@@ -653,16 +663,16 @@ public:
 
 protected:
     // Chained callbacks
-    void*             m_UserData;
-    FHTTP_Adjust      m_UserAdjust;
-    FHTTP_Cleanup     m_UserCleanup;
-    FHTTP_ParseHeader m_UserParseHeader;
+    void*                    m_UserData;
+    FHTTP_Adjust             m_UserAdjust;
+    FHTTP_Cleanup            m_UserCleanup;
+    FHTTP_ParseHeader        m_UserParseHeader;
 
     // HTTP status & text seen last
-    SHTTP_StatusData  m_StatusData;
+    SHTTP_StatusData         m_StatusData;
 
     // URL to hit next
-    string            m_URL;
+    string                   m_URL;
 
 private:
     // Interceptors
@@ -699,20 +709,20 @@ class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 {
 public:
     CConn_ServiceStream
-    (const string&         service,
-     TSERV_Type            types    = fSERV_Any,
-     const SConnNetInfo*   net_info = 0,
-     const SSERVICE_Extra* extra    = 0,
-     const STimeout*       timeout  = kDefaultTimeout,
-     size_t                buf_size = kConn_DefaultBufSize);
+    (const string&           service,
+     TSERV_Type              types    = fSERV_Any,
+     const SConnNetInfo*     net_info = 0,
+     const SSERVICE_Extra*   extra    = 0,
+     const STimeout*         timeout  = kDefaultTimeout,
+     size_t                  buf_size = kConn_DefaultBufSize);
 
     CConn_ServiceStream
-    (const string&         service,
-     const string&         user_header,
-     TSERV_Type            types    = fSERV_Any,
-     const SSERVICE_Extra* extra    = 0,
-     const STimeout*       timeout  = kDefaultTimeout,
-     size_t                buf_size = kConn_DefaultBufSize);
+    (const string&           service,
+     const string&           user_header,
+     TSERV_Type              types    = fSERV_Any,
+     const SSERVICE_Extra*   extra    = 0,
+     const STimeout*         timeout  = kDefaultTimeout,
+     size_t                  buf_size = kConn_DefaultBufSize);
 
     ~CConn_ServiceStream();
 
@@ -801,7 +811,7 @@ public:
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
 
 protected:
-    const void* m_Ptr;         ///< pointer to read memory area (if owned)
+    const void* m_Ptr;              ///< pointer to read memory area (if owned)
 };
 
 
@@ -839,7 +849,7 @@ public:
     /// A valid exit code is only made available after an explicit Close().
     int    GetExitCode(void) const { return m_ExitCode; }
 
-    CPipe& GetPipe(void)           { return *m_Pipe; }
+    CPipe& GetPipe(void)           { return *m_Pipe;    }
 
 protected:
     CPipe* m_Pipe;      ///< Underlying pipe.
@@ -984,8 +994,6 @@ protected:
 
 
 
-#ifdef NCBI_CONN_STREAM_EXPERIMENTAL_API
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Given the URL, open the data source and make it available for reading.
@@ -997,9 +1005,6 @@ protected:
 extern NCBI_XCONNECT_EXPORT
 CConn_IOStream* NcbiOpenURL(const string& url,
                             size_t        buf_size = kConn_DefaultBufSize);
-
-#endif //NCBI_CONN_STREAM_EXPERIMENTAL_API
-
 
 
 END_NCBI_SCOPE
