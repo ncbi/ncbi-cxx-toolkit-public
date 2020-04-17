@@ -43,7 +43,7 @@
 #  undef pipe
 #endif /*pipe*/
 
-#define DEFAULT_TIMEOUT  5
+#define DEFAULT_TIMEOUT  3
 
 
 USING_NCBI_SCOPE;
@@ -83,9 +83,6 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t buf_size,
         n_read_total += x_read;
     } while (status == eIO_Success  &&  n_read_total < msg_size);
 
-    if (status == eIO_Timeout) {
-        status  = eIO_Success;
-    }
     *n_read = n_read_total;
     return status;
 }
@@ -109,9 +106,6 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
 
-    if (status == eIO_Timeout) {
-        status  = eIO_Success;
-    }
     *n_written = n_written_total;
     return status;
 }
@@ -230,7 +224,7 @@ int CTest::Run(void)
 void CTest::Client(int num)
 {
     if (::rand() & 1) {
-        SleepMilliSec(500);
+        SleepMilliSec(150);
     }
     ERR_POST(Info << "Starting client " + NStr::IntToString(num) + "...");
 
@@ -284,7 +278,7 @@ void CTest::Client(int num)
         ERR_POST(Info << "Blob test is OK!");
     }}
     if (::rand() & 1) {
-        SleepMilliSec(500);
+        SleepMilliSec(100);
     }  
     if (::rand() & 1) {
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
@@ -324,7 +318,7 @@ void CTest::Server(void)
 
     for (int n = 1;  n <= 100;  ++n) {
         if (::rand() & 1) {
-            SleepMilliSec(500);
+            SleepMilliSec(100);
         }
         ERR_POST(Info << "Listening pipe " + NStr::IntToString(n) + "...");
 
@@ -368,7 +362,7 @@ void CTest::Server(void)
                 ERR_POST(Info << "Blob test is OK!");
             }}
             if (::rand() & 1) {
-                SleepMilliSec(500);
+                SleepMilliSec(150);
             }
             if (::rand() & 1) {
                 status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
