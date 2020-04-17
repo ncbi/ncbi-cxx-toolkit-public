@@ -728,8 +728,8 @@ public:
 public:
     /// Helper class
     struct SSERVICE_CBData {
-        SSERVICE_Extra       extra;
         SHTTP_StatusData     status;
+        SSERVICE_Extra       extra;
     };
 
 protected:
