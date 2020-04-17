@@ -9,7 +9,7 @@ SRC = test_objmgr_data_mt
 LIB = ncbi_xloader_lds2 lds2 sqlitewrapp $(OBJREAD_LIBS) xobjutil ncbi_xdbapi_ftds \
       $(FTDS_LIB) test_mt $(OBJMGR_LIBS)
 
-LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
+LIBS = $(SQLITE3_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = test_objmgr_data_mt.sh test_objmgr_data_ids.sh test_objmgr_data.id1 test_objmgr_data.id2 test_objmgr_data.id_wgs1 test_objmgr_data.id_wgs2
