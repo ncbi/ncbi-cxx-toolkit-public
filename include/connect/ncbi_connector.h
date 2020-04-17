@@ -55,7 +55,7 @@ typedef struct SConnectorTag* CONNECTOR;  /**< connector handle */
 
 
 /** DEF_CONN_TIMEOUT as STimeout */
-extern const STimeout g_NcbiDefConnTimeout;
+extern  NCBI_XCONNECT_EXPORT const STimeout g_NcbiDefConnTimeout;
 
 
 /* Function type definitions for the connector method table.
