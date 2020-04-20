@@ -220,13 +220,13 @@ esac
 
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
-: ${LIBUV_PATH=$NCBI/libuv-1.25.0}
+: ${LIBUV_PATH=$NCBI/libuv-1.35.0}
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
 
 : ${LIBXLSXWRITER_PATH=$NCBI/libxlsxwriter-0.6.9}
 
-: ${LMDB_PATH=$NCBI/lmdb-0.9.21}
+: ${LMDB_PATH=$NCBI/lmdb-0.9.24}
 
 case "$ncbi_platform" in
     FreeBSD64* ) : ${LZO_PATH=$NCBI/lzo-2.09} ;;
@@ -260,7 +260,7 @@ case "$ncbi_platform" in
     *MAC       ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
 esac
 
-: ${NGHTTP2_PATH=$NCBI/nghttp2-1.29.0}
+: ${NGHTTP2_PATH=$NCBI/nghttp2-1.40.0}
 
 : ${NGS_PATH=/net/snowman/vol/projects/trace_software/ngs/ngs-versions/2.10.5}
 
