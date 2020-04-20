@@ -398,7 +398,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* variable,
                                            const char* env_var_name,
                                            const char* default_value,
-                                           int* src)
+                                           CParamBase::EParamSource* src)
 {
     // Check the environment first - if the name is customized CNcbiRegistry
     // will not find it and can use INI file value instead.

@@ -37,6 +37,7 @@
 
 
 #include <serial/grpc_integration/impl/grpc_support.hpp>
+#include <corelib/ncbi_param.hpp>
 #ifdef HAVE_LIBGRPC
 #  include <grpc++/client_context.h>
 #else
@@ -113,7 +114,7 @@ public:
 string g_NCBI_GRPC_GetAddress(const char* section,
                               const char* variable,
                               const char* env_var_name = nullptr,
-                              int* value_source = nullptr);
+                              CParamBase::EParamSource* value_source = nullptr);
 
 END_NCBI_SCOPE
 

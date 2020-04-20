@@ -463,7 +463,7 @@ bool CGRPCServerCallbacks::x_IsRealRequest(const grpc::ServerContext* sctx)
 string g_NCBI_GRPC_GetAddress(const char* section,
                               const char* variable,
                               const char* env_var_name,
-                              int* value_source)
+                              CParamBase::EParamSource* value_source)
 {
     auto addr = g_GetConfigString(section, variable, env_var_name, nullptr, value_source);
     if ( addr.empty() ) {

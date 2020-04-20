@@ -443,7 +443,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
             state = eState_Config; // No need to check anything else.
         }
         else {
-            int src = eSource_NotSet;
+            EParamSource src = eSource_NotSet;
             string config_value =
                 g_GetConfigString(TDescription::sm_ParamDescription.section,
                                     TDescription::sm_ParamDescription.name,

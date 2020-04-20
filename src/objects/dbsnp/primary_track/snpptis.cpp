@@ -58,7 +58,7 @@ bool CSnpPtisClient::IsEnabled()
         return false;
     }
     // check if there's valid address
-    int source;
+    CParamBase::EParamSource source;
     auto addr = g_NCBI_GRPC_GetAddress("ID2SNP", "PTIS_NAME", nullptr, &source);
 #ifndef NCBI_OS_LINUX
     if ( source == CParamBase::eSource_Default ) {
