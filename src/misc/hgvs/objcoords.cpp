@@ -220,7 +220,17 @@ void CReportEntry::x_SetFeature(CScope& scope, feature::CFeatTree& feat_tree, co
         break;
     case CSeqFeatData::eSubtype_mRNA:
         SetMrna(scope, seq_feat);
-        {{
+        if (feat.IsSetProduct()) {
+            CBioseq_Handle product_bsh =scope.GetBioseqHandle(feat.GetProduct());
+            if (product_bsh) {
+                SAnnotSelector sel  = x_GetAnnotSelector();
+                sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+                for (CFeat_CI feat_iter(product_bsh, sel); feat_iter;  ++feat_iter)
+                {
+                    x_SetRnaCds(scope, feat_iter->GetMappedFeature());
+                }
+            }
+        } else {
             vector<CMappedFeat> cc = feat_tree.GetChildren(feat);
             // TODO: We don't handle multiple CDS per mRNA. Do they actually happen?
             ITERATE (vector<CMappedFeat>, iter, cc) {
@@ -232,7 +242,7 @@ void CReportEntry::x_SetFeature(CScope& scope, feature::CFeatTree& feat_tree, co
                     break;
                 }
             }
-        }}
+        }
         break;
     case CSeqFeatData::eSubtype_cdregion:
         SetCds(scope, seq_feat);
