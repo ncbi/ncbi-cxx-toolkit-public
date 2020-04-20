@@ -333,7 +333,14 @@ set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${NCBI_COMPILER_SHA
 #----------------------------------------------------------------------------
 
 if (NOT WIN32)
-    if(NCBI_COMPILER_ICC)
+    if(NCBI_COMPILER_GCC)
+
+        if("${NCBI_COMPILER_VERSION}" LESS "730")
+            add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+        endif()
+
+    elseif(NCBI_COMPILER_ICC)
+
         if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
             set(NCBI_COMPILER_COMPONENTS ICC1903)
         endif()
@@ -348,7 +355,9 @@ if (NOT WIN32)
         set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651")
         set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
+
     elseif(NCBI_COMPILER_LLVM_CLANG)
+
         if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
             set(NCBI_COMPILER_COMPONENTS GCC730)
         endif()
