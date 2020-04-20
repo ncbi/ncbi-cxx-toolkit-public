@@ -178,7 +178,7 @@ void CRPCClient<TRequest, TReply>::x_FillConnNetInfo(SConnNetInfo& net_info,
     x_extra->flags = fHTTP_NoAutoRetry;
     const char* user_header = GetContentTypeHeader(GetFormat());
     if (user_header != NULL  &&  *user_header != '\0') {
-        if ( !ConnNetInfo_AppendUserHeader(&net_info, user_header)) {
+        if ( !ConnNetInfo_OverrideUserHeader(&net_info, user_header)) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending user header");
         }
