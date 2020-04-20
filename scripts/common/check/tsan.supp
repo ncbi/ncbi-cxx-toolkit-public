@@ -71,5 +71,6 @@ race:^MT_LOCK_AddRef$
 # ucko CXX-11303
 
 # the race is real, but AFAICT harmless in this context
-race:^tds_socket_write /src/dbapi/driver/ftds100/freetds/tds/net.c
+race:^tds_socket_write$
+race:^tds_socket_read$
 
