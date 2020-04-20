@@ -191,8 +191,8 @@ CTLibContextRegistry::ClearAll(void)
 {
     if (!m_Registry.empty())
     {
-        CMutexGuard mg(m_Mutex);
         CMutexGuard ctx_mg(s_CTLCtxMtx);
+        CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
             // x_Close will unregister and remove handler from the registry.
