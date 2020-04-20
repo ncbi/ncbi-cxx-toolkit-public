@@ -181,7 +181,7 @@ void SPercentiles::Report(istream& is, ostream& os, double percentage)
 
     unordered_map<string, vector<SMessage>> raw_data;
 
-    while (is) {
+    for (;;) {
         string request;
         SMessage message;
 
@@ -190,6 +190,13 @@ void SPercentiles::Report(istream& is, ostream& os, double percentage)
             raw_data[request].emplace_back(std::move(message));
             auto new_size = raw_data.size();
             if ((old_size < new_size) && (new_size % 2000 == 0)) cerr << '.';
+
+        } else if (!is.eof() || raw_data.empty()) {
+            cerr << "\nError on parsing data, check the file\n";
+            return;
+
+        } else {
+            break;
         }
     }
 

@@ -143,11 +143,14 @@ struct SMessage
             case SMetricType::eSend:
             case SMetricType::eReceive:
             case SMetricType::eClose:
+            case SMetricType::eRetry:
+            case SMetricType::eFail:
                 message.type = static_cast<SMetricType::EType>(type);
                 break;
 
             default:
-                _TROUBLE;
+                message.type = SMetricType::eError;
+                break;
         }
 
         // Read the rest of the line if the converion above has failed
