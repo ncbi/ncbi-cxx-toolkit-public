@@ -207,6 +207,7 @@ void SPercentiles::Report(istream& is, ostream& os, double percentage)
     SPercentiles percentiles(percentage);
     double min = numeric_limits<double>::max();
     double max = numeric_limits<double>::min();
+    size_t success_total = 0;
 
     for (auto& node : raw_data) {
         auto& request = node.first;
@@ -231,6 +232,8 @@ void SPercentiles::Report(istream& is, ostream& os, double percentage)
 
         percentiles.Add(request_metrics);
 
+        if (success) ++success_total;
+
         if (++processed % 2000 == 0) cerr << '.';
     }
 
@@ -243,7 +246,8 @@ void SPercentiles::Report(istream& is, ostream& os, double percentage)
         if (++printed % 2000 == 0) cerr << '.';
     }
 
-    os << '\n' << percentiles << "\n\nOverall\t" << setw(7) << (max - min) / milli::den << "\tseconds" << endl;
+    os << '\n' << percentiles << "\nSuccess\t" << success_total << '/' << complex_metrics.size() <<
+        "\trequests\nOverall\t" << setw(7) << (max - min) / milli::den << "\tseconds" << endl;
     cerr << '\n';
 }
 
