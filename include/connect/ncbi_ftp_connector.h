@@ -84,7 +84,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * Note that commands unsupported by the server are automatically unsupported
  * by the connector.
  *
- * Upon open, an FTP server gets connected to with a specified username and
+ * Upon open, the FTP server gets connected to with the specified username and
  * password (user accounts [ACCT] are not supported), and the data transfer is
  * set to be STREAM/FILE/BINARY(I or L8) -- these transfer parameters may not
  * be changed.
@@ -123,8 +123,8 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * accumulate in the internal command buffer).  Only one command can be
  * executed at a time (i.e. writing "CDUP\nSYST\n" in a single write is
  * illegal).  Note that the codes are text strings each consisting of 3 chars
- * (not ints!) -- the "values" are chosen to be equivalent to FTP response
- * codes that the FTP servers are expected to generate upon successful
+ * (not binary integers!) -- the "values" are chosen to be equivalent to FTP
+ * response codes that the FTP servers are expected to generate upon successful
  * completion of the corresponding commands (per RFC959), but may not
  * necessarily be the actual codes as received from the server (connector is
  * somewhat flexible with accepting various codes noted in several different
@@ -140,7 +140,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * name "a"b).  Note that the filename a"b (no leading quote) does not require
  * any additional quoting.
  * Some commands (e.g. NLST, MLSD, etc) allow an optional argument, which can
- * either be present or omitted (the optional part is shown in the square
+ * be either present or omitted (the optional part is shown in the square
  * brakets, which are not the elements of those commands).
  * UTC seconds can have a fraction portion preceded by a decimal point.
  *
@@ -173,10 +173,10 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * upload, see below) was complete (sometimes, the information returned from
  * the server does not permit doing this check).  Any mismatch will result in
  * an error different from eIO_Closed.  (For buggy / noisy FTP servers, the
- * size checks can be suppressed via the connector flags.)
+ * size checks can be suppressed via connector flags.)
  *
  * During file download, any command (legitimate or not) written to the
- * connection and triggered for execution will abort the data transfer (result
+ * connection and triggered for execution will abort the data transfer (results
  * in a warning logged, yet the connection must still be manually drained until
  * eIO_Closed), but if an output is expected from such a command, it cannot be
  * distinguished from the remnants of the file data -- so such a method is not
@@ -194,13 +194,13 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * the codes out, but rely solely on CONN_Status() responses.  Any pending
  * (unread) result of the previous command gets discarded when a new command
  * gets executed (i.e. command accumulation in the internal buffer does not
- * cause the pending result to be discarded; it is the connection flushing, as
+ * cause the pending result to be discarded;  it is the connection flushing, as
  * with '\n', CONN_Flush(), etc that does so).  (Same happens with results of
  * the commands returning non-code information, but reading it out is supposed
  * to be the very purpose of issuing of such commands, and hence, is not
  * mentioned above.)
  *
- * Connection is switched to SEND mode upon either APPE or STOR is executed.
+ * Connection is switched to SEND mode upon either APPE or STOR gets executed.
  * If that is successful (CONN_Status(eIO_Write) reports eIO_Success), then
  * any following writes will send the data to the file being uploaded (while
  * the file is being uploaded, CONN_Status(eIO_Write) will report the status of

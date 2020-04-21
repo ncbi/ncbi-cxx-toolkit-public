@@ -31,6 +31,10 @@
  * File Description:
  *   Special forwarding header for <connect/ncbi_localip.h> for C++ Tkit use
  *
+ * @warning
+ *   You MUST use this header (instead of <connect/ncbi_localip.h>) in a C++
+ *   application, or risk facing undefined symbols at link time!
+ *
  */
 
 

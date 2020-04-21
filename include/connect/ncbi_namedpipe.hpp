@@ -110,8 +110,8 @@ public:
     /// Read data from the pipe.
     ///
     /// Always return eIO_Success if some data were read (regardless of pipe
-    /// conditions that may include EOF/error).
-    //  Return other (error) code only if no data at all could be obtained.
+    /// conditions that may include EOF(eIO_Closed)/error(other code)).
+    //  Return an error code only if no data at all could be obtained.
     /// Return via "n_read" the number of bytes actually read (which can be
     /// smaller than the requested "count").
     EIO_Status Read(void* buf, size_t count, size_t* n_read = 0);
