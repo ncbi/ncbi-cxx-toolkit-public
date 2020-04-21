@@ -314,14 +314,14 @@ else()
 #    set(HOST "${HOST_CPU}-unknown-${HOST_OS}")
     set(HOST "${HOST_CPU}-${HOST_OS}")
 endif()
-set(FEATURES "${NCBI_ALL_COMPONENTS}")
+string(REPLACE ";" " " FEATURES "${NCBI_ALL_COMPONENTS}")
 
 if (NCBI_EXPERIMENTAL_CFG)
 
     if (WIN32 OR XCODE)
         foreach(_cfg ${NCBI_CONFIGURATION_TYPES})
 
-            set(_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_cfg}")
+            set(_file "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${_cfg}")
             if (WIN32)
                 string(REPLACE "/" "\\\\" _file ${_file})
             endif()
@@ -364,9 +364,7 @@ endif()
         endif()
     else()
 #Linux
-        set(c_ncbi_runpath ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-        set(SYBASE_LCL_PATH ${SYBASE_LIBRARIES})
-        set(SYBASE_PATH "")
+        set(c_ncbi_runpath ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
         set(NCBI_TLS_VAR "__thread")
 
         set(NCBI_SIGNATURE "${NCBI_COMPILER}_${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}--${HOST_CPU}-${HOST_OS_WITH_VERSION}-${_local_host_name}")

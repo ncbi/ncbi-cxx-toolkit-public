@@ -424,6 +424,9 @@ endif()
 #############################################################################
 # PYTHON
 NCBI_define_component(PYTHON python38.lib python3.lib)
+if(NCBI_COMPONENT_PYTHON_FOUND)
+    set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
+endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
