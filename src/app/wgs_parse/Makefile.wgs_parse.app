@@ -17,7 +17,8 @@ SRC     = \
 
 APP     = wgs_parse
 
-LIB  = fix_pub eutils_client xmlwrapp $(ncbi_xreader_pubseqos2) xcleanup \
+LIB  = fix_pub eutils_client xmlwrapp xid_wgsdb xid_utils \
+    $(ncbi_xreader_pubseqos2) xcleanup \
     $(OBJEDIT_LIBS) xobjutil valid taxon1 mlacli mla medlars pubmed \
     ncbi_xdbapi_ftds $(FTDS_LIB) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 

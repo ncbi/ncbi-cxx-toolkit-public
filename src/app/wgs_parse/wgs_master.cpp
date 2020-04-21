@@ -62,6 +62,8 @@
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 
+#include <internal/ID/utils/wgsdb.hpp>
+
 #include "wgs_params.hpp"
 #include "wgs_master.hpp"
 #include "wgs_utils.hpp"
@@ -1502,6 +1504,11 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     if (info.m_biosource.NotEmpty()) {
+
+        if (GetParams().IsVDBMode() && info.m_vdb_biosource_state == eBioSourceMaster && !info.m_same_biosource) {
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_BioSourcesVDBPropagate, Warning << "The master source descriptor needs to be propagated to all contigs.");
+        }
+
         if (!CreateBiosource(*bioseq, *info.m_biosource, info.m_org_refs)) {
             return ret;
         }
@@ -2395,8 +2402,56 @@ static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAcc
     return ret;
 }
 
+static bool CheckVDBBioSource(CMasterInfo& master_info)
+{
+    CWGSDbAcc::TWGSContigStat state;
+    string prefix = GetParams().GetAccession();
+    
+    int rc = CWGSDbAcc().GetProjectContigStats(prefix, state);
+    if (rc) {
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_BioSourcesVDBProblem, Fatal << "Failed to get information about BioSource for " << prefix << ". Cannot proceed.");
+    }
+    else {
+
+        master_info.m_vdb_biosource_state = static_cast<EVDBBioSourceState>(state.native_source);
+        if (state.native_source) {
+            master_info.m_same_biosource = false;
+        }
+        else {
+            const CSeq_descr* descrs = nullptr;
+            bool biosource_present = false;
+            if (GetDescr(*master_info.m_id_master_bioseq, descrs) && descrs->IsSet()) {
+
+                auto biosource_it = find_if(descrs->Get().begin(), descrs->Get().end(),
+                    [](const CRef<CSeqdesc>& descr) { return descr->IsSource(); });
+
+                if (biosource_it != descrs->Get().end()) {
+
+                    biosource_present = true;
+                    master_info.m_biosource.Reset(new CBioSource);
+                    master_info.m_biosource->Assign((*biosource_it)->GetSource());
+                }
+            }
+
+            if (!biosource_present) {
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_BioSourcesVDBProblem, Fatal << "Master record does not contain BioSource descriptor for " << prefix << ". Cannot proceed.");
+                rc = -1;
+            }
+        }
+    }
+
+    return rc == 0;
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
+    master_info.m_same_biosource = true;
+    if (GetParams().IsVDBMode() && GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+        if (!CheckVDBBioSource(master_info)) {
+            return false;
+        }
+    }
+
     const list<string>& files = GetParams().GetInputFiles();
 
     bool ret = true,
@@ -2407,7 +2462,6 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     CSeqEntryCommonInfo common_info;
     CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
 
-    master_info.m_same_biosource = true;
     list<CEntryOrderInfo> seq_order;
 
     size_t cur_file_num = 0;

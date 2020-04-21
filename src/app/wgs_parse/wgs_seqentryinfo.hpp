@@ -271,6 +271,13 @@ struct CCitSubInfo
     }
 };
 
+enum EVDBBioSourceState
+{
+    eBioSourceMaster = 0,
+    eBioSourceBioseq = 1,
+    eBioSourceBioseqSet = 2,
+    eBioSourceNA = -1
+};
 
 struct CMasterInfo
 {
@@ -337,6 +344,8 @@ struct CMasterInfo
     list<CRef<CPub_equiv>> m_cit_arts;
     EInputType m_input_type;
 
+    EVDBBioSourceState m_vdb_biosource_state;
+
 
     CMasterInfo() :
         m_num_of_pubs(0),
@@ -366,7 +375,8 @@ struct CMasterInfo
         m_keywords_set(false),
         m_num_of_prot_seq(0),
         m_current_master(nullptr),
-        m_input_type(eUnknownType)
+        m_input_type(eUnknownType),
+        m_vdb_biosource_state(eBioSourceNA)
     {}
 
     void SetDblinkEmpty(const string& file, const string& id)

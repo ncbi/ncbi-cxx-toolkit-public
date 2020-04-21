@@ -88,6 +88,8 @@
 #define ERR_MASTER_NoMasterCitSub              18
 #define ERR_MASTER_CannotReadFromFile          19
 #define ERR_MASTER_BioSourcesDiff              20
+#define ERR_MASTER_BioSourcesVDBProblem        21
+#define ERR_MASTER_BioSourcesVDBPropagate      22
 
 #define ERR_SUBMISSION                         3
 #define ERR_SUBMISSION_SegSetsAreNotAllowed    1

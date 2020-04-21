@@ -103,7 +103,9 @@ static map<int, SErrorSubcodes> ERROR_CODE_STR =
             { ERR_MASTER_NoMasterBioSource, "NoMasterBioSource" },
             { ERR_MASTER_NoMasterCitSub, "NoMasterCitSub" },
             { ERR_MASTER_CannotReadFromFile, "CannotReadFromFile" },
-            { ERR_MASTER_BioSourcesDiff, "BioSourcesDiff" }
+            { ERR_MASTER_BioSourcesDiff, "BioSourcesDiff" },
+            { ERR_MASTER_BioSourcesVDBProblem, "BioSourcesVDBProblem" },
+            { ERR_MASTER_BioSourcesVDBPropagate, "BioSourcesVDBPropagate" }
         }
     } },
     { ERR_SUBMISSION, { "SUBMISSION",

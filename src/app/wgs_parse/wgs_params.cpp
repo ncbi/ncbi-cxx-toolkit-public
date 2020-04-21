@@ -1167,8 +1167,9 @@ bool SetParams(const CArgs& args)
         params_imp.m_update_mode != eUpdateAssembly &&
         params_imp.m_update_mode != eUpdateNew &&
         params_imp.m_update_mode != eUpdatePartial &&
-        params_imp.m_update_mode != eUpdateFull) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Fatal << "VDB parsing mode (\"-U T\") can be used for brand new projects (\"-u 0\") or reassemblies (\"-u 2\") only.");
+        params_imp.m_update_mode != eUpdateFull &&
+        params_imp.m_update_mode != eUpdateExtraContigs) {
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Fatal << "VDB parsing mode (\"-U T\") cannot be used for scaffold modes (\"-u 3\" and \"-u 5\").");
         return false;
     }
 
