@@ -296,7 +296,7 @@ int CTest::Run(void)
     assert(pipe.SetReadHandle(CPipe::eStdErr) == eIO_Success);
     assert(pipe.Read(buf, sizeof(buf), NULL) == eIO_Unknown);
     assert(pipe.SetReadHandle(CPipe::eStdOut) == eIO_Success);
-    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Unknown);
+    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Closed);
     assert(n_written == 0);
 
     total = 0;

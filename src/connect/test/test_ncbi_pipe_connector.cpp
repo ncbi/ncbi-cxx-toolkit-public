@@ -197,7 +197,7 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Write(conn, buf, kBufferSize, &n_written, eIO_WritePersist);
-    assert(status == eIO_Unknown);
+    assert(status == eIO_Closed);
     assert(n_written == 0);
 
     size_t total = 0;

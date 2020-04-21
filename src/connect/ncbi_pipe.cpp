@@ -898,6 +898,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         }
     }
 
+    _ASSERT(!(poll ^ (poll & mask)));
     return poll;
 }
 
@@ -1033,7 +1034,7 @@ static int s_ExecShell(const char* executable,
 static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
 {
     // CAUTION (security):  current directory is in the path on purpose,
-    //                      to be in-sync with default behavior of MS-Win.
+    //                      to be in-sync with the default behavior on MS-Win.
     static const char* kPathDefault = ":/bin:/usr/bin";
 
     // If file name is not specified
@@ -1694,12 +1695,15 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             }
             if (n > 0) {
                 // no need to check mask here
-                if (poll_fds[0].revents)
+                if (poll_fds[0].revents) {
                     poll |= CPipe::fStdIn;
-                if (poll_fds[1].revents)
+                }
+                if (poll_fds[1].revents) {
                     poll |= CPipe::fStdOut;
-                if (poll_fds[2].revents)
+                }
+                if (poll_fds[2].revents) {
                     poll |= CPipe::fStdErr;
+                }
                 break;
             }
             // n < 0
@@ -1818,6 +1822,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         }
     }
 
+    _ASSERT(!(poll ^ (poll & mask)));
     return poll;
 }
 
@@ -1989,6 +1994,7 @@ CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask,
         if ( poll & m_ReadHandle ) {
             poll |= fDefault;
         }
+        poll &= mask;
     }
     // Result may not be a bigger set
     _ASSERT(!(poll ^ (poll & mask)));
