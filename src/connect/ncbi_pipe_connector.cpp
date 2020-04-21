@@ -35,8 +35,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_pipe_connector.hpp>
 #include "ncbi_ansi_ext.h"
+#include <connect/ncbi_pipe_connector.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -125,8 +125,9 @@ static EIO_Status s_VT_Wait
  EIO_Event       event,
  const STimeout* timeout)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    _ASSERT(timeout != kDefaultTimeout);
     _ASSERT(event == eIO_Read  ||  event == eIO_Write);
+    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     CPipe::TChildPollMask what = 0;
     if (event & eIO_Read)
         what |= CPipe::fDefault;
@@ -143,6 +144,7 @@ static EIO_Status s_VT_Write
  size_t*         n_written,
  const STimeout* timeout)
 {
+    _ASSERT(timeout != kDefaultTimeout);
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     _VERIFY(xxx->pipe->SetTimeout(eIO_Write, timeout) == eIO_Success);
     return xxx->pipe->Write(buf, size, n_written);
@@ -156,6 +158,7 @@ static EIO_Status s_VT_Read
  size_t*         n_read,
  const STimeout* timeout)
 {
+    _ASSERT(timeout != kDefaultTimeout);
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     _VERIFY(xxx->pipe->SetTimeout(eIO_Read, timeout) == eIO_Success);
     return xxx->pipe->Read(buf, size, n_read);
@@ -175,6 +178,7 @@ static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
+    _ASSERT(timeout != kDefaultTimeout);
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     _VERIFY(xxx->pipe->SetTimeout(eIO_Close, timeout) == eIO_Success);
     return xxx->pipe->Close();
@@ -206,6 +210,7 @@ static void s_Destroy
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     connector->handle = 0;
 
+    _ASSERT(xxx->pipe);
     if (xxx->own_pipe) {
         delete xxx->pipe;
     }

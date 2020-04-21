@@ -43,6 +43,9 @@
 #  undef pipe
 #endif /*pipe*/
 
+#define _STR(x)  #x
+#define  STR(s)  _STR(s)
+
 #define DEFAULT_TIMEOUT  3
 
 
@@ -171,7 +174,8 @@ void CTest::Init(void)
     arg_desc->SetConstraint
         ("mode", &(*new CArgAllow_Strings, "client", "server"));
     arg_desc->AddOptionalPositional 
-        ("timeout", "Input/output timeout",
+        ("timeout", "Input/output timeout"
+         " (default = " + string(STR(DEFAULT_TIMEOUT)) + ')',
          CArgDescriptions::eDouble);
     arg_desc->SetConstraint
         ("timeout", new CArgAllow_Doubles(0.0, 200.0));
@@ -204,9 +208,6 @@ int CTest::Run(void)
         }
     }
     else if (args["mode"].AsString() == "server") {
-        if (!args["timeout"].HasValue()) {
-            m_Timeout.sec = (unsigned int) DEF_CONN_TIMEOUT;
-        }
         SetDiagPostPrefix("Server");
         Server();
     }
@@ -316,7 +317,7 @@ void CTest::Server(void)
     assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
-    for (int n = 1;  n <= 100;  ++n) {
+    for (int n = 1;  n <= 10;  ++n) {
         if (::rand() & 1) {
             SleepMilliSec(100);
         }

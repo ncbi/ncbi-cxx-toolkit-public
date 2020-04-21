@@ -36,12 +36,12 @@
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
+#include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_util.h>
-#include "../ncbi_priv.h"
 #include "ncbi_conntest.h"
 
 #if defined(NCBI_OS_MSWIN)

@@ -73,11 +73,7 @@
 
 
 #define PIPE_THROW(err, errtxt)                     \
-    {                                               \
-        int _err = int(err);                        \
-        string _errstr(errtxt);                     \
-        THROW0_TRACE(x_FormatError(_err, _errstr)); \
-    }
+    THROW0_TRACE(x_FormatError(int(err), errtxt))
 
 
 BEGIN_NCBI_SCOPE
@@ -99,7 +95,10 @@ static const STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 }
 
 
-static string x_FormatError(int error, string& message)
+typedef AutoPtr< char, CDeleter<char> >  TTempCharPtr;
+
+
+static string x_FormatError(int error, const string& message)
 {
     const char* errstr;
 
@@ -130,17 +129,9 @@ static string x_FormatError(int error, string& message)
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
                                                 error, errstr);
-
-    string retval;
-    if ( result ) {
-        retval = result;
-        if ( dynamic ) {
-            free((void*) result);
-        }
-    } else {
-        retval.swap(message);
-    }
-    return retval;
+    TTempCharPtr retval(const_cast<char*> (result),
+                        dynamic ? eTakeOwnership : eNoOwnership);
+    return retval.get() ? retval.get() : message;
 }
 
 
@@ -213,6 +204,7 @@ static string x_GetHandleName(CPipe::EChildIOHandle handle)
     case CPipe::eStdErr:
         return "eStdErr";
     default:
+        _TROUBLE;
         break;
     }
     return "<Invalid handle " + NStr::NumericToString(int(handle)) + '>';
@@ -232,7 +224,7 @@ static string x_GetHandleName(CPipe::EChildIOHandle handle)
 const unsigned long kWaitPrecision = 100;  // Timeout time slice (milliseconds)
 
 
-static inline bool x_DisconnectError(DWORD error)
+static inline bool x_IsDisconnectError(DWORD error)
 {
     return (error == ERROR_NO_DATA      ||
             error == ERROR_BROKEN_PIPE  ||
@@ -603,6 +595,7 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
         m_ChildStdErr = INVALID_HANDLE_VALUE;
         break;
     default:
+        _TROUBLE;
         return eIO_InvalidArg;
     }
     return eIO_Success;
@@ -614,6 +607,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                              const STimeout* timeout) const
 {
     _ASSERT(!n_read  ||  !*n_read);
+    _ASSERT(!(from_handle & (from_handle - 1)));
 
     EIO_Status status = eIO_Unknown;
 
@@ -647,7 +641,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                 _ASSERT(!bytes_avail);
                 // Has peer closed the connection?
                 DWORD error = ::GetLastError();
-                if ( !x_DisconnectError(error) ) {
+                if ( !x_IsDisconnectError(error) ) {
                     // NB: status == eIO_Unknown
                     PIPE_THROW(error,
                                "Failed PeekNamedPipe("
@@ -683,6 +677,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         }
         if ( !::ReadFile(fd, buf, bytes_avail, &bytes_avail, NULL) ) {
             if ( !bytes_avail ) {
+                // NB: status == eIO_Unknown
                 PIPE_THROW(::GetLastError(),
                            "Failed to read data from pipe I/O handle "
                            + x_GetHandleName(from_handle));
@@ -716,6 +711,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                        "Pipe closed");
         }
         if (m_ChildStdIn == INVALID_HANDLE_VALUE) {
+            status = eIO_Closed;
             PIPE_THROW(0,
                        "Pipe I/O handle "
                        + x_GetHandleName(CPipe::eStdIn) + " closed");
@@ -736,9 +732,9 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                               &bytes_written, NULL)) {
                 if ( !bytes_written ) {
                     DWORD error = ::GetLastError();
-                    if ( x_DisconnectError(error) ) {
+                    if ( x_IsDisconnectError(error) ) {
                         status = eIO_Closed;
-                    } // NB: status == eIO_Unknown;
+                    } // NB: status == eIO_Unknown
                     PIPE_THROW(error,
                                "Failed to write data to pipe I/O handle "
                                + x_GetHandleName(CPipe::eStdIn));
@@ -815,6 +811,7 @@ HANDLE CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
     case CPipe::eStdErr:
         return m_ChildStdErr;
     default:
+        _TROUBLE;
         break;
     }
     return INVALID_HANDLE_VALUE;
@@ -856,7 +853,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                                   &bytes_avail, NULL) ) {
                 DWORD error = ::GetLastError();
                 // Has peer closed connection?
-                if ( !x_DisconnectError(error) ) {
+                if ( !x_IsDisconnectError(error) ) {
                     PIPE_THROW(error,
                                "Failed PeekNamedPipe(stdout)");
                 }
@@ -872,7 +869,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                                   &bytes_avail, NULL) ) {
                 DWORD error = ::GetLastError();
                 // Has peer closed connection?
-                if ( !x_DisconnectError(error) ) {
+                if ( !x_IsDisconnectError(error) ) {
                     PIPE_THROW(error,
                                "Failed PeekNamedPipe(stderr)");
                 }
@@ -1048,10 +1045,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     // If the file name contains path
     if ( strchr(file, '/') ) {
         ::execve(file, argv, envp);
-        if (errno == ENOEXEC) {
-            return s_ExecShell(file, argv, envp);
-        }
-        return -1;
+        return errno == ENOEXEC ? s_ExecShell(file, argv, envp) : -1;
     }
 
     // Get the PATH environment variable
@@ -1473,6 +1467,7 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
         m_ChildStdErr = -1;
         break;
     default:
+        _TROUBLE;
         return eIO_InvalidArg;
     }
     return eIO_Success;
@@ -1484,6 +1479,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                              const STimeout* timeout) const
 {
     _ASSERT(!n_read  ||  !*n_read);
+    _ASSERT(!(from_handle & (from_handle - 1)));
 
     EIO_Status status = eIO_Unknown;
 
@@ -1529,6 +1525,10 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                            "Failed to read data from pipe I/O handle "
                            + x_GetHandleName(from_handle));
             }
+            if (SOCK_SetInterruptOnSignalAPI(eDefault) == eOn) {
+                status = eIO_Interrupt;
+                break;
+            }
             // Interrupted read -- restart
         }
     }
@@ -1554,6 +1554,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                        "Pipe closed");
         }
         if (m_ChildStdIn == -1) {
+            status = eIO_Closed;
             PIPE_THROW(0,
                        "Pipe I/O handle "
                        + x_GetHandleName(CPipe::eStdIn) + " closed");
@@ -1592,6 +1593,10 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                 PIPE_THROW(errno,
                            "Failed to write data to pipe I/O handle "
                            + x_GetHandleName(CPipe::eStdIn));
+            }
+            if (SOCK_SetInterruptOnSignalAPI(eDefault) == eOn) {
+                status = eIO_Interrupt;
+                break;
             }
             // Interrupted write -- restart
         }
@@ -1640,6 +1645,7 @@ int CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
     case CPipe::eStdErr:
         return m_ChildStdErr;
     default:
+        _TROUBLE;
         break;
     }
     return -1;
@@ -1700,6 +1706,9 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             if ((n = errno) != EINTR) {
                 PIPE_THROW(n,
                            "Failed poll()");
+            }
+            if (SOCK_SetInterruptOnSignalAPI(eDefault) == eOn) {
+                break;
             }
             // continue, no need to recreate either timeout or poll_fds
         }
@@ -1802,6 +1811,9 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                 PIPE_THROW(n,
                            "Failed select()");
             }
+            if (SOCK_SetInterruptOnSignalAPI(eDefault) == eOn) {
+                break;
+            }
             // continue
         }
     }
@@ -1864,9 +1876,7 @@ EIO_Status CPipe::Open(const string&         cmd,
                        const char* const     env[],
                        size_t                pipe_size)
 {
-    if ( !m_PipeHandle ) {
-        return eIO_Unknown;
-    }
+    _ASSERT(m_PipeHandle);
     if (pipe_size) {
         m_PipeSize = pipe_size;
     }
@@ -1884,11 +1894,8 @@ EIO_Status CPipe::Open(const string&         cmd,
 
 void CPipe::OpenSelf(void)
 {
+    _ASSERT(m_PipeHandle);
     try {
-        if ( !m_PipeHandle ) {
-            PIPE_THROW(0,
-                       "Pipe invalid");
-        }
         m_PipeHandle->OpenSelf();
     }
     catch (string& err) {
@@ -1902,24 +1909,23 @@ void CPipe::OpenSelf(void)
 
 EIO_Status CPipe::Close(int* exitcode)
 {
-    if ( !m_PipeHandle ) {
-        return eIO_Unknown;
-    }
+    _ASSERT(m_PipeHandle);
     m_ReadStatus  = eIO_Closed;
     m_WriteStatus = eIO_Closed;
-
     return m_PipeHandle->Close(exitcode, m_CloseTimeout);
 }
 
 
 EIO_Status CPipe::CloseHandle(EChildIOHandle handle)
 {
-    return m_PipeHandle ? m_PipeHandle->CloseHandle(handle) : eIO_Unknown;
+    _ASSERT(m_PipeHandle);
+    return m_PipeHandle->CloseHandle(handle);
 }
 
 
 EIO_Status CPipe::SetReadHandle(EChildIOHandle from_handle)
 {
+    _ASSERT(m_PipeHandle);
     if (from_handle == eStdIn) {
         return eIO_InvalidArg;
     }
@@ -1928,11 +1934,12 @@ EIO_Status CPipe::SetReadHandle(EChildIOHandle from_handle)
 }
 
 
-EIO_Status CPipe::Read(void* buf, size_t count, size_t* read,
+EIO_Status CPipe::Read(void* buf, size_t count, size_t* n_read,
                        EChildIOHandle from_handle)
 {
-    if ( read ) {
-        *read = 0;
+    _ASSERT(m_PipeHandle);
+    if ( n_read ) {
+        *n_read = 0;
     }
     if (from_handle == eStdIn) {
         return eIO_InvalidArg;
@@ -1944,27 +1951,22 @@ EIO_Status CPipe::Read(void* buf, size_t count, size_t* read,
     if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
-    if ( !m_PipeHandle ) {
-        return eIO_Unknown;
-    }
-    m_ReadStatus = m_PipeHandle->Read(buf, count, read, from_handle,
+    m_ReadStatus = m_PipeHandle->Read(buf, count, n_read, from_handle,
                                       m_ReadTimeout);
     return m_ReadStatus;
 }
 
 
-EIO_Status CPipe::Write(const void* buf, size_t count, size_t* written)
+EIO_Status CPipe::Write(const void* buf, size_t count, size_t* n_written)
 {
-    if ( written ) {
-        *written = 0;
+    _ASSERT(m_PipeHandle);
+    if ( n_written ) {
+        *n_written = 0;
     }
     if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
-    if ( !m_PipeHandle ) {
-        return eIO_Unknown;
-    }
-    m_WriteStatus = m_PipeHandle->Write(buf, count, written,
+    m_WriteStatus = m_PipeHandle->Write(buf, count, n_written,
                                         m_WriteTimeout);
     return m_WriteStatus;
 }
@@ -1973,7 +1975,8 @@ EIO_Status CPipe::Write(const void* buf, size_t count, size_t* written)
 CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask, 
                                   const STimeout* timeout)
 {
-    if (!mask  ||  !m_PipeHandle) {
+    _ASSERT(m_PipeHandle  &&  timeout != kDefaultTimeout);
+    if (!mask  ||  timeout == kDefaultTimeout) {
         return 0;
     }
     TChildPollMask x_mask = mask;
@@ -1986,7 +1989,6 @@ CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask,
         if ( poll & m_ReadHandle ) {
             poll |= fDefault;
         }
-        poll &= mask;
     }
     // Result may not be a bigger set
     _ASSERT(!(poll ^ (poll & mask)));
@@ -1996,12 +1998,14 @@ CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask,
 
 EIO_Status CPipe::Status(EIO_Event direction) const
 {
+    _ASSERT(m_PipeHandle);
     switch ( direction ) {
     case eIO_Read:
-        return m_PipeHandle ? m_ReadStatus  : eIO_Closed;
+        return m_ReadStatus;
     case eIO_Write:
-        return m_PipeHandle ? m_WriteStatus : eIO_Closed;
+        return m_WriteStatus;
     default:
+        _TROUBLE;
         break;
     }
     return eIO_InvalidArg;
@@ -2010,6 +2014,7 @@ EIO_Status CPipe::Status(EIO_Event direction) const
 
 EIO_Status CPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
 {
+    _ASSERT(m_PipeHandle);
     if (timeout == kDefaultTimeout) {
         return eIO_Success;
     }
@@ -2028,6 +2033,7 @@ EIO_Status CPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
         m_WriteTimeout = s_SetTimeout(timeout, &m_WriteTimeoutValue);
         break;
     default:
+        _TROUBLE;
         return eIO_InvalidArg;
     }
     return eIO_Success;
@@ -2036,6 +2042,7 @@ EIO_Status CPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
 
 const STimeout* CPipe::GetTimeout(EIO_Event event) const
 {
+    _ASSERT(m_PipeHandle);
     switch ( event ) {
     case eIO_Close:
         return m_CloseTimeout;
@@ -2044,6 +2051,7 @@ const STimeout* CPipe::GetTimeout(EIO_Event event) const
     case eIO_Write:
         return m_WriteTimeout;
     default:
+        _TROUBLE;
         break;
     }
     return kDefaultTimeout;
@@ -2052,7 +2060,8 @@ const STimeout* CPipe::GetTimeout(EIO_Event event) const
 
 TProcessHandle CPipe::GetProcessHandle(void) const
 {
-    return m_PipeHandle ? m_PipeHandle->GetProcessHandle() : 0;
+    _ASSERT(m_PipeHandle);
+    return m_PipeHandle->GetProcessHandle();
 }
 
 

@@ -51,12 +51,8 @@
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
 
 
-#define NAMEDPIPE_THROW(err, errtxt)                  \
-    {                                                 \
-        int _err = int(err);                          \
-        string _errstr(errtxt);                       \
-        THROW0_TRACE(x_FormatError(_err, _errstr));   \
-    }
+#define NAMEDPIPE_THROW(err, errtxt)                \
+    THROW0_TRACE(x_FormatError(int(err), errtxt))
 
 
 BEGIN_NCBI_SCOPE
@@ -85,7 +81,10 @@ static inline const STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 }
 
 
-static string x_FormatError(int error, string& message)
+typedef AutoPtr< char, CDeleter<char> >  TTempCharPtr;
+
+
+static string x_FormatError(int error, const string& message)
 {
     const char* errstr;
 
@@ -116,17 +115,9 @@ static string x_FormatError(int error, string& message)
     int dynamic = 0/*false*/;
     const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
                                                 error, errstr);
-
-    string retval;
-    if ( result ) {
-        retval = result;
-        if ( dynamic ) {
-            free((void*) result);
-        }
-    } else {
-        retval.swap(message);
-    }
-    return retval;
+    TTempCharPtr retval(const_cast<char*> (result),
+                        dynamic ? eTakeOwnership : eNoOwnership);
+    return retval.get() ? retval.get() : message;
 }
 
 
@@ -149,7 +140,7 @@ static string s_FormatErrorMessage(const string& where, const string& what)
 const unsigned long kWaitPrecision = 100;  // Timeout time slice (milliseconds)
 
 
-static inline bool x_DisconnectError(DWORD error)
+static inline bool x_IsDisconnectError(DWORD error)
 {
     return (error == ERROR_NO_DATA      ||
             error == ERROR_BROKEN_PIPE  ||
@@ -360,7 +351,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE  ||  m_Connected) {
-            status  = eIO_Closed;
+            status = eIO_Closed;
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
                             + "\" not listening");
@@ -374,17 +365,17 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         unsigned long x_sleep = 1;
         for (;;) {
             if ( ::ConnectNamedPipe(m_Pipe, NULL) ) {
-                break; // connected while within ConnectNamedPipe()
+                break; // client connected while within ConnectNamedPipe()
             }
             DWORD error = ::GetLastError();
             if (error == ERROR_PIPE_CONNECTED) {
-                break; // connected before ConnectNamedPipe()
+                break; // client connected before ConnectNamedPipe() was called
             }
             
-            // NB:  status == eIO_Unknown
+            // NB: status == eIO_Unknown
             if (error == ERROR_NO_DATA/*not disconnected???*/) {
                 if (x_Disconnect(/*abort*/) == eIO_Success) {
-                    continue;  // try again
+                    continue; // try again
                 }
                 NAMEDPIPE_THROW(error,
                                 "Named pipe \"" + m_PipeName
@@ -517,7 +508,7 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
             _ASSERT(!*in_avail);
             // Has peer closed the connection?
             DWORD error = ::GetLastError();
-            if ( !x_DisconnectError(error) ) {
+            if ( !x_IsDisconnectError(error) ) {
                 m_ReadStatus = eIO_Unknown;
                 return eIO_Unknown;
             }
@@ -640,9 +631,9 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
             if ( !::WriteFile(m_Pipe, buf, to_write, &bytes_written, NULL) ) {
                 m_WriteStatus = eIO_Unknown;
                 if ( !bytes_written ) {
-                    // NB:  status == eIO_Unknown
+                    // NB: status == eIO_Unknown
                     DWORD error = ::GetLastError();
-                    if ( x_DisconnectError(error) ) {
+                    if ( x_IsDisconnectError(error) ) {
                         m_ReadStatus  = eIO_Closed;
                         m_WriteStatus = eIO_Closed;
                         status        = eIO_Closed;
@@ -719,8 +710,7 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
     case eIO_Write:
         return m_WriteStatus;
     default:
-        // Should never get here
-        _ASSERT(0);
+        _TROUBLE;
         break;
     }
     return eIO_InvalidArg;
@@ -950,10 +940,11 @@ EIO_Status CNamedPipeHandle::x_Disconnect(const char* where)
     m_IoSocket = 0;
 
     if (status != eIO_Success) {
-        string err("Named pipe \"" + m_PipeName
-                   + "\" failed to close");
         ERR_POST_X(8, s_FormatErrorMessage(where,
-                                           x_FormatError(0, err)));
+                                           x_FormatError(0,
+                                                         "Named pipe \""
+                                                         + m_PipeName + "\""
+                                                         " failed to close")));
     }
     return status;
 }
@@ -1121,12 +1112,14 @@ CNamedPipe::~CNamedPipe()
 
 EIO_Status CNamedPipe::Close(void)
 {
-    return m_NamedPipeHandle ? m_NamedPipeHandle->Close() : eIO_Unknown;
+    _ASSERT(m_NamedPipeHandle);
+    return m_NamedPipeHandle->Close();
 }
      
 
 EIO_Status CNamedPipe::Read(void* buf, size_t count, size_t* n_read)
 {
+    _ASSERT(m_NamedPipeHandle);
     size_t x_read;
     if ( !n_read ) {
         n_read = &x_read;
@@ -1135,14 +1128,13 @@ EIO_Status CNamedPipe::Read(void* buf, size_t count, size_t* n_read)
     if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
-    return m_NamedPipeHandle
-        ? m_NamedPipeHandle->Read(buf, count, n_read, m_ReadTimeout)
-        : eIO_Unknown;
+    return m_NamedPipeHandle->Read(buf, count, n_read, m_ReadTimeout);
 }
 
 
 EIO_Status CNamedPipe::Write(const void* buf, size_t count, size_t* n_written)
 {
+    _ASSERT(m_NamedPipeHandle);
     size_t x_written;
     if ( !n_written ) {
         n_written = &x_written;
@@ -1151,45 +1143,48 @@ EIO_Status CNamedPipe::Write(const void* buf, size_t count, size_t* n_written)
     if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
-    return m_NamedPipeHandle
-        ? m_NamedPipeHandle->Write(buf, count, n_written, m_WriteTimeout)
-        : eIO_Unknown;
+    return m_NamedPipeHandle->Write(buf, count, n_written, m_WriteTimeout);
 }
 
 
 EIO_Status CNamedPipe::Wait(EIO_Event event, const STimeout* timeout)
 {
+    _ASSERT(m_NamedPipeHandle);
+    if (timeout == kDefaultTimeout) {
+        _TROUBLE;
+        return eIO_InvalidArg;
+    }
     switch (event) {
     case eIO_Read:
     case eIO_Write:
     case eIO_ReadWrite:
         break;
     default:
+        _TROUBLE;
         return eIO_InvalidArg;
     }
-    return m_NamedPipeHandle
-        ? m_NamedPipeHandle->Wait(event, timeout)
-        : eIO_Unknown;
+    return m_NamedPipeHandle->Wait(event, timeout);
 }
 
 
 EIO_Status CNamedPipe::Status(EIO_Event direction) const
 {
+    _ASSERT(m_NamedPipeHandle);
     switch (direction) {
     case eIO_Read:
     case eIO_Write:
         break;
     default:
+        _TROUBLE;
         return eIO_InvalidArg;
     }
-    return m_NamedPipeHandle
-        ? m_NamedPipeHandle->Status(direction)
-        : eIO_Closed;
+    return m_NamedPipeHandle->Status(direction);
 }
 
 
 EIO_Status CNamedPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
 {
+    _ASSERT(m_NamedPipeHandle);
     if (timeout == kDefaultTimeout) {
         return eIO_Success;
     }
@@ -1208,6 +1203,7 @@ EIO_Status CNamedPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
         m_WriteTimeout = s_SetTimeout(timeout, &m_WriteTimeoutValue);
         break;
     default:
+        _TROUBLE;
         return eIO_InvalidArg;
     }
     return eIO_Success;
@@ -1216,6 +1212,7 @@ EIO_Status CNamedPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
 
 const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
 {
+    _ASSERT(m_NamedPipeHandle);
     switch ( event ) {
     case eIO_Open:
         return m_OpenTimeout;
@@ -1224,6 +1221,7 @@ const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
     case eIO_Write:
         return m_WriteTimeout;
     default:
+        _TROUBLE;
         break;
     }
     return kDefaultTimeout;
@@ -1273,6 +1271,7 @@ void CNamedPipe::x_SetName(const string& pipename)
 CNamedPipeClient::CNamedPipeClient(size_t pipesize)
     : CNamedPipe(pipesize)
 {
+    _ASSERT(m_NamedPipeHandle);
     m_IsClientSide = true;
 }
 
@@ -1291,9 +1290,7 @@ EIO_Status CNamedPipeClient::Open(const string&   pipename,
                                   const STimeout* timeout,
                                   size_t          pipesize)
 {
-    if ( !m_NamedPipeHandle ) {
-        return eIO_Unknown;
-    }
+    _ASSERT(m_NamedPipeHandle  &&  m_IsClientSide);
     if (pipesize) {
         m_PipeSize = pipesize;
     }
@@ -1314,6 +1311,7 @@ EIO_Status CNamedPipeClient::Open(const string&   pipename,
 CNamedPipeServer::CNamedPipeServer(size_t pipesize)
     : CNamedPipe(pipesize)
 {
+    _ASSERT(m_NamedPipeHandle);
     m_IsClientSide = false;
 }
 
@@ -1332,9 +1330,7 @@ EIO_Status CNamedPipeServer::Create(const string&   pipename,
                                     const STimeout* timeout,
                                     size_t          pipesize)
 {
-    if ( !m_NamedPipeHandle ) {
-        return eIO_Unknown;
-    }
+    _ASSERT(m_NamedPipeHandle  &&  !m_IsClientSide);
     if (pipesize) {
         m_PipeSize = pipesize;
     }
@@ -1347,17 +1343,15 @@ EIO_Status CNamedPipeServer::Create(const string&   pipename,
 
 EIO_Status CNamedPipeServer::Listen(void)
 {
-    return m_NamedPipeHandle
-        ? m_NamedPipeHandle->Listen(m_OpenTimeout)
-        : eIO_Unknown;
+    _ASSERT(m_NamedPipeHandle  &&  !m_IsClientSide);
+    return m_NamedPipeHandle->Listen(m_OpenTimeout);
 }
 
 
 EIO_Status CNamedPipeServer::Disconnect(void)
 {
-    return m_NamedPipeHandle
-        ? m_NamedPipeHandle->Disconnect()
-        : eIO_Unknown;
+    _ASSERT(m_NamedPipeHandle  &&  !m_IsClientSide);
+    return m_NamedPipeHandle->Disconnect();
 }
 
 

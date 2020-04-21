@@ -31,11 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_namedpipe_connector.hpp>
-#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
 
 #include "test_assert.h"  // This header must go last

@@ -37,12 +37,10 @@
 #include <string.h>
 #include <math.h>
 
-#if defined(NCBI_OS_MSWIN)
-#  include <io.h>
-#elif defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 #  include <signal.h>
 #  include <unistd.h>
-#else
+#elif !defined(NCBI_OS_MSWIN)
 #   error "CPipe tests configured for Windows and Unix only."
 #endif
 
@@ -206,21 +204,21 @@ static void s_WriteLine(FILE* fs, const string& str)
 
 
 // Soak up from istream until EOF, dump into NcbiCerr
-static void s_ReadStream(istream& ios)
+static void s_ReadStream(istream& is)
 {
     size_t total = 0;
     for (;;) {
         char   buf[kBufferSize];
-        ios.read(buf, sizeof(buf));
-        size_t cnt = (size_t) ios.gcount();
+        is.read(buf, sizeof(buf));
+        size_t cnt = (size_t) is.gcount();
         ERR_POST(Info << cnt <<" byte(s) read from stream"+string(&":"[!cnt]));
         if (cnt) {
             NcbiCerr.write(buf, cnt);
             NcbiCerr << endl << flush;
             total += cnt;
-        } else if (ios.eof()  ||  ios.bad())
+        } else if (is.eof()  ||  is.bad())
             break;
-        ios.clear();
+        is.clear();
     }
     ERR_POST(Info << "Total read from istream " << total << " byte(s)");
 }
@@ -315,15 +313,15 @@ int CTest::Run(void)
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
-    // Unidirectional pipe (read from iostream)
+    // Unidirectional pipe (read from istream)
     args.clear();
     args.push_back(NStr::IntToString(eStreamRead));
     ERR_POST(Info << "TEST:  Unidirectional stream read");
-    CConn_PipeStream ios(app.c_str(), args,
-                         CPipe::fStdIn_Close | share, 0, &timeout);
-    s_ReadStream(ios);
+    CConn_PipeStream is(app.c_str(), args,
+                        CPipe::fStdIn_Close | share, 0, &timeout);
+    s_ReadStream(is);
 
-    status = ios.GetPipe().Close(&exitcode);
+    status = is.GetPipe().Close(&exitcode);
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
@@ -581,5 +579,6 @@ int main(int argc, const char* argv[])
         exit(kTestResult);
     }}
 
+    ERR_POST(Fatal << "Huh?");
     return -1;
 }
