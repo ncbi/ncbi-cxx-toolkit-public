@@ -1531,7 +1531,7 @@ const CSeq_entry *ctx)
             }
         } else if (subtype == COrgMod::eSubtype_serovar) {
             // RW-1064
-            if (NStr::Find(taxname, subname) == string::npos) {
+            if (s_IsSalmonellaGenus(taxname) && NStr::Find(taxname, subname) == string::npos) {
                 PostObjErr(x_SalmonellaErrorLevel(), eErr_SEQ_DESCR_BadOrgMod,
                     "Salmonella organism name should contain the serovar value.",
                     obj, ctx);

@@ -8713,10 +8713,7 @@ void CheckUnbalancedParenthesesOrgMod(COrgMod::TSubtype subtype, const string& v
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
             "Unbalanced parentheses in orgmod '" + val + "'"));
     //AddChromosomeNoLocation(expected_errors, entry);
-    if (subtype == COrgMod::eSubtype_serovar) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadOrgMod",
-            "Salmonella organism name should contain the serovar value."));
-    }
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
@@ -24945,8 +24942,26 @@ BOOST_AUTO_TEST_CASE(Test_RW_1063)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+
+
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_RW_1064)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Streptococcus agalactiae NEM316");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 211110);
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_serovar, "an innocuous value");
+    STANDARD_SETUP
+
+    // no errors, because not salmonella
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
 
 #if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)
