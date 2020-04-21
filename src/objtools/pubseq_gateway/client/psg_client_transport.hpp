@@ -1033,8 +1033,8 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(const string& service, SPSG_Servers::TTS& servers) :
-        m_Service(service),
+    SPSG_DiscoveryImpl(CNetServiceDiscovery service, SPSG_Servers::TTS& servers) :
+        m_Service(move(service)),
         m_Servers(servers)
     {}
 
@@ -1054,7 +1054,7 @@ struct SPSG_IoCoordinator
 {
     SPSG_Params params;
 
-    SPSG_IoCoordinator(const string& service_name);
+    SPSG_IoCoordinator(CNetServiceDiscovery service);
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
     const string& GetClientId() const { return m_ClientId; }

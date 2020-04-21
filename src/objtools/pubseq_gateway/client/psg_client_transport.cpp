@@ -1581,8 +1581,13 @@ void SPSG_IoImpl::AfterExecute()
 
 /** SPSG_IoCoordinator */
 
-SPSG_IoCoordinator::SPSG_IoCoordinator(const string& service_name) :
-    m_Discovery(m_Barrier, 0, s_SecondsToMs(TPSG_RebalanceTime::GetDefault()), service_name, m_Servers),
+uint64_t s_GetDiscoveryRepeat(const CNetServiceDiscovery& service)
+{
+    return service.IsSingleServer() ? 0 : s_SecondsToMs(TPSG_RebalanceTime::GetDefault());
+}
+
+SPSG_IoCoordinator::SPSG_IoCoordinator(CNetServiceDiscovery service) :
+    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, m_Servers),
     m_RequestCounter(0),
     m_RequestId(1),
     m_Barrier(TPSG_NumIo::GetDefault() + 2),
