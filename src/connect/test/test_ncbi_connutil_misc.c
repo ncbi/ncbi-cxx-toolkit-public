@@ -398,7 +398,8 @@ static void TEST_ConnNetInfo(void)
                                  "T2: V2\r\n"
                                  "T3: V3\n"
                                  "T4: V4\n"
-                                 "T1: V6\n");
+                                 "T1: V6\n"
+                                 "T2:V2.2");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
@@ -412,7 +413,8 @@ static void TEST_ConnNetInfo(void)
                   "T2: V2\r\n"
                   "T3: V3\n"
                   "T4: V4\n"
-                  "T1: V6\r\n") == 0);
+                  "T1: V6\n"
+                  "T2:V2.2\r\n") == 0);
 
     ConnNetInfo_OverrideUserHeader(net_info,
                                    "T0\r\n"
