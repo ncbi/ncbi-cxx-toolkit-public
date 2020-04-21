@@ -74,7 +74,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SERVICE_CreateConnectorEx
  const SSERVICE_Extra* extra
  );
 
-#define SERVICE_CreateConnector(service) \
+#define SERVICE_CreateConnector(service)                \
     SERVICE_CreateConnectorEx(service, fSERV_Any, 0, 0)
 
 
