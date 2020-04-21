@@ -68,7 +68,7 @@ if (${NCBI_ThirdPartyCompiler} STREQUAL "vs2017.64" OR ${NCBI_ThirdPartyCompiler
         set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
         set(NCBI_ThirdParty_VDB_ARCH     x86_64/v141)
 
-    set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python)
+    set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python38)
 #    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
 #    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
     set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1-ncbi1)
@@ -423,7 +423,7 @@ endif()
 
 #############################################################################
 # PYTHON
-#NCBI_define_component(PYTHON python3.lib python38.lib)
+NCBI_define_component(PYTHON python38.lib python3.lib)
 
 ##############################################################################
 # GRPC/PROTOBUF

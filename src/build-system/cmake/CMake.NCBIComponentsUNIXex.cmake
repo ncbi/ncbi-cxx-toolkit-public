@@ -19,7 +19,7 @@ set(NCBI_COMPONENT_Linux_FOUND YES)
 option(USE_LOCAL_BZLIB "Use a local copy of libbz2")
 option(USE_LOCAL_PCRE "Use a local copy of libpcre")
 #to debug
-#set(NCBI_TRACE_COMPONENT_GRPC ON)
+#set(NCBI_TRACE_COMPONENT_PYTHON ON)
 #############################################################################
 # common settings
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
@@ -63,6 +63,7 @@ set(NCBI_ThirdParty_FASTCGI_SHLIB    ${NCBI_OPT_ROOT}/fcgi-2.4.0)
 set(NCBI_ThirdParty_SQLITE3      ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1)
 set(NCBI_ThirdParty_BerkeleyDB   ${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1)
 set(NCBI_ThirdParty_Sybase     "/opt/sybase/clients/16.0-64bit/OCS-16_0")
+set(NCBI_ThirdParty_PYTHON     "/opt/python-3.8")
 set(NCBI_ThirdParty_VDB          ${NCBI_OPT_ROOT}/trace_software/vdb/vdb-versions/cxx_toolkit/2)
 set(NCBI_ThirdParty_XML          ${NCBI_TOOLS_ROOT}/libxml-2.7.8)
 set(NCBI_ThirdParty_XSLT         ${NCBI_TOOLS_ROOT}/libxml-2.7.8)
@@ -476,8 +477,10 @@ endif()
 
 #############################################################################
 # PYTHON
-set(NCBI_COMPONENT_PYTHON_FOUND NO)
-
+NCBI_define_component(PYTHON python3.8 python3)
+if (NCBI_COMPONENT_PYTHON_FOUND)
+    set(NCBI_COMPONENT_PYTHON_INCLUDE ${NCBI_COMPONENT_PYTHON_INCLUDE}/python3.8)
+endif()
 #############################################################################
 # VDB
 find_external_library(VDB INCLUDES sra/sradb.h LIBS ncbi-vdb

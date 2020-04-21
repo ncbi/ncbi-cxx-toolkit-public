@@ -17,6 +17,9 @@
 #############################################################################
 set(NCBI_ALL_COMPONENTS "")
 set(NCBI_REQUIRE_MT_FOUND YES)
+if(BUILD_SHARED_LIBS)
+    set(NCBI_REQUIRE_DLL_BUILD_FOUND YES)
+endif()
 
 if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTS}" STREQUAL "")
     foreach(_comp IN LISTS NCBI_PTBCFG_PROJECT_COMPONENTS)
