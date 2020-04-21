@@ -150,13 +150,14 @@ static EIO_Status s_VT_Open
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
-    SSockConnector* xxx = (SSockConnector*) connector->handle;
     EIO_Status status = eIO_Success;
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+    assert(timeout != kDefaultTimeout);
 
     if (!xxx->sock) {
         unsigned short n;
         if (!xxx->port)
-            return eIO_Closed;
+            return eIO_InvalidArg;
         assert(xxx->try_own);
         for (n = 0;  n < xxx->try_own;  ++n) {
             /* connect */
@@ -190,7 +191,7 @@ static EIO_Status s_VT_Wait
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
     assert(event == eIO_Read  ||  event == eIO_Write);
-    assert(xxx->sock);
+    assert(xxx->sock  &&  timeout != kDefaultTimeout);
     return SOCK_Wait(xxx->sock, event, timeout);
 }
 
@@ -203,7 +204,7 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
-    assert(xxx->sock);
+    assert(xxx->sock  &&  timeout != kDefaultTimeout);
     verify(SOCK_SetTimeout(xxx->sock, eIO_Write, timeout) == eIO_Success);
     return SOCK_Write(xxx->sock, buf, size, n_written, eIO_WritePlain);
 }
@@ -217,7 +218,7 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
-    assert(xxx->sock);
+    assert(xxx->sock  && timeout != kDefaultTimeout);
     verify(SOCK_SetTimeout(xxx->sock, eIO_Read, timeout) == eIO_Success);
     return SOCK_Read(xxx->sock, buf, size, n_read, eIO_ReadPlain);
 }
@@ -237,13 +238,14 @@ static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
+    EIO_Status status;
     SSockConnector* xxx = (SSockConnector*) connector->handle;
-    EIO_Status status = eIO_Success;
-    assert(xxx->sock);
+    assert(xxx->sock  &&  timeout != kDefaultTimeout);
     if (xxx->try_own) {
-        SOCK_SetTimeout(xxx->sock, eIO_Close, timeout);
+        verify(SOCK_SetTimeout(xxx->sock, eIO_Close, timeout) == eIO_Success);
         status = SOCK_Close(xxx->sock);
-    }
+    } else
+        status = eIO_Success;
     xxx->sock = 0;
     return status;
 }
@@ -273,7 +275,7 @@ static void s_Destroy
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
     connector->handle = 0;
-
+    assert(!xxx->sock);
     xxx->data = 0;
     xxx->size = 0;
     xxx->host = 0;
@@ -326,11 +328,12 @@ static CONNECTOR s_Init
             xxx->host  = addr;
             assert(xxx->port);
         } else {
-            /* this denotes invalid state */
+            /* in the absence of sock this denotes invalid state for Open() */
             xxx->host  = 0;
             xxx->port  = 0;
         }
         xxx->try_own   = try_own   ? 1         : 0;
+        /*xxx->flags   = 0; // unused*/
     } else {
         char* temp     = (char*) xxx + sizeof(*xxx);
         xxx->sock      = 0;
