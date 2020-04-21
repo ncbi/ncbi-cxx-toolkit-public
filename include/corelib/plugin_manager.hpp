@@ -915,20 +915,29 @@ bool CPluginManager<TClass>::WillExtendCapabilities
 
     ITERATE(typename TClassFactory::TDriverList, it2, full_drv_list) {
         const typename TClassFactory::SDriverInfo& drv_info = *it2;
+        bool has_new_driver = true; // optimistic
 
         ITERATE(typename TClassFactory::TDriverList, new_it2, new_drv_list) {
             const typename TClassFactory::SDriverInfo& new_drv_info = *new_it2;
 
-            if ( !(new_drv_info.name == drv_info.name &&
-                   new_drv_info.version.Match(drv_info.version) ==
-                        CVersionInfo::eFullyCompatible)
-                ) {
-                return true;
-            } else {
+            if (new_drv_info.name == drv_info.name
+                &&  (new_drv_info.version.Match(drv_info.version) ==
+                     CVersionInfo::eFullyCompatible)) {
                 _TRACE("Driver " << new_drv_info.name << " having version " <<
                        new_drv_info.version << " is already registered and " <<
                        "won't extend Plugin Manager's capabilities");
+                has_new_driver = false;
             }
+        }
+
+        if (has_new_driver) {
+            // NB: This placement allows partial overlap in the highly
+            // unlikely case that new_drv_list identifies multiple
+            // drivers (already atypical) and more specifically a mix
+            // of old and new drivers.  A stricter policy would be to
+            // pull both has_new_driver's definition and this followup
+            // check up one level.
+            return true;
         }
     }
 
