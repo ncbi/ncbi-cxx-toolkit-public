@@ -594,6 +594,7 @@ public:
 
         W_GnlId,
         W_CompIsLocalTypeNotW,
+        W_SingletonCompBeginsAt1AndMinusOri,
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence

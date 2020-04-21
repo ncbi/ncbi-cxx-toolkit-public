@@ -134,6 +134,7 @@ CAgpErr::sMessageMap = {
 
     {CAgpErr::W_GnlId, "\"gnl|\" prefix in X is deprecated inside AGP files (no \"prefix|\" is best)"},
     {CAgpErr::W_CompIsLocalTypeNotW, "component_id X is a not an accession, but is used with component_type other than W"},
+    {CAgpErr::W_SingletonCompBeginsAt1AndMinusOri, "singleton object has component_beg=1 and in minus orientation"},
     // GenBank-related errors
     {CAgpErr::G_InvalidCompId, "invalid component_id"},
     {CAgpErr::G_NotInGenbank, "component_id not in GenBank"},
@@ -145,6 +146,7 @@ CAgpErr::sMessageMap = {
     {CAgpErr::G_InvalidObjId, "object X not found in FASTA file(s)"},
     {CAgpErr::G_BadObjLen, "final object_end (column 3) not equal to object length in FASTA file(s)"},
     {CAgpErr::G_NsWithinCompSpan, "run(s) of Ns within the component span"},
+
 };
 
 // When updating s_msg, also update the enum that indexes into this

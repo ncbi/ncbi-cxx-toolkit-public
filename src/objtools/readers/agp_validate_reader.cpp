@@ -483,7 +483,10 @@ void CAgpValidateReader::OnScaffoldEnd()
 
     if (m_prev_orientation=='-' &&
         m_prev_component_beg==1) {
-        m_AgpErr->Msg(CAgpErrEx::E_SingletonCompBeginsAt1AndMinusOri, CAgpErr::fAtPrevLine);
+        auto errCode = m_AgpErr->m_strict ? 
+            CAgpErrEx::E_SingletonCompBeginsAt1AndMinusOri :
+            CAgpErrEx::W_SingletonCompBeginsAt1AndMinusOri;
+        m_AgpErr->Msg(errCode, CAgpErr::fAtPrevLine);
     }
 
     if((m_unplaced || NStr::StartsWith(m_prev_row->GetObject(), "un", NStr::eNocase) ) && m_prev_orientation) {
