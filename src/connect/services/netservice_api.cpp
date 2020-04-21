@@ -1511,21 +1511,37 @@ CNetService CNetService::Create(const string& api_name, const string& service_na
             registry_builder, sections);
 }
 
-CNetServiceDiscovery::CNetServiceDiscovery(const string& service_name) :
-    m_ServiceName(service_name)
+// This class also initializes CONNECT library in its constructor (via CConnIniter base).
+struct SNetServiceDiscoveryInit : CConnIniter
 {
-    struct Init : CConnIniter {} init;
+    shared_ptr<void> GetSingleServer(const string& service_name) const
+    {
+        if (auto address = CNetServer::SAddress::Parse(service_name)) {
+            CNetServiceDiscovery::TServer server(move(address), 1.0);
+            return make_shared<CNetServiceDiscovery::TServers>(1, move(server));
+        }
+
+        return {};
+    }
+};
+
+CNetServiceDiscovery::CNetServiceDiscovery(const string& service_name) :
+    m_ServiceName(service_name),
+    m_Data(SNetServiceDiscoveryInit().GetSingleServer(m_ServiceName)),
+    m_IsSingleServer(m_Data)
+{
 }
 
 CNetServiceDiscovery::TServers CNetServiceDiscovery::operator()()
 {
     // Single server "discovery"
-    if (auto address = CNetServer::SAddress::Parse(m_ServiceName)) {
-        return { TServer(move(address), 1.0) };
+    if (m_IsSingleServer) {
+        _ASSERT(m_Data);
+        return *static_pointer_cast<TServers>(m_Data);
     }
 
     const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;
-    return SNetServiceImpl::Discover(m_ServiceName, types, m_NetInfo, SNetServerPoolImpl::TLBSMAffinity(), 0, 0);
+    return SNetServiceImpl::Discover(m_ServiceName, types, m_Data, SNetServerPoolImpl::TLBSMAffinity(), 0, 0);
 }
 
 void g_AppendClientIPSessionIDHitID(string& cmd)

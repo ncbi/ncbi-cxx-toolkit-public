@@ -156,10 +156,12 @@ public:
     TServers operator()();
 
     const string& GetServiceName() const { return m_ServiceName; }
+    bool IsSingleServer() const { return m_IsSingleServer; }
 
 private:
     const string m_ServiceName;
-    shared_ptr<void> m_NetInfo;
+    shared_ptr<void> m_Data;
+    const bool m_IsSingleServer;
 };
 
 /// This class is for use by the grid_cli utility only.
