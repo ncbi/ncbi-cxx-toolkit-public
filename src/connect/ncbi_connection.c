@@ -172,7 +172,7 @@ typedef struct SConnectionTag {
     TNCBI_BigCount  r_pos;       /* read and ...                             */
     TNCBI_BigCount  w_pos;       /*          ... write positions             */
 
-    SCONN_Callback  cb[CONN_N_CALLBACKS];
+    SCONN_Callback  cb[CONN_N_CALLBACKS+1]; /* +1 includes dummy no-callback */
 
     unsigned int    magic;       /* magic cookie for integrity checks        */
 } SConnection;
@@ -554,6 +554,7 @@ extern EIO_Status CONN_SetTimeout
     default:
         sprintf(errbuf, "Unknown event #%u", (unsigned int) event);
         CONN_LOG_EX(9, SetTimeout, eLOG_Error, errbuf, eIO_InvalidArg);
+        assert(0);
         return eIO_InvalidArg;
     }
 
@@ -609,8 +610,10 @@ extern EIO_Status CONN_Wait
 
     CONN_NOT_NULL(13, Wait);
 
-    if (event != eIO_Read  &&  event != eIO_Write)
+    if (event != eIO_Read  &&  event != eIO_Write) {
+        assert(0);
         return eIO_InvalidArg;
+    }
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
@@ -776,6 +779,7 @@ extern EIO_Status CONN_Write
     case eIO_WritePersist:
         return s_CONN_WritePersist(conn, buf, size, n_written);
     default:
+        assert(0);
         return eIO_NotSupported;
     }
 
@@ -992,6 +996,7 @@ extern EIO_Status CONN_Read
     case eIO_ReadPersist:
         return s_CONN_ReadPersist(conn, buf, size, n_read);
     default:
+        assert(0);
         return eIO_NotSupported;
     }
 
@@ -1151,6 +1156,7 @@ extern EIO_Status CONN_SetCallback
         char errbuf[80];
         sprintf(errbuf, "Unknown callback type #%u", (unsigned int) type);
         CONN_LOG_EX(29, SetCallback, eLOG_Error, errbuf, eIO_InvalidArg);
+        assert(0);
         return eIO_InvalidArg;
     }
 

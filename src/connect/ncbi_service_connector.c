@@ -388,6 +388,8 @@ static SSERV_InfoCPtr s_GetNextInfo(SServiceConnector* uuu, int/*bool*/ http)
         }
         if (uuu->reset)
             break;
+        if (uuu->extra.reset)
+            uuu->extra.reset(uuu->extra.data);
         SERV_Reset(uuu->iter);
         uuu->reset = 1/*true*/;
     }
@@ -468,9 +470,13 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         if (!proxy  &&  net_info->debug_printout) {
             net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
+            net_info->external = 0;
             net_info->firewall = 0;
             net_info->stateless = 0;
             net_info->lb_disable = 0;
+            net_info->http_version = 0;
+            net_info->http_push_auth = 0;
+            net_info->http_proxy_leak = 0;
             net_info->user[0] = '\0';
             net_info->pass[0] = '\0';
             net_info->path[0] = '\0';
@@ -583,9 +589,9 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     if (n == (unsigned int)(-1))
         return -1/*no new URL*/;
     if (!n/*redirect*/)
-        return uuu->extra.adjust(net_info, uuu->extra.data, n);
+        return uuu->extra.adjust(net_info, uuu->extra.data, 0);
 
-    uuu->warned = 1;
+    uuu->warned = 1/*true*/;
     if (uuu->retry >= uuu->net_info->max_try)
         return 0/*failure - too many errors*/;
     uuu->retry++;
@@ -1068,7 +1074,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     SMetaConnector* meta = connector->meta;
     EIO_Status status = eIO_Closed;
 
-    uuu->warned = 0;
+    uuu->warned = 0/*false*/;
     for (uuu->retry = 0;  uuu->retry < uuu->net_info->max_try;  uuu->retry++) {
         SConnNetInfo* net_info;
         SSERV_InfoCPtr info;

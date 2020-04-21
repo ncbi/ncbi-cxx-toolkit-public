@@ -396,7 +396,7 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     nd_iter->types = fSERV_Http;
 
     /* Connect directly to namerd. */
-    nd_net_info = ConnNetInfo_Create(iter->name);
+    nd_net_info = ConnNetInfo_CreateInternal(iter->name);
     if ( ! (op = SERV_NAMERD_Open(nd_iter, nd_net_info, NULL))) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't open namerd.");

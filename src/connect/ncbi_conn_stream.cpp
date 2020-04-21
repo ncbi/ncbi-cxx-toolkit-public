@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
+#include "ncbi_servicep.h"
 #include "ncbi_socketp.h"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -122,7 +123,7 @@ EIO_Status CConn_IOStream::SetTimeout(EIO_Event       direction,
 const STimeout* CConn_IOStream::GetTimeout(EIO_Event direction) const
 {
     CONN conn = GET_CONN(m_CSb);
-    return conn ? CONN_GetTimeout(conn, direction) : 0/*kInfiniteTimeout*/;
+    return conn ? CONN_GetTimeout(conn, direction) : kDefaultTimeout;
 }
 
 
@@ -312,6 +313,14 @@ CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
 }
 
 
+template<>
+struct Deleter<SConnNetInfo>
+{
+    static void Delete(SConnNetInfo* net_info)
+    { ConnNetInfo_Destroy(net_info); }
+};
+
+
 static CConn_IOStream::TConnector
 s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                          const STimeout*     timeout,
@@ -352,13 +361,18 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         if (timeout == kDefaultTimeout)
             timeout  = net_info->timeout;
         if (!proxy  &&  net_info->debug_printout) {
-            SConnNetInfo* x_net_info = ConnNetInfo_Clone(net_info);
-            if (x_net_info) {
+            AutoPtr<SConnNetInfo> x_net_info(ConnNetInfo_Clone(net_info));
+            if (x_net_info.get()) {
+                // manual cleanup of most fields req'd
                 x_net_info->scheme = eURL_Unspec;
                 x_net_info->req_method = eReqMethod_Any;
+                x_net_info->external = 0;
                 x_net_info->firewall = 0;
                 x_net_info->stateless = 0;
                 x_net_info->lb_disable = 0;
+                x_net_info->http_version = 0;
+                x_net_info->http_push_auth = 0;
+                x_net_info->http_proxy_leak = 0;
                 x_net_info->user[0] = '\0';
                 x_net_info->pass[0] = '\0';
                 x_net_info->path[0] = '\0';
@@ -366,15 +380,14 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 x_net_info->http_proxy_port    =   0;
                 x_net_info->http_proxy_user[0] = '\0';
                 x_net_info->http_proxy_pass[0] = '\0';
-                ConnNetInfo_SetUserHeader(x_net_info, 0);
+                ConnNetInfo_SetUserHeader(x_net_info.get(), 0);
                 if (x_net_info->http_referer) {
                     free((void*) x_net_info->http_referer);
                     x_net_info->http_referer = 0;
                 }
                 x_net_info->timeout = timeout;
             }
-            ConnNetInfo_Log(x_net_info, eLOG_Note, CORE_GetLOG());
-            ConnNetInfo_Destroy(x_net_info);
+            ConnNetInfo_Log(x_net_info.get(), eLOG_Note, CORE_GetLOG());
         }
         SSOCK_Init init;
         memset(&init, 0, sizeof(init));
@@ -438,12 +451,7 @@ EHTTP_HeaderParse SHTTP_StatusData::Parse(const char* header)
 }
 
 
-template<>
-struct Deleter<SConnNetInfo>
-{
-    static void Delete(SConnNetInfo* net_info)
-    { ConnNetInfo_Destroy(net_info); }
-};
+typedef AutoPtr< char, CDeleter<char> >  TTempCharPtr;
 
 
 static CConn_IOStream::TConnector
@@ -463,13 +471,13 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        const STimeout*     timeout,
                        void**              user_data_ptr,
                        FHTTP_Cleanup*      user_cleanup_ptr,
-                       void*               user_data = 0,
+                       void*               user_data    = 0,
                        FHTTP_Cleanup       user_cleanup = 0)
 {
     EReqMethod x_req_method;
-    AutoPtr<SConnNetInfo>
-        x_net_info(net_info
-                   ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0));
+    AutoPtr<SConnNetInfo> x_net_info(net_info
+                                     ? ConnNetInfo_Clone(net_info)
+                                     : ConnNetInfo_CreateInternal(0));
     if (!x_net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream(): "
@@ -517,12 +525,11 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
         const char* x_message = NcbiMessagePlusError(&x_dynamic,
                                                      "Cannot set user header",
                                                      errno, 0);
-        string message(x_message);
-        if (x_dynamic)
-            free((void*) x_message);
+        TTempCharPtr msg_ptr(const_cast<char*> (x_message),
+                             x_dynamic ? eTakeOwnership : eNoOwnership);
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream(): "
-                   " " + message);
+                   " " + string(msg_ptr.get()));
     }
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
@@ -765,9 +772,9 @@ s_ServiceConnectorBuilder(const char*                          service,
                           FSERVICE_GetNextInfo                 x_get_next_info,
                           const STimeout*                      timeout)
 {
-    AutoPtr<SConnNetInfo>
-        x_net_info(net_info ?
-                   ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service));
+    AutoPtr<SConnNetInfo> x_net_info(net_info
+                                     ? ConnNetInfo_Clone(net_info)
+                                     : ConnNetInfo_Create(service));
     if (!x_net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
@@ -779,12 +786,11 @@ s_ServiceConnectorBuilder(const char*                          service,
         const char* x_message = NcbiMessagePlusError(&x_dynamic,
                                                      "Cannot set user header",
                                                      errno, 0);
-        string message(x_message);
-        if (x_dynamic)
-            free((void*) x_message);
+        TTempCharPtr msg_ptr(const_cast<char*> (x_message),
+                             x_dynamic ? eTakeOwnership : eNoOwnership);
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
-                   " " + message);
+                   " " + string(msg_ptr.get()));
     }
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
@@ -1317,9 +1323,11 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     bool svc = x_IsIdentifier(url);
 
     AutoPtr<SConnNetInfo> net_info
-        (ConnNetInfo_Create(svc ? url.c_str()
-                            : NStr::StartsWith(url, "ftp://", NStr::eNocase)
-                            ? "_FTP" : 0));
+        (ConnNetInfo_CreateInternal
+         (svc
+          ? TTempCharPtr(SERV_ServiceName(url.c_str())).get()
+          : NStr::StartsWith(url, "ftp://", NStr::eNocase)
+          ? "_FTP" : 0));
     if (svc)
         return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
 
@@ -1362,7 +1370,7 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->http_proxy_user[0] = '\0';
                 net_info->http_proxy_pass[0] = '\0';
                 net_info->max_try = 0;
-                net_info->timeout = kInfiniteTimeout;
+                net_info->timeout = kInfiniteTimeout/*0*/;
                 ConnNetInfo_SetUserHeader(net_info.get(), 0);
                 if (net_info->http_referer) {
                     free((void*) net_info->http_referer);

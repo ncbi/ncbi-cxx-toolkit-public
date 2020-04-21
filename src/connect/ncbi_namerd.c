@@ -1587,7 +1587,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     /* Make sure a net_info exists. */
     SConnNetInfo* new_net_info = NULL;
     if ( ! net_info) {
-        new_net_info = ConnNetInfo_Create(iter->name);
+        new_net_info = ConnNetInfo_CreateInternal(iter->name);
         if ( ! new_net_info) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't create net_info.");
             s_Close(iter);

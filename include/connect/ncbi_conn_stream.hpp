@@ -57,15 +57,22 @@
  *
  *   CConn_PipeStream
  *      I/O stream based on PIPE connector, which is able to exchange data
- *      with a child process.
+ *      with a spawned child process, specified via a command.
  *
  *   CConn_NamedPipeStream
  *      I/O stream based on NAMEDPIPE connector, which is able to exchange
- *      data to/from another process.
+ *      data with another process.
  *
  *   CConn_FtpStream
  *      I/O stream based on FTP connector, which is able to retrieve files
  *      and file lists from remote FTP servers, and upload files as well.
+ *
+ * API:
+ *   NcbiOpenURL()
+ *      Given a URL, return CConn_IOStream that is reading from the source.
+ *      Supported schemes include: file://, http[s]://, ftp://, and finally
+ *      a named NCBI service (null scheme).
+ *
  */
 
 #include <connect/ncbi_ftp_connector.h>
@@ -135,7 +142,7 @@ public:
     /// @param close
     ///   True if to close CONN automatically (otherwise CONN remains open)
     /// @param timeout
-    ///   Default I/O timeout
+    ///   Default I/O timeout (including to open the stream)
     /// @param buf_size
     ///   Default size of underlying stream buffer's I/O arena (per direction)
     /// @param flags
@@ -186,7 +193,7 @@ protected:
     /// @param connector
     ///   CONNECTOR coupled with an error code (if any)
     /// @param timeout
-    ///   Default I/O timeout
+    ///   Default I/O timeout (including to open the stream)
     /// @param buf_size
     ///   Default size of underlying stream buffer's I/O arena (per direction)
     /// @param flags
@@ -996,8 +1003,11 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Given the URL, open the data source and make it available for reading.
+/// Given a URL, open the data source and make it available for _reading_.
 /// See <connect/ncbi_connutil.h> for supported schemes.
+///
+/// If "url" looks like an identifier (no scheme provided), then it will be
+/// opened as a named NCBI service (using CConn_ServiceStream).
 ///
 /// @warning
 ///   Writing to the resultant stream is undefined.
