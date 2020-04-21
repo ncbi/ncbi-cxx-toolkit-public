@@ -51,7 +51,13 @@
 #  define __MATHERR_RENAME_EXCEPTION 1
 #endif
 
-#include <Python.h>
+#if defined(_DEBUG)  &&  defined(_MSC_VER)
+#  undef _DEBUG
+#  include <Python.h>
+#  define _DEBUG
+#else
+#  include <Python.h>
+#endif
 
 #ifdef HAVE_FSTAT
 #  undef HAVE_FSTAT
