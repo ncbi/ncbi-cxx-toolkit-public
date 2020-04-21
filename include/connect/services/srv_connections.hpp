@@ -106,7 +106,10 @@ class NCBI_XCONNECT_EXPORT CNetServer
 
         SAddress(unsigned h, unsigned short p);
         SAddress(string n, unsigned short p);
+        explicit operator bool() const { return host && port; }
         const string& AsString() const;
+
+        static SAddress Parse(const string& address);
     };
 
     const SAddress& GetAddress() const;

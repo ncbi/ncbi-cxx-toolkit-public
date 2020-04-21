@@ -80,10 +80,7 @@ private:
 CNetServer::SAddress SFallbackServer::Init()
 {
     try {
-        string host, port;
-        if (NStr::SplitInTwo(TCGI_NetCacheFallbackServer::GetDefault(), ":", host, port)) {
-            return TAddress(host, static_cast<unsigned short>(NStr::StringToInt(port)));
-        }
+        return TAddress::Parse(TCGI_NetCacheFallbackServer::GetDefault());
     } catch (...) {
     }
 

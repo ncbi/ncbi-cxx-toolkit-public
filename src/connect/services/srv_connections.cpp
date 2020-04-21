@@ -916,6 +916,17 @@ CNetServer::SAddress::SAddress(string n, unsigned short p) :
 {
 }
 
+CNetServer::SAddress CNetServer::SAddress::Parse(const string& address)
+{
+    string host, port;
+
+    if (NStr::SplitInTwo(address, ":", host, port)) {
+        return { move(host), NStr::StringToNumeric<unsigned short>(port) };
+    }
+
+    return { 0, 0 };
+}
+
 bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
 {
     return lhs.host == rhs.host && lhs.port == rhs.port;

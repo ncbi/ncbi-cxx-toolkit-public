@@ -394,13 +394,11 @@ void SNetServiceImpl::Construct(SNetServerInPool* server)
 void SNetServiceImpl::Construct()
 {
     if (!m_ServiceName.empty()) {
-        string host, port;
-
-        if (!NStr::SplitInTwo(m_ServiceName, ":", host, port))
+        if (auto address = CNetServer::SAddress::Parse(m_ServiceName)) {
+            Construct(m_ServerPool->FindOrCreateServerImpl(move(address)));
+        } else {
             m_ServiceType = eLoadBalancedService;
-        else
-            Construct(m_ServerPool->FindOrCreateServerImpl(CNetServer::SAddress(host,
-                    (unsigned short) NStr::StringToInt(port))));
+        }
     }
 }
 
@@ -742,9 +740,9 @@ bool CNetService::IsLoadBalanced() const
     return m_Impl->IsLoadBalanced();
 }
 
-void CNetServerPool::StickToServer(const string& host, unsigned short port)
+void CNetServerPool::StickToServer(CNetServer::SAddress address)
 {
-    m_Impl->m_EnforcedServer = CNetServer::SAddress(host, port);
+    m_Impl->m_EnforcedServer = move(address);
 }
 
 void CNetService::PrintCmdOutput(const string& cmd,
@@ -1521,13 +1519,9 @@ CNetServiceDiscovery::CNetServiceDiscovery(const string& service_name) :
 
 CNetServiceDiscovery::TServers CNetServiceDiscovery::operator()()
 {
-    string host, port;
-
     // Single server "discovery"
-    if (NStr::SplitInTwo(m_ServiceName, ":", host, port)) {
-        if (auto p = NStr::StringToNumeric<unsigned short>(port, NStr::fConvErr_NoThrow)) {
-            return { TServer(CNetServer::SAddress(move(host), p), 1.0) };
-        }
+    if (auto address = CNetServer::SAddress::Parse(m_ServiceName)) {
+        return { TServer(move(address), 1.0) };
     }
 
     const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;

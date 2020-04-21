@@ -73,7 +73,8 @@ class NCBI_XCONNECT_EXPORT CNetServerPool
 {
     NCBI_NET_COMPONENT(NetServerPool);
 
-    void StickToServer(const string& host, unsigned short port);
+    void StickToServer(CNetServer::SAddress address);
+    void StickToServer(const string& host, unsigned short port) { StickToServer(CNetServer::SAddress(host, port)); }
 
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;

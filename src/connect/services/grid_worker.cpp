@@ -572,11 +572,9 @@ int SGridWorkerNodeImpl::Run(
     NStr::Split(m_SynRegistry->Get("server", "master_nodes", kEmptyStr), " ;,", vhosts);
 
     ITERATE(vector<string>, it, vhosts) {
-        string host, port;
-        NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, port);
-        if (!host.empty() && !port.empty())
-            m_Masters.insert(CNetServer::SAddress(host,
-                    (unsigned short) NStr::StringToUInt(port)));
+        if (auto address = CNetServer::SAddress::Parse(NStr::TruncateSpaces(*it))) {
+            m_Masters.insert(move(address));
+        }
     }
 
     vhosts.clear();

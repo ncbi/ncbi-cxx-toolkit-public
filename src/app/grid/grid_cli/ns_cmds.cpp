@@ -86,16 +86,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     }
 
     if (job_provided && service_provided) {
-        string host, port;
-
-        if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
+        if (auto address = CNetServer::SAddress::Parse(m_Opts.ns_service)) {
+            m_NetScheduleAPI.GetService().GetServerPool().StickToServer(move(address));
+        } else {
             NCBI_THROW(CArgException, eInvalidArg,
                     "When job ID is given, '--" NETSCHEDULE_OPTION "' "
                     "must be a host:port server address.");
         }
-
-        m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
-                (unsigned short) NStr::StringToInt(port));
     }
 
     if (m_AdminMode)

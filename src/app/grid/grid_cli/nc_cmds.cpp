@@ -78,16 +78,14 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
             CNetCacheKey key(m_Opts.ncid.key, CCompoundIDPool());
 
             if (key.GetVersion() != 3) {
-                string host, port;
-
-                if (!NStr::SplitInTwo(m_Opts.nc_service, ":", host, port)) {
+                if (auto address = CNetServer::SAddress::Parse(m_Opts.nc_service)) {
+                    m_NetCacheAPI.GetService().GetServerPool().StickToServer(move(address));
+                } else {
                     NCBI_THROW(CArgException, eInvalidArg,
                         "When blob ID is given, '--" NETCACHE_OPTION "' "
                         "must be a host:port server address.");
                 }
 
-                m_NetCacheAPI.GetService().GetServerPool().StickToServer(host,
-                        (unsigned short) NStr::StringToInt(port));
             }
         }
 
