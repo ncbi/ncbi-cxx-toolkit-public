@@ -40,16 +40,18 @@
 #include <corelib/request_status.hpp>
 #ifdef HAVE_LIBPROTOBUF
 #  include <google/protobuf/message.h>
+#  if PROTOBUF_VERSION >= 3002000
+#    define NCBI_GRPC_GET_BYTE_SIZE(msg) ((msg).ByteSizeLong())
+#  else
+#    define NCBI_GRPC_GET_BYTE_SIZE(msg) ((msg).ByteSize())
+#  endif
 #else
 namespace google {
     namespace protobuf {
-        class Message
-        {
-        public:
-            long ByteSizeLong(void) const { return 0L; }
-        };
+        class Message {};
     }
 }
+#  define NCBI_GRPC_GET_BYTE_SIZE(msg) 0L
 #endif
 #ifdef HAVE_LIBGRPC
 #  include <grpc++/server.h>
@@ -101,7 +103,9 @@ public:
 private:
     CDiagContext&    m_DiagContext;
     CRequestContext& m_RequestContext;
+#ifdef HAVE_LIBPROTOBUF
     const TMessage&  m_Reply;
+#endif
     bool             m_ManagingRequest;
 };
 
@@ -165,7 +169,10 @@ CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
                                        const TMessage& reply)
     : m_DiagContext(GetDiagContext()),
       m_RequestContext(m_DiagContext.GetRequestContext()),
-      m_Reply(reply), m_ManagingRequest(false)
+#ifdef HAVE_LIBPROTOBUF
+      m_Reply(reply),
+#endif
+      m_ManagingRequest(false)
 {
     if (m_DiagContext.GetAppState() < eDiagAppState_RequestBegin) {
         m_ManagingRequest = true;
@@ -173,7 +180,7 @@ CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
                                            CGRPCServerCallbacks::eExplicit);
     }
     m_DiagContext.Extra().Print("method_name", method_name);
-    m_RequestContext.SetBytesRd(request.ByteSizeLong());
+    m_RequestContext.SetBytesRd(NCBI_GRPC_GET_BYTE_SIZE(request));
 }
 
 inline
@@ -183,7 +190,7 @@ CGRPCRequestLogger::~CGRPCRequestLogger()
         m_RequestContext.SetRequestStatus
             (CRequestStatus::e500_InternalServerError);
     }
-    m_RequestContext.SetBytesWr(m_Reply.ByteSizeLong());
+    m_RequestContext.SetBytesWr(NCBI_GRPC_GET_BYTE_SIZE(m_Reply));
     if (m_ManagingRequest) {
         m_DiagContext.PrintRequestStop();
     }
