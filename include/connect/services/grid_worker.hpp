@@ -571,7 +571,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNode
 
     /// Get total time limit (automatic restart after that)
     ///
-    int GetTotalTimeLimit() const;
+    unsigned GetTotalTimeLimit() const;
     time_t GetStartupTime() const;
     unsigned GetQueueTimeout() const;
 

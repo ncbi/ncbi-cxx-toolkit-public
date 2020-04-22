@@ -129,9 +129,7 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
             }
         }
 
-        int total_time_limit = worker_node.GetTotalTimeLimit();
-
-        if (total_time_limit > 0) {  // time check requested
+        if (auto total_time_limit = worker_node.GetTotalTimeLimit()) {  // time check requested
             auto passed = static_cast<unsigned>(difftime(time(nullptr), worker_node.GetStartupTime()));
 
             if (passed > total_time_limit) {

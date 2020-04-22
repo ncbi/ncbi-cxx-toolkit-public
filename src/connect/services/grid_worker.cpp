@@ -458,7 +458,7 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
             m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
     }}
 
-    m_TotalTimeLimit = m_SynRegistry->Get("server", "total_time_limit", 0);
+    m_TotalTimeLimit = m_SynRegistry->Get("server", "total_time_limit", 0u);
 
     m_StartupTime = time(0);
 
@@ -1056,7 +1056,7 @@ Uint8 CGridWorkerNode::GetTotalMemoryLimit() const
     return m_Impl->m_TotalMemoryLimit;
 }
 
-int CGridWorkerNode::GetTotalTimeLimit() const
+unsigned CGridWorkerNode::GetTotalTimeLimit() const
 {
     return m_Impl->m_TotalTimeLimit;
 }
