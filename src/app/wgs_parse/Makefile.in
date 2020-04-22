@@ -1,4 +1,0 @@
-APP_PROJ = wgs_parse
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

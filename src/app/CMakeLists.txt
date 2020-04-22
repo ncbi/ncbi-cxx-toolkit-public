@@ -69,7 +69,6 @@ NCBI_add_subdirectory(
 #  split_cache
   sub_fuse
   tls
-  wgs_parse
   wig2table
   pubseq_gateway
 )
