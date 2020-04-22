@@ -808,7 +808,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
         shared_ptr<CPSG_Queue> queue;
         deque<shared_ptr<CPSG_Reply>> replies;
         
-        if (service.empty()) {
+        if (!local_queue) {
             queue = shared_ptr<CPSG_Queue>(shared_ptr<CPSG_Queue>(), &global_queue);
         } else {
             queue = make_shared<CPSG_Queue>(service);
