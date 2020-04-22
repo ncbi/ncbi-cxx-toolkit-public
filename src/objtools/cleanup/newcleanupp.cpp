@@ -12463,7 +12463,11 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
         CSeq_entry_Handle& seh )
 {
     CSeq_entry_EditHandle edit_handle = seh.GetEditHandle();
-    CConstRef<CSeq_entry> e = seh.GetCompleteSeq_entry();
+    CSeq_entry* en = const_cast<CSeq_entry*>(seh.GetCompleteSeq_entry().GetPointer());
+    
+    SetScope(seh.GetScope());
+    ExtendedCleanupSeqEntry(*en);
+/*
     CRef<CSeq_entry> en(new CSeq_entry);
     if ( e->IsSet() ) {
         en->SetSet(const_cast<CBioseq_set&>(e->GetSet()));
@@ -12481,6 +12485,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
         edit_handle.SelectSeq(en->SetSeq());
     }
     seh = edit_handle;
+    */
 }
 
 END_SCOPE(objects)
