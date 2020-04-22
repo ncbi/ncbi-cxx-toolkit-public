@@ -199,9 +199,10 @@ void* CTriggerThread::Main(void)
 
 void CTest::Client()
 {
-    ERR_POST(Info << "Client started...");
+    unsigned short port = NStr::StringToNumeric<unsigned short>(m_Port);
+    ERR_POST(Info << "Client started, using server at port " << port << "...");
 
-    CSocket socket("localhost", NStr::StringToNumeric<unsigned short>(m_Port));
+    CSocket socket("localhost", port);
 
     size_t n_read = 0;
     // the client is greedy but slow
@@ -230,7 +231,7 @@ void CTest::Server(void)
     // Create listening socket
     CListeningSocket lsock;
     unsigned short port =
-        NStr::StringToNumeric<unsigned short>(m_Port,NStr::fConvErr_NoThrow);
+        NStr::StringToNumeric<unsigned short>(m_Port, NStr::fConvErr_NoThrow);
     EIO_Status status = lsock.Listen(port);
     if (status == eIO_Success  &&  !port) {
         port = lsock.GetPort(eNH_HostByteOrder);
@@ -238,6 +239,7 @@ void CTest::Server(void)
             ofstream of(m_Port.c_str());
             if (!(of << port << flush))
                 status = eIO_Unknown;
+            of.close();
         } else
             status = eIO_Unknown;
     }
@@ -269,7 +271,7 @@ void CTest::Server(void)
             break;
         }
         _ASSERT(status == eIO_Success  &&  n);
-        for (size_t i = 0;  i < polls.size();  i++) {
+        for (size_t i = 0;  i < polls.size();  ++i) {
             CSocket* sock;
 
             if (polls[i].m_REvent == eIO_Open)
@@ -300,7 +302,7 @@ void CTest::Server(void)
                     _ASSERT(status == eIO_Success);
                     ERR_POST(Info << "Client connected...");
                     sock->SetTimeout(eIO_ReadWrite, &kZero);
-                    for (n = i + 1;  n < polls.size();  n++) {
+                    for (n = i + 1;  n < polls.size();  ++n) {
                         if (!polls[n].m_Pollable) {
                             polls[n].m_Pollable = sock;
                             polls[n].m_Event = eIO_ReadWrite;
@@ -338,7 +340,7 @@ void CTest::Server(void)
                 buf[0] = 'S';
                 buf[1] = '1';
                 buf[2] = '\0';
-                for (n = 3;  n < sizeof(buf);  n++)
+                for (n = 3;  n < sizeof(buf);  ++n)
                     buf[n] = rand() & 0xFF;
                 //ERR_POST(Info << "Client is receiving...");
                 status = sock->Write(buf, sizeof(buf));
