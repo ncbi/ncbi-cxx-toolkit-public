@@ -8258,7 +8258,21 @@ fi
 
 : ${PROTOBUF_PATH=$GRPC_PATH}
 
-NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$D_SFX],
+PROTOBUF_SFX=
+if test -n "$D_SFX"; then
+   if ls $PROTOBUF_PATH/lib*/libprotobuf$D_SFX.* >/dev/null 2>&1; then
+      PROTOBUF_SFX=$D_SFX
+   else
+      for ext in .a .so .dylib; do
+         path=`$CXX -B$PROTOBUF_PATH/ -print-file-name=libprotobuf$D_SFX.$ext \
+               2>/dev/null`
+         case "$path" in
+            */* ) PROTOBUF_SFX=$D_SFX; break ;;
+         esac
+      done
+   fi
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$PROTOBUF_SFX],
    [AC_LANG_PROGRAM([[@%:@include <google/protobuf/type.pb.h>]],
        [[google::protobuf::Type t;]])],
    [], [$Z_LIBS])
@@ -8272,6 +8286,20 @@ if test -n "$PROTOBUF_LIBS"; then
 else
    NCBI_MISSING_PACKAGE(grpc)
 fi
+
+if test -n "$GRPC_PATH"; then
+   in_path=" in $GRPC_PATH"
+   CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
+   LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lcares"
+   LIBS="$LIBS $orig_LIBS"
+else
+   LIBS="-lcares $orig_LIBS"
+fi
+AC_MSG_CHECKING([for libcares$in_path])
+AC_LINK_IFELSE(
+   [AC_LANG_PROGRAM([@%:@include <ares.h>], [ares_library_init(0);])],
+   [CARES_LIBS=-lcares; AC_MSG_RESULT([yes])],
+   [CARES_LIBS=; AC_MSG_RESULT([no])])
 
 if test -f "$GRPC_PATH/lib/libboringssl.a"; then
    GRPC_LDEP="-lboringssl -lboringcrypto"
@@ -8288,7 +8316,7 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [AC_LANG_PROGRAM([[@%:@include <grpc++/grpc++.h>]],
        [[return grpc::Version().size();]])],
-   [-lgrpc -lgpr $PROTOBUF_LIBS -lcares], [$GRPC_LDEP $Z_LIBS],
+   [-lgrpc -lgpr $PROTOBUF_LIBS $CARES_LIBS], [$GRPC_LDEP $Z_LIBS],
    [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
    LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"

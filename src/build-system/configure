@@ -52081,6 +52081,20 @@ fi
 
 : ${PROTOBUF_PATH=$GRPC_PATH}
 
+PROTOBUF_SFX=
+if test -n "$D_SFX"; then
+   if ls $PROTOBUF_PATH/lib*/libprotobuf$D_SFX.* >/dev/null 2>&1; then
+      PROTOBUF_SFX=$D_SFX
+   else
+      for ext in .a .so .dylib; do
+         path=`$CXX -B$PROTOBUF_PATH/ -print-file-name=libprotobuf$D_SFX.$ext \
+               2>/dev/null`
+         case "$path" in
+            */* ) PROTOBUF_SFX=$D_SFX; break ;;
+         esac
+      done
+   fi
+fi
 if test "$with_protobuf" != "no"; then
     case "$PROTOBUF_PATH:$with_protobuf" in
        *:yes | *: | $with_protobuf* ) ;;
@@ -52156,14 +52170,14 @@ if test "$with_protobuf" != "no"; then
     PROTOBUF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       PROTOBUF_LIBS="$PROTOBUF_LIBPATH -lprotobuf$D_SFX "
+       PROTOBUF_LIBS="$PROTOBUF_LIBPATH -lprotobuf$PROTOBUF_SFX "
     else
        PROTOBUF_INCLUDE=""
-       PROTOBUF_LIBS="-lprotobuf$D_SFX "
+       PROTOBUF_LIBS="-lprotobuf$PROTOBUF_SFX "
        in_path=
     fi
-    { echo "$as_me:$LINENO: checking for libprotobuf$D_SFX$in_path" >&5
-echo $ECHO_N "checking for libprotobuf$D_SFX$in_path... $ECHO_C" >&6; }
+    { echo "$as_me:$LINENO: checking for libprotobuf$PROTOBUF_SFX$in_path" >&5
+echo $ECHO_N "checking for libprotobuf$PROTOBUF_SFX$in_path... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_protobuf+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -52318,6 +52332,78 @@ echo "$as_me: error: --with-grpc explicitly specified, but no usable version fou
     fi
 fi
 
+if test -n "$GRPC_PATH"; then
+   in_path=" in $GRPC_PATH"
+   CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
+   LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lcares"
+   LIBS="$LIBS $orig_LIBS"
+else
+   LIBS="-lcares $orig_LIBS"
+fi
+{ echo "$as_me:$LINENO: checking for libcares$in_path" >&5
+echo $ECHO_N "checking for libcares$in_path... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <ares.h>
+int
+main ()
+{
+ares_library_init(0);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  CARES_LIBS=-lcares; { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	CARES_LIBS=; { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
 if test -f "$GRPC_PATH/lib/libboringssl.a"; then
    GRPC_LDEP="-lboringssl -lboringcrypto"
 else
@@ -52405,10 +52491,10 @@ if test "$with_grpc" != "no"; then
     GRPC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ -lgrpc -lgpr $PROTOBUF_LIBS -lcares"
+       GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ -lgrpc -lgpr $PROTOBUF_LIBS $CARES_LIBS"
     else
        GRPC_INCLUDE=""
-       GRPC_LIBS="-lgrpc++ -lgrpc -lgpr $PROTOBUF_LIBS -lcares"
+       GRPC_LIBS="-lgrpc++ -lgrpc -lgpr $PROTOBUF_LIBS $CARES_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libgrpc++$in_path" >&5
