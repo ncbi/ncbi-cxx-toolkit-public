@@ -1587,10 +1587,10 @@ uint64_t s_GetDiscoveryRepeat(const CNetServiceDiscovery& service)
 }
 
 SPSG_IoCoordinator::SPSG_IoCoordinator(CNetServiceDiscovery service) :
+    m_Barrier(TPSG_NumIo::GetDefault() + 2),
     m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, m_Servers),
     m_RequestCounter(0),
     m_RequestId(1),
-    m_Barrier(TPSG_NumIo::GetDefault() + 2),
     m_ClientId("&client_id=" + GetDiagContext().GetStringUID())
 {
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {

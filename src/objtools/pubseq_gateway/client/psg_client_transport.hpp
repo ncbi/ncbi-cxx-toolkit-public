@@ -1060,13 +1060,13 @@ struct SPSG_IoCoordinator
     const string& GetClientId() const { return m_ClientId; }
 
 private:
+    SPSG_UvBarrier m_Barrier;
     SPSG_IoImpl::TSpaceCV m_Space;
     SPSG_Servers::TTS m_Servers;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;
-    SPSG_UvBarrier m_Barrier;
     const string m_ClientId;
 };
 
