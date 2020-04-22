@@ -37,7 +37,7 @@ macro(NCBI_internal_process_cmake_test_requires _test)
 
     foreach(_req IN LISTS _all)
         NCBI_util_parse_sign( ${_req} _value _negate)
-        if (NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
+        if (${_value} OR NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
             if (_negate)
                 set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
             endif()
