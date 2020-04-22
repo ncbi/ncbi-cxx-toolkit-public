@@ -5,7 +5,7 @@
 NCBI_begin_app(gc_cli)
   NCBI_sources(gc_cli)
   NCBI_uses_toolkit_libraries(gencoll_client)
-  NCBI_project_watchers(akimchi shchekot)
+  NCBI_project_watchers(gencoll-dev)
   NCBI_requires(SQLITE3)
 
   NCBI_begin_test(test_gencoll_svc_ASSM)
