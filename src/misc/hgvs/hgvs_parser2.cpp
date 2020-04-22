@@ -185,6 +185,11 @@ CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
     //interval, create locs for individual repeat units; then merge them, and keep the interval that
     //overlaps the original.
 
+    if (loc.GetStart(eExtreme_Positional) > loc.GetStop(eExtreme_Positional)) {
+        stringstream s;
+        s << MSerial_AsnText << loc << endl;
+        HGVS_THROW(eSemantic, "Invalid range: start position is bigger than stop position" + s.str());
+    }
     const TSeqPos ext_interval = 10000;
 
     CRef<CSeq_loc> loc1 = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
