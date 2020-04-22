@@ -480,7 +480,7 @@ void CAgpValidateReader::OnScaffoldEnd()
     m_SingleCompScaffolds++;
     if(m_gapsInLastScaffold) m_SingleCompScaffolds_withGaps++;
 
-
+/*
     if (m_prev_orientation=='-' &&
         m_prev_component_beg==1) {
         auto errCode = m_AgpErr->m_strict ? 
@@ -488,9 +488,17 @@ void CAgpValidateReader::OnScaffoldEnd()
             CAgpErrEx::W_SingletonCompBeginsAt1AndMinusOri;
         m_AgpErr->Msg(errCode, CAgpErr::fAtPrevLine);
     }
+*/
+
+   
+    const bool not_plus = m_prev_orientation && m_prev_orientation!='+';
+    if (m_prev_component_beg==1 && not_plus) {
+        m_AgpErr->Msg(CAgpErrEx::W_SingleOriNotPlus, CAgpErr::fAtPrevLine);
+    }
+
 
     if((m_unplaced || NStr::StartsWith(m_prev_row->GetObject(), "un", NStr::eNocase) ) && m_prev_orientation) {
-      if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
+    //  if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
 
       TMapStrInt::iterator it = m_comp2len->find( m_prev_row->GetComponentId() );
       if( it!=m_comp2len->end() ) {

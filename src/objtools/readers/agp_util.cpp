@@ -72,7 +72,6 @@ CAgpErr::sMessageMap = {
     {CAgpErr::E_SameGapLength, "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)"},
     // "'|' character can only follow a recognized Seq-id type",
     {CAgpErr::E_InvalidBarInId, "invalid use of \"|\" character"},
-    {CAgpErr::E_SingletonCompBeginsAt1AndMinusOri, "singleton object has component_beg=1 and in minus orientation"},
     {CAgpErr::E_Last, ""},
 
     // Content Warnings
@@ -113,7 +112,7 @@ CAgpErr::sMessageMap = {
     // "singleton scaffold includes only part of the component"
     {CAgpErr::W_UnSingleCompNotInFull, "in unplaced singleton scaffold, component is not used in full"}, // (X out of Y bp)
 
-    {CAgpErr::W_UnSingleOriNotPlus, "in unplaced singleton scaffold, component orientation is not \"+\""},
+    {CAgpErr::W_SingleOriNotPlus, "component orientation is not \"+\" in a single component scaffold"},
     {CAgpErr::W_ShortGap, "gap shorter than 10 bp"},
     {CAgpErr::W_SpaceInObjName, "space in object name "},
     {CAgpErr::W_CommentsAfterStart, "comments only allowed at the beginning of the file in AGP 2.0"},
@@ -134,7 +133,6 @@ CAgpErr::sMessageMap = {
 
     {CAgpErr::W_GnlId, "\"gnl|\" prefix in X is deprecated inside AGP files (no \"prefix|\" is best)"},
     {CAgpErr::W_CompIsLocalTypeNotW, "component_id X is a not an accession, but is used with component_type other than W"},
-    {CAgpErr::W_SingletonCompBeginsAt1AndMinusOri, "singleton object has component_beg=1 and in minus orientation"},
     // GenBank-related errors
     {CAgpErr::G_InvalidCompId, "invalid component_id"},
     {CAgpErr::G_NotInGenbank, "component_id not in GenBank"},

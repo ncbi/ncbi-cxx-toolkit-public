@@ -543,7 +543,6 @@ public:
         E_UnusedScaf,           // CAgpValidateReader
         E_SameGapLength,        // CAgpValidateReader
         E_InvalidBarInId,       // CAgpValidateReader
-        E_SingletonCompBeginsAt1AndMinusOri,
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
@@ -574,7 +573,7 @@ public:
         W_BreakingGapSameCompId,// CAgpValidateReader
         W_UnSingleCompNotInFull,// CAgpValidateReader
 
-        W_UnSingleOriNotPlus,   // CAgpValidateReader
+        W_SingleOriNotPlus,     // CAgpValidateReader
         W_ShortGap          ,   // CAgpValidateReader
         W_SpaceInObjName    ,   // CAgpValidateReader
         W_CommentsAfterStart,   // CAgpRow (v. >= 2.0)
@@ -594,7 +593,6 @@ public:
 
         W_GnlId,
         W_CompIsLocalTypeNotW,
-        W_SingletonCompBeginsAt1AndMinusOri,
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
@@ -780,6 +778,7 @@ public:
     //   other: errors/warnings of one given type
     // 2 arguments: range of int-s
     int CountTotals(int from, int to=E_First);
+    int Count() const;
     void ResetTotals();
 
     // Print individual error counts (important if we skipped some errors)
