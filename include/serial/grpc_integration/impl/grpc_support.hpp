@@ -53,6 +53,7 @@ namespace google {
 #endif
 #ifdef HAVE_LIBGRPC
 #  include <grpc++/server.h>
+#  include <grpc++/server_context.h>
 #else
 namespace grpc {
     typedef int Status;
@@ -79,6 +80,12 @@ namespace grpc {
 
 BEGIN_NCBI_SCOPE
 
+#ifdef GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H
+typedef grpc_impl::ServerContext TGRPCServerContext;
+#else
+typedef grpc::ServerContext TGRPCServerContext;
+#endif
+
 grpc::Status     g_AsGRPCStatus    (CRequestStatus::ECode status_code);
 grpc::StatusCode g_AsGRPCStatusCode(CRequestStatus::ECode status_code);
 
@@ -87,7 +94,7 @@ class CGRPCRequestLogger
 {
 public:
     typedef google::protobuf::Message TMessage;
-    CGRPCRequestLogger(grpc::ServerContext* sctx, CTempString method_name,
+    CGRPCRequestLogger(TGRPCServerContext* sctx, CTempString method_name,
                        const TMessage& request, const TMessage& reply);
     ~CGRPCRequestLogger();
 
@@ -108,20 +115,20 @@ public:
         eExplicit, ///< Via CGRPCRequestLogger or the like.
     };
     
-    void PreSynchronousRequest (grpc::ServerContext* sctx) override
+    void PreSynchronousRequest (TGRPCServerContext* sctx) override
         { BeginRequest(sctx, eImplicit); }
-    void PostSynchronousRequest(grpc::ServerContext* sctx) override
+    void PostSynchronousRequest(TGRPCServerContext* sctx) override
         { EndRequest(sctx, eImplicit);   }
 
     // Static methods for use by any asynchronous service implementations,
     // which have no obvious provision for global hooks.
-    static void BeginRequest(grpc::ServerContext* sctx,
+    static void BeginRequest(TGRPCServerContext* sctx,
                              EInvocationType invocation_type = eExplicit);
-    static void EndRequest  (grpc::ServerContext* sctx,
+    static void EndRequest  (TGRPCServerContext* sctx,
                              EInvocationType invocation_type = eExplicit);
 
 private:
-    static bool x_IsRealRequest(const grpc::ServerContext* sctx);
+    static bool x_IsRealRequest(const TGRPCServerContext* sctx);
 };
 
 
@@ -152,7 +159,7 @@ grpc::Status g_AsGRPCStatus(CRequestStatus::ECode status_code,
 
 
 inline
-CGRPCRequestLogger::CGRPCRequestLogger(grpc::ServerContext* sctx,
+CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
                                        CTempString method_name,
                                        const TMessage& request,
                                        const TMessage& reply)

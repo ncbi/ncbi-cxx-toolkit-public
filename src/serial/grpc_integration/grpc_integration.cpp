@@ -140,13 +140,13 @@ CGRPCInitializer::CGRPCInitializer(void)
 #endif
 
 
-unique_ptr<grpc::ClientContext>
-CGRPCClientContext::FromServerContext(const grpc::ServerContext& sctx,
-                                      grpc::PropagationOptions options)
+unique_ptr<TGRPCBaseClientContext>
+CGRPCClientContext::FromServerContext(const TGRPCServerContext& sctx,
+                                      TGRPCPropagationOptions options)
 {
 #ifdef HAVE_LIBGRPC
-    unique_ptr<grpc::ClientContext> result
-        (grpc::ClientContext::FromServerContext(sctx, options));
+    unique_ptr<TGRPCBaseClientContext> result
+        (TGRPCBaseClientContext::FromServerContext(sctx, options));
     if (result.get() != NULL) {
         AddStandardNCBIMetadata(*result);
     }
@@ -156,7 +156,7 @@ CGRPCClientContext::FromServerContext(const grpc::ServerContext& sctx,
 #endif    
 }
 
-void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
+void CGRPCClientContext::AddStandardNCBIMetadata(TGRPCBaseClientContext& cctx)
 {
 #ifdef HAVE_LIBGRPC
     CDiagContext&    dctx = GetDiagContext();
@@ -309,7 +309,7 @@ DEFINE_STATIC_ARRAY_MAP(TRCSetterMap, sc_RCSetterMap, sc_RCSetters);
 // service name, the status code, or the number of bytes in and/or out?
 // (Byte counts appear to be tracked internally but not exposed. :-/)
 
-void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx,
+void CGRPCServerCallbacks::BeginRequest(TGRPCServerContext* sctx,
                                         EInvocationType invocation_type)
 {
     if (invocation_type == eImplicit  &&  !x_IsRealRequest(sctx)) {
@@ -424,7 +424,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx,
 }
 
 
-void CGRPCServerCallbacks::EndRequest(grpc::ServerContext* sctx,
+void CGRPCServerCallbacks::EndRequest(TGRPCServerContext* sctx,
                                       EInvocationType invocation_type)
 {
     if (invocation_type == eImplicit  &&  !x_IsRealRequest(sctx)) {
@@ -434,7 +434,7 @@ void CGRPCServerCallbacks::EndRequest(grpc::ServerContext* sctx,
 }
 
 
-bool CGRPCServerCallbacks::x_IsRealRequest(const grpc::ServerContext* sctx)
+bool CGRPCServerCallbacks::x_IsRealRequest(const TGRPCServerContext* sctx)
 {
 #ifdef HAVE_LIBGRPC
     auto peer = sctx->peer();

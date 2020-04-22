@@ -56,6 +56,13 @@ namespace grpc {
 
 BEGIN_NCBI_SCOPE
 
+#ifdef GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_IMPL_H
+typedef grpc_impl::ClientContext      TGRPCBaseClientContext;
+typedef grpc_impl::PropagationOptions TGRPCPropagationOptions;
+#else
+typedef grpc::ClientContext      TGRPCBaseClientContext;
+typedef grpc::PropagationOptions TGRPCPropagationOptions;
+#endif
 
 /// CGRPCClientContext -- client context for NCBI gRPC services.
 ///
@@ -66,17 +73,17 @@ BEGIN_NCBI_SCOPE
 /// by passing a ServerContext to FromServerContext or calling
 /// AddStandardNCBIMetadata on an existing ClientContext (bearing in
 /// mind that every actual remote procedure call requires a fresh context).
-class CGRPCClientContext : public grpc::ClientContext
+class CGRPCClientContext : public TGRPCBaseClientContext
 {
 public:
-    typedef grpc::ClientContext TParent;
+    typedef TGRPCBaseClientContext TParent;
     
     CGRPCClientContext(void)
         { AddStandardNCBIMetadata(*this); }
 
-    static unique_ptr<TParent> FromServerContext(const grpc::ServerContext& sc,
-                                                 grpc::PropagationOptions opts
-                                                 = grpc::PropagationOptions());
+    static unique_ptr<TParent> FromServerContext(const TGRPCServerContext& sc,
+                                                 TGRPCPropagationOptions opts
+                                                 = TGRPCPropagationOptions());
 
     static void AddStandardNCBIMetadata(TParent& cctx);
 
