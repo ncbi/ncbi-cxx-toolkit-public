@@ -32,8 +32,14 @@ endif
 VERSION_MARKER_BASE = $(MODULE).using-protoc-
 VERSION_MARKER = $(VERSION_MARKER_BASE)$(PROTOC_VERSION)
 
+CAN_MOCK := $(shell grep generate_mock_code $(GRPC_CPP_PLUGIN))
+ifneq "" "$(CAN_MOCK)"
+   MOCK_OPTION = generate_mock_code=true:
+   MOCK_HEADER = $(MODULE)_mock.grpc.pb.h
+endif
+
 GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h \
-             $(INCLUDEDIR)/$(MODULE)_mock.grpc.pb.h
+             $(MOCK_HEADER:%=$(INCLUDEDIR)/%)
 
 DEPS = $(MODULE_ASN) $(PROTOC) $(MODULE).module $(IMPDEPS) $(VERSION_MARKER)
 
@@ -72,10 +78,10 @@ $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
 	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
 
 ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
-$(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h $(MODULE)_mock.grpc.pb.h: \
+$(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h $(MOCK_HEADER): \
     $(DEPS) $(GRPC_CPP_PLUGIN)
 	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) \
-            --grpc_out=generate_mock_code=true:. \
+            --grpc_out=$(MOCK_OPTION). \
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
 else
 $(GRPC_FILES):
