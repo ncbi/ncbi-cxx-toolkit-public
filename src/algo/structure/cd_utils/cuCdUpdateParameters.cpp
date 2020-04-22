@@ -52,7 +52,10 @@ string BlastDatabaseNames[] = {
     "ecoli", 
     "Drosophila genome", 
     "month",
-    "SMARTBLAST/landmark"
+    "SMARTBLAST/landmark",
+    "CDSEARCH_TEST/nr_v4",
+    "CDSEARCH_TEST/pdb_v4",
+    "CDSEARCH/CDDupdate"
 };
 
 string OrganismNames[] = {
@@ -130,21 +133,6 @@ string CdUpdateParameters::getBlastTypeName(enum BlastType bt)
         return BlastTypeNames[bt];
 }
 
-string CdUpdateParameters::getBlastTypeDefline()
-{
-    string defline("Type of Blast:");
-    for (int i = 0; i < eBlastTypeEnd; i++)
-    {
-        string part = getBlastTypeName((BlastType)i);
-        if (part.length() > 0)
-        {
-            defline += '|';
-            defline += part;
-        }
-    }
-    return defline;
-}
-
 string CdUpdateParameters::getBlastDatabaseName(BlastDatabase db)
 {
     if (db >= eBlastDatabaseEnd)
@@ -152,22 +140,6 @@ string CdUpdateParameters::getBlastDatabaseName(BlastDatabase db)
     else
         return BlastDatabaseNames[db];
 }
-
-string CdUpdateParameters::getBlastDatabaseDefline()
-{
-    string defline("Choose a database:");
-    for (int i = 0; i < eBlastDatabaseEnd; i++)
-    {
-        string part = getBlastDatabaseName((BlastDatabase)i);
-        if (part.length() > 0)
-        {
-            defline += '|';
-            defline += part;
-        }
-    }
-    return defline;
-}
-
 
 string CdUpdateParameters::getOrganismName(Organism org)
 {
@@ -177,44 +149,12 @@ string CdUpdateParameters::getOrganismName(Organism org)
         return OrganismNames[org];
 }
 
-string CdUpdateParameters::getOrganismDefline()
-{
-    string defline("Limit search by organism:");
-    for (int i = 0; i < eOrganismEnd; i++)
-    {
-        string part = getOrganismName((Organism)i);
-        if (part.length() > 0)
-        {
-            defline += '|';
-            defline += part;
-        }
-    }
-    return defline;
-}
-
-
 string CdUpdateParameters::getEnvironmentalTaxName(EnvironmentalTax et)
 {
     if (et >= eEnvironmentalTaxEnd)
         return "";
     else
         return EnvironmentalTaxNames[et];
-}
-
-string CdUpdateParameters::getEnvironmentalTaxDefline()
-{
-    string defline("Exclude sequences with this taxonomic classification:");
-    for (int i = 0; i < eEnvironmentalTaxEnd; i++)
-    {
-        string part = getEnvironmentalTaxName((EnvironmentalTax)i);
-        if (part.length() > 0)
-        {
-            defline += '|';
-            defline += part;
-        }
-    }
-    return defline; 
-
 }
 
 END_SCOPE(cd_utils)

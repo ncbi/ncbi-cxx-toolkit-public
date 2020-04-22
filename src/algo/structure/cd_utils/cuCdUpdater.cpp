@@ -981,11 +981,6 @@ bool CDUpdater::passedFilters(CCdCore* cd, CRef< CSeq_align > seqAlign,
 		m_stats.noSeq.push_back(gi);
 		return false; //no seq is not acceptable
 	}
-/*    if (m_config.excludingTaxNodes == eEnvironmental_sequence && TaxDataSource::isEnvironmentalSeq(*bioseq))
-	{
-		m_stats.envSeq.push_back(gi);
-		return false;
-	}*/
 
 	//filter fragmented
 	if (m_config.missingResidueThreshold > 0 && isFragmentedSeq(cd, seqAlign, seqEntry))

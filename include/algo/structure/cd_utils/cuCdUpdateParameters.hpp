@@ -60,6 +60,9 @@ enum BlastDatabase
 	eDrosophila_genome,
 	eMonth,
     eSmartblast_landmark,
+    eNrV4,
+    ePdbV4,
+    eCddUpdate,
 	eBlastDatabaseEnd
 };
 
@@ -105,16 +108,12 @@ public:
 
 public:
 	static string getBlastTypeName(BlastType bt);
-	static string getBlastTypeDefline();
 
 	static string getBlastDatabaseName(BlastDatabase db);
-	static string getBlastDatabaseDefline();
 
 	static string getOrganismName(Organism org);
-	static string getOrganismDefline();
 
 	static string getEnvironmentalTaxName(EnvironmentalTax bt);
-	static string getEnvironmentalTaxDefline();
 
 //members
 	BlastType blastType; //0=blast, 1=psi-blast
