@@ -11,7 +11,7 @@ LIB = $(SEQ_LIBS) pub medline biblio general psg_cache psg_cassandra psg_protobu
 
 LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
 
-REQUIRES = MT Linux LMDB PROTOBUF
+REQUIRES = CASSANDRA MT Linux LMDB PROTOBUF
 
 WATCHERS = satskyse saprykin
 
