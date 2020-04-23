@@ -309,6 +309,11 @@ int CAgpValidateApplication::Run(void)
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
   m_reader.m_unplaced   =args["un" ].HasValue();
+
+  if (m_reader.m_unplaced) {
+      pAgpErr->UpgradeToError(CAgpErrEx::W_SingleOriNotPlus);
+  }
+
   if(args["chr" ].HasValue() || args["scaf" ].HasValue()) {
     if( m_reader.m_unplaced  ) {
       cerr << "Error -- cannot specify -un with -chr/-scaf.\n";

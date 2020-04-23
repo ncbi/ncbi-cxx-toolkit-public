@@ -495,7 +495,7 @@ void CAgpValidateReader::OnScaffoldEnd()
     if (m_prev_component_beg==1 && not_plus) {
         m_AgpErr->Msg(CAgpErrEx::W_SingleOriNotPlus, CAgpErr::fAtPrevLine);
         if (m_unplaced) {
-            m_AgpErr->SetUpgradedWarnings().insert(CAgpErrEx::W_SingleOriNotPlus);
+            m_AgpErr->UpgradeToError(CAgpErrEx::W_SingleOriNotPlus);
         }
     }
 

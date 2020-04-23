@@ -1332,7 +1332,7 @@ string CAgpErrEx::GetPrintableCode(int code, bool strict) const
         (code<G_Last) ? "g" : "x";
 
     if( res[0]=='w') {
-        if (UpgradeToError(code) ||
+        if (TreatAsError(code) ||
             (strict && !IsStrictModeWarning(code))) {
             res = "e";
         }  
@@ -1504,7 +1504,7 @@ const char* CAgpErrEx::ErrorWarningOrNoteEx(int code)
         return "ERROR";
     }
     
-    if (UpgradeToError(code)) {
+    if (TreatAsError(code)) {
         return "ERROR";
     }
    

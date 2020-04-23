@@ -852,13 +852,18 @@ public:
         return m_UpgradedWarnings;
     }
 
-    bool UpgradeToError(int code) const {
-        return UpgradeToError(static_cast<EErrCode>(code));
+    void UpgradeToError(EErrCode code) {
+        m_UpgradedWarnings.insert(code);
     }
 
-    bool UpgradeToError(EErrCode code) const {
+    bool TreatAsError(int code) const {
+        return TreatAsError(static_cast<EErrCode>(code));
+    }
+
+    bool TreatAsError(EErrCode code) const {
         return (m_UpgradedWarnings.find(code) != m_UpgradedWarnings.end());
     }
+
 
 private:
     set<EErrCode> m_UpgradedWarnings;
