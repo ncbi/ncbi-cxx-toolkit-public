@@ -314,6 +314,21 @@ CGff3Writer::CGff3Writer(
 
 
 //  ----------------------------------------------------------------------------
+SAnnotSelector& CGff3Writer::SetAnnotSelector(void)
+//  ----------------------------------------------------------------------------
+{
+    auto& selector = CGff2Writer::SetAnnotSelector();
+    selector.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub)
+        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq)
+        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
+        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_prot);
+    selector.ExcludeFeatType(CSeqFeatData::e_Biosrc);
+    return selector;
+}
+
+
+//  ----------------------------------------------------------------------------
 void CGff3Writer::SetBioseqHandle(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
@@ -329,10 +344,6 @@ bool CGff3Writer::WriteAlign(
     const string& strAssAcc )
 //  ----------------------------------------------------------------------------
 {
-    //CNcbiOfstream ostr("f:\\testing\\denseg.asn1");
-    //ostr << MSerial_Format_AsnText() << align << endl;
-    //return true;
-
     try {
         align.Validate(true);
     }
@@ -1383,13 +1394,24 @@ bool CGff3Writer::xWriteFeature(
                 return xWriteFeatureCDJVSegment( fc, mf );
             case CSeqFeatData::eSubtype_gene: 
                 return xWriteFeatureGene( fc, mf );
-            case CSeqFeatData::eSubtype_cdregion:
+            case CSeqFeatData::eSubtype_cdregion: {
                 return xWriteFeatureCds( fc, mf );
+            }
             case CSeqFeatData::eSubtype_tRNA:
                 return xWriteFeatureTrna( fc, mf );
 
             case CSeqFeatData::eSubtype_pub:
                 return true; //ignore
+            case 5:
+            case 6: {
+                if (mf.GetFeatType() == CSeqFeatData::e_Prot) {
+                    return true; //already handled as part of CDS
+                }
+                if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                    return xWriteFeatureRna( fc, mf );
+                }
+                return xWriteFeatureGeneric( fc, mf );
+            }
         }
     }
     catch (CException& e) {
@@ -2061,7 +2083,6 @@ bool CGff3Writer::xAssignFeature(
     else  { // Trim the feature
         pLoc->Add(*sequence::CFeatTrim::Apply(mf.GetLocation(), display_range));
     }
- 
 
     CWriteUtil::ChangeToPackedInt(*pLoc);
 
@@ -2429,6 +2450,24 @@ bool CGff3Writer::xWriteFeatureCds(
             }
         }
     }
+
+    if (!fc.BioseqHandle()  ||  !mf.IsSetProduct()) {
+        return true;
+    }
+    CConstRef<CSeq_id> protId(mf.GetProduct().GetId());
+    const  CSeq_id& constProdId = *protId;
+    CBioseq_Handle protein_h = m_pScope->GetBioseqHandleFromTSE(*protId, fc.BioseqHandle());
+    if (!protein_h) {
+        return true;
+    }
+    CFeat_CI it(protein_h);
+    fc.FeatTree().AddFeatures(it);
+    for (; it; ++it) {
+        if (!it->GetData().IsProt()) {
+            continue;
+        }
+        xWriteFeatureProtein(fc, mf, *it);
+    }
     return true;
 }
 
@@ -2548,12 +2587,50 @@ bool CGff3Writer::xWriteFeatureGeneric(
     return xWriteFeatureRecords( *pParent, mf.GetLocation(), seqlength );
 }
 
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteFeatureProtein(
+    CGffFeatureContext& fc,
+    const CMappedFeat& cds,
+    const CMappedFeat& protein )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
+    if (!xAssignFeature(*pRecord, fc, protein)) {
+        return false;
+    }
+
+    CSeq_loc_Mapper prot_to_cds(cds.GetOriginalFeature(), 
+        CSeq_loc_Mapper::eProductToLocation, m_pScope);
+    prot_to_cds.SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_CStyle);
+    CRef<CSeq_loc> pMappedLoc(prot_to_cds.Map(protein.GetLocation()));
+    auto& packedInt = *pMappedLoc;
+    CWriteUtil::ChangeToPackedInt(packedInt);
+    _ASSERT(packedInt.IsPacked_int() && packedInt.GetPacked_int().CanGet());
+    
+    TSeqPos seqlength = 0;
+    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
+        seqlength = fc.BioseqHandle().GetInst().GetLength();
+
+    list< CRef< CSeq_interval > > sublocs( packedInt.GetPacked_int().Get() );
+    list< CRef< CSeq_interval > >::const_iterator it;
+    for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+        const CSeq_interval& subint = **it;
+        CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pRecord));
+        pExon->SetLocation(subint);
+        if (!xWriteRecord(*pExon)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureRecords(
     const CGffFeatureRecord& record,
     const CSeq_loc& location,
     unsigned int seqLength )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord(
         dynamic_cast<const CGff3FeatureRecord&>(record)));

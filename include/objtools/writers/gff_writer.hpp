@@ -182,11 +182,6 @@ public:
         const string& asmblyName="",
         const string& asmblyAccession="" );
 
-    /// Provide access to the selction criteria used when traversing containers 
-    /// for content to be rendered.
-    ///
-//    virtual SAnnotSelector& GetAnnotSelector();
-
 protected:
     virtual bool xAssignFeature(
         CGffFeatureRecord&,

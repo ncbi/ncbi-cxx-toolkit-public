@@ -173,6 +173,8 @@ public:
         const string& asmblyName="",
         const string& asmblyAccession="" ) override;
 
+    virtual SAnnotSelector& SetAnnotSelector(void) override;
+
 protected:
     typedef list<pair<CConstRef<CSeq_align>, string>> TAlignCache;
 
@@ -217,6 +219,10 @@ protected:
         const CMappedFeat& );
     virtual bool xWriteFeatureGeneric(
         CGffFeatureContext&,
+        const CMappedFeat& );
+    virtual bool xWriteFeatureProtein(
+        CGffFeatureContext&,
+        const CMappedFeat&,
         const CMappedFeat& );
     virtual bool xWriteFeatureTrna(
         CGffFeatureContext&,

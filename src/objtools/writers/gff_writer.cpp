@@ -64,7 +64,7 @@ CGff2Writer::CGff2Writer(
     m_bHeaderWritten(false)
 {
     m_pScope.Reset( &scope );
-    SetAnnotSelector();
+    //SetAnnotSelector();
 };
 
 //  ----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ CGff2Writer::CGff2Writer(
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();
-    SetAnnotSelector();
+    //SetAnnotSelector();
 };
 
 //  ----------------------------------------------------------------------------
@@ -149,9 +149,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
 
     if (isNucProtSet) {
         for (CBioseq_CI bci(seh); bci; ++bci) {
-            if (bci->IsSetInst_Mol() && (bci->GetInst_Mol() == CSeq_inst::eMol_aa)) {
-                continue;
-            }
             if (!x_WriteBioseqHandle(*bci)) {
                 return false;
             }
@@ -212,6 +209,11 @@ bool CGff2Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel = SetAnnotSelector();
+    //sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub)
+    //    .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+    //    .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq)
+    //    .ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue);
+    //sel.ExcludeFeatType(CSeqFeatData::e_Biosrc);
     const auto& display_range = GetRange();
     CFeat_CI feat_iter(bsh, display_range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
