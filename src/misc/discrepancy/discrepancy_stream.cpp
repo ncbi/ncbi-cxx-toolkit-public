@@ -711,6 +711,7 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compr
         default:
             break;
     }
+    objectStream->SetDelayBufferParsingPolicy(CObjectIStream::eDelayBufferPolicyAlwaysParse);
     return objectStream;
 }
 
@@ -770,6 +771,7 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
     }
     bool compressed = false;
     auto_ptr<CObjectIStream> in = OpenUncompressedStream(path, compressed);
+cout << "Autofixing " << path << "\n";
 
     int dot = path.find_last_of('.');
     int slash = path.find_last_of("/\\");
