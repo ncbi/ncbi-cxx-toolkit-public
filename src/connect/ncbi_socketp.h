@@ -123,12 +123,12 @@ typedef int TRIGGER_Handle;
 
 #endif /*NCBI_OS_MSWIN*/
 
-#if   defined(ENFILE)
-#  define SOCK_ETOOMANY       ENFILE
+#if defined(WSAEMFILE)
+#  define SOCK_ETOOMANY       WSAEMFILE
 #elif defined(EMFILE)
 #  define SOCK_ETOOMANY       EMFILE
-#elif defined(WSAEMFILE)
-#  define SOCK_ETOOMANY       WSAEMFILE
+#elif defined(ENFILE)
+#  define SOCK_ETOOMANY       ENFILE
 #elif defined(EINVAL)
 #  define SOCK_ETOOMANY       EINVAL
 #else
