@@ -288,7 +288,7 @@ int CAgpValidateApplication::Run(void)
   const CArgs& args = GetArgs();
 
   if( args["list"].HasValue() ) {
-    CAgpErrEx::PrintAllMessages(cout);
+    pAgpErr->PrintAllMessages(cout);
     exit(0);
   }
 

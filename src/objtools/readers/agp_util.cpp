@@ -1260,7 +1260,7 @@ bool CAgpErrEx::MustSkip(int code)
     return m_MustSkip[code];
 }
 
-void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
+void CAgpErrEx::PrintAllMessages(CNcbiOstream& out) const
 {
     out << "### Errors within a single line. Lines with such errors are skipped, ###\n";
     out << "### i.e. not used for: further checks, object/component/gap counts.  ###\n";
@@ -1324,13 +1324,19 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         ;
 }
 
-string CAgpErrEx::GetPrintableCode(int code, bool strict)
+string CAgpErrEx::GetPrintableCode(int code, bool strict) const
 {
     string res =
         (code<E_Last) ? "e" :
         (code<W_Last) ? "w" :
         (code<G_Last) ? "g" : "x";
-    if( res[0]=='w' && strict && !IsStrictModeWarning(code) ) res = "e";
+
+    if( res[0]=='w') {
+        if (UpgradeToError(code) ||
+            (strict && !IsStrictModeWarning(code))) {
+            res = "e";
+        }  
+    } 
     if(code<10) res += "0";
     res += i2s(code);
     return res;
@@ -1494,7 +1500,14 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
 const char* CAgpErrEx::ErrorWarningOrNoteEx(int code)
 {
     const char* t = ErrorWarningOrNote(code);
-    if(m_strict && t[0]=='W' && !IsStrictModeWarning(code) ) t = "ERROR";
+    if(m_strict && t[0]=='W' && !IsStrictModeWarning(code) ) {
+        return "ERROR";
+    }
+    
+    if (UpgradeToError(code)) {
+        return "ERROR";
+    }
+   
     return t;
 }
 
@@ -1681,6 +1694,15 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
 
     return res;
 }
+
+
+int CAgpErrEx::GetCount(EErrCode code) const {
+    if (code < CODE_Last) {
+        return m_MsgCount[code];
+    }
+    return 0;
+}
+
 
 int CAgpErrEx::CountTotals(int from, int to)
 {

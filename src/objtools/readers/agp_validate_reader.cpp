@@ -494,8 +494,10 @@ void CAgpValidateReader::OnScaffoldEnd()
     const bool not_plus = m_prev_orientation && m_prev_orientation!='+';
     if (m_prev_component_beg==1 && not_plus) {
         m_AgpErr->Msg(CAgpErrEx::W_SingleOriNotPlus, CAgpErr::fAtPrevLine);
+        if (m_unplaced) {
+            m_AgpErr->SetUpgradedWarnings().insert(CAgpErrEx::W_SingleOriNotPlus);
+        }
     }
-
 
     if((m_unplaced || NStr::StartsWith(m_prev_row->GetObject(), "un", NStr::eNocase) ) && m_prev_orientation) {
     //  if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
@@ -873,6 +875,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   int e_count=m_AgpErr->CountTotals(CAgpErrEx::E_Last);
   // In case -fa or -len was used, add counts for G_InvalidCompId and G_CompEndGtLength.
   e_count+=m_AgpErr->CountTotals(CAgpErrEx::G_Last);
+
   int w_count=m_AgpErr->CountTotals(CAgpErrEx::W_Last);
 
   if(m_GapCount==0) {
@@ -881,6 +884,13 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
 
   if(not_in_agp_msg.size()) {
     if(m_AgpErr->m_strict) e_count++; else w_count++;
+  }
+
+  if (!m_AgpErr->m_strict && m_unplaced) {
+      const int singleton_ori_not_plus_count = 
+          m_AgpErr->GetCount(CAgpErrEx::W_SingleOriNotPlus);
+      e_count += singleton_ori_not_plus_count;
+      w_count -= singleton_ori_not_plus_count;
   }
 
   if(e_count || w_count || m_ObjCount) {
@@ -917,7 +927,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
         }
         if(m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap)) {
             hints[CAgpErrEx::W_ShortGap] = "(Use -show "+
-                CAgpErrEx::GetPrintableCode(CAgpErrEx::W_ShortGap)+
+                m_AgpErr->GetPrintableCode(CAgpErrEx::W_ShortGap)+
                 " to print lines with short gaps.)";
         }
       }

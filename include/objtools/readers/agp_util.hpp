@@ -658,8 +658,8 @@ public:
     };
 
     //static const char* GetMsgEx(int code);
-    static string GetPrintableCode(int code, bool strict=false); // Returns a string like e01 w12
-    static void PrintAllMessages(CNcbiOstream& out);
+    string GetPrintableCode(int code, bool strict=false) const; // Returns a string like e01 w12
+    void PrintAllMessages(CNcbiOstream& out) const;
 
 
     // The max number of times to print a given error message.
@@ -778,7 +778,7 @@ public:
     //   other: errors/warnings of one given type
     // 2 arguments: range of int-s
     int CountTotals(int from, int to=E_First);
-    int Count() const;
+    int GetCount(EErrCode code) const;
     void ResetTotals();
 
     // Print individual error counts (important if we skipped some errors)
@@ -842,6 +842,26 @@ public:
     {
         return m_InputFiles[num-1];
     }
+
+    using TUpgradedWarnings = set<EErrCode>;
+    const TUpgradedWarnings& GetUpgradedWarnings(void) const {
+        return m_UpgradedWarnings;
+    }
+
+    TUpgradedWarnings& SetUpgradedWarnings() {
+        return m_UpgradedWarnings;
+    }
+
+    bool UpgradeToError(int code) const {
+        return UpgradeToError(static_cast<EErrCode>(code));
+    }
+
+    bool UpgradeToError(EErrCode code) const {
+        return (m_UpgradedWarnings.find(code) != m_UpgradedWarnings.end());
+    }
+
+private:
+    set<EErrCode> m_UpgradedWarnings;
 };
 
 
