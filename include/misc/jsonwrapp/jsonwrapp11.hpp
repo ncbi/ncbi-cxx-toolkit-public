@@ -72,9 +72,6 @@
 
 #define RAPIDJSON_NOMEMBERITERATORCLASS
 #include "rapidjson11/rapidjson.h"
-
-RAPIDJSON_DIAG_PUSH
-RAPIDJSON_DIAG_OFF(conversion)
 #include "rapidjson11/document.h"
 #include "rapidjson11/prettywriter.h"
 #include "rapidjson11/filereadstream.h"
@@ -83,7 +80,6 @@ RAPIDJSON_DIAG_OFF(conversion)
 #include "rapidjson11/ostreamwrapper.h"
 #include "rapidjson11/error/en.h"
 #include "rapidjson11/schema.h"
-RAPIDJSON_DIAG_POP
 
 
 BEGIN_NCBI_SCOPE
