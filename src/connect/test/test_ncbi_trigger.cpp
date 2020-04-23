@@ -200,7 +200,8 @@ void* CTriggerThread::Main(void)
 void CTest::Client()
 {
     unsigned short port = NStr::StringToNumeric<unsigned short>(m_Port);
-    ERR_POST(Info << "Client started, using server at port " << port << "...");
+    ERR_POST(Info << "Client (PID=" << CCurrentProcess::GetPid()
+             << ") started, using server at port " << port << "...");
 
     CSocket socket("localhost", port);
 
@@ -249,7 +250,8 @@ void CTest::Server(void)
                               ? "  port busy "
                               : IO_StatusStr(status)) << ')');
     } else
-        ERR_POST(Info << "Server started on port " << port << "...");
+        ERR_POST(Info << "Server (PID=" << CCurrentProcess::GetPid()
+                 << ") started on port " << port << "...");
     _ASSERT(status == eIO_Success);
 
     // Spawn test thread to activate the trigger
