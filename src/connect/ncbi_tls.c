@@ -33,7 +33,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
+#include "ncbi_servicep.h"
 #include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_mbedtls.h>
 #include <connect/ncbi_tls.h>
@@ -78,7 +78,7 @@ extern SOCKSSL NcbiSetupTls(void)
     static FSSLSetup s_Setup = (FSSLSetup)(-1L);
     if (s_Setup == (FSSLSetup)(-1L)) {
         char str[32];
-        ConnNetInfo_GetValue(0, "USESSL", str, sizeof(str), 0);
+        ConnNetInfo_GetValueInternal(0, "USESSL", str, sizeof(str), 0);
         if (!ConnNetInfo_Boolean(str)  &&  *str) {
             if (strcmp    (str, "0")     == 0  ||
                 strcasecmp(str, "no")    == 0  ||

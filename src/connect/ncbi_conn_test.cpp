@@ -31,13 +31,13 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "ncbi_comm.h"
+#include "ncbi_priv.h"
+#include "ncbi_servicep.h"
 #include <corelib/ncbiutil.hpp>
 #include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
-#include "ncbi_comm.h"
-#include "ncbi_priv.h"
-#include "ncbi_servicep.h"
 #include <iterator>
 #include <stdlib.h>
 
@@ -625,8 +625,10 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     static const char kFWDUrl[] = "/IEB/ToolBox/NETWORK/fwd_check.cgi";
 
     char fwdurl[128];
-    if (!ConnNetInfo_GetValue(0, "FWD_URL", fwdurl, sizeof(fwdurl), kFWDUrl))
+    if (!ConnNetInfo_GetValueInternal(0, "FWD_URL",
+                                      fwdurl, sizeof(fwdurl), kFWDUrl)) {
         return eIO_InvalidArg;
+    }
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
     CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*ushdr*/, s_GoodHeader,
                             auxdata, s_Adjust, s_Cleanup, 0/*flg*/, m_Timeout);

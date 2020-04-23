@@ -412,7 +412,7 @@ static TReqMethod s_GetReqMethod()
 {
     char val[20];
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_REQ_KEY, val, sizeof(val)-1,
         REG_NAMERD_API_REQ_DEF))
     {
@@ -434,7 +434,7 @@ static EBURLScheme s_GetScheme()
 {
     char val[12];
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_SCHEME_KEY, val, sizeof(val)-1,
         REG_NAMERD_API_SCHEME_DEF))
     {
@@ -466,7 +466,7 @@ static int s_GetHttpProxy(char* host, size_t host_size, unsigned short* port_p)
             break;
     }
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_PROXY_HOST_KEY, host, host_size - 1,
         REG_NAMERD_PROXY_HOST_DEF)  ||  ! *host)
     {
@@ -475,7 +475,7 @@ static int s_GetHttpProxy(char* host, size_t host_size, unsigned short* port_p)
         return 0;
     }
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
             REG_NAMERD_PROXY_PORT_KEY, port_str, sizeof(port_str) - 1,
             REG_NAMERD_PROXY_PORT_DEF)  ||
          ! *port_str  ||
@@ -1249,7 +1249,7 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
         return;
     }
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_DTAB_KEY, val, MAX_QRY_STR_LEN,
         REG_NAMERD_DTAB_DEF))
     {
@@ -1639,19 +1639,19 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         return NULL;
     }
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_HOST_KEY, data->net_info->host,
         sizeof(data->net_info->host), REG_NAMERD_API_HOST_DEF))
     {
         data->net_info->host[0] = NIL;
     }
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_PATH_KEY, data->net_info->path,
         sizeof(data->net_info->path), REG_NAMERD_API_PATH_DEF))
     {
         data->net_info->path[0] = NIL;
     }
-    if (ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if (ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_ENV_KEY, namerd_env, sizeof(namerd_env),
         REG_NAMERD_API_ENV_DEF))
     {
@@ -1662,7 +1662,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
             strcat(data->net_info->path, namerd_env);
         }
     }
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_ARGS_KEY, namerd_args, sizeof(namerd_args),
         REG_NAMERD_API_ARGS_DEF)
          ||  strlen(namerd_args) + strlen(iter->name) >= sizeof(namerd_args))

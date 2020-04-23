@@ -294,7 +294,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
     char    path[(CONN_PATH_LEN+1)/2];
     char    args[(CONN_PATH_LEN+1)/2];
 
-    if ( ! ConnNetInfo_GetValue("",
+    if ( ! ConnNetInfo_GetValueInternal(0,
         REG_LINKERD_SCHEME_KEY, scheme, sizeof(scheme),
         REG_LINKERD_SCHEME_DEF))
     {
@@ -303,7 +303,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValue("",
+    if ( ! ConnNetInfo_GetValueInternal(0,
         REG_LINKERD_USER_KEY, user, sizeof(user),
         REG_LINKERD_USER_DEF))
     {
@@ -312,7 +312,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValue("",
+    if ( ! ConnNetInfo_GetValueInternal(0,
         REG_LINKERD_PASS_KEY, pass, sizeof(pass),
         REG_LINKERD_PASS_DEF))
     {
@@ -321,7 +321,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValue("",
+    if ( ! ConnNetInfo_GetValueInternal(0,
         REG_LINKERD_PATH_KEY, path, sizeof(path),
         REG_LINKERD_PATH_DEF))
     {
@@ -330,7 +330,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValue("",
+    if ( ! ConnNetInfo_GetValueInternal(0,
         REG_LINKERD_ARGS_KEY, args, sizeof(args),
         REG_LINKERD_ARGS_DEF))
     {
@@ -374,7 +374,7 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     size_t              pathlen, argslen;
 
     /* Make sure namerd is enabled for linkerd. */
-    if ( ! ConnNetInfo_GetValue("",
+    if ( ! ConnNetInfo_GetValueInternal(0,
         REG_NAMERD_FOR_LINKERD_KEY, use_namerd, sizeof(use_namerd)-1,
         REG_NAMERD_FOR_LINKERD_DEF))
     {

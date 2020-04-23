@@ -32,7 +32,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
+#include "ncbi_servicep.h"
 #include <connect/ncbi_sendmail.h>
 #include <ctype.h>
 #include <errno.h>
@@ -280,15 +280,16 @@ static void x_Sendmail_InitEnv(void)
     if (s_MxPort)
         return;
 
-    if (!ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)  ||  !*buf
-        ||  (tmo = NCBI_simple_atof(buf, &e)) < 0.000001  ||  errno  ||  !*e) {
+    if (!ConnNetInfo_GetValueInternal(0, "MX_TIMEOUT", buf, sizeof(buf), 0)
+        ||  !*buf  ||  (tmo = NCBI_simple_atof(buf, &e)) < 0.000001
+        ||  errno  ||  !*e) {
         tmo = 120.0/*2 min*/;
     }
-    if (!ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
+    if (!ConnNetInfo_GetValueInternal(0, "MX_PORT", buf, sizeof(buf), 0)
         ||  !(port = (unsigned int) atoi(buf))  ||  port > 65535) {
         port = CONN_PORT_SMTP;
     }
-    if (!ConnNetInfo_GetValue(0, "MX_HOST", buf, sizeof(buf), 0)
+    if (!ConnNetInfo_GetValueInternal(0, "MX_HOST", buf, sizeof(buf), 0)
         ||  !*buf) {
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
         strcpy(buf, "localhost");

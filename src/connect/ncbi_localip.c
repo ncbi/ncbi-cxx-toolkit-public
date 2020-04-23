@@ -33,7 +33,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_assert.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
+#include "ncbi_servicep.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_http_connector.h>
@@ -246,8 +246,8 @@ static void s_LoadLocalIPs(void)
     size_t n;
     ELOG_Level level;
     char buf[PATH_MAX + 1];
-    const char* file = ConnNetInfo_GetValue(0, REG_CONN_LOCAL_IPS,
-                                            buf, sizeof(buf) - 1, "");
+    const char* file = ConnNetInfo_GetValueInternal(0, REG_CONN_LOCAL_IPS,
+                                                    buf, sizeof(buf) - 1, "");
     if (file) {
         SConnNetInfo* net_info;
         for (n = 0;  n < SizeOf(kFile);  ++n) {
