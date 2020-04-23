@@ -849,7 +849,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseOSHandle
  * @param event
  *  [in]  one of:  eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite
  * @param timeout
- *  [in]  maximal time to wait for the event to occur
+ *  [in]  maximal time to wait for the event to occur (not kDefaultTimeout!)
  * @return
  *  eIO_Closed     -- if the socket has been closed (in the specified
  *                    direction when a read/write "event" requested);
@@ -946,7 +946,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
  * @param event
  *  [in]  one of:  eIO_[Read/Write/ReadWrite/Close]
  * @param timeout
- *  [in]  new timeout value to set
+ *  [in]  new timeout value to set (kDefaultTimeout is not accepted)
  * @sa
  *  SOCK_Read, SOCK_Write, SOCK_Close
  */
