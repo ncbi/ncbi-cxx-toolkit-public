@@ -60,9 +60,9 @@ enum BlastDatabase
 	eDrosophila_genome,
 	eMonth,
     eSmartblast_landmark,
-    eNrV4,
-    ePdbV4,
-    eCddUpdate,
+    eNrV4,       /*  CDD uses final V4 nr database with gi present  */
+    ePdbV5,      /*  CDD custom V5 pdb database with gi present  */
+    eCddUpdate,  /*  CDD custom database  */
 	eBlastDatabaseEnd
 };
 
