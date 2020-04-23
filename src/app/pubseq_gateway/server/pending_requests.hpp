@@ -126,42 +126,6 @@ public:
 };
 
 
-struct SResolveRequest
-{
-public:
-    SResolveRequest(const CTempString &  seq_id,
-                    int  seq_id_type,
-                    TServIncludeData  include_data_flags,
-                    EOutputFormat  output_format,
-                    ECacheAndCassandraUse  use_cache,
-                    bool  use_psg_protocol,
-                    EAccessionSubstitutionOption  subst_option,
-                    bool  trace,
-                    const THighResolutionTimePoint &  start_timestamp) :
-        m_SeqId(seq_id.data(), seq_id.size()), m_SeqIdType(seq_id_type),
-        m_IncludeDataFlags(include_data_flags),
-        m_OutputFormat(output_format),
-        m_UseCache(use_cache),
-        m_UsePsgProtocol(use_psg_protocol),
-        m_AccSubstOption(subst_option),
-        m_Trace(trace),
-        m_StartTimestamp(start_timestamp)
-    {}
-
-    SResolveRequest() = default;
-
-public:
-    string                          m_SeqId;
-    int                             m_SeqIdType;
-    TServIncludeData                m_IncludeDataFlags;
-    EOutputFormat                   m_OutputFormat;
-    ECacheAndCassandraUse           m_UseCache;
-    bool                            m_UsePsgProtocol;
-    EAccessionSubstitutionOption    m_AccSubstOption;
-    bool                            m_Trace;
-    THighResolutionTimePoint        m_StartTimestamp;
-};
-
 
 struct SAnnotRequest
 {

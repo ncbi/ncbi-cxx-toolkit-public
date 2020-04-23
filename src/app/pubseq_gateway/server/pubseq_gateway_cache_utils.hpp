@@ -52,54 +52,55 @@ public:
         x_Allowed(allowed)
     {}
 
-    ECacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
-                                         CPendingOperation *  pending_op)
+    EPSGS_CacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
+                                              CPendingOperation *  pending_op)
     {
         if (x_Allowed)
             return s_LookupBioseqInfo(bioseq_resolution, pending_op);
-        return eNotFound;
+        return ePSGS_NotFound;
     }
 
-    ECacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution,
-                                     CPendingOperation *  pending_op)
+    EPSGS_CacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution,
+                                          CPendingOperation *  pending_op)
     {
         if (x_Allowed)
             return s_LookupSi2csi(bioseq_resolution, pending_op);
-        return eNotFound;
+        return ePSGS_NotFound;
     }
 
-    ECacheLookupResult  LookupBlobProp(int  sat,
-                                       int  sat_key,
-                                       int64_t &  last_modified,
-                                       CPendingOperation *  pending_op,
-                                       CBlobRecord &  blob_record)
+    EPSGS_CacheLookupResult  LookupBlobProp(int  sat,
+                                            int  sat_key,
+                                            int64_t &  last_modified,
+                                            CPendingOperation *  pending_op,
+                                            CBlobRecord &  blob_record)
     {
         if (x_Allowed)
             return s_LookupBlobProp(sat, sat_key, last_modified,
                                     pending_op, blob_record);
-        return eNotFound;
+        return ePSGS_NotFound;
     }
 
 public:
     static
-    ECacheLookupResult  s_LookupBioseqInfo(
+    EPSGS_CacheLookupResult  s_LookupBioseqInfo(
                                 SBioseqResolution &  bioseq_resolution,
                                 CPendingOperation *  pending_op);
     static
-    ECacheLookupResult s_LookupINSDCBioseqInfo(
+    EPSGS_CacheLookupResult  s_LookupINSDCBioseqInfo(
                                 SBioseqResolution &  bioseq_resolution,
                                 CPendingOperation *  pending_op);
 
     static
-    ECacheLookupResult  s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
-                                       CPendingOperation *  pending_op);
+    EPSGS_CacheLookupResult  s_LookupSi2csi(
+                                SBioseqResolution &  bioseq_resolution,
+                                CPendingOperation *  pending_op);
 
     static
-    ECacheLookupResult  s_LookupBlobProp(int  sat,
-                                         int  sat_key,
-                                         int64_t &  last_modified,
-                                         CPendingOperation *  pending_op,
-                                         CBlobRecord &  blob_record);
+    EPSGS_CacheLookupResult  s_LookupBlobProp(int  sat,
+                                              int  sat_key,
+                                              int64_t &  last_modified,
+                                              CPendingOperation *  pending_op,
+                                              CBlobRecord &  blob_record);
 
 private:
     bool        x_Allowed;

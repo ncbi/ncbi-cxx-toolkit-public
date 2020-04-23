@@ -129,8 +129,9 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (m_NeedTrace) {
         string  msg = to_string(records.size()) + " hit(s)";
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, fServAllBioseqFields).
-                            Repr(CJsonNode::fStandardJson);
+            msg += "\n" +
+                   ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
+                        Repr(CJsonNode::fStandardJson);
         }
         m_PendingOp->SendTrace(msg);
     }
@@ -150,7 +151,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         if (m_NeedTrace)
             m_PendingOp->SendTrace("Report not found");
 
-        m_BioseqResolution.m_ResolutionResult = eNotResolved;
+        m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
         m_PendingOp->OnBioseqDetailsRecord(std::move(m_BioseqResolution));
         return;
     }
@@ -161,7 +162,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             m_PendingOp->SendTrace("Report found");
         }
 
-        m_BioseqResolution.m_ResolutionResult = eBioseqDB;
+        m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
         app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                   m_BioseqRequestStart);
@@ -180,7 +181,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                 "specified but many records)\nReport not found");
         }
 
-        m_BioseqResolution.m_ResolutionResult = eNotResolved;
+        m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
         app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                   m_BioseqRequestStart);
@@ -202,12 +203,12 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (m_NeedTrace) {
         m_PendingOp->SendTrace(
             "Record with max version selected\n" +
-            ToJson(records[index], fServAllBioseqFields).
+            ToJson(records[index], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                 Repr(CJsonNode::fStandardJson) +
             "\nReport found");
     }
 
-    m_BioseqResolution.m_ResolutionResult = eBioseqDB;
+    m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
     app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                               m_BioseqRequestStart);
@@ -230,7 +231,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
         string  msg = to_string(records.size()) +
                       " hit(s); decision status: " + to_string(decision.status);
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, fServAllBioseqFields).
+            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson);
         }
         m_PendingOp->SendTrace(msg);
@@ -241,7 +242,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             if (m_NeedTrace)
                 m_PendingOp->SendTrace("Report found");
 
-            m_BioseqResolution.m_ResolutionResult = eBioseqDB;
+            m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqRequestStart);
@@ -255,7 +256,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             if (m_NeedTrace)
                 m_PendingOp->SendTrace("Report not found");
 
-            m_BioseqResolution.m_ResolutionResult = eNotResolved;
+            m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
                                       m_BioseqRequestStart);
@@ -268,7 +269,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             if (m_NeedTrace)
                 m_PendingOp->SendTrace("Report not found");
 
-            m_BioseqResolution.m_ResolutionResult = eNotResolved;
+            m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqRequestStart);
@@ -277,14 +278,14 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             // Error callback
             m_PendingOp->OnBioseqDetailsError(
                 CRequestStatus::e500_InternalServerError,
-                eBioseqInfoMultipleRecords, eDiag_Error,
+                ePSGS_BioseqInfoMultipleRecords, eDiag_Error,
                 decision.message,
                 m_BioseqResolution.m_RequestStartTimestamp);
             break;
         default:
             // Impossible
             m_PendingOp->OnBioseqDetailsError(
-                CRequestStatus::e500_InternalServerError, eServerLogicError,
+                CRequestStatus::e500_InternalServerError, ePSGS_ServerLogicError,
                 eDiag_Error, "Unexpected decision code when a secondary INSCD "
                 "request results processed while retrieving bioseq info",
                 m_BioseqResolution.m_RequestStartTimestamp);

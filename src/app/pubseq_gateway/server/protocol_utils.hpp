@@ -39,7 +39,7 @@
 
 class CPendingOperation;
 class CCassBlobFetch;
-struct SBlobId;
+struct SPSGS_BlobId;
 
 
 // Keeps track of the protocol replies
@@ -83,7 +83,7 @@ public:
                               CRequestStatus::ECode  status,
                               int  err_code, EDiagSev  severity);
     void PrepareBioseqData(size_t  item_id, const string &  content,
-                           EOutputFormat  output_format);
+                           SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format);
     void PrepareBioseqCompletion(size_t  item_id, size_t  chunk_count);
     void PrepareBlobPropMessage(size_t  item_id, const string &  msg,
                                 CRequestStatus::ECode  status,
@@ -99,7 +99,7 @@ public:
                          unsigned int  data_size, int  chunk_no);
     void PrepareBlobPropCompletion(size_t  item_id, size_t  chunk_count);
     void PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details);
-    void PrepareBlobMessage(size_t  item_id, const SBlobId &  blob_id,
+    void PrepareBlobMessage(size_t  item_id, const SPSGS_BlobId &  blob_id,
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity);
@@ -107,12 +107,12 @@ public:
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity);
-    void PrepareBlobCompletion(size_t  item_id, const SBlobId &  blob_id,
+    void PrepareBlobCompletion(size_t  item_id, const SPSGS_BlobId &  blob_id,
                                size_t  chunk_count);
-    void PrepareBlobExcluded(const SBlobId &  blob_id,
-                             EBlobSkipReason  skip_reason);
-    void PrepareBlobExcluded(size_t  item_id, const SBlobId &  blob_id,
-                             EBlobSkipReason  skip_reason);
+    void PrepareBlobExcluded(const SPSGS_BlobId &  blob_id,
+                             EPSGS_BlobSkipReason  skip_reason);
+    void PrepareBlobExcluded(size_t  item_id, const SPSGS_BlobId &  blob_id,
+                             EPSGS_BlobSkipReason  skip_reason);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
     void PrepareReplyMessage(const string &  msg,
                              CRequestStatus::ECode  status, int  err_code,
@@ -123,7 +123,7 @@ public:
 
 public:
     // HTTP facilities
-    void SendData(const string &  data_ptr, EReplyMimeType  mime_type);
+    void SendData(const string &  data_ptr, EPSGS_ReplyMimeType  mime_type);
     void Send400(const char *  msg);
     void Send404(const char *  msg);
     void Send500(const char *  msg);

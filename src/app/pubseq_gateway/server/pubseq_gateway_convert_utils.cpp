@@ -141,32 +141,32 @@ string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info)
 
 
 CJsonNode  ToJson(const CBioseqInfoRecord &  bioseq_info,
-                  TServIncludeData  include_data_flags)
+                  SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    if (include_data_flags & fServCanonicalId) {
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_CanonicalId) {
         json.SetString(kAccession, bioseq_info.GetAccession());
         json.SetInteger(kVersion, bioseq_info.GetVersion());
         json.SetInteger(kSeqIdType, bioseq_info.GetSeqIdType());
     }
-    if (include_data_flags & fServName)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Name)
         json.SetString(kName, bioseq_info.GetName());
-    if (include_data_flags & fServGi)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Gi)
         json.SetInteger(kGi, bioseq_info.GetGI());
-    if (include_data_flags & fServDateChanged)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_DateChanged)
         json.SetInteger(kDateChanged, bioseq_info.GetDateChanged());
-    if (include_data_flags & fServHash)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Hash)
         json.SetInteger(kHash, bioseq_info.GetHash());
-    if (include_data_flags & fServLength)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Length)
         json.SetInteger(kLength, bioseq_info.GetLength());
-    if (include_data_flags & fServMoleculeType)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_MoleculeType)
         json.SetInteger(kMol, bioseq_info.GetMol());
-    if (include_data_flags & fServBlobId) {
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_BlobId) {
         json.SetInteger(kSat, bioseq_info.GetSat());
         json.SetInteger(kSatKey, bioseq_info.GetSatKey());
     }
-    if (include_data_flags & fServSeqIds) {
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqIds) {
         CJsonNode       seq_ids(CJsonNode::NewArrayNode());
         for (const auto &  item : bioseq_info.GetSeqIds()) {
             CJsonNode       item_tuple(CJsonNode::NewArrayNode());
@@ -177,11 +177,11 @@ CJsonNode  ToJson(const CBioseqInfoRecord &  bioseq_info,
         json.SetByKey(kSeqIds, seq_ids);
     }
 
-    if (include_data_flags & fServSeqState)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqState)
         json.SetInteger(kSeqState, bioseq_info.GetSeqState());
-    if (include_data_flags & fServState)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_State)
         json.SetInteger(kState, bioseq_info.GetState());
-    if (include_data_flags & fServTaxId)
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_TaxId)
         json.SetInteger(kTaxId, bioseq_info.GetTaxId());
 
     return json;

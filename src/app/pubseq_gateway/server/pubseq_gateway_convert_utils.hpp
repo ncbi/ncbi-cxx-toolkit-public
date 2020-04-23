@@ -56,7 +56,7 @@ using namespace std;
 
 string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info);
 CJsonNode ToJson(const CBioseqInfoRecord &  bioseq_info,
-                 TServIncludeData  include_data_flags);
+                 SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags);
 CJsonNode ToJson(const CBlobRecord &  blob);
 CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat);
 

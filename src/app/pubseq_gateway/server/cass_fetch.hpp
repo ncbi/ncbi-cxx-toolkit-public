@@ -34,7 +34,7 @@
 
 
 #include "pubseq_gateway_types.hpp"
-#include "pending_requests.hpp"
+#include "psgs_request.hpp"
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
@@ -53,7 +53,7 @@ class CCassFetch
 public:
     CCassFetch() :
         m_FinishedRead(false),
-        m_RequestType(eUnknownRequest)
+        m_FetchType(ePSGS_UnknownFetch)
     {}
 
     virtual ~CCassFetch()
@@ -68,8 +68,8 @@ public:
     void SetReadFinished(void)
     { m_FinishedRead = true; }
 
-    EPendingRequestType GetRequestType(void) const
-    { return m_RequestType; }
+    EPSGS_DbFetchType GetFetchType(void) const
+    { return m_FetchType; }
 
     bool ReadFinished(void) const
     { return m_FinishedRead; }
@@ -89,7 +89,7 @@ protected:
     // That code receives a pointer to the base class but it needs to know
     // what kind of request it was because an appropriate error message needs
     // to be send. Thus this member is required.
-    EPendingRequestType             m_RequestType;
+    EPSGS_DbFetchType               m_FetchType;
 };
 
 
@@ -97,9 +97,9 @@ protected:
 class CCassNamedAnnotFetch : public CCassFetch
 {
 public:
-    CCassNamedAnnotFetch(const SAnnotRequest &  annot_request)
+    CCassNamedAnnotFetch(const SPSGS_AnnotRequest &  annot_request)
     {
-        m_RequestType = eAnnotationRequest;
+        m_FetchType = ePSGS_AnnotationFetch;
     }
 
     CCassNamedAnnotFetch()
@@ -123,41 +123,54 @@ public:
 class CCassBlobFetch : public CCassFetch
 {
 public:
-    CCassBlobFetch(const SBlobRequest &  blob_request) :
+    CCassBlobFetch(const SPSGS_BlobBySeqIdRequest &  blob_request) :
         m_BlobId(blob_request.m_BlobId),
         m_TSEOption(blob_request.m_TSEOption),
         m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
-        m_BlobIdType(blob_request.m_BlobIdType),
+        m_UserProvidedBlobId(false),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
         m_BlobChunkItemId(0)
     {
-        m_RequestType = eBlobRequest;
+        m_FetchType = ePSGS_BlobBySeqIdFetch;
+    }
+
+    CCassBlobFetch(const SPSGS_BlobBySatSatKeyRequest &  blob_request) :
+        m_BlobId(blob_request.m_BlobId),
+        m_TSEOption(blob_request.m_TSEOption),
+        m_ClientId(blob_request.m_ClientId),
+        m_BlobPropSent(false),
+        m_UserProvidedBlobId(true),
+        m_TotalSentBlobChunks(0),
+        m_BlobPropItemId(0),
+        m_BlobChunkItemId(0)
+    {
+        m_FetchType = ePSGS_BlobBySatSatKeyFetch;
     }
 
     // The TSE chunk request is pretty much the same as a blob request
     // - eUnknownTSE is used to skip the blob prop analysis logic
     // - client id is empty so the cache of blobs sent to the user is not used
-    // - eUnknownBlobIdentification is used to report a server error 500 in
+    // - UserProvidedBlobId == false is used to report a server error 500 in
     //   case the blob props are not found.
-    CCassBlobFetch(const STSEChunkRequest &  chunk_request) :
+    CCassBlobFetch(const SPSGS_TSEChunkRequest &  chunk_request) :
         m_BlobId(chunk_request.m_TSEId),
-        m_TSEOption(eUnknownTSE),
+        m_TSEOption(SPSGS_BlobRequestBase::ePSGS_UnknownTSE),
         m_ClientId(""),
         m_BlobPropSent(false),
-        m_BlobIdType(eUnknownBlobIdentification),
+        m_UserProvidedBlobId(false),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
         m_BlobChunkItemId(0)
     {
-        m_RequestType = eTSEChunkRequest;
+        m_FetchType = ePSGS_TSEChunkFetch;
     }
 
     CCassBlobFetch() :
-        m_TSEOption(eUnknownTSE),
+        m_TSEOption(SPSGS_BlobRequestBase::ePSGS_UnknownTSE),
         m_BlobPropSent(false),
-        m_BlobIdType(eBySatAndSatKey),
+        m_UserProvidedBlobId(true),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
         m_BlobChunkItemId(0)
@@ -170,13 +183,13 @@ public:
     string GetClientId(void) const
     { return m_ClientId; }
 
-    ETSEOption GetTSEOption(void) const
+    SPSGS_BlobRequestBase::EPSGS_TSEOption GetTSEOption(void) const
     { return m_TSEOption; }
 
-    EBlobIdentificationType GetBlobIdType(void) const
-    { return m_BlobIdType; }
+    bool GetUserProvidedBlobId(void) const
+    { return m_UserProvidedBlobId; }
 
-    SBlobId GetBlobId(void) const
+    SPSGS_BlobId GetBlobId(void) const
     { return m_BlobId; }
 
     int32_t GetTotalSentBlobChunks(void) const
@@ -209,17 +222,27 @@ public:
     virtual void ResetCallbacks(void);
 
 private:
-    SBlobId                             m_BlobId;
-    ETSEOption                          m_TSEOption;
-    string                              m_ClientId;
+    SPSGS_BlobId                            m_BlobId;
+    SPSGS_BlobRequestBase::EPSGS_TSEOption  m_TSEOption;
+    string                                  m_ClientId;
 
-    bool                                m_BlobPropSent;
+    bool                                    m_BlobPropSent;
 
-    EBlobIdentificationType             m_BlobIdType;
-    int32_t                             m_TotalSentBlobChunks;
+    // There are three cases when a blob is requested and depending on which
+    // one is used a different error message should be reported (blob
+    // properties are not found):
+    // 1. The user provided seq_id. In this case the error is a server data
+    //    error (500) because the seq_id has been resolved
+    // 2. The user provided blob sat & sat_key. In this case it is a client
+    //    error (404) because the user provided something unknown
+    // 3. The TSE chunk request also should lead to a server error because
+    //    the chunks in this request are coming for already resolved split blob
+    bool                                    m_UserProvidedBlobId;
 
-    size_t                              m_BlobPropItemId;
-    size_t                              m_BlobChunkItemId;
+    int32_t                                 m_TotalSentBlobChunks;
+
+    size_t                                  m_BlobPropItemId;
+    size_t                                  m_BlobChunkItemId;
 };
 
 
@@ -228,7 +251,7 @@ class CCassBioseqInfoFetch : public CCassFetch
 public:
     CCassBioseqInfoFetch()
     {
-        m_RequestType = eBioseqInfoRequest;
+        m_FetchType = ePSGS_BioseqInfoFetch;
     }
 
     virtual ~CCassBioseqInfoFetch()
@@ -251,7 +274,7 @@ class CCassSi2csiFetch : public CCassFetch
 public:
     CCassSi2csiFetch()
     {
-        m_RequestType = eSi2csiRequest;
+        m_FetchType = ePSGS_Si2csiFetch;
     }
 
     virtual ~CCassSi2csiFetch()
@@ -272,20 +295,20 @@ public:
 class CCassSplitHistoryFetch : public CCassFetch
 {
 public:
-    CCassSplitHistoryFetch(const STSEChunkRequest &  chunk_request) :
+    CCassSplitHistoryFetch(const SPSGS_TSEChunkRequest &  chunk_request) :
         m_TSEId(chunk_request.m_TSEId),
         m_Chunk(chunk_request.m_Chunk),
         m_SplitVersion(chunk_request.m_SplitVersion),
         m_UseCache(chunk_request.m_UseCache)
     {
-        m_RequestType = eSplitHistoryRequest;
+        m_FetchType = ePSGS_SplitHistoryFetch;
     }
 
     virtual ~CCassSplitHistoryFetch()
     {}
 
 public:
-    SBlobId  GetTSEId(void) const
+    SPSGS_BlobId  GetTSEId(void) const
     { return m_TSEId; }
 
     int64_t  GetChunk(void) const
@@ -294,7 +317,7 @@ public:
     int64_t  GetSplitVersion(void) const
     { return m_SplitVersion; }
 
-    ECacheAndCassandraUse  GetUseCache(void) const
+    SPSGS_RequestBase::EPSGS_CacheAndDbUse  GetUseCache(void) const
     { return m_UseCache; }
 
     void SetLoader(CCassBlobTaskFetchSplitHistory *  fetch)
@@ -307,10 +330,10 @@ public:
     virtual void ResetCallbacks(void);
 
 private:
-    SBlobId                     m_TSEId;
-    int64_t                     m_Chunk;
-    int64_t                     m_SplitVersion;
-    ECacheAndCassandraUse       m_UseCache;
+    SPSGS_BlobId                            m_TSEId;
+    int64_t                                 m_Chunk;
+    int64_t                                 m_SplitVersion;
+    SPSGS_RequestBase::EPSGS_CacheAndDbUse  m_UseCache;
 };
 
 #endif

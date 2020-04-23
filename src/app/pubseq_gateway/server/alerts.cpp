@@ -37,30 +37,30 @@
 
 struct SAlertToId
 {
-    enum EPSGAlertType  type;
+    EPSGS_AlertType     type;
     string              id;
 };
 
 
 const SAlertToId     kAlertToIdMap[] = {
-    { eConfigAuthDecrypt,               "ConfigAuthDecrypt" },
-    { eConfigHttpWorkers,               "ConfigHttpWorkers" },
-    { eConfigListenerBacklog,           "ConfigListenerBacklog" },
-    { eConfigMaxConnections,            "ConfigMaxConnections" },
-    { eConfigTimeout,                   "ConfigTimeout" },
-    { eConfigRetries,                   "ConfigRetries" },
-    { eConfigExcludeCacheSize,          "ConfigExcludeCacheSize" },
-    { eConfigExcludeCachePurgeSize,     "ConfigExcludeCachePurgeSize" },
-    { eConfigExcludeCacheInactivity,    "ConfigExcludeCacheInactivity" },
-    { eConfigStatScaleType,             "ConfigStatScaleType" },
-    { eConfigStatMinMaxVal,             "ConfigStatMinMaxVal" },
-    { eConfigStatNBins,                 "ConfigStatNBins" },
-    { eOpenCassandra,                   "OpenCassandra" },
-    { eNoValidCassandraMapping,         "NoValidCassandraMapping" },
-    { eInvalidCassandraMapping,         "InvalidCassandraMapping" },
-    { eNewCassandraMappingAccepted,     "NewCassandraMappingAccepted"},
-    { eNewCassandraSatNamesMapping,     "NewCassandraSatNamesMapping" },
-    { eOpenCache,                       "OpenCache" }
+    { ePSGS_ConfigAuthDecrypt,               "ConfigAuthDecrypt" },
+    { ePSGS_ConfigHttpWorkers,               "ConfigHttpWorkers" },
+    { ePSGS_ConfigListenerBacklog,           "ConfigListenerBacklog" },
+    { ePSGS_ConfigMaxConnections,            "ConfigMaxConnections" },
+    { ePSGS_ConfigTimeout,                   "ConfigTimeout" },
+    { ePSGS_ConfigRetries,                   "ConfigRetries" },
+    { ePSGS_ConfigExcludeCacheSize,          "ConfigExcludeCacheSize" },
+    { ePSGS_ConfigExcludeCachePurgeSize,     "ConfigExcludeCachePurgeSize" },
+    { ePSGS_ConfigExcludeCacheInactivity,    "ConfigExcludeCacheInactivity" },
+    { ePSGS_ConfigStatScaleType,             "ConfigStatScaleType" },
+    { ePSGS_ConfigStatMinMaxVal,             "ConfigStatMinMaxVal" },
+    { ePSGS_ConfigStatNBins,                 "ConfigStatNBins" },
+    { ePSGS_OpenCassandra,                   "OpenCassandra" },
+    { ePSGS_NoValidCassandraMapping,         "NoValidCassandraMapping" },
+    { ePSGS_InvalidCassandraMapping,         "InvalidCassandraMapping" },
+    { ePSGS_NewCassandraMappingAccepted,     "NewCassandraMappingAccepted"},
+    { ePSGS_NewCassandraSatNamesMapping,     "NewCassandraSatNamesMapping" },
+    { ePSGS_OpenCache,                       "OpenCache" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 
@@ -87,10 +87,10 @@ CJsonNode SPSGAlertAttributes::Serialize(void) const
 }
 
 
-void CPSGAlerts::Register(enum EPSGAlertType  alert_type,
+void CPSGAlerts::Register(enum EPSGS_AlertType  alert_type,
                           const string &   message)
 {
-    map<enum EPSGAlertType,
+    map<EPSGS_AlertType,
         SPSGAlertAttributes>::iterator      found;
     lock_guard<mutex>                       guard(m_Lock);
 
@@ -112,50 +112,50 @@ void CPSGAlerts::Register(enum EPSGAlertType  alert_type,
 }
 
 
-enum EPSGAlertAckResult CPSGAlerts::Acknowledge(const string &  alert_id,
-                                                const string &  user)
+EPSGS_AlertAckResult CPSGAlerts::Acknowledge(const string &  alert_id,
+                                             const string &  user)
 {
-    EPSGAlertType   type = x_IdToType(alert_id);
-    if (type == EPSGAlertType::eUnknown)
-        return eAlertNotFound;
+    EPSGS_AlertType     type = x_IdToType(alert_id);
+    if (type == EPSGS_AlertType::ePSGS_Unknown)
+        return ePSGS_AlertNotFound;
 
     return Acknowledge(type, user);
 }
 
 
-enum EPSGAlertAckResult CPSGAlerts::Acknowledge(enum EPSGAlertType alert_type,
-                                                const string &  user)
+EPSGS_AlertAckResult CPSGAlerts::Acknowledge(EPSGS_AlertType alert_type,
+                                             const string &  user)
 {
-    map<enum EPSGAlertType,
+    map<EPSGS_AlertType,
         SPSGAlertAttributes>::iterator      found;
     lock_guard<mutex>                       guard(m_Lock);
 
     found = m_Alerts.find(alert_type);
     if (found == m_Alerts.end())
-        return eAlertNotFound;
+        return ePSGS_AlertNotFound;
 
     if (!found->second.m_On)
-        return eAlertAlreadyAcknowledged;
+        return ePSGS_AlertAlreadyAcknowledged;
 
     found->second.m_AcknowledgedTimestamp = chrono::system_clock::now();
     found->second.m_On = false;
     found->second.m_User = user;
     found->second.m_CountSinceAck = 0;
-    return eAlertAcknowledged;
+    return ePSGS_AlertAcknowledged;
 }
 
 
-enum EPSGAlertType CPSGAlerts::x_IdToType(const string &  alert_id) const
+EPSGS_AlertType CPSGAlerts::x_IdToType(const string &  alert_id) const
 {
     for (size_t  k = 0; k < kAlertToIdMapSize; ++k) {
         if (NStr::CompareNocase(alert_id, kAlertToIdMap[k].id) == 0)
             return kAlertToIdMap[k].type;
     }
-    return EPSGAlertType::eUnknown;
+    return EPSGS_AlertType::ePSGS_Unknown;
 }
 
 
-string CPSGAlerts::x_TypeToId(enum EPSGAlertType  type) const
+string CPSGAlerts::x_TypeToId(EPSGS_AlertType  type) const
 {
     for (size_t  k = 0; k < kAlertToIdMapSize; ++k) {
         if (kAlertToIdMap[k].type == type)
@@ -169,7 +169,7 @@ string CPSGAlerts::x_TypeToId(enum EPSGAlertType  type) const
 CJsonNode CPSGAlerts::Serialize(void) const
 {
     CJsonNode                                   result = CJsonNode::NewObjectNode();
-    map<enum EPSGAlertType,
+    map<EPSGS_AlertType,
         SPSGAlertAttributes>::const_iterator    k;
     lock_guard<mutex>                           guard(m_Lock);
 

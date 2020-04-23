@@ -43,34 +43,34 @@ using namespace std;
 USING_NCBI_SCOPE;
 
 
-enum EPSGAlertType {
-    eUnknown = -1,
-    eConfigAuthDecrypt = 0,
-    eConfigHttpWorkers = 1,
-    eConfigListenerBacklog = 2,
-    eConfigMaxConnections = 3,
-    eConfigTimeout = 4,
-    eConfigRetries = 5,
-    eConfigExcludeCacheSize = 6,
-    eConfigExcludeCachePurgeSize = 7,
-    eConfigExcludeCacheInactivity = 8,
-    eConfigStatScaleType = 9,
-    eConfigStatMinMaxVal = 10,
-    eConfigStatNBins = 11,
-    eOpenCassandra = 12,
-    eNoValidCassandraMapping = 13,      // PSG has no valid cassandra mapping at hand
-    eInvalidCassandraMapping = 14,      // PSG has detected an invalid mapping in cassandra
-    eNewCassandraMappingAccepted = 15,  // PSG accepted an updated mapping from cassandra
-    eNewCassandraSatNamesMapping = 16,  // PSG has detected new sat names mapping in cassandra
-                                        // however it can be accepted only
-                                        // after restart
-    eOpenCache = 17                     // PSG cannot create or open the LMDB cache
+enum EPSGS_AlertType {
+    ePSGS_Unknown = -1,
+    ePSGS_ConfigAuthDecrypt = 0,
+    ePSGS_ConfigHttpWorkers = 1,
+    ePSGS_ConfigListenerBacklog = 2,
+    ePSGS_ConfigMaxConnections = 3,
+    ePSGS_ConfigTimeout = 4,
+    ePSGS_ConfigRetries = 5,
+    ePSGS_ConfigExcludeCacheSize = 6,
+    ePSGS_ConfigExcludeCachePurgeSize = 7,
+    ePSGS_ConfigExcludeCacheInactivity = 8,
+    ePSGS_ConfigStatScaleType = 9,
+    ePSGS_ConfigStatMinMaxVal = 10,
+    ePSGS_ConfigStatNBins = 11,
+    ePSGS_OpenCassandra = 12,
+    ePSGS_NoValidCassandraMapping = 13,      // PSG has no valid cassandra mapping at hand
+    ePSGS_InvalidCassandraMapping = 14,      // PSG has detected an invalid mapping in cassandra
+    ePSGS_NewCassandraMappingAccepted = 15,  // PSG accepted an updated mapping from cassandra
+    ePSGS_NewCassandraSatNamesMapping = 16,  // PSG has detected new sat names mapping in cassandra
+                                             // however it can be accepted only
+                                             // after restart
+    ePSGS_OpenCache = 17                     // PSG cannot create or open the LMDB cache
 };
 
-enum EPSGAlertAckResult {
-    eAlertNotFound = 0,
-    eAlertAlreadyAcknowledged = 1,
-    eAlertAcknowledged = 2
+enum EPSGS_AlertAckResult {
+    ePSGS_AlertNotFound = 0,
+    ePSGS_AlertAlreadyAcknowledged = 1,
+    ePSGS_AlertAcknowledged = 2
 };
 
 
@@ -99,19 +99,19 @@ struct SPSGAlertAttributes
 class CPSGAlerts
 {
     public:
-        void Register(enum EPSGAlertType alert_type, const string &  message);
-        enum EPSGAlertAckResult Acknowledge(const string &  alert_id,
-                                            const string &  user);
-        enum EPSGAlertAckResult Acknowledge(enum EPSGAlertType alert_type,
-                                            const string &  user);
+        void Register(EPSGS_AlertType alert_type, const string &  message);
+        EPSGS_AlertAckResult Acknowledge(const string &  alert_id,
+                                         const string &  user);
+        EPSGS_AlertAckResult Acknowledge(EPSGS_AlertType alert_type,
+                                         const string &  user);
         CJsonNode Serialize(void) const;
 
     private:
-        mutable mutex                                   m_Lock;
-        map<enum EPSGAlertType, SPSGAlertAttributes>    m_Alerts;
+        mutable mutex                               m_Lock;
+        map<EPSGS_AlertType, SPSGAlertAttributes>   m_Alerts;
 
-        enum EPSGAlertType x_IdToType(const string &  alert_id) const;
-        string x_TypeToId(enum EPSGAlertType  type) const;
+        EPSGS_AlertType x_IdToType(const string &  alert_id) const;
+        string x_TypeToId(EPSGS_AlertType  type) const;
 };
 
 

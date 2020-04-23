@@ -142,7 +142,7 @@ void CAsyncSeqIdResolver::Process(void)
         case eFinished:
         default:
             // 'not found' of PendingOperation
-            m_BioseqResolution.m_ResolutionResult = eNotResolved;
+            m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
             m_BioseqResolution.m_BioseqInfo.Reset();
 
             m_PendingOp->OnSeqIdAsyncResolutionFinished(
@@ -320,7 +320,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (m_NeedTrace) {
         string  msg = to_string(records.size()) + " hit(s)";
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, fServAllBioseqFields).
+            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_BioseqKeyFields).
                             Repr(CJsonNode::fStandardJson);
         }
         m_PendingOp->SendTrace(msg);
@@ -366,14 +366,14 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             if (record_count > 1) {
                 m_PendingOp->OnSeqIdAsyncError(
                     CRequestStatus::e502_BadGateway,
-                    eBioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
                     "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession(),
                     m_BioseqResolution.m_RequestStartTimestamp);
             } else {
                 m_PendingOp->OnSeqIdAsyncError(
                     CRequestStatus::e502_BadGateway,
-                    eBioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
                     "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession(),
                     m_BioseqResolution.m_RequestStartTimestamp);
@@ -388,20 +388,20 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (m_NeedTrace) {
         m_PendingOp->SendTrace(
             "Selected record: " +
-            ToJson(records[index_to_pick], fServAllBioseqFields).
+            ToJson(records[index_to_pick], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                 Repr(CJsonNode::fStandardJson));
     }
 
-    m_BioseqResolution.m_ResolutionResult = eBioseqDB;
+    m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
     m_BioseqResolution.m_BioseqInfo = std::move(records[index_to_pick]);
 
     // Adjust accession if needed
     auto    adj_result = m_PendingOp->AdjustBioseqAccession(m_BioseqResolution);
-    if (adj_result == eLogicError || adj_result == eSeqIdsEmpty) {
+    if (adj_result == ePSGS_LogicError || adj_result == ePSGS_SeqIdsEmpty) {
         // The problem has already been logged
         m_PendingOp->OnSeqIdAsyncError(
             CRequestStatus::e502_BadGateway,
-            eBioseqInfoAccessionAdjustmentError, eDiag_Error,
+            ePSGS_BioseqInfoAccessionAdjustmentError, eDiag_Error,
             "BIOSEQ_INFO Cassandra error: " + m_BioseqResolution.m_AdjustmentError,
             m_BioseqResolution.m_RequestStartTimestamp);
         return;
@@ -428,7 +428,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
         string  msg = to_string(records.size()) +
                       " hit(s); decision status: " + to_string(decision.status);
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, fServAllBioseqFields).
+            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson);
         }
         m_PendingOp->SendTrace(msg);
@@ -436,7 +436,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
 
     switch (decision.status) {
         case CRequestStatus::e200_Ok:
-            m_BioseqResolution.m_ResolutionResult = eBioseqDB;
+            m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
@@ -453,7 +453,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
             if (m_ResolveStage == ePostSi2Csi) {
                 m_PendingOp->OnSeqIdAsyncError(
                     CRequestStatus::e502_BadGateway,
-                    eBioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
                     "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession(),
                     m_BioseqResolution.m_RequestStartTimestamp);
@@ -469,7 +469,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
             if (m_ResolveStage == ePostSi2Csi) {
                 m_PendingOp->OnSeqIdAsyncError(
                     CRequestStatus::e502_BadGateway,
-                    eBioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
                     "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession(),
                     m_BioseqResolution.m_RequestStartTimestamp);
@@ -482,7 +482,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
         default:
             // Impossible
             m_PendingOp->OnSeqIdAsyncError(
-                CRequestStatus::e500_InternalServerError, eServerLogicError,
+                CRequestStatus::e500_InternalServerError, ePSGS_ServerLogicError,
                 eDiag_Error, "Unexpected decision code when a secondary INSCD "
                 "request results processed while resolving seq id asynchronously",
                 m_BioseqResolution.m_RequestStartTimestamp);
@@ -545,7 +545,7 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
                               m_Si2csiStart);
     app->GetDBCounters().IncSi2csiFoundOne();
 
-    m_BioseqResolution.m_ResolutionResult = eSi2csiDB;
+    m_BioseqResolution.m_ResolutionResult = ePSGS_Si2csiDB;
     m_BioseqResolution.m_BioseqInfo.SetAccession(records[0].GetAccession());
     m_BioseqResolution.m_BioseqInfo.SetVersion(records[0].GetVersion());
     m_BioseqResolution.m_BioseqInfo.SetSeqIdType(records[0].GetSeqIdType());

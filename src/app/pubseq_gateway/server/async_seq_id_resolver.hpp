@@ -46,7 +46,7 @@ class CPendingOperation;
 class CAsyncSeqIdResolver
 {
 private:
-    enum EResolveStage {
+    enum EPSGS_ResolveStage {
         eInit,                      // Initial stage; nothing has been done yet
         ePrimaryBioseq,             // BIOSEQ_INFO (primary) request issued
 
@@ -105,7 +105,7 @@ private:
     CPendingOperation *         m_PendingOp;
     bool                        m_NeedTrace;
 
-    EResolveStage               m_ResolveStage;
+    EPSGS_ResolveStage          m_ResolveStage;
     CCassFetch *                m_CurrentFetch;
     CCassFetch *                m_NoSeqIdTypeFetch;
 
@@ -117,8 +117,8 @@ private:
     CBioseqInfoRecord::TSeqIdType   m_BioseqInfoRequestedSeqIdType;
     CBioseqInfoRecord::TGI          m_BioseqInfoRequestedGI;
 
-    THighResolutionTimePoint    m_Si2csiStart;
-    THighResolutionTimePoint    m_BioseqInfoStart;
+    TPSGS_HighResolutionTimePoint   m_Si2csiStart;
+    TPSGS_HighResolutionTimePoint   m_BioseqInfoStart;
 };
 
 #endif

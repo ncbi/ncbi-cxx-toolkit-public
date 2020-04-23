@@ -104,6 +104,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eInvalidId2Info";
         case eLogic:
             return "eLogic";
+        case eInvalidUserRequestType:
+            return "eInvalidUserRequestType";
         case eAccessionMismatch:
             return "eAccessionMismatch";
         case eVersionMismatch:

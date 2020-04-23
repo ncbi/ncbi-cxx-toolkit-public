@@ -40,88 +40,19 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-SBlobId::SBlobId() :
-    m_Sat(-1), m_SatKey(-1)
-{}
-
-
-SBlobId::SBlobId(const string &  blob_id) :
-    m_Sat(-1), m_SatKey(-1)
-{
-    list<string>    parts;
-    NStr::Split(blob_id, ".", parts);
-
-    if (parts.size() == 2) {
-        try {
-            m_Sat = NStr::StringToNumeric<int>(parts.front());
-            m_SatKey = NStr::StringToNumeric<int>(parts.back());
-        } catch (...) {
-        }
-    }
-}
-
-
-SBlobId::SBlobId(const CTempString &  blob_id) :
-    m_Sat(-1), m_SatKey(-1)
-{
-    list<CTempString>   parts;
-    NStr::Split(blob_id, ".", parts);
-
-    if (parts.size() == 2) {
-        try {
-            m_Sat = NStr::StringToNumeric<int>(parts.front());
-            m_SatKey = NStr::StringToNumeric<int>(parts.back());
-        } catch (...) {
-        }
-    }
-}
-
-
-SBlobId::SBlobId(int  sat, int  sat_key) :
-    m_Sat(sat), m_SatKey(sat_key)
-{}
-
-
-bool SBlobId::IsValid(void) const
-{
-    return m_Sat >= 0 && m_SatKey >= 0;
-}
-
-static string   s_BlobIdSeparator = ".";
-string SBlobId::ToString(void) const
-{
-    return to_string(m_Sat) + s_BlobIdSeparator +
-           to_string(m_SatKey);
-}
-
-
-bool SBlobId::operator < (const SBlobId &  other) const
-{
-    if (m_Sat == other.m_Sat)
-        return m_SatKey < other.m_SatKey;
-    return m_Sat < other.m_Sat;
-}
-
-
-bool SBlobId::operator == (const SBlobId &  other) const
-{
-    return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
-}
-
-
 // see CXX-10728
 // Need to replace the found accession with the seq_ids found accession
-EAccessionAdjustmentResult
+EPSGS_AccessionAdjustmentResult
 SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
 {
     if (m_AdjustmentTried)
         return m_AccessionAdjustmentResult;
     m_AdjustmentTried = true;
 
-    if (m_ResolutionResult != eBioseqDB && m_ResolutionResult != eBioseqCache) {
+    if (m_ResolutionResult != ePSGS_BioseqDB && m_ResolutionResult != ePSGS_BioseqCache) {
         m_AdjustmentError = "BIOSEQ_INFO accession adjustment logic error. The "
                             "data are not ready for adjustments.";
-        m_AccessionAdjustmentResult = eLogicError;
+        m_AccessionAdjustmentResult = ePSGS_LogicError;
         return m_AccessionAdjustmentResult;
     }
 
@@ -130,7 +61,7 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
         if (pending_op->NeedTrace())
             pending_op->SendTrace("No need to adjust accession");
 
-        m_AccessionAdjustmentResult = eNotRequired;
+        m_AccessionAdjustmentResult = ePSGS_NotRequired;
         return m_AccessionAdjustmentResult;
     }
 
@@ -150,7 +81,7 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
             if (pending_op->NeedTrace())
                 pending_op->SendTrace("Accession adjusted with Gi");
 
-            m_AccessionAdjustmentResult = eAdjustedWithGi;
+            m_AccessionAdjustmentResult = ePSGS_AdjustedWithGi;
             return m_AccessionAdjustmentResult;
         }
     }
@@ -159,7 +90,7 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
         m_AdjustmentError = "BIOSEQ_INFO data inconsistency. Accession " +
                             m_BioseqInfo.GetAccession() + " needs to be "
                             "adjusted but the seq_ids list is empty.";
-        m_AccessionAdjustmentResult = eSeqIdsEmpty;
+        m_AccessionAdjustmentResult = ePSGS_SeqIdsEmpty;
         return m_AccessionAdjustmentResult;
     }
 
@@ -180,7 +111,7 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
                               to_string(m_BioseqInfo.GetSeqIdType()) +
                               " (first from the seq_ids list)");
 
-    m_AccessionAdjustmentResult = eAdjustedWithAny;
+    m_AccessionAdjustmentResult = ePSGS_AdjustedWithAny;
     return m_AccessionAdjustmentResult;
 }
 
@@ -267,7 +198,7 @@ static string SeverityToLowerString(EDiagSev  severity)
 
 
 string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
-                            EOutputFormat  output_format)
+                            SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
     string      reply(s_ReplyBegin);
@@ -277,7 +208,7 @@ string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
          .append(s_AndDataChunk)
          .append(s_AndSize)
          .append(to_string(bioseq_info_size));
-    if (output_format == eJsonFormat)
+    if (output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat)
         reply.append(s_AndFmtJson);
     else
         reply.append(s_AndFmtProtobuf);
@@ -321,7 +252,7 @@ string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
 
 
 string  GetBlobPropHeader(size_t  item_id,
-                          const SBlobId &  blob_id,
+                          const SPSGS_BlobId &  blob_id,
                           size_t  blob_prop_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=2&item_type=blob_prop&chunk_type=data&size=550&sat=111
@@ -372,7 +303,7 @@ string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
 }
 
 
-string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobChunkHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                            size_t  chunk_size,
                            size_t  chunk_number)
 {
@@ -393,19 +324,19 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
 }
 
 
-string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
-                             EBlobSkipReason  skip_reason)
+string  GetBlobExcludeHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+                             EPSGS_BlobSkipReason  skip_reason)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
     string      reason;
     switch (skip_reason) {
-        case eExcluded:
+        case ePSGS_Excluded:
             reason = s_Excluded;
             break;
-        case eInProgress:
+        case ePSGS_InProgress:
             reason = s_InProgress;
             break;
-        case eSent:
+        case ePSGS_Sent:
             reason = s_Sent;
             break;
     }
@@ -423,7 +354,7 @@ string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
                 .append(1, '\n');
 }
 
-string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobCompletionHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                                 size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=4&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
@@ -440,7 +371,7 @@ string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
 }
 
 
-string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobMessageHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                              size_t  msg_size,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity)
@@ -582,12 +513,12 @@ string FormatPreciseTime(const chrono::system_clock::time_point &  t_point)
 
 
 
-static map<EStartupDataState, string> s_CassStartupDataStateMsg =
-    { {eNoCassConnection, "Cassandra DB connection is not established"},
-      {eNoValidCassMapping, "Cassanda DB mapping configuration is invalid"},
-      {eNoCassCache, "LMDB cache is not initialized"},
-      {eStartupDataOK, "Cassandra DB mapping data are OK"} };
-string GetCassStartupDataStateMessage(EStartupDataState  state)
+static map<EPSGS_StartupDataState, string> s_CassStartupDataStateMsg =
+    { {ePSGS_NoCassConnection, "Cassandra DB connection is not established"},
+      {ePSGS_NoValidCassMapping, "Cassanda DB mapping configuration is invalid"},
+      {ePSGS_NoCassCache, "LMDB cache is not initialized"},
+      {ePSGS_StartupDataOK, "Cassandra DB mapping data are OK"} };
+string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state)
 {
     return s_CassStartupDataStateMsg[state];
 }

@@ -75,6 +75,7 @@ public:
         eUnknownTSEOption,
         eInvalidId2Info,
         eLogic,
+        eInvalidUserRequestType,
 
         eAccessionMismatch,
         eVersionMismatch,

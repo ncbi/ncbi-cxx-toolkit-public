@@ -39,6 +39,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
 #include "pubseq_gateway_types.hpp"
+#include "psgs_request.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -48,41 +49,6 @@ USING_IDBLOB_SCOPE;
 using namespace std;
 
 class CPendingOperation;
-
-
-// The request URLs and the reply content parameters need the blob ID as a
-// string while internally they are represented as a pair of integers. So
-// a few conversion utilities need to be created.
-
-struct SBlobId
-{
-    int     m_Sat;
-    int     m_SatKey;
-
-    // Resolved sat; may be ommitted
-    string  m_SatName;
-
-    SBlobId();
-    SBlobId(const string &  blob_id);
-    SBlobId(const CTempString &  blob_id);
-    SBlobId(int  sat, int  sat_key);
-
-    SBlobId(const SBlobId &) = default;
-    SBlobId(SBlobId &&) = default;
-    SBlobId &  operator=(const SBlobId &) = default;
-    SBlobId &  operator=(SBlobId &&) = default;
-
-    void SetSatName(const string &  name)
-    {
-        m_SatName = name;
-    }
-
-    string ToString(void) const;
-
-    bool IsValid(void) const;
-    bool operator < (const SBlobId &  other) const;
-    bool operator == (const SBlobId &  other) const;
-};
 
 
 
@@ -120,12 +86,12 @@ struct SResolveInputSeqIdError
 
 struct SBioseqResolution
 {
-    SBioseqResolution(const THighResolutionTimePoint &  request_start_timestamp) :
-        m_ResolutionResult(eNotResolved),
+    SBioseqResolution(const TPSGS_HighResolutionTimePoint &  request_start_timestamp) :
+        m_ResolutionResult(ePSGS_NotResolved),
         m_RequestStartTimestamp(request_start_timestamp),
         m_CassQueryCount(0),
         m_AdjustmentTried(false),
-        m_AccessionAdjustmentResult(eNotRequired)
+        m_AccessionAdjustmentResult(ePSGS_NotRequired)
     {}
 
     SBioseqResolution(const SBioseqResolution &) = default;
@@ -136,50 +102,50 @@ struct SBioseqResolution
 
     bool IsValid(void) const
     {
-        return m_ResolutionResult != eNotResolved;
+        return m_ResolutionResult != ePSGS_NotResolved;
     }
 
     void Reset(void)
     {
-        m_ResolutionResult = eNotResolved;
+        m_ResolutionResult = ePSGS_NotResolved;
         m_BioseqInfo.Reset();
 
         m_AdjustmentTried = false;
-        m_AccessionAdjustmentResult = eNotRequired;
+        m_AccessionAdjustmentResult = ePSGS_NotRequired;
         m_AdjustmentError.clear();
     }
 
-    EAccessionAdjustmentResult AdjustAccession(CPendingOperation *  pending_op);
+    EPSGS_AccessionAdjustmentResult AdjustAccession(CPendingOperation *  pending_op);
 
-    EResolutionResult           m_ResolutionResult;
-    THighResolutionTimePoint    m_RequestStartTimestamp;
-    size_t                      m_CassQueryCount;
+    EPSGS_ResolutionResult          m_ResolutionResult;
+    TPSGS_HighResolutionTimePoint   m_RequestStartTimestamp;
+    size_t                          m_CassQueryCount;
 
     // In case of the SI2CSI the only key fields are filled
-    CBioseqInfoRecord           m_BioseqInfo;
+    CBioseqInfoRecord               m_BioseqInfo;
 
     // Most likely parsing error if so
-    SResolveInputSeqIdError     m_PostponedError;
+    SResolveInputSeqIdError         m_PostponedError;
 
     // The accession adjustment should happened exactly once so the results
     // of the call are saved for the use on the other stages
-    bool                        m_AdjustmentTried;
-    EAccessionAdjustmentResult  m_AccessionAdjustmentResult;
-    string                      m_AdjustmentError;
+    bool                            m_AdjustmentTried;
+    EPSGS_AccessionAdjustmentResult m_AccessionAdjustmentResult;
+    string                          m_AdjustmentError;
 };
 
 
 
 // Bioseq messages
 string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
-                            EOutputFormat  output_format);
+                            SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format);
 string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
                                CRequestStatus::ECode  status, int  code,
                                EDiagSev  severity);
 string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count);
 
 // Blob prop messages
-string  GetBlobPropHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobPropHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                           size_t  blob_prop_size);
 string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
                                  CRequestStatus::ECode  status, int  code,
@@ -187,16 +153,16 @@ string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
 string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count);
 
 // Blob chunk messages
-string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobChunkHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                            size_t  chunk_size, size_t  chunk_number);
-string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobCompletionHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                                 size_t  chunk_count);
-string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
+string  GetBlobMessageHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                              size_t  msg_size,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity);
-string  GetBlobExcludeHeader(size_t  item_id, const SBlobId &  blob_id,
-                             EBlobSkipReason  skip_reason);
+string  GetBlobExcludeHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+                             EPSGS_BlobSkipReason  skip_reason);
 
 // Named annotation messages
 string GetNamedAnnotationHeader(size_t  item_id, const string &  annot_name,
@@ -226,6 +192,6 @@ public:
 
 
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
-string GetCassStartupDataStateMessage(EStartupDataState  state);
+string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
 
 #endif

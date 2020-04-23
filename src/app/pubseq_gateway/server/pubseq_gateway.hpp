@@ -192,7 +192,7 @@ public:
         return *m_Timing.get();
     }
 
-    EStartupDataState GetStartupDataState(void) const
+    EPSGS_StartupDataState GetStartupDataState(void) const
     {
         return m_StartupDataState;
     }
@@ -214,7 +214,7 @@ private:
 
     void x_SendUnknownClientSatelliteError(
         HST::CHttpReply<CPendingOperation> &  resp,
-        const SBlobId &  blob_id, const string &  message);
+        const SPSGS_BlobId &  blob_id, const string &  message);
     void x_SendMessageAndCompletionChunks(
         HST::CHttpReply<CPendingOperation> &  resp,  const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity);
@@ -223,7 +223,8 @@ private:
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
         CTempString &  seq_id, int &  seq_id_type,
-        ECacheAndCassandraUse &  use_cache, bool  use_psg_protocol);
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache,
+        bool  use_psg_protocol);
 
 private:
     void x_ValidateArgs(void);
@@ -233,8 +234,9 @@ private:
 
     SRequestParameter  x_GetParam(HST::CHttpRequest &  req,
                                   const string &  name) const;
-    ECacheAndCassandraUse x_GetUseCacheParameter(HST::CHttpRequest &  req,
-                                                 string &  err_msg);
+    SPSGS_RequestBase::EPSGS_CacheAndDbUse x_GetUseCacheParameter(
+                                                HST::CHttpRequest &  req,
+                                                string &  err_msg);
     bool x_IsBoolParamValid(const string &  param_name,
                             const CTempString &  param_value,
                             string &  err_msg) const;
@@ -245,26 +247,28 @@ private:
     bool x_IsResolutionParamValid(const string &  param_name,
                                   const CTempString &  param_value,
                                   string &  err_msg) const;
-    EOutputFormat x_GetOutputFormat(const string &  param_name,
+    SPSGS_ResolveRequest::EPSGS_OutputFormat x_GetOutputFormat(
+                                    const string &  param_name,
                                     const CTempString &  param_value,
                                     string &  err_msg) const;
-    ETSEOption x_GetTSEOption(const string &  param_name,
+    SPSGS_BlobRequestBase::EPSGS_TSEOption x_GetTSEOption(
+                              const string &  param_name,
                               const CTempString &  param_value,
                               string &  err_msg) const;
-    vector<SBlobId> x_GetExcludeBlobs(const string &  param_name,
-                                      const CTempString &  param_value,
-                                      string &  err_msg) const;
+    vector<SPSGS_BlobId> x_GetExcludeBlobs(const string &  param_name,
+                                           const CTempString &  param_value,
+                                           string &  err_msg) const;
     unsigned long x_GetDataSize(const IRegistry &  reg,
                                 const string &  section,
                                 const string &  entry,
                                 unsigned long  default_val);
-    EAccessionSubstitutionOption x_GetAccessionSubstitutionOption(
+    SPSGS_RequestBase::EPSGS_AccSubstitutioOption x_GetAccessionSubstitutionOption(
                                             const string &  param_name,
                                             const CTempString &  param_value,
                                             string &  err_msg) const;
     bool x_GetTraceParameter(HST::CHttpRequest &  req,
                              const string &  param_name,
-                             bool &  resolve_trace,
+                             SPSGS_RequestBase::EPSGS_Trace &  trace,
                              string &  err_msg);
 
 private:
@@ -337,7 +341,7 @@ private:
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;
 
-    EStartupDataState                   m_StartupDataState;
+    EPSGS_StartupDataState              m_StartupDataState;
 
     // Serialized JSON introspection message
     string                              m_HelpMessage;

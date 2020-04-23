@@ -48,8 +48,8 @@ bool CUserExcludeBlobs::IsInCache(int  sat, int  sat_key, bool &  completed)
 }
 
 
-ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
-                                             bool &  completed)
+EPSGS_CacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
+                                                  bool &  completed)
 {
     m_LastTouch = std::chrono::steady_clock::now();
 
@@ -57,7 +57,7 @@ ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
     if (ret.second) {
         // There was an insertion of a new item
         m_LRU.emplace_front(sat, sat_key);
-        return eAdded;
+        return ePSGS_Added;
     }
 
     // It already exists
@@ -72,7 +72,7 @@ ECacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
         m_LRU.push_front(blob_id);
     }
 
-    return eAlreadyInCache;
+    return ePSGS_AlreadyInCache;
 }
 
 
@@ -129,14 +129,14 @@ void CUserExcludeBlobs::Clear(void)
 }
 
 
-ECacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
-                                             int  sat, int  sat_key,
-                                             bool &  completed)
+EPSGS_CacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
+                                                  int  sat, int  sat_key,
+                                                  bool &  completed)
 {
     if (m_MaxCacheSize == 0)
-        return eAdded;
+        return ePSGS_Added;
     if (user.empty())
-        return eAdded;
+        return ePSGS_Added;
 
     while (m_Lock.exchange(true)) {}    // acquire top level lock
 

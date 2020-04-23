@@ -110,7 +110,7 @@ public:
         m_HttpProto(proto),
         m_HttpConn(http_conn),
         m_DataReady(make_shared<CDataTrigger>(proto)),
-        m_ReplyContentType(eNotSet)
+        m_ReplyContentType(ePSGS_NotSet)
     {}
 
     CHttpReply(const CHttpReply&) = delete;
@@ -157,7 +157,7 @@ public:
         m_State = eReplyInitialized;
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
-        m_ReplyContentType = eNotSet;
+        m_ReplyContentType = ePSGS_NotSet;
     }
 
     void AssignPendingRec(P &&  pending_rec)
@@ -175,7 +175,7 @@ public:
         }
     }
 
-    void SetContentType(EReplyMimeType  mime_type)
+    void SetContentType(EPSGS_ReplyMimeType  mime_type)
     {
         m_ReplyContentType = mime_type;
     }
@@ -588,7 +588,7 @@ private:
 
     void x_SetContentType(void)
     {
-        if (m_ReplyContentType == eNotSet)
+        if (m_ReplyContentType == ePSGS_NotSet)
             return;
 
         if (m_State != eReplyInitialized)
@@ -596,25 +596,25 @@ private:
                        "Reply has already started");
 
         switch (m_ReplyContentType) {
-            case eJsonMime:
+            case ePSGS_JsonMime:
                 h2o_add_header(&m_Req->pool,
                                &m_Req->res.headers,
                                H2O_TOKEN_CONTENT_TYPE, NULL,
                                H2O_STRLIT("application/json"));
                 break;
-            case eBinaryMime:
+            case ePSGS_BinaryMime:
                 h2o_add_header(&m_Req->pool,
                                &m_Req->res.headers,
                                H2O_TOKEN_CONTENT_TYPE, NULL,
                                H2O_STRLIT("application/octet-stream"));
                 break;
-            case ePlainTextMime:
+            case ePSGS_PlainTextMime:
                 h2o_add_header(&m_Req->pool,
                                &m_Req->res.headers,
                                H2O_TOKEN_CONTENT_TYPE, NULL,
                                H2O_STRLIT("text/plain"));
                 break;
-            case ePSGMime:
+            case ePSGS_PSGMime:
                 h2o_add_header(&m_Req->pool,
                                &m_Req->res.headers,
                                H2O_TOKEN_CONTENT_TYPE, NULL,
@@ -638,7 +638,7 @@ private:
     CHttpConnection<P> *            m_HttpConn;
     std::shared_ptr<P>              m_PendingRec;
     std::shared_ptr<CDataTrigger>   m_DataReady;
-    EReplyMimeType                  m_ReplyContentType;
+    EPSGS_ReplyMimeType             m_ReplyContentType;
 };
 
 

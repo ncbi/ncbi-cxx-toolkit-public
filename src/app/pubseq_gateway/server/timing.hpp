@@ -34,6 +34,7 @@
  */
 
 #include "pubseq_gateway_types.hpp"
+#include "psgs_request.hpp"
 
 #include <vector>
 #include <mutex>
@@ -315,7 +316,7 @@ class COperationTiming
         // operation == eBlobRetrieve
         void Register(EPSGOperation  operation,
                       EPSGOperationStatus  status,
-                      const THighResolutionTimePoint &  op_begin_ts,
+                      const TPSGS_HighResolutionTimePoint &  op_begin_ts,
                       size_t  blob_size=0);
 
     public:

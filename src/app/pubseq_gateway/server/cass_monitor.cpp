@@ -51,7 +51,7 @@ void CassMonitorThreadedFunction(void)
             break;
 
         switch (app->GetStartupDataState()) {
-            case eNoCassConnection:
+            case ePSGS_NoCassConnection:
                 if (app->OpenCass()) {
                     // true => the 'accept' alert is set if sucessfull
                     if (app->PopulateCassandraMapping(true)) {
@@ -59,15 +59,15 @@ void CassMonitorThreadedFunction(void)
                     }
                 }
                 break;
-            case eNoValidCassMapping:
+            case ePSGS_NoValidCassMapping:
                 // true => the 'accept' alert is set if sucessfull
                 if (app->PopulateCassandraMapping(true))
                     app->OpenCache();
                 break;
-            case eNoCassCache:
+            case ePSGS_NoCassCache:
                 app->OpenCache();
                 break;
-            case eStartupDataOK:
+            case ePSGS_StartupDataOK:
                 app->CheckCassMapping();
                 break;
         }

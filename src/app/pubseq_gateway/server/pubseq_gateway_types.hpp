@@ -32,177 +32,90 @@
  *
  */
 
-#include <chrono>
-using namespace std;
-
 
 // Error codes for the PSG protocol messages
-enum EPubseqGatewayErrorCode {
-    eUnknownSatellite = 300,
-    eBadURL,
-    eMissingParameter,
-    eMalformedParameter,
-    eUnknownResolvedSatellite,
-    eNoBioseqInfo,
-    eBadID2Info,
-    eUnpackingError,
-    eUnknownError,
-    eBlobPropsNotFound,
-    eUnresolvedSeqId,
-    eInsufficientArguments,
-    eInvalidId2Info,
-    eSplitHistoryNotFound,
-    eBioseqInfoNotFoundForGi,       // whole bioseq_info record not found
-    eBioseqInfoGiNotFoundForGi,     // gi is not found in in the seq_ids field
-                                    // in the bioseq_info record
-    eBioseqInfoMultipleRecords,
-    eServerLogicError,
-    eBioseqInfoAccessionAdjustmentError
+enum EPSGS_PubseqGatewayErrorCode {
+    ePSGS_UnknownSatellite = 300,
+    ePSGS_BadURL,
+    ePSGS_MissingParameter,
+    ePSGS_MalformedParameter,
+    ePSGS_UnknownResolvedSatellite,
+    ePSGS_NoBioseqInfo,
+    ePSGS_BadID2Info,
+    ePSGS_UnpackingError,
+    ePSGS_UnknownError,
+    ePSGS_BlobPropsNotFound,
+    ePSGS_UnresolvedSeqId,
+    ePSGS_InsufficientArguments,
+    ePSGS_InvalidId2Info,
+    ePSGS_SplitHistoryNotFound,
+    ePSGS_BioseqInfoNotFoundForGi,       // whole bioseq_info record not found
+    ePSGS_BioseqInfoGiNotFoundForGi,     // gi is not found in in the seq_ids field
+                                         // in the bioseq_info record
+    ePSGS_BioseqInfoMultipleRecords,
+    ePSGS_ServerLogicError,
+    ePSGS_BioseqInfoAccessionAdjustmentError
 };
 
 
-// The user may come with an accession or with a pair sat/sat key
-// The requests are counted separately so the enumeration distinguish them.
-enum EBlobIdentificationType {
-    eBySeqId,
-    eBySatAndSatKey,
-
-    eUnknownBlobIdentification  // Used for TSE chunk requests;
-                                // These requests reuse the blob retrieval
-                                // infrastructure. However in case of not found
-                                // blobs the TSE chunk request should report a
-                                // server inconsistency error (in opposite to
-                                // the user bad data). So the eBySatAndSatKey
-                                // cannot be used for TSE chunk requests.
+enum EPSGS_ResolutionResult {
+    ePSGS_Si2csiCache,
+    ePSGS_Si2csiDB,
+    ePSGS_BioseqCache,
+    ePSGS_BioseqDB,
+    ePSGS_NotResolved,
+    ePSGS_PostponedForDB
 };
 
 
-// Pretty much copied from the client; the justfication for copying is:
-// "it will be decoupled with the client type"
-enum EServIncludeData {
-    fServCanonicalId = (1 << 1),
-    fServSeqIds = (1 << 2),
-    fServMoleculeType = (1 << 3),
-    fServLength = (1 << 4),
-    fServState = (1 << 5),
-    fServBlobId = (1 << 6),
-    fServTaxId = (1 << 7),
-    fServHash = (1 << 8),
-    fServDateChanged = (1 << 9),
-    fServGi = (1 << 10),
-    fServName = (1 << 11),
-    fServSeqState = (1 << 12),
-
-    fServAllBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
-                           fServLength | fServState | fServBlobId |
-                           fServTaxId | fServHash | fServDateChanged |
-                           fServGi | fServName | fServSeqState,
-    fBioseqKeyFields = fServCanonicalId | fServGi
-};
-
-// Bit-set of EServIncludeData flags
-typedef int TServIncludeData;
-
-
-enum EOutputFormat {
-    eProtobufFormat,
-    eJsonFormat,
-    eNativeFormat,
-
-    eUnknownFormat
+enum EPSGS_SeqIdParsingResult {
+    ePSGS_ParsedOK,
+    ePSGS_ParseFailed
 };
 
 
-enum ETSEOption {
-    eNoneTSE,
-    eSlimTSE,
-    eSmartTSE,
-    eWholeTSE,
-    eOrigTSE,
-
-    eUnknownTSE
+enum EPSGS_DbFetchType {
+    ePSGS_BlobBySeqIdFetch,
+    ePSGS_BlobBySatSatKeyFetch,
+    ePSGS_AnnotationFetch,
+    ePSGS_TSEChunkFetch,
+    ePSGS_BioseqInfoFetch,
+    ePSGS_Si2csiFetch,
+    ePSGS_SplitHistoryFetch,
+    ePSGS_UnknownFetch
 };
 
 
-enum EResolutionResult {
-    eSi2csiCache,
-    eSi2csiDB,
-    eBioseqCache,
-    eBioseqDB,
-    eNotResolved,
-    ePostponedForDB
+enum EPSGS_CacheLookupResult {
+    ePSGS_Found,
+    ePSGS_NotFound,
+    ePSGS_Failure                // LMDB may throw an exception
 };
 
 
-enum ESeqIdParsingResult {
-    eParsedOK,
-    eParseFailed
+enum EPSGS_AccessionAdjustmentResult {
+    ePSGS_NotRequired,
+    ePSGS_AdjustedWithGi,
+    ePSGS_AdjustedWithAny,
+    ePSGS_SeqIdsEmpty,
+    ePSGS_LogicError
 };
 
 
-enum ECacheAndCassandraUse {
-    eCacheOnly,
-    eCassandraOnly,
-    eCacheAndCassandra,     // Default
+enum EPSGS_ReplyMimeType {
+    ePSGS_JsonMime,
+    ePSGS_BinaryMime,
+    ePSGS_PlainTextMime,
+    ePSGS_PSGMime,
 
-    eUnknownUseCache
+    ePSGS_NotSet
 };
 
 
-enum EPendingRequestType {
-    eBlobRequest,
-    eResolveRequest,
-    eAnnotationRequest,
-    eTSEChunkRequest,
-
-    eBioseqInfoRequest,         // Internally generated pending request type
-    eSi2csiRequest,             // Internally generated pending request type
-
-    eSplitHistoryRequest,       // Internally generated
-
-    eUnknownRequest
-};
-
-
-enum ECacheLookupResult {
-    eFound,
-    eNotFound,
-    eFailure                // LMDB may throw an exception
-};
-
-
-enum EAccessionAdjustmentResult {
-    eNotRequired,
-    eAdjustedWithGi,
-    eAdjustedWithAny,
-    eSeqIdsEmpty,
-    eLogicError
-};
-
-
-enum EReplyMimeType {
-    eJsonMime,
-    eBinaryMime,
-    ePlainTextMime,
-    ePSGMime,
-
-    eNotSet
-};
-
-
-enum EBlobSkipReason {
-    eExcluded,
-    eInProgress,
-    eSent
-};
-
-
-enum EAccessionSubstitutionOption {
-    eDefaultAccSubstitution,
-    eLimitedAccSubstitution,
-    eNeverAccSubstitute,
-
-    eUnknownAccSubstitution
+enum EPSGS_BlobSkipReason {
+    ePSGS_Excluded,
+    ePSGS_InProgress,
+    ePSGS_Sent
 };
 
 
@@ -212,15 +125,12 @@ enum EAccessionSubstitutionOption {
 // - creates a cache for si2csi, bioseqinfo and blobprop
 // If there is an error on any of these stages the server tries to recover
 // periodically
-enum EStartupDataState {
-    eNoCassConnection,
-    eNoValidCassMapping,
-    eNoCassCache,
-    eStartupDataOK
+enum EPSGS_StartupDataState {
+    ePSGS_NoCassConnection,
+    ePSGS_NoValidCassMapping,
+    ePSGS_NoCassCache,
+    ePSGS_StartupDataOK
 };
 
-
-// Mostly for timing collection
-typedef chrono::high_resolution_clock::time_point   THighResolutionTimePoint;
-
 #endif
+

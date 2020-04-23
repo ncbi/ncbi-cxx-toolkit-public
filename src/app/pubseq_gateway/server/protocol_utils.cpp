@@ -77,9 +77,10 @@ void CProtocolUtils::PrepareBioseqMessage(size_t  item_id,
 
 
 
-void CProtocolUtils::PrepareBioseqData(size_t  item_id,
-                                       const string &  content,
-                                       EOutputFormat  output_format)
+void CProtocolUtils::PrepareBioseqData(
+                    size_t  item_id,
+                    const string &  content,
+                    SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
     string      header = GetBioseqInfoHeader(item_id, content.size(),
                                              output_format);
@@ -191,7 +192,7 @@ void CProtocolUtils::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
 
 
 void CProtocolUtils::PrepareBlobMessage(size_t                 item_id,
-                                        const SBlobId &        blob_id,
+                                        const SPSGS_BlobId &   blob_id,
                                         const string &         msg,
                                         CRequestStatus::ECode  status,
                                         int                    err_code,
@@ -220,9 +221,9 @@ void CProtocolUtils::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
 }
 
 
-void CProtocolUtils::PrepareBlobCompletion(size_t           item_id,
-                                           const SBlobId &  blob_id,
-                                           size_t           chunk_count)
+void CProtocolUtils::PrepareBlobCompletion(size_t                item_id,
+                                           const SPSGS_BlobId &  blob_id,
+                                           size_t                chunk_count)
 {
     string completion = GetBlobCompletionHeader(item_id, blob_id, chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -232,8 +233,8 @@ void CProtocolUtils::PrepareBlobCompletion(size_t           item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobExcluded(const SBlobId &  blob_id,
-                                         EBlobSkipReason  skip_reason)
+void CProtocolUtils::PrepareBlobExcluded(const SPSGS_BlobId &  blob_id,
+                                         EPSGS_BlobSkipReason  skip_reason)
 {
     string  exclude = GetBlobExcludeHeader(GetItemId(), blob_id, skip_reason);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -243,9 +244,9 @@ void CProtocolUtils::PrepareBlobExcluded(const SBlobId &  blob_id,
 }
 
 
-void CProtocolUtils::PrepareBlobExcluded(size_t  item_id,
-                                         const SBlobId &  blob_id,
-                                         EBlobSkipReason  skip_reason)
+void CProtocolUtils::PrepareBlobExcluded(size_t                item_id,
+                                         const SPSGS_BlobId &  blob_id,
+                                         EPSGS_BlobSkipReason  skip_reason)
 {
     string  exclude = GetBlobExcludeHeader(item_id, blob_id, skip_reason);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -314,7 +315,7 @@ void CProtocolUtils::PrepareReplyCompletion(void)
 
 
 void CProtocolUtils::SendData(const string &  data_to_send,
-                              EReplyMimeType  mime_type)
+                              EPSGS_ReplyMimeType  mime_type)
 {
     m_Reply->SetContentType(mime_type);
     m_Reply->SetContentLength(data_to_send.length());
@@ -324,35 +325,35 @@ void CProtocolUtils::SendData(const string &  data_to_send,
 
 void CProtocolUtils::Send400(const char *  msg)
 {
-    m_Reply->SetContentType(ePlainTextMime);
+    m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send400("Bad Request", msg);
 }
 
 
 void CProtocolUtils::Send404(const char *  msg)
 {
-    m_Reply->SetContentType(ePlainTextMime);
+    m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send404("Not Found", msg);
 }
 
 
 void CProtocolUtils::Send500(const char *  msg)
 {
-    m_Reply->SetContentType(ePlainTextMime);
+    m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send500("Internal Server Error", msg);
 }
 
 
 void CProtocolUtils::Send502(const char *  msg)
 {
-    m_Reply->SetContentType(ePlainTextMime);
+    m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send502("Bad Gateway", msg);
 }
 
 
 void CProtocolUtils::Send503(const char *  msg)
 {
-    m_Reply->SetContentType(ePlainTextMime);
+    m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send503("Service Unavailable", msg);
 }
 

@@ -49,7 +49,6 @@ USING_SCOPE(objects);
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
-#include "pending_requests.hpp"
 #include "cass_fetch.hpp"
 #include "protocol_utils.hpp"
 #include "async_seq_id_resolver.hpp"
@@ -61,7 +60,7 @@ USING_SCOPE(objects);
 class CPendingOperation
 {
 private:
-    enum EAsyncInterruptPoint {
+    enum EPSGS_AsyncInterruptPoint {
         eAnnotSeqIdResolution,
         eResolveSeqIdResolution,
         eResolveBioseqDetails,
@@ -71,31 +70,12 @@ private:
     };
 
 public:
-    CPendingOperation(const SBlobRequest &  blob_request,
+    CPendingOperation(const CPSGS_Request &  user_request,
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
                       unsigned int  max_retries,
                       CRef<CRequestContext>  request_context);
-    CPendingOperation(const SResolveRequest &  resolve_request,
-                      size_t  initial_reply_chunks,
-                      shared_ptr<CCassConnection>  conn,
-                      unsigned int  timeout,
-                      unsigned int  max_retries,
-                      CRef<CRequestContext>  request_context);
-    CPendingOperation(const SAnnotRequest &  annot_request,
-                      size_t  initial_reply_chunks,
-                      shared_ptr<CCassConnection>  conn,
-                      unsigned int  timeout,
-                      unsigned int  max_retries,
-                      CRef<CRequestContext>  request_context);
-    CPendingOperation(const STSEChunkRequest &  tse_chunk_request,
-                      size_t  initial_reply_chunks,
-                      shared_ptr<CCassConnection>  conn,
-                      unsigned int  timeout,
-                      unsigned int  max_retries,
-                      CRef<CRequestContext>  request_context);
-
     ~CPendingOperation();
 
     void Clear();
@@ -112,7 +92,7 @@ public:
         m_OverallStatus = max(status, m_OverallStatus);
     }
 
-    bool NeedTrace(void) const;
+    SPSGS_RequestBase::EPSGS_Trace NeedTrace(void);
     void SendTrace(const string &  msg);
 
 public:
@@ -128,29 +108,29 @@ private:
                                  SBioseqResolution &  bioseq_resolution);
     void x_CompleteResolveRequest(SBioseqResolution &  bioseq_resolution);
     void x_OnResolveResolutionError(SResolveInputSeqIdError &  err,
-                                    const THighResolutionTimePoint &  start_timestamp);
+                                    const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_OnResolveResolutionError(CRequestStatus::ECode  status,
                                     const string &  message,
-                                    const THighResolutionTimePoint &  start_timestamp);
-    void x_ResolveRequestBioseqInconsistency(const THighResolutionTimePoint &  start_timestamp);
+                                    const TPSGS_HighResolutionTimePoint &  start_timestamp);
+    void x_ResolveRequestBioseqInconsistency(const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_ResolveRequestBioseqInconsistency(const string &  err_msg,
-                                             const THighResolutionTimePoint &  start_timestamp);
+                                             const TPSGS_HighResolutionTimePoint &  start_timestamp);
 
 public:
     void OnBioseqDetailsRecord(SBioseqResolution &&  async_bioseq_info);
     void OnBioseqDetailsError(CRequestStatus::ECode  status, int  code,
                               EDiagSev  severity, const string &  message,
-                              const THighResolutionTimePoint &  start_timestamp);
+                              const TPSGS_HighResolutionTimePoint &  start_timestamp);
 
 private:
     void x_ProcessGetRequest(void);
     void x_ProcessGetRequest(SResolveInputSeqIdError &  err,
                              SBioseqResolution &  bioseq_resolution);
     void x_GetRequestBioseqInconsistency(
-                            const THighResolutionTimePoint &  start_timestamp);
+                            const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_GetRequestBioseqInconsistency(
                             const string &  err_msg,
-                            const THighResolutionTimePoint &  start_timestamp);
+                            const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_CompleteGetRequest(SBioseqResolution &  bioseq_resolution);
     void x_StartMainBlobRequest(void);
 
@@ -164,9 +144,9 @@ private:
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
-    bool x_SatToSatName(const SBlobRequest &  blob_request,
-                        SBlobId &  blob_id);
-    bool x_TSEChunkSatToSatName(SBlobId &  blob_id, bool  need_finish);
+    bool x_SatToSatName(const SPSGS_BlobBySeqIdRequest &  blob_request,
+                        SPSGS_BlobId &  blob_id);
+    bool x_TSEChunkSatToSatName(SPSGS_BlobId &  blob_id, bool  need_finish);
     void x_SendBlobPropError(size_t  item_id,
                              const string &  message,
                              int  error_code);
@@ -174,12 +154,12 @@ private:
                           CRequestStatus::ECode  status,
                           int  code);
     void x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution,
-                          EOutputFormat  output_format);
+                          SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format);
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<CCassFetch> &  fetch_details);
     void x_PeekIfNeeded(void);
 
-    bool x_UsePsgProtocol(void) const;
+    bool x_UsePsgProtocol(void);
     void x_InitUrlIndentification(void);
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
                                   CPSGId2Info::TChunks  total_chunks,
@@ -188,22 +168,22 @@ private:
 private:
     bool x_ComposeOSLT(CSeq_id &  parsed_seq_id, int16_t &  effective_seq_id_type,
                        list<string> &  secondary_id_list, string &  primary_id);
-    ECacheLookupResult x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
-                                            SResolveInputSeqIdError &  err,
-                                            bool  need_as_is=true);
+    EPSGS_CacheLookupResult x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution,
+                                                 SResolveInputSeqIdError &  err,
+                                                 bool  need_as_is=true);
     void x_ResolveViaComposeOSLTInCache(CSeq_id &  parsed_seq_id,
                                         int16_t  effective_seq_id_type,
                                         const list<string> &  secondary_id_list,
                                         const string &  primary_id,
                                         SResolveInputSeqIdError &  err,
                                         SBioseqResolution &  bioseq_resolution);
-    ECacheLookupResult x_ResolvePrimaryOSLTInCache(const string &  primary_id,
-                                                   int16_t  effective_version,
-                                                   int16_t  effective_seq_id_type,
-                                                   SBioseqResolution &  bioseq_resolution);
-    ECacheLookupResult x_ResolveSecondaryOSLTInCache(const string &  secondary_id,
-                                                     int16_t  effective_seq_id_type,
-                                                     SBioseqResolution &  bioseq_resolution);
+    EPSGS_CacheLookupResult x_ResolvePrimaryOSLTInCache(const string &  primary_id,
+                                                        int16_t  effective_version,
+                                                        int16_t  effective_seq_id_type,
+                                                        SBioseqResolution &  bioseq_resolution);
+    EPSGS_CacheLookupResult x_ResolveSecondaryOSLTInCache(const string &  secondary_id,
+                                                          int16_t  effective_seq_id_type,
+                                                          SBioseqResolution &  bioseq_resolution);
 
 private:
     void x_ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
@@ -211,19 +191,20 @@ private:
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
                                  int16_t &  eff_seq_id_type,
                                  bool  need_trace);
-    ESeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id, string &  err_msg);
+    EPSGS_SeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id,
+                                               string &  err_msg);
     void x_OnBioseqError(CRequestStatus::ECode  status, const string &  err_msg,
-                         const THighResolutionTimePoint &  start_timestamp);
+                         const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_OnReplyError(CRequestStatus::ECode  status, int  err_code,
                         const string &  err_msg,
-                        const THighResolutionTimePoint &  start_timestamp);
+                        const TPSGS_HighResolutionTimePoint &  start_timestamp);
 
 public:
     int16_t GetEffectiveVersion(const CTextseq_id *  text_seq_id);
     void OnSeqIdAsyncResolutionFinished(SBioseqResolution &&  async_bioseq_resolution);
     void OnSeqIdAsyncError(CRequestStatus::ECode  status, int  code,
                            EDiagSev  severity, const string &  message,
-                           const THighResolutionTimePoint &  start_timestamp);
+                           const TPSGS_HighResolutionTimePoint &  start_timestamp);
 
 public:
     // Named annotations callbacks
@@ -270,17 +251,18 @@ private:
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details, CBlobRecord const &  blob);
     bool x_ParseTSEChunkId2Info(const string &  info,
                                 unique_ptr<CPSGId2Info> &  id2_info,
-                                const SBlobId &  blob_id,
+                                const SPSGS_BlobId &  blob_id,
                                 bool  need_finish);
     void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
                            CCassSplitHistoryFetch *  fetch_details);
 
     void x_RegisterResolveTiming(const SBioseqResolution &  bioseq_resolution);
     void x_RegisterResolveTiming(CRequestStatus::ECode  status,
-                                 const THighResolutionTimePoint &  start_timestamp);
-    EAccessionSubstitutionOption x_GetAccessionSubstitutionOption(void) const;
-    TServIncludeData x_GetBioseqInfoFields(void) const;
-    bool x_NonKeyBioseqInfoFieldsRequested(void) const;
+                                 const TPSGS_HighResolutionTimePoint &  start_timestamp);
+    SPSGS_RequestBase::EPSGS_AccSubstitutioOption
+            x_GetAccessionSubstitutionOption(void);
+    SPSGS_ResolveRequest::TPSGS_BioseqIncludeData x_GetBioseqInfoFields(void);
+    bool x_NonKeyBioseqInfoFieldsRequested(void);
 
     unique_ptr<CPSGId2Info>     m_Id2Info;
 
@@ -289,10 +271,10 @@ public:
     unsigned int GetMaxRetries(void) const                { return m_MaxRetries; }
     shared_ptr<CCassConnection> GetConnection(void) const { return m_Conn; }
     int16_t GetUrlSeqIdType(void) const                   { return m_UrlSeqIdType; }
-    EAccessionAdjustmentResult AdjustBioseqAccession(
+    EPSGS_AccessionAdjustmentResult AdjustBioseqAccession(
                                         SBioseqResolution &  bioseq_resolution);
     bool CanSkipBioseqInfoRetrieval(
-                            const CBioseqInfoRecord &  bioseq_info_record) const;
+                            const CBioseqInfoRecord &  bioseq_info_record);
 
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
     { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }
@@ -306,15 +288,12 @@ private:
     unsigned int                            m_MaxRetries;
     CRequestStatus::ECode                   m_OverallStatus;
 
-    // Incoming request. It could be by sat/sat_key or by seq_id/id_type
-    EPendingRequestType                     m_RequestType;
-    SBlobRequest                            m_BlobRequest;
-    SResolveRequest                         m_ResolveRequest;
-    SAnnotRequest                           m_AnnotRequest;
-    STSEChunkRequest                        m_TSEChunkRequest;
+    // Incoming request
+    CPSGS_Request                           m_UserRequest;
+
     CTempString                             m_UrlSeqId;
     int16_t                                 m_UrlSeqIdType;
-    ECacheAndCassandraUse                   m_UrlUseCache;
+    SPSGS_RequestBase::EPSGS_CacheAndDbUse  m_UrlUseCache;
 
     bool                                    m_Cancelled;
     CRef<CRequestContext>                   m_RequestContext;
@@ -327,10 +306,10 @@ private:
     // Async DB access support
     unique_ptr<CAsyncSeqIdResolver>         m_AsyncSeqIdResolver;
     unique_ptr<CAsyncBioseqQuery>           m_AsyncBioseqDetailsQuery;
-    EAsyncInterruptPoint                    m_AsyncInterruptPoint;
-    THighResolutionTimePoint                m_AsyncCassResolutionStart;
+    EPSGS_AsyncInterruptPoint               m_AsyncInterruptPoint;
+    TPSGS_HighResolutionTimePoint           m_AsyncCassResolutionStart;
 
-    THighResolutionTimePoint                m_CreateTimestamp;
+    TPSGS_HighResolutionTimePoint           m_CreateTimestamp;
 };
 
 

@@ -125,7 +125,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
     m_ExcludeBlobCache(nullptr),
-    m_StartupDataState(eNoCassConnection)
+    m_StartupDataState(ePSGS_NoCassConnection)
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -204,7 +204,7 @@ void CPubseqGatewayApp::ParseArgs(void)
         string  msg = "Decrypting error detected while reading "
                       "[ADMIN]/auth_token value: " + string(ex.what());
         ERR_POST(msg);
-        m_Alerts.Register(eConfigAuthDecrypt, msg);
+        m_Alerts.Register(ePSGS_ConfigAuthDecrypt, msg);
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
@@ -213,7 +213,7 @@ void CPubseqGatewayApp::ParseArgs(void)
         string  msg = "Unknown decrypting error detected while reading "
                       "[ADMIN]/auth_token value";
         ERR_POST(msg);
-        m_Alerts.Register(eConfigAuthDecrypt, msg);
+        m_Alerts.Register(ePSGS_ConfigAuthDecrypt, msg);
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
@@ -244,7 +244,7 @@ void CPubseqGatewayApp::OpenCache(void)
     // It was decided to work with and without the cache even if the wrapper
     // has not been created. So the cache initialization is called once and
     // always succeed.
-    m_StartupDataState = eStartupDataOK;
+    m_StartupDataState = ePSGS_StartupDataOK;
 
     try {
         // NB. It was decided that the configuration may ommit the cache file
@@ -271,7 +271,7 @@ void CPubseqGatewayApp::OpenCache(void)
             }
 
             PSG_ERROR(msg);
-            m_Alerts.Register(eOpenCache, msg);
+            m_Alerts.Register(ePSGS_OpenCache, msg);
             m_LookupCache->ResetErrors();
         }
     } catch (const exception &  exc) {
@@ -279,13 +279,13 @@ void CPubseqGatewayApp::OpenCache(void)
                           string(exc.what()) +
                           ". The server continues without cache.";
         PSG_ERROR(exc);
-        m_Alerts.Register(eOpenCache, msg);
+        m_Alerts.Register(ePSGS_OpenCache, msg);
         m_LookupCache.reset(nullptr);
     } catch (...) {
         string      msg = "Unknown initializing LMDB cache error. "
                           "The server continues without cache.";
         PSG_ERROR(msg);
-        m_Alerts.Register(eOpenCache, msg);
+        m_Alerts.Register(ePSGS_OpenCache, msg);
         m_LookupCache.reset(nullptr);
     }
 }
@@ -301,7 +301,7 @@ bool CPubseqGatewayApp::OpenCass(void)
         m_CassConnection->Connect();
 
         // Next step in the startup data initialization
-        m_StartupDataState = eNoValidCassMapping;
+        m_StartupDataState = ePSGS_NoValidCassMapping;
     } catch (const exception &  exc) {
         string      msg = "Error connecting to Cassandra: " +
                           string(exc.what());
@@ -309,7 +309,7 @@ bool CPubseqGatewayApp::OpenCass(void)
             PSG_CRITICAL(exc);
 
         need_logging = false;
-        m_Alerts.Register(eOpenCassandra, msg);
+        m_Alerts.Register(ePSGS_OpenCassandra, msg);
         return false;
     } catch (...) {
         string      msg = "Unknown Cassandra connecting error";
@@ -317,7 +317,7 @@ bool CPubseqGatewayApp::OpenCass(void)
             PSG_CRITICAL(msg);
 
         need_logging = false;
-        m_Alerts.Register(eOpenCassandra, msg);
+        m_Alerts.Register(ePSGS_OpenCassandra, msg);
         return false;
     }
 
@@ -637,7 +637,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             to_string(kWorkersMax) + ". Received: " +
             to_string(m_HttpWorkers) + ". Reset to "
             "default: " + to_string(kWorkersDefault);
-        m_Alerts.Register(eConfigHttpWorkers, err_msg);
+        m_Alerts.Register(ePSGS_ConfigHttpWorkers, err_msg);
         PSG_ERROR(err_msg);
         m_HttpWorkers = kWorkersDefault;
     }
@@ -650,7 +650,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             to_string(kListenerBacklogMax) + ". Received: " +
             to_string(m_ListenerBacklog) + ". Reset to "
             "default: " + to_string(kListenerBacklogDefault);
-        m_Alerts.Register(eConfigListenerBacklog, err_msg);
+        m_Alerts.Register(ePSGS_ConfigListenerBacklog, err_msg);
         PSG_ERROR(err_msg);
         m_ListenerBacklog = kListenerBacklogDefault;
     }
@@ -662,7 +662,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             to_string(kTcpMaxConnMax) + ". Received: " +
             to_string(m_TcpMaxConn) + ". Reset to "
             "default: " + to_string(kTcpMaxConnDefault);
-        m_Alerts.Register(eConfigMaxConnections, err_msg);
+        m_Alerts.Register(ePSGS_ConfigMaxConnections, err_msg);
         PSG_ERROR(err_msg);
         m_TcpMaxConn = kTcpMaxConnDefault;
     }
@@ -674,7 +674,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             to_string(kTimeoutMsMax) + ". Received: " +
             to_string(m_TimeoutMs) + ". Reset to "
             "default: " + to_string(kTimeoutDefault);
-        m_Alerts.Register(eConfigTimeout, err_msg);
+        m_Alerts.Register(ePSGS_ConfigTimeout, err_msg);
         PSG_ERROR(err_msg);
         m_TimeoutMs = kTimeoutDefault;
     }
@@ -686,7 +686,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             to_string(kMaxRetriesMax) + ". Received: " +
             to_string(m_MaxRetries) + ". Reset to "
             "default: " + to_string(kMaxRetriesDefault);
-        m_Alerts.Register(eConfigRetries, err_msg);
+        m_Alerts.Register(ePSGS_ConfigRetries, err_msg);
         PSG_ERROR(err_msg);
         m_MaxRetries = kMaxRetriesDefault;
     }
@@ -696,7 +696,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             "The max exclude cache size must be a positive integer. "
             "Received: " + to_string(m_ExcludeCacheMaxSize) + ". "
             "Reset to 0 (exclude blobs cache is disabled)";
-        m_Alerts.Register(eConfigExcludeCacheSize, err_msg);
+        m_Alerts.Register(ePSGS_ConfigExcludeCacheSize, err_msg);
         PSG_ERROR(err_msg);
         m_ExcludeCacheMaxSize = 0;
     }
@@ -715,7 +715,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             PSG_WARNING(err_msg);
         }
         m_ExcludeCachePurgePercentage = kDefaultExcludeCachePurgePercentage;
-        m_Alerts.Register(eConfigExcludeCachePurgeSize, err_msg);
+        m_Alerts.Register(ePSGS_ConfigExcludeCachePurgeSize, err_msg);
     }
 
     if (m_ExcludeCacheInactivityPurge <= 0) {
@@ -732,7 +732,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             PSG_WARNING(err_msg);
         }
         m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
-        m_Alerts.Register(eConfigExcludeCacheInactivity, err_msg);
+        m_Alerts.Register(ePSGS_ConfigExcludeCacheInactivity, err_msg);
     }
 
     bool        stat_settings_good = true;
@@ -741,7 +741,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         string  err_msg = "Invalid [STATISTICS]/type value '" +
             m_StatScaleType + "'. Allowed values are: log, linear. "
             "The statistics parameters are reset to default.";
-        m_Alerts.Register(eConfigStatScaleType, err_msg);
+        m_Alerts.Register(ePSGS_ConfigStatScaleType, err_msg);
         PSG_ERROR(err_msg);
         stat_settings_good = false;
 
@@ -756,7 +756,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             string  err_msg = "Invalid [STATISTICS]/min and max values. The "
                 "max cannot be less than min. "
                 "The statistics parameters are reset to default.";
-            m_Alerts.Register(eConfigStatMinMaxVal, err_msg);
+            m_Alerts.Register(ePSGS_ConfigStatMinMaxVal, err_msg);
             PSG_ERROR(err_msg);
             stat_settings_good = false;
 
@@ -772,7 +772,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             string  err_msg = "Invalid [STATISTICS]/n_bins value. The "
                 "number of bins must be greater than 0. "
                 "The statistics parameters are reset to default.";
-            m_Alerts.Register(eConfigStatNBins, err_msg);
+            m_Alerts.Register(ePSGS_ConfigStatNBins, err_msg);
             PSG_ERROR(err_msg);
             stat_settings_good = false;
 
@@ -935,7 +935,7 @@ bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
 }
 
 
-EOutputFormat
+SPSGS_ResolveRequest::EPSGS_OutputFormat
 CPubseqGatewayApp::x_GetOutputFormat(const string &  param_name,
                                      const CTempString &  param_value,
                                      string &  err_msg) const
@@ -945,22 +945,22 @@ CPubseqGatewayApp::x_GetOutputFormat(const string &  param_name,
     static string   native = "native";
 
     if (param_value == protobuf)
-        return eProtobufFormat;
+        return SPSGS_ResolveRequest::ePSGS_ProtobufFormat;
     if (param_value == json)
-        return eJsonFormat;
+        return SPSGS_ResolveRequest::ePSGS_JsonFormat;
     if (param_value == native)
-        return eNativeFormat;
+        return SPSGS_ResolveRequest::ePSGS_NativeFormat;
 
     err_msg = "Malformed '" + param_name + "' parameter. "
               "Acceptable values are '" +
               protobuf + "' and '" +
               json + "' and '" +
               native + "'.";
-    return eUnknownFormat;
+    return SPSGS_ResolveRequest::ePSGS_UnknownFormat;
 }
 
 
-ETSEOption
+SPSGS_BlobRequestBase::EPSGS_TSEOption
 CPubseqGatewayApp::x_GetTSEOption(const string &  param_name,
                                   const CTempString &  param_value,
                                   string &  err_msg) const
@@ -972,15 +972,15 @@ CPubseqGatewayApp::x_GetTSEOption(const string &  param_name,
     static string   slim = "slim";
 
     if (param_value == none)
-        return eNoneTSE;
+        return SPSGS_BlobRequestBase::ePSGS_NoneTSE;
     if (param_value == whole)
-        return eWholeTSE;
+        return SPSGS_BlobRequestBase::ePSGS_WholeTSE;
     if (param_value == orig)
-        return eOrigTSE;
+        return SPSGS_BlobRequestBase::ePSGS_OrigTSE;
     if (param_value == smart)
-        return eSmartTSE;
+        return SPSGS_BlobRequestBase::ePSGS_SmartTSE;
     if (param_value == slim)
-        return eSlimTSE;
+        return SPSGS_BlobRequestBase::ePSGS_SlimTSE;
 
     err_msg = "Malformed '" + param_name + "' parameter. "
               "Acceptable values are '" +
@@ -989,11 +989,11 @@ CPubseqGatewayApp::x_GetTSEOption(const string &  param_name,
               orig + "', '" +
               smart + "' and '" +
               slim + "'.";
-    return eUnknownTSE;
+    return SPSGS_BlobRequestBase::ePSGS_UnknownTSE;
 }
 
 
-EAccessionSubstitutionOption
+SPSGS_RequestBase::EPSGS_AccSubstitutioOption
 CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
                                     const string &  param_name,
                                     const CTempString &  param_value,
@@ -1004,27 +1004,28 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
     static string       never_option = "never";
 
     if (param_value == default_option)
-        return eDefaultAccSubstitution;
+        return SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
     if (param_value == limited_option)
-        return eLimitedAccSubstitution;
+        return SPSGS_RequestBase::ePSGS_LimitedAccSubstitution;
     if (param_value == never_option)
-        return eNeverAccSubstitute;
+        return SPSGS_RequestBase::ePSGS_NeverAccSubstitute;
 
     err_msg = "Malformed '" + param_name + "' parameter. "
               "Acceptable values are '" +
               default_option + "', '" +
               limited_option + "', '" +
               never_option + "'.";
-    return eUnknownAccSubstitution;
+    return SPSGS_RequestBase::ePSGS_UnknownAccSubstitution;
 }
 
 
-bool CPubseqGatewayApp::x_GetTraceParameter(HST::CHttpRequest &  req,
-                                            const string &  param_name,
-                                            bool &  trace,
-                                            string &  err_msg)
+bool
+CPubseqGatewayApp::x_GetTraceParameter(HST::CHttpRequest &  req,
+                                       const string &  param_name,
+                                       SPSGS_RequestBase::EPSGS_Trace &  trace,
+                                       string &  err_msg)
 {
-    trace = false;
+    trace = SPSGS_RequestBase::ePSGS_NoTracing;
     SRequestParameter   trace_protocol_param = x_GetParam(req, param_name);
 
     if (trace_protocol_param.m_Found) {
@@ -1034,22 +1035,26 @@ bool CPubseqGatewayApp::x_GetTraceParameter(HST::CHttpRequest &  req,
             PSG_WARNING(err_msg);
             return false;
         }
-        trace = trace_protocol_param.m_Value == "yes";
+        if (trace_protocol_param.m_Value == "yes")
+            trace = SPSGS_RequestBase::ePSGS_WithTracing;
+        else
+            trace = SPSGS_RequestBase::ePSGS_NoTracing;;
     }
     return true;
 }
 
 
-vector<SBlobId> CPubseqGatewayApp::x_GetExcludeBlobs(const string &  param_name,
-                                                     const CTempString &  param_value,
-                                                     string &  err_msg) const
+vector<SPSGS_BlobId>
+CPubseqGatewayApp::x_GetExcludeBlobs(const string &  param_name,
+                                     const CTempString &  param_value,
+                                     string &  err_msg) const
 {
-    vector<SBlobId>             result;
-    vector<CTempString>         blob_ids;
+    vector<SPSGS_BlobId>        result;
+    vector<string>              blob_ids;
     NStr::Split(param_value, ",", blob_ids);
 
     for (const auto &  item : blob_ids) {
-        SBlobId     blob_id(item);
+        SPSGS_BlobId     blob_id(item);
         if (!blob_id.IsValid()) {
             err_msg = "Invalid blob id in the '" + param_name +
                       "' parameter comma separated list. Received: '" +
@@ -1122,7 +1127,7 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
             if (need_logging)
                 PSG_CRITICAL(err_msg);
             need_logging = false;
-            m_Alerts.Register(eNoValidCassandraMapping, err_msg);
+            m_Alerts.Register(ePSGS_NoValidCassandraMapping, err_msg);
             return false;
         }
     } catch (const exception &  exc) {
@@ -1132,7 +1137,7 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
             PSG_CRITICAL(err_msg);
         }
         need_logging = false;
-        m_Alerts.Register(eNoValidCassandraMapping, err_msg + " " + exc.what());
+        m_Alerts.Register(ePSGS_NoValidCassandraMapping, err_msg + " " + exc.what());
         return false;
     } catch (...) {
         string      err_msg = "Unknown error while populating "
@@ -1140,7 +1145,7 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
         if (need_logging)
             PSG_CRITICAL(err_msg);
         need_logging = false;
-        m_Alerts.Register(eNoValidCassandraMapping, err_msg);
+        m_Alerts.Register(ePSGS_NoValidCassandraMapping, err_msg);
         return false;
     }
 
@@ -1153,14 +1158,14 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
         m_MappingIndex = vacant_index;
 
         // Next step in the startup data initialization
-        m_StartupDataState = eNoCassCache;
+        m_StartupDataState = ePSGS_NoCassCache;
 
         if (need_accept_alert) {
             // We are not the first time here; It means that the alert about
             // the bad mapping has been set before. So now we accepted the
             // configuration so a change config alert is needed for the UI
             // visibility
-            m_Alerts.Register(eNewCassandraMappingAccepted,
+            m_Alerts.Register(ePSGS_NewCassandraMappingAccepted,
                               "Keyspace mapping (sat names, bioseq info and named "
                               "annotations) has been populated");
         }
@@ -1172,7 +1177,7 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
         if (need_logging)
             PSG_CRITICAL(combined_error);
 
-        m_Alerts.Register(eNoValidCassandraMapping, combined_error);
+        m_Alerts.Register(ePSGS_NoValidCassandraMapping, combined_error);
     }
 
     need_logging = false;
@@ -1196,18 +1201,18 @@ void CPubseqGatewayApp::CheckCassMapping(void)
                     m_CassMapping[vacant_index].m_BioseqKeyspace, eResolverSchema,
                     m_CassMapping[vacant_index].m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
                     err_msg)) {
-            m_Alerts.Register(eInvalidCassandraMapping,
+            m_Alerts.Register(ePSGS_InvalidCassandraMapping,
                               "Error checking cassandra mapping: " + err_msg);
             return;
         }
 
     } catch (const exception &  exc) {
-        m_Alerts.Register(eInvalidCassandraMapping,
+        m_Alerts.Register(ePSGS_InvalidCassandraMapping,
                           "Cannot check keyspace mapping from Cassandra. " +
                           string(exc.what()));
         return;
     } catch (...) {
-        m_Alerts.Register(eInvalidCassandraMapping,
+        m_Alerts.Register(ePSGS_InvalidCassandraMapping,
                           "Unknown error while checking "
                           "keyspace mapping from Cassandra.");
         return;
@@ -1221,14 +1226,14 @@ void CPubseqGatewayApp::CheckCassMapping(void)
     if (errors.empty()) {
         // No errors detected in the DB; let's compare with what we use now
         if (sat_names != m_SatNames)
-            m_Alerts.Register(eNewCassandraSatNamesMapping,
+            m_Alerts.Register(ePSGS_NewCassandraSatNamesMapping,
                               "Cassandra has new sat names mapping in  the " +
                               m_RootKeyspace + " keyspace. The server needs "
                               "to restart to use it.");
 
         if (m_CassMapping[0] != m_CassMapping[1]) {
             m_MappingIndex = vacant_index;
-            m_Alerts.Register(eNewCassandraMappingAccepted,
+            m_Alerts.Register(ePSGS_NewCassandraMappingAccepted,
                               "Keyspace mapping (bioseq info and named "
                               "annotations) has been updated");
         }
@@ -1238,7 +1243,7 @@ void CPubseqGatewayApp::CheckCassMapping(void)
         for (const auto &  err : errors) {
             combined_error += "\n" + err;
         }
-        m_Alerts.Register(eInvalidCassandraMapping, combined_error);
+        m_Alerts.Register(ePSGS_InvalidCassandraMapping, combined_error);
     }
 }
 
@@ -1284,7 +1289,7 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
 
-    resp.SetContentType(ePSGMime);
+    resp.SetContentType(ePSGS_PSGMime);
     resp.Send(chunks, true);
 }
 
@@ -1294,7 +1299,7 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
 // error (opposite to a server data inconsistency)
 void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
         HST::CHttpReply<CPendingOperation> &  resp,
-        const SBlobId &  blob_id,
+        const SPSGS_BlobId &  blob_id,
         const string &  message)
 {
     vector<h2o_iovec_t>     chunks;
@@ -1302,7 +1307,7 @@ void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
     // Add header
     string      header = GetBlobMessageHeader(1, blob_id, message.size(),
                                               CRequestStatus::e404_NotFound,
-                                              eUnknownResolvedSatellite,
+                                              ePSGS_UnknownResolvedSatellite,
                                               eDiag_Error);
     chunks.push_back(resp.PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
@@ -1322,7 +1327,7 @@ void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
 
-    resp.SetContentType(ePSGMime);
+    resp.SetContentType(ePSGS_PSGMime);
     resp.Send(chunks, true);
 }
 
@@ -1335,7 +1340,7 @@ void CPubseqGatewayApp::x_MalformedArguments(
     m_ErrorCounters.IncMalformedArguments();
     x_SendMessageAndCompletionChunks(resp, err_msg,
                                      CRequestStatus::e400_BadRequest,
-                                     eMalformedParameter, eDiag_Error);
+                                     ePSGS_MalformedParameter, eDiag_Error);
     PSG_WARNING(err_msg);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
 }
@@ -1349,7 +1354,7 @@ void CPubseqGatewayApp::x_InsufficientArguments(
     m_ErrorCounters.IncInsufficientArguments();
     x_SendMessageAndCompletionChunks(resp, err_msg,
                                      CRequestStatus::e400_BadRequest,
-                                     eInsufficientArguments, eDiag_Error);
+                                     ePSGS_InsufficientArguments, eDiag_Error);
     PSG_WARNING(err_msg);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
 }

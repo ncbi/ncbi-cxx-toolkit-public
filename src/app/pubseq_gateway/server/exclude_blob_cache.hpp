@@ -43,9 +43,9 @@
 using namespace std;
 
 
-enum ECacheAddResult {
-    eAlreadyInCache,
-    eAdded
+enum EPSGS_CacheAddResult {
+    ePSGS_AlreadyInCache,
+    ePSGS_Added
 };
 
 
@@ -87,7 +87,7 @@ class CUserExcludeBlobs
     public:
         // The 'completed' value is filled only if the blob is in the cache
         bool IsInCache(int  sat, int  sat_key, bool &  completed);
-        ECacheAddResult AddBlobId(int  sat, int  sat_key, bool &  completed);
+        EPSGS_CacheAddResult AddBlobId(int  sat, int  sat_key, bool &  completed);
 
         // Return true if the required blob id was found
         bool SetCompleted(int  sat, int  sat_key, bool  new_val);
@@ -200,8 +200,8 @@ class CExcludeBlobCache
 
     public:
         // The 'completed' value is filled only if the blob is in the cache
-        ECacheAddResult AddBlobId(const string &  user,
-                                  int  sat, int  sat_key, bool &  completed);
+        EPSGS_CacheAddResult AddBlobId(const string &  user,
+                                       int  sat, int  sat_key, bool &  completed);
         bool IsInCache(const string &  user,
                        int  sat, int  sat_key, bool &  completed);
 
