@@ -800,8 +800,8 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
 
     if (requests.empty()) return -1;
 
-    atomic_int start(user_threads);
-    atomic_int to_submit(requests.size());
+    atomic_size_t start(user_threads);
+    atomic_int to_submit(static_cast<int>(requests.size()));
     auto wait = [&]() { while (start > 0) this_thread::sleep_for(chrono::microseconds(1)); };
 
     auto l = [&]() {
@@ -876,10 +876,10 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
 
     // Start processing replies
     cerr << "\nSubmitting requests: ";
-    int previous = requests.size() / 2000;
+    size_t previous = requests.size() / 2000;
 
     while (to_submit > 0) {
-        int current = to_submit / 2000;
+        size_t current = to_submit / 2000;
 
         if (current < previous) {
             cerr << '.';
@@ -1348,7 +1348,7 @@ void SIoOutput::Output(size_t errors)
     }
 
 
-    const size_t size = stats.size();
+    const auto size = static_cast<double>(stats.size());
     const double avg = accumulate(stats.begin(), stats.end(), 0.0) / size;
     sort(stats.begin(), stats.end());
 

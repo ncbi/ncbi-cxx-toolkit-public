@@ -224,10 +224,10 @@ private:
     static string GetLastModified(const CJson_ConstObject& input) { return input.has("last_modified") ? input["last_modified"].GetValue().GetString() : ""; }
 
     static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CArgs& input) { return input["CHUNK_NO"].AsInteger(); }
-    static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CJson_ConstObject& input) { return input["chunk_no"].GetValue().GetUint8(); }
+    static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CJson_ConstObject& input) { return input["chunk_no"].GetValue().GetUint4(); }
 
     static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CArgs& input) { return input["SPLIT_VER"].AsInteger(); }
-    static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CJson_ConstObject& input) { return input["split_ver"].GetValue().GetInt8(); }
+    static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CJson_ConstObject& input) { return input["split_ver"].GetValue().GetInt4(); }
 
     static vector<string> GetNamedAnnots(const CArgs& input) { return input["na"].GetStringList(); }
     static vector<string> GetNamedAnnots(const CJson_ConstObject& input);
