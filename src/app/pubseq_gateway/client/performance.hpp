@@ -218,10 +218,17 @@ struct SPercentiles
     static void Report(istream& is, ostream& os, double percentage);
 
 private:
-    static const vector<pair<size_t, string>> PercentileTypes;
+    using TData = vector<double>;
+
+    pair<TData::const_iterator, double> GetData(size_t i)
+    {
+        return { m_Data[i].cbegin(), m_Percentage * (static_cast<double>(m_Data[i].size()) / 100.0) };
+    }
 
     const double m_Percentage;
-    vector<vector<double>> m_Data;
+    vector<TData> m_Data;
+
+    static const vector<pair<double, string>> PercentileTypes;
 
     friend ostream& operator<<(ostream& os, SPercentiles& percentiles);
 };

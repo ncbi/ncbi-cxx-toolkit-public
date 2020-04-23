@@ -53,7 +53,7 @@ const vector<SRule> SRule::Rules =
     { "ReplyToDone",      { SMetricType::eReply,   SPoint::eFirst }, { SMetricType::eDone,    SPoint::eFirst } },
 };
 
-const vector<pair<size_t, string>> SPercentiles::PercentileTypes =
+const vector<pair<double, string>> SPercentiles::PercentileTypes =
 {
     {   0, "Min "   },
     {  25, "25th"   },
@@ -150,12 +150,9 @@ ostream& operator<<(ostream& os, SPercentiles& percentiles)
         os << type.second;
 
         for (size_t i = 0; i < SRule::Rules.size(); ++i) {
-            const auto& data = percentiles.m_Data[i];
-            const size_t data_size = percentiles.m_Percentage * (data.size() / 100.0);
-            auto data_end = data.begin();
-            advance(data_end, data_size);
-            auto it = data.begin();
-            if (auto index = data_size * (type.first / 100.0)) advance(it, index - 1);
+            auto data = percentiles.GetData(i);
+            auto it = data.first;
+            if (auto index = static_cast<size_t>(data.second * (type.first / 100.0))) advance(it, index - 1);
             os << '\t' << setw(7) << *it;
         }
 
@@ -165,11 +162,9 @@ ostream& operator<<(ostream& os, SPercentiles& percentiles)
     os << "Average";
 
     for (size_t i = 0; i < SRule::Rules.size(); ++i) {
-        const auto& data = percentiles.m_Data[i];
-        const size_t data_size = percentiles.m_Percentage * (data.size() / 100.0);
-        auto data_end = data.begin();
-        advance(data_end, data_size);
-        os << '\t' << setw(7) << accumulate(data.begin(), data_end, 0.0) / data_size;
+        auto data = percentiles.GetData(i);
+        auto it = data.first + static_cast<size_t>(data.second);
+        os << '\t' << setw(7) << accumulate(data.first, it, 0.0) / data.second;
     }
 
     return os;
