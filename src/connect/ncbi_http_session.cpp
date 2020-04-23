@@ -32,13 +32,14 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "ncbi_ansi_ext.h"
+#include "ncbi_servicep.h"
 #include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_http_session.hpp>
 #include <stdlib.h>
-#include "ncbi_ansi_ext.h"
 
 
 BEGIN_NCBI_SCOPE
@@ -532,7 +533,8 @@ unsigned short SGetHttpDefaultRetries::operator()(void) const
 #define _STR(s)  #s
 #define  STR(s)  _STR(s)
     char buf[16];
-    ConnNetInfo_GetValue(0, REG_CONN_MAX_TRY, buf, sizeof(buf), STR(DEF_CONN_MAX_TRY));
+    ConnNetInfo_GetValueInternal(0, REG_CONN_MAX_TRY,
+                                 buf, sizeof(buf), STR(DEF_CONN_MAX_TRY));
 #undef   STR
 #undef  _STR
     int maxtry = atoi(buf);
