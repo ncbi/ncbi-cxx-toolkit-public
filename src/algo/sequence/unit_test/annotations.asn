@@ -7370,6 +7370,7 @@ Seq-annot ::= {
         syn {
           "CR42911",
           "dme-mir-2279",
+          "dme-miR-2279",
           "Dmel\CR42911",
           "miR-2279"
         },
