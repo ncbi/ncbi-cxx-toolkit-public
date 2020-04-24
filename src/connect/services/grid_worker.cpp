@@ -171,7 +171,7 @@ private:
     {
         CFastMutexGuard guard(m_Mutex);
         auto elapsed = static_cast<unsigned>(m_AutoShutdownSW.Elapsed());
-        return (m_AutoShutdown && elapsed > m_AutoShutdown) ? elapsed : 0;
+        return (m_AutoShutdown && elapsed >= m_AutoShutdown) ? elapsed : 0;
     }
 
     IWorkerNodeIdleTask* m_Task;
