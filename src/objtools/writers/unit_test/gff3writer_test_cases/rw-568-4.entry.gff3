@@ -141,16 +141,16 @@ ADJ94582.1	Genbank	protein	72606	72658	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;
 ADJ94582.1	Genbank	protein	72757	72795	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
 ADJ94582.1	Genbank	protein	1	304	.	+	.	ID=id-ADJ94582.1:1..304-2;gbkey=Prot;gene=KIR2DS3
 GU182347.1	Genbank	pseudogene	75429	87779	.	+	.	ID=gene-KIR2DP1;Name=KIR2DP1;gbkey=Gene;gene=KIR2DP1;gene_biotype=pseudogene;pseudo=true
-GU182347.1	Genbank	mRNA	75429	87779	.	+	.	ID=rna-KIR2DP1;Parent=gene-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	75429	75462	.	+	.	ID=exon-KIR2DP1-1;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	76520	76555	.	+	.	ID=exon-KIR2DP1-2;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	77281	77562	.	+	.	ID=exon-KIR2DP1-3;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	79016	79314	.	+	.	ID=exon-KIR2DP1-4;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	80838	81131	.	+	.	ID=exon-KIR2DP1-5;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	84299	84349	.	+	.	ID=exon-KIR2DP1-6;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	86885	86989	.	+	.	ID=exon-KIR2DP1-7;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	87452	87504	.	+	.	ID=exon-KIR2DP1-8;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	87603	87779	.	+	.	ID=exon-KIR2DP1-9;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
+GU182347.1	Genbank	mRNA	75429	87779	.	+	.	ID=rna-KIR2DP1;Parent=gene-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	75429	75462	.	+	.	ID=exon-KIR2DP1-1;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	76520	76555	.	+	.	ID=exon-KIR2DP1-2;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	77281	77562	.	+	.	ID=exon-KIR2DP1-3;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	79016	79314	.	+	.	ID=exon-KIR2DP1-4;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	80838	81131	.	+	.	ID=exon-KIR2DP1-5;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	84299	84349	.	+	.	ID=exon-KIR2DP1-6;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	86885	86989	.	+	.	ID=exon-KIR2DP1-7;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	87452	87504	.	+	.	ID=exon-KIR2DP1-8;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	87603	87779	.	+	.	ID=exon-KIR2DP1-9;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
 GU182347.1	Genbank	gene	90262	104231	.	+	.	ID=gene-KIR2DL1;Name=KIR2DL1;end_range=104231,.;gbkey=Gene;gene=KIR2DL1;gene_biotype=protein_coding;partial=true;start_range=.,90262
 GU182347.1	Genbank	mRNA	90262	104231	.	+	.	ID=rna-KIR2DL1;Parent=gene-KIR2DL1;end_range=104231,.;gbkey=mRNA;gene=KIR2DL1;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 1;start_range=.,90262
 GU182347.1	Genbank	exon	90262	90295	.	+	.	ID=exon-KIR2DL1-1;Parent=rna-KIR2DL1;gbkey=mRNA;gene=KIR2DL1;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 1;start_range=.,90262
@@ -179,11 +179,11 @@ ADJ94583.1	Genbank	protein	103904	103956	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Pro
 ADJ94583.1	Genbank	protein	104055	104228	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
 ADJ94583.1	Genbank	protein	1	348	.	+	.	ID=id-ADJ94583.1:1..348-2;gbkey=Prot;gene=KIR2DL1
 GU182347.1	Genbank	pseudogene	106773	110732	.	+	.	ID=gene-KIR3DP1;Name=KIR3DP1;gbkey=Gene;gene=KIR3DP1;gene_biotype=pseudogene;pseudo=true
-GU182347.1	Genbank	mRNA	106773	110732	.	+	.	ID=rna-KIR3DP1;Parent=gene-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	106773	106806	.	+	.	ID=exon-KIR3DP1-1;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	106881	107165	.	+	.	ID=exon-KIR3DP1-2;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	108616	108915	.	+	.	ID=exon-KIR3DP1-3;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
-GU182347.1	Genbank	exon	110439	110732	.	+	.	ID=exon-KIR3DP1-4;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1
+GU182347.1	Genbank	mRNA	106773	110732	.	+	.	ID=rna-KIR3DP1;Parent=gene-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	106773	106806	.	+	.	ID=exon-KIR3DP1-1;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	106881	107165	.	+	.	ID=exon-KIR3DP1-2;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	108616	108915	.	+	.	ID=exon-KIR3DP1-3;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
+GU182347.1	Genbank	exon	110439	110732	.	+	.	ID=exon-KIR3DP1-4;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
 GU182347.1	Genbank	gene	124064	134532	.	+	.	ID=gene-KIR2DL4;Name=KIR2DL4;end_range=134532,.;gbkey=Gene;gene=KIR2DL4;gene_biotype=protein_coding;partial=true;start_range=.,124064
 GU182347.1	Genbank	mRNA	124064	134532	.	+	.	ID=rna-KIR2DL4;Parent=gene-KIR2DL4;end_range=134532,.;gbkey=mRNA;gene=KIR2DL4;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 4;start_range=.,124064
 GU182347.1	Genbank	exon	124064	124103	.	+	.	ID=exon-KIR2DL4-1;Parent=rna-KIR2DL4;gbkey=mRNA;gene=KIR2DL4;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 4;start_range=.,124064

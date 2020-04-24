@@ -209,11 +209,6 @@ bool CGff2Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel = SetAnnotSelector();
-    //sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub)
-    //    .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
-    //    .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq)
-    //    .ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue);
-    //sel.ExcludeFeatType(CSeqFeatData::e_Biosrc);
     const auto& display_range = GetRange();
     CFeat_CI feat_iter(bsh, display_range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
@@ -222,6 +217,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
     std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
+        fc.AssignShouldInheritPseudo(false);
         if (!xWriteFeature(fc, mRoot)) {
             // error!
             continue;
@@ -626,6 +622,12 @@ bool CGff2Writer::xAssignFeatureAttributePseudo(
 {
     if (mf.IsSetPseudo()  &&  mf.GetPseudo()) {
         record.SetAttribute("pseudo", "true");
+        fc.AssignShouldInheritPseudo(true);
+        return true;
+    }
+    if (fc.ShouldInheritPseudo()) {
+        record.SetAttribute("pseudo", "true");
+        return true;
     }
     return true;
 }

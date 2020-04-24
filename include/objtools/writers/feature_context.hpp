@@ -54,7 +54,8 @@ public:
         CSeq_annot_Handle sah=CSeq_annot_Handle()) :
         m_ft(feat_iter), m_bsh(bsh), m_sah(sah),
         m_bSequenceHasBioSource(false),
-        m_bSequenceIsGenomicRecord(false)
+        m_bSequenceIsGenomicRecord(false),
+        mShouldInheritPseudo(false)
     {
         xAssignSequenceHasBioSource();
         xAssignSequenceIsGenomicRecord();
@@ -67,7 +68,8 @@ public:
         m_bsh(other.m_bsh),
         m_sah(other.m_sah),
         m_bSequenceHasBioSource(false),
-        m_bSequenceIsGenomicRecord(false)
+        m_bSequenceIsGenomicRecord(false),
+        mShouldInheritPseudo(false)
     {
         xAssignSequenceHasBioSource();
         xAssignSequenceIsGenomicRecord();
@@ -82,6 +84,11 @@ public:
     bool IsSequenceGenomicRecord() const { return m_bSequenceIsGenomicRecord; };
     bool HasSequenceBioSource() const { return m_bSequenceHasBioSource; };
 
+    bool ShouldInheritPseudo() const { return mShouldInheritPseudo; };
+    void AssignShouldInheritPseudo(bool shouldInheritPseudo) { 
+        mShouldInheritPseudo = shouldInheritPseudo; 
+    }; 
+
 protected:
     feature::CFeatTree m_ft;
     CMappedFeat m_mfLastIn, m_mfLastOut;
@@ -89,6 +96,7 @@ protected:
     CSeq_annot_Handle m_sah;
     bool m_bSequenceHasBioSource;
     bool m_bSequenceIsGenomicRecord;
+    bool mShouldInheritPseudo;
 
     void xAssignSequenceHasBioSource();
     void xAssignSequenceIsGenomicRecord();

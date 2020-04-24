@@ -6883,7 +6883,7 @@ AE014135.4	Genbank	pseudogene	905179	907924	.	+	.	ID=gene-Dmel_CR43361;Dbxref=FL
 AE014135.4	Genbank	exon	905179	905578	.	+	.	ID=id-Dmel_CR43361-1;Parent=gene-Dmel_CR43361;Dbxref=FLYBASE:FBgn0263093;exon_number=1;gbkey=exon;gene=CR43361;locus_tag=Dmel_CR43361;number=1;pseudo=true
 AE014135.4	Genbank	exon	906894	907047	.	+	.	ID=id-Dmel_CR43361-2;Parent=gene-Dmel_CR43361;Dbxref=FLYBASE:FBgn0263093;exon_number=2;gbkey=exon;gene=CR43361;locus_tag=Dmel_CR43361;number=2;pseudo=true
 AE014135.4	Genbank	exon	907115	907924	.	+	.	ID=id-Dmel_CR43361-3;Parent=gene-Dmel_CR43361;Dbxref=FLYBASE:FBgn0263093;exon_number=3;gbkey=exon;gene=CR43361;locus_tag=Dmel_CR43361;number=3;pseudo=true
-AE014135.4	Genbank	mobile_genetic_element	907816	907886	.	+	.	ID=id-Dmel_CR43361;Dbxref=FLYBASE:FBti0060916,FLYBASE:FBgn0263093;gbkey=mobile_element;mobile_element_type=transposon:diver2{}2855
+AE014135.4	Genbank	mobile_genetic_element	907816	907886	.	+	.	ID=id-Dmel_CR43361;Dbxref=FLYBASE:FBti0060916,FLYBASE:FBgn0263093;gbkey=mobile_element;mobile_element_type=transposon:diver2{}2855;pseudo=true
 AE014135.4	Genbank	mobile_genetic_element	907917	908992	.	+	.	ID=id-AE014135.4:907917..908992;Dbxref=FLYBASE:FBti0019502;gbkey=mobile_element;mobile_element_type=transposon:1360{}1539
 AE014135.4	Genbank	mobile_genetic_element	910399	913480	.	-	.	ID=id-AE014135.4:910399..913480;Dbxref=FLYBASE:FBti0019504;gbkey=mobile_element;mobile_element_type=transposon:invader4{}1541
 AE014135.4	Genbank	mobile_genetic_element	914539	914853	.	-	.	ID=id-AE014135.4:914539..914853;Dbxref=FLYBASE:FBti0060810;gbkey=mobile_element;mobile_element_type=transposon:INE-1{}2749
