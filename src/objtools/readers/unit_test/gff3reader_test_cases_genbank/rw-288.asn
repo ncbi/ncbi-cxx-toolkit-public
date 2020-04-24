@@ -658,6 +658,27 @@ Seq-annot ::= {
     },
     {
       id local id 30,
+      data prot {
+        processed preprotein
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id33"
+        }
+      }
+    },
+    {
+      id local id 31,
       data imp {
         key "prim_transcript"
       },
@@ -678,7 +699,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 32,
       data imp {
         key "primer_bind"
       },
@@ -699,7 +720,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 32,
+      id local id 33,
       data imp {
         key "protein_bind"
       },
@@ -720,7 +741,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 33,
+      id local id 34,
       data imp {
         key "misc_structure"
       },
@@ -741,7 +762,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 35,
       data imp {
         key "rep_origin"
       },
@@ -762,7 +783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 35,
+      id local id 36,
       data imp {
         key "repeat_region"
       },
@@ -787,7 +808,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 36,
+      id local id 37,
       data imp {
         key "sig_peptide"
       },
@@ -808,7 +829,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 38,
       data imp {
         key "sig_peptide"
       },
@@ -829,7 +850,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 38,
+      id local id 39,
       data imp {
         key "transit_peptide"
       },
@@ -850,7 +871,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 39,
+      id local id 40,
       data imp {
         key "unsure"
       },
@@ -871,7 +892,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 41,
       data imp {
         key "variation"
       },
@@ -892,7 +913,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 41,
+      id local id 42,
       data imp {
         key "variation"
       },

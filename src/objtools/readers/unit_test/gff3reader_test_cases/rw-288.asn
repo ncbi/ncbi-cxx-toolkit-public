@@ -750,7 +750,9 @@ Seq-annot ::= {
     },
     {
       id local id 34,
-      data region "",
+      data prot {
+        processed preprotein
+      },
       location int {
         from 25386,
         to 26730,
@@ -761,10 +763,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "SO_type",
-          val "proprotein"
-        },
         {
           qual "ID",
           val "id33"
