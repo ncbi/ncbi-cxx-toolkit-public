@@ -113,7 +113,9 @@ void CSeq_align_Handle::x_RealRemove(void) const
 
 void CSeq_align_Handle::x_RealReplace(const CSeq_align& new_obj) const
 {
-    GetAnnot().GetEditHandle().x_GetInfo().Replace(m_AnnotIndex, new_obj);
+    if ( GetAnnot().GetEditHandle().x_GetInfo().Replace(m_AnnotIndex, new_obj) ) {
+        GetAnnot().x_GetScopeImpl().x_ClearAnnotCache();
+    }
     _ASSERT(!IsRemoved());
 }
 

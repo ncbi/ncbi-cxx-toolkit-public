@@ -533,7 +533,9 @@ void CSeq_feat_EditHandle::x_RealRemove(void) const
 void CSeq_feat_EditHandle::x_RealReplace(const CSeq_feat& new_feat) const
 {
     if ( IsRemoved() || IsPlainFeat() ) {
-        GetAnnot().x_GetInfo().Replace(x_GetFeatIndex(), new_feat);
+        if ( GetAnnot().x_GetInfo().Replace(x_GetFeatIndex(), new_feat) ) {
+            GetAnnot().x_GetScopeImpl().x_ClearAnnotCache();
+        }
         _ASSERT(!IsRemoved());
     }
     else {

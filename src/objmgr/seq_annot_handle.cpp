@@ -404,23 +404,35 @@ CSeq_annot_EditHandle::TakeAllAnnots(const CSeq_annot_EditHandle& annot) const
 CSeq_feat_EditHandle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_feat& new_obj) const
 {
+    auto add = x_GetInfo().Add(new_obj);
+    if ( add.second ) {
+        x_GetScopeImpl().x_ClearAnnotCache();
+    }
     return CSeq_feat_EditHandle(*this,
                                 //CSeq_annot_Info::eNonTable,
-                                x_GetInfo().Add(new_obj));
+                                add.first);
 }
 
 
 CSeq_align_Handle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_align& new_obj) const
 {
-    return CSeq_align_Handle(*this, x_GetInfo().Add(new_obj));
+    auto add = x_GetInfo().Add(new_obj);
+    if ( add.second ) {
+        x_GetScopeImpl().x_ClearAnnotCache();
+    }
+    return CSeq_align_Handle(*this, add.first);
 }
 
 
 CSeq_graph_Handle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_graph& new_obj) const
 {
-    return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
+    auto add = x_GetInfo().Add(new_obj);
+    if ( add.second ) {
+        x_GetScopeImpl().x_ClearAnnotCache();
+    }
+    return CSeq_graph_Handle(*this, add.first);
 }
 
 

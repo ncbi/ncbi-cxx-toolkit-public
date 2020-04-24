@@ -609,7 +609,7 @@ void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 }
 
 
-void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
+bool CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
                                 const CSeq_id_Handle& id)
 {
     if ( !id.IsGi() ) {
@@ -618,10 +618,12 @@ void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
             m_AnnotIdsFlags |= fAnnotIds_Matching;
         }
     }
+    bool new_id = false;
     TIdAnnotInfoMap::iterator iter = m_IdAnnotInfoMap.lower_bound(id);
     if ( iter == m_IdAnnotInfoMap.end() || iter->first != id ) {
         iter = m_IdAnnotInfoMap
             .insert(iter, TIdAnnotInfoMap::value_type(id, SIdAnnotInfo()));
+        new_id = true;
         bool orphan = !ContainsMatchingBioseq(id);
         iter->second.m_Orphan = orphan;
         if ( HasDataSource() ) {
@@ -629,6 +631,7 @@ void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
         }
     }
     _VERIFY(iter->second.m_Names.insert(name).second);
+    return new_id;
 }
 
 
@@ -1087,24 +1090,27 @@ CTSE_Info::x_GetUnnamedAnnotObjs(void) const
 }
 
 
-SIdAnnotObjs& CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
-                                        const CAnnotName& name,
-                                        const CSeq_id_Handle& id)
+pair<SIdAnnotObjs*, bool>
+CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
+                          const CAnnotName& name,
+                          const CSeq_id_Handle& id)
 {
     // repeat for more generic types of selector
+    bool new_id = false;
     TAnnotObjs::iterator it = objs.find(id);
     if ( it == objs.end() ) {
         // new id
         it = objs.insert(TAnnotObjs::value_type(id, SIdAnnotObjs())).first;
-        x_IndexAnnotTSE(name, id);
+        new_id = x_IndexAnnotTSE(name, id);
     }
     _ASSERT(it != objs.end() && it->first == id);
-    return it->second;
+    return make_pair(&it->second, new_id);
 }
 
 
-SIdAnnotObjs& CTSE_Info::x_SetIdObjects(const CAnnotName& name,
-                                        const CSeq_id_Handle& id)
+pair<SIdAnnotObjs*, bool>
+CTSE_Info::x_SetIdObjects(const CAnnotName& name,
+                          const CSeq_id_Handle& id)
 {
     return x_SetIdObjects(x_SetAnnotObjs(name), name, id);
 }
@@ -1224,12 +1230,14 @@ bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
 }
 
 
-void CTSE_Info::x_MapAnnotObject(TAnnotObjs& objs,
+bool CTSE_Info::x_MapAnnotObject(TAnnotObjs& objs,
                                  const CAnnotName& name,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& index)
 {
-    x_MapAnnotObject(x_SetIdObjects(objs, name, key.m_Handle), key, index);
+    auto id_objs = x_SetIdObjects(objs, name, key.m_Handle);
+    x_MapAnnotObject(*id_objs.first, key, index);
+    return id_objs.second;
 }
 
 
@@ -1248,12 +1256,13 @@ bool CTSE_Info::x_UnmapAnnotObject(TAnnotObjs& objs,
 }
 
 
-void CTSE_Info::x_MapSNP_Table(const CAnnotName& name,
+bool CTSE_Info::x_MapSNP_Table(const CAnnotName& name,
                                const CSeq_id_Handle& key,
                                const CSeq_annot_SNP_Info& snp_info)
 {
-    SIdAnnotObjs& objs = x_SetIdObjects(name, key);
-    objs.m_SNPSet.push_back(ConstRef(&snp_info));
+    auto objs = x_SetIdObjects(name, key);
+    objs.first->m_SNPSet.push_back(ConstRef(&snp_info));
+    return objs.second;
 }
 
 
@@ -1261,7 +1270,7 @@ void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
                                  const CSeq_id_Handle& key,
                                  const CSeq_annot_SNP_Info& snp_info)
 {
-    SIdAnnotObjs& objs = x_SetIdObjects(name, key);
+    SIdAnnotObjs& objs = *x_SetIdObjects(name, key).first;
     TSNPSet::iterator iter = find(objs.m_SNPSet.begin(),
                                   objs.m_SNPSet.end(),
                                   ConstRef(&snp_info));
@@ -1271,11 +1280,11 @@ void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
 }
 
 
-void CTSE_Info::x_MapAnnotObject(const CAnnotName& name,
+bool CTSE_Info::x_MapAnnotObject(const CAnnotName& name,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& index)
 {
-    x_MapAnnotObject(x_SetAnnotObjs(name), name, key, index);
+    return x_MapAnnotObject(x_SetAnnotObjs(name), name, key, index);
 }
 
 

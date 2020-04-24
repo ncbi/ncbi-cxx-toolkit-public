@@ -143,12 +143,14 @@ public:
 
     // individual annotation editing API
     void Remove(TAnnotIndex index);
-    void Replace(TAnnotIndex index, const CSeq_feat& new_obj);
-    void Replace(TAnnotIndex index, const CSeq_align& new_obj);
-    void Replace(TAnnotIndex index, const CSeq_graph& new_obj);
-    TAnnotIndex Add(const CSeq_feat& new_obj);
-    TAnnotIndex Add(const CSeq_align& new_obj);
-    TAnnotIndex Add(const CSeq_graph& new_obj);
+    // return true if new CSeq_id may appear in TSE annot index
+    bool Replace(TAnnotIndex index, const CSeq_feat& new_obj);
+    bool Replace(TAnnotIndex index, const CSeq_align& new_obj);
+    bool Replace(TAnnotIndex index, const CSeq_graph& new_obj);
+    // return true in 'second' if new CSeq_id may appear in TSE annot index
+    pair<TAnnotIndex, bool> Add(const CSeq_feat& new_obj);
+    pair<TAnnotIndex, bool> Add(const CSeq_align& new_obj);
+    pair<TAnnotIndex, bool> Add(const CSeq_graph& new_obj);
 
     void ReorderFtable(const vector<CSeq_feat_Handle>& feats);
 
@@ -237,8 +239,9 @@ protected:
     void x_DropAnnotObjects(CTSE_Info& tse);
 
     void x_UnmapAnnotObject(CAnnotObject_Info& info);
-    void x_MapAnnotObject(CAnnotObject_Info& info);
-    void x_RemapAnnotObject(CAnnotObject_Info& info);
+    // return true if new CSeq_id may appear in TSE annot index
+    bool x_MapAnnotObject(CAnnotObject_Info& info);
+    bool x_RemapAnnotObject(CAnnotObject_Info& info);
 
     void x_MapFeatIds(CAnnotObject_Info& info);
     void x_UnmapFeatIds(CAnnotObject_Info& info);
@@ -251,7 +254,8 @@ protected:
     void x_MapFeatByGene(const CGene_ref& gene, CAnnotObject_Info& info);
     void x_UnmapFeatByGene(const CGene_ref& gene, CAnnotObject_Info& info);
 
-    void x_Map(const CTSEAnnotObjectMapper& mapper,
+    // return true if new CSeq_id may appear in TSE annot index
+    bool x_Map(const CTSEAnnotObjectMapper& mapper,
                const SAnnotObject_Key& key,
                const SAnnotObject_Index& index);
 

@@ -538,15 +538,17 @@ private:
     // tse annot index should be locked by TAnnotLockReadGuard
     bool x_HasIdObjects(const CSeq_id_Handle& id) const;
 
-    SIdAnnotObjs& x_SetIdObjects(TAnnotObjs& objs,
-                                 const CAnnotName& name,
-                                 const CSeq_id_Handle& id);
-    SIdAnnotObjs& x_SetIdObjects(const CAnnotName& name,
-                                 const CSeq_id_Handle& idh);
+    // return true in 'second' if new CSeq_id may appear in TSE annot index
+    pair<SIdAnnotObjs*, bool> x_SetIdObjects(TAnnotObjs& objs,
+                                             const CAnnotName& name,
+                                             const CSeq_id_Handle& id);
+    pair<SIdAnnotObjs*, bool> x_SetIdObjects(const CAnnotName& name,
+                                             const CSeq_id_Handle& idh);
 
     CRef<CSeq_annot_SNP_Info> x_GetSNP_Info(const CConstRef<CSeq_annot>& annot);
 
-    void x_MapSNP_Table(const CAnnotName& name,
+    // return true if new CSeq_id may appear in TSE annot index
+    bool x_MapSNP_Table(const CAnnotName& name,
                         const CSeq_id_Handle& key,
                         const CSeq_annot_SNP_Info& snp_info);
     void x_UnmapSNP_Table(const CAnnotName& name,
@@ -565,11 +567,13 @@ private:
     bool x_UnmapAnnotObject(SIdAnnotObjs& objs,
                             const CAnnotObject_Info& info,
                             const SAnnotObject_Key& key);
-    void x_MapAnnotObject(TAnnotObjs& objs,
+    // return true if new CSeq_id may appear in TSE annot index
+    bool x_MapAnnotObject(TAnnotObjs& objs,
                           const CAnnotName& name,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& index);
-    void x_MapAnnotObject(const CAnnotName& name,
+    // return true if new CSeq_id may appear in TSE annot index
+    bool x_MapAnnotObject(const CAnnotName& name,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& index);
 
@@ -653,7 +657,8 @@ private:
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
-    void x_IndexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
+    // return true if new CSeq_id may appear in TSE annot index
+    bool x_IndexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
     void x_UnindexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
 
     void x_DoUpdate(TNeedUpdateFlags flags);
@@ -956,10 +961,11 @@ public:
         {
         }
 
-    void Map(const SAnnotObject_Key& key,
+    // return true if new CSeq_id may appear in TSE annot index
+    bool Map(const SAnnotObject_Key& key,
              const SAnnotObject_Index& index) const
         {
-            m_TSE.x_MapAnnotObject(m_AnnotObjs, m_Name, key, index);
+            return m_TSE.x_MapAnnotObject(m_AnnotObjs, m_Name, key, index);
         }
 
     void Unmap(const SAnnotObject_Key& key,
