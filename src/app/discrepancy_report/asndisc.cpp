@@ -493,6 +493,7 @@ int CDiscRepApp::Run(void)
         m_AutoFix = args["F"].AsBoolean();
     }
 
+    transform(m_Files.begin(), m_Files.end(), m_Files.begin(), [](string& s) { for (auto n = s.find('\\'); n != string::npos; n = s.find('\\')) s[n] = '/'; return s; });
     // run in deterministic order for TC tests
     sort(m_Files.begin(), m_Files.end());
 
