@@ -81,7 +81,6 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
-an_core needs 16S_common
 an_core needs gcaccess_utils
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
@@ -111,6 +110,11 @@ an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs tax_xml
 an_prok_pipeline needs xalgophytree
 an_prok_pipeline needs xobjwrite
+an_submission_16S needs $(GPIPE_COMMON_LIBS)
+an_submission_16S needs 16S_common
+an_submission_16S needs gpipe_an_base
+an_submission_16S needs gpipe_fileutils
+an_submission_16S needs gpipe_xmlutil
 an_worker_nodes needs gpipe_an_base
 an_worker_nodes needs gpipe_fileutils
 an_worker_nodes needs gpipe_xmlutil
