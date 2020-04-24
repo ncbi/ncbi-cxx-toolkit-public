@@ -2821,7 +2821,13 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     }
 
     if (run_extended_cleanup) {
-        CCleanup::ExtendedCleanup(entry, options);
+        auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+        auto *pEntry = const_cast<CSeq_entry*>(entry.GetCompleteSeq_entry().GetPointer());
+        auto entryHandle = pScope->AddTopLevelSeqEntry(*pEntry);
+        auto pChanged = CCleanup::ExtendedCleanup(entryHandle, options);
+        if (pChanged->ChangeCount()>0) {
+            return true;
+        }
     }
     return any_changes;
 }

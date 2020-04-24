@@ -12462,25 +12462,9 @@ void CNewCleanup_imp::SubmitblockBC(CSubmit_block& sb)
 void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
         CSeq_entry_Handle& seh )
 {
-    CSeq_entry_EditHandle edit_handle = seh.GetEditHandle();
-    CConstRef<CSeq_entry> e = seh.GetCompleteSeq_entry();
-    CRef<CSeq_entry> en(new CSeq_entry);
-    if ( e->IsSet() ) {
-        en->SetSet(const_cast<CBioseq_set&>(e->GetSet()));
-    }
-    else if ( e->IsSeq() ) {
-        en->SetSeq(const_cast<CBioseq&>(e->GetSeq()));
-    }
-    edit_handle.SelectNone();
-    
-    ExtendedCleanupSeqEntry(*en);
-    if ( en->IsSet() ) {
-        edit_handle.SelectSet(en->SetSet());
-    }
-    else if ( en->IsSeq() ) {
-        edit_handle.SelectSeq(en->SetSeq());
-    }
-    seh = edit_handle;
+    auto* pEntry  = const_cast<CSeq_entry*>(seh.GetCompleteSeq_entry().GetPointer());
+    SetScope(seh.GetScope());
+    ExtendedCleanupSeqEntry(*pEntry);
 }
 
 END_SCOPE(objects)
