@@ -844,13 +844,6 @@ public:
     }
 
     using TUpgradedWarnings = set<EErrCode>;
-    const TUpgradedWarnings& GetUpgradedWarnings(void) const {
-        return m_UpgradedWarnings;
-    }
-
-    TUpgradedWarnings& SetUpgradedWarnings() {
-        return m_UpgradedWarnings;
-    }
 
     void UpgradeToError(EErrCode code) {
         m_UpgradedWarnings.insert(code);
