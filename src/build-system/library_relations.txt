@@ -84,8 +84,6 @@ alndbaccess needs generic_db_core
 an_core needs gcaccess_utils
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
-an_core needs gpipe_fileutils
-an_core needs gpipe_xmlutil
 an_core needs pathogen_connection
 an_core needs reftrack_access
 an_core needs simple_asm
