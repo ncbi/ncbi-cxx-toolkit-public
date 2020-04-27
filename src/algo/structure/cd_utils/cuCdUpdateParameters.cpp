@@ -54,7 +54,7 @@ string BlastDatabaseNames[] = {
     "month",
     "SMARTBLAST/landmark",
     "CDSEARCH_TEST/nr_v4",
-    "CDSEARCH_TEST/pdb_v4",
+    "CDSEARCH/pdb_v5",
     "CDSEARCH/CDDupdate"
 };
 
