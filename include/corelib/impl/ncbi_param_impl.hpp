@@ -33,10 +33,9 @@
  *
  */
 
-
-#include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+
 
 BEGIN_NCBI_SCOPE
 

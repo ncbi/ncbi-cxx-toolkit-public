@@ -54,7 +54,6 @@
 #include <corelib/ncbi_mask.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbisys.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
 
 #include <sys/types.h>
@@ -62,8 +61,6 @@
 #  include <sys/stat.h>
 #endif
 
-#include <limits.h>
-#include <stdlib.h>
 #if defined(NCBI_OS_UNIX)
 #  include <sys/param.h>
 #endif

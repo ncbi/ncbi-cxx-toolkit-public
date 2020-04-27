@@ -49,7 +49,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
 #include <array>
-#include <set>
+
 
 BEGIN_NCBI_SCOPE
 
