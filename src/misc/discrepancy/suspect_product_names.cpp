@@ -427,7 +427,7 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_PRODUCTS)
 }
 
 
-DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS)
+DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS) // LCOV_EXCL_START // There are currently no autofixable rules for ORGANELLE_PRODUCTS
 {
     CRef<CAutofixReport> ret;
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
@@ -455,7 +455,7 @@ DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS)
         }
     }
     return ret;
-}
+} // LCOV_EXCL_STOP
 
 
 static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet(void)
