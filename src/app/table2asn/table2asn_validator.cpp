@@ -61,6 +61,7 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     if (flags.find('w') != string::npos)
     {
         CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects, false);
+        xForceUpdateHandle(h_entry);
     }
 
     // ignore 'e' flag, run ExtendedCleanup() uncoditionally - but only after 'x'
@@ -79,31 +80,31 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
             ++bi;
         }
     }
-    CCleanup cleanup;
     if (submit) {
+        CCleanup cleanup;
         cleanup.ExtendedCleanup(*submit, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        xForceUpdateHandle(h_entry);
     }
     else {
-        cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        CCleanup::ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
     }
-    xForceUpdateHandle(h_entry);
 
     if (flags.find('f') != string::npos)
     {        
-        m_context->m_suspect_rules.FixSuspectProductNames((*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer()), h_entry.GetScope());
+        m_context->m_suspect_rules.FixSuspectProductNames(*const_cast<CSeq_entry*>(h_entry.GetCompleteSeq_entry().GetPointer()), h_entry.GetScope());
     }
 
     // SQD-4386
     {
         for (CBioseq_CI it(h_entry); *it; ++it)
         {
-            cleanup.AddProteinTitle(*it);
+            CCleanup::AddProteinTitle(*it);
         }
     }
 
     if (flags.find('s') != string::npos)
     {
-        CCleanup::AddLowQualityException(h_entry.GetEditHandle());
+        CCleanup::AddLowQualityException(h_entry);
     }
 }
 
