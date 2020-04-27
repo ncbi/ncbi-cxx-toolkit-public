@@ -50,7 +50,6 @@
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
-#include <corelib/ncbi_system.hpp>
 #include <util/compress/tar.hpp>
 #include <util/error_codes.hpp>
 
@@ -58,25 +57,27 @@
 #  error "Class CTar can be defined on UNIX and MS-Windows platforms only!"
 #endif
 
-#ifdef NCBI_OS_UNIX
+#if   defined(NCBI_OS_UNIX)
 #  include "../../../corelib/ncbi_os_unix_p.hpp"
 #  include <grp.h>
 #  include <pwd.h>
 #  include <unistd.h>
 #  ifdef NCBI_OS_IRIX
 #    include <sys/mkdev.h>
-#    if !defined(major)  ||  !defined(minor)  ||  !defined(makedev)
-#      error "Device macros undefined in this UNIX build!"
-#    endif
+#  endif //NCBI_OS_IRIX
+#  ifdef HAVE_SYS_SYSMACROS_H
+#    include <sys/sysmacros.h>
+#  endif //HAVE_SYS_SYSMACROS_H
+#  if !defined(major)  ||  !defined(minor)  ||  !defined(makedev)
+#    error "Device macros undefined in this UNIX build!"
 #  endif
-#endif //NCBI_OS_UNIX
-#ifdef NCBI_OS_MSWIN
+#elif defined(NCBI_OS_MSWIN)
 #  include "../../../corelib/ncbi_os_mswin_p.hpp"
 #  include <io.h>
 typedef unsigned int mode_t;
 typedef unsigned int uid_t;
 typedef unsigned int gid_t;
-#endif //NCBI_OS_MSWIN
+#endif //NCBI_OS...
 
 
 #define NCBI_USE_ERRCODE_X  Util_Compress
@@ -3804,7 +3805,7 @@ string CTar::x_ReadLine(Uint8& size, const char*& data, size_t& nread)
 template<>
 struct Deleter<FILE>
 {
-    static void Delete(FILE* fp) { if (fp) fclose(fp); }
+    static void Delete(FILE* fp) { fclose(fp); }
 };
 
 
