@@ -1841,8 +1841,8 @@ public:
     CDeadline(const CTimeout& timeout);
 
     /// Type of special deadlines.
-    enum EType {
-        eInfinite, ///< Infinite deadline.
+    enum EType : unsigned {
+        eInfinite = numeric_limits<unsigned>::max(), ///< Infinite deadline.
     };
 
     /// Initialize deadline of specified type.
