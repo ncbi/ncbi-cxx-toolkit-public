@@ -625,6 +625,7 @@ AC_DIVERT_PUSH(PARSE_ARGS)
 dnl As of Autoconf 2.60, this needs to run too early for config.log,
 dnl to which AC_MSG_ERROR normally copies its output, to be available.
 m4_rename([AS_MESSAGE_LOG_FD], [NCBI_ORIG_ASMLFD])
+m4_define([AS_MESSAGE_LOG_FD], [])
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug max-debug max-debug=thread symbols optimization sse42 \
@@ -760,6 +761,7 @@ for x_arg in "$@" ; do
       ;;
    esac
 done
+m4_undefine([AS_MESSAGE_LOG_FD])
 m4_rename([NCBI_ORIG_ASMLFD], [AS_MESSAGE_LOG_FD])
 AC_DIVERT_POP
 
@@ -1072,6 +1074,9 @@ esac
 
 #### C and C++ compilers
 AC_LANG(C++)
+AC_PROG_CC
+ac_build_objext=$ac_objext
+AS_UNSET([ac_cv_c_compiler_gnu])
 AX_PROG_CC_FOR_BUILD
 AC_PROG_CXX
 
@@ -1851,7 +1856,9 @@ LIBS="$MATH_LIBS $LIBS"
 C_LIBS="$MATH_LIBS $C_LIBS"
 
 ### Should go before any test compiler runs
+AC_LANG_PUSH(C)
 AC_GNU_SOURCE
+AC_LANG_POP(C)
 
 if test -n "$with_64"; then
    AC_CACHE_CHECK([whether this system supports --with(out)-64],
@@ -2753,7 +2760,7 @@ esac
 
 ### Possibly add the version to the build directory name, but preseve
 ### the original default when reconfiguring.
-if test -z "${with_version}" -a -n "${ac_cv_header_stdc}"; then
+if test -z "${with_version}" -a -n "${ncbi_cv_sys_xdir_ln}"; then
    with_version=${ncbi_cv_with_version:-no}
 fi
 if test -z "${build_root}" ; then

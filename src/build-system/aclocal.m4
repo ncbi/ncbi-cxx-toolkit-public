@@ -17,27 +17,22 @@ ac_builddir=$builddir
 ])
 
 
-# _AS_DETECT_BETTER_SHELL and its helper _AS_RUN (from m4sh.m4; both
-# historically part of _AS_LINENO_PREPARE) also need tweaking, to make
-# bash a last resort due to issues with sourcing .bashrc while entirely
-# avoiding zsh, which passes itself off as ksh on some systems but runs
-# parent shells' exit handlers from subshells, resulting in premature
-# cleanup of temporary files (notably confdefs.h).
+dnl _AS_DETECT_BETTER_SHELL(from m4sh.m4; historically part of
+dnl _AS_LINENO_PREPARE) also needs tweaking, to make bash a last resort
+dnl due to issues with sourcing .bashrc.
 m4_copy([_AS_DETECT_BETTER_SHELL], [NCBI_ORIG__AS_DETECT_BETTER_SHELL])
-m4_copy([_AS_RUN], [NCBI_ORIG___AS_RUN])
 
 m4_define([_AS_DETECT_BETTER_SHELL],
   [patsubst(m4_defn([NCBI_ORIG__AS_DETECT_BETTER_SHELL]),
      [sh bash ksh sh5], [sh ksh sh5 bash])])
-m4_define([_AS_RUN],
-[m4_divert_once([M4SH-SANITIZE], [AS_UNSET(ZSH_VERSION)])dnl
-NCBI_ORIG___AS_RUN([test -z "${ZSH_VERSION+set}" || exit $?; $1], [$2])])
 
 
 # One more hack: suppress PACKAGE_*, as we don't use them and some
 # third-party libraries expose their corresponding settings, leading
 # to preprocessor warnings.
 m4_copy([AC_DEFINE_UNQUOTED], [NCBI_ORIG_AC_DEFINE_UNQUOTED])
+m4_ifdef([_AC_DEFINE_UNQUOTED],
+   [m4_copy([_AC_DEFINE_UNQUOTED], [_NCBI_ORIG_AC_DEFINE_UNQUOTED])])
 m4_define([AC_DEFINE_UNQUOTED],
    [ifelse(m4_substr([$1], 0, 8), [PACKAGE_], [],
        [NCBI_ORIG_AC_DEFINE_UNQUOTED($@)])])
