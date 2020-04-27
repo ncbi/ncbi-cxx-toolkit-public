@@ -68,6 +68,12 @@
 #  ifdef HAVE_SYS_SYSMACROS_H
 #    include <sys/sysmacros.h>
 #  endif //HAVE_SYS_SYSMACROS_H
+#  ifdef NCBI_OS_DARWIN
+// macOS supplies these as inline functions rather than macros.
+#    define major major
+#    define minor minor
+#    define makedev makedev
+#  endif
 #  if !defined(major)  ||  !defined(minor)  ||  !defined(makedev)
 #    error "Device macros undefined in this UNIX build!"
 #  endif

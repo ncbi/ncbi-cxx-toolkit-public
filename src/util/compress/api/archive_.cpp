@@ -42,6 +42,12 @@
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  include <sys/types.h>
+#  ifdef NCBI_OS_DARWIN
+// macOS supplies these as inline functions rather than macros.
+#    define major major
+#    define minor minor
+#    define makedev makedev
+#  endif
 #  if defined(HAVE_SYS_SYSMACROS_H)
 #    include <sys/sysmacros.h>
 #  endif
