@@ -19,6 +19,9 @@ race:corelib/test/test_ncbidiag_mt.cpp
 
 race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
 
+# ncbi_url.cpp default encoder. Leave as is. CXX-10543
+race:^ncbi::CSafeStatic<ncbi::CDefaultUrlEncoder, ncbi::CSafeStatic_Callbacks<ncbi::CDefaultUrlEncoder> >::x_Init()$
+
 
 ################################################################
 # ivanov
