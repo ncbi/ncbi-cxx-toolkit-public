@@ -1352,6 +1352,7 @@ void CMultiReaderApp::xSetFlags(
             m_iFlags |= CGff3Reader::fGeneXrefs;
         }
         if (args["genbank-no-locus-tags"]) {
+            m_iFlags |= CGff3Reader::fGeneXrefs;
             m_iFlags |= CGtfReader::fGenbankMode;
         }
         if ( args["genbank"] ) {
