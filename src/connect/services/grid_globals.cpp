@@ -41,8 +41,6 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
-#define RESOURCE_OVERUSE_EXIT_CODE 100
-
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -125,17 +123,8 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
                 ERR_POST(Warning << "Memory usage (" << memory_usage.total <<
                     ") is above the configured limit (" <<
                     total_memory_limit << ")");
-                grid_globals.RequestShutdown(CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
-            }
-        }
-
-        if (auto total_time_limit = worker_node.GetTotalTimeLimit()) {  // time check requested
-            auto passed = static_cast<unsigned>(difftime(time(nullptr), worker_node.GetStartupTime()));
-
-            if (passed > total_time_limit) {
-                LOG_POST("The total runtime limit (" << total_time_limit <<
-                        " seconds) has been reached after " << passed << " seconds");
-                grid_globals.RequestShutdown(CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
+                const auto kExitCode = 100; // See also one in wn_main_loop.cpp
+                grid_globals.RequestShutdown(CNetScheduleAdmin::eNormalShutdown, kExitCode);
             }
         }
     }

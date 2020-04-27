@@ -392,7 +392,7 @@ private:
         CNetServer x_ProcessRequestJobNotification();
     };
 
-    bool x_GetNextJob(CNetScheduleJob& job);
+    bool x_GetNextJob(CNetScheduleJob& job, const CDeadline& deadline);
 
     SGridWorkerNodeImpl* m_WorkerNode;
     CImpl m_Impl;

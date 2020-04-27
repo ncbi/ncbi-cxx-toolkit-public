@@ -562,6 +562,8 @@ void* CMainLoopThread::Main()
     CWorkerNodeJobContext job_context(
             m_WorkerNode->m_JobCommitterThread->AllocJobContext());
 
+    const auto total_time_limit = m_WorkerNode->m_TotalTimeLimit;
+    CDeadline deadline(total_time_limit ? CDeadline(total_time_limit) : CDeadline::eInfinite);
     CRequestContextSwitcher no_op;
     unsigned try_count = 0;
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
@@ -575,7 +577,7 @@ void* CMainLoopThread::Main()
                 continue;
             }
 
-            if (x_GetNextJob(job_context->m_Job)) {
+            if (x_GetNextJob(job_context->m_Job, deadline)) {
                 job_context->ResetJobContext();
 
                 try {
@@ -593,6 +595,13 @@ void* CMainLoopThread::Main()
                 }
                 job_context =
                         m_WorkerNode->m_JobCommitterThread->AllocJobContext();
+
+            } else if (deadline.IsExpired()) {
+                LOG_POST("The total runtime limit (" << total_time_limit << " seconds) has been reached");
+                const auto kExitCode = 100; // See also one in grid_globals.cpp
+                CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eNormalShutdown, kExitCode);
+                break;
+
             }
             max_wait_for_servers =
                 CDeadline(TWorkerNode_MaxWaitForServers::GetDefault());
@@ -719,7 +728,7 @@ void CMainLoopThread::CImpl::ReturnJob(CNetScheduleJob& job)
     m_WorkerNode->m_NSExecutor->ReturnJob(job, false);
 }
 
-bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
+bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job, const CDeadline& deadline)
 {
     if (!m_WorkerNode->x_AreMastersBusy()) {
         SleepSec(m_WorkerNode->m_NSTimeout);
@@ -731,7 +740,7 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
 
     const bool any_affinity = m_Impl.m_API->m_AffinityLadder.empty();
 
-    if (m_Timeline.GetJob(CDeadline::eInfinite, job, NULL, any_affinity) != CNetScheduleGetJob::eJob) {
+    if (m_Timeline.GetJob(deadline, job, NULL, any_affinity) != CNetScheduleGetJob::eJob) {
         return false;
     }
 
