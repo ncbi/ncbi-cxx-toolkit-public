@@ -994,33 +994,24 @@ void CTbl2AsnApp::ProcessOneEntry(
     else
         result = m_context.CreateSubmitFromTemplate(entry, submit);
 
- //   CSerialObject& submit_or_entry = submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit;
 
-
-    //m_context.MakeGenomeCenterId(*entry);
     fr.MakeGapsFromFeatures(*entry);
 
-    //CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
-    //CSeq_entry_EditHandle entry_edit_handle = seh.GetEditHandle();
 
     if (m_context.m_delay_genprodset)
     {
-        //VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
     }
     else
     {
-        //VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
     CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
-    CSeq_entry_EditHandle entry_edit_handle = seh.GetEditHandle();
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
     {
-        //m_context.m_remote_updater->UpdatePubReferences(submit_or_entry);
         m_context.m_remote_updater->UpdatePubReferences(*obj);
     }
     if (m_context.m_postprocess_pubs)
@@ -1028,16 +1019,10 @@ void CTbl2AsnApp::ProcessOneEntry(
         edit::CRemoteUpdater::PostProcessPubs(*entry);
     }
 
-    if (avoid_submit_block)
-    {
-        // we need to fix cit-sub date
-        //COpticalxml2asnOperator::UpdatePubDate(*result);
-    }
-
 
     if (m_context.m_cleanup.find('-') == string::npos)
     {
-       m_validator->Cleanup(submit, entry_edit_handle, m_context.m_cleanup);
+       m_validator->Cleanup(submit, seh, m_context.m_cleanup);
     }
 
     // make asn.1 look nicier
@@ -1069,7 +1054,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             CFlatFileGenerator ffgenerator;
 
             if (submit.Empty())
-                ffgenerator.Generate(entry_edit_handle, m_context.GetOstream(".gbf"));
+                ffgenerator.Generate(seh, m_context.GetOstream(".gbf"));
             else
                 ffgenerator.Generate(*submit, *m_context.m_scope, m_context.GetOstream(".gbf"));
         }
