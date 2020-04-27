@@ -38,7 +38,7 @@
 #
 #############################################################################
 
-AC_PREREQ(2.60)
+AC_PREREQ(2.69)
 
 dnl Early setup, most crucially for locking.  The diversion magic lets
 dnl this occur before AC_INIT, which already interferes with other
