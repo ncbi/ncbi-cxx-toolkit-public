@@ -247,7 +247,7 @@ void CSnpBitfield2::x_CreateString()
     char buff[5];
     for(unsigned int i=0; i < NUM_BYTES; i++) {
         unsigned char x = (unsigned char)m_listBytes[i];
-        sprintf(buff, "%02hX", (unsigned int)x);
+        sprintf(buff, "%02X", (unsigned int)x);
         m_strBits += buff;
         if(i+1 != NUM_BYTES)
             m_strBits += "-";
