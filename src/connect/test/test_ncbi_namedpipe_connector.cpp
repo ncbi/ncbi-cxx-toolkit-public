@@ -276,6 +276,7 @@ void CTest::Server(int n_cycle)
             _TROUBLE;
         }
     } while (--n_cycle > 0);
+
     // Close named pipe
     status = pipe.Close();
     assert(status == eIO_Success  ||  status == eIO_Closed);

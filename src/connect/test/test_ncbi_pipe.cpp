@@ -499,7 +499,7 @@ int main(int argc, const char* argv[])
     // Check arguments
     if (argc > 2) {
         // Invalid arguments
-        exit(1);
+        return 1;
     }
     if (argc == 1) {
         // Execute main application function
@@ -530,7 +530,7 @@ int main(int argc, const char* argv[])
             cout << endl;
         }
         ERR_POST(Info << "--- CPipe unidirectional test (1) done ---");
-        exit(kTestResult);
+        return kTestResult;
     }
     // Spawned process for unidirectional test (reads from pipe)
     case ePipeWrite:
@@ -540,7 +540,7 @@ int main(int argc, const char* argv[])
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
         ERR_POST(Info << "--- CPipe unidirectional test (2) done ---");
-        exit(kTestResult);
+        return kTestResult;
     }
     // Spawned process for bidirectional test (direct from pipe)
     case ePipe:
@@ -550,7 +550,7 @@ int main(int argc, const char* argv[])
         assert(command == "Child, are you ready again?");
         s_WriteLine(stdout, "Ok.");
         ERR_POST(Info << "--- CPipe bidirectional test (pipe) done ---");
-        exit(kTestResult);
+        return kTestResult;
     }
     // Spawned process for bidirectional test (iostream)
     case eStream:
@@ -564,7 +564,7 @@ int main(int argc, const char* argv[])
         }
         NcbiCout << "Done." << endl;
         ERR_POST(Info << "--- CPipe bidirectional test (iostream) done ---");
-        exit(kTestResult);
+        return kTestResult;
     }
     // Test for fKeepOnClose && fKillOnClose flags
     case eFlagsOnClose:
@@ -576,7 +576,7 @@ int main(int argc, const char* argv[])
         ERR_POST(Info << "--- CPipe sleeping test ---");
         SleepMilliSec(DEFAULT_TIMEOUT * 1500);
         ERR_POST(Info << "--- CPipe sleeping test done ---");
-        exit(kTestResult);
+        return kTestResult;
     }}
 
     ERR_POST(Fatal << "Huh?");

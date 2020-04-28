@@ -637,8 +637,11 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
         unsigned long x_sleep = 1;
         for (;;) {
-            if ( !::PeekNamedPipe(fd, NULL, 0, NULL, &bytes_avail, NULL) ) {
-                _ASSERT(!bytes_avail);
+            BOOL ok = ::PeekNamedPipe(fd, NULL, 0, NULL, &bytes_avail, NULL);
+            if ( bytes_avail ) {
+                break;
+            }
+            if ( !ok ) {
                 // Has peer closed the connection?
                 DWORD error = ::GetLastError();
                 if ( !x_IsDisconnectError(error) ) {
@@ -648,9 +651,6 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                                + x_GetHandleName(from_handle) + ')');
                 }
                 return eIO_Closed;
-            }
-            if ( bytes_avail ) {
-                break;
             }
 
             if ( !x_timeout ) {
@@ -675,19 +675,18 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         if (bytes_avail >         count) {
             bytes_avail = (DWORD) count;
         }
-        if ( !::ReadFile(fd, buf, bytes_avail, &bytes_avail, NULL) ) {
-            if ( !bytes_avail ) {
-                // NB: status == eIO_Unknown
-                PIPE_THROW(::GetLastError(),
-                           "Failed to read data from pipe I/O handle "
-                           + x_GetHandleName(from_handle));
+        BOOL ok = ::ReadFile(fd, buf, bytes_avail, &bytes_avail, NULL);
+        if ( !bytes_avail ) {
+            // NB: status == eIO_Unknown
+            PIPE_THROW(!ok ? ::GetLastError() : 0,
+                       "Failed to read data from pipe I/O handle "
+                       + x_GetHandleName(from_handle));
+        } else {
+            if ( n_read ) {
+                *n_read = (size_t) bytes_avail;
             }
-        } else
-            _ASSERT(bytes_avail);
-        if ( n_read ) {
-            *n_read = (size_t) bytes_avail;
+            status = eIO_Success;
         }
-        status = eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(2, s_FormatErrorMessage("Read", what));
@@ -728,21 +727,19 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
 
         unsigned long x_sleep = 1;
         for (;;) {
-            if ( !::WriteFile(m_ChildStdIn, (char*) buf, to_write,
-                              &bytes_written, NULL)) {
-                if ( !bytes_written ) {
-                    DWORD error = ::GetLastError();
-                    if ( x_IsDisconnectError(error) ) {
-                        status = eIO_Closed;
-                    } // NB: status == eIO_Unknown
-                    PIPE_THROW(error,
-                               "Failed to write data to pipe I/O handle "
-                               + x_GetHandleName(CPipe::eStdIn));
-                }
-                break;
-            }
+            BOOL ok = ::WriteFile(m_ChildStdIn, (char*) buf, to_write,
+                                  &bytes_written, NULL);
             if ( bytes_written ) {
                 break;
+            }
+            if ( !ok ) {
+                DWORD error = ::GetLastError();
+                if ( x_IsDisconnectError(error) ) {
+                    status = eIO_Closed;
+                } // NB: status == eIO_Unknown
+                PIPE_THROW(error,
+                           "Failed to write data to pipe I/O handle "
+                           + x_GetHandleName(CPipe::eStdIn));
             }
 
             if ( !x_timeout ) {

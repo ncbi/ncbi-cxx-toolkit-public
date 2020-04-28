@@ -129,7 +129,7 @@ public:
 
 protected:
     void Client(int num);
-    void Server(void);
+    int  Server(void);
 
     string   m_PipeName;
     STimeout m_Timeout;
@@ -209,7 +209,7 @@ int CTest::Run(void)
     }
     else if (args["mode"].AsString() == "server") {
         SetDiagPostPrefix("Server");
-        Server();
+        return Server();
     }
     else {
         _TROUBLE;
@@ -225,7 +225,7 @@ int CTest::Run(void)
 void CTest::Client(int num)
 {
     if (::rand() & 1) {
-        SleepMilliSec(150);
+        SleepMilliSec(100);
     }
     ERR_POST(Info << "Starting client " + NStr::IntToString(num) + "...");
 
@@ -235,10 +235,19 @@ void CTest::Client(int num)
     assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
-    EIO_Status status = pipe.Open(m_PipeName, kDefaultTimeout, kSubBlobSize);
-    if (status != eIO_Success) {
-        ERR_POST(Error << IO_StatusStr(status));
-        _TROUBLE;
+    EIO_Status status;
+    CDeadline timeout(g_STimeoutToCTimeout(&m_Timeout));
+    for (;;) {
+        // Wait for server to come up online
+        status = pipe.Open(m_PipeName, kDefaultTimeout, kSubBlobSize);
+        if (status == eIO_Success) {
+            break;
+        }
+        if(timeout.IsExpired()  ||  status != eIO_Closed) {
+            ERR_POST(Error << IO_StatusStr(status));
+            _TROUBLE;
+        }
+        SleepMilliSec(500);
     }
 
     char buf[kSubBlobSize];
@@ -303,7 +312,7 @@ void CTest::Client(int num)
 // Named pipe server
 //
 
-void CTest::Server(void)
+int CTest::Server(void)
 {
     ERR_POST(Info << "Starting server...");
 
@@ -317,17 +326,22 @@ void CTest::Server(void)
     assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
+    EIO_Status status;
+
     for (int n = 1;  n <= 10;  ++n) {
         if (::rand() & 1) {
             SleepMilliSec(100);
         }
         ERR_POST(Info << "Listening pipe " + NStr::IntToString(n) + "...");
 
-        EIO_Status status = pipe.Listen();
+        status = pipe.Listen();
         switch (status) {
         case eIO_Success:
             ERR_POST(Info << "Client connected!");
 
+            if (::rand() & 1) {
+                SleepMilliSec(100);
+            }
             // "Hello" test
             {{
                 assert(s_ReadPipe(pipe, buf, sizeof(buf), 5, &n_read) == eIO_Success);
@@ -337,6 +351,9 @@ void CTest::Server(void)
                 assert(n_written == 2);
             }}
 
+            if (::rand() & 1) {
+                SleepMilliSec(100);
+            }
             // Big binary blob test
             {{
                 // Receive a very big binary blob
@@ -363,7 +380,7 @@ void CTest::Server(void)
                 ERR_POST(Info << "Blob test is OK!");
             }}
             if (::rand() & 1) {
-                SleepMilliSec(150);
+                SleepMilliSec(100);
             }
             if (::rand() & 1) {
                 status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
@@ -392,6 +409,12 @@ void CTest::Server(void)
             _TROUBLE;
         }
     }
+
+    // Close named pipe
+    status = pipe.Close();
+    assert(status == eIO_Success  ||  status == eIO_Closed);
+    // Not supposed to reach here -- but get killed instead at test completion
+    return 1;
 }
 
 

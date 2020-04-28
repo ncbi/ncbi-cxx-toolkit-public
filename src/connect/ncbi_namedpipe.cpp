@@ -40,6 +40,7 @@
 
 #  include <connect/ncbi_socket_unix.h>
 #  include <errno.h>
+#  include <unistd.h>
 #  include <sys/socket.h>
 #  include <sys/types.h>
 
@@ -211,13 +212,16 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                                   const STimeout* timeout,
                                   size_t          /*pipesize*/)
 {
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+
+    EIO_Status status = eIO_Unknown;
+
     try {
         if (m_Pipe != INVALID_HANDLE_VALUE) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
                             + "\" already open");
         }
-        m_PipeName = pipename;
 
         // Set the base security attributes
         SECURITY_ATTRIBUTES attr;
@@ -237,31 +241,40 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         unsigned long x_sleep = 1;
         for (;;) {
             // Open existing pipe
-            m_Pipe = ::CreateFile
-                (_T_XCSTRING(m_PipeName),
-                 GENERIC_READ | GENERIC_WRITE,
-                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                 &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                 NULL);
-
-            if (m_Pipe != INVALID_HANDLE_VALUE) {
+            if (pipe == INVALID_HANDLE_VALUE) {
+                pipe = ::CreateFile
+                    (_T_XCSTRING(pipename),
+                     GENERIC_READ | GENERIC_WRITE,
+                     FILE_SHARE_READ | FILE_SHARE_WRITE,
+                     &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+                     NULL);
+            }
+            if (pipe != INVALID_HANDLE_VALUE) {
                 DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;  // non-blocking
-                if ( !::SetNamedPipeHandleState(m_Pipe, &mode, NULL, NULL) ) {
-                    NAMEDPIPE_THROW(::GetLastError(),
-                                    "Name pipe \"" + m_PipeName
-                                    + "\" failed to set non-blocking");
+                if ( ::SetNamedPipeHandleState(pipe, &mode, NULL, NULL) ) {
+                    break;
                 }
-                break;
             }
             DWORD error = ::GetLastError();
-            if (error != ERROR_FILE_NOT_FOUND  &&
-                error != ERROR_PIPE_BUSY) {
+            if ((pipe == INVALID_HANDLE_VALUE
+                 &&  error != ERROR_PIPE_BUSY)  ||
+                (pipe != INVALID_HANDLE_VALUE
+                 &&  error != ERROR_PIPE_NOT_CONNECTED)) {
+                if (pipe == INVALID_HANDLE_VALUE
+                    &&  error == ERROR_FILE_NOT_FOUND) {
+                    status = eIO_Closed;
+                }
                 NAMEDPIPE_THROW(error,
-                                "Named pipe \"" + m_PipeName
-                                + "\" failed to open");
+                                "Name pipe \"" + pipename
+                                + "\" failed to "
+                                + string(pipe == INVALID_HANDLE_VALUE
+                                         ? "open" : "set non-blocking"));
             }
 
             if ( !x_timeout ) {
+                if (pipe != INVALID_HANDLE_VALUE) {
+                    ::CloseHandle(pipe);
+                }
                 return eIO_Timeout;
             }
             if (x_timeout != INFINITE) {
@@ -276,8 +289,10 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 x_sleep = kWaitPrecision;
             }
         }
-        _ASSERT(m_Pipe != INVALID_HANDLE_VALUE);
+        _ASSERT(pipe != INVALID_HANDLE_VALUE);
 
+        m_Pipe        = pipe;
+        m_PipeName    = pipename;
         m_Connected   = 1/*client*/;
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
@@ -287,24 +302,28 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         ERR_POST_X(10, s_FormatErrorMessage("Open", what));
     }
 
-    return eIO_Unknown;
+    if (pipe != INVALID_HANDLE_VALUE) {
+        ::CloseHandle(pipe);
+    }
+    return status;
 }
 
 
 EIO_Status CNamedPipeHandle::Create(const string& pipename,
                                     size_t        pipesize)
 {
+    EIO_Status status = eIO_Unknown;
+
     try {
         if (m_Pipe != INVALID_HANDLE_VALUE) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
                             + "\" already exists");
         }
-        m_PipeName = pipename;
 
         if (pipesize > numeric_limits<DWORD>::max()) {
             NAMEDPIPE_THROW(0,
-                            "Named pipe \"" + m_PipeName
+                            "Named pipe \"" + pipename
                             + "\" buffer size "
                             + NStr::NumericToString(pipesize)
                             + " too large");
@@ -318,21 +337,27 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 
         // Create pipe
         m_Pipe = ::CreateNamedPipe
-            (_T_XCSTRING(m_PipeName),       // pipe name 
+            (_T_XCSTRING(pipename),         // pipe name 
              PIPE_ACCESS_DUPLEX,            // read/write access 
              PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, non-blocking mode 
              1,                             // one instance only 
              (DWORD) pipesize,              // output buffer size 
-             (DWORD) pipesize,              // input buffer size 
-             INFINITE,                      // client time-out by default
+             (DWORD) pipesize,              // input  buffer size 
+             INFINITE,                      // default client timeout
              &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            NAMEDPIPE_THROW(::GetLastError(),
-                            "Named pipe \"" + m_PipeName
+            DWORD error = ::GetLastError();
+            if (error == ERROR_ALREADY_EXISTS) {
+                status = eIO_Closed;
+            }
+            NAMEDPIPE_THROW(error,
+                            "Named pipe \"" + pipename
                             + "\" failed to create");
         }
 
+        _ASSERT(!m_Connected);
+        m_PipeName    = pipename;
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
         return eIO_Success;
@@ -341,7 +366,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         ERR_POST_X(11, s_FormatErrorMessage("Create", what));
     }
 
-    return eIO_Unknown;
+    return status;
 }
 
 
@@ -407,7 +432,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         m_Connected   = -1/*server*/;
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
-        status        = eIO_Success;
+        return eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(12, s_FormatErrorMessage("Listen", what));
@@ -495,6 +520,8 @@ EIO_Status CNamedPipeHandle::Close(void)
 EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
                                            DWORD*          in_avail)
 {
+    _ASSERT(m_Connected);
+
     *in_avail = 0;
 
     DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
@@ -504,20 +531,25 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
 
     unsigned long x_sleep = 1;
     for (;;) {
-        if ( !::PeekNamedPipe(m_Pipe, NULL, 0, NULL, in_avail, NULL) ) {
-            _ASSERT(!*in_avail);
+        BOOL ok = ::PeekNamedPipe(m_Pipe, NULL, 0, NULL, in_avail, NULL);
+        if ( *in_avail ) {
+            if (!(m_Connected & 2)) {
+                m_Connected |= 2;
+            }
+            break;
+        }
+        if ( !ok ) {
             // Has peer closed the connection?
             DWORD error = ::GetLastError();
-            if ( !x_IsDisconnectError(error) ) {
-                m_ReadStatus = eIO_Unknown;
-                return eIO_Unknown;
+            if ((m_Connected & 2)  ||  error != ERROR_PIPE_NOT_CONNECTED) {
+                if ( !x_IsDisconnectError(error) ) {
+                    m_ReadStatus = eIO_Unknown;
+                    return eIO_Unknown;
+                }
+                m_ReadStatus  = eIO_Closed;
+                m_WriteStatus = eIO_Closed;
+                return eIO_Closed;
             }
-            m_ReadStatus  = eIO_Closed;
-            m_WriteStatus = eIO_Closed;
-            return eIO_Closed;
-        }
-        if ( *in_avail ) {
-            break;
         }
 
         if ( !x_timeout ) {
@@ -569,20 +601,18 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             if (bytes_avail >         count) {
                 bytes_avail = (DWORD) count;
             }
-            if ( !::ReadFile(m_Pipe, buf, bytes_avail, &bytes_avail, NULL) ) {
+            BOOL ok = ::ReadFile(m_Pipe, buf, bytes_avail, &bytes_avail, NULL);
+            if ( !bytes_avail ) {
+                status = eIO_Unknown;
                 m_ReadStatus = eIO_Unknown;
-                if ( !bytes_avail ) {
-                    status = eIO_Unknown;
-                    NAMEDPIPE_THROW(::GetLastError(),
-                                    "Named pipe \"" + m_PipeName
+                NAMEDPIPE_THROW(!ok ? ::GetLastError() : 0,
+                                "Named pipe \"" + m_PipeName
                                     + "\" read failed");
-                }
-                // NB: status == eIO_Success
             } else {
+                // NB: status == eIO_Success
                 m_ReadStatus = eIO_Success;
-                _ASSERT(bytes_avail);
+                *n_read = bytes_avail;
             }
-            *n_read = bytes_avail;
         } else if (status == eIO_Timeout) {
             m_ReadStatus = eIO_Timeout;
         } else if (status != eIO_Closed) {
@@ -628,25 +658,29 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
 
         unsigned long x_sleep = 1;
         for (;;) {
-            if ( !::WriteFile(m_Pipe, buf, to_write, &bytes_written, NULL) ) {
-                m_WriteStatus = eIO_Unknown;
-                if ( !bytes_written ) {
-                    // NB: status == eIO_Unknown
-                    DWORD error = ::GetLastError();
+            BOOL ok = ::WriteFile(m_Pipe, buf, to_write, &bytes_written, NULL);
+            if ( bytes_written ) {
+                if (!(m_Connected & 2)) {
+                    m_Connected |= 2;
+                }
+                m_WriteStatus = ok ? eIO_Success : eIO_Unknown;
+                break;
+            }
+            if ( !ok ) {                
+                DWORD error = ::GetLastError();
+                if ((m_Connected & 2)  ||  error != ERROR_PIPE_NOT_CONNECTED) {
                     if ( x_IsDisconnectError(error) ) {
                         m_ReadStatus  = eIO_Closed;
                         m_WriteStatus = eIO_Closed;
                         status        = eIO_Closed;
+                    } else {
+                        m_WriteStatus = eIO_Unknown;
+                        // NB: status == eIO_Unknown
                     }
                     NAMEDPIPE_THROW(error,
                                     "Named pipe \"" + m_PipeName
                                     + "\" write failed");
                 }
-                break;
-            }
-            if ( bytes_written ) {
-                m_WriteStatus = eIO_Success;
-                break;
             }
 
             if ( !x_timeout ) {
@@ -764,8 +798,8 @@ private:
 private:
     LSOCK      m_LSocket;   // listening socket
     SOCK       m_IoSocket;  // I/O socket
-    string     m_PipeName;  // pipe name
     size_t     m_PipeSize;  // pipe size
+    string     m_PipeName;  // pipe name
 };
 
 
@@ -794,15 +828,13 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                             "Named pipe \""
                             + m_PipeName + "\" already open");
         }
-        m_PipeName = pipename;
-        m_PipeSize = 0;
 
-        status = SOCK_CreateUNIX(m_PipeName.c_str(), timeout, &m_IoSocket,
+        status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
                                  NULL, 0, 0/*flags*/);
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \""
-                            + m_PipeName + "\" failed to create UNIX socket: "
+                            + pipename + "\" failed to create UNIX socket: "
                             + string(IO_StatusStr(status)));
         }
         SOCK_SetTimeout(m_IoSocket, eIO_Close, timeout);
@@ -817,13 +849,15 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     _ASSERT(error);
                     NAMEDPIPE_THROW(error,
                                     "Named pipe \""
-                                    + m_PipeName + "\" failed to set"
+                                    + pipeame + "\" failed to set"
                                     " UNIX socket buffer size "
                                     + NStr::NumericToString(pipesize));
                 }
             }
         }
 
+        m_PipeSize = 0/*not needed*/;
+        m_PipeName = pipename;
         return eIO_Success;
     }
     catch (string& what) {
@@ -845,10 +879,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                             "Named pipe \""
                             + m_PipeName + "\" already exists");
         }
-        m_PipeName = pipename;
-        m_PipeSize = pipesize;
 
-        CDirEntry pipe(m_PipeName);
+        CDirEntry pipe(pipename);
         switch (pipe.GetType()) {
         case CDirEntry::eSocket:
             pipe.Remove();
@@ -860,7 +892,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
             status = eIO_Unknown;
             NAMEDPIPE_THROW(0,
                             "Named pipe path \""
-                            + m_PipeName + "\" already exists");
+                            + pipename + "\" already exists");
         }
 
         status = LSOCK_CreateUNIX(pipename.c_str(),
@@ -869,10 +901,12 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \""
-                            + m_PipeName + "\" failed to create listening"
+                            + pipename + "\" failed to create listening"
                             " UNIX socket: " + string(IO_StatusStr(status)));
         }
 
+        m_PipeSize = pipesize;
+        m_PipeName = pipename;
         return eIO_Success;
     }
     catch (string& what) {
@@ -1231,11 +1265,11 @@ const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
 void CNamedPipe::x_SetName(const string& pipename)
 {
 #ifdef NCBI_OS_MSWIN
-    static const char separators[] = ":/\\";
+    static const char kSeparators[] = ":/\\";
 #else
-    static const char separators[] = "/";
+    static const char kSeparators[] = "/";
 #endif
-    if (pipename.find_first_of(separators) != NPOS) {
+    if (pipename.find_first_of(kSeparators) != NPOS) {
         m_PipeName = pipename;
         return;
     }
@@ -1243,19 +1277,18 @@ void CNamedPipe::x_SetName(const string& pipename)
 #if defined(NCBI_OS_MSWIN)
     m_PipeName = "\\\\.\\pipe\\" + pipename;
 #elif defined(NCBI_OS_UNIX)
-    static const mode_t k_writeable = S_IWUSR | S_IWGRP | S_IWOTH;
     struct stat st;
 
     const char* pipedir = "/var/tmp";
     if (::stat(pipedir, &st) != 0  ||  !S_ISDIR(st.st_mode)
-        ||  (st.st_mode & k_writeable) != k_writeable) {
+        ||  ::access(pipedir, W_OK) != 0) {
         pipedir = "/tmp";
         if (::stat(pipedir, &st) != 0  ||  !S_ISDIR(st.st_mode)
-            ||  (st.st_mode & k_writeable) != k_writeable) {
+            ||  ::access(pipedir, W_OK) != 0) {
             pipedir = ".";
         }
     }
-    m_PipeName = string(pipedir) + "/" + pipename;
+    m_PipeName = string(pipedir) + '/' + pipename;
 #else
     m_PipeName = pipename;
 #endif

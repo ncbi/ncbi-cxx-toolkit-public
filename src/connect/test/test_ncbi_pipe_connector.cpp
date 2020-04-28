@@ -320,7 +320,7 @@ int main(int argc, const char* argv[])
         assert(command == "Child, are you ready?");
         NcbiCout << "Ok. Test 1 running." << endl;
         ERR_POST(Info << "--- PIPE CONNECTOR unidirectional test done ---");
-        exit(0);
+        return 0;
     }
 
     // Spawned process for bidirectional test
@@ -330,7 +330,7 @@ int main(int argc, const char* argv[])
         assert(command == "Child, are you ready again?");
         s_WriteLine(stdout, "Ok. Test 2 running.");
         ERR_POST(Info << "--- PIPE CONNECTOR bidirectional test done ---");
-        exit(0);
+        return 0;
     }
 
     // Spawned process for bidirectional standard test
@@ -340,7 +340,7 @@ int main(int argc, const char* argv[])
         _setmode(_fileno(stdout), _O_BINARY);
 #endif // NCBI_OS_MSWIN
         ERR_POST(Info << "--- PIPE CONNECTOR bidirectional standard test ---");
-        // NB: NcbiStreamCopy(cout, cin) can't be used because of bufferring
+        // NB: NcbiStreamCopy(cout, cin) can't be used because of buffering
         do {
             int c;
             if ((c = cin.get()) != EOF) {
@@ -348,7 +348,7 @@ int main(int argc, const char* argv[])
             }
         } while (cin  &&  cout);
         ERR_POST(Info << "--- PIPE CONNECTOR bidirectional standard test done ---");
-        exit(0);
+        return 0;
     }
 
     ERR_POST(Fatal << "Huh?");

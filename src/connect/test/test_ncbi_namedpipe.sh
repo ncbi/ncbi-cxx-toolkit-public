@@ -37,13 +37,13 @@ while true; do
   t="`expr $t + 1`"
   if [ $t -gt $timeout ]; then
     echo "`date` FATAL:  Timed out waiting for server to start." >$client_log
-    exit_code=1
+    exit_code=2
     break
   fi
   sleep 1
 done
 
-( kill    $spid ) >/dev/null 2>&1  ||  exit_code=2
+( kill    $spid ) >/dev/null 2>&1  ||  exit_code=3
 ( kill -9 $spid ) >/dev/null 2>&1
 wait $spid 2>/dev/null
 
