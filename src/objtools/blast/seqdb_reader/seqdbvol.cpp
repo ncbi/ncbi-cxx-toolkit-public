@@ -3035,15 +3035,14 @@ void CSeqDBVol::GetColumnBlob(int              col_id,
                               bool             keep,
                               CSeqDBLockHold & locked)
 {
-    //m_Atlas.Lock(locked);
-
     if (! m_HaveColumns) {
         x_OpenAllColumns(locked);
     }
 
+    if ((int)m_Columns.size() == 0 || m_Columns[col_id].Empty())
+	return;
+
     _ASSERT(col_id >= 0);
-    _ASSERT(col_id < (int)m_Columns.size());
-    _ASSERT(m_Columns[col_id].NotEmpty());
 
     m_Columns[col_id]->GetBlob(oid, blob, keep, & locked);
 }

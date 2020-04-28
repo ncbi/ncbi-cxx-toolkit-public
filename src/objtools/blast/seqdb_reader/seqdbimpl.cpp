@@ -2575,10 +2575,16 @@ void CSeqDBImpl::GetMaskData(int                       oid,
         // If there actually is mask data, then we need to do the
         // algorithm translation.
 
-        int vol_algo_id = m_AlgorithmIds.GetVolAlgo(vol_idx, algo_id);
+        int vol_algo_id = -1;
+	try {
+        	vol_algo_id = m_AlgorithmIds.GetVolAlgo(vol_idx, algo_id);
+	}  // indicates that masking algo not in this volume (should not be fatal)
+    	catch(CSeqDBException & e) {
+		return;
+        }
 
         s_ReadRanges<SReadInt4>(vol_algo_id, ranges, blob);
-    }
+    } 
 
     //int seq_length = 0;
 }
