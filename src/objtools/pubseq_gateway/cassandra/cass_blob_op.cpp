@@ -379,8 +379,12 @@ void CCassBlobOp::UpdateBlobFlagsExtended(
 
 *****************************************************/
 
+//#define MULTI_SETTINGS_TBL
+
 void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value)
 {
+#ifdef MULTI_SETTINGS_TBL
+
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
         [this, name, value](bool /*is_repeated*/) {
             string sql = "INSERT INTO " + KeySpaceDot(m_Keyspace) + "settings (name, value) VALUES(?, ?)";
@@ -392,6 +396,7 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
             return true;
         }
     );
+#endif
     
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
         [this, name, value](bool /*is_repeated*/) {
@@ -410,6 +415,7 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
 bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, string & value)
 {
     bool rslt = false;
+#ifdef MULTI_SETTINGS_TBL
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
         [this, name, &value, &rslt](bool is_repeated) {
             string sql = "SELECT value FROM " + KeySpaceDot(m_Keyspace) + "settings WHERE name = ?";
@@ -427,12 +433,11 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
             return true;
         }
     );
-    
-    bool rslt1 = false;
-    string value1 = "";
+    @@@
+#endif
     
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [this, name, &value1, &rslt1](bool is_repeated) {
+        [this, name, &value, &rslt](bool is_repeated) {
             string sql = "SELECT value FROM maintenance.settings WHERE domain = ? AND name = ?";
             shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
             qry->SetSQL(sql, 2);
@@ -443,21 +448,14 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
             qry->Query(cons, false, false);
             async_rslt_t rv = qry->NextRow();
             if (rv == ar_dataready) {
-                qry->FieldGetStrValue(0, value1);
-                rslt1 = true;
+                qry->FieldGetStrValue(0, value);
+                rslt = true;
             }
             return true;
         }
     );
 
     return rslt;
-    
-    //if( rslt && rslt1)
-    //{
-    //  if( !value.compare( value1)) return true;
-    //}
-    
-    //return false;
 }
 
 END_IDBLOB_SCOPE
