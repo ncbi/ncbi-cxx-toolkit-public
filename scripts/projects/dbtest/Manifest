@@ -32,7 +32,7 @@ FreeBSD64             : plain : Clang.sh  --without-debug --without-mt --with-st
 IntelMAC              : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile --without-gcrypt
 Win64_17              : plain : static 64 ReleaseDLL
 Linux64-Ubuntu        : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
-# Linux64-Ubuntu-Public : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
+Linux64-Ubuntu-Public : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 
 # USE_COMPONENTS
 
