@@ -383,7 +383,7 @@ bool CDUpdater::processBlastHits()
 	}
 	else
 	{
-		LOG_POST("Found no BLAST hits to process for CD " << m_cd->GetAccession() << ". Will try again to retrieve the hits.\n");
+		LOG_POST("Found no BLAST hits to process for CD " << m_cd->GetAccession() << ".\n");
 	}
 	return updated;
 }
@@ -1106,6 +1106,8 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 	vector< CRef<CSeq_id> > seqids;
 	unsigned int batchSize = 500;
 	unsigned int maxBatchSize = 2000;
+    string dbName = CdUpdateParameters::getBlastDatabaseName(m_config.database);
+        
 	list< CRef< CSeq_align > >& seqAligns = alignments.Set();
 	list< CRef< CSeq_align > >::iterator lit = seqAligns.begin();
 	for (; lit != seqAligns.end(); lit++)
@@ -1120,8 +1122,11 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 			vector< CRef< CBioseq > > bioseqBatch;
 			try {
 				//LOG_POST("Calling CBlastServices::GetSequences().\n");
-				CBlastServices::GetSequences(seqids, "nr", 'p', bioseqBatch, errors,warnings);
-				LOG_POST("Returned from CBlastServices::GetSequences() with a batch of " << bioseqBatch.size() << " sequences.");
+                //  For Blast v5 databases, not all members of an identical protein group are in the database
+                //  which may cause GetSequences to not find the exact sequence specified from such a group
+                //  if it wasn't one of the representatives (5 as of early 2020).
+				CBlastServices::GetSequences(seqids, dbName, 'p', bioseqBatch, errors,warnings);
+				LOG_POST("Returned from CBlastServices::GetSequences('" << dbName << "') with a batch of " << bioseqBatch.size() << " sequences.");
 			}
 			catch (blast::CBlastException& be)
             {
