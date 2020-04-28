@@ -2473,6 +2473,7 @@ esac
 dnl Autoconf 2.62+ has an AC_PATH_PROGS_FEATURE_CHECK macro that could
 dnl also be useful.
 AX_CHECK_GNU_MAKE
+AC_PATH_PROG(AWK, ${ac_cv_prog_AWK-awk})
 AC_PATH_PROG(MAKE, ${ax_cv_gnu_make_command-make})
 export MAKE
 
