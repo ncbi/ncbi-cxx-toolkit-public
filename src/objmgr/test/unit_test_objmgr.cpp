@@ -35,6 +35,9 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/seq_align_handle.hpp>
+#include <objmgr/seq_graph_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -45,6 +48,8 @@
 
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqalign/seqalign__.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <serial/iterator.hpp>
@@ -205,6 +210,290 @@ BOOST_AUTO_TEST_CASE(TestReResolve4)
     BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 3u);
     BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 5u);
     BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 5u);
+}
+
+
+static CRef<CSeq_feat> s_CreateFeatForEdit(const CSeq_id* id)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    feat->SetData().SetGene().SetLocus("test locus");
+    feat->SetLocation().SetInt().SetId(*SerialClone(*id));
+    feat->SetLocation().SetInt().SetFrom(419);
+    feat->SetLocation().SetInt().SetTo(1171);
+    feat->SetLocation().SetInt().SetStrand(eNa_strand_plus);
+    return feat;
+}
+
+
+static CRef<CSeq_align> s_CreateAlignForEdit(const CSeq_id* id1, const CSeq_id* id2)
+{
+    CRef<CSeq_align> align(new CSeq_align);
+    auto& segs = align->SetSegs().SetDenseg();
+    segs.SetNumseg(1);
+    segs.SetIds().push_back(Ref(SerialClone(*id1)));
+    segs.SetIds().push_back(Ref(SerialClone(*id2)));
+    segs.SetStarts().push_back(1);
+    segs.SetStarts().push_back(100);
+    segs.SetLens().push_back(100);
+    return align;
+}
+
+
+static CRef<CSeq_graph> s_CreateGraphForEdit(const CSeq_id* id)
+{
+    CRef<CSeq_graph> graph(new CSeq_graph);
+    graph->SetLoc().SetInt().SetId(*SerialClone(*id));
+    graph->SetLoc().SetInt().SetFrom(419);
+    graph->SetLoc().SetInt().SetTo(1171);
+    graph->SetLoc().SetInt().SetStrand(eNa_strand_plus);
+    graph->SetGraph().SetByte().SetMin(0);
+    graph->SetGraph().SetByte().SetMax(1);
+    graph->SetGraph().SetByte().SetAxis(0);
+    graph->SetGraph().SetByte().SetValues().resize(1171-419+1);
+    return graph;
+}
+
+
+static CRef<CBioseq> s_CreateBioseqForEdit(const CSeq_id* id1 = 0, const CSeq_id* id2 = 0)
+{
+    CRef<CBioseq> seq(new CBioseq);
+    if ( id1 ) {
+        seq->SetId().push_back(Ref(SerialClone(*id1)));
+    }
+    if ( id2 ) {
+        seq->SetId().push_back(Ref(SerialClone(*id2)));
+    }
+    seq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
+    seq->SetInst().SetMol(CSeq_inst::eMol_dna);
+    seq->SetInst().SetLength(1172);
+    seq->SetAnnot().push_back(Ref(new CSeq_annot));
+    seq->SetAnnot().back()->SetData().SetFtable();
+    return seq;
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqAdd)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 0u);
+    BOOST_REQUIRE(CSeq_annot_CI(bh));
+    CSeq_annot_CI(bh)->GetEditHandle().AddFeat(*feat);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqReplace)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CRef<CSeq_feat> feat2 = s_CreateFeatForEdit(id2);
+    seq->SetAnnot().back()->SetData().SetFtable().push_back(feat);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+    BOOST_REQUIRE(CSeq_annot_CI(bh));
+    BOOST_REQUIRE_EQUAL(CFeat_CI(*CSeq_annot_CI(bh)).GetSize(), 1u);
+    CSeq_feat_EditHandle(*CFeat_CI(*CSeq_annot_CI(bh))).Replace(*feat2);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotExternalAdd)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable();
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 0u);
+    ah.GetEditHandle().AddFeat(*feat);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotExternalReplace)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CRef<CSeq_feat> feat2 = s_CreateFeatForEdit(id2);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable().push_back(feat);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+    BOOST_REQUIRE_EQUAL(CFeat_CI(ah).GetSize(), 1u);
+    CSeq_feat_EditHandle(*CFeat_CI(ah)).Replace(*feat2);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotOrphanAdd)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable();
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot, 3);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 0u);
+    ah.GetEditHandle().AddFeat(*feat);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotOrphanReplace)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CRef<CSeq_feat> feat2 = s_CreateFeatForEdit(id2);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable().push_back(feat);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot, 3);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+    BOOST_REQUIRE_EQUAL(CFeat_CI(ah).GetSize(), 1u);
+    CSeq_feat_EditHandle(*CFeat_CI(ah)).Replace(*feat2);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotNoSeqAdd)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    loc1->SetWhole(*id1);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
+    loc2->SetWhole(*id2);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable();
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 0u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 0u);
+    ah.GetEditHandle().AddFeat(*feat);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 0u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotNoSeqReplace)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    loc1->SetWhole(*id1);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
+    loc2->SetWhole(*id2);
+    CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
+    CRef<CSeq_feat> feat2 = s_CreateFeatForEdit(id2);
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable().push_back(feat);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 0u);
+    BOOST_REQUIRE_EQUAL(CFeat_CI(ah).GetSize(), 1u);
+    CSeq_feat_EditHandle(*CFeat_CI(ah)).Replace(*feat2);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, SAnnotSelector().SetSearchUnresolved()).GetSize(), 0u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc2, SAnnotSelector().SetSearchUnresolved()).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqAlignAdd)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id0(new CSeq_id("lcl|Ref"));
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    seq->SetAnnot().back()->SetData().SetAlign();
+    CRef<CSeq_align> align = s_CreateAlignForEdit(id0, id1);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_CHECK_EQUAL(CAlign_CI(bh).GetSize(), 0u);
+    BOOST_REQUIRE(CSeq_annot_CI(bh));
+    CSeq_annot_CI(bh)->GetEditHandle().AddAlign(*align);
+    BOOST_CHECK_EQUAL(CAlign_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqAlignReplace)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id0(new CSeq_id("lcl|Ref"));
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    seq->SetAnnot().back()->SetData().SetAlign();
+    CRef<CSeq_align> align = s_CreateAlignForEdit(id0, id1);
+    CRef<CSeq_align> align2 = s_CreateAlignForEdit(id0, id2);
+    seq->SetAnnot().back()->SetData().SetAlign().push_back(align);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_REQUIRE_EQUAL(CAlign_CI(bh).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(&CAlign_CI(bh).GetOriginalSeq_align(), align);
+    BOOST_REQUIRE(CSeq_annot_CI(bh));
+    BOOST_REQUIRE_EQUAL(CAlign_CI(*CSeq_annot_CI(bh)).GetSize(), 1u);
+    CAlign_CI(*CSeq_annot_CI(bh)).GetSeq_align_Handle().Replace(*align2);
+    BOOST_REQUIRE_EQUAL(CAlign_CI(bh).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(&CAlign_CI(bh).GetOriginalSeq_align(), align2);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqGraphAdd)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    seq->SetAnnot().back()->SetData().SetGraph();
+    CRef<CSeq_graph> graph = s_CreateGraphForEdit(id1);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_CHECK_EQUAL(CGraph_CI(bh).GetSize(), 0u);
+    BOOST_REQUIRE(CSeq_annot_CI(bh));
+    CSeq_annot_CI(bh)->GetEditHandle().AddGraph(*graph);
+    BOOST_CHECK_EQUAL(CGraph_CI(bh).GetSize(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqGraphReplace)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CSeq_id> id2(new CSeq_id("KF591393"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1, id2);
+    seq->SetAnnot().back()->SetData().SetGraph();
+    CRef<CSeq_graph> graph = s_CreateGraphForEdit(id1);
+    CRef<CSeq_graph> graph2 = s_CreateGraphForEdit(id2);
+    seq->SetAnnot().back()->SetData().SetGraph().push_back(graph);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_REQUIRE_EQUAL(CGraph_CI(bh).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(&CGraph_CI(bh)->GetOriginalGraph(), graph);
+    BOOST_REQUIRE(CSeq_annot_CI(bh));
+    BOOST_REQUIRE_EQUAL(CGraph_CI(*CSeq_annot_CI(bh)).GetSize(), 1u);
+    CGraph_CI(*CSeq_annot_CI(bh))->GetSeq_graph_Handle().Replace(*graph2);
+    BOOST_REQUIRE_EQUAL(CGraph_CI(bh).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(&CGraph_CI(bh)->GetOriginalGraph(), graph2);
 }
 
 
