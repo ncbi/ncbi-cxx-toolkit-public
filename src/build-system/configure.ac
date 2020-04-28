@@ -2471,7 +2471,7 @@ case "$compiler" in
 esac
 
 dnl Autoconf 2.62+ has an AC_PATH_PROGS_FEATURE_CHECK macro that could
-dnl also be useful, but we're still on 2.60.
+dnl also be useful.
 AX_CHECK_GNU_MAKE
 AC_PATH_PROG(MAKE, ${ax_cv_gnu_make_command-make})
 export MAKE
