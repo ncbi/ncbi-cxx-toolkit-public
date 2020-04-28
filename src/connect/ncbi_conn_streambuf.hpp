@@ -152,8 +152,10 @@ private:
 
     static EIO_Status x_OnClose(CONN conn, TCONN_Callback type, void* data);
 
-    string            x_Message(const CTempString msg,
-                                EIO_Status status = eIO_Success);
+    string            x_Message(const char*     method,
+                                const char*     message,
+                                EIO_Status      status = eIO_Success,
+                                const STimeout* timeout = 0/*kInfiniteTmo*/);
 
     SCONN_Callback    m_Cb;
 };

@@ -994,7 +994,7 @@ static void s_Exit(int status, int fd)
 {
     int errcode = errno;
     (void) ::write(fd, &errcode, sizeof(errcode));
-    ::close(fd);
+    (void) ::close(fd);
     ::_exit(status);
 }
 
