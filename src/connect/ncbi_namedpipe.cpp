@@ -849,7 +849,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     _ASSERT(error);
                     NAMEDPIPE_THROW(error,
                                     "Named pipe \""
-                                    + pipeame + "\" failed to set"
+                                    + pipename + "\" failed to set"
                                     " UNIX socket buffer size "
                                     + NStr::NumericToString(pipesize));
                 }
