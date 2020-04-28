@@ -1012,7 +1012,7 @@
 #cmakedefine HAVE_NCBI_VDB 1
 
 /* Define to 1 if ODBC libraries are available. */
-/* #undef HAVE_ODBC */
+#cmakedefine HAVE_ODBC 1
 
 /* Define to 1 if you have the <odbcss.h> header file. */
 #cmakedefine HAVE_ODBCSS_H 1

@@ -456,6 +456,7 @@ set(NCBI_COMPONENT_ODBC_FOUND NO)
 
 #############################################################################
 # MySQL
+if(NOT NCBI_COMPONENT_MySQL_DISABLED)
 find_external_library(Mysql INCLUDES mysql/mysql.h LIBS mysqlclient)
 if(MYSQL_FOUND)
     set(NCBI_COMPONENT_MySQL_FOUND YES)
@@ -465,6 +466,9 @@ if(MYSQL_FOUND)
 else()
   set(NCBI_COMPONENT_MySQL_FOUND NO)
 endif()
+else(NOT NCBI_COMPONENT_MySQL_DISABLED)
+    message("DISABLED MySQL")
+endif(NOT NCBI_COMPONENT_MySQL_DISABLED)
 
 #############################################################################
 # Sybase
@@ -484,6 +488,7 @@ if (NCBI_COMPONENT_PYTHON_FOUND)
 endif()
 #############################################################################
 # VDB
+if(NOT NCBI_COMPONENT_VDB_DISABLED)
 find_external_library(VDB INCLUDES sra/sradb.h LIBS ncbi-vdb
     INCLUDE_HINTS ${NCBI_ThirdParty_VDB}/interfaces
     LIBS_HINTS    ${NCBI_ThirdParty_VDB}/linux/release/x86_64/lib
@@ -503,6 +508,9 @@ if(VDB_FOUND)
 else()
     set(NCBI_COMPONENT_VDB_FOUND NO)
 endif()
+else(NOT NCBI_COMPONENT_VDB_DISABLED)
+    message("DISABLED VDB")
+endif(NOT NCBI_COMPONENT_VDB_DISABLED)
 
 ##############################################################################
 # wxWidgets
@@ -601,6 +609,7 @@ NCBI_define_component(XLSXWRITER xlsxwriter)
 
 #############################################################################
 # LAPACK
+if(NOT NCBI_COMPONENT_LAPACK_DISABLED)
 check_include_file(lapacke.h HAVE_LAPACKE_H)
 check_include_file(lapacke/lapacke.h HAVE_LAPACKE_LAPACKE_H)
 check_include_file(Accelerate/Accelerate.h HAVE_ACCELERATE_ACCELERATE_H)
@@ -619,9 +628,13 @@ if(LAPACK_FOUND)
 else()
   set(NCBI_COMPONENT_LAPACK_FOUND NO)
 endif()
+else(NOT NCBI_COMPONENT_LAPACK_DISABLED)
+    message("DISABLED LAPACK")
+endif(NOT NCBI_COMPONENT_LAPACK_DISABLED)
 
 #############################################################################
 # SAMTOOLS
+if(NOT NCBI_COMPONENT_SAMTOOLS_DISABLED)
 find_external_library(samtools INCLUDES bam.h  LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
 if(SAMTOOLS_FOUND)
     set(NCBI_COMPONENT_SAMTOOLS_FOUND YES)
@@ -631,6 +644,9 @@ if(SAMTOOLS_FOUND)
 else()
     set(NCBI_COMPONENT_SAMTOOLS_FOUND NO)
 endif()
+else(NOT NCBI_COMPONENT_SAMTOOLS_DISABLED)
+    message("DISABLED SAMTOOLS")
+endif(NOT NCBI_COMPONENT_SAMTOOLS_DISABLED)
 
 #############################################################################
 # FreeType
@@ -691,6 +707,7 @@ NCBI_define_component(XALAN xalan-c xalanMsg)
 
 ##############################################################################
 # PERL
+if(NOT NCBI_COMPONENT_PERL_DISABLED)
 find_package(PerlLibs)
 if (PERLLIBS_FOUND)
     set(NCBI_COMPONENT_PERL_FOUND   YES)
@@ -698,6 +715,9 @@ if (PERLLIBS_FOUND)
     set(NCBI_COMPONENT_PERL_LIBS    ${PERL_LIBRARY})
     list(APPEND NCBI_ALL_COMPONENTS PERL)
 endif()
+else(NOT NCBI_COMPONENT_PERL_DISABLED)
+    message("DISABLED PERL")
+endif(NOT NCBI_COMPONENT_PERL_DISABLED)
 
 #############################################################################
 # OpenSSL
@@ -709,6 +729,7 @@ NCBI_define_component(MSGSL)
 
 #############################################################################
 # SGE  (Sun Grid Engine)
+if(NOT NCBI_COMPONENT_SGE_DISABLED)
 find_external_library(SGE INCLUDES drmaa.h LIBS drmaa
     INCLUDE_HINTS "${NCBI_ThirdParty_SGE}/include"
     LIBS_HINTS "${NCBI_ThirdParty_SGE}/ncbi-lib/lx-amd64/")
@@ -719,6 +740,9 @@ if (SGE_FOUND)
     set(HAVE_LIBSGE 1)
     list(APPEND NCBI_ALL_COMPONENTS SGE)
 endif()
+else(NOT NCBI_COMPONENT_SGE_DISABLED)
+    message("DISABLED SGE")
+endif(NOT NCBI_COMPONENT_SGE_DISABLED)
 
 #############################################################################
 # MONGOCXX
@@ -733,6 +757,7 @@ NCBI_define_component(LEVELDB leveldb)
 
 #############################################################################
 # WGMLST
+if(NOT NCBI_COMPONENT_WGMLST_DISABLED)
 find_package(SKESA)
 if (WGMLST_FOUND)
     set(NCBI_COMPONENT_WGMLST_FOUND YES)
@@ -740,9 +765,13 @@ if (WGMLST_FOUND)
     set(NCBI_COMPONENT_WGMLST_LIBS    ${WGMLST_LIBPATH} ${WGMLST_LIBRARIES})
     list(APPEND NCBI_ALL_COMPONENTS WGMLST)
 endif()
+else(NOT NCBI_COMPONENT_WGMLST_DISABLED)
+    message("DISABLED WGMLST")
+endif(NOT NCBI_COMPONENT_WGMLST_DISABLED)
 
 #############################################################################
 # GLPK
+if(NOT NCBI_COMPONENT_GLPK_DISABLED)
 find_external_library(glpk INCLUDES glpk.h LIBS glpk
     HINTS "/usr/local/glpk/4.45")
 if(GLPK_FOUND)
@@ -751,6 +780,9 @@ if(GLPK_FOUND)
     set(NCBI_COMPONENT_GLPK_LIBS    ${GLPK_LIBS})
     list(APPEND NCBI_ALL_COMPONENTS GLPK)
 endif()
+else(NOT NCBI_COMPONENT_GLPK_DISABLED)
+    message("DISABLED GLPK")
+endif(NOT NCBI_COMPONENT_GLPK_DISABLED)
 
 #############################################################################
 # UV

@@ -314,7 +314,7 @@ set(NCBI_COMPONENT_ODBC_FOUND NO)
 set(ODBC_INCLUDE  ${NCBI_INC_ROOT}/dbapi/driver/odbc/unix_odbc 
                   ${NCBI_INC_ROOT}/dbapi/driver/odbc/unix_odbc)
 set(NCBI_COMPONENT_ODBC_INCLUDE ${ODBC_INCLUDE})
-set(HAVE_ODBC 1)
+set(HAVE_ODBC 0)
 set(HAVE_ODBCSS_H 0)
 
 #############################################################################
@@ -331,6 +331,7 @@ set(NCBI_COMPONENT_PYTHON_FOUND NO)
 
 #############################################################################
 # VDB
+if(NOT NCBI_COMPONENT_VDB_DISABLED)
 set(NCBI_COMPONENT_VDB_INCLUDE
   ${NCBI_ThirdParty_VDB}/interfaces
   ${NCBI_ThirdParty_VDB}/interfaces/cc/gcc/${NCBI_ThirdParty_VDB_ARCH}
@@ -357,6 +358,9 @@ else()
   unset(NCBI_COMPONENT_VDB_INCLUDE)
   unset(NCBI_COMPONENT_VDB_LIBS)
 endif()
+else(NOT NCBI_COMPONENT_VDB_DISABLED)
+    message("DISABLED VDB")
+endif(NOT NCBI_COMPONENT_VDB_DISABLED)
 
 #############################################################################
 # XML
@@ -376,9 +380,13 @@ NCBI_define_component(EXSLT exslt)
 
 #############################################################################
 # LAPACK
+if(NOT NCBI_COMPONENT_LAPACK_DISABLED)
 set(NCBI_COMPONENT_LAPACK_FOUND YES)
 set(NCBI_COMPONENT_LAPACK_LIBS -llapack)
 list(APPEND NCBI_ALL_COMPONENTS LAPACK)
+else(NOT NCBI_COMPONENT_LAPACK_DISABLED)
+    message("DISABLED LAPACK")
+endif(NOT NCBI_COMPONENT_LAPACK_DISABLED)
 
 #############################################################################
 # wxWidgets
@@ -410,9 +418,13 @@ NCBI_define_component(GLEW GLEW)
 
 #############################################################################
 # OpenGL
+if(NOT NCBI_COMPONENT_OpenGL_DISABLED)
 set(NCBI_COMPONENT_OpenGL_FOUND YES)
 set(NCBI_COMPONENT_OpenGL_LIBS "-framework AGL -framework OpenGL -framework Metal -framework MetalKit")
 list(APPEND NCBI_ALL_COMPONENTS OpenGL)
+else(NOT NCBI_COMPONENT_OpenGL_DISABLED)
+    message("DISABLED OpenGL")
+endif(NOT NCBI_COMPONENT_OpenGL_DISABLED)
 
 #############################################################################
 # FTGL

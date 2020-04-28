@@ -249,16 +249,26 @@ set(NCBI_COMPONENT_MySQL_FOUND NO)
 
 #############################################################################
 # ODBC
-set(NCBI_COMPONENT_ODBC_FOUND YES)
-set(NCBI_COMPONENT_ODBC_LIBS odbc32.lib odbccp32.lib odbcbcp.lib)
-set(HAVE_ODBC 1)
-set(HAVE_ODBCSS_H 1)
+if(NOT NCBI_COMPONENT_ODBC_DISABLED)
+    set(NCBI_COMPONENT_ODBC_FOUND YES)
+    set(NCBI_COMPONENT_ODBC_LIBS odbc32.lib odbccp32.lib odbcbcp.lib)
+    set(HAVE_ODBC 1)
+    set(HAVE_ODBCSS_H 1)
+    list(APPEND NCBI_ALL_COMPONENTS ODBC)
+else()
+    message("DISABLED ODBC")
+endif()
 
 ##############################################################################
 # OpenGL
-set(NCBI_COMPONENT_OpenGL_FOUND YES)
-set(NCBI_COMPONENT_OpenGL_LIBS opengl32.lib glu32.lib)
-set(HAVE_OPENGL 1)
+if(NOT NCBI_COMPONENT_OpenGL_DISABLED)
+    set(NCBI_COMPONENT_OpenGL_FOUND YES)
+    set(NCBI_COMPONENT_OpenGL_LIBS opengl32.lib glu32.lib)
+    set(HAVE_OPENGL 1)
+    list(APPEND NCBI_ALL_COMPONENTS OpenGL)
+else()
+    message("DISABLED OpenGL")
+endif()
 
 #############################################################################
 # LMDB
@@ -393,6 +403,7 @@ endif()
 
 #############################################################################
 # VDB
+if(NOT NCBI_COMPONENT_VDB_DISABLED)
 set(NCBI_COMPONENT_VDB_INCLUDE
     ${NCBI_ThirdParty_VDB}/interfaces
     ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++/${NCBI_ThirdParty_VDB_ARCH_INC}
@@ -420,6 +431,9 @@ else()
     unset(NCBI_COMPONENT_VDB_INCLUDE)
     unset(NCBI_COMPONENT_VDB_LIBS)
 endif()
+else(NOT NCBI_COMPONENT_VDB_DISABLED)
+    message("DISABLED VDB")
+endif(NOT NCBI_COMPONENT_VDB_DISABLED)
 
 #############################################################################
 # PYTHON
