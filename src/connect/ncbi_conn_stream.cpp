@@ -41,9 +41,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_util.h>
-#include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 BEGIN_NCBI_SCOPE
