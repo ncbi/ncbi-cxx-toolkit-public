@@ -261,7 +261,7 @@ public:
         eMissense               = 7,  // Is non-synonymous Missense. Changes protein peptide
         eFrameshift             = 8,  // Is non-synonymous Frameshift. Changes all downstream amino acids
 
-        // Version 2 additions
+        // dbSNP 2.0 additions
         eInGene                 = 9,  // In gene segment Defined as sequence intervals covered by a gene ID but not having an aligned transcript. FxnCode = 11
         eInGene5                = 10, // In 5' gene region FxnCode = 15
         eInGene3                = 11, // In 3' gene region FxnCode = 13
@@ -318,7 +318,7 @@ public:
     int                     GetVersion()                const;
     EVariationClass         GetVariationClass()         const;
     EFunctionClass          GetFunctionClass()          const;
-    const char *            GetGenePropertyString()     const;
+    string                  GetGenePropertyString()     const;
     const char *            GetVariationClassString()   const;
     NCBI_DEPRECATED const char *            GetString()                 const  { NCBI_ASSERT(true, "Not supported anymore"); return NULL; }
     NCBI_DEPRECATED void                    GetBytes(vector<char>& bytes) const  { NCBI_ASSERT(true, "Not supported anymore"); }

@@ -199,9 +199,13 @@ public:
     ///
     /// @param feat
     ///   CSeq_feat object representing snp feature
+    /// @param isPadding
+    ///   if true, add allele padding according to VCF spec
+    /// @param bsh
+    ///   must be not NULL if isPadding == true
     /// @return
     ///   - list of alleles found in the feature (if any)
-    static void     GetAlleles(const CSeq_feat &feat, TAlleles& Alleles);
+    static void     GetAlleles(const CSeq_feat &feat, TAlleles& Alleles, bool isPadding = false, CBioseq_Handle* bsh = NULL);
 
 	/// controls the case of strings returned from ClinSigAsString()
 	enum ELetterCase {
