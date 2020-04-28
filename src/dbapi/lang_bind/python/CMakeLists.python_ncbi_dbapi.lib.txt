@@ -11,7 +11,7 @@ NCBI_end_lib(_result)
 
 if(_result AND UNIX AND BUILD_SHARED_LIBS)
   add_custom_command(TARGET python_ncbi_dbapi POST_BUILD
-    COMMAND ln -s libpython_ncbi_dbapi.so python_ncbi_dbapi.so
+    COMMAND ln -f -s libpython_ncbi_dbapi.so python_ncbi_dbapi.so
     BYPRODUCTS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python_ncbi_dbapi.so
     WORKING_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
   )
