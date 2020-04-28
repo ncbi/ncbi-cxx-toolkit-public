@@ -578,7 +578,7 @@ int CAsn2FlatApp::Run(void)
 //    else if (!m_Scope->GetKeepExternalAnnotsForEdit()) {
 //       m_Scope->SetKeepExternalAnnotsForEdit();
 //    }
-    if( args["resolve-all"]) {
+    if( args["resolve-all"] || args["policy"].AsString() == "external") {
         m_FFGenerator->SetAnnotSelector().SetResolveAll();
     }
     if( args["depth"] ) {

@@ -413,6 +413,8 @@ public:
     // Feature exploration iterator
     template<typename Fnc> size_t IterateFeatures (Fnc m);
 
+    template<typename Fnc> size_t IterateFeaturesByLoc (const CSeq_loc& slp, Fnc m);
+
     // Getters
     CBioseq_Handle GetBioseqHandle (void) const { return m_Bsh; }
     const CBioseq& GetBioseq (void) const { return m_Bsp; }
@@ -582,6 +584,8 @@ private:
 
     // Common feature collection, delayed until actually needed
     void x_InitFeats (void);
+    // Collect features by location
+    void x_InitFeatsByLoc (const CSeq_loc& slp);
 
     // Set BioSource flags
     void x_InitSource (void);
@@ -1063,6 +1067,28 @@ size_t CBioseqIndex::IterateFeatures (Fnc m)
     }
     catch (CException& e) {
         LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
+    }
+    return count;
+}
+
+// Visit CFeatureIndex objects for range of features
+template<typename Fnc>
+inline
+size_t CBioseqIndex::IterateFeaturesByLoc (const CSeq_loc& slp, Fnc m)
+
+{
+    int count = 0;
+    try {
+        // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
+        x_InitFeatsByLoc(slp);
+
+        for (auto& sfx : m_SfxList) {
+            count++;
+            m(*sfx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::IterateFeaturesByLoc: " << e.what());
     }
     return count;
 }

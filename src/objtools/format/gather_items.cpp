@@ -3652,6 +3652,136 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     });  //  end of for loop
 }
 
+size_t CFlatGatherer::x_GatherFeaturesOnSegmentIdx
+(const CSeq_loc& loc,
+ SAnnotSelector& sel,
+ CBioseqContext& ctx) const
+{
+    size_t count = 0;
+
+    CScope& scope = ctx.GetScope();
+    CFlatItemOStream& out = *m_ItemOS;
+
+    // logic to handle offsets that occur when user sets
+    // the -from and -to command-line parameters
+    // build slice_mapper for mapping locations
+    CRef<CSeq_loc_Mapper> slice_mapper = s_MakeSliceMapper(loc, ctx);
+
+    // Gaps of length zero are only shown for SwissProt Genpept records
+    const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
+
+    // cache to avoid repeated calculations
+    const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
+
+    CSeq_feat_Handle prev_feat;
+    CConstRef<IFlatItem> item;
+
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return count;
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex ();
+    if (! bsx) return count;
+
+    count = bsx->IterateFeaturesByLoc(loc, [this, &ctx, &scope, &prev_feat, &loc_len,
+                              &item, &out, &slice_mapper, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+        try {
+            CMappedFeat mf = sfx.GetMappedFeat();
+            CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
+            const CSeq_feat& original_feat = sfx.GetMappedFeat().GetOriginalFeature(); // it->GetOriginalFeature();
+
+            /// we need to cleanse CDD features
+
+            s_CleanCDDFeature(original_feat);
+
+            const CFlatFileConfig& cfg = ctx.Config();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (cfg.HideCDDFeatures()  &&
+                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+                s_IsCDD(feat)) {
+                return;
+            }
+
+            if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
+                // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
+                // unless they're a plain feature.
+                // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
+                return;
+            }
+
+            // supress duplicate features
+            if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
+                return;
+            }
+            prev_feat = feat;
+
+            CConstRef<CSeq_loc> feat_loc( sfx.GetMappedLocation()); // &it->GetLocation()); 
+
+            feat_loc = s_NormalizeNullsBetween( feat_loc );
+
+            feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
+
+            // HANDLE GAPS SECTION GOES HERE
+
+
+            const CSeq_loc& loc = original_feat.GetLocation();
+            CRef<CSeq_loc> loc2(new CSeq_loc);
+            loc2->Assign(*feat_loc);
+            loc2->SetId(*loc.GetId());
+ 
+            item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
+            out << item;
+
+            // Add more features depending on user preferences
+
+            switch (feat.GetFeatSubtype()) {
+                case CSeqFeatData::eSubtype_mRNA:
+                {{
+                    // optionally map CDS from cDNA onto genomic
+                    if (s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct()) {
+                        x_CopyCDSFromCDNA(original_feat, ctx);
+                    }
+                    break;
+                }}
+                case CSeqFeatData::eSubtype_cdregion:
+                    {{  
+                        // map features from protein
+                        if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
+                            x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, 
+                                slice_mapper,
+                                CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
+                        }
+                        break;
+                    }}
+                default:
+                    break;
+            }
+        } catch (CException& e) {
+            // special case: Job cancellation exceptions make us stop
+            // generating features.
+            CMappedFeat mf = sfx.GetMappedFeat();
+            if( NStr::EqualNocase(e.what(), "job cancelled") ||
+                NStr::EqualNocase(e.what(), "job canceled") )
+            {
+                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                                << s_GetFeatDesc(mf.GetSeq_feat_Handle())
+                                << " [" << e << "]; flatfile may be truncated");
+                return;
+            }
+
+            // for cases where a halt is requested, just rethrow the exception
+            if( e.GetErrCodeString() == string("eHaltRequested") ) {
+                throw e;
+            }
+
+            // post to log, go on to next feature
+            LOG_POST_X(2, Error << "Error processing feature "
+                                << s_GetFeatDesc(mf.GetSeq_feat_Handle())
+                                << " [" << e << "]");
+        }
+    });  //  end of for loop
+
+    return count;
+}
+
 void CFlatGatherer::x_GatherFeaturesOnRange
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -3929,28 +4059,89 @@ void CFlatGatherer::x_GatherFeatures(void) const
     }
 
     // collect features
-    if ( ctx.IsSegmented()  &&  cfg.IsStyleMaster()  &&  cfg.OldFeaturesOrder() ) {
-        if (ctx.GetAnnotSelector() == NULL) {
-            selp->SetResolveNone();
-        }
+    // if ( ctx.IsSegmented()  &&  cfg.IsStyleMaster()  &&  cfg.OldFeaturesOrder() ) {
+    if ( cfg.UseSeqEntryIndexer() && ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && cfg.IsStyleMaster() ) {
         
-        // first do the master bioeseq
-        x_GatherFeaturesOnLocation(loc, *selp, ctx);
+        CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+        if (! idx) return;
+        CBioseq_Handle hdl = ctx.GetHandle();
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+        if (! bsx) return;
 
-        // map the location on the segments        
-        CSeq_loc_Mapper mapper(1, ctx.GetHandle(),
-                               CSeq_loc_Mapper::eSeqMap_Down);
-        CRef<CSeq_loc> seg_loc(mapper.Map(loc));
-        if ( seg_loc ) {
-            // now go over each of the segments
-            for ( CSeq_loc_CI it(*seg_loc); it; ++it ) {
-                x_GatherFeaturesOnLocation(it.GetEmbeddingSeq_loc(), *selp, ctx);
+        // Gaps of length zero are only shown for SwissProt Genpept records
+        const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
+
+        const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
+
+        SGapIdxData gap_data{};
+
+        gap_data.num_gaps = gaps.size();
+        gap_data.next_gap = 0;
+
+        if (gap_data.num_gaps > 0 && ! ctx.Config().HideGapFeatures()) {
+            s_SetGapIdxData (gap_data, gaps);
+        }
+
+        SSeqMapSelector msel;
+        msel.SetFlags(CSeqMap::fFindAny);
+        CBioseq_Handle bsh = ctx.GetHandle();
+
+        bool keepGoing = true;
+        bool noFeatsSeen = true;
+        int withoutFeats = 0;
+
+        SetDiagFilter(eDiagFilter_All, "!(1305.28,31)");
+
+        for ( CSeqMap_CI seg(ConstRef(&bsh.GetSeqMap()), &ctx.GetScope(), msel); seg; ++seg ) {
+            if (seg.GetType() != CSeqMap::eSeqGap) {
+                if (keepGoing) {
+                    // go over each of the segments
+                    ENa_strand strand = eNa_strand_unknown;
+                    if (seg.GetRefMinusStrand()) {
+                        strand = eNa_strand_minus;
+                    }
+                    // cout << "SEG " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
+                    CRef<CSeq_loc> sl = bsh.GetRangeSeq_loc(seg.GetPosition(), seg.GetEndPosition() - 1, strand);
+                    if (sl) {
+                        size_t count = x_GatherFeaturesOnSegmentIdx(*sl, *selp, ctx);
+                        if (count > 0) {
+                            noFeatsSeen = false;
+                        } else if (ctx.IsEMBL() || ctx.IsDDBJ()) {
+                            withoutFeats++;
+                            if (withoutFeats > 20 && noFeatsSeen) {
+                                keepGoing = false;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // cout << "GAP " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
+                const bool noGapSizeProblem = ( false || (seg.GetPosition() < seg.GetEndPosition()) );
+                if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+                    CConstRef<IFlatItem> item;
+                    if (gap_data.has_gap) {
+                        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start < gap_data.gap_end) );
+                        if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+                            item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
+                                        gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
+                            out << item;
+                        }
+                        if (gap_data.next_gap < gap_data.num_gaps) {
+                            s_SetGapIdxData (gap_data, gaps);
+                        } else {
+                            gap_data.has_gap = false;
+                        }
+                    }
+                }
             }
         }
+
+        SetDiagFilter(eDiagFilter_All, "");
+
     } else {
         x_GatherFeaturesOnLocation(loc, *selp, ctx);
     }
-    
+
     if ( ctx.IsProt() ) {
         // Also collect features which this protein is their product.
         // Currently there are only two possible candidates: Coding regions
