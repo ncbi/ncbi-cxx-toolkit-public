@@ -47,42 +47,42 @@ USING_SCOPE(objects);
 // Used for GetVariationClassString
 static const char * g_VARIATION_NAMES[] =
 { "UNKNOWN",
-  "SNP",
+  "SNV",
   "INDEL",
   "HET",
   "MSAT",
   "NAMED",
   "NOVAR",
   "MIXED",
-  "MNP",
+  "MNV",
   "Idenity",
   "Inversion",
-  "Deletion",
-  "Insertion"
+  "DEL",
+  "INS"
 };
 
 static const char * g_FXN_NAMES[] =
 {
     "Unknown",
-    "Intron",
-    "Donor",
-    "Acceptor",
+    "intron_variant",
+    "splice_donor_variant",
+    "splice_acceptor_variant",
     "UTR",
-    "Synonymous",
-    "Nonsense",
-    "Missense",
-    "Frameshift",
+    "synonymous_variant",
+    "nonsense_variant",
+    "missense_variant",
+    "frameshift_variant",
 
-    // Version 2 additions
+    // dbSNP 2.0 additions
     "In Gene",      // In gene segment Defined as sequence intervals covered by a gene ID but not having an aligned transcript. FxnCode = 11
-    "In 5' Gene",   // In 5' gene region FxnCode = 15
-    "In 3' Gene",    // In 3' gene region FxnCode = 13
-    "In 5' UTR",    // In 5' UTR Location is in an untranslated region (UTR). FxnCode = 55
-    "In 3' UTR",    // In 3' UTR Location is in an untranslated region (UTR). FxnCode = 53
+    "2KB_upstream_variant",   // In 5' gene region FxnCode = 15
+    "500B_downstream_variant",    // In 3' gene region FxnCode = 13
+    "5_prime_UTR_variant",    // In 5' UTR Location is in an untranslated region (UTR). FxnCode = 55
+    "3_prime_UTR_variant",    // In 3' UTR Location is in an untranslated region (UTR). FxnCode = 53
     "Multiple",      // Has multiple gene functions (i.e. fwd strand 5'near gene, rev strand 3'near gene)
 
-    "STOP-Gain",
-    "STOP-Loss"
+    "stop_gained",
+    "stop_lost"
 };
 
 
@@ -168,10 +168,31 @@ const char * CSnpBitfield::GetVariationClassString() const
     return g_VARIATION_NAMES[v];
 }
 
-const char * CSnpBitfield::GetGenePropertyString() const
+#define ADD_FXN_CLASS(fxn_class)    if(IsTrue(fxn_class)) { FunctionClassesLst.push_back(g_FXN_NAMES[fxn_class]); }
+
+string CSnpBitfield::GetGenePropertyString() const
 {
-    int v = GetFunctionClass();
-    return g_FXN_NAMES[v];
+    string sFunctionClasses;
+    list<string> FunctionClassesLst;
+
+    // a SNP record may have several function classes, so we need to try all of them and 
+    // concatenate corresponding strings
+    ADD_FXN_CLASS(eIntron);
+    ADD_FXN_CLASS(eDonor);
+    ADD_FXN_CLASS(eAcceptor);
+    ADD_FXN_CLASS(eUTR);
+    ADD_FXN_CLASS(eSynonymous);
+    ADD_FXN_CLASS(eNonsense);
+    ADD_FXN_CLASS(eMissense);
+    ADD_FXN_CLASS(eFrameshift);
+    ADD_FXN_CLASS(eInGene);
+    ADD_FXN_CLASS(eInGene5);
+    ADD_FXN_CLASS(eInGene3);
+    ADD_FXN_CLASS(eInUTR5);
+    ADD_FXN_CLASS(eInUTR3);
+    ADD_FXN_CLASS(eStopGain);
+    ADD_FXN_CLASS(eStopLoss);
+    return NStr::Join(FunctionClassesLst, ",");
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -244,6 +244,10 @@ bool CSnpBitfield20::IsTrue(CSnpBitfield::EFunctionClass prop) const
         Snp20BitIndex = NDbSnp::CSnpBitAttributes::eHasStopGainAllele ;
         break;
 
+    case CSnpBitfield::eStopLoss:
+        Snp20BitIndex = NDbSnp::CSnpBitAttributes::eHasStopLossAllele ;
+        break;
+
     case CSnpBitfield::eMissense:
         /// A coding region variation where one allele in the set
         /// changes protein peptide.

@@ -49,6 +49,7 @@
 #include <objects/seqfeat/VariantProperties.hpp>
 
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -238,8 +239,11 @@ void NSnp::GetAlleles(const CMappedFeat &mapped_feat, TAlleles& Alleles)
     GetAlleles(mapped_feat.GetOriginalFeature(), Alleles);
 }
 
-void NSnp::GetAlleles(const CSeq_feat &feat, TAlleles& Alleles)
+void NSnp::GetAlleles(const CSeq_feat &feat, TAlleles& Alleles, bool isPadding, CBioseq_Handle* bsh)
 {
+    bool isRefAlleleEmpty{false};
+    bool isAnyAltAlleleEmpty{false};
+    
     Alleles.clear();
 
     if (feat.CanGetQual()) {
@@ -249,7 +253,28 @@ void NSnp::GetAlleles(const CSeq_feat &feat, TAlleles& Alleles)
             if (qual.GetQual() == "replace") {
 				string sQualVal(qual.GetVal());
 				Alleles.push_back(sQualVal.empty() ? "-" : sQualVal);
+                if(sQualVal.empty()) {
+                    if(it == feat.GetQual().begin()) {
+                        isRefAlleleEmpty = true;
+                    } else {
+                        isAnyAltAlleleEmpty = true;
+                    }
+                }
             }
+        }
+    }
+    if(isPadding && bsh && (isRefAlleleEmpty || isAnyAltAlleleEmpty)) {
+        string sPadding;
+        const CSeq_loc& feat_seq_loc(feat.GetLocation());
+        CSeqVector seq_vector(*bsh, CBioseq_Handle::eCoding_Iupac);
+        int delta(isRefAlleleEmpty ? 0 : -1);
+        if(feat_seq_loc.GetStart(ESeqLocExtremes::eExtreme_Positional) + delta < 0) {
+            seq_vector.GetSeqData(feat_seq_loc.GetStop(ESeqLocExtremes::eExtreme_Positional), feat_seq_loc.GetStop(ESeqLocExtremes::eExtreme_Positional) + 1, sPadding);
+        } else {
+            seq_vector.GetSeqData(feat_seq_loc.GetStart(ESeqLocExtremes::eExtreme_Positional) + delta, feat_seq_loc.GetStart(ESeqLocExtremes::eExtreme_Positional) + delta + 1, sPadding);
+        }
+        for(auto& allele: Alleles) {
+            allele = allele == "-" ? sPadding : sPadding + allele;
         }
     }
 }
