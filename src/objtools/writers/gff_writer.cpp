@@ -890,15 +890,7 @@ sGetClosestGeneRef(
     if (mf.GetData().IsGene()) {
         return mf.GetData().GetGene();
     }
-    if (mf.IsSetXref()) {
-        const auto& xrefs = mf.GetXref();
-        for (auto it = xrefs.begin(); it != xrefs.end(); ++it) {
-            const auto& xref = **it;
-            if (xref.CanGetData() && xref.GetData().IsGene()) {
-                return xref.GetData().GetGene();
-            }
-        }
-    }
+    // do not use xref gene ref directly !!!
     CMappedFeat gene = fc.FindBestGeneParent(mf);
     if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
         return gene.GetData().GetGene();
