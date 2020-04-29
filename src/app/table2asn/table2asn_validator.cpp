@@ -81,9 +81,8 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
         }
     }
     if (submit) {
-        CCleanup cleanup;
+        CCleanup cleanup(&(h_entry.GetScope()), CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential
         cleanup.ExtendedCleanup(*submit, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
-        xForceUpdateHandle(h_entry);
     }
     else {
         CCleanup::ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
