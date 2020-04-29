@@ -752,7 +752,7 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
             timeout = &g_NcbiDefConnTimeout;
     }
 
-    // flush buffer first
+    // try to flush buffer first
     if (pbase() < pptr()) {
         const STimeout* x_tmo = CONN_GetTimeout(m_Conn, eIO_Write);
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Write, timeout) == eIO_Success);
@@ -775,7 +775,6 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
             ERR_POST_X(15, x_Message("Fetch",
                                      "Failed to flush",
                                      m_Status, timeout));
-            return m_Status;
         }
     }
 
@@ -783,13 +782,14 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
     if (gptr() < egptr())
         return eIO_Success;
 
-    // wait for some input
-    if ((m_Status = CONN_Wait(m_Conn, eIO_Read, timeout)) != eIO_Success) {
+    // now wait for some input
+    EIO_Status status = CONN_Wait(m_Conn, eIO_Read, timeout);
+    if (status != eIO_Success) {
         ERR_POST_X(16, x_Message("Fetch",
                                  "CONN_Wait() failed",
-                                 m_Status, timeout));
+                                 status, timeout));
     }
-    return m_Status;
+    return status;
 }
 
 
