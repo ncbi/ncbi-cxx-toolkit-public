@@ -8682,7 +8682,18 @@ ncbi_compiler="UNKNOWN"
 ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
-   compiler_ver="`$real_CXX -dumpversion 2>&1`"
+   compiler_ver="`$real_CXX -dumpfullversion 2>/dev/null \
+       || $real_CXX -dumpversion 2>&1`"
+   case "$compiler_ver" in
+     *.*.* ) ;;
+     * )
+       fullversion="`$real_CXX --version | \
+           sed -ne '1s/.*) \([1-9][0-9.]*\).*/\1/p'`"
+       case "$fullversion" in
+         "$compiler_ver".* ) compiler_ver=$fullversion ;;
+       esac
+       ;;
+   esac
    compiler="GCC"
    ncbi_compiler="GCC"
    ncbi_compiler_ver="$compiler_ver"
