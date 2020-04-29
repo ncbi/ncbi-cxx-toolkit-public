@@ -720,11 +720,12 @@ EIO_Status CNamedPipeHandle::Wait(EIO_Event event, const STimeout* timeout)
     if (m_WriteStatus == eIO_Closed) {
         event = (EIO_Event)(event & ~eIO_Write);
     }
-    if (!event) {
-        return eIO_Closed;
+    if (!(event & eIO_Read)) {
+        return event ? eIO_Success : eIO_Closed;
     }
     DWORD x_avail;
-    return event == eIO_Read ? x_WaitForRead(timeout, &x_avail) : eIO_Success;
+    EIO_Status status = x_WaitForRead(timeout, &x_avail);
+    return status == eIO_Closed ? eIO_Success : status;
 }
 
 
