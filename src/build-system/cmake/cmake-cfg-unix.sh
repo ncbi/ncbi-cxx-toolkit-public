@@ -271,8 +271,9 @@ if [ -n "$CC" ]; then
         CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
       else
         CC_NAME=`$CC --version | awk 'NR==1{print $1}' | tr '[:lower:]' '[:upper:]'`
-        if $CXX -dumpversion > /dev/null 2>&1; then
-          CC_VERSION=`$CC -dumpversion | awk 'BEGIN{FS="."} { print $1 $2 $3}'`
+        ver=`$CC -dumpfullversion 2>/dev/null || $CC -dumpversion 2>/dev/null`
+        if [ -n "$ver" ]; then
+          CC_VERSION=`echo $ver | awk 'BEGIN{FS="."} { print $1 $2 $3}'`
         else
           CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
         fi
@@ -320,12 +321,12 @@ fi
 if [ -z "$BUILD_ROOT" ]; then
   if test "$CMAKE_GENERATOR" = "Xcode"; then
     BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
-    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+    if test "$BUILD_SHARED_LIBS" = "ON"; then
       BUILD_ROOT="$BUILD_ROOT"-DLL
     fi
   else
     BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
-    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+    if test "$BUILD_SHARED_LIBS" = "ON"; then
       BUILD_ROOT="$BUILD_ROOT"DLL
     fi
 #BUILD_ROOT="$BUILD_ROOT"64
@@ -335,7 +336,7 @@ fi
 cd ${tree_root}
 Check_function_exists configure_ext_PreCMake && configure_ext_PreCMake
 # true to debug
-if false; then
+if true; then
   echo mkdir -p ${BUILD_ROOT}/build 
   echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 else
