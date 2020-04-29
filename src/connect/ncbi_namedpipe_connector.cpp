@@ -195,8 +195,9 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
     CONNECTOR            ccc;
     SNamedPipeConnector* xxx;
 
-    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
         return 0;
+    }
 
     // Initialize internal data structures
     xxx           = new SNamedPipeConnector;

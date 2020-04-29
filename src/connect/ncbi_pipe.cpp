@@ -267,7 +267,7 @@ private:
     HANDLE x_GetHandle(CPipe::EChildIOHandle from_handle) const;
     // Trigger blocking mode on specified I/O handle.
     void   x_SetNonBlockingMode(HANDLE fd) const;
-    // Wait on the file descriptors I/O.
+    // Wait on the file descriptors for I/O.
     CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
                                  const STimeout* timeout) const;
 private:
@@ -943,7 +943,7 @@ private:
     int  x_GetHandle(CPipe::EChildIOHandle from_handle) const;
     // Trigger blocking mode on specified I/O handle.
     void x_SetNonBlockingMode(int fd) const;
-    // Wait on the file descriptors I/O.
+    // Wait on the file descriptors for I/O.
     CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
                                  const STimeout* timeout) const;
 

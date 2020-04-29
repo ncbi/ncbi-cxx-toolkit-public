@@ -129,10 +129,12 @@ static EIO_Status s_VT_Wait
     _ASSERT(event == eIO_Read  ||  event == eIO_Write);
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     CPipe::TChildPollMask what = 0;
-    if (event & eIO_Read)
+    if (event & eIO_Read) {
         what |= CPipe::fDefault;
-    if (event & eIO_Write)
+    }
+    if (event & eIO_Write) {
         what |= CPipe::fStdIn;
+    }
     return xxx->pipe->Poll(what, timeout) ? eIO_Success : eIO_Unknown;
 }
 
@@ -241,8 +243,9 @@ extern CONNECTOR PIPE_CreateConnector
     CONNECTOR       ccc;
     SPipeConnector* xxx;
 
-    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
         return 0;
+    }
 
     // Initialize internal data structures
     xxx            = new SPipeConnector;
