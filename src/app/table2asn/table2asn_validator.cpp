@@ -42,14 +42,6 @@ void xGetLabel(const CSeq_feat& feat, string& label)
     }
 }
 
-void xForceUpdateHandle(CSeq_entry_Handle& h_entry)
-{
-    CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
-    CScope& scope = h_entry.GetScope();
-    scope.RemoveTopLevelSeqEntry(h_entry);
-    h_entry = scope.AddTopLevelSeqEntry(*entry);
-}
-
 } // end anonymous namespace
 
 CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CValidErrItem::eSev_trace), m_context(&ctx)
@@ -61,7 +53,6 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     if (flags.find('w') != string::npos)
     {
         CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects, false);
-        xForceUpdateHandle(h_entry);
     }
 
     // ignore 'e' flag, run ExtendedCleanup() uncoditionally - but only after 'x'
