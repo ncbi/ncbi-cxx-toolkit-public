@@ -212,8 +212,6 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                                   const STimeout* timeout,
                                   size_t          /*pipesize*/)
 {
-    HANDLE pipe = INVALID_HANDLE_VALUE;
-
     EIO_Status status = eIO_Unknown;
 
     try {
@@ -235,27 +233,29 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         // NOTE:  We do not use WaitNamedPipe() here because it works
         //        incorrectly in some cases!
+        HANDLE pipe;
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
         unsigned long x_sleep = 1;
         for (;;) {
-            // Open existing pipe
-            if (pipe == INVALID_HANDLE_VALUE) {
-                pipe = ::CreateFile
-                    (_T_XCSTRING(pipename),
-                     GENERIC_READ | GENERIC_WRITE,
-                     FILE_SHARE_READ | FILE_SHARE_WRITE,
-                     &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                     NULL);
-            }
+            // Try to open existing pipe
+            pipe = ::CreateFile(_T_XCSTRING(pipename),
+                                GENERIC_READ | GENERIC_WRITE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+                                NULL);
+            DWORD error;
             if (pipe != INVALID_HANDLE_VALUE) {
                 DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;  // non-blocking
                 if ( ::SetNamedPipeHandleState(pipe, &mode, NULL, NULL) ) {
                     break;
                 }
-            }
-            DWORD error = ::GetLastError();
+                error = ::GetLastError();
+                ::CloseHandle(pipe);
+            } else
+                error = ::GetLastError();
+            // NB: "pipe" is closed at this point
             if ((pipe == INVALID_HANDLE_VALUE
                  &&  error != ERROR_PIPE_BUSY)  ||
                 (pipe != INVALID_HANDLE_VALUE
@@ -265,16 +265,13 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     status = eIO_Closed;
                 }
                 NAMEDPIPE_THROW(error,
-                                "Name pipe \"" + pipename
+                                "Named pipe \"" + pipename
                                 + "\" failed to "
                                 + string(pipe == INVALID_HANDLE_VALUE
                                          ? "open" : "set non-blocking"));
             }
 
             if ( !x_timeout ) {
-                if (pipe != INVALID_HANDLE_VALUE) {
-                    ::CloseHandle(pipe);
-                }
                 return eIO_Timeout;
             }
             if (x_timeout != INFINITE) {
@@ -302,9 +299,6 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         ERR_POST_X(10, s_FormatErrorMessage("Open", what));
     }
 
-    if (pipe != INVALID_HANDLE_VALUE) {
-        ::CloseHandle(pipe);
-    }
     return status;
 }
 

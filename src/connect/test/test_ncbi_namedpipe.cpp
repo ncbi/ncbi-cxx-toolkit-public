@@ -297,13 +297,15 @@ void CTest::Client(int num)
         }
         ERR_POST(Error << IO_StatusStr(status));
     }
-    status = pipe.Close();
-    if (status != eIO_Success) {
-        ERR_POST(Error << IO_StatusStr(status));
-        _TROUBLE;
+    if (::rand() & 1) {
+        status = pipe.Close();
+        if (status != eIO_Success) {
+            ERR_POST(Error << IO_StatusStr(status));
+            _TROUBLE;
+        }
+        status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+        _ASSERT(status == eIO_Unknown);
     }
-    status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
-    _ASSERT(status == eIO_Unknown);
     ERR_POST(Info << "TEST completed successfully");
 }
 
@@ -395,8 +397,10 @@ int CTest::Server(void)
                 ERR_POST(Error << IO_StatusStr(status));
                 _TROUBLE;
             }
-            status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
-            _ASSERT(status == eIO_Unknown);
+            if (::rand() & 1) {
+                status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+                _ASSERT(status == eIO_Unknown);
+            }
             ERR_POST(Info << "Round completed successfully!");
             break;
 
