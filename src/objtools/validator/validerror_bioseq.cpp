@@ -4433,8 +4433,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 if(last_is_gap &&
                    (prev_gap_type == gap_type ||
                     prev_gap_linkage != gap_linkage ||
-                    gap_linkage != CSeq_gap::eLinkage_unlinked))
-                    ++num_adjacent_gaps;
+                    gap_linkage != CSeq_gap::eLinkage_unlinked)) {
+                        if (prev_gap_type != CSeq_gap::eType_contamination && gap_type != CSeq_gap::eType_contamination) {
+                            ++num_adjacent_gaps;
+                        }
+                    }
 
                 if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap()) {
                     ValidateSeqGap(lit.GetSeq_data().GetGap(), seq);
