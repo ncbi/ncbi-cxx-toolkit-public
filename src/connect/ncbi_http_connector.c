@@ -1817,7 +1817,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     hdr[n] = '\0';
                     retry->data = hdr;
                 }
-                tags &= (THTTP_Tags)(eHTTP_Authenticate);
+                tags &= (THTTP_Tags)(~eHTTP_Authenticate);
                 continue;
             }
         }
