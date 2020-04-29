@@ -172,6 +172,7 @@ void CBioseq_set_Info::x_ParentAttach(CSeq_entry_Info& parent)
 {
     TParent::x_ParentAttach(parent);
     CSeq_entry& entry = parent.x_GetObject();
+    entry.ParentizeOneLevel();
     _ASSERT(entry.IsSet() && &entry.GetSet() == m_Object);
     NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
         if ( (*it)->x_GetObject().GetParentEntry() != &entry ) {

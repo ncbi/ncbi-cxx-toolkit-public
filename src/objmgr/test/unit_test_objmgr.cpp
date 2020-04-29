@@ -497,6 +497,49 @@ BOOST_AUTO_TEST_CASE(TestEditAnnotBioseqGraphReplace)
 }
 
 
+BOOST_AUTO_TEST_CASE(TestParent)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
+    CRef<CBioseq> seq = s_CreateBioseqForEdit(id1);
+    CBioseq_Handle bh = scope.AddBioseq(*seq);
+    BOOST_CHECK(bh.GetParentEntry());
+    BOOST_CHECK(bh.GetCompleteObject()->GetParentEntry());
+    CSeq_entry_Handle seh = bh.GetParentEntry();
+    
+    CSeq_entry_EditHandle eh = seh.GetEditHandle();
+    auto pBioseqEntry = eh.GetCompleteSeq_entry();
+    auto pSeqParentEntry = pBioseqEntry->GetSeq().GetParentEntry();
+    if (pSeqParentEntry) {
+        cout << "Seq has parent entry" << endl;
+    }
+    else {
+        cout << "Seq has no parent entry" << endl;
+    }
+    BOOST_CHECK(pSeqParentEntry);
+
+    auto bioseq_set_handle = eh.ConvertSeqToSet(CBioseq_set::eClass_nuc_prot);
+    auto parentHandle = bioseq_set_handle.GetParentEntry();
+    if (parentHandle) {
+        cout << "Set has parent handle" << endl;
+    }
+    else {
+        cout << "Set has no parent handle" << endl;
+    }
+    BOOST_CHECK(parentHandle);
+
+    auto pSetEntry = eh.GetCompleteSeq_entry();
+    auto pSetParentEntry = pSetEntry->GetSet().GetParentEntry();
+    if (pSetParentEntry) {
+        cout << "Set has parent entry" << endl;
+    }
+    else {
+        cout << "Set has no parent entry" << endl;
+    }
+    BOOST_CHECK(pSetParentEntry);
+}
+
+
 #ifdef NCBI_THREADS
 static vector<size_t> s_GetBioseqParallel(size_t THREADS,
                                           CScope& scope,
