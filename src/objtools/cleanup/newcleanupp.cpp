@@ -7416,6 +7416,7 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
 void CNewCleanup_imp::x_MoveCDSFromNucAnnotToSetAnnot( CBioseq_set &set )
 {
     if (set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        _ASSERT(set.GetParentEntry());
         CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(*(set.GetParentEntry()));
         SAnnotSelector sel(CSeqFeatData::e_Cdregion);
         CFeat_CI fi(seh, sel);
