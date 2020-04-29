@@ -1884,7 +1884,21 @@ void CBioseqIndex::x_InitFeats (void)
             sel.ExcludeNamedAnnots("STS");
         }
 
-        if (m_Policy == CSeqEntryIndex::eExhaustive) {
+        if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
+
+            // do not fetch features from underlying sequence component records
+            if (m_Surrogate) {
+                // delta with sublocation needs to map features from original Bioseq
+                sel.SetResolveAll();
+                sel.SetResolveDepth(1);
+                sel.SetExcludeExternal();
+            } else {
+                // otherwise limit collection to local records in top-level Seq-entry
+                sel.SetResolveDepth(0);
+                sel.SetExcludeExternal();
+            }
+
+        } else if (m_Policy == CSeqEntryIndex::eExhaustive) {
 
             sel.SetResolveAll();
              // experimental flag forces collection of features from all levels
@@ -1911,20 +1925,6 @@ void CBioseqIndex::x_InitFeats (void)
             // obey flag to hide CDD features by default in the web display
             if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
                 sel.ExcludeNamedAnnots("CDD");
-            }
-
-        } else if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
-
-            // do not fetch features from underlying sequence component records
-            if (m_Surrogate) {
-                // delta with sublocation needs to map features from original Bioseq
-                sel.SetResolveAll();
-                sel.SetResolveDepth(1);
-                sel.SetExcludeExternal();
-            } else {
-                // otherwise limit collection to local records in top-level Seq-entry
-                sel.SetResolveDepth(0);
-                sel.SetExcludeExternal();
             }
 
         } else if (m_Depth > -1) {
