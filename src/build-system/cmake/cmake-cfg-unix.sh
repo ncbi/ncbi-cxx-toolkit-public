@@ -336,7 +336,7 @@ fi
 cd ${tree_root}
 Check_function_exists configure_ext_PreCMake && configure_ext_PreCMake
 # true to debug
-if true; then
+if false; then
   echo mkdir -p ${BUILD_ROOT}/build 
   echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 else
