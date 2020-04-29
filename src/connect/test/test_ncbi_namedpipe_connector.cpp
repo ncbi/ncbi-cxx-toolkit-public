@@ -33,8 +33,8 @@
 #include <ncbi_pch.hpp>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_namedpipe_connector.hpp>
 #include "ncbi_conntest.h"
 
@@ -107,6 +107,10 @@ void CTest::Init(void)
 
     // Describe the expected command-line arguments
     arg_desc->AddDefaultKey
+        ("basename", "basename",
+         "Base name for the pipe",
+         CArgDescriptions::eString, kPipeName);
+    arg_desc->AddDefaultKey
         ("suffix", "suffix",
          "Unique string that will be added to the base pipe name",
          CArgDescriptions::eString, "");
@@ -130,7 +134,10 @@ int CTest::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    m_PipeName = kPipeName;
+    m_PipeName = args["basename"].AsString();
+    if ( m_PipeName.empty() ) {
+        m_PipeName = kPipeName;
+    }
     if ( !args["suffix"].AsString().empty() ) {
         m_PipeName += "_" + args["suffix"].AsString();
     }
@@ -139,7 +146,7 @@ int CTest::Run(void)
     if (args["timeout"].HasValue()) {
         double tv = args["timeout"].AsDouble();
         m_Timeout.sec  = (unsigned int)  tv;
-        m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * 1000000);
+        m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * kMicroSecondsPerSecond);
     }
     if      (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
@@ -167,8 +174,9 @@ void CTest::Client(void)
     // Tests for NAMEDPIPE CONNECTOR
     ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR test ...");
     ERR_POST(Info << m_PipeName + ", timeout = "
-             + NStr::DoubleToString(m_Timeout.sec
-                                    + (double) m_Timeout.usec / 1000000.0, 6)
+             + NStr::DoubleToString
+             (m_Timeout.sec
+              + (double) m_Timeout.usec / kMicroSecondsPerSecond, 6)
              + " sec.");
 
     connector = NAMEDPIPE_CreateConnector(m_PipeName.c_str());

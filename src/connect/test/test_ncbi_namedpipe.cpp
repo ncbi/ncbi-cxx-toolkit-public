@@ -39,10 +39,6 @@
 
 #include "test_assert.h"  // This header must go last
 
-#ifdef   pipe
-#  undef pipe
-#endif /*pipe*/
-
 #define _STR(x)  #x
 #define  STR(s)  _STR(s)
 
@@ -165,6 +161,10 @@ void CTest::Init(void)
 
     // Describe the expected command-line arguments
     arg_desc->AddDefaultKey
+        ("basename", "basename",
+         "Base name for the pipe",
+         CArgDescriptions::eString, kPipeName);
+    arg_desc->AddDefaultKey
         ("suffix", "suffix",
          "Unique string that will be added to the base pipe name",
          CArgDescriptions::eString, "");
@@ -189,9 +189,12 @@ int CTest::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    m_PipeName = kPipeName;
+    m_PipeName = args["basename"].AsString();
+    if ( m_PipeName.empty() ) {
+        m_PipeName = kPipeName;
+    }
     if ( !args["suffix"].AsString().empty() ) {
-        m_PipeName += "_" + args["suffix"].AsString();
+        m_PipeName += '_' + args["suffix"].AsString();
     }
     ERR_POST(Info << "Using pipe name: " + m_PipeName);
 
@@ -201,7 +204,7 @@ int CTest::Run(void)
         m_Timeout.sec  = (unsigned int)  tv;
         m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * kMicroSecondsPerSecond);
     }
-    if (args["mode"].AsString() == "client") {
+    if     (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
         for (int i = 1;  i <= 3;  ++i) {
             Client(i);
