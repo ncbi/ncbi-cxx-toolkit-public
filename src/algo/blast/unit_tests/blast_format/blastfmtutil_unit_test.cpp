@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_SUITE(blastfmtutil)
 
 BOOST_AUTO_TEST_CASE(GetBlastDeflineFromGenbank)
 {
-    const TIntId gi = 555;
+    const TGi gi = GI_CONST(555);
     const bool is_prot = false;
     SDataLoaderConfig config(is_prot, SDataLoaderConfig::eUseGenbankDataLoader);
 
