@@ -1023,12 +1023,12 @@ CSeqDBVol::x_GetTaxDefline(int                    oid,
 
     // 2. if there is a preferred gi, bump it to the top.
 
-    if (preferred_gi || preferred_seqid) {
+    if (preferred_gi != ZERO_GI || preferred_seqid) {
         CRef<CBlast_def_line_set> new_bdls(new CBlast_def_line_set);
 
         CRef<const CSeq_id> seqid;
-        if (preferred_gi) {
-            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, preferred_gi)));
+        if (preferred_gi != ZERO_GI) {
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, preferred_gi));
         } else {
             seqid.Reset(preferred_seqid);
         }
@@ -1285,7 +1285,7 @@ CSeqDBVol::GetBioseq(int                    oid,
         CRef<const CSeq_id > seqid;
         CRef<const CSeq_id > seqid_lcl;
         if (target_gi != ZERO_GI) {
-            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, target_gi)));
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, target_gi));
             seqid_lcl.Reset(new CSeq_id(CSeq_id::e_Local, NStr::NumericToString(target_gi)));
         }
         else {

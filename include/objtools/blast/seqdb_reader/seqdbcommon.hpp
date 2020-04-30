@@ -446,7 +446,7 @@ public:
     template <class T>
     T GetKey(int index) const
     {
-        return m_GisOids[index].gi;
+        return GI_TO(T, m_GisOids[index].gi);
     }
 
     template <class T>
