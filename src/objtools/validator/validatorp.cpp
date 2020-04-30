@@ -2501,7 +2501,7 @@ bool CValidError_imp::RequireLocalProduct(const CSeq_id* sid) const
 
 
 static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
-                                          vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+                                          vector<TEntrezId>& pmids, vector<TEntrezId>& muids, vector<int>& serials,
                                           vector<string>& published_labels, vector<string>& unpublished_labels)
 {
     FOR_EACH_SEQDESC_ON_SEQENTRY (it, se) {
@@ -2520,8 +2520,8 @@ static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
 
 void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
 {
-    vector<int> pmids;
-    vector<int> muids;
+    vector<TEntrezId> pmids;
+    vector<TEntrezId> muids;
     vector<int> serials;
     vector<string> published_labels;
     vector<string> unpublished_labels;
@@ -2543,7 +2543,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                 bool found = false;
 
                 if ((*cit_it)->IsPmid()) {
-                    vector<int>::iterator it = pmids.begin();    
+                    vector<TEntrezId>::iterator it = pmids.begin();
                     while (it != pmids.end() && !found) {
                         if (*it == (*cit_it)->GetPmid()) {
                             found = true;
@@ -2553,12 +2553,12 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                     if (!found) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
                                  "Citation on feature refers to uid ["
-                                 + NStr::NumericToString(INT_ID_TO(int, (*cit_it)->GetPmid()))
+                                 + NStr::NumericToString(ENTREZ_ID_TO(int, (*cit_it)->GetPmid().Get()))
                                  + "] not on a publication in the record",
                                  f->GetOriginalFeature());
                     }
                 } else if ((*cit_it)->IsMuid()) {
-                    vector<int>::iterator it = muids.begin();    
+                    vector<TEntrezId>::iterator it = muids.begin();
                     while (it != muids.end() && !found) {
                         if (*it == (*cit_it)->GetMuid()) {
                             found = true;

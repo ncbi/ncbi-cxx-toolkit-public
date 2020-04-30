@@ -82,7 +82,7 @@ void CValidError_imp::ValidatePubdesc
                 "Empty publication descriptor", obj, ctx);
         return;
     }
-    int uid = 0, pmid = 0, muid = 0;
+    TEntrezId uid = ZERO_ENTREZ_ID, pmid = ZERO_ENTREZ_ID, muid = ZERO_ENTREZ_ID;
     bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
 
     ValidatePubHasAuthor(pubdesc, obj, ctx);
@@ -93,27 +93,27 @@ void CValidError_imp::ValidatePubdesc
 
         switch( pub.Which() ) {
         case CPub::e_Muid:
-            if ( muid == 0 ) {
+            if ( muid == ZERO_ENTREZ_ID ) {
                 muid = pub.GetMuid();
             } else if ( muid != pub.GetMuid() ) {
                 conflicting_muids = true;
             } else {
                 redundant_muids = true;
             }
-            if ( uid == 0 ) {
+            if ( uid == ZERO_ENTREZ_ID ) {
                 uid = pub.GetMuid();
             }
             break;
 
         case CPub::e_Pmid:
-            if ( pmid == 0 ) {
+            if ( pmid == ZERO_ENTREZ_ID ) {
                 pmid = pub.GetPmid();
             } else if ( pmid != pub.GetPmid() ) {
                 conflicting_pmids = true;
             } else {
                 redundant_pmids = true;
             }
-            if ( uid == 0 ) {
+            if ( uid == ZERO_ENTREZ_ID ) {
                 uid = pub.GetPmid();
             }
             break;
@@ -173,7 +173,7 @@ void CValidError_imp::ValidatePubdesc
         */
             
         case CPub::e_Article:
-            ValidatePubArticle(pub.GetArticle(), uid, obj, ctx);
+            ValidatePubArticle(pub.GetArticle(), ENTREZ_ID_TO(int, uid), obj, ctx);
             if (pubdesc.IsSetComment() && !NStr::IsBlank(pubdesc.GetComment())
                 && pub.GetArticle().IsSetFrom() && pub.GetArticle().GetFrom().IsJournal()
                 && pub.GetArticle().GetFrom().GetJournal().IsSetImp()
@@ -187,7 +187,7 @@ void CValidError_imp::ValidatePubdesc
                         || NStr::Find(comment, "Publication-Status") != string::npos
                         || NStr::Find(comment, "Publication_Status") != string::npos)) {
                     PostObjErr(eDiag_Warning, eErr_GENERIC_UnexpectedPubStatusComment,
-                               "Publication status is in comment for pmid " + NStr::IntToString (uid),
+                               "Publication status is in comment for pmid " + NStr::NumericToString (uid),
                                obj, ctx);
                 }
             }
@@ -205,7 +205,6 @@ void CValidError_imp::ValidatePubdesc
     if (pubdesc.IsSetPub()) {
         ValidateAuthorsInPubequiv (pubdesc.GetPub(), obj, ctx);
     }
-
 }
 
 
@@ -840,7 +839,7 @@ void CValidError_imp::ValidateAuthorsInPubequiv
     // per VR-19, do not validate authors if PMID specified
     FOR_EACH_PUB_ON_PUBEQUIV(pub_iter, pe) {
         const CPub& pub = **pub_iter;
-        if (pub.IsPmid() && pub.GetPmid() > 0) {
+        if (pub.IsPmid() && pub.GetPmid() > ZERO_ENTREZ_ID) {
             return;
         }
     }

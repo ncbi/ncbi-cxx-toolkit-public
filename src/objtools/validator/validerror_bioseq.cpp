@@ -2071,8 +2071,8 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
 {
     // used to check for dups.  Currently only deals with cases where
     // there's an otherpub, but check if this comment is out of date.
-    set<int> muids_seen;
-    set<int> pmids_seen;
+    set<TEntrezId> muids_seen;
+    set<TEntrezId> pmids_seen;
 
     vector<int> serials;
     vector<CTempString> published_labels;
@@ -2095,8 +2095,8 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
         copy(BEGIN_COMMA_END(pubdesc_info.m_unpublished_labels),
              back_inserter(unpublished_labels));
 
-        int muid = 0;
-        int pmid = 0;
+        TEntrezId muid = ZERO_ENTREZ_ID;
+        TEntrezId pmid = ZERO_ENTREZ_ID;
         bool otherpub = false;
         FOR_EACH_PUB_ON_PUBDESC (pub_it, *pub) {
             switch ( (*pub_it)->Which() ) {
@@ -2114,14 +2114,14 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
     
         if ( otherpub ) {
             bool collision = false;
-            if ( muid > 0 ) {
+            if ( muid > ZERO_ENTREZ_ID ) {
                 if ( muids_seen.find(muid) != muids_seen.end() ) {
                     collision = true;
                 } else {
                     muids_seen.insert(muid);
                 }
             }
-            if ( pmid > 0 ) {
+            if ( pmid > ZERO_ENTREZ_ID ) {
                 if ( pmids_seen.find(pmid) != pmids_seen.end() ) {
                     collision = true;
                 } else {
@@ -9728,7 +9728,7 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
                 if ( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
                   for (auto it: moltypes) {
                       string sName;
-                      if ( tax.GetScientificName( it->GetIval1(), sName ) ) {
+                      if ( tax.GetScientificName( ENTREZ_ID_FROM(TIntId, it->GetIval1()), sName ) ) {
                           if ( it->GetIval2() == 1 ) {
                               s_ViralTaxonMap [sName] = it->GetSval();
                           }

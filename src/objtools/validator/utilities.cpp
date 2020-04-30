@@ -2148,8 +2148,8 @@ bool IsLikelyTaxname(const string& val)
 
     CTaxon1 taxon1;
     taxon1.Init();
-    int taxid = taxon1.GetTaxIdByName(val.substr(0, pos));
-    if (taxid == 0 || taxid == -1) {
+    TTaxId taxid = taxon1.GetTaxIdByName(val.substr(0, pos));
+    if (taxid == ZERO_ENTREZ_ID || taxid == INVALID_ENTREZ_ID) {
         return false;
     }
 

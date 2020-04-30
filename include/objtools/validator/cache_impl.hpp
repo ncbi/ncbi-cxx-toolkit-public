@@ -131,8 +131,8 @@ public:
     class NCBI_VALIDATOR_EXPORT CPubdescInfo : public CObject
     {
     public:
-        vector<int> m_pmids;
-        vector<int> m_muids;
+        vector<TEntrezId> m_pmids;
+        vector<TEntrezId> m_muids;
         vector<int> m_serials;
         vector<string> m_published_labels;
         vector<string> m_unpublished_labels;

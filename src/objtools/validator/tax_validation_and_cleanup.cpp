@@ -784,14 +784,14 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
                 if (NStr::Equal(taxname_rep, "unidentified")) {
                     is_unidentified = true;
                 }
-                int taxid_request = org.GetTaxId();
-                int taxid_reply = orp_rep.GetTaxId();
+                TTaxId taxid_request = org.GetTaxId();
+                TTaxId taxid_reply = orp_rep.GetTaxId();
 
-                if (taxid_request != 0 && taxid_reply != 0 && taxid_request != taxid_reply) {
+                if (taxid_request != ZERO_ENTREZ_ID && taxid_reply != ZERO_ENTREZ_ID && taxid_request != taxid_reply) {
                     errs.push_back(TTaxError{ eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
                         "Organism name is '" + taxname_req
-                        + "', taxonomy ID should be '" + NStr::IntToString(taxid_reply)
-                        + "' but is '" + NStr::IntToString(taxid_request) + "'" });
+                        + "', taxonomy ID should be '" + NStr::NumericToString(taxid_reply)
+                        + "' but is '" + NStr::NumericToString(taxid_request) + "'" });
                 }
             }
         }
