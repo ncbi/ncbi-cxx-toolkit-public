@@ -207,10 +207,10 @@ public:
 
     ITreeIterator::EAction Execute(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();
+        TTaxId taxid = tax_node->GetTaxId();
                
         //if m_Curr != NULL there was Level End - we are at branch processing
-        int currTaxid = (m_Curr) ? m_Curr->taxid : 0;
+        TTaxId currTaxid = (m_Curr) ? ENTREZ_ID_FROM(int, m_Curr->taxid) : ZERO_ENTREZ_ID;
         bool useTaxid = false;                       
         if(taxid == currTaxid) {//branch processing            
             m_Curr->numHits += m_Curr->seqInfoList.size();                                                            
@@ -297,10 +297,10 @@ public:
 
     ITreeIterator::EAction LevelBegin(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();        
+        TTaxId taxid = tax_node->GetTaxId();        
         if((*m_TreeTaxInfoMap).count(taxid) != 0 ) {//sequence is in alignment            
             m_Depth++;
-            m_Lineage.push_back(taxid); //Push current taxid info into stack
+            m_Lineage.push_back(ENTREZ_ID_TO(int, taxid)); //Push current taxid info into stack
         }        
         x_PrintTaxInfo("Begin branch",tax_node);        
                 
@@ -309,7 +309,7 @@ public:
 
     ITreeIterator::EAction Execute(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();        
+        TTaxId taxid = tax_node->GetTaxId();        
         if((*m_TreeTaxInfoMap).count(taxid) != 0 ) {//sequence is in alignment            
             (*m_TreeTaxInfoMap)[taxid].depth = m_Depth;
             for(size_t i = 0; i < m_Lineage.size(); i++) {
@@ -322,7 +322,7 @@ public:
 
     ITreeIterator::EAction LevelEnd(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();        
+        TTaxId taxid = tax_node->GetTaxId();        
         if((*m_TreeTaxInfoMap).count(taxid) != 0 ) {//sequence is in alignment            
             m_Depth--;
             m_Lineage.pop_back();
@@ -357,7 +357,7 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
     string taxIdToSeqsMap;
 
     for(size_t i = 0; i < m_BlastResTaxInfo->orderedTaxids.size(); i++) {
-        int taxid = m_BlastResTaxInfo->orderedTaxids[i];
+        TTaxId taxid = m_BlastResTaxInfo->orderedTaxids[i];
         STaxInfo seqsForTaxID = m_BlastResTaxInfo->seqTaxInfoMap[taxid];
         
         string orgHeader = (m_ConnectToTaxServer) ? m_TaxFormatTemplates->orgReportOrganismHeader : 
@@ -398,7 +398,7 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
 
         //string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.giList);
         string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.accList);
-        taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(taxIdToSeqsRow,"taxid",taxid);
+        taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(taxIdToSeqsRow,"taxid",ENTREZ_ID_TO(TIntId, taxid));
         taxIdToSeqsMap += taxIdToSeqsRow;
     }   
     orgReportData = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->orgReportTable,"table_rows",orgReportData);
@@ -430,7 +430,7 @@ void CTaxFormat::DisplayLineageReport(CNcbiOstream& out)
             STaxInfo alnSeqTaxInfo = *iter;
 //            taxInfo.lineage.push_back(iter->taxid);            
             for(size_t i = 0; i< alnSeqTaxInfo.lineage.size();i++) {
-                int taxid = alnSeqTaxInfo.lineage[i];                
+                TTaxId taxid = ENTREZ_ID_FROM(int, alnSeqTaxInfo.lineage[i]);
                 if(header) {                                        
                     STaxInfo taxInfo = GetTaxTreeInfo(taxid);                   
 
@@ -460,12 +460,12 @@ void CTaxFormat::DisplayLineageReport(CNcbiOstream& out)
 void CTaxFormat::DisplayTaxonomyReport(CNcbiOstream& out) 
 {
     x_InitTaxReport();    
-    vector <int> taxTreeTaxids = GetTaxTreeTaxIDs();        
+    vector <TTaxId> taxTreeTaxids = GetTaxTreeTaxIDs();        
     string taxReportRows;
     taxReportRows = m_TaxFormatTemplates->taxonomyReportTableHeader;//!!!Do the same for organism report
 
     for(size_t i = 0; i < taxTreeTaxids.size(); i++) {
-        int taxid = taxTreeTaxids[i];
+        TTaxId taxid = taxTreeTaxids[i];
         STaxInfo taxInfo = GetTaxTreeInfo(taxid);     
         string taxReportTableRow;             
         if(isTaxidInAlign(taxid)) {                                                     
@@ -543,8 +543,8 @@ void CTaxFormat::x_LoadTaxTree(void)
 {
     x_InitTaxClient();                
     if(!m_TaxTreeLoaded) {
-        vector <int> taxidsToRoot;    
-        vector <int> alignTaxids = GetAlignTaxIDs();
+        vector <TTaxId> taxidsToRoot;    
+        vector <TTaxId> alignTaxids = GetAlignTaxIDs();
 
         bool tax_load_ok = false;
         if(m_TaxClient->IsAlive()) {          
@@ -553,7 +553,7 @@ void CTaxFormat::x_LoadTaxTree(void)
 
             //Adding alignTaxids
             for(size_t i = 0; i < alignTaxids.size(); i++) {
-                int tax_id = alignTaxids[i];                                    
+                TTaxId tax_id = alignTaxids[i];                                    
 
                 if(!m_TaxClient->IsAlive()) break;
                 const ITaxon1Node* tax_node = NULL;
@@ -561,15 +561,15 @@ void CTaxFormat::x_LoadTaxTree(void)
                 if(!tax_load_ok) break;                
 
                 if(tax_node && tax_node->GetTaxId() != tax_id) {
-                    int newTaxid = tax_node->GetTaxId();
+                    TTaxId newTaxid = tax_node->GetTaxId();
                     if(m_Debug) {
                         cerr << "*******TAXID MISMATCH: changing " << tax_id << " to " << tax_node->GetTaxId() << "-" << endl;
                     }
                     STaxInfo &taxInfo = GetAlignTaxInfo(tax_id);
-                    taxInfo.taxid = newTaxid;
+                    taxInfo.taxid = ENTREZ_ID_TO(int, newTaxid);
                     for(size_t j = 0; i < taxInfo.seqInfoList.size(); j++) {
                         SSeqInfo* seqInfo = taxInfo.seqInfoList[j];                        
-                        seqInfo->taxid = newTaxid;
+                        seqInfo->taxid = ENTREZ_ID_TO(int, newTaxid);
                     }        
                     m_BlastResTaxInfo->seqTaxInfoMap.insert(CTaxFormat::TSeqTaxInfoMap::value_type(newTaxid,taxInfo));  
                     m_BlastResTaxInfo->orderedTaxids[i] = newTaxid;                    
@@ -578,8 +578,8 @@ void CTaxFormat::x_LoadTaxTree(void)
             }
         }
         if(m_TaxClient->IsAlive() && tax_load_ok) {          
-            ITERATE(vector<int>, it, taxidsToRoot) {
-                int tax_id = *it;                 
+            ITERATE(vector<TTaxId>, it, taxidsToRoot) {
+                TTaxId tax_id = *it;                 
 
                 if(!m_TaxClient->IsAlive()) break;
                 tax_load_ok |= m_TaxClient->LoadNode(tax_id);
@@ -603,12 +603,12 @@ void CTaxFormat::x_LoadTaxTree(void)
 }
 
 
-void CTaxFormat::x_PrintTaxInfo(vector <int> taxids, string title)
+void CTaxFormat::x_PrintTaxInfo(vector <TTaxId> taxids, string title)
 {
     if(m_Debug) {
         cerr << "******" << title << "**********" << endl;
         for(size_t i = 0; i < taxids.size(); i++) {
-            int taxid = taxids[i];                            
+            TTaxId taxid = taxids[i];                            
             STaxInfo taxInfo = GetTaxTreeInfo(taxid);                         
             string lineage;
             for(size_t j = 0; j < taxInfo.lineage.size(); j++) {
@@ -636,7 +636,7 @@ void CTaxFormat::x_InitOrgTaxMetaData(void)
         CDownwardTreeFiller dwnwFiller(&m_TaxTreeinfo->seqTaxInfoMap);
         dwnwFiller.SetDebugMode(m_Debug);
         m_TreeIterator->TraverseDownward(dwnwFiller);
-        vector <int> taxTreeTaxids = GetTaxTreeTaxIDs();
+        vector <TTaxId> taxTreeTaxids = GetTaxTreeTaxIDs();
 
         x_PrintTaxInfo(taxTreeTaxids,"Taxonomy tree");                     
     }
@@ -646,14 +646,14 @@ void CTaxFormat::x_InitBlastNameTaxInfo(STaxInfo &taxInfo)
 {
     
     if(m_TaxClient && m_TaxClient->IsAlive()) {
-        m_TaxClient->GetBlastName(taxInfo.taxid,taxInfo.blastName);
+        m_TaxClient->GetBlastName(ENTREZ_ID_FROM(int, taxInfo.taxid),taxInfo.blastName);
         list< CRef< CTaxon1_name > > nameList;
-        taxInfo.blNameTaxid = m_TaxClient->SearchTaxIdByName(taxInfo.blastName,CTaxon1::eSearch_Exact,&nameList);        
+        taxInfo.blNameTaxid = ENTREZ_ID_TO(int, m_TaxClient->SearchTaxIdByName(taxInfo.blastName,CTaxon1::eSearch_Exact,&nameList));
         if(taxInfo.blNameTaxid == -1) //more than one name in the list
         ITERATE(list < CRef< CTaxon1_name > >, iter, nameList) {                           
             ncbi::TIntId blastNameCde = m_TaxClient->GetNameClassId("blast name");
             if((*iter)->CanGetTaxid() && (*iter)->IsSetCde() && (*iter)->GetCde() == blastNameCde) {
-                taxInfo.blNameTaxid = (*iter)->GetTaxid();
+                taxInfo.blNameTaxid = ENTREZ_ID_TO(int, (*iter)->GetTaxid());
             }
         }
     }
@@ -705,7 +705,7 @@ void CTaxFormat::x_PrintLineage(void)
             string name = iter->scientificName;            
             cerr << "taxid" << taxid << " " << name << ": "; 
             for(size_t i = 0; i< iter->lineage.size();i++) {                
-                int lnTaxid = iter->lineage[i];            
+                TTaxId lnTaxid = ENTREZ_ID_FROM(int, iter->lineage[i]);
                 cerr << " " << lnTaxid << " " << GetTaxTreeInfo(lnTaxid).scientificName + "," ;
             }
             cerr << endl;
@@ -715,9 +715,9 @@ void CTaxFormat::x_PrintLineage(void)
 
 void CTaxFormat::x_InitLineageMetaData(void)
 {
-        int betsHitTaxid = m_BlastResTaxInfo->orderedTaxids[0];
+        TTaxId betsHitTaxid = m_BlastResTaxInfo->orderedTaxids[0];
         m_BestHitLineage = GetTaxTreeInfo(betsHitTaxid).lineage; 
-        vector <int> alignTaxids = GetAlignTaxIDs();
+        vector <TTaxId> alignTaxids = GetAlignTaxIDs();
         
         list <STaxInfo> alnTaxInfo;
         for(size_t i = 0; i < alignTaxids.size(); i++) {                    
@@ -730,7 +730,7 @@ void CTaxFormat::x_InitLineageMetaData(void)
         m_AlnLineageTaxInfo.sort(s_SortByLinageToBestHit);                
         ITERATE(list <STaxInfo>, iter, m_AlnLineageTaxInfo) {            
             for(size_t i = 0; i< iter->lineage.size();i++) {                
-                int lnTaxid = iter->lineage[i];  
+                TTaxId lnTaxid = ENTREZ_ID_FROM(int, iter->lineage[i]);
                 STaxInfo &taxInfo = GetTaxTreeInfo(lnTaxid);
                 x_InitBlastNameTaxInfo(taxInfo);                                                    
             }            
@@ -744,12 +744,12 @@ void CUpwardTreeFiller::x_InitTaxInfo(const ITaxon1Node* tax_node)
     CTaxFormat::STaxInfo *info = new CTaxFormat::STaxInfo;        
 
     
-    int taxid = tax_node->GetTaxId();    
+    TTaxId taxid = tax_node->GetTaxId();    
     if(m_SeqAlignTaxInfoMap.count(taxid) != 0 ) {//sequence is in alignment
         info->seqInfoList = m_SeqAlignTaxInfoMap[taxid].seqInfoList;        
     }   
 
-    info->taxid = taxid;
+    info->taxid = ENTREZ_ID_TO(int, taxid);
     info->scientificName = tax_node->GetName();
     info->blastName = tax_node->GetBlastName();            
     m_Curr = info;
@@ -757,7 +757,7 @@ void CUpwardTreeFiller::x_InitTaxInfo(const ITaxon1Node* tax_node)
 
 void CUpwardTreeFiller::x_InitTreeTaxInfo(void)
 {
-    int taxid = m_Curr->taxid;
+    TTaxId taxid = ENTREZ_ID_FROM(int, m_Curr->taxid);
     if(m_TreeTaxInfo->seqTaxInfoMap.count(taxid) == 0) {              
         CTaxFormat::STaxInfo seqsForTaxID;
         seqsForTaxID.taxid = m_Curr->taxid;
@@ -775,7 +775,7 @@ void CUpwardTreeFiller::x_InitTreeTaxInfo(void)
 }
 
 
-bool CTaxFormat::isTaxidInAlign(int taxid)
+bool CTaxFormat::isTaxidInAlign(TTaxId taxid)
 {
     bool ret = false;
     if(m_BlastResTaxInfo->seqTaxInfoMap.count(taxid) != 0 && m_BlastResTaxInfo->seqTaxInfoMap[taxid].seqInfoList.size() > 0) {
@@ -922,13 +922,13 @@ void CTaxFormat::x_InitTaxInfoMap(void)
 
 void CTaxFormat::x_InitBlastDBTaxInfo(CTaxFormat::SSeqInfo *seqInfo)    
 {
-    int taxid = seqInfo->taxid;
+    TTaxId taxid = ENTREZ_ID_FROM(int, seqInfo->taxid);
     if(m_BlastResTaxInfo->seqTaxInfoMap.count(taxid) == 0){		                            
         SSeqDBTaxInfo taxInfo;
-        CSeqDB::GetTaxInfo(taxid, taxInfo);                
+        CSeqDB::GetTaxInfo(ENTREZ_ID_TO(int, taxid), taxInfo);                
 
         STaxInfo seqsForTaxID;
-        seqsForTaxID.taxid = taxid;
+        seqsForTaxID.taxid = ENTREZ_ID_TO(int, taxid);
         seqsForTaxID.commonName = taxInfo.common_name;
         seqsForTaxID.scientificName = taxInfo.scientific_name;
         seqsForTaxID.blastName = taxInfo.blast_name;                    
@@ -954,7 +954,7 @@ void CTaxFormat::x_InitBlastDBTaxInfo(CTaxFormat::SSeqInfo *seqInfo)
 string CTaxFormat::x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo)
 {
     SSeqInfo *seqInfo = taxInfo.seqInfoList[0];
-    int taxid = taxInfo.taxid;
+    TTaxId taxid = ENTREZ_ID_FROM(int, taxInfo.taxid);
     
     string reportTableRow = CAlignFormatUtil::MapTemplate(seqTemplate,"acc",m_BlastResTaxInfo->seqTaxInfoMap[taxid].accList);        
     reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr",seqInfo->title);    

@@ -177,10 +177,10 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
         unsigned int       numOrgs;      ///< Number of organism in alignmnet corresponding to taxid and it's children
     };
 
-    typedef map < int, struct STaxInfo > TSeqTaxInfoMap; 
+    typedef map < TTaxId, struct STaxInfo > TSeqTaxInfoMap; 
 
     struct SBlastResTaxInfo {
-        vector <int> orderedTaxids;   ///< taxids ordered by highest score or common tree top to bottom tarveres??
+        vector <TTaxId> orderedTaxids;   ///< taxids ordered by highest score or common tree top to bottom tarveres??
         TSeqTaxInfoMap seqTaxInfoMap; ///< Map containing info for orderedTaxids
     };
 
@@ -233,30 +233,30 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     ///Gets taxids for sequences in alignment
     ///@return: vector of taxids
     ///    
-    vector <int> &GetAlignTaxIDs(void){return m_BlastResTaxInfo->orderedTaxids;}
+    vector <TTaxId> &GetAlignTaxIDs(void){return m_BlastResTaxInfo->orderedTaxids;}
 
     ///Gets info for sequences in alignment corresponding to taxid
     ///@param taxid: taxid
     ///@return: STaxInfo 
     ///    
-    struct STaxInfo &GetAlignTaxInfo(int taxid){ return m_BlastResTaxInfo->seqTaxInfoMap[taxid];}//Check if taxid exists in aligh first    
+    struct STaxInfo &GetAlignTaxInfo(TTaxId taxid){ return m_BlastResTaxInfo->seqTaxInfoMap[taxid];}//Check if taxid exists in aligh first    
 
     ///Gets taxids for sequences in taxonomy tree
     ///@return: vector of taxids
     ///    
-    vector <int> &GetTaxTreeTaxIDs(void){return m_TaxTreeinfo->orderedTaxids;}
+    vector <TTaxId> &GetTaxTreeTaxIDs(void){return m_TaxTreeinfo->orderedTaxids;}
 
     ///Gets info for sequences in taxonomy tree corresponding to taxid
     ///@param taxid: taxid
     ///@return: STaxInfo 
     ///    
-    struct STaxInfo &GetTaxTreeInfo(int taxid){ return m_TaxTreeinfo->seqTaxInfoMap[taxid];}
+    struct STaxInfo &GetTaxTreeInfo(TTaxId taxid){ return m_TaxTreeinfo->seqTaxInfoMap[taxid];}
 
     ///Checks if there are sequences in alignment with specified taxid
     ///@param taxid: taxid
     ///@return: bool true  if there are sequences in alignment with specified taxid
     ///    
-    bool isTaxidInAlign(int taxid);
+    bool isTaxidInAlign(TTaxId taxid);
     
 
 protected:
@@ -332,7 +332,7 @@ protected:
     string x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInfo,unsigned int depth = 0);
     void x_InitTextFormatInfo(CTaxFormat::SSeqInfo *seqInfo);
 
-    void x_PrintTaxInfo(vector <int> taxids, string title);       
+    void x_PrintTaxInfo(vector <TTaxId> taxids, string title);       
     void x_PrintLineage(void);
 };
 
