@@ -117,7 +117,7 @@ s_ConvertToBlastQueries(const TGiLengthVector& gi_length,
             loc->SetId(*id);
             loc->SetStrand((*strands)[i]);
         } else {
-            loc->SetWhole().SetGi(gi_length[i].first);
+            loc->SetWhole().SetGi(GI_FROM(TIntId, gi_length[i].first));
         }
         CRef<CScope> scope(CSimpleOM::NewScope());
         retval.push_back(SSeqLoc(loc, &*scope));
@@ -201,7 +201,7 @@ public:
 
         for (int i = 0; gis[i] != -1; i++) {
             CRef<CSeq_loc> loc(new CSeq_loc());
-            loc->SetWhole().SetGi(gis[i]);
+            loc->SetWhole().SetGi(GI_FROM(TIntId, gis[i]));
             CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
             scope->AddDefaults();
             queries.push_back(SSeqLoc(loc, scope));

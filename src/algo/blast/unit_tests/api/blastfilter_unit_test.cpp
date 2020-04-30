@@ -1568,7 +1568,7 @@ void setupQueryInfoForOffsetTranslation(CBlastQueryInfo &query_info)
 
     for (int index = 0; index < kNumQueries; ++index) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(kQueryGis[index]);
+        loc->SetWhole().SetGi(GI_FROM(TIntId, kQueryGis[index]));
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
         query_v.push_back(SSeqLoc(loc, scope));
