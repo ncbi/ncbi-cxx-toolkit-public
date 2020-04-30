@@ -124,7 +124,7 @@ CSnpPtisClient_Impl::~CSnpPtisClient_Impl()
 string CSnpPtisClient_Impl::GetPrimarySnpTrackForGi(TGi gi)
 {
     ncbi::grpcapi::dbsnp::primary_track::SeqIdRequestStringAccverUnion request;
-    request.set_gi(TIntId(gi));
+    request.set_gi(GI_TO(TIntId, gi));
     return x_GetPrimarySnpTrack(request);
 }
 

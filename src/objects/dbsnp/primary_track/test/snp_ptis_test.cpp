@@ -151,7 +151,7 @@ int CSnpPtisTestApp::Run(void)
                            string track;
                            try {
                                if ( isdigit(id[0]) ) {
-                                   track = client->GetPrimarySnpTrackForGi(NStr::StringToNumeric<TIntId>(id));
+                                   track = client->GetPrimarySnpTrackForGi(NStr::StringToNumeric<TGi>(id));
                                }
                                else {
                                    track = client->GetPrimarySnpTrackForAccVer(id);
