@@ -124,7 +124,7 @@ void CFeatTreeSampleApp::Init(void)
     const CArgs& args = GetArgs();
 
     // Get configuration.
-    m_gi = args["gi"].AsIntId();
+    m_gi = GI_FROM(TIntId, args["gi"].AsIntId());
     m_range_from = args["from"].AsInteger();
     m_range_to = args["to"].AsInteger();
 }

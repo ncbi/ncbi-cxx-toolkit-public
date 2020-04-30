@@ -603,7 +603,7 @@ int CEditBioseqSampleApp::Run(void)
 
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
-    TGi gi = args["gi"].AsIntId();
+    TGi gi = GI_FROM(TIntId, args["gi"].AsIntId());
 
     // Create Seq-id, set it to the GI specified on the command line
     CSeq_id_Handle seq_id(CSeq_id_Handle::GetGiHandle(gi));
