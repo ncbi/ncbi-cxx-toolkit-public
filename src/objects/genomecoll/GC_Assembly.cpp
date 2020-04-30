@@ -202,7 +202,7 @@ int CGC_Assembly::GetTaxId() const
         desc.Reset(&GetUnit().GetDesc());
     }
 
-    int tax_id = 0;
+    TTaxId tax_id = ZERO_ENTREZ_ID;
     if (desc  &&  desc->IsSetDescr()) {
         ITERATE (CGC_AssemblyDesc::TDescr::Tdata, it, desc->GetDescr().Get()) {
             if ((*it)->IsSource()) {
@@ -211,7 +211,7 @@ int CGC_Assembly::GetTaxId() const
             }
         }
     }
-    return tax_id;
+    return ENTREZ_ID_TO(int, tax_id);
 }
 
 
