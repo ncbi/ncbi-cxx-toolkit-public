@@ -6097,8 +6097,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_CollidingPublications)
     CheckErrors (*eval, expected_errors);
 
     // should also report muid collisions
-    pub1->SetPub().SetPub().Set().front()->SetMuid(2);
-    pub2->SetPub().SetPub().Set().front()->SetMuid(2);
+    pub1->SetPub().SetPub().Set().front()->SetMuid(ENTREZ_ID_CONST(2));
+    pub2->SetPub().SetPub().Set().front()->SetMuid(ENTREZ_ID_CONST(2));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6116,23 +6116,23 @@ BOOST_AUTO_TEST_CASE(Test_Descr_CollidingPublications)
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetDescr().Set().pop_back();
     CRef<CPub> extra_id(new CPub());
-    extra_id->SetMuid(3);
+    extra_id->SetMuid(ENTREZ_ID_CONST(3));
     pub1->SetPub().SetPub().Set().push_back(extra_id);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetErrCode("CollidingPublications");
     expected_errors[0]->SetErrMsg("Multiple conflicting muids in a single publication");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    extra_id->SetMuid(2);
+    extra_id->SetMuid(ENTREZ_ID_CONST(2));
     expected_errors[0]->SetErrMsg("Multiple redundant muids in a single publication");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    pub1->SetPub().SetPub().Set().front()->SetPmid((CPub::TPmid)2);
-    extra_id->SetPmid((CPub::TPmid)3);
+    pub1->SetPub().SetPub().Set().front()->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(2)));
+    extra_id->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(3)));
     expected_errors[0]->SetErrMsg("Multiple conflicting pmids in a single publication");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    extra_id->SetPmid((CPub::TPmid)2);
+    extra_id->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(2)));
     expected_errors[0]->SetErrMsg("Multiple redundant pmids in a single publication");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14632,7 +14632,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryCitPubEquiv)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
     CRef<CPub> pub(new CPub());
-    pub->SetPmid((CPub::TPmid)1);
+    pub->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(1)));
     feat->SetCit().SetPub().push_back(pub);
     CRef<CPub> pub2(new CPub());
     pub2->SetEquiv();
@@ -15971,7 +15971,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCitationProblem)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
     CRef<CPub> pub(new CPub());
-    pub->SetPmid((CPub::TPmid)2);
+    pub->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(2)));
     misc->SetCit().SetPub().push_back(pub);
 
     STANDARD_SETUP
@@ -16206,11 +16206,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivPublications)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> feat1 = unit_test_util::AddMiscFeature (entry);
     CRef<CPub> pub1(new CPub());
-    pub1->SetPmid((CPub::TPmid)2);
+    pub1->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(2)));
     feat1->SetData().SetPub().SetPub().Set().push_back(pub1);
     CRef<CSeq_feat> feat2 = unit_test_util::AddMiscFeature (entry);
     CRef<CPub> pub2(new CPub());
-    pub2->SetPmid((CPub::TPmid)2);
+    pub2->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(2)));
     feat2->SetData().SetPub().SetPub().Set().push_back(pub2);
     feat2->SetLocation().SetInt().SetFrom(30);
     feat2->SetLocation().SetInt().SetTo(40);
@@ -16236,7 +16236,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadFullLengthFeature)
     src1->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
     CRef<CSeq_feat> feat1 = unit_test_util::AddMiscFeature (entry);
     CRef<CPub> pub1(new CPub());
-    pub1->SetPmid((CPub::TPmid)2);
+    pub1->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(2)));
     feat1->SetData().SetPub().SetPub().Set().push_back(pub1);
     feat1->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
     unit_test_util::SetTransgenic(entry, true);
@@ -21479,7 +21479,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveLineageSourceNotes)
 
     bool removed = bsrc->RemoveLineageSourceNotes();
     BOOST_CHECK_EQUAL(removed, false); // it won't remove the notes as there is no taxid
-    bsrc->SetOrg().SetTaxId(11320);
+    bsrc->SetOrg().SetTaxId(ENTREZ_ID_CONST(11320));
 
     removed = bsrc->RemoveLineageSourceNotes();
     BOOST_CHECK_EQUAL(removed, true);
