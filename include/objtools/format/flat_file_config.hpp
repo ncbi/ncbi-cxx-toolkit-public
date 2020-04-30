@@ -200,7 +200,7 @@ public:
         fIgnoreExistingTitle   = 1 << 13,
         fGeneRNACDSFeatures    = 1 << 14,
         fShowFtablePeptides    = 1 << 15,
-        fUseReferenceCache     = 1 << 16
+        fDisableReferenceCache = 1 << 16
     };
 
     enum EView {
@@ -616,23 +616,23 @@ public:
     bool IgnoreExistingTitle   (void) const;
     bool GeneRNACDSFeatures    (void) const;
     bool ShowFtablePeptides    (void) const;
-    bool UseReferenceCache     (void) const;
+    bool DisableReferenceCache (void) const;
 
     // setters
     void SetCustom(const TCustom& custom) { m_Custom = custom; }
-    CFlatFileConfig& SetHideProteinID        (bool val = true);
-    CFlatFileConfig& SetHideGI               (bool val = true);
-    CFlatFileConfig& SetLongLocusNames       (bool val = true);
-    CFlatFileConfig& SetExpandGaps           (bool val = true);
-    CFlatFileConfig& SetShowSNPFeatures      (bool val = true);
-    CFlatFileConfig& SetShowCDDFeatures      (bool val = true);
-    CFlatFileConfig& SetDisableAnnotRefs     (bool val = true);
-    CFlatFileConfig& SetUseSeqEntryIndexer   (bool val = true);
-    CFlatFileConfig& SetUseAutoDef           (bool val = true);
-    CFlatFileConfig& SetIgnoreExistingTitle  (bool val = true);
-    CFlatFileConfig& SetGeneRNACDSFeatures   (bool val = true);
-    CFlatFileConfig& SetShowFtablePeptides   (bool val = true);
-    CFlatFileConfig& SetUseReferenceCache    (bool val = true);
+    CFlatFileConfig& SetHideProteinID         (bool val = true);
+    CFlatFileConfig& SetHideGI                (bool val = true);
+    CFlatFileConfig& SetLongLocusNames        (bool val = true);
+    CFlatFileConfig& SetExpandGaps            (bool val = true);
+    CFlatFileConfig& SetShowSNPFeatures       (bool val = true);
+    CFlatFileConfig& SetShowCDDFeatures       (bool val = true);
+    CFlatFileConfig& SetDisableAnnotRefs      (bool val = true);
+    CFlatFileConfig& SetUseSeqEntryIndexer    (bool val = true);
+    CFlatFileConfig& SetUseAutoDef            (bool val = true);
+    CFlatFileConfig& SetIgnoreExistingTitle   (bool val = true);
+    CFlatFileConfig& SetGeneRNACDSFeatures    (bool val = true);
+    CFlatFileConfig& SetShowFtablePeptides    (bool val = true);
+    CFlatFileConfig& SetDisableReferenceCache (bool val = true);
 
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -822,7 +822,7 @@ CUSTOM_ARG_IMP(UseAutoDef)
 CUSTOM_ARG_IMP(IgnoreExistingTitle)
 CUSTOM_ARG_IMP(GeneRNACDSFeatures)
 CUSTOM_ARG_IMP(ShowFtablePeptides)
-CUSTOM_ARG_IMP(UseReferenceCache)
+CUSTOM_ARG_IMP(DisableReferenceCache)
 
 #undef FLAG_ARG_IMP
 #undef FLAG_ARG_GET

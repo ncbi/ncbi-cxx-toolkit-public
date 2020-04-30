@@ -444,7 +444,7 @@ void CFlatGatherer::x_GatherBioseq(
         // display as a single bioseq (single section)
         m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, 0, 
             (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : NULL)));
-        if ( m_Context->UsingSeqEntryIndex() && cfg.UseReferenceCache() ) {
+        if ( m_Context->UsingSeqEntryIndex() && ! cfg.DisableReferenceCache() ) {
             CRef<CSeqEntryIndex> idx = m_Context->GetSeqEntryIndex();
             if (idx) {
                 if (! idx->DistributedReferences()) {
@@ -479,7 +479,7 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
                 part.GetInst_Repr() : CSeq_inst::eRepr_not_set;
             if (repr != CSeq_inst::eRepr_virtual) {
                 m_Current.Reset(new CBioseqContext(part, *m_Context, mctx));
-                if ( m_Context->UsingSeqEntryIndex() && cfg.UseReferenceCache() ) {
+                if ( m_Context->UsingSeqEntryIndex() && ! cfg.DisableReferenceCache() ) {
                     CRef<CSeqEntryIndex> idx = m_Context->GetSeqEntryIndex();
                     if (idx) {
                         if (! idx->DistributedReferences()) {
