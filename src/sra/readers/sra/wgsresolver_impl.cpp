@@ -590,7 +590,7 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(TGi gi)
         ERR_POST_X(24, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<gi);
     }
     CRef<SGiIdxTableCursor> cur = GiIdx();
-    CVDBStringValue value = cur->WGS_PREFIX(gi, CVDBValue::eMissing_Allow);
+    CVDBStringValue value = cur->WGS_PREFIX(GI_TO(TVDBRowId, gi), CVDBValue::eMissing_Allow);
     if ( !value.empty() ) {
         if ( s_DebugEnabled(eDebug_resolve) ) {
             ERR_POST_X(25, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<*value);

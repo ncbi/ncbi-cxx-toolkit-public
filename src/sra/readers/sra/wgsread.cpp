@@ -1865,7 +1865,7 @@ static inline TGi s_ToGi(TVDBRowId gi, const char* method)
         NCBI_THROW_FMT(CSraException, eDataError,
                        method<<": GI is too big: "<<gi);
     }
-    return TIntId(gi);
+    return GI_FROM(TVDBRowId, gi);
 }
 
 
@@ -1938,7 +1938,7 @@ CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
         TVDBRowIdRange row_range = seq->m_GI.GetRowIdRange(seq->m_Cursor);
         for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
             row_id = row_range.first+i;
-            TIntId gi = s_ToGi(*seq->GI(row_id), "CWGSDb::GetNucGiRanges()");
+            TIntId gi = GI_TO(TIntId, s_ToGi(*seq->GI(row_id), "CWGSDb::GetNucGiRanges()"));
             if ( !gi ) {
                 continue;
             }
@@ -2044,7 +2044,7 @@ CWGSDb_Impl::TProtAccRanges CWGSDb_Impl::GetProtAccRanges(void)
 pair<TVDBRowId, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 {
     pair<TVDBRowId, bool> ret;
-    TIntId row_id = gi;
+    TIntId row_id = GI_TO(TIntId, gi);
     if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
@@ -2069,7 +2069,7 @@ pair<TVDBRowId, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 TVDBRowId CWGSDb_Impl::GetNucGiRowId(TGi gi)
 {
     TVDBRowId ret = 0;
-    TIntId row_id = gi;
+    TIntId row_id = GI_TO(TIntId, gi);
     if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
@@ -2087,7 +2087,7 @@ TVDBRowId CWGSDb_Impl::GetNucGiRowId(TGi gi)
 TVDBRowId CWGSDb_Impl::GetProtGiRowId(TGi gi)
 {
     TVDBRowId ret = 0;
-    TIntId row_id = gi;
+    TIntId row_id = GI_TO(TIntId, gi);
     if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_PROT_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
@@ -4225,13 +4225,13 @@ static void s_AddGiRange(CID2S_Seq_loc::TLoc_set& loc_set,
         return;
     }
     CRef<CID2S_Seq_loc> loc(new CID2S_Seq_loc);
-    if ( gi_range_stop == gi_range_start+1 ) {
+    if ( gi_range_stop == gi_range_start+GI_FROM(TIntId, 1) ) {
         loc->SetWhole_gi(gi_range_start);
     }
     else {
         CID2S_Gi_Range& gi_range = loc->SetWhole_gi_range();
         gi_range.SetStart(gi_range_start);
-        gi_range.SetCount(CID2S_Gi_Range::TCount(gi_range_stop - gi_range_start));
+        gi_range.SetCount(GI_TO(CID2S_Gi_Range::TCount, gi_range_stop - gi_range_start));
     }
     loc_set.push_back(loc);
 }
@@ -4285,12 +4285,13 @@ CRef<CID2S_Chunk_Info> SWGSFeatChunkInfo::CreateChunkInfo(int index,
                 feat_loc_id_type = prot_it.GetDb().GetFeatLocIdType();
             }
             if ( feat_loc_id_type == eFeatLocIdGi ) {
-                if ( CSeq_id::TGi gi = prot_it.GetGi() ) {
+                CSeq_id::TGi gi = prot_it.GetGi();
+                if ( gi != ZERO_GI ) {
                     if ( gi != gi_range_stop ) {
                         s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
                         gi_range_start = gi;
                     }
-                    gi_range_stop = gi+1;
+                    gi_range_stop = gi+GI_FROM(TIntId, 1);
                     continue;
                 }
             }
@@ -5381,7 +5382,7 @@ void CWGSGiIterator::Reset(void)
 {
     if ( m_Cur ) {
         if ( m_Db ) {
-            GetDb().Put(m_Cur, TIntId(m_CurrGi));
+            GetDb().Put(m_Cur, GI_TO(TIntId, m_CurrGi));
         }
         else {
             m_Cur.Reset();
@@ -5475,8 +5476,8 @@ void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
         return;
     }
     TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
-    m_FirstBadGi = TIntId(range.first+range.second);
-    m_CurrGi = TIntId(range.first);
+    m_FirstBadGi = GI_FROM(TIntId, range.first+range.second);
+    m_CurrGi = GI_FROM(TIntId, range.first);
 }
 
 
@@ -5484,7 +5485,7 @@ bool CWGSGiIterator::x_Excluded(void)
 {
     if ( m_FilterSeqType != eProt && m_Cur->m_NUC_ROW_ID ) {
         CVDBValueFor<TVDBRowId> value =
-            m_Cur->NUC_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
+            m_Cur->NUC_ROW_ID(GI_TO(TIntId, m_CurrGi), CVDBValue::eMissing_Allow);
         if ( !value.empty() ) {
             m_CurrRowId = *value;
             if ( m_CurrRowId ) {
@@ -5495,7 +5496,7 @@ bool CWGSGiIterator::x_Excluded(void)
     }
     if ( m_FilterSeqType != eNuc && m_Cur->m_PROT_ROW_ID ) {
         CVDBValueFor<TVDBRowId> value =
-            m_Cur->PROT_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
+            m_Cur->PROT_ROW_ID(GI_TO(TIntId, m_CurrGi), CVDBValue::eMissing_Allow);
         if ( !value.empty() ) {
             m_CurrRowId = *value;
             if ( m_CurrRowId ) {
@@ -5717,7 +5718,8 @@ CRef<CSeq_id> CWGSProteinIterator::GetGiSeq_id(void) const
 {
     PROFILE(sw____GetProtGISeq_id);
     CRef<CSeq_id> id;
-    if ( CSeq_id::TGi gi = GetGi() ) {
+    CSeq_id::TGi gi = GetGi();
+    if ( gi != ZERO_GI ) {
         id = new CSeq_id;
         id->SetGi(gi);
     }
