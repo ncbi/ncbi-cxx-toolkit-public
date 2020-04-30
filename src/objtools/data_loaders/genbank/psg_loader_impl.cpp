@@ -317,7 +317,7 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
     : molecule_type(CSeq_inst::eMol_not_set),
       length(0),
       state(0),
-      tax_id(0),
+      tax_id(ZERO_ENTREZ_ID),
       hash(0),
       deadline(kMaxCacheLifespanSeconds)
 {
@@ -711,7 +711,7 @@ void CPSGDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 int CPSGDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
     auto seq_info = x_GetBioseqInfo(idh);
-    return seq_info ? seq_info->tax_id : -1;
+    return seq_info ? ENTREZ_ID_TO(int, seq_info->tax_id) : -1;
 }
 
 
