@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-const CSourceItem::TTaxid CSourceItem::kInvalidTaxid = -1;
+const CSourceItem::TTaxid CSourceItem::kInvalidTaxid = INVALID_ENTREZ_ID;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -168,7 +168,7 @@ void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
 
     m_Taxname = &bsx->GetTaxname();
     m_Common = &bsx->GetCommon();
-    m_Taxid = bsx->GetTaxid();
+    m_Taxid = ENTREZ_ID_FROM(int, bsx->GetTaxid());
     m_UsingAnamorph = bsx->IsUsingAnamorph();
 
     const string& lineage = bsx->GetLineage();
@@ -521,7 +521,7 @@ void CSourceItem::x_SetSource
     // Taxid
     {{
         TTaxid taxid = org.GetTaxId();
-        if (taxid != 0) {
+        if (taxid != ZERO_ENTREZ_ID) {
             m_Taxid = taxid;
         }
     }}

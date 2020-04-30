@@ -764,7 +764,7 @@ void CGenbankFormatter::x_FormatOrganismLine(list<string>& l, const CSourceItem&
     // taxname
 #ifdef NEW_HTML_FMT
     string s;
-    GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, source.GetTaxid(), source.GetTaxname());
+    GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, ENTREZ_ID_TO(int, source.GetTaxid()), source.GetTaxname());
     Wrap(l, "ORGANISM", s, eSubp);
 #else
     if (source.GetContext()->Config().DoHTML()) {
@@ -1498,7 +1498,7 @@ bool s_GetLinkFeatureKey(
     // assembly of the actual string:
 	strLink.reserve(100); // euristical URL length
 #ifdef NEW_HTML_FMT
-    item.GetContext()->Config().GetHTMLFormatter().FormatLocation(strLink, item.GetFeat().GetLocation(), iGi, strRawKey);
+    item.GetContext()->Config().GetHTMLFormatter().FormatLocation(strLink, item.GetFeat().GetLocation(), GI_TO(TIntId, iGi), strRawKey);
 #else
     // check if this is a protein or nucleotide link
     bool is_prot = false;

@@ -597,9 +597,9 @@ bool CReferenceItem::Matches(const CPub& pub) const
 {
     switch (pub.Which()) {
     case CPub::e_Muid:
-        return pub.GetMuid() == GetMUID();
+        return pub.GetMuid() == ENTREZ_ID_FROM(int, GetMUID());
     case CPub::e_Pmid:
-        return pub.GetPmid() == GetPMID();
+        return pub.GetPmid() == ENTREZ_ID_FROM(int, GetPMID());
     case CPub::e_Equiv:
         ITERATE (CPub::TEquiv::Tdata, it, pub.GetEquiv().Get()) {
             if ( Matches(**it) ) {
@@ -681,7 +681,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
                 switch(pub.Which()) {
                 case CPub::e_Pmid:
                     {
-                        const int pmid = pub.GetPmid().Get();
+                        const TEntrezId pmid = pub.GetPmid().Get();
 
                         CPubMedId req(pmid);
                         CMLAClient::TReply reply;
@@ -690,7 +690,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
                     break;
                 case CPub::e_Muid:
                     {
-                        const int muid = pub.GetMuid();
+                        const TEntrezId muid = pub.GetMuid();
                         // RW-1040: removed mlaClient.AskUidtopmid and AskGetpubpmid
                     }
                     break;
@@ -756,7 +756,7 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
 
     case CPub::e_Muid:
         if (m_MUID == 0) {
-            m_MUID = pub.GetMuid();
+            m_MUID = ENTREZ_ID_TO(int, pub.GetMuid());
             m_Category = ePublished;
         }
         break;
@@ -801,7 +801,7 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
 
     case CPub::e_Pmid:
         if (m_PMID == 0) {
-            m_PMID = pub.GetPmid();
+            m_PMID = ENTREZ_ID_TO(int, pub.GetPmid().Get());
             m_Category = ePublished;
         }
         break;
@@ -883,12 +883,12 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
 
     // MUID
     if (gen.CanGetMuid()  &&  m_MUID == 0) {
-        m_MUID = gen.GetMuid();
+        m_MUID = ENTREZ_ID_TO(int, gen.GetMuid());
     }
     
     // PMID
     if (gen.CanGetPmid()  &&  m_PMID == 0) {
-        m_PMID = gen.GetPmid();
+        m_PMID = ENTREZ_ID_TO(int, gen.GetPmid().Get());
     }
 }
 
@@ -923,11 +923,11 @@ void CReferenceItem::x_Init(const CMedline_entry& mle, CBioseqContext& ctx)
     m_Category = ePublished;
 
     if (mle.CanGetUid()  &&  m_MUID == 0) {
-        m_MUID = mle.GetUid();
+        m_MUID = ENTREZ_ID_TO(int, mle.GetUid());
     }
 
     if (mle.CanGetPmid()  &&  m_PMID == 0) {
-        m_PMID = mle.GetPmid();
+        m_PMID = ENTREZ_ID_TO(int, mle.GetPmid().Get());
     }
 
     if (mle.CanGetCit()) {
@@ -1034,12 +1034,12 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
             switch ((*it)->Which()) {
             case CArticleId::e_Pubmed:
                 if (m_PMID == 0) {
-                    m_PMID = (*it)->GetPubmed();
+                    m_PMID = ENTREZ_ID_TO(int, (*it)->GetPubmed().Get());
                 }
                 break;
             case CArticleId::e_Medline:
                 if (m_MUID == 0) {
-                    m_MUID = (*it)->GetMedline();
+                    m_MUID = ENTREZ_ID_TO(int, (*it)->GetMedline().Get());
                 }
                 break;
             case CArticleId::e_Doi:
@@ -1662,10 +1662,10 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                             // no DOIs pritned if there's a pmid or muid
                             bool hasPmidOrMuid = false;
                             ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
-                                if( (*it)->IsPubmed() && (*it)->GetPubmed().Get() != 0 ) {
+                                if( (*it)->IsPubmed() && (*it)->GetPubmed().Get() != ZERO_ENTREZ_ID ) {
                                     hasPmidOrMuid = true;
                                     break;
-                                } else if(  (*it)->IsMedline() && (*it)->GetMedline().Get() != 0 ) {
+                                } else if(  (*it)->IsMedline() && (*it)->GetMedline().Get() != ZERO_ENTREZ_ID ) {
                                     hasPmidOrMuid = true;
                                     break;
                                 }

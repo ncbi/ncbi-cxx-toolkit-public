@@ -1069,7 +1069,7 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
         CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
         for (; pub_iter != unusedPubs.end(); ++pub_iter) {
             if ((*pub_iter)->IsPmid()) {
-                const int pmid = (*pub_iter)->GetPmid().Get();
+                const TEntrezId pmid = (*pub_iter)->GetPmid().Get();
                 string pmid_str = NStr::NumericToString(pmid);
                 pubmed = "[PUBMED ";
                 if (bHtml) {

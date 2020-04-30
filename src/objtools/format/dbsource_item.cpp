@@ -628,7 +628,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     GetContext()->Config().GetHTMLFormatter().FormatUniProtId(ht, acc);
                 } else {
                     GetContext()->Config().GetHTMLFormatter().FormatNucId(ht, *idh.GetSeqId(),
-                        GetContext()->GetScope().GetGi(idh), acc);
+                        GI_TO(TIntId, GetContext()->GetScope().GetGi(idh)), acc);
                 }
 #endif
                 s += comma + sep + "accession " + ht;
