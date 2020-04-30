@@ -1878,7 +1878,7 @@ private:
 };
 
 
-class CStrictId64;
+template<class TKey, class TStorage> class CStrictId;
 
 /// Temporary object for holding extra message arguments. Prints all
 /// of the arguments on destruction.
@@ -1911,7 +1911,12 @@ public:
     CDiagContext_Extra& Print(const string& name, unsigned char value);
     CDiagContext_Extra& Print(const string& name, double value);
     CDiagContext_Extra& Print(const string& name, bool value);
-    CDiagContext_Extra& Print(const string& name, const CStrictId64& value);
+    template<class TKey, class TStorage>
+    CDiagContext_Extra& Print(const string& name, const CStrictId<TKey, TStorage>& value)
+    {
+        return Print(name, value.Get());
+    }
+
 
     typedef SDiagMessage::TExtraArg  TExtraArg;
     typedef SDiagMessage::TExtraArgs TExtraArgs;

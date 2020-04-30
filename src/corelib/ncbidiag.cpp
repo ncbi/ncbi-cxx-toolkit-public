@@ -2631,14 +2631,6 @@ CDiagContext_Extra::Print(const string& name, bool value)
     return Print(name, NStr::BoolToString(value));
 }
 
-#ifdef NCBI_STRICT_GI
-CDiagContext_Extra&
-CDiagContext_Extra::Print(const string& name, const CStrictId64& value)
-{
-    return Print(name, NStr::NumericToString(value));
-}
-#endif
-
 CDiagContext_Extra&
 CDiagContext_Extra::Print(TExtraArgs& args)
 {
