@@ -310,7 +310,7 @@ bool CCSRATestApp::TestShortReads(int idx)
             for ( int read_id = 1; read_id <= 4; ++read_id ) {
                 CSeq_id_Handle id = GetHandle(acc, spot_id, read_id);
                 _ASSERT(!scope.GetAccVer(id));
-                _ASSERT(!scope.GetGi(id));
+                _ASSERT(scope.GetGi(id) == ZERO_GI);
                 if ( scope.GetIds(id).empty() ) {
                     _ASSERT(scope.GetSequenceLength(id) == kInvalidSeqPos);
                     _ASSERT(scope.GetSequenceType(id) == CSeq_inst::eMol_not_set);
