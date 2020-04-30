@@ -703,7 +703,7 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     if ( str.Found() ) {
         Int8 gi_num = str.ParseInt8();
 #ifdef NCBI_INT8_GI
-        TGi gi = gi_num;
+        TGi gi = GI_FROM(TIntId, gi_num);
 #else
         if ( gi_num != Int4(gi_num) ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
@@ -874,7 +874,7 @@ bool CCacheReader::LoadSequenceHash(CReaderRequestResult& result,
             LoadSeq_idGi(result, seq_id);
             if ( gi_lock.IsLoadedGi() ) {
                 TSequenceGi gi = gi_lock.GetGi();
-                if ( gi_lock.GetGi(gi) ) {
+                if ( gi_lock.GetGi(gi) != ZERO_GI ) {
                     CSeq_id_Handle gi_id =
                         CSeq_id_Handle::GetGiHandle(gi_lock.GetGi(gi));
                     CLoadLockHash gi_hash(result, gi_id);

@@ -202,7 +202,7 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
         CStoreBuffer str;
         CReader::TSequenceGi data = lock.GetGi();
         _ASSERT(lock.IsFound(data));
-        str.StoreInt8(lock.GetGi(data));
+        str.StoreInt8(GI_TO(Int8, lock.GetGi(data)));
         x_WriteId(GetIdKey(seq_id), GetGiSubkey(), str);
     }
 }
