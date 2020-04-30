@@ -1157,8 +1157,8 @@ bool CGff3Writer::xWriteSequenceHeader(
     CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
     if (sdi) {
         const CBioSource& bs = sdi->GetSource();
-        if (bs.IsSetOrg()  &&  bs.GetOrg().GetTaxId() != 0) {
-            string tax_id = NStr::IntToString(bs.GetOrg().GetTaxId());
+        if (bs.IsSetOrg()  &&  bs.GetOrg().GetTaxId() != ZERO_ENTREZ_ID) {
+            string tax_id = NStr::NumericToString(bs.GetOrg().GetTaxId());
             m_Os << "##species " << base_url << "id=" << tax_id << '\n';
         }
         else if (bs.IsSetOrgname()) {
