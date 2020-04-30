@@ -72,9 +72,9 @@ CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
     // Get the gi
     TGi gi;
     if (st == eQuery) {
-        gi = GetArgs()["query"].AsIntId();
+        gi = GI_FROM(TIntId, GetArgs()["query"].AsIntId());
     } else {
-        gi = GetArgs()["subject"].AsIntId();
+        gi = GI_FROM(TIntId, GetArgs()["subject"].AsIntId());
     }
 
     CRef<CSeq_loc> seqloc(new CSeq_loc);

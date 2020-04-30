@@ -113,7 +113,7 @@ int VSRunSampleApplication::Run(void)
     scope->AddDefaults();
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
-    query_loc->SetWhole().SetGi(args["gi"].AsIntId());
+    query_loc->SetWhole().SetGi(GI_FROM(TIntId, args["gi"].AsIntId()));
 
     CVecscreenRun vs_run(query_loc, scope);
 
