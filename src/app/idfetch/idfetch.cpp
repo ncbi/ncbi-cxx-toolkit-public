@@ -261,7 +261,7 @@ int CIdfetchApplication::Run(void)
         // processing single sequence
         CSeq_id_Handle idh;
         if (args["g"]) {
-            idh = CSeq_id_Handle::GetHandle(args["g"].AsInt8());
+            idh = CSeq_id_Handle::GetHandle(GI_FROM(TIntId, args["g"].AsIntId()));
         }
         else if (args["s"]) {
             idh = CSeq_id_Handle::GetHandle(args["s"].AsString());
@@ -283,7 +283,7 @@ int CIdfetchApplication::Run(void)
 
         string query = args["q"].AsString();
 
-        vector<TGi> uids;
+        vector<TEntrezId> uids;
         CEutilsClient cli;
         if (args["dp"]) {
             cli.Search("protein", query, uids);
@@ -297,8 +297,8 @@ int CIdfetchApplication::Run(void)
                        "indicate the database of interest");
         }
 
-        ITERATE (vector<TGi>, it, uids) {
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
+        ITERATE (vector<TEntrezId>, it, uids) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(GI_FROM(TIntId, ENTREZ_ID_TO(TIntId, *it)));
             CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
             if ( !bsh ) {
                 NCBI_THROW(CException, eUnknown,
