@@ -8540,12 +8540,12 @@ void CNewCleanup_imp::x_PostProcessing(void)
     if( ! m_MuidPubContainer.empty() ) {
         NON_CONST_ITERATE( TMuidPubContainer, pub_iter, m_MuidPubContainer ) {
             CPub &pub = **pub_iter;
-            const int muid = pub.GetMuid();
+            const TEntrezId muid = pub.GetMuid();
             
             // attempt to find that muid in the muid-to-pmid mapping created earlier
-            TMuidToPmidMap::const_iterator map_iter = m_MuidToPmidMap.find(muid);
+            TMuidToPmidMap::const_iterator map_iter = m_MuidToPmidMap.find(ENTREZ_ID_TO(int, muid));
             if( map_iter != m_MuidToPmidMap.end() ) {
-                const int pmid = map_iter->second;
+                const TEntrezId pmid = ENTREZ_ID_FROM(int, map_iter->second);
                 pub.SetPmid().Set(pmid);
                 ChangeMade(CCleanupChange::eChangePublication);
             }
@@ -8686,16 +8686,16 @@ void CNewCleanup_imp::x_NotePubdescOrAnnotPubs(
 }
 
 void CNewCleanup_imp::x_NotePubdescOrAnnotPubs_RecursionHelper(
-    const CPub_equiv &pub_equiv, int &muid, int &pmid ) 
+    const CPub_equiv &pub_equiv, int &muid, int &pmid )
 {
     FOR_EACH_PUB_ON_PUBEQUIV(pub_iter, pub_equiv) {
         const CPub &pub = **pub_iter;
         switch( pub.Which() ) {
         case NCBI_PUB(Muid):
-            muid = pub.GetMuid();
+            muid = ENTREZ_ID_TO(int, pub.GetMuid());
             break;
         case NCBI_PUB(Pmid):
-            pmid = pub.GetPmid().Get();
+            pmid = ENTREZ_ID_TO(int, pub.GetPmid().Get());
             break;
         case NCBI_PUB(Gen): 
             {
@@ -10083,9 +10083,9 @@ bool CNewCleanup_imp::x_IsPubContentBad(const CPub& pub)
 {
     if (pub.IsGen() && IsMinimal(pub.GetGen())) {
         return true;
-    } else if (pub.IsMuid() && pub.GetMuid() == 0) {
+    } else if (pub.IsMuid() && pub.GetMuid() == ZERO_ENTREZ_ID) {
         return true;
-    } else if (pub.IsPmid() && pub.GetPmid() == 0) {
+    } else if (pub.IsPmid() && pub.GetPmid() == ZERO_ENTREZ_ID) {
         return true;
     } else if (pub.IsPat_id() && x_IsPubContentBad(pub.GetPat_id())) {
         return true;

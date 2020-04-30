@@ -414,7 +414,7 @@ public:
 /// Get labels for a pubdesc. To be used in citations.
     static void GetPubdescLabels
         (const CPubdesc& pd,
-        vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+        vector<TEntrezId>& pmids, vector<TEntrezId>& muids, vector<int>& serials,
         vector<string>& published_labels, vector<string>& unpublished_labels);
 
 /// Get list of pubs that can be used for citations for Seq-feat on a Bioseq-handle

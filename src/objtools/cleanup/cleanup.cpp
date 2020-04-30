@@ -3131,7 +3131,7 @@ void s_GetAuthorsString(
 
 void CCleanup::GetPubdescLabels
 (const CPubdesc& pd,
-vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+vector<TEntrezId>& pmids, vector<TEntrezId>& muids, vector<int>& serials,
 vector<string>& published_labels,
 vector<string>& unpublished_labels)
 {
@@ -3204,8 +3204,8 @@ vector<CConstRef<CPub> > CCleanup::GetCitationList(CBioseq_Handle bsh)
     // first get descriptor pubs
     CSeqdesc_CI di(bsh, CSeqdesc::e_Pub);
     while (di) {
-        vector<int> pmids;
-        vector<int> muids;
+        vector<TEntrezId> pmids;
+        vector<TEntrezId> muids;
         vector<int> serials;
         vector<string> published_labels;
         vector<string> unpublished_labels;
@@ -3237,8 +3237,8 @@ vector<CConstRef<CPub> > CCleanup::GetCitationList(CBioseq_Handle bsh)
     // now get pub features
     CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Pub));
     while (fi) {
-        vector<int> pmids;
-        vector<int> muids;
+        vector<TEntrezId> pmids;
+        vector<TEntrezId> muids;
         vector<int> serials;
         vector<string> published_labels;
         vector<string> unpublished_labels;

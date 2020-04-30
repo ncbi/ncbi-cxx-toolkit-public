@@ -190,8 +190,8 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
 
     // we keep the last of these because we might transfer one
     // to the other as necessary to fill in gaps.
-    int last_pmid = 0;
-    int last_article_pubmed_id = 0; // the last from a journal
+    TEntrezId last_pmid = ZERO_ENTREZ_ID;
+    TEntrezId last_article_pubmed_id = ZERO_ENTREZ_ID; // the last from a journal
     CRef<CCit_art> last_article;
 
     auto& pe_set = m_Equiv.Set();
@@ -239,13 +239,13 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
     }
 
     // Now, we might have to transfer data to fill in missing information
-    if (last_pmid == 0 && last_article_pubmed_id > 0) {
+    if (last_pmid == ZERO_ENTREZ_ID && last_article_pubmed_id > ZERO_ENTREZ_ID) {
         CRef<CPub> new_pub(new CPub);
         new_pub->SetPmid().Set(last_article_pubmed_id);
         m_Equiv.Set().insert(m_Equiv.Set().begin(), new_pub);
         change = true;
     }
-    else if (last_pmid > 0 && last_article_pubmed_id == 0 && last_article) {
+    else if (last_pmid > ZERO_ENTREZ_ID && last_article_pubmed_id == ZERO_ENTREZ_ID && last_article) {
         CRef<CArticleId> new_article_id(new CArticleId);
         new_article_id->SetPubmed().Set(last_pmid);
         last_article->SetIds().Set().push_back(new_article_id);
@@ -403,7 +403,7 @@ bool CCitGenCleaner::IsEmpty()
 {
     return (!m_Gen.IsSetCit()) &&
         !m_Gen.IsSetAuthors() &&
-        (!m_Gen.IsSetMuid() || m_Gen.GetMuid() <= 0) &&
+        (!m_Gen.IsSetMuid() || m_Gen.GetMuid() <= ZERO_ENTREZ_ID) &&
         !m_Gen.IsSetJournal() &&
         (!m_Gen.IsSetVolume() || m_Gen.GetVolume().empty()) &&
         (!m_Gen.IsSetIssue() || m_Gen.GetIssue().empty()) &&
@@ -411,7 +411,7 @@ bool CCitGenCleaner::IsEmpty()
         !m_Gen.IsSetDate() &&
         (!m_Gen.IsSetSerial_number() || m_Gen.GetSerial_number() <= 0) &&
         (!m_Gen.IsSetTitle() || m_Gen.GetTitle().empty()) &&
-        (!m_Gen.IsSetPmid() || m_Gen.GetPmid() <= 0);
+        (!m_Gen.IsSetPmid() || m_Gen.GetPmid().Get() <= ZERO_ENTREZ_ID);
 }
 
 
