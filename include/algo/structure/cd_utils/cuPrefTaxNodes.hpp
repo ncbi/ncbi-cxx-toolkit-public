@@ -51,7 +51,7 @@ struct OrgNode
 	const CRef<CCdd_org_ref> orgRef;
 };
 
-typedef map<int, OrgNode > TaxidToOrgMap;
+typedef map<TTaxId, OrgNode > TaxidToOrgMap;
 
 class NCBI_CDUTILS_EXPORT CPriorityTaxNodes 
 {
@@ -81,7 +81,7 @@ public:
     CPriorityTaxNodes(const CCdd_pref_nodes& prefNodes, TaxNodeInputType inputType);
 
     //  Given a list of taxids for each of the maps, construct the maps.
-    CPriorityTaxNodes(const vector< int >& taxids, TaxClient& taxClient, TaxNodeInputType inputType = eRawTaxIds);
+    CPriorityTaxNodes(const vector< TTaxId >& taxids, TaxClient& taxClient, TaxNodeInputType inputType = eRawTaxIds);
 
     virtual ~CPriorityTaxNodes();
 
@@ -106,25 +106,25 @@ public:
     TaxNodeInputType GetNodeInputType() const {return m_inputType;}
 
     //  Looks if taxid is *exactly* one of the priority tax nodes.
-    bool IsPriorityTaxnode(int taxid);
+    bool IsPriorityTaxnode(TTaxId taxid);
 
     //  If taxidIn is not an a priority taxnode, return its nearest ancestor that is.  
     //  Use taxClient to ascend the lineage of taxidIn in the full taxonomy tree.
     //  Return true if a priorityTaxid is found; otherwise return false and set priorityTaxid = 0.
-    bool GetPriorityTaxid(int taxidIn, int& priorityTaxid, TaxClient& taxClient);
-    bool GetPriorityTaxidAndName(int taxidIn, int& priorityTaxid, string& nodeName, TaxClient& taxClient);
+    bool GetPriorityTaxid(TTaxId taxidIn, TTaxId& priorityTaxid, TaxClient& taxClient);
+    bool GetPriorityTaxidAndName(TTaxId taxidIn, TTaxId& priorityTaxid, string& nodeName, TaxClient& taxClient);
 
     //  If not an exact match w/ a priority taxnode, and there is
     //  not an entry for the taxid in the corresponding ancestral map, use taxClient
     //  to ascend the tax tree to see if one of its ancestors is a match.  Return the 
     //  first such tax node's info.
     //  Return value itself is OrgNode.order, or -1 on failure or if taxid = 0.
-    int GetPriorityTaxnode(int taxid, string& nodeName, TaxClient* taxClient = NULL);
-    int GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient = NULL);
+    int GetPriorityTaxnode(TTaxId taxid, string& nodeName, TaxClient* taxClient = NULL);
+    int GetPriorityTaxnode(TTaxId taxid, const OrgNode*& orgNode, TaxClient* taxClient = NULL);
 
     //  Extract fields from a CCdd_org_ref.
 	static string getTaxName(const CRef< CCdd_org_ref >& orgRef);
-	static int getTaxId(const CRef< CCdd_org_ref >& orgRef);
+	static TTaxId getTaxId(const CRef< CCdd_org_ref >& orgRef);
 	static bool isActive(const CRef< CCdd_org_ref >& orgRef);
 
     //  Conversion functions between a collection of taxonomy ids and a CCdd_org_ref_set
@@ -134,8 +134,8 @@ public:
     //  are left in the output data structure for failures --> output index not guaranteed
     //  to correspond to input index.
     //  NOTE:  2nd argument is not cleared/reset before adding new data.
-    static unsigned int CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cddOrgRefSet, vector< int >& taxids, vector<int>* notAddedIndices = NULL);
-    static unsigned int TaxIdsToCddOrgRefSet(const vector< int >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<int>* notAddedTaxids = NULL);
+    static unsigned int CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cddOrgRefSet, vector< TTaxId >& taxids, vector<int>* notAddedIndices = NULL);
+    static unsigned int TaxIdsToCddOrgRefSet(const vector< TTaxId >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<TTaxId>* notAddedTaxids = NULL);
 
 protected:
 	string m_err;
@@ -150,13 +150,13 @@ private:
     //  Use to map a taxid to the taxid found by findAncestor (mapped value may equal key value),
     //  which should have an entry in m_selectedTaxNodesMap.
     //  Maintain these to avoid use of TaxClient when possible.
-    typedef map<int, int>      TAncestorMap;
+    typedef map<TTaxId, TTaxId>      TAncestorMap;
     TAncestorMap   m_ancestralTaxNodeMap;
 
     //  Return m_selectedTaxNodesMap.end() if no ancestor found for taxid, or taxid = 0.  
     //  Use taxClient only if non-null and the corresponding ancestral map does not contain 
     //  non-zero taxid as a key, or if ancestralMap pointer is NULL (to force use of the TaxClient).
-	TaxidToOrgMap::iterator findAncestor(int taxid, TaxClient* taxClient);
+	TaxidToOrgMap::iterator findAncestor(TTaxId taxid, TaxClient* taxClient);
 
 	void putIntoMap(const CCdd_org_ref_set& orgRefs);
     void BuildMap(const CCdd_pref_nodes& prefNodes, bool reset = false);

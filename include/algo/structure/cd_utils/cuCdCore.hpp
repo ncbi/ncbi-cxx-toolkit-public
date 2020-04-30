@@ -217,7 +217,7 @@ public:
     bool AddComment(const string& comment);
     bool AddOthername(const string& othername);
     bool AddTitle(const string& title);
-    bool AddPmidReference(unsigned int pmid);
+    bool AddPmidReference(TEntrezId pmid);
     bool AddSource(const string& source, bool removeExistingSources = true);
     bool AddCreateDate();  //  uses the current time
     

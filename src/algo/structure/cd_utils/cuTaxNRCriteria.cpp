@@ -119,7 +119,7 @@ CTaxNRCriteria::CTaxNRCriteria() {
     m_priorityTaxNodes = NULL;
 }
 
-CTaxNRCriteria::CTaxNRCriteria(const vector< int >& priorityTaxIds, const vector< int >& taxIdsToBeClustered) {
+CTaxNRCriteria::CTaxNRCriteria(const vector< TTaxId >& priorityTaxIds, const vector< TTaxId >& taxIdsToBeClustered) {
     InitializeCriteria();
 
     m_priorityTaxNodes = (m_taxClient) ? new CPriorityTaxNodes(priorityTaxIds, *m_taxClient) : NULL;
@@ -129,7 +129,7 @@ CTaxNRCriteria::CTaxNRCriteria(const vector< int >& priorityTaxIds, const vector
     }
 }
 
-CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< int >& taxIdsToBeClustered) {
+CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< TTaxId >& taxIdsToBeClustered) {
     InitializeCriteria();
     m_priorityTaxNodes = priorityTaxNodes;
 
@@ -148,9 +148,9 @@ CTaxNRCriteria::~CTaxNRCriteria() {
     delete m_priorityTaxNodes;
 }
 
-int CTaxNRCriteria::GetTaxIdForId(const CBaseClusterer::TId& id) const {
+TTaxId CTaxNRCriteria::GetTaxIdForId(const CBaseClusterer::TId& id) const {
     TId2TaxidMapCIt cit = m_id2Tax.find(id);
-    int result = (cit != m_id2Tax.end()) ? cit->second : -1;
+    TTaxId result = (cit != m_id2Tax.end()) ? cit->second : INVALID_ENTREZ_ID;
     return result;
 }
 
@@ -168,15 +168,16 @@ void CTaxNRCriteria::InitializeCriteria() {
     m_id2Tax.clear();
 }
 
-int CTaxNRCriteria::GetTaxIdFromClient(const CBioseq& bioseq)
+TTaxId CTaxNRCriteria::GetTaxIdFromClient(const CBioseq& bioseq)
 {
-    return (m_taxClient) ? m_taxClient->GetTaxIDFromBioseq(bioseq, false) : -1;
+    return (m_taxClient) ? m_taxClient->GetTaxIDFromBioseq(bioseq, false) : INVALID_ENTREZ_ID;
 }
 
 unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string* report) {
 
     unsigned int nSubcluster = 0, nMarkedRedundant = 0;
-    int priorityNodeId, taxId;
+    int priorityNodeId;
+    TTaxId taxId;
     string nodeName;
 
     if (!clusterPtr || !m_id2ItemMap) return nMarkedRedundant;
@@ -196,7 +197,7 @@ unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string
         id = *itemIt;
         taxId = m_id2Tax[id];
         nodeName.erase();
-        priorityNodeId = (taxId > 0 && m_priorityTaxNodes) ? m_priorityTaxNodes->GetPriorityTaxnode(taxId, nodeName, m_taxClient) : badId;
+        priorityNodeId = (taxId > ZERO_ENTREZ_ID && m_priorityTaxNodes) ? m_priorityTaxNodes->GetPriorityTaxnode(taxId, nodeName, m_taxClient) : badId;
         if (priorityNodeId == -1) priorityNodeId = badId;
 
         taxNRItem = new CTaxNRItem(id, (CTaxNRItem::TTaxItemId)(priorityNodeId), CTaxNRItem::INVALID_TAX_ITEM_ID, taxId, true);
@@ -205,11 +206,11 @@ unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string
         }
 
         if ((priorityNodeId == badId && m_shouldMatch) || (priorityNodeId != badId && !m_shouldMatch)) {
-            if (report) report->append("\n    Toss ID " + NStr::UIntToString(id) + "  taxId = " + NStr::IntToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
+            if (report) report->append("\n    Toss ID " + NStr::UIntToString(id) + "  taxId = " + NStr::NumericToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
             taxNRItem->keep = false;
             ++nMarkedRedundant;
         } else {
-            if (report) report->append("\n    Keep ID " + NStr::UIntToString(id) + "  taxId = " + NStr::IntToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
+            if (report) report->append("\n    Keep ID " + NStr::UIntToString(id) + "  taxId = " + NStr::NumericToString(taxId) + " nodeName = " + nodeName + ": priorityNodeId " + NStr::IntToString(priorityNodeId));
         }
         if (m_subclusters.count(priorityNodeId) == 0) ++nSubcluster;
 
@@ -231,15 +232,15 @@ int CTaxNRCriteria::CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) c
     CTaxNRItem lhsItem(lhs), rhsItem(rhs);
 
     //  If don't have valid field in the passed-in items, fill them in the temporaries.
-    if (lhsItem.taxId == -1) {
+    if (lhsItem.taxId == INVALID_ENTREZ_ID) {
         //  Doing it this way since operator[] returns non-const reference.
         TId2TaxidMapCIt citLHS = m_id2Tax.find(lhs.itemId);
-        lhsItem.taxId = citLHS != m_id2Tax.end() ? citLHS->second : 0;
+        lhsItem.taxId = citLHS != m_id2Tax.end() ? citLHS->second : ZERO_ENTREZ_ID;
     }
-    if (rhsItem.taxId == -1) {
+    if (rhsItem.taxId == INVALID_ENTREZ_ID) {
         //  Doing it this way since operator[] returns non-const reference.
         TId2TaxidMapCIt citRHS = m_id2Tax.find(rhs.itemId);
-        rhsItem.taxId = citRHS != m_id2Tax.end() ? citRHS->second : 0;
+        rhsItem.taxId = citRHS != m_id2Tax.end() ? citRHS->second : ZERO_ENTREZ_ID;
     }
 
     return (lhsItem.taxId == rhsItem.taxId) ? 0 : (lhsItem.taxId < rhsItem.taxId) ? -1 : 1;

@@ -47,7 +47,7 @@ class NCBI_CDUTILS_EXPORT TaxNode
 {
 public:
 	//fields for internal tax nodes
-	int taxId;
+    TTaxId taxId;
 	std::string orgName;
 	short rankId;
 	//fields for external seq nodes
@@ -64,7 +64,7 @@ public:
 	bool operator==(const TaxNode& rhs) {return taxId == rhs.taxId;};
 	static bool isSeqLeaf(const TaxNode& node);
 	static bool isSubSeqLeaf(const TaxNode& node);
-	static TaxNode* makeTaxNode(int taxID, std::string taxName, short rankId=-1);
+	static TaxNode* makeTaxNode(TTaxId taxID, std::string taxName, short rankId=-1);
 	static TaxNode* makeSeqLeaf(int rowID, std::string sequenceName);
 	static TaxNode* makeSubSeqLeaf(int rowID, CCdCore* cd, int rowInCd);
 
@@ -108,7 +108,7 @@ public:
 	//bool missLocalTaxFiles()const {return m_missLocalTaxFiles;}
 	~TaxTreeData();
 
-	void addTaxToBioseq(CBioseq& bioseq, int taxid, string& taxName);
+	void addTaxToBioseq(CBioseq& bioseq, TTaxId taxid, string& taxName);
 	bool writeToFile(string fname)const;
 	bool writeToFileAsTable(string fname)const;
 	bool write(std::ostream&os, const iterator& cursor)const;
@@ -126,10 +126,10 @@ private:
 	bool makeTaxonomyTree();
 	void addRows(const AlignmentCollection& ac);
     // get integer taxid for a sequence
-    int GetTaxIDForSequence(const AlignmentCollection& aligns, int rowID);
+    TTaxId GetTaxIDForSequence(const AlignmentCollection& aligns, int rowID);
     // get info for taxid
 	void selectTaxTreeLeaf(const TaxTreeIterator& cursor, bool select, CCdCore* cd=0);
-	void addSeqTax(int rowID, string seqName, int taxid);
+	void addSeqTax(int rowID, string seqName, TTaxId taxid);
 	void growAndInsertLineage(stack<TaxNode*>& lineage);
 	void insertLineage(TaxTreeIterator& pos, stack<TaxNode*>& lineage);
 	void cacheRank(short rank, string rankName);

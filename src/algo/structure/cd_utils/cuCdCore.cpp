@@ -2025,13 +2025,13 @@ unsigned int CCdCore::GetTitles(vector<string>& titles) const
     return titles.size();
 }
 
-bool CCdCore::AddPmidReference(unsigned int pmid)
+bool CCdCore::AddPmidReference(TEntrezId pmid)
 {
     //  Don't add a duplicate PMID.
     if (IsSetDescription()) {
         for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); cit != GetDescription().Get().end(); ++cit) {
             if ((*cit)->IsReference() && (*cit)->GetReference().IsPmid()) {
-                if (pmid == (unsigned int) (*cit)->GetReference().GetPmid()) {
+                if (pmid == (*cit)->GetReference().GetPmid()) {
                     return false;
                 }
             }
@@ -2040,7 +2040,7 @@ bool CCdCore::AddPmidReference(unsigned int pmid)
 
     //  validate the pmid???
     CRef<CPub> pub(new CPub);
-    pub->SetPmid((CPub::TPmid) pmid);
+    pub->SetPmid(CPub::TPmid(pmid));
 
     CRef<CCdd_descr> descr(new CCdd_descr);
     descr->SetReference(*pub);

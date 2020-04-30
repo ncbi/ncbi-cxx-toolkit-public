@@ -136,10 +136,10 @@ int GetMMDBId(const CBioseq& bioseq) {
   return(id);
 }
 
-int GetTaxIdInBioseq(const CBioseq& bioseq) {
+TTaxId GetTaxIdInBioseq(const CBioseq& bioseq) {
 
     bool isTaxIdFound = false;
-    int	thisTaxid, taxid =	0;
+    TTaxId	thisTaxid, taxid =	ZERO_ENTREZ_ID;
 	list< CRef<	CSeqdesc > >::const_iterator  j, jend;
 
 	if (bioseq.IsSetDescr()) 
@@ -160,15 +160,15 @@ int GetTaxIdInBioseq(const CBioseq& bioseq) {
 				for	(k=org->GetDb().begin(); k != kend;	++k) {
 					if ((*k)->GetDb() == "taxon") {
 						if ((*k)->GetTag().IsId()) {
-							thisTaxid = (*k)->GetTag().GetId();
+							thisTaxid = ENTREZ_ID_FROM(CObject_id::TId, (*k)->GetTag().GetId());
 
                             //  Mark the first valid tax id found; if there are others, 
                             //  return -(firstTaxid) if they are not all equal.  Allow for
                             //  thisTaxid < 0, which CTaxon1 allows when there are multiple ids.
                             if (isTaxIdFound && taxid != thisTaxid && taxid != -thisTaxid) {
-                                taxid *= (taxid > 0) ? -1 : 1;
-                            } else if (taxid == 0 && thisTaxid != 0 && !isTaxIdFound) {
-                                taxid = (thisTaxid > 0) ? thisTaxid : -thisTaxid;
+                                if (taxid > ZERO_ENTREZ_ID) taxid = -taxid;
+                            } else if (taxid == ZERO_ENTREZ_ID && thisTaxid != ZERO_ENTREZ_ID && !isTaxIdFound) {
+                                taxid = (thisTaxid > ZERO_ENTREZ_ID) ? thisTaxid : -thisTaxid;
                                 isTaxIdFound = true;
                             } 
 //							break;

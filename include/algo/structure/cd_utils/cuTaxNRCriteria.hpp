@@ -50,14 +50,14 @@ public:
 
     TTaxItemId  prefTaxnode; // labels a subcluster this item is placed in (INVALID_TAX_ITEM_ID = not a preferred tax node)
     TTaxItemId  modelOrg;    // labels the model org identifier for this item (INVALID_TAX_ITEM_ID = not a model org)
-    int         taxId;       // NCBI taxonomy Id
+    TTaxId      taxId;       // NCBI taxonomy Id
 
     virtual ~CTaxNRItem() {};
 
     CTaxNRItem() : CNRItem() {
-        InitTaxItem(INVALID_TAX_ITEM_ID, INVALID_TAX_ITEM_ID, -1);
+        InitTaxItem(INVALID_TAX_ITEM_ID, INVALID_TAX_ITEM_ID, INVALID_ENTREZ_ID);
     }
-    CTaxNRItem(TItemId idIn, TTaxItemId prefTaxnodeIn, TTaxItemId modelOrgIn, int taxIdIn, bool keepIn=true) : CNRItem(idIn, keepIn) {
+    CTaxNRItem(TItemId idIn, TTaxItemId prefTaxnodeIn, TTaxItemId modelOrgIn, TTaxId taxIdIn, bool keepIn=true) : CNRItem(idIn, keepIn) {
         InitTaxItem(prefTaxnodeIn, modelOrgIn, taxIdIn);
     }
     CTaxNRItem(const CTaxNRItem& rhs) : CNRItem(rhs.itemId, rhs.keep) {
@@ -95,7 +95,7 @@ public:
 
 private:
 
-    void InitTaxItem(TTaxItemId prefTaxnodeIn, TTaxItemId modelOrgIn, int taxIdIn) {
+    void InitTaxItem(TTaxItemId prefTaxnodeIn, TTaxItemId modelOrgIn, TTaxId taxIdIn) {
         prefTaxnode = prefTaxnodeIn;
         modelOrg = modelOrgIn;
         taxId = taxIdIn;
@@ -107,7 +107,7 @@ class NCBI_CDUTILS_EXPORT CTaxNRCriteria : public CNRCriteria {
 public:
 
     //  Map between the underlying ID (for CDs, it's the row number) and tax id.
-    typedef map< CBaseClusterer::TId, int > TId2TaxidMap;
+    typedef map< CBaseClusterer::TId, TTaxId > TId2TaxidMap;
     typedef TId2TaxidMap::iterator TId2TaxidMapIt;
     typedef TId2TaxidMap::const_iterator TId2TaxidMapCIt;
 
@@ -121,12 +121,12 @@ public:
     //  Loads the priorityTaxIds into the instance-specific priority tax nodes, type 'eRawTaxIds'.
     //  The vector index of taxIdsToBeClustered is used as the 'id' associated w/ its entries
     //  in setting up m_id2Tax:  this is assumed to be the same index used in building clusters.
-    CTaxNRCriteria(const vector< int >& priorityTaxIds, const vector< int >& taxIdsToBeClustered);
+    CTaxNRCriteria(const vector< TTaxId >& priorityTaxIds, const vector< TTaxId >& taxIdsToBeClustered);
 
     //  Use an existing set of priority tax nodes.
     //  The vector index of taxIdsToBeClustered is used as the 'id' associated w/ its entries
     //  in setting up m_id2Tax:  this is assumed to be the same index used in building clusters.
-    CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< int >& taxIdsToBeClustered);
+    CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const vector< TTaxId >& taxIdsToBeClustered);
 
     //  Pass in the item id <--> tax id mapping and the set of priority tax nodes.
     //  The key in 'id2TaxidMap' is the index used when making clusters.
@@ -156,7 +156,7 @@ public:
     virtual int CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) const;
 
     //  If 'id' has not been seen, return an id of -1.
-    int  GetTaxIdForId(const CBaseClusterer::TId& id) const;
+    TTaxId  GetTaxIdForId(const CBaseClusterer::TId& id) const;
 
     bool ConnectToServer();
 
@@ -183,7 +183,7 @@ protected:
     TSubclusterMap m_subclusters;   // mapped by pref tax node identifier (incl. -1)
     TId2TaxidMap m_id2Tax;          // map row identifier to a taxon ID
 
-    int GetTaxIdFromClient(const CBioseq& bioseq);
+    TTaxId GetTaxIdFromClient(const CBioseq& bioseq);
 };
 
 END_SCOPE(cd_utils)

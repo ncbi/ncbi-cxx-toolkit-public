@@ -96,7 +96,7 @@ bool TaxClient::IsAlive() {
 }
 
 // try to get "official" tax info from seq_id's gi
-int TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
+TTaxId TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
 {
 	TGi gi = ZERO_GI;
     if (sid->IsGi()) 
@@ -109,23 +109,22 @@ int TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
 			m_id1= new CID1Client;
 		gi = m_id1->AskGetgi(*sid);
 	}
-	int taxid = GetTaxIDForGI(gi);
-    return taxid;
+	return GetTaxIDForGI(gi);
 }
 
 
-int TaxClient::GetTaxIDForGI(TGi gi) {
-    int taxid = 0;
+TTaxId TaxClient::GetTaxIDForGI(TGi gi) {
+    TTaxId taxid = ZERO_ENTREZ_ID;
     if (IsAlive()) {
-        return (m_taxonomyClient->GetTaxId4GI(gi, taxid)) ? taxid : 0;
+        return (m_taxonomyClient->GetTaxId4GI(gi, taxid)) ? taxid : ZERO_ENTREZ_ID;
     }
     return taxid;
 }
 
-bool TaxClient::GetOrgRef(int taxId, CRef< COrg_ref >& orgRef) {
+bool TaxClient::GetOrgRef(TTaxId taxId, CRef< COrg_ref >& orgRef) {
     bool result = false;
 
-    if (IsAlive() && orgRef.NotEmpty() && taxId > 0) {
+    if (IsAlive() && orgRef.NotEmpty() && taxId > ZERO_ENTREZ_ID) {
         bool is_species, is_uncultured;
         string blast_name;
         CConstRef< COrg_ref > constOrgRef = m_taxonomyClient->GetOrgRef(taxId, is_species, is_uncultured, blast_name);
@@ -140,9 +139,9 @@ bool TaxClient::GetOrgRef(int taxId, CRef< COrg_ref >& orgRef) {
 
 //  Look through the bioseq for a COrg object, and use it to get taxid.
 //  Use tax server by default, unless server fails and lookInBioseq is true.
-int TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {
+TTaxId TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {
 
-	int	taxid =	0;
+    TTaxId	taxid =	ZERO_ENTREZ_ID;
 	list< CRef<	CSeqdesc > >::const_iterator  j, jend;
 
 	if (bioseq.IsSetDescr()) 
@@ -162,23 +161,23 @@ int TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {
 				//	Use	tax	server
 				if (IsAlive()) 
 				{
-						if ((taxid = m_taxonomyClient->GetTaxIdByOrgRef(*org)) != 0) 
+						if ((taxid = m_taxonomyClient->GetTaxIdByOrgRef(*org)) != ZERO_ENTREZ_ID) 
 						{
-							if (taxid <	0) 
+							if (taxid <	ZERO_ENTREZ_ID)
 							{  //  multiple	tax	nodes; -taxid is one of	them
-								taxid *= -1;
+								taxid = -taxid;
 							}
 							break;
 						}
 				}
 				//	Use	bioseq,	which may be obsolete, only	when requested and tax server failed.
-				if (taxid == 0 && lookInBioseq)	
+				if (taxid == ZERO_ENTREZ_ID && lookInBioseq)	
 				{	//	is there an	ID in the bioseq itself	if fails
 					vector < CRef< CDbtag >	>::const_iterator k, kend =	org->GetDb().end();
 					for	(k=org->GetDb().begin(); k != kend;	++k) {
 						if ((*k)->GetDb() == "taxon") {
 							if ((*k)->GetTag().IsId()) {
-								taxid =	(*k)->GetTag().GetId();
+								taxid =	ENTREZ_ID_FROM(CObject_id::TId, (*k)->GetTag().GetId());
 								break;
 							}
 						}
@@ -190,7 +189,7 @@ int TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {
 	return taxid;
 }
 
-short TaxClient::GetRankID(int taxId, string& rankName)
+short TaxClient::GetRankID(TTaxId taxId, string& rankName)
 {
 	short rankId = -1;
 	if(IsAlive())
@@ -203,12 +202,12 @@ short TaxClient::GetRankID(int taxId, string& rankName)
 	return rankId;
 }
     // get info for taxid
-std::string TaxClient::GetTaxNameForTaxID(int taxid)
+std::string TaxClient::GetTaxNameForTaxID(TTaxId taxid)
 {
 	std::string taxName = kEmptyStr;
-	if (taxid <= 0)
+	if (taxid <= ZERO_ENTREZ_ID)
 		return taxName;
-	if (taxid == 1)
+	if (taxid == ENTREZ_ID_CONST(1))
 	{
 		taxName = "Root";
 		return taxName;
@@ -225,21 +224,21 @@ std::string TaxClient::GetTaxNameForTaxID(int taxid)
 }
 
     // get parent for taxid
-int TaxClient::GetParentTaxID(int taxid)
+TTaxId TaxClient::GetParentTaxID(TTaxId taxid)
 {
-	int parent = 0;
+    TTaxId parent = ZERO_ENTREZ_ID;
 	if (IsAlive())
 		parent = m_taxonomyClient->GetParent(taxid);
     return parent;
 }
 
-string TaxClient::GetSuperKingdom(int taxid) {
+string TaxClient::GetSuperKingdom(TTaxId taxid) {
 
-    int skId = m_taxonomyClient->GetSuperkingdom(taxid);
-    return (skId == -1) ? kEmptyStr : GetTaxNameForTaxID(skId);
+    TTaxId skId = m_taxonomyClient->GetSuperkingdom(taxid);
+    return (skId == INVALID_ENTREZ_ID) ? kEmptyStr : GetTaxNameForTaxID(skId);
 }
 
-bool TaxClient::GetDisplayCommonName(int taxid, string& displayCommonName)
+bool TaxClient::GetDisplayCommonName(TTaxId taxid, string& displayCommonName)
 {
     if (IsAlive()) {
         return m_taxonomyClient->GetDisplayCommonName(taxid, displayCommonName);
@@ -249,16 +248,16 @@ bool TaxClient::GetDisplayCommonName(int taxid, string& displayCommonName)
 }
 
 //is taxid2 the descendant of taxid1?
-bool TaxClient::IsTaxDescendant(int taxid1, int taxid2)
+bool TaxClient::IsTaxDescendant(TTaxId taxid1, TTaxId taxid2)
 {   
     if (IsAlive()) {
-        int ancestor = m_taxonomyClient->Join(taxid1, taxid2);
+        TTaxId ancestor = m_taxonomyClient->Join(taxid1, taxid2);
         return (ancestor == taxid1); 
     } else 
         return false;
 }
 
-CConstRef< COrg_ref > TaxClient::GetOrgRef(int tax_id, bool& is_species, bool& is_uncultured, string& blast_name)
+CConstRef< COrg_ref > TaxClient::GetOrgRef(TTaxId tax_id, bool& is_species, bool& is_uncultured, string& blast_name)
 {
     if (IsAlive()) {
         return m_taxonomyClient->GetOrgRef(tax_id, is_species, is_uncultured, blast_name);
@@ -268,19 +267,19 @@ CConstRef< COrg_ref > TaxClient::GetOrgRef(int tax_id, bool& is_species, bool& i
     }
 }
 
-int TaxClient::Join(int taxid1, int taxid2)
+TTaxId TaxClient::Join(TTaxId taxid1, TTaxId taxid2)
 {
     if (IsAlive()) {
         return m_taxonomyClient->Join(taxid1, taxid2);
     } else {
-        return 0;
+        return ZERO_ENTREZ_ID;
     }
 }
 
-bool TaxClient::GetFullLineage(int taxid, vector<int>& lineageFromRoot)
+bool TaxClient::GetFullLineage(TTaxId taxid, vector<TTaxId>& lineageFromRoot)
 {
-    int rootTaxid = 1;
-    vector<int> v;
+    TTaxId rootTaxid = ENTREZ_ID_CONST(1);
+    vector<TTaxId> v;
     v.push_back(rootTaxid);
     v.push_back(taxid);
     lineageFromRoot.clear();
@@ -292,26 +291,26 @@ bool TaxClient::GetFullLineage(int taxid, vector<int>& lineageFromRoot)
     return false;
 }
 
-bool TaxClient::GetFullLineage(int taxid, vector< pair<int, string> >& lineageFromRoot, bool useCommonName)
+bool TaxClient::GetFullLineage(TTaxId taxid, vector< pair<TTaxId, string> >& lineageFromRoot, bool useCommonName)
 {
     string commonName;
     string root("root");
-    vector<int> lineageAsTaxids;
-    pair<int, string> p;
+    vector<TTaxId> lineageAsTaxids;
+    pair<TTaxId, string> p;
 
     lineageFromRoot.clear();
     if (GetFullLineage(taxid, lineageAsTaxids)) {
-        ITERATE(vector<int>, vit, lineageAsTaxids) {
+        ITERATE(vector<TTaxId>, vit, lineageAsTaxids) {
             p.first = *vit;
             if (!useCommonName) {  // formal name via the COrg_ref
                 commonName = GetTaxNameForTaxID(*vit);
                 if (commonName.length() > 0) {
-                    p.second = (p.first > 1) ? commonName : root;
+                    p.second = (p.first > ENTREZ_ID_CONST(1)) ? commonName : root;
                 } else {
                     p.second = kEmptyStr;
                 }
             } else if (useCommonName && GetDisplayCommonName(*vit, commonName) && commonName.length() > 0) {
-                p.second = (p.first > 1) ? commonName : root;
+                p.second = (p.first > ENTREZ_ID_CONST(1)) ? commonName : root;
             } else {
                 p.second = kEmptyStr;
             }

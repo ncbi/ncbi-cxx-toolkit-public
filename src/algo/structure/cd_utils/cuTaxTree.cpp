@@ -51,7 +51,7 @@ TaxNode::TaxNode(const TaxNode& rhs): taxId(rhs.taxId),
 
 void TaxNode::init()
 {
-	taxId= -1;
+	taxId= INVALID_ENTREZ_ID;
 	rankId =-1;
 
 	rowId = -1;
@@ -61,7 +61,7 @@ void TaxNode::init()
 	selectedLeaves = 0;
 }
 
-TaxNode* TaxNode::makeTaxNode(int taxID, std::string taxName, short rankId)
+TaxNode* TaxNode::makeTaxNode(TTaxId taxID, std::string taxName, short rankId)
 {
 	TaxNode*  node = new TaxNode();
 	node->taxId = taxID;
@@ -245,7 +245,7 @@ bool TaxTreeData::makeTaxonomyTree()
 	if (!m_taxDataSource->IsAlive())
 		return false;
 	//add root
-	TaxNode* root = TaxNode::makeTaxNode(1,"Root");
+	TaxNode* root = TaxNode::makeTaxNode(ENTREZ_ID_CONST(1),"Root");
 	insert(begin(), *root);
 	delete root;
 	//retrieve tax lineage for each sequence and add it to the tree
@@ -262,8 +262,8 @@ void TaxTreeData::addRows(const AlignmentCollection& ac)
 	{
 		std::string seqName;
 		ac.Get_GI_or_PDB_String_FromAlignment(i, seqName);
-		int taxid = GetTaxIDForSequence(ac, i);
-		if (taxid <= 0)
+		TTaxId taxid = GetTaxIDForSequence(ac, i);
+		if (taxid <= ZERO_ENTREZ_ID)
 			m_failedRows.push_back(i);
 		else
 			addSeqTax(i, seqName, taxid);
@@ -294,10 +294,10 @@ void TaxTreeData::fillLeafCount(const TaxTreeIterator& cursor)
 	}
 }
 
-void TaxTreeData::addSeqTax(int rowID, string seqName, int taxid)
+void TaxTreeData::addSeqTax(int rowID, string seqName, TTaxId taxid)
 {
 	stack<TaxNode*> lineage;
-	if (taxid <= 0) //invalid tax node, ignore this sequence
+	if (taxid <= ZERO_ENTREZ_ID) //invalid tax node, ignore this sequence
 		return;
 	TaxNode *seq = TaxNode::makeSeqLeaf(rowID, seqName);
 	string rankName;
@@ -325,7 +325,7 @@ void TaxTreeData::growAndInsertLineage(stack<TaxNode*>& lineage)
 	}
 	else //top is not in the tree, keep growing lineage
 	{
-		int parentId = m_taxDataSource->GetParentTaxID(top->taxId);
+        TTaxId parentId = m_taxDataSource->GetParentTaxID(top->taxId);
 		string rankName;
 		short rank= m_taxDataSource->GetRankID(parentId, rankName);
 		cacheRank(rank, rankName);
@@ -380,9 +380,9 @@ short TaxTreeData::getRankId(string rankName)
 }
 
  // get integer taxid for a sequence
-int TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowID)
+TTaxId TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowID)
 {
-    int taxid = 0;
+    TTaxId taxid = ZERO_ENTREZ_ID;
     std::string err = "no gi or source info";
 	// try to get "official" tax info from gi
 	TGi gi = ZERO_GI;
@@ -396,10 +396,10 @@ int TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowI
 	{
 		if (seqEntry->IsSeq()) 
 		{
-			int localTaxid = m_taxDataSource->GetTaxIDFromBioseq(seqEntry->GetSeq(), true);
+            TTaxId localTaxid = m_taxDataSource->GetTaxIDFromBioseq(seqEntry->GetSeq(), true);
 			if(localTaxid != taxid)
 			{
-				if (taxid != 0) {
+				if (taxid != ZERO_ENTREZ_ID) {
 				    string taxName = m_taxDataSource->GetTaxNameForTaxID(taxid);
 				    addTaxToBioseq(seqEntry->SetSeq(), taxid, taxName); 
 				} else
@@ -411,7 +411,7 @@ int TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowI
 	return taxid;
 }
 
-void TaxTreeData::addTaxToBioseq(CBioseq& bioseq, int taxid, string& taxName)
+void TaxTreeData::addTaxToBioseq(CBioseq& bioseq, TTaxId taxid, string& taxName)
 {
 	//bool hasSource = false;
 	//get BioSource if there is none in bioseq

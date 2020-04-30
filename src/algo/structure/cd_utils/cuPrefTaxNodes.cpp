@@ -63,7 +63,7 @@ CPriorityTaxNodes::CPriorityTaxNodes(const CCdd_pref_nodes& prefNodes, TaxNodeIn
 }
 
 
-CPriorityTaxNodes::CPriorityTaxNodes(const vector< int >& taxids, TaxClient& taxClient, TaxNodeInputType inputType) : m_inputType(inputType) 
+CPriorityTaxNodes::CPriorityTaxNodes(const vector< TTaxId >& taxids, TaxClient& taxClient, TaxNodeInputType inputType) : m_inputType(inputType) 
 {
     CCdd_org_ref_set cddOrgRefSet;
     unsigned int nAdded = TaxIdsToCddOrgRefSet(taxids, cddOrgRefSet, taxClient);
@@ -161,7 +161,7 @@ string CPriorityTaxNodes::getTaxName(const CRef< CCdd_org_ref >& orgRef)
     return kEmptyStr;
 }
 
-int CPriorityTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
+TTaxId CPriorityTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
 {
 	if (orgRef->CanGetReference())
 	{
@@ -169,7 +169,7 @@ int CPriorityTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
 		return org.GetTaxId();
 	}
 	else
-		return 0;
+		return ZERO_ENTREZ_ID;
 }
 
 bool CPriorityTaxNodes::isActive(const CRef< CCdd_org_ref >& orgRef)
@@ -177,7 +177,7 @@ bool CPriorityTaxNodes::isActive(const CRef< CCdd_org_ref >& orgRef)
 	return orgRef->GetActive();
 }
 
-unsigned int CPriorityTaxNodes::TaxIdsToCddOrgRefSet(const vector< int >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<int>* notAddedTaxids) 
+unsigned int CPriorityTaxNodes::TaxIdsToCddOrgRefSet(const vector< TTaxId >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<TTaxId>* notAddedTaxids) 
 {
 
     unsigned int nAdded = 0, nTaxa = taxids.size();
@@ -199,9 +199,9 @@ unsigned int CPriorityTaxNodes::TaxIdsToCddOrgRefSet(const vector< int >& taxids
     return nAdded;
 }
 
-unsigned int CPriorityTaxNodes::CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cddOrgRefSet, vector< int >& taxids, vector<int>* notAddedIndices) 
+unsigned int CPriorityTaxNodes::CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cddOrgRefSet, vector< TTaxId >& taxids, vector<int>* notAddedIndices) 
 {
-    int taxId;
+    TTaxId taxId;
     unsigned int taxaIndex = 0, nAdded = 0;
     const CCdd_org_ref_set::Tdata cddOrgRefList = cddOrgRefSet.Get();
     CCdd_org_ref_set::Tdata::const_iterator cddOrgRefListCit = cddOrgRefList.begin(), citEnd = cddOrgRefList.end();
@@ -210,7 +210,7 @@ unsigned int CPriorityTaxNodes::CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cdd
 
     for (; cddOrgRefListCit != citEnd; ++cddOrgRefListCit ) {
         taxId = getTaxId(*cddOrgRefListCit);
-        if (taxId > 0) {
+        if (taxId > ZERO_ENTREZ_ID) {
             taxids.push_back(taxId);
             ++nAdded;
         } else if (notAddedIndices) {
@@ -221,15 +221,15 @@ unsigned int CPriorityTaxNodes::CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cdd
     return nAdded;
 }
 
-TaxidToOrgMap::iterator CPriorityTaxNodes::findAncestor(int taxid, TaxClient* taxClient)
+TaxidToOrgMap::iterator CPriorityTaxNodes::findAncestor(TTaxId taxid, TaxClient* taxClient)
 {
 	TaxidToOrgMap::iterator titEnd = m_selectedTaxNodesMap.end(), tit = titEnd;
     TAncestorMap::iterator ancestorIt;
 
-    if (taxid != 0) {
+    if (taxid != ZERO_ENTREZ_ID) {
         //  First see if this taxid has been seen before; if so, retrieve iterator from toMap...
         ancestorIt = m_ancestralTaxNodeMap.find(taxid);
-        if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= 0) {
+        if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= ZERO_ENTREZ_ID) {
             tit = m_selectedTaxNodesMap.find(ancestorIt->second);
         }
 
@@ -249,24 +249,24 @@ TaxidToOrgMap::iterator CPriorityTaxNodes::findAncestor(int taxid, TaxClient* ta
 	return tit;
 }
 
-bool CPriorityTaxNodes::IsPriorityTaxnode(int taxid) 
+bool CPriorityTaxNodes::IsPriorityTaxnode(TTaxId taxid) 
 {
 	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxid);	
     return it != m_selectedTaxNodesMap.end();
 }
 
-bool CPriorityTaxNodes::GetPriorityTaxid(int taxidIn, int& priorityTaxid, TaxClient& taxClient)
+bool CPriorityTaxNodes::GetPriorityTaxid(TTaxId taxidIn, TTaxId& priorityTaxid, TaxClient& taxClient)
 {
     string nodeName;
     return GetPriorityTaxidAndName(taxidIn, priorityTaxid, nodeName, taxClient);
 }
 
-bool CPriorityTaxNodes::GetPriorityTaxidAndName(int taxidIn, int& priorityTaxid, string& nodeName, TaxClient& taxClient)
+bool CPriorityTaxNodes::GetPriorityTaxidAndName(TTaxId taxidIn, TTaxId& priorityTaxid, string& nodeName, TaxClient& taxClient)
 {
     bool result = false;
 	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxidIn), itEnd = m_selectedTaxNodesMap.end();
 
-    priorityTaxid = 0;
+    priorityTaxid = ZERO_ENTREZ_ID;
     nodeName = kEmptyStr;
     if (it != itEnd) {
         priorityTaxid = taxidIn;
@@ -288,12 +288,12 @@ bool CPriorityTaxNodes::GetPriorityTaxidAndName(int taxidIn, int& priorityTaxid,
 }
 
 //  return -1 if fails or taxid = 0
-int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, TaxClient* taxClient) 
+int CPriorityTaxNodes::GetPriorityTaxnode(TTaxId taxid, const OrgNode*& orgNode, TaxClient* taxClient) 
 {
 	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxid), itEnd = m_selectedTaxNodesMap.end();	
 
     orgNode = NULL;
-    if (taxid != 0) {
+    if (taxid != ZERO_ENTREZ_ID) {
         if (it != itEnd)
         {
             orgNode = &(it->second);
@@ -313,7 +313,7 @@ int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, const OrgNode*& orgNode, Ta
 }
 
 //  return index into list; -1 if fails
-int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, string& nodeName, TaxClient* taxClient) 
+int CPriorityTaxNodes::GetPriorityTaxnode(TTaxId taxid, string& nodeName, TaxClient* taxClient) 
 {
     const OrgNode* orgNode = NULL;
 

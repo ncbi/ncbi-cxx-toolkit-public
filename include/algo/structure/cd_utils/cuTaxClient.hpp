@@ -60,30 +60,30 @@ public:
     virtual bool IsAlive();
 
     //  return 0 if Get*TaxID*(...) fails
-    virtual int GetTaxIDForSeqId(CConstRef< CSeq_id > sid);  // was GetTaxIDForSequence
-    virtual int GetTaxIDForGI(TGi gi);
+    virtual TTaxId GetTaxIDForSeqId(CConstRef< CSeq_id > sid);  // was GetTaxIDForSequence
+    virtual TTaxId GetTaxIDForGI(TGi gi);
 
-    virtual bool GetOrgRef(int taxId, CRef< COrg_ref >& orgRef);
+    virtual bool GetOrgRef(TTaxId taxId, CRef< COrg_ref >& orgRef);
 
-	virtual short GetRankID(int taxId, string& rankName);
+	virtual short GetRankID(TTaxId taxId, string& rankName);
 
     //  Look through the bioseq for a COrg object, and use it to get taxid.
     //  Use tax server by default, unless server fails and lookInBioseq is true.
-    virtual int GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq);
-    virtual string GetTaxNameForTaxID(int taxid);
-    virtual string GetSuperKingdom(int taxid);
+    virtual TTaxId GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq);
+    virtual string GetTaxNameForTaxID(TTaxId taxid);
+    virtual string GetSuperKingdom(TTaxId taxid);
 
     //  Returns true on success, false in case of error.
-    virtual bool GetDisplayCommonName(int taxid, string& displayCommonName);
+    virtual bool GetDisplayCommonName(TTaxId taxid, string& displayCommonName);
 
     //  Returns zero if the client is not alive (i.e., IsAlive() returns false).
-    virtual int GetParentTaxID(int taxid);
+    virtual TTaxId GetParentTaxID(TTaxId taxid);
 	//is tax2 the descendant of tax1?
-    virtual bool IsTaxDescendant(int tax1, int tax2);
+    virtual bool IsTaxDescendant(TTaxId tax1, TTaxId tax2);
 
     //  On success, lineageFromRoot contains the path in the taxonomy from the root to taxid.
     //  Returns true on success (i.e., a non-empty lineage), false in case of error.
-    virtual bool GetFullLineage(int taxid, vector<int>& lineageFromRoot);
+    virtual bool GetFullLineage(TTaxId taxid, vector<TTaxId>& lineageFromRoot);
 
     //  On success, lineageFromRoot contains (taxid, taxname) for each step along the path 
     //  in the taxonomy from the root to provided taxid.  An empty string is used should any
@@ -92,13 +92,13 @@ public:
     //  the preferred formal name found in the corresponding COrg_ref for the taxid (and
     //  shown in lineages on the Entrez taxonomy pages).
     //  Returns true on success (i.e., a non-empty lineage), false in case of error.
-    virtual bool GetFullLineage(int taxid, vector< pair<int, string> >& lineageFromRoot, bool useCommonName = false);
+    virtual bool GetFullLineage(TTaxId taxid, vector< pair<TTaxId, string> >& lineageFromRoot, bool useCommonName = false);
 
     virtual bool ConnectToTaxServer();  
 
     //  Wrapper functions to invoke CTaxon1 methods.
-    CConstRef< COrg_ref > GetOrgRef(int tax_id, bool& is_species, bool& is_uncultured, string& blast_name);
-    int Join(int taxid1, int taxid2);
+    CConstRef< COrg_ref > GetOrgRef(TTaxId tax_id, bool& is_species, bool& is_uncultured, string& blast_name);
+    TTaxId Join(TTaxId taxid1, TTaxId taxid2);
 
 private:
 

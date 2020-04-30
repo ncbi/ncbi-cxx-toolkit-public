@@ -638,7 +638,7 @@ bool GetBioseqWithFootprintForNRows(CCdCore* cd, int N, vector< CRef< CBioseq > 
 
 CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo)
 {
-	int comTax = 0;
+	TTaxId comTax = ZERO_ENTREZ_ID;
 	CRef< COrg_ref > orgRef;
 	CTaxon1 taxServer;
 	if (!taxServer.Init())
@@ -653,10 +653,10 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo)
 	{
 		TGi gi = INVALID_GI;
 		cd->GetGI(i,gi,false);
-		int taxid = 0;
+		TTaxId taxid = ZERO_ENTREZ_ID;
 		if (gi > ZERO_GI)
 			taxServer.GetTaxId4GI(gi, taxid);
-		if (taxid == 0)
+		if (taxid == ZERO_ENTREZ_ID)
 		{
 			CRef< CBioseq > bioseq;
 			if (cd->GetBioseqForRow(i, bioseq))
@@ -665,14 +665,14 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo)
 			}
 		}
 
-		if (taxid > 0)
+		if (taxid > ZERO_ENTREZ_ID)
 		{
-			if (comTax == 0)
+			if (comTax == ZERO_ENTREZ_ID)
 				comTax = taxid;
 			else
 			{
-				int joined = taxServer.Join(comTax, taxid);
-				if (joined == 0)
+				TTaxId joined = taxServer.Join(comTax, taxid);
+				if (joined == ZERO_ENTREZ_ID)
 				{
 					LOG_POST("Failed to join two taxids:"<<comTax<<" and "<<taxid<<". The latter one is ignored.");
 				}
@@ -680,17 +680,17 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo)
 					comTax = joined;
 			}
 		}
-		if (comTax == 1) //reach root
+		if (comTax == ENTREZ_ID_CONST(1)) //reach root
 			break;
 	}
 
     //  The condition 'comTax == 0' is true only if no row satisfied (taxid > 0) above.
     //  Use root tax node as common tax node unless told not to.
-	if (comTax == 0 && useRootWhenNoTaxInfo)
-		comTax = 1;
+	if (comTax == ZERO_ENTREZ_ID && useRootWhenNoTaxInfo)
+		comTax = ENTREZ_ID_CONST(1);
 
 	orgRef = new COrg_ref;
-    if (comTax > 0) {
+    if (comTax > ZERO_ENTREZ_ID) {
         orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
     } else {
         orgRef.Reset();

@@ -1269,7 +1269,7 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 					if ( fields.size() > 0)
 					{
 						CRef< CUser_field > field = fields[0];
-						int taxid = field->GetLabel().GetId();
+						TTaxId taxid = ENTREZ_ID_FROM(CObject_id::TId, field->GetLabel().GetId());
 						string taxname = field->GetData().GetStrs()[0];
 						//create a source seedsc and add it
 						CRef< CSeqdesc > source(new CSeqdesc);
