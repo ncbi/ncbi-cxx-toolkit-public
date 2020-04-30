@@ -137,7 +137,7 @@ int CGi2TaxIdApp::Run()
             continue;
         }
 
-        int tax_id = 0;
+        TTaxId tax_id = ZERO_ENTREZ_ID;
         tax.GetTaxId4GI(gi, tax_id);
 
         if (show) {
