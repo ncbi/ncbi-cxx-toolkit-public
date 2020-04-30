@@ -338,7 +338,7 @@ int CId1FetchApp::Run(void)
     int repeat = args["repeat"].AsInteger();
     for ( int pass = 0; pass < repeat; ++pass ) {
     if (args["gi"]) {
-        if ( !LookUpGI(args["gi"].AsIntId()) )
+        if ( !LookUpGI(GI_FROM(TIntId, args["gi"].AsIntId())) )
             return -1;
     }
 
