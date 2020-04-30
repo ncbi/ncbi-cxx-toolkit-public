@@ -575,7 +575,7 @@ static CRef<CScope> s_GetScope()
 
 static void s_BuildIds(TIdList & ids, TGi * gis)
 {
-    for(TGi * ptr = gis; *ptr; ptr ++) {
+    for(TGi * ptr = gis; *ptr != ZERO_GI; ptr ++) {
         ids.push_back(s_GiToSeqId(*ptr));
     }
 }
