@@ -303,8 +303,8 @@ int CPerfTestApp::Run(void)
             ERR_POST("No input data specified. Either ids or gi_from/gi_to arguments must be provided.");
             return -1;
         }
-        TGi gi_from = args["gi_from"].AsIntId();
-        TGi gi_to = args["gi_to"].AsIntId();
+        TGi gi_from = GI_FROM(TIntId, args["gi_from"].AsIntId());
+        TGi gi_to = GI_FROM(TIntId, args["gi_to"].AsIntId());
         for (TGi gi = gi_from; gi < gi_to; ++gi) {
             m_Ids.insert(CSeq_id_Handle::GetGiHandle(gi));
         }
