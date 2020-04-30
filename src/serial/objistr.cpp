@@ -1902,7 +1902,7 @@ TObjectPtr CObjectIStream::GetParentObjectPtr(TTypeInfo type,
 #ifdef NCBI_STRICT_GI
 void CObjectIStream::ReadGi(TGi& obj)
 {
-    obj = ReadInt8();
+    obj.Set() = ReadInt8();
 }
 
 

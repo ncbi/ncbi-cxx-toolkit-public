@@ -1198,7 +1198,7 @@ void CObjectOStream::SetFormattingFlags(TSerial_Format_Flags flags)
 #ifdef NCBI_STRICT_GI
 void CObjectOStream::WriteGi(const TGi& obj)
 {
-    WriteInt8(obj);
+    WriteInt8(obj.Get());
 }
 
 void CObjectOStream::CopyGi(CObjectIStream& in)

@@ -423,19 +423,17 @@ public:
 };
 
 
-#ifdef NCBI_STRICT_GI
-template <>
-class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId64> : public CAliasBase<CStrictId64>
+template <class TKey, class TStorage>
+class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId<TKey, TStorage>> : public CAliasBase<CStrictId<TKey, TStorage>>
 {
-    typedef CAliasBase<CStrictId64> TParent;
-    typedef CStdAliasBase<CStrictId64> TThis;
+    typedef CAliasBase<CStrictId<TKey, TStorage>> TParent;
+    typedef CStdAliasBase<CStrictId<TKey, TStorage>> TThis;
 public:
     CStdAliasBase(void)
-        : TParent(CStrictId64()) {}
-    explicit CStdAliasBase(const CStrictId64& value)
+        : TParent(CStrictId<TKey, TStorage>()) {}
+    explicit CStdAliasBase(const CStrictId<TKey, TStorage>& value)
         : TParent(value) {}
 };
-#endif
 
 
 template<typename T>

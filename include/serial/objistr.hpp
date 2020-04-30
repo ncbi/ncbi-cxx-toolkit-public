@@ -776,10 +776,17 @@ public:
 
     virtual void SkipPointer(TTypeInfo declaredType);
 
-#ifdef NCBI_STRICT_GI
-    void ReadStd(TGi& data);
-    void SkipStd(TGi& data);
+    template<class TKey, class TStorage> void ReadStd(CStrictId<TKey, TStorage>& data)
+    {
+        ReadStd(data.Set());
+    }
 
+    template<class TKey, class TStorage> void SkipStd(CStrictId<TKey, TStorage>& data)
+    {
+        SkipStd(data.Set());
+    }
+
+#ifdef NCBI_STRICT_GI
     virtual void ReadGi(TGi& obj);
     virtual void SkipGi(void);
 #endif
