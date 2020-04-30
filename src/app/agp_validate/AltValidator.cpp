@@ -146,11 +146,11 @@ void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
 }
 
 
-int CAltValidator::x_GetSpecies(int taxid)
+TTaxId CAltValidator::x_GetSpecies(TTaxId taxid)
 {
   TTaxidSpeciesMap::iterator map_it;
   map_it = m_TaxidSpeciesMap.find(taxid);
-  int species_id;
+  TTaxId species_id;
 
   if (map_it == m_TaxidSpeciesMap.end()) {
     species_id = x_GetTaxonSpecies(taxid);
@@ -163,7 +163,7 @@ int CAltValidator::x_GetSpecies(int taxid)
   return species_id;
 }
 
-int CAltValidator::x_GetTaxonSpecies(int taxid)
+TTaxId CAltValidator::x_GetTaxonSpecies(TTaxId taxid)
 {
   CTaxon1 taxon;
   taxon.Init();
@@ -173,12 +173,12 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
   string blast_name;
   string blast_name0;
 
-  int species_id = 0;
-  int prev_id = taxid;
+  TTaxId species_id = ZERO_ENTREZ_ID;
+  TTaxId prev_id = taxid;
 
 
-  for(int id = taxid;
-      is_species == true && id > 1;
+  for(TTaxId id = taxid;
+      is_species == true && id > ENTREZ_ID_CONST(1);
       id = taxon.GetParent(id)
   ) {
     CConstRef<COrg_ref> org_ref = taxon.GetOrgRef(
@@ -186,8 +186,8 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
     );
     if(org_ref == null) {
       pAgpErr->Msg(CAgpErrEx::G_TaxError,
-        string(" for taxid ")+ NStr::IntToString(id) );
-      return 0;
+        string(" for taxid ")+ NStr::NumericToString(id) );
+      return ZERO_ENTREZ_ID;
     }
     if(id==taxid) blast_name0=blast_name;
 
@@ -198,12 +198,12 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
     }
   }
 
-  if(species_id==0) {
+  if(species_id==ZERO_ENTREZ_ID) {
     if(blast_name0.size()) {
-      blast_name0 = NStr::IntToString(taxid) + " (" + blast_name0 + ")";
+      blast_name0 = NStr::NumericToString(taxid) + " (" + blast_name0 + ")";
     }
     else{
-      blast_name0 = string("taxid ") + NStr::IntToString(taxid);
+      blast_name0 = string("taxid ") + NStr::NumericToString(taxid);
     }
     pAgpErr->Msg(CAgpErrEx::G_DataError,
       string(" - ") + blast_name0 +
@@ -215,7 +215,7 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
 
 
 void CAltValidator::x_AddToTaxidMap(
-  int taxid, const string& comp_id, int line_num)
+  TTaxId taxid, const string& comp_id, int line_num)
 {
   SAgpLineInfo line_info;
 
@@ -235,7 +235,7 @@ bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
 {
   if (m_TaxidMap.size() == 0) return true;
 
-  int agp_taxid = 0;
+  TTaxId agp_taxid = ZERO_ENTREZ_ID;
   float agp_taxid_percent = 0;
 
   float max_percent = 0;
@@ -261,7 +261,7 @@ bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
     }
     else {
       cerr << "\nUnable to determine a Taxid for the AGP";
-      if(agp_taxid) {
+      if(agp_taxid != ZERO_ENTREZ_ID) {
         cerr << ":\nless than 80% of components have one common taxid="<<agp_taxid<<"";
       }
       // else: no taxid was found
@@ -279,7 +279,7 @@ bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
   ITERATE(TTaxidMap, map_it, m_TaxidMap) {
     if (map_it->first == agp_taxid) continue;
 
-    int taxid = map_it->first;
+    TTaxId taxid = map_it->first;
     ITERATE(TAgpInfoList, list_it, map_it->second) {
       if(use_xml) {
          out << " <CompBadTaxid taxid=\"" << taxid
@@ -362,7 +362,7 @@ void CAltValidator::x_QueryAccessions()
         auto& compInfo = m_ComponentInfoMap[accVer.GetAccession()];
         compInfo.currentVersion = accVer.GetVersion();
         compInfo.len = bioseqHandle.GetInst_Length();
-        compInfo.taxid = sequence::GetTaxId(bioseqHandle);
+        compInfo.taxid = ENTREZ_ID_FROM(int, sequence::GetTaxId(bioseqHandle));
         compInfo.inDatabase=true;
     }
     m_Accessions.clear();
@@ -448,7 +448,7 @@ void CAltValidator::ProcessQueue()
                     " - cannot get version for "+acc);
             }
             else 
-            if (m_check_len_taxid && !acc_data.taxid) {
+            if (m_check_len_taxid && acc_data.taxid == ZERO_ENTREZ_ID) {
                 pAgpErr->Msg(CAgpErrEx::G_DataError,
                     " - cannot retrieve taxonomic id for "+acc);
             }
@@ -464,8 +464,8 @@ void CAltValidator::ProcessQueue()
                 CAgpRow::CheckComponentEnd( acc, lineInfo.comp_end, acc_data.len, *pAgpErr );
 
                 // Taxid check
-                int taxid = acc_data.taxid;
-                if(taxid) {
+                TTaxId taxid = acc_data.taxid;
+                if(taxid != ZERO_ENTREZ_ID) {
                     if(m_SpeciesLevelTaxonCheck) {
                         taxid = x_GetSpecies(taxid);
                     }

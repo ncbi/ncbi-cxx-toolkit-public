@@ -86,11 +86,11 @@ public:
 
 private:
   void x_QueryAccessions();
-  void x_AddToTaxidMap(int taxid, const string& comp_id, int line_num);
+  void x_AddToTaxidMap(TTaxId taxid, const string& comp_id, int line_num);
 
   // searches m_TaxidSpeciesMap first, calls x_GetTaxonSpecies() if necessary
-  int x_GetSpecies(int taxid);
-  int x_GetTaxonSpecies(int taxid);
+  TTaxId x_GetSpecies(TTaxId taxid);
+  TTaxId x_GetTaxonSpecies(TTaxId taxid);
 
   struct SLineData
   {
@@ -104,7 +104,7 @@ private:
   {
     int currentVersion=0; 
     int len=0;
-    int taxid=0;
+    TTaxId taxid = ZERO_ENTREZ_ID;
     bool inDatabase=false;
   };
 
@@ -119,12 +119,12 @@ private:
   };
 
   using TAgpInfoList = vector<SAgpLineInfo>;
-  using TTaxidMap = map<int, TAgpInfoList>;
+  using TTaxidMap = map<TTaxId, TAgpInfoList>;
   using TTaxidMapRes = pair<TTaxidMap::iterator, bool>;
   TTaxidMap m_TaxidMap;
 
   int m_TaxidComponentTotal;
-  using TTaxidSpeciesMap = map<int, int>;
+  using TTaxidSpeciesMap = map<TTaxId, TTaxId>;
   TTaxidSpeciesMap m_TaxidSpeciesMap;
 
   bool m_SpeciesLevelTaxonCheck;
