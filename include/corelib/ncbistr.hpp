@@ -672,6 +672,12 @@ public:
         x_NumericToString(ret, value, flags, base);
         return ret;
     }
+    template <typename TStrictId>
+    static typename enable_if< is_integral<typename TStrictId::TId>::value && is_member_function_pointer<decltype(&TStrictId::Get)>::value, string>::type
+    NumericToString(TStrictId value, TNumToStringFlags flags = 0, int base = 10)
+    {
+        return NumericToString(value.Get());
+    }
 
     /// Convert numeric value to string.
     ///
@@ -3500,6 +3506,13 @@ private:
     {
         return StringToUInt8(str, flags, base);
     }
+    template <typename TStrictId>
+    static typename enable_if< is_integral<typename TStrictId::TId>::value && is_member_function_pointer<decltype(&TStrictId::Get)>::value, TStrictId>::type
+        x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
+    {
+        return TStrictId(StringToNumeric<typename TStrictId::TId>(str, flags, base));
+    }
+
     template <typename TNumeric>
     static typename enable_if< is_same<TNumeric, float>::value, TNumeric>::type
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int /*base*/)
@@ -3513,14 +3526,6 @@ private:
     {
         return StringToDouble(str, flags);
     }
-#ifdef NCBI_STRICT_GI
-    template <typename TNumeric>
-    static typename enable_if< is_same<TNumeric, TGi>::value, TNumeric>::type
-    x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
-    {
-        return x_StringToNumeric<TIntId>(str, flags, base);
-    }
-#endif
 
     template <typename TNumeric>
     static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) < sizeof(int)), bool>::type
@@ -3603,13 +3608,12 @@ private:
         *value = StringToDouble(str, flags);
         return (*value || !errno);
     }
-#ifdef NCBI_STRICT_GI
-    static bool
-    x_StringToNumeric(const CTempString str, TGi* value, TStringToNumFlags flags, int base)
+    template <typename TStrictId>
+    static typename enable_if< is_integral<typename TStrictId::TId>::value && is_member_function_pointer<decltype(&TStrictId::Get)>::value, bool>::type
+    x_StringToNumeric(const CTempString str, TStrictId* value, TStringToNumFlags flags, int base)
     {
-        return x_StringToNumeric(str, reinterpret_cast<TIntId*>(value), flags, base);
+        return x_StringToNumeric(str, &value->Set(), flags, base);
     }
-#endif
 
 // NumericToString
     template<typename TNumeric>
@@ -3664,13 +3668,12 @@ private:
     {
         DoubleToString(out_str, value, -1, flags);
     }
-#ifdef NCBI_STRICT_GI
-    static void
-    x_NumericToString(string& out_str, TGi value, TNumToStringFlags flags, int base)
+    template <typename TStrictId>
+    static typename enable_if< is_integral<typename TStrictId::TId>::value && is_member_function_pointer<decltype(&TStrictId::Get)>::value, void>::type
+        x_NumericToString(string& out_str, TStrictId value, TNumToStringFlags flags, int base)
     {
-        x_NumericToString(out_str, TIntId(value), flags, base);
+        return x_NumericToString(out_str, value.Get(), flags, base);
     }
-#endif
 
 
 // Join
