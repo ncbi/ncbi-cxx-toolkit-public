@@ -1237,7 +1237,7 @@ bool
 CReaderRequestResult::SetLoadedSeqIdsFromZeroGi(const CSeq_id_Handle& id,
                                                 const CLoadLockGi& gi_lock)
 {
-    _ASSERT(gi_lock.IsLoadedGi() && !gi_lock.GetGi(gi_lock.GetGi()));
+    _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi(gi_lock.GetGi()) == ZERO_GI );
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") seq_ids = null");
     }
@@ -1252,7 +1252,7 @@ CReaderRequestResult::SetLoadedBlobIdsFromZeroGi(const CSeq_id_Handle& id,
                                                  const SAnnotSelector* sel,
                                                  const CLoadLockGi& gi_lock)
 {
-    _ASSERT(gi_lock.IsLoadedGi() && !gi_lock.GetGi(gi_lock.GetGi()));
+    _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi(gi_lock.GetGi()) == ZERO_GI);
     if ( s_GetLoadTraceLevel() > 0 ) {
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") blob_ids = null");
     }

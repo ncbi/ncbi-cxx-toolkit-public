@@ -431,8 +431,9 @@ bool CProcessor::OffsetId(CSeq_id& id, TIntId gi_offset)
         return false;
     }
     if ( id.IsGi() ) {
-        if ( TGi gi = id.GetGi() ) {
-            id.SetGi(gi + gi_offset);
+        TGi gi = id.GetGi();
+        if ( gi != ZERO_GI ) {
+            id.SetGi(gi + GI_FROM(TIntId, gi_offset));
             return true;
         }
     }
@@ -477,8 +478,9 @@ bool CProcessor::OffsetId(CSeq_id_Handle& id, TIntId gi_offset)
         return false;
     }
     if ( id.IsGi() ) {
-        if ( TGi gi = id.GetGi() ) {
-            id = CSeq_id_Handle::GetGiHandle(gi + gi_offset);
+        TGi gi = id.GetGi();
+        if ( gi != ZERO_GI ) {
+            id = CSeq_id_Handle::GetGiHandle(gi + GI_FROM(TIntId, gi_offset));
             return true;
         }
     }
@@ -2600,11 +2602,11 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         setter.GetTSE_LoadLock()->SetName(name);
     }
 
-    TGi gi = ConvertGiToOM(blob_id.GetSatKey());
+    TGi gi = ConvertGiToOM(GI_FROM(TIntId, blob_id.GetSatKey()));
     CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
     CSeq_id seq_id;
     seq_id.SetGeneral().SetDb(db_name);
-    seq_id.SetGeneral().SetTag().SetId8(gi);
+    seq_id.SetGeneral().SetTag().SetId8(GI_TO(Int8, gi));
     CSeq_id_Handle seh = CSeq_id_Handle::GetHandle(seq_id);
     
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));

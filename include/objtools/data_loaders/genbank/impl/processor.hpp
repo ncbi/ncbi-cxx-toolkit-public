@@ -122,8 +122,8 @@ public:
     static TIntId GetGiOffset(void);
     static void OffsetGi(TGi& gi, TIntId gi_offset)
     {
-        if ( gi ) {
-            gi = gi + gi_offset;
+        if ( gi != ZERO_GI ) {
+            gi = gi + GI_FROM(TIntId, gi_offset);
         }
     }
 #ifdef NCBI_STRICT_GI

@@ -347,7 +347,7 @@ unsigned read_unsigned(CNcbiIstream& stream, const char* name)
 static inline
 void write_gi(CNcbiOstream& stream, TGi gi, const char* name)
 {
-    TIntId n = gi;
+    TIntId n = GI_TO(TIntId, gi);
     char c[8];
     for ( int i = 7; i >= 0; --i ) {
         c[i] = char(n);
@@ -384,7 +384,7 @@ TGi read_gi(CNcbiIstream& stream, const char* name)
                    string("GI overflow ")+name);
     }
 #endif
-    return n;
+    return GI_FROM(TIntId, n);
 }
 
 
@@ -689,7 +689,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     const CSeq_id& id = snp_info.GetSeq_id();
     TGi gi = id.IsGi()? id.GetGi(): ZERO_GI;
     write_gi(stream, gi, "SNP table GI");
-    if ( !gi ) {
+    if ( gi == ZERO_GI ) {
         write_seq_id(stream, id);
     }
 
@@ -720,7 +720,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                    "Incompatible version of SNP table");
     }
     TGi gi = read_gi(stream, "SNP table GI");
-    if ( !gi ) {
+    if ( gi == ZERO_GI ) {
         snp_info.SetSeq_id(*read_seq_id(stream));
     }
     else {
