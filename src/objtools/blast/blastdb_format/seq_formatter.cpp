@@ -405,7 +405,7 @@ int CBlastDB_FastaFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterCon
 			bioseq = m_BlastDb.GetBioseq(oid, ZERO_GI, &seq_id);
 		}
 		else {
-			bioseq = m_BlastDb.GetBioseq(oid, num_id);
+			bioseq = m_BlastDb.GetBioseq(oid, GI_FROM(Int8, num_id));
 		}
 	}
 	else {
@@ -522,7 +522,7 @@ int CBlastDB_BioseqFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterCo
 		bool simpler = false;
 		ESeqDBIdType  id_type = SeqDB_SimplifySeqid(seq_id, &target_id, num_id, string_id, simpler);
 		if (id_type == eGiId) {
-			bioseq = m_BlastDb.GetBioseq(oid, num_id);
+			bioseq = m_BlastDb.GetBioseq(oid, GI_FROM(Int8, num_id));
 		}
 		else {
 			bioseq = m_BlastDb.GetBioseq(oid, ZERO_GI, &seq_id);

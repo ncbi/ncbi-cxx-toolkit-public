@@ -63,7 +63,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     if (id.IsOID()) {
         m_Oid = id.GetOID();
     } else if (id.IsGi()) {
-        m_Gi = id.GetGi();
+        m_Gi = GI_FROM(TIntId, id.GetGi());
         m_BlastDb.GiToOid(m_Gi, m_Oid);
         if (m_TargetOnly || ! get_data) target_gi = m_Gi;
     } else if (id.IsPig()) {
@@ -808,7 +808,7 @@ void CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(const CBlast_def_line_set
 	bool can_be_gi = errno ? false: true;
 	ITERATE(CBlast_def_line_set::Tdata, itr, dl_set.Get()) {
 		 ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
-			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == num_id))) {
+			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == GI_FROM(TIntId, num_id)))) {
 				 CBlastDeflineUtil::ExtractDataFromBlastDefline( **itr, results, fields, use_long_id);
 				 return;
 			 }
