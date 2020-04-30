@@ -151,7 +151,7 @@ CRef<objects::CSeqdesc> BuildGoodPubSeqdesc()
 {
     CRef<objects::CSeqdesc> pdesc(new objects::CSeqdesc());
     CRef<objects::CPub> pub(new objects::CPub());
-    pub->SetPmid((objects::CPub::TPmid)1);
+    pub->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(1)));
     pdesc->SetPub().SetPub().Set().push_back(pub);
 
     return pdesc;
