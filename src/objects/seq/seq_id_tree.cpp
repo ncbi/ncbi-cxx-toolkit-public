@@ -554,7 +554,7 @@ CConstRef<CSeq_id> CSeq_id_Gi_Info::GetPackedSeqId(TPacked gi, TVariant /*varian
     }
     const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
 #endif
-    const_cast<CSeq_id&>(*ret).SetGi(gi);
+    const_cast<CSeq_id&>(*ret).SetGi(GI_FROM(TPacked, gi));
     return ret;
 }
 
@@ -605,12 +605,12 @@ void CSeq_id_Gi_Tree::x_Unindex(const CSeq_id_Info* info)
 
 CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(TGi gi)
 {
-    if ( gi ) {
+    if ( gi != ZERO_GI ) {
         TWriteLockGuard guard(m_TreeLock);
         if ( !m_SharedInfo ) {
             m_SharedInfo = new CSeq_id_Gi_Info(m_Mapper);
         }
-        return CSeq_id_Handle(m_SharedInfo, gi);
+        return CSeq_id_Handle(m_SharedInfo, GI_TO(TPacked, gi));
     }
     else {
         TWriteLockGuard guard(m_TreeLock);
@@ -628,7 +628,7 @@ CSeq_id_Handle CSeq_id_Gi_Tree::FindInfo(const CSeq_id& id) const
 {
     CSeq_id_Handle ret;
     _ASSERT(x_Check(id));
-    TPacked gi = x_Get(id);
+    TPacked gi = GI_TO(TPacked, x_Get(id));
     TReadLockGuard guard(m_TreeLock);
     if ( gi ) {
         if ( m_SharedInfo ) {
