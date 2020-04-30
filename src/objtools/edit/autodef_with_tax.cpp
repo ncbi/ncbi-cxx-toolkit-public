@@ -116,9 +116,9 @@ string CAutoDefWithTaxonomy::GetDocsumOrgDescription(CSeq_entry_Handle se)
     while (bi) {
         CSeqdesc_CI desc_ci(*bi, CSeqdesc::e_Source);
         if (desc_ci && desc_ci->GetSource().IsSetOrg()) {
-            int taxid = desc_ci->GetSource().GetOrg().GetTaxId();
-            if (taxid > 0) {
-                rq->SetJoin().Set().push_back(taxid);
+            TTaxId taxid = desc_ci->GetSource().GetOrg().GetTaxId();
+            if (taxid > ZERO_ENTREZ_ID) {
+                rq->SetJoin().Set().push_back(ENTREZ_ID_TO(int, taxid));
             }
         }
         ++bi;

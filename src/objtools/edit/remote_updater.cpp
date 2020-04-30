@@ -73,7 +73,7 @@ int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
 {
     for (auto pPub : arr) {
         if (pPub->IsPmid()) {
-            return pPub->GetPmid().Get();
+            return ENTREZ_ID_TO(int, pPub->GetPmid().Get());
         }
 
     }
@@ -84,7 +84,7 @@ int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
 void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
 {
     try {
-        CPubMedId req(id);
+        CPubMedId req(ENTREZ_ID_FROM(int, id));
         CRef<CPub> new_pub = mlaClient.AskGetpubpmid(req);
         if (new_pub.NotEmpty())
         {
@@ -95,7 +95,7 @@ void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
 
             arr.clear();
             CRef<CPub> new_pmid(new CPub);
-            new_pmid->SetPmid().Set(id);
+            new_pmid->SetPmid().Set(ENTREZ_ID_FROM(int, id));
             arr.push_back(new_pmid);
             arr.push_back(new_pub);
         }
@@ -139,7 +139,7 @@ public:
         {
             const string& error_message = 
                 "Taxon update: " +
-                (org.IsSetTaxname() ? org.GetTaxname() : NStr::IntToString(org.GetTaxId())) + ": " +
+                (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
                 reply->GetError().GetMessage();
 
 /*
@@ -235,8 +235,8 @@ void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
 {
     CMutexGuard guard(m_Mutex);
 
-    int taxid = org.GetTaxId();
-    if (taxid == 0 && !org.IsSetTaxname())
+    TTaxId taxid = org.GetTaxId();
+    if (taxid == ZERO_ENTREZ_ID && !org.IsSetTaxname())
         return;
 
     if (m_taxClient.get() == 0)
