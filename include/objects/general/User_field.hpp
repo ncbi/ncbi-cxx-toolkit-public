@@ -305,7 +305,7 @@ CUser_field& CUser_field::SetValue(Int8 value)
 inline
 CUser_field& CUser_field::SetGi(TGi value)
 {
-    return SetValue(TIntId(value));
+    return SetValue(GI_TO(TIntId, value));
 }
 
 
@@ -389,7 +389,7 @@ string CUser_field::GetValue<string>(void) const
 inline
 TGi CUser_field::GetGi(void) const
 {
-    return GetValue<TIntId>();
+    return GI_FROM(TIntId, GetValue<TIntId>());
 }
 
 
