@@ -995,11 +995,11 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                         NcbiCerr << "Merging Seq-annot..." << NcbiEndl;
 
                     if ( args["Min"] ) {
-                        merge_annot::MergeFromFile(*in, *out, args["Mgi"].AsIntId(),
+                        merge_annot::MergeFromFile(*in, *out, GI_FROM(TIntId, args["Mgi"].AsIntId()),
                                                    args["Min"].AsString());
                     }
                     else {
-                        merge_annot::MergeExternal(*in, *out, args["Mgi"].AsIntId(),
+                        merge_annot::MergeExternal(*in, *out, GI_FROM(TIntId, args["Mgi"].AsIntId()),
                                                    args["Mext"].AsInteger());
                     }
                 }
