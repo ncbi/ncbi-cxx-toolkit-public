@@ -40,10 +40,17 @@
 #include <corelib/request_status.hpp>
 #ifdef HAVE_LIBPROTOBUF
 #  include <google/protobuf/message.h>
+#  ifndef PROTOBUF_VERSION
+#    include <google/protobuf/port_def.inc>
+#    define HAVE_PROTOBUF_PORT_UNDEF 1
+#  endif
 #  if PROTOBUF_VERSION >= 3002000
 #    define NCBI_GRPC_GET_BYTE_SIZE(msg) ((msg).ByteSizeLong())
 #  else
 #    define NCBI_GRPC_GET_BYTE_SIZE(msg) ((msg).ByteSize())
+#  endif
+#  ifdef HAVE_PROTOBUF_PORT_UNDEF
+#    include <google/protobuf/port_undef.inc>
 #  endif
 #else
 namespace google {
