@@ -978,13 +978,13 @@ int CPrimeCacheApplication::Run(void)
 
     if (args["taxid"]) {
         CLocalTaxon taxon(args);
-        int taxid = args["taxid"].AsInteger();
+        TTaxId taxid = ENTREZ_ID_FROM(TIntId, args["taxid"].AsIntId());
         CConstRef<COrg_ref> ref =
             taxon.GetOrgRef(taxid);
         if ( !ref ) {
             NCBI_THROW(CException, eUnknown,
                         "failed to find Org-ref for taxid " +
-                        NStr::IntToString(taxid));
+                        NStr::NumericToString(taxid));
         }
 
         m_Biosource.Reset(new CSeqdesc);
