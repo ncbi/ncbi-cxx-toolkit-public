@@ -939,6 +939,49 @@ vector<TQuery> s_GetQueries2full()
     return queries;
 }
 
+// CM000663.2 from
+// https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam
+// BK006938.2 from
+// https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam
+vector<TQuery> s_GetQueries3()
+{
+    vector<TQuery> queries;
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(0, 100000), true, 980, 6));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(0, 100000), false, 981, 45));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(100000, 200000), true, 982, 6));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(200000, 300000), true, 983, 6));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(0, 400000), false, 984, 109));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(11000000, 12000000), true, 985, 11));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(12000000, 13000000), true, 986, 6));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(11500000, 11600000), false, 987, 67));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(21000000, 22000000), true, 988, 6));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(22000000, 23000000), true, 989, 11));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(21500000, 21600000), false, 990, 66));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(31000000, 32000000), true, 991, 6));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(21500000, 21600000), false, 992, 66));
+    queries.push_back(make_tuple("BK006938.2", CRange<TSeqPos>(0, 10000), true, 993, 6));
+    queries.push_back(make_tuple("BK006938.2", CRange<TSeqPos>(0, 10000), false, 994, 778));
+    queries.push_back(make_tuple("BK006938.2", CRange<TSeqPos>(20000, 30000), true, 995, 6));
+    queries.push_back(make_tuple("BK006938.2", CRange<TSeqPos>(20000, 30000), false, 996, 1723));
+    return queries;
+}
+
+vector<TQuery> s_GetQueries3full()
+{
+    vector<TQuery> queries;
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(0, 248956422), false, 970, 159722));
+    queries.push_back(make_tuple("CM000663.2", CRange<TSeqPos>(0, 248956422), true, 971, 596));
+    queries.push_back(make_tuple("BK006938.2", CRange<TSeqPos>(0, 1531932), false, 972, 243416));
+    queries.push_back(make_tuple("BK006938.2", CRange<TSeqPos>(0, 1531932), true, 973, 471));
+    for ( int i = 0; i < 1; ++i ) {
+        queries.push_back(queries[0]);
+        queries.push_back(queries[1]);
+        queries.push_back(queries[2]);
+        queries.push_back(queries[3]);
+    }
+    return queries;
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeqST1)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(true);
@@ -1183,6 +1226,102 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT2)
                                }
                            }
                            if ( !get<4>(query) || count != get<4>(query) ) {
+                               BOOST_CHECK_EQUAL(count, get<3>(query));
+                           }
+                       }, queries[i]);
+        }
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i].join();
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeqMT3)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    const size_t BAM_COUNT = 2;
+    string bam_name[BAM_COUNT] = {
+        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam",
+        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam"
+    };
+    string annot_name[BAM_COUNT] = {
+        "grch38_wgsim_gb_accs",
+        "yeast_wgsim_gb_accs"
+    };
+    string id[BAM_COUNT] = {
+        "CM000663.2",
+        "BK006938.2"
+    };
+    string loader_name[BAM_COUNT];
+    vector<thread> init_tt(BAM_COUNT);
+    for ( size_t i = 0; i < BAM_COUNT; ++i ) {
+        init_tt[i] =
+            thread([&](size_t i)
+                   {
+                       CBAMDataLoader::SLoaderParams params;
+                       params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name[i]));
+                       loader_name[i] =
+                       CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                               CObjectManager::eDefault)
+                       .GetLoader()->GetName();
+                   }, i);
+    }
+    for ( size_t i = 0; i < BAM_COUNT; ++i ) {
+        init_tt[i].join();
+        sx_ReportBamLoaderName(loader_name[i]);
+    }
+    CScope scope(*om);
+    scope.AddDefaults();
+    for ( int pass = 0; pass < 2; ++pass ) {
+        vector<TQuery> queries;
+        size_t NQ;
+        if ( pass == 0 ) {
+            queries = s_GetQueries3();
+        }
+        else {
+            queries = s_GetQueries3full();
+            queries.clear();
+        }
+        NQ = queries.size();
+    
+        vector<thread> tt(NQ);
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i] =
+                thread([&]
+                       (const TQuery& query)
+                       {
+                           CRef<CSeq_id> seqid(new CSeq_id(get<0>(query)));
+                           CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+                           CRef<CSeq_loc> loc(new CSeq_loc);
+                           loc->SetInt().SetId(*seqid);
+                           loc->SetInt().SetFrom(get<1>(query).GetFrom());
+                           loc->SetInt().SetTo(get<1>(query).GetTo());
+                           string name;
+                           for ( size_t i = 0; i < BAM_COUNT; ++i ) {
+                               if ( get<0>(query) == id[i] ) {
+                                   name = annot_name[i];
+                               }
+                           }
+                           SAnnotSelector sel;
+                           sel.SetSearchUnresolved();
+                           sel.AddNamedAnnots(name);
+                           sel.AddNamedAnnots(name+" pileup graphs");
+                           size_t count = 0;
+                           if ( get<2>(query) ) {
+                               for ( CGraph_CI it(scope, *loc, sel); it; ++it ) {
+                                   ++count;
+                               }
+                           }
+                           else {
+                               for ( CAlign_CI it(scope, *loc, sel); it; ++it ) {
+                                   ++count;
+                               }
+                           }
+                           if ( count != get<4>(query) ) {
                                BOOST_CHECK_EQUAL(count, get<3>(query));
                            }
                        }, queries[i]);
