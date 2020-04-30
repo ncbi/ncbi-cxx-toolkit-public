@@ -721,7 +721,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             RemoveOrgMod(COrgMod::eSubtype_old_name);
         } else if (NStr::EqualNocase((*it)->GetFieldName(), "Tax ID")) {
             try {
-                SetOrg().SetTaxId(atoi((*it)->GetSampleVal().c_str()));
+                SetOrg().SetTaxId(ENTREZ_ID_FROM(int, atoi((*it)->GetSampleVal().c_str())));
             } catch (...) {
                 NCBI_THROW(CException, eUnknown, "Non-integer Tax ID value");
             }
@@ -816,8 +816,8 @@ CBioSource::TNameValList CBioSource::GetNameValPairs() const
         list.push_back(TNameVal(kOrganismName, GetOrg().GetTaxname()));
     }
     if (IsSetOrg()) {
-        int taxid = GetOrg().GetTaxId();
-        if (taxid > 0) {
+        TTaxId taxid = GetOrg().GetTaxId();
+        if (taxid > ZERO_ENTREZ_ID) {
             try {
                 string val = NStr::NumericToString(taxid);
                 list.push_back(TNameVal(kTaxId, val));
@@ -1509,7 +1509,7 @@ static bool s_DoesTextContainOnlyTheseWords(const string& text, const TWordList&
 
 bool CBioSource::RemoveLineageSourceNotes()
 {
-    if (!IsSetOrg()  || !IsSetLineage() || GetOrg().GetTaxId() == 0) {
+    if (!IsSetOrg()  || !IsSetLineage() || GetOrg().GetTaxId() == ZERO_ENTREZ_ID) {
         return false;
     }
     bool any_removed = false;

@@ -103,10 +103,10 @@ public:
 
     // Returns NCBI Taxonomy database id (AKA tax id)
     // if the latter is found in Org_ref; otherwise returns 0
-    int GetTaxId() const;
+    TTaxId GetTaxId() const;
     // Sets tax id into Org_ref contents.
     // Returns old value of tax id or 0 if it was not found
-    int SetTaxId( int tax_id );
+    TTaxId SetTaxId( TTaxId tax_id );
 
     // shortcut access to selected OrgName methods
     bool IsSetLineage(void) const;

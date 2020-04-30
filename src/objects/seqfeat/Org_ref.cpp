@@ -68,11 +68,11 @@ void COrg_ref::GetLabel(string* label) const
 static const char* const s_taxonName = "taxon" ;
 static const string s_nomenclature = "nomenclature=";
 
-int
+TTaxId
 COrg_ref::GetTaxId() const
 {
     if( ! IsSetDb() ) {
-        return 0;
+        return ZERO_ENTREZ_ID;
     }
     const TDb& lDbTags = GetDb();
  
@@ -83,16 +83,16 @@ COrg_ref::GetTaxId() const
 	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
 	    const CObject_id& id = i->GetObject().GetTag();
 	    if( id.IsId() )
-		return id.GetId();
+		return ENTREZ_ID_FROM(CObject_id::TId, id.GetId());
 	}
     }
-    return 0;
+    return ZERO_ENTREZ_ID;
 }
 
-int
-COrg_ref::SetTaxId( int tax_id )
+TTaxId
+COrg_ref::SetTaxId( TTaxId tax_id )
 {
-    int old_id(0);
+    TTaxId old_id = ZERO_ENTREZ_ID;
 
     TDb& lDbTags = SetDb();
     // Try to update existing tax id first
@@ -102,15 +102,15 @@ COrg_ref::SetTaxId( int tax_id )
 	if( *i && i->GetObject().GetDb() == s_taxonName ) {
 	    CObject_id& id = i->GetObject().SetTag();
 	    if( id.IsId() )
-		old_id = id.GetId();
-	    id.SetId() = tax_id;
+		old_id = ENTREZ_ID_FROM(CObject_id::TId, id.GetId());
+	    id.SetId() = ENTREZ_ID_TO(CObject_id::TId, tax_id);
 	    return old_id;
 	}
     }
     // Add new tag
     CRef< CDbtag > ref( new CDbtag() );
     ref->SetDb( s_taxonName );
-    ref->SetTag().SetId( tax_id );
+    ref->SetTag().SetId( ENTREZ_ID_TO(CObject_id::TId, tax_id) );
     SetDb().push_back( ref );
 
     return old_id;
@@ -279,8 +279,8 @@ void s_MakeCommonStringList(const list< string >& list1, const list< string >& l
 
 CRef<COrg_ref> COrg_ref::MakeCommon(const COrg_ref& other) const
 {
-    int taxid1 = GetTaxId();
-    int taxid2 = other.GetTaxId();
+    TTaxId taxid1 = GetTaxId();
+    TTaxId taxid2 = other.GetTaxId();
     if (taxid1 != taxid2) {
         return CRef<COrg_ref>(NULL);
     }
@@ -487,7 +487,7 @@ bool COrg_ref::UpdateFromTable()
                 }
             }
             if (taxid > 0) {
-                SetTaxId(taxid);
+                SetTaxId(ENTREZ_ID_FROM(CObject_id::TId, taxid));
             }
         }
         if (lookup->IsSetLineage()) {
