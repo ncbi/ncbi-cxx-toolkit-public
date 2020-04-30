@@ -62,12 +62,12 @@ public:
     /// @{
 
     /// typedefs for dealing with separations by tax-id
-    typedef set<int> TTaxIds;
+    typedef set<TTaxId> TTaxIds;
     typedef map<TTaxIds, list< CRef<objects::CSeq_align> > > TTaxAlignMap;
 
     /// typedefs for caching of taxonomic information
-    typedef map<objects::CSeq_id_Handle, size_t> TTaxIdMap;
-    typedef map<int, CConstRef<objects::COrg_ref> > TTaxInfoMap;
+    typedef map<objects::CSeq_id_Handle, TTaxId> TTaxIdMap;
+    typedef map<TTaxId, CConstRef<objects::COrg_ref> > TTaxInfoMap;
 
     /// Separate a set of alignments into groups that describe
     /// how the alignments relate taxonomically
@@ -142,11 +142,11 @@ private:
                            TTaxAlignMap&     tax_aligns,
                            objects::CScope&  scope);
 
-    CConstRef<objects::COrg_ref> x_GetOrgRef(int tax_id);
+    CConstRef<objects::COrg_ref> x_GetOrgRef(TTaxId tax_id);
     CConstRef<objects::COrg_ref> x_GetOrgRef(const objects::CSeq_id_Handle& id,
                                              objects::CScope& scope);
-    int x_GetTaxId(const objects::CSeq_id_Handle& id,
-                   objects::CScope& scope);
+    TTaxId x_GetTaxId(const objects::CSeq_id_Handle& id,
+                      objects::CScope& scope);
 
 private:
     /// forbidden!

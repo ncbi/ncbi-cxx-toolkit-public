@@ -66,7 +66,7 @@ void CAlignGroup::GroupByTaxIds(const TAlignList& aligns,
     ///
     NON_CONST_ITERATE (TTaxAlignMap, iter, tax_aligns) {
         string tax_id_tag;
-        ITERATE (set<int>, it, iter->first) {
+        ITERATE (set<TTaxId>, it, iter->first) {
             CConstRef<COrg_ref> org_ref = x_GetOrgRef(*it);
             if ( !tax_id_tag.empty() ) {
                 tax_id_tag += "; ";
@@ -77,7 +77,7 @@ void CAlignGroup::GroupByTaxIds(const TAlignList& aligns,
                 tax_id_tag += "unknown";
             }
 
-            tax_id_tag += " [taxid:" + NStr::IntToString(*it) + "]";
+            tax_id_tag += " [taxid:" + NStr::NumericToString(*it) + "]";
         }
 
         CRef<CSeq_annot> annot(new CSeq_annot);
@@ -109,7 +109,7 @@ void CAlignGroup::GroupByLikeTaxIds(const TAlignList& aligns,
     NON_CONST_ITERATE (TTaxAlignMap, iter, tax_aligns) {
         if (iter->first.size() == 1) {
             string tax_id_tag;
-            int tax_id = *iter->first.begin();
+            TTaxId tax_id = *iter->first.begin();
             CConstRef<COrg_ref> org_ref = x_GetOrgRef(tax_id);
 
             if ( !tax_id_tag.empty() ) {
@@ -121,7 +121,7 @@ void CAlignGroup::GroupByLikeTaxIds(const TAlignList& aligns,
                 tax_id_tag += "unknown";
             }
 
-            tax_id_tag += " [taxid:" + NStr::IntToString(tax_id) + "]";
+            tax_id_tag += " [taxid:" + NStr::NumericToString(tax_id) + "]";
 
             CRef<CSeq_annot> annot(new CSeq_annot);
 
@@ -465,7 +465,7 @@ void CAlignGroup::x_SeparateByTaxId(const TAlignList& alignments,
         CTypeConstIterator<CSeq_id> id_iter(*align);
         for ( ;  id_iter;  ++id_iter) {
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id_iter);
-            int tax_id = x_GetTaxId(idh, scope);
+            TTaxId tax_id = x_GetTaxId(idh, scope);
             ids.insert(tax_id);
         }
 
@@ -474,13 +474,13 @@ void CAlignGroup::x_SeparateByTaxId(const TAlignList& alignments,
 }
 
 
-int CAlignGroup::x_GetTaxId(const CSeq_id_Handle& id, CScope& scope)
+TTaxId CAlignGroup::x_GetTaxId(const CSeq_id_Handle& id, CScope& scope)
 {
-    int tax_id = 0;
+    TTaxId tax_id = ZERO_ENTREZ_ID;
     try {
         CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-        tax_id = sequence::GetTaxId(bsh);
-        if ( !tax_id ) {
+        tax_id = ENTREZ_ID_FROM(int, sequence::GetTaxId(bsh));
+        if ( tax_id == ZERO_ENTREZ_ID ) {
             if ( !m_Taxon1.get() ) {
                 m_Taxon1.reset(new CTaxon1);
                 m_Taxon1->Init();
@@ -497,12 +497,12 @@ int CAlignGroup::x_GetTaxId(const CSeq_id_Handle& id, CScope& scope)
 }
 
 
-CConstRef<COrg_ref> CAlignGroup::x_GetOrgRef(int tax_id)
+CConstRef<COrg_ref> CAlignGroup::x_GetOrgRef(TTaxId tax_id)
 {
     CConstRef<COrg_ref> org_ref;
     TTaxInfoMap::iterator tax_iter = m_TaxInfo.find(tax_id);
     if (tax_iter == m_TaxInfo.end()) {
-        if (tax_id) {
+        if (tax_id != ZERO_ENTREZ_ID) {
             if ( !m_Taxon1.get() ) {
                 m_Taxon1.reset(new CTaxon1);
                 m_Taxon1->Init();
@@ -527,7 +527,7 @@ CConstRef<COrg_ref> CAlignGroup::x_GetOrgRef(int tax_id)
 CConstRef<COrg_ref> CAlignGroup::x_GetOrgRef(const CSeq_id_Handle& id,
                                              CScope& scope)
 {
-    int tax_id = x_GetTaxId(id, scope);
+    TTaxId tax_id = x_GetTaxId(id, scope);
     return x_GetOrgRef(tax_id);
 }
 
