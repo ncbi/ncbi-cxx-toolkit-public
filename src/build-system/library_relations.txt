@@ -250,7 +250,6 @@ connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
 connssl needs3party $(ORIG_LIBS)
-creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
 crypto needs3party $(Z_LIBS)
@@ -363,6 +362,7 @@ eutils_client needs $(SEQ_LIBS)
 eutils_client needs pub
 eutils_client needs xmlwrapp
 eutilsapp includes eueid
+eutilsapp needs gi2acc_client
 eutilsapp needs ncqhst
 eutilsapp needs3party $(FASTCGI_LIBS)
 event_g needs generic_db_utils
@@ -449,6 +449,8 @@ genome_size needs xconnect
 genome_size needs xutil
 gensvc_g needs xser
 geodataset needs biblio
+gi2acc_client needs txclient
+gi2acc_client needs txxmldoc
 gif needs3party $(ORIG_LIBS)
 gif needs3party X11
 gmap needs xlinear_prog
@@ -833,7 +835,6 @@ mongocxx needs3party bson-1.0
 mongocxx needs3party bsoncxx
 mongocxx needs3party mongoc-1.0
 monitor_buildrun needs general
-msbuild_dataobj needs xser
 muparser needs3party $(ORIG_LIBS)
 muscleasn_g needs $(SEQ_LIBS)
 muscleasn_g needs pub
@@ -987,7 +988,6 @@ ncbimla needs3party netcli
 ncbimmdb needs3party ncbiid1
 ncbimmdb needs3party ncbitool
 ncbimsc1 needs3party $(NCBI_C_ncbi)
-ncbiobj includes creaders
 ncbiobj needs3party $(NCBI_C_ncbi)
 ncbiprs needs3party ctutils
 ncbiprs needs3party ncbiindx
