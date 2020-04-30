@@ -530,18 +530,18 @@ bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_t
         const auto& value = x_GetModValue(mod_entry);
         m_pDescrCache->SetBioSource().SetOrg().SetTaxname(value);
         if (!preserve_taxid &&
-             m_pDescrCache->SetBioSource().GetOrg().GetTaxId()) { 
+             m_pDescrCache->SetBioSource().GetOrg().GetTaxId() != ZERO_ENTREZ_ID) { 
             // clear taxid if it does not occur in this modifier set
-            m_pDescrCache->SetBioSource().SetOrg().SetTaxId(0);
+            m_pDescrCache->SetBioSource().SetOrg().SetTaxId(ZERO_ENTREZ_ID);
         }
         return true;
     }
 
     if (name == "taxid") {
         const auto& value = x_GetModValue(mod_entry);
-        int taxid;
+        TTaxId taxid;
         try {
-            taxid = NStr::StringToInt(value);
+            taxid = NStr::StringToNumeric<TTaxId>(value);
         }
         catch (...) {
             x_ReportInvalidValue(mod_entry.second.front(), "Integer value expected.");
@@ -925,9 +925,9 @@ void CDescrModApply::x_SetPMID(const TModEntry& mod_entry)
     for (const auto& mod : mod_entry.second)
     {
         const auto& value = mod.GetValue();
-        int pmid;
+        TEntrezId pmid;
         try {
-            pmid = NStr::StringToInt(value);
+            pmid = NStr::StringToNumeric<TEntrezId>(value);
         }
         catch(...) {
             x_ReportInvalidValue(mod_entry.second.front(), "Expected integer value.");

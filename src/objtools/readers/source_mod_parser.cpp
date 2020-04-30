@@ -1158,11 +1158,11 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
 
 
     if ((mod = FindMod(s_Mod_taxid)) != NULL) {
-        bsrc->SetOrg().SetTaxId( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
+        bsrc->SetOrg().SetTaxId( NStr::StringToNumeric<TEntrezId>(mod->value, NStr::fConvErr_NoThrow) );
     }
     else 
-    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != 0) {
-       bsrc->SetOrg().SetTaxId(0);
+    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != ZERO_ENTREZ_ID) {
+       bsrc->SetOrg().SetTaxId(ZERO_ENTREZ_ID);
     }
 }
 
@@ -1582,7 +1582,7 @@ void s_ApplyPubMods(CBioseq& bioseq, const CSourceModParser::TModsRange& range)
 {
     for (CSourceModParser::TModsCI it = range.first;
          it != range.second;  ++it) {
-        TIntId pmid = NStr::StringToNumeric<TIntId>(it->value, NStr::fConvErr_NoThrow);
+        TEntrezId pmid = NStr::StringToNumeric<TEntrezId>(it->value, NStr::fConvErr_NoThrow);
         CRef<CPub> pub(new CPub);
         pub->SetPmid().Set(pmid);
         CRef<CSeqdesc> pubdesc(new CSeqdesc);

@@ -2441,7 +2441,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
             case CSeqFeatData::e_Pub:
                 if( qtype == eQual_PubMed ) {
                     CRef<CPub> new_pub( new CPub );
-                    new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, feat_name, qual) ) );
+                    new_pub->SetPmid( CPubMedId( ENTREZ_ID_FROM(long, x_StringToLongNoThrow(val, feat_name, qual)) ) );
                     sfdata.SetPub().SetPub().Set().push_back( new_pub );
                     return true;
                 }
