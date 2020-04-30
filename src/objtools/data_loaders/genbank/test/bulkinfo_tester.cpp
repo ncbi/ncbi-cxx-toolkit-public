@@ -141,7 +141,7 @@ public:
             for ( size_t i = 0; i < ids.size(); ++i ) {
                 const string& line = lines[i];
                 if ( !line.empty() ) {
-                    data_verify[i] = NStr::StringToNumeric<TIntId>(line);
+                    data_verify[i] = NStr::StringToNumeric<TGi>(line);
                 }
             }
         }
@@ -149,14 +149,14 @@ public:
         {
             for ( size_t i = 0; i < ids.size(); ++i ) {
                 if ( Valid(i) ) {
-                    out << TIntId(data[i]);
+                    out << data[i];
                 }
                 out << NcbiEndl;
             }
         }
     bool Valid(size_t i) const
         {
-            return data[i];
+            return data[i] != ZERO_GI;
         }
     bool Correct(size_t i) const
         {

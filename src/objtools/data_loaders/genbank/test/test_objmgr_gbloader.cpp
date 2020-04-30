@@ -137,7 +137,7 @@ int CTestApplication::Run()
 
     for ( TIntId gi = 18565540;  gi < 18565650; gi++ ) {
         CSeq_id id;
-        id.SetGi(gi);
+        id.SetGi(GI_FROM(TIntId, gi));
         CConstRef<CSeqref> sr = pLoader->GetSatSatkey(id);
         if ( !sr ) {
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
@@ -152,7 +152,7 @@ int CTestApplication::Run()
         CScope scope(*pOm);
         scope.AddDefaults();
         CSeq_id id;
-        id.SetGi(gi);
+        id.SetGi(GI_FROM(TIntId, gi));
         CBioseq_Handle h = scope.GetBioseqHandle(id);
         if ( !h ) {
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
@@ -179,7 +179,7 @@ int CTestApplication::Run()
                 LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
             }
             CRef<CSeq_loc> loc(new CSeq_loc);
-            loc->SetWhole().SetGi(gi);
+            loc->SetWhole().SetGi(GI_FROM(TIntId, gi));
             int fcount = 0;
             {{ // Creating a block to destroy the iterator after using it
                 CFeat_CI feat_it1(scope, *loc, CSeqFeatData::e_Cdregion);

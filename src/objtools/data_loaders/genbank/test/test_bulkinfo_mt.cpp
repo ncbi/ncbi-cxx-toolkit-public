@@ -188,7 +188,7 @@ bool CTestApplication::TestApp_Init(void)
         TIntId gi_to    = args["togi"]? args["togi"].AsInteger(): g_gi_to;
         TIntId delta = gi_to > gi_from? 1: -1;
         for ( TIntId gi = gi_from; gi != gi_to+delta; gi += delta ) {
-            m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
+            m_Ids.push_back(CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, gi)));
         }
         NcbiCout << "Testing bulk info load ("
             "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
@@ -197,7 +197,7 @@ bool CTestApplication::TestApp_Init(void)
         TIntId count = g_gi_to-g_gi_from+1;
         for ( TIntId i = 0; i < count; ++i ) {
             if ( i % 3 != 0 ) {
-                m_Ids.push_back(CSeq_id_Handle::GetGiHandle(i+g_gi_from));
+                m_Ids.push_back(CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, i+g_gi_from)));
             }
             else {
                 CNcbiOstrstream str;

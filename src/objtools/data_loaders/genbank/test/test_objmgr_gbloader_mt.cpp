@@ -115,7 +115,7 @@ void* CTestThread::Main(void)
             throw runtime_error("unexpected mode");
         }
     
-        TGi gi = i ; // (i + m_Idx)/2+3;
+        TGi gi = GI_FROM(TIntId, i) ; // (i + m_Idx)/2+3;
         CSeq_id x;
         x.SetGi(gi);
         CBioseq_Handle h = s->GetBioseqHandle(x);

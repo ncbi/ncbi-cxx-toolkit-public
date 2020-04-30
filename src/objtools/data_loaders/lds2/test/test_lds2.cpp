@@ -374,7 +374,7 @@ void* CLDS2_TestThread::Main(void)
     TIntId gi = kStressTestEntriesPerFile + m_Id;
     CSeq_id seq_id;
     for (; gi < kStressTestEntries; gi += m_Step) {
-        seq_id.SetGi(gi);
+        seq_id.SetGi(GI_FROM(TIntId, gi));
         CSeq_id_Handle id = CSeq_id_Handle::GetHandle(seq_id);
         CBioseq_Handle h = m_Scope.GetBioseqHandle(id);
         if ( !h ) {
