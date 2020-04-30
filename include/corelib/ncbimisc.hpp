@@ -874,8 +874,76 @@ const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
 /// Use this typedef rather than its expansion, which may change.
 typedef int TSignedSeqPos;
 
-/// Type for Taxon1-name.taxid
-typedef int TTaxId;
+
+/// Template class for strict ID types.
+template<class TKey, class TStorage>
+class CStrictId
+{
+public:
+    typedef TStorage TId;
+    typedef CStrictId<TKey, TStorage> TThis;
+
+    CStrictId(void) : m_Id(0) {}
+    CStrictId(const TThis& other) : m_Id(other.m_Id) {}
+    TThis& operator=(const TThis& other) { m_Id = other.m_Id; return *this; }
+
+    bool operator==(const TThis& id) const { return m_Id == id.m_Id; }
+    bool operator!=(const TThis& id) const { return m_Id != id.m_Id; }
+    bool operator<(const TThis& id) const { return m_Id < id.m_Id; }
+    bool operator<=(const TThis& id) const { return m_Id <= id.m_Id; }
+    bool operator>(const TThis& id) const { return m_Id > id.m_Id; }
+    bool operator>=(const TThis& id) const { return m_Id >= id.m_Id; }
+
+    TThis& operator++(void) { m_Id++; return *this; }
+    TThis operator++(int) { TThis tmp = *this; m_Id++; return tmp; }
+    TThis& operator--(void) { m_Id--; return *this; }
+    TThis operator--(int) { TThis tmp = *this; m_Id--; return tmp; }
+
+    TThis operator+(const TThis& id) const { return TThis(m_Id + id.m_Id); }
+    TThis operator-(const TThis& id) const { return TThis(m_Id - id.m_Id); }
+    TThis operator-(void) const { return TThis(-m_Id); }
+
+    //template<typename T>
+    //operator typename enable_if<is_same<T, bool>::value, bool>::type(void) const { return m_Id != 0; }
+
+    TId Get(void) const { return m_Id; }
+    void Set(TId id) { m_Id = id; }
+    TId& Set(void) { return m_Id; }
+
+#if !defined(NCBI_TEST_APPLICATION)
+    template<typename T>
+    explicit CStrictId(T id, typename enable_if<is_same<T, TId>::value, T>::type dummy = 0) : m_Id(id) {}
+private:
+#else
+    template<typename T>
+    CStrictId(T id, typename enable_if<is_arithmetic<T>::value, T>::type dummy = 0) : m_Id(id) {}
+    template<typename T>
+    typename enable_if<is_arithmetic<T>::value, TThis>::type& operator=(T id) { m_Id = id; return *this; }
+    template<typename T>
+    typename enable_if<is_arithmetic<T>::value, bool>::type operator==(T id) const { return m_Id == id; }
+    template<typename T>
+    operator typename enable_if<is_arithmetic<T>::value, T>::type(void) const { return static_cast<T>(m_Id); }
+#endif
+
+private:
+    TId m_Id;
+};
+
+template<class TKey, class TStorage>
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictId<TKey, TStorage>& id)
+{
+    return out << id.Get();
+}
+
+template<class TKey, class TStorage>
+inline
+CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
+{
+    in >> id.Set();
+    return in;
+}
+
 
 /// Type for sequence GI.
 ///
@@ -887,7 +955,13 @@ typedef int TTaxId;
 
 #ifdef NCBI_STRICT_GI
 # define NCBI_INT8_GI
+#else
+# undef NCBI_STRICT_ENTREZ_ID
 #endif
+
+/// Key structs must always be defined - they are used in aliasinfo.cpp
+struct SStrictId_Gi {};
+struct SStrictId_Entrez {};
 
 #ifdef NCBI_INT8_GI
 
@@ -899,101 +973,10 @@ typedef Uint8 TUintId;
 
 // Strict mode can be enabled only for Int8 GIs.
 
-class CStrictId64
-{
-public:
-    CStrictId64(void) : m_Gi(0) {}
+typedef CStrictId<SStrictId_Gi, TIntId> TGi;
 
-    bool operator==(const CStrictId64& gi) const { return m_Gi == gi.m_Gi; }
-    bool operator!=(const CStrictId64& gi) const { return m_Gi != gi.m_Gi; }
-    bool operator<(const CStrictId64& gi) const { return m_Gi < gi.m_Gi; }
-    bool operator<=(const CStrictId64& gi) const { return m_Gi <= gi.m_Gi; }
-    bool operator>(const CStrictId64& gi) const { return m_Gi > gi.m_Gi; }
-    bool operator>=(const CStrictId64& gi) const { return m_Gi >= gi.m_Gi; }
-
-    CStrictId64& operator++(void) { m_Gi++; return *this; }
-    CStrictId64 operator++(int) { CStrictId64 tmp = *this; m_Gi++; return tmp; }
-    CStrictId64& operator--(void) { m_Gi--; return *this; }
-    CStrictId64 operator--(int) { CStrictId64 tmp = *this; m_Gi--; return tmp; }
-
-    TIntId operator+(const CStrictId64& gi) const { return m_Gi + gi.m_Gi; }
-    TIntId operator-(const CStrictId64& gi) const { return m_Gi - gi.m_Gi; }
-
-    CStrictId64 operator+(TIntId offset) const { return m_Gi + offset; }
-    CStrictId64 operator-(TIntId offset) const { return m_Gi - offset; }
-#if defined(NCBI_INT8_GI)
-    CStrictId64 operator+(Int4 offset) const { return m_Gi + offset; }
-    CStrictId64 operator-(Int4 offset) const { return m_Gi - offset; }
-#endif
-
-    CStrictId64(TIntId value) : m_Gi(value) {}
-    CStrictId64& operator=(TIntId value) { m_Gi = value; return *this; }
-    operator TIntId(void) const { return m_Gi; }
-    bool operator==(TIntId value) const { return m_Gi == value; }
-
-#if defined(NCBI_INT8_GI) && defined(NCBI_TEST_APPLICATION)
-    CStrictId64(Int4 value) : m_Gi(value) {}
-    CStrictId64& operator=(Int4 value) { m_Gi = value; return *this; }
-    bool operator==(Int4 value) const { return m_Gi == value; }
-#endif
-
-    operator bool(void) const { return m_Gi != 0; }
-
-private:
-#if defined(NCBI_INT8_GI) && !defined(NCBI_TEST_APPLICATION)
-    CStrictId64(Int4);
-    CStrictId64& operator=(Int4);
-    operator Int4(void) const;
-#endif
-    CStrictId64(Int1);
-    CStrictId64(Uint1);
-    CStrictId64(Int2);
-    CStrictId64(Uint2);
-    CStrictId64(Uint4);
-    CStrictId64(Uint8);
-    CStrictId64(float);
-    CStrictId64(double);
-    CStrictId64& operator=(Int1);
-    CStrictId64& operator=(Uint1);
-    CStrictId64& operator=(Int2);
-    CStrictId64& operator=(Uint2);
-    CStrictId64& operator=(Uint4);
-    CStrictId64& operator=(Uint8);
-    CStrictId64& operator=(float);
-    CStrictId64& operator=(double);
-    operator Int1(void) const;
-    operator Uint1(void) const;
-    operator Int2(void) const;
-    operator Uint2(void) const;
-    operator Uint4(void) const;
-    operator Uint8(void) const;
-    operator float(void) const;
-    operator double(void) const;
-
-private:
-    TIntId m_Gi;
-};
-
-/// @deprecated: Use CStrictId64 instead of CStrictGi, or TGi/TEntrezId typedefs.
-NCBI_DEPRECATED typedef CStrictId64 CStrictGi;
-
-
-inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictId64& gi)
-{
-    return out << TIntId(gi);
-}
-
-inline
-CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId64& gi)
-{
-    TIntId id;
-    in >> id;
-    gi = id;
-    return in;
-}
-
-typedef CStrictId64 TGi;
+/// @deprecated: Use TGi/TEntrezId typedefs.
+NCBI_DEPRECATED typedef TGi CStrictGi;
 
 #else // NCBI_STRICT_GI
 
@@ -1009,33 +992,64 @@ typedef Uint4 TUintId;
 
 #endif
 
+
 /// TEntrezId type for entrez ids which require the same strictness as TGi.
 #ifdef NCBI_STRICT_ENTREZ_ID
-# ifndef NCBI_STRICT_GI
-#  undef NCBI_STRICT_ENTREZ_ID
-# endif
-typedef TGi TEntrezId;
+typedef CStrictId<SStrictId_Entrez, TIntId> TEntrezId;
 #else
 typedef TIntId TEntrezId;
 #endif
 
+/// Taxon id type is the same as TEntrezId.
+typedef TEntrezId TTaxId;
+
+
+#ifdef NCBI_STRICT_GI
+
 /// a helper template to enforce constness of argument to GI_CONST macro
-template<TIntId gi>
-class CConstGIChecker {
+template<class TId, TId id>
+class CConstIdChecker {
 public:
-    static const TIntId value = gi;
+    static const TId value = id;
 };
-#define GI_CONST(gi) (TGi(CConstGIChecker<gi>::value))
-#define ZERO_GI GI_CONST(0)
-#define INVALID_GI GI_CONST(-1)
 
-/// Temporary macros to convert TGi to other types (int, unsigned etc.).
-#define GI_TO(T, gi) (static_cast<T>(TIntId(gi)))
-#define GI_FROM(T, value) (TGi(static_cast<TIntId>(value)))
+/// Macros to convert TGi to other types (int, unsigned etc.).
+#define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>((id).Get()))
+#define STRICT_ID_FROM(TIdType, TIntType, id) (TIdType(static_cast<TIdType::TId>(id)))
+#define STRICT_ID_CONST(type, id) (type(CConstIdChecker<type::TId, id>::value))
+#define STRICT_ID_ZERO(type) STRICT_ID_CONST(type, 0)
+#define STRICT_ID_INVALID(type) STRICT_ID_CONST(type, -1)
 
-/// Temporary macros to convert TEntrezId to other types (int, unsigned etc.).
-#define ENTREZ_ID_TO(T, entrez_id) (static_cast<T>(TIntId(entrez_id)))
-#define ENTREZ_ID_FROM(T, value) (TGi(static_cast<TIntId>(value)))
+#else // NCBI_STRICT_GI
+
+#define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>(id))
+#define STRICT_ID_FROM(TIdType, TIntType, id) (static_cast<TIdType>(id))
+#define STRICT_ID_CONST(type, id) id
+#define STRICT_ID_ZERO(type) 0
+#define STRICT_ID_INVALID(type) type(-1)
+
+#endif // NCBI_STRICT_GI
+
+#define GI_TO(T, gi) STRICT_ID_TO(TGi, T, gi)
+#define GI_FROM(T, value) STRICT_ID_FROM(TGi, T, value)
+#define GI_CONST(gi) STRICT_ID_CONST(TGi, gi)
+#define ZERO_GI STRICT_ID_ZERO(TGi)
+#define INVALID_GI STRICT_ID_INVALID(TGi)
+
+
+#ifdef NCBI_STRICT_ENTREZ_ID
+# define ENTREZ_ID_TO(T, entrez_id) STRICT_ID_TO(TEntrezId, T, entrez_id)
+# define ENTREZ_ID_FROM(T, value) STRICT_ID_FROM(TEntrezId, T, value)
+# define ENTREZ_ID_CONST(id) STRICT_ID_CONST(TEntrezId, id)
+#else
+# define ENTREZ_ID_TO(T, entrez_id) (static_cast<T>(entrez_id))
+# define ENTREZ_ID_FROM(T, value) (static_cast<TEntrezId>(value))
+# define ENTREZ_ID_CONST(id) id
+#endif
+
+#define ZERO_ENTREZ_ID ENTREZ_ID_CONST(0)
+#define INVALID_ENTREZ_ID ENTREZ_ID_CONST(-1)
+
 
 /// Convert gi-compatible int to/from other types.
 #define INT_ID_TO(T, id) (static_cast<T>(id))
@@ -1416,11 +1430,11 @@ size_t ArraySize(const Element (&)[Size])
 }
 
 #ifdef NCBI_STRICT_GI
-template <> struct hash<ncbi::CStrictId64>
+template <class TKey, class TStorage> struct hash<ncbi::CStrictId<TKey, TStorage>>
 {
-    size_t operator()(const ncbi::CStrictId64 & x) const
+    size_t operator()(const ncbi::CStrictId<TKey, TStorage> & x) const
     {
-        return hash<ncbi::TIntId>()((ncbi::TIntId)x);
+        return hash<TStorage>()(x.Get());
     }
 };
 #endif /* NCBI_STRICT_GI */
