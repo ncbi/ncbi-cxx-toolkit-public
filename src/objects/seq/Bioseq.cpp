@@ -178,8 +178,8 @@ int CBioseq::GetTaxId() const
 {
     /// A taxid can be found either in a source descriptor (the newer form) or in a
     /// org descriptor. If both are there, the source descriptor should have precedence.
-    int taxid_from_source = 0,
-        taxid_from_org = 0;
+    TEntrezId taxid_from_source = ZERO_ENTREZ_ID,
+        taxid_from_org = ZERO_ENTREZ_ID;
 
     if (IsSetDescr()) {
         ITERATE (TDescr::Tdata, it, GetDescr().Get()) {
@@ -189,13 +189,13 @@ int CBioseq::GetTaxId() const
             } else if (desc.IsSource() && desc.GetSource().IsSetOrg()) {
                 taxid_from_source = desc.GetSource().GetOrg().GetTaxId();
             }
-            if (taxid_from_source) {
+            if (taxid_from_source != ZERO_ENTREZ_ID) {
                 break;
             }
         }
     }
 
-    return taxid_from_source ? taxid_from_source : taxid_from_org;
+    return ENTREZ_ID_TO(int, taxid_from_source != ZERO_ENTREZ_ID ? taxid_from_source : taxid_from_org);
 }
 
 
