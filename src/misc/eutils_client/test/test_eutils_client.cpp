@@ -181,7 +181,7 @@ int CTestEUtilsClientApp::Run(void)
         vector<TEntrezId> uids;
         for (auto& id : idstrs) {
             TEntrezId entrez_id = NStr::StringToNumeric<TEntrezId>(id, NStr::fConvErr_NoThrow);
-            if (entrez_id) {
+            if (entrez_id != ZERO_ENTREZ_ID) {
                 uids.push_back(entrez_id);
             }
         }
@@ -202,7 +202,7 @@ int CTestEUtilsClientApp::Run(void)
         string db_to = args["db"].AsString();
         string uid = args["fetch"].AsString();
         TEntrezId entrez_id = NStr::StringToNumeric<TEntrezId>(uid, NStr::fConvErr_NoThrow);
-        if (!entrez_id) {
+        if (entrez_id == ZERO_ENTREZ_ID) {
             vector<objects::CSeq_id_Handle> uids(1, objects::CSeq_id_Handle::GetHandle(uid));
             ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
         } else {
