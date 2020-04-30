@@ -868,10 +868,10 @@ BOOST_AUTO_TEST_CASE(Test_Pub_SameCitation)
     pub2->Assign(*pub1);
     BOOST_CHECK_EQUAL(pub1->SameCitation(*pub2), true);
     // muid
-    pub2->SetGen().SetMuid(40);
+    pub2->SetGen().SetMuid(ENTREZ_ID_FROM(TIntId, 40));
     BOOST_CHECK_EQUAL(pub1->SameCitation(*pub2), false);
     pub2->Assign(*pub1);
-    pub1->SetGen().SetMuid(42);
+    pub1->SetGen().SetMuid(ENTREZ_ID_FROM(TIntId, 42));
     BOOST_CHECK_EQUAL(pub1->SameCitation(*pub2), false);
     pub2->Assign(*pub1);
     BOOST_CHECK_EQUAL(pub1->SameCitation(*pub2), true);
@@ -926,7 +926,7 @@ BOOST_AUTO_TEST_CASE(Test_PubEquiv_SameCitation)
 
     // should match if second also has PubMed ID (but first does not)
     CRef<CPub> pmid2(new CPub());
-    pmid2->SetPmid().Set(4);
+    pmid2->SetPmid().Set(ENTREZ_ID_FROM(TIntId, 4));
     eq2->Set().push_back(pmid2);
     BOOST_CHECK_EQUAL(eq1->SameCitation(*eq2), true);
 
@@ -936,7 +936,7 @@ BOOST_AUTO_TEST_CASE(Test_PubEquiv_SameCitation)
 
     // won't match even if PubMed IDs match
     CRef<CPub> pmid1(new CPub());
-    pmid1->SetPmid().Set(4);
+    pmid1->SetPmid().Set(ENTREZ_ID_FROM(TIntId, 4));
     eq1->Set().push_back(pmid1);
     BOOST_CHECK_EQUAL(eq1->SameCitation(*eq2), false);
 }
@@ -1031,16 +1031,16 @@ BOOST_AUTO_TEST_CASE(Test_OrgRef_MakeCommon)
     if (common) {
         BOOST_ASSERT("common OrgRef should not have been created");
     }
-    org1->SetTaxId(1);
-    org2->SetTaxId(2);
+    org1->SetTaxId(ENTREZ_ID_FROM(TIntId, 1));
+    org2->SetTaxId(ENTREZ_ID_FROM(TIntId, 2));
     common = org1->MakeCommon(*org2);
     if (common) {
         BOOST_ASSERT("common OrgRef should not have been created");
     }
 
-    org2->SetTaxId(1);
+    org2->SetTaxId(ENTREZ_ID_FROM(TIntId, 1));
     common = org1->MakeCommon(*org2);
-    BOOST_CHECK_EQUAL(common->GetTaxId(), 1);
+    BOOST_CHECK_EQUAL(common->GetTaxId(), ENTREZ_ID_FROM(TIntId, 1));
     BOOST_CHECK_EQUAL(common->IsSetTaxname(), false);
 
     CHECK_COMMON_FIELD(org1,org2,common,Taxname,"A","B");
@@ -1061,10 +1061,10 @@ BOOST_AUTO_TEST_CASE(Test_BioSource_MakeCommon)
         BOOST_ASSERT("common BioSource should not have been created");
     }
 
-    src1->SetOrg().SetTaxId(1);
-    src2->SetOrg().SetTaxId(1);
+    src1->SetOrg().SetTaxId(ENTREZ_ID_FROM(TIntId, 1));
+    src2->SetOrg().SetTaxId(ENTREZ_ID_FROM(TIntId, 1));
     common = src1->MakeCommon(*src2);
-    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), 1);
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), ENTREZ_ID_FROM(TIntId, 1));
 
     CRef<CSubSource> s1(new CSubSource());
     s1->SetSubtype(CSubSource::eSubtype_altitude);
@@ -1094,7 +1094,7 @@ BOOST_AUTO_TEST_CASE(Test_BioSource_GetRepliconName_CXX_10657)
 {
     CRef<CBioSource> src1(new CBioSource());
 
-    src1->SetOrg().SetTaxId(1);
+    src1->SetOrg().SetTaxId(ENTREZ_ID_FROM(TIntId, 1));
 
     SetSubSource(*src1,CSubSource::eSubtype_altitude,"X");
     BOOST_CHECK_EQUAL(src1->IsSetSubtype(), true);
