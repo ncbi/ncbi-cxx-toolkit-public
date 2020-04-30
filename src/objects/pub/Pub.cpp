@@ -349,8 +349,8 @@ typedef struct {
     string country;
     string number;
     string app_number;
-    int muid;
-    int pmid;
+    TEntrezId muid;
+    TEntrezId pmid;
     CRef<CCit_art> art;
 } SPubMatchInfo;
 
@@ -640,13 +640,13 @@ bool s_CitSubMatch(const CCit_sub& sub1, const CCit_sub& sub2)
 
 bool s_MatchInfoMatches(const SPubMatchInfo& match1, const SPubMatchInfo& match2)
 {
-    if (match1.muid > 0 && match2.muid > 0) {
+    if (match1.muid > ZERO_ENTREZ_ID && match2.muid > ZERO_ENTREZ_ID) {
         if (match1.muid == match2.muid) {
             return true;
         } 
     }
 
-    if (match1.pmid > 0 && match2.pmid > 0) {
+    if (match1.pmid > ZERO_ENTREZ_ID && match2.pmid > ZERO_ENTREZ_ID) {
         if (match1.pmid == match2.pmid) {
             return true;
         }
@@ -701,8 +701,8 @@ void s_GetPubMatchInfo(const CId_pat& patent, SPubMatchInfo& match)
 
 void s_GetPubMatchInfo(const CPub& pub, SPubMatchInfo& match)
 {
-    match.muid = 0;
-    match.pmid = 0;
+    match.muid = ZERO_ENTREZ_ID;
+    match.pmid = ZERO_ENTREZ_ID;
     match.country = "";
     match.number = "";
     match.app_number = "";
