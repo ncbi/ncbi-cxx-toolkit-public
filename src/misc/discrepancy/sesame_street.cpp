@@ -118,8 +118,8 @@ DISCREPANCY_CASE(SOURCE_QUALS, BIOSRC, eDisc | eOncaller | eSubmitter | eSmart |
             if (org_ref.CanGetTaxname()) {
                 AddObjToQualMap("taxname", org_ref.GetTaxname(), *disc_obj, m_Objs);
             }
-            if (org_ref.GetTaxId()) {
-                AddObjToQualMap("taxid", NStr::IntToString(org_ref.GetTaxId()), *disc_obj, m_Objs);
+            if (org_ref.GetTaxId() != ZERO_ENTREZ_ID) {
+                AddObjToQualMap("taxid", NStr::NumericToString(org_ref.GetTaxId()), *disc_obj, m_Objs);
             }
         }
         if (biosrc->CanGetSubtype()) {
