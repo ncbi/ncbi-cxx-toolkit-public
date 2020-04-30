@@ -1176,7 +1176,7 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
         }
         else if ( kResolveMaster == eResolveMaster_without_gi ) {
             // only master sequences w/o GI are resolved
-            if ( GetWGSDb(seq)->GetMasterGi() ) {
+            if ( GetWGSDb(seq)->GetMasterGi() != ZERO_GI ) {
                 // Let master sequences with GI to be processed by ID
                 seq.m_IsWGS = false;
                 return seq;
@@ -1395,7 +1395,8 @@ void CID2WGSProcessor_Impl::GetSeqIds(SWGSSeqInfo& seq,
     if ( CRef<CSeq_id> id = GetGeneral(seq) ) {
         ids.push_back(id);
     }
-    if ( TGi gi = GetGi(seq) ) {
+    TGi gi = GetGi(seq);
+    if ( gi != ZERO_GI ) {
         CRef<CSeq_id> gi_id(new CSeq_id);
         gi_id->SetGi(gi);
         ids.push_back(gi_id);
@@ -1542,13 +1543,16 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
         if ( CRef<CSeq_id> id = GetAccVer(seq) ) {
             ids.push_back(id);
         }
-        else if ( TGi gi = GetGi(seq) ) {
-            CRef<CSeq_id> gi_id(new CSeq_id);
-            gi_id->SetGi(gi);
-            ids.push_back(gi_id);
-        }
-        else if ( CRef<CSeq_id> id = GetGeneral(seq) ) {
-            ids.push_back(id);
+        else {
+            TGi gi = GetGi(seq);
+            if ( gi != ZERO_GI) {
+                CRef<CSeq_id> gi_id(new CSeq_id);
+                gi_id->SetGi(gi);
+                ids.push_back(gi_id);
+            }
+            else if (CRef<CSeq_id> id = GetGeneral(seq)) {
+                ids.push_back(id);
+            }
         }
     }
     if ( request.GetSeq_id_type() & request.eSeq_id_type_text ) {
@@ -1557,7 +1561,8 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
         }
     }
     if ( request.GetSeq_id_type() & request.eSeq_id_type_gi ) {
-        if ( TGi gi = GetGi(seq) ) {
+        TGi gi = GetGi(seq);
+        if ( gi != ZERO_GI ) {
             CRef<CSeq_id> gi_id(new CSeq_id);
             gi_id->SetGi(gi);
             ids.push_back(gi_id);
