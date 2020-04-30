@@ -72,7 +72,7 @@ COrgRefCache::Init( unsigned nCapacity )
     if( m_host.SendRequest( req, resp ) ) {
         if( resp.IsMaxtaxid() ) {
             // Correct response, return object
-            m_nMaxTaxId = resp.GetMaxtaxid();
+            m_nMaxTaxId = ENTREZ_ID_TO(unsigned, resp.GetMaxtaxid());
             m_nMaxTaxId += m_nMaxTaxId/10;
             m_ppEntries = new CTaxon1Node*[m_nMaxTaxId];
             memset( m_ppEntries, '\0', m_nMaxTaxId*sizeof(*m_ppEntries) );
@@ -84,7 +84,7 @@ COrgRefCache::Init( unsigned nCapacity )
         return false;
     }
     CTaxon1_name* pNode = ( new CTaxon1_name );
-    pNode->SetTaxid( 1 );
+    pNode->SetTaxid( ENTREZ_ID_CONST(1) );
     pNode->SetOname().assign("root");
     pNode->SetCde( 0x40000000 ); // Gene bank hidden
     CTaxon1Node* pRoot = new CTaxon1Node( CRef<CTaxon1_name>(pNode) );
@@ -102,8 +102,8 @@ COrgRefCache::Init( unsigned nCapacity )
 bool
 COrgRefCache::Lookup( TTaxId tax_id, CTaxon1Node** ppNode )
 {
-    if( (unsigned)tax_id < m_nMaxTaxId ) {
-        *ppNode = m_ppEntries[tax_id];
+    if( ENTREZ_ID_TO(unsigned, tax_id) < m_nMaxTaxId ) {
+        *ppNode = m_ppEntries[ENTREZ_ID_TO(unsigned, tax_id)];
     } else {
         *ppNode = NULL;
     }
@@ -114,8 +114,8 @@ bool
 COrgRefCache::LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData )
 {
     *ppData = NULL;
-    if( (unsigned)tax_id < m_nMaxTaxId ) {
-        CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
+    if(ENTREZ_ID_TO(unsigned, tax_id) < m_nMaxTaxId ) {
+        CTaxon1Node* pNode = ( m_ppEntries[ENTREZ_ID_TO(unsigned, tax_id)] );
         if( pNode ) {
             *ppData = pNode;
             return true;
@@ -123,7 +123,7 @@ COrgRefCache::LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData )
             CTaxon1_req  req;
             CTaxon1_resp resp;
 
-            req.SetTaxalineage( tax_id );
+            req.SetTaxalineage(ENTREZ_ID_TO(int, tax_id) );
 
             if( m_host.SendRequest( req, resp ) ) {
                 if( resp.IsTaxalineage() ) {
@@ -134,17 +134,17 @@ COrgRefCache::LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData )
                     // Check if this is a secondary node
                     if( lLin.front()->GetTaxid() != tax_id ) {
                         // Secondary node, try to get primary from index
-                        pNode = m_ppEntries[ lLin.front()->GetTaxid() ];
+                        pNode = m_ppEntries[ENTREZ_ID_TO(unsigned, lLin.front()->GetTaxid()) ];
                     }
                     if( !pNode ) {
                         list< CRef< CTaxon1_name > >::reverse_iterator i;
                         // Fill in storage
                         for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
-                            if( !m_ppEntries[ (*i)->GetTaxid() ] ) {
+                            if( !m_ppEntries[ENTREZ_ID_TO(unsigned, (*i)->GetTaxid()) ] ) {
                                 // Create node
                                 break;
                             } else {
-                                pParent = m_ppEntries[ (*i)->GetTaxid() ];
+                                pParent = m_ppEntries[ENTREZ_ID_TO(unsigned, (*i)->GetTaxid()) ];
                             }
                         }
                         // Create tree iterator
@@ -155,13 +155,13 @@ COrgRefCache::LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData )
                         pIt->GoNode( pParent );
                         for( ; i != lLin.rend(); ++i ) {
                             pNode = new CTaxon1Node(*i);
-                            m_ppEntries[ pNode->GetTaxId() ] = pNode;
+                            m_ppEntries[ENTREZ_ID_TO(unsigned, pNode->GetTaxId()) ] = pNode;
                             pIt->AddChild( pNode );
                             pIt->GoNode( pNode );
                         }
                         delete pIt;
                     } else { // Store secondary in index
-                        m_ppEntries[ tax_id ] = pNode;
+                        m_ppEntries[ENTREZ_ID_TO(unsigned, tax_id) ] = pNode;
                     }
                     _ASSERT( pNode );
                     *ppData = pNode;
@@ -202,8 +202,8 @@ COrgRefCache::LookupAndInsert( TTaxId tax_id, CTaxon2_data** ppData )
 bool
 COrgRefCache::Lookup( TTaxId tax_id, CTaxon2_data** ppData )
 {
-    if( (unsigned)tax_id < m_nMaxTaxId ) {
-        CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
+    if(ENTREZ_ID_TO(unsigned, tax_id) < m_nMaxTaxId ) {
+        CTaxon1Node* pNode = ( m_ppEntries[ENTREZ_ID_TO(unsigned, tax_id)] );
         SCacheEntry* pEntry;
         if( pNode && (pEntry=pNode->GetEntry()) ) {
             // Move in the list

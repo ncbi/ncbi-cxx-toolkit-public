@@ -5,14 +5,18 @@ _export = NCBI_TAXON1_EXPORT
 id4gi._type = ncbi::TGi
 id4gi._storage_type = ncbi::TIntId
 
+[Taxon1-resp]
+maxtaxid._type = ncbi::TTaxId
+maxtaxid._storage_type = ncbi::TIntId
+getunique._type = ncbi::TTaxId
+getunique._storage_type = ncbi::TIntId
+id4gi._type = ncbi::TGi
+id4gi._storage_type = ncbi::TIntId
+
 [Taxon1-info]
-ival1._type = ncbi::TEntrezId
-ival1._storage_type = ncbi::TIntId
-ival2._type = ncbi::TEntrezId
-ival2._storage_type = ncbi::TIntId
+ival1._type = ncbi::TIntId
+ival2._type = ncbi::TIntId
 
 [Taxon1-name]
 taxid._type = ncbi::TEntrezId
 taxid._storage_type = ncbi::TIntId
-cde._type = ncbi::TEntrezId
-cde._storage_type = ncbi::TIntId

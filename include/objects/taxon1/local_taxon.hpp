@@ -49,7 +49,7 @@ END_SCOPE(objects)
 class CLocalTaxon
 {
 public:
-    typedef int TTaxid;
+    typedef TTaxId TTaxid;
     typedef vector<TTaxid> TLineage;
 
     static void AddArguments(CArgDescriptions& arg_desc);
@@ -86,7 +86,7 @@ public: // lookups other than taxid
 
 private: // data types
     struct STaxidNode;
-    typedef map<int, STaxidNode> TNodes;
+    typedef map<TTaxId, STaxidNode> TNodes;
     typedef map<string, STaxidNode> TScientificNameIndex;
     typedef TNodes::const_iterator TNodeRef;
     typedef TScientificNameIndex::const_iterator TScientificNameRef;

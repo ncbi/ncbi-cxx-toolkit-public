@@ -222,7 +222,7 @@ public:
     // Returns: number of organisms found (negative value on error), 
     // id list appended with found tax ids
     ///
-    TTaxId GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds);
+    int GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds);
 
     //----------------------------------------------
     // Get organism by tax_id
@@ -557,7 +557,7 @@ public:
     ///
     bool GetInheritedPropertyDefines( const string& prop_name,
 				      TInfoList& results_out,
-				      TTaxId subtree_root = 1 );
+				      TTaxId subtree_root = ENTREZ_ID_CONST(1) );
 
     //---------------------------------------------------
     // This function returns the list of "type materials" for the node with taxid given.

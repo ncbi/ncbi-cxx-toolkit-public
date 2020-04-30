@@ -235,7 +235,7 @@ CTaxon1::GetById(TTaxId tax_id)
 	    return CRef<CTaxon2_data>(NULL);
 	}
     }
-    if( tax_id > 0 ) {
+    if( tax_id > ZERO_ENTREZ_ID ) {
         // Check if this taxon is in cache
         CTaxon2_data* pData = 0;
         if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
@@ -491,7 +491,7 @@ CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
 
@@ -503,12 +503,12 @@ CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
     if( SendRequest( req, resp ) ) {
         if( resp.IsGetidbyorg() ) {
             // Correct response, return object
-            return resp.GetGetidbyorg();
+            return ENTREZ_ID_FROM(int, resp.GetGetidbyorg());
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Getidbyorg" );
         }
     }
-    return 0;
+    return ZERO_ENTREZ_ID;
 }
 
 //----------------------------------------------
@@ -524,11 +524,11 @@ CTaxon1::GetTaxIdByName(const string& orgname)
 {
     SetLastError(NULL);
     if( orgname.empty() )
-        return 0;
+        return ZERO_ENTREZ_ID;
     list< CRef< CTaxon1_name > > lNames;
     TTaxId retc = SearchTaxIdByName(orgname, eSearch_Exact, &lNames);
-    switch( retc ) {
-    case -2: retc = -1; break;
+    switch( ENTREZ_ID_TO(TIntId, retc) ) {
+    case -2: retc = INVALID_ENTREZ_ID; break;
     case -1: retc = -lNames.front()->GetTaxid(); break; // Multiple nodes found, get first taxid
     default: break;
     }
@@ -550,17 +550,17 @@ CTaxon1::FindTaxIdByName(const string& orgname)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
     if( orgname.empty() )
-        return 0;
+        return ZERO_ENTREZ_ID;
 
     TTaxId id( GetTaxIdByName(orgname) );
 
-    if(id < 1) {
+    if(id < ENTREZ_ID_CONST(1)) {
 
-        TTaxId idu = 0;
+        TTaxId idu = ZERO_ENTREZ_ID;
 
         CTaxon1_req  req;
         CTaxon1_resp resp;
@@ -576,7 +576,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
             }
         }
 
-        if( idu > 0 )
+        if( idu > ZERO_ENTREZ_ID )
             id= idu;
     }
     return id;
@@ -599,11 +599,11 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -2;
+	    return ENTREZ_ID_CONST(-2);
 	}
     }
     if( orgname.empty() ) {
-        return 0;
+        return ZERO_ENTREZ_ID;
     }
     CRef< CTaxon1_info > pQuery( new CTaxon1_info() );
     int nMode = 0;
@@ -626,14 +626,14 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
     if( SendRequest( req, resp ) ) {
         if( resp.IsSearchname() ) {
             // Correct response, return object
-            TTaxId retc = 0;
+            TTaxId retc = ZERO_ENTREZ_ID;
             const CTaxon1_resp::TSearchname& lNm = resp.GetSearchname();
             if( lNm.size() == 0 ) {
-                retc = 0;
+                retc = ZERO_ENTREZ_ID;
             } else if( lNm.size() == 1 ) {
                 retc = lNm.front()->GetTaxid();
             } else {
-                retc = -1;
+                retc = INVALID_ENTREZ_ID;
             }
             // Fill the names list
             if( pNameList ) {
@@ -642,12 +642,12 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
             return retc;
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Searchname" );
-            return -2;
+            return ENTREZ_ID_CONST(-2);
         }
     } else if( GetLastError().find("Nothing found") != string::npos ) {
-        return 0;
+        return ZERO_ENTREZ_ID;
     }
-    return -2;
+    return ENTREZ_ID_CONST(-2);
 }
 
 //----------------------------------------------
@@ -713,7 +713,7 @@ CTaxon1::GetOrgRef(TTaxId tax_id,
 	    return null;
 	}
     }
-    if( tax_id > 0 ) {
+    if( tax_id > ZERO_ENTREZ_ID ) {
         CTaxon2_data* pData = 0;
         if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
             is_species = pData->GetIs_species_level();
@@ -764,14 +764,14 @@ CTaxon1::GetParent(TTaxId id_tax)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return 0;
+	    return ZERO_ENTREZ_ID;
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode && pNode->GetParent() ) {
         return pNode->GetParent()->GetTaxId();
     }
-    return 0;
+    return ZERO_ENTREZ_ID;
 }
 
 //---------------------------------------------
@@ -792,7 +792,7 @@ CTaxon1::GetSpecies(TTaxId id_tax, ESpeciesMode mode)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
@@ -804,33 +804,33 @@ CTaxon1::GetSpecies(TTaxId id_tax, ESpeciesMode mode)
 		if( rank == species_rank )
 		    return pNode->GetTaxId();
 		if( (rank > 0) && (rank < species_rank))
-		    return 0;
+		    return ZERO_ENTREZ_ID;
 		pNode = pNode->GetParent();
 	    }
-	    return 0;
+	    return ZERO_ENTREZ_ID;
 	} else { // Based on flag
 	    CTaxon1Node* pResult = NULL;
 	    CTaxon2_data* pData = NULL;
 	    while( !pNode->IsRoot() ) {
 		if( m_plCache->LookupAndInsert( pNode->GetTaxId(), &pData ) ) {
 		    if( !pData )
-			return -1;
+			return INVALID_ENTREZ_ID;
 		    if( !(pData->IsSetIs_species_level() && pData->GetIs_species_level()) ) {
 			if( pResult ) {
 			    return pResult->GetTaxId();
 			} else {
-			    return 0;
+			    return ZERO_ENTREZ_ID;
 			}
 		    }
 		    pResult = pNode;
 		    pNode = pNode->GetParent();
 		} else { // Node in the lineage not found
-		    return -1;
+		    return INVALID_ENTREZ_ID;
 		}
 	    }
 	}
     }
-    return -1;
+    return INVALID_ENTREZ_ID;
 }
 
 //---------------------------------------------
@@ -846,7 +846,7 @@ CTaxon1::GetGenus(TTaxId id_tax)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
@@ -857,12 +857,12 @@ CTaxon1::GetGenus(TTaxId id_tax)
             if( rank == genus_rank )
                 return pNode->GetTaxId();
             if( (rank > 0) && (rank < genus_rank))
-                return 0;
+                return ZERO_ENTREZ_ID;
             pNode = pNode->GetParent();
         }
-        return 0;
+        return ZERO_ENTREZ_ID;
     }
-    return -1;
+    return INVALID_ENTREZ_ID;
 }
 
 //---------------------------------------------
@@ -878,7 +878,7 @@ CTaxon1::GetSuperkingdom(TTaxId id_tax)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
@@ -889,12 +889,12 @@ CTaxon1::GetSuperkingdom(TTaxId id_tax)
             if( rank == sk_rank )
                 return pNode->GetTaxId();
             if( (rank > 0) && (rank < sk_rank))
-                return 0;
+                return ZERO_ENTREZ_ID;
             pNode = pNode->GetParent();
         }
-        return 0; 
+        return ZERO_ENTREZ_ID;
    }
-    return -1;
+    return INVALID_ENTREZ_ID;
 }
 
 //---------------------------------------------
@@ -944,7 +944,7 @@ CTaxon1::GetAncestorByRank(TTaxId id_tax, const char* rank_name)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
         if( !Init() ) { 
-            return -3;
+            return ENTREZ_ID_CONST(-3);
         }
     }
     if( rank_name ) {
@@ -955,7 +955,7 @@ CTaxon1::GetAncestorByRank(TTaxId id_tax, const char* rank_name)
     }
     SetLastError( "rank not found" );
     ERR_POST_X( 2, GetLastError() );
-    return -2;
+    return ENTREZ_ID_CONST(-2);
 }
 
 TTaxId
@@ -965,7 +965,7 @@ CTaxon1::GetAncestorByRank(TTaxId id_tax, TTaxRank rank_id)
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
         if( !Init() ) { 
-            return -3;
+            return ENTREZ_ID_CONST(-3);
         }
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
@@ -975,12 +975,12 @@ CTaxon1::GetAncestorByRank(TTaxId id_tax, TTaxRank rank_id)
             if( rank == rank_id )
                 return pNode->GetTaxId();
             if( (rank >= 0) && (rank < rank_id))
-                return 0;
+                return ZERO_ENTREZ_ID;
             pNode = pNode->GetParent();
         }
-        return 0;
+        return ZERO_ENTREZ_ID;
     }
-    return -1;
+    return INVALID_ENTREZ_ID;
 }
 
 //---------------------------------------------
@@ -988,7 +988,7 @@ CTaxon1::GetAncestorByRank(TTaxId id_tax, TTaxRank rank_id)
 // Returns: number of children, id list appended with found tax ids
 //          -1 - in case of error
 ///
-TTaxId
+int
 CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
 {
     int count(0);
@@ -1005,7 +1005,7 @@ CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
         CTaxon1_req  req;
         CTaxon1_resp resp;
 
-        req.SetTaxachildren( id_tax );
+        req.SetTaxachildren( ENTREZ_ID_TO(int, id_tax) );
 
         if( SendRequest( req, resp ) ) {
             if( resp.IsTaxachildren() ) {
@@ -1020,7 +1020,7 @@ CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
                     children_ids.push_back( (*i)->GetTaxid() );
                     // Add node to the partial tree
                     CTaxon1Node* pNewNode = new CTaxon1Node(*i);
-                    m_plCache->SetIndexEntry(pNewNode->GetTaxId(), pNewNode);
+                    m_plCache->SetIndexEntry(ENTREZ_ID_TO(int, pNewNode->GetTaxId()), pNewNode);
                     pIt->AddChild( pNewNode );
                 }
             } else { // Internal: wrong respond type
@@ -1219,12 +1219,12 @@ CTaxon1::GetNameClassId( const string& class_name )
 TTaxId
 CTaxon1::Join(TTaxId taxid1, TTaxId taxid2)
 {
-    TTaxId tax_id = 0;
+    TTaxId tax_id = ZERO_ENTREZ_ID;
     CTaxon1Node *pNode1, *pNode2;
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
     if( m_plCache->LookupAndAdd( taxid1, &pNode1 ) && pNode1
@@ -1257,7 +1257,7 @@ CTaxon1::GetAllNames(TTaxId tax_id, TNameList& lNames, bool unique)
     CTaxon1_req  req;
     CTaxon1_resp resp;
 
-    req.SetGetorgnames( tax_id );
+    req.SetGetorgnames( ENTREZ_ID_TO(int, tax_id) );
 
     if( SendRequest( req, resp ) ) {
         if( resp.IsGetorgnames() ) {
@@ -1303,7 +1303,7 @@ CTaxon1::GetAllNamesEx(TTaxId tax_id, list< CRef< CTaxon1_name > >& lNames)
 
     lNames.clear();
 
-    req.SetGetorgnames( tax_id );
+    req.SetGetorgnames( ENTREZ_ID_TO(int, tax_id) );
 
     if( SendRequest( req, resp ) ) {
         if( resp.IsGetorgnames() ) {
@@ -1385,7 +1385,7 @@ CTaxon1::GetTaxId4GI(TGi gi, TTaxId& tax_id_out )
     if( SendRequest( req, resp ) ) {
         if( resp.IsId4gi() ) {
             // Correct response, return object
-            tax_id_out = resp.GetId4gi();
+            tax_id_out = ENTREZ_ID_FROM(TIntId, GI_TO(TIntId, resp.GetId4gi()));
             return true;
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Id4gi" );
@@ -1556,7 +1556,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
         for( TTaxIdList::const_iterator ci = ids_in.begin();
              ci != ids_in.end();
              ++ci ) {
-            map< int, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
+            map< TTaxId, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
             if( nmi == nodeMap.end() ) {
                 if( m_plCache->LookupAndAdd( *ci, &pNode ) ) {
                     if( !tPartTree.GetRoot() ) {
@@ -1564,7 +1564,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
                             ( *static_cast<const CTaxon1Node*>
                               (m_plCache->GetTree().GetRoot()) );
                         tPartTree.SetRoot( pNewParent );
-                        nodeMap.insert( map< int,CTaxon1Node* >::value_type
+                        nodeMap.insert( map< TTaxId, CTaxon1Node* >::value_type
                                         (pNewParent->GetTaxId(), pNewParent) );
                     }
                     if( pNode ) {
@@ -1590,7 +1590,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
                              i != vLin.rend();
                              ++i ) {
                             pNode = *i;
-                            nodeMap.insert( map< int,CTaxon1Node* >::value_type
+                            nodeMap.insert( map< TTaxId, CTaxon1Node* >::value_type
                                             ( pNode->GetTaxId(), pNode ) );
                             pIt->AddChild( pNode );
                             pIt->GoNode( pNode );
@@ -1662,7 +1662,7 @@ CTaxon1::LoadSubtreeEx( TTaxId tax_id, int levels, const ITaxon1Node** ppNode )
         if( levels < 0 ) {
             tax_id = -tax_id;
         }
-        req.SetTaxachildren( tax_id );
+        req.SetTaxachildren(ENTREZ_ID_TO(int, tax_id) );
 
         if( SendRequest( req, resp ) ) {
             if( resp.IsTaxachildren() ) {
@@ -1687,7 +1687,7 @@ CTaxon1::LoadSubtreeEx( TTaxId tax_id, int levels, const ITaxon1Node** ppNode )
                     } else { // Add node to the partial tree
                         if( !m_plCache->Lookup((*i)->GetTaxid(), &pNode) ) {
                             pNode = new CTaxon1Node(*i);
-                            m_plCache->SetIndexEntry(pNode->GetTaxId(), pNode);
+                            m_plCache->SetIndexEntry(ENTREZ_ID_TO(int, pNode->GetTaxId()), pNode);
                             pIt->AddChild( pNode );
                         }
                     }
@@ -1774,7 +1774,7 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
     CDiagAutoPrefix( "Taxon1::GetNodeProperty" );
 
     if( !prop_name.empty() ) {
-        pProp->SetIval1( tax_id );
+        pProp->SetIval1(ENTREZ_ID_TO(int, tax_id) );
         pProp->SetIval2( -1 ); // Get string property by name
         pProp->SetSval( prop_name );
 
@@ -1827,7 +1827,7 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
     CDiagAutoPrefix( "Taxon1::GetNodeProperty" );
 
     if( !prop_name.empty() ) {
-        pProp->SetIval1( tax_id );
+        pProp->SetIval1(ENTREZ_ID_TO(int, tax_id) );
         pProp->SetIval2( -3 ); // Get bool property by name
         pProp->SetSval( prop_name );
 
@@ -1880,7 +1880,7 @@ CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
     CDiagAutoPrefix( "Taxon1::GetNodeProperty" );
 
     if( !prop_name.empty() ) {
-        pProp->SetIval1( tax_id );
+        pProp->SetIval1(ENTREZ_ID_TO(int, tax_id) );
         pProp->SetIval2( -2 ); // Get int property by name
         pProp->SetSval( prop_name );
 
@@ -1934,7 +1934,7 @@ CTaxon1::GetInheritedPropertyDefines( const string& prop_name,
     CDiagAutoPrefix( "Taxon1::GetInheritedPropertyDefines" );
 
     if( !prop_name.empty() ) {
-        pProp->SetIval1( -root );
+        pProp->SetIval1(ENTREZ_ID_TO(int, -root) );
         pProp->SetIval2( -4 ); // Get inherited property defines by name
         pProp->SetSval( prop_name );
 
@@ -2268,10 +2268,10 @@ CTaxon1::GetMaxTaxId( void )
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
 	if( !Init() ) { 
-	    return -1;
+	    return INVALID_ENTREZ_ID;
 	}
     }
-    return m_plCache->m_nMaxTaxId;
+    return ENTREZ_ID_FROM(unsigned, m_plCache->m_nMaxTaxId);
 }
 
 //---------------------------------------------------
@@ -2330,9 +2330,9 @@ CTaxon1::GetDisplayCommonName( TTaxId tax_id, string& disp_name_out )
 // 	if( pNode->GetRank() == m_plCache->GetSubspeciesRank() ) {
 	    // Get corresponding species
 	    TTaxId species_id = GetSpecies(tax_id);
-	    if( species_id < 0 ) {
+	    if( species_id < ZERO_ENTREZ_ID ) {
 		return false;
-	    } else if( species_id > 0 && species_id != tax_id ) {
+	    } else if( species_id > ZERO_ENTREZ_ID && species_id != tax_id ) {
 		lNames.clear();
 		cn = m_plCache->GetPreferredCommonNameClass();
 		if( GetAllNamesEx(species_id, lNames) ) {

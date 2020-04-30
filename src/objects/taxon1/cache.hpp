@@ -120,7 +120,7 @@ public:
     CTreeCont& GetTree() { return m_tPartTree; }
     const CTreeCont& GetTree() const { return m_tPartTree; }
 
-    void  SetIndexEntry( TTaxId id, CTaxon1Node* pNode );
+    void  SetIndexEntry( int id, CTaxon1Node* pNode );
 
 private:
     friend class CTaxon1Node;

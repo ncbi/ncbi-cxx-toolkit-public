@@ -85,7 +85,7 @@ CLocalTaxon::~CLocalTaxon()
 }
 
 CLocalTaxon::STaxidNode::STaxidNode()
-    : taxid(-1)
+    : taxid(INVALID_ENTREZ_ID)
     , is_valid(false)
     , parent(s_InvalidNode)
     , genetic_code(-1)
@@ -111,7 +111,7 @@ CLocalTaxon::TTaxid CLocalTaxon::GetParent(TTaxid taxid)
     if (m_SqliteConn.get()) {
         x_Cache(taxid);
         TNodeRef parent = m_Nodes.find(taxid)->second.parent;
-        return parent == s_InvalidNode ? 0 : parent->first;
+        return parent == s_InvalidNode ? ZERO_ENTREZ_ID : parent->first;
     } else {
         return m_TaxonConn->GetParent(taxid);
     }
@@ -203,13 +203,13 @@ void s_RemoveTaxon(COrg_ref& org)
 void CLocalTaxon::LookupMerge(objects::COrg_ref& org)
 {
     if (m_SqliteConn.get()) {
-        int taxid = 0;
+        TTaxId taxid = ZERO_ENTREZ_ID;
         if( ! org.IsSetDb() ) {
             taxid = GetTaxIdByOrgRef(org);
         } else {
             taxid = org.GetTaxId();
         }
-        if ( taxid <=0 ) {
+        if ( taxid <= ZERO_ENTREZ_ID ) {
             NCBI_THROW(CException, eUnknown, "s_UpdateOrgRef: organism does not contain tax id or has unequivocal registered taxonomy name");
         }
 
@@ -254,7 +254,7 @@ CLocalTaxon::TTaxid CLocalTaxon::GetAncestorByRank(TTaxid taxid, const string &r
                 return ancestor->first;
             }
         }
-        return 0;
+        return ZERO_ENTREZ_ID;
     } else {
         return m_TaxonConn->GetAncestorByRank(taxid, rank.c_str());
     }
@@ -282,7 +282,7 @@ CLocalTaxon::TLineage CLocalTaxon::GetLineage(TTaxid taxid)
             lineage.push_back(ancestor->first);
         }
     } else {
-        for (TTaxid ancestor = taxid; ancestor > 0;
+        for (TTaxid ancestor = taxid; ancestor > ZERO_ENTREZ_ID;
              ancestor = m_TaxonConn->GetParent(ancestor))
         {
             lineage.push_back(ancestor);
@@ -309,11 +309,11 @@ CLocalTaxon::TTaxid CLocalTaxon::Join(TTaxid taxid1, TTaxid taxid2)
 
 CLocalTaxon::TTaxid CLocalTaxon::GetTaxIdByName(const string& orgname)
 {
-    TTaxid taxid = -1;
+    TTaxid taxid = INVALID_ENTREZ_ID;
     if (m_SqliteConn.get()) {
         x_Cache(orgname);
         auto& taxnode = m_ScientificNameIndex.find(orgname)->second;
-        taxid =  taxnode.is_valid ? taxnode.taxid : -1;
+        taxid =  taxnode.is_valid ? taxnode.taxid : INVALID_ENTREZ_ID;
     } else {
         taxid = m_TaxonConn->GetTaxIdByName(orgname);
     }
@@ -344,7 +344,7 @@ CLocalTaxon::TScientificNameRef CLocalTaxon::x_Cache(const string& orgname)
         stmt.Bind(1, orgname);
         stmt.Execute();
         if  (stmt.Step()) {
-            auto taxid = stmt.GetInt(0);
+            TTaxId taxid = ENTREZ_ID_FROM(int, stmt.GetInt(0));
             auto it2 = x_Cache(taxid);
             it = m_ScientificNameIndex.insert(TScientificNameIndex::value_type(orgname,  it2->second  )).first;
         }
@@ -370,7 +370,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
     }
 
     if (it == m_Nodes.end()) {
-        int parent = -1;
+        TTaxId parent = INVALID_ENTREZ_ID;
         //
         //  Note that we are unconditionally recording (so far) unknown input taxid here
         //  thereby caching all successful and unsuccessful queries
@@ -382,7 +382,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
                   "SELECT scientific_name, rank, parent, genetic_code "
                   "FROM TaxidInfo "
                   "WHERE taxid = ? ");
-             stmt.Bind(1, taxid);
+             stmt.Bind(1, ENTREZ_ID_TO(TIntId, taxid));
              stmt.Execute();
              if  (stmt.Step()) {
                  it->second.taxid  = taxid;
@@ -392,11 +392,11 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
                  if (it->second.rank.empty()) {
                      it->second.rank = "no rank";
                  }
-                 parent = stmt.GetInt(2);
+                 parent = ENTREZ_ID_FROM(int, stmt.GetInt(2));
                  it->second.genetic_code = stmt.GetInt(3);
              }
        }}
-       if (parent > 1) {
+       if (parent > ENTREZ_ID_CONST(1)) {
            // Recursively get information for parent; no need for Org_ref, even
            // / if it was requested for child node
            it->second.parent = x_Cache(parent);
@@ -409,7 +409,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
              "SELECT org_ref_asn "
              "FROM TaxidInfo "
              "WHERE taxid = ? ");
-        stmt.Bind(1, taxid);
+        stmt.Bind(1, ENTREZ_ID_TO(TIntId, taxid));
         stmt.Execute();
         stmt.Step();
         string org_ref_asn = stmt.GetString(0);
