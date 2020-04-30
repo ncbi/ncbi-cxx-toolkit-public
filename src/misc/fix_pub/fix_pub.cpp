@@ -239,12 +239,12 @@ void SplitMedlineEntry(CPub_equiv::Tdata& medlines)
 
     CPub& pub = *medlines.front();
     CMedline_entry& medline = pub.SetMedline();
-    if (!medline.IsSetCit() && medline.IsSetPmid() && medline.GetPmid() < 0) {
+    if (!medline.IsSetCit() && medline.IsSetPmid() && medline.GetPmid() < ZERO_ENTREZ_ID) {
         return;
     }
 
     CRef<CPub> pmid;
-    if (medline.GetPmid() > 0) {
+    if (medline.GetPmid() > ZERO_ENTREZ_ID) {
         pmid.Reset(new CPub);
         pmid->SetPmid(medline.GetPmid());
     }
@@ -905,7 +905,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
         pub_list.splice(pub_list.end(), medlines);
     }
 
-    long oldpmid = 0;
+    TEntrezId oldpmid = ZERO_ENTREZ_ID;
     if (!pmids.empty()) {
 
         oldpmid = pmids.front()->GetPmid();
@@ -920,7 +920,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
         pmids.resize(1);
     }
 
-    long oldmuid = 0;
+    TEntrezId oldmuid = ZERO_ENTREZ_ID;
     if (!muids.empty()) {
 
         oldmuid = muids.front()->GetMuid();
@@ -948,20 +948,20 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
         CRef<CPub> new_pub(new CPub);
         new_pub->SetArticle(*cit_art);
 
-        long pmid = 0;
+        TEntrezId pmid = ZERO_ENTREZ_ID;
         try {
             CMLAClient mla;
-            pmid = mla.AskCitmatchpmid(*new_pub);
+            pmid = ENTREZ_ID_FROM(int, mla.AskCitmatchpmid(*new_pub));
         }
         catch (exception &) {
             // pmid == 0
         }
 
-        if (pmid) {
+        if ( pmid != ZERO_ENTREZ_ID ) {
 
-            PrintPub(*cit_art, true, false, pmid, m_err_log);
+            PrintPub(*cit_art, true, false, ENTREZ_ID_TO(long, pmid), m_err_log);
 
-            if (oldpmid > 0 && oldpmid != pmid) {
+            if (oldpmid > ZERO_ENTREZ_ID && oldpmid != pmid) {
                 // already had a pmid
                 ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, err_Reference, err_Reference_PmidMissmatch,
                     "OldPMID=" << oldpmid << " doesn't match lookup (" << pmid << "). Keeping lookup.");
@@ -998,7 +998,7 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
                     else {
                         pmids.clear();
 
-                        PrintPub(*cit_art, false, true, pmid, m_err_log);
+                        PrintPub(*cit_art, false, true, ENTREZ_ID_TO(long, pmid), m_err_log);
                         pub_list.splice(pub_list.end(), cit_arts);
                     }
 
@@ -1028,14 +1028,14 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
             return;
         }
 
-        PrintPub(*cit_art, false, false, oldpmid, m_err_log);
+        PrintPub(*cit_art, false, false, ENTREZ_ID_TO(long, oldpmid), m_err_log);
         PropagateInPress(inpress, *cit_art);
         pub_list.splice(pub_list.end(), cit_arts);
 
         return;
     }
 
-    if (oldpmid) {
+    if (oldpmid != ZERO_ENTREZ_ID) {
         // have a pmid but no cit-art
 
         CRef<CCit_art> new_cit_art = FetchPubPmId(oldpmid);
@@ -1057,10 +1057,10 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
             "Cant find article for pmid [" << oldpmid << "]");
     }
 
-    if (oldpmid > 0) {
+    if (oldpmid > ZERO_ENTREZ_ID) {
         pub_list.splice(pub_list.end(), pmids);
     }
-    else if (oldmuid > 0) {
+    else if (oldmuid > ZERO_ENTREZ_ID) {
         pub_list.splice(pub_list.end(), muids);
     }
 }
@@ -1089,17 +1089,17 @@ void CPubFixing::FixPub(CPub& pub)
             return;
         }
 
-        int pmid = 0;
+        TEntrezId pmid = ZERO_ENTREZ_ID;
         try {
             CMLAClient mla;
-            pmid = mla.AskCitmatchpmid(pub);
+            pmid = ENTREZ_ID_FROM(int, mla.AskCitmatchpmid(pub));
         }
         catch (exception &) {
             // pmid == 0;
         }
 
-        if (pmid > 0) {
-            PrintPub(cit_art, true, false, pmid, m_err_log);
+        if (pmid > ZERO_ENTREZ_ID) {
+            PrintPub(cit_art, true, false, ENTREZ_ID_TO(long, pmid), m_err_log);
             if (m_replace_cit) {
                 CRef<CCit_art> new_cit_art = FetchPubPmId(pmid);
 
@@ -1119,13 +1119,13 @@ void CPubFixing::FixPub(CPub& pub)
                         pub.SetEquiv().Set().push_back(new_pub);
                     }
                     else {
-                        PrintPub(cit_art, false, true, pmid, m_err_log);
+                        PrintPub(cit_art, false, true, ENTREZ_ID_TO(long, pmid), m_err_log);
                         MedlineToISO(cit_art);
                     }
                 }
             }
             else {
-                PrintPub(cit_art, false, false, pmid, m_err_log);
+                PrintPub(cit_art, false, false, ENTREZ_ID_TO(long, pmid), m_err_log);
                 MedlineToISO(cit_art);
             }
         }
@@ -1140,10 +1140,10 @@ void CPubFixing::FixPub(CPub& pub)
     }
 }
 
-CRef<CCit_art> CPubFixing::FetchPubPmId(int pmid)
+CRef<CCit_art> CPubFixing::FetchPubPmId(TEntrezId pmid)
 {
     CRef<CCit_art> cit_art;
-    if (pmid < 0)
+    if (pmid < ZERO_ENTREZ_ID)
         return cit_art;
 
     CRef<CPub> pub;

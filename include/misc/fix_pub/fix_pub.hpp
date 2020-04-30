@@ -61,7 +61,7 @@ public:
     void FixPub(CPub& pub);
     void FixPubEquiv(CPub_equiv& pub_equiv);
 
-    static CRef<CCit_art> FetchPubPmId(int pmid);
+    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid);
     static string GetErrorId(int code, int subcode);
 
 private:
