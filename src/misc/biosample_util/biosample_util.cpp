@@ -1480,8 +1480,8 @@ UpdateBiosourceFromBiosample(
             }
         }
         auto existingTaxId = existingOrg.GetTaxId();
-        if (existingTaxId > 0) {
-            if (!newBiosource.IsSetOrg()  ||  newBiosource.GetOrg().GetTaxId() == 0) {
+        if (existingTaxId > ZERO_ENTREZ_ID) {
+            if (!newBiosource.IsSetOrg()  ||  newBiosource.GetOrg().GetTaxId() == ZERO_ENTREZ_ID) {
                 newBiosource.SetOrg().SetTaxId(existingTaxId);
             }
         }
@@ -1563,7 +1563,7 @@ UpdateBiosourceFromBiosample(
         {{
             auto fromDiff = sGetDiffByFieldName(diffs, "Tax ID");
             auto existingTaxId = existingOrg.GetTaxId();
-            if (fromDiff  &&  existingTaxId > 0) {
+            if (fromDiff  &&  existingTaxId > ZERO_ENTREZ_ID) {
                 newBiosource.SetOrg().SetTaxId(existingTaxId);
             }
         }}
