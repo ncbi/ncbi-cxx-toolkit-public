@@ -263,7 +263,7 @@ int CTestApplication::Run(void)
 
     // Create one container and tree:
 	try{
-		int tax_id = tax.GetTaxIdByName("Mouse");
+		TTaxId tax_id = tax.GetTaxIdByName("Mouse");
 		cout << tax_id << endl;
 
 		CBioTreeContainer btrc;
@@ -288,10 +288,10 @@ int CTestApplication::Run(void)
 
     // Create one contanier with two trees in it, and a forest:
 	try{
-		int tax_id1 = tax.GetTaxIdByName("Mouse");
+		TTaxId tax_id1 = tax.GetTaxIdByName("Mouse");
 		cout << tax_id1 << endl;
 
-	    int tax_id2 = tax.GetTaxIdByName("Rattus rattus");
+	    TTaxId tax_id2 = tax.GetTaxIdByName("Rattus rattus");
 		cout << tax_id2 << endl;
 
         //

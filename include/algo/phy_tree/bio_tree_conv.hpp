@@ -604,7 +604,7 @@ public:
 	EAction Execute(const TITaxon1Node* pNode)
 	{
 
-        TBioTreeNodeId uid = pNode->GetTaxId();
+        TBioTreeNodeId uid = ENTREZ_ID_TO(int, pNode->GetTaxId());
 
         CRef<TCNode> cnode(new TCNode);
         cnode->SetId(uid);
@@ -613,10 +613,10 @@ public:
             m_MaxUID = (int)uid;
         }
 
-		vector<int>::size_type psize = m_Parents.size();
+		vector<TTaxId>::size_type psize = m_Parents.size();
 		if (psize != 0) {
-			int parent_tax_id = m_Parents[psize - 1];
-			cnode->SetParent(parent_tax_id);
+			TTaxId parent_tax_id = m_Parents[psize - 1];
+			cnode->SetParent(ENTREZ_ID_TO(int, parent_tax_id));
 		}
 
 
@@ -734,7 +734,7 @@ public:
 private:
 	TBioTreeContainer*  m_TreeContainer;
     TNodeList*          m_NodeList;
-	vector<int>         m_Parents; //<! Stack of parent tax ids
+	vector<TTaxId>      m_Parents; //<! Stack of parent tax ids
     int                 m_MaxUID;  //<! Maximum node ID
 };
 
@@ -783,7 +783,7 @@ public:
 
   void operator()(TBioTreeContainer&  tree_container,
 		  TTaxon1&            tax, 
-		  int                 tax_id)
+          TTaxId              tax_id)
   {
          SetupFeatureDictionary(tree_container);
 
