@@ -737,7 +737,7 @@ int CWGSTestApp::Run(void)
     }
     if ( args["gi-range"] ) {
         pair<TGi, TGi> gi_range = wgs_db.GetNucGiRange();
-        if ( gi_range.second ) {
+        if ( gi_range.second != ZERO_GI ) {
             out << "Nucleotide GI range: "
                 << gi_range.first << " - " << gi_range.second
                 << NcbiEndl;
@@ -746,7 +746,7 @@ int CWGSTestApp::Run(void)
             out << "Nucleotide GI range is empty" << NcbiEndl;
         }
         gi_range = wgs_db.GetProtGiRange();
-        if ( gi_range.second ) {
+        if ( gi_range.second != ZERO_GI ) {
             out << "Protein GI range: "
                 << gi_range.first << " - " << gi_range.second
                 << NcbiEndl;
@@ -757,7 +757,7 @@ int CWGSTestApp::Run(void)
     }
     bool check_non_empty_lookup = args["check_non_empty_lookup"];
     if ( args["gi"] ) {
-        TGi gi = TIntId(args["gi"].AsInt8());
+        TGi gi = GI_FROM(TIntId, args["gi"].AsIntId());
         CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
         if ( resolver ) {
             CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(gi);
