@@ -169,7 +169,7 @@ CBlastDBCmdApp::x_GetOids(const string & id, vector<int> & oids)
 	if(m_BlastDb->GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5) {
 		acc = s_PreProcessAccessionsForDBv5(id);
 	}
-	Int8 num_id = NStr::StringToNumeric<Int8>(acc, NStr::fConvErr_NoThrow);
+	TGi num_id = NStr::StringToNumeric<TGi>(acc, NStr::fConvErr_NoThrow);
 	if(!errno) {
 		int gi_oid = -1;
 		m_BlastDb->GiToOidwFilterCheck(num_id, gi_oid);
@@ -365,7 +365,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt)
     m_BlastDb->AccessionsToOids(ids, oids);
     for(unsigned i=0; i < ids.size(); i++) {
     	if(oids[i] == kSeqDBEntryNotFound) {
-    		Int8 num_id = NStr::StringToNumeric<Int8>(ids[i], NStr::fConvErr_NoThrow);
+    		TGi num_id = NStr::StringToNumeric<TGi>(ids[i], NStr::fConvErr_NoThrow);
     		if(!errno) {
     			int gi_oid = -1;
     			m_BlastDb->GiToOidwFilterCheck(num_id, gi_oid);
