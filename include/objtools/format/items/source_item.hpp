@@ -58,7 +58,7 @@ class IFormatter;
 class NCBI_FORMAT_EXPORT CSourceItem : public CFlatItem
 {
 public:
-    typedef int TTaxid;
+    typedef TTaxId TTaxid;
 
     static const TTaxid kInvalidTaxid;
 
