@@ -374,7 +374,7 @@ void CEntrez2ClientApp::x_GetLinkCounts(CEntrez2Client& client,
     CEntrez2_id req;
 
     req.SetDb(CEntrez2_db_id(db));
-    req.SetUid(NStr::StringToInt(query));
+    req.SetUid(NStr::StringToNumeric<TEntrezId>(query));
 
     CRef<CEntrez2_link_count_list> reply = client.AskGet_link_counts(req);
 

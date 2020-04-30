@@ -143,7 +143,7 @@ CEntrez2Client::GetNeighborCounts(TUid query_uid,
 {
     CEntrez2_id uid;
     uid.SetDb() = CEntrez2_db_id(db);
-    uid.SetUid(query_uid);
+    uid.SetUid(ENTREZ_ID_FROM(TIntId, query_uid));
     return AskGet_link_counts(uid);
 }
 
