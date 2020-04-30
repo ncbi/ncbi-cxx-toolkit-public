@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(Test_GP_9113)
     src.SetOrg().SetTaxname("a");
     CBioSource smpl;
     smpl.SetOrg().SetTaxname("a");
-    smpl.SetOrg().SetTaxId(123);
+    smpl.SetOrg().SetTaxId(ENTREZ_ID_CONST(123));
 
     try {
         src.UpdateWithBioSample(smpl, true);
