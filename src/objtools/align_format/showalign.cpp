@@ -3492,8 +3492,8 @@ void CDisplaySeqalign::x_DisplayBl2SeqLink(CNcbiOstream& out)
     TGi query_gi = FindGi(query_handle.GetBioseqCore()->GetId());
     TGi subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
 
-    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",query_gi);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject",subject_gi);
+    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",GI_TO(TIntId, query_gi));
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject", GI_TO(TIntId, subject_gi));
 
     out << url_link << "\n";
 }

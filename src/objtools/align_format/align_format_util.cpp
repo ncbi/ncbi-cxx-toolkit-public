@@ -134,7 +134,7 @@ s_GetBlastScore(const container&  scoreList,
             }            
             else if(NStr::StartsWith(id.GetStr(),k_GiPrefix)) { //will be used when switch to 64bit GIs
                 string strGi = NStr::Replace(id.GetStr(),k_GiPrefix,"");
-                TGi gi = NStr::StringToInt8(strGi);
+                TGi gi = NStr::StringToNumeric<TGi>(strGi);
                 use_this_gi.push_back(gi);
             }
         }        
@@ -3523,7 +3523,7 @@ static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURL
     }
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string url_link = CAlignFormatUtil::MapTemplate(urlTemplate,"db",db);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",seqUrlInfo->gi);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi", GI_TO(TIntId, seqUrlInfo->gi));
     url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);     
@@ -3768,7 +3768,7 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
         seqLink = CAlignFormatUtil::MapTemplate(linkTmpl,"url",linkURL);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
-        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi); 
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi", GI_TO(TIntId, seqUrlInfo->gi));
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"target","EntrezView");    
         if(seqUrlInfo->addCssInfo) {
             seqLink = CAlignFormatUtil::MapTemplate(seqLink,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline));            
@@ -3832,7 +3832,7 @@ string  CAlignFormatUtil::GetGraphiscLink(SSeqURLInfo *seqUrlInfo,
     linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
          
 	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);			
-	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",seqUrlInfo->gi);
+	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi", GI_TO(TIntId, seqUrlInfo->gi));
     string linkTitle = "Show alignment to <@seqid@> in <@custom_report_type@>";	
     string link_loc;
     if(!hspRange) {
@@ -4219,7 +4219,7 @@ s_GetBlastScore(const container&  scoreList,
             }
             else if(NStr::StartsWith(id.GetStr(),k_GiPrefix)) { //will be used when switch to 64bit GIs
                 string strGi = NStr::Replace(id.GetStr(),k_GiPrefix,"");
-                TGi gi = NStr::StringToInt8(strGi);
+                TGi gi = NStr::StringToNumeric<TGi>(strGi);
                 use_this_gi.push_back(gi);
             }
         }        
@@ -4247,7 +4247,7 @@ void CAlignFormatUtil::GetUseThisSequence(const CSeq_align& aln,list<TGi>& use_t
                 ITERATE(CUser_field::TData::TStrs, acc_iter, strs) {
                     if(NStr::StartsWith(*acc_iter,k_GiPrefix)) { //will be used when switch to 64bit GIs
                         string strGi = NStr::Replace(*acc_iter,k_GiPrefix,"");
-                        TGi gi = NStr::StringToInt8(strGi);
+                        TGi gi = NStr::StringToNumeric<TGi>(strGi);
                         use_this_gi.push_back(gi);
                     }                        
                 }
@@ -4453,7 +4453,7 @@ list<TGi> CAlignFormatUtil::StringGiToNumGiList(list<string> &use_this_seq)
     ITERATE(list<string>, iter_seq, use_this_seq){        
         bool isGi = false;
         string strGI = s_UseThisSeqToTextSeqID( *iter_seq, isGi);
-        if(isGi) use_this_gi.push_back(NStr::StringToInt8(strGI));        
+        if(isGi) use_this_gi.push_back(NStr::StringToNumeric<TGi>(strGI));        
     }    
     return use_this_gi;
 }
@@ -4469,7 +4469,7 @@ bool CAlignFormatUtil::MatchSeqInSeqList(TGi cur_gi, CRef<CSeq_id> &seqID, list<
     ITERATE(list<string>, iter_seq, use_this_seq){        
         isGi = false;
         string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGi);
-        if((isGi && cur_gi == NStr::StringToInt8((useThisSeq))) || (!isGi && curSeqID == useThisSeq)){
+        if((isGi && cur_gi == NStr::StringToNumeric<TGi>((useThisSeq))) || (!isGi && curSeqID == useThisSeq)){
             found = true;            
             break;
          }
@@ -4554,7 +4554,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                 ITERATE(list<string>, iter_seq, use_this_seq){                    
                     bool isGi = false;
                     string useThisSeq = s_UseThisSeqToTextSeqID( *iter_seq, isGi);
-                    if((isGi && cur_gi == NStr::StringToInt8((useThisSeq))) || (!isGi && curSeqID == useThisSeq)){
+                    if((isGi && cur_gi == NStr::StringToNumeric<TGi>((useThisSeq))) || (!isGi && curSeqID == useThisSeq)){
                         found = true;
                         break;
                     }
