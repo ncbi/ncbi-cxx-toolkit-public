@@ -291,13 +291,13 @@ void CAgpconvertApplication::Init(void)
 }
 
 
-static int s_GetTaxid(const COrg_ref& org_ref) {
-    int taxid = 0;
+static TTaxId s_GetTaxid(const COrg_ref& org_ref) {
+    TTaxId taxid = ZERO_ENTREZ_ID;
     int count = 0;
     ITERATE (COrg_ref::TDb, db_tag, org_ref.GetDb()) {
         if ((*db_tag)->GetDb() == "taxon") {
             count++;
-            taxid = (*db_tag)->GetTag().GetId();
+            taxid = ENTREZ_ID_FROM(CObject_id::TId, (*db_tag)->GetTag().GetId());
         }
     }
     if (count != 1) {
@@ -795,28 +795,28 @@ void CAgpconvertApplication::x_HandleTaxArgs( CRef<CSeqdesc> source_desc )
     }
 
     if (args["nt"]) {
-        int inp_taxid = args["nt"].AsInteger();
+        TTaxId inp_taxid = ENTREZ_ID_FROM(int, args["nt"].AsInteger());
         nt_result = cl.GetById(inp_taxid);
         if (!nt_result->GetIs_species_level()) {
-            throw runtime_error("taxid " + NStr::IntToString(inp_taxid)
+            throw runtime_error("taxid " + NStr::NumericToString(inp_taxid)
                 + " is not species-level");
         }
         nt_result->SetOrg().ResetSyn();  // lose any synonyms
-        int db_taxid = s_GetTaxid(nt_result->GetOrg());
+        TTaxId db_taxid = s_GetTaxid(nt_result->GetOrg());
         if (db_taxid != inp_taxid) {
             cerr << "** Warning: taxid returned by server ("
-                << NStr::IntToString(db_taxid)
+                << NStr::NumericToString(db_taxid)
                 << ") differs from that supplied with -nt ("
                 << inp_taxid << ")" << endl;
         }
         if (args["on"]) {
-            int on_taxid = s_GetTaxid(on_result->GetOrg());
+            TTaxId on_taxid = s_GetTaxid(on_result->GetOrg());
             if (on_taxid != db_taxid) {
                 throw runtime_error("taxid from name lookup ("
-                    + NStr::IntToString(on_taxid)
+                    + NStr::NumericToString(on_taxid)
                     + ") differs from that from "
                     + "taxid lookup ("
-                    + NStr::IntToString(db_taxid)
+                    + NStr::NumericToString(db_taxid)
                     + ")");
             }
         }
