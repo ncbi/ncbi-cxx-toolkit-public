@@ -13,7 +13,7 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/loc_edit.hpp>
 #include <objects/submit/Seq_submit.hpp>
-
+#include <objtools/validator/tax_validation_and_cleanup.hpp>
 
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
@@ -95,6 +95,11 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     if (flags.find('s') != string::npos)
     {
         CCleanup::AddLowQualityException(h_entry);
+    }
+
+    if (flags.find('T') != string::npos) {
+        validator::CTaxValidationAndCleanup tval;
+        tval.DoTaxonomyUpdate(h_entry, true);
     }
 }
 

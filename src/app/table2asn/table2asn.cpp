@@ -538,6 +538,9 @@ int CTbl2AsnApp::Run(void)
         m_context.m_postprocess_pubs = args["postprocess-pubs"].AsBoolean();
 
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
+    if (m_context.m_RemoteTaxonomyLookup) {
+        m_context.m_cleanup += 'T';
+    }
 
     if (args["a"])
     {
