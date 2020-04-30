@@ -340,7 +340,7 @@ void CMakeBlastDBApp::x_AddFasta(CNcbiIstream & data)
     m_DB->AddFasta(data);
 }
 
-static int s_GetTaxId(const CBioseq & bio)
+static TTaxId s_GetTaxId(const CBioseq & bio)
 {
     CSeq_entry * p_ptr = bio.GetParentEntry();
     while (p_ptr != NULL)
@@ -361,7 +361,7 @@ static int s_GetTaxId(const CBioseq & bio)
 
         p_ptr = p_ptr->GetParentEntry();
     }
-    return 0;
+    return ZERO_ENTREZ_ID;
 }
 
 static bool s_GenerateTitle(const CBioseq & bio)
@@ -501,8 +501,8 @@ public:
             }
 
             if (0 == m_bio->GetTaxId()) {
-                int taxid = s_GetTaxId(*m_bio);
-                if (0 != taxid) {
+                TTaxId taxid = s_GetTaxId(*m_bio);
+                if (ZERO_ENTREZ_ID != taxid) {
                     CRef<CSeqdesc> des(new CSeqdesc);
                     des->SetOrg().SetTaxId(taxid);
                     m_bio->SetDescr().Set().push_back(des);
