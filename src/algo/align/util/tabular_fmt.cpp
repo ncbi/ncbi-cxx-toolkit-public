@@ -1536,10 +1536,10 @@ void CTabularFormatter_OrgName::Print(CNcbiOstream& ostr,
         m_Taxon1->Init(100000);
     }
 
-    int taxid = 
+    TTaxId taxid = ENTREZ_ID_FROM(int,
         (int)m_Scores->GetScore(align,
                                 m_Row == 0 ? "query_taxid"
-                                : "subject_taxid");
+                                : "subject_taxid"));
 
     switch (m_Field) {
     case eSpecies:
