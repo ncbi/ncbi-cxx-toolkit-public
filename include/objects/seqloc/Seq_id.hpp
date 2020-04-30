@@ -150,6 +150,10 @@ public:
     ///   Numeric value.
     CSeq_id(E_Choice the_type,
             TIntId   int_seq_id);
+#ifdef NCBI_STRICT_GI
+    CSeq_id(E_Choice the_type,
+            TGi      gi);
+#endif
 
     /// Construct a Seq-id from a flat representation.
     /// @param the_type

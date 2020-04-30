@@ -2460,6 +2460,13 @@ CSeq_id::CSeq_id(E_Choice the_type, TIntId the_id)
     Set(the_type, the_id);
 }
 
+#ifdef NCBI_STRICT_GI
+CSeq_id::CSeq_id(E_Choice the_type, TGi gi)
+{
+    Set(the_type, GI_TO(TIntId, gi));
+}
+#endif
+
 CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id)
 {
 // see CSeq_id::Set below, it prohibits lcl|0, but allows gi|0
@@ -2487,7 +2494,7 @@ CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id)
         break;
     }
     case e_Gi:
-        SetGi(the_id);
+        SetGi(GI_FROM(TIntId, the_id));
         break;
     default:
         NCBI_THROW(CSeqIdException, eFormat,
@@ -2537,8 +2544,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
 #ifdef NCBI_INT8_GI
         if ( the_type == e_Gi ) {
             try {
-                TIntId gi = NStr::StringToNumeric<TIntId>(acc);
-                if ( gi > 0 ) {
+                TGi gi = NStr::StringToNumeric<TGi>(acc);
+                if ( gi > ZERO_GI ) {
                     SetGi(gi);
                     return *this;
                 }
