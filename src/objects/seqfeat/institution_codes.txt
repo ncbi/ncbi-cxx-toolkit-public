@@ -275,6 +275,7 @@ ARKH	s	Chingan State Nature Reserve
 ARM	s	County Museum			
 ARMFN	s	Armagh Field Naturalists' Society			
 ARRI	s	Ayurveda Regional Research Institute			
+ARRIAM	c	All-Russia Research Institute for Agricultural Microbiology			
 ARSEF	c	ARS Collection of Entomopathogenic Fungi			
 ARTH	s	Artvin Coruh University			
 ARUN	s	Botanical Survey of India, Arunachal Pradesh Regional Centre			

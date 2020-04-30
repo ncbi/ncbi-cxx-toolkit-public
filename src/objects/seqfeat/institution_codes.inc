@@ -308,6 +308,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ARM\ts\tCounty Museum\t\t\t",
 "ARMFN\ts\tArmagh Field Naturalists' Society\t\t\t",
 "ARRI\ts\tAyurveda Regional Research Institute\t\t\t",
+"ARRIAM\tc\tAll-Russia Research Institute for Agricultural Microbiology\t\t\t",
 "ARSEF\tc\tARS Collection of Entomopathogenic Fungi\t\t\t",
 "ARTH\ts\tArtvin Coruh University\t\t\t",
 "ARUN\ts\tBotanical Survey of India, Arunachal Pradesh Regional Centre\t\t\t",
