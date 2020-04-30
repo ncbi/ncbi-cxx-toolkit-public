@@ -41,8 +41,12 @@
 #ifdef HAVE_LIBPROTOBUF
 #  include <google/protobuf/message.h>
 #  ifndef PROTOBUF_VERSION
-#    include <google/protobuf/port_def.inc>
-#    define HAVE_PROTOBUF_PORT_UNDEF 1
+#    ifdef GOOGLE_PROTOBUF_VERSION
+#      define PROTOBUF_VERSION GOOGLE_PROTOBUF_VERSION
+#    else
+#      include <google/protobuf/port_def.inc>
+#      define HAVE_PROTOBUF_PORT_UNDEF 1
+#    endif
 #  endif
 #  if PROTOBUF_VERSION >= 3002000
 #    define NCBI_GRPC_GET_BYTE_SIZE(msg) ((msg).ByteSizeLong())
