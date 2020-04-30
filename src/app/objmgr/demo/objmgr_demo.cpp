@@ -788,7 +788,7 @@ void CDemoApp::GetIds(CScope& scope, const CSeq_id_Handle& idh)
     }
     if ( args["get_acc"] ) {
         if ( args["gi"] ) {
-            TGi gi = args["gi"].AsGi();
+            TGi gi = GI_FROM(TIntId, args["gi"].AsGi());
             NcbiCout << "Acc: "
                      << sequence::GetAccessionForGi(gi, scope, sequence::eWithoutAccessionVersion)
                      << NcbiEndl;
@@ -857,7 +857,7 @@ int CDemoApp::Run(void)
     CRef<CSeq_id> id;
     CRef<CSeq_loc> range_loc;
     if ( args["gi"] ) {
-        TGi gi = args["gi"].AsGi();
+        TGi gi = GI_FROM(TIntId, args["gi"].AsGi());
         id.Reset(new CSeq_id);
         id->SetGi(gi);
     }
