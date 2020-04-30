@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(Test_MergeNonPubmedPubIds)
     CRef<CArticleId> art_id(new CArticleId);
 
     // PMID will not be merged
-    static const int PMID = 2626;
+    static const TEntrezId PMID = ENTREZ_ID_CONST(2626);
     art_id->SetPubmed().Set(PMID);
     old_art.SetIds().Set().push_back(art_id);
 
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitMedlineEntry)
     CRef<CPub> pub(new CPub);
 
     // Set medline
-    static const int TEST_PMID = 1;
+    static const TEntrezId TEST_PMID = ENTREZ_ID_CONST(1);
     pub->SetMedline().SetCit().SetAuthors().SetNames().SetMl().push_back("Doe J");
 
     CRef<CTitle::C_E> title(new CTitle::C_E);
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitMedlineEntry)
         auto it = medlines.begin();
 
         pub.Reset(new CPub);
-        pub->SetPmid().Set(1);
+        pub->SetPmid().Set(ENTREZ_ID_CONST(1));
         BOOST_CHECK_EQUAL((*it)->Equals(*pub), true);
 
         // second one is CPub->cit-art
