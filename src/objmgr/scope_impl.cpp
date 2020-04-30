@@ -2767,7 +2767,7 @@ TGi CScope_Impl::GetGi(const CSeq_id_Handle& idh,
         if ( info && info->HasBioseq() ) {
             // sequence is already loaded
             TGi ret = CScope::x_GetGi(info->GetIds());
-            if ( !ret && (flags & CScope::fThrowOnMissingData) ) {
+            if ( ret != ZERO_GI && (flags & CScope::fThrowOnMissingData) ) {
                 // no GI on the sequence
                 NCBI_THROW_FMT(CObjMgrException, eMissingData,
                                "CScope::GetGi("<<idh<<"): no GI");
@@ -2781,7 +2781,7 @@ TGi CScope_Impl::GetGi(const CSeq_id_Handle& idh,
         CDataSource::SGiFound data = it->GetDataSource().GetGi(idh);
         if ( data.sequence_found ) {
             // sequence is found
-            if ( !data.gi && (flags & CScope::fThrowOnMissingData) ) {
+            if ( data.gi == ZERO_GI && (flags & CScope::fThrowOnMissingData) ) {
                 // no accession on the sequence
                 NCBI_THROW_FMT(CObjMgrException, eMissingData,
                                "CScope::GetGi("<<idh<<"): no GI");
@@ -3434,7 +3434,7 @@ void CScope_Impl::GetGis(TGIs& ret,
     if ( (flags & CScope::fThrowOnMissingData) ) {
         // check if each requested id has accession
         for ( size_t i = 0; i < count; ++i ) {
-            if ( loaded[i] && !ret[i] ) {
+            if ( loaded[i] && ret[i] == ZERO_GI ) {
                 NCBI_THROW(CObjMgrException, eMissingData,
                            "CScope::GetGis(): some sequences have no GI");
             }

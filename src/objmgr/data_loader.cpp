@@ -388,7 +388,7 @@ CDataLoader::SGiFound CDataLoader::GetGiFound(const CSeq_id_Handle& idh)
     SGiFound ret;
     try {
         ret.gi = GetGi(idh);
-        ret.sequence_found = ret.gi || SequenceExists(idh);
+        ret.sequence_found = ret.gi != ZERO_GI || SequenceExists(idh);
     }
     catch ( CLoaderException& exc ) {
         if ( exc.GetErrCode() == exc.eNotFound ) {

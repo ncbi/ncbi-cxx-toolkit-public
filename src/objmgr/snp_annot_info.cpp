@@ -1071,7 +1071,7 @@ void CSeq_annot_SNP_Info::SetGi(TGi gi)
 void CSeq_annot_SNP_Info::OffsetGi(TIntId gi_offset)
 {
     if ( m_Seq_id->IsGi() ) {
-        m_Seq_id->SetGi(m_Seq_id->GetGi() + gi_offset);
+        m_Seq_id->SetGi(m_Seq_id->GetGi() + GI_FROM(TIntId, gi_offset));
     }
 }
 

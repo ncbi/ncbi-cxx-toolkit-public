@@ -51,7 +51,7 @@ public:
     CBioObjectId() : m_Id(eUnSet, CSeq_id_Handle()) {}
     explicit CBioObjectId(const CSeq_id_Handle& id) : m_Id(eSeqId,id) {}
     CBioObjectId(EType type, TIntId id)
-        : m_Id(type, CSeq_id_Handle::GetGiHandle(id)) 
+        : m_Id(type, CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, id))) 
     {
         _ASSERT(type == eSeqId || type == eSetId || type == eUniqNumber);
     }
@@ -61,11 +61,11 @@ public:
     }
 
     TIntId GetSetId() const  { 
-        _ASSERT(m_Id.first == eSetId); return m_Id.second.GetGi();
+        _ASSERT(m_Id.first == eSetId); return GI_TO(TIntId, m_Id.second.GetGi());
     }
     
     TIntId GetUniqNumber() const  { 
-        _ASSERT(m_Id.first == eUniqNumber); return m_Id.second.GetGi();
+        _ASSERT(m_Id.first == eUniqNumber); return GI_TO(TIntId, m_Id.second.GetGi());
     }
     
     bool operator == (const CBioObjectId& other) const {
