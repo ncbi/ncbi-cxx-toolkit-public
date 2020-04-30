@@ -506,7 +506,7 @@ bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
     }
     TSequenceGi data = gi_lock.GetGi();
     TGi gi = gi_lock.GetGi(data);
-    if ( !gi ) {
+    if ( gi == ZERO_GI ) {
         // no gi -> no Seq-ids
         SetAndSaveNoSeq_idSeq_ids(result, seq_id, 0);
         return true;
@@ -587,7 +587,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                 CDB_Connection* db_conn = x_GetConnection(conn);
     
                 AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_accn_ver_by_gi"));
-                sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(gi));
+                sx_SetIntId(*cmd, "@gi", GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
                 cmd->Send();
                 
                 //bool not_found = false;
@@ -706,7 +706,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     const string& name = dbr->ItemName(pos);
                     _TRACE("next item: " << name);
                     if (name == "gi") {
-                        gi = sx_GetIntId(*dbr, pos);
+                        gi = GI_FROM(TIntId, sx_GetIntId(*dbr, pos));
                         _TRACE("gi: "<<gi);
                         CProcessor::OffsetGiToOM(gi);
                     }
@@ -784,7 +784,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                             ext_feat -= bit;
                             blob_id = new CBlob_id;
                             blob_id->SetSat(GetAnnotSat(bit));
-                            blob_id->SetSatKey(CProcessor::ConvertGiFromOM(gi));
+                            blob_id->SetSatKey(GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
                             blob_id->SetSubSat(bit);
                             blob_ids.push_back(CBlob_Info(blob_id,
                                                           fBlobHasExtAnnot));
@@ -810,7 +810,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
             // postponed read of named annot accessions
             _TRACE("id_get_annot_types "<<named_gi);
             AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_annot_types"));
-            sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(named_gi));
+            sx_SetIntId(*cmd, "@gi", GI_TO(TIntId, CProcessor::ConvertGiFromOM(named_gi)));
             cmd->Send();
             while(cmd->HasMoreResults()) {
                 AutoPtr<CDB_Result> dbr(cmd->Result());
@@ -834,7 +834,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                         const string& name = dbr->ItemName(pos);
                         _TRACE("next item: " << name);
                         if (name == "gi") {
-                            gi = sx_GetIntId(*dbr, pos);
+                            gi = GI_FROM(TIntId, sx_GetIntId(*dbr, pos));
                             _TRACE("ngi: "<<gi);
                             CProcessor::OffsetGiToOM(gi);
                         }
@@ -908,7 +908,7 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi"));
-        sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(gi));
+        sx_SetIntId(*cmd, "@gi", GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
         CDB_TinyInt binIn = 1;
         cmd->SetParam("@bin", &binIn);
         cmd->Send();
@@ -999,7 +999,7 @@ bool CPubseqReader::LoadSequenceHash(CReaderRequestResult& result,
         result.SetLoadedHash(seq_id, TSequenceHash());
         return true;
     }
-    if ( !gi_lock.GetGi(gi) ) {
+    if ( gi_lock.GetGi(gi) == ZERO_GI ) {
         // no gi -> no hash known
         TSequenceHash hash;
         hash.sequence_found = true;
@@ -1042,7 +1042,7 @@ bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class"));
-        sx_SetIntId(*cmd, "@gi", CProcessor::ConvertGiFromOM(gi));
+        sx_SetIntId(*cmd, "@gi", GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
         CDB_TinyInt hashIn = 1;
         cmd->SetParam("@ver", &hashIn);
         cmd->Send();
