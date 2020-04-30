@@ -98,14 +98,14 @@ int CTitleTester::Run(void)
     }
 
     if (args["gi"]) {
-        id.SetGi(args["gi"].AsIntId());
+        id.SetGi(GI_FROM(TIntId, args["gi"].AsIntId()));
         CBioseq_Handle handle = scope.GetBioseqHandle(id);
         NcbiCout << gen.GenerateDefline(handle, flags) << NcbiEndl;
     } else {
         CNcbiIstream& in(args["in"].AsInputFile());
         TIntId int_gi;
         while (in >> int_gi) {
-            id.SetGi(int_gi);
+            id.SetGi(GI_FROM(TIntId, int_gi));
             string s;
             try {
                 CBioseq_Handle handle = scope.GetBioseqHandle(id);
