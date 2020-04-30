@@ -143,17 +143,17 @@ CTestProtProd_Cdd::RunTest(const CSerialObject& obj,
 
 // Find the taxid from a bioseq handle by iterating over
 // Seqdesc's of type "source".  Return 0 if not found.
-int s_GetTaxId(const CBioseq_Handle& hand)
+TTaxId s_GetTaxId(const CBioseq_Handle& hand)
 {
     CSeqdesc_CI it(hand, CSeqdesc::e_Source);
-    int taxid;
+    TTaxId taxid;
     while (it) {
         taxid = it->GetSource().GetOrg().GetTaxId();
-        if (taxid != 0) {
+        if (taxid != ZERO_ENTREZ_ID) {
             return taxid;
         }
     }
-    return 0;
+    return ZERO_ENTREZ_ID;
 }
 
 
@@ -194,8 +194,8 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
 
     CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
     TGi gi = sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
-    int taxid = s_GetTaxId(hand);
-    if (taxid == 0) {
+    TTaxId taxid = s_GetTaxId(hand);
+    if (taxid == ZERO_ENTREZ_ID) {
         throw runtime_error("CTestProtProd_EntrezNeighbors::RunTest: "
                             "taxid not found for " + id->GetSeqIdString(true));
     }
