@@ -423,7 +423,7 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                 ESat sat = iter->second.first;
                 Int8 sat_key = num;
                 if ( sat == eSat_ANNOT_CDD || sat == eSat_ANNOT ) {
-                    sat_key = CProcessor::ConvertGiFromOM(sat_key);
+                    sat_key = GI_TO(Int8, CProcessor::ConvertGiFromOM(GI_FROM(TIntId, sat_key)));
                 }
                 blob_id->SetSat(sat);
                 blob_id->SetSatKey(sat_key);
@@ -441,7 +441,7 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     }
     TSequenceGi data = gi_lock.GetGi();
     TGi gi = gi_lock.GetGi(data);
-    if ( !gi ) {
+    if ( gi == ZERO_GI ) {
         // no gi -> no Seq-ids
         SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, gi_lock);
         return true;
@@ -540,7 +540,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
                 ext_feat -= bit;
                 CRef<CBlob_id> blob_id(new CBlob_id);
                 blob_id->SetSat(GetAnnotSat(bit));
-                blob_id->SetSatKey(CProcessor::ConvertGiFromOM(gi));
+                blob_id->SetSatKey(GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
                 blob_id->SetSubSat(bit);
                 blob_ids.push_back(CBlob_Info(blob_id, fBlobHasExtAnnot));
             }
