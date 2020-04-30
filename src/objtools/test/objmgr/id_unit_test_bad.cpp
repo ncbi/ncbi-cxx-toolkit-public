@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
         switch ( op.op ) {
         case 0:
             TEST_TRACE_POST("GetGi");
-            BOOST_CHECK(!op->GetGi(id, kThrowNoData));
+            BOOST_CHECK(op->GetGi(id, kThrowNoData) == ZERO_GI);
             break;
         case 1:
             TEST_TRACE_POST("GetGiThrow");
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
             break;
         case 2:
             TEST_TRACE_POST("GetGiBulk");
-            BOOST_CHECK(!op->GetGis(idvec, kThrowNoData)[0]);
+            BOOST_CHECK(op->GetGis(idvec, kThrowNoData)[0] == ZERO_GI);
             break;
         case 3:
             TEST_TRACE_POST("GetGiBulkThrow");
@@ -491,11 +491,11 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAll)
             break;
         case 3:
             TEST_TRACE_POST("GetGi");
-            BOOST_CHECK(!op->GetGi(id));
+            BOOST_CHECK(op->GetGi(id) == ZERO_GI);
             break;
         case 4:
             TEST_TRACE_POST("GetGiBulk");
-            BOOST_CHECK(!op->GetGis(idvec, kThrowNoData)[0]);
+            BOOST_CHECK(op->GetGis(idvec, kThrowNoData)[0] == ZERO_GI);
             break;
         case 5:
             TEST_TRACE_POST("GetGiBulkThrow");
@@ -542,7 +542,7 @@ BOOST_AUTO_TEST_CASE(CheckNoAcc)
         }
         if ( op.last ) {
             TEST_TRACE_POST("GetGi");
-            BOOST_CHECK(op->GetGi(id, kThrowNoSeq));
+            BOOST_CHECK(op->GetGi(id, kThrowNoSeq) != ZERO_GI);
             TEST_TRACE_POST("GetIds");
             BOOST_CHECK(!op->GetIds(id).empty());
             TEST_TRACE_POST("GetBioseqHandle");

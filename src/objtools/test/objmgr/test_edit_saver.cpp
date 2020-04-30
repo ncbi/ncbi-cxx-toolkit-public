@@ -436,7 +436,7 @@ static void s_RemoveAnnot(const CBioseq_Handle& handle)
 int CTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    TGi gi = args["gi"].AsIntId();
+    TGi gi = GI_FROM(TIntId, args["gi"].AsIntId());
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
