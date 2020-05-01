@@ -4092,7 +4092,14 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
         SetDiagFilter(eDiagFilter_All, "!(1305.28,31)");
 
-        for ( CSeqMap_CI seg(ConstRef(&bsh.GetSeqMap()), &ctx.GetScope(), msel); seg; ++seg ) {
+        CConstRef<CSeqMap> seqmap;
+        if (ctx.GetLocation().IsWhole()) {
+            seqmap = &bsh.GetSeqMap();
+        } else {
+            seqmap = CSeqMap::CreateSeqMapForSeq_loc(loc, &ctx.GetScope());
+        }
+
+        for ( CSeqMap_CI seg(seqmap, &ctx.GetScope(), msel); seg; ++seg ) {
             if (seg.GetType() != CSeqMap::eSeqGap) {
                 if (keepGoing) {
                     // go over each of the segments
