@@ -4804,6 +4804,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NCAW\ts\tNorth-West College of Agriculture\t\t\t",
 "NCB\tc\tNational Culture Bank\t\t\t",
 "NCBS\ts\tYale University, Connecticut Botanical Society\t\t\t",
+"NCBS<IND>\ts\tNational Centre for Biological Sciences, Bangalore\t\t\t",
 "NCC<FRA>\tc\tNantes Culture Collection\t\t\t",
 "NCC<USA-CA>\ts\tSonoma State University, Biology Department\t\t\t",
 "NCCB\tc\tThe Netherlands Culture Collection of Bacteria\tLMD,NCCB<NLD>\t\t",

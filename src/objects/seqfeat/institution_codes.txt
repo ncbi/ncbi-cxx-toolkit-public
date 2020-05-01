@@ -4771,6 +4771,7 @@ NCATG	s	North Carolina A & T State University, Biology Department
 NCAW	s	North-West College of Agriculture			
 NCB	c	National Culture Bank			
 NCBS	s	Yale University, Connecticut Botanical Society			
+NCBS<IND>	s	National Centre for Biological Sciences, Bangalore			
 NCC<FRA>	c	Nantes Culture Collection			
 NCC<USA-CA>	s	Sonoma State University, Biology Department			
 NCCB	c	The Netherlands Culture Collection of Bacteria	LMD,NCCB<NLD>		
