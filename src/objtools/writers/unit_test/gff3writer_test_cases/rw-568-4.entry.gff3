@@ -23,15 +23,6 @@ GU182347.1	Genbank	CDS	5428	5721	.	+	2	ID=cds-ADJ94578.1;Parent=rna-KIR3DL3;Dbxr
 GU182347.1	Genbank	CDS	11189	11293	.	+	2	ID=cds-ADJ94578.1;Parent=rna-KIR3DL3;Dbxref=NCBI_GP:ADJ94578.1;Name=ADJ94578.1;gbkey=CDS;gene=KIR3DL3;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 3;protein_id=ADJ94578.1
 GU182347.1	Genbank	CDS	11756	11808	.	+	2	ID=cds-ADJ94578.1;Parent=rna-KIR3DL3;Dbxref=NCBI_GP:ADJ94578.1;Name=ADJ94578.1;gbkey=CDS;gene=KIR3DL3;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 3;protein_id=ADJ94578.1
 GU182347.1	Genbank	CDS	11907	12032	.	+	0	ID=cds-ADJ94578.1;Parent=rna-KIR3DL3;Dbxref=NCBI_GP:ADJ94578.1;Name=ADJ94578.1;gbkey=CDS;gene=KIR3DL3;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 3;protein_id=ADJ94578.1
-ADJ94578.1	Genbank	protein	475	508	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	1186	1221	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	1992	2276	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	3550	3849	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	5428	5721	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	11189	11293	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	11756	11808	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	11907	12029	.	+	.	ID=id-ADJ94578.1:1..410;gbkey=Prot;gene=KIR3DL3
-ADJ94578.1	Genbank	protein	1	410	.	+	.	ID=id-ADJ94578.1:1..410-2;gbkey=Prot;gene=KIR3DL3
 GU182347.1	Genbank	gene	14499	28152	.	+	.	ID=gene-KIR2DS2;Name=KIR2DS2;end_range=28152,.;gbkey=Gene;gene=KIR2DS2;gene_biotype=protein_coding;partial=true;start_range=.,14499
 GU182347.1	Genbank	mRNA	14499	28152	.	+	.	ID=rna-KIR2DS2;Parent=gene-KIR2DS2;end_range=28152,.;gbkey=mRNA;gene=KIR2DS2;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 2;start_range=.,14499
 GU182347.1	Genbank	exon	14499	14532	.	+	.	ID=exon-KIR2DS2-1;Parent=rna-KIR2DS2;gbkey=mRNA;gene=KIR2DS2;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 2;start_range=.,14499
@@ -50,15 +41,6 @@ GU182347.1	Genbank	CDS	23076	23126	.	+	2	ID=cds-ADJ94579.1;Parent=rna-KIR2DS2;Db
 GU182347.1	Genbank	CDS	27393	27497	.	+	2	ID=cds-ADJ94579.1;Parent=rna-KIR2DS2;Dbxref=NCBI_GP:ADJ94579.1;Name=ADJ94579.1;gbkey=CDS;gene=KIR2DS2;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 2;protein_id=ADJ94579.1
 GU182347.1	Genbank	CDS	27960	28012	.	+	2	ID=cds-ADJ94579.1;Parent=rna-KIR2DS2;Dbxref=NCBI_GP:ADJ94579.1;Name=ADJ94579.1;gbkey=CDS;gene=KIR2DS2;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 2;protein_id=ADJ94579.1
 GU182347.1	Genbank	CDS	28111	28152	.	+	0	ID=cds-ADJ94579.1;Parent=rna-KIR2DS2;Dbxref=NCBI_GP:ADJ94579.1;Name=ADJ94579.1;gbkey=CDS;gene=KIR2DS2;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 2;protein_id=ADJ94579.1
-ADJ94579.1	Genbank	protein	14499	14532	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	15325	15360	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	17797	18096	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	19615	19908	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	23076	23126	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	27393	27497	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	27960	28012	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	28111	28149	.	+	.	ID=id-ADJ94579.1:1..304;gbkey=Prot;gene=KIR2DS2
-ADJ94579.1	Genbank	protein	1	304	.	+	.	ID=id-ADJ94579.1:1..304-2;gbkey=Prot;gene=KIR2DS2
 GU182347.1	Genbank	gene	30680	44683	.	+	.	ID=gene-KIR2DL2;Name=KIR2DL2;end_range=44683,.;gbkey=Gene;gene=KIR2DL2;gene_biotype=protein_coding;partial=true;start_range=.,30680
 GU182347.1	Genbank	mRNA	30680	44683	.	+	.	ID=rna-KIR2DL2;Parent=gene-KIR2DL2;end_range=44683,.;gbkey=mRNA;gene=KIR2DL2;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 2;start_range=.,30680
 GU182347.1	Genbank	exon	30680	30713	.	+	.	ID=exon-KIR2DL2-1;Parent=rna-KIR2DL2;gbkey=mRNA;gene=KIR2DL2;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 2;start_range=.,30680
@@ -77,15 +59,6 @@ GU182347.1	Genbank	CDS	39476	39526	.	+	2	ID=cds-ADJ94580.1;Parent=rna-KIR2DL2;Db
 GU182347.1	Genbank	CDS	43792	43893	.	+	2	ID=cds-ADJ94580.1;Parent=rna-KIR2DL2;Dbxref=NCBI_GP:ADJ94580.1;Name=ADJ94580.1;gbkey=CDS;gene=KIR2DL2;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 2;protein_id=ADJ94580.1
 GU182347.1	Genbank	CDS	44356	44408	.	+	2	ID=cds-ADJ94580.1;Parent=rna-KIR2DL2;Dbxref=NCBI_GP:ADJ94580.1;Name=ADJ94580.1;gbkey=CDS;gene=KIR2DL2;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 2;protein_id=ADJ94580.1
 GU182347.1	Genbank	CDS	44507	44683	.	+	0	ID=cds-ADJ94580.1;Parent=rna-KIR2DL2;Dbxref=NCBI_GP:ADJ94580.1;Name=ADJ94580.1;gbkey=CDS;gene=KIR2DL2;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 2;protein_id=ADJ94580.1
-ADJ94580.1	Genbank	protein	30680	30713	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	31622	31657	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	34094	34393	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	35908	36201	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	39476	39526	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	43792	43893	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	44356	44408	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	44507	44680	.	+	.	ID=id-ADJ94580.1:1..348;gbkey=Prot;gene=KIR2DL2
-ADJ94580.1	Genbank	protein	1	348	.	+	.	ID=id-ADJ94580.1:1..348-2;gbkey=Prot;gene=KIR2DL2
 GU182347.1	Genbank	gene	47225	56237	.	+	.	ID=gene-KIR2DL5;Name=KIR2DL5;end_range=56237,.;gbkey=Gene;gene=KIR2DL5;gene_biotype=protein_coding;partial=true;start_range=.,47225
 GU182347.1	Genbank	mRNA	47225	56237	.	+	.	ID=rna-KIR2DL5;Parent=gene-KIR2DL5;end_range=56237,.;gbkey=mRNA;gene=KIR2DL5;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5B;start_range=.,47225
 GU182347.1	Genbank	exon	47225	47258	.	+	.	ID=exon-KIR2DL5-1;Parent=rna-KIR2DL5;gbkey=mRNA;gene=KIR2DL5;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5B;start_range=.,47225
@@ -104,15 +77,6 @@ GU182347.1	Genbank	CDS	52435	52485	.	+	2	ID=cds-ADJ94581.1;Parent=rna-KIR2DL5;Db
 GU182347.1	Genbank	CDS	55248	55352	.	+	2	ID=cds-ADJ94581.1;Parent=rna-KIR2DL5;Dbxref=NCBI_GP:ADJ94581.1;Name=ADJ94581.1;gbkey=CDS;gene=KIR2DL5;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5B;protein_id=ADJ94581.1
 GU182347.1	Genbank	CDS	55815	55867	.	+	2	ID=cds-ADJ94581.1;Parent=rna-KIR2DL5;Dbxref=NCBI_GP:ADJ94581.1;Name=ADJ94581.1;gbkey=CDS;gene=KIR2DL5;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5B;protein_id=ADJ94581.1
 GU182347.1	Genbank	CDS	55968	56237	.	+	0	ID=cds-ADJ94581.1;Parent=rna-KIR2DL5;Dbxref=NCBI_GP:ADJ94581.1;Name=ADJ94581.1;gbkey=CDS;gene=KIR2DL5;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5B;protein_id=ADJ94581.1
-ADJ94581.1	Genbank	protein	47225	47258	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	48012	48047	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	48810	49094	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	49970	50263	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	52435	52485	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	55248	55352	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	55815	55867	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	55968	56234	.	+	.	ID=id-ADJ94581.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94581.1	Genbank	protein	1	375	.	+	.	ID=id-ADJ94581.1:1..375-2;gbkey=Prot;gene=KIR2DL5
 GU182347.1	Genbank	gene	58641	72798	.	+	.	ID=gene-KIR2DS3;Name=KIR2DS3;end_range=72798,.;gbkey=Gene;gene=KIR2DS3;gene_biotype=protein_coding;partial=true;start_range=.,58641
 GU182347.1	Genbank	mRNA	58641	72798	.	+	.	ID=rna-KIR2DS3;Parent=gene-KIR2DS3;end_range=72798,.;gbkey=mRNA;gene=KIR2DS3;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;start_range=.,58641
 GU182347.1	Genbank	exon	58641	58674	.	+	.	ID=exon-KIR2DS3-1;Parent=rna-KIR2DS3;gbkey=mRNA;gene=KIR2DS3;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;start_range=.,58641
@@ -131,15 +95,6 @@ GU182347.1	Genbank	CDS	67724	67774	.	+	2	ID=cds-ADJ94582.1;Parent=rna-KIR2DS3;Db
 GU182347.1	Genbank	CDS	72039	72143	.	+	2	ID=cds-ADJ94582.1;Parent=rna-KIR2DS3;Dbxref=NCBI_GP:ADJ94582.1;Name=ADJ94582.1;gbkey=CDS;gene=KIR2DS3;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;protein_id=ADJ94582.1
 GU182347.1	Genbank	CDS	72606	72658	.	+	2	ID=cds-ADJ94582.1;Parent=rna-KIR2DS3;Dbxref=NCBI_GP:ADJ94582.1;Name=ADJ94582.1;gbkey=CDS;gene=KIR2DS3;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;protein_id=ADJ94582.1
 GU182347.1	Genbank	CDS	72757	72798	.	+	0	ID=cds-ADJ94582.1;Parent=rna-KIR2DS3;Dbxref=NCBI_GP:ADJ94582.1;Name=ADJ94582.1;gbkey=CDS;gene=KIR2DS3;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;protein_id=ADJ94582.1
-ADJ94582.1	Genbank	protein	58641	58674	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	59979	60014	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	62458	62757	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	64277	64570	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	67724	67774	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	72039	72143	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	72606	72658	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	72757	72795	.	+	.	ID=id-ADJ94582.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94582.1	Genbank	protein	1	304	.	+	.	ID=id-ADJ94582.1:1..304-2;gbkey=Prot;gene=KIR2DS3
 GU182347.1	Genbank	pseudogene	75429	87779	.	+	.	ID=gene-KIR2DP1;Name=KIR2DP1;gbkey=Gene;gene=KIR2DP1;gene_biotype=pseudogene;pseudo=true
 GU182347.1	Genbank	mRNA	75429	87779	.	+	.	ID=rna-KIR2DP1;Parent=gene-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
 GU182347.1	Genbank	exon	75429	75462	.	+	.	ID=exon-KIR2DP1-1;Parent=rna-KIR2DP1;gbkey=mRNA;gene=KIR2DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
@@ -169,15 +124,6 @@ GU182347.1	Genbank	CDS	99021	99071	.	+	2	ID=cds-ADJ94583.1;Parent=rna-KIR2DL1;Db
 GU182347.1	Genbank	CDS	103340	103441	.	+	2	ID=cds-ADJ94583.1;Parent=rna-KIR2DL1;Dbxref=NCBI_GP:ADJ94583.1;Name=ADJ94583.1;gbkey=CDS;gene=KIR2DL1;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 1;protein_id=ADJ94583.1
 GU182347.1	Genbank	CDS	103904	103956	.	+	2	ID=cds-ADJ94583.1;Parent=rna-KIR2DL1;Dbxref=NCBI_GP:ADJ94583.1;Name=ADJ94583.1;gbkey=CDS;gene=KIR2DL1;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 1;protein_id=ADJ94583.1
 GU182347.1	Genbank	CDS	104055	104231	.	+	0	ID=cds-ADJ94583.1;Parent=rna-KIR2DL1;Dbxref=NCBI_GP:ADJ94583.1;Name=ADJ94583.1;gbkey=CDS;gene=KIR2DL1;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 1;protein_id=ADJ94583.1
-ADJ94583.1	Genbank	protein	90262	90295	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	91260	91295	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	93746	94045	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	95575	95868	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	99021	99071	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	103340	103441	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	103904	103956	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	104055	104228	.	+	.	ID=id-ADJ94583.1:1..348;gbkey=Prot;gene=KIR2DL1
-ADJ94583.1	Genbank	protein	1	348	.	+	.	ID=id-ADJ94583.1:1..348-2;gbkey=Prot;gene=KIR2DL1
 GU182347.1	Genbank	pseudogene	106773	110732	.	+	.	ID=gene-KIR3DP1;Name=KIR3DP1;gbkey=Gene;gene=KIR3DP1;gene_biotype=pseudogene;pseudo=true
 GU182347.1	Genbank	mRNA	106773	110732	.	+	.	ID=rna-KIR3DP1;Parent=gene-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
 GU182347.1	Genbank	exon	106773	106806	.	+	.	ID=exon-KIR3DP1-1;Parent=rna-KIR3DP1;gbkey=mRNA;gene=KIR3DP1;product=killer cell immunoglobulin-like receptor three domains pseudogene 1;pseudo=true
@@ -202,15 +148,6 @@ GU182347.1	Genbank	CDS	129251	129301	.	+	2	ID=cds-ADJ94584.1;Parent=rna-KIR2DL4;
 GU182347.1	Genbank	CDS	133545	133649	.	+	2	ID=cds-ADJ94584.1;Parent=rna-KIR2DL4;Dbxref=NCBI_GP:ADJ94584.1;Name=ADJ94584.1;gbkey=CDS;gene=KIR2DL4;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 4;protein_id=ADJ94584.1
 GU182347.1	Genbank	CDS	134111	134163	.	+	2	ID=cds-ADJ94584.1;Parent=rna-KIR2DL4;Dbxref=NCBI_GP:ADJ94584.1;Name=ADJ94584.1;gbkey=CDS;gene=KIR2DL4;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 4;protein_id=ADJ94584.1
 GU182347.1	Genbank	CDS	134263	134532	.	+	0	ID=cds-ADJ94584.1;Parent=rna-KIR2DL4;Dbxref=NCBI_GP:ADJ94584.1;Name=ADJ94584.1;gbkey=CDS;gene=KIR2DL4;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 4;protein_id=ADJ94584.1
-ADJ94584.1	Genbank	protein	124064	124103	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	124303	124338	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	125205	125489	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	126369	126662	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	129251	129301	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	133545	133649	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	134111	134163	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	134263	134529	.	+	.	ID=id-ADJ94584.1:1..377;gbkey=Prot;gene=KIR2DL4
-ADJ94584.1	Genbank	protein	1	377	.	+	.	ID=id-ADJ94584.1:1..377-2;gbkey=Prot;gene=KIR2DL4
 GU182347.1	Genbank	gene	136923	150908	.	+	.	ID=gene-KIR3DS1;Name=KIR3DS1;end_range=150908,.;gbkey=Gene;gene=KIR3DS1;gene_biotype=protein_coding;partial=true;start_range=.,136923
 GU182347.1	Genbank	mRNA	136923	150908	.	+	.	ID=rna-KIR3DS1;Parent=gene-KIR3DS1;end_range=150908,.;gbkey=mRNA;gene=KIR3DS1;partial=true;product=killer cell immunoglobulin-like receptor three domains short cytoplasmic tail 1;start_range=.,136923
 GU182347.1	Genbank	exon	136923	136956	.	+	.	ID=exon-KIR3DS1-1;Parent=rna-KIR3DS1;gbkey=mRNA;gene=KIR3DS1;partial=true;product=killer cell immunoglobulin-like receptor three domains short cytoplasmic tail 1;start_range=.,136923
@@ -230,15 +167,6 @@ GU182347.1	Genbank	CDS	142389	142682	.	+	2	ID=cds-ADJ94585.1;Parent=rna-KIR3DS1;
 GU182347.1	Genbank	CDS	145853	145903	.	+	2	ID=cds-ADJ94585.1;Parent=rna-KIR3DS1;Dbxref=NCBI_GP:ADJ94585.1;Name=ADJ94585.1;gbkey=CDS;gene=KIR3DS1;product=killer cell immunoglobulin-like receptor three domains short cytoplasmic tail 1;protein_id=ADJ94585.1
 GU182347.1	Genbank	CDS	150184	150289	.	+	2	ID=cds-ADJ94585.1;Parent=rna-KIR3DS1;Dbxref=NCBI_GP:ADJ94585.1;Name=ADJ94585.1;gbkey=CDS;gene=KIR3DS1;product=killer cell immunoglobulin-like receptor three domains short cytoplasmic tail 1;protein_id=ADJ94585.1
 GU182347.1	Genbank	CDS	150752	150794	.	+	1	ID=cds-ADJ94585.1;Parent=rna-KIR3DS1;Dbxref=NCBI_GP:ADJ94585.1;Name=ADJ94585.1;gbkey=CDS;gene=KIR3DS1;product=killer cell immunoglobulin-like receptor three domains short cytoplasmic tail 1;protein_id=ADJ94585.1
-ADJ94585.1	Genbank	protein	136923	136956	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	137956	137991	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	138736	139020	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	140509	140808	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	142389	142682	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	145853	145903	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	150184	150289	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	150752	150791	.	+	.	ID=id-ADJ94585.1:1..382;gbkey=Prot;gene=KIR3DS1
-ADJ94585.1	Genbank	protein	1	382	.	+	.	ID=id-ADJ94585.1:1..382-2;gbkey=Prot;gene=KIR3DS1
 GU182347.1	Genbank	gene	153561	162553	.	+	.	ID=gene-KIR2DL5-2;Name=KIR2DL5;end_range=162553,.;gbkey=Gene;gene=KIR2DL5;gene_biotype=protein_coding;partial=true;start_range=.,153561
 GU182347.1	Genbank	mRNA	153561	162553	.	+	.	ID=rna-KIR2DL5-2;Parent=gene-KIR2DL5-2;end_range=162553,.;gbkey=mRNA;gene=KIR2DL5;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5A;start_range=.,153561
 GU182347.1	Genbank	exon	153561	153594	.	+	.	ID=exon-KIR2DL5-2-1;Parent=rna-KIR2DL5-2;gbkey=mRNA;gene=KIR2DL5;partial=true;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5A;start_range=.,153561
@@ -257,15 +185,6 @@ GU182347.1	Genbank	CDS	158751	158801	.	+	2	ID=cds-ADJ94586.1;Parent=rna-KIR2DL5-
 GU182347.1	Genbank	CDS	161564	161668	.	+	2	ID=cds-ADJ94586.1;Parent=rna-KIR2DL5-2;Dbxref=NCBI_GP:ADJ94586.1;Name=ADJ94586.1;gbkey=CDS;gene=KIR2DL5;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5A;protein_id=ADJ94586.1
 GU182347.1	Genbank	CDS	162131	162183	.	+	2	ID=cds-ADJ94586.1;Parent=rna-KIR2DL5-2;Dbxref=NCBI_GP:ADJ94586.1;Name=ADJ94586.1;gbkey=CDS;gene=KIR2DL5;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5A;protein_id=ADJ94586.1
 GU182347.1	Genbank	CDS	162284	162553	.	+	0	ID=cds-ADJ94586.1;Parent=rna-KIR2DL5-2;Dbxref=NCBI_GP:ADJ94586.1;Name=ADJ94586.1;gbkey=CDS;gene=KIR2DL5;product=killer cell immunoglobulin-like receptor two domains long cytoplasmic tail 5A;protein_id=ADJ94586.1
-ADJ94586.1	Genbank	protein	153561	153594	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	154328	154363	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	155126	155410	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	156286	156579	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	158751	158801	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	161564	161668	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	162131	162183	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	162284	162550	.	+	.	ID=id-ADJ94586.1:1..375;gbkey=Prot;gene=KIR2DL5
-ADJ94586.1	Genbank	protein	1	375	.	+	.	ID=id-ADJ94586.1:1..375-2;gbkey=Prot;gene=KIR2DL5
 GU182347.1	Genbank	gene	164957	179115	.	+	.	ID=gene-KIR2DS3-2;Name=KIR2DS3;end_range=179115,.;gbkey=Gene;gene=KIR2DS3;gene_biotype=protein_coding;partial=true;start_range=.,164957
 GU182347.1	Genbank	mRNA	164957	179115	.	+	.	ID=rna-KIR2DS3-2;Parent=gene-KIR2DS3-2;end_range=179115,.;gbkey=mRNA;gene=KIR2DS3;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;start_range=.,164957
 GU182347.1	Genbank	exon	164957	164990	.	+	.	ID=exon-KIR2DS3-2-1;Parent=rna-KIR2DS3-2;gbkey=mRNA;gene=KIR2DS3;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;start_range=.,164957
@@ -284,15 +203,6 @@ GU182347.1	Genbank	CDS	174040	174090	.	+	2	ID=cds-ADJ94587.1;Parent=rna-KIR2DS3-
 GU182347.1	Genbank	CDS	178356	178460	.	+	2	ID=cds-ADJ94587.1;Parent=rna-KIR2DS3-2;Dbxref=NCBI_GP:ADJ94587.1;Name=ADJ94587.1;gbkey=CDS;gene=KIR2DS3;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;protein_id=ADJ94587.1
 GU182347.1	Genbank	CDS	178923	178975	.	+	2	ID=cds-ADJ94587.1;Parent=rna-KIR2DS3-2;Dbxref=NCBI_GP:ADJ94587.1;Name=ADJ94587.1;gbkey=CDS;gene=KIR2DS3;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;protein_id=ADJ94587.1
 GU182347.1	Genbank	CDS	179074	179115	.	+	0	ID=cds-ADJ94587.1;Parent=rna-KIR2DS3-2;Dbxref=NCBI_GP:ADJ94587.1;Name=ADJ94587.1;gbkey=CDS;gene=KIR2DS3;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 3;protein_id=ADJ94587.1
-ADJ94587.1	Genbank	protein	164957	164990	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	166295	166330	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	168774	169073	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	170593	170886	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	174040	174090	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	178356	178460	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	178923	178975	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	179074	179112	.	+	.	ID=id-ADJ94587.1:1..304;gbkey=Prot;gene=KIR2DS3
-ADJ94587.1	Genbank	protein	1	304	.	+	.	ID=id-ADJ94587.1:1..304-2;gbkey=Prot;gene=KIR2DS3
 GU182347.1	Genbank	gene	181747	195575	.	+	.	ID=gene-KIR2DS1;Name=KIR2DS1;end_range=195575,.;gbkey=Gene;gene=KIR2DS1;gene_biotype=protein_coding;partial=true;start_range=.,181747
 GU182347.1	Genbank	mRNA	181747	195575	.	+	.	ID=rna-KIR2DS1;Parent=gene-KIR2DS1;end_range=195575,.;gbkey=mRNA;gene=KIR2DS1;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 1;start_range=.,181747
 GU182347.1	Genbank	exon	181747	181780	.	+	.	ID=exon-KIR2DS1-1;Parent=rna-KIR2DS1;gbkey=mRNA;gene=KIR2DS1;partial=true;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 1;start_range=.,181747
@@ -311,15 +221,6 @@ GU182347.1	Genbank	CDS	190502	190552	.	+	2	ID=cds-ADJ94588.1;Parent=rna-KIR2DS1;
 GU182347.1	Genbank	CDS	194816	194920	.	+	2	ID=cds-ADJ94588.1;Parent=rna-KIR2DS1;Dbxref=NCBI_GP:ADJ94588.1;Name=ADJ94588.1;gbkey=CDS;gene=KIR2DS1;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 1;protein_id=ADJ94588.1
 GU182347.1	Genbank	CDS	195383	195435	.	+	2	ID=cds-ADJ94588.1;Parent=rna-KIR2DS1;Dbxref=NCBI_GP:ADJ94588.1;Name=ADJ94588.1;gbkey=CDS;gene=KIR2DS1;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 1;protein_id=ADJ94588.1
 GU182347.1	Genbank	CDS	195534	195575	.	+	0	ID=cds-ADJ94588.1;Parent=rna-KIR2DS1;Dbxref=NCBI_GP:ADJ94588.1;Name=ADJ94588.1;gbkey=CDS;gene=KIR2DS1;product=killer cell immunoglobulin-like receptor two domains short cytoplasmic tail 1;protein_id=ADJ94588.1
-ADJ94588.1	Genbank	protein	181747	181780	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	182745	182780	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	185229	185528	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	187054	187347	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	190502	190552	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	194816	194920	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	195383	195435	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	195534	195572	.	+	.	ID=id-ADJ94588.1:1..304;gbkey=Prot;gene=KIR2DS1
-ADJ94588.1	Genbank	protein	1	304	.	+	.	ID=id-ADJ94588.1:1..304-2;gbkey=Prot;gene=KIR2DS1
 GU182347.1	Genbank	gene	198104	214381	.	+	.	ID=gene-KIR3DL2;Name=KIR3DL2;end_range=214381,.;gbkey=Gene;gene=KIR3DL2;gene_biotype=protein_coding;partial=true;start_range=.,198104
 GU182347.1	Genbank	mRNA	198104	214381	.	+	.	ID=rna-KIR3DL2;Parent=gene-KIR3DL2;end_range=214381,.;gbkey=mRNA;gene=KIR3DL2;partial=true;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;start_range=.,198104
 GU182347.1	Genbank	exon	198104	198137	.	+	.	ID=exon-KIR3DL2-1;Parent=rna-KIR3DL2;gbkey=mRNA;gene=KIR3DL2;partial=true;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;start_range=.,198104
@@ -340,16 +241,6 @@ GU182347.1	Genbank	CDS	206731	206781	.	+	2	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;
 GU182347.1	Genbank	CDS	213455	213559	.	+	2	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;Dbxref=NCBI_GP:ADJ94589.1;Name=ADJ94589.1;gbkey=CDS;gene=KIR3DL2;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;protein_id=ADJ94589.1
 GU182347.1	Genbank	CDS	214020	214072	.	+	2	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;Dbxref=NCBI_GP:ADJ94589.1;Name=ADJ94589.1;gbkey=CDS;gene=KIR3DL2;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;protein_id=ADJ94589.1
 GU182347.1	Genbank	CDS	214172	214381	.	+	0	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;Dbxref=NCBI_GP:ADJ94589.1;Name=ADJ94589.1;gbkey=CDS;gene=KIR3DL2;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;protein_id=ADJ94589.1
-ADJ94589.1	Genbank	protein	198104	198137	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	198867	198902	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	199645	199929	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	201394	201693	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	203273	203566	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	206731	206781	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	213455	213559	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	214020	214072	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	214172	214378	.	+	.	ID=id-ADJ94589.1:1..455;gbkey=Prot;gene=KIR3DL2
-ADJ94589.1	Genbank	protein	1	455	.	+	.	ID=id-ADJ94589.1:1..455-2;gbkey=Prot;gene=KIR3DL2
 ##sequence-region ADJ94578.1 1 410
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
 ADJ94578.1	Genbank	region	1	410	.	+	.	ID=ADJ94578.1:1..410;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned

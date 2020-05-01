@@ -1402,15 +1402,15 @@ bool CGff3Writer::xWriteFeature(
 
             case CSeqFeatData::eSubtype_pub:
                 return true; //ignore
-            case 5:
-            case 6: {
-                if (mf.GetFeatType() == CSeqFeatData::e_Prot) {
-                    return true; //already handled as part of CDS
-                }
-                if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                    return xWriteFeatureRna( fc, mf );
-                }
-                return xWriteFeatureGeneric( fc, mf );
+            case CSeqFeatData::eSubtype_prot:
+            case CSeqFeatData::eSubtype_preprotein:
+            case CSeqFeatData::eSubtype_sig_peptide:
+            case CSeqFeatData::eSubtype_sig_peptide_aa:
+            case CSeqFeatData::eSubtype_transit_peptide:
+            case CSeqFeatData::eSubtype_transit_peptide_aa:
+            case CSeqFeatData::eSubtype_mat_peptide:
+            case CSeqFeatData::eSubtype_mat_peptide_aa: {
+                return true; //already handled in context of cds
             }
         }
     }
@@ -2594,6 +2594,13 @@ bool CGff3Writer::xWriteFeatureProtein(
     const CMappedFeat& protein )
 //  ----------------------------------------------------------------------------
 {
+    auto subtype = protein.GetFeatSubtype();
+    //const auto& location = protein.GetLocation().GetInt();
+
+    if (subtype == CSeqFeatData::eSubtype_prot) {
+        return true;
+    }
+
     CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
     if (!xAssignFeature(*pRecord, fc, protein)) {
         return false;
