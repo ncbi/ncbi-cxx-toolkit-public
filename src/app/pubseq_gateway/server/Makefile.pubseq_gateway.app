@@ -7,7 +7,7 @@ SRC = pubseq_gateway  \
       pending_operation http_server_transport pubseq_gateway_exception \
       uv_extra pubseq_gateway_utils pubseq_gateway_stat \
       pubseq_gateway_handlers pubseq_gateway_convert_utils \
-      pubseq_gateway_cache_utils cass_fetch protocol_utils \
+      pubseq_gateway_cache_utils cass_fetch psgs_reply \
       async_seq_id_resolver async_bioseq_query \
       exclude_blob_cache alerts timing cass_monitor id2info \
       insdc_utils introspection psgs_request

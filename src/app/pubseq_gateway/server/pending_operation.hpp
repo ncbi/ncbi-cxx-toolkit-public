@@ -50,7 +50,7 @@ USING_SCOPE(objects);
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
 #include "cass_fetch.hpp"
-#include "protocol_utils.hpp"
+#include "psgs_reply.hpp"
 #include "async_seq_id_resolver.hpp"
 #include "async_bioseq_query.hpp"
 #include "id2info.hpp"
@@ -74,8 +74,7 @@ public:
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
-                      unsigned int  max_retries,
-                      CRef<CRequestContext>  request_context);
+                      unsigned int  max_retries);
     ~CPendingOperation();
 
     void Clear();
@@ -296,12 +295,11 @@ private:
     SPSGS_RequestBase::EPSGS_CacheAndDbUse  m_UrlUseCache;
 
     bool                                    m_Cancelled;
-    CRef<CRequestContext>                   m_RequestContext;
 
     // Cassandra data loaders; there could be many of them
     list<unique_ptr<CCassFetch>>            m_FetchDetails;
 
-    CProtocolUtils                          m_ProtocolSupport;
+    CPSGS_Reply                             m_ProtocolSupport;
 
     // Async DB access support
     unique_ptr<CAsyncSeqIdResolver>         m_AsyncSeqIdResolver;

@@ -37,9 +37,6 @@
 #include "cass_fetch.hpp"
 
 
-class CProtocolUtils;
-
-
 class CNamedAnnotationCallback
 {
     public:

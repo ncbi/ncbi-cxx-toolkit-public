@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "cass_fetch.hpp"
-#include "protocol_utils.hpp"
+#include "psgs_reply.hpp"
 
 
 void CCassNamedAnnotFetch::ResetCallbacks(void)
@@ -47,18 +47,18 @@ void CCassNamedAnnotFetch::ResetCallbacks(void)
 }
 
 
-size_t CCassBlobFetch::GetBlobPropItemId(CProtocolUtils *  protocol_utils)
+size_t CCassBlobFetch::GetBlobPropItemId(CPSGS_Reply *  reply)
 {
     if (m_BlobPropItemId == 0)
-        m_BlobPropItemId = protocol_utils->GetItemId();
+        m_BlobPropItemId = reply->GetItemId();
     return m_BlobPropItemId;
 }
 
 
-size_t CCassBlobFetch::GetBlobChunkItemId(CProtocolUtils *  protocol_utils)
+size_t CCassBlobFetch::GetBlobChunkItemId(CPSGS_Reply *  reply)
 {
     if (m_BlobChunkItemId == 0)
-        m_BlobChunkItemId = protocol_utils->GetItemId();
+        m_BlobChunkItemId = reply->GetItemId();
     return m_BlobChunkItemId;
 }
 

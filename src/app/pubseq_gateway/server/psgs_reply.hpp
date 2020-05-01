@@ -1,5 +1,5 @@
-#ifndef PROTOCOL_UTILS__HPP
-#define PROTOCOL_UTILS__HPP
+#ifndef PSGS_REPLY__HPP
+#define PSGS_REPLY__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -43,10 +43,10 @@ struct SPSGS_BlobId;
 
 
 // Keeps track of the protocol replies
-class CProtocolUtils
+class CPSGS_Reply
 {
 public:
-    CProtocolUtils(size_t  initial_reply_chunks) :
+    CPSGS_Reply(size_t  initial_reply_chunks) :
         m_Reply(nullptr),
         m_NextItemId(0),
         m_TotalSentReplyChunks(initial_reply_chunks)

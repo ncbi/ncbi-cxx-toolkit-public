@@ -35,9 +35,7 @@
 #include "http_server_transport.hpp"
 #include "cass_fetch.hpp"
 
-
 class CPendingOperation;
-class CProtocolUtils;
 
 class CSplitHistoryConsumeCallback
 {

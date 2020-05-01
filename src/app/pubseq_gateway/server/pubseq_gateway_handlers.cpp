@@ -229,16 +229,17 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
 
         m_RequestCounters.IncGetBlobBySeqId();
         resp.Postpone(
-                CPendingOperation(
+            CPendingOperation(
+                CPSGS_Request(
                     SPSGS_BlobBySeqIdRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, exclude_blobs,
                         tse_option, use_cache, subst_option,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        trace, now),
-                    0, m_CassConnection, m_TimeoutMs,
-                    m_MaxRetries, context));
+                        trace, now), context),
+                0, m_CassConnection, m_TimeoutMs,
+                m_MaxRetries));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get request: " +
                           string(exc.what());
@@ -334,15 +335,16 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
 
                 m_RequestCounters.IncGetBlobBySatSatKey();
                 resp.Postpone(
-                        CPendingOperation(
+                    CPendingOperation(
+                        CPSGS_Request(
                             SPSGS_BlobBySatSatKeyRequest(
                                 blob_id, last_modified_value,
                                 tse_option, use_cache,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
-                                trace, now),
+                                trace, now), context),
                             0, m_CassConnection, m_TimeoutMs,
-                            m_MaxRetries, context));
+                            m_MaxRetries));
 
                 return 0;
             }
@@ -516,14 +518,15 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
         // Parameters processing has finished
         m_RequestCounters.IncResolve();
         resp.Postpone(
-                CPendingOperation(
+            CPendingOperation(
+                CPSGS_Request(
                     SPSGS_ResolveRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, include_data_flags, output_format,
                         use_cache, use_psg_protocol, subst_option,
-                        trace, now),
+                        trace, now), context),
                     0, m_CassConnection, m_TimeoutMs,
-                    m_MaxRetries, context));
+                    m_MaxRetries));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a resolve request: " +
                           string(exc.what());
@@ -658,12 +661,13 @@ int CPubseqGatewayApp::OnGetTSEChunk(HST::CHttpRequest &  req,
         // All parameters are good
         m_RequestCounters.IncGetTSEChunk();
         resp.Postpone(
-                CPendingOperation(
+            CPendingOperation(
+                CPSGS_Request(
                     SPSGS_TSEChunkRequest(
                         tse_id, chunk_value, split_version_value,
-                        use_cache, trace, now),
+                        use_cache, trace, now), context),
                     0, m_CassConnection, m_TimeoutMs,
-                    m_MaxRetries, context));
+                    m_MaxRetries));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_tse_chunk request: " +
                           string(exc.what());
@@ -779,12 +783,14 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
         // Parameters processing has finished
         m_RequestCounters.IncGetNA();
         resp.Postpone(
-                CPendingOperation(
+            CPendingOperation(
+                CPSGS_Request(
                     SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, names, use_cache, trace, now),
+                        context),
                     0, m_CassConnection, m_TimeoutMs,
-                    m_MaxRetries, context));
+                    m_MaxRetries));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_na request: " +
                           string(exc.what());

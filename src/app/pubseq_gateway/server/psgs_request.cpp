@@ -53,6 +53,45 @@ SPSGS_BlobId::SPSGS_BlobId(const string &  blob_id) :
     }
 }
 
+CPSGS_Request::CPSGS_Request(const SPSGS_ResolveRequest &  req,
+                             CRef<CRequestContext>  request_context) :
+    m_RequestType(ePSGS_ResolveRequest),
+    m_ResolveRequest(req),
+    m_RequestContext(request_context)
+{}
+
+
+CPSGS_Request::CPSGS_Request(const SPSGS_BlobBySeqIdRequest &  req,
+                             CRef<CRequestContext>  request_context) :
+    m_RequestType(ePSGS_BlobBySeqIdRequest),
+    m_BlobBySeqIdRequest(req),
+    m_RequestContext(request_context)
+{}
+
+
+CPSGS_Request::CPSGS_Request(const SPSGS_BlobBySatSatKeyRequest &  req,
+                             CRef<CRequestContext>  request_context) :
+    m_RequestType(ePSGS_BlobBySatSatKeyRequest),
+    m_BlobBySatSatKeyRequest(req),
+    m_RequestContext(request_context)
+{}
+
+
+CPSGS_Request::CPSGS_Request(const SPSGS_AnnotRequest &  req,
+                             CRef<CRequestContext>  request_context) :
+    m_RequestType(ePSGS_AnnotationRequest),
+    m_AnnotRequest(req),
+    m_RequestContext(request_context)
+{}
+
+
+CPSGS_Request::CPSGS_Request(const SPSGS_TSEChunkRequest &  req,
+                             CRef<CRequestContext>  request_context) :
+    m_RequestType(ePSGS_TSEChunkRequest),
+    m_TSEChunkRequest(req),
+    m_RequestContext(request_context)
+{}
+
 
 string CPSGS_Request::x_RequestTypeToString(EPSGS_Type  type) const
 {

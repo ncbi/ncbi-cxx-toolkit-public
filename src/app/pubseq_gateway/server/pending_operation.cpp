@@ -53,15 +53,13 @@ CPendingOperation::CPendingOperation(const CPSGS_Request &  user_request,
                                      size_t  initial_reply_chunks,
                                      shared_ptr<CCassConnection>  conn,
                                      unsigned int  timeout,
-                                     unsigned int  max_retries,
-                                     CRef<CRequestContext>  request_context) :
+                                     unsigned int  max_retries) :
     m_Conn(conn),
     m_Timeout(timeout),
     m_MaxRetries(max_retries),
     m_OverallStatus(CRequestStatus::e200_Ok),
     m_UserRequest(user_request),
     m_Cancelled(false),
-    m_RequestContext(request_context),
     m_ProtocolSupport(initial_reply_chunks),
     m_CreateTimestamp(chrono::high_resolution_clock::now())
 {
@@ -1292,19 +1290,19 @@ void CPendingOperation::x_SendReplyCompletion(bool  forced)
 
 void CPendingOperation::x_SetRequestContext(void)
 {
-    if (m_RequestContext.NotNull())
-        CDiagContext::SetRequestContext(m_RequestContext);
+    if (m_UserRequest.GetRequestContext().NotNull())
+        CDiagContext::SetRequestContext(m_UserRequest.GetRequestContext());
 }
 
 
 void CPendingOperation::x_PrintRequestStop(int  status)
 {
-    if (m_RequestContext.NotNull()) {
-        CDiagContext::SetRequestContext(m_RequestContext);
-        m_RequestContext->SetReadOnly(false);
-        m_RequestContext->SetRequestStatus(status);
+    if (m_UserRequest.GetRequestContext().NotNull()) {
+        CDiagContext::SetRequestContext(m_UserRequest.GetRequestContext());
+        m_UserRequest.GetRequestContext()->SetReadOnly(false);
+        m_UserRequest.GetRequestContext()->SetRequestStatus(status);
         GetDiagContext().PrintRequestStop();
-        m_RequestContext.Reset();
+        m_UserRequest.GetRequestContext().Reset();
         CDiagContext::SetRequestContext(NULL);
     }
 }

@@ -37,7 +37,6 @@
 
 
 class CPendingOperation;
-class CProtocolUtils;
 
 class CBlobChunkCallback
 {

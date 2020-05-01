@@ -45,7 +45,7 @@ USING_IDBLOB_SCOPE;
 
 
 class CPendingOperation;
-class CProtocolUtils;
+class CPSGS_Reply;
 
 // Keeps track of the retrieving something from cassandra
 class CCassFetch
@@ -216,8 +216,8 @@ public:
     { return static_cast<CCassBlobTaskLoadBlob *>(m_Loader.get()); }
 
 public:
-    size_t GetBlobPropItemId(CProtocolUtils *  protocol_utils);
-    size_t GetBlobChunkItemId(CProtocolUtils *  protocol_utils);
+    size_t GetBlobPropItemId(CPSGS_Reply *  reply);
+    size_t GetBlobChunkItemId(CPSGS_Reply *  reply);
 
     virtual void ResetCallbacks(void);
 

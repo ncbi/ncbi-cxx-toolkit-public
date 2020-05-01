@@ -33,26 +33,26 @@
 #include <ncbi_pch.hpp>
 
 #include "pending_operation.hpp"
-#include "protocol_utils.hpp"
+#include "psgs_reply.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "cass_fetch.hpp"
 
 
-void CProtocolUtils::Flush(void)
+void CPSGS_Reply::Flush(void)
 {
     m_Reply->Send(m_Chunks, true);
     m_Chunks.clear();
 }
 
 
-void CProtocolUtils::Flush(bool  is_last)
+void CPSGS_Reply::Flush(bool  is_last)
 {
     m_Reply->Send(m_Chunks, is_last);
     m_Chunks.clear();
 }
 
 
-void CProtocolUtils::Clear(void)
+void CPSGS_Reply::Clear(void)
 {
     m_Chunks.clear();
     m_Reply = nullptr;
@@ -60,11 +60,11 @@ void CProtocolUtils::Clear(void)
 }
 
 
-void CProtocolUtils::PrepareBioseqMessage(size_t  item_id,
-                                          const string &  msg,
-                                          CRequestStatus::ECode  status,
-                                          int  err_code,
-                                          EDiagSev  severity)
+void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
+                                       const string &  msg,
+                                       CRequestStatus::ECode  status,
+                                       int  err_code,
+                                       EDiagSev  severity)
 {
     string  header = GetBioseqMessageHeader(item_id, msg.size(), status,
                                             err_code, severity);
@@ -77,7 +77,7 @@ void CProtocolUtils::PrepareBioseqMessage(size_t  item_id,
 
 
 
-void CProtocolUtils::PrepareBioseqData(
+void CPSGS_Reply::PrepareBioseqData(
                     size_t  item_id,
                     const string &  content,
                     SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
@@ -92,8 +92,8 @@ void CProtocolUtils::PrepareBioseqData(
 }
 
 
-void CProtocolUtils::PrepareBioseqCompletion(size_t  item_id,
-                                             size_t  chunk_count)
+void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
+                                          size_t  chunk_count)
 {
     string      bioseq_meta = GetBioseqCompletionHeader(item_id, chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -103,11 +103,11 @@ void CProtocolUtils::PrepareBioseqCompletion(size_t  item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobPropMessage(size_t                 item_id,
-                                            const string &         msg,
-                                            CRequestStatus::ECode  status,
-                                            int                    err_code,
-                                            EDiagSev               severity)
+void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
+                                         const string &         msg,
+                                         CRequestStatus::ECode  status,
+                                         int                    err_code,
+                                         EDiagSev               severity)
 {
     string      header = GetBlobPropMessageHeader(item_id, msg.size(),
                                                   status, err_code, severity);
@@ -119,11 +119,11 @@ void CProtocolUtils::PrepareBlobPropMessage(size_t                 item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
-                                            const string &         msg,
-                                            CRequestStatus::ECode  status,
-                                            int                    err_code,
-                                            EDiagSev               severity)
+void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
+                                         const string &         msg,
+                                         CRequestStatus::ECode  status,
+                                         int                    err_code,
+                                         EDiagSev               severity)
 {
     PrepareBlobPropMessage(fetch_details->GetBlobPropItemId(this),
                            msg, status, err_code, severity);
@@ -131,8 +131,8 @@ void CProtocolUtils::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details
 }
 
 
-void CProtocolUtils::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
-                                         const string &    content)
+void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+                                      const string &    content)
 {
     string  header = GetBlobPropHeader(fetch_details->GetBlobPropItemId(this),
                                        fetch_details->GetBlobId(),
@@ -147,10 +147,10 @@ void CProtocolUtils::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
 }
 
 
-void CProtocolUtils::PrepareBlobData(CCassBlobFetch *       fetch_details,
-                                     const unsigned char *  chunk_data,
-                                     unsigned int           data_size,
-                                     int                    chunk_no)
+void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
+                                  const unsigned char *  chunk_data,
+                                  unsigned int           data_size,
+                                  int                    chunk_no)
 {
     fetch_details->IncrementTotalSentBlobChunks();
     ++m_TotalSentReplyChunks;
@@ -167,8 +167,8 @@ void CProtocolUtils::PrepareBlobData(CCassBlobFetch *       fetch_details,
 }
 
 
-void CProtocolUtils::PrepareBlobPropCompletion(size_t  item_id,
-                                               size_t  chunk_count)
+void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
+                                            size_t  chunk_count)
 {
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
                                                              chunk_count);
@@ -179,7 +179,7 @@ void CProtocolUtils::PrepareBlobPropCompletion(size_t  item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
+void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
 {
     // +1 is for the completion itself
     PrepareBlobPropCompletion(fetch_details->GetBlobPropItemId(this),
@@ -191,12 +191,12 @@ void CProtocolUtils::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
 }
 
 
-void CProtocolUtils::PrepareBlobMessage(size_t                 item_id,
-                                        const SPSGS_BlobId &   blob_id,
-                                        const string &         msg,
-                                        CRequestStatus::ECode  status,
-                                        int                    err_code,
-                                        EDiagSev               severity)
+void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
+                                     const SPSGS_BlobId &   blob_id,
+                                     const string &         msg,
+                                     CRequestStatus::ECode  status,
+                                     int                    err_code,
+                                     EDiagSev               severity)
 {
     string      header = GetBlobMessageHeader(item_id, blob_id, msg.size(),
                                               status, err_code, severity);
@@ -208,11 +208,11 @@ void CProtocolUtils::PrepareBlobMessage(size_t                 item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
-                                        const string &         msg,
-                                        CRequestStatus::ECode  status,
-                                        int                    err_code,
-                                        EDiagSev               severity)
+void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
+                                     const string &         msg,
+                                     CRequestStatus::ECode  status,
+                                     int                    err_code,
+                                     EDiagSev               severity)
 {
     PrepareBlobMessage(fetch_details->GetBlobChunkItemId(this),
                        fetch_details->GetBlobId(),
@@ -221,9 +221,9 @@ void CProtocolUtils::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
 }
 
 
-void CProtocolUtils::PrepareBlobCompletion(size_t                item_id,
-                                           const SPSGS_BlobId &  blob_id,
-                                           size_t                chunk_count)
+void CPSGS_Reply::PrepareBlobCompletion(size_t                item_id,
+                                        const SPSGS_BlobId &  blob_id,
+                                        size_t                chunk_count)
 {
     string completion = GetBlobCompletionHeader(item_id, blob_id, chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -233,8 +233,8 @@ void CProtocolUtils::PrepareBlobCompletion(size_t                item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobExcluded(const SPSGS_BlobId &  blob_id,
-                                         EPSGS_BlobSkipReason  skip_reason)
+void CPSGS_Reply::PrepareBlobExcluded(const SPSGS_BlobId &  blob_id,
+                                      EPSGS_BlobSkipReason  skip_reason)
 {
     string  exclude = GetBlobExcludeHeader(GetItemId(), blob_id, skip_reason);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -244,9 +244,9 @@ void CProtocolUtils::PrepareBlobExcluded(const SPSGS_BlobId &  blob_id,
 }
 
 
-void CProtocolUtils::PrepareBlobExcluded(size_t                item_id,
-                                         const SPSGS_BlobId &  blob_id,
-                                         EPSGS_BlobSkipReason  skip_reason)
+void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
+                                      const SPSGS_BlobId &  blob_id,
+                                      EPSGS_BlobSkipReason  skip_reason)
 {
     string  exclude = GetBlobExcludeHeader(item_id, blob_id, skip_reason);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -256,7 +256,7 @@ void CProtocolUtils::PrepareBlobExcluded(size_t                item_id,
 }
 
 
-void CProtocolUtils::PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
+void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
 {
     // +1 is for the completion itself
     PrepareBlobCompletion(fetch_details->GetBlobChunkItemId(this),
@@ -266,10 +266,10 @@ void CProtocolUtils::PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
 }
 
 
-void CProtocolUtils::PrepareReplyMessage(const string &         msg,
-                                         CRequestStatus::ECode  status,
-                                         int                    err_code,
-                                         EDiagSev               severity)
+void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
+                                      CRequestStatus::ECode  status,
+                                      int                    err_code,
+                                      EDiagSev               severity)
 {
     string      header = GetReplyMessageHeader(msg.size(),
                                                status, err_code, severity);
@@ -282,8 +282,8 @@ void CProtocolUtils::PrepareReplyMessage(const string &         msg,
 
 
 
-void CProtocolUtils::PrepareNamedAnnotationData(const string &  annot_name,
-                                                const string &  content)
+void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
+                                             const string &  content)
 {
     size_t      item_id = GetItemId();
     string      header = GetNamedAnnotationHeader(item_id, annot_name,
@@ -303,7 +303,7 @@ void CProtocolUtils::PrepareNamedAnnotationData(const string &  annot_name,
 }
 
 
-void CProtocolUtils::PrepareReplyCompletion(void)
+void CPSGS_Reply::PrepareReplyCompletion(void)
 {
     ++m_TotalSentReplyChunks;
 
@@ -314,8 +314,8 @@ void CProtocolUtils::PrepareReplyCompletion(void)
 }
 
 
-void CProtocolUtils::SendData(const string &  data_to_send,
-                              EPSGS_ReplyMimeType  mime_type)
+void CPSGS_Reply::SendData(const string &  data_to_send,
+                           EPSGS_ReplyMimeType  mime_type)
 {
     m_Reply->SetContentType(mime_type);
     m_Reply->SetContentLength(data_to_send.length());
@@ -323,35 +323,35 @@ void CProtocolUtils::SendData(const string &  data_to_send,
 }
 
 
-void CProtocolUtils::Send400(const char *  msg)
+void CPSGS_Reply::Send400(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send400("Bad Request", msg);
 }
 
 
-void CProtocolUtils::Send404(const char *  msg)
+void CPSGS_Reply::Send404(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send404("Not Found", msg);
 }
 
 
-void CProtocolUtils::Send500(const char *  msg)
+void CPSGS_Reply::Send500(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send500("Internal Server Error", msg);
 }
 
 
-void CProtocolUtils::Send502(const char *  msg)
+void CPSGS_Reply::Send502(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send502("Bad Gateway", msg);
 }
 
 
-void CProtocolUtils::Send503(const char *  msg)
+void CPSGS_Reply::Send503(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
     m_Reply->Send503("Service Unavailable", msg);

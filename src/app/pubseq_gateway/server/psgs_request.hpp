@@ -32,6 +32,7 @@
  *
  */
 
+#include <corelib/request_ctx.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
 #include <chrono>
@@ -447,34 +448,29 @@ public:
     };
 
 public:
-    CPSGS_Request(const SPSGS_ResolveRequest &  req) :
-        m_RequestType(ePSGS_ResolveRequest),
-        m_ResolveRequest(req)
-    {}
+    CPSGS_Request(const SPSGS_ResolveRequest &  req,
+                  CRef<CRequestContext>  request_context);
 
-    CPSGS_Request(const SPSGS_BlobBySeqIdRequest &  req) :
-        m_RequestType(ePSGS_BlobBySeqIdRequest),
-        m_BlobBySeqIdRequest(req)
-    {}
+    CPSGS_Request(const SPSGS_BlobBySeqIdRequest &  req,
+                  CRef<CRequestContext>  request_context);
 
-    CPSGS_Request(const SPSGS_BlobBySatSatKeyRequest &  req) :
-        m_RequestType(ePSGS_BlobBySatSatKeyRequest),
-        m_BlobBySatSatKeyRequest(req)
-    {}
+    CPSGS_Request(const SPSGS_BlobBySatSatKeyRequest &  req,
+                  CRef<CRequestContext>  request_context);
 
-    CPSGS_Request(const SPSGS_AnnotRequest &  req) :
-        m_RequestType(ePSGS_AnnotationRequest),
-        m_AnnotRequest(req)
-    {}
+    CPSGS_Request(const SPSGS_AnnotRequest &  req,
+                  CRef<CRequestContext>  request_context);
 
-    CPSGS_Request(const SPSGS_TSEChunkRequest &  req) :
-        m_RequestType(ePSGS_TSEChunkRequest),
-        m_TSEChunkRequest(req)
-    {}
+    CPSGS_Request(const SPSGS_TSEChunkRequest &  req,
+                  CRef<CRequestContext>  request_context);
 
     EPSGS_Type  GetRequestType(void) const
     {
         return m_RequestType;
+    }
+
+    CRef<CRequestContext>  GetRequestContext(void)
+    {
+        return m_RequestContext;
     }
 
     SPSGS_ResolveRequest &  GetResolveRequest(void);
@@ -498,6 +494,9 @@ private:
     SPSGS_BlobBySatSatKeyRequest    m_BlobBySatSatKeyRequest;
     SPSGS_AnnotRequest              m_AnnotRequest;
     SPSGS_TSEChunkRequest           m_TSEChunkRequest;
+
+private:
+    CRef<CRequestContext>           m_RequestContext;
 };
 
 #endif  // PSGS_REQUEST__HPP
