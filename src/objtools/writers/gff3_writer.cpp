@@ -2605,7 +2605,9 @@ bool CGff3Writer::xWriteFeatureProtein(
     if (!xAssignFeature(*pRecord, fc, protein)) {
         return false;
     }
-
+    
+    // map location to cds coordinates (id and span):
+    xAssignFeatureSeqId(*pRecord, fc, cds);
     CSeq_loc_Mapper prot_to_cds(cds.GetOriginalFeature(), 
         CSeq_loc_Mapper::eProductToLocation, m_pScope);
     prot_to_cds.SetFuzzOption(CSeq_loc_Mapper::fFuzzOption_CStyle);
