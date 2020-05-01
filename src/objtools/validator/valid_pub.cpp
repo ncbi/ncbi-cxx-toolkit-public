@@ -1105,7 +1105,7 @@ void CValidError_imp::ValidateCitSub
         if (rval == eDateValid_valid) {
             time_t time_now = time(NULL);
             if (CSubSource::IsCollectionDateAfterTime(cs.GetDate(), time_now)) {
-                PostObjErr(eDiag_Error, eErr_GENERIC_BadDate, "Submission citation date is in the future", obj, ctx);
+                PostObjErr(eDiag_Warning, eErr_GENERIC_BadDate, "Submission citation date is in the future", obj, ctx);
             }
         } else {
             PostBadDateError (eDiag_Error, "Submission citation date has error", rval, obj, ctx);
