@@ -23225,7 +23225,7 @@ BOOST_AUTO_TEST_CASE(VR_778)
     
     AddYear(future);
     subpub->SetSub().SetDate().Assign(future);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadDate",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDate",
                               "Submission citation date is in the future"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
