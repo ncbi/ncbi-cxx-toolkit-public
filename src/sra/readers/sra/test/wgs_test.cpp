@@ -137,7 +137,7 @@ void CWGSTestApp::Init(void)
                       "Check that lookup produce non-empty result");
     arg_desc->AddOptionalKey("gi", "GI",
                              "lookup by GI",
-                             CArgDescriptions::eInt8);
+                             CArgDescriptions::eIntId);
     arg_desc->AddOptionalKey("contig_name", "ContigName",
                              "lookup by contig name",
                              CArgDescriptions::eString);
