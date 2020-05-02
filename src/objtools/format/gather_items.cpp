@@ -4060,7 +4060,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
     // collect features
     // if ( ctx.IsSegmented()  &&  cfg.IsStyleMaster()  &&  cfg.OldFeaturesOrder() ) {
-    if ( cfg.UseSeqEntryIndexer() && ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && cfg.IsStyleMaster() && ctx.GetLocation().IsWhole() ) {
+    if ( cfg.UseSeqEntryIndexer() && ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() ) {
         
         CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
         if (! idx) return;
