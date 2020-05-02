@@ -688,7 +688,8 @@ void CBioseqContext::x_CheckForShowComments() const
     }
 
     // JIRA SQD-4444 : copy annot selector from the one saved in this context structure
-    SAnnotSelector sel = m_FFCtx.SetAnnotSelector();
+    // SAnnotSelector sel = m_FFCtx.SetAnnotSelector();
+    SAnnotSelector sel;
     sel.SetAnnotType(CSeq_annot::TData::e_Ftable);
     CAnnot_CI annot_ci(m_Handle, sel);
     for( ; annot_ci; ++annot_ci ) {
