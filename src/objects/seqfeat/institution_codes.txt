@@ -7939,6 +7939,7 @@ YUC	s	INIREB
 YUKU	s	Yunnan University, Biology Department			
 YUO	s	Youngstown State University, Biological Sciences Department			
 YUTO	s	York University, Biology Department			
+YUZM	s	Yasouj University Zoological Museum			
 YXDC	s	Yuxi District Institute for Drug Control			
 YZU	s	Yuzhou University			
 Z	sb	Institut fur Systematische Botanik Universitat Zurich			

@@ -7972,6 +7972,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "YUKU\ts\tYunnan University, Biology Department\t\t\t",
 "YUO\ts\tYoungstown State University, Biological Sciences Department\t\t\t",
 "YUTO\ts\tYork University, Biology Department\t\t\t",
+"YUZM\ts\tYasouj University Zoological Museum\t\t\t",
 "YXDC\ts\tYuxi District Institute for Drug Control\t\t\t",
 "YZU\ts\tYuzhou University\t\t\t",
 "Z\tsb\tInstitut fur Systematische Botanik Universitat Zurich\t\t\t",
