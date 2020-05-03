@@ -35,6 +35,7 @@ static char sql_file[PATH_MAX];
 static FILE* input_file = NULL;
 
 static char *ARGV0 = NULL;
+static char *ARGV0B = NULL;
 static char *DIRNAME = NULL;
 static const char *BASENAME = NULL;
 
@@ -97,6 +98,8 @@ free_file(void)
 		BASENAME = NULL;
 		free(ARGV0);
 		ARGV0 = NULL;
+		free(ARGV0B);
+		ARGV0B = NULL;
 	}
 }
 
@@ -129,6 +132,7 @@ read_login_info(int argc, char **argv)
 	setbuf(stderr, NULL);
 
 	free(ARGV0);
+	free(ARGV0B);
 #ifdef __VMS
 	{
 		/* basename expects unix format */
@@ -140,8 +144,9 @@ read_login_info(int argc, char **argv)
 #else
 	ARGV0 = strdup(argv[0]);
 #endif
+        ARGV0B = strdup(ARGV0);
 	
-	BASENAME = basename(ARGV0);
+	BASENAME = basename(ARGV0B);
 #if defined(_WIN32) || defined(__VMS)
 	s1 = strrchr(BASENAME, '.');
 	if (s1) *s1 = 0;
