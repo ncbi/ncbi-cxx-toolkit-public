@@ -4,6 +4,7 @@
 #include <objmgr/util/indexer.hpp>
 
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_map_ci.hpp>
 
 //  ============================================================================
 class CExploreProcess
@@ -83,10 +84,17 @@ public:
         int num_nucs = 0;
         int num_prots = 0;
 
+        CNcbiOstream* x_out = m_out;
        // Must pass &num_nucs and &num_prots references as closure arguments
-       idx.IterateBioseqs([&num_nucs, &num_prots](CBioseqIndex& bsx) {
+       idx.IterateBioseqs([x_out, &num_nucs, &num_prots](CBioseqIndex& bsx) {
             // Lambda function executed for each Bioseq
             if (bsx.IsNA()) {
+                SSeqMapSelector sel;
+                sel.SetFlags(CSeqMap::fFindAny);
+                CBioseq_Handle bsh = bsx.GetBioseqHandle();
+                for ( CSeqMap_CI seg(ConstRef(&bsh.GetSeqMap()), &bsh.GetScope(), sel); seg; ++seg ) {
+                    *x_out << "# " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << endl;
+                }
                 num_nucs++;
             } else if (bsx.IsAA()) {
                 num_prots++;
