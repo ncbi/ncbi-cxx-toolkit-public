@@ -640,38 +640,32 @@ int CDbapiTest::Run()
 
         delete bi;
 
-        NcbiCout << "Writing BLOB using cursor and streams..." << endl;
+        NcbiCout << "Writing BLOB using descriptors and streams..." << endl;
 
-        ICursor *blobCur = conn->CreateCursor("test", 
-           "select id, blob from BlobSample for update of blob");
-    
-        IResultSet *blobRs = blobCur->Open();
-        while(blobRs->Next()) {
-                NcbiCout << "Writing BLOB " << blobRs->GetVariant(1).GetInt4() << endl;
-                ostream& out = blobCur->GetBlobOStream(2, blob.size(), eDisableLog);
-                out.write(buf, blob.size());
-                out.flush();
+        for (int i = 0;  i < COUNT;  ++i) {
+            NcbiCout << "Writing BLOB " << i << endl;
+            CDB_BlobDescriptor desc("BlobSample", "blob",
+                                    "id = " + NStr::IntToString(i),
+                                    CDB_BlobDescriptor::eText);
+            ostream& out = stmt->GetBlobOStream(desc, blob.size(),
+                                                fBOS_SkipLogging);
+            out.write(buf, blob.size());
+            out.flush();
         }
-     
-        //blobCur->Close();
-        delete blobCur;
 
-        NcbiCout << "Writing BLOB using cursor and writer..." << endl;
+        NcbiCout << "Writing BLOB using descriptors and writers..." << endl;
 
-        blobCur = conn->CreateCursor("test", 
-           "select id, blob from BlobSample for update of blob");
-    
-        blobRs = blobCur->Open();
-        while(blobRs->Next()) {
-                NcbiCout << "Writing BLOB " << blobRs->GetVariant(1).GetInt4() << endl;
-                IWriter *wr = blobCur->GetBlobWriter(2, blob.size(), eDisableLog);
-                wr->Write(buf, blob.size());
+        for (int i = 0;  i < COUNT;  ++i) {
+            NcbiCout << "Writing BLOB " << i << endl;
+            CDB_BlobDescriptor desc("BlobSample", "blob",
+                                    "id = " + NStr::IntToString(i),
+                                    CDB_BlobDescriptor::eText);
+            IWriter *wr = stmt->GetBlobWriter(desc, blob.size(),
+                                              fBOS_SkipLogging);
+            wr->Write(buf, blob.size());
         }
-     
-        //blobCur->Close();
-        delete blobCur;
 
-#if 0 // Not supported by ODBC driver
+#if 0 // Not supported by ODBC driver, and uses deprecated API regardless
         NcbiCout << "Writing BLOB using resultset..." << endl;
 
         sql = "select id, blob from BlobSample";
