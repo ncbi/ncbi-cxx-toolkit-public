@@ -104,12 +104,13 @@ void CCgiSampleApplication::x_LookAtArgs()
     if ( args["message"] ) {
         // get the first "message" argument only...
         const string& m = args["message"].AsString();
-        (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
+        (void) m.c_str(); // just get rid of compiler warning about unused variable
 
         // ...or get the whole list of "message" arguments
         const auto& values = args["message"].GetStringList();  // const CArgValue::TStringArray& 
         for (const auto& v : values) {
             // do something with each message 'v' (string)
+            (void) v.c_str(); // just get rid of compiler warning about unused variable
         } 
     } else {
         // no "message" argument is present

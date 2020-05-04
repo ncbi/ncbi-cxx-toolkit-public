@@ -16,11 +16,11 @@ static const char* CD_VERSION_ENV     = "APPLICATION_VERSION";
 static const char* CD_VERSION_UNKNOWN = "unknown";
 
 
-const string& CCgiSampleApplication::GetCdVersion() const
+const string CCgiSampleApplication::GetCdVersion() const
 {
     bool found = false;
-    const string & version = GetEnvironment().Get(CD_VERSION_ENV, &found);
-    if(!found) {
+    const string version = GetEnvironment().Get(CD_VERSION_ENV, &found);
+    if (!found) {
         return CD_VERSION_UNKNOWN;
     }
     return version;
