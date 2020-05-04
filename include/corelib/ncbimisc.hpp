@@ -1030,20 +1030,20 @@ public:
 
 #endif // NCBI_STRICT_GI
 
-#define GI_TO(T, gi) STRICT_ID_TO(TGi, T, gi)
-#define GI_FROM(T, value) STRICT_ID_FROM(TGi, T, value)
-#define GI_CONST(gi) STRICT_ID_CONST(TGi, gi)
-#define ZERO_GI STRICT_ID_ZERO(TGi)
-#define INVALID_GI STRICT_ID_INVALID(TGi)
+#define GI_TO(T, gi) STRICT_ID_TO(ncbi::TGi, T, gi)
+#define GI_FROM(T, value) STRICT_ID_FROM(ncbi::TGi, T, value)
+#define GI_CONST(gi) STRICT_ID_CONST(ncbi::TGi, gi)
+#define ZERO_GI STRICT_ID_ZERO(ncbi::TGi)
+#define INVALID_GI STRICT_ID_INVALID(ncbi::TGi)
 
 
 #ifdef NCBI_STRICT_ENTREZ_ID
-# define ENTREZ_ID_TO(T, entrez_id) STRICT_ID_TO(TEntrezId, T, entrez_id)
-# define ENTREZ_ID_FROM(T, value) STRICT_ID_FROM(TEntrezId, T, value)
-# define ENTREZ_ID_CONST(id) STRICT_ID_CONST(TEntrezId, id)
+# define ENTREZ_ID_TO(T, entrez_id) STRICT_ID_TO(ncbi::TEntrezId, T, entrez_id)
+# define ENTREZ_ID_FROM(T, value) STRICT_ID_FROM(ncbi::TEntrezId, T, value)
+# define ENTREZ_ID_CONST(id) STRICT_ID_CONST(ncbi::TEntrezId, id)
 #else
 # define ENTREZ_ID_TO(T, entrez_id) (static_cast<T>(entrez_id))
-# define ENTREZ_ID_FROM(T, value) (static_cast<TEntrezId>(value))
+# define ENTREZ_ID_FROM(T, value) (static_cast<ncbi::TEntrezId>(value))
 # define ENTREZ_ID_CONST(id) id
 #endif
 
@@ -1053,7 +1053,7 @@ public:
 
 /// Convert gi-compatible int to/from other types.
 #define INT_ID_TO(T, id) (static_cast<T>(id))
-#define INT_ID_FROM(T, value) (static_cast<TIntId>(value))
+#define INT_ID_FROM(T, value) (static_cast<ncbi::TIntId>(value))
 
 
 /// Helper address class
