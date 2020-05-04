@@ -8306,24 +8306,43 @@ else
    NCBI_MISSING_PACKAGE(grpc)
 fi
 
+grpc_pc=pkg-config
 if test -n "$GRPC_PATH"; then
-   in_path=" in $GRPC_PATH"
-   CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
-   LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lcares"
-   LIBS="$LIBS $orig_LIBS"
-else
-   LIBS="-lcares $orig_LIBS"
+   for d in "$GRPC_PATH/lib$bit64_sfx" "$GRPC_PATH/lib"; do
+      if test -d "$d/pkgconfig"; then
+         grpc_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
+         break
+      fi
+   done
 fi
-AC_MSG_CHECKING([for libcares$in_path])
-AC_LINK_IFELSE(
-   [AC_LANG_PROGRAM([@%:@include <ares.h>], [ares_library_init(0);])],
-   [CARES_LIBS=-lcares; AC_MSG_RESULT([yes])],
-   [CARES_LIBS=; AC_MSG_RESULT([no])])
-
-if test -f "$GRPC_PATH/lib/libboringssl.a"; then
-   GRPC_LDEP="-lboringssl -lboringcrypto"
+if $grpc_pc grpc++ --exists 2>/dev/null; then
+   if test -f "$GRPC_PATH/lib/libboringssl.a"; then
+      GRPC_SED="sed -e s/-lssl/-lboringssl/g -e s/-lcrypto/-lboringcrypto/g"
+   else
+      GRPC_SED=cat
+   fi
+   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ --libs | $GRPC_SED`"
 else
-   GRPC_LDEP=$OPENSSL_LIBS
+   GRPC_CONFIG_LIBS=
+   if test -n "$GRPC_PATH"; then
+      in_path=" in $GRPC_PATH"
+      CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
+      LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lcares"
+      LIBS="$LIBS $orig_LIBS"
+   else
+      LIBS="-lcares $orig_LIBS"
+   fi
+   AC_MSG_CHECKING([for libcares$in_path])
+   AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([@%:@include <ares.h>], [ares_library_init(0);])],
+      [CARES_LIBS=-lcares; AC_MSG_RESULT([yes])],
+      [CARES_LIBS=; AC_MSG_RESULT([no])])
+   
+   if test -f "$GRPC_PATH/lib/libboringssl.a"; then
+      GRPC_LDEP="-lboringssl -lboringcrypto"
+   else
+      GRPC_LDEP=$OPENSSL_LIBS
+   fi
 fi
 # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
 # GRPC is always threaded, and may need explicit THREAD_LIBS when
@@ -8335,15 +8354,21 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [AC_LANG_PROGRAM([[@%:@include <grpc++/grpc++.h>]],
        [[return grpc::Version().size();]])],
-   [-lgrpc -lgpr $PROTOBUF_LIBS $CARES_LIBS], [$GRPC_LDEP $Z_LIBS],
-   [$PROTOBUF_INCLUDE])
+   [${GRPC_CONFIG_LIBS--lgrpc -lgpr $CARES_LIBS $GRPC_LDEP}],
+   [$PROTOBUF_LIBS $Z_LIBS], [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
-   LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
-   AC_CHECK_LIB(address_sorting, address_sorting_rfc_6724_sort,
-      [GRPC_LIBS="$GRPC_LIBS -laddress_sorting"], [])
-   LDFLAGS=$orig_LDFLAGS
-   GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
-   GRPC_LIBS="$GRPC_LIBS $GRPC_LDEP"
+   if test -n "$GRPC_CONFIG_LIBS"; then
+      GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS"
+      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure --libs` $PROTOBUF_LIBS"
+   else
+      LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
+      AC_CHECK_LIB(address_sorting, address_sorting_rfc_6724_sort,
+         [GRPC_LIBS="$GRPC_LIBS -laddress_sorting"], [])
+      LDFLAGS=$orig_LDFLAGS
+      GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS \
+         | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
+      GRPC_LIBS="$GRPC_LIBS $GRPC_LDEP"
+   fi 
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"

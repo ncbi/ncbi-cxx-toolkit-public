@@ -32438,17 +32438,35 @@ else
     fi
 fi
 
+grpc_pc=pkg-config
 if test -n "$GRPC_PATH"; then
-   in_path=" in $GRPC_PATH"
-   CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
-   LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lcares"
-   LIBS="$LIBS $orig_LIBS"
-else
-   LIBS="-lcares $orig_LIBS"
+   for d in "$GRPC_PATH/lib$bit64_sfx" "$GRPC_PATH/lib"; do
+      if test -d "$d/pkgconfig"; then
+         grpc_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
+         break
+      fi
+   done
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcares$in_path" >&5
+if $grpc_pc grpc++ --exists 2>/dev/null; then
+   if test -f "$GRPC_PATH/lib/libboringssl.a"; then
+      GRPC_SED="sed -e s/-lssl/-lboringssl/g -e s/-lcrypto/-lboringcrypto/g"
+   else
+      GRPC_SED=cat
+   fi
+   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ --libs | $GRPC_SED`"
+else
+   GRPC_CONFIG_LIBS=
+   if test -n "$GRPC_PATH"; then
+      in_path=" in $GRPC_PATH"
+      CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
+      LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lcares"
+      LIBS="$LIBS $orig_LIBS"
+   else
+      LIBS="-lcares $orig_LIBS"
+   fi
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcares$in_path" >&5
 $as_echo_n "checking for libcares$in_path... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <ares.h>
 int
@@ -32469,10 +32487,11 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-if test -f "$GRPC_PATH/lib/libboringssl.a"; then
-   GRPC_LDEP="-lboringssl -lboringcrypto"
-else
-   GRPC_LDEP=$OPENSSL_LIBS
+   if test -f "$GRPC_PATH/lib/libboringssl.a"; then
+      GRPC_LDEP="-lboringssl -lboringcrypto"
+   else
+      GRPC_LDEP=$OPENSSL_LIBS
+   fi
 fi
 # In MT builds, ORIG_LIBS already contains THREAD_LIBS.  However,
 # GRPC is always threaded, and may need explicit THREAD_LIBS when
@@ -32556,10 +32575,10 @@ if test "$with_grpc" != "no"; then
     GRPC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ -lgrpc -lgpr $PROTOBUF_LIBS $CARES_LIBS"
+       GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ ${GRPC_CONFIG_LIBS--lgrpc -lgpr $CARES_LIBS $GRPC_LDEP}"
     else
        GRPC_INCLUDE=""
-       GRPC_LIBS="-lgrpc++ -lgrpc -lgpr $PROTOBUF_LIBS $CARES_LIBS"
+       GRPC_LIBS="-lgrpc++ ${GRPC_CONFIG_LIBS--lgrpc -lgpr $CARES_LIBS $GRPC_LDEP}"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libgrpc++$in_path" >&5
@@ -32568,7 +32587,7 @@ if ${ncbi_cv_lib_grpc+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   CPPFLAGS="$PROTOBUF_INCLUDE $GRPC_INCLUDE $orig_CPPFLAGS"
-       LIBS="$GRPC_LIBS $GRPC_LDEP $Z_LIBS $orig_LIBS"
+       LIBS="$GRPC_LIBS $PROTOBUF_LIBS $Z_LIBS $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <grpc++/grpc++.h>
@@ -32611,8 +32630,12 @@ $as_echo "#define HAVE_LIBGRPC 1" >>confdefs.h
 
 
 if test -n "$GRPC_LIBS"; then
-   LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for address_sorting_rfc_6724_sort in -laddress_sorting" >&5
+   if test -n "$GRPC_CONFIG_LIBS"; then
+      GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS"
+      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure --libs` $PROTOBUF_LIBS"
+   else
+      LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for address_sorting_rfc_6724_sort in -laddress_sorting" >&5
 $as_echo_n "checking for address_sorting_rfc_6724_sort in -laddress_sorting... " >&6; }
 if ${ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -32652,9 +32675,11 @@ if test "x$ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort" = x""yes; th
   GRPC_LIBS="$GRPC_LIBS -laddress_sorting"
 fi
 
-   LDFLAGS=$orig_LDFLAGS
-   GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
-   GRPC_LIBS="$GRPC_LIBS $GRPC_LDEP"
+      LDFLAGS=$orig_LDFLAGS
+      GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS \
+         | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
+      GRPC_LIBS="$GRPC_LIBS $GRPC_LDEP"
+   fi
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
