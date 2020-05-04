@@ -144,7 +144,7 @@ if(OFF)
                 )
 elseif(OFF)
 # on every build creates check.sh in one configuration, then runs it.
-                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_CFG} . ${_root} ${_checkdir} check.sh $<CONFIG>')
+                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${_root} ${_checkdir} check.sh $<CONFIG>')
                 add_custom_target(RUN_CREATE_CHECKS
                     COMMAND ${_cmd}
                     DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
@@ -163,7 +163,7 @@ elseif(OFF)
                 add_dependencies(RUN_CHECKS RUN_CREATE_CHECKS)
 else()
 # on every build creates check.sh in one configuration, then runs it.
-                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_CFG} . ${_root} ${_checkdir} check.sh $<CONFIG>)
+                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${_root} ${_checkdir} check.sh $<CONFIG>)
                 set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
                 if ($ENV{NCBI_AUTOMATED_BUILD})
                     set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh concat_err)
@@ -183,7 +183,7 @@ endif()
         message("NOT FOUND Cygwin")
     elseif(XCODE)
         set(_cmdstart export DIAG_SILENT_ABORT=Y$<SEMICOLON>)
-        set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBI_SIGNATURE_CFG} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh $<CONFIG>)
+        set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh $<CONFIG>)
         set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
         if ($ENV{NCBI_AUTOMATED_BUILD})
             set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh concat_err)

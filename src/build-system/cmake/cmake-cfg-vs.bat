@@ -253,4 +253,3 @@ if exist "%tree_root%\CMakeLists.txt" (
 :DONE
 cd /d %initial_dir%
 endlocal
-exit /b 0
