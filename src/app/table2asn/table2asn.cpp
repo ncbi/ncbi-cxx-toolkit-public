@@ -857,6 +857,13 @@ int CTbl2AsnApp::Run(void)
             line, "", "", "", e.GetMsg(), lines));
         m_logger->PutError(*le);
     }
+    catch (CSeqMapException& e) {
+        string msg = e.GetMsg();
+        if (!args["r"] && !args["vdb"] && msg.find("Cannot resolve") != string::npos) {
+            msg += " - try running with -r to enable remote retrieval of sequences";
+        }
+        m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, "", "", "", msg)));
+    }
     catch (const CException& e)
     {
         m_logger->PutError(*unique_ptr<CLineError>(
