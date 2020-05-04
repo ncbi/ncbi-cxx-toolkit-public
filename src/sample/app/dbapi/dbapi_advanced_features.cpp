@@ -43,6 +43,7 @@
 
 USING_NCBI_SCOPE;
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
@@ -50,50 +51,42 @@ class CDbapiTest : public CNcbiApplication
 {
 private:
     virtual void Init();
-    virtual int Run();
+    virtual int  Run();
     virtual void Exit();
-
-  
-    CArgDescriptions *argList;
 };
 
 
 void CDbapiTest::Init()
 {
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    argList = new CArgDescriptions();
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "DBAPI test program");
 
-    argList->SetUsageContext(GetArguments().GetProgramBasename(),
-                             "DBAPI test program");
-
-
-#ifdef WIN32
-
-   argList->AddDefaultKey("s", "string",
+#if defined(NCBI_OS_MSWIN)
+   arg_desc->AddDefaultKey("s", "string",
                            "Server name",
                            CArgDescriptions::eString, "MS_DEV1");
-   argList->AddDefaultKey("d", "string",
+   arg_desc->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds|odbc>",
                            CArgDescriptions::eString, 
                            "odbc");
 #else
+	arg_desc->AddDefaultKey("s", "string",
+                            "Server name",
+                            CArgDescriptions::eString, "TAPER");
 
-	argList->AddDefaultKey("s", "string",
-                           "Server name",
-                           CArgDescriptions::eString, "TAPER");
-
-	argList->AddDefaultKey("d", "string",
-                           "Driver <ctlib|dblib|ftds>",
-                           CArgDescriptions::eString, 
-                           "ctlib");
+	arg_desc->AddDefaultKey("d", "string",
+                            "Driver <ctlib|dblib|ftds>",
+                            CArgDescriptions::eString, 
+                            "ctlib");
 #endif
-
-    SetupArgDescriptions(argList);
+    SetupArgDescriptions(arg_desc.release());
 }
-  
+
+
 int CDbapiTest::Run() 
 {
-
     DBLB_INSTALL_DEFAULT();
 
     const CArgs& args = GetArgs();
@@ -101,13 +94,12 @@ int CDbapiTest::Run()
     IDataSource *ds = 0;
     //CNcbiOfstream log("debug.log");
     //SetDiagStream(&log);
+
     try {
-        
         CDriverManager &dm = CDriverManager::GetInstance();
 
         string server = args["s"].AsString();
         string driver = args["d"].AsString();
-
 
         // Create data source - the root object for all other
         // objects in the library.
@@ -118,7 +110,7 @@ int CDbapiTest::Run()
 
             map<string,string> attr;
             if ( NStr::CompareNocase(driver, "ftds") == 0 ||
-                NStr::CompareNocase(driver, "ftds63") == 0 ) {
+                 NStr::CompareNocase(driver, "ftds63") == 0 ) {
 
                 // set TDS version
                 attr["version"] = "42";
@@ -138,7 +130,6 @@ int CDbapiTest::Run()
         //CNcbiOfstream logfile("test.log");
         //ds->SetLogStream(&log);
 
-
         // Create connection. 
         IConnection* conn = ds->CreateConnection();
         if ( conn == NULL) {
@@ -155,10 +146,7 @@ int CDbapiTest::Run()
         //conn->ForceSingle(true);
 		CTrivialConnValidator val("DBAPI_Sample");
 
-		conn->ConnectValidated(val, "anyone",
-                      "allowed",
-                      server,
-                      "DBAPI_Sample");
+		conn->ConnectValidated(val, "anyone", "allowed", server, "DBAPI_Sample");
     
         NcbiCout << "Using server: " << server
                  << ", driver: " << driver << endl;
@@ -173,59 +161,54 @@ int CDbapiTest::Run()
         // Get trancount
         sql = "select @@trancount";
         IResultSet *tc = stmt->ExecuteQuery(sql);
-        while(tc->Next()) {
+        while (tc->Next()) {
             NcbiCout << "Begin transaction, count: " << tc->GetVariant(1).GetString();
         }
 #endif
-        try 
-		{
+        try {
 			NcbiCout << "Creating SelectSample table...";
 			sql = "if exists( select * from sysobjects \
-where name = 'SelectSample' \
-AND type = 'U') \
-begin \
-	drop table SelectSample \
-end";
+                        where name = 'SelectSample' \
+                        AND type = 'U') \
+                        begin \
+	                        drop table SelectSample \
+                        end";
 			stmt->ExecuteUpdate(sql);
 
-
-        sql = "create table SelectSample (\
-	int_val int not null, \
-	fl_val real not null, \
-    date_val smalldatetime not null, \
-	str_val varchar(255) not null, \
-	text_val text not null)";
+            sql = "create table SelectSample (\
+                        int_val int not null, \
+                        fl_val real not null, \
+                        date_val smalldatetime not null, \
+                        str_val varchar(255) not null, \
+                        text_val text not null)";
 			stmt->ExecuteUpdate(sql);
 
 			sql = "insert SelectSample values (1, 2.5, '11/05/2005', 'Test string1', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-				  insert SelectSample values (2, 3.3, '11/06/2005', 'Test string2', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-				  insert SelectSample values (3, 4.4, '11/07/2005', 'Test string3', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-				  insert SelectSample values (4, 5.5, '11/08/2005', 'Test string4', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-				  insert SelectSample values (5, 6.6, '11/09/2005', 'Test string5', 'TextBlobTextBlobTextBlobTextBlobTextBlob')";
+                   insert SelectSample values (2, 3.3, '11/06/2005', 'Test string2', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+                   insert SelectSample values (3, 4.4, '11/07/2005', 'Test string3', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+                   insert SelectSample values (4, 5.5, '11/08/2005', 'Test string4', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+                   insert SelectSample values (5, 6.6, '11/09/2005', 'Test string5', 'TextBlobTextBlobTextBlobTextBlobTextBlob')";
 			stmt->ExecuteUpdate(sql);
 
-
             sql = "select int_val, fl_val, date_val, str_val from SelectSample";
-            NcbiCout << endl << "Testing simple select..." << endl
-                    << sql << endl;
+            NcbiCout << endl << "Testing simple select..." << endl << sql << endl;
 
             conn->MsgToEx(true);
 
             stmt->SendSql(sql);
     
-        // Below is an example of using auto_ptr to avoid resource wasting
-        // in case of multiple resultsets, statements, etc.
-        // NOTE: Use it with caution, when the wrapped parent object
-        // goes out of scope, all child objects are destroyed.
+            // Below is an example of using unique_ptr to avoid resource wasting
+            // in case of multiple resultsets, statements, etc.
+            // NOTE: Use it with caution, when the wrapped parent object
+            // goes out of scope, all child objects are destroyed.
+
             while( stmt->HasMoreResults() ) {
                 if( stmt->HasRows() ) {   
-                    auto_ptr<IResultSet> rs(stmt->GetResultSet());
-
+                    unique_ptr<IResultSet> rs(stmt->GetResultSet());
                     const IResultSetMetaData* rsMeta = rs->GetMetaData();
-
                     rs->BindBlobToVariant(true);
 
-                    for(unsigned int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
+                    for (unsigned int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
                         NcbiCout << rsMeta->GetName(i) << "  ";
 
                     NcbiCout << endl;
@@ -236,19 +219,16 @@ end";
                                 || rsMeta->GetType(i) == eDB_Image ) {
 
                                 const CVariant& b = rs->GetVariant(i);
-
                                 char *buf = new char[b.GetBlobSize() + 1];
                                 b.Read(buf, b.GetBlobSize());
                                 buf[b.GetBlobSize()] = '\0';
                                 NcbiCout << buf << "|";
                                 delete[] buf;
-                                
                             }
                             else
                                 NcbiCout << rs->GetVariant(i).GetString() << "|";
                         }
                         NcbiCout << endl;
-                                
                             
 #if 0
                         NcbiCout << rs->GetVariant(1).GetInt4() << "|"
@@ -337,20 +317,19 @@ end";
         // Testing bulk insert w/o BLOBs
         NcbiCout << endl << "Creating BulkSample table..." << endl;
         sql = "if exists( select * from sysobjects \
-where name = 'BulkSample' \
-AND type = 'U') \
-begin \
-	drop table BulkSample \
-end";
+                    where name = 'BulkSample' \
+                    AND type = 'U') \
+                    begin \
+	                    drop table BulkSample \
+                    end";
         stmt->ExecuteUpdate(sql);
 
 
         sql = "create table BulkSample (\
-	id int not null, \
-	ord int not null, \
-    mode tinyint not null, \
-    date datetime not null)";
-
+                    id int not null, \
+                    ord int not null, \
+                    mode tinyint not null, \
+                    date datetime not null)";
         stmt->ExecuteUpdate(sql);
 
         //I_DriverContext *ctx = ds->GetDriverContext();
@@ -377,56 +356,53 @@ end";
                 bi->AddRow();
                 //bi->StoreBatch();
             }
-            
             bi->Complete();
-
         }
         catch(...) {
             throw;
         }
 
-
         // create a stored procedure
         sql = "if exists( select * from sysobjects \
-where name = 'SampleProc' \
-AND type = 'P') \
-begin \
-	drop proc SampleProc \
-end";
+                    where name = 'SampleProc' \
+                    AND type = 'P') \
+                    begin \
+	                    drop proc SampleProc \
+                    end";
         stmt->ExecuteUpdate(sql);
 
 	if( NStr::CompareNocase(server, "STRAUSS") == 0 || 
         NStr::CompareNocase(server, "TAPER") == 0 ||
         NStr::CompareNocase(server, "MOZART") == 0 )
         sql = "create procedure SampleProc \
-	@id int, \
-	@f float, \
-    @o int output \
-as \
-begin \
-  select int_val, fl_val, date_val from SelectSample \
-  where int_val < @id and fl_val <= @f \
-  select @o = 555 \
-  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
-  print 'Print test output' \
-   /* raiserror 20000  'Raise Error test output' */ \
-  return @id \
-end";
-	else
-		sql = "create procedure SampleProc \
-	@id int, \
-	@f float, \
-    @o int output \
-as \
-begin \
-  select int_val, fl_val, date_val from SelectSample \
-  where int_val < @id and fl_val <= @f \
-  select @o = 555 \
-  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
-  print 'Print test output' \
-  raiserror('Raise Error test output', 1, 1) \
-  return @id \
-end";
+	                @id int, \
+	                @f float, \
+                    @o int output \
+                as \
+                begin \
+                  select int_val, fl_val, date_val from SelectSample \
+                  where int_val < @id and fl_val <= @f \
+                  select @o = 555 \
+                  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
+                  print 'Print test output' \
+                   /* raiserror 20000  'Raise Error test output' */ \
+                  return @id \
+                end";
+	                else
+		                sql = "create procedure SampleProc \
+	                @id int, \
+	                @f float, \
+                    @o int output \
+                as \
+                begin \
+                  select int_val, fl_val, date_val from SelectSample \
+                  where int_val < @id and fl_val <= @f \
+                  select @o = 555 \
+                  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
+                  print 'Print test output' \
+                  raiserror('Raise Error test output', 1, 1) \
+                  return @id \
+                end";
         stmt->ExecuteUpdate(sql);
 #if 0
         // commit transaction
@@ -438,10 +414,8 @@ end";
         while(tc->Next()) {
             NcbiCout << "Transaction committed, count: " << tc->GetVariant(1).GetString();
         }
-
 #endif
         /*stmt->ExecuteUpdate("print 'test'");*/
-
 
         float f = 2.999f;
 
@@ -500,8 +474,6 @@ end";
          }
         NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
         NcbiCout << endl << ds->GetErrorInfo() << endl;
-
-
 
         cstmt->Close();
         delete cstmt;
@@ -569,14 +541,10 @@ end";
         NcbiCout << endl << "Reconnecting..." << endl;
 
         delete conn;
+
         conn = ds->CreateConnection();
-
         conn->SetMode(IConnection::eBulkInsert);
-
-        conn->Connect("anyone",
-                      "allowed",
-                      server,
-                      "DBAPI_Sample");
+        conn->Connect("anyone", "allowed", server, "DBAPI_Sample");
 
         //conn->ForceSingle(true);
 
@@ -586,22 +554,19 @@ end";
 
         // Read blob to vector
         vector<char> blob;
-
  
         NcbiCout << "Retrieve BLOBs using streams and reader" << endl;
 
         stmt->ExecuteUpdate("set textsize 2000000");
     
-        stmt->SendSql("select str_val, text_val, text_val \
-from SelectSample where int_val = 1");
+        stmt->SendSql("select str_val, text_val, text_val from SelectSample where int_val = 1");
     
         while( stmt->HasMoreResults() ) { 
             if( stmt->HasRows() ) {
                 IResultSet *rs = stmt->GetResultSet();
                 int size = 0;
                 while(rs->Next()) { 
-                    NcbiCout << "Reading: " << rs->GetVariant(1).GetString() 
-                             << endl;
+                    NcbiCout << "Reading: " << rs->GetVariant(1).GetString() << endl;
                     istream& in1 = rs->GetBlobIStream();
                     int c = 0; 
                     NcbiCout << "Reading first blob with stream..." << endl;
@@ -626,17 +591,17 @@ from SelectSample where int_val = 1");
         // create a table
         NcbiCout << endl << "Creating BlobSample table..." << endl;
         sql = "if exists( select * from sysobjects \
-where name = 'BlobSample' \
-AND type = 'U') \
-begin \
-	drop table BlobSample \
-end";
+                    where name = 'BlobSample' \
+                    AND type = 'U') \
+                    begin \
+	                    drop table BlobSample \
+                    end";
         stmt->ExecuteUpdate(sql);
 
 
         sql = "create table BlobSample (\
-	id int null, \
-	blob2 text null, blob text null, unique (id))";
+	                id int null, \
+	                blob2 text null, blob text null, unique (id))";
         stmt->ExecuteUpdate(sql);
 
         // Write BLOB several times
@@ -731,14 +696,12 @@ end";
 
         delete newConn;
 #endif
-
         delete[] buf;
 
         // check if Blob is there
         stmt = conn->CreateStatement();
         NcbiCout << "Checking BLOB size..." << endl;
-        stmt->SendSql("select 'Written blob size' as size, datalength(blob) \
-from BlobSample where id = 1");
+        stmt->SendSql("select 'Written blob size' as size, datalength(blob) from BlobSample where id = 1");
         
         while( stmt->HasMoreResults() ) {
             if( stmt->HasRows() ) {
@@ -782,8 +745,7 @@ from BlobSample where id = 1");
         // Cursor test (remove blob)
         NcbiCout << "Cursor test, removing blobs" << endl;
 
-        ICursor *cur = conn->CreateCursor("test", 
-                                          "select id, blob from BlobSample for update of blob");
+        ICursor *cur = conn->CreateCursor("test", "select id, blob from BlobSample for update of blob");
     
         IResultSet *rs = cur->Open();
         while(rs->Next()) {
@@ -817,13 +779,12 @@ from BlobSample where id = 1");
         return 1;
     }
 
-
     return 0;
 }
 
 void CDbapiTest::Exit()
 {
-
+    return;
 }
 
 

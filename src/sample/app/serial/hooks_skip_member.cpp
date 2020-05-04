@@ -8,6 +8,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CSkipClassMemberHook
 {
 public:
@@ -65,6 +66,7 @@ public:
 #endif
     }
 };
+
 
 int main(int argc, char** argv)
 {

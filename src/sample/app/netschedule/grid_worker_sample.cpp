@@ -42,7 +42,7 @@
 USING_NCBI_SCOPE;
 
     
-///////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 class CSampleJobCleanupListener : public IWorkerNodeCleanupEventListener
 {
@@ -92,8 +92,7 @@ public:
             new CSampleJobCleanupListener("Job-do"));
 
         ERR_POST( Info << context.GetJobKey() + " " + context.GetJobInput());
-        ERR_POST( Info << Note << "This parameter is read from a config file: "
-                               << m_Param);
+        ERR_POST( Info << Note << "This parameter is read from a config file: " << m_Param);
 
         // 1. Get an input data from the client
         //    (You can use ASN.1 de-serialization here)
@@ -109,10 +108,10 @@ public:
         vector<double> dvec;
         dvec.reserve(count);
         ERR_POST( Info << "Getting " << count << " doubles from stream...");
+
         for (int i = 0; i < count; ++i) {
             if (!is.good()) {
                 ERR_POST( "Input stream error. Index : " << i );
-
                 // If anything bad happened, throw an exception
                 // and its message will be delivered to the client.
                 throw runtime_error("Worker node input stream error"); 
@@ -164,7 +163,6 @@ public:
         }
         sort(dvec.begin(), dvec.end());
 
-
         // 3. Return the result to the client 
         //    (You can use ASN.1 serialization here)
         //
@@ -202,8 +200,10 @@ private:
     int m_SleepSec;
 };
 
+
 // if an Idle task is needed then an implementation of IWorkerNodeIdelTask
 // should be created.
+
 class CSampleIdleTask : public IWorkerNodeIdleTask
 {
 public:

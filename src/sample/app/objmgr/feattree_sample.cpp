@@ -72,7 +72,6 @@ USING_SCOPE(ncbi::objects::sequence);
 /////////////////////////////////////////////////////////////////////////////
 //  CFeatTreeSampleApp::
 
-
 class CFeatTreeSampleApp : public CNcbiApplication
 {
 private:
@@ -97,10 +96,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Initialize configuration parameters
 
-
 void CFeatTreeSampleApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Demonstrate CFeatTree class.");
@@ -130,10 +128,8 @@ void CFeatTreeSampleApp::Init(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  Run the application
-
 
 int CFeatTreeSampleApp::Run(void)
 {
@@ -250,10 +246,8 @@ int CFeatTreeSampleApp::Run(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
-
 
 void CFeatTreeSampleApp::Exit(void)
 {
@@ -261,10 +255,8 @@ void CFeatTreeSampleApp::Exit(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

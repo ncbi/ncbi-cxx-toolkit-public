@@ -79,8 +79,8 @@ static void s_Process(const CSeq_entry& entry)
 ///////////////////////////////////////////////////////////////////////////
 // Hook Classes
 
-// This class processes top-level Seq-entry's when skipping through a
-// Bioseq-set.
+// This class processes top-level Seq-entry's when skipping through a Bioseq-set.
+
 class CSkipMemberHook__Bioseq_set : public CSkipClassMemberHook
 {
 public:
@@ -107,8 +107,8 @@ public:
 };
 
 
-// This class processes top-level Seq-entry's when skipping through a
-// Seq-submit.
+// This class processes top-level Seq-entry's when skipping through a Seq-submit.
+
 class CSkipVariantHook__Seq_submit : public CSkipChoiceVariantHook
 {
 public:

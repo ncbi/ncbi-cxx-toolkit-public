@@ -59,7 +59,6 @@ USING_SCOPE(blast);
 /////////////////////////////////////////////////////////////////////////////
 //  CBlastDemoApplication::
 
-
 class CBlastDemoApplication : public CNcbiApplication
 {
 private:
@@ -68,18 +67,16 @@ private:
     virtual void Exit(void);
 
     void ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle);
-
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
 
-
 void CBlastDemoApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "BLAST demo program");
@@ -119,47 +116,47 @@ void CBlastDemoApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 /// Modify BLAST options from defaults based upon command-line args.
 ///
 /// @param opts_handle already created CBlastOptionsHandle to modify [in]
-void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle)
 
+void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle)
 {
 	const CArgs& args = GetArgs();
 
-        // Expect value is a supported option for all flavors of BLAST.
-        if(args["evalue"].AsDouble())
-          opts_handle->SetEvalueThreshold(args["evalue"].AsDouble());
+    // Expect value is a supported option for all flavors of BLAST.
+    if(args["evalue"].AsDouble())
+        opts_handle->SetEvalueThreshold(args["evalue"].AsDouble());
         
-        // The first branch is used if the program is blastn or a flavor of megablast
-        // as reward and penalty is a valid option.
-        //
-        // The second branch is used for all other programs except rpsblast as matrix
-        // is a valid option for blastp and other programs that perform protein-protein
-        // comparisons.
-        //
-        if (CBlastNucleotideOptionsHandle* nucl_handle =
-              dynamic_cast<CBlastNucleotideOptionsHandle*>(&*opts_handle)) {
+    // The first branch is used if the program is blastn or a flavor of megablast
+    // as reward and penalty is a valid option.
+    //
+    // The second branch is used for all other programs except rpsblast as matrix
+    // is a valid option for blastp and other programs that perform protein-protein
+    // comparisons.
+    //
+    if (CBlastNucleotideOptionsHandle* nucl_handle =
+        dynamic_cast<CBlastNucleotideOptionsHandle*>(&*opts_handle)) {
 
-              if (args["reward"].AsInteger())
-                nucl_handle->SetMatchReward(args["reward"].AsInteger());
-            
-              if (args["penalty"].AsInteger())
-                nucl_handle->SetMismatchPenalty(args["penalty"].AsInteger());
-        }
-        else if (CBlastProteinOptionsHandle* prot_handle =
-               dynamic_cast<CBlastProteinOptionsHandle*>(&*opts_handle)) {
-              if (args["matrix"]) 
-                prot_handle->SetMatrixName(args["matrix"].AsString().c_str());
+        if (args["reward"].AsInteger())
+            nucl_handle->SetMatchReward(args["reward"].AsInteger());
+        if (args["penalty"].AsInteger())
+            nucl_handle->SetMismatchPenalty(args["penalty"].AsInteger());
+    }
+    else if (CBlastProteinOptionsHandle* prot_handle = 
+        dynamic_cast<CBlastProteinOptionsHandle*>(&*opts_handle)) {
+
+        if (args["matrix"]) 
+            prot_handle->SetMatrixName(args["matrix"].AsString().c_str());
         }
 
-        return;
+    return;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
-
 
 int CBlastDemoApplication::Run(void)
 {
@@ -172,11 +169,8 @@ int CBlastDemoApplication::Run(void)
                      program == eRPSBlast || program == eRPSTblastn);
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
-
     ProcessCommandLineArgs(opts);
-
     opts->Validate();  // Can throw CBlastException::eInvalidOptions for invalid option.
-
 
     // This will dump the options to stderr.
     // opts->GetOptions().DebugDumpText(cerr, "opts", 1);
@@ -186,17 +180,14 @@ int CBlastDemoApplication::Run(void)
          throw std::runtime_error("Could not initialize object manager");
     }
 
-    const bool is_protein =
-        !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
+    const bool is_protein = !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
     SDataLoaderConfig dlconfig(is_protein);
     CBlastInputSourceConfig iconfig(dlconfig);
     CBlastFastaInputSource fasta_input(args["in"].AsInputFile(), iconfig);
     CScope scope(*objmgr);
 
     CBlastInput blast_input(&fasta_input);
-
     TSeqLocVector query_loc = blast_input.GetAllSeqLocs(scope);
-
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
 
     const CSearchDatabase target_db(args["db"].AsString(),
@@ -210,16 +201,11 @@ int CBlastDemoApplication::Run(void)
     for (unsigned int i = 0; i < results.GetNumResults(); i++) 
     {
         TQueryMessages messages = results[i].GetErrors(eBlastSevWarning);
-        if (messages.size() > 0)
-        {
+        if (messages.size() > 0) {
             CConstRef<CSeq_id> seq_id = results[i].GetSeqId();
-            if (seq_id.NotEmpty())
-                cerr << "ID: " << seq_id->AsFastaString() << endl;
-            else
-                cerr << "ID: " << "Unknown" << endl;
-
-            ITERATE(vector<CRef<CSearchMessage> >, it, messages)
-                cerr << (*it)->GetMessage() << endl;
+            cerr << "ID: " << (seq_id.NotEmpty() ? seq_id->AsFastaString() : "Unknown") << endl;
+            for (const auto& it : messages)
+                cerr << it->GetMessage() << endl;
         }
     }
     
@@ -237,7 +223,6 @@ int CBlastDemoApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-
 void CBlastDemoApplication::Exit(void)
 {
     // Do your after-Run() cleanup here
@@ -246,7 +231,6 @@ void CBlastDemoApplication::Exit(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])

@@ -49,6 +49,7 @@
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
+
 class CSampleObjectsApplication : public CNcbiApplication
 {
     virtual void Init(void);
@@ -62,7 +63,7 @@ class CSampleObjectsApplication : public CNcbiApplication
 void CSampleObjectsApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -115,7 +116,7 @@ int CSampleObjectsApplication::Run(void)
 
     // Read the entry
     {{
-        auto_ptr<CObjectIStream> in
+        unique_ptr<CObjectIStream> in
             (CObjectIStream::Open(s_GetFormat(args["infmt"].AsString()),
                                    args["in"].AsInputFile()));
         *in >> m_Entry;
@@ -137,7 +138,7 @@ int CSampleObjectsApplication::Run(void)
 
     // Write the entry
     {{
-        auto_ptr<CObjectOStream> out
+        unique_ptr<CObjectOStream> out
             (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                                   args["out"].AsOutputFile()));
         *out << m_Entry;
@@ -150,7 +151,6 @@ int CSampleObjectsApplication::Run(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

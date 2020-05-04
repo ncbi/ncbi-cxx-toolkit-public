@@ -7,11 +7,11 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CReadClassMemberHook
 {
 public:
-    virtual void ReadClassMember(CObjectIStream& strm,
-                                 const CObjectInfoMI& passed_info)
+    virtual void ReadClassMember(CObjectIStream& strm, const CObjectInfoMI& passed_info)
     {
 #if 1
         DefaultRead(strm, passed_info);
@@ -60,6 +60,7 @@ public:
     }
 };
 
+
 int main(int argc, char** argv)
 {
     char asn[] = "Date-std ::= { year 1998, month 1, day 2, season \"winter\" }";
@@ -68,7 +69,6 @@ int main(int argc, char** argv)
 
     CObjectTypeInfo(CType<CDate_std>()).FindMember("year")
                                        .SetLocalReadHook(*in, new CDemoHook);
-
     CDate_std my_date;
     *in >> my_date;
 

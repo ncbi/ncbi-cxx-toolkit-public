@@ -46,7 +46,7 @@ USING_SCOPE(objects);
 
 class CDemoApp : public CNcbiApplication
 {
-    virtual int  Run(void);
+    virtual int Run(void);
 
     void Dispatch(size_t offset, const CConstObjectInfo& info);
     void WalkPrimitive(size_t offset, const CConstObjectInfo& info);
@@ -96,6 +96,7 @@ void CDemoApp::Dispatch(size_t offset, const CConstObjectInfo& info)
         break;
     }
 }
+
 
 void CDemoApp::WalkPrimitive(size_t offset, const CConstObjectInfo& info)
 {
@@ -148,6 +149,7 @@ void CDemoApp::WalkPrimitive(size_t offset, const CConstObjectInfo& info)
     cout << endl;
 }
 
+
 void CDemoApp::WalkClass(size_t offset, const CConstObjectInfo& info)
 {
     string off(offset,' ');
@@ -167,6 +169,7 @@ void CDemoApp::WalkClass(size_t offset, const CConstObjectInfo& info)
     cout << off << "} end of class: " << info.GetName() << endl;
 }
 
+
 void CDemoApp::WalkChoice(size_t offset, const CConstObjectInfo& info)
 {
     string off(offset,' ');
@@ -178,6 +181,7 @@ void CDemoApp::WalkChoice(size_t offset, const CConstObjectInfo& info)
     Dispatch(offset,var.GetVariant());
     cout << off << "} end of choice: " << info.GetName() << endl;
 }
+
 
 void CDemoApp::WalkContainer(size_t offset, const CConstObjectInfo& info)
 {
@@ -192,6 +196,7 @@ void CDemoApp::WalkContainer(size_t offset, const CConstObjectInfo& info)
     cout << off << "} end of container: " << info.GetName() << endl;
 }
 
+
 void CDemoApp::WalkPointer(size_t offset, const CConstObjectInfo& info)
 {
     string off(offset,' ');
@@ -204,4 +209,3 @@ int main(int argc, const char* argv[])
 {
     return CDemoApp().AppMain(argc, argv);
 }
-

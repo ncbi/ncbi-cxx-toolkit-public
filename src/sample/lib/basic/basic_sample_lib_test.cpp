@@ -39,7 +39,6 @@ USING_NCBI_SCOPE;
 /////////////////////////////////////////////////////////////////////////////
 //  CSampleLibtestApplication::
 
-
 class CSampleLibtestApplication : public CNcbiApplication
 {
 private:
@@ -51,7 +50,7 @@ private:
 void CSampleLibtestApplication::Init(void)
 {
     // Create command-line argument descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(
@@ -66,6 +65,7 @@ void CSampleLibtestApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 int CSampleLibtestApplication::Run(void)
 {
     // Get arguments
@@ -73,13 +73,14 @@ int CSampleLibtestApplication::Run(void)
 
     list<string> found;
     if (CSampleLibraryObject().FindInPath( found, args["mask"].AsString() )) {
-        ITERATE( list<string>, f, found) {
-            cout << *f << endl;
+        for (const auto& f : found) {
+            cout << f << endl;
         }
         return 0;
     }
     return 1;
 }
+
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

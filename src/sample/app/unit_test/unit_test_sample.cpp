@@ -36,10 +36,8 @@
 */
 
 #include <ncbi_pch.hpp>
-
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
-
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -65,12 +63,12 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 }
 
 
-
 NCBITEST_AUTO_FINI()
 {
     // Your application finalization code here (optional)
     cout << "Finalization function executed" << endl;
 }
+
 
 BOOST_AUTO_TEST_CASE(TestSimpleTools)
 {
@@ -120,6 +118,7 @@ BOOST_AUTO_TEST_CASE(TestWithoutException)
 {
     BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
 }
+
 
 BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 2);
 BOOST_AUTO_TEST_CASE(TestTimeout)

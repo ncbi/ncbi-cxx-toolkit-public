@@ -54,12 +54,9 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
-
 #include <dbapi/simple/sdbapi.hpp>
-
 
 USING_NCBI_SCOPE;
 
@@ -143,7 +140,6 @@ void CSdbapiSimpleApp::Init(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  Run - i.e. parse command-line arguments and demo simple operations.
-
 
 int CSdbapiSimpleApp::Run(void)
 {

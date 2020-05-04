@@ -7,6 +7,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CReadChoiceVariantHook
 {
 public:
@@ -52,6 +53,7 @@ public:
 #endif
     }
 };
+
 
 int main(int argc, char** argv)
 {

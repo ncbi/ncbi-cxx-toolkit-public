@@ -40,6 +40,7 @@
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
+
 int main(int argc, const char* argv[])
 {
     {{
@@ -105,4 +106,3 @@ int main(int argc, const char* argv[])
 
     return 0;
 }
-

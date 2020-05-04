@@ -31,7 +31,6 @@
 * ===========================================================================
 */
 
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -40,11 +39,11 @@
 #include <dbapi/simple/sdbapi.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
-
 USING_NCBI_SCOPE;
 
+
 /////////////////////////////////////////////////////////////////////////////
-//  MAIN
+//  CSdbapiTest
 
 class CSdbapiTest : public CNcbiApplication
 {
@@ -53,7 +52,6 @@ private:
     virtual int Run();
     virtual void Exit();
 
-
     CArgDescriptions *argList;
 };
 
@@ -61,21 +59,18 @@ private:
 void CSdbapiTest::Init()
 {
     argList = new CArgDescriptions();
-
     argList->SetUsageContext(GetArguments().GetProgramBasename(),
                              "SDBAPI test program");
-
     argList->AddDefaultKey("s", "string",
                            "Server name",
                            CArgDescriptions::eString, "DBAPI_MS_TEST");
-
     SetupArgDescriptions(argList);
 }
+
 
 int CSdbapiTest::Run()
 {
     const CArgs& args = GetArgs();
-
     try {
         string server = args["s"].AsString();
 
@@ -111,19 +106,17 @@ int CSdbapiTest::Run()
             query.VerifyDone();
 
             sql = "insert SelectSample values (1, 2.5, '11/05/2005', 'Test string1', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-                  insert SelectSample values (2, 3.3, '11/06/2005', 'Test string2', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-                  insert SelectSample values (3, 4.4, '11/07/2005', 'Test string3', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-                  insert SelectSample values (4, 5.5, '11/08/2005', 'Test string4', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
-                  insert SelectSample values (5, 6.6, '11/09/2005', 'Test string5', 'TextBlobTextBlobTextBlobTextBlobTextBlob')";
+                   insert SelectSample values (2, 3.3, '11/06/2005', 'Test string2', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+                   insert SelectSample values (3, 4.4, '11/07/2005', 'Test string3', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+                   insert SelectSample values (4, 5.5, '11/08/2005', 'Test string4', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+                   insert SelectSample values (5, 6.6, '11/09/2005', 'Test string5', 'TextBlobTextBlobTextBlobTextBlobTextBlob')";
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(0);
             query.VerifyDone();
 
-
             sql = "select int_val, fl_val, date_val, str_val from SelectSample";
-            NcbiCout << endl << "Testing simple select..." << endl
-                    << sql << endl;
+            NcbiCout << endl << "Testing simple select..." << endl << sql << endl;
 
             query.SetSql(sql);
             query.Execute();
@@ -132,18 +125,17 @@ int CSdbapiTest::Run()
             bool show_names = true;
             for (const auto& row: query) {
                 if (show_names) {
-                    for(int i = 1; i <= row.GetTotalColumns(); ++i) {
+                    for(unsigned i = 1; i <= row.GetTotalColumns(); ++i) {
                         NcbiCout << row.GetColumnName(i) << "  ";
                     }
                     NcbiCout << endl;
                     show_names = false;
                 }
 
-                for(int i = 1;  i <= row.GetTotalColumns(); ++i) {
+                for(unsigned i = 1;  i <= row.GetTotalColumns(); ++i) {
                     NcbiCout << row[i].AsString() << "|";
                 }
                 NcbiCout << endl;
-
 #if 1
                 NcbiCout << row[1].AsInt4() << "|"
                          << row[2].AsFloat() << "|"
@@ -151,7 +143,6 @@ int CSdbapiTest::Run()
                          << row[4].AsString() << "|"
                          << endl;
 #endif
-
             }
 
             query.VerifyDone();
@@ -217,34 +208,34 @@ int CSdbapiTest::Run()
         if (CCPPToolkitConnParams::GetServerType(server)
             != CCPPToolkitConnParams::eMSSqlServer) {
             sql = "create procedure SampleProc \
-    @id int, \
-    @f float, \
-    @o int output \
-as \
-begin \
-  select int_val, fl_val, date_val from SelectSample \
-  where int_val < @id and fl_val <= @f \
-  select @o = 555 \
-  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
-  print 'Print test output' \
-  return @id \
-end";
+                        @id int, \
+                        @f float, \
+                        @o int output \
+                    as \
+                    begin \
+                      select int_val, fl_val, date_val from SelectSample \
+                      where int_val < @id and fl_val <= @f \
+                      select @o = 555 \
+                      select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
+                      print 'Print test output' \
+                      return @id \
+                    end";
         }
         else {
             sql = "create procedure SampleProc \
-    @id int, \
-    @f float, \
-    @o int output \
-as \
-begin \
-  select int_val, fl_val, date_val from SelectSample \
-  where int_val < @id and fl_val <= @f \
-  select @o = 555 \
-  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
-  print 'Print test output' \
-  raiserror('Raise Error test output', 1, 1) \
-  return @id \
-end";
+                        @id int, \
+                        @f float, \
+                        @o int output \
+                    as \
+                    begin \
+                      select int_val, fl_val, date_val from SelectSample \
+                      where int_val < @id and fl_val <= @f \
+                      select @o = 555 \
+                      select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
+                      print 'Print test output' \
+                      raiserror('Raise Error test output', 1, 1) \
+                      return @id \
+                    end";
         }
         query.SetSql(sql);
         query.Execute();
@@ -305,7 +296,6 @@ end";
         query.Execute();
         query.RequireRowCount(0);
         query.VerifyDone();
-
 
         sql = "create table BlobSample (\
                 id int null, \
@@ -380,6 +370,9 @@ void CSdbapiTest::Exit()
 
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

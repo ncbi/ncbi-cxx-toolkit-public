@@ -309,6 +309,6 @@ int main(int argc, const char* argv[])
     // Each application have a name. It can be specified as last parameter
     // in arguments to AppMain, or extracted from the executable file name.
     // So it can be automatically used for reporting.
-    //
+
     return CUsageReportSampleApp().AppMain(argc, argv, 0, eDS_Default, "", "SampleAppName");
 }

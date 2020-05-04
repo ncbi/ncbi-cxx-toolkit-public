@@ -29,23 +29,18 @@
  */
 
 #include <ncbi_pch.hpp>
-
+#include <corelib/ncbireg.hpp>
 #include <connect/services/netcache_api.hpp>
-
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
-
 #include <html/html.hpp>
 #include <html/page.hpp>
-
-#include <corelib/ncbireg.hpp>
 
 
 // To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
 
-
-using namespace ncbi;
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -75,9 +70,7 @@ void CCgiSampleApplication::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
-    m_HtmlTempl = 
-        GetConfig().GetString("html", "template", "");
-
+    m_HtmlTempl   = GetConfig().GetString("html", "template", "");
     m_NetCacheAPI = CNetCacheAPI("netcache_cgi_sample");
 
     // Describe possible cmd-line and HTTP entries
@@ -86,7 +79,7 @@ void CCgiSampleApplication::Init()
 }
 
 
-const string kSessionId = "nsessionid";
+const char* kSessionId = "nsessionid";
 
 int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
@@ -115,7 +108,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     bool is_message = false;
     string new_message = request.GetEntry("Message", &is_message);
     if ( is_message && !new_message.empty() ) {       
-        auto_ptr<CNcbiOstream> os(m_NetCacheAPI.CreateOStream(session_id));
+        unique_ptr<CNcbiOstream> os(m_NetCacheAPI.CreateOStream(session_id));
         *os << new_message;
         os.reset();
         CCgiCookies& rcookies = response.Cookies();
@@ -125,7 +118,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         new_message = "<HAS NOT BEEN CHANGED>";
 
     // Create a HTML page (using template HTML file "cgi_sample.html")
-    auto_ptr<CHTMLPage> page;
+    unique_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage("Sample CGI with NetCache Session", m_HtmlTempl));
     } catch (exception& e) {
@@ -163,7 +156,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 }
 
 
-
 void CCgiSampleApplication::x_SetupArgs()
 {
     // Disregard the case of CGI arguments
@@ -171,7 +163,7 @@ void CCgiSampleApplication::x_SetupArgs()
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -203,12 +195,9 @@ void CCgiSampleApplication::x_LookAtArgs()
         (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
 
         // ...or get the whole list of "message" arguments
-        const CArgValue::TStringArray& values = 
-            args["message"].GetStringList();
-
-        ITERATE(CArgValue::TStringArray, it, values) {
-            // do something with the message
-            // (void) it->c_str(); // eg
+        const auto& values = args["message"].GetStringList();  // const CArgValue::TStringArray& 
+        for (const auto& v : values) {
+            // do something with each message 'v' (string)
         } 
     } else {
         // no "message" argument is present

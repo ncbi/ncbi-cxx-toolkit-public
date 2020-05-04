@@ -52,7 +52,6 @@ USING_NCBI_SCOPE;
 class CGridCgiSampleApplication : public  CGridCgiApplication
 {
 public:
-
     virtual void Init(void);
     virtual string GetProgramVersion(void) const
     {
@@ -68,7 +67,7 @@ public:
 protected:
 
     // Render the job input parameters HTML page
-    virtual void ShowParamsPage(CGridCgiContext& ctx) const ;
+    virtual void ShowParamsPage(CGridCgiContext& ctx) const;
 
     // Collect parameters from the HTML page.
     virtual bool CollectParams(CGridCgiContext&);
@@ -119,6 +118,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  CGridCgiSampleApplication::
 //
+
 string CGridCgiSampleApplication::GetPageTitle() const
 {
     return "Grid Sample CGI";
@@ -142,11 +142,9 @@ void CGridCgiSampleApplication::Init()
     //   E-mail -- using CGI arg "&diag-destination=email:user@host"
     RegisterDiagFactory("email",    new CEmailDiagFactory);
 
-
     // Describe possible cmd-line and HTTP entries
     // (optional)
     x_SetupArgs();
-
 }
 
 
@@ -159,6 +157,7 @@ void CGridCgiSampleApplication::ShowParamsPage(CGridCgiContext& ctx) const
             "<INPUT TYPE=\"reset\"  VALUE=\"Reset\">" );
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
+
 
 bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
 {
@@ -174,10 +173,9 @@ bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
         const string& m = args["message"].AsString();
         vector<string> sdoubles;
         NStr::Split(m, " ", sdoubles);
-        for (size_t i = 0; i < sdoubles.size(); ++i) {
+        for (auto sd : sdoubles) {
             try {
-                double d = NStr::StringToDouble(sdoubles[i],
-                                                NStr::fAllowTrailingSymbols);
+                double d = NStr::StringToDouble(sd, NStr::fAllowTrailingSymbols);
                 m_Doubles.push_back(d);
             }
             catch(...) {}
@@ -195,8 +193,8 @@ void CGridCgiSampleApplication::PrepareJobData(CGridClient& grid_client)
     // Send jobs input data
     os << "doubles ";  // request output type just a list of doubles
     os << m_Doubles.size() << ' ';
-    for (size_t j = 0; j < m_Doubles.size(); ++j) {
-        os << m_Doubles[j] << ' ';
+    for (auto d : m_Doubles) {
+        os << d << ' ';
     }
 }
 
@@ -213,11 +211,8 @@ void CGridCgiSampleApplication::OnJobSubmitted(CGridCgiContext& ctx)
 }
 
 
-
-void CGridCgiSampleApplication::OnJobDone(CGridClient& grid_client,
-                                          CGridCgiContext& ctx)
+void CGridCgiSampleApplication::OnJobDone(CGridClient& grid_client, CGridCgiContext& ctx)
 {
-
     CNcbiIstream& is = grid_client.GetIStream();
     int count;
                 
@@ -245,8 +240,8 @@ void CGridCgiSampleApplication::OnJobDone(CGridClient& grid_client,
     ctx.GetHTMLPage().AddTagMap("OUTPUT_DATA",idoubles);
 }
 
-void CGridCgiSampleApplication::OnJobFailed(const string& msg, 
-                                            CGridCgiContext& ctx)
+
+void CGridCgiSampleApplication::OnJobFailed(const string& msg, CGridCgiContext& ctx)
 {
     // Render a error page
     CHTMLText* inp_text = new CHTMLText(
@@ -259,6 +254,7 @@ void CGridCgiSampleApplication::OnJobFailed(const string& msg,
     ctx.GetHTMLPage().AddTagMap("MSG",err);
 }
 
+
 void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
 {
     // Render a job cancellation page
@@ -270,6 +266,7 @@ void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
+
 void CGridCgiSampleApplication::OnJobPending(CGridCgiContext& ctx)
 {
     // Render a status report page
@@ -280,6 +277,7 @@ void CGridCgiSampleApplication::OnJobPending(CGridCgiContext& ctx)
                                          "VALUE=\"Cancel the job\">");
    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
+
 
 void CGridCgiSampleApplication::OnJobRunning(CGridCgiContext& ctx)
 {
@@ -295,11 +293,13 @@ void CGridCgiSampleApplication::OnJobRunning(CGridCgiContext& ctx)
     ctx.GetHTMLPage().AddTagMap("PROGRESS_MSG", proress_text);
 }
 
+
 void CGridCgiSampleApplication::OnEndProcessRequest(CGridCgiContext& ctx)
 {
     ctx.GetHTMLPage().AddTagMap("DATE",
         new CHTMLText(GetFastLocalTime().AsString("M B Y, h:m")));
 }
+
 
 bool CGridCgiSampleApplication::JobStopRequested(void) const
 {
@@ -311,6 +311,7 @@ bool CGridCgiSampleApplication::JobStopRequested(void) const
     return false;
 }
 
+
 void CGridCgiSampleApplication::x_SetupArgs()
 {
     // Disregard the case of CGI arguments
@@ -318,7 +319,7 @@ void CGridCgiSampleApplication::x_SetupArgs()
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),

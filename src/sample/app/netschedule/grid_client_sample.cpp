@@ -41,6 +41,11 @@
 
 USING_NCBI_SCOPE;
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  CGridClientSampleApp::
+//
+
 class CGridClientSampleApp : public CGridClientApp
 {
 public:
@@ -69,7 +74,7 @@ private:
 void CGridClientSampleApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -92,6 +97,7 @@ void CGridClientSampleApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 int CGridClientSampleApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -100,7 +106,6 @@ int CGridClientSampleApp::Run(void)
     if (args["vsize"]) {
         vsize = args["vsize"].AsInteger();
     }
-
     int jobs_number = 10;
     if (args["jobs"]) {
         jobs_number = args["jobs"].AsInteger();
@@ -109,7 +114,6 @@ int CGridClientSampleApp::Run(void)
 
     // Don't forget to call it
     CGridClientApp::Init();
-
 
     vector<string> job_keys;
 
@@ -130,7 +134,6 @@ int CGridClientSampleApp::Run(void)
             double d = rand()*0.2;
             os << d << ' ';
         }
-        
         // Submit a job
         job_keys.push_back(grid_client.Submit());
     }
@@ -143,8 +146,7 @@ int CGridClientSampleApp::Run(void)
         SleepMilliSec(100);
 
         vector<string> done_jobs;
-        for(vector<string>::const_iterator it = job_keys.begin();
-            it != job_keys.end(); ++it) {
+        for(auto it = job_keys.begin(); it != job_keys.end(); ++it) {
             // Get a job status
             CGridClient& grid_client(GetGridClient());
             grid_client.SetJobKey(*it);
@@ -176,8 +178,7 @@ int CGridClientSampleApp::Run(void)
             
             // A job has failed
             if (status == CNetScheduleAPI::eFailed) {
-                ERR_POST( "Job " << *it << " failed : " 
-                          << grid_client.GetErrorMessage() );
+                ERR_POST( "Job " << *it << " failed : " << grid_client.GetErrorMessage());
                 done_jobs.push_back(*it);
                 break;
             }
@@ -189,11 +190,10 @@ int CGridClientSampleApp::Run(void)
                 break;
             }
         }            
-        for(vector<string>::const_iterator i = done_jobs.begin();
-            i != done_jobs.end(); ++i) {
-            job_keys.erase(remove(job_keys.begin(),job_keys.end(), *i),job_keys.end());
+        for (const auto& job : done_jobs) {
+            job_keys.erase(remove(job_keys.begin(),job_keys.end(), job),job_keys.end());
         }
-        if (job_keys.empty())
+        if (job_keys.empty()) 
             break;
          
         // A job is still running

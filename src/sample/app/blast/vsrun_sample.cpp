@@ -48,9 +48,9 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  VSRunSampleApplication::
-
 
 class VSRunSampleApplication : public CNcbiApplication
 {
@@ -58,34 +58,30 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
-
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
 
-
 void VSRunSampleApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideVersion);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-      "VSRun demo to run vecscreen");
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "VSRun demo to run vecscreen");
 
     // Identifier for the query sequence
-    arg_desc->AddKey("gi", "QuerySequenceID", 
-                     "GI of the query sequence",
-                     CArgDescriptions::eIntId);
-
+    arg_desc->AddKey(
+        "gi", "QuerySequenceID", "GI of the query sequence",
+        CArgDescriptions::eIntId);
 
     // Output file
-    arg_desc->AddDefaultKey("out", "OutputFile", 
-        "File name for writing the vecscreen results",
+    arg_desc->AddDefaultKey(
+        "out", "OutputFile", "File name for writing the vecscreen results",
         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
     // Setup arg.descriptions for this application
@@ -93,16 +89,14 @@ void VSRunSampleApplication::Init(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  Run demo
-
 
 int VSRunSampleApplication::Run(void)
 {
     int retval = 0;
 
-        // Get arguments
+    // Get arguments
     const CArgs& args = GetArgs();
 
     // C++ boiler plate to fetch the query.
@@ -117,14 +111,12 @@ int VSRunSampleApplication::Run(void)
 
     CVecscreenRun vs_run(query_loc, scope);
 
-    list<CVecscreenRun::SVecscreenSummary> vs_list = vs_run.GetList();
-
-    list<CVecscreenRun::SVecscreenSummary>::iterator itr = vs_list.begin();
-
-    for ( ; itr != vs_list.end(); ++itr)
-    {
-        cout << (*itr).seqid->AsFastaString() << " " << (*itr).range.GetFrom() << " " 
-          << (*itr).range.GetTo() << " " << (*itr).match_type << endl;
+    auto vs_list = vs_run.GetList();  // list<CVecscreenRun::SVecscreenSummary>
+    for (const auto& v : vs_list) {
+        cout << v.seqid->AsFastaString() << " " 
+             << v.range.GetFrom() << " " 
+             << v.range.GetTo() << " " 
+             << v.match_type << endl;
     }
 
     return retval;
@@ -134,7 +126,6 @@ int VSRunSampleApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-
 void VSRunSampleApplication::Exit(void)
 {
     // Do your after-Run() cleanup here
@@ -143,7 +134,6 @@ void VSRunSampleApplication::Exit(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])

@@ -55,15 +55,14 @@
 
 #include <common/test_assert.h>
 
-using namespace ncbi;
-using namespace objects;
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Demo application
 //
-
 
 class CSampleObjmgrApplication : public CNcbiApplication
 {
@@ -76,25 +75,20 @@ public:
 void CSampleObjmgrApplication::Init(void)
 {
     // Prepare command line descriptions
-    //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
                      CArgDescriptions::eIntId);
-    arg_desc->SetConstraint
-        ("gi", new CArgAllow_Int8s(2, 40000000));
+    arg_desc->SetConstraint("gi", new CArgAllow_Int8s(2, 40000000));
 
     // Program description
     string prog_description = "Example of the C++ Object Manager usage\n";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, false);
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), prog_description, false);
 
     // Pass argument descriptions to the application
-    //
-
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -153,8 +147,7 @@ int CSampleObjmgrApplication::Run(void)
     /////////////////////////////////////////////////////////////////////////
     // Get the sequence using CSeqVector.
     // Use Iupac encoding: CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-    CSeqVector seq_vect = bioseq_handle.GetSeqVector
-        (CBioseq_Handle::eCoding_Iupac);
+    CSeqVector seq_vect = bioseq_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     // Printout length of the sequence.
     NcbiCout << "Sequence:  length=" << seq_vect.size();
     NcbiCout << ",  data=";
@@ -256,10 +249,8 @@ int CSampleObjmgrApplication::Run(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

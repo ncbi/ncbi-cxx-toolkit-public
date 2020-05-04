@@ -66,7 +66,7 @@ private:
 
     void x_CleanUp();
 
-    auto_ptr<CAsnDB> m_AsnDBGuard;
+    unique_ptr<CAsnDB> m_AsnDBGuard;
     CAsnDB&          m_AsnDB;
     
     typedef set<CBioseq_Handle> TBioseqCont;

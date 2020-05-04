@@ -44,6 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 template<>
 class CContElemConverter<objects::CSeq_id_Handle>
 {
@@ -51,7 +52,7 @@ public:
     static objects::CSeq_id_Handle FromString(const string& str)  
     {
         CNcbiIstrstream is_str(str.c_str());
-        auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText,is_str));
+        unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText,is_str));
         CRef<objects::CSeq_id> seqid(new objects::CSeq_id);
         *is >> *seqid;
         return objects::CSeq_id_Handle::GetHandle(*seqid);
@@ -60,12 +61,13 @@ public:
     {
         CNcbiOstrstream os_str;
         {
-        auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText,os_str));
+        unique_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText,os_str));
         *os << *id.GetSeqId();
         }
         return CNcbiOstrstreamToString(os_str);
     }
 };
+
 
 BEGIN_SCOPE(objects)
 
@@ -83,9 +85,11 @@ CFileDBEngine::CFileDBEngine(const string& db_path)
     }
 }
 
+
 CFileDBEngine::~CFileDBEngine()
 {
 }
+
 
 void CFileDBEngine::CreateBlob(const string& blobid)
 {
@@ -96,11 +100,13 @@ void CFileDBEngine::CreateBlob(const string& blobid)
     }
 }
 
+
 bool CFileDBEngine::HasBlob(const string& blobid) const
 {
     CDir dir(m_DBPath + CDirEntry::GetPathSeparator() + blobid);
     return dir.Exists();
 }
+
 
 string CFileDBEngine::x_GetCmdFileName(const string& blobid, int cmdcount)
 {
@@ -119,6 +125,7 @@ string CFileDBEngine::x_GetCmdFileName(const string& blobid, int cmdcount)
     return fname;
 }
 
+
 void CFileDBEngine::SaveCommand( const CSeqEdit_Cmd& cmd )
 {
     const string& blob_id = cmd.GetBlobId();
@@ -131,11 +138,12 @@ void CFileDBEngine::SaveCommand( const CSeqEdit_Cmd& cmd )
     int& cmdcount = m_CmdCount[blob_id];
     string fname = x_GetCmdFileName(blob_id,cmdcount+1);
     
-    auto_ptr<CObjectOStream> os( CObjectOStream::Open(m_DataFormat,fname) );
+    unique_ptr<CObjectOStream> os( CObjectOStream::Open(m_DataFormat,fname) );
     *os << cmd;
 
     ++cmdcount;
 }
+
 
 void CFileDBEngine::GetCommands(const string& blob_id, TCommands& cmds) const
 {
@@ -153,16 +161,17 @@ void CFileDBEngine::GetCommands(const string& blob_id, TCommands& cmds) const
         fnames.sort();
         int& cmdcount = const_cast<CFileDBEngine*>(this)->m_CmdCount[blob_id];
         cmdcount = 0;
-        ITERATE(list<string>, it, fnames) {
-            string fname = dir.GetPath() + CDirEntry::GetPathSeparator() + *it;
+        for (const auto& name : fnames) {
+            string fname = dir.GetPath() + CDirEntry::GetPathSeparator() + name;
             CRef<CSeqEdit_Cmd> cmd(new CSeqEdit_Cmd);
-            auto_ptr<CObjectIStream> is( CObjectIStream::Open(m_DataFormat,fname) );
+            unique_ptr<CObjectIStream> is( CObjectIStream::Open(m_DataFormat,fname) );
             *is >> *cmd;
             cmds.push_back(cmd);
             ++cmdcount;
         }
     } 
 }
+
 
 void CFileDBEngine::DropDB()
 {
@@ -191,11 +200,12 @@ bool CFileDBEngine::FindSeqId(const CSeq_id_Handle& id, string& blobid) const
     return false;
 }
 
-void CFileDBEngine::NotifyIdChanged(const CSeq_id_Handle& id, 
-                                    const string& newblobid)
+
+void CFileDBEngine::NotifyIdChanged(const CSeq_id_Handle& id, const string& newblobid)
 {
     m_TmpIds[id] = newblobid;
 }
+
 
 void CFileDBEngine::BeginTransaction()
 {
@@ -205,6 +215,7 @@ void CFileDBEngine::BeginTransaction()
         m_TmpCount[it->first] = it->second;
     }
 }
+
 
 void CFileDBEngine::CommitTransaction()
 {
@@ -219,6 +230,7 @@ void CFileDBEngine::CommitTransaction()
     }
     m_TmpCount.clear();
 }
+
 
 void CFileDBEngine::RollbackTransaction()
 {

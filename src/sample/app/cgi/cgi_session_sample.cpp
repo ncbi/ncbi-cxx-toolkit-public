@@ -36,9 +36,7 @@
 
 #include <misc/grid_cgi/cgi_session_netcache.hpp>
 
-
-
-using namespace ncbi;
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -48,20 +46,20 @@ using namespace ncbi;
 class CCgiSessionSampleApplication : public CCgiApplication
 {
 public:
-    virtual int  ProcessRequest(CCgiContext& ctx);
+    virtual int ProcessRequest(CCgiContext& ctx);
 
 protected:
     /// Get storage for CGI session data
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters&) const;
+
 private:
+    // Auxiliary method to print configuration file
     void x_ShowConfigFile(CCgiResponse& response);
 };
 
 
-
 ICgiSessionStorage* 
-CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params)
-    const
+CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params) const
 {
     // NetCache requires some configuring;  e.g. see "cgi_session_sample.ini"
     const IRegistry& app_config = GetConfig();
@@ -71,11 +69,9 @@ CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params)
 }
 
 
-// Fwd decl of auxiliary functions to create the HTML representation skeleton
+// Forward declarations of auxiliary functions to create the HTML representation skeleton
 static CRef<CHTML_table> s_CreateHTMLTable();
-static CNodeRef          s_CreateHTMLPage(CRef<CHTML_table> table, 
-                                          const string&     form_url,
-                                          const string&     session_label);
+static CNodeRef          s_CreateHTMLPage(CRef<CHTML_table> table, const string& form_url, const string& session_label);
 
 
 int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
@@ -89,7 +85,6 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
         x_ShowConfigFile(response);
         return 0;
     }
-
 
     // Get CGI session.
     // The framework searches for the session ID in the CGI request
@@ -105,8 +100,7 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
     else if ( !request.GetEntry("CreateSession").empty() ) {
         session.CreateNewSession();
     }
-
-
+    
     // If there is an active CGI session...
     if (session.GetStatus() != CCgiSession::eDeleted) {
         // Check if user typed into the text fields to add a new
@@ -119,23 +113,22 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
             CNcbiOstream& os = session.GetAttrOStream(name);
             os << value;
 
-            // Alternatively (for a string value), the SetAttribute()
-            // method can also be used:
+            // Alternatively (for a string value), the SetAttribute() method can also be used:
             //   session.SetAttribute(name, value);
         }
 
-        // Check if user requested to delete existing
-        // session variable (pressed "Delete Attribute" button)
+        // Check if user requested to delete existing session variable (pressed "Delete Attribute" button)
         CCgiSession::TNames names( session.GetAttributeNames() );
-        ITERATE(CCgiSession::TNames, it, names) {
-            if ( !request.GetEntry("Delete_" + *it).empty() ) {
-                session.RemoveAttribute(*it);
+        for (const auto& name : names) {
+            if ( !request.GetEntry("Delete_" + name).empty() ) {
+                session.RemoveAttribute(name);
                 break;
             }
         }
     }      
 
     // Create layout of the table that shows session attributes (if any)
+
     CRef<CHTML_table> table(s_CreateHTMLTable());
 
     // Populate the HTML page with the session data
@@ -152,10 +145,8 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
                 (new CHTML_submit("Delete_" + *name, "Delete Attribute"));
             ++row;
         }
-
         // Show session ID
         session_label = "Session ID: " + session.GetId();
-
         // If we want to pass session Id through a query string...
         self_url += "?" + session.GetSessionIdName() + "=" + session.GetId();
     } else {
@@ -176,6 +167,9 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
 
 /////////////////////////////////////////////////////////////////////////////
 
+
+// Auxiliary function to print configuration file, if any 
+
 void CCgiSessionSampleApplication::x_ShowConfigFile(CCgiResponse& response)
 {
     CNodeRef Html(new CHTML_html);
@@ -193,11 +187,8 @@ void CCgiSessionSampleApplication::x_ShowConfigFile(CCgiResponse& response)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-
-
-
 // Auxiliary function to create the HTML table to hold session attributes
+
 static CRef<CHTML_table> s_CreateHTMLTable()
 {
     CRef<CHTML_table> table(new CHTML_table);
@@ -215,6 +206,7 @@ static CRef<CHTML_table> s_CreateHTMLTable()
 
 
 // Auxiliary function to create the HTML page to manage session and its data
+
 static CNodeRef s_CreateHTMLPage(CRef<CHTML_table> table, 
                                  const string&     form_url,
                                  const string&     session_label) 
@@ -250,11 +242,9 @@ static CNodeRef s_CreateHTMLPage(CRef<CHTML_table> table,
     if (pos != string::npos) {
         s = form_url.substr(0,pos);
     }
-    Form->AppendChild(new CHTML_a(s + "?showconfig=1",
-                                  "Show config file"));
+    Form->AppendChild(new CHTML_a(s + "?showconfig=1", "Show config file"));
     return Html;
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -263,6 +253,5 @@ static CNodeRef s_CreateHTMLPage(CRef<CHTML_table> table,
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
-    int result = CCgiSessionSampleApplication().AppMain(argc, argv);
-    return result;
+    return CCgiSessionSampleApplication().AppMain(argc, argv);
 }

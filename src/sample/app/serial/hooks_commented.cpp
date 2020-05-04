@@ -38,6 +38,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 // This class implements a read hook for class members.
 //
 // A read hook is created by passing a new instance of this class to a
@@ -74,6 +75,7 @@ USING_SCOPE(ncbi::objects);
 // respecitive base classes.  It is also a ClassMember hook.  Hooks for
 // other structural contexts (Object and ChoiceVariant) a similarly derived
 // from the appropriate base.
+
 class CReadCMHook_Date_std__year : public CReadClassMemberHook
 {
 public:
@@ -127,6 +129,7 @@ public:
         NcbiCout << s << NcbiEndl;
     }
 };
+
 
 int main(int argc, char** argv)
 {

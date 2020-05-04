@@ -52,8 +52,7 @@
 // To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
 
-
-using namespace ncbi;
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,7 +106,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         message = "<NONE>";
     }
 
-    int iters = 5;
+    const int iters = 5;
     for(int i = 0; i < iters; ++i) {
         PutProgressMessage( "Iteration " + NStr::IntToString(i) 
                             + " of " + NStr::IntToString(iters));
@@ -117,14 +116,13 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     string this_host = CSocketAPI::gethostname();
 
     // Create a HTML page (using template HTML file "cgi_sample.html")
-    auto_ptr<CHTMLPage> page;
+    unique_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage("Sample Remote CGI", "rcgi_sample.html"));
     } catch (exception& e) {
         ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
         return 2;
     }
-    
 
     // Register substitution for the template parameters <@MESSAGE@> and
     // <@SELF_URL@>
@@ -163,7 +161,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 }
 
 
-
 void CCgiSampleApplication::x_SetupArgs()
 {
     // Disregard the case of CGI arguments
@@ -171,7 +168,7 @@ void CCgiSampleApplication::x_SetupArgs()
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -203,18 +200,14 @@ void CCgiSampleApplication::x_LookAtArgs()
         (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
 
         // ...or get the whole list of "message" arguments
-        const CArgValue::TStringArray& values = 
-            args["message"].GetStringList();
-
-        ITERATE(CArgValue::TStringArray, it, values) {
-            // do something with the message
-            // (void) it->c_str(); // eg
+        const auto& values = args["message"].GetStringList();  // const CArgValue::TStringArray& 
+        for (const auto& v : values) {
+            // do something with each message 'v' (string)
         } 
     } else {
         // no "message" argument is present
     }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -224,6 +217,6 @@ void CCgiSampleApplication::x_LookAtArgs()
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     int result = CCgiSampleApplication().AppMain(argc, argv);
-    _TRACE("back to normal diags");
+    _TRACE("back to normal diagnostics");
     return result;
 }

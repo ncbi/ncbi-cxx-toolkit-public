@@ -57,20 +57,16 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/patcher/loaderpatcher.hpp>
 
-
 #include "file_db_engine.hpp"
 
-using namespace ncbi;
-using namespace objects;
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Demo application
 //
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
 
 class IOperationTest
 {
@@ -90,6 +86,7 @@ private:
     string m_Name;
 };
 
+
 void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
 {
     const CBioseq_Handle::TId& ids = handle.GetId();
@@ -99,11 +96,22 @@ void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
     }
 }
 
+
+// Auxiliary class to use with CSafeStatic.
+// Creates CSeq_id_Handle on a first call and deletes it on CSafeStatic destruction.
+class CGetSeqIdHandle
+{
+public:
+    CGetSeqIdHandle() : m_Handle( new CSeq_id_Handle( CSeq_id_Handle::GetGiHandle(GI_CONST(2122545143)) ) ) {}
+    unique_ptr<CSeq_id_Handle> m_Handle;
+};
+
 static const CSeq_id_Handle& s_GetNewIdHandle()
 {
-    static CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(2122545143));
-    return id;
+    static CSafeStatic<CGetSeqIdHandle> id;
+    return *id.Get().m_Handle;
 }
+
 
 void s_PrintIds1(const CBioseq_Handle::TId& ids, CNcbiOstream& os)
 {
@@ -122,12 +130,12 @@ string ToString(const TParam& param, TFunction func)
     func(param,ostr);
     return CNcbiOstrstreamToString(ostr);
 }
+
 class CAddIdChecker : public IOperationTest
 {
 public:
     CAddIdChecker(const CSeq_id_Handle& seq_id) 
-        : IOperationTest("Check Add Id"), 
-          m_SeqId(seq_id) {}
+        : IOperationTest("Check Add Id"), m_SeqId(seq_id) {}
     virtual ~CAddIdChecker() {}
 
     virtual bool Do(CScope& scope, CNcbiOstream* os) 
@@ -140,6 +148,7 @@ public:
         m_Test2 = ToString(bioseq_handle, &s_PrintIds);
         return true;
     }
+
     virtual bool Check(CScope& scope, CNcbiOstream* os)
     {
         CBioseq_Handle::TId ids = scope.GetIds(m_SeqId);
@@ -160,12 +169,12 @@ private:
     string m_Test2;
 };
 
+
 class CRemoveIdChecker : public IOperationTest
 {
 public:
     CRemoveIdChecker(const CSeq_id_Handle& seq_id) 
-        : IOperationTest("Check Remove Id"), 
-          m_SeqId(seq_id) {}
+        : IOperationTest("Check Remove Id"), m_SeqId(seq_id) {}
 
     virtual ~CRemoveIdChecker() {}
 
@@ -187,6 +196,7 @@ public:
         m_Test1 = ToString(bioseq_handle, &s_PrintIds);
         return true;
     }
+
     virtual bool Check(CScope& scope, CNcbiOstream* os)
     {
         CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(m_SeqId);
@@ -206,12 +216,12 @@ private:
     string m_Test1;
 };
 
+
 class CResetIdChecker : public IOperationTest
 {
 public:
     CResetIdChecker(const CSeq_id_Handle& seq_id) 
-        : IOperationTest("Check Reset Id"), 
-          m_SeqId(seq_id) {}
+        : IOperationTest("Check Reset Id"), m_SeqId(seq_id) {}
 
     virtual ~CResetIdChecker() {}
 
@@ -232,6 +242,7 @@ public:
     }
     virtual bool Check(CScope& scope, CNcbiOstream* os)
     {
+
         CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(m_SeqId);
         if (bioseq_handle)
             return false;
@@ -244,21 +255,20 @@ public:
 
         return true;
     }
-
 private:
     const CSeq_id_Handle& m_SeqId;
     string m_Test1;
 };
 
+
 class CRemoveBioseqChecker : public IOperationTest
 {
 public:
     CRemoveBioseqChecker(const CSeq_id_Handle& seq_id, bool keep_seqentry) 
-        : IOperationTest("Check Remove bioseq"), 
-          m_SeqId(seq_id) 
+        : IOperationTest("Check Remove bioseq"), m_SeqId(seq_id) 
     {
         m_RemoveMode = keep_seqentry ? CBioseq_EditHandle::eKeepSeq_entry :
-            CBioseq_EditHandle::eRemoveSeq_entry;
+                                       CBioseq_EditHandle::eRemoveSeq_entry;
         if (keep_seqentry) SetName( GetName() + " (KeepSeq_entry)");
     }
 
@@ -275,14 +285,12 @@ public:
         CBioseq_set_Handle bioseq_set_handle = parent.GetParentBioseq_set();
         {
             if (m_RemoveMode !=  CBioseq_EditHandle::eKeepSeq_entry )  {
-                auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
-                                                           "bseq0.ss") );
+                unique_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText, "bseq0.ss") );
                 *oss << *bioseq_set_handle.GetCompleteObject();
             }
         }
         bioseq_handle.GetEditHandle().Remove(m_RemoveMode);
-        CBioseq_CI iter(bioseq_set_handle, CSeq_inst::eMol_not_set, 
-                        CBioseq_CI::eLevel_Mains);
+        CBioseq_CI iter(bioseq_set_handle, CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_Mains);
         for(; iter; ++iter) {
             CBioseq_Handle bs = *iter;
             if( bs.GetParentEntry().GetParentBioseq_set() != bioseq_set_handle)
@@ -299,8 +307,7 @@ public:
         m_BSet->Assign(*bioseq_set_handle.GetCompleteObject());
         
         if (m_RemoveMode !=  CBioseq_EditHandle::eKeepSeq_entry )  {
-            auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
-                                                               "bseq1.ss") );
+            unique_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText, "bseq1.ss") );
             //oss->SetVerifyData(eSerialVerifyData_Never);
             *oss << *m_BSet;
         }
@@ -308,6 +315,7 @@ public:
             throw "dfsdffsd";
         return true;
     }
+
     virtual bool Check(CScope& scope, CNcbiOstream* os)
     {
         CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(m_SeqId);
@@ -321,8 +329,7 @@ public:
         CConstRef<CBioseq_set> bset = bioseq_set_handle.GetCompleteObject();
         
         if (m_RemoveMode !=  CBioseq_EditHandle::eKeepSeq_entry )  {
-            auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
-                                                               "bseq2.ss") );
+            unique_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText, "bseq2.ss") );
             //oss->SetVerifyData(eSerialVerifyData_Never);
             *oss << *bset;
         }
@@ -338,6 +345,7 @@ private:
     CRef<CBioseq_set> m_BSet;
 };
 
+
 class CAddBioseqChecker : public IOperationTest
 {
 public:
@@ -345,8 +353,7 @@ public:
         : IOperationTest("Check Add bioseq"), 
           m_SeqId(seq_id),
           m_BSeq(new CBioseq)
-    {       
-    }
+    {}
 
     virtual ~CAddBioseqChecker() {}
 
@@ -410,7 +417,6 @@ public:
             break;
         }
         m_BSeq->Assign(*bioseq_handle.GetCompleteObject());
-        
         return true;
     }
 
@@ -436,8 +442,7 @@ public:
         : IOperationTest("Check Add Feat"), 
           m_SeqId(seq_id),
           m_BSeq(new CBioseq)
-    {
-    }
+    {}
 
     virtual ~CAddFeatChecker() {}
 
@@ -486,7 +491,6 @@ public:
 
     virtual void Init(void);
     virtual int  Run (void);
-   
 
 private:
     CRef<CScope> x_CreateScope();
@@ -535,10 +539,9 @@ CRef<CScope> CEditBioseqSampleApp::x_CreateScope()
 void CEditBioseqSampleApp::Init(void)
 {
     // Prepare command line descriptions
-    //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
@@ -548,14 +551,12 @@ void CEditBioseqSampleApp::Init(void)
 
     // Program description
     string prog_description = "Example of the C++ Object Manager usage\n";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, false);
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), prog_description, false);
 
     // Pass argument descriptions to the application
-    //
-
     SetupArgDescriptions(arg_desc.release());
 }
+
 
 /*
 void s_PrintDescr(const CBioseq_Handle& handle, CNcbiOstream& os)
@@ -619,25 +620,26 @@ int CEditBioseqSampleApp::Run(void)
     m_Operations.push_back(new CRemoveFeatChecker(seq_id));
     m_Operations.push_back(new CAddFeatChecker(seq_id));
 
-    NON_CONST_ITERATE(TOperations, it, m_Operations) {
+    for (const auto& it : m_Operations) {
         m_DbEngine.DropDB();
-        IOperationTest& ot = **it;
+        IOperationTest& ot = *it;
         os << ot.GetName() << "... ";
-        {
-        CRef<CScope> scope = x_CreateScope();
-        if (!ot.Do(*scope, &os)) {
-            os << "[Skipped]";
-            continue;
-        }
-        }
-        {
-        CRef<CScope> scope = x_CreateScope();
-        if (ot.Check(*scope, &os)) os << "[OK]";
-        else os << "[FAILED]";
-        }
+        {{
+            CRef<CScope> scope = x_CreateScope();
+            if (!ot.Do(*scope, &os)) {
+                os << "[Skipped]";
+                continue;
+            }
+        }}
+        {{
+            CRef<CScope> scope = x_CreateScope();
+            if (ot.Check(*scope, &os)) 
+                os << "[OK]";
+            else 
+                os << "[FAILED]";
+        }}
         os << NcbiEndl;           
     }
-    
     return 0;
 }
 
@@ -761,7 +763,6 @@ void CEditBioseqSampleApp::x_RunCheck(const CSeq_id& seq_id,
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

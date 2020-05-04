@@ -35,7 +35,7 @@
  *      -  executing a dynamic SQL statement
  *
  *  Here's how to choose which form of SQL statement creation to use:
- *   1. If stored procuedures can be used, then use them.  This increases both
+ *   1. If stored procedures can be used, then use them.  This increases both
  *      security and performance.  Plus, this practice could facilitate testing
  *      and documentation.
  *   2. Otherwise, if the SQL statement does not require construction, then use
@@ -156,8 +156,8 @@ public:
     }
 
 private:
-    string          m_Type;
-    CNcbiOstream*   m_LogStream;
+    string         m_Type;
+    CNcbiOstream*  m_LogStream;
 };
 
 
@@ -166,48 +166,47 @@ private:
 
 void CDbapiSimpleApp::Init(void)
 {
-    CArgDescriptions* argdesc = new CArgDescriptions();
-    argdesc->SetUsageContext(GetArguments().GetProgramBasename(),
-                             "DBAPI simple operations demo");
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "DBAPI simple operations demo");
 
 
-    argdesc->AddDefaultKey("user_string1", "UserString1", "A user-supplied "
-                           "string to be used in one of the demonstrations "
-                           "(could contain a SQL injection attempt)",
-                           CArgDescriptions::eString, "");
+    arg_desc->AddDefaultKey("user_string1", "UserString1", "A user-supplied "
+                            "string to be used in one of the demonstrations "
+                            "(could contain a SQL injection attempt)",
+                            CArgDescriptions::eString, "");
 
-    argdesc->AddDefaultKey("user_string2", "UserString2", "Another "
-                           "user-supplied string to be used in one of the "
-                           "demonstrations (could contain a SQL injection "
-                           "attempt)",
-                           CArgDescriptions::eString, "");
+    arg_desc->AddDefaultKey("user_string2", "UserString2", "Another "
+                            "user-supplied string to be used in one of the "
+                            "demonstrations (could contain a SQL injection "
+                            "attempt)",
+                            CArgDescriptions::eString, "");
 
-    argdesc->AddDefaultKey("user_string3", "UserString3", "Yet another "
-                           "user-supplied string to be used in one of the "
-                           "demonstrations (could contain a SQL injection "
-                           "attempt)",
-                           CArgDescriptions::eString, "");
+    arg_desc->AddDefaultKey("user_string3", "UserString3", "Yet another "
+                            "user-supplied string to be used in one of the "
+                            "demonstrations (could contain a SQL injection "
+                            "attempt)",
+                            CArgDescriptions::eString, "");
 
-    argdesc->AddPositional("service", "Service name",
-                           CArgDescriptions::eString);
+    arg_desc->AddPositional("service", "Service name",
+                            CArgDescriptions::eString);
 
-    argdesc->AddPositional("db_name", "Database name",
-                           CArgDescriptions::eString);
+    arg_desc->AddPositional("db_name", "Database name",
+                            CArgDescriptions::eString);
 
-    argdesc->AddPositional("user", "User name",
-                           CArgDescriptions::eString);
+    arg_desc->AddPositional("user", "User name",
+                            CArgDescriptions::eString);
 
-    argdesc->AddPositional("password", "User password",
-                           CArgDescriptions::eString);
+    arg_desc->AddPositional("password", "User password",
+                            CArgDescriptions::eString);
 
-
-    SetupArgDescriptions(argdesc);
+    SetupArgDescriptions(arg_desc.release());
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Run - i.e. parse command-line arguments and demo simple operations.
-
 
 int CDbapiSimpleApp::Run(void)
 {
@@ -251,10 +250,10 @@ void CDbapiSimpleApp::ParseArgs(void)
     m_UserString1 = args["user_string1"].AsString();
     m_UserString2 = args["user_string2"].AsString();
     m_UserString3 = args["user_string3"].AsString();
-    m_Service = args["service"].AsString();
-    m_DbName = args["db_name"].AsString();
-    m_User = args["user"].AsString();
-    m_Password = args["password"].AsString();
+    m_Service     = args["service"].AsString();
+    m_DbName      = args["db_name"].AsString();
+    m_User        = args["user"].AsString();
+    m_Password    = args["password"].AsString();
 
     if (args["logfile"].HasValue()) {
         m_LogFileName = args["logfile"].AsString();
@@ -406,31 +405,27 @@ void CDbapiSimpleApp::DemoStoredProc(void)
 
         // Create an integer input parameter "@max_id", a float input
         // parameter "@max_fl", and an integer output parameter "@num_rows".
-        auto_ptr<ICallableStatement> cstmt(m_Conn->GetCallableStatement(
-            proc_name));
+        unique_ptr<ICallableStatement> cstmt(m_Conn->GetCallableStatement(proc_name));
         cstmt->SetParam(CVariant(5), "@max_id");
         cstmt->SetParam(CVariant(5.1f), "@max_fl");
         cstmt->SetOutputParam(CVariant(eDB_Int), "@num_rows");
 
         // Execute the stored procedure.
-        NcbiCout << "\nExecuting stored procedure \"" << proc_name << "\":"
-            << NcbiEndl;
+        NcbiCout << "\nExecuting stored procedure \"" << proc_name << "\":" << NcbiEndl;
         cstmt->Execute();
 
         // Retrieve and display the data.
         RetrieveData(&*cstmt);
 
         // The stored procedure will return a status.
-        NcbiCout << "\nStored procedure returned status: "
-            << cstmt->GetReturnStatus() << NcbiEndl;
+        NcbiCout << "\nStored procedure returned status: " << cstmt->GetReturnStatus() << NcbiEndl;
         string msgs = m_Ds->GetErrorInfo();
         if ( ! msgs.empty() ) {
             NcbiCout << "    Errors:" << NcbiEndl;
             NcbiCout << "        " << msgs << NcbiEndl;
         }
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName
-            << "\"." << NcbiEndl;
+        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
     }
 }
 
@@ -454,14 +449,13 @@ void CDbapiSimpleApp::DemoStaticSql(void)
 
         // Execute the static SQL.
         NcbiCout << "\nExecuting static SQL \"" << sql << "\":" << NcbiEndl;
-        auto_ptr<IStatement> stmt(m_Conn->CreateStatement());
+        unique_ptr<IStatement> stmt(m_Conn->CreateStatement());
         stmt->Execute(sql);
 
         // Retrieve the data.
         RetrieveData(&*stmt);
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName
-            << "\"." << NcbiEndl;
+        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
     }
 }
 
@@ -494,21 +488,19 @@ void CDbapiSimpleApp::DemoParamerizedSql(void)
                    " AND [hiredate] > @hire");
 
         // Assign parameters.
-        auto_ptr<IStatement> cstmt(m_Conn->GetStatement());
+        unique_ptr<IStatement> cstmt(m_Conn->GetStatement());
         cstmt->SetParam(CVariant(user_last),   "@last");
         cstmt->SetParam(CVariant(user_salary), "@salary");
         cstmt->SetParam(CVariant(user_hire),   "@hire");
 
         // Execute the parameterized SQL.
-        NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":"
-            << NcbiEndl;
+        NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":" << NcbiEndl;
         cstmt->SendSql(sql);
 
         // Retrieve the data.
         RetrieveData(&*cstmt);
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName
-            << "\"." << NcbiEndl;
+        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
     }
 }
 
@@ -543,9 +535,7 @@ void CDbapiSimpleApp::DemoDynamicSql(void)
         // Sanitize.
         // For strings, use SQLEncode().  For scalars, first convert to an
         // appropriate scalar type, then convert back to a string.
-        user_last   = NStr::SQLEncode(CUtf8::AsUTF8(user_last,
-                                                    eEncoding_ISO8859_1),
-                                      NStr::eSqlEnc_TagNonASCII);
+        user_last   = NStr::SQLEncode(CUtf8::AsUTF8(user_last, eEncoding_ISO8859_1), NStr::eSqlEnc_TagNonASCII);
         user_salary = NStr::UIntToString(NStr::StringToUInt(user_salary));
         user_hire   = "'" + CTime(user_hire).AsString() + "'";
 
@@ -557,14 +547,13 @@ void CDbapiSimpleApp::DemoDynamicSql(void)
 
         // Execute the dynamic SQL.
         NcbiCout << "\nExecuting dynamic SQL \"" << sql << "\":" << NcbiEndl;
-        auto_ptr<IStatement> stmt(m_Conn->CreateStatement());
+        unique_ptr<IStatement> stmt(m_Conn->CreateStatement());
         stmt->Execute(sql);
 
         // Retrieve the data.
         RetrieveData(&*stmt);
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName
-            << "\"." << NcbiEndl;
+        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
     }
 }
 
@@ -598,8 +587,7 @@ void CDbapiSimpleApp::DemoSqlInjection(void)
         //      FROM [Employee]
         //      WHERE [last] LIKE 'a' OR 1=1; DROP TABLE [emp]; --'
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName
-            << "\"." << NcbiEndl;
+        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
     }
 #endif
 }
@@ -611,12 +599,12 @@ void CDbapiSimpleApp::DemoSqlInjection(void)
 void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
 {
     while (stmt->HasMoreResults()) {
-        // Use an auto_ptr to manage resultset lifetime.
+        // Use an unique_ptr to manage resultset lifetime.
         // NOTE: Use it with caution. When the wrapped parent object
         // goes out of scope, all child objects are destroyed
         // (which isn't an issue for this demo but could be for
         // other applications).
-        auto_ptr<IResultSet> rs(stmt->GetResultSet());
+        unique_ptr<IResultSet> rs(stmt->GetResultSet());
 
         // Sometimes the results have no rows - and that's ok.
         if ( ! stmt->HasRows() ) {
@@ -629,8 +617,7 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
         case eDB_StatusResult:
             NcbiCout << "\nStatus results:" << NcbiEndl;
             while (rs->Next()) {
-                NcbiCout << "    Status: " << rs->GetVariant(1).GetInt4()
-                    << NcbiEndl;
+                NcbiCout << "    Status: " << rs->GetVariant(1).GetInt4() << NcbiEndl;
             }
             break;
 
@@ -665,8 +652,7 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
                 NcbiCout << NcbiEndl;
             }
             NcbiCout << "    ---------------" << NcbiEndl;
-            NcbiCout << "    Row count: " << stmt->GetRowCount()
-                << NcbiEndl;
+            NcbiCout << "    Row count: " << stmt->GetRowCount() << NcbiEndl;
             break;
         }
 
@@ -674,14 +660,12 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
         // your code.
         case eDB_ComputeResult:
         case eDB_CursorResult:
-            ERR_POST_X(1, Warning << Note << "Unhandled results type:"
-                << rs->GetResultType());
+            ERR_POST_X(1, Warning << Note << "Unhandled results type:" << rs->GetResultType());
             break;
 
         // Any other type means this code is out-of-date.
         default:
-            ERR_POST_X(1, Critical << "Unexpected results type:"
-                << rs->GetResultType());
+            ERR_POST_X(1, Critical << "Unexpected results type:" << rs->GetResultType());
         }
     }
 }

@@ -59,15 +59,14 @@
 #include <objtools/eutils/ehistory/ehistory__.hpp>
 
 
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  EUtils demo application
 //
-
-
-BEGIN_NCBI_SCOPE
-USING_SCOPE(NCBI_NS_NCBI::objects);
-
 
 class CEUtilsApp : public CNcbiApplication
 {
@@ -75,6 +74,7 @@ public:
     virtual void Init(void);
     virtual int  Run (void);
     virtual void Exit(void);
+
 private:
     void CallEInfo(const CArgs& args);
     void CallESearch(const CArgs& args);
@@ -114,7 +114,7 @@ void CEUtilsApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddFlag("einfo", "Call einfo utility", true);
     arg_desc->AddFlag("efetch", "Call efetch utility", true);
@@ -131,8 +131,7 @@ void CEUtilsApp::Init(void)
     arg_desc->AddDefaultKey("http", "Method",
         "HTTP method used to send requests",
         CArgDescriptions::eString, "post");
-    arg_desc->SetConstraint("http", &(*new CArgAllow_Strings,
-        "post", "get"));
+    arg_desc->SetConstraint("http", &(*new CArgAllow_Strings, "post", "get"));
 
     // Debug flag
     arg_desc->AddFlag("dump", "Print raw incoming data", true);
@@ -564,7 +563,7 @@ CEFetch_Request* CEUtilsApp::x_CreateLitRequest(const CArgs& args)
     else {
         return 0;
     }
-    auto_ptr<CEFetch_Literature_Request> lit_req(
+    unique_ptr<CEFetch_Literature_Request> lit_req(
         new CEFetch_Literature_Request(ldb, x_GetCtx()));
 
     string rettype = args["rettype"] ? args["rettype"].AsString() : kEmptyStr;
@@ -631,7 +630,7 @@ CEFetch_Request* CEUtilsApp::x_CreateSeqRequest(const CArgs& args)
     else {
         return 0;
     }
-    auto_ptr<CEFetch_Sequence_Request> seq_req(
+    unique_ptr<CEFetch_Sequence_Request> seq_req(
         new CEFetch_Sequence_Request(sdb, x_GetCtx()));
 
     string rettype = args["rettype"] ? args["rettype"].AsString() : kEmptyStr;
@@ -700,7 +699,7 @@ CEFetch_Request* CEUtilsApp::x_CreateTaxRequest(const CArgs& args)
     if (db != "taxonomy") {
         return 0;
     }
-    auto_ptr<CEFetch_Taxonomy_Request> tax_req(
+    unique_ptr<CEFetch_Taxonomy_Request> tax_req(
         new CEFetch_Taxonomy_Request(x_GetCtx()));
 
     if ( args["report"] ) {
@@ -729,7 +728,7 @@ CEFetch_Request* CEUtilsApp::x_CreateTaxRequest(const CArgs& args)
 void CEUtilsApp::CallEFetch(const CArgs& args)
 {
     // Try to create literature request
-    auto_ptr<CEFetch_Request> req(x_CreateLitRequest(args));
+    unique_ptr<CEFetch_Request> req(x_CreateLitRequest(args));
     if ( !req.get() ) {
         // Try to create sequence request
         req.reset(x_CreateSeqRequest(args));
@@ -841,17 +840,12 @@ int CEUtilsApp::Run(void)
 
 void CEUtilsApp::Exit(void)
 {
+    return;
 }
-
-
-END_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
-
-USING_NCBI_SCOPE;
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

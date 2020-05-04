@@ -47,7 +47,7 @@
  *  please see basic_sample.cpp.
  *
  *  It is assumed that the reader is familiar with the NCBI application
- *  framework class CNcbiApplication and with auto_ptr.
+ *  framework class CNcbiApplication and with unique_ptr.
  *
  *  --- Program Invocation and Supported Features ---
  *
@@ -154,7 +154,7 @@ USING_NCBI_SCOPE;
 //  Note: The "list" command doesn't have any additional arguments, so it
 //  doesn't have an "Init" function.
 
-static int s_RunList(const CArgs & args, ostream & os)
+static int s_RunList(const CArgs& args, ostream& os)
 {
     // The "list" command might print a list of queue names.
     os << "Here is the list of queues: ..." << endl;
@@ -162,7 +162,7 @@ static int s_RunList(const CArgs & args, ostream & os)
 }
 
 
-static void s_InitCreate(CArgDescriptions & arg_desc)
+static void s_InitCreate(CArgDescriptions& arg_desc)
 {
     // The "create" command requires the "queue" argument. Here it is being
     // added as an opening argument - a mandatory argument preceding any
@@ -175,7 +175,7 @@ static void s_InitCreate(CArgDescriptions & arg_desc)
     //arg_desc.AddPositional("queue", "Queue name", CArgDescriptions::eString);
 }
 
-static int s_RunCreate(const CArgs & args, ostream & os)
+static int s_RunCreate(const CArgs & args, ostream& os)
 {
     // The "create" command might create a queue with a given name.
     os << "Creating queue '" << args["queue"].AsString() << "'." << endl;
@@ -183,7 +183,7 @@ static int s_RunCreate(const CArgs & args, ostream & os)
 }
 
 
-static void s_InitPost(CArgDescriptions & arg_desc)
+static void s_InitPost(CArgDescriptions& arg_desc)
 {
     // The "post" command requires the "queue" opening argument.
     // AddOpening must be used in this case because the queue argument precedes
@@ -198,7 +198,7 @@ static void s_InitPost(CArgDescriptions & arg_desc)
         CArgDescriptions::eString);
 }
 
-static int s_RunPost(const CArgs & args, ostream & os)
+static int s_RunPost(const CArgs& args, ostream& os)
 {
     // The "post" command might send a message to a queue, with an optional
     // importance value.
@@ -213,7 +213,7 @@ static int s_RunPost(const CArgs & args, ostream & os)
 }
 
 
-static void s_InitQuery(CArgDescriptions & arg_desc)
+static void s_InitQuery(CArgDescriptions& arg_desc)
 {
     // The "query" command allows the "queue" argument. Because it is optional,
     // it must be a positional argument, not an opening argument.
@@ -221,7 +221,7 @@ static void s_InitQuery(CArgDescriptions & arg_desc)
         CArgDescriptions::eString);
 }
 
-static int s_RunQuery(const CArgs & args, ostream & os)
+static int s_RunQuery(const CArgs& args, ostream& os)
 {
     // The "query" command might print the messages for a given queue, or for
     // all queues if none was specified.
@@ -238,7 +238,7 @@ static int s_RunQuery(const CArgs & args, ostream & os)
 // The following "Init" and "Run" functions are for the command-less usage
 // form of the program, i.e.  multi_command [-v] <script_file>
 
-static void s_CommandlessInit(CArgDescriptions & arg_desc)
+static void s_CommandlessInit(CArgDescriptions& arg_desc)
 {
     // Example arguments for a command-less usage form:
     arg_desc.AddFlag("v", "Verbose");
@@ -246,11 +246,10 @@ static void s_CommandlessInit(CArgDescriptions & arg_desc)
         CArgDescriptions::eString);
 }
 
-static int s_CommandlessRun(const CArgs & args, ostream & os)
+static int s_CommandlessRun(const CArgs& args, ostream& os)
 {
     // The command-less usage form would do something with the arguments.
-    os << "Executing script file '" << args["script_file"].AsString() << "'."
-        << endl;
+    os << "Executing script file '" << args["script_file"].AsString() << "'." << endl;
     if ( args["v"].AsBoolean() ) {
         os << "    Blah, blah, blah..." << endl;
     }
@@ -314,7 +313,7 @@ void CMultiCommandApplication::Init(void)
     // The ECommandPresence parameter controls whether or not the user must
     // enter a command-based command line. Use eCommandOptional only when you
     // are setting up both command-less and command-based command lines.
-    auto_ptr< CCommandArgDescriptions >     cmd_desc(
+    unique_ptr<CCommandArgDescriptions> cmd_desc(
         new CCommandArgDescriptions(true, 0,
             CCommandArgDescriptions::eCommandOptional));
 
@@ -331,7 +330,7 @@ void CMultiCommandApplication::Init(void)
 
         // Create a container for this command's arguments. Argument
         // descriptions are allocated on the heap.
-        auto_ptr< CArgDescriptions >    arg_desc(new CArgDescriptions());
+        unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
         // Describe this command (the name parameter is not used for commands).
         // This description will be shown in the USAGE statement.
@@ -352,7 +351,7 @@ void CMultiCommandApplication::Init(void)
 
         // Add this command (and its argument descriptions) to the program's
         // overall argument descriptions object, 'cmd_desc'. Ownership is
-        // transfered to 'cmd_desc' by calling the auto_ptr's release() method
+        // transfered to 'cmd_desc' by calling the unique_ptr's release() method
         // and passing that to 'cmd_desc' via AddCommand().
         cmd_desc->AddCommand(s_Cmds[idx].m_Name, arg_desc.release(),
                              s_Cmds[idx].m_Alias);

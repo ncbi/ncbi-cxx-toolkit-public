@@ -9,10 +9,12 @@
 
 USING_NCBI_SCOPE;
 
+
 #define NEED_SET_DEPLOYMENT_UID
 
-static const string CD_VERSION_ENV="APPLICATION_VERSION";
-static const string CD_VERSION_UNKNOWN="unknown";
+static const char* CD_VERSION_ENV     = "APPLICATION_VERSION";
+static const char* CD_VERSION_UNKNOWN = "unknown";
+
 
 const string& CCgiSampleApplication::GetCdVersion() const
 {
@@ -23,6 +25,7 @@ const string& CCgiSampleApplication::GetCdVersion() const
     }
     return version;
 }
+
 
 int CCgiSampleApplication::ProcessPrintEnvironment(CCgiContext& ctx)
 {
@@ -39,7 +42,7 @@ int CCgiSampleApplication::ProcessPrintEnvironment(CCgiContext& ctx)
     response.SetStatus(200);
     response.WriteHeader();
 
-    auto_ptr<CHTMLPage> page;
+    unique_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage("Sample CGI", "./share/deployable_cgi_env.html"));
     } catch (const exception& e) {
@@ -61,7 +64,6 @@ int CCgiSampleApplication::ProcessPrintEnvironment(CCgiContext& ctx)
             env->Cell(row,1)->AppendPlainText(GetEnvironment().Get(name));
             ++row;
         }
-
         page->AddTagMap("ENVIRONMENT", env);
     }
     catch (const exception& e) {
@@ -81,18 +83,15 @@ int CCgiSampleApplication::ProcessPrintEnvironment(CCgiContext& ctx)
         ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
         return 4;
     }
-
-
     return 0;
 }
 
+
 int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
-
     // Parse, verify, and look at cmd-line and CGI parameters via "CArgs"
     // (optional)
     x_LookAtArgs();
-
 
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
@@ -135,7 +134,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
 
     // Create a HTML page (using template HTML file "deployable_cgi.html")
-    auto_ptr<CHTMLPage> page;
+    unique_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage("Sample CGI", "./share/deployable_cgi.html"));
     } catch (const exception& e) {

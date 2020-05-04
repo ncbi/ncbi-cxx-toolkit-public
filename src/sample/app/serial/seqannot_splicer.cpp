@@ -178,16 +178,15 @@
 #include "seqannot_splicer_stats.hpp"
 #include "seqannot_splicer_util.hpp"
 
-USING_SCOPE(ncbi);
+USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
 ///////////////////////////////////////////////////////////////////////////
 // Static Function Prototypes
 
-static void s_PreprocessSeqAnnots(auto_ptr<CObjectIStream>& sai);
-
-static void s_PreprocessSeqEntry(auto_ptr<CObjectIStream>& sei);
+static void s_PreprocessSeqAnnots(unique_ptr<CObjectIStream>& sai);
+static void s_PreprocessSeqEntry(unique_ptr<CObjectIStream>& sei);
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -195,15 +194,14 @@ static void s_PreprocessSeqEntry(auto_ptr<CObjectIStream>& sei);
 
 // This class is used when skipping Seq-annot's.  The entire Seq-annot is
 // hooked so that any necessary wrapper functionality can be implemented.
+
 class CHookSeq_annot__Seq_annot : public CSkipObjectHook
 {
 public:
-    virtual void SkipObject(CObjectIStream& in,
-                            const CObjectTypeInfo& passed_info)
+    virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& passed_info)
     {
         // Do any needed processing before skipping object.
         SeqAnnotSet_Pre(in);
-
         // Skip the Seq-annot (triggering other hooks).
         DefaultSkip(in, passed_info);
     }
@@ -212,16 +210,15 @@ public:
 
 // This class is used when skipping Seq-annot's.  The Seq-id is
 // hooked so that Seq-id's can be associated with the Seq-annot's.
+
 class CHookSeq_annot__Seq_id : public CSkipObjectHook
 {
 public:
-    virtual void SkipObject(CObjectIStream& in,
-                            const CObjectTypeInfo& passed_info)
+    virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& passed_info)
     {
         // Read Seq-id locally (not saved outside this scope).
         CRef<CSeq_id> seqid(new CSeq_id);
-        in.Read(&*seqid, CType<CSeq_id>().GetTypeInfo(),
-                CObjectIStream::eNoFileHeader);
+        in.Read(&*seqid, CType<CSeq_id>().GetTypeInfo(), CObjectIStream::eNoFileHeader);
 
         // Associate this Seq-id with the containing Seq-annot.
         SeqAnnotMapSeqId(seqid);
@@ -232,6 +229,7 @@ public:
 // This class is used when copying Seq-entry's.  Bioseq and Bioseq-set's are
 // hooked so that the context can be tracked, and so that splicing can be
 // done within the proper context.
+
 class CHookSeq_entry__Copy : public CCopyObjectHook
 {
 public:
@@ -251,10 +249,11 @@ public:
 // This class is used when copying Seq-entry's.  Seq-annot's are hooked so
 // that splicing new Seq-annot's can be done in conjunction with copying the
 // existing Seq-annot's.
+
 class CHookSeq_entry__Copy__Seq_annot : public CCopyClassMemberHook
 {
 public:
-    CHookSeq_entry__Copy__Seq_annot(auto_ptr<CObjectIStream>& sai)
+    CHookSeq_entry__Copy__Seq_annot(unique_ptr<CObjectIStream>& sai)
         : m_sai(sai)
     {
     }
@@ -298,23 +297,22 @@ public:
         ProcessSeqEntryAnnot(m_sai, osc);
     }
 private:
-    auto_ptr<CObjectIStream>& m_sai;
+    unique_ptr<CObjectIStream>& m_sai;
 };
 
 
 // This class is used when skipping Seq-entry's.  Bioseq and Bioseq-set's are
 // hooked so that a context tree can be created for reference when the
 // Seq-entry is copied.
+
 class CHookSeq_entry__Skip : public CSkipObjectHook
 {
 public:
     CHookSeq_entry__Skip(const EContextType context)
         : m_context(context)
-    {
-    }
+    {}
 
-    virtual void SkipObject(CObjectIStream& in,
-                            const CObjectTypeInfo& passed_info)
+    virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& passed_info)
     {
         // This hook just helps establish context for other hooks by
         // recording the context (nesting of Bioseq and Bioseq-set).
@@ -323,14 +321,16 @@ public:
         DefaultSkip(in, passed_info);
         ContextEnd();
     }
+
 private:
-    EContextType    m_context;
+    EContextType  m_context;
 };
 
 
 // This class is used when skipping Seq-entry's.  Seq-annot's are
 // hooked because the splicing code needs to know whether the context
 // being copied contains a Seq-annot.
+
 class CHookSeq_entry__Skip__Seq_annot : public CSkipObjectHook
 {
 public:
@@ -356,8 +356,7 @@ public:
     {
         // Read Seq-id locally (not saved outside this scope).
         CRef<CSeq_id> id(new CSeq_id);
-        in.Read(&*id, CType<CSeq_id>().GetTypeInfo(),
-                CObjectIStream::eNoFileHeader);
+        in.Read(&*id, CType<CSeq_id>().GetTypeInfo(), CObjectIStream::eNoFileHeader);
 
         // Add this Seq-id to the current context.
         AddSeqIdToCurrentContext(id);
@@ -366,12 +365,13 @@ public:
 
 
 ///////////////////////////////////////////////////////////////////////////
-// Static Function Definitions
+// Static function definitions
 
 // This function pre-processes the Seq-annot stream to record the stream
 // positions of the Seq-annot's and to associate Seq-annot's with the Seq-id's
 // they reference.
-static void s_PreprocessSeqAnnots(auto_ptr<CObjectIStream>& sai)
+
+static void s_PreprocessSeqAnnots(unique_ptr<CObjectIStream>& sai)
 {
     // Set a hook to handle any processing necessary for the full Seq-annot.
     CObjectTypeInfo(CType<CSeq_annot>())
@@ -405,7 +405,8 @@ static void s_PreprocessSeqAnnots(auto_ptr<CObjectIStream>& sai)
 
 // This function figures out the context for each Seq-id so the best place to
 // splice Seq-annot's can be determined.
-static void s_PreprocessSeqEntry(auto_ptr<CObjectIStream>& sei)
+
+static void s_PreprocessSeqEntry(unique_ptr<CObjectIStream>& sei)
 {
     // Set hooks to find the context for each Seq-id.
     CObjectTypeInfo(CType<CBioseq>())
@@ -450,7 +451,7 @@ class CSeqAnnotSplicerApp : public CNcbiApplication
 void CSeqAnnotSplicerApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -500,6 +501,7 @@ void CSeqAnnotSplicerApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 int CSeqAnnotSplicerApp::Run(void)
 {
     // Get arguments
@@ -517,7 +519,7 @@ int CSeqAnnotSplicerApp::Run(void)
                     "is not currently supported \n"
                     "due to an apparent bug in parsing seq-table CHOICE values.\n"
                     "Please try an alternate CHOICE." << NcbiEndl;
-        return 0;
+        return 1;
     }
 
     // Set up Seq-id selection mask.
@@ -526,7 +528,7 @@ int CSeqAnnotSplicerApp::Run(void)
     }
 
     // Set up Seq-annot stream.
-    auto_ptr<CObjectIStream> sai(CObjectIStream::Open
+    unique_ptr<CObjectIStream> sai(CObjectIStream::Open
         (GetFormat(args["safmt"].AsString()),
          args["sa"].AsInputFile()));
     //
@@ -538,7 +540,7 @@ int CSeqAnnotSplicerApp::Run(void)
                     "Seq-Annot file due to an apparent bug in "
                     "CObjectIStream::{G|S}etStreamPos().\n"
                     "Please try an alternate format." << NcbiEndl;
-        return 0;
+        return 1;
     }
 
     // Pre-process the Seq-annot stream to create map from Seq-id to Seq-annot.
@@ -556,19 +558,19 @@ int CSeqAnnotSplicerApp::Run(void)
 
     // Loop through all the Seq-entry files.
     CDir::TEntries dir_entries(CDir(seidir).GetEntries());
-    ITERATE (CDir::TEntries, file, dir_entries) {
+    for (const auto& file : dir_entries) {
         // Get the current (non-trivial) directory entry.
-        string name = (*file)->GetName();
-        if (name.compare(".")  && name.compare("..")) {
-            string seiname = (*file)->GetPath();
+        string name = (*file).GetName();
+        if (name != "."  &&  name != "..") {
+            string seiname = (*file).GetPath();
             string seoname = seodir + CDir::GetPathSeparator() + name;
 
             // Start the statistics for this Seq-entry.
             g_Stats->SeqEntry_Start();
 
             // Set up input and output streams for copying Seq-entry's.
-            auto_ptr<CObjectIStream> sei(CObjectIStream::Open(seifmt, seiname));
-            auto_ptr<CObjectOStream> seo(CObjectOStream::Open(seofmt, seoname));
+            unique_ptr<CObjectIStream> sei(CObjectIStream::Open(seifmt, seiname));
+            unique_ptr<CObjectOStream> seo(CObjectOStream::Open(seofmt, seoname));
             CObjectStreamCopier copier(*sei, *seo);
 
             // Do any preprocessing necessary.

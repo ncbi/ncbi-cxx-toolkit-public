@@ -9,11 +9,11 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CReadObjectHook
 {
 public:
-    virtual void ReadObject(CObjectIStream& strm,
-                            const CObjectInfo& passed_info)
+    virtual void ReadObject(CObjectIStream& strm,  const CObjectInfo& passed_info)
     {
         cout << strm.GetStackPath() << endl;
 #if 1
@@ -62,6 +62,7 @@ public:
 #endif
     }
 };
+
 
 int main(int argc, char** argv)
 {

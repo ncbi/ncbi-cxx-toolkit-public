@@ -35,9 +35,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-
 #include <sample/app/asn/NCBI_Sample_ASN_Type.hpp>
-
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -53,7 +51,7 @@ class CSampleAsnApplication : public CNcbiApplication
 void CSampleAsnApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -65,6 +63,7 @@ void CSampleAsnApplication::Init(void)
         ("input", "InputFile",
          "name of file to read ASN.1 data from (standard input by default)",
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
+
     arg_desc->AddDefaultKey
         ("output", "OutputFile",
          "name of file to write XML data to (standard output by default)",

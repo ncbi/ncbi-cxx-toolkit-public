@@ -40,14 +40,13 @@
 
 #include "seqannot_splicer_stats.hpp"
 
-USING_SCOPE(ncbi);
+USING_NCBI_SCOPE;
 
 
 // Global pointer to access the application statistics singleton.
 CSeqAnnotSplicerStats* g_Stats = CSeqAnnotSplicerStats::GetInstance();
 
-
-typedef unsigned long   TObjCtr;
+typedef unsigned long TObjCtr;
 
 // Private data used by app stats class.
 static TObjCtr  s_NumSa = 0;
@@ -116,4 +115,3 @@ void CSeqAnnotSplicerStats::SeqEntry_Start(void)
 {
     s_Unchanged = true;
 }
-

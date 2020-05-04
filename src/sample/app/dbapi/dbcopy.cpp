@@ -31,13 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include <corelib/ncbiapp.hpp>
 #include <dbapi/dbapi.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 
 class CDbCopyApp : public CNcbiApplication
@@ -69,7 +68,6 @@ bool CErrHandler::HandleIt(CDB_Exception* ex)
 }
 
 
-
 int CDbCopyApp::Run(void)
 {
     string sql;
@@ -88,65 +86,54 @@ int CDbCopyApp::Run(void)
         drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
         drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
 
-        auto_ptr<IConnection> conn_from(ds_from->CreateConnection());
-        auto_ptr<IConnection> conn_to(ds_to->CreateConnection());
+        unique_ptr<IConnection> conn_from(ds_from->CreateConnection());
+        unique_ptr<IConnection> conn_to(ds_to->CreateConnection());
 
         conn_to->SetMode(IConnection::eBulkInsert);
 
-        conn_from->Connect("anyone",
-                           "allowed",
-                           "TAPER",
-                           "DBAPI_Sample");
+        conn_from->Connect("anyone", "allowed", "TAPER", "DBAPI_Sample");
+        conn_to->Connect("anyone", "allowed", "MS_DEV1", "DBAPI_Sample");
 
-        conn_to->Connect("anyone",
-                         "allowed",
-                         "MS_DEV1",
-                         "DBAPI_Sample");
-
-        auto_ptr<IStatement> stmt_from(conn_from->GetStatement());
-        auto_ptr<IStatement> stmt_to(conn_to->GetStatement());
+        unique_ptr<IStatement> stmt_from(conn_from->GetStatement());
+        unique_ptr<IStatement> stmt_to(conn_to->GetStatement());
 
         // Create a source table ...
         {
             sql = " CREATE TABLE #source_table( \n"
-                "attribute_id INT, \n"
-                "attribute_name VARCHAR(128), \n"
-                "attribute_value VARCHAR(255) \n"
-                ")";
-
+                        "attribute_id INT, \n"
+                        "attribute_name VARCHAR(128), \n"
+                        "attribute_value VARCHAR(255) \n"
+                        ")";
             stmt_from->ExecuteUpdate(sql);
         }
 
         // Create a destination table ...
         {
             sql = " CREATE TABLE #destination_table( \n"
-                "attribute_id INT, \n"
-                "attribute_name VARCHAR(128), \n"
-                "attribute_value VARCHAR(255) \n"
-                ")";
-
+                        "attribute_id INT, \n"
+                        "attribute_name VARCHAR(128), \n"
+                        "attribute_value VARCHAR(255) \n"
+                        ")";
             stmt_to->ExecuteUpdate(sql);
         }
 
         // Fill up the #source_table with some data ...
         {
-            auto_ptr<IConnection> conn_tmp(ds_from->CreateConnection());
+            unique_ptr<IConnection> conn_tmp(ds_from->CreateConnection());
 
-            conn_tmp->Connect("anyone",
-                              "allowed",
-                              "TAPER");
+            conn_tmp->Connect("anyone", "allowed", "TAPER");
 
             // Prepare an INSERT stattement ...
             sql = "INSERT INTO #source_table VALUES(@attr_id, @attr_name, @attr_value)";
 
             // Prepare a stored procedure ...
-            auto_ptr<ICallableStatement> auto_stmt(conn_tmp->GetCallableStatement("sp_server_info"));
+            unique_ptr<ICallableStatement> auto_stmt(conn_tmp->GetCallableStatement("sp_server_info"));
             auto_stmt->Execute();
 
             // Insert data ...
             stmt_from->ExecuteUpdate("BEGIN TRANSACTION");
             while(auto_stmt->HasMoreResults()) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                 if (rs.get()) {
                     while(rs->Next()) {
@@ -164,7 +151,7 @@ int CDbCopyApp::Run(void)
 
         // Copy data from the #source_table into the #destination table ...
         {
-            // Prepare an INSERT stattement ...
+            // Prepare an INSERT statement ...
             sql = "INSERT INTO #destination_table VALUES(@attr_id, @attr_name, @attr_value)";
 
             // Prepare a SELECT statement ...
@@ -173,7 +160,7 @@ int CDbCopyApp::Run(void)
             // Insert data ...
             stmt_to->ExecuteUpdate("BEGIN TRANSACTION");
             while(stmt_from->HasMoreResults()) {
-                auto_ptr<IResultSet> rs(stmt_from->GetResultSet());
+                unique_ptr<IResultSet> rs(stmt_from->GetResultSet());
 
                 if (rs.get()) {
                     while(rs->Next()) {
@@ -189,11 +176,11 @@ int CDbCopyApp::Run(void)
             stmt_to->ExecuteUpdate("COMMIT TRANSACTION");
         }
 
-        // Print out the copyed data ...
+        // Print out the copied data ...
         {
             stmt_to->SendSql("SELECT * FROM #destination_table");
             while(stmt_to->HasMoreResults()) {
-                auto_ptr<IResultSet> rs(stmt_to->GetResultSet());
+                unique_ptr<IResultSet> rs(stmt_to->GetResultSet());
 
                 if (rs.get()) {
                     while(rs->Next()) {
@@ -218,10 +205,7 @@ int CDbCopyApp::Run(void)
 }
 
 
-END_NCBI_SCOPE
-
-
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
-    return ncbi::CDbCopyApp().AppMain(argc, argv);
+    return CDbCopyApp().AppMain(argc, argv);
 }

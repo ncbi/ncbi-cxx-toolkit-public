@@ -40,7 +40,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 
-
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
@@ -60,6 +59,7 @@ NCBITEST_AUTO_INIT()
 
     cout << "Initialization function executed" << endl;
 }
+
 
 NCBITEST_AUTO_FINI()
 {
@@ -162,12 +162,14 @@ BOOST_AUTO_TEST_CASE(TestWithoutException)
     BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
 }
 
+
 BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 1);
 BOOST_AUTO_TEST_CASE(TestTimeout)
 {
     // This test will always fail due to timeout
     SleepSec(2);
 }
+
 
 BOOST_AUTO_TEST_CASE(TestDependentOnArg)
 {
@@ -177,10 +179,12 @@ BOOST_AUTO_TEST_CASE(TestDependentOnArg)
     ERR_POST(Info << Note << "Argument value is " << arg_value);
 }
 
+
 BOOST_AUTO_TEST_CASE(TestAlwaysDisabled)
 {
     cout << "This message will never be printed" << endl;
 }
+
 
 BOOST_AUTO_TEST_CASE(TestDisabledInConfig)
 {
@@ -188,6 +192,7 @@ BOOST_AUTO_TEST_CASE(TestDisabledInConfig)
         "proper editing of *.ini file or after adding command line "
         "argument --run_test='*DisabledInConfig'" << endl;
 }
+
 
 BOOST_AUTO_TEST_CASE(TestUsingArg)
 {

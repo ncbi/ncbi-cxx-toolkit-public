@@ -47,9 +47,11 @@
 
 #include "deployable_cgi.hpp"
 
-using namespace ncbi;
+USING_NCBI_SCOPE;
+
 
 #define NEED_SET_DEPLOYMENT_UID
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CCgiSampleApplication::
@@ -73,7 +75,7 @@ void CCgiSampleApplication::x_SetupArgs()
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -105,18 +107,14 @@ void CCgiSampleApplication::x_LookAtArgs()
         (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
 
         // ...or get the whole list of "message" arguments
-        const CArgValue::TStringArray& values = 
-            args["message"].GetStringList();
-
-        ITERATE(CArgValue::TStringArray, it, values) {
-            // do something with the message
-            // (void) it->c_str(); // eg
+        const auto& values = args["message"].GetStringList();  // const CArgValue::TStringArray& 
+        for (const auto& v : values) {
+            // do something with each message 'v' (string)
         } 
     } else {
         // no "message" argument is present
     }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////

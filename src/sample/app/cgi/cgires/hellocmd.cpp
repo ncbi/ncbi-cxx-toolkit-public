@@ -68,7 +68,7 @@ void CHelloCommand::Execute( CCgiContext& ctx )
     
     // load in the html template file
     string baseFile = reg.Get( "filesystem", "HtmlBaseFile" );
-	auto_ptr<CHTMLPage> page( new CHTMLPage( NcbiEmptyString, baseFile ) );
+    unique_ptr<CHTMLPage> page( new CHTMLPage( NcbiEmptyString, baseFile ) );
     
     // set up to replace <@VIEW@> in template file with html returned
     // from CreateView
@@ -116,7 +116,7 @@ CNCBINode* CHelloBasicCommand::CreateView( CCgiContext& ctx)
 {
     const CNcbiRegistry& reg = ctx.GetConfig();
      
-    auto_ptr <CHTML_form> Form(new CHTML_form(reg.Get("html", "URL")));    
+    unique_ptr <CHTML_form> Form(new CHTML_form(reg.Get("html", "URL")));    
                                  
     Form->AppendChild(new CHTML_text("input", 40));
     Form->AddHidden(GetEntry(), "reply");
@@ -159,7 +159,7 @@ string CHelloReplyCommand::GetName( void ) const
 
 CNCBINode* CHelloReplyCommand::CreateView( CCgiContext& ctx)
 {
-    auto_ptr <CHTMLText> Reply(new CHTMLText("Hello"));
+    unique_ptr <CHTMLText> Reply(new CHTMLText("Hello"));
   
     // get the list of cgi request name, value pairs
     TCgiEntries& entries = const_cast<TCgiEntries&>

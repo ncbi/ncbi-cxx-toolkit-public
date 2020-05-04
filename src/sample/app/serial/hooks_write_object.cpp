@@ -9,6 +9,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CWriteObjectHook
 {
 public:
@@ -28,6 +29,7 @@ public:
 #endif
     }
 };
+
 
 int main(int argc, char** argv)
 {

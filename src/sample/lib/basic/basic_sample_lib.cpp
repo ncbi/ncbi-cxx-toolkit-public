@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <sample/lib/basic/sample_lib_basic.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 
@@ -52,21 +51,19 @@ CSampleLibraryObject::CSampleLibraryObject()
 bool CSampleLibraryObject::FindInPath(list<string>& found, const string& mask)
 {
     // Get PATH
-    const string path =
-        CNcbiApplication::Instance()->GetEnvironment().Get(m_EnvPath);
+    const string path = CNcbiApplication::Instance()->GetEnvironment().Get(m_EnvPath);
 
     // Get PATH folders
     list<string> folders;
     NStr::Split(path, m_EnvSeparator, folders, NStr::fSplit_Tokenize);
 
     // Find file(s)
-    for (auto f : folders) {
+    for (const auto& f : folders) {
         CDir::TEntries entries = CDir(f).GetEntries(mask);
-        for (auto e : entries) {
-            found.push_back( e->GetPath() );
+        for (const auto& e : entries) {
+            found.push_back(e->GetPath());
         }
     }
-
     return !found.empty();
 }
 
@@ -74,7 +71,6 @@ bool CSampleLibraryObject::FindInPath(list<string>& found, const string& mask)
 CSampleLibraryObject::~CSampleLibraryObject()
 {
 }
-
 
 
 END_NCBI_SCOPE

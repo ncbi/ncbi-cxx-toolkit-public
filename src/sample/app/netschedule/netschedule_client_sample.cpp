@@ -47,19 +47,17 @@ USING_NCBI_SCOPE;
 
     
 ///////////////////////////////////////////////////////////////////////
-
-
 /// Sample application
 ///
 /// @internal
 ///
+
 class CSampleNetScheduleClient : public CNcbiApplication
 {
 public:
-    void Init(void);
-    int Run(void);
+    virtual void Init(void);
+    virtual int  Run(void);
 };
-
 
 
 void CSampleNetScheduleClient::Init(void)
@@ -70,7 +68,7 @@ void CSampleNetScheduleClient::Init(void)
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -89,8 +87,6 @@ void CSampleNetScheduleClient::Init(void)
                              "jcount",
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
-
-
     
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -118,31 +114,26 @@ int CSampleNetScheduleClient::Run(void)
     submitter.SubmitJob(job);
     NcbiCout << job.job_id << NcbiEndl;
 
-    
-    
     vector<string> jobs;
-
     {{
-    CStopWatch sw(CStopWatch::eStart);
+        CStopWatch sw(CStopWatch::eStart);
 
-    NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
+        NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
-    for (unsigned i = 0; i < jcount; ++i) {
-        CNetScheduleJob job(input);
-        submitter.SubmitJob(job);
-        jobs.push_back(job.job_id);
-        if (i % 1000 == 0) {
-            NcbiCout << "." << flush;
+        for (unsigned i = 0; i < jcount; ++i) {
+            CNetScheduleJob job(input);
+            submitter.SubmitJob(job);
+            jobs.push_back(job.job_id);
+            if (i % 1000 == 0) {
+                NcbiCout << "." << flush;
+            }
         }
-    }
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
-    double elapsed = sw.Elapsed();
-    double avg = elapsed / jcount;
-
-    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Avg time:" << avg << " sec." << NcbiEndl;
+        double elapsed = sw.Elapsed();
+        NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+        double avg = elapsed / jcount;
+        NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+        NcbiCout << "Avg time:" << avg << " sec." << NcbiEndl;
     }}
-
 
     // Waiting for jobs to be done
 
@@ -161,8 +152,8 @@ int CSampleNetScheduleClient::Run(void)
     }
     */
             
-    unsigned last_jobs = 0;
-    unsigned no_jobs_executes_cnt = 0;
+    size_t last_jobs = 0;
+    size_t no_jobs_executes_cnt = 0;
     
     while (jobs.size()) {
         NON_CONST_ITERATE(vector<string>, it, jobs) {
@@ -173,8 +164,7 @@ int CSampleNetScheduleClient::Run(void)
             if (status == CNetScheduleAPI::eDone) {
                 string expected_output = "DONE " + queue_name;
                 if (job.output != expected_output || job.ret_code != 0) {
-                    ERR_POST("Unexpected output or return code:" +
-                             job.output);
+                    ERR_POST("Unexpected output or return code:" + job.output);
                 }
                 jobs.erase(it);
                 ++cnt;
@@ -191,10 +181,7 @@ int CSampleNetScheduleClient::Run(void)
             
             ++cnt;
             if (cnt % 1000 == 0) {
-                NcbiCout << "Waiting for " 
-                         << jobs.size() 
-                         << " jobs."
-                         << NcbiEndl;
+                NcbiCout << "Waiting for " << jobs.size() << " jobs." << NcbiEndl;
                 // it is necessary to give system a rest periodically
                 SleepMilliSec(2000);
                 // check status of only first 1000 jobs
@@ -209,8 +196,7 @@ int CSampleNetScheduleClient::Run(void)
         if (jobs.size() == last_jobs) {
             ++no_jobs_executes_cnt;
             if (no_jobs_executes_cnt == 3) {
-                NcbiCout << "No progress in job execution. Stopping..."
-                         << NcbiEndl;
+                NcbiCout << "No progress in job execution. Stopping..." << NcbiEndl;
                 break;
             } else {
                 last_jobs = jobs.size();
@@ -221,7 +207,7 @@ int CSampleNetScheduleClient::Run(void)
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     if (jobs.size()) {
-        NcbiCout << "Remaning job count = " << jobs.size() << NcbiEndl;
+        NcbiCout << "Remaining job count = " << jobs.size() << NcbiEndl;
     }
     return 0;
 }

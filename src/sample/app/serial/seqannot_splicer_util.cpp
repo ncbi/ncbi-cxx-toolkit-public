@@ -105,14 +105,17 @@ static TSeqIdChoiceMaskFlags s_GetSeqIdChoiceMask(const CSeq_id* seqid);
 
 static bool s_RemoveAnnot(TAnnotToSeqIdMapIter annot_in_map_iter);
 
-static bool s_SpliceAnnot(auto_ptr<CObjectIStream>& sai,
+static bool s_SpliceAnnot(unique_ptr<CObjectIStream>& sai,
                           COStreamContainer& osc,
                           TAnnotToSeqIdMapIter annot_in_map);
 
-static void s_SpliceAnnotsForSeqId(auto_ptr<CObjectIStream>& sai,
+static void s_SpliceAnnotsForSeqId(unique_ptr<CObjectIStream>& sai,
                                    COStreamContainer& osc,
                                    TSeqIdToAnnotMapIter seqid_iter);
 
+
+// These static global objects defined here for a test simplicity.
+// DO NOT USE static non-POD types in your program!!!
 
 static TAnnotToSeqIdMap             s_AnnotToSeqIdMap;
 static TSeqIdToAnnotMap             s_SeqIdToAnnotMap;
@@ -270,7 +273,7 @@ bool IsSeqIdChoiceSelected(const CSeq_id* seqid)
 // This function is called during the copying of a Seq-annot, and (after
 // all existing Seq-annot's are copied) splices in any applicable new
 // Seq-annot's.
-void ProcessSeqEntryAnnot(auto_ptr<CObjectIStream>& sai,
+void ProcessSeqEntryAnnot(unique_ptr<CObjectIStream>& sai,
                           COStreamContainer& osc)
 {
     // Loop through all Seq-id's for this context, and splice appropriate
@@ -332,8 +335,7 @@ void SeqAnnotMapSeqId(TSeqRef seqid_in_annot)
     // entry with a new vector containing this position.
     {{
         // mapentry finds mapping, if one exists:
-        TSeqIdToAnnotMapIter
-            mapentry = s_SeqIdToAnnotMap.find(seqid_in_annot);
+        TSeqIdToAnnotMapIter mapentry = s_SeqIdToAnnotMap.find(seqid_in_annot);
 
         if (mapentry != s_SeqIdToAnnotMap.end()) {
             // a mapping exists, so see if the current
@@ -367,8 +369,7 @@ void SeqAnnotMapSeqId(TSeqRef seqid_in_annot)
     // entry with a new vector containing this Seq-id.
     {{
         // mapentry finds mapping, if one exists:
-        TAnnotToSeqIdMapIter
-            mapentry = s_AnnotToSeqIdMap.find(s_AnnotPos);
+        TAnnotToSeqIdMapIter mapentry = s_AnnotToSeqIdMap.find(s_AnnotPos);
 
         if (mapentry != s_AnnotToSeqIdMap.end()) {
             // a mapping exists, so see if the current Seq-id is
@@ -416,12 +417,11 @@ void SetSeqAnnotChoiceMask(const string& mask)
         return;
     }
 
-    list<string>    flag_list;
-    NStr::Split(mask, "|", flag_list,
-                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-    list<string>::iterator  fbegin(flag_list.begin());
-    list<string>::iterator  fend(flag_list.end());
-    list<string>::iterator  found_flag;
+    list<string> flag_list;
+    NStr::Split(mask, "|", flag_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    list<string>::iterator fbegin(flag_list.begin());
+    list<string>::iterator fend(flag_list.end());
+    list<string>::iterator found_flag;
     TSeqAnnotChoiceMaskFlags flags = fSAMF_NotSet;
 
 #define ADDFLAG(flag) \
@@ -461,9 +461,9 @@ void SetSeqIdChoiceMask(const string& mask)
     list<string>    flag_list;
     NStr::Split(mask, "|", flag_list,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-    list<string>::iterator  fbegin(flag_list.begin());
-    list<string>::iterator  fend(flag_list.end());
-    list<string>::iterator  found_flag;
+    list<string>::iterator fbegin(flag_list.begin());
+    list<string>::iterator fend(flag_list.end());
+    list<string>::iterator found_flag;
     TSeqIdChoiceMaskFlags flags = fSIMF_NotSet;
 
 #define ADDFLAG(flag) \
@@ -501,7 +501,7 @@ void SetSeqIdChoiceMask(const TSeqIdChoiceMaskFlags mask)
 
 
 ///////////////////////////////////////////////////////////////////////////
-// Module Static functions
+// Module static functions
 
 // This function deletes a context.
 static void s_DeleteContext(TContextPtr context)
@@ -553,7 +553,6 @@ static TSeqAnnotChoiceMaskFlags s_GetSeqAnnotChoiceMask(const CSeq_annot* annot)
     if ( ! annot->CanGetData() || ! annot->IsSetData() ) {
         return fSAMF_NotSet;
     }
-
     switch (annot->GetData().Which()) {
         case CSeq_annot_Base::C_Data::e_not_set:    return fSAMF_NotSet;
         case CSeq_annot_Base::C_Data::e_Ftable:     return fSAMF_Ftable;
@@ -613,17 +612,18 @@ static bool s_RemoveAnnot(TAnnotToSeqIdMapIter annot_in_map_iter)
     // not the Seq-id's in the global map.  It then looks up the
     // corresponding Seq-id in the global map.
     // This will erase elements from Seq-annot's container.
+
     TSeqRefCont& seq_list(annot_in_map_iter->second->GetData());
-    NON_CONST_ITERATE (TSeqRefCont, seq_iter, seq_list) {
+    NON_CONST_ITERATE (TSeqRefCont, seq_iter, seq_list) 
+    {
         // Find the Seq-id in the global map that corresponds to the
         // Seq-id in this Seq-annot's list.
         TSeqIdToAnnotMapIter seqid_in_map = s_SeqIdToAnnotMap.find(*seq_iter);
         _ASSERT(seqid_in_map != s_SeqIdToAnnotMap.end());
 
         // Find the link to this Seq-annot in this Seq-id's list.
-        TPosCont&       annot_list(seqid_in_map->second->GetData());
-        TPosContIter    seqannot = find(annot_list.begin(), annot_list.end(),
-                                        annot_in_map_iter->first);
+        TPosCont&    annot_list(seqid_in_map->second->GetData());
+        TPosContIter seqannot = find(annot_list.begin(), annot_list.end(), annot_in_map_iter->first);
         _ASSERT(seqannot != annot_list.end());
 
         // Erase the link to this Seq-annot from this Seq-id.
@@ -648,7 +648,7 @@ static bool s_RemoveAnnot(TAnnotToSeqIdMapIter annot_in_map_iter)
 // This function splices a Seq-annot from the Seq-annot stream to the
 // new Seq-entry file, and calls the function that removes the Seq-annot
 // from the mappings.
-static bool s_SpliceAnnot(auto_ptr<CObjectIStream>& sai,
+static bool s_SpliceAnnot(unique_ptr<CObjectIStream>& sai,
                           COStreamContainer& osc,
                           TAnnotToSeqIdMapIter annot_in_map)
 {
@@ -673,7 +673,7 @@ static bool s_SpliceAnnot(auto_ptr<CObjectIStream>& sai,
 
 
 // This function splices all the Seq-annot's for a given Seq-id.
-static void s_SpliceAnnotsForSeqId(auto_ptr<CObjectIStream>& sai,
+static void s_SpliceAnnotsForSeqId(unique_ptr<CObjectIStream>& sai,
                                    COStreamContainer& osc,
                                    TSeqIdToAnnotMapIter seqid_iter)
 {

@@ -44,12 +44,10 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-
 // To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
 
-
-using namespace ncbi;
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -96,16 +94,14 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     /*
     // To get CGI client API (in-house only, optional)
     const char* const* client_tracking_env = request.GetClientTrackingEnv();
-    unsigned int client_ip = NcbiGetCgiClientIP(eCgiClientIP_TryAll,
-                                                client_tracking_env);
+    unsigned int client_ip = NcbiGetCgiClientIP(eCgiClientIP_TryAll, client_tracking_env);
     int is_local_client = NcbiIsLocalCgiClient(client_tracking_env);
     */
    
-
     // Try to retrieve the message ('message=...') from the HTTP request.
     // NOTE:  the case sensitivity was turned off in Init().
     bool is_message = false;
-    string message    = request.GetEntry("Message", &is_message);
+    string message = request.GetEntry("Message", &is_message);
     if ( is_message ) {
         message = "'" + message + "'";
     } else {
@@ -115,11 +111,11 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // NOTE:  While this sample uses the CHTML* classes for generating HTML,
     // you are encouraged to use XML/XSLT and the NCBI port of XmlWrapp.
     // For more info:
-    //  http://ncbi.github.io/cxx-toolkit/pages/ch_xmlwrapp
-    //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
+    //   http://ncbi.github.io/cxx-toolkit/pages/ch_xmlwrapp
+    //   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
 
     // Create a HTML page (using template HTML file "cgi_sample.html")
-    auto_ptr<CHTMLPage> page;
+    unique_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage("Sample CGI", "cgi_sample.html"));
     } catch (exception& e) {
@@ -160,7 +156,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 }
 
 
-
 void CCgiSampleApplication::x_SetupArgs()
 {
     // Disregard the case of CGI arguments
@@ -168,7 +163,7 @@ void CCgiSampleApplication::x_SetupArgs()
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -200,18 +195,15 @@ void CCgiSampleApplication::x_LookAtArgs()
         (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
 
         // ...or get the whole list of "message" arguments
-        const CArgValue::TStringArray& values = 
-            args["message"].GetStringList();
+        const auto& values = args["message"].GetStringList();  // const CArgValue::TStringArray& 
 
-        ITERATE(CArgValue::TStringArray, it, values) {
-            // do something with the message
-            // (void) it->c_str(); // eg
+        for (const auto& v : values) {
+            // do something with each message 'v' (string)
         } 
     } else {
         // no "message" argument is present
     }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////

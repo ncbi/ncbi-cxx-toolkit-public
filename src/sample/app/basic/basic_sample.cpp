@@ -41,7 +41,6 @@ USING_NCBI_SCOPE;
 /////////////////////////////////////////////////////////////////////////////
 //  CSampleBasicApplication::
 
-
 class CSampleBasicApplication : public CNcbiApplication
 {
 private:
@@ -54,7 +53,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
 
-
 void CSampleBasicApplication::Init(void)
 {
     // // Set error posting and tracing on maximum
@@ -63,7 +61,7 @@ void CSampleBasicApplication::Init(void)
     // SetDiagPostLevel(eDiag_Info);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -129,16 +127,13 @@ void CSampleBasicApplication::Init(void)
     arg_desc->SetConstraint
         ("one_symbol", new CArgAllow_Symbols(" aB\tCd"));
 
-
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
-
 
 int CSampleBasicApplication::Run(void)
 {
@@ -169,15 +164,13 @@ int CSampleBasicApplication::Run(void)
         lg << "logfile:   " << args["logfile"].AsString() << endl;
 
     if ( args["ko"] ) {
-        lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
-           << endl;
+        lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean()) << endl;
 
-        const CArgValue::TStringArray& ko_values = 
-            args["ko"].GetStringList();
+        const CArgValue::TStringArray& ko_values = args["ko"].GetStringList();
         if (!ko_values.empty()) {
             lg << "ko list:";
-            ITERATE(CArgValue::TStringArray, it, ko_values) {
-                lg << *it << ", ";
+            for (const auto& v: ko_values) {
+                lg << v << ", ";
             }
             lg << endl;
         }
@@ -210,8 +203,7 @@ int CSampleBasicApplication::Run(void)
                << endl;
         }
     } else {
-        lg << "(no unnamed positional arguments passed in the cmd-line)"
-           << endl;
+        lg << "(no unnamed positional arguments passed in the cmd-line)" << endl;
     }
 
     // Separator
@@ -228,7 +220,6 @@ int CSampleBasicApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-
 void CSampleBasicApplication::Exit(void)
 {
     // Do your after-Run() cleanup here
@@ -237,7 +228,6 @@ void CSampleBasicApplication::Exit(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

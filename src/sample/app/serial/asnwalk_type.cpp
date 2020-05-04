@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 
 class CDemoApp : public CNcbiApplication
 {
-    virtual int  Run(void);
+    virtual int Run(void);
 
     void Dispatch(int depth, size_t offset, const CObjectTypeInfo& info);
     void WalkPrimitive(int depth, size_t offset, const CObjectTypeInfo& info);
@@ -101,6 +101,8 @@ void CDemoApp::Dispatch(int depth, size_t offset, const CObjectTypeInfo& info)
     }
     --depth;
 }
+
+
 void CDemoApp::WalkPrimitive(int depth, size_t offset, const CObjectTypeInfo& info)
 {
     string off(offset,' ');
@@ -132,10 +134,9 @@ void CDemoApp::WalkPrimitive(int depth, size_t offset, const CObjectTypeInfo& in
             if (values.IsInteger()) {
                 cout << " integer: ";
             }
-            CEnumeratedTypeValues::TValues all = values.GetValues();
             cout << "{" << endl;
-            ITERATE( CEnumeratedTypeValues::TValues, v, all) {
-                cout << off << " " << v->first << " (" << v->second << ")" << endl;
+            for (auto& v : values.GetValues()) {
+                cout << off << " " << v.first << " (" << v.second << ")" << endl;
             }
             cout << off << "}";
         }
@@ -155,6 +156,7 @@ void CDemoApp::WalkPrimitive(int depth, size_t offset, const CObjectTypeInfo& in
     }
     cout << endl;
 }
+
 
 void CDemoApp::WalkClass(int depth, size_t offset, const CObjectTypeInfo& info)
 {
@@ -192,6 +194,7 @@ void CDemoApp::WalkClass(int depth, size_t offset, const CObjectTypeInfo& info)
     cout << off << "} end of " << info.GetName() << endl;
 }
 
+
 void CDemoApp::WalkChoice(int depth, size_t offset, const CObjectTypeInfo& info)
 {
     string off(offset,' ');
@@ -206,6 +209,8 @@ void CDemoApp::WalkChoice(int depth, size_t offset, const CObjectTypeInfo& info)
     }
     cout << off << "} end of " << info.GetName() << endl;
 }
+
+
 void CDemoApp::WalkContainer(int depth, size_t offset, const CObjectTypeInfo& info)
 {
     string off(offset,' ');
@@ -213,6 +218,8 @@ void CDemoApp::WalkContainer(int depth, size_t offset, const CObjectTypeInfo& in
     Dispatch(depth, offset, info.GetElementType());
     cout << off << "} end of " << info.GetName() << endl;
 }
+
+
 void CDemoApp::WalkPointer(int depth, size_t offset, const CObjectTypeInfo& info)
 {
     string off(offset,' ');

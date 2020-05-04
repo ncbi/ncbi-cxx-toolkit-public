@@ -41,14 +41,10 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 
-
-
 USING_NCBI_SCOPE;
 
     
 ///////////////////////////////////////////////////////////////////////
-
-
 /// Test application
 ///
 /// @internal
@@ -56,10 +52,9 @@ USING_NCBI_SCOPE;
 class CSampleNetScheduleNode : public CNcbiApplication
 {
 public:
-    void Init(void);
-    int Run(void);
+    virtual void Init(void);
+    virtual int  Run(void);
 };
-
 
 
 void CSampleNetScheduleNode::Init(void)
@@ -70,7 +65,7 @@ void CSampleNetScheduleNode::Init(void)
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -172,7 +167,6 @@ int CSampleNetScheduleNode::Run(void)
                 NcbiCout << "\nWaiting." << NcbiEndl;
                 node_status = 1;
             }
-
             if (++no_jobs_counter > 7) { // no new jobs coming
                 NcbiCout << "\nNo new jobs arriving. Processing closed." << NcbiEndl;
                 break;

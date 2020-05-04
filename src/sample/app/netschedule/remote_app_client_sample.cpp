@@ -38,15 +38,18 @@
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/remote_app.hpp>
 
-
 USING_NCBI_SCOPE;
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CRemoteAppClientSampleApp::
+//
 
 class CRemoteAppClientSampleApp : public CGridClientApp
 {
 public:
-
     virtual void Init(void);
-    virtual int Run(void);
+    virtual int  Run(void);
     virtual string GetProgramVersion(void) const
     {
         // Next formats are valid and supported:
@@ -59,15 +62,13 @@ public:
     }
 
 protected:
-
-    void PrintJobInfo(const string& job_key,
-        CNetCacheAPI::TInstance netcache_api);
+    void PrintJobInfo(const string& job_key, CNetCacheAPI::TInstance netcache_api);
     void ShowBlob(const string& blob_key);
 
     virtual bool UseProgressMessage() const { return false; }
     virtual bool UseAutomaticCleanup() const { return false; }
-
 };
+
 
 void CRemoteAppClientSampleApp::Init(void)
 {
@@ -75,7 +76,7 @@ void CRemoteAppClientSampleApp::Init(void)
     CGridClientApp::Init();
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -100,10 +101,13 @@ void CRemoteAppClientSampleApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-const string kData = 
-    "!====================================================================================================!";
+
 int CRemoteAppClientSampleApp::Run(void)
 {
+    const char* kData = 
+        "!====================================================================================================!";
+    const size_t kDataSize = strlen(kData);
+
     const CArgs& args = GetArgs();
 
     if (args["showblob"]) {
@@ -133,12 +137,12 @@ int CRemoteAppClientSampleApp::Run(void)
         CNcbiOstream& os = request.GetStdIn();
 
         if (i % 5 == 0) {
-            os.write(kData.c_str(),kData.size());
+            os.write(kData, kDataSize);
             os << endl << i << endl;
-            os.write(kData.c_str(),kData.size());
-            os.write(kData.c_str(),kData.size());
-            os.write(kData.c_str(),kData.size());
-            os.write(kData.c_str(),kData.size());
+            os.write(kData, kDataSize);
+            os.write(kData, kDataSize);
+            os.write(kData, kDataSize);
+            os.write(kData, kDataSize);
         } else
             os << "Request data";
 
@@ -167,9 +171,9 @@ int CRemoteAppClientSampleApp::Run(void)
         
         typedef list<TJobKeys::iterator> TDoneJobs;
         TDoneJobs done_jobs;
-        for(TJobKeys::iterator it = job_keys.begin();
-            it != job_keys.end(); ++it) {
-        // Get a job status
+
+        for(auto it = job_keys.begin(); it != job_keys.end(); ++it) {
+            // Get a job status
             CGridClient& grid_client(GetGridClient());
             grid_client.SetJobKey(*it);
             CNetScheduleAPI::EJobStatus status;
@@ -192,7 +196,6 @@ int CRemoteAppClientSampleApp::Run(void)
                 NcbiCout.clear();
                 NcbiCout << NcbiEndl << "----------------------" <<  NcbiEndl;
                 done_jobs.push_back(it);
-
             }
 
             // A job has failed
@@ -209,13 +212,13 @@ int CRemoteAppClientSampleApp::Run(void)
                 done_jobs.push_back(it);
             }
         }
-        for(TDoneJobs::iterator i = done_jobs.begin();
-            i != done_jobs.end(); ++i) {
-            job_keys.erase(*i);
+        for (const auto& job : done_jobs) {
+            job_keys.erase(job);
         }
         if (job_keys.empty())
             break;
-            // A job is still running
+
+        // A job is still running
         if (++cnt % 1000 == 0) {
             NcbiCout << "Still waiting..." << NcbiEndl;
         }
@@ -223,20 +226,21 @@ int CRemoteAppClientSampleApp::Run(void)
 
     ERR_POST(Info << Note
                   << "==================== All finished ==================");
-    for(TJobKeys::iterator it = job_keys.begin();
-        it != job_keys.end(); ++it) {
-        PrintJobInfo(*it, netcache_api);
+    for (const auto& job : job_keys) {
+        PrintJobInfo(job, netcache_api);
     }
     return 0;
 }
 
+
 void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 {
     CNetCacheAPI nc_api(GetGridClient().GetNetCacheAPI());
-    auto_ptr<CNcbiIstream> is(nc_api.GetIStream(blob_key));
+    unique_ptr<CNcbiIstream> is(nc_api.GetIStream(blob_key));
     NcbiStreamCopy(NcbiCout, *is);
     NcbiCout << NcbiEndl;
 }
+
 
 void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
     CNetCacheAPI::TInstance netcache_api)
@@ -245,6 +249,7 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
     grid_client.SetJobKey(job_key);
     CNetScheduleAPI::EJobStatus status;
     status = grid_client.GetStatus();
+
     // A job is done here
     if (status == CNetScheduleAPI::eDone) {
         NcbiCout << "Job : " << job_key << NcbiEndl;
@@ -267,7 +272,6 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
         ERR_POST( "Job " << job_key << " failed : " 
                   << grid_client.GetErrorMessage() );
     }
-    
     // A job has been canceled
     if (status == CNetScheduleAPI::eCanceled) {
         ERR_POST( Warning << Note << "Job " << job_key << " is canceled.");

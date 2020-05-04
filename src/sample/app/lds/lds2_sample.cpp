@@ -66,7 +66,6 @@ USING_SCOPE(objects);
 //  Demo application
 //
 
-
 class CSampleLds2Application : public CNcbiApplication
 {
 public:
@@ -74,10 +73,8 @@ public:
     virtual int  Run (void);
 
 private:
-    void x_InitLDS2(const string& lds_path,
-                    const string& data_path);
+    void x_InitLDS2(const string& lds_path, const string& data_path);
 };
-
 
 
 void CSampleLds2Application::Init(void)
@@ -86,7 +83,7 @@ void CSampleLds2Application::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalKey("data_dir", "DataDir",
         "Directory with the data files.", CArgDescriptions::eString);
@@ -112,8 +109,6 @@ void CSampleLds2Application::Init(void)
                               prog_description, false);
 
     // Pass argument descriptions to the application
-    //
-
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -170,8 +165,8 @@ int CSampleLds2Application::Run(void)
         CBioseq_Handle::TId bh_ids = scope.GetIds(seq_id);
         NcbiCout << "Synonyms for " << id << ": ";
         string sep = "";
-        ITERATE (CBioseq_Handle::TId, id_it, bh_ids) {
-            cout << sep << id_it->AsString();
+        for (const auto& it : bh_ids) {
+            cout << sep << it.AsString();
             sep = ", ";
         }
         cout << endl;
@@ -191,8 +186,7 @@ int CSampleLds2Application::Run(void)
 
         // Test features
         SAnnotSelector sel;
-        sel.SetSearchUnresolved()
-            .SetResolveAll();
+        sel.SetSearchUnresolved().SetResolveAll();
         CSeq_loc loc;
         loc.SetWhole().Assign(seq_id);
         cout << "Features by location:" << endl;
@@ -237,7 +231,6 @@ int CSampleLds2Application::Run(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {

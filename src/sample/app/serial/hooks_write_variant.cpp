@@ -9,6 +9,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook_std : public CWriteChoiceVariantHook
 {
 public:
@@ -43,6 +44,7 @@ public:
     }
 };
 
+
 class CDemoHook_str : public CWriteChoiceVariantHook
 {
 public:
@@ -75,6 +77,7 @@ public:
     }
 };
 
+
 int main(int argc, char** argv)
 {
     unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "stdout", eSerial_StdWhenStd));
@@ -98,6 +101,5 @@ int main(int argc, char** argv)
 //      date.SetStr();
         *out << date;
     }
-
     return 0;
 }

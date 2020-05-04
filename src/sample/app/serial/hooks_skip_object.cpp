@@ -6,6 +6,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CSkipObjectHook
 {
 public:
@@ -52,7 +53,6 @@ public:
 #endif
 #endif
 #endif
-
     }
 };
 

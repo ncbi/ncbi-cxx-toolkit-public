@@ -33,17 +33,15 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-
 #include <serial/serialdef.hpp>
-
 #include <objmgr/edits_db_engine.hpp>
-
 
 #include <string>
 #include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
 
 class CFileDBEngine : public IEditsDBEngine
 {
@@ -53,11 +51,9 @@ public:
 
     void CreateBlob(const string& blobid);
 
-
     virtual bool HasBlob(const string& blobid) const;
     virtual bool FindSeqId(const CSeq_id_Handle& id, string& blobid) const;
-    virtual void NotifyIdChanged(const CSeq_id_Handle& id, 
-                                 const string& newblobid);
+    virtual void NotifyIdChanged(const CSeq_id_Handle& id, const string& newblobid);
 
     virtual void SaveCommand(const CSeqEdit_Cmd& cmd);
     virtual void GetCommands(const string& blob_id, TCommands& cmds) const;
@@ -67,8 +63,8 @@ public:
     virtual void RollbackTransaction();
 
     void DropDB();
-private:
 
+private:
     string x_GetCmdFileName(const string& blobid, int cmdcount);
 
     string m_DBPath;
@@ -81,8 +77,8 @@ private:
     typedef map<CSeq_id_Handle, string> TChangedIds;
     TChangedIds m_ChangedIds;
     TChangedIds m_TmpIds;
-    
 };
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

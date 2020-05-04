@@ -29,16 +29,12 @@
  */
 
 #include <ncbi_pch.hpp>
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/rwstream.hpp>
-
 #include <connect/services/netcache_api.hpp>
-
 #include <util/compress/zlib.hpp>
 
-
-using namespace ncbi;
+USING_NCBI_SCOPE;
 
 
 class CSampleNetCacheClient : public CNcbiApplication
@@ -61,7 +57,7 @@ private:
 // Setup command line arguments and parameters
 void CSampleNetCacheClient::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
@@ -137,9 +133,7 @@ void CSampleNetCacheClient::DemoPutRead(void)
     {{
         string message("yet another message");
         nc_api.PutData(key, message.c_str(), message.size());
-        NcbiCout
-            << "Wrote: '" << message
-            << "' to blob: " << key << NcbiEndl;
+        NcbiCout << "Wrote: '" << message << "' to blob: " << key << NcbiEndl;
 
         // Use GetBlobInfo() to find out what TTL the server gave this blob.
         string blob_info;
@@ -180,9 +174,7 @@ void CSampleNetCacheClient::DemoPartialRead(void)
     {{
         string message("Just pretend this is a really huge blob, ok?");
         key = nc_api.PutData(message.c_str(), message.size());
-        NcbiCout
-            << "Wrote: '" << message
-            << "' to blob: " << key << NcbiEndl;
+        NcbiCout << "Wrote: '" << message << "' to blob: " << key << NcbiEndl;
     }}
 
     // Read back the data a part at a time, in case it's too big to handle
@@ -222,7 +214,7 @@ void CSampleNetCacheClient::DemoStream(void)
 {
     NcbiCout << "\nCreateOStream()/GetIStream() example:" << NcbiEndl;
 
-    auto_ptr<CNetCacheAPI> nc_api_p;
+    unique_ptr<CNetCacheAPI> nc_api_p;
     {{
         // Configure based on the user-specified service, if given.
         if (GetArgs()["service"]) {
@@ -240,7 +232,7 @@ void CSampleNetCacheClient::DemoStream(void)
 
     // Write to NetCache stream.
     {{
-        auto_ptr<CNcbiOstream> os(nc_api_p->CreateOStream(key,
+        unique_ptr<CNcbiOstream> os(nc_api_p->CreateOStream(key,
                 nc_blob_ttl = 600));
         *os << "line one\n";
         *os << "line two\n";
@@ -249,14 +241,14 @@ void CSampleNetCacheClient::DemoStream(void)
 
         // Blobs are not finalized on the server side until the stream
         // is deleted.  So you could call os.reset() if you wanted to
-        // access the blob in the same scope as the stream auto_ptr.
+        // access the blob in the same scope as the stream unique_ptr.
         //os.reset(); // not necessary in this example
     }}
 
     // Retrieve words from NetCache stream.
     // Note that this doesn't remove the data from NetCache.
     {{
-        auto_ptr<CNcbiIstream> is(nc_api_p->GetIStream(key));
+        unique_ptr<CNcbiIstream> is(nc_api_p->GetIStream(key));
         while (!is->eof()) {
             string message;
             *is >> message; // get one word at a time, ignoring whitespace
@@ -269,7 +261,7 @@ void CSampleNetCacheClient::DemoStream(void)
     // In this example, get all the data at once from a NetCache stream
     // (preserving whitespace).
     {{
-        auto_ptr<CNcbiIstream> is(nc_api_p->GetIStream(key));
+        unique_ptr<CNcbiIstream> is(nc_api_p->GetIStream(key));
         NcbiCout << "Read buffer: '" << is->rdbuf() << "'" << NcbiEndl;
     }}
 }
@@ -293,19 +285,17 @@ void CSampleNetCacheClient::DemoCompression(void)
     // Write to NetCache with compression.
     {{
         string message("The quick brown fox jumps over a lazy dog.");
-        auto_ptr<CNcbiOstream> os(nc_api.CreateOStream(key));
+        unique_ptr<CNcbiOstream> os(nc_api.CreateOStream(key));
         CCompressionOStream os_zip(*os, new CZipStreamCompressor(),
                                    CCompressionStream::fOwnWriter);
         os_zip << message;
-        NcbiCout
-            << "Wrote: '" << message
-            << "' to blob: " << key << NcbiEndl;
+        NcbiCout << "Wrote: '" << message << "' to blob: " << key << NcbiEndl;
     }}
 
     // Read back from NetCache with decompression.
     // NOTE: The decompression stream type must match the compression type.
     {{
-        auto_ptr<CNcbiIstream> is(nc_api.GetIStream(key));
+        unique_ptr<CNcbiIstream> is(nc_api.GetIStream(key));
         string message;
         CCompressionIStream is_zip(*is, new CZipStreamDecompressor(),
                                     CCompressionStream::fOwnReader);
@@ -336,8 +326,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
     // but it's just done once here to cleanly illustrate the API call.
     {{
         // Create a data writer.
-        auto_ptr<IEmbeddedStreamWriter> writer(nc_api.PutData(&key,
-                nc_blob_ttl = 600));
+        unique_ptr<IEmbeddedStreamWriter> writer(nc_api.PutData(&key, nc_blob_ttl = 600));
 
         if (m_StreamStyle == "iostream") {
             // Write some data via ostream API.
@@ -355,7 +344,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             char data[] = "abcdefghij1234567890!@#";
             writer->Write(data, strlen(data)); // don't store terminating zero
             NcbiCout
-                << "Wrote: '" << data
+                << "Wrote: '"    << data
                 << "' to blob: " << key << NcbiEndl;
         }
 
@@ -369,7 +358,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
     {{
         // Create a data reader and get the blob size.
         size_t blob_size;
-        auto_ptr<IReader> reader(nc_api.GetReader(key, &blob_size));
+        unique_ptr<IReader> reader(nc_api.GetReader(key, &blob_size));
 
         // Don't intermix using different stream APIs.  Reading via
         // CRStream may buffer more input than you consume, possibly resulting
@@ -382,7 +371,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             string text1, text2;
             is >> text1 >> text2;
             NcbiCout
-                << "Read '" << text1
+                << "Read '"  << text1
                 << "' and '" << text2 << "' from blob:" << key << NcbiEndl;
         } else {
             // Read some data via IReader API.
@@ -399,8 +388,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             // available, without an error.  Therefore, bytes_read must
             // always be used after the read instead of read_size.
             size_t bytes_read;
-            ERW_Result rw_res = reader->Read(my_buf,
-                    (size_t) read_size, &bytes_read);
+            ERW_Result rw_res = reader->Read(my_buf, (size_t) read_size, &bytes_read);
             my_buf[bytes_read] = '\0';
 
             if (rw_res == eRW_Success) {

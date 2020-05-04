@@ -47,9 +47,9 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  CBlastSampleApplication::
-
 
 class CBlastSampleApplication : public CNcbiApplication
 {
@@ -76,7 +76,6 @@ CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
     } else {
         gi = GI_FROM(TIntId, GetArgs()["subject"].AsIntId());
     }
-
     CRef<CSeq_loc> seqloc(new CSeq_loc);
     seqloc->SetWhole().SetGi(gi);
 
@@ -86,32 +85,31 @@ CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
     return new blast::SSeqLoc(seqloc, scope);
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
-
 
 void CBlastSampleApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideVersion);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
       "CBl2Seq demo to compare 2 sequences using BLAST");
 
     // Program type
-    arg_desc->AddKey("program", "p", "Type of BLAST program",
-            CArgDescriptions::eString);
+    arg_desc->AddKey("program", "p", "Type of BLAST program", CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("program", &(*new CArgAllow_Strings, 
                 "blastp", "blastn", "blastx", "tblastn", "tblastx"));
 
     // Identifier for the query sequence
     arg_desc->AddKey("query", "QuerySequenceID", 
-                     "GI of the query sequence",
-                     CArgDescriptions::eIntId);
+                    "GI of the query sequence",
+                    CArgDescriptions::eIntId);
 
     // Identifier for the subject sequence
     arg_desc->AddKey("subject", "SubjectSequenceID", 
@@ -132,19 +130,15 @@ void CBlastSampleApplication::Init(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Run demo
 
-
 int CBlastSampleApplication::Run(void)
 {
     int retval = 0;
-
     try {
-
         // Obtain the query, subject, and program from command line
         // arguments...
-        auto_ptr<blast::SSeqLoc> query(x_CreateSSeqLoc(eQuery));
-        auto_ptr<blast::SSeqLoc> subject(x_CreateSSeqLoc(eSubject));
-        blast::EProgram program =
-            blast::ProgramNameToEnum(GetArgs()["program"].AsString());
+        unique_ptr<blast::SSeqLoc> query(x_CreateSSeqLoc(eQuery));
+        unique_ptr<blast::SSeqLoc> subject(x_CreateSSeqLoc(eSubject));
+        blast::EProgram program = blast::ProgramNameToEnum(GetArgs()["program"].AsString());
 
         /// ... and BLAST the sequences!
         blast::CBl2Seq blaster(*query, *subject, program);
@@ -152,8 +146,8 @@ int CBlastSampleApplication::Run(void)
 
         /// Display the alignments in text ASN.1
         CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
-        for (int i = 0; i < (int) alignments.size(); ++i)
-            out << MSerial_AsnText << *alignments[i];
+        for (const auto& it : alignments)
+            out << MSerial_AsnText << *it;
 
     } catch (const CException& e) {
         ERR_POST(e);
@@ -167,7 +161,6 @@ int CBlastSampleApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-
 void CBlastSampleApplication::Exit(void)
 {
     // Do your after-Run() cleanup here
@@ -176,7 +169,6 @@ void CBlastSampleApplication::Exit(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])

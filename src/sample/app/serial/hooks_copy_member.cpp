@@ -11,6 +11,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(ncbi::objects);
 
+
 class CDemoHook : public CCopyClassMemberHook
 {
 public:
@@ -82,9 +83,10 @@ public:
     }
 };
 
+
 int main(int argc, char** argv)
 {
-// read Seq-entry data
+    // read Seq-entry data
     unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, "seq-entry-sample.asn"));
     unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, "seq-entry-sample_output.asn"));
     CObjectStreamCopier copier(*in, *out);

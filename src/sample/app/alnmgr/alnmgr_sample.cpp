@@ -62,16 +62,18 @@
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
+
 class CSampleAlnmgrApplication : public CNcbiApplication
 {
     virtual void Init(void);
     virtual int  Run(void);
 };
 
+
 void CSampleAlnmgrApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -111,14 +113,11 @@ int CSampleAlnmgrApplication::Run(void)
 
     // Read the file
     {{
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Open(eSerial_AsnText,
-                                   args["in"].AsInputFile()));
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, args["in"].AsInputFile()));
         *in >> in_se;
     }}
 
-    auto_ptr<CObjectOStream> asn_out 
-        (CObjectOStream::Open(eSerial_AsnText, args["asnout"].AsOutputFile()));
+    unique_ptr<CObjectOStream> asn_out(CObjectOStream::Open(eSerial_AsnText, args["asnout"].AsOutputFile()));
     asn_out->SetSeparator("\n");
 
     CNcbiOstream& out = args["out"].AsOutputFile();
@@ -138,22 +137,18 @@ int CSampleAlnmgrApplication::Run(void)
     asn_out->Flush();
 
     CAlnVec av(mix.GetDenseg(), scope);
-
     av.SetAnchor(0);
 
     CAlnMap::TSignedRange range(5, 12);
-
     CRef<CAlnMap::CAlnChunkVec> chunk_vec = av.GetAlnChunks(1, range);
     
     for (int i = 0;  i < chunk_vec->size();  i++) {
         CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
         if (!chunk->IsGap()) {
-            out << chunk->GetRange().GetFrom() << "-"
-                << chunk->GetRange().GetTo();
+            out << chunk->GetRange().GetFrom() << "-" << chunk->GetRange().GetTo();
         } else {
             out << "gap";
         }
-
         if (chunk->GetType() & CAlnMap::fSeq) {
             cout << "(Seq)";
         }
@@ -180,14 +175,12 @@ int CSampleAlnmgrApplication::Run(void)
         }
         cout << NcbiEndl;
     }
-
     return 0;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int NcbiSys_main(int argc, TXChar* argv[])
 {

@@ -138,7 +138,7 @@ extern bool IsSeqAnnotChoiceSelected(const ncbi::objects::CSeq_annot* annot);
 extern bool IsSeqIdChoiceSelected(TSeqIdChoiceMaskFlags flags);
 extern bool IsSeqIdChoiceSelected(const ncbi::objects::CSeq_id* seqid);
 
-extern void ProcessSeqEntryAnnot(std::auto_ptr<ncbi::CObjectIStream>& sai,
+extern void ProcessSeqEntryAnnot(std::unique_ptr<ncbi::CObjectIStream>& sai,
                                  ncbi::COStreamContainer& osc);
 
 extern void ResetSeqEntryProcessing(void);

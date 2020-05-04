@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 
 class CDemoApp : public CNcbiApplication
 {
-    virtual int  Run(void);
+    virtual int Run(void);
 
     void SetDispatch(int depth, size_t offset, CObjectInfo& info);
     void SetPrimitive(int depth, size_t offset, CObjectInfo& info);
@@ -102,6 +102,7 @@ void CDemoApp::SetDispatch(int depth, size_t offset, CObjectInfo& info)
     --depth;
 }
 
+
 void CDemoApp::SetPrimitive(int depth, size_t offset, CObjectInfo& info)
 {
     EPrimitiveValueType type = info.GetPrimitiveValueType();
@@ -152,6 +153,8 @@ void CDemoApp::SetPrimitive(int depth, size_t offset, CObjectInfo& info)
         break;
     }
 }
+
+
 void CDemoApp::SetClass(int depth, size_t offset, CObjectInfo& info)
 {
     string off(offset,' ');
@@ -170,15 +173,16 @@ void CDemoApp::SetClass(int depth, size_t offset, CObjectInfo& info)
     }
     cout << off << "} end of " << info.GetName() << endl;
 }
+
+
 void CDemoApp::SetChoice(int depth, size_t offset, CObjectInfo& info)
 {
-// select choice #2
+    // select choice #2
     TMemberIndex ind = 2;
     if (depth > m_MaxDepth) {
         // or choice #1
         ind = 1;
     }
-
     string off(offset,' ');
     cout << off << "choice: " << info.GetName() << " {" << endl;
     cout << off << " [" << ind << "]: "
@@ -188,6 +192,8 @@ void CDemoApp::SetChoice(int depth, size_t offset, CObjectInfo& info)
     SetDispatch(depth,offset,tmp_info);
     cout << off << "} end of " << info.GetName() << endl;
 }
+
+
 void CDemoApp::SetContainer(int depth, size_t offset, CObjectInfo& info)
 {
     string off(offset,' ');
@@ -203,6 +209,8 @@ void CDemoApp::SetContainer(int depth, size_t offset, CObjectInfo& info)
     }
     cout << off << "} end of " << info.GetName() << endl;
 }
+
+
 void CDemoApp::SetPointer(int depth, size_t offset, CObjectInfo& info)
 {
     CObjectInfo tmp_info(info.SetPointedObject());
@@ -214,4 +222,3 @@ int main(int argc, const char* argv[])
 {
     return CDemoApp().AppMain(argc, argv);
 }
-

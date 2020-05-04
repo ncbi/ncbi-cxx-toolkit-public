@@ -42,7 +42,7 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 
-using namespace ncbi;
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -56,8 +56,7 @@ public:
     virtual void Init(void);
     virtual int Run(void);
 
-    bool PrintResponse(const CHttpSession* session,
-                       const CHttpResponse& response);
+    bool PrintResponse(const CHttpSession* session, const CHttpResponse& response);
 
 private:
     void SetupRequest(CHttpRequest& request);
@@ -100,7 +99,7 @@ void CHttpSessionApp::Init()
 {
     CNcbiApplication::Init();
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "HTTP session sample application");
@@ -170,10 +169,7 @@ public:
     CTestDataProvider(void) {}
     virtual string GetContentType(void) const { return "text/plain"; }
     virtual string GetFileName(void) const { return "test.txt"; }
-    virtual void WriteData(CNcbiOstream& out) const
-    {
-        out << "Provider test";
-    }
+    virtual void WriteData(CNcbiOstream& out) const { out << "Provider test"; }
 };
 
 
@@ -193,8 +189,10 @@ int CHttpSessionApp::Run(void)
     bool skip_defaults = false;
     if (args["method"]) {
         CHttpSession::ERequestMethod method = CHttpSession::eHead;
-        if (args["method"].AsString() == "GET") method = CHttpSession::eGet;
-        else if (args["method"].AsString() == "POST") method = CHttpSession::ePost;
+        if (args["method"].AsString() == "GET") 
+            method = CHttpSession::eGet;
+        else if (args["method"].AsString() == "POST") 
+            method = CHttpSession::ePost;
         CUrl url;
         if (args["url"]) {
             url.SetUrl(args["url"].AsString());
@@ -210,7 +208,7 @@ int CHttpSessionApp::Run(void)
         }
         else {
             cout << "Missing 'url' or 'service-name' argument for " << args["method"] << " request." << endl;
-            return 0;
+            return 1;
         }
         cout << args["method"].AsString() << " " << url.ComposeUrl(CUrlArgs::eAmp_Char) << endl;
         CHttpRequest req = session.NewRequest(url, method);
@@ -223,10 +221,10 @@ int CHttpSessionApp::Run(void)
     }
     if ( args["head"] ) {
         skip_defaults = true;
-        const CArgValue::TStringArray& urls = args["head"].GetStringList();
-        ITERATE(CArgValue::TStringArray, it, urls) {
-            cout << "HEAD " << *it << endl;
-            CHttpRequest req = session.NewRequest(*it, CHttpSession::eHead);
+        const auto& urls = args["head"].GetStringList();
+        for (const auto& url : urls) {
+            cout << "HEAD " << url << endl;
+            CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
             SetupRequest(req);
             if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
@@ -234,10 +232,10 @@ int CHttpSessionApp::Run(void)
     }
     if ( args["get"] ) {
         skip_defaults = true;
-        const CArgValue::TStringArray& urls = args["get"].GetStringList();
-        ITERATE(CArgValue::TStringArray, it, urls) {
-            cout << "GET " << *it << endl;
-            CHttpRequest req = session.NewRequest(*it);
+        const auto& urls = args["get"].GetStringList();
+        for (const auto& url : urls) {
+            cout << "GET " << url << endl;
+            CHttpRequest req = session.NewRequest(url);
             SetupRequest(req);
             if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
@@ -384,21 +382,21 @@ bool CHttpSessionApp::PrintResponse(const CHttpSession* session,
                                     const CHttpResponse& response)
 {
     cout << "Status: " << response.GetStatusCode() << " "
-        << response.GetStatusText() << endl;
+         << response.GetStatusText() << endl;
     if ( m_PrintHeaders ) {
         list<string> headers;
         NStr::Split(response.Headers().GetHttpHeader(), "\n\r", headers,
             NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         cout << "--- Headers ---" << endl;
-        ITERATE(list<string>, it, headers) {
-            cout << *it << endl;
+        for (const auto& v : headers) {
+            cout << v << endl;
         }
     }
 
     if (m_PrintCookies  &&  session) {
         cout << "--- Cookies ---" << endl;
-        ITERATE(CHttpCookies, it, session->Cookies()) {
-            cout << it->AsString(CHttpCookie::eHTTPResponse) << endl;
+        for (const auto& cookie : session->Cookies()) {
+            cout << cookie.AsString(CHttpCookie::eHTTPResponse) << endl;
         }
     }
 

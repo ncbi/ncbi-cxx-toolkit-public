@@ -95,6 +95,7 @@
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
+
 ///////////////////////////////////////////////////////////////////////////
 // Local Types
 
@@ -109,15 +110,13 @@ enum ETaxPath {
 };
 
 
-// Keep info about a Bioseq.  Note that this info could be inherited from a
-// Bioseq-set.descr.
+// Keep info about a Bioseq.  Note that this info could be inherited from a Bioseq-set.descr.
 
 struct SBioseqInfo
 {
     SBioseqInfo()
         : seqid_str(""), taxid_org(-1), taxid_source_org(-1), defline("")
-    {
-    }
+    {}
 
     string  seqid_str;
     int     taxid_org;
@@ -132,7 +131,14 @@ struct SBioseqInfo
 static ESerialDataFormat    s_GetFormat(const string& name);
 static void                 s_Report(void);
 
-static stack<SBioseqInfo>   s_BioseqInfoStack;
+typedef stack<SBioseqInfo> TBioseqInfoStack;
+
+static TBioseqInfoStack& GetBioseqInfoStack()
+{
+    // safe way to use global static objects
+    static CSafeStatic<TBioseqInfoStack> bi_stack;
+    return bi_stack.Get();
+};
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -145,23 +151,22 @@ class CHookBioseqContext : public CSkipObjectHook
 public:
     CHookBioseqContext(EBioseqContext context)
         : m_Context(context)
-    {
-    }
+    {}
 
-    virtual void SkipObject(CObjectIStream& stream,
+    virtual void SkipObject(CObjectIStream& stream, 
                             const CObjectTypeInfo& info)
     {
         // Push info to be used for this Bioseq.  Note: this is initially
         // invalid, but the info will be overwritten (in other hooks) before
         // it gets used.
-        if (s_BioseqInfoStack.empty()) {
+        if (GetBioseqInfoStack().empty()) {
             // Push a new empty object for the first time.
             SBioseqInfo  bs_info;
-            s_BioseqInfoStack.push(bs_info);
+            GetBioseqInfoStack().push(bs_info);
         } else {
             // Push a copy of the last object for this Bioseq.
             // This facilitates inheriting info through nesting.
-            s_BioseqInfoStack.push(s_BioseqInfoStack.top());
+            GetBioseqInfoStack().push(GetBioseqInfoStack().top());
         }
 
         // Skip the Bioseq, triggering other hooks which in turn retrieve
@@ -174,7 +179,7 @@ public:
         }
 
         // We're done with this Bioseq info.
-        s_BioseqInfoStack.pop();
+        GetBioseqInfoStack().pop();
     }
 
 private:
@@ -184,6 +189,7 @@ private:
 
 // This class finds Bioseq.id's when skipping.  The hook reads and records
 // the last Bioseq.id encountered.
+
 class CHookBioseq__Seq_id : public CSkipClassMemberHook
 {
 public:
@@ -216,19 +222,19 @@ public:
         }
 
         // Update the current Bioseq info with the new Seq-id string.
-        s_BioseqInfoStack.top().seqid_str = seqid_str;
+        GetBioseqInfoStack().top().seqid_str = seqid_str;
     }
 };
 
 
 // This class finds Tax-id's when skipping, and sets the current Tax-id.
+
 class CHookTax_id : public CSkipClassMemberHook
 {
 public:
     CHookTax_id(ETaxPath tax_path)
         : m_TaxPath(tax_path)
-    {
-    }
+    {}
 
     virtual void SkipClassMember(CObjectIStream& stream,
                                  const CObjectTypeInfoMI& info)
@@ -264,41 +270,36 @@ public:
             isc >> dbtag; // Read from the container iterator, not the stream.
 
             // Get access to the Dbtag.db class member.
-            CObjectInfo     obj = ObjectInfo<CDbtag>(dbtag);
-            CObjectInfo     db_member = obj.SetClassMember
-                                (obj.FindMemberIndex("db"));
+            CObjectInfo obj = ObjectInfo<CDbtag>(dbtag);
+            CObjectInfo db_member = obj.SetClassMember(obj.FindMemberIndex("db"));
 
             // Get the value of the Dbtag.db class member.
-            string          db_str = db_member.GetPrimitiveValueString();
+            string db_str = db_member.GetPrimitiveValueString();
 
             // Only continue for taxonomy db entries.
             if (db_str == "taxon") {
                 // Get access to the Dbtag.tag class member.
-                CObjectInfo     tag_cont = obj.SetClassMember
-                                    (obj.FindMemberIndex("tag"));
+                CObjectInfo tag_cont = obj.SetClassMember(obj.FindMemberIndex("tag"));
 
                 // Get access to the Dbtag.tag class member (the Object-id).
-                CObjectInfo     tag_pt = tag_cont.GetPointedObject();
+                CObjectInfo tag_pt = tag_cont.GetPointedObject();
 
                 // Get access to the selected Object-id choice variant.
-                CObjectInfoCV   tag_var = tag_pt.GetCurrentChoiceVariant();
-                CObjectInfo     tag_choice = tag_var.GetVariant();
+                CObjectInfoCV tag_var = tag_pt.GetCurrentChoiceVariant();
+                CObjectInfo tag_choice = tag_var.GetVariant();
 
                 // Get the value of the selected Object-id choice variant.
                 int taxid;
                 if (tag_var.GetVariantInfo()->GetId().GetName() == "id") {
                     taxid = tag_choice.GetPrimitiveValueInt();
                 } else {
-                    taxid = NStr::StringToInt
-                        (tag_choice.GetPrimitiveValueString(),
-                         NStr::fConvErr_NoThrow);
+                    taxid = NStr::StringToInt(tag_choice.GetPrimitiveValueString(), NStr::fConvErr_NoThrow);
                 }
-
                 // Only keep the last Tax-id found (for each path).
                 if (m_TaxPath == eTaxPathOrg) {
-                    s_BioseqInfoStack.top().taxid_org = taxid;
+                    GetBioseqInfoStack().top().taxid_org = taxid;
                 } else {
-                    s_BioseqInfoStack.top().taxid_source_org = taxid;
+                    GetBioseqInfoStack().top().taxid_source_org = taxid;
                 }
             }
         }
@@ -310,6 +311,7 @@ private:
 
 
 // This class finds Defline's when skipping, and sets the current Defline.
+
 class CHookDefline : public CSkipObjectHook
 {
 public:
@@ -317,7 +319,7 @@ public:
                             const CObjectTypeInfo& info)
     {
         // Get a reference to the current Bioseq info.
-        SBioseqInfo& bs_info(s_BioseqInfoStack.top());
+        SBioseqInfo& bs_info(GetBioseqInfoStack().top());
 
         // Read the Defline into the current Bioseq info.
         stream.Read(&bs_info.defline,
@@ -349,30 +351,31 @@ ESerialDataFormat s_GetFormat(const string& name)
     }
 }
 
+
 // This function will print the required information for the current Bioseq.
 static void s_Report(void)
 {
     // Get the Seq-id string.
-    string seqid_str = s_BioseqInfoStack.top().seqid_str;
+    string seqid_str = GetBioseqInfoStack().top().seqid_str;
 
     // Get the Tax-id, preferring Tax-id's found with stack path
     // *.descr.source.org.db over those with path *.descr.org.db --
     // see ncbi::objects::CBioseq_Info::GetTaxId() and
     // ncbi::objects::sequence::GetTaxId().
-    int taxid = s_BioseqInfoStack.top().taxid_source_org;
+    int taxid = GetBioseqInfoStack().top().taxid_source_org;
     // If not found in source.org, taxid will be < 1 so try just org.
     if (taxid < 1) {
-        taxid = s_BioseqInfoStack.top().taxid_org;
+        taxid = GetBioseqInfoStack().top().taxid_org;
     }
 
     // Get the Defline.
-    string defline = s_BioseqInfoStack.top().defline;
+    string defline = GetBioseqInfoStack().top().defline;
 
     // Report the required information.
     NcbiCout << ">"
-        << seqid_str << " "
-        << defline << " ["
-        << taxid << "]" << NcbiEndl;
+             << seqid_str << " "
+             << defline << " ["
+             << taxid << "]" << NcbiEndl;
 }
 
 
@@ -389,7 +392,7 @@ class CBssInfoApp : public CNcbiApplication
 void CBssInfoApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -411,13 +414,14 @@ void CBssInfoApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 int CBssInfoApp::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
 
     // Set up the input stream.
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open
         (s_GetFormat(args["ifmt"].AsString()),
          args["i"].AsInputFile()));
 

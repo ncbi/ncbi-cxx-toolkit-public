@@ -61,7 +61,6 @@ USING_SCOPE(blast);
 /////////////////////////////////////////////////////////////////////////////
 //  CBlastDemoApplication::
 
-
 class CBlastDemoApplication : public CNcbiApplication
 {
 private:
@@ -70,18 +69,16 @@ private:
     virtual void Exit(void);
 
     void ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle);
-
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
 
-
 void CBlastDemoApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "BLAST demo program");
@@ -95,22 +92,20 @@ void CBlastDemoApplication::Init(void)
         ("program", &(*new CArgAllow_Strings,
                 "blastn", "megablast", "disc_megablast", "blastp", "blastx", "tblastn", "tblastx", "rpsblast"));
 
-    arg_desc->AddDefaultKey
-        ("db", "DataBase",
-         "This is the name of the database",
-         CArgDescriptions::eString, "nr");
+    arg_desc->AddDefaultKey("db", "DataBase",
+                            "This is the name of the database", CArgDescriptions::eString, "nr");
 
     arg_desc->AddDefaultKey("in", "Queryfile",
-                        "A FASTA file with the query", CArgDescriptions::eInputFile, "stdin");
+                            "A FASTA file with the query", CArgDescriptions::eInputFile, "stdin");
 
     arg_desc->AddDefaultKey("parse", "parse", "Parse FASTA defline",
                             CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey("out", "Outputfile",
-                        "The output file", CArgDescriptions::eOutputFile, "stdout");
+                            "The output file", CArgDescriptions::eOutputFile, "stdout");
 
     arg_desc->AddDefaultKey("evalue", "evalue",
-                        "E-value threshold for saving hits", CArgDescriptions::eDouble, "0");
+                            "E-value threshold for saving hits", CArgDescriptions::eDouble, "0");
 
     arg_desc->AddDefaultKey("penalty", "penalty", "Penalty score for a mismatch",
                             CArgDescriptions::eInteger, "0");
@@ -128,20 +123,21 @@ void CBlastDemoApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 /// Modify BLAST options from defaults based upon command-line args.
 ///
 /// @param opts_handle already created CBlastOptionsHandle to modify [in]
-void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle)
 
+void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle)
 {
 	const CArgs& args = GetArgs();
 
         // Expect value is a supported option for all flavors of BLAST.
         if(args["evalue"].AsDouble())
-          opts_handle->SetEvalueThreshold(args["evalue"].AsDouble());
+            opts_handle->SetEvalueThreshold(args["evalue"].AsDouble());
         
         if(args["hitsize"].AsInteger() && args["hitsize"].AsInteger() > 0)
-          opts_handle->SetHitlistSize(args["hitsize"].AsInteger());
+            opts_handle->SetHitlistSize(args["hitsize"].AsInteger());
         
         // The first branch is used if the program is blastn or a flavor of megablast
         // as reward and penalty is a valid option.
@@ -161,7 +157,8 @@ void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opt
         }
         else if (CBlastProteinOptionsHandle* prot_handle =
                dynamic_cast<CBlastProteinOptionsHandle*>(&*opts_handle)) {
-              if (args["matrix"]) 
+
+            if (args["matrix"]) 
                 prot_handle->SetMatrixName(args["matrix"].AsString().c_str());
         }
 
@@ -172,7 +169,6 @@ void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opt
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
 
-
 int CBlastDemoApplication::Run(void)
 {
     // Get arguments
@@ -180,8 +176,10 @@ int CBlastDemoApplication::Run(void)
 
     EProgram program = ProgramNameToEnum(args["program"].AsString());
 
-    bool db_is_aa = (program == eBlastp || program == eBlastx ||
-                     program == eRPSBlast || program == eRPSTblastn);
+    bool db_is_aa = (program == eBlastp   || 
+                     program == eBlastx   ||
+                     program == eRPSBlast || 
+                     program == eRPSTblastn);
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program, CBlastOptions::eRemote));
 
@@ -197,11 +195,9 @@ int CBlastDemoApplication::Run(void)
          throw std::runtime_error("Could not initialize object manager");
     }
 
-    const bool is_protein = 
-        !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
+    const bool is_protein = !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
     SDataLoaderConfig dlconfig(is_protein);
-    CBlastInputSourceConfig iconfig(dlconfig, objects::eNa_strand_other, false, 
-                              args["parse"].AsBoolean());
+    CBlastInputSourceConfig iconfig(dlconfig, objects::eNa_strand_other, false, args["parse"].AsBoolean());
     CBlastFastaInputSource fasta_input(args["in"].AsInputFile(), iconfig);
     CScope scope(*objmgr);
 
@@ -216,8 +212,8 @@ int CBlastDemoApplication::Run(void)
 
     CRemoteBlast blaster(query_factory, opts, target_db);
 
-// This will dump a lot of stuff to stderr.
-//    blaster.SetVerbose();
+    // This will dump a lot of stuff to stderr.
+    // blaster.SetVerbose();
 
     bool status = blaster.SubmitSync();
 
@@ -227,7 +223,6 @@ int CBlastDemoApplication::Run(void)
     cerr << "RID: " << blaster.GetRID() << '\n';
 
     CSearchResultSet results = *blaster.GetResultSet();
-
     CNcbiOstream& out = args["out"].AsOutputFile();
 
     for (unsigned int i = 0; i < results.GetNumResults(); i++) {
@@ -242,7 +237,6 @@ int CBlastDemoApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-
 void CBlastDemoApplication::Exit(void)
 {
     // Do your after-Run() cleanup here
@@ -251,7 +245,6 @@ void CBlastDemoApplication::Exit(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
