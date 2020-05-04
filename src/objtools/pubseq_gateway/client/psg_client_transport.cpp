@@ -1469,10 +1469,13 @@ void SPSG_IoImpl::OnQueue(uv_async_t*)
                 }
             }
 
-            // Session is unavailable
-            --sessions;
-            d = uniform_real_distribution<>(d.min() + session_rate);
-            session_rate = 0.0;
+            // Current session is unavailable.
+            // Check if there are some other sessions available
+            if (--sessions) {
+                d = uniform_real_distribution<>(d.min() + session_rate);
+                session_rate = 0.0;
+            }
+
             break;
         }
     }
