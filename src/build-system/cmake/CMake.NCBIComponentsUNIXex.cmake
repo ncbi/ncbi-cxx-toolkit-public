@@ -288,6 +288,7 @@ endif()
 
 #############################################################################
 # STACKTRACE
+if($ENV{DEBUG_TRACE_FATAL_SIGNALS})
 if(EXISTS ${NCBI_ThirdParty_BACKWARD}/include)
     set(LIBBACKWARD_INCLUDE ${NCBI_ThirdParty_BACKWARD}/include)
     set(HAVE_LIBBACKWARD_CPP YES)
@@ -312,6 +313,7 @@ if(HAVE_LIBBACKWARD_CPP OR HAVE_LIBUNWIND OR HAVE_LIBDW)
 else()
     set(NCBI_COMPONENT_STACKTRACE_FOUND NO)
 endif()
+endif($ENV{DEBUG_TRACE_FATAL_SIGNALS})
 
 ##############################################################################
 # UUID
