@@ -1025,7 +1025,7 @@ public:
 #define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>(id))
 #define STRICT_ID_FROM(TIdType, TIntType, id) (static_cast<TIdType>(id))
 #define STRICT_ID_CONST(type, id) id
-#define STRICT_ID_ZERO(type) 0
+#define STRICT_ID_ZERO(type) type(0)
 #define STRICT_ID_INVALID(type) type(-1)
 
 #endif // NCBI_STRICT_GI
