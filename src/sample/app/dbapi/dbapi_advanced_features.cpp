@@ -148,8 +148,8 @@ int CDbapiTest::Run()
 
 		conn->ConnectValidated(val, "anyone", "allowed", server, "DBAPI_Sample");
     
-        coutt << "Using server: " << server
-              << ", driver: " << driver << endl;
+        cout << "Using server: " << server
+             << ", driver: " << driver << endl;
 
         IStatement *stmt = conn->GetStatement();
         string sql;
