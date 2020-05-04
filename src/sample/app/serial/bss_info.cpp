@@ -372,10 +372,10 @@ static void s_Report(void)
     string defline = GetBioseqInfoStack().top().defline;
 
     // Report the required information.
-    NcbiCout << ">"
-             << seqid_str << " "
-             << defline << " ["
-             << taxid << "]" << NcbiEndl;
+    cout << ">"
+         << seqid_str << " "
+         << defline << " ["
+         << taxid << "]" << endl;
 }
 
 

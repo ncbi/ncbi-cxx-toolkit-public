@@ -151,27 +151,27 @@ int CFeatTreeSampleApp::Run(void)
     CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
     if (bioseq_handle.GetState()) {
         // print blob state:
-        NcbiCout << "Bioseq state: 0x"
-                 << hex << bioseq_handle.GetState()
-                 << dec << NcbiEndl;
+        cout << "Bioseq state: 0x"
+             << hex << bioseq_handle.GetState()
+             << dec << endl;
         return 1;
     }
     CDeflineGenerator gen;
-    NcbiCout << "Title: " << gen.GenerateDefline(bioseq_handle) << NcbiEndl;
+    cout << "Title: " << gen.GenerateDefline(bioseq_handle) << endl;
 
     // Construct the Seq-loc to get features for.
     CSeq_loc seq_loc;
     if (m_range_from == 0 && m_range_to == 0) {
         seq_loc.SetWhole().SetGi(m_gi);
-        NcbiCout << "Searching whole bioseq, gi|" << m_gi << "  length = "
-            << bioseq_handle.GetBioseqLength() << NcbiEndl;
+        cout << "Searching whole bioseq, gi|" << m_gi << "  length = "
+             << bioseq_handle.GetBioseqLength() << endl;
     } else {
         seq_loc.SetInt().SetId(seq_id);
         seq_loc.SetInt().SetFrom(m_range_from);
         seq_loc.SetInt().SetTo(m_range_to);
-        NcbiCout << "Searching bioseq interval, gi|" << m_gi << ":"
-            << seq_loc.GetInt().GetFrom() << "-"
-            << seq_loc.GetInt().GetTo() << NcbiEndl;
+        cout << "Searching bioseq interval, gi|" << m_gi << ":"
+             << seq_loc.GetInt().GetFrom() << "-"
+             << seq_loc.GetInt().GetTo() << endl;
     }
 
     // Make a selector to limit features to those of interest.
@@ -186,7 +186,7 @@ int CFeatTreeSampleApp::Run(void)
 
     // Use a CFeat_CI iterator to iterate through all selected features.
     CFeat_CI feat_it(CFeat_CI(scope, seq_loc, sel));
-    NcbiCout << feat_it.GetSize() << " features found." << NcbiEndl;
+    cout << feat_it.GetSize() << " features found." << endl;
 
     // Create the feature tree and add to it the features found by the
     // feature iterator.
@@ -239,8 +239,8 @@ int CFeatTreeSampleApp::Run(void)
 
     // For this demo, just print the size of the map and number of genes.
     // For real applications, do something interesting with the results.
-    NcbiCout << feattree_map.size() << " features mapped to genes." << NcbiEndl;
-    NcbiCout << gene_set.size() << " unique genes found." << NcbiEndl;
+    cout << feattree_map.size() << " features mapped to genes." << endl;
+    cout << gene_set.size() << " unique genes found." << endl;
 
     return 0;
 }

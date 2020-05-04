@@ -72,7 +72,7 @@ static void s_Process(const CSeq_entry& entry)
     // where you would put your custom processing code.
     string label;
     entry.GetLabel(&label, CSeq_entry::eBoth);
-    NcbiCout << label << NcbiEndl;
+    cout << label << endl;
 }
 
 
@@ -169,7 +169,7 @@ void CProcessHighestSeObjs::Init(void)
 int CProcessHighestSeObjs::Run(void)
 {
     // Get object stream.
-    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, NcbiCin));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, cin));
 
     // Set hooks.  No hooks are necessary for Seq-entry because in that case
     // all highest-level (Seq-entry) objects are read.

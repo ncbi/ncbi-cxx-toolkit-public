@@ -67,19 +67,20 @@ CSeqAnnotSplicerStats* CSeqAnnotSplicerStats::GetInstance(void)
 
 void CSeqAnnotSplicerStats::Report(void)
 {
-    NcbiCout << "\nNumber of Seq-annot's processed: " << s_NumSa << NcbiEndl;
-    NcbiCout << "Number of Seq-annot's spliced:   " << s_NumSaSpliced << NcbiEndl;
-    NcbiCout << "Number of Seq-annot's unspliced: " << s_NumSa - s_NumSaSpliced << NcbiEndl << NcbiEndl;
-    NcbiCout << "Number of Seq-entry's processed: " << s_NumSe << NcbiEndl;
-    NcbiCout << "Number of Seq-entry's expanded:  " << s_NumSe - s_NumSeUnchanged << NcbiEndl;
-    NcbiCout << "Number of Seq-entry's unchanged: " << s_NumSeUnchanged << NcbiEndl;
+    cout << endl;
+    cout << "Number of Seq-annot's processed: " << s_NumSa << endl;
+    cout << "Number of Seq-annot's spliced:   " << s_NumSaSpliced << endl;
+    cout << "Number of Seq-annot's unspliced: " << s_NumSa - s_NumSaSpliced << endl << endl;
+    cout << "Number of Seq-entry's processed: " << s_NumSe << endl;
+    cout << "Number of Seq-entry's expanded:  " << s_NumSe - s_NumSeUnchanged << endl;
+    cout << "Number of Seq-entry's unchanged: " << s_NumSeUnchanged << endl;
 }
 
 
 void CSeqAnnotSplicerStats::SeqAnnot_Scan_Pre(void)
 {
     if (s_NumSa % 10000 == 0) {
-        NcbiCout << "Preprocessing Seq-annot # " << s_NumSa << NcbiEndl;
+        cout << "Preprocessing Seq-annot # " << s_NumSa << endl;
     }
 }
 

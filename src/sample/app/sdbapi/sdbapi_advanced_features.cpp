@@ -82,7 +82,7 @@ int CSdbapiTest::Run()
         CQuery query = db.NewQuery();
         string sql;
         try  {
-            NcbiCout << "Creating SelectSample table...";
+            cout << "Creating SelectSample table...";
             sql = "if exists( select * from sysobjects \
                     where name = 'SelectSample' \
                     AND type = 'U') \
@@ -116,7 +116,7 @@ int CSdbapiTest::Run()
             query.VerifyDone();
 
             sql = "select int_val, fl_val, date_val, str_val from SelectSample";
-            NcbiCout << endl << "Testing simple select..." << endl << sql << endl;
+            cout << endl << "Testing simple select..." << endl << sql << endl;
 
             query.SetSql(sql);
             query.Execute();
@@ -125,35 +125,35 @@ int CSdbapiTest::Run()
             bool show_names = true;
             for (const auto& row: query) {
                 if (show_names) {
-                    for(unsigned i = 1; i <= row.GetTotalColumns(); ++i) {
-                        NcbiCout << row.GetColumnName(i) << "  ";
+                    for (unsigned i = 1; i <= row.GetTotalColumns(); ++i) {
+                        cout << row.GetColumnName(i) << "  ";
                     }
-                    NcbiCout << endl;
+                    cout << endl;
                     show_names = false;
                 }
 
                 for(unsigned i = 1;  i <= row.GetTotalColumns(); ++i) {
-                    NcbiCout << row[i].AsString() << "|";
+                    cout << row[i].AsString() << "|";
                 }
-                NcbiCout << endl;
+                cout << endl;
 #if 1
-                NcbiCout << row[1].AsInt4() << "|"
-                         << row[2].AsFloat() << "|"
-                         << row["date_val"].AsString() << "|"
-                         << row[4].AsString() << "|"
-                         << endl;
+                cout << row[1].AsInt4() << "|"
+                     << row[2].AsFloat() << "|"
+                     << row["date_val"].AsString() << "|"
+                     << row[4].AsString() << "|"
+                     << endl;
 #endif
             }
 
             query.VerifyDone();
-            NcbiCout << "Rows : " << query.GetRowCount() << endl;
+            cout << "Rows : " << query.GetRowCount() << endl;
         }
         catch(CSDB_Exception& e) {
-            NcbiCout << "Exception: " << e.what() << endl;
+            cout << "Exception: " << e.what() << endl;
         }
 
         // Testing bulk insert w/o BLOBs
-        NcbiCout << endl << "Creating BulkSample table..." << endl;
+        cout << endl << "Creating BulkSample table..." << endl;
         sql = "if exists( select * from sysobjects \
                 where name = 'BulkSample' \
                 AND type = 'U') \
@@ -177,7 +177,7 @@ int CSdbapiTest::Run()
 
         try {
             //Initialize table using bulk insert
-            NcbiCout << "Initializing BulkSample table..." << endl;
+            cout << "Initializing BulkSample table..." << endl;
             CBulkInsert bi = db.NewBulkInsert("BulkSample", 5);
             bi.Bind(1, eSDB_Int4);
             bi.Bind(2, eSDB_Int4);
@@ -245,7 +245,7 @@ int CSdbapiTest::Run()
         float f = 2.999f;
 
         // call stored procedure
-        NcbiCout << endl << "Calling stored procedure..." << endl;
+        cout << endl << "Calling stored procedure..." << endl;
 
         query.SetParameter("@id", 5);
         query.SetParameter("@f", f);
@@ -255,29 +255,29 @@ int CSdbapiTest::Run()
 
         for (const auto& row: query.SingleSet()) {
             if(row[1].AsInt4() == 2121) {
-                NcbiCout << row[2].AsString() << " "
-                         << row[3].AsString() << " "
-                         << row[4].AsString() << " "
-                         << row[5].AsString() << " "
-                         << row[6].AsString() << " "
-                         << row[7].AsString() << " "
-                         << endl;
+                cout << row[2].AsString() << " "
+                     << row[3].AsString() << " "
+                     << row[4].AsString() << " "
+                     << row[5].AsString() << " "
+                     << row[6].AsString() << " "
+                     << row[7].AsString() << " "
+                     << endl;
             }
             else {
-                NcbiCout << row[1].AsInt4() << "|"
-                         << row[2].AsFloat() << "|"
-                         << row["date_val"].AsString() << "|"
-                         << endl;
+                cout << row[1].AsInt4() << "|"
+                     << row[2].AsFloat() << "|"
+                     << row["date_val"].AsString() << "|"
+                     << endl;
             }
         }
         query.VerifyDone();
-        NcbiCout << "Output param: "
-                 << query.GetParameter("@o").AsInt4()
-                 << endl;
-        NcbiCout << "Status : " << query.GetStatus() << endl;
+        cout << "Output param: "
+             << query.GetParameter("@o").AsInt4()
+             << endl;
+        cout << "Status : " << query.GetStatus() << endl;
 
         // Reconnect
-        NcbiCout << endl << "Reconnecting..." << endl;
+        cout << endl << "Reconnecting..." << endl;
 
         db.Close();
         db.Connect();
@@ -285,7 +285,7 @@ int CSdbapiTest::Run()
         query = db.NewQuery();
 
         // create a table
-        NcbiCout << endl << "Creating BlobSample table..." << endl;
+        cout << endl << "Creating BlobSample table..." << endl;
         sql = "if exists( select * from sysobjects \
                 where name = 'BlobSample' \
                 AND type = 'U') \
@@ -309,7 +309,7 @@ int CSdbapiTest::Run()
         const int COUNT = 5;
 
         //Initialize table using bulk insert
-        NcbiCout << "Initializing BlobSample table..." << endl;
+        cout << "Initializing BlobSample table..." << endl;
         CBulkInsert bi = db.NewBulkInsert("BlobSample", 1);
         bi.Bind(1, eSDB_Int4);
         bi.Bind(2, eSDB_Text);
@@ -322,48 +322,49 @@ int CSdbapiTest::Run()
         bi.Complete();
 
         // check if Blob is there
-        NcbiCout << "Checking BLOB size..." << endl;
+        cout << "Checking BLOB size..." << endl;
         query.SetSql("select 'Written blob size' as size, datalength(blob) \
                         from BlobSample where id = 1");
         query.Execute();
         query.RequireRowCount(1);
 
         for (const auto& row: query.SingleSet()) {
-            NcbiCout << row[1].AsString() << ": "
-                     << row[2].AsInt4() << endl;
+            cout << row[1].AsString() << ": "
+                 << row[2].AsInt4() << endl;
         }
 
         query.VerifyDone();
 
         // ExecuteUpdate rowcount test
-        NcbiCout << "Rowcount test..." << endl;
+        cout << "Rowcount test..." << endl;
         sql = "update BlobSample set blob ='deleted'";
         query.SetSql(sql);
         query.Execute();
         query.RequireRowCount(0);
         query.VerifyDone();
-        NcbiCout << "Rows updated: " << query.GetRowCount() << endl;
+        cout << "Rows updated: " << query.GetRowCount() << endl;
 
         // drop BlobSample table
-        NcbiCout << "Deleting BlobSample table..." << endl;
+        cout << "Deleting BlobSample table..." << endl;
         sql = "drop table BlobSample";
         query.SetSql(sql);
         query.Execute();
         query.RequireRowCount(0);
         query.VerifyDone();
-        NcbiCout << "Done." << endl;
+        cout << "Done." << endl;
     }
     catch(out_of_range) {
-        NcbiCout << "Exception: Out of range" << endl;
+        cout << "Exception: Out of range" << endl;
         return 1;
     }
     catch(exception& e) {
-        NcbiCout << "Exception: " << e.what() << endl;
+        cout << "Exception: " << e.what() << endl;
         return 1;
     }
 
     return 0;
 }
+
 
 void CSdbapiTest::Exit()
 {

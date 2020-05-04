@@ -140,7 +140,7 @@ public:
 
         // Log all exceptions coming from the server.
         *m_LogStream << m_Type << " " << ex->SeverityString() << ": ";
-        *m_LogStream << ex->ReportThis() << NcbiEndl;
+        *m_LogStream << ex->ReportThis() << endl;
 
         // NOTE: DBAPI converts server exceptions into C++ exceptions with
         // severity eDiag_Error, and less severe server errors into C++
@@ -411,21 +411,21 @@ void CDbapiSimpleApp::DemoStoredProc(void)
         cstmt->SetOutputParam(CVariant(eDB_Int), "@num_rows");
 
         // Execute the stored procedure.
-        NcbiCout << "\nExecuting stored procedure \"" << proc_name << "\":" << NcbiEndl;
+        cout << "\nExecuting stored procedure \"" << proc_name << "\":" << endl;
         cstmt->Execute();
 
         // Retrieve and display the data.
         RetrieveData(&*cstmt);
 
         // The stored procedure will return a status.
-        NcbiCout << "\nStored procedure returned status: " << cstmt->GetReturnStatus() << NcbiEndl;
+        cout << "\nStored procedure returned status: " << cstmt->GetReturnStatus() << endl;
         string msgs = m_Ds->GetErrorInfo();
         if ( ! msgs.empty() ) {
-            NcbiCout << "    Errors:" << NcbiEndl;
-            NcbiCout << "        " << msgs << NcbiEndl;
+            cout << "    Errors:" << endl;
+            cout << "        " << msgs << endl;
         }
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
+        cout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << endl;
     }
 }
 
@@ -448,14 +448,14 @@ void CDbapiSimpleApp::DemoStaticSql(void)
         string sql("SELECT [title] FROM [Journal]");
 
         // Execute the static SQL.
-        NcbiCout << "\nExecuting static SQL \"" << sql << "\":" << NcbiEndl;
+        cout << "\nExecuting static SQL \"" << sql << "\":" << endl;
         unique_ptr<IStatement> stmt(m_Conn->CreateStatement());
         stmt->Execute(sql);
 
         // Retrieve the data.
         RetrieveData(&*stmt);
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
+        cout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << endl;
     }
 }
 
@@ -494,13 +494,13 @@ void CDbapiSimpleApp::DemoParamerizedSql(void)
         cstmt->SetParam(CVariant(user_hire),   "@hire");
 
         // Execute the parameterized SQL.
-        NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":" << NcbiEndl;
+        cout << "\nExecuting parameterized SQL \"" << sql << "\":" << endl;
         cstmt->SendSql(sql);
 
         // Retrieve the data.
         RetrieveData(&*cstmt);
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
+        cout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << endl;
     }
 }
 
@@ -546,14 +546,14 @@ void CDbapiSimpleApp::DemoDynamicSql(void)
                    " AND [hiredate] > " + user_hire);
 
         // Execute the dynamic SQL.
-        NcbiCout << "\nExecuting dynamic SQL \"" << sql << "\":" << NcbiEndl;
+        cout << "\nExecuting dynamic SQL \"" << sql << "\":" << endl;
         unique_ptr<IStatement> stmt(m_Conn->CreateStatement());
         stmt->Execute(sql);
 
         // Retrieve the data.
         RetrieveData(&*stmt);
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
+        cout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << endl;
     }
 }
 
@@ -587,7 +587,7 @@ void CDbapiSimpleApp::DemoSqlInjection(void)
         //      FROM [Employee]
         //      WHERE [last] LIKE 'a' OR 1=1; DROP TABLE [emp]; --'
     } catch (...) {
-        NcbiCout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << NcbiEndl;
+        cout << "*** Caught exception; see logfile \"" << m_LogFileName << "\"." << endl;
     }
 #endif
 }
@@ -615,44 +615,43 @@ void CDbapiSimpleApp::RetrieveData(IStatement* stmt)
         switch (rs->GetResultType()) {
 
         case eDB_StatusResult:
-            NcbiCout << "\nStatus results:" << NcbiEndl;
+            cout << "\nStatus results:" << endl;
             while (rs->Next()) {
-                NcbiCout << "    Status: " << rs->GetVariant(1).GetInt4() << NcbiEndl;
+                cout << "    Status: " << rs->GetVariant(1).GetInt4() << endl;
             }
             break;
 
         case eDB_ParamResult:
-            NcbiCout << "\nParameter results:" << NcbiEndl;
+            cout << "\nParameter results:" << endl;
             while (rs->Next()) {
-                NcbiCout << "    Parameter: "
-                    << rs->GetVariant(1).GetInt4() << NcbiEndl;
+                cout << "    Parameter: " << rs->GetVariant(1).GetInt4() << endl;
             }
             break;
 
         case eDB_RowResult: {
-            NcbiCout << "\nRow results:" << NcbiEndl;
+            cout << "\nRow results:" << endl;
 
             const IResultSetMetaData* rsMeta = rs->GetMetaData();
 
             // Print column headers.
             for (unsigned i = 1; i <= rsMeta->GetTotalColumns(); ++i) {
-                NcbiCout << "    " << rsMeta->GetName(i);
+                cout << "    " << rsMeta->GetName(i);
             }
-            NcbiCout << NcbiEndl;
+            cout << endl;
             for (unsigned i = 1; i <= rsMeta->GetTotalColumns(); ++i) {
-                NcbiCout << "    " << string(rsMeta->GetName(i).size(), '=');
+                cout << "    " << string(rsMeta->GetName(i).size(), '=');
             }
-            NcbiCout << NcbiEndl;
+            cout << endl;
 
             while (rs->Next()) {
                 // Print a row of data.
                 for (unsigned i = 1; i <= rsMeta->GetTotalColumns(); ++i) {
-                    NcbiCout << "    " << rs->GetVariant(i).GetString();
+                    cout << "    " << rs->GetVariant(i).GetString();
                 }
-                NcbiCout << NcbiEndl;
+                cout << endl;
             }
-            NcbiCout << "    ---------------" << NcbiEndl;
-            NcbiCout << "    Row count: " << stmt->GetRowCount() << NcbiEndl;
+            cout << "    ---------------" << endl;
+            cout << "    Row count: " << stmt->GetRowCount() << endl;
             break;
         }
 

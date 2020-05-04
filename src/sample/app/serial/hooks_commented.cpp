@@ -94,7 +94,7 @@ public:
                                  const CObjectInfoMI& passed_info)
     {
         // Perform any pre-read processing here.
-        //NcbiCout << "In ReadClassMember() hook, before reading." << NcbiEndl;
+        //cout << "In ReadClassMember() hook, before reading." << endl;
 
         // You must call DefaultRead() (or perform an equivalent operation)
         // if you want the object to be read into memory.  You could also
@@ -126,7 +126,7 @@ public:
         CNcbiOstrstream oss;
         oss << MSerial_AsnText << passed_info.GetClassObject();
         string s = CNcbiOstrstreamToString(oss);
-        NcbiCout << s << NcbiEndl;
+        cout << s << endl;
     }
 };
 

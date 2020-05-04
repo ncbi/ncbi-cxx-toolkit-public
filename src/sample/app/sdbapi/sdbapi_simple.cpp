@@ -239,7 +239,7 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
     query.SetParameter("@num_rows", 0, eSDB_Int4, eSP_InOut);
 
     // Execute the stored procedure.
-    NcbiCout << "\nExecuting stored proc \"" << proc_name << "\":" << NcbiEndl;
+    cout << "\nExecuting stored proc \"" << proc_name << "\":" << endl;
     query.ExecuteSP(proc_name);
     // query.RequireRowCount(...);
 
@@ -247,20 +247,17 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
     //
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
-    NcbiCout << "int_val    fl_val" << NcbiEndl;
+    cout << "int_val    fl_val" << endl;
     for (const auto& row: query.SingleSet()) {
-        NcbiCout
-            << row[1].AsInt4() << "    "
-            << row[2].AsFloat() << NcbiEndl;
+        cout << row[1].AsInt4() << "    "
+             << row[2].AsFloat() << endl;
     }
 
     // Confirm having read all results.
     query.VerifyDone();
 
     // Print the number of result rows.
-    NcbiCout
-        << "Number of rows: "
-        << query.GetParameter("@num_rows").AsInt4() << NcbiEndl;
+    cout << "Number of rows: "  << query.GetParameter("@num_rows").AsInt4() << endl;
 }
 
 
@@ -281,7 +278,7 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
     string sql("SELECT [title] FROM [Journal]");
 
     // Execute the static SQL.
-    NcbiCout << "\nExecuting static SQL \"" << sql << "\":" << NcbiEndl;
+    cout << "\nExecuting static SQL \"" << sql << "\":" << endl;
     CQuery query = m_Db.NewQuery(sql);
     query.Execute();
     // query.RequireRowCount(...);
@@ -290,9 +287,9 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
     //
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
-    NcbiCout << "title" << NcbiEndl;
+    cout << "title" << endl;
     for (const auto& row: query.SingleSet()) {
-        NcbiCout << row[1].AsString() << NcbiEndl;
+        cout << row[1].AsString() << endl;
     }
     query.VerifyDone();
 }
@@ -331,7 +328,7 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
     query.SetParameter("@hire",   user_hire);
 
     // Execute the parameterized SQL.
-    NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":" << NcbiEndl;
+    cout << "\nExecuting parameterized SQL \"" << sql << "\":" << endl;
     query.SetSql(sql);
     query.Execute();
     // query.RequireRowCount(...);
@@ -340,14 +337,13 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
     //
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
-    NcbiCout << "id    last    first    salary    hiredate" << NcbiEndl;
+    cout << "id    last    first    salary    hiredate" << endl;
     for (const auto& row: query.SingleSet()) {
-        NcbiCout
-            << row[1].AsInt4() << "    "
-            << row[2].AsString() << "    "
-            << row[3].AsString() << "    "
-            << row[4].AsInt4() << "    "
-            << row[5].AsString() << NcbiEndl;
+        cout << row[1].AsInt4() << "    "
+             << row[2].AsString() << "    "
+             << row[3].AsString() << "    "
+             << row[4].AsInt4() << "    "
+             << row[5].AsString() << endl;
     }
     query.VerifyDone();
 }
@@ -394,7 +390,7 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
                " AND [hiredate] > " + user_hire);
 
     // Execute the dynamic SQL.
-    NcbiCout << "\nExecuting dynamic SQL \"" << sql << "\":" << NcbiEndl;
+    cout << "\nExecuting dynamic SQL \"" << sql << "\":" << endl;
     CQuery query = m_Db.NewQuery();
     query.SetSql(sql);
     query.Execute();
@@ -404,14 +400,13 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
     //
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
-    NcbiCout << "id    last    first    salary    hiredate" << NcbiEndl;
+    cout << "id    last    first    salary    hiredate" << endl;
     for (const auto& row: query.SingleSet()) {
-        NcbiCout
-            << row[1].AsInt4() << "    "
-            << row[2].AsString() << "    "
-            << row[3].AsString() << "    "
-            << row[4].AsInt4() << "    "
-            << row[5].AsString() << NcbiEndl;
+        cout << row[1].AsInt4() << "    "
+             << row[2].AsString() << "    "
+             << row[3].AsString() << "    "
+             << row[4].AsInt4() << "    "
+             << row[5].AsString() << endl;
     }
     query.VerifyDone();
 }

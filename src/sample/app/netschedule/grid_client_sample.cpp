@@ -117,7 +117,7 @@ int CGridClientSampleApp::Run(void)
 
     vector<string> job_keys;
 
-    NcbiCout << "Submit a job..." << jobs_number << NcbiEndl;
+    cout << "Submit a job..." << jobs_number << endl;
 
     for (int i = 0; i < jobs_number; ++i) {
         // Get a job submitter
@@ -137,9 +137,9 @@ int CGridClientSampleApp::Run(void)
         // Submit a job
         job_keys.push_back(grid_client.Submit());
     }
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    cout << endl << "Done." << endl;
      
-    NcbiCout << "Waiting for job " << job_keys.size() << "..." << NcbiEndl;
+    cout << "Waiting for job " << job_keys.size() << "..." << endl;
 
     unsigned int cnt = 0;
     while (1) {
@@ -198,7 +198,7 @@ int CGridClientSampleApp::Run(void)
          
         // A job is still running
         if (++cnt % 1000 == 0) {
-            NcbiCout << "Still waiting..." << NcbiEndl;
+            cout << "Still waiting..." << endl;
         }
     }
     return 0;

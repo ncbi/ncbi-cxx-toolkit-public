@@ -567,9 +567,9 @@ void s_PrintDescr(const CBioseq_Handle& handle, CNcbiOstream& os)
         const CSeqdesc& desc = *desc_it;
         string label;
         desc.GetLabel(&label, CSeqdesc::eBoth);
-        os << label << NcbiEndl;
+        os << label << endl;
     }      
-    os << "# of descriptors:  " << desc_count << NcbiEndl;
+    os << "# of descriptors:  " << desc_count << endl;
 }
 
 void s_PrintFeat(const CBioseq_Handle& handle, CNcbiOstream& os)
@@ -579,7 +579,7 @@ void s_PrintFeat(const CBioseq_Handle& handle, CNcbiOstream& os)
         feat_count++;
         CSeq_annot_Handle annot = feat_it.GetAnnot();
     }
-    os << "# of featues:  " << feat_count << NcbiEndl;
+    os << "# of featues:  " << feat_count << endl;
 }
 
 void s_RemoveBioseq(int gi, CScope& scope, CNcbiOstream& os)
@@ -609,7 +609,7 @@ int CEditBioseqSampleApp::Run(void)
     // Create Seq-id, set it to the GI specified on the command line
     CSeq_id_Handle seq_id(CSeq_id_Handle::GetGiHandle(gi));
 
-    CNcbiOstream& os = NcbiCout;
+    CNcbiOstream& os = cout;
 
     m_Operations.push_back(new CAddIdChecker(seq_id));
     m_Operations.push_back(new CRemoveIdChecker(seq_id));
@@ -638,7 +638,7 @@ int CEditBioseqSampleApp::Run(void)
             else 
                 os << "[FAILED]";
         }}
-        os << NcbiEndl;           
+        os << endl;           
     }
     return 0;
 }
@@ -662,7 +662,7 @@ void CEditBioseqSampleApp::x_RunEdits(const CSeq_id& seq_id,
             os << " + "; // print id separator
         os << id_it->AsString();
     }
-    os << NcbiEndl;
+    os << endl;
 
     /////////////////////////////////////////////////////////////////////////
     // Get Bioseq handle for the Seq-id.
@@ -686,9 +686,9 @@ void CEditBioseqSampleApp::x_RunEdits(const CSeq_id& seq_id,
     edit.AddId(GetNewIdHandle());
     //    edit.RemoveId(idh);
     
-    os << "---------------- Before descr is added -----------" << NcbiEndl;       
+    os << "---------------- Before descr is added -----------" << endl;       
     s_PrintDescr(bioseq_handle, os);
-    os << "----------------------- end ----------------------" << NcbiEndl;
+    os << "----------------------- end ----------------------" << endl;
     {
         CRef<CSeqdesc> desc(new CSeqdesc);
         desc->SetComment("-------------- ADDED COMMENT1 ------------");
@@ -697,9 +697,9 @@ void CEditBioseqSampleApp::x_RunEdits(const CSeq_id& seq_id,
         edit.AddSeqdesc(*desc);
         trans.Commit();
     }
-    os << "------------- After descr is added -----" << NcbiEndl;       
+    os << "------------- After descr is added -----" << endl;       
     s_PrintDescr(bioseq_handle, os);
-    os << "--------------------  end  -------------" << NcbiEndl;       
+    os << "--------------------  end  -------------" << endl;       
 
     os << "Before featre is removed : ";
     CSeq_annot_Handle annot;
@@ -738,7 +738,7 @@ void CEditBioseqSampleApp::x_RunEdits(const CSeq_id& seq_id,
     os << "After featre is added : ";
     s_PrintFeat(bioseq_handle, os);
     // Done
-    os << "Changes are made." << NcbiEndl;
+    os << "Changes are made." << endl;
 }
 
 
@@ -750,12 +750,12 @@ void CEditBioseqSampleApp::x_RunCheck(const CSeq_id& seq_id,
 
     CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
     s_PrintIds(bioseq_handle, os);
-    os << "*******************************" << NcbiEndl;
+    os << "*******************************" << endl;
     s_PrintDescr(bioseq_handle, os);
-    os << "*******************************" << NcbiEndl;
+    os << "*******************************" << endl;
     s_PrintFeat(bioseq_handle, os);
 
-    os << "Check is done." << NcbiEndl;
+    os << "Check is done." << endl;
 }
 */
 

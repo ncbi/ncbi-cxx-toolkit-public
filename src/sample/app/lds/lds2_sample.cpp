@@ -163,7 +163,7 @@ int CSampleLds2Application::Run(void)
 
         // Get synonyms
         CBioseq_Handle::TId bh_ids = scope.GetIds(seq_id);
-        NcbiCout << "Synonyms for " << id << ": ";
+        cout << "Synonyms for " << id << ": ";
         string sep = "";
         for (const auto& it : bh_ids) {
             cout << sep << it.AsString();

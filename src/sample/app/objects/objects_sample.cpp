@@ -129,11 +129,11 @@ int CSampleObjectsApplication::Run(void)
             if (first) {
                 first = false;
             } else {
-                NcbiCerr << '|';
+                cerr << '|';
             }
-            (*id)->WriteAsFasta(NcbiCerr);
+            (*id)->WriteAsFasta(cerr);
         }
-        NcbiCerr << NcbiEndl;
+        cerr << endl;
     }
 
     // Write the entry

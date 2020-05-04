@@ -515,10 +515,10 @@ int CSeqAnnotSplicerApp::Run(void)
     // NOTE: There appears to be a bug in CObjectIStream::{G|S}etStreamPos()
     // for ASN.1 text format, so don't allow that format.
     if (IsSeqAnnotChoiceSelected(fSAMF_Seq_table)) {
-        NcbiCout << "I'm sorry, the Seq_table CHOICE mask for Seq-annot's "
-                    "is not currently supported \n"
-                    "due to an apparent bug in parsing seq-table CHOICE values.\n"
-                    "Please try an alternate CHOICE." << NcbiEndl;
+        cout << "I'm sorry, the Seq_table CHOICE mask for Seq-annot's "
+                "is not currently supported \n"
+                "due to an apparent bug in parsing seq-table CHOICE values.\n"
+                 "Please try an alternate CHOICE." << endl;
         return 1;
     }
 
@@ -535,11 +535,11 @@ int CSeqAnnotSplicerApp::Run(void)
     // NOTE: There appears to be a bug in CObjectIStream::{G|S}etStreamPos()
     // for ASN.1 text format, so don't allow that format.
     if (eSerial_AsnText == GetFormat(args["safmt"].AsString())) {
-        NcbiCout << "I'm sorry, ASN.1 text is not currently "
-                    "supported for the concatenated \n"
-                    "Seq-Annot file due to an apparent bug in "
-                    "CObjectIStream::{G|S}etStreamPos().\n"
-                    "Please try an alternate format." << NcbiEndl;
+        cout << "I'm sorry, ASN.1 text is not currently "
+                "supported for the concatenated \n"
+                "Seq-Annot file due to an apparent bug in "
+                "CObjectIStream::{G|S}etStreamPos().\n"
+                "Please try an alternate format." << endl;
         return 1;
     }
 
@@ -574,7 +574,7 @@ int CSeqAnnotSplicerApp::Run(void)
             CObjectStreamCopier copier(*sei, *seo);
 
             // Do any preprocessing necessary.
-            NcbiCout << "Processing Seq-entry: " << name << NcbiEndl;
+            cout << "Processing Seq-entry: " << name << endl;
             s_PreprocessSeqEntry(sei);
 
             // Set up hooks to follow the Bioseq / Bioseq-set context.

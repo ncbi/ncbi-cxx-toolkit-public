@@ -148,8 +148,8 @@ int CDbapiTest::Run()
 
 		conn->ConnectValidated(val, "anyone", "allowed", server, "DBAPI_Sample");
     
-        NcbiCout << "Using server: " << server
-                 << ", driver: " << driver << endl;
+        coutt << "Using server: " << server
+              << ", driver: " << driver << endl;
 
         IStatement *stmt = conn->GetStatement();
         string sql;
@@ -162,11 +162,11 @@ int CDbapiTest::Run()
         sql = "select @@trancount";
         IResultSet *tc = stmt->ExecuteQuery(sql);
         while (tc->Next()) {
-            NcbiCout << "Begin transaction, count: " << tc->GetVariant(1).GetString();
+            cout << "Begin transaction, count: " << tc->GetVariant(1).GetString();
         }
 #endif
         try {
-			NcbiCout << "Creating SelectSample table...";
+			cout << "Creating SelectSample table...";
 			sql = "if exists( select * from sysobjects \
                         where name = 'SelectSample' \
                         AND type = 'U') \
@@ -191,7 +191,7 @@ int CDbapiTest::Run()
 			stmt->ExecuteUpdate(sql);
 
             sql = "select int_val, fl_val, date_val, str_val from SelectSample";
-            NcbiCout << endl << "Testing simple select..." << endl << sql << endl;
+            cout << endl << "Testing simple select..." << endl << sql << endl;
 
             conn->MsgToEx(true);
 
@@ -209,9 +209,9 @@ int CDbapiTest::Run()
                     rs->BindBlobToVariant(true);
 
                     for (unsigned int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
-                        NcbiCout << rsMeta->GetName(i) << "  ";
+                        cout << rsMeta->GetName(i) << "  ";
 
-                    NcbiCout << endl;
+                    cout << endl;
 
                     while(rs->Next()) { 
                         for(unsigned int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
@@ -222,33 +222,33 @@ int CDbapiTest::Run()
                                 char *buf = new char[b.GetBlobSize() + 1];
                                 b.Read(buf, b.GetBlobSize());
                                 buf[b.GetBlobSize()] = '\0';
-                                NcbiCout << buf << "|";
+                                cout << buf << "|";
                                 delete[] buf;
                             }
                             else
-                                NcbiCout << rs->GetVariant(i).GetString() << "|";
+                                cout << rs->GetVariant(i).GetString() << "|";
                         }
-                        NcbiCout << endl;
+                        cout << endl;
                             
 #if 0
-                        NcbiCout << rs->GetVariant(1).GetInt4() << "|"
-                                 << rs->GetVariant(2).GetFloat() << "|"
-                                 << rs->GetVariant("date_val").GetString() << "|"
-                                 << rs->GetVariant(4).GetString()
-                                 << endl;
+                        cout << rs->GetVariant(1).GetInt4() << "|"
+                             << rs->GetVariant(2).GetFloat() << "|"
+                             << rs->GetVariant("date_val").GetString() << "|"
+                             << rs->GetVariant(4).GetString()
+                             << endl;
 #endif
                     
                     } 
                     // Use Close() to free database resources and leave DBAPI framwork intact
                     // All closed DBAPI objects become invalid.
                     //rs->Close();
-                    NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
+                    cout << "Rows : " << stmt->GetRowCount() << endl;
                }
             }
         }
-        catch(CDB_Exception& e) {
-            NcbiCout << "Exception: " << e.what() << endl;
-            NcbiCout << conn->GetErrorInfo();
+        catch (CDB_Exception& e) {
+            cout << "Exception: " << e.what() << endl;
+            cout << conn->GetErrorInfo();
         } 
 
         //stmt->PurgeResults();
@@ -257,8 +257,8 @@ int CDbapiTest::Run()
 /*
         // Testing MSSQL XML output
         sql += " for xml auto, elements";
-        NcbiCout << "Testing simple select with XML output..." << endl
-                 << sql << endl;
+        cout << "Testing simple select with XML output..." << endl
+             << sql << endl;
 
         conn->MsgToEx(true);
 
@@ -273,9 +273,9 @@ int CDbapiTest::Run()
                     rs->BindBlobToVariant(true);
 
                     for(int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
-                        NcbiCout << rsMeta->GetName(i) << "  ";
+                        cout << rsMeta->GetName(i) << "  ";
 
-                    NcbiCout << endl;
+                    cout << endl;
 
                     while(rs->Next()) { 
                         for(int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
@@ -288,23 +288,23 @@ int CDbapiTest::Run()
                                 char *buf = new char[b->Size() + 1];
                                 b->Read(buf, b->Size());
                                 buf[b->Size()] = '\0';
-                                NcbiCout << buf << "|";
+                                cout << buf << "|";
                                 delete[] buf;
                                 
                             }
                             else
-                                NcbiCout << rs->GetVariant(i).GetString() << "|";
+                                cout << rs->GetVariant(i).GetString() << "|";
                         }
-                        NcbiCout << endl;
+                        cout << endl;
                     
                     } 
                     
                 }
             }
         }
-        catch(CDB_Exception& e) {
-            NcbiCout << "Exception: " << e.what() << endl;
-            NcbiCout << ds->GetErrorInfo();
+        catch (CDB_Exception& e) {
+            cout << "Exception: " << e.what() << endl;
+            cout << ds->GetErrorInfo();
         } 
         
         exit(1);
@@ -315,7 +315,7 @@ int CDbapiTest::Run()
         //stmt = conn->GetStatement();
 
         // Testing bulk insert w/o BLOBs
-        NcbiCout << endl << "Creating BulkSample table..." << endl;
+        cout << endl << "Creating BulkSample table..." << endl;
         sql = "if exists( select * from sysobjects \
                     where name = 'BulkSample' \
                     AND type = 'U') \
@@ -337,7 +337,7 @@ int CDbapiTest::Run()
 
         try {
             //Initialize table using bulk insert
-            NcbiCout << "Initializing BulkSample table..." << endl;
+            cout << "Initializing BulkSample table..." << endl;
             IBulkInsert *bi = conn->GetBulkInsert("BulkSample");
             CVariant b1(eDB_Int);
             CVariant b2(eDB_Int);
@@ -411,8 +411,8 @@ int CDbapiTest::Run()
 
         sql = "select @@trancount";
         tc = stmt->ExecuteQuery(sql);
-        while(tc->Next()) {
-            NcbiCout << "Transaction committed, count: " << tc->GetVariant(1).GetString();
+        while (tc->Next()) {
+            cout << "Transaction committed, count: " << tc->GetVariant(1).GetString();
         }
 #endif
         /*stmt->ExecuteUpdate("print 'test'");*/
@@ -420,7 +420,7 @@ int CDbapiTest::Run()
         float f = 2.999f;
 
         // call stored procedure
-        NcbiCout << endl << "Calling stored procedure..." << endl;
+        cout << endl << "Calling stored procedure..." << endl;
         
         ICallableStatement *cstmt = conn->GetCallableStatement("SampleProc");
         cstmt->SetParam(CVariant(5), "@id");
@@ -431,7 +431,7 @@ int CDbapiTest::Run()
         while(cstmt->HasMoreResults()) {
             IResultSet *rs = cstmt->GetResultSet();
 
-            //NcbiCout << "Row count: " << cstmt->GetRowCount() << endl;
+            //cout << "Row count: " << cstmt->GetRowCount() << endl;
 
             if( !cstmt->HasRows() ) {
                 continue;
@@ -440,27 +440,27 @@ int CDbapiTest::Run()
             switch( rs->GetResultType() ) {
             case eDB_ParamResult:
                 while( rs->Next() ) {
-                    NcbiCout << "Output param: "
-                             << rs->GetVariant(1).GetInt4()
-                             << endl;
+                    cout << "Output param: "
+                         << rs->GetVariant(1).GetInt4()
+                         << endl;
                 }
                 break;
             case eDB_RowResult:
-                while( rs->Next() ) {
-                    if( rs->GetVariant(1).GetInt4() == 2121 ) {
-                            NcbiCout << rs->GetVariant(2).GetString() << " "
-                                     << rs->GetVariant(3).GetString() << " "
-                                     << rs->GetVariant(4).GetString() << " "
-                                     << rs->GetVariant(5).GetString() << " "
-                                     << rs->GetVariant(6).GetString() << " "
-                                     << rs->GetVariant(7).GetString() << " "
-                                     << endl;
+                while ( rs->Next() ) {
+                    if ( rs->GetVariant(1).GetInt4() == 2121 ) {
+                            cout << rs->GetVariant(2).GetString() << " "
+                                 << rs->GetVariant(3).GetString() << " "
+                                 << rs->GetVariant(4).GetString() << " "
+                                 << rs->GetVariant(5).GetString() << " "
+                                 << rs->GetVariant(6).GetString() << " "
+                                 << rs->GetVariant(7).GetString() << " "
+                                 << endl;
                     }
                     else {
-                        NcbiCout << rs->GetVariant(1).GetInt4() << "|"
-                                 << rs->GetVariant(2).GetFloat() << "|"
-                                 << rs->GetVariant("date_val").GetString() << "|"
-                                 << endl;
+                        cout << rs->GetVariant(1).GetInt4() << "|"
+                             << rs->GetVariant(2).GetFloat() << "|"
+                             << rs->GetVariant("date_val").GetString() << "|"
+                             << endl;
                     }
                 }
                 break;
@@ -472,14 +472,14 @@ int CDbapiTest::Run()
             // when deleted.
             delete rs;
          }
-        NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
-        NcbiCout << endl << ds->GetErrorInfo() << endl;
+        cout << "Status : " << cstmt->GetReturnStatus() << endl;
+        cout << endl << ds->GetErrorInfo() << endl;
 
         cstmt->Close();
         delete cstmt;
 
         // call stored procedure using language call
-        NcbiCout << endl << "Calling stored procedure using language call..." << endl;
+        cout << endl << "Calling stored procedure using language call..." << endl;
         
         sql = "exec SampleProc @id, @f, @o output";
         stmt->SetParam(CVariant(5), "@id");
@@ -490,42 +490,42 @@ int CDbapiTest::Run()
         while(stmt->HasMoreResults()) {
             IResultSet *rs = stmt->GetResultSet();
 
-            //NcbiCout << "Row count: " << stmt->GetRowCount() << endl;
+            //cout << "Row count: " << stmt->GetRowCount() << endl;
 
             if( rs == 0 )
                 continue;
 
-            switch( rs->GetResultType() ) {
+            switch (rs->GetResultType()) {
             case eDB_ParamResult:
-                while( rs->Next() ) {
-                    NcbiCout << "Output param: "
-                             << rs->GetVariant(1).GetInt4()
-                             << endl;
+                while (rs->Next()) {
+                    cout << "Output param: "
+                         << rs->GetVariant(1).GetInt4()
+                         << endl;
                 }
                 break;
             case eDB_StatusResult:
-                while( rs->Next() ) {
-                    NcbiCout << "Return status: "
+                while (rs->Next()) {
+                    cout << "Return status: "
                              << rs->GetVariant(1).GetInt4()
                              << endl;
                 }
                 break;
             case eDB_RowResult:
-                while( rs->Next() ) {
-                    if( rs->GetVariant(1).GetInt4() == 2121 ) {
-                            NcbiCout << rs->GetVariant(2).GetString() << "|"
-                                     << rs->GetVariant(3).GetString() << "|"
-                                     << rs->GetVariant(4).GetString() << "|"
-                                     << rs->GetVariant(5).GetString() << "|"
-                                     << rs->GetVariant(6).GetString() << "|"
-                                     << rs->GetVariant(7).GetString() << "|"
-                                     << endl;
+                while (rs->Next()) {
+                    if (rs->GetVariant(1).GetInt4() == 2121) {
+                            cout << rs->GetVariant(2).GetString() << "|"
+                                 << rs->GetVariant(3).GetString() << "|"
+                                 << rs->GetVariant(4).GetString() << "|"
+                                 << rs->GetVariant(5).GetString() << "|"
+                                 << rs->GetVariant(6).GetString() << "|"
+                                 << rs->GetVariant(7).GetString() << "|"
+                                 << endl;
                     }
                     else {
-                        NcbiCout << rs->GetVariant(1).GetInt4() << "|"
-                                 << rs->GetVariant(2).GetFloat() << "|"
-                                 << rs->GetVariant("date_val").GetString() << "|"
-                                 << endl;
+                        cout << rs->GetVariant(1).GetInt4() << "|"
+                             << rs->GetVariant(2).GetFloat() << "|"
+                             << rs->GetVariant("date_val").GetString() << "|"
+                             << endl;
                     }
                 }
                 break;
@@ -538,7 +538,7 @@ int CDbapiTest::Run()
         //exit(1);
 
         // Reconnect
-        NcbiCout << endl << "Reconnecting..." << endl;
+        cout << endl << "Reconnecting..." << endl;
 
         delete conn;
 
@@ -550,46 +550,46 @@ int CDbapiTest::Run()
 
         stmt = conn->CreateStatement();
 
-        NcbiCout << endl << "Reading BLOB..." << endl;
+        cout << endl << "Reading BLOB..." << endl;
 
         // Read blob to vector
         vector<char> blob;
  
-        NcbiCout << "Retrieve BLOBs using streams and reader" << endl;
+        cout << "Retrieve BLOBs using streams and reader" << endl;
 
         stmt->ExecuteUpdate("set textsize 2000000");
     
         stmt->SendSql("select str_val, text_val, text_val from SelectSample where int_val = 1");
     
-        while( stmt->HasMoreResults() ) { 
-            if( stmt->HasRows() ) {
+        while (stmt->HasMoreResults()) { 
+            if (stmt->HasRows()) {
                 IResultSet *rs = stmt->GetResultSet();
                 int size = 0;
-                while(rs->Next()) { 
-                    NcbiCout << "Reading: " << rs->GetVariant(1).GetString() << endl;
+                while (rs->Next()) { 
+                    cout << "Reading: " << rs->GetVariant(1).GetString() << endl;
                     istream& in1 = rs->GetBlobIStream();
                     int c = 0; 
-                    NcbiCout << "Reading first blob with stream..." << endl;
-                    for( ;(c = in1.get()) != CT_EOF; ++size ) {
+                    cout << "Reading first blob with stream..." << endl;
+                    for ( ;(c = in1.get()) != CT_EOF; ++size ) {
                         blob.push_back(c);
                     }
                     IReader *ir = rs->GetBlobReader();
-                    NcbiCout << "Reading second blob with reader..." << endl;
+                    cout << "Reading second blob with reader..." << endl;
                     char rBuf[1000];
                     size_t bRead = 0;
-                    while( ir->Read(rBuf, 999, &bRead) != eRW_Eof ) {
+                    while ( ir->Read(rBuf, 999, &bRead) != eRW_Eof ) {
                         rBuf[bRead] = '\0';
-                        for( int i = 0; rBuf[i] != '\0'; ++i ) { 
+                        for ( int i = 0; rBuf[i] != '\0'; ++i ) { 
                             blob.push_back(rBuf[i]);
                         }
                     }
                 } 
-                NcbiCout << "Bytes read: " << blob.size() << endl;
+                cout << "Bytes read: " << blob.size() << endl;
             }
         }
 
         // create a table
-        NcbiCout << endl << "Creating BlobSample table..." << endl;
+        cout << endl << "Creating BlobSample table..." << endl;
         sql = "if exists( select * from sysobjects \
                     where name = 'BlobSample' \
                     AND type = 'U') \
@@ -616,7 +616,7 @@ int CDbapiTest::Run()
         }
 
         //Initialize table using bulk insert
-        NcbiCout << "Initializing BlobSample table..." << endl;
+        cout << "Initializing BlobSample table..." << endl;
         IBulkInsert *bi = conn->CreateBulkInsert("BlobSample");
         CVariant col1 = CVariant(eDB_Int);
         CVariant col2 = CVariant(eDB_Text);
@@ -634,16 +634,16 @@ int CDbapiTest::Run()
             col3.Append(im.c_str(), im.size());
             bi->AddRow();
         }
-		//NcbiCout << "Blob size: " << col3.GetBlobSize() << endl;
+        //cout << "Blob size: " << col3.GetBlobSize() << endl;
 
         bi->Complete();
 
         delete bi;
 
-        NcbiCout << "Writing BLOB using descriptors and streams..." << endl;
+        cout << "Writing BLOB using descriptors and streams..." << endl;
 
         for (int i = 0;  i < COUNT;  ++i) {
-            NcbiCout << "Writing BLOB " << i << endl;
+            cout << "Writing BLOB " << i << endl;
             CDB_BlobDescriptor desc("BlobSample", "blob",
                                     "id = " + NStr::IntToString(i),
                                     CDB_BlobDescriptor::eText);
@@ -653,10 +653,10 @@ int CDbapiTest::Run()
             out.flush();
         }
 
-        NcbiCout << "Writing BLOB using descriptors and writers..." << endl;
+        cout << "Writing BLOB using descriptors and writers..." << endl;
 
         for (int i = 0;  i < COUNT;  ++i) {
-            NcbiCout << "Writing BLOB " << i << endl;
+            cout << "Writing BLOB " << i << endl;
             CDB_BlobDescriptor desc("BlobSample", "blob",
                                     "id = " + NStr::IntToString(i),
                                     CDB_BlobDescriptor::eText);
@@ -666,7 +666,7 @@ int CDbapiTest::Run()
         }
 
 #if 0 // Not supported by ODBC driver, and uses deprecated API regardless
-        NcbiCout << "Writing BLOB using resultset..." << endl;
+        cout << "Writing BLOB using resultset..." << endl;
 
         sql = "select id, blob from BlobSample";
         //if( NStr::CompareNocase(driver, "ctlib") == 0 )
@@ -680,7 +680,7 @@ int CDbapiTest::Run()
             if( stmt->HasRows() ) {
                 IResultSet *rs = stmt->GetResultSet();
                 while(rs->Next()) {
-                    NcbiCout << "Writing BLOB " << ++cnt << endl;
+                    cout << "Writing BLOB " << ++cnt << endl;
                     ostream& out = rs->GetBlobOStream(newConn, blob.size(), eDisableLog);
                     out.write(buf, blob.size());
                     out.flush();
@@ -694,50 +694,50 @@ int CDbapiTest::Run()
 
         // check if Blob is there
         stmt = conn->CreateStatement();
-        NcbiCout << "Checking BLOB size..." << endl;
+        cout << "Checking BLOB size..." << endl;
         stmt->SendSql("select 'Written blob size' as size, datalength(blob) from BlobSample where id = 1");
         
-        while( stmt->HasMoreResults() ) {
-            if( stmt->HasRows() ) {
+        while ( stmt->HasMoreResults() ) {
+            if ( stmt->HasRows() ) {
                 IResultSet *rs = stmt->GetResultSet();
-                while(rs->Next()) {
-                    NcbiCout << rs->GetVariant(1).GetString() << ": " 
-                             << rs->GetVariant(2).GetInt4() << endl;
+                while (rs->Next()) {
+                    cout << rs->GetVariant(1).GetString() << ": " 
+                         << rs->GetVariant(2).GetInt4() << endl;
                 }
             }
         }
 
         // Reading text blobs
-        NcbiCout << "Reading text BLOB..." << endl;
+        cout << "Reading text BLOB..." << endl;
         IResultSet *brs = stmt->ExecuteQuery("select id, blob2, blob from BlobSample");
         brs->BindBlobToVariant(true);
         char *bbuf = new char[50000];
         while(brs->Next()) {
-            NcbiCout << brs->GetVariant(1).GetString() << "|";
+            cout << brs->GetVariant(1).GetString() << "|";
             //CNcbiIstream &is = brs->GetBlobIStream();
             //while( !is.eof() ) {
-            //    NcbiCout << is.get();
+            //    cout << is.get();
             //}
-            //NcbiCout << "|";
+            //cout << "|";
             //CNcbiIstream &is2 = brs->GetBlobIStream();
             //while( !is2.eof() ) {
-            //    NcbiCout << (char)is2.get();
+            //    cout << (char)is2.get();
             //}
-            //NcbiCout << endl;
+            //cout << endl;
 
             if( brs->GetVariant(2).IsNull() ) {
-                NcbiCout << " null ";
+                cout << " null ";
             }
             const CVariant &v = brs->GetVariant(3);
             v.Read(bbuf, v.GetBlobSize());
             bbuf[v.GetBlobSize()] = '\0';
-            NcbiCout << bbuf << endl;
+            cout << bbuf << endl;
 
         }
         delete[] bbuf;
 
         // Cursor test (remove blob)
-        NcbiCout << "Cursor test, removing blobs" << endl;
+        cout << "Cursor test, removing blobs" << endl;
 
         ICursor *cur = conn->CreateCursor("test", "select id, blob from BlobSample for update of blob");
     
@@ -750,26 +750,26 @@ int CDbapiTest::Run()
         delete cur;
 
         // ExecuteUpdate rowcount test
-        NcbiCout << "Rowcount test..." << endl;
+        cout << "Rowcount test..." << endl;
         sql = "update BlobSample set blob ='deleted'";
         stmt->ExecuteUpdate(sql);
-        NcbiCout << "Rows updated: " << stmt->GetRowCount() << endl;
+        cout << "Rows updated: " << stmt->GetRowCount() << endl;
 
         // drop BlobSample table
-        NcbiCout << "Deleting BlobSample table..." << endl;
+        cout << "Deleting BlobSample table..." << endl;
         sql = "drop table BlobSample";
         stmt->ExecuteUpdate(sql);
-        NcbiCout << "Done." << endl;
+        cout << "Done." << endl;
 
-		delete conn;
+        delete conn;
     }
     catch(out_of_range) {
-        NcbiCout << "Exception: Out of range" << endl;
+        cout << "Exception: Out of range" << endl;
         return 1;
     }
     catch(exception& e) {
-        NcbiCout << "Exception: " << e.what() << endl;
-        NcbiCout << ds->GetErrorInfo();
+        cout << "Exception: " << e.what() << endl;
+        cout << ds->GetErrorInfo();
         return 1;
     }
 

@@ -108,7 +108,7 @@ int CSampleNetCacheClient::Run(void)
 
 void CSampleNetCacheClient::DemoPutRead(void)
 {
-    NcbiCout << "\nPutData()/ReadData() example:" << NcbiEndl;
+    cout << "\nPutData()/ReadData() example:" << endl;
 
     // Configure based on the application registry.
     CNetCacheAPI nc_api(CNetCacheAPI::eAppRegistry);
@@ -133,14 +133,14 @@ void CSampleNetCacheClient::DemoPutRead(void)
     {{
         string message("yet another message");
         nc_api.PutData(key, message.c_str(), message.size());
-        NcbiCout << "Wrote: '" << message << "' to blob: " << key << NcbiEndl;
+        cout << "Wrote: '" << message << "' to blob: " << key << endl;
 
         // Use GetBlobInfo() to find out what TTL the server gave this blob.
         string blob_info;
         CNetServerMultilineCmdOutput result(nc_api.GetBlobInfo(key));
         while (result.ReadLine(blob_info)) {
             if (NStr::EqualNocase(blob_info, 0, 4, "TTL:")) {
-                NcbiCout << blob_info << NcbiEndl;
+                cout << blob_info << endl;
                 break;
             }
         }
@@ -150,7 +150,7 @@ void CSampleNetCacheClient::DemoPutRead(void)
     {{
         string message;
         nc_api.ReadData(key, message);
-        NcbiCout << "Read: '" << message << "'" << NcbiEndl;
+        cout << "Read: '" << message << "'" << endl;
     }}
 }
 
@@ -162,7 +162,7 @@ void CSampleNetCacheClient::DemoPutRead(void)
 
 void CSampleNetCacheClient::DemoPartialRead(void)
 {
-    NcbiCout << "\nPartRead() example:" << NcbiEndl;
+    cout << "\nPartRead() example:" << endl;
 
     // Configure based on the application registry.
     CNetCacheAPI nc_api(CNetCacheAPI::eAppRegistry);
@@ -174,7 +174,7 @@ void CSampleNetCacheClient::DemoPartialRead(void)
     {{
         string message("Just pretend this is a really huge blob, ok?");
         key = nc_api.PutData(message.c_str(), message.size());
-        NcbiCout << "Wrote: '" << message << "' to blob: " << key << NcbiEndl;
+        cout << "Wrote: '" << message << "' to blob: " << key << endl;
     }}
 
     // Read back the data a part at a time, in case it's too big to handle
@@ -194,7 +194,7 @@ void CSampleNetCacheClient::DemoPartialRead(void)
             // Read part of the blob.
             string part;
             nc_api.ReadPart(key, offset, part_size, part);
-            NcbiCout << "Read: '" << part << "'" << NcbiEndl;
+            cout << "Read: '" << part << "'" << endl;
 
             // Prep for the next part.
             offset    += part_size;
@@ -212,7 +212,7 @@ void CSampleNetCacheClient::DemoPartialRead(void)
 
 void CSampleNetCacheClient::DemoStream(void)
 {
-    NcbiCout << "\nCreateOStream()/GetIStream() example:" << NcbiEndl;
+    cout << "\nCreateOStream()/GetIStream() example:" << endl;
 
     unique_ptr<CNetCacheAPI> nc_api_p;
     {{
@@ -236,8 +236,8 @@ void CSampleNetCacheClient::DemoStream(void)
                 nc_blob_ttl = 600));
         *os << "line one\n";
         *os << "line two\n";
-        *os << "line three" << NcbiEndl;
-        NcbiCout << "Wrote three lines to blob: " << key << NcbiEndl;
+        *os << "line three" << endl;
+        cout << "Wrote three lines to blob: " << key << endl;
 
         // Blobs are not finalized on the server side until the stream
         // is deleted.  So you could call os.reset() if you wanted to
@@ -252,7 +252,7 @@ void CSampleNetCacheClient::DemoStream(void)
         while (!is->eof()) {
             string message;
             *is >> message; // get one word at a time, ignoring whitespace
-            NcbiCout << "Read word: '" << message << "'" << NcbiEndl;
+            cout << "Read word: '" << message << "'" << endl;
         }
     }}
 
@@ -262,7 +262,7 @@ void CSampleNetCacheClient::DemoStream(void)
     // (preserving whitespace).
     {{
         unique_ptr<CNcbiIstream> is(nc_api_p->GetIStream(key));
-        NcbiCout << "Read buffer: '" << is->rdbuf() << "'" << NcbiEndl;
+        cout << "Read buffer: '" << is->rdbuf() << "'" << endl;
     }}
 }
 
@@ -274,7 +274,7 @@ void CSampleNetCacheClient::DemoStream(void)
 
 void CSampleNetCacheClient::DemoCompression(void)
 {
-    NcbiCout << "\nCompression example:" << NcbiEndl;
+    cout << "\nCompression example:" << endl;
 
     // Configure based on the application registry.
     CNetCacheAPI nc_api(CNetCacheAPI::eAppRegistry);
@@ -289,7 +289,7 @@ void CSampleNetCacheClient::DemoCompression(void)
         CCompressionOStream os_zip(*os, new CZipStreamCompressor(),
                                    CCompressionStream::fOwnWriter);
         os_zip << message;
-        NcbiCout << "Wrote: '" << message << "' to blob: " << key << NcbiEndl;
+        cout << "Wrote: '" << message << "' to blob: " << key << endl;
     }}
 
     // Read back from NetCache with decompression.
@@ -300,7 +300,7 @@ void CSampleNetCacheClient::DemoCompression(void)
         CCompressionIStream is_zip(*is, new CZipStreamDecompressor(),
                                     CCompressionStream::fOwnReader);
         getline(is_zip, message);
-        NcbiCout << "Read: '" << message << "'" << NcbiEndl;
+        cout << "Read: '" << message << "'" << endl;
     }}
 }
 
@@ -313,7 +313,7 @@ void CSampleNetCacheClient::DemoCompression(void)
 
 void CSampleNetCacheClient::DemoIWriterIReader(void)
 {
-    NcbiCout << "\nIWriter()/IReader() example:" << NcbiEndl;
+    cout << "\nIWriter()/IReader() example:" << endl;
 
     // Configure based on the the provided registry.  In this case it is the
     // application registry for simplicity, but it could be any registry.
@@ -334,18 +334,16 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             CWStream os(&*writer);
             string text1("just chars."), text2("with a newline");
             os << text1;
-            os << text2 << NcbiEndl;
-            NcbiCout
-                << "Wrote '" << text1
-                << "' and '" << text2 << "' to blob: " << key << NcbiEndl;
+            os << text2 << endl;
+            cout << "Wrote '" << text1
+                 << "' and '" << text2 << "' to blob: " << key << endl;
         } else {
             // Write some data via IWriter API.
 
             char data[] = "abcdefghij1234567890!@#";
             writer->Write(data, strlen(data)); // don't store terminating zero
-            NcbiCout
-                << "Wrote: '"    << data
-                << "' to blob: " << key << NcbiEndl;
+            cout << "Wrote: '"    << data
+                 << "' to blob: " << key << endl;
         }
 
         // The blob is not committed on the server side until the
@@ -370,9 +368,8 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             CRStream is(&*reader);
             string text1, text2;
             is >> text1 >> text2;
-            NcbiCout
-                << "Read '"  << text1
-                << "' and '" << text2 << "' from blob:" << key << NcbiEndl;
+            cout << "Read '"  << text1
+                 << "' and '" << text2 << "' from blob:" << key << endl;
         } else {
             // Read some data via IReader API.
 
@@ -392,7 +389,7 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             my_buf[bytes_read] = '\0';
 
             if (rw_res == eRW_Success) {
-                NcbiCout << "Read: '" << my_buf << "'" << NcbiEndl;
+                cout << "Read: '" << my_buf << "'" << endl;
             } else {
                 NCBI_USER_THROW("Error while reading blob.");
             }

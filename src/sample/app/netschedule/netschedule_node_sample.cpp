@@ -126,14 +126,14 @@ int CSampleNetScheduleNode::Run(void)
         job_exists = executor.GetJob(job, 560);
         if (job_exists) {
             if (first_try) {
-                NcbiCout << "\nProcessing." << NcbiEndl;
+                cout << "\nProcessing." << endl;
                 node_status = 0; first_try = false;
             } else 
             if (node_status != 0) {
-                NcbiCout << "\nProcessing." << NcbiEndl;
+                cout << "\nProcessing." << endl;
                 node_status = 0;
             }
-//            NcbiCout << job.job_id << NcbiEndl;
+//            cout << job.job_id << endl;
             string expected_input = "Hello " + queue_name;
             if (expected_input != job.input) {
                 ERR_POST("Unexpected input: " + job.input);
@@ -155,27 +155,26 @@ int CSampleNetScheduleNode::Run(void)
             ++jobs_done;
 
             if (jobs_done % 50 == 0) {
-                NcbiCout << "*" << flush;
+                cout << "*" << flush;
             }
 
         } else {
             if (first_try) {
-                NcbiCout << "\nWaiting." << NcbiEndl;
+                cout << "\nWaiting." << endl;
                 node_status = 1; first_try = false;
             } else 
             if (node_status != 1) {
-                NcbiCout << "\nWaiting." << NcbiEndl;
+                cout << "\nWaiting." << endl;
                 node_status = 1;
             }
             if (++no_jobs_counter > 7) { // no new jobs coming
-                NcbiCout << "\nNo new jobs arriving. Processing closed." << NcbiEndl;
+                cout << "\nNo new jobs arriving. Processing closed." << endl;
                 break;
             }
         }
 
     }
-    NcbiCout << NcbiEndl << "Jobs done: " 
-             << jobs_processed.size() << NcbiEndl;
+    cout << endl << "Jobs done: " << jobs_processed.size() << endl;
 
     return 0;
 }

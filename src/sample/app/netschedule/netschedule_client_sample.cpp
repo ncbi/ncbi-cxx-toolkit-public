@@ -112,32 +112,32 @@ int CSampleNetScheduleClient::Run(void)
 
     CNetScheduleJob job(input);
     submitter.SubmitJob(job);
-    NcbiCout << job.job_id << NcbiEndl;
+    cout << job.job_id << endl;
 
     vector<string> jobs;
     {{
         CStopWatch sw(CStopWatch::eStart);
 
-        NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
+        cout << "Submit " << jcount << " jobs..." << endl;
 
         for (unsigned i = 0; i < jcount; ++i) {
             CNetScheduleJob job(input);
             submitter.SubmitJob(job);
             jobs.push_back(job.job_id);
             if (i % 1000 == 0) {
-                NcbiCout << "." << flush;
+                cout << "." << flush;
             }
         }
         double elapsed = sw.Elapsed();
-        NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+        cout << endl << "Done." << endl;
         double avg = elapsed / jcount;
-        NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-        NcbiCout << "Avg time:" << avg << " sec." << NcbiEndl;
+        cout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+        cout << "Avg time:" << avg << " sec." << endl;
     }}
 
     // Waiting for jobs to be done
 
-    NcbiCout << "Waiting for jobs..." << jobs.size() << NcbiEndl;
+    cout << "Waiting for jobs..." << jobs.size() << endl;
     unsigned cnt = 0;
     SleepMilliSec(5000);
 
@@ -172,7 +172,7 @@ int CSampleNetScheduleClient::Run(void)
             } else 
             if (status != CNetScheduleAPI::ePending) {
                 if (status == CNetScheduleAPI::eJobNotFound) {
-                    NcbiCerr << "Job lost:" << job.job_id << NcbiEndl;
+                    cerr << "Job lost:" << job.job_id << endl;
                 }
                 jobs.erase(it);
                 ++cnt;
@@ -181,7 +181,7 @@ int CSampleNetScheduleClient::Run(void)
             
             ++cnt;
             if (cnt % 1000 == 0) {
-                NcbiCout << "Waiting for " << jobs.size() << " jobs." << NcbiEndl;
+                cout << "Waiting for " << jobs.size() << " jobs." << endl;
                 // it is necessary to give system a rest periodically
                 SleepMilliSec(2000);
                 // check status of only first 1000 jobs
@@ -196,7 +196,7 @@ int CSampleNetScheduleClient::Run(void)
         if (jobs.size() == last_jobs) {
             ++no_jobs_executes_cnt;
             if (no_jobs_executes_cnt == 3) {
-                NcbiCout << "No progress in job execution. Stopping..." << NcbiEndl;
+                cout << "No progress in job execution. Stopping..." << endl;
                 break;
             } else {
                 last_jobs = jobs.size();
@@ -205,9 +205,9 @@ int CSampleNetScheduleClient::Run(void)
         
     } // while
 
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    cout << endl << "Done." << endl;
     if (jobs.size()) {
-        NcbiCout << "Remaining job count = " << jobs.size() << NcbiEndl;
+        cout << "Remaining job count = " << jobs.size() << endl;
     }
     return 0;
 }

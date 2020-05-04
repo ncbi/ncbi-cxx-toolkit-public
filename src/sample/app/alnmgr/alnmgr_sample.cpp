@@ -173,7 +173,7 @@ int CSampleAlnmgrApplication::Run(void)
         if (chunk->GetType() & CAlnMap::fEndOnLeft) {
             cout << "(EndOnLeft)";
         }
-        cout << NcbiEndl;
+        cout << endl;
     }
     return 0;
 }

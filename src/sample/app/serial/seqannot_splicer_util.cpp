@@ -524,16 +524,16 @@ static void s_DumpContext(TContextPtr context)
     string s1 = string(4 * indent, ' ');
     string s2 = string(4 * (indent+1), ' ');
     string s3 = string(4 * (indent+2), ' ');
-    NcbiCout << s1 << "Context {" << NcbiEndl;
-    NcbiCout << s2 << "type: " << context->type << NcbiEndl;
-    NcbiCout << s2 << "has_annots: " << context->has_annots << NcbiEndl;
+    cout << s1 << "Context {" << endl;
+    cout << s2 << "type: " << context->type << endl;
+    cout << s2 << "has_annots: " << context->has_annots << endl;
     if (context->seqids.size() > 0) {
-        NcbiCout << s2 << "seqids: " << NcbiEndl;
+        cout << s2 << "seqids: " << endl;
         ITERATE (TContextSeqIds, id, context->seqids) {
-            NcbiCout << s3 << "seqid: " << (*id)->GetSeqIdString(true) << NcbiEndl;
+            cout << s3 << "seqid: " << (*id)->GetSeqIdString(true) << endl;
         }
     } else {
-        NcbiCout << s2 << "seqids: (none)" << NcbiEndl;
+        cout << s2 << "seqids: (none)" << endl;
     }
 
     ++indent;
@@ -542,7 +542,7 @@ static void s_DumpContext(TContextPtr context)
     }
     --indent;
 
-    NcbiCout << s1 << "}" << NcbiEndl;
+    cout << s1 << "}" << endl;
 }
 #endif
 

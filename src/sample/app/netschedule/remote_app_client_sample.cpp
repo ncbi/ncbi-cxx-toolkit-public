@@ -127,7 +127,7 @@ int CRemoteAppClientSampleApp::Run(void)
         jobs_number = args["jobs"].AsInteger();
     }
 
-    NcbiCout << "Submitting jobs..." << jobs_number << NcbiEndl;
+    cout << "Submitting jobs..." << jobs_number << endl;
 
     typedef list<string> TJobKeys;
     TJobKeys job_keys;
@@ -158,9 +158,9 @@ int CRemoteAppClientSampleApp::Run(void)
         // Submit a job
         job_keys.push_back(grid_client.Submit());
     }
-    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+    cout << endl << "Done." << endl;
      
-    NcbiCout << "Waiting for jobs..." << NcbiEndl;
+    cout << "Waiting for jobs..." << endl;
 
     CRemoteAppResult result(netcache_api);
     TJobKeys failed_jobs;
@@ -184,17 +184,17 @@ int CRemoteAppClientSampleApp::Run(void)
                 
                 result.Receive(grid_client.GetIStream());
                 
-                NcbiCout << "Job : " << *it << NcbiEndl;
-                NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
+                cout << "Job : " << *it << endl;
+                cout << "Return code: " << result.GetRetCode() << endl;
                 if (result.GetRetCode()==-1) 
                     failed_jobs.push_back(*it);
-                NcbiCout << "StdOut : " <<  NcbiEndl;
-                NcbiCout << result.GetStdOut().rdbuf();
-                NcbiCout.clear();
-                NcbiCout << NcbiEndl << "StdErr : " <<  NcbiEndl;
-                NcbiCout << result.GetStdErr().rdbuf();
-                NcbiCout.clear();
-                NcbiCout << NcbiEndl << "----------------------" <<  NcbiEndl;
+                cout << "StdOut : " <<  endl;
+                cout << result.GetStdOut().rdbuf();
+                cout.clear();
+                cout << endl << "StdErr : " <<  endl;
+                cout << result.GetStdErr().rdbuf();
+                cout.clear();
+                cout << endl << "----------------------" <<  endl;
                 done_jobs.push_back(it);
             }
 
@@ -220,7 +220,7 @@ int CRemoteAppClientSampleApp::Run(void)
 
         // A job is still running
         if (++cnt % 1000 == 0) {
-            NcbiCout << "Still waiting..." << NcbiEndl;
+            cout << "Still waiting..." << endl;
         }
     }
 
@@ -237,8 +237,8 @@ void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 {
     CNetCacheAPI nc_api(GetGridClient().GetNetCacheAPI());
     unique_ptr<CNcbiIstream> is(nc_api.GetIStream(blob_key));
-    NcbiStreamCopy(NcbiCout, *is);
-    NcbiCout << NcbiEndl;
+    NcbiStreamCopy(cout, *is);
+    cout << endl;
 }
 
 
@@ -252,19 +252,19 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
 
     // A job is done here
     if (status == CNetScheduleAPI::eDone) {
-        NcbiCout << "Job : " << job_key << NcbiEndl;
-        NcbiCout << "Input : " << grid_client.GetJobInput() << NcbiEndl; 
-        NcbiCout << "Output : " << grid_client.GetJobOutput() << NcbiEndl; 
-        NcbiCout << "======================================" << NcbiEndl; 
+        cout << "Job : " << job_key << endl;
+        cout << "Input : " << grid_client.GetJobInput() << endl; 
+        cout << "Output : " << grid_client.GetJobOutput() << endl; 
+        cout << "======================================" << endl; 
         CRemoteAppResult result(netcache_api);
         result.Receive(grid_client.GetIStream());
-        NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
-        NcbiCout << "StdOut : " <<  NcbiEndl;
-        NcbiCout << result.GetStdOut().rdbuf();
-        NcbiCout.clear();
-        NcbiCout << NcbiEndl << "StdErr : " <<  NcbiEndl;
-        NcbiCout << result.GetStdErr().rdbuf();
-        NcbiCout.clear();
+        cout << "Return code: " << result.GetRetCode() << endl;
+        cout << "StdOut : " <<  endl;
+        cout << result.GetStdOut().rdbuf();
+        cout.clear();
+        cout << endl << "StdErr : " <<  endl;
+        cout << result.GetStdErr().rdbuf();
+        cout.clear();
     }
     
     // A job has failed
