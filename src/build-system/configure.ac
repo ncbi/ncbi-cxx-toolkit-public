@@ -8321,7 +8321,7 @@ if $grpc_pc grpc++ --exists 2>/dev/null; then
    else
       GRPC_SED=cat
    fi
-   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ --libs | $GRPC_SED`"
+   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc --libs | $GRPC_SED`"
 else
    GRPC_CONFIG_LIBS=
    if test -n "$GRPC_PATH"; then
@@ -8359,7 +8359,8 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
 if test -n "$GRPC_LIBS"; then
    if test -n "$GRPC_CONFIG_LIBS"; then
       GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS"
-      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure --libs` $PROTOBUF_LIBS"
+      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure grpc_unsecure --libs`"
+      GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS $PROTOBUF_LIBS"
    else
       LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
       AC_CHECK_LIB(address_sorting, address_sorting_rfc_6724_sort,
