@@ -1910,7 +1910,10 @@ void CBioseqIndex::x_InitFeats (void)
             // same as eAdaptive, except also allows external annots
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
-            // needs to be here
+            // needs to be here to prevent external variations from overriding internal gene, mRNA, CDS, and exon features in
+            // asn2flat -id NG_008330 -faster -custom 2048 -style master -policy external
+            // but if present, suppresses genes in named annots in
+            // asn2flat -id EU826466 -custom 2048 -faster -o extern.gbf -policy external
             sel.AddUnnamedAnnots();
             // allow external SNPs
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
@@ -1941,7 +1944,8 @@ void CBioseqIndex::x_InitFeats (void)
             sel.SetAdaptiveDepth(true);
 
             // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // but commenting it out allows external variations in NG_008330 to override internal gene, mRNA, CDS, and exon features
+            // but commenting it out is needed for
+            // asn2flat -id NW_003127872 -faster -custom 2048 -style master
             // sel.AddUnnamedAnnots();
 
             // allow external SNPs - testing for now, probably needs to be in external policy
@@ -1969,27 +1973,6 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.SetResolveDepth(0);
                 sel.SetExcludeExternal();
             }
-
-            /*
-            sel.SetResolveAll();
-            // flatfile generator now needs to do its own exploration of far delta components
-            // and needs to implement barrier between RefSeq and INSD accession types
-            sel.SetResolveDepth(1);
-
-            // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // sel.AddUnnamedAnnots();
-
-            // allow external SNPs - testing for now, probably needs to be in external policy
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("SNP");
-                sel.AddNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("CDD");
-                sel.AddNamedAnnots("CDD");
-            }
-            m_Scope->SetKeepExternalAnnotsForEdit();
-            */
         }
 
         // bit flags exclude specific features
@@ -2225,8 +2208,10 @@ void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
             // same as eAdaptive, except also allows external annots
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
-            // needs to be here to preent
-            // external variations in NG_008330 from overriding internal gene, mRNA, CDS, and exon features
+            // needs to be here to prevent external variations from overriding internal gene, mRNA, CDS, and exon features in
+            // asn2flat -id NG_008330 -faster -custom 2048 -style master -policy external
+            // but if present, suppresses genes in named annots in
+            // asn2flat -id EU826466 -custom 2048 -faster -o extern.gbf -policy external
             sel.AddUnnamedAnnots();
             // allow external SNPs
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
@@ -2271,8 +2256,8 @@ void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
             sel.SetAdaptiveDepth(true);
 
             // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // commenting it out is needed for
-            //  asn2flat -id NW_003127872 -faster -custom 2048 -style master
+            // but commenting it out is needed for
+            // asn2flat -id NW_003127872 -faster -custom 2048 -style master
             // sel.AddUnnamedAnnots();
 
             // allow external SNPs - testing for now, probably needs to be in external policy
@@ -2300,27 +2285,6 @@ void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
                 sel.SetResolveDepth(0);
                 sel.SetExcludeExternal();
             }
-
-            /*
-            sel.SetResolveAll();
-            // flatfile generator now needs to do its own exploration of far delta components
-            // and needs to implement barrier between RefSeq and INSD accession types
-            sel.SetResolveDepth(1);
-
-            // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // sel.AddUnnamedAnnots();
-
-            // allow external SNPs - testing for now, probably needs to be in external policy
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("SNP");
-                sel.AddNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("CDD");
-                sel.AddNamedAnnots("CDD");
-            }
-            m_Scope->SetKeepExternalAnnotsForEdit();
-            */
         }
 
         // bit flags exclude specific features
