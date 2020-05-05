@@ -278,11 +278,11 @@ void ProcessSeqEntryAnnot(unique_ptr<CObjectIStream>& sai,
 {
     // Loop through all Seq-id's for this context, and splice appropriate
     // Seq-annot's.
-    ITERATE (TContextSeqIds, seqid_from_se_iter, s_CurrentContextPtr->seqids) {
+    for( const auto& seqid_from_se : s_CurrentContextPtr->seqids) {
         // See if the Seq-id from the Seq-entry was also in
         // the Seq-annot's.
         TSeqIdToAnnotMapIter
-            seqid_in_map_iter = s_SeqIdToAnnotMap.find(*seqid_from_se_iter);
+            seqid_in_map_iter = s_SeqIdToAnnotMap.find(seqid_from_se);
         if (seqid_in_map_iter != s_SeqIdToAnnotMap.end()) {
             // The current Seq-id for the current Seq-annot for
             // the current Seq-entry being read may be contained
@@ -529,16 +529,16 @@ static void s_DumpContext(TContextPtr context)
     cout << s2 << "has_annots: " << context->has_annots << endl;
     if (context->seqids.size() > 0) {
         cout << s2 << "seqids: " << endl;
-        ITERATE (TContextSeqIds, id, context->seqids) {
-            cout << s3 << "seqid: " << (*id)->GetSeqIdString(true) << endl;
+        for(const auto& id : context->seqids) {
+            cout << s3 << "seqid: " << id->GetSeqIdString(true) << endl;
         }
     } else {
         cout << s2 << "seqids: (none)" << endl;
     }
 
     ++indent;
-    ITERATE (TContextList, sub, context->sub_contexts) {
-        s_DumpContext(*sub);
+    for(const auto& sub : context->sub_contexts) {
+        s_DumpContext(sub);
     }
     --indent;
 
@@ -614,11 +614,10 @@ static bool s_RemoveAnnot(TAnnotToSeqIdMapIter annot_in_map_iter)
     // This will erase elements from Seq-annot's container.
 
     TSeqRefCont& seq_list(annot_in_map_iter->second->GetData());
-    NON_CONST_ITERATE (TSeqRefCont, seq_iter, seq_list) 
-    {
+    for(const auto& seq : seq_list) {
         // Find the Seq-id in the global map that corresponds to the
         // Seq-id in this Seq-annot's list.
-        TSeqIdToAnnotMapIter seqid_in_map = s_SeqIdToAnnotMap.find(*seq_iter);
+        TSeqIdToAnnotMapIter seqid_in_map = s_SeqIdToAnnotMap.find(seq);
         _ASSERT(seqid_in_map != s_SeqIdToAnnotMap.end());
 
         // Find the link to this Seq-annot in this Seq-id's list.
