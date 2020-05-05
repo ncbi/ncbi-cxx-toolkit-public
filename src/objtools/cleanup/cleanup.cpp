@@ -723,6 +723,10 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     CSeq_annot_Handle ah = fh.GetAnnot();
 
     CBioseq_Handle target_bsh = fh.GetScope().GetBioseqHandle(new_feat->GetLocation());
+    if (!target_bsh) {
+        return false;
+    }
+
     CBioseq_EditHandle eh = target_bsh.GetEditHandle();
 
     // Find a feature table on the protein sequence to add the feature to.    
