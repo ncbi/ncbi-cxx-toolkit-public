@@ -4020,6 +4020,21 @@ s_ContainsGaps( const CSeq_loc &loc )
     return false;
 }
 
+static bool s_NotForceNearFeats(CBioseqContext& ctx)
+{
+    // asn2flat -id NW_003127872  -flags 2 -faster -custom 2048
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (idx) {
+        CBioseq_Handle hdl = ctx.GetHandle();
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+        if (bsx) {
+            if (bsx->IsForceOnlyNearFeats()) return false;
+        }
+    }
+
+    return true;
+}
+
 void CFlatGatherer::x_GatherFeatures(void) const
 {
     CBioseqContext& ctx = *m_Current;
@@ -4060,7 +4075,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
     // collect features
     // if ( ctx.IsSegmented()  &&  cfg.IsStyleMaster()  &&  cfg.OldFeaturesOrder() ) {
-    if ( cfg.UseSeqEntryIndexer() && ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() ) {
+    if ( cfg.UseSeqEntryIndexer() && ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() && s_NotForceNearFeats(ctx) ) {
         
         CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
         if (! idx) return;
