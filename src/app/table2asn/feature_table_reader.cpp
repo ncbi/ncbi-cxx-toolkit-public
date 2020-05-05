@@ -954,13 +954,9 @@ void CFeatureTableReader::_MergeCDSFeatures_impl(CSeq_entry& entry)
             {
                 case CBioseq_set::eClass_nuc_prot:
                 case CBioseq_set::eClass_gen_prod_set:
-                    //ParseCdregions(entry);
                     return;
-                case CBioseq_set::eClass_genbank:
-                case CBioseq_set::eClass_eco_set:
-                    break;
                 default:
-                    return;
+                    break;
             }
         }
         NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
