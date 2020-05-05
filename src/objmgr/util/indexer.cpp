@@ -2225,7 +2225,8 @@ void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
             // same as eAdaptive, except also allows external annots
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
-            // needs to be here
+            // needs to be here to preent
+            // external variations in NG_008330 from overriding internal gene, mRNA, CDS, and exon features
             sel.AddUnnamedAnnots();
             // allow external SNPs
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
@@ -2270,7 +2271,8 @@ void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
             sel.SetAdaptiveDepth(true);
 
             // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // but commenting it out allows external variations in NG_008330 to override internal gene, mRNA, CDS, and exon features
+            // commenting it out is needed for
+            //  asn2flat -id NW_003127872 -faster -custom 2048 -style master
             // sel.AddUnnamedAnnots();
 
             // allow external SNPs - testing for now, probably needs to be in external policy
