@@ -426,6 +426,10 @@ protected:
         CGff3FeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
+    virtual bool xAssignFeatureAttributeParentCds(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat& );
     virtual bool xAssignFeatureAttributeParentpreRNA(
         CGff3FeatureRecord&,
         CGffFeatureContext&,
@@ -435,6 +439,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&);
     virtual bool xAssignFeatureAttributeParentGene(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat& );
+    virtual bool xAssignFeatureAttributeParentRegion(
         CGff3FeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
@@ -475,9 +483,15 @@ protected:
     using TMrnaMapNew = TFeatureMap;
     TMrnaMapNew m_MrnaMapNew;
 
+    using TCdsMapNew = TFeatureMap;
+    TMrnaMapNew m_CdsMapNew;
+
     TFeatureMap m_PrernaMapNew;
 
     TFeatureMap m_VDJsegmentCregionMapNew;
+
+    using TRegionMapNew = TFeatureMap;
+    TRegionMapNew m_RegionMapNew;
 
 
     bool m_SortAlignments;

@@ -1977,6 +1977,8 @@ bool CGff3Writer::xAssignFeatureAttributeID(
     return true;
 }
 
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeParent(
     CGff3FeatureRecord& record,
@@ -1992,9 +1994,16 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
         xAssignFeatureAttributeParentGene(record, fc, mf);
         return true;
     }
+
+
     switch (mf.GetFeatSubtype()) {
-    default:
-        return true;
+    default: {
+        return true; // by default: no Parent assigned
+    }
+
+    case CSeqFeatData::eSubtype_ncRNA:
+        return xAssignFeatureAttributeParentpreRNA(record, fc, mf)  ||
+            xAssignFeatureAttributeParentGene(record, fc, mf);
 
     case CSeqFeatData::eSubtype_cdregion:
     case CSeqFeatData::eSubtype_exon:
@@ -2002,22 +2011,50 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
         //  we just write the data given to us we don't check it.
         //  if there is a feature that should have a parent but doesn't
         //    then so be it.
-        xAssignFeatureAttributeParentVDJsegmentCregion(record, fc, mf) ||
-        xAssignFeatureAttributeParentMrna(record, fc,mf)  ||
-        xAssignFeatureAttributeParentGene(record, fc, mf);
-        return true;
+        return xAssignFeatureAttributeParentVDJsegmentCregion(record, fc, mf) ||
+            xAssignFeatureAttributeParentMrna(record, fc,mf)  ||
+            xAssignFeatureAttributeParentGene(record, fc, mf);
+
+    case CSeqFeatData::eSubtype_transit_peptide:
+    case CSeqFeatData::eSubtype_transit_peptide_aa:
+    case CSeqFeatData::eSubtype_mat_peptide:
+    case CSeqFeatData::eSubtype_mat_peptide_aa:
+    case CSeqFeatData::eSubtype_sig_peptide:
+    case CSeqFeatData::eSubtype_sig_peptide_aa:
+    case CSeqFeatData::eSubtype_propeptide:
+        return xAssignFeatureAttributeParentCds(record, fc, mf);
+
+    case CSeqFeatData::eSubtype_intron:
+    case CSeqFeatData::eSubtype_N_region:
+    case CSeqFeatData::eSubtype_polyA_site:
+    case CSeqFeatData::eSubtype_S_region:
+    case CSeqFeatData::eSubtype_V_region:
+    case CSeqFeatData::eSubtype_5UTR:
+    case CSeqFeatData::eSubtype_3UTR:
     case CSeqFeatData::eSubtype_mRNA:
     case CSeqFeatData::eSubtype_C_region:
     case CSeqFeatData::eSubtype_D_segment:
     case CSeqFeatData::eSubtype_J_segment:
     case CSeqFeatData::eSubtype_V_segment:
-        xAssignFeatureAttributeParentGene(record, fc,mf);
-        return true;
-    case CSeqFeatData::eSubtype_gene:
-        //genes have no parents
-        return true;
+        return xAssignFeatureAttributeParentGene(record, fc, mf);
+
+    case CSeqFeatData::eSubtype_regulatory:
+        return xAssignFeatureAttributeParentGene(record, fc, mf)  ||
+            xAssignFeatureAttributeParentRegion(record, fc, mf);
+
+    case CSeqFeatData::eSubtype_misc_feature:
+    case CSeqFeatData::eSubtype_protein_bind:
+    case CSeqFeatData::eSubtype_repeat_region:
+    case CSeqFeatData::eSubtype_misc_recomb:
+    case CSeqFeatData::eSubtype_mobile_element:
+    case CSeqFeatData::eSubtype_rep_origin:
+    case CSeqFeatData::eSubtype_misc_structure:
+    case CSeqFeatData::eSubtype_stem_loop:
+        return xAssignFeatureAttributeParentRegion(record, fc, mf);
     }
+
     return true; 
+    
 }
 
 //  ----------------------------------------------------------------------------
@@ -2450,6 +2487,7 @@ bool CGff3Writer::xWriteFeatureCds(
             }
         }
     }
+    m_MrnaMapNew[mf] = pCds;
 
     if (!fc.BioseqHandle()  ||  !mf.IsSetProduct()) {
         return true;
@@ -2694,7 +2732,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentGene(
 {
     CMappedFeat gene = fc.FindBestGeneParent(mf);
     if (!gene) {
-        return false;
+        return true; //nothing to do
     }
     TGeneMapNew::iterator it = m_GeneMapNew.find(gene);
     if (it == m_GeneMapNew.end()) {
@@ -2724,6 +2762,46 @@ bool CGff3Writer::xAssignFeatureAttributeParentMrna(
     TMrnaMapNew::iterator it = m_MrnaMapNew.find(mrna);
     if (it == m_MrnaMapNew.end()) {
         return false;
+    }
+    record.SetParent(it->second->Id());
+    return true;
+}
+
+//  ============================================================================
+bool CGff3Writer::xAssignFeatureAttributeParentCds(
+    CGff3FeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ============================================================================
+{
+    CMappedFeat cds = feature::GetBestParentForFeat(
+        mf, CSeqFeatData::eSubtype_cdregion, &fc.FeatTree());
+    if (!cds) {
+        return true; // nothing to do
+    }
+    TCdsMapNew::iterator it = m_CdsMapNew.find(cds);
+    if (it == m_CdsMapNew.end()) {
+        return false; // not good - but at least preserve feature
+    }
+    record.SetParent(it->second->Id());
+    return true;
+}
+
+//  ============================================================================
+bool CGff3Writer::xAssignFeatureAttributeParentRegion(
+    CGff3FeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ============================================================================
+{
+    CMappedFeat region = feature::GetBestParentForFeat(
+        mf, CSeqFeatData::eSubtype_region, &fc.FeatTree());
+    if (!region) {
+        return true; // nothing to assign
+    }
+    TCdsMapNew::iterator it = m_RegionMapNew.find(region);
+    if (it == m_RegionMapNew.end()) {
+        return true; // not good - but let's save the feature
     }
     record.SetParent(it->second->Id());
     return true;

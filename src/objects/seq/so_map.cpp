@@ -66,6 +66,32 @@ bool CompareNoCase::operator()(
 }
 
 //  ----------------------------------------------------------------------------
+string GetUnambiguousNamedQual(
+    const CSeq_feat& feature, 
+    const string& qualName)
+//  ----------------------------------------------------------------------------
+{
+    string namedQual;
+    const auto& quals = feature.GetQual();
+    for (const auto& qual: quals) {
+        if (!qual->CanGetQual()  ||  !qual->CanGetVal()) {
+            continue;
+        }
+        if (qual->GetQual() != qualName) {
+            continue;
+        }
+        if (namedQual.empty()) {
+            namedQual = qual->GetVal();
+            continue;
+        }
+        if (namedQual != qual->GetVal()) {
+            return "";
+        }
+    }
+    return namedQual;
+}
+
+//  ----------------------------------------------------------------------------
 CSoMap::TYPEMAP CSoMap::mMapSoTypeToId;
 //  ----------------------------------------------------------------------------
 
@@ -440,7 +466,7 @@ bool CSoMap::xFeatureMakeNcRna(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string, CompareNoCase> mTypeToClass = {
+    static const TYPEMAP mTypeToClass = {
         {"ncRNA", "other"},
     };
     feature.SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
@@ -491,7 +517,7 @@ bool CSoMap::xFeatureMakeMiscFeature(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string, CompareNoCase> mapTypeToQual = {
+    static const TYPEMAP mapTypeToQual = {
         {"TSS", "transcription_start_site"},
     };
     feature.SetData().SetImp().SetKey("misc_feature");
@@ -517,7 +543,7 @@ bool CSoMap::xFeatureMakeMiscRecomb(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string, CompareNoCase> mapTypeToQual = {
+    static const TYPEMAP mapTypeToQual = {
         {"meiotic_recombination_region", "meiotic"},
         {"mitotic_recombination_region", "mitotic"},
         {"non_allelic_homologous_recombination", "non_allelic_homologous"},
@@ -556,7 +582,7 @@ bool CSoMap::xFeatureMakeImp(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string, CompareNoCase> mapTypeToKey = {
+    static const TYPEMAP mapTypeToKey = {
         {"C_gene_segment", "C_region"},
         {"D_gene_segment", "D_segment"},
         {"D_loop", "D-loop"},
@@ -612,7 +638,7 @@ bool CSoMap::xFeatureMakeRegulatory(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string, CompareNoCase> mapTypeToQual = {
+    static const TYPEMAP mapTypeToQual = {
         {"DNAsel_hypersensitive_site", "DNase_I_hypersensitive_site"}, 
         {"GC_rich_promoter_region", "GC_signal"},
         {"boundary_element", "insulator"},
@@ -639,12 +665,12 @@ bool CSoMap::xFeatureMakeRepeatRegion(
     CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    static const map<string, string, CompareNoCase> mapTypeToSatellite = {
+    static const TYPEMAP mapTypeToSatellite = {
         {"microsatellite", "microsatellite"},
         {"minisatellite", "minisatellite"},
         {"satellite_DNA", "satellite"},
     };
-    static const map<string, string, CompareNoCase> mapTypeToRptType = {
+    static const TYPEMAP mapTypeToRptType = {
         {"tandem_repeat", "tandem"},
         {"inverted_repeat", "inverted"},
         {"direct_repeat", "direct"},
@@ -952,11 +978,11 @@ bool CSoMap::xMapMiscFeature(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<string, string> mapFeatClassToSoType = {
+    static const TYPEMAP mapFeatClassToSoType = {
         {"transcription_start_site", "TSS"},
         {"other", "sequence_feature"},
     };
-    string feat_class = feature.GetNamedQual("feat_class");
+    string feat_class = GetUnambiguousNamedQual(feature, "feat_class");
     if (feat_class.empty()) {
         so_type = "sequence_feature";
         return true;
@@ -976,7 +1002,7 @@ bool CSoMap::xMapMiscRecomb(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<string, string> mapRecombClassToSoType = {
+    static const TYPEMAP mapRecombClassToSoType = {
         {"meiotic", "meiotic_recombination_region"},
         {"mitotic", "mitotic_recombination_region"},
         {"non_allelic_homologous", "non_allelic_homologous_recombination_region"},
@@ -985,7 +1011,7 @@ bool CSoMap::xMapMiscRecomb(
         {"non_allelic_homologous_recombination", "non_allelic_homologous_recombination_region"},
         {"other", "recombination_feature"},
     };
-    string recomb_class = feature.GetNamedQual("recombination_class");
+    string recomb_class = GetUnambiguousNamedQual(feature, "recombination_class");
     if (recomb_class.empty()) {
         so_type = "recombination_feature";
         return true;
@@ -1022,7 +1048,7 @@ bool CSoMap::xMapNcRna(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<string, string> mapNcRnaClassToSoType = {
+    static const TYPEMAP mapNcRnaClassToSoType = {
         {"antisense_RNA", "antisense_RNA"},
         {"autocatalytically_spliced_intron", "autocatalytically_spliced_intron"},
         {"guide_RNA", "guide_RNA"},
@@ -1044,7 +1070,7 @@ bool CSoMap::xMapNcRna(
         {"vault_RNA", "vault_RNA"},
         {"Y_RNA", "Y_RNA"},
     };
-    string ncrna_class = feature.GetNamedQual("ncRNA_class");
+    string ncrna_class = GetUnambiguousNamedQual(feature, "ncRNA_class");
     if (ncrna_class.empty()) {
         if (feature.IsSetData()  &&
                 feature.GetData().IsRna()  &&
@@ -1084,7 +1110,7 @@ bool CSoMap::xMapRegulatory(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<string, string> mapRegulatoryClassToSoType = {
+    static const TYPEMAP mapRegulatoryClassToSoType = {
         {"DNase_I_hypersensitive_site", "DNAseI_hypersensitive_site"},
         {"GC_signal", "GC_rich_promoter_region"},
         {"enhancer_blocking_element", "enhancer_blocking_element"},
@@ -1096,7 +1122,7 @@ bool CSoMap::xMapRegulatory(
         {"ribosome_binding_site", "ribosome_entry_site"},
     };
 
-    string regulatory_class = feature.GetNamedQual("regulatory_class");
+    string regulatory_class = GetUnambiguousNamedQual(feature, "regulatory_class");
     if (regulatory_class.empty()) {
         so_type = "regulatory_region";
         return true;
@@ -1124,11 +1150,11 @@ bool CSoMap::xMapBond(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<string, string> mapBondTypeToSoType = {
+    static const TYPEMAP mapBondTypeToSoType = {
         {"disulfide", "disulfide_bond"},
         {"xlink", "cross_link"},
     };
-    string bond_type = feature.GetNamedQual("bond_type");
+    string bond_type = GetUnambiguousNamedQual(feature, "bond_type");
     if (bond_type.empty()) {
         return false;
     }
@@ -1141,18 +1167,19 @@ bool CSoMap::xMapBond(
     return true;
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CSoMap::xMapRepeatRegion(
     const CSeq_feat& feature,
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    map<string, string> mapSatelliteToSoType = {
+    static const TYPEMAP mapSatelliteToSoType = {
         {"satellite", "satellite_DNA"},
         {"microsatellite", "microsatellite"},
         {"minisatellite", "minisatellite"},
     };
-    string satellite = feature.GetNamedQual("satellite");
+    string satellite = GetUnambiguousNamedQual(feature, "satellite");
     if (!satellite.empty()) {
         auto cit = mapSatelliteToSoType.find(satellite);
         if (cit == mapSatelliteToSoType.end()) {
@@ -1162,7 +1189,7 @@ bool CSoMap::xMapRepeatRegion(
         return true;
     }
 
-    map<string, string> mapRptTypeToSoType = {
+    static const TYPEMAP mapRptTypeToSoType = {
         {"tandem", "tandem_repeat"},
         {"inverted", "inverted_repeat"},
         {"flanking", "repeat_region"},
@@ -1175,7 +1202,7 @@ bool CSoMap::xMapRepeatRegion(
         {"y_prime_element", "Y_prime_element"},
         {"other", "repeat_region"},
     };
-    string rpt_type = feature.GetNamedQual("rpt_type");
+    string rpt_type = GetUnambiguousNamedQual(feature, "rpt_type");
     if (rpt_type.empty()) {
         so_type = "repeat_region";
         return true;
