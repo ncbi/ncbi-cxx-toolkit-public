@@ -37,6 +37,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  CSampleSoapServerApplication
 //
@@ -52,28 +53,33 @@ public:
     bool DoMath(CSoapMessage& response, const CSoapMessage& request);
 };
 
+
 CSampleSoapServerApplication::CSampleSoapServerApplication(
     const string& wsdl_filename, const string& namespace_name)
     : CSoapServerApplication(wsdl_filename,namespace_name)
 {
 }
 
+
 void CSampleSoapServerApplication::Init()
 {
     CSoapServerApplication::Init();
-// Register incoming object types
-// so the SOAP message parser can recognize these objects
-// in incoming data and parse them correctly.
+    
+    // Register incoming object types
+    // so the SOAP message parser can recognize these objects
+    // in incoming data and parse them correctly.
     RegisterObjectType(CSampleVersion::GetTypeInfo);
     RegisterObjectType(CMath::GetTypeInfo);
-// Register SOAP message processors.
-// It is possible to set more than one listeners for a particular message.
-// Such listeners will be called in the order of registration.
+
+    // Register SOAP message processors.
+    // It is possible to set more than one listeners for a particular message.
+    // Such listeners will be called in the order of registration.
     AddMessageListener((TWebMethod)(&CSampleSoapServerApplication::GetDescription), "Description");
     AddMessageListener((TWebMethod)(&CSampleSoapServerApplication::GetDescription2), "Description");
     AddMessageListener((TWebMethod)(&CSampleSoapServerApplication::GetVersion), "Version");
     AddMessageListener((TWebMethod)(&CSampleSoapServerApplication::DoMath), "Math");
 }
+
 
 bool CSampleSoapServerApplication::GetDescription(
     CSoapMessage& response, const CSoapMessage& request)
@@ -82,6 +88,7 @@ bool CSampleSoapServerApplication::GetDescription(
     // (Return 'false' to stop the processing)
     return true;
 }
+
 
 bool CSampleSoapServerApplication::GetDescription2(
     CSoapMessage& response, const CSoapMessage& request)
@@ -92,11 +99,11 @@ bool CSampleSoapServerApplication::GetDescription2(
     return true;
 }
 
+
 bool CSampleSoapServerApplication::GetVersion(
     CSoapMessage& response, const CSoapMessage& request)
 {
-    CConstRef<CSampleVersion> req =
-        SOAP_GetKnownObject<CSampleVersion>(request);
+    CConstRef<CSampleVersion> req = SOAP_GetKnownObject<CSampleVersion>(request);
     CRef<CVersionResponse> resp(new CVersionResponse);
     // Just bounce ClientID
     resp->SetVersionStruct().SetClientID(req ? req->GetClientID() : "unknown clientid");
@@ -106,18 +113,18 @@ bool CSampleSoapServerApplication::GetVersion(
     return true;
 }
 
+
 bool CSampleSoapServerApplication::DoMath(
     CSoapMessage& response, const CSoapMessage& request)
 {
     CConstRef<CMath> req = SOAP_GetKnownObject<CMath>(request);
     CRef<CMathResponse> resp(new CMathResponse);
     const CMath::TOperand& ops = req->GetOperand();
-    CMath::TOperand::const_iterator it;
-    for (it = ops.begin(); it != ops.end(); ++it) {
-        int x = (*it)->GetX();
-        int y = (*it)->GetY();
+    for (const auto& op : ops) {
+        int x = op->GetX();
+        int y = op->GetY();
         int res;
-        COperand::C_Attlist::TOperation op_type = (*it)->GetAttlist().GetOperation();
+        COperand::C_Attlist::TOperation op_type = op->GetAttlist().GetOperation();
         if (op_type == COperand::C_Attlist::eAttlist_operation_add) {
             res = x+y;
         } else {
@@ -129,20 +136,18 @@ bool CSampleSoapServerApplication::DoMath(
     return true;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 //
 
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
-    int result = CSampleSoapServerApplication(
+    // WSDL file name is needed so the server can return it to the client upon request.
+    // In this case WSDL file should be deployed with the server.
+    //
+    // Still, it is possible to pass an empty string here -
+    // in case you do not want to disclose the WSDL specification
 
-// WSDL file name is needed so the server can return it to the client upon request.
-// In this case WSDL file should be deployed with the server.
-//
-// Still, it is possible to pass an empty string here -
-// in case you do not want to disclose the WSDL specification
-        "soapserver.wsdl",
-        "http://www.ncbi.nlm.nih.gov/").AppMain(argc, argv);
-    return result;
+    return CSampleSoapServerApplication("soapserver.wsdl", "http://www.ncbi.nlm.nih.gov/").AppMain(argc, argv);
 }

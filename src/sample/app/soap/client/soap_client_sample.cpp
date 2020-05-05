@@ -43,9 +43,11 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 // to see communication log, put the following into environment:
 //  CONN_DEBUG_PRINTOUT=data
 //  DIAG_POST_LEVEL=0
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -63,30 +65,33 @@ public:
     CConstRef<CMathResponse>    DoMath(CMath& ops, CConstRef<CSoapFault>* fault=0);
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 
 CSampleSoapClient::CSampleSoapClient(void)
     : CSoapHttpClient(
-// This Server URL is valid only within NCBI
+    // This Server URL is valid only within NCBI
 #if 0
-// works either way
+    // works either way
         "http://intrawebdev2:6224/staff/gouriano/samplesoap/samplesoap.cgi",
 #else
         "https://intrawebdev2/staff/gouriano/samplesoap/samplesoap.cgi",
 #endif
         "http://ncbi.nlm.nih.gov/")
 {
-// Register incoming object types
-// so the SOAP message parser can recognize these objects
-// in incoming data and parse them correctly
+    // Register incoming object types
+    // so the SOAP message parser can recognize these objects
+    // in incoming data and parse them correctly
     RegisterObjectType(CDescriptionText::GetTypeInfo);
     RegisterObjectType(CVersionResponse::GetTypeInfo);
     RegisterObjectType(CMathResponse::GetTypeInfo);
 }
 
+
 CSampleSoapClient::~CSampleSoapClient(void)
 {
 }
+
 
 CConstRef<CDescriptionText>
 CSampleSoapClient::GetDescription(CConstRef<CSoapFault>* fault)
@@ -95,7 +100,7 @@ CSampleSoapClient::GetDescription(CConstRef<CSoapFault>* fault)
 {
     CSoapMessage request( GetDefaultNamespaceName() ), response;
 
-// Both variants are okay
+    // Both variants are okay
 #if 0
     CRef<CAnyContentObject> any(new CAnyContentObject);
     any->SetName("Description");
@@ -110,11 +115,12 @@ CSampleSoapClient::GetDescription(CConstRef<CSoapFault>* fault)
     return SOAP_GetKnownObject<CDescriptionText>(response);
 }
 
-CConstRef<CVersionResponse>
-CSampleSoapClient::GetVersion(const string& client_id, CConstRef<CSoapFault>* fault)
+
 // Request is a single string: ClientID
 // Response is a sequence of 3 strings: Major, Minor, ClientID
-//      here ClientID is same as the one sent in request
+// here ClientID is same as the one sent in request
+CConstRef<CVersionResponse>
+CSampleSoapClient::GetVersion(const string& client_id, CConstRef<CSoapFault>* fault)
 {
     CSoapMessage request( GetDefaultNamespaceName() ), response;
 
@@ -127,15 +133,15 @@ CSampleSoapClient::GetVersion(const string& client_id, CConstRef<CSoapFault>* fa
     return SOAP_GetKnownObject<CVersionResponse>(response);
 }
 
+
+// Request is a list of Operand where each Operand is a sequence of 2 strings + attribute
+// Response is a list of result strings
 CConstRef<CMathResponse>
 CSampleSoapClient::DoMath(CMath& ops, CConstRef<CSoapFault>* fault)
-// Request is a list of Operand
-//      where each Operand is a sequence of 2 strings + attribute
-// Response is a list of result strings
 {
     CSoapMessage request, response;
-// The following call is not needed, because the ops object already has
-// a (correct) namespace name defined
+    // The following call is not needed, because the ops object already has
+    // a (correct) namespace name defined
 //    ops.SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( ops, CSoapMessage::eMsgBody);
 
@@ -143,11 +149,11 @@ CSampleSoapClient::DoMath(CMath& ops, CConstRef<CSoapFault>* fault)
     return SOAP_GetKnownObject<CMathResponse>(response);
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSampleSoapClientApplication
 //
-
 
 class CSampleSoapClientApplication : public CNcbiApplication
 {
@@ -156,13 +162,14 @@ public:
     virtual int  Run (void);
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 
 void CSampleSoapClientApplication::Init(void)
 {
     CNcbiApplication::Init();
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Program description
     string prog_description = "Test NCBI C++ Toolkit Sample Soap Server\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -170,6 +177,7 @@ void CSampleSoapClientApplication::Init(void)
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());
 }
+
 
 int CSampleSoapClientApplication::Run(void)
 {
