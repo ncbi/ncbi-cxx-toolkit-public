@@ -2314,5 +2314,78 @@ DISCREPANCY_SUMMARIZE(UNUSUAL_ITS)
 }
 
 
+// SARS_QUALS
+
+#define SARS_TAX_ID 2697049
+
+DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have correct format")
+{
+    for (auto biosrc : context.GetBiosources()) {
+        if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetDb()) {
+            bool sars = false;
+            for (auto db : biosrc->GetOrg().GetDb()) {
+                if (db->CanGetTag() && db->GetTag().IsId() && db->GetTag().GetId() == SARS_TAX_ID && db->CanGetDb() && db->GetDb() == "taxon") {
+                    sars = true;
+                    break;
+                }
+            }
+            if (sars) {
+                string isolate;
+                bool good = true;
+                if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
+                    for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
+                        if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_isolate && m->IsSetSubname()) {
+                            isolate = m->GetSubname();
+                            cout << "isolate: " << m->GetSubname() << "\n";
+                        }
+                    }
+                }
+                if (!isolate.length()) {
+                    isolate = "no isolate";
+                    good = false;
+                }
+                if (good && isolate.find("SARS-CoV-2") != 0) {
+                    good = false;
+                }
+                string year;
+                if (good) {
+                    vector<string> arr;
+                    NStr::SplitByPattern(isolate, "/", arr);
+                    if (arr.size() == 5) {
+                        year = arr[4];
+                    }
+                    else {
+                        good = false;
+                    }
+                }
+                if (good) {
+                    string date;
+                    if (biosrc->IsSetSubtype()) {
+                        for (auto it : biosrc->GetSubtype()) {
+                            if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_collection_date && it->IsSetName()) {
+                                date = it->GetName();
+                            }
+                        }
+                    }
+                    if (date.length() >= 4) {
+                        date = date.substr(date.length() - 4);
+                    }
+                    good = date == year;
+                }
+                if (!good) {
+                    m_Objs["[n] SARS-CoV-2 biosource[s] [has] wrong isolate format"][isolate].Add(*context.BiosourceObjRef(*biosrc));
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(SARS_QUALS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
