@@ -125,13 +125,13 @@ int CSampleObjectsApplication::Run(void)
     // Display the IDs of the sequence(s) it contains
     for (CTypeConstIterator<CBioseq> seq = ConstBegin(m_Entry);  seq;  ++seq) {
         bool first = true;
-        ITERATE (CBioseq::TId, id, seq->GetId()) {
+        for (auto& id : seq->GetId()) {
             if (first) {
                 first = false;
             } else {
                 cerr << '|';
             }
-            (*id)->WriteAsFasta(cerr);
+            id->WriteAsFasta(cerr);
         }
         cerr << endl;
     }

@@ -270,8 +270,8 @@ void CEUtilsApp::CallEInfo(const CArgs& args)
     _ASSERT(result);
     cout << MSerial_Xml << *result << endl;
     if ( result->IsDbList() ) {
-        ITERATE(einfo::CDbList::TDbName, it, result->GetDbList().GetDbName()) {
-            req.SetDatabase(*it);
+        for (const auto& name : result->GetDbList().GetDbName()) {
+            req.SetDatabase(name);
             cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
             CRef<einfo::CEInfoResult> db_info = req.GetEInfoResult();
             _ASSERT(db_info);

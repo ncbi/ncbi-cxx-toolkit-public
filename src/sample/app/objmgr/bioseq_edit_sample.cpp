@@ -59,6 +59,7 @@
 
 #include "file_db_engine.hpp"
 
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 

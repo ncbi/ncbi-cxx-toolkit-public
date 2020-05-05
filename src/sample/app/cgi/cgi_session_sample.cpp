@@ -138,11 +138,10 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
         // Populate table with the list of known session variables
         CCgiSession::TNames attrs(session.GetAttributeNames());
         CHTML_table::TIndex row = 1;
-        ITERATE(CCgiSession::TNames, name, attrs) {
-            table->Cell(row,0)->AppendPlainText(*name);
-            table->Cell(row,1)->AppendPlainText(session.GetAttribute(*name));
-            table->Cell(row,2)->AppendChild
-                (new CHTML_submit("Delete_" + *name, "Delete Attribute"));
+        for (const auto& name : attrs) {
+            table->Cell(row,0)->AppendPlainText(name);
+            table->Cell(row,1)->AppendPlainText(session.GetAttribute(name));
+            table->Cell(row,2)->AppendChild(new CHTML_submit("Delete_" + name, "Delete Attribute"));
             ++row;
         }
         // Show session ID
