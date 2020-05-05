@@ -2336,7 +2336,6 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
                     for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
                         if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_isolate && m->IsSetSubname()) {
                             isolate = m->GetSubname();
-                            cout << "isolate: " << m->GetSubname() << "\n";
                         }
                     }
                 }
