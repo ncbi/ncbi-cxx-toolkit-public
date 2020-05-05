@@ -8318,6 +8318,9 @@ fi
 if $grpc_pc grpc++ --exists 2>/dev/null; then
    if test -f "$GRPC_PATH/lib/libboringssl.a"; then
       GRPC_SED="sed -e s/-lssl/-lboringssl/g -e s/-lcrypto/-lboringcrypto/g"
+   elif test -f /usr/lib/libssl.dylib -a \
+             x"`$grpc_pc grpc++ --variable=prefix`" != x/sw; then
+      GRPC_SED="sed -e s,-L/sw/lib,,"
    else
       GRPC_SED=cat
    fi
@@ -8358,9 +8361,9 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [$PROTOBUF_LIBS $Z_LIBS], [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
    if test -n "$GRPC_CONFIG_LIBS"; then
-      GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS"
+      GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS $GRPC_LDEP"
       GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure grpc_unsecure --libs`"
-      GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS $PROTOBUF_LIBS"
+      GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS $PROTOBUF_LIBS $GRPC_LDEP"
    else
       LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
       AC_CHECK_LIB(address_sorting, address_sorting_rfc_6724_sort,
