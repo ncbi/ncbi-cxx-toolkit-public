@@ -838,6 +838,9 @@
 /* Define to 1 if libbackward is available. */
 #cmakedefine HAVE_LIBBACKWARD_CPP 1
 
+/* Define to allow backward-cpp to also handle signals. */
+#cmakedefine USE_LIBBACKWARD_SIG_HANDLING 1
+
 /* Define to 1 if libbackward is available. */
 #cmakedefine HAVE_LIBDW 1
 

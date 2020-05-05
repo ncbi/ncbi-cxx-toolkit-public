@@ -233,11 +233,6 @@ if(OFF)
 endif()
 NCBI_define_component(NCBI_C ncbiobj.lib ncbimmdb.lib ncbi.lib)
 
-#############################################################################
-# STACKTRACE
-set(NCBI_COMPONENT_STACKTRACE_FOUND YES)
-set(NCBI_COMPONENT_STACKTRACE_LIBS dbghelp.lib)
-
 ##############################################################################
 # UUID
 set(NCBI_COMPONENT_UUID_FOUND YES)

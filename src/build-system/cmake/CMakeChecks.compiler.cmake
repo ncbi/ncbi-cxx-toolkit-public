@@ -23,6 +23,10 @@ if(StrictGI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_STRICT_GI)
 endif()
 
+if("$ENV{DEBUG_TRACE_FATAL_SIGNALS}" OR BackwardSig IN_LIST NCBI_PTBCFG_PROJECT_FEATURES )
+    set(USE_LIBBACKWARD_SIG_HANDLING 1)
+endif()
+
 if (NCBI_EXPERIMENTAL_CFG)
 
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -154,7 +158,7 @@ if (WIN32)
     set(NCBI_DEFAULT_DLLENTRY  "${NCBI_TREE_CMAKECFG}/dll_main.cpp")
     set(NCBI_DEFAULT_GUIENTRY  "${NCBI_TREE_CMAKECFG}/winmain.cpp")
 
-    set(ORIG_LIBS ws2_32.lib)
+    set(ORIG_LIBS ws2_32.lib dbghelp.lib)
     return()
 
 #----------------------------------------------------------------------------
