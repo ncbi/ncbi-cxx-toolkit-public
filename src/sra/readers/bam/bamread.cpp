@@ -1310,6 +1310,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
 
             TSeqPos ref_pos = rit->GetRefSeqPos();
             values.update_current_ref_start(ref_pos, callback);
+            TSeqPos read_len = rit->GetShortSequenceLength();
             CTempString read_raw = rit->GetShortSequenceRaw();
             TSeqPos read_pos = 0;
             for ( Uint2 i = 0, count = rit->GetCIGAROpsCount(); i < count; ++i ) {
@@ -1333,7 +1334,13 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
                 case SBamAlignInfo::kCIGAR_X: // X
                     // mismatch ('X') or
                     // unspecified 'alignment match' ('M') that can be a mismatch too
-                    values.add_bases_ref_range_raw(ref_pos, ref_end, read_raw, read_pos);
+                    if ( read_pos+ref_end > read_len+ref_pos ) {
+                        // range is out of read bounds -> keep it unspecified
+                        values.add_match_ref_range(ref_pos, ref_end);
+                    }
+                    else {
+                        values.add_bases_ref_range_raw(ref_pos, ref_end, read_raw, read_pos);
+                    }
                     ref_pos += seglen;
                     read_pos += seglen;
                     break;
@@ -1373,6 +1380,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
             values.update_current_ref_start(ref_pos, callback);
             _ASSERT((values.m_RefFrom-graph_range.GetFrom())%16 == 0);
             _ASSERT((values.m_RefToOpen-values.m_RefFrom)%16 == 0 || values.m_RefToOpen == values.m_RefStop);
+            TSeqPos read_len = ait.GetShortSequenceLength();
             CTempString read = ait.GetShortSequence();
             TSeqPos read_pos = ait.GetCIGARPos();
             CTempString cigar = ait.GetCIGAR();
@@ -1409,7 +1417,13 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
                 else if ( type == 'M' || type == 'X' ) {
                     // mismatch ('X') or
                     // unspecified 'alignment match' ('M') that can be a mismatch too
-                    values.add_bases_ref_range(ref_pos, ref_end, read, read_pos);
+                    if ( read_pos+ref_end > read_len+ref_pos ) {
+                        // range is out of read bounds -> keep it unspecified
+                        values.add_match_ref_range(ref_pos, ref_end);
+                    }
+                    else {
+                        values.add_bases_ref_range(ref_pos, ref_end, read, read_pos);
+                    }
                     ref_pos += seglen;
                     read_pos += seglen;
                 }
