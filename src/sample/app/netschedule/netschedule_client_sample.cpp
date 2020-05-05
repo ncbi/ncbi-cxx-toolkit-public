@@ -156,7 +156,7 @@ int CSampleNetScheduleClient::Run(void)
     size_t no_jobs_executes_cnt = 0;
     
     while (jobs.size()) {
-        NON_CONST_ITERATE(vector<string>, it, jobs) {
+        for (auto it = jobs.begin(); it != jobs.end(); ++it) {
             CNetScheduleJob job;
             job.job_id = *it;
             status = submitter.GetJobDetails(job);

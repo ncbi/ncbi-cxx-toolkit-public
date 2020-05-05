@@ -89,7 +89,7 @@ int CSampleNetScheduleNode::Run(void)
     const string&  service  = args["service"].AsString();
     const string&  queue_name = args["queue"].AsString();  
 
-    CNetScheduleAPI cl("node_sample", service, queue_name);
+    CNetScheduleAPI cl(service, "node_sample", queue_name);
 
     bool      job_exists;
     int       no_jobs_counter = 0;
