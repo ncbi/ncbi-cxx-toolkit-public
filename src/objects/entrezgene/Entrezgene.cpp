@@ -153,7 +153,7 @@ CRef<objects::CGene_nomenclature> CEntrezgene::GetNomenclature() const
         // Fifth choice: get from EG.gene.syn[0]
 
         else
-        if (gene_ref.IsSetSyn()) {
+        if (gene_ref.IsSetSyn() && ( ! gene_ref.GetSyn().empty() ) ) {
             nomen->SetSymbol(*(gene_ref.GetSyn().begin()));
         }
 
@@ -189,7 +189,7 @@ string CEntrezgene::GetDescription() const
     else if (IsSetProt() && GetProt().IsSetDesc()) {
         desc = GetProt().GetDesc();
     }
-    else if (IsSetProt() && GetProt().IsSetName()) {
+    else if (IsSetProt() && GetProt().IsSetName() && ( ! GetProt().GetName().empty() ) ) {
         desc = *(GetProt().GetName().begin());
     }
     else if (IsSetRna() && GetRna().IsSetExt() && GetRna().GetExt().IsName()) {
