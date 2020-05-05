@@ -1942,7 +1942,7 @@ void CBioseqIndex::x_InitFeats (void)
 
             // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
             // but commenting it out allows external variations in NG_008330 to override internal gene, mRNA, CDS, and exon features
-            sel.AddUnnamedAnnots();
+            // sel.AddUnnamedAnnots();
 
             // allow external SNPs - testing for now, probably needs to be in external policy
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
@@ -2271,7 +2271,7 @@ void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
 
             // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
             // but commenting it out allows external variations in NG_008330 to override internal gene, mRNA, CDS, and exon features
-            sel.AddUnnamedAnnots();
+            // sel.AddUnnamedAnnots();
 
             // allow external SNPs - testing for now, probably needs to be in external policy
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
