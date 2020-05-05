@@ -794,7 +794,7 @@ public:
                                const string& custom_title = kEmptyStr);
     virtual void WriteSequence(const CBioseq_Handle& handle,
                                const CSeq_loc* location = 0, 
-                               CSeq_loc::EOpFlags merge_flags=CSeq_loc::fMerge_All);
+                               CSeq_loc::EOpFlags merge_flags=CSeq_loc::fMerge_AbuttingOnly);
 
     /// These versions may set up a temporary object manager scope
     /// In the common case of a raw bioseq, no scope is needed
