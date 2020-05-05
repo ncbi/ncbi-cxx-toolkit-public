@@ -70,7 +70,7 @@ private:
     };
 
 public:
-    CPendingOperation(const CPSGS_Request &  user_request,
+    CPendingOperation(CPSGS_Request &&  user_request,
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,

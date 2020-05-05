@@ -39,6 +39,8 @@
 #include <string>
 #include <vector>
 
+#include "pubseq_gateway_exception.hpp"
+
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
@@ -102,6 +104,65 @@ struct SPSGS_BlobId
 };
 
 
+// Forward declaration
+// CPSGS_Request uses unique_ptr to SPSGS_RequestBase and
+// SPSGS_RequestBase uses the request type from CPSGS_Request
+struct SPSGS_RequestBase;
+
+class CPSGS_Request
+{
+public:
+    enum EPSGS_Type {
+        ePSGS_ResolveRequest,
+        ePSGS_BlobBySeqIdRequest,
+        ePSGS_BlobBySatSatKeyRequest,
+        ePSGS_AnnotationRequest,
+        ePSGS_TSEChunkRequest,
+
+        ePSGS_UnknownRequest
+    };
+
+public:
+    CPSGS_Request()
+    {}
+
+    CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
+                  CRef<CRequestContext>  request_context);
+
+    EPSGS_Type  GetRequestType(void) const;
+
+    CRef<CRequestContext>  GetRequestContext(void)
+    {
+        return m_RequestContext;
+    }
+
+    template<typename TRequest> TRequest& GetRequest(void)
+    {
+        if (m_Request) {
+            TRequest*   req = dynamic_cast<TRequest *>(m_Request.get());
+            if (req != nullptr)
+                return *req;
+        }
+
+        NCBI_THROW(CPubseqGatewayException, eInvalidUserRequestType,
+                   "User request type mismatch. Stored type: " +
+                   x_RequestTypeToString(GetRequestType()));
+    }
+
+    CPSGS_Request(const CPSGS_Request &) = default;
+    CPSGS_Request(CPSGS_Request &&) = default;
+    CPSGS_Request &  operator=(const CPSGS_Request &) = default;
+    CPSGS_Request &  operator=(CPSGS_Request &&) = default;
+
+private:
+    string x_RequestTypeToString(EPSGS_Type  type) const;
+
+private:
+    unique_ptr<SPSGS_RequestBase>   m_Request;
+    CRef<CRequestContext>           m_RequestContext;
+};
+
+
 
 // Base struct for all requests: any request can be traceable and has a start
 // time
@@ -143,6 +204,10 @@ struct SPSGS_RequestBase
                       const TPSGS_HighResolutionTimePoint &  start) :
         m_Trace(trace), m_StartTimestamp(start)
     {}
+
+    virtual ~SPSGS_RequestBase() {}
+
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const = 0;
 
     SPSGS_RequestBase(const SPSGS_RequestBase &) = default;
     SPSGS_RequestBase(SPSGS_RequestBase &&) = default;
@@ -228,6 +293,11 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_UsePsgProtocol(true),
         m_AccSubstOption(ePSGS_UnknownAccSubstitution)
     {}
+
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
+    {
+        return CPSGS_Request::ePSGS_ResolveRequest;
+    }
 
     SPSGS_ResolveRequest(const SPSGS_ResolveRequest &) = default;
     SPSGS_ResolveRequest(SPSGS_ResolveRequest &&) = default;
@@ -322,6 +392,11 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
         m_AccSubstOption(ePSGS_UnknownAccSubstitution)
     {}
 
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
+    {
+        return CPSGS_Request::ePSGS_BlobBySeqIdRequest;
+    }
+
     // Check if the resolved seq_id (to sat/sat_key) is in the user provided
     // exclude list
     bool IsExcludedBlob(void) const
@@ -362,6 +437,11 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
         m_LastModified(INT64_MIN)
     {}
 
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
+    {
+        return CPSGS_Request::ePSGS_BlobBySatSatKeyRequest;
+    }
+
     SPSGS_BlobBySatSatKeyRequest(const SPSGS_BlobBySatSatKeyRequest &) = default;
     SPSGS_BlobBySatSatKeyRequest(SPSGS_BlobBySatSatKeyRequest &&) = default;
     SPSGS_BlobBySatSatKeyRequest &  operator=(const SPSGS_BlobBySatSatKeyRequest &) = default;
@@ -393,6 +473,11 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
         m_SeqIdType(-1),
         m_UseCache(ePSGS_UnknownUseCache)
     {}
+
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
+    {
+        return CPSGS_Request::ePSGS_AnnotationRequest;
+    }
 
     SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = default;
     SPSGS_AnnotRequest(SPSGS_AnnotRequest &&) = default;
@@ -427,77 +512,17 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
         m_UseCache(ePSGS_UnknownUseCache)
     {}
 
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
+    {
+        return CPSGS_Request::ePSGS_TSEChunkRequest;
+    }
+
     SPSGS_TSEChunkRequest(const SPSGS_TSEChunkRequest &) = default;
     SPSGS_TSEChunkRequest(SPSGS_TSEChunkRequest &&) = default;
     SPSGS_TSEChunkRequest &  operator=(const SPSGS_TSEChunkRequest &) = default;
     SPSGS_TSEChunkRequest &  operator=(SPSGS_TSEChunkRequest &&) = default;
 };
 
-
-class CPSGS_Request
-{
-public:
-    enum EPSGS_Type {
-        ePSGS_ResolveRequest,
-        ePSGS_BlobBySeqIdRequest,
-        ePSGS_BlobBySatSatKeyRequest,
-        ePSGS_AnnotationRequest,
-        ePSGS_TSEChunkRequest,
-
-        ePSGS_UnknownRequest
-    };
-
-public:
-    CPSGS_Request(const SPSGS_ResolveRequest &  req,
-                  CRef<CRequestContext>  request_context);
-
-    CPSGS_Request(const SPSGS_BlobBySeqIdRequest &  req,
-                  CRef<CRequestContext>  request_context);
-
-    CPSGS_Request(const SPSGS_BlobBySatSatKeyRequest &  req,
-                  CRef<CRequestContext>  request_context);
-
-    CPSGS_Request(const SPSGS_AnnotRequest &  req,
-                  CRef<CRequestContext>  request_context);
-
-    CPSGS_Request(const SPSGS_TSEChunkRequest &  req,
-                  CRef<CRequestContext>  request_context);
-
-    EPSGS_Type  GetRequestType(void) const
-    {
-        return m_RequestType;
-    }
-
-    CRef<CRequestContext>  GetRequestContext(void)
-    {
-        return m_RequestContext;
-    }
-
-    SPSGS_ResolveRequest &  GetResolveRequest(void);
-    SPSGS_BlobBySeqIdRequest &  GetBlobBySeqIdRequest(void);
-    SPSGS_BlobBySatSatKeyRequest &  GetBlobBySatSatKeyRequest(void);
-    SPSGS_AnnotRequest &  GetAnnotRequest(void);
-    SPSGS_TSEChunkRequest &  GetTSEChunkRequest(void);
-
-    CPSGS_Request(const CPSGS_Request &) = default;
-    CPSGS_Request(CPSGS_Request &&) = default;
-    CPSGS_Request &  operator=(const CPSGS_Request &) = default;
-    CPSGS_Request &  operator=(CPSGS_Request &&) = default;
-
-private:
-    string x_RequestTypeToString(EPSGS_Type  type) const;
-
-private:
-    EPSGS_Type                      m_RequestType;
-    SPSGS_ResolveRequest            m_ResolveRequest;
-    SPSGS_BlobBySeqIdRequest        m_BlobBySeqIdRequest;
-    SPSGS_BlobBySatSatKeyRequest    m_BlobBySatSatKeyRequest;
-    SPSGS_AnnotRequest              m_AnnotRequest;
-    SPSGS_TSEChunkRequest           m_TSEChunkRequest;
-
-private:
-    CRef<CRequestContext>           m_RequestContext;
-};
 
 #endif  // PSGS_REQUEST__HPP
 

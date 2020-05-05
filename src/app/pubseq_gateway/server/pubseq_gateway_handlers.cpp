@@ -228,16 +228,17 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         }
 
         m_RequestCounters.IncGetBlobBySeqId();
-        resp.Postpone(
-            CPendingOperation(
-                CPSGS_Request(
-                    SPSGS_BlobBySeqIdRequest(
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_BlobBySeqIdRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, exclude_blobs,
                         tse_option, use_cache, subst_option,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        trace, now), context),
+                        trace, now));
+
+        resp.Postpone(
+            CPendingOperation(CPSGS_Request(move(req), context),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries));
     } catch (const exception &  exc) {
@@ -334,15 +335,16 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                                                                  kClientIdParam);
 
                 m_RequestCounters.IncGetBlobBySatSatKey();
-                resp.Postpone(
-                    CPendingOperation(
-                        CPSGS_Request(
-                            SPSGS_BlobBySatSatKeyRequest(
+                unique_ptr<SPSGS_RequestBase>
+                    req(new SPSGS_BlobBySatSatKeyRequest(
                                 blob_id, last_modified_value,
                                 tse_option, use_cache,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
-                                trace, now), context),
+                                trace, now));
+                resp.Postpone(
+                    CPendingOperation(
+                        CPSGS_Request(move(req), context),
                             0, m_CassConnection, m_TimeoutMs,
                             m_MaxRetries));
 
@@ -517,14 +519,15 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
 
         // Parameters processing has finished
         m_RequestCounters.IncResolve();
-        resp.Postpone(
-            CPendingOperation(
-                CPSGS_Request(
-                    SPSGS_ResolveRequest(
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_ResolveRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, include_data_flags, output_format,
                         use_cache, use_psg_protocol, subst_option,
-                        trace, now), context),
+                        trace, now));
+        resp.Postpone(
+            CPendingOperation(
+                CPSGS_Request(move(req), context),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries));
     } catch (const exception &  exc) {
@@ -660,12 +663,13 @@ int CPubseqGatewayApp::OnGetTSEChunk(HST::CHttpRequest &  req,
 
         // All parameters are good
         m_RequestCounters.IncGetTSEChunk();
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_TSEChunkRequest(
+                        tse_id, chunk_value, split_version_value,
+                        use_cache, trace, now));
         resp.Postpone(
             CPendingOperation(
-                CPSGS_Request(
-                    SPSGS_TSEChunkRequest(
-                        tse_id, chunk_value, split_version_value,
-                        use_cache, trace, now), context),
+                CPSGS_Request(move(req), context),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries));
     } catch (const exception &  exc) {
@@ -782,13 +786,13 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
 
         // Parameters processing has finished
         m_RequestCounters.IncGetNA();
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_AnnotRequest(
+                        string(seq_id.data(), seq_id.size()),
+                        seq_id_type, names, use_cache, trace, now));
         resp.Postpone(
             CPendingOperation(
-                CPSGS_Request(
-                    SPSGS_AnnotRequest(
-                        string(seq_id.data(), seq_id.size()),
-                        seq_id_type, names, use_cache, trace, now),
-                        context),
+                CPSGS_Request(move(req), context),
                     0, m_CassConnection, m_TimeoutMs,
                     m_MaxRetries));
     } catch (const exception &  exc) {

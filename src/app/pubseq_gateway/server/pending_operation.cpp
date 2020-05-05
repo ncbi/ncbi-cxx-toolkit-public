@@ -49,7 +49,7 @@ USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
 
 
-CPendingOperation::CPendingOperation(const CPSGS_Request &  user_request,
+CPendingOperation::CPendingOperation(CPSGS_Request &&  user_request,
                                      size_t  initial_reply_chunks,
                                      shared_ptr<CCassConnection>  conn,
                                      unsigned int  timeout,
@@ -58,7 +58,7 @@ CPendingOperation::CPendingOperation(const CPSGS_Request &  user_request,
     m_Timeout(timeout),
     m_MaxRetries(max_retries),
     m_OverallStatus(CRequestStatus::e200_Ok),
-    m_UserRequest(user_request),
+    m_UserRequest(move(user_request)),
     m_Cancelled(false),
     m_ProtocolSupport(initial_reply_chunks),
     m_CreateTimestamp(chrono::high_resolution_clock::now())
@@ -67,34 +67,34 @@ CPendingOperation::CPendingOperation(const CPSGS_Request &  user_request,
         case CPSGS_Request::ePSGS_ResolveRequest:
             PSG_TRACE("CPendingOperation::CPendingOperation: resolution "
                       "request by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetResolveRequest().m_SeqId << "." <<
-                      m_UserRequest.GetResolveRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
             PSG_TRACE("CPendingOperation::CPendingOperation: blob "
                       "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetBlobBySeqIdRequest().m_SeqId << "." <<
-                      m_UserRequest.GetBlobBySeqIdRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
             PSG_TRACE("CPendingOperation::CPendingOperation: blob "
                       "requested by sat/sat_key: " <<
-                      m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId.ToString() <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId.ToString() <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             PSG_TRACE("CPendingOperation::CPendingOperation: annotation "
                       "request by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetAnnotRequest().m_SeqId << "." <<
-                      m_UserRequest.GetAnnotRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
             PSG_TRACE("CPendingOperation::CPendingOperation: TSE chunk "
                       "request by sat/sat_key: " <<
-                      m_UserRequest.GetTSEChunkRequest().m_TSEId.ToString() <<
+                      m_UserRequest.GetRequest<SPSGS_TSEChunkRequest>().m_TSEId.ToString() <<
                       ", this: " << this);
             break;
         default:
@@ -112,34 +112,34 @@ CPendingOperation::~CPendingOperation()
         case CPSGS_Request::ePSGS_ResolveRequest:
             PSG_TRACE("CPendingOperation::~CPendingOperation: resolve "
                       "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetResolveRequest().m_SeqId << "." <<
-                      m_UserRequest.GetResolveRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
             PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
                       "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetBlobBySeqIdRequest().m_SeqId << "." <<
-                      m_UserRequest.GetBlobBySeqIdRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
             PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
                       "requested by sat/sat_key: " <<
-                      m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId.ToString() <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId.ToString() <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             PSG_TRACE("CPendingOperation::~CPendingOperation: annotation "
                       "request by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetAnnotRequest().m_SeqId << "." <<
-                      m_UserRequest.GetAnnotRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
             PSG_TRACE("CPendingOperation::~CPendingOperation: TSE chunk "
                       "request by sat/sat_key: " <<
-                      m_UserRequest.GetTSEChunkRequest().m_TSEId.ToString() <<
+                      m_UserRequest.GetRequest<SPSGS_TSEChunkRequest>().m_TSEId.ToString() <<
                       ", this: " << this);
             break;
         default:
@@ -169,34 +169,34 @@ void CPendingOperation::Clear()
         case CPSGS_Request::ePSGS_ResolveRequest:
             PSG_TRACE("CPendingOperation::Clear(): resolve "
                       "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetResolveRequest().m_SeqId << "." <<
-                      m_UserRequest.GetResolveRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
             PSG_TRACE("CPendingOperation::Clear(): blob "
                       "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetBlobBySeqIdRequest().m_SeqId << "." <<
-                      m_UserRequest.GetBlobBySeqIdRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
             PSG_TRACE("CPendingOperation::Clear(): blob "
                       "requested by sat/sat_key: " <<
-                      m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId.ToString() <<
+                      m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId.ToString() <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             PSG_TRACE("CPendingOperation::Clear(): annotation "
                       "request by seq_id/seq_id_type: " <<
-                      m_UserRequest.GetAnnotRequest().m_SeqId << "." <<
-                      m_UserRequest.GetAnnotRequest().m_SeqIdType <<
+                      m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId << "." <<
+                      m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqIdType <<
                       ", this: " << this);
             break;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
             PSG_TRACE("CPendingOperation::Clear(): TSE chunk "
                       "request by sat/sat_key: " <<
-                      m_UserRequest.GetTSEChunkRequest().m_TSEId.ToString() <<
+                      m_UserRequest.GetRequest<SPSGS_TSEChunkRequest>().m_TSEId.ToString() <<
                       ", this: " << this);
             break;
         default:
@@ -227,23 +227,23 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
     auto    request_type = m_UserRequest.GetRequestType();
     switch (request_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
-            m_UrlUseCache = m_UserRequest.GetResolveRequest().m_UseCache;
+            m_UrlUseCache = m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_UseCache;
             x_ProcessResolveRequest();
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            m_UrlUseCache = m_UserRequest.GetBlobBySeqIdRequest().m_UseCache;
+            m_UrlUseCache = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_UseCache;
             x_ProcessGetRequest();
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            m_UrlUseCache = m_UserRequest.GetBlobBySatSatKeyRequest().m_UseCache;
+            m_UrlUseCache = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_UseCache;
             x_ProcessGetRequest();
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
-            m_UrlUseCache = m_UserRequest.GetAnnotRequest().m_UseCache;
+            m_UrlUseCache = m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_UseCache;
             x_ProcessAnnotRequest();
             break;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
-            m_UrlUseCache = m_UserRequest.GetTSEChunkRequest().m_UseCache;
+            m_UrlUseCache = m_UserRequest.GetRequest<SPSGS_TSEChunkRequest>().m_UseCache;
             x_ProcessTSEChunkRequest();
             break;
         default:
@@ -298,7 +298,7 @@ void CPendingOperation::x_ProcessGetRequest(void)
         // By seq_id -> search for the bioseq key info in the cache only
         SResolveInputSeqIdError err;
         SBioseqResolution       bioseq_resolution(
-                    m_UserRequest.GetBlobBySeqIdRequest().m_StartTimestamp);
+                    m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_StartTimestamp);
 
         x_ResolveInputSeqId(bioseq_resolution, err);
         if (err.HasError()) {
@@ -336,7 +336,7 @@ void CPendingOperation::x_ProcessGetRequest(SResolveInputSeqIdError &  err,
             // Could not resolve, send 404
             x_OnBioseqError(CRequestStatus::e404_NotFound,
                             "Could not resolve seq_id " +
-                            m_UserRequest.GetBlobBySeqIdRequest().m_SeqId,
+                            m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId,
                             bioseq_resolution.m_RequestStartTimestamp);
         }
         return;
@@ -386,7 +386,7 @@ CPendingOperation::x_CompleteGetRequest(SBioseqResolution &  bioseq_resolution)
     SPSGS_BlobId    blob_id(bioseq_resolution.m_BioseqInfo.GetSat(),
                             bioseq_resolution.m_BioseqInfo.GetSatKey());
 
-    if (!x_SatToSatName(m_UserRequest.GetBlobBySeqIdRequest(), blob_id)) {
+    if (!x_SatToSatName(m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>(), blob_id)) {
         // This is server data inconsistency error, so 500 (not 404)
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         x_SendReplyCompletion(true);
@@ -395,7 +395,7 @@ CPendingOperation::x_CompleteGetRequest(SBioseqResolution &  bioseq_resolution)
     }
 
     // retrieve BLOB_PROP & CHUNKS (if needed)
-    m_UserRequest.GetBlobBySeqIdRequest().m_BlobId = blob_id;
+    m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId = blob_id;
 
     x_StartMainBlobRequest();
 }
@@ -406,7 +406,7 @@ void CPendingOperation::x_GetRequestBioseqInconsistency(
 {
     x_GetRequestBioseqInconsistency(
         "Data inconsistency: the bioseq key info was resolved for seq_id " +
-        m_UserRequest.GetBlobBySeqIdRequest().m_SeqId +
+        m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId +
         " but the bioseq info is not found",
         start_timestamp);
 }
@@ -474,7 +474,7 @@ void CPendingOperation::x_ProcessResolveRequest(void)
 {
     SResolveInputSeqIdError     err;
     auto                        start_timestamp =
-                                    m_UserRequest.GetResolveRequest().m_StartTimestamp;
+                                    m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_StartTimestamp;
     SBioseqResolution           bioseq_resolution(start_timestamp);
 
     x_ResolveInputSeqId(bioseq_resolution, err);
@@ -507,7 +507,7 @@ void CPendingOperation::x_ProcessResolveRequest(
         } else {
             // Could not resolve, send 404
             string  err_msg = "Could not resolve seq_id " +
-                              m_UserRequest.GetResolveRequest().m_SeqId;
+                              m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId;
 
             if (x_UsePsgProtocol()) {
                 x_OnBioseqError(CRequestStatus::e404_NotFound, err_msg,
@@ -569,10 +569,10 @@ void CPendingOperation::x_ResolveRequestBioseqInconsistency(
     string      seq_id;
     switch (m_UserRequest.GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
-            seq_id = m_UserRequest.GetResolveRequest().m_SeqId;
+            seq_id = m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId;
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
-            seq_id = m_UserRequest.GetAnnotRequest().m_SeqId;
+            seq_id = m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId;
             break;
         default:
             // Should not happened
@@ -617,7 +617,7 @@ void CPendingOperation::x_CompleteResolveRequest(
 {
     // Bioseq info is found, send it to the client
     x_SendBioseqInfo(bioseq_resolution,
-                     m_UserRequest.GetResolveRequest().m_OutputFormat);
+                     m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
     if (x_UsePsgProtocol()) {
         x_SendReplyCompletion(true);
         m_ProtocolSupport.Flush();
@@ -678,7 +678,7 @@ void CPendingOperation::OnBioseqDetailsError(
             x_ResolveRequestBioseqInconsistency(
                     "Data inconsistency: the bioseq key info was resolved for "
                     "seq_id " +
-                    m_UserRequest.GetResolveRequest().m_SeqId + " but the "
+                    m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId + " but the "
                     "bioseq info is not found (database error: " +
                     message + ")", start_timestamp);
             break;
@@ -686,7 +686,7 @@ void CPendingOperation::OnBioseqDetailsError(
             x_GetRequestBioseqInconsistency(
                     "Data inconsistency: the bioseq key info was resolved for "
                     "seq_id " +
-                    m_UserRequest.GetBlobBySeqIdRequest().m_SeqId + " but the "
+                    m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId + " but the "
                     "bioseq info is not found (database error: " + message +
                     ")", start_timestamp);
             break;
@@ -694,7 +694,7 @@ void CPendingOperation::OnBioseqDetailsError(
             x_ResolveRequestBioseqInconsistency(
                     "Data inconsistency: the bioseq key info was resolved for "
                     "seq_id " +
-                    m_UserRequest.GetAnnotRequest().m_SeqId + " but the "
+                    m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId + " but the "
                     "bioseq info is not found (database error: " +
                     message + ")", start_timestamp);
             break;
@@ -708,7 +708,7 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
 {
     SResolveInputSeqIdError     err;
     SBioseqResolution           bioseq_resolution(
-                m_UserRequest.GetAnnotRequest().m_StartTimestamp);
+                m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_StartTimestamp);
 
     x_ResolveInputSeqId(bioseq_resolution, err);
     if (err.HasError()) {
@@ -738,7 +738,7 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
     CPSGCache                   psg_cache(m_UrlUseCache != SPSGS_RequestBase::ePSGS_DbOnly);
     int64_t                     last_modified = INT64_MIN;  // last modified is unknown
-    SPSGS_TSEChunkRequest &     request = m_UserRequest.GetTSEChunkRequest();
+    SPSGS_TSEChunkRequest &     request = m_UserRequest.GetRequest<SPSGS_TSEChunkRequest>();
     auto                        blob_prop_cache_lookup_result =
         psg_cache.LookupBlobProp(request.m_TSEId.m_Sat,
                                  request.m_TSEId.m_SatKey,
@@ -887,7 +887,7 @@ void CPendingOperation::x_ProcessAnnotRequest(
             // Could not resolve, send 404
             x_OnReplyError(CRequestStatus::e404_NotFound, ePSGS_NoBioseqInfo,
                            "Could not resolve seq_id " +
-                           m_UserRequest.GetAnnotRequest().m_SeqId,
+                           m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId,
                            bioseq_resolution.m_RequestStartTimestamp);
         }
         return;
@@ -946,7 +946,7 @@ void CPendingOperation::x_CompleteAnnotRequest(
     for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
         unique_ptr<CCassNamedAnnotFetch>   details;
         details.reset(new CCassNamedAnnotFetch(
-                            m_UserRequest.GetAnnotRequest()));
+                            m_UserRequest.GetRequest<SPSGS_AnnotRequest>()));
 
         CCassNAnnotTaskFetch *  fetch_task =
                 new CCassNAnnotTaskFetch(m_Timeout, m_MaxRetries, m_Conn,
@@ -954,7 +954,7 @@ void CPendingOperation::x_CompleteAnnotRequest(
                                          bioseq_resolution.m_BioseqInfo.GetAccession(),
                                          bioseq_resolution.m_BioseqInfo.GetVersion(),
                                          bioseq_resolution.m_BioseqInfo.GetSeqIdType(),
-                                         m_UserRequest.GetAnnotRequest().m_Names,
+                                         m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_Names,
                                          nullptr, nullptr);
         details->SetLoader(fetch_task);
 
@@ -989,10 +989,10 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     // blob list and thus should not be retrieved at all
     if (m_UserRequest.GetRequestType() ==
                             CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-        if (m_UserRequest.GetBlobBySeqIdRequest().IsExcludedBlob()) {
+        if (m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().IsExcludedBlob()) {
             m_ProtocolSupport.PrepareBlobExcluded(
                 m_ProtocolSupport.GetItemId(),
-                m_UserRequest.GetBlobBySeqIdRequest().m_BlobId, ePSGS_Excluded);
+                m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId, ePSGS_Excluded);
             x_SendReplyCompletion(true);
             m_ProtocolSupport.Flush();
             return;
@@ -1009,19 +1009,19 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     TPSGS_HighResolutionTimePoint   start_timestamp;
     if (m_UserRequest.GetRequestType() ==
                         CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-        tse_option = m_UserRequest.GetBlobBySeqIdRequest().m_TSEOption;
-        client_id = m_UserRequest.GetBlobBySeqIdRequest().m_ClientId;
-        blob_id = m_UserRequest.GetBlobBySeqIdRequest().m_BlobId;
-        exclude_blob_cache_added = & m_UserRequest.GetBlobBySeqIdRequest().m_ExcludeBlobCacheAdded;
+        tse_option = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_TSEOption;
+        client_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ClientId;
+        blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId;
+        exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ExcludeBlobCacheAdded;
         last_modified = INT64_MIN;
-        start_timestamp = m_UserRequest.GetBlobBySeqIdRequest().m_StartTimestamp;
+        start_timestamp = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_StartTimestamp;
     } else {
-        tse_option = m_UserRequest.GetBlobBySatSatKeyRequest().m_TSEOption;
-        client_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_ClientId;
-        blob_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId;
-        exclude_blob_cache_added = & m_UserRequest.GetBlobBySatSatKeyRequest().m_ExcludeBlobCacheAdded;
-        last_modified = m_UserRequest.GetBlobBySatSatKeyRequest().m_LastModified;
-        start_timestamp = m_UserRequest.GetBlobBySatSatKeyRequest().m_StartTimestamp;
+        tse_option = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_TSEOption;
+        client_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ClientId;
+        blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId;
+        exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ExcludeBlobCacheAdded;
+        last_modified = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_LastModified;
+        start_timestamp = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_StartTimestamp;
     }
 
     if (tse_option != SPSGS_BlobRequestBase::ePSGS_NoneTSE &&
@@ -1057,10 +1057,10 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     if (m_UserRequest.GetRequestType() ==
                         CPSGS_Request::ePSGS_BlobBySeqIdRequest)
         fetch_details.reset(
-                new CCassBlobFetch(m_UserRequest.GetBlobBySeqIdRequest()));
+                new CCassBlobFetch(m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>()));
     else
         fetch_details.reset(
-                new CCassBlobFetch(m_UserRequest.GetBlobBySatSatKeyRequest()));
+                new CCassBlobFetch(m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>()));
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(m_UrlUseCache != SPSGS_RequestBase::ePSGS_DbOnly);
@@ -1176,15 +1176,15 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
         bool *              exclude_blob_cache_added;
         bool *              exclude_blob_cache_completed;
         if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-            client_id = m_UserRequest.GetBlobBySeqIdRequest().m_ClientId;
-            blob_id = m_UserRequest.GetBlobBySeqIdRequest().m_BlobId;
-            exclude_blob_cache_added = & m_UserRequest.GetBlobBySeqIdRequest().m_ExcludeBlobCacheAdded;
-            exclude_blob_cache_completed = & m_UserRequest.GetBlobBySeqIdRequest().m_ExcludeBlobCacheCompleted;
+            client_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ClientId;
+            blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId;
+            exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ExcludeBlobCacheAdded;
+            exclude_blob_cache_completed = & m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ExcludeBlobCacheCompleted;
         } else {
-            client_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_ClientId;
-            blob_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId;
-            exclude_blob_cache_added = & m_UserRequest.GetBlobBySatSatKeyRequest().m_ExcludeBlobCacheAdded;
-            exclude_blob_cache_completed = & m_UserRequest.GetBlobBySatSatKeyRequest().m_ExcludeBlobCacheCompleted;
+            client_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ClientId;
+            blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId;
+            exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ExcludeBlobCacheAdded;
+            exclude_blob_cache_completed = & m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ExcludeBlobCacheCompleted;
         }
 
         if (* exclude_blob_cache_added &&
@@ -1394,16 +1394,16 @@ void CPendingOperation::x_InitUrlIndentification(void)
 {
     switch (m_UserRequest.GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
-            m_UrlSeqId = m_UserRequest.GetResolveRequest().m_SeqId;
-            m_UrlSeqIdType = m_UserRequest.GetResolveRequest().m_SeqIdType;
+            m_UrlSeqId = m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqId;
+            m_UrlSeqIdType = m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_SeqIdType;
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            m_UrlSeqId = m_UserRequest.GetBlobBySeqIdRequest().m_SeqId;
-            m_UrlSeqIdType = m_UserRequest.GetBlobBySeqIdRequest().m_SeqIdType;
+            m_UrlSeqId = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId;
+            m_UrlSeqIdType = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType;
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
-            m_UrlSeqId = m_UserRequest.GetAnnotRequest().m_SeqId;
-            m_UrlSeqIdType = m_UserRequest.GetAnnotRequest().m_SeqIdType;
+            m_UrlSeqId = m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqId;
+            m_UrlSeqIdType = m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_SeqIdType;
             break;
         default:
             NCBI_THROW(CPubseqGatewayException, eLogic,
@@ -1866,7 +1866,7 @@ void CPendingOperation::x_SendBioseqInfo(
 bool CPendingOperation::x_UsePsgProtocol(void)
 {
     if (m_UserRequest.GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest)
-        return m_UserRequest.GetResolveRequest().m_UsePsgProtocol;
+        return m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_UsePsgProtocol;
     return true;
 }
 
@@ -2127,13 +2127,13 @@ void CPendingOperation::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     string          client_id;
     bool *          exclude_blob_cache_added;
     if (m_UserRequest.GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-        request_blob_id = m_UserRequest.GetBlobBySeqIdRequest().m_BlobId;
-        client_id = m_UserRequest.GetBlobBySeqIdRequest().m_ClientId;
-        exclude_blob_cache_added = & m_UserRequest.GetBlobBySeqIdRequest().m_ExcludeBlobCacheAdded;
+        request_blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId;
+        client_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ClientId;
+        exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ExcludeBlobCacheAdded;
     } else {
-        request_blob_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId;
-        client_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_ClientId;
-        exclude_blob_cache_added = & m_UserRequest.GetBlobBySatSatKeyRequest().m_ExcludeBlobCacheAdded;
+        request_blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId;
+        client_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ClientId;
+        exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ExcludeBlobCacheAdded;
     }
 
     if (blob_id == request_blob_id) {
@@ -2171,13 +2171,13 @@ void CPendingOperation::x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
     string          client_id;
     bool *          exclude_blob_cache_added;
     if (m_UserRequest.GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-        request_blob_id = m_UserRequest.GetBlobBySeqIdRequest().m_BlobId;
-        client_id = m_UserRequest.GetBlobBySeqIdRequest().m_ClientId;
-        exclude_blob_cache_added = & m_UserRequest.GetBlobBySeqIdRequest().m_ExcludeBlobCacheAdded;
+        request_blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId;
+        client_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ClientId;
+        exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ExcludeBlobCacheAdded;
     } else {
-        request_blob_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId;
-        client_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_ClientId;
-        exclude_blob_cache_added = & m_UserRequest.GetBlobBySatSatKeyRequest().m_ExcludeBlobCacheAdded;
+        request_blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId;
+        client_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ClientId;
+        exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ExcludeBlobCacheAdded;
     }
 
     fetch_details->SetReadFinished();
@@ -2402,13 +2402,13 @@ void CPendingOperation::OnGetBlobError(
         string          client_id;
         bool *          exclude_blob_cache_added;
         if (m_UserRequest.GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-            request_blob_id = m_UserRequest.GetBlobBySeqIdRequest().m_BlobId;
-            client_id = m_UserRequest.GetBlobBySeqIdRequest().m_ClientId;
-            exclude_blob_cache_added = & m_UserRequest.GetBlobBySeqIdRequest().m_ExcludeBlobCacheAdded;
+            request_blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_BlobId;
+            client_id = m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ClientId;
+            exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_ExcludeBlobCacheAdded;
         } else {
-            request_blob_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_BlobId;
-            client_id = m_UserRequest.GetBlobBySatSatKeyRequest().m_ClientId;
-            exclude_blob_cache_added = & m_UserRequest.GetBlobBySatSatKeyRequest().m_ExcludeBlobCacheAdded;
+            request_blob_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId;
+            client_id = m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ClientId;
+            exclude_blob_cache_added = & m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_ExcludeBlobCacheAdded;
         }
 
         SPSGS_BlobId    blob_id = fetch_details->GetBlobId();
@@ -3027,9 +3027,9 @@ CPendingOperation::x_GetAccessionSubstitutionOption(void)
     // The substitution makes sense only for resolve/get/annot requests
     switch (m_UserRequest.GetRequestType()) {
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            return m_UserRequest.GetBlobBySeqIdRequest().m_AccSubstOption;
+            return m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_AccSubstOption;
         case CPSGS_Request::ePSGS_ResolveRequest:
-            return m_UserRequest.GetResolveRequest().m_AccSubstOption;
+            return m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_AccSubstOption;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             return SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
         default:
@@ -3071,7 +3071,7 @@ SPSGS_ResolveRequest::TPSGS_BioseqIncludeData
 CPendingOperation::x_GetBioseqInfoFields(void)
 {
     if (m_UserRequest.GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest)
-        return m_UserRequest.GetResolveRequest().m_IncludeDataFlags;
+        return m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_IncludeDataFlags;
     return SPSGS_ResolveRequest::fPSGS_AllBioseqFields;
 }
 
@@ -3082,18 +3082,18 @@ SPSGS_RequestBase::EPSGS_Trace CPendingOperation::NeedTrace(void)
     // The PSG protocol may be not used in case of resolve request.
     switch (m_UserRequest.GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
-            if (m_UserRequest.GetResolveRequest().m_Trace == SPSGS_RequestBase::ePSGS_WithTracing &&
-                m_UserRequest.GetResolveRequest().m_UsePsgProtocol)
+            if (m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_Trace == SPSGS_RequestBase::ePSGS_WithTracing &&
+                m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_UsePsgProtocol)
                 return SPSGS_RequestBase::ePSGS_WithTracing;
             return SPSGS_RequestBase::ePSGS_NoTracing;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            return m_UserRequest.GetBlobBySeqIdRequest().m_Trace;
+            return m_UserRequest.GetRequest<SPSGS_BlobBySeqIdRequest>().m_Trace;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            return m_UserRequest.GetBlobBySatSatKeyRequest().m_Trace;
+            return m_UserRequest.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_Trace;
         case CPSGS_Request::ePSGS_AnnotationRequest:
-            return m_UserRequest.GetAnnotRequest().m_Trace;
+            return m_UserRequest.GetRequest<SPSGS_AnnotRequest>().m_Trace;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
-            return m_UserRequest.GetTSEChunkRequest().m_Trace;
+            return m_UserRequest.GetRequest<SPSGS_TSEChunkRequest>().m_Trace;
         default:
             break;
     }
@@ -3138,12 +3138,12 @@ CPendingOperation::CanSkipBioseqInfoRetrieval(
     if (bioseq_info_record.GetVersion() > 0 && seq_id_type != CSeq_id::e_Gi)
         return true;    // This combination in data never requires accession adjustments
 
-    auto    include_flags = m_UserRequest.GetResolveRequest().m_IncludeDataFlags;
+    auto    include_flags = m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_IncludeDataFlags;
     if ((include_flags & ~SPSGS_ResolveRequest::fPSGS_Gi) == 0)
         return true;    // Only GI field or no fields are requested so no accession
                         // adjustments are required
 
-    auto    acc_subst = m_UserRequest.GetResolveRequest().m_AccSubstOption;
+    auto    acc_subst = m_UserRequest.GetRequest<SPSGS_ResolveRequest>().m_AccSubstOption;
     if (acc_subst == SPSGS_RequestBase::ePSGS_NeverAccSubstitute)
         return true;    // No accession adjustments anyway so key fields are enough
 

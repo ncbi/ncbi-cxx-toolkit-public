@@ -33,7 +33,6 @@
 #include <corelib/ncbistr.hpp>
 
 #include "psgs_request.hpp"
-#include "pubseq_gateway_exception.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -53,44 +52,20 @@ SPSGS_BlobId::SPSGS_BlobId(const string &  blob_id) :
     }
 }
 
-CPSGS_Request::CPSGS_Request(const SPSGS_ResolveRequest &  req,
+
+CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                              CRef<CRequestContext>  request_context) :
-    m_RequestType(ePSGS_ResolveRequest),
-    m_ResolveRequest(req),
+    m_Request(move(req)),
     m_RequestContext(request_context)
 {}
 
 
-CPSGS_Request::CPSGS_Request(const SPSGS_BlobBySeqIdRequest &  req,
-                             CRef<CRequestContext>  request_context) :
-    m_RequestType(ePSGS_BlobBySeqIdRequest),
-    m_BlobBySeqIdRequest(req),
-    m_RequestContext(request_context)
-{}
-
-
-CPSGS_Request::CPSGS_Request(const SPSGS_BlobBySatSatKeyRequest &  req,
-                             CRef<CRequestContext>  request_context) :
-    m_RequestType(ePSGS_BlobBySatSatKeyRequest),
-    m_BlobBySatSatKeyRequest(req),
-    m_RequestContext(request_context)
-{}
-
-
-CPSGS_Request::CPSGS_Request(const SPSGS_AnnotRequest &  req,
-                             CRef<CRequestContext>  request_context) :
-    m_RequestType(ePSGS_AnnotationRequest),
-    m_AnnotRequest(req),
-    m_RequestContext(request_context)
-{}
-
-
-CPSGS_Request::CPSGS_Request(const SPSGS_TSEChunkRequest &  req,
-                             CRef<CRequestContext>  request_context) :
-    m_RequestType(ePSGS_TSEChunkRequest),
-    m_TSEChunkRequest(req),
-    m_RequestContext(request_context)
-{}
+CPSGS_Request::EPSGS_Type  CPSGS_Request::GetRequestType(void) const
+{
+    if (m_Request)
+        return m_Request->GetRequestType();
+    return ePSGS_UnknownRequest;
+}
 
 
 string CPSGS_Request::x_RequestTypeToString(EPSGS_Type  type) const
@@ -112,65 +87,5 @@ string CPSGS_Request::x_RequestTypeToString(EPSGS_Type  type) const
             break;
     }
     return "???";
-}
-
-
-SPSGS_ResolveRequest &  CPSGS_Request::GetResolveRequest(void)
-{
-    if (m_RequestType != ePSGS_ResolveRequest)
-        NCBI_THROW(CPubseqGatewayException, eInvalidUserRequestType,
-                   "User request type mismatch. Requested: " +
-                   x_RequestTypeToString(ePSGS_ResolveRequest) +
-                   " Stored: " +
-                   x_RequestTypeToString(m_RequestType));
-    return m_ResolveRequest;
-}
-
-
-SPSGS_BlobBySeqIdRequest &  CPSGS_Request::GetBlobBySeqIdRequest(void)
-{
-    if (m_RequestType != ePSGS_BlobBySeqIdRequest)
-        NCBI_THROW(CPubseqGatewayException, eInvalidUserRequestType,
-                   "User request type mismatch. Requested: " +
-                   x_RequestTypeToString(ePSGS_BlobBySeqIdRequest) +
-                   " Stored: " +
-                   x_RequestTypeToString(m_RequestType));
-    return m_BlobBySeqIdRequest;
-}
-
-
-SPSGS_BlobBySatSatKeyRequest &  CPSGS_Request::GetBlobBySatSatKeyRequest(void)
-{
-    if (m_RequestType != ePSGS_BlobBySatSatKeyRequest)
-        NCBI_THROW(CPubseqGatewayException, eInvalidUserRequestType,
-                   "User request type mismatch. Requested: " +
-                   x_RequestTypeToString(ePSGS_BlobBySatSatKeyRequest) +
-                   " Stored: " +
-                   x_RequestTypeToString(m_RequestType));
-    return m_BlobBySatSatKeyRequest;
-}
-
-
-SPSGS_AnnotRequest &  CPSGS_Request::GetAnnotRequest(void)
-{
-    if (m_RequestType != ePSGS_AnnotationRequest)
-        NCBI_THROW(CPubseqGatewayException, eInvalidUserRequestType,
-                   "User request type mismatch. Requested: " +
-                   x_RequestTypeToString(ePSGS_AnnotationRequest) +
-                   " Stored: " +
-                   x_RequestTypeToString(m_RequestType));
-    return m_AnnotRequest;
-}
-
-
-SPSGS_TSEChunkRequest &  CPSGS_Request::GetTSEChunkRequest(void)
-{
-    if (m_RequestType != ePSGS_TSEChunkRequest)
-        NCBI_THROW(CPubseqGatewayException, eInvalidUserRequestType,
-                   "User request type mismatch. Requested: " +
-                   x_RequestTypeToString(ePSGS_TSEChunkRequest) +
-                   " Stored: " +
-                   x_RequestTypeToString(m_RequestType));
-    return m_TSEChunkRequest;
 }
 
