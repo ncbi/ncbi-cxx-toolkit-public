@@ -50,13 +50,7 @@ USING_SCOPE(objects);
 
 
 CPendingOperation::CPendingOperation(CPSGS_Request &&  user_request,
-                                     size_t  initial_reply_chunks,
-                                     shared_ptr<CCassConnection>  conn,
-                                     unsigned int  timeout,
-                                     unsigned int  max_retries) :
-    m_Conn(conn),
-    m_Timeout(timeout),
-    m_MaxRetries(max_retries),
+                                     size_t  initial_reply_chunks) :
     m_OverallStatus(CRequestStatus::e200_Ok),
     m_UserRequest(move(user_request)),
     m_Cancelled(false),
@@ -813,7 +807,9 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
             unique_ptr<CCassBlobFetch>  fetch_details;
             fetch_details.reset(new CCassBlobFetch(chunk_request));
             CCassBlobTaskLoadBlob *         load_task =
-                new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+                new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                          app->GetCassandraMaxRetries(),
+                                          app->GetCassandraConnection(),
                                           chunk_blob_id.m_SatName,
                                           std::move(blob_record),
                                           true, nullptr);
@@ -849,7 +845,9 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
     unique_ptr<CCassSplitHistoryFetch>      fetch_details;
     fetch_details.reset(new CCassSplitHistoryFetch(request));
     CCassBlobTaskFetchSplitHistory *   load_task =
-        new  CCassBlobTaskFetchSplitHistory(m_Timeout, m_MaxRetries, m_Conn,
+        new  CCassBlobTaskFetchSplitHistory(app->GetCassandraTimeout(),
+                                            app->GetCassandraMaxRetries(),
+                                            app->GetCassandraConnection(),
                                             request.m_TSEId.m_SatName,
                                             request.m_TSEId.m_SatKey,
                                             request.m_SplitVersion,
@@ -936,6 +934,8 @@ void CPendingOperation::x_ProcessAnnotRequest(
 void CPendingOperation::x_CompleteAnnotRequest(
                                         SBioseqResolution &  bioseq_resolution)
 {
+    auto    app = CPubseqGatewayApp::GetInstance();
+
     // At the moment the annotations request supports only json
     x_SendBioseqInfo(bioseq_resolution, SPSGS_ResolveRequest::ePSGS_JsonFormat);
     x_RegisterResolveTiming(bioseq_resolution);
@@ -949,7 +949,9 @@ void CPendingOperation::x_CompleteAnnotRequest(
                             m_UserRequest.GetRequest<SPSGS_AnnotRequest>()));
 
         CCassNAnnotTaskFetch *  fetch_task =
-                new CCassNAnnotTaskFetch(m_Timeout, m_MaxRetries, m_Conn,
+                new CCassNAnnotTaskFetch(app->GetCassandraTimeout(),
+                                         app->GetCassandraMaxRetries(),
+                                         app->GetCassandraConnection(),
                                          bioseq_na_keyspace.first,
                                          bioseq_resolution.m_BioseqInfo.GetAccession(),
                                          bioseq_resolution.m_BioseqInfo.GetVersion(),
@@ -1072,7 +1074,9 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                                         this, *blob_record.get());
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == ePSGS_Found) {
-        load_task = new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                              app->GetCassandraMaxRetries(),
+                                              app->GetCassandraConnection(),
                                               blob_id.m_SatName,
                                               std::move(blob_record),
                                               false, nullptr);
@@ -1104,13 +1108,17 @@ void CPendingOperation::x_StartMainBlobRequest(void)
         }
 
         if (last_modified == INT64_MIN) {
-            load_task = new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+            load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                                  app->GetCassandraMaxRetries(),
+                                                  app->GetCassandraConnection(),
                                                   blob_id.m_SatName,
                                                   blob_id.m_SatKey,
                                                   false, nullptr);
             fetch_details->SetLoader(load_task);
         } else {
-            load_task = new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+            load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                                  app->GetCassandraMaxRetries(),
+                                                  app->GetCassandraConnection(),
                                                   blob_id.m_SatName,
                                                   blob_id.m_SatKey,
                                                   last_modified,
@@ -2538,17 +2546,22 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(chunk_request));
 
+    auto    app = CPubseqGatewayApp::GetInstance();
     CCassBlobTaskLoadBlob *     load_task = nullptr;
 
     if (blob_prop_cache_lookup_result == ePSGS_Found) {
         load_task = new CCassBlobTaskLoadBlob(
-                            m_Timeout, m_MaxRetries, m_Conn,
+                            app->GetCassandraTimeout(),
+                            app->GetCassandraMaxRetries(),
+                            app->GetCassandraConnection(),
                             chunk_request.m_BlobId.m_SatName,
                             std::move(blob_record),
                             true, nullptr);
     } else {
         load_task = new CCassBlobTaskLoadBlob(
-                            m_Timeout, m_MaxRetries, m_Conn,
+                            app->GetCassandraTimeout(),
+                            app->GetCassandraMaxRetries(),
+                            app->GetCassandraConnection(),
                             chunk_request.m_BlobId.m_SatName,
                             chunk_request.m_BlobId.m_SatKey,
                             true, nullptr);
@@ -2618,6 +2631,8 @@ void CPendingOperation::OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_d
 void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                                     CBlobRecord const &  blob)
 {
+    auto    app = CPubseqGatewayApp::GetInstance();
+
     // eUnknownTSE is safe here; no blob prop call will happen anyway
     // eUnknownUseCache is safe here; no further resolution required
     SPSGS_BlobBySatSatKeyRequest
@@ -2632,7 +2647,9 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
     CCassBlobTaskLoadBlob *             load_task =
-        new CCassBlobTaskLoadBlob(m_Timeout, m_MaxRetries, m_Conn,
+        new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                  app->GetCassandraMaxRetries(),
+                                  app->GetCassandraConnection(),
                                   orig_blob_request.m_BlobId.m_SatName,
                                   std::move(blob_record),
                                   true, nullptr);
@@ -2717,7 +2734,9 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
     if (blob_prop_cache_lookup_result == ePSGS_Found) {
         load_task = new CCassBlobTaskLoadBlob(
-                        m_Timeout, m_MaxRetries, m_Conn,
+                        app->GetCassandraTimeout(),
+                        app->GetCassandraMaxRetries(),
+                        app->GetCassandraConnection(),
                         info_blob_request.m_BlobId.m_SatName,
                         std::move(blob_record),
                         true, nullptr);
@@ -2748,7 +2767,9 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
         }
 
         load_task = new CCassBlobTaskLoadBlob(
-                        m_Timeout, m_MaxRetries, m_Conn,
+                        app->GetCassandraTimeout(),
+                        app->GetCassandraMaxRetries(),
+                        app->GetCassandraConnection(),
                         info_blob_request.m_BlobId.m_SatName,
                         info_blob_request.m_BlobId.m_SatKey,
                         true, nullptr);
@@ -2788,6 +2809,8 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                                                const string &  sat_name)
 {
+    auto    app = CPubseqGatewayApp::GetInstance();
+
     for (int  chunk_no = 1; chunk_no <= m_Id2Info->GetChunks(); ++chunk_no) {
         SPSGS_BlobId    chunks_blob_id(m_Id2Info->GetSat(),
                                        m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
@@ -2820,7 +2843,9 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 
         if (blob_prop_cache_lookup_result == ePSGS_Found) {
             load_task = new CCassBlobTaskLoadBlob(
-                            m_Timeout, m_MaxRetries, m_Conn,
+                            app->GetCassandraTimeout(),
+                            app->GetCassandraMaxRetries(),
+                            app->GetCassandraConnection(),
                             chunk_request.m_BlobId.m_SatName,
                             std::move(blob_record),
                             true, nullptr);
@@ -2852,7 +2877,9 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            m_Timeout, m_MaxRetries, m_Conn,
+                            app->GetCassandraTimeout(),
+                            app->GetCassandraMaxRetries(),
+                            app->GetCassandraConnection(),
                             chunk_request.m_BlobId.m_SatName,
                             chunk_request.m_BlobId.m_SatKey,
                             true, nullptr);

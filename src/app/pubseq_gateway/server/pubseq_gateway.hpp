@@ -202,6 +202,21 @@ public:
         return m_IdToNameAndDescription;
     }
 
+    shared_ptr<CCassConnection> GetCassandraConnection(void)
+    {
+        return m_CassConnection;
+    }
+
+    unsigned int GetCassandraTimeout(void) const
+    {
+        return m_TimeoutMs;
+    }
+
+    unsigned int GetCassandraMaxRetries(void) const
+    {
+        return m_MaxRetries;
+    }
+
 private:
     struct SRequestParameter
     {

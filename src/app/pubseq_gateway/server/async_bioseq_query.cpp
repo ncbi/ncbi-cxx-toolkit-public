@@ -75,11 +75,13 @@ void CAsyncBioseqQuery::MakeRequest(bool  with_seq_id_type)
     if (gi != -1)
         bioseq_info_request.SetGI(gi);
 
+    auto    app = CPubseqGatewayApp::GetInstance();
     CCassBioseqInfoTaskFetch *  fetch_task =
             new CCassBioseqInfoTaskFetch(
-                    m_PendingOp->GetTimeout(), m_PendingOp->GetMaxRetries(),
-                    m_PendingOp->GetConnection(),
-                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    app->GetCassandraTimeout(),
+                    app->GetCassandraMaxRetries(),
+                    app->GetCassandraConnection(),
+                    app->GetBioseqKeyspace(),
                     bioseq_info_request,
                     nullptr, nullptr);
     details->SetLoader(fetch_task);

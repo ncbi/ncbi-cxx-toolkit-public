@@ -179,11 +179,13 @@ CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(
     if (gi != -1)
         bioseq_info_request.SetGI(gi);
 
+    auto    app = CPubseqGatewayApp::GetInstance();
     CCassBioseqInfoTaskFetch *  fetch_task =
             new CCassBioseqInfoTaskFetch(
-                    m_PendingOp->GetTimeout(), m_PendingOp->GetMaxRetries(),
-                    m_PendingOp->GetConnection(),
-                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    app->GetCassandraTimeout(),
+                    app->GetCassandraMaxRetries(),
+                    app->GetCassandraConnection(),
+                    app->GetBioseqKeyspace(),
                     bioseq_info_request,
                     nullptr, nullptr);
     details->SetLoader(fetch_task);
@@ -236,11 +238,13 @@ void CAsyncSeqIdResolver::x_PrepareSi2csiQuery(const string &  secondary_id,
     if (effective_seq_id_type != -1)
         si2csi_request.SetSecSeqIdType(effective_seq_id_type);
 
+    auto    app = CPubseqGatewayApp::GetInstance();
     CCassSI2CSITaskFetch *  fetch_task =
             new CCassSI2CSITaskFetch(
-                    m_PendingOp->GetTimeout(), m_PendingOp->GetMaxRetries(),
-                    m_PendingOp->GetConnection(),
-                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    app->GetCassandraTimeout(),
+                    app->GetCassandraMaxRetries(),
+                    app->GetCassandraConnection(),
+                    app->GetBioseqKeyspace(),
                     si2csi_request,
                     nullptr, nullptr);
 

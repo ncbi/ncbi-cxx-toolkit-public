@@ -71,10 +71,7 @@ private:
 
 public:
     CPendingOperation(CPSGS_Request &&  user_request,
-                      size_t  initial_reply_chunks,
-                      shared_ptr<CCassConnection>  conn,
-                      unsigned int  timeout,
-                      unsigned int  max_retries);
+                      size_t  initial_reply_chunks = 0);
     ~CPendingOperation();
 
     void Clear();
@@ -266,9 +263,6 @@ private:
     unique_ptr<CPSGId2Info>     m_Id2Info;
 
 public:
-    unsigned int GetTimeout(void) const                   { return m_Timeout; }
-    unsigned int GetMaxRetries(void) const                { return m_MaxRetries; }
-    shared_ptr<CCassConnection> GetConnection(void) const { return m_Conn; }
     int16_t GetUrlSeqIdType(void) const                   { return m_UrlSeqIdType; }
     EPSGS_AccessionAdjustmentResult AdjustBioseqAccession(
                                         SBioseqResolution &  bioseq_resolution);
@@ -282,9 +276,6 @@ public:
     { m_FetchDetails.push_back(unique_ptr<CCassFetch>(fetch)); }
 
 private:
-    shared_ptr<CCassConnection>             m_Conn;
-    unsigned int                            m_Timeout;
-    unsigned int                            m_MaxRetries;
     CRequestStatus::ECode                   m_OverallStatus;
 
     // Incoming request
