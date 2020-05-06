@@ -2637,7 +2637,20 @@ static bool s_CleanupIsShortrRNA(const CSeq_feat& f, CScope* scope) // used in f
     }
     bool is_bad = false;
     size_t len = sequence::GetLength(f.GetLocation(), scope);
-    string rrna_name = f.GetData().GetRna().GetRnaProductName();
+    const CRNA_ref& rrna = f.GetData().GetRna();
+    string rrna_name = rrna.GetRnaProductName();
+    if (rrna_name.empty()) {
+        // RNA name may still be in product GBQual
+        if (f.IsSetQual()) {
+            for (auto qit : f.GetQual()) {
+                const CGb_qual& gbq = *qit;
+                if ( gbq.IsSetQual() && gbq.GetQual() == "product" ) {
+                    rrna_name = gbq.GetVal();
+                    break;
+                }
+            }
+        }
+    }
     ITERATE (TRNALengthMap, it, kTrnaLengthMap) {
         SIZE_TYPE pos = NStr::FindNoCase(rrna_name, it->first);
         if (pos != string::npos && len < it->second.first && !(it->second.second && f.IsSetPartial() && f.GetPartial()) ) {
