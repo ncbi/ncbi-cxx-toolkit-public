@@ -34,6 +34,7 @@
 
 #include "util.hpp"
 
+#include <connect/impl/socket_address.hpp>
 #include <connect/ncbi_socket.hpp>
 
 #include <corelib/reader_writer.hpp>
@@ -93,21 +94,6 @@ class NCBI_XCONNECT_EXPORT CNetServerInfo
 NCBI_XCONNECT_EXPORT
 CNetServerInfo g_ServerInfoFromString(const string& server_info);
 
-struct NCBI_XCONNECT_EXPORT SSocketAddress
-{
-    unsigned host;
-    unsigned short port;
-
-    SSocketAddress(unsigned h, unsigned short p) : host(h), port(p) {}
-    SSocketAddress(const string& n, unsigned short p);
-
-    explicit operator bool() const { return host && port; }
-    string GetHostName() const;
-    string AsString() const { return GetHostName() + ':' + NStr::UIntToString(port); }
-
-    static SSocketAddress Parse(const string& address);
-};
-
 ///////////////////////////////////////////////////////////////////////////
 //
 class NCBI_XCONNECT_EXPORT CNetServer
@@ -139,9 +125,6 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// attribute name-value pairs.
     CNetServerInfo GetServerInfo();
 };
-
-NCBI_XCONNECT_EXPORT bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs);
-NCBI_XCONNECT_EXPORT bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs);
 
 ///////////////////////////////////////////////////////////////////////////
 //

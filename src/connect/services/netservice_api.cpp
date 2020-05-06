@@ -915,44 +915,6 @@ void CNetService::ExecOnAllServers(const string& cmd)
         (*it).ExecWithRetry(cmd, false);
 }
 
-CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& service_name, unsigned types,
-        shared_ptr<void>& net_info, pair<string, const char*> lbsm_affinity,
-        int try_count, unsigned long retry_delay)
-{
-    CServiceDiscovery::TServers rv;
-
-    // Query the Load Balancer.
-    for (;;) {
-        if (!net_info) {
-            net_info.reset(ConnNetInfo_Create(service_name.c_str()), ConnNetInfo_Destroy);
-        }
-
-        if (auto it = make_c_unique(SERV_OpenP(service_name.c_str(), types, SERV_LOCALHOST, 0, 0.0,
-                        static_cast<const SConnNetInfo*>(net_info.get()), NULL, 0, 0 /*false*/,
-                        lbsm_affinity.first.c_str(), lbsm_affinity.second), SERV_Close)) {
-
-            while (auto info = SERV_GetNextInfoEx(it.get(), 0)) {
-                if (info->time > 0 && info->time != NCBI_TIME_INFINITE && info->rate != 0.0) {
-                    rv.emplace_back(SSocketAddress(info->host, info->port), info->rate);
-                }
-            }
-
-            break;
-        }
-
-        // FIXME Retry logic can be removed as soon as LBSMD with
-        // packet compression is installed universally.
-        if (--try_count < 0) {
-            break;
-        }
-
-        ERR_POST_X(4, "Could not find LB service name '" << service_name << "', will retry after delay");
-        SleepMilliSec(retry_delay);
-    }
-
-    return rv;
-}
-
 void SNetServiceImpl::DiscoverServersIfNeeded()
 {
     if (m_ServiceType == eServiceNotDefined) {
@@ -1509,40 +1471,6 @@ CNetService CNetService::Create(const string& api_name, const string& service_na
 
     return SNetServiceImpl::Create(api_name, service_name, client_name, new SNoOpConnectionListener,
             registry_builder, sections);
-}
-
-// This class also initializes CONNECT library in its constructor (via CConnIniter base).
-struct SServiceDiscoveryImpl : CConnIniter
-{
-    // Do not make static (see above)
-    shared_ptr<void> GetSingleServer(const string& service_name) const
-    {
-        if (auto address = SSocketAddress::Parse(service_name)) {
-            CServiceDiscovery::TServer server(move(address), 1.0);
-            return make_shared<CServiceDiscovery::TServers>(1, move(server));
-        }
-
-        return {};
-    }
-};
-
-CServiceDiscovery::CServiceDiscovery(const string& service_name) :
-    m_ServiceName(service_name),
-    m_Data(SServiceDiscoveryImpl().GetSingleServer(m_ServiceName)),
-    m_IsSingleServer(m_Data)
-{
-}
-
-CServiceDiscovery::TServers CServiceDiscovery::operator()()
-{
-    // Single server "discovery"
-    if (m_IsSingleServer) {
-        _ASSERT(m_Data);
-        return *static_pointer_cast<TServers>(m_Data);
-    }
-
-    const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;
-    return DiscoverImpl(m_ServiceName, types, m_Data, {}, 0, 0);
 }
 
 void g_AppendClientIPSessionIDHitID(string& cmd)

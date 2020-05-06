@@ -146,26 +146,6 @@ class NCBI_XCONNECT_EXPORT CNetService
     static CNetService Create(const string& api_name, const string& service_name, const string& client_name);
 };
 
-class NCBI_XCONNECT_EXPORT CServiceDiscovery
-{
-public:
-    CServiceDiscovery(const string& service_name);
-
-    using TServer = pair<SSocketAddress, double>;
-    using TServers = vector<TServer>;
-    TServers operator()();
-
-    const string& GetServiceName() const { return m_ServiceName; }
-    bool IsSingleServer() const { return m_IsSingleServer; }
-
-    static TServers DiscoverImpl(const string&, unsigned, shared_ptr<void>&, pair<string, const char*>, int, unsigned long);
-
-private:
-    const string m_ServiceName;
-    shared_ptr<void> m_Data;
-    const bool m_IsSingleServer;
-};
-
 /// This class is for use by the grid_cli utility only.
 /// @internal
 class NCBI_XCONNECT_EXPORT IExecToJson

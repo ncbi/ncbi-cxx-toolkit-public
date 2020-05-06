@@ -36,8 +36,6 @@
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
-#include <connect/ncbi_core_cxx.hpp>
-
 #include <corelib/ncbi_system.hpp>
 
 #include <sstream>
@@ -880,75 +878,6 @@ void SThrottleParams::SIOFailureThreshold::Init(CSynRegistry& registry, const SR
         numerator = (numerator * kMaxDenominator) / denominator;
         denominator = kMaxDenominator;
     }
-}
-
-// This class also initializes CONNECT library in its constructor (via CConnIniter base)
-struct SSocketAddressImpl : CConnIniter
-{
-    // Do not make static (see above)
-    unsigned GetHost(const string& name) const
-    {
-        return CSocketAPI::gethostbyname(name, eOn);
-    }
-
-    const string& GetName(unsigned host)
-    {
-        auto& name = m_Data[host];
-
-        // Name was not looked up yet or host changed
-        if (name.empty()) {
-            name = CSocketAPI::gethostbyaddr(host, eOn);
-
-            if (name.empty()) {
-                name = CSocketAPI::ntoa(host);
-            }
-        }
-
-        return name;
-    }
-
-    static SSocketAddressImpl& GetInstance()
-    {
-        thread_local static SSocketAddressImpl impl;
-        return impl;
-    }
-
-private:
-    map<unsigned, string> m_Data;
-};
-
-SSocketAddress::SSocketAddress(const string& n, unsigned short p) :
-    host(SSocketAddressImpl::GetInstance().GetHost(n)),
-    port(p)
-{
-}
-
-string SSocketAddress::GetHostName() const
-{
-    return SSocketAddressImpl::GetInstance().GetName(host);
-}
-
-SSocketAddress SSocketAddress::Parse(const string& address)
-{
-    string host, port;
-
-    if (NStr::SplitInTwo(address, ":", host, port)) {
-        return { move(host), NStr::StringToNumeric<unsigned short>(port) };
-    }
-
-    return { 0, 0 };
-}
-
-bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs)
-{
-    return lhs.host == rhs.host && lhs.port == rhs.port;
-}
-
-bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs)
-{
-    if (lhs.host != rhs.host) return lhs.host < rhs.host;
-
-    return lhs.port < rhs.port;
 }
 
 END_NCBI_SCOPE
