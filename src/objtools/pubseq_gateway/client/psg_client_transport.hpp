@@ -1033,7 +1033,7 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(CNetServiceDiscovery service, SPSG_Servers::TTS& servers) :
+    SPSG_DiscoveryImpl(CServiceDiscovery service, SPSG_Servers::TTS& servers) :
         m_Service(move(service)),
         m_Servers(servers)
     {}
@@ -1045,7 +1045,7 @@ protected:
     void AfterExecute() {}
 
 private:
-    CNetServiceDiscovery m_Service;
+    CServiceDiscovery m_Service;
     SPSG_Servers::TTS& m_Servers;
     SPSG_ThrottleParams m_ThrottleParams;
 };
@@ -1054,7 +1054,7 @@ struct SPSG_IoCoordinator
 {
     SPSG_Params params;
 
-    SPSG_IoCoordinator(CNetServiceDiscovery service);
+    SPSG_IoCoordinator(CServiceDiscovery service);
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
     const string& GetClientId() const { return m_ClientId; }

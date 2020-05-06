@@ -146,10 +146,10 @@ class NCBI_XCONNECT_EXPORT CNetService
     static CNetService Create(const string& api_name, const string& service_name, const string& client_name);
 };
 
-class NCBI_XCONNECT_EXPORT CNetServiceDiscovery
+class NCBI_XCONNECT_EXPORT CServiceDiscovery
 {
 public:
-    CNetServiceDiscovery(const string& service_name);
+    CServiceDiscovery(const string& service_name);
 
     using TServer = pair<SSocketAddress, double>;
     using TServers = vector<TServer>;
@@ -157,6 +157,8 @@ public:
 
     const string& GetServiceName() const { return m_ServiceName; }
     bool IsSingleServer() const { return m_IsSingleServer; }
+
+    static TServers DiscoverImpl(const string&, unsigned, shared_ptr<void>&, pair<string, const char*>, int, unsigned long);
 
 private:
     const string m_ServiceName;

@@ -300,10 +300,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     static SNetServiceImpl* Clone(SNetServerInPool* server, SNetServiceImpl* prototype);
     static SNetServiceImpl* Clone(const string& service_name, SNetServiceImpl* prototype);
 
-    static CNetServiceDiscovery::TServers Discover(const string& service_name, unsigned types,
-            shared_ptr<void>& net_info, SNetServerPoolImpl::TLBSMAffinity lbsm_affinity,
-            int try_count, unsigned long retry_delay);
-
 private:
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,

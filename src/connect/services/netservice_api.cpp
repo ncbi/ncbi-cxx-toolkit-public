@@ -915,11 +915,11 @@ void CNetService::ExecOnAllServers(const string& cmd)
         (*it).ExecWithRetry(cmd, false);
 }
 
-CNetServiceDiscovery::TServers SNetServiceImpl::Discover(const string& service_name, unsigned types,
-        shared_ptr<void>& net_info, SNetServerPoolImpl::TLBSMAffinity lbsm_affinity,
+CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& service_name, unsigned types,
+        shared_ptr<void>& net_info, pair<string, const char*> lbsm_affinity,
         int try_count, unsigned long retry_delay)
 {
-    CNetServiceDiscovery::TServers rv;
+    CServiceDiscovery::TServers rv;
 
     // Query the Load Balancer.
     for (;;) {
@@ -976,7 +976,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby |
                 fSERV_IncludeReserved | fSERV_IncludeSuppressed;
 
-            auto discovered = Discover(m_ServiceName, types, m_NetInfo, m_ServerPool->m_LBSMAffinity,
+            auto discovered = CServiceDiscovery::DiscoverImpl(m_ServiceName, types, m_NetInfo, m_ServerPool->m_LBSMAffinity,
                     TServConn_MaxFineLBNameRetries::GetDefault(), m_ConnectionRetryDelay);
 
             SDiscoveredServers* server_group = m_DiscoveredServers;
@@ -1512,27 +1512,28 @@ CNetService CNetService::Create(const string& api_name, const string& service_na
 }
 
 // This class also initializes CONNECT library in its constructor (via CConnIniter base).
-struct SNetServiceDiscoveryInit : CConnIniter
+struct SServiceDiscoveryImpl : CConnIniter
 {
+    // Do not make static (see above)
     shared_ptr<void> GetSingleServer(const string& service_name) const
     {
         if (auto address = SSocketAddress::Parse(service_name)) {
-            CNetServiceDiscovery::TServer server(move(address), 1.0);
-            return make_shared<CNetServiceDiscovery::TServers>(1, move(server));
+            CServiceDiscovery::TServer server(move(address), 1.0);
+            return make_shared<CServiceDiscovery::TServers>(1, move(server));
         }
 
         return {};
     }
 };
 
-CNetServiceDiscovery::CNetServiceDiscovery(const string& service_name) :
+CServiceDiscovery::CServiceDiscovery(const string& service_name) :
     m_ServiceName(service_name),
-    m_Data(SNetServiceDiscoveryInit().GetSingleServer(m_ServiceName)),
+    m_Data(SServiceDiscoveryImpl().GetSingleServer(m_ServiceName)),
     m_IsSingleServer(m_Data)
 {
 }
 
-CNetServiceDiscovery::TServers CNetServiceDiscovery::operator()()
+CServiceDiscovery::TServers CServiceDiscovery::operator()()
 {
     // Single server "discovery"
     if (m_IsSingleServer) {
@@ -1541,7 +1542,7 @@ CNetServiceDiscovery::TServers CNetServiceDiscovery::operator()()
     }
 
     const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;
-    return SNetServiceImpl::Discover(m_ServiceName, types, m_Data, SNetServerPoolImpl::TLBSMAffinity(), 0, 0);
+    return DiscoverImpl(m_ServiceName, types, m_Data, {}, 0, 0);
 }
 
 void g_AppendClientIPSessionIDHitID(string& cmd)

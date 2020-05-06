@@ -1526,7 +1526,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
     // Update existing servers
     for (auto& server : servers) {
-        auto address_same = [&](CNetServiceDiscovery::TServer& s) { return s.first == server.address; };
+        auto address_same = [&](CServiceDiscovery::TServer& s) { return s.first == server.address; };
         auto it = find_if(discovered.begin(), discovered.end(), address_same);
 
         _DEBUG_ARG(const auto& server_name = server.address.AsString());
@@ -1584,12 +1584,12 @@ void SPSG_IoImpl::AfterExecute()
 
 /** SPSG_IoCoordinator */
 
-uint64_t s_GetDiscoveryRepeat(const CNetServiceDiscovery& service)
+uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 {
     return service.IsSingleServer() ? 0 : s_SecondsToMs(TPSG_RebalanceTime::GetDefault());
 }
 
-SPSG_IoCoordinator::SPSG_IoCoordinator(CNetServiceDiscovery service) :
+SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     m_Barrier(TPSG_NumIo::GetDefault() + 2),
     m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, m_Servers),
     m_RequestCounter(0),
