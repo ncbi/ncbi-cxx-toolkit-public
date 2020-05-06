@@ -360,7 +360,7 @@ public:
             NStr::NumericToString(random.GetRandUint8());
     }
 
-    static const char* const GetData()
+    static const char* GetData()
     {
         SSingleton& s = SSingleton::instance();
         return s.data.data() + s.distribution(s.generator);
