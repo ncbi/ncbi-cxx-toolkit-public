@@ -126,11 +126,16 @@ int CSampleObjmgrApplication::Run(void)
     // Get list of synonyms for the Seq-id.
     // * With GenBank loader this request should not load the whole Bioseq.
     CBioseq_Handle::TId ids = scope.GetIds(seq_id);
+
     cout << "ID: ";
-    ITERATE (CBioseq_Handle::TId, id_it, ids) {
-        if (id_it != ids.begin())
+    bool first = true;
+    for (const auto& id : ids) {
+        if (first) {
+            first = false;
+        } else {
             cout << " + "; // print id separator
-        cout << id_it->AsString();
+        }
+        cout << id.AsString();
     }
     cout << endl;
 

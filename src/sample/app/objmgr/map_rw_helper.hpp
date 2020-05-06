@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 ///////////////////////////////////////////////////////
 ///
 /// template<typename TElem> CContElemConverter
@@ -68,6 +69,7 @@ public:
     static const string& ToString  (const string& str)  { return str; }
 };
 
+
 ///////////////////////////////////////////////////////
 ///
 /// Read a string from a stream. The string is following 
@@ -76,9 +78,9 @@ public:
 inline string ReadStringFromStream(CNcbiIstream& is)
 {
     string str;
-    if (!is.good() || is.eof())
+    if (!is.good() || is.eof()) {
         return str;
-
+    }
     size_t size;
     is >> size;
     if (!is.good() || is.eof())
@@ -86,11 +88,12 @@ inline string ReadStringFromStream(CNcbiIstream& is)
     vector<char> buf(size+1, 0);
     is.read(&*buf.begin(), size+1);
     size_t count = is.gcount();
-    if (count > 0)
+    if (count > 0) {
         str.append((&*buf.begin())+1, count-1);
-
+    }
     return str;
 }
+
 
 ///////////////////////////////////////////////////////
 ///
@@ -104,13 +107,12 @@ CNcbiOstream& WriteMap(CNcbiOstream& os, const TMap& cont)
 
     os << cont.size() << ' ';
 
-    ITERATE(typename TMap, it, cont) {
-        string key = TKeyConverter  ::ToString(it->first);
-        string value = TValueConverter::ToString(it->second);   
+    for (auto const& it : cont) {
+        string key = TKeyConverter::ToString(it.first);
+        string value = TValueConverter::ToString(it.second);   
         os << key.size() << ' ' << key;
         os << value.size() << ' ' << value;
     }
-
     return os;
 }
 
@@ -125,26 +127,24 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
     typedef CContElemConverter<typename TMap::key_type>    TKeyConverter;
     typedef CContElemConverter<typename TMap::mapped_type> TValueConverter;
 
-
     string str;
-    if (!is.good() || is.eof())
+    if (!is.good() || is.eof()) {
         return is;
-
+    }
     size_t size;
     is >> size;
-    if (!is.good() || is.eof())
+    if (!is.good() || is.eof()) {
         return is;
-    for( size_t i = 0; i < size; ++i) {
+    }
+    for (size_t i = 0; i < size; ++i) {
 
         string key = ReadStringFromStream(is);
         string value = ReadStringFromStream(is);
 
         cont.insert(typename TMap::value_type(
                              TKeyConverter::FromString(key),
-                             TValueConverter::FromString(value))
-                    );
+                             TValueConverter::FromString(value)));
     }
-
     return is;
 }
 

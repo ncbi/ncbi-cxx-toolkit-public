@@ -91,8 +91,10 @@ private:
 void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
 {
     const CBioseq_Handle::TId& ids = handle.GetId();
-    ITERATE(CBioseq_Handle::TId, id, ids) {
-        if (id != ids.begin()) os << " ; ";
+    for (auto id = ids.begin(); id != ids.end(); id++) {
+        if (id != ids.begin()) {
+            os << " ; ";
+        }
         os << id->AsString();
     }
 }
@@ -106,7 +108,6 @@ public:
     CGetSeqIdHandle() : m_Handle( new CSeq_id_Handle( CSeq_id_Handle::GetGiHandle(GI_CONST(2122545143)) ) ) {}
     unique_ptr<CSeq_id_Handle> m_Handle;
 };
-
 static const CSeq_id_Handle& s_GetNewIdHandle()
 {
     static CSafeStatic<CGetSeqIdHandle> id;
@@ -117,12 +118,14 @@ static const CSeq_id_Handle& s_GetNewIdHandle()
 void s_PrintIds1(const CBioseq_Handle::TId& ids, CNcbiOstream& os)
 {
     os << "ID: ";
-    ITERATE (CBioseq_Handle::TId, id_it, ids) {
-        if (id_it != ids.begin())
+    for (auto id = ids.begin(); id != ids.end(); id++ ) {
+        if (id != ids.begin()) {
             os << " + "; // print id separator
-        os << id_it->AsString();
+        }
+        os << id->AsString();
     }
 }
+
 
 template<typename TParam, typename TFunction>
 string ToString(const TParam& param, TFunction func)
@@ -182,16 +185,18 @@ public:
     virtual bool Do(CScope& scope, CNcbiOstream* os) 
     {
         CBioseq_Handle::TId ids = scope.GetIds(m_SeqId);
-        if( ids.empty() )
+        if (ids.empty()) {
             return false;
-        ITERATE(CBioseq_Handle::TId, id, ids) {
-            if (*id != m_SeqId) {
-                m_SIH = *id;
+        }
+        for (const auto& id : ids) {
+            if (id != m_SeqId) {
+                m_SIH = id;
                 break;
             }
         }
-        if ( !m_SIH )
+        if (!m_SIH) {
             return false;
+        }
         CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(m_SeqId);
         bioseq_handle.GetEditHandle().RemoveId(m_SeqId);
         m_Test1 = ToString(bioseq_handle, &s_PrintIds);

@@ -211,8 +211,8 @@ void CFileDBEngine::BeginTransaction()
 {
     m_TmpIds.clear();
     m_TmpCount.clear();
-    ITERATE(TCmdCount, it, m_CmdCount) {
-        m_TmpCount[it->first] = it->second;
+    for (auto const& it : m_CmdCount) {
+        m_TmpCount[it.first] = it.second;
     }
 }
 
@@ -236,28 +236,30 @@ void CFileDBEngine::RollbackTransaction()
 {
     m_TmpIds.clear();
 
-    NON_CONST_ITERATE(TCmdCount, it, m_CmdCount) {
-        if( m_TmpCount.find(it->first) == m_TmpCount.end()) {
-            int cmdcount = it->second;
+    for (auto const& it : m_CmdCount) {
+        if( m_TmpCount.find(it.first) == m_TmpCount.end()) {
+            int cmdcount = it.second;
             while (cmdcount > 0)  {
-                string fname = x_GetCmdFileName(it->first, cmdcount);
+                string fname = x_GetCmdFileName(it.first, cmdcount);
                 CFile file(fname);
-                if ( file.Exists() )
+                if (file.Exists()) {
                     file.Remove();
+                }
                 --cmdcount;
             }
-            m_CmdCount[it->first] = 0;
+            m_CmdCount[it.first] = 0;
         }
     }
 
-    ITERATE(TCmdCount, it, m_TmpCount) {
-        _ASSERT( m_CmdCount.find(it->first) != m_CmdCount.end());
-        int& cmdcount = m_CmdCount[it->first];
-        while (cmdcount > it->second) {
-            string fname = x_GetCmdFileName(it->first, cmdcount);
+    for (auto const& it : m_TmpCount) {
+        _ASSERT( m_CmdCount.find(it.first) != m_CmdCount.end());
+        int& cmdcount = m_CmdCount[it.first];
+        while (cmdcount > it.second) {
+            string fname = x_GetCmdFileName(it.first, cmdcount);
             CFile file(fname);
-            if ( file.Exists() )
+            if (file.Exists()) {
                 file.Remove();
+            }
             --cmdcount;
         }
     }
