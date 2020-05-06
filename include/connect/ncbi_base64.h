@@ -105,21 +105,29 @@ typedef enum {
 
 /**
  * Encode binary data using the base64url variant of the Base64 family of
- * encodings. The input data is read from src_buf and the result is stored
- * in dst_buf. This implementation does not pad the output with '='.
- * When called with a dst_size of zero, this function simply returns the
- * required destination buffer size in output_len. Large inputs can be
- * processed incrementally by dividing the input into chunks and calling
- * this function for each chunk. Important: When large inputs are
- * incrementally encoded in this way, the source buffer size for all but
- * the last chunk must be a multiple of 3 bytes. For information about the
- * base64url, please refer to RFC 4648.
+ * encodings.  The input data is read from src_buf and the result is stored
+ * in dst_buf.  This implementation does not pad the output with '=';  nor it
+ * terminates the output with '\0'.  When called with a dst_size of zero, this
+ * function simply returns the required destination buffer size in output_len.
  *
- * @param src_buf Data to encode. Ignored if dst_size is zero.
- * @param src_size The size of the input data.
- * @param dst_buf Output buffer. Ignored if dst_size is zero.
- * @param dst_size The size of the output buffer or zero.
- * @param output_len Variable for storing the length of the encoded string.
+ * Large inputs can be processed incrementally by dividing the input into
+ * chunks and calling this function for each chunk.
+ * Important:  When large inputs are incrementally encoded in this way, the
+ * source buffer size for all but the last chunk must be a multiple of 3 bytes.
+ *
+ * For information about the base64url variant of the Base64 family of
+ * encodings, please refer to RFC 4648.
+ *
+ * @param src_buf
+ *  [in]  Data to encode.  Ignored if dst_size is zero.
+ * @param src_size
+ *  [in]  The size of the input data.
+ * @param dst_buf
+ *  [out] Output buffer.  Ignored if dst_size is zero.
+ * @param dst_size
+ *  [in]  The size of the output buffer or zero.
+ * @param output_len
+ *  [out] Variable for storing the length of the encoded string.
  *        If it turns out to be greater than dst_size, dst_buf is not
  *        written and the function returns eBase64_BufferTooSmall.
  *        Can be NULL.
@@ -138,22 +146,30 @@ extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_encode
 
 
 /**
- * Decode the base64url-encoded src_buf and store the result in dst_buf.
- * This implementation reports the padding character ('=') as an error, so
- * those symbols must be removed before calling this function. When called
- * with a dst_size of zero, this function simply returns the required
- * destination buffer size in output_len. Large inputs can be processed
- * incrementally by dividing the input into chunks and calling this
- * function for each chunk. Important: When large inputs are incrementally
- * encoded in this way, the source buffer size for all but the last chunk
- * must be a multiple of 4 bytes. For information about the base64url
- * variant of the Base64 family of encodings, please refer to RFC 4648.
+ * Decode the base64url-encoded src_buf and store the result in dst_buf, not
+ * '\0'-terminated.  This implementation reports the padding character ('=')
+ * as an error, so those symbols must be removed before calling this function.
+ * When called with a dst_size of zero, this function simply returns the
+ * required destination buffer size in output_len.
  *
- * @param src_buf Base64url-encoded data to decode. Ignored if dst_size is zero.
- * @param src_size The size of src_buf.
- * @param dst_buf Output buffer. Ignored if dst_size is zero.
- * @param dst_size The size of the output buffer or zero.
- * @param output_len Variable for storing the length of the decoded string.
+ * Large inputs can be processed incrementally by dividing the input into
+ * chunks and calling this function for each chunk.
+ * Important:  When large inputs are incrementally decoded in this way, the
+ * source buffer size for all but the last chunk must be a multiple of 4 bytes.
+ *
+ * For information about the base64url variant of the Base64 family of
+ * encodings, please refer to RFC 4648.
+ *
+ * @param src_buf
+ *  [in]  Base64url-encoded data to decode.  Ignored if dst_size is zero.
+ * @param src_size
+ *  [in]  The size of src_buf.
+ * @param dst_buf
+ *  [out] Output buffer.  Ignored if dst_size is zero.
+ * @param dst_size
+ *  [in]  The size of the output buffer or zero.
+ * @param output_len
+ *  [out] Variable for storing the length of the decoded string.
  *        If more space than dst_size bytes is required, dst_buf is not
  *        written and the function returns eBase64_BufferTooSmall.
  *        Can be NULL.

@@ -79,7 +79,7 @@ extern void BASE64_Encode
         if (i >= src_size) {
             break;
         }
-        shift = (unsigned char)(shift + 2);  // shift += 2;
+        shift = (unsigned char)(shift + 2);  /* shift += 2; */
         shift &= 7;
         temp = (c << (8 - shift)) & 0x3F;
         if (shift) {
