@@ -458,7 +458,7 @@ public:
         if (!bioseq_handle)
             return false;
         CRef<CSeq_annot> annot(new CSeq_annot);
-        annot->AddName("Test Annot");
+        annot->SetNameDesc("Test Annot");
         annot->SetData().SetFtable();
         CSeq_annot_Handle ah = bioseq_handle.GetEditHandle().AttachAnnot(*annot);
 
