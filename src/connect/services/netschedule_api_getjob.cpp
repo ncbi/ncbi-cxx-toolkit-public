@@ -61,7 +61,7 @@ CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJob(
     }
 }
 
-typedef list<CNetServer::SAddress> TServers;
+typedef list<SSocketAddress> TServers;
 typedef list<CNetScheduleGetJob::SEntry> TTimeline;
 typedef TTimeline::iterator TIterator;
 
@@ -362,7 +362,7 @@ inline void Filter(TTimeline& timeline, TServers& servers)
     TTimeline::iterator i = timeline.begin();
 
     while (i != timeline.end()) {
-        const CNetServer::SAddress& address(i->server_address);
+        const SSocketAddress& address(i->server_address);
         TServers::iterator j = find(servers.begin(), servers.end(), address);
 
         // If this server is still valid

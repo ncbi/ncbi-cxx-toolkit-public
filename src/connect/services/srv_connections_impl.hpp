@@ -198,7 +198,7 @@ private:
 
 struct SNetServerInPool : public CObject
 {
-    SNetServerInPool(CNetServer::SAddress address,
+    SNetServerInPool(SSocketAddress address,
             INetServerProperties* server_properties, SThrottleParams throttle_params);
 
     // Releases a reference to the parent service object,
@@ -221,7 +221,7 @@ public:
     // to an outside caller via ReturnServer() or GetServer().
     CNetServerPool m_ServerPool;
 
-    CNetServer::SAddress m_Address;
+    SSocketAddress m_Address;
 
     // API-specific server properties.
     CRef<INetServerProperties> m_ServerProperties;
@@ -271,8 +271,8 @@ struct SNetServerImpl : public CObject
             const STimeout* timeout = NULL,
             INetServerExecListener* exec_listener = NULL);
 
-    static void ConnectImpl(CSocket&, SConnectDeadline&, const CNetServer::SAddress&,
-            const CNetServer::SAddress&);
+    static void ConnectImpl(CSocket&, SConnectDeadline&, const SSocketAddress&,
+            const SSocketAddress&);
 
     template <class TProperties>
     CRef<TProperties> Get()

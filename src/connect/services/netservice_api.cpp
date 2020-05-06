@@ -394,7 +394,7 @@ void SNetServiceImpl::Construct(SNetServerInPool* server)
 void SNetServiceImpl::Construct()
 {
     if (!m_ServiceName.empty()) {
-        if (auto address = CNetServer::SAddress::Parse(m_ServiceName)) {
+        if (auto address = SSocketAddress::Parse(m_ServiceName)) {
             Construct(m_ServerPool->FindOrCreateServerImpl(move(address)));
         } else {
             m_ServiceType = eLoadBalancedService;
@@ -457,9 +457,9 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry& registry, const SRegSynonyms& 
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const CNetServer::SAddress& original, const string& service)
+        const SSocketAddress& original, const string& service)
 {
-    CNetServer::SAddress actual(original);
+    SSocketAddress actual(original);
     _ASSERT(actual.port);
     ticket_t ticket = 0;
 
@@ -586,7 +586,7 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry&, const SRegSynonyms&)
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const CNetServer::SAddress& original, const string&)
+        const SSocketAddress& original, const string&)
 {
     SNetServerImpl::ConnectImpl(socket, deadline, original, original);
 }
@@ -740,7 +740,7 @@ bool CNetService::IsLoadBalanced() const
     return m_Impl->IsLoadBalanced();
 }
 
-void CNetServerPool::StickToServer(CNetServer::SAddress address)
+void CNetServerPool::StickToServer(SSocketAddress address)
 {
     m_Impl->m_EnforcedServer = move(address);
 }
@@ -793,7 +793,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
 }
 
 SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
-        CNetServer::SAddress server_address)
+        SSocketAddress server_address)
 {
     pair<TNetServerByAddress::iterator, bool> loc(m_Servers.insert(
             TNetServerByAddress::value_type(server_address,
@@ -818,7 +818,7 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, CNetServer::SAddress server_address)
+CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, SSocketAddress server_address)
 {
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
@@ -828,7 +828,7 @@ CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, CNetServer::S
     return new SNetServerImpl(service, server);
 }
 
-CNetServer SNetServiceImpl::GetServer(CNetServer::SAddress server_address)
+CNetServer SNetServiceImpl::GetServer(SSocketAddress server_address)
 {
     m_RebalanceStrategy.OnResourceRequested();
     return m_ServerPool->GetServer(this, move(server_address));
@@ -837,12 +837,12 @@ CNetServer SNetServiceImpl::GetServer(CNetServer::SAddress server_address)
 CNetServer CNetService::GetServer(const string& host,
         unsigned short port)
 {
-    return m_Impl->GetServer(CNetServer::SAddress(host, port));
+    return m_Impl->GetServer(SSocketAddress(host, port));
 }
 
 CNetServer CNetService::GetServer(unsigned host, unsigned short port)
 {
-    return m_Impl->GetServer(CNetServer::SAddress(host, port));
+    return m_Impl->GetServer(SSocketAddress(host, port));
 }
 
 class SRandomServiceTraversal : public IServiceTraversal
@@ -933,7 +933,7 @@ CNetServiceDiscovery::TServers SNetServiceImpl::Discover(const string& service_n
 
             while (auto info = SERV_GetNextInfoEx(it.get(), 0)) {
                 if (info->time > 0 && info->time != NCBI_TIME_INFINITE && info->rate != 0.0) {
-                    rv.emplace_back(CNetServer::SAddress(info->host, info->port), info->rate);
+                    rv.emplace_back(SSocketAddress(info->host, info->port), info->rate);
                 }
             }
 
@@ -1516,7 +1516,7 @@ struct SNetServiceDiscoveryInit : CConnIniter
 {
     shared_ptr<void> GetSingleServer(const string& service_name) const
     {
-        if (auto address = CNetServer::SAddress::Parse(service_name)) {
+        if (auto address = SSocketAddress::Parse(service_name)) {
             CNetServiceDiscovery::TServer server(move(address), 1.0);
             return make_shared<CNetServiceDiscovery::TServers>(1, move(server));
         }

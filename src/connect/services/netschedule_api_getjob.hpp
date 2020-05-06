@@ -68,12 +68,12 @@ struct CNetScheduleGetJob
 
     struct SEntry
     {
-        CNetServer::SAddress server_address;
+        SSocketAddress server_address;
         CDeadline deadline;
         bool all_affinities_checked;
         bool more_jobs;
 
-        SEntry(const CNetServer::SAddress& a, bool j = true) :
+        SEntry(const SSocketAddress& a, bool j = true) :
             server_address(a),
             deadline(0, 0),
             all_affinities_checked(true),
@@ -94,7 +94,7 @@ class CNetScheduleGetJobImpl : public CNetScheduleGetJob
 public:
     CNetScheduleGetJobImpl(TImpl& impl) :
         m_Impl(impl),
-        m_DiscoveryAction(CNetServer::SAddress(0, 0), false)
+        m_DiscoveryAction(SSocketAddress(0, 0), false)
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }

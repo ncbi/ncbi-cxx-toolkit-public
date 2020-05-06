@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 typedef pair<SNetServerInPool*, double> TServerRate;
 typedef vector<TServerRate> TNetServerList;
-typedef map<CNetServer::SAddress, SNetServerInPool*> TNetServerByAddress;
+typedef map<SSocketAddress, SNetServerInPool*> TNetServerByAddress;
 typedef map<string, CNetService> TNetServiceByName;
 
 struct SDiscoveredServers : public CObject
@@ -96,9 +96,9 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 
-    SNetServerInPool* FindOrCreateServerImpl(CNetServer::SAddress server_address);
+    SNetServerInPool* FindOrCreateServerImpl(SSocketAddress server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
-    CNetServer GetServer(SNetServiceImpl* service, CNetServer::SAddress server_address);
+    CNetServer GetServer(SNetServiceImpl* service, SSocketAddress server_address);
 
     void ResetServerConnections();
     const SThrottleParams& GetThrottleParams() const { return m_ThrottleParams; }
@@ -109,7 +109,7 @@ private:
     INetServerConnectionListener::TPropCreator m_PropCreator;
 
 public:
-    CNetServer::SAddress m_EnforcedServer;
+    SSocketAddress m_EnforcedServer;
 
     // LBSM affinity name and value
     using TLBSMAffinity = pair<string, const char*>;
@@ -258,7 +258,7 @@ struct SNetServiceXSiteAPI : public CObject
 {
     static void InitXSite(CSynRegistry& registry, const SRegSynonyms& sections);
     static void ConnectXSite(CSocket&, SNetServerImpl::SConnectDeadline&,
-            const CNetServer::SAddress&, const string&);
+            const SSocketAddress&, const string&);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static bool IsUsingXSiteProxy();
@@ -343,7 +343,7 @@ public:
     SNetServiceIteratorImpl* Iterate(CNetServer::TInstance priority_server);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
-    CNetServer GetServer(CNetServer::SAddress server_address);
+    CNetServer GetServer(SSocketAddress server_address);
 
     const string& GetClientName() const { return m_ClientName; }
 

@@ -93,26 +93,26 @@ class NCBI_XCONNECT_EXPORT CNetServerInfo
 NCBI_XCONNECT_EXPORT
 CNetServerInfo g_ServerInfoFromString(const string& server_info);
 
+struct NCBI_XCONNECT_EXPORT SSocketAddress
+{
+    unsigned host;
+    unsigned short port;
+
+    SSocketAddress(unsigned h, unsigned short p);
+    SSocketAddress(string n, unsigned short p);
+    explicit operator bool() const { return host && port; }
+    const string& AsString() const;
+
+    static SSocketAddress Parse(const string& address);
+};
+
 ///////////////////////////////////////////////////////////////////////////
 //
 class NCBI_XCONNECT_EXPORT CNetServer
 {
     NCBI_NET_COMPONENT(NetServer);
 
-    struct NCBI_XCONNECT_EXPORT SAddress
-    {
-        unsigned host;
-        unsigned short port;
-
-        SAddress(unsigned h, unsigned short p);
-        SAddress(string n, unsigned short p);
-        explicit operator bool() const { return host && port; }
-        const string& AsString() const;
-
-        static SAddress Parse(const string& address);
-    };
-
-    const SAddress& GetAddress() const;
+    const SSocketAddress& GetAddress() const;
 
     // Shortcuts
     unsigned       GetHost()          const { return GetAddress().host;       }
@@ -138,8 +138,8 @@ class NCBI_XCONNECT_EXPORT CNetServer
     CNetServerInfo GetServerInfo();
 };
 
-NCBI_XCONNECT_EXPORT bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs);
-NCBI_XCONNECT_EXPORT bool operator< (const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs);
+NCBI_XCONNECT_EXPORT bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs);
+NCBI_XCONNECT_EXPORT bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs);
 
 ///////////////////////////////////////////////////////////////////////////
 //

@@ -458,7 +458,7 @@ private:
 
 struct SPSG_UvConnect
 {
-    SPSG_UvConnect(void* user_data, const CNetServer::SAddress& address);
+    SPSG_UvConnect(void* user_data, const SSocketAddress& address);
 
     int operator()(uv_tcp_t* handle, uv_connect_cb cb);
 
@@ -473,7 +473,7 @@ struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
     using TReadCb = function<void(const char*, ssize_t)>;
     using TWriteCb = function<void(int)>;
 
-    SPSG_UvTcp(uv_loop_t *loop, const CNetServer::SAddress& address,
+    SPSG_UvTcp(uv_loop_t *loop, const SSocketAddress& address,
             TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
 
     int Write();
@@ -733,7 +733,7 @@ struct SPSG_ThrottleParams
 
 struct SPSG_Throttling
 {
-    SPSG_Throttling(const CNetServer::SAddress& address, SPSG_ThrottleParams p, uv_loop_t* l);
+    SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l);
 
     bool Active() const { return m_Active != eOff; }
     bool AddSuccess() { return AddResult(true); }
@@ -760,7 +760,7 @@ private:
 
         SStats(SPSG_ThrottleParams p) : params(p) {}
 
-        bool Adjust(const CNetServer::SAddress& address, bool result);
+        bool Adjust(const SSocketAddress& address, bool result);
         void Reset();
     };
     enum EThrottling { eOff, eOnTimer, eUntilDiscovery };
@@ -786,7 +786,7 @@ private:
         }
     }
 
-    const CNetServer::SAddress& m_Address;
+    const SSocketAddress& m_Address;
     SPSG_ThreadSafe<SStats> m_Stats;
     atomic<EThrottling> m_Active;
     SPSG_UvTimer m_Timer;
@@ -795,11 +795,11 @@ private:
 
 struct SPSG_Server
 {
-    const CNetServer::SAddress address;
+    const SSocketAddress address;
     atomic<double> rate;
     SPSG_Throttling throttling;
 
-    SPSG_Server(CNetServer::SAddress a, double r, SPSG_ThrottleParams p, uv_loop_t* l) :
+    SPSG_Server(SSocketAddress a, double r, SPSG_ThrottleParams p, uv_loop_t* l) :
         address(move(a)),
         rate(r),
         throttling(address, move(p), l)

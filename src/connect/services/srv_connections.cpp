@@ -303,7 +303,7 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 }
 
 /*************************************************************************/
-SNetServerInPool::SNetServerInPool(CNetServer::SAddress address,
+SNetServerInPool::SNetServerInPool(SSocketAddress address,
         INetServerProperties* server_properties, SThrottleParams throttle_params) :
     m_Address(move(address)),
     m_ServerProperties(server_properties),
@@ -438,7 +438,7 @@ bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
     return m_Impl->GetNextAttribute(attr_name, attr_value);
 }
 
-const CNetServer::SAddress& CNetServer::GetAddress() const
+const SSocketAddress& CNetServer::GetAddress() const
 {
     return m_Impl->m_ServerInPool->m_Address;
 }
@@ -549,7 +549,7 @@ CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, const STi
 }
 
 void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
-        const CNetServer::SAddress& actual, const CNetServer::SAddress& original)
+        const SSocketAddress& actual, const SSocketAddress& original)
 {
     EIO_Status io_st;
 
@@ -904,19 +904,19 @@ private:
     map<unsigned, map<unsigned short, string>> m_Data;
 };
 
-CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :
+SSocketAddress::SSocketAddress(unsigned h, unsigned short p) :
     host(h),
     port(p)
 {
 }
 
-CNetServer::SAddress::SAddress(string n, unsigned short p) :
+SSocketAddress::SSocketAddress(string n, unsigned short p) :
     host(g_NetService_gethostbyname(n)),
     port(p)
 {
 }
 
-CNetServer::SAddress CNetServer::SAddress::Parse(const string& address)
+SSocketAddress SSocketAddress::Parse(const string& address)
 {
     string host, port;
 
@@ -927,19 +927,19 @@ CNetServer::SAddress CNetServer::SAddress::Parse(const string& address)
     return { 0, 0 };
 }
 
-bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
+bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs)
 {
     return lhs.host == rhs.host && lhs.port == rhs.port;
 }
 
-bool operator< (const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
+bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs)
 {
     if (lhs.host != rhs.host) return lhs.host < rhs.host;
 
     return lhs.port < rhs.port;
 }
 
-const string& CNetServer::SAddress::AsString() const
+const string& SSocketAddress::AsString() const
 {
     return SNameByHost::GetInstance().Get(host, port);
 }

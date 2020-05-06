@@ -592,7 +592,7 @@ void SPSG_UvWrite::NewBuffer()
 }
 
 
-SPSG_UvConnect::SPSG_UvConnect(void* user_data, const CNetServer::SAddress& address)
+SPSG_UvConnect::SPSG_UvConnect(void* user_data, const SSocketAddress& address)
 {
     m_Request.data = user_data;
 
@@ -610,7 +610,7 @@ int SPSG_UvConnect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
 }
 
 
-SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const CNetServer::SAddress& address,
+SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address,
         TConnectCb connect_cb, TReadCb rcb, TWriteCb write_cb) :
     SPSG_UvHandle<uv_tcp_t>(s_OnClose),
     m_Loop(l),
@@ -1279,7 +1279,7 @@ SPSG_ThrottleParams::SPSG_ThrottleParams() :
 
 /** SPSG_Throttling */
 
-SPSG_Throttling::SPSG_Throttling(const CNetServer::SAddress& address, SPSG_ThrottleParams p, uv_loop_t* l) :
+SPSG_Throttling::SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l) :
     m_Address(address),
     m_Stats(move(p)),
     m_Active(eOff),
@@ -1311,7 +1311,7 @@ bool SPSG_Throttling::Adjust(bool result)
     return false;
 }
 
-bool SPSG_Throttling::SStats::Adjust(const CNetServer::SAddress& address, bool result)
+bool SPSG_Throttling::SStats::Adjust(const SSocketAddress& address, bool result)
 {
     if (result) {
         failures = 0;

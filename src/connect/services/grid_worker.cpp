@@ -572,7 +572,7 @@ int SGridWorkerNodeImpl::Run(
     NStr::Split(m_SynRegistry->Get("server", "master_nodes", kEmptyStr), " ;,", vhosts);
 
     ITERATE(vector<string>, it, vhosts) {
-        if (auto address = CNetServer::SAddress::Parse(NStr::TruncateSpaces(*it))) {
+        if (auto address = SSocketAddress::Parse(NStr::TruncateSpaces(*it))) {
             m_Masters.insert(move(address));
         }
     }
@@ -954,7 +954,7 @@ bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
 
 bool SGridWorkerNodeImpl::x_AreMastersBusy() const
 {
-    ITERATE(set<CNetServer::SAddress>, it, m_Masters) {
+    ITERATE(set<SSocketAddress>, it, m_Masters) {
         STimeout tmo = {0, 500};
         CSocket socket(it->host, it->port, &tmo, eOff);
         if (socket.GetStatus(eIO_Open) != eIO_Success)

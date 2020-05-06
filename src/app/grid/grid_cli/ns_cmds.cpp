@@ -86,7 +86,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     }
 
     if (job_provided && service_provided) {
-        if (auto address = CNetServer::SAddress::Parse(m_Opts.ns_service)) {
+        if (auto address = SSocketAddress::Parse(m_Opts.ns_service)) {
             m_NetScheduleAPI.GetService().GetServerPool().StickToServer(move(address));
         } else {
             NCBI_THROW(CArgException, eInvalidArg,

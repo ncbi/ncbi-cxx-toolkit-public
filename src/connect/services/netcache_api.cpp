@@ -65,7 +65,7 @@ BEGIN_NCBI_SCOPE
 
 struct SFallbackServer
 {
-    using TAddress = CNetServer::SAddress;
+    using TAddress = SSocketAddress;
 
     static const TAddress* Get()
     {
@@ -77,7 +77,7 @@ private:
     static TAddress Init();
 };
 
-CNetServer::SAddress SFallbackServer::Init()
+SSocketAddress SFallbackServer::Init()
 {
     try {
         return TAddress::Parse(TCGI_NetCacheFallbackServer::GetDefault());
@@ -536,7 +536,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
         try {
             exec_result = m_Service.FindServerAndExec(cmd, false);
         } catch (CNetSrvConnException& e) {
-            const CNetServer::SAddress* backup = SFallbackServer::Get();
+            const SSocketAddress* backup = SFallbackServer::Get();
 
             if (backup == NULL) {
                 LOG_POST(Info << "Fallback server address is not configured.");

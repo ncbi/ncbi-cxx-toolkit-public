@@ -73,8 +73,8 @@ class NCBI_XCONNECT_EXPORT CNetServerPool
 {
     NCBI_NET_COMPONENT(NetServerPool);
 
-    void StickToServer(CNetServer::SAddress address);
-    void StickToServer(const string& host, unsigned short port) { StickToServer(CNetServer::SAddress(host, port)); }
+    void StickToServer(SSocketAddress address);
+    void StickToServer(const string& host, unsigned short port) { StickToServer(SSocketAddress(host, port)); }
 
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;
@@ -151,7 +151,7 @@ class NCBI_XCONNECT_EXPORT CNetServiceDiscovery
 public:
     CNetServiceDiscovery(const string& service_name);
 
-    using TServer = pair<CNetServer::SAddress, double>;
+    using TServer = pair<SSocketAddress, double>;
     using TServers = vector<TServer>;
     TServers operator()();
 
