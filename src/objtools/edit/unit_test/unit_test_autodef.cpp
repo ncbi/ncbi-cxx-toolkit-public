@@ -1328,6 +1328,35 @@ BOOST_AUTO_TEST_CASE(Test_GB_3942)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_8927)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> prot1 = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+
+    unit_test_util::ChangeId(prot1, "_1");
+    cds1->SetLocation().SetInt().SetFrom(0);
+    cds1->SetLocation().SetInt().SetTo(5);
+    cds1->SetProduct().SetWhole().Assign(*(prot1->GetSeq().GetId().front()));
+    s_SetProteinName(prot1, "RNA-dependent RNA polymerase");
+
+    CRef<CSeq_feat> cds2 = s_AddCDS(entry, "Coat protein", 10, 25);
+    CRef<CSeq_feat> cds3 = s_AddCDS(entry, "Movement protein", 12, 20);
+
+    cds1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds2->SetLocation().Assign(*(unit_test_util::MakeMixLoc(nuc->GetSeq().GetId().front())));
+    cds3->SetLocation().Assign(cds2->GetLocation());
+    TSeqPos old_end = cds3->GetLocation().GetMix().Get().back()->GetInt().GetTo();
+    cds3->SetLocation().SetMix().Set().back()->SetInt().SetTo(old_end + 2);
+
+    unit_test_util::SetDiv(entry, "VRL");
+
+    AddTitle(nuc, "Sebaea microphylla Movement protein and Coat protein genes, complete cds; and RNA-dependent RNA polymerase gene, partial cds.");
+    CheckDeflineMatches(entry, true);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_GB_3926)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
@@ -2649,6 +2678,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_8854)
 
     CRef<CSeq_feat> rpt = MakeRptRegion("long_terminal_repeat", 15, entry);
     AddTitle(entry, "Sebaea microphylla LTR repeat region.");
+    CheckDeflineMatches(entry);
     TestRepeatRegion(entry);
 
     CRef<CSeq_feat> reg1 = MakeRegulatoryFeature("CAAT_signal", "U3 region", 0, entry);

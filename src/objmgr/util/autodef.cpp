@@ -660,8 +660,19 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
     main_clause.Label(m_Options.GetSuppressAlleles());
 
     if (!m_Options.GetSuppressFeatureAltSplice()) {
-        main_clause.FindAltSplices(m_Options.GetSuppressAlleles());
-        main_clause.RemoveDeletedSubclauses();
+        // GB-8927
+        // no alternate splice calculations for viruses
+        bool is_virus = false;
+        CSeqdesc_CI src(bh, CSeqdesc::e_Source);
+        if (src && src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetDivision()
+            && NStr::EqualNocase(src->GetSource().GetOrg().GetDivision(), "VRL")) {
+            is_virus = true;
+        }
+
+        if (!is_virus) {
+            main_clause.FindAltSplices(m_Options.GetSuppressAlleles());
+            main_clause.RemoveDeletedSubclauses();
+        }
     } 
     
     main_clause.ConsolidateRepeatedClauses(m_Options.GetSuppressAlleles());
