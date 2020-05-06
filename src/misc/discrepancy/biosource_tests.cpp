@@ -2336,6 +2336,7 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
                     for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
                         if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_isolate && m->IsSetSubname()) {
                             isolate = m->GetSubname();
+                            break;
                         }
                     }
                 }
@@ -2358,18 +2359,20 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
                     }
                 }
                 if (good) {
-                    string date;
+                    string date, date0, date1;
                     if (biosrc->IsSetSubtype()) {
                         for (auto it : biosrc->GetSubtype()) {
                             if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_collection_date && it->IsSetName()) {
                                 date = it->GetName();
+                                break;
                             }
                         }
                     }
                     if (date.length() >= 4) {
-                        date = date.substr(date.length() - 4);
+                        date0 = date.substr(0, 4);
+                        date1 = date.substr(date.length() - 4);
                     }
-                    good = date == year;
+                    good = year == date0 || year == date1;
                 }
                 if (!good) {
                     m_Objs["[n] SARS-CoV-2 biosource[s] [has] wrong isolate format"][isolate].Add(*context.BiosourceObjRef(*biosrc));
