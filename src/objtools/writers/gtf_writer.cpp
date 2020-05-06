@@ -753,7 +753,8 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         geneFeat = feature::GetBestGeneForFeat(mf, &fc.FeatTree());
     }
     if (!geneFeat) {
-        record.SetGeneId("");
+        const auto& geneIdQual = mf.GetNamedQual("gene_id");
+        record.SetGeneId(geneIdQual); // empty most times but still best effort
         return true;
     }
 

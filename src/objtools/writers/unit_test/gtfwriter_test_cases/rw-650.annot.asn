@@ -1,0 +1,223 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "mrna_2",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 29553,
+          to 30038,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 30563,
+          to 30666,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 30975,
+          to 31096,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000243485.2"
+        },
+        {
+          qual "gene_name",
+          val "MIR1302-11"
+        },
+        {
+          qual "gene_status",
+          val "NOVEL"
+        },
+        {
+          qual "gene_type",
+          val "lincRNA"
+        },
+        {
+          qual "havana_gene",
+          val "OTTHUMG00000000959.2"
+        },
+        {
+          qual "havana_transcript",
+          val "OTTHUMT00000002840.1"
+        },
+        {
+          qual "level",
+          val "2"
+        },
+        {
+          qual "tag",
+          val "not_best_in_genome_evidence"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000473358.1"
+        },
+        {
+          qual "transcript_name",
+          val "MIR1302-11-001"
+        },
+        {
+          qual "transcript_status",
+          val "KNOWN"
+        },
+        {
+          qual "transcript_type",
+          val "lincRNA"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 30266,
+          to 30666,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 30975,
+          to 31108,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000243485.2"
+        },
+        {
+          qual "gene_name",
+          val "MIR1302-11"
+        },
+        {
+          qual "gene_status",
+          val "NOVEL"
+        },
+        {
+          qual "gene_type",
+          val "lincRNA"
+        },
+        {
+          qual "havana_gene",
+          val "OTTHUMG00000000959.2"
+        },
+        {
+          qual "havana_transcript",
+          val "OTTHUMT00000002841.2"
+        },
+        {
+          qual "level",
+          val "2"
+        },
+        {
+          qual "tag",
+          val "not_best_in_genome_evidence"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000469289.1"
+        },
+        {
+          qual "transcript_name",
+          val "MIR1302-11-002"
+        },
+        {
+          qual "transcript_status",
+          val "KNOWN"
+        },
+        {
+          qual "transcript_type",
+          val "lincRNA"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_4",
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 30365,
+        to 30502,
+        strand plus,
+        id local str "chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000243485.2"
+        },
+        {
+          qual "gene_name",
+          val "MIR1302-11"
+        },
+        {
+          qual "gene_status",
+          val "NOVEL"
+        },
+        {
+          qual "gene_type",
+          val "lincRNA"
+        },
+        {
+          qual "havana_gene",
+          val "OTTHUMG00000000959.2"
+        },
+        {
+          qual "level",
+          val "3"
+        },
+        {
+          qual "tag",
+          val "basic"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000607096.1"
+        },
+        {
+          qual "transcript_name",
+          val "MIR1302-11-201"
+        },
+        {
+          qual "transcript_status",
+          val "KNOWN"
+        },
+        {
+          qual "transcript_type",
+          val "miRNA"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}
