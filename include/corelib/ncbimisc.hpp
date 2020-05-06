@@ -1006,7 +1006,7 @@ typedef TIntId TEntrezId;
 #endif
 
 /// Taxon id type is the same as TEntrezId.
-typedef TEntrezId TTaxId;
+typedef int TTaxId;
 
 
 #ifdef NCBI_STRICT_GI
