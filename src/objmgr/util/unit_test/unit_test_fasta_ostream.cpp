@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE(Test_GapMods)
                   fasta_os.SetFlag(CFastaOstream::fShowGapModifiers);
               }
               fasta_os.Write(seh);
-          }}
+         }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
 
@@ -628,6 +628,40 @@ BOOST_AUTO_TEST_CASE(Test_GapMods)
              "ATCTAGTATACATTTCGATACATCGAAAT\n";
 
          BOOST_CHECK_EQUAL(s, string(CNcbiOstrstreamToString(expected_os)));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_OverlappingLocation) 
+{
+    auto pEntry = s_ReadData();
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+
+
+    auto pSeqId = Ref(new CSeq_id("lcl|test-seq"));
+    auto pLoc = Ref(new CSeq_loc());
+    auto& packedInt = pLoc->SetPacked_int();
+    packedInt.AddInterval(*pSeqId, 10, 20);
+    packedInt.AddInterval(*pSeqId, 15, 25);
+
+    string expected = ">lcl|test-seq:11-21,16-26 test sequence\n"
+                      "GGTTTTATAACTATAACATCAG\n";
+
+    { 
+        CNcbiOstrstream os;
+        CFastaOstream fasta_os(os);
+        auto seh = pScope->AddTopLevelSeqEntry(*pEntry);
+        fasta_os.Write(seh, pLoc.GetPointer());
+        auto s = string(CNcbiOstrstreamToString(os));
+        BOOST_CHECK_EQUAL(s, expected);
+    }
+    
+    {
+        CNcbiOstrstream os;
+        CFastaOstream fasta_os(os);
+        auto bsh = pScope->GetBioseqHandle(*pLoc); 
+        fasta_os.Write(bsh, pLoc.GetPointer());
+        auto s = string(CNcbiOstrstreamToString(os));
+        BOOST_CHECK_EQUAL(s, expected);
     }
 }
 
