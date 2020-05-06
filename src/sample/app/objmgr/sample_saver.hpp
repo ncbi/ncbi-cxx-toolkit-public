@@ -34,9 +34,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/simple_editsaver.hpp>
-
 #include <objmgr/bioseq_handle.hpp>
-
 #include "asn_db.hpp"
 
 #include <set>
@@ -44,6 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
 
 class CSampleEditSaver : public CSimpleEditSaver
 {
@@ -56,18 +55,14 @@ public:
     virtual void CommitTransaction();
     virtual void RollbackTransaction();
 
-    //-----------------------------------------------------------------
-    virtual void UpdateSeq(const CBioseq_Handle& handle, 
-                           IEditSaver::ECallMode mode);
+    virtual void UpdateSeq(const CBioseq_Handle& handle, IEditSaver::ECallMode mode);
+    virtual void UpdateTSE(const CSeq_entry_Handle& handle, IEditSaver::ECallMode mode);
 
-    virtual void UpdateTSE(const CSeq_entry_Handle& handle, 
-                           IEditSaver::ECallMode mode);
 private:
-
     void x_CleanUp();
 
     unique_ptr<CAsnDB> m_AsnDBGuard;
-    CAsnDB&          m_AsnDB;
+    CAsnDB&            m_AsnDB;
     
     typedef set<CBioseq_Handle> TBioseqCont;
     typedef map<CBlobIdKey, TBioseqCont> TBlobCont;
@@ -76,6 +71,7 @@ private:
     TBlobCont m_Blobs;
     TTSECont  m_TSEs;
 };
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

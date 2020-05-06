@@ -104,17 +104,20 @@ void CSampleEditSaver::UpdateSeq(const CBioseq_Handle& handle,
     bioseqs.insert(handle);
 }
 
+
 void CSampleEditSaver::UpdateTSE(const CSeq_entry_Handle& handle, 
                                  IEditSaver::ECallMode mode)
 {
     m_TSEs.insert(handle);
 }
 
+
 void CSampleEditSaver::x_CleanUp()
 {
     m_Blobs.clear();
     m_TSEs.clear();
 }
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

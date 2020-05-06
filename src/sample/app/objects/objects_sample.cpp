@@ -124,11 +124,9 @@ int CSampleObjectsApplication::Run(void)
 
     // Display the IDs of the sequence(s) it contains
     for (CTypeConstIterator<CBioseq> seq = ConstBegin(m_Entry);  seq;  ++seq) {
-        bool first = true;
-        for (auto& id : seq->GetId()) {
-            if (first) {
-                first = false;
-            } else {
+        auto ids = seq->GetId();
+        for (const auto& id : ids) {
+            if (&id != &ids.front()) {
                 cerr << '|';
             }
             id->WriteAsFasta(cerr);

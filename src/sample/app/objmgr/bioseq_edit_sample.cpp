@@ -90,12 +90,12 @@ private:
 
 void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
 {
-    const CBioseq_Handle::TId& ids = handle.GetId();
-    for (auto id = ids.begin(); id != ids.end(); id++) {
-        if (id != ids.begin()) {
+    auto ids = handle.GetId();
+    for (const auto& id : ids) {
+        if (&id != &ids.front()) {
             os << " ; ";
         }
-        os << id->AsString();
+        os << id.AsString();
     }
 }
 
@@ -118,11 +118,11 @@ static const CSeq_id_Handle& s_GetNewIdHandle()
 void s_PrintIds1(const CBioseq_Handle::TId& ids, CNcbiOstream& os)
 {
     os << "ID: ";
-    for (auto id = ids.begin(); id != ids.end(); id++ ) {
-        if (id != ids.begin()) {
-            os << " + "; // print id separator
+    for (const auto& id : ids) {
+        if (&id != &ids.front()) {
+            os << " + ";
         }
-        os << id->AsString();
+        os << id.AsString();
     }
 }
 

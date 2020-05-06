@@ -128,12 +128,9 @@ int CSampleObjmgrApplication::Run(void)
     CBioseq_Handle::TId ids = scope.GetIds(seq_id);
 
     cout << "ID: ";
-    bool first = true;
     for (const auto& id : ids) {
-        if (first) {
-            first = false;
-        } else {
-            cout << " + "; // print id separator
+        if ( &id != &ids.front() ) {
+            cout << " + ";
         }
         cout << id.AsString();
     }

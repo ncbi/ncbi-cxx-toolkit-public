@@ -37,6 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 //
 // CHelloCommand
 // 
@@ -46,16 +47,14 @@ BEGIN_NCBI_SCOPE
 class CHelloCommand : public CNcbiCommand
 {
 public:
-  
+ 
     CHelloCommand( CNcbiResource& resource );
     virtual ~CHelloCommand( void );
-
     virtual void Execute( CCgiContext& ctx );
     virtual string GetLink(CCgiContext&) const 
-        { return NcbiEmptyString; }
+        { return string(); }
 
     virtual CNCBINode* CreateView( CCgiContext& ctx ) = 0;
-
 
 protected:
 
@@ -70,6 +69,7 @@ protected:
     virtual string GetEntry() const;
 };
 
+
 //
 // CHelloBasicCommand
 //
@@ -82,7 +82,6 @@ public:
 
     CHelloBasicCommand( CNcbiResource& resource );
     virtual ~CHelloBasicCommand( void );
-
     virtual CNcbiCommand* Clone( void ) const;
 
     // GetName() returns the string used to match the name in a cgi request.
@@ -101,10 +100,8 @@ public:
 class CHelloReplyCommand : public CHelloBasicCommand
 {
 public:
-
     CHelloReplyCommand( CNcbiResource& resource );
     virtual ~CHelloReplyCommand( void );
-
     virtual CNcbiCommand* Clone( void ) const;
 
     // GetName() returns the string used to match the name in a cgi request.
@@ -113,6 +110,7 @@ public:
 
     virtual CNCBINode* CreateView( CCgiContext& ctx );
 };
+
 
 END_NCBI_SCOPE
 

@@ -215,10 +215,8 @@ int CSampleSoapClientApplication::Run(void)
 
         CConstRef<CMathResponse> v3 = ws.DoMath(ops,&fault);
         if (v3) {
-            CMathResponse::TMathResult::const_iterator i;
-            for (i = v3->GetMathResult().begin();
-                 i != v3->GetMathResult().end(); ++i) {
-                cout << *i << endl;
+            for (auto i : v3->GetMathResult()) {
+                cout << i << endl;
             }
         } else if (fault) {
             ERR_POST(Error << fault->GetFaultcode() << ": " << fault->GetFaultstring());

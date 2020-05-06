@@ -151,13 +151,13 @@ void CFileDBEngine::GetCommands(const string& blob_id, TCommands& cmds) const
     list<string> fnames;
     if (dir.Exists()) {
         CDir::TEntries files = dir.GetEntries( "", CDir::fIgnoreRecursive);
-        CDir::TEntries::const_iterator i = files.begin();
-        for (; i != files.end(); ++i) {
-            if ( (*i)->IsFile() )
-                fnames.push_back((*i)->GetName());
+        for (const auto& f : files) {
+            if ( f->IsFile() )
+                fnames.push_back(f->GetName());
         }
-        if (fnames.empty())
+        if (fnames.empty()) {
             return;
+        }
         fnames.sort();
         int& cmdcount = const_cast<CFileDBEngine*>(this)->m_CmdCount[blob_id];
         cmdcount = 0;
@@ -219,8 +219,8 @@ void CFileDBEngine::BeginTransaction()
 
 void CFileDBEngine::CommitTransaction()
 {
-    ITERATE(TChangedIds, it, m_TmpIds) {
-        m_ChangedIds[it->first] = it->second;
+    for (const auto& it : m_TmpIds) {
+        m_ChangedIds[it.first] = it.second;
     }
     m_TmpIds.clear();
     if (m_ChangedIds.size() > 0) {

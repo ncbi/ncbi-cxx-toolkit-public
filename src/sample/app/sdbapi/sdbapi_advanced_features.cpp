@@ -123,7 +123,7 @@ int CSdbapiTest::Run()
             query.RequireRowCount(5);
 
             bool show_names = true;
-            for (const auto& row: query) {
+            for (const auto& row : query) {
                 if (show_names) {
                     for (unsigned i = 1; i <= row.GetTotalColumns(); ++i) {
                         cout << row.GetColumnName(i) << "  ";
@@ -183,7 +183,7 @@ int CSdbapiTest::Run()
             bi.Bind(2, eSDB_Int4);
             bi.Bind(3, eSDB_Byte);
             bi.Bind(4, eSDB_DateTime);
-            for(int i = 0; i < 10; ++i) {
+            for (int i = 0; i < 10; ++i) {
                 bi << i << (i * 2) << Uint1(i + 1) << CTime(CTime::eCurrent)
                    << EndRow;
             }
@@ -254,7 +254,7 @@ int CSdbapiTest::Run()
         query.RequireRowCount(1, kMax_Auto);
 
         for (const auto& row: query.SingleSet()) {
-            if(row[1].AsInt4() == 2121) {
+            if (row[1].AsInt4() == 2121) {
                 cout << row[2].AsString() << " "
                      << row[3].AsString() << " "
                      << row[4].AsString() << " "
@@ -315,7 +315,7 @@ int CSdbapiTest::Run()
         bi.Bind(2, eSDB_Text);
         bi.Bind(3, eSDB_Text);
 
-        for(int i = 0; i < COUNT; ++i ) {
+        for (int i = 0; i < COUNT; ++i ) {
             string im = "BLOB data " + NStr::IntToString(i);
             bi << i << im << im << EndRow;
         }

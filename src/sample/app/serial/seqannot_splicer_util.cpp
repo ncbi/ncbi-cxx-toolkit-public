@@ -278,7 +278,7 @@ void ProcessSeqEntryAnnot(unique_ptr<CObjectIStream>& sai,
 {
     // Loop through all Seq-id's for this context, and splice appropriate
     // Seq-annot's.
-    for( const auto& seqid_from_se : s_CurrentContextPtr->seqids) {
+    for (const auto& seqid_from_se : s_CurrentContextPtr->seqids) {
         // See if the Seq-id from the Seq-entry was also in
         // the Seq-annot's.
         TSeqIdToAnnotMapIter
@@ -458,9 +458,8 @@ void SetSeqIdChoiceMask(const string& mask)
         return;
     }
 
-    list<string>    flag_list;
-    NStr::Split(mask, "|", flag_list,
-                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    list<string> flag_list;
+    NStr::Split(mask, "|", flag_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::iterator fbegin(flag_list.begin());
     list<string>::iterator fend(flag_list.end());
     list<string>::iterator found_flag;
@@ -614,7 +613,7 @@ static bool s_RemoveAnnot(TAnnotToSeqIdMapIter annot_in_map_iter)
     // This will erase elements from Seq-annot's container.
 
     TSeqRefCont& seq_list(annot_in_map_iter->second->GetData());
-    for(const auto& seq : seq_list) {
+    for (const auto& seq : seq_list) {
         // Find the Seq-id in the global map that corresponds to the
         // Seq-id in this Seq-annot's list.
         TSeqIdToAnnotMapIter seqid_in_map = s_SeqIdToAnnotMap.find(seq);

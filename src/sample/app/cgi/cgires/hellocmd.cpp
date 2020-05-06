@@ -42,8 +42,8 @@
 
 #include <memory>
 
-
 BEGIN_NCBI_SCOPE
+
 
 CHelloCommand::CHelloCommand( CNcbiResource& resource )
   : CNcbiCommand( resource )
@@ -52,11 +52,9 @@ CHelloCommand::CHelloCommand( CNcbiResource& resource )
 CHelloCommand::~CHelloCommand()
 {}
 
-//
 // GetEntry() returns the string used to match the name in a cgi request.
 // e.g. for "?cmd=search", GetEntry should return "cmd"
 //
-
 string CHelloCommand::GetEntry() const
 {
     return string("cmd");  // set the value of this string in helloapi.cpp
@@ -96,6 +94,7 @@ CNcbiCommand* CHelloBasicCommand::Clone( void ) const
     return new CHelloBasicCommand( GetHelloResource() );
 }
 
+
 //
 // GetName() returns the string used to match the value in a cgi request.
 // e.g. for "?cmd=search", GetName() should return "search"
@@ -124,6 +123,7 @@ CNCBINode* CHelloBasicCommand::CreateView( CCgiContext& ctx)
 
     return Form.release();
 }
+
 
 //
 // CHelloReplyCommand
@@ -169,7 +169,7 @@ CNCBINode* CHelloReplyCommand::CreateView( CCgiContext& ctx)
     pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range("input");
     
     // print the values associated with input to the html page
-    for(TCgiEntriesI i = p.first; i != p.second; ++i) {
+    for (TCgiEntriesI i = p.first; i != p.second; ++i) {
         Reply->AppendChild(new CHTMLText(", "));
         Reply->AppendChild(new CHTMLPlainText(i->second));
     }
@@ -178,5 +178,6 @@ CNCBINode* CHelloReplyCommand::CreateView( CCgiContext& ctx)
   
     return Reply.release();
 }
+
 
 END_NCBI_SCOPE

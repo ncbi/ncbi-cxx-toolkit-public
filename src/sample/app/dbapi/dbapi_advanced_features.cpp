@@ -31,7 +31,6 @@
 * ===========================================================================
 */
 
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -214,8 +213,8 @@ int CDbapiTest::Run()
                     cout << endl;
 
                     while(rs->Next()) { 
-                        for(unsigned int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
-                            if( rsMeta->GetType(i) == eDB_Text
+                        for (unsigned int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
+                            if ( rsMeta->GetType(i) == eDB_Text
                                 || rsMeta->GetType(i) == eDB_Image ) {
 
                                 const CVariant& b = rs->GetVariant(i);
@@ -348,7 +347,7 @@ int CDbapiTest::Run()
             bi->Bind(3, &b3);
             bi->Bind(4, &b4);
             int i;
-            for( i = 0; i < 10; ++i ) {
+            for ( i = 0; i < 10; ++i ) {
                 b1 = i;
                 b2 = i * 2;
                 b3 = Uint1(i + 1);
@@ -611,7 +610,7 @@ int CDbapiTest::Run()
         char *buf = new char[blob.size()];
         char *p = buf;
         vector<char>::iterator i_b = blob.begin();
-        for( ; i_b != blob.end(); ++i_b ) {
+        for ( ; i_b != blob.end(); ++i_b ) {
             *p++ = *i_b;
         }
 
@@ -625,7 +624,7 @@ int CDbapiTest::Run()
         bi->Bind(2, &col2);
         bi->Bind(3, &col3);
 
-        for(int i = 0; i < COUNT; ++i ) {
+        for (int i = 0; i < COUNT; ++i ) {
             string im = "BLOB data " + NStr::IntToString(i);
             col1 = i;
             col2.Truncate();
@@ -742,7 +741,7 @@ int CDbapiTest::Run()
         ICursor *cur = conn->CreateCursor("test", "select id, blob from BlobSample for update of blob");
     
         IResultSet *rs = cur->Open();
-        while(rs->Next()) {
+        while (rs->Next()) {
             cur->Update("BlobSample", "update BlobSample set blob = ' '");
         }
      
