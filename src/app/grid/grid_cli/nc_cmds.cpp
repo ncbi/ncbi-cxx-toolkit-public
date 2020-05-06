@@ -209,9 +209,7 @@ void CGridCommandLineInterfaceApp::SOptions::SNCID::Parse(
 
 void CGridCommandLineInterfaceApp::PrintServerAddress(CNetServer server)
 {
-    printf("Server: %s:%hu\n",
-        g_NetService_gethostnamebyaddr(server.GetHost()).c_str(),
-        server.GetPort());
+    printf("Server: %s\n", server.GetServerAddress().c_str());
 }
 
 int CGridCommandLineInterfaceApp::Cmd_BlobInfo()

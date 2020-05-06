@@ -36,6 +36,8 @@
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
+#include <connect/ncbi_core_cxx.hpp>
+
 #include <corelib/ncbi_system.hpp>
 
 #include <sstream>
@@ -880,40 +882,50 @@ void SThrottleParams::SIOFailureThreshold::Init(CSynRegistry& registry, const SR
     }
 }
 
-struct SNameByHost
+// This class also initializes CONNECT library in its constructor (via CConnIniter base)
+struct SSocketAddressImpl : CConnIniter
 {
-    const string& Get(unsigned host, unsigned short port)
+    // Do not make static (see above)
+    unsigned GetHost(const string& name) const
     {
-        auto& name = m_Data[host][port];
+        return CSocketAPI::gethostbyname(name, eOn);
+    }
+
+    const string& GetName(unsigned host)
+    {
+        auto& name = m_Data[host];
 
         // Name was not looked up yet or host changed
         if (name.empty()) {
-            name = g_NetService_gethostnamebyaddr(host) + ':' + NStr::UIntToString(port);
+            name = CSocketAPI::gethostbyaddr(host, eOn);
+
+            if (name.empty()) {
+                name = CSocketAPI::ntoa(host);
+            }
         }
 
         return name;
     }
 
-    static SNameByHost& GetInstance()
+    static SSocketAddressImpl& GetInstance()
     {
-        thread_local static SNameByHost name_by_host;
-        return name_by_host;
+        thread_local static SSocketAddressImpl impl;
+        return impl;
     }
 
 private:
-    map<unsigned, map<unsigned short, string>> m_Data;
+    map<unsigned, string> m_Data;
 };
 
-SSocketAddress::SSocketAddress(unsigned h, unsigned short p) :
-    host(h),
+SSocketAddress::SSocketAddress(const string& n, unsigned short p) :
+    host(SSocketAddressImpl::GetInstance().GetHost(n)),
     port(p)
 {
 }
 
-SSocketAddress::SSocketAddress(string n, unsigned short p) :
-    host(g_NetService_gethostbyname(n)),
-    port(p)
+string SSocketAddress::GetHostName() const
 {
+    return SSocketAddressImpl::GetInstance().GetName(host);
 }
 
 SSocketAddress SSocketAddress::Parse(const string& address)
@@ -937,11 +949,6 @@ bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs)
     if (lhs.host != rhs.host) return lhs.host < rhs.host;
 
     return lhs.port < rhs.port;
-}
-
-const string& SSocketAddress::AsString() const
-{
-    return SNameByHost::GetInstance().Get(host, port);
 }
 
 END_NCBI_SCOPE

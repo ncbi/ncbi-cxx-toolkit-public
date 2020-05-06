@@ -323,8 +323,7 @@ CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
 {
     switch (m_WhichPart) {
     case 1:
-        return CJsonNode::NewStringNode(g_NetService_gethostnamebyaddr(
-                server.GetHost()));
+        return CJsonNode::NewStringNode(server.GetAddress().GetHostName());
     case 2:
         return CJsonNode::NewIntegerNode(server.GetPort());
     }

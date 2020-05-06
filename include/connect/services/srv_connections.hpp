@@ -98,10 +98,12 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     unsigned host;
     unsigned short port;
 
-    SSocketAddress(unsigned h, unsigned short p);
-    SSocketAddress(string n, unsigned short p);
+    SSocketAddress(unsigned h, unsigned short p) : host(h), port(p) {}
+    SSocketAddress(const string& n, unsigned short p);
+
     explicit operator bool() const { return host && port; }
-    const string& AsString() const;
+    string GetHostName() const;
+    string AsString() const { return GetHostName() + ':' + NStr::UIntToString(port); }
 
     static SSocketAddress Parse(const string& address);
 };

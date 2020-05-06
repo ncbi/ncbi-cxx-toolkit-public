@@ -1218,10 +1218,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
     TQueueRegister queue_register;
 
     ITERATE (CNetScheduleAdmin::TQueueList, it, queues) {
-        string server_address =
-                g_NetService_gethostnamebyaddr(it->server.GetHost());
-        server_address += ':';
-        server_address += NStr::UIntToString(it->server.GetPort());
+        string server_address = it->server.GetServerAddress();
 
         ITERATE(std::list<std::string>, queue, it->queues) {
             queue_register[*queue].insert(server_address);
