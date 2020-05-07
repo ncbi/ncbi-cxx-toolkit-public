@@ -48,6 +48,11 @@
 #include <kfs/file.h>
 #include <vfs/path.h>
 #include <vfs/manager.h>
+#ifdef _MSC_VER
+# include <io.h>
+#else
+# include <unistd.h>
+#endif
 
 #include <corelib/test_boost.hpp>
 #include <common/test_assert.h>  /* This header must go last */
@@ -65,7 +70,7 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
         char buffer2[8192];
         unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
                              file, line, code, rc, buffer1);
-        write(2, buffer2, len);
+        NcbiSys_write(2, buffer2, len);
         exit(1);
     }
 }
