@@ -761,12 +761,6 @@ SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], const char (&v)[V]) :
 }
 
 template <size_t N>
-SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], const string& v) :
-    nghttp2_nv{ (uint8_t*)n, (uint8_t*)v.c_str(), N - 1, v.length(), kDefaultFlags }
-{
-}
-
-template <size_t N>
 SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], uint8_t f) :
     nghttp2_nv{ (uint8_t*)n, nullptr, N - 1, 0, uint8_t(NGHTTP2_NV_FLAG_NO_COPY_NAME | f) }
 {
@@ -821,20 +815,21 @@ SUserAgent::SUserAgent()
         );
 }
 
-SPSG_NgHttp2Session::SPSG_NgHttp2Session(const string& authority, void* user_data,
+SPSG_NgHttp2Session::SPSG_NgHttp2Session(string authority, void* user_data,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
         nghttp2_error_callback              on_error) :
+    m_Authority(move(authority)),
     m_Headers{{
         { ":method", "GET" },
         { ":scheme", "http" },
-        { ":authority", authority },
-        { ":path" },
-        { "user-agent", SUserAgent::Get() },
-        { "http_ncbi_sid", NGHTTP2_NV_FLAG_NONE },
-        { "http_ncbi_phid", NGHTTP2_NV_FLAG_NONE },
-        { "x-forwarded-for", NGHTTP2_NV_FLAG_NONE }
+        { ":authority" },
+        { ":path", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
+        { "user-agent", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
+        { "http_ncbi_sid" },
+        { "http_ncbi_phid" },
+        { "x-forwarded-for" }
     }},
     m_UserData(user_data),
     m_OnData(on_data),
@@ -907,7 +902,9 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
     const auto& sub_hit_id = context.GetNextSubHitID();
     auto headers_size = m_Headers.size();
 
+    m_Headers[eAuthority] = m_Authority;
     m_Headers[ePath] = path;
+    m_Headers[eUserAgent] = SUserAgent::Get();
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
 

@@ -626,7 +626,7 @@ struct SPSG_UvLoop : uv_loop_t
 
 struct SPSG_NgHttp2Session
 {
-    SPSG_NgHttp2Session(const string& authority, void* user_data,
+    SPSG_NgHttp2Session(string authority, void* user_data,
             nghttp2_on_data_chunk_recv_callback on_data,
             nghttp2_on_stream_close_callback    on_stream_close,
             nghttp2_on_header_callback          on_header,
@@ -646,8 +646,7 @@ private:
     struct SHeader : nghttp2_nv
     {
         template <size_t N, size_t V> SHeader(const char (&n)[N], const char (&v)[V]);
-        template <size_t N>           SHeader(const char (&n)[N], const string& v);
-        template <size_t N>           SHeader(const char (&n)[N], uint8_t f = NGHTTP2_NV_FLAG_NO_COPY_VALUE);
+        template <size_t N>           SHeader(const char (&n)[N], uint8_t f = NGHTTP2_NV_FLAG_NONE);
         void operator=(const string& v);
     };
 
@@ -665,6 +664,7 @@ private:
     }
 
     nghttp2_session* m_Session = nullptr;
+    const string m_Authority;
     array<SHeader, eSize> m_Headers;
     void* m_UserData;
     nghttp2_on_data_chunk_recv_callback m_OnData;
