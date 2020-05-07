@@ -3745,7 +3745,7 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	}
 	alnDefLine  = CAlignFormatUtil::MapTemplate(alnDefLine ,"alnLinkout",linkoutStr);
 	alnDefLine  = CAlignFormatUtil::MapTemplate(alnDefLine ,"dndlLinkt",dnldLinkStr);
-	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnTitle",alnDispParams->title);
+	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnTitle",CHTMLHelper::HTMLEncode(alnDispParams->title));
 	return alnDefLine;
 }
 string alnTitlesLinkTmpl;    ///< Template for displaying link for more defline titles
