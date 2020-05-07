@@ -7949,8 +7949,8 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Homo supiens"));
 	
 	host = "Pinus sp.";
-	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
-	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus sp."));
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 	
 	host = "Gallus Gallus";
 	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
@@ -8016,7 +8016,7 @@ BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
 	
 	host = "Pinus sp.";
 	hostfix = FixSpecificHost(host);
-	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	BOOST_CHECK_EQUAL(hostfix, "Pinus sp.");
 		
 	host = "Gallus Gallus";
 	hostfix = FixSpecificHost(host);
