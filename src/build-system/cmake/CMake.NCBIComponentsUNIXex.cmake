@@ -19,7 +19,7 @@ set(NCBI_COMPONENT_Linux_FOUND YES)
 option(USE_LOCAL_BZLIB "Use a local copy of libbz2")
 option(USE_LOCAL_PCRE "Use a local copy of libpcre")
 #to debug
-#set(NCBI_TRACE_COMPONENT_PYTHON ON)
+#set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################
 # common settings
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
@@ -75,8 +75,8 @@ set(NCBI_ThirdParty_GLEW         ${NCBI_TOOLS_ROOT}/glew-1.5.8)
 set(NCBI_ThirdParty_OpenGL       ${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2)
 set(NCBI_ThirdParty_OSMesa       ${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2)
 set(NCBI_ThirdParty_XERCES       ${NCBI_TOOLS_ROOT}/xerces-3.1.2)
-set(NCBI_ThirdParty_GRPC         ${NCBI_TOOLS_ROOT}/grpc-1.21.1-ncbi1)
-set(NCBI_ThirdParty_PROTOBUF     ${NCBI_TOOLS_ROOT}/grpc-1.21.1-ncbi1)
+set(NCBI_ThirdParty_GRPC         ${NCBI_TOOLS_ROOT}/grpc-1.28.1-ncbi1)
+set(NCBI_ThirdParty_PROTOBUF     ${NCBI_TOOLS_ROOT}/grpc-1.28.1-ncbi1)
 set(NCBI_ThirdParty_XALAN        ${NCBI_TOOLS_ROOT}/xalan-1.11)
 set(NCBI_ThirdParty_GPG          ${NCBI_TOOLS_ROOT}/libgpg-error-1.6)
 set(NCBI_ThirdParty_GCRYPT       ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3)
@@ -317,6 +317,7 @@ if(NOT NCBI_COMPONENT_UNWIND_DISABLED)
         set(LIBUNWIND_INCLUDE ${NCBI_ThirdParty_UNWIND}/include)
         set(HAVE_LIBUNWIND YES)
         find_library(LIBUNWIND_LIBS NAMES unwind HINTS "${NCBI_ThirdParty_UNWIND}/lib" )
+        set(NCBI_COMPONENT_UNWIND_FOUND YES)
         set(NCBI_COMPONENT_UNWIND_INCLUDE ${LIBUNWIND_INCLUDE})
         set(NCBI_COMPONENT_UNWIND_LIBS ${LIBUNWIND_LIBS})
         list(APPEND NCBI_ALL_COMPONENTS UNWIND)
@@ -714,7 +715,11 @@ else()
   set(_suffix "")
 endif()
 NCBI_define_component(PROTOBUF protobuf${_suffix})
-NCBI_define_component(GRPC grpc++ grpc gpr protobuf${_suffix} cares address_sorting boringssl boringcrypto)
+NCBI_define_component(GRPC 
+    grpc++ grpc address_sorting upb cares gpr absl_bad_optional_access absl_str_format_internal
+    absl_strings absl_strings_internal absl_base absl_spinlock_wait absl_dynamic_annotations
+    absl_int128 absl_throw_delegate absl_raw_logging_internal absl_log_severity boringssl boringcrypto
+    protobuf${_suffix})
 
 #############################################################################
 # XALAN

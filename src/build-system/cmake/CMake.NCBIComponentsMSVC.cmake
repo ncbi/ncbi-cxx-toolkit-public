@@ -17,7 +17,7 @@
 
 set(NCBI_COMPONENT_MSWin_FOUND YES)
 #to debug
-#set(NCBI_TRACE_COMPONENT_PYTHON ON)
+#set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################
 # common settings
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
@@ -69,10 +69,8 @@ if (${NCBI_ThirdPartyCompiler} STREQUAL "vs2017.64" OR ${NCBI_ThirdPartyCompiler
         set(NCBI_ThirdParty_VDB_ARCH     x86_64/v141)
 
     set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python38)
-#    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
-#    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.21.1-ncbi1)
-    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1-ncbi1)
-    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1-ncbi1)
+    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.28.1)
+    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.28.1)
 endif()
 
 set(NCBI_ThirdParty_XALAN       ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814)
@@ -445,7 +443,10 @@ if(NOT EXISTS "${NCBI_PROTOC_APP}")
     message("NOT FOUND: ${NCBI_PROTOC_APP}")
 else()
 NCBI_define_component(PROTOBUF libprotobuf.lib)
-NCBI_define_component(GRPC grpc++.lib grpc.lib gpr.lib cares.lib libprotobuf.lib ssl.lib crypto.lib)
+NCBI_define_component(GRPC grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib libprotobuf.lib
+                           upb.lib crypto.lib ssl.lib absl_throw_delegate.lib absl_strings.lib
+                           absl_bad_optional_access.lib  absl_str_format_internal.lib
+                           absl_raw_logging_internal.lib absl_int128.lib)
 if(NCBI_COMPONENT_GRPC_FOUND)
     set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
 endif()
