@@ -227,41 +227,6 @@ public:
         CNcbiIfstream::open(_Filename.c_str(), _Mode, _Prot);
     }
 };
-#elif defined(NCBI_COMPILER_MSVC)
-#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
-class CNcbiIfstream : public IO_PREFIX::ifstream
-{
-public:
-    CNcbiIfstream() : m_Fp(0)
-    {
-    }
-
-    explicit CNcbiIfstream(const char* s,
-                           IOS_BASE::openmode mode = IOS_BASE::in)
-    {
-        fastopen(s, mode);
-    }
-
-    void fastopen(const char* s, IOS_BASE::openmode mode = IOS_BASE::in)
-    {
-        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode | in)))
-            setstate(failbit);
-        else
-            (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
-    }
-
-    virtual ~CNcbiIfstream(void)
-    {
-        if (m_Fp)
-            fclose(m_Fp);
-    }
-private:
-    FILE* m_Fp;
-};
-#  else
-/// Portable alias for ifstream.
-typedef IO_PREFIX::ifstream      CNcbiIfstream;
-#  endif
 #else
 /// Portable alias for ifstream.
 typedef IO_PREFIX::ifstream      CNcbiIfstream;
@@ -323,41 +288,6 @@ public:
         CNcbiOfstream::open(_Filename.c_str(), _Mode, _Prot);
     }
 };
-#elif defined(NCBI_COMPILER_MSVC)
-#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
-class CNcbiOfstream : public IO_PREFIX::ofstream
-{
-public:
-    CNcbiOfstream() : m_Fp(0)
-    {
-    }
-
-    explicit CNcbiOfstream(const char* s,
-                           IOS_BASE::openmode mode = IOS_BASE::out)
-    {
-        fastopen(s, mode);
-    }
-
-    void fastopen(const char* s, IOS_BASE::openmode mode = IOS_BASE::out)
-    {
-        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode | out)))
-            setstate(failbit);
-        else
-            (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
-    }
-
-    virtual ~CNcbiOfstream(void)
-    {
-        if (m_Fp)
-            fclose(m_Fp);
-    }
-private:
-    FILE* m_Fp;
-};
-#  else
-/// Portable alias for ofstream.
-typedef IO_PREFIX::ofstream      CNcbiOfstream;
-#  endif
 #else
 /// Portable alias for ofstream.
 typedef IO_PREFIX::ofstream      CNcbiOfstream;
@@ -396,43 +326,6 @@ public:
         IO_PREFIX::fstream::open(_Filename,_Mode,_Prot);
     }
 };
-#elif defined(NCBI_COMPILER_MSVC)
-#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
-class CNcbiFstream : public IO_PREFIX::fstream
-{
-public:
-    CNcbiFstream() : m_Fp(0)
-    {
-    }
-
-    explicit CNcbiFstream(const char* s,
-                          IOS_BASE::openmode
-                          mode = IOS_BASE::in | IOS_BASE::out)
-    {
-        fastopen(s, mode);
-    }
-
-    void fastopen(const char* s, IOS_BASE::openmode
-                  mode = IOS_BASE::in | IOS_BASE::out)
-    {
-        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode)))
-            setstate(failbit);
-        else
-            (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
-    }
-
-    virtual ~CNcbiFstream(void)
-    {
-        if (m_Fp)
-            fclose(m_Fp);
-    }
-private:
-    FILE* m_Fp;
-};
-#  else
-/// Portable alias for fstream.
-typedef IO_PREFIX::fstream       CNcbiFstream;
-#  endif
 #else
 /// Portable alias for fstream.
 typedef IO_PREFIX::fstream       CNcbiFstream;
@@ -703,8 +596,7 @@ NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, const CNcbiOstrstreamToString& s);
 
 inline
-Int8 
-GetOssSize(CNcbiOstrstream& oss)
+Int8 GetOssSize(CNcbiOstrstream& oss)
 {
 #ifdef NCBI_SHUN_OSTRSTREAM
     return NcbiStreamposToInt8(oss.tellp());
@@ -714,8 +606,7 @@ GetOssSize(CNcbiOstrstream& oss)
 }
 
 inline
-bool
-IsOssEmpty(CNcbiOstrstream& oss)
+bool IsOssEmpty(CNcbiOstrstream& oss)
 {
     return GetOssSize(oss) == 0;
 }
@@ -866,13 +757,6 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
 NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
-#ifdef NCBI_COMPILER_MSVC
-#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
-NCBI_XNCBI_EXPORT
-CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
-#  endif
-#endif
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -964,8 +848,8 @@ enum EBOMDiscard {
 ///        CStreamUtils::Pushback().
 /// @sa CStreamUtils::Pushback()
 NCBI_XNCBI_EXPORT
-EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
-                                  EBOMDiscard   discard_bom);
+EEncodingForm GetTextEncodingForm(CNcbiIstream& input, EBOMDiscard discard_bom);
+
 
 /// Byte Order Mark helper class to use in serialization
 ///
@@ -991,8 +875,10 @@ private:
     EEncodingForm m_EncodingForm;
 };
 
+
 /// Write Byte Order Mark into output stream
 NCBI_XNCBI_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CByteOrderMark&  bom);
+
 
 /// Read Byte Order Mark, if present, from input stream
 ///
@@ -1017,10 +903,10 @@ END_NCBI_SCOPE
 // NOTE:  these must have been inside the _NCBI_SCOPE and without the
 //        "ncbi::" and "std::" prefixes, but there is some bug in SunPro 5.0...
 #if defined(NCBI_USE_OLD_IOSTREAM)
-extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
-                                              const NCBI_NS_STD::string& str);
-extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
-                                              NCBI_NS_STD::string& str);
+extern NCBI_NS_NCBI::CNcbiOstream& 
+    operator<<(NCBI_NS_NCBI::CNcbiOstream& os, const NCBI_NS_STD::string& str);
+extern NCBI_NS_NCBI::CNcbiIstream& 
+    operator>>(NCBI_NS_NCBI::CNcbiIstream& is, NCBI_NS_STD::string& str);
 #endif // NCBI_USE_OLD_IOSTREAM
 
 
