@@ -314,6 +314,19 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
 }
 
 
+void CPSGS_Reply::SendTrace(const string &  msg,
+                            const TPSGS_HighResolutionTimePoint &  create_timestamp)
+{
+    auto            now = chrono::high_resolution_clock::now();
+    uint64_t        mks = chrono::duration_cast<chrono::microseconds>
+                                            (now - create_timestamp).count();
+    string          timestamp = "Timestamp (mks): " + to_string(mks) + "\n";
+
+    PrepareReplyMessage(timestamp + msg,
+                        CRequestStatus::e200_Ok, 0, eDiag_Trace);
+}
+
+
 void CPSGS_Reply::SendData(const string &  data_to_send,
                            EPSGS_ReplyMimeType  mime_type)
 {

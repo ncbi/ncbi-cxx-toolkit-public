@@ -36,74 +36,108 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include "pubseq_gateway_types.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "psgs_request.hpp"
 
 #include <string>
 using namespace std;
 
 USING_IDBLOB_SCOPE;
 
-class CPendingOperation;
-
+class CPSGS_Reply;
 
 class CPSGCache
 {
 public:
-    CPSGCache(bool  allowed) :
-        x_Allowed(allowed)
+    CPSGCache(CPSGS_Request *  request,
+              CPSGS_Reply *  reply) :
+        m_Allowed(false),
+        m_NeedTrace(request->NeedTrace()),
+        m_Request(request),
+        m_Reply(reply)
+    {
+        switch (request->GetRequestType()) {
+            case CPSGS_Request::ePSGS_ResolveRequest:
+                m_Allowed =
+                    request->GetRequest<SPSGS_ResolveRequest>().m_UseCache !=
+                        SPSGS_RequestBase::ePSGS_DbOnly;
+                break;
+            case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+                m_Allowed =
+                    request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_UseCache !=
+                        SPSGS_RequestBase::ePSGS_DbOnly;
+                break;
+            case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+                m_Allowed =
+                    request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_UseCache !=
+                        SPSGS_RequestBase::ePSGS_DbOnly;
+                break;
+            case CPSGS_Request::ePSGS_AnnotationRequest:
+                m_Allowed =
+                    request->GetRequest<SPSGS_AnnotRequest>().m_UseCache !=
+                        SPSGS_RequestBase::ePSGS_DbOnly;
+                break;
+            case CPSGS_Request::ePSGS_TSEChunkRequest:
+                m_Allowed =
+                    request->GetRequest<SPSGS_TSEChunkRequest>().m_UseCache !=
+                        SPSGS_RequestBase::ePSGS_DbOnly;
+                break;
+            default:
+                ;
+        }
+    }
+
+    CPSGCache(bool  allowed,
+              CPSGS_Request *  request,
+              CPSGS_Reply *  reply) :
+        m_Allowed(allowed),
+        m_NeedTrace(request->NeedTrace()),
+        m_Request(request),
+        m_Reply(reply)
     {}
 
-    EPSGS_CacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
-                                              CPendingOperation *  pending_op)
+    EPSGS_CacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     {
-        if (x_Allowed)
-            return s_LookupBioseqInfo(bioseq_resolution, pending_op);
+        if (m_Allowed)
+            return x_LookupBioseqInfo(bioseq_resolution);
         return ePSGS_NotFound;
     }
 
-    EPSGS_CacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution,
-                                          CPendingOperation *  pending_op)
+    EPSGS_CacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     {
-        if (x_Allowed)
-            return s_LookupSi2csi(bioseq_resolution, pending_op);
+        if (m_Allowed)
+            return x_LookupSi2csi(bioseq_resolution);
         return ePSGS_NotFound;
     }
 
     EPSGS_CacheLookupResult  LookupBlobProp(int  sat,
                                             int  sat_key,
                                             int64_t &  last_modified,
-                                            CPendingOperation *  pending_op,
                                             CBlobRecord &  blob_record)
     {
-        if (x_Allowed)
-            return s_LookupBlobProp(sat, sat_key, last_modified,
-                                    pending_op, blob_record);
+        if (m_Allowed)
+            return x_LookupBlobProp(sat, sat_key, last_modified, blob_record);
         return ePSGS_NotFound;
     }
 
-public:
-    static
-    EPSGS_CacheLookupResult  s_LookupBioseqInfo(
-                                SBioseqResolution &  bioseq_resolution,
-                                CPendingOperation *  pending_op);
-    static
-    EPSGS_CacheLookupResult  s_LookupINSDCBioseqInfo(
-                                SBioseqResolution &  bioseq_resolution,
-                                CPendingOperation *  pending_op);
+private:
+    EPSGS_CacheLookupResult  x_LookupBioseqInfo(
+                                SBioseqResolution &  bioseq_resolution);
+    EPSGS_CacheLookupResult  x_LookupINSDCBioseqInfo(
+                                SBioseqResolution &  bioseq_resolution);
 
-    static
-    EPSGS_CacheLookupResult  s_LookupSi2csi(
-                                SBioseqResolution &  bioseq_resolution,
-                                CPendingOperation *  pending_op);
+    EPSGS_CacheLookupResult  x_LookupSi2csi(
+                                SBioseqResolution &  bioseq_resolution);
 
-    static
-    EPSGS_CacheLookupResult  s_LookupBlobProp(int  sat,
+    EPSGS_CacheLookupResult  x_LookupBlobProp(int  sat,
                                               int  sat_key,
                                               int64_t &  last_modified,
-                                              CPendingOperation *  pending_op,
                                               CBlobRecord &  blob_record);
 
 private:
-    bool        x_Allowed;
+    bool                m_Allowed;
+    bool                m_NeedTrace;
+    CPSGS_Request *     m_Request;
+    CPSGS_Reply *       m_Reply;
 };
 
 #endif

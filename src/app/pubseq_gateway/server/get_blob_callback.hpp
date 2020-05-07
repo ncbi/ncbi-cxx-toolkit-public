@@ -77,9 +77,13 @@ class CBlobPropCallback
     public:
         CBlobPropCallback(
                 CPendingOperation *  pending_op,
+                CPSGS_Request *  request,
+                CPSGS_Reply *  reply,
                 CCassBlobFetch *  fetch_details,
                 bool  need_timing) :
             m_PendingOp(pending_op),
+            m_Request(request),
+            m_Reply(reply),
             m_FetchDetails(fetch_details),
             m_InProcess(false),
             m_NeedTiming(need_timing)
@@ -91,12 +95,14 @@ class CBlobPropCallback
         void operator()(CBlobRecord const &  blob, bool is_found)
         {
             if (!m_InProcess) {
-                if (m_PendingOp->NeedTrace()) {
+                if (m_Request->NeedTrace()) {
                     if (is_found) {
-                        m_PendingOp->SendTrace("Cassandra blob props: " +
-                            ToJson(blob).Repr(CJsonNode::fStandardJson));
+                        m_Reply->SendTrace("Cassandra blob props: " +
+                            ToJson(blob).Repr(CJsonNode::fStandardJson),
+                            m_Request->GetStartTimestamp());
                     } else {
-                        m_PendingOp->SendTrace("Cassandra blob props not found");
+                        m_Reply->SendTrace("Cassandra blob props not found",
+                                           m_Request->GetStartTimestamp());
                     }
                 }
 
@@ -120,6 +126,8 @@ class CBlobPropCallback
 
     private:
         CPendingOperation *                     m_PendingOp;
+        CPSGS_Request *                         m_Request;
+        CPSGS_Reply *                           m_Reply;
         CCassBlobFetch *                        m_FetchDetails;
 
         // Avoid an infinite loop

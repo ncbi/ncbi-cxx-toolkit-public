@@ -49,7 +49,9 @@ CAsyncSeqIdResolver::CAsyncSeqIdResolver(
                             const CTempString &               url_seq_id,
                             bool                              composed_ok,
                             SBioseqResolution &&              bioseq_resolution,
-                            CPendingOperation *               pending_op) :
+                            CPendingOperation *               pending_op,
+                            CPSGS_Request *                   request,
+                            CPSGS_Reply *                     reply) :
     m_OsltSeqId(oslt_seq_id),
     m_EffectiveSeqIdType(effective_seq_id_type),
     m_SecondaryIdList(std::move(secondary_id_list)),
@@ -58,7 +60,9 @@ CAsyncSeqIdResolver::CAsyncSeqIdResolver(
     m_ComposedOk(composed_ok),
     m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op),
-    m_NeedTrace(pending_op->NeedTrace()),
+    m_Request(request),
+    m_Reply(reply),
+    m_NeedTrace(request->NeedTrace()),
     m_ResolveStage(eInit),
     m_CurrentFetch(nullptr),
     m_NoSeqIdTypeFetch(nullptr),
@@ -212,13 +216,15 @@ CAsyncSeqIdResolver::x_PreparePrimaryBioseqInfoQuery(
 
     if (m_NeedTrace) {
         if (with_seq_id_type)
-            m_PendingOp->SendTrace(
+            m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
         else
-            m_PendingOp->SendTrace(
+            m_Reply->SendTrace(
                 "Cassandra request for INSDC types: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
     }
 
     fetch_task->Wait();
@@ -260,9 +266,10 @@ void CAsyncSeqIdResolver::x_PrepareSi2csiQuery(const string &  secondary_id,
     m_PendingOp->RegisterFetch(m_CurrentFetch);
 
     if (m_NeedTrace)
-        m_PendingOp->SendTrace(
+        m_Reply->SendTrace(
             "Cassandra request: " +
-            ToJson(si2csi_request).Repr(CJsonNode::fStandardJson));
+            ToJson(si2csi_request).Repr(CJsonNode::fStandardJson),
+            m_Request->GetStartTimestamp());
 
     fetch_task->Wait();
 }
@@ -327,7 +334,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_BioseqKeyFields).
                             Repr(CJsonNode::fStandardJson);
         }
-        m_PendingOp->SendTrace(msg);
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
     size_t  index_to_pick = 0;
@@ -390,10 +397,11 @@ void CAsyncSeqIdResolver::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     }
 
     if (m_NeedTrace) {
-        m_PendingOp->SendTrace(
+        m_Reply->SendTrace(
             "Selected record: " +
             ToJson(records[index_to_pick], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                Repr(CJsonNode::fStandardJson));
+                Repr(CJsonNode::fStandardJson),
+            m_Request->GetStartTimestamp());
     }
 
     m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
@@ -435,7 +443,7 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoWithoutSeqIdType(
             msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson);
         }
-        m_PendingOp->SendTrace(msg);
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
     switch (decision.status) {
@@ -498,7 +506,8 @@ void CAsyncSeqIdResolver::x_OnBioseqInfoError(CRequestStatus::ECode  status, int
                                               EDiagSev  severity, const string &  message)
 {
     if (m_NeedTrace)
-        m_PendingOp->SendTrace("Cassandra error: " + message);
+        m_Reply->SendTrace("Cassandra error: " + message,
+                           m_Request->GetStartTimestamp());
 
     if (m_CurrentFetch)
         m_CurrentFetch->SetReadFinished();
@@ -526,7 +535,7 @@ void CAsyncSeqIdResolver::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
         if (record_count > 1)
             msg += "\nMore than one record => may be more tries";
 
-        m_PendingOp->SendTrace(msg);
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
     if (record_count != 1) {
@@ -571,7 +580,8 @@ void CAsyncSeqIdResolver::x_OnSi2csiError(CRequestStatus::ECode  status, int  co
                                           EDiagSev  severity, const string &  message)
 {
     if (m_NeedTrace)
-        m_PendingOp->SendTrace("Cassandra error: " + message);
+        m_Reply->SendTrace("Cassandra error: " + message,
+                           m_Request->GetStartTimestamp());
 
     auto    app = CPubseqGatewayApp::GetInstance();
 

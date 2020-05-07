@@ -149,6 +149,9 @@ public:
                    x_RequestTypeToString(GetRequestType()));
     }
 
+    TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
+    bool NeedTrace(void);
+
     CPSGS_Request(const CPSGS_Request &) = default;
     CPSGS_Request(CPSGS_Request &&) = default;
     CPSGS_Request &  operator=(const CPSGS_Request &) = default;
@@ -208,6 +211,16 @@ struct SPSGS_RequestBase
     virtual ~SPSGS_RequestBase() {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const = 0;
+
+    virtual EPSGS_Trace GetTrace(void) const
+    {
+        return m_Trace;
+    }
+
+    virtual TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const
+    {
+        return m_StartTimestamp;
+    }
 
     SPSGS_RequestBase(const SPSGS_RequestBase &) = default;
     SPSGS_RequestBase(SPSGS_RequestBase &&) = default;

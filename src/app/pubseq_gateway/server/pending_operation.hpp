@@ -88,9 +88,6 @@ public:
         m_OverallStatus = max(status, m_OverallStatus);
     }
 
-    SPSGS_RequestBase::EPSGS_Trace NeedTrace(void);
-    void SendTrace(const string &  msg);
-
 public:
     CPendingOperation(const CPendingOperation&) = delete;
     CPendingOperation& operator=(const CPendingOperation&) = delete;
@@ -270,7 +267,7 @@ public:
                             const CBioseqInfoRecord &  bioseq_info_record);
 
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
-    { return m_ProtocolSupport.GetReply()->GetDataReadyCB(); }
+    { return m_Reply.GetReply()->GetDataReadyCB(); }
 
     void RegisterFetch(CCassFetch *  fetch)
     { m_FetchDetails.push_back(unique_ptr<CCassFetch>(fetch)); }
@@ -290,15 +287,13 @@ private:
     // Cassandra data loaders; there could be many of them
     list<unique_ptr<CCassFetch>>            m_FetchDetails;
 
-    CPSGS_Reply                             m_ProtocolSupport;
+    CPSGS_Reply                             m_Reply;
 
     // Async DB access support
     unique_ptr<CAsyncSeqIdResolver>         m_AsyncSeqIdResolver;
     unique_ptr<CAsyncBioseqQuery>           m_AsyncBioseqDetailsQuery;
     EPSGS_AsyncInterruptPoint               m_AsyncInterruptPoint;
     TPSGS_HighResolutionTimePoint           m_AsyncCassResolutionStart;
-
-    TPSGS_HighResolutionTimePoint           m_CreateTimestamp;
 };
 
 

@@ -42,10 +42,8 @@ USING_NCBI_SCOPE;
 
 
 EPSGS_CacheLookupResult
-CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
-                              CPendingOperation *  pending_op)
+CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
 {
-    bool                    need_trace = pending_op->NeedTrace();
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
@@ -70,22 +68,23 @@ CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
 
     COperationTiming &      timing = app->GetTiming();
     try {
-        if (need_trace) {
-            pending_op->SendTrace(
+        if (m_NeedTrace) {
+            m_Reply->SendTrace(
                 "Cache request: " +
-                ToJson(fetch_request).Repr(CJsonNode::fStandardJson));
+                ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
         }
 
         auto    records = cache->FetchBioseqInfo(fetch_request);
 
-        if (need_trace) {
+        if (m_NeedTrace) {
             string  msg = to_string(records.size()) + " hit(s)";
             for (const auto &  item : records) {
                 msg += "\n" +
                        ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson);
             }
-            pending_op->SendTrace(msg);
+            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
 
         switch (records.size()) {
@@ -93,8 +92,7 @@ CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
                 if (IsINSDCSeqIdType(seq_id_type)) {
                     timing.Register(eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
                     app->GetCacheCounters().IncBioseqInfoCacheMiss();
-                    return CPSGCache::s_LookupINSDCBioseqInfo(bioseq_resolution,
-                                                              pending_op);
+                    return CPSGCache::x_LookupINSDCBioseqInfo(bioseq_resolution);
                 }
                 cache_hit = false;
                 break;
@@ -113,12 +111,13 @@ CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
                             ver = records[k].GetVersion();
                         }
                     }
-                    if (need_trace) {
-                        pending_op->SendTrace(
+                    if (m_NeedTrace) {
+                        m_Reply->SendTrace(
                             "Record with max version selected\n" +
                             ToJson(records[index_to_pick],
                                    SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                                Repr(CJsonNode::fStandardJson));
+                                Repr(CJsonNode::fStandardJson),
+                            m_Request->GetStartTimestamp());
                     }
 
                     cache_hit = true;
@@ -127,40 +126,45 @@ CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
                 } else {
                     cache_hit = false;
 
-                    if (need_trace) {
-                        pending_op->SendTrace(
+                    if (m_NeedTrace) {
+                        m_Reply->SendTrace(
                             "Consider as nothing was found (version was "
                             "specified but many records; further tries "
-                            "may be more successful)");
+                            "may be more successful)",
+                            m_Request->GetStartTimestamp());
                     }
                 }
                 break;
         }
     } catch (const exception &  exc) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch exception. Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch exception. Report failure.",
+                               m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Exception while bioseq info cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
     } catch (...) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch exception. Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch exception. Report failure.",
+                               m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while bioseq info cache lookup");
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
     }
 
     if (cache_hit) {
-        if (need_trace)
-            pending_op->SendTrace("Report cache hit");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Report cache hit",
+                               m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbBioseqInfo, eOpStatusFound, start);
         app->GetCacheCounters().IncBioseqInfoCacheHit();
         return ePSGS_Found;
     }
 
-    if (need_trace)
-        pending_op->SendTrace("Report cache no hit");
+    if (m_NeedTrace)
+        m_Reply->SendTrace("Report cache no hit",
+                           m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
     app->GetCacheCounters().IncBioseqInfoCacheMiss();
     return ePSGS_NotFound;
@@ -168,10 +172,8 @@ CPSGCache::s_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution,
 
 
 EPSGS_CacheLookupResult
-CPSGCache::s_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution,
-                                   CPendingOperation *  pending_op)
+CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
 {
-    bool                    need_trace = pending_op->NeedTrace();
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
@@ -190,16 +192,17 @@ CPSGCache::s_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution,
 
     COperationTiming &      timing = app->GetTiming();
     try {
-        if (need_trace) {
-            pending_op->SendTrace(
+        if (m_NeedTrace) {
+            m_Reply->SendTrace(
                     "Cache request for INSDC types: " +
-                    ToJson(fetch_request).Repr(CJsonNode::fStandardJson));
+                    ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                    m_Request->GetStartTimestamp());
         }
 
         auto    records = cache->FetchBioseqInfo(fetch_request);
         SINSDCDecision  decision = DecideINSDC(records, version);
 
-        if (need_trace) {
+        if (m_NeedTrace) {
             string  msg = to_string(records.size()) +
                           " hit(s); decision status: " + to_string(decision.status);
             for (const auto &  item : records) {
@@ -208,7 +211,7 @@ CPSGCache::s_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution,
                               SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                                     Repr(CJsonNode::fStandardJson);
             }
-            pending_op->SendTrace(msg);
+            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
 
         switch (decision.status) {
@@ -229,18 +232,20 @@ CPSGCache::s_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution,
                 break;
         }
     } catch (const exception &  exc) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch for INSDC types exception. "
-                                  "Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch for INSDC types exception. "
+                               "Report failure.",
+                               m_Request->GetStartTimestamp());
 
         ERR_POST(Critical << "Exception while INSDC bioseq info cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
     } catch (...) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch for INSDC types exception. "
-                                  "Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch for INSDC types exception. "
+                               "Report failure.",
+                               m_Request->GetStartTimestamp());
 
         ERR_POST(Critical << "Unknown exception while INSDC bioseq info cache lookup");
         app->GetErrorCounters().IncLMDBError();
@@ -248,15 +253,17 @@ CPSGCache::s_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution,
     }
 
     if (cache_hit) {
-        if (need_trace)
-            pending_op->SendTrace("Report cache for INSDC types hit");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Report cache for INSDC types hit",
+                               m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbBioseqInfo, eOpStatusFound, start);
         app->GetCacheCounters().IncBioseqInfoCacheHit();
         return ePSGS_Found;
     }
 
-    if (need_trace)
-        pending_op->SendTrace("Report cache for INSDC types no hit");
+    if (m_NeedTrace)
+        m_Reply->SendTrace("Report cache for INSDC types no hit",
+                           m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
     app->GetCacheCounters().IncBioseqInfoCacheMiss();
     return ePSGS_NotFound;
@@ -264,10 +271,8 @@ CPSGCache::s_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution,
 
 
 EPSGS_CacheLookupResult
-CPSGCache::s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
-                          CPendingOperation *  pending_op)
+CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
 {
-    bool                    need_trace = pending_op->NeedTrace();
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
@@ -285,20 +290,21 @@ CPSGCache::s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
     bool    cache_hit = false;
 
     try {
-        if (need_trace) {
-            pending_op->SendTrace(
+        if (m_NeedTrace) {
+            m_Reply->SendTrace(
                 "Cache request: " +
-                ToJson(fetch_request).Repr(CJsonNode::fStandardJson));
+                ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
         }
 
         auto    records = cache->FetchSi2Csi(fetch_request);
 
-        if (need_trace) {
+        if (m_NeedTrace) {
             string  msg = to_string(records.size()) + " hit(s)";
             for (const auto &  item : records) {
                 msg += "\n" + ToJson(item).Repr(CJsonNode::fStandardJson);
             }
-            pending_op->SendTrace(msg);
+            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
 
         switch (records.size()) {
@@ -313,10 +319,11 @@ CPSGCache::s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
                 bioseq_resolution.m_BioseqInfo.SetGI(records[0].GetGI());
                 break;
             default:
-                if (need_trace) {
-                    pending_op->SendTrace(
+                if (m_NeedTrace) {
+                    m_Reply->SendTrace(
                         to_string(records.size()) + " hits. "
-                        "Cannot decide what to choose so treat as no hit");
+                        "Cannot decide what to choose so treat as no hit",
+                        m_Request->GetStartTimestamp());
                 }
 
                 // More than one record: there is no basis to choose, so
@@ -325,15 +332,17 @@ CPSGCache::s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
                 break;
         }
     } catch (const exception &  exc) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch exception. Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch exception. Report failure.",
+                               m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Exception while csi cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
     } catch (...) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch exception. Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch exception. Report failure.",
+                               m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while csi cache lookup");
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
@@ -341,29 +350,29 @@ CPSGCache::s_LookupSi2csi(SBioseqResolution &  bioseq_resolution,
 
     COperationTiming &      timing = app->GetTiming();
     if (cache_hit) {
-        if (need_trace)
-            pending_op->SendTrace("Report cache hit");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Report cache hit",
+                               m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbSi2csi, eOpStatusFound, start);
         app->GetCacheCounters().IncSi2csiCacheHit();
         return ePSGS_Found;
     }
 
-    if (need_trace)
-        pending_op->SendTrace("Report cache no hit");
+    if (m_NeedTrace)
+        m_Reply->SendTrace("Report cache no hit",
+                           m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbSi2csi, eOpStatusNotFound, start);
     app->GetCacheCounters().IncSi2csiCacheMiss();
     return ePSGS_NotFound;
 }
 
 
-EPSGS_CacheLookupResult  CPSGCache::s_LookupBlobProp(
+EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
                                             int  sat,
                                             int  sat_key,
                                             int64_t &  last_modified,
-                                            CPendingOperation *  pending_op,
                                             CBlobRecord &  blob_record)
 {
-    bool                    need_trace = pending_op->NeedTrace();
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
@@ -380,20 +389,21 @@ EPSGS_CacheLookupResult  CPSGCache::s_LookupBlobProp(
     bool    cache_hit = false;
 
     try {
-        if (need_trace) {
-            pending_op->SendTrace(
+        if (m_NeedTrace) {
+            m_Reply->SendTrace(
                 "Cache request: " +
-                ToJson(fetch_request).Repr(CJsonNode::fStandardJson));
+                ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
         }
 
         auto    records = cache->FetchBlobProp(fetch_request);
 
-        if (need_trace) {
+        if (m_NeedTrace) {
             string  msg = to_string(records.size()) + " hit(s)";
             for (const auto &  item : records) {
                 msg += "\n" + ToJson(item).Repr(CJsonNode::fStandardJson);
             }
-            pending_op->SendTrace(msg);
+            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
 
         switch (records.size()) {
@@ -414,11 +424,12 @@ EPSGS_CacheLookupResult  CPSGCache::s_LookupBlobProp(
                         records[max_last_modified_index].GetModified())
                         max_last_modified_index = k;
                 }
-                if (need_trace) {
-                    pending_op->SendTrace(
+                if (m_NeedTrace) {
+                    m_Reply->SendTrace(
                         "Record with max last_modified selected\n" +
                         ToJson(records[max_last_modified_index]).
-                            Repr(CJsonNode::fStandardJson));
+                            Repr(CJsonNode::fStandardJson),
+                        m_Request->GetStartTimestamp());
                 }
 
                 last_modified = records[max_last_modified_index].GetModified();
@@ -427,15 +438,17 @@ EPSGS_CacheLookupResult  CPSGCache::s_LookupBlobProp(
                 break;
         }
     } catch (const exception &  exc) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch exception. Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch exception. Report failure.",
+                               m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Exception while blob prop cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
     } catch (...) {
-        if (need_trace)
-            pending_op->SendTrace("Cache fetch exception. Report failure.");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Cache fetch exception. Report failure.",
+                               m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while blob prop cache lookup");
         app->GetErrorCounters().IncLMDBError();
         return ePSGS_Failure;
@@ -443,15 +456,17 @@ EPSGS_CacheLookupResult  CPSGCache::s_LookupBlobProp(
 
     COperationTiming &      timing = app->GetTiming();
     if (cache_hit) {
-        if (need_trace)
-            pending_op->SendTrace("Report cache hit");
+        if (m_NeedTrace)
+            m_Reply->SendTrace("Report cache hit",
+                               m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbBlobProp, eOpStatusFound, start);
         app->GetCacheCounters().IncBlobPropCacheHit();
         return ePSGS_Found;
     }
 
-    if (need_trace)
-        pending_op->SendTrace("Report cache no hit");
+    if (m_NeedTrace)
+        m_Reply->SendTrace("Report cache no hit",
+                           m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbBlobProp, eOpStatusNotFound, start);
     app->GetCacheCounters().IncBlobPropCacheMiss();
     return ePSGS_NotFound;

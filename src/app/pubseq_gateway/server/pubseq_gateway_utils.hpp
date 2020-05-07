@@ -48,8 +48,8 @@ USING_IDBLOB_SCOPE;
 #include <chrono>
 using namespace std;
 
-class CPendingOperation;
-
+class CPSGS_Request;
+class CPSGS_Reply;
 
 
 // Used to report errors like bad request or LMDB cache error from a lower
@@ -115,7 +115,8 @@ struct SBioseqResolution
         m_AdjustmentError.clear();
     }
 
-    EPSGS_AccessionAdjustmentResult AdjustAccession(CPendingOperation *  pending_op);
+    EPSGS_AccessionAdjustmentResult AdjustAccession(CPSGS_Request *  request,
+                                                    CPSGS_Reply *  reply);
 
     EPSGS_ResolutionResult          m_ResolutionResult;
     TPSGS_HighResolutionTimePoint   m_RequestStartTimestamp;

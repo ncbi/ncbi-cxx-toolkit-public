@@ -34,7 +34,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include "pubseq_gateway_utils.hpp"
-#include "pending_operation.hpp"
+#include "psgs_request.hpp"
+#include "psgs_reply.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -43,7 +44,8 @@ USING_SCOPE(objects);
 // see CXX-10728
 // Need to replace the found accession with the seq_ids found accession
 EPSGS_AccessionAdjustmentResult
-SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
+SBioseqResolution::AdjustAccession(CPSGS_Request *  request,
+                                   CPSGS_Reply *  reply)
 {
     if (m_AdjustmentTried)
         return m_AccessionAdjustmentResult;
@@ -58,8 +60,9 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
 
     auto    seq_id_type = m_BioseqInfo.GetSeqIdType();
     if (m_BioseqInfo.GetVersion() > 0 && seq_id_type != CSeq_id::e_Gi) {
-        if (pending_op->NeedTrace())
-            pending_op->SendTrace("No need to adjust accession");
+        if (request->NeedTrace())
+            reply->SendTrace("No need to adjust accession",
+                             request->GetStartTimestamp());
 
         m_AccessionAdjustmentResult = ePSGS_NotRequired;
         return m_AccessionAdjustmentResult;
@@ -78,8 +81,9 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
             if (orig_seq_id_type != CSeq_id::e_Gi)
                 seq_ids.insert(make_tuple(orig_seq_id_type, orig_accession));
 
-            if (pending_op->NeedTrace())
-                pending_op->SendTrace("Accession adjusted with Gi");
+            if (request->NeedTrace())
+                reply->SendTrace("Accession adjusted with Gi",
+                                 request->GetStartTimestamp());
 
             m_AccessionAdjustmentResult = ePSGS_AdjustedWithGi;
             return m_AccessionAdjustmentResult;
@@ -106,10 +110,11 @@ SBioseqResolution::AdjustAccession(CPendingOperation *  pending_op)
     if (orig_seq_id_type != CSeq_id::e_Gi)
         seq_ids.insert(make_tuple(orig_seq_id_type, orig_accession));
 
-    if (pending_op->NeedTrace())
-        pending_op->SendTrace("Accession adjusted with type " +
-                              to_string(m_BioseqInfo.GetSeqIdType()) +
-                              " (first from the seq_ids list)");
+    if (request->NeedTrace())
+        reply->SendTrace("Accession adjusted with type " +
+                         to_string(m_BioseqInfo.GetSeqIdType()) +
+                         " (first from the seq_ids list)",
+                         request->GetStartTimestamp());
 
     m_AccessionAdjustmentResult = ePSGS_AdjustedWithAny;
     return m_AccessionAdjustmentResult;

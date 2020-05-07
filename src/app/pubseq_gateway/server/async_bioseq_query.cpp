@@ -42,10 +42,14 @@ using namespace std::placeholders;
 
 
 CAsyncBioseqQuery::CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                                     CPendingOperation *  pending_op) :
+                                     CPendingOperation *   pending_op,
+                                     CPSGS_Request *       request,
+                                     CPSGS_Reply *         reply) :
     m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op),
-    m_NeedTrace(pending_op->NeedTrace()),
+    m_Request(request),
+    m_Reply(reply),
+    m_NeedTrace(request->NeedTrace()),
     m_Fetch(nullptr),
     m_NoSeqIdTypeFetch(nullptr)
 {}
@@ -109,13 +113,15 @@ void CAsyncBioseqQuery::MakeRequest(bool  with_seq_id_type)
 
     if (m_NeedTrace) {
         if (with_seq_id_type)
-            m_PendingOp->SendTrace(
+            m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
         else
-            m_PendingOp->SendTrace(
+            m_Reply->SendTrace(
                 "Cassandra request for INSDC types: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson));
+                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
     }
 
     fetch_task->Wait();
@@ -135,7 +141,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                    ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                         Repr(CJsonNode::fStandardJson);
         }
-        m_PendingOp->SendTrace(msg);
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
     if (records.empty()) {
@@ -151,7 +157,8 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         }
 
         if (m_NeedTrace)
-            m_PendingOp->SendTrace("Report not found");
+            m_Reply->SendTrace("Report not found",
+                               m_Request->GetStartTimestamp());
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
         m_PendingOp->OnBioseqDetailsRecord(std::move(m_BioseqResolution));
@@ -161,7 +168,7 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (records.size() == 1) {
         // Exactly one match; no complications
         if (m_NeedTrace) {
-            m_PendingOp->SendTrace("Report found");
+            m_Reply->SendTrace("Report found", m_Request->GetStartTimestamp());
         }
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
@@ -178,9 +185,10 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (m_BioseqResolution.m_BioseqInfo.GetVersion() != -1) {
         // More than one with the version provided
         if (m_NeedTrace) {
-            m_PendingOp->SendTrace(
+            m_Reply->SendTrace(
                 "Consider as nothing was found (version was "
-                "specified but many records)\nReport not found");
+                "specified but many records)\nReport not found",
+                m_Request->GetStartTimestamp());
         }
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
@@ -203,11 +211,12 @@ void CAsyncBioseqQuery::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     }
 
     if (m_NeedTrace) {
-        m_PendingOp->SendTrace(
+        m_Reply->SendTrace(
             "Record with max version selected\n" +
             ToJson(records[index], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                 Repr(CJsonNode::fStandardJson) +
-            "\nReport found");
+            "\nReport found",
+            m_Request->GetStartTimestamp());
     }
 
     m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
@@ -236,13 +245,14 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson);
         }
-        m_PendingOp->SendTrace(msg);
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
     switch (decision.status) {
         case CRequestStatus::e200_Ok:
             if (m_NeedTrace)
-                m_PendingOp->SendTrace("Report found");
+                m_Reply->SendTrace("Report found",
+                                   m_Request->GetStartTimestamp());
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
@@ -256,7 +266,8 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             break;
         case CRequestStatus::e404_NotFound:
             if (m_NeedTrace)
-                m_PendingOp->SendTrace("Report not found");
+                m_Reply->SendTrace("Report not found",
+                                   m_Request->GetStartTimestamp());
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
@@ -269,7 +280,8 @@ void CAsyncBioseqQuery::x_OnBioseqInfoWithoutSeqIdType(
             break;
         case CRequestStatus::e500_InternalServerError:
             if (m_NeedTrace)
-                m_PendingOp->SendTrace("Report not found");
+                m_Reply->SendTrace("Report not found",
+                                   m_Request->GetStartTimestamp());
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
@@ -300,7 +312,8 @@ void CAsyncBioseqQuery::x_OnBioseqInfoError(
                                 EDiagSev  severity, const string &  message)
 {
     if (m_NeedTrace)
-        m_PendingOp->SendTrace("Cassandra error: " + message);
+        m_Reply->SendTrace("Cassandra error: " + message,
+                           m_Request->GetStartTimestamp());
 
     if (m_Fetch)
         m_Fetch->SetReadFinished();

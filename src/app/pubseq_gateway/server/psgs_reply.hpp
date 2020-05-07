@@ -120,6 +120,8 @@ public:
     void PrepareNamedAnnotationData(const string &  annot_name,
                                     const string &  content);
     void PrepareReplyCompletion(void);
+    void SendTrace(const string &  msg,
+                   const TPSGS_HighResolutionTimePoint &  create_timestamp);
 
 public:
     // HTTP facilities
