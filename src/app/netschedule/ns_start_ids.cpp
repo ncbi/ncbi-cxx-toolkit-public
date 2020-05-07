@@ -158,7 +158,7 @@ void CNSStartIDs::x_SerializeNoLock(void) const
 
         if (f != NULL) {
             for (k = m_IDs.begin(); k != m_IDs.end(); ++k)
-                fprintf(f, "%s=%d\n", k->first.c_str(), k->second);
+                fprintf(f, "%s=%u\n", k->first.c_str(), k->second);
             fclose(f);
         } else
             ERR_POST("Cannot serialize start queue job ids into file " +
