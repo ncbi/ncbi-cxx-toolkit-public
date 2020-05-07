@@ -3395,12 +3395,17 @@ changequote(, )dnl
       FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
    else
+      if test "$GCC" = yes; then
+         defoptim=-O2
+      else
+         defoptim=-O
+      fi
       if echo " $CFLAGS "   | grep -v "$optrx" >/dev/null ; then
-         CFLAGS="$CFLAGS -O" ; fi
+         CFLAGS="$CFLAGS $defoptim" ; fi
       if echo " $CXXFLAGS " | grep -v "$optrx" >/dev/null ; then
-         CXXFLAGS="$CXXFLAGS -O" ; fi
+         CXXFLAGS="$CXXFLAGS $defoptim" ; fi
       if echo " $LDFLAGS "  | grep -v "$optrx" >/dev/null ; then
-         LDFLAGS="$LDFLAGS -O" ; fi
+         LDFLAGS="$LDFLAGS $defoptim" ; fi
       if test "$skip_fast_flags" = yes ; then
          FAST_CFLAGS="$CFLAGS"
          FAST_CXXFLAGS="$CXXFLAGS"
