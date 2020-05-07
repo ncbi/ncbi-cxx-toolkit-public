@@ -5573,6 +5573,7 @@ if test "$with_boost" != "no"; then
          AS_UNSET(ncbi_cv_lib_boost_version)
       fi
    fi
+      CPPFLAGS=$orig_CPPFLAGS
       AC_CACHE_CHECK([Boost version],
          ncbi_cv_lib_boost_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
@@ -5592,8 +5593,7 @@ _NCBI_EOF
 ncbi_cv_lib_boost_version_num=\`get_BOOST_VERSION\`
 ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           ]])])
-          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" > conftest.sh \
-             2>&AS_MESSAGE_LOG_FD
+          _AC_DO([$ac_cpp $BOOST_INCLUDE conftest.$ac_ext]) > conftest.sh
           . ./conftest.sh 2>&AS_MESSAGE_LOG_FD
           rm -f conftest*
          ])

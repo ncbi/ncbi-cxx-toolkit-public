@@ -21664,6 +21664,7 @@ if test "$with_boost" != "no"; then
          { ncbi_cv_lib_boost_version=; unset ncbi_cv_lib_boost_version;}
       fi
    fi
+      CPPFLAGS=$orig_CPPFLAGS
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boost version" >&5
 $as_echo_n "checking Boost version... " >&6; }
 if ${ncbi_cv_lib_boost_version+:} false; then :
@@ -21689,8 +21690,17 @@ ncbi_cv_lib_boost_version_num=\`get_BOOST_VERSION\`
 ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
 
 _ACEOF
-          eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" > conftest.sh \
-             2>&5
+          { { ac_try="$ac_cpp $BOOST_INCLUDE conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } > conftest.sh
           . ./conftest.sh 2>&5
           rm -f conftest*
 
