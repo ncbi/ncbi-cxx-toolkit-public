@@ -45,7 +45,7 @@
 #define NCBI_MSWIN_NO_POPUP
 
 /* In case anyone needs to always disable the popup messages (regardless of DIAG_SILENT_ABDORT)
-   another pre-processor macro can be defined before #include’ing either 
+   another pre-processor macro can be defined before #include'ing either 
    <corelib/mswin_no_popup.h> (or <common/test_assert.h>).
 */
 /* #define NCBI_MSWIN_NO_POPUP_EVER */
