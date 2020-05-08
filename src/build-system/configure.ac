@@ -8368,6 +8368,10 @@ if test -n "$GRPC_LIBS"; then
    if test -n "$GRPC_CONFIG_LIBS"; then
       GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS $GRPC_LDEP"
       GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure grpc_unsecure --libs`"
+      case " $GRPC_LIBS ::: $GRPC_UNSECURE_LIBS " in
+         *:::*" -lupb "* ) ;;
+         *" -lupb "* ) GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS -lupb" ;;
+      esac
       GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS $PROTOBUF_LIBS $GRPC_LDEP"
    else
       LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
