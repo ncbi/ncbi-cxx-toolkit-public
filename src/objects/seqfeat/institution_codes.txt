@@ -3677,6 +3677,7 @@ LEC	s	Universita degli Studi di Lecce, Dipartimento di Biologia
 LECB	s	Saint Petersburg State University, Botany Department			
 LEDLIE	s	Patricia Ledlie Herbarium			
 LEF	s	Economic Forestry Institute of Liaoning Province			
+LEGEcc	c	Blue Biotechnology and Ecotoxicology Culture Collection			
 LEH	s	Lehigh University			
 LEI	s	Leicester Literary and Philosophical Society			
 LEISHCRYOBANK	c	International Cryobank of Leishmania			

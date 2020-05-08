@@ -3710,6 +3710,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LECB\ts\tSaint Petersburg State University, Botany Department\t\t\t",
 "LEDLIE\ts\tPatricia Ledlie Herbarium\t\t\t",
 "LEF\ts\tEconomic Forestry Institute of Liaoning Province\t\t\t",
+"LEGEcc\tc\tBlue Biotechnology and Ecotoxicology Culture Collection\t\t\t",
 "LEH\ts\tLehigh University\t\t\t",
 "LEI\ts\tLeicester Literary and Philosophical Society\t\t\t",
 "LEISHCRYOBANK\tc\tInternational Cryobank of Leishmania\t\t\t",
