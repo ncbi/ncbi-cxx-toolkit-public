@@ -571,7 +571,7 @@ void CDbtag::InvalidateType(void)
 // special case URLs
 static const char kFBan[] = "http://www.fruitfly.org/cgi-bin/annot/fban?";  // url not found "Internal Server Error" tested 7/13/2016
 static const char kHInvDbHIT[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR="; // access forbidden 7/13/2016
-static const char kHInvDbHIX[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";  // “Internal Server Error” tested 7/13/2016
+static const char kHInvDbHIX[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR="; // "Internal Server Error" tested 7/13/2016
 static const char kDictyPrim[] = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";  // url not found tested 7/13/2016
 static const char kMiRBaseMat[] = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc="; // https not available tested 7/13/2016 
 static const char kMaizeGDBInt[] = "https://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
@@ -585,7 +585,7 @@ static const char kHomdSeq[] = "http://www.homd.org/seq="; // https not availabl
 typedef SStaticPair<CDbtag::EDbtagType, const char*>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_AFTOL, "https://wasabi.lutzonilab.net/pub/displayTaxonInfo?aftol_id=" },
-    { CDbtag::eDbtagType_APHIDBASE, "http://bipaa.genouest.org/apps/grs-2.3/grs?reportID=aphidbase_transcript_report&objectID=" }, // “Service Unavailable” tested 7/13/2016  
+    { CDbtag::eDbtagType_APHIDBASE, "http://bipaa.genouest.org/apps/grs-2.3/grs?reportID=aphidbase_transcript_report&objectID=" }, // "Service Unavailable" tested 7/13/2016  
     { CDbtag::eDbtagType_ASAP, "https://asap.genetics.wisc.edu/asap/feature_info.php?FeatureID=" },
     { CDbtag::eDbtagType_ATCC, "https://www.atcc.org/Products/All/" },
     { CDbtag::eDbtagType_AceView_WormGenes, "https://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q=" },
@@ -604,11 +604,11 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
-    { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but “page can’t be displayed”, tested 7/13/2016  
-    { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
+    { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but "page can't be displayed", tested 7/13/2016  
+    { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016  
     { CDbtag::eDbtagType_FANTOM_DB, "https://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" }, // https not available tested 7/13/2016                               
-    { CDbtag::eDbtagType_FLYBASE, "http://flybase.org/reports/" }, // https not available, http site “experiencing problems” tested 7/13/2016
+    { CDbtag::eDbtagType_FLYBASE, "http://flybase.org/reports/" }, // https not available, http site "experiencing problems" tested 7/13/2016
     { CDbtag::eDbtagType_Fungorum, "http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_GABI, "https://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId=" },
     { CDbtag::eDbtagType_GEO, "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" },
@@ -623,47 +623,47 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_HMP, "https://www.hmpdacc.org/catalog/grid.php?dataset=genomic&hmp_id=" },
     { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_HPM, "http://www.humanproteomemap.org/protein.php?hpm_id=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" }, // https not available, http returns “Service Temporarily Unavailable” tested 7/13/2016
+    { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" }, // https not available, http returns "Service Temporarily Unavailable" tested 7/13/2016
     { CDbtag::eDbtagType_HSSP, "http://mrs.cmbi.ru.nl/m6/search?db=all&q=" }, // not sure this points to a useful URL tested 7/13/2016  
     { CDbtag::eDbtagType_H_InvDB, "https://www.h-invitational.jp" },
     { CDbtag::eDbtagType_IFO, "https://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT=" },
-    { CDbtag::eDbtagType_IMGT_GENEDB, "http://www.imgt.org/IMGT_GENE-DB/GENElect?species=Homo+sapiens&query=2+" }, // https not available, http “detected an unhandled exception” tested 7/13/2016
+    { CDbtag::eDbtagType_IMGT_GENEDB, "http://www.imgt.org/IMGT_GENE-DB/GENElect?species=Homo+sapiens&query=2+" }, // https not available, http "detected an unhandled exception" tested 7/13/2016
     { CDbtag::eDbtagType_IMGT_HLA, "https://www.ebi.ac.uk/cgi-bin/ipd/imgt/hla/get_allele.cgi?" },
-    { CDbtag::eDbtagType_IMGT_LIGM, "http://www.imgt.org/cgi-bin/IMGTlect.jv?query=201+" }, // https not available, http “detected an unhandled exception” tested 7/13/2016
+    { CDbtag::eDbtagType_IMGT_LIGM, "http://www.imgt.org/cgi-bin/IMGTlect.jv?query=201+" }, // https not available, http "detected an unhandled exception" tested 7/13/2016
     { CDbtag::eDbtagType_IRD, "https://www.fludb.org/brc/fluSegmentDetails.do?irdSubmissionId=" },
-    { CDbtag::eDbtagType_ISD, "http://www.flu.lanl.gov/search/view_record.html?accession=" }, // http “page can’t be displayed” tested 7/13/2016  
+    { CDbtag::eDbtagType_ISD, "http://www.flu.lanl.gov/search/view_record.html?accession=" }, // http "page can't be displayed" tested 7/13/2016  
     { CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_InterimID, "https://www.ncbi.nlm.nih.gov/gene/" },
     { CDbtag::eDbtagType_Interpro, "https://www.ebi.ac.uk/interpro/entry/InterPro/" },
-    { CDbtag::eDbtagType_IntrepidBio, "http://server1.intrepidbio.com/FeatureBrowser/gene/browse/" }, // http request shows “Database is down for maint” tested 7/13/2016  
+    { CDbtag::eDbtagType_IntrepidBio, "http://server1.intrepidbio.com/FeatureBrowser/gene/browse/" }, // http request shows "Database is down for maint" tested 7/13/2016  
     { CDbtag::eDbtagType_JCM, "https://www.jcm.riken.go.jp/cgi-bin/jcm/jcm_number?JCM=" },
-    { CDbtag::eDbtagType_JGIDB, "http://genome.jgi-psf.org/cgi-bin/jgrs?id=" }, // https page “can’t be displayed” tested 7/13/2016  
+    { CDbtag::eDbtagType_JGIDB, "http://genome.jgi-psf.org/cgi-bin/jgrs?id=" }, // https page "can't be displayed" tested 7/13/2016  
     { CDbtag::eDbtagType_LocusID, "https://www.ncbi.nlm.nih.gov/gene/" },
-    { CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/marker/MGI:" }, // https page “can’t be displayed” tested 7/13/2016  
+    { CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/marker/MGI:" }, // https page "can't be displayed" tested 7/13/2016  
     { CDbtag::eDbtagType_MIM, "https://www.ncbi.nlm.nih.gov/omim/" },
     { CDbtag::eDbtagType_MaizeGDB, "https://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?" },
     { CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id=" }, // https not available, http “Internal Server Error” tested 7/13/2016                                                                                            
-    { CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id=" }, //  http “page can’t be displayed” tested 7/13/2016  
+    { CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id=" }, // https not available, http "Internal Server Error" tested 7/13/2016                                                                                            
+    { CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id=" }, //  http "page can't be displayed" tested 7/13/2016  
     { CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_OrthoMCL, "http://orthomcl.org/orthomcl/showRecord.do?name=GroupRecordClasses.GroupRecordClass&group_name=" }, // https not available                                                                                            
-    { CDbtag::eDbtagType_Osa1, "http://rice.plantbiology.msu.edu/cgi-bin/gbrowse/rice/?name=" }, // https “page can’t be displayed” tested 7/13/2016
+    { CDbtag::eDbtagType_Osa1, "http://rice.plantbiology.msu.edu/cgi-bin/gbrowse/rice/?name=" }, // https "page can't be displayed" tested 7/13/2016
     { CDbtag::eDbtagType_PBR, "https://www.poxvirus.org/query.asp?web_id=" },
     { CDbtag::eDbtagType_PBmice, "http://www.idmshanghai.cn/PBmice/DetailedSearch.do?type=insert&id=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId=" }, // https “page can’t be displayed” tested 7/13/2016
+    { CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId=" }, // https "page can't be displayed" tested 7/13/2016
     { CDbtag::eDbtagType_PFAM, "https://pfam.xfam.org/family/" },
     { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" }, // http page states info no longer avail at this website, includes links to look for a new location tested 7/13/2016
     { CDbtag::eDbtagType_Phytozome, "https://phytozome.jgi.doe.gov/pz/portal.html#!results?search=0&crown=1&star=1&method=0&searchText=" },
     { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
-    { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" }, // https appears available, domain appears to exist but http “page not found” with note about release of a major update tested 7/13/2016  
+    { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" }, // https appears available, domain appears to exist but http "page not found" with note about release of a major update tested 7/13/2016  
     { CDbtag::eDbtagType_RATMAP, "https://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
     { CDbtag::eDbtagType_RBGE_garden, "https://data.rbge.org.uk/living/" },
     { CDbtag::eDbtagType_RBGE_herbarium, "https://data.rbge.org.uk/herb/" },
     { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" }, // ID-4590 : https not available 02/14/2018
     { CDbtag::eDbtagType_RFAM, "http://rfam.xfam.org/family/" }, // https not available tested 7/13/2016                                                                                            
     { CDbtag::eDbtagType_RGD, "https://rgd.mcw.edu/rgdweb/search/search.html?term=" },
-    { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" }, // http “page can’t be displayed” tested 7/13/2016  
+    { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" }, // http "page can't be displayed" tested 7/13/2016  
     { CDbtag::eDbtagType_SGD, "https://www.yeastgenome.org/locus/" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_SGN, "http://www.sgn.cornell.edu/search/est.pl?request_type=7&request_id=" }, // https not available, http automatically redirects to https, then shows security cert issue, tested 7/13/2016
     { CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/" }, // https not available tested 7/13/2016                                                                                            
@@ -720,7 +720,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RNAcentral, "http://rnacentral.org/rna/" },
     { CDbtag::eDbtagType_PeptideAtlas, "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" },
     { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
-    { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
+    { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016  
     { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
 };
 
