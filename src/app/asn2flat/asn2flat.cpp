@@ -527,7 +527,7 @@ int CAsn2FlatApp::Run(void)
     const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
     m_PSGMode = cfg.GetBool("genbank", "loader_psg", false, 0, CNcbiRegistry::eReturn);
     if (m_PSGMode) {
-#ifdef HAVE_LIBGRPC
+#if defined(HAVE_LIBGRPC)  &&  defined(HAVE_NCBI_VDB)
         string host = cfg.GetString("SNPAccess", "host", "");
         string port = cfg.GetString("SNPAccess", "port", "");
         string hostport = host + ":" + port;
