@@ -29,7 +29,7 @@
  * Authors:  Vladislav Evgeniev, Vladimir Ivanov
  *
  * File Description:
- *   Log usage information to NCBI “pinger”.
+ *   Log usage information to NCBI "pinger".
  *
  */
 

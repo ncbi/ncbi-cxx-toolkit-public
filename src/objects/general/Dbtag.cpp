@@ -569,7 +569,7 @@ void CDbtag::InvalidateType(void)
 //=========================================================================//
 
 // special case URLs
-static const char kFBan[] = "http://www.fruitfly.org/cgi-bin/annot/fban?";  // url not found “Internal Server Error” tested 7/13/2016
+static const char kFBan[] = "http://www.fruitfly.org/cgi-bin/annot/fban?";  // url not found "Internal Server Error" tested 7/13/2016
 static const char kHInvDbHIT[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR="; // access forbidden 7/13/2016
 static const char kHInvDbHIX[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";  // “Internal Server Error” tested 7/13/2016
 static const char kDictyPrim[] = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";  // url not found tested 7/13/2016

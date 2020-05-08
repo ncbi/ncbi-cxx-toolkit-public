@@ -257,8 +257,8 @@ public:
     static bool SetBestFrame(CSeq_feat& cds, CScope& scope);
 
 /// Chooses best frame based on location
-/// 1.	If the location is 5’ complete, then the frame must be one.
-/// 2.	If the location is 5' partial and 3’ complete, select a frame using the
+/// 1.	If the location is 5' complete, then the frame must be one.
+/// 2.	If the location is 5' partial and 3' complete, select a frame using the
 ///      value of the location length modulo 3.
 /// @param cdregion Coding Region in which to set frame
 /// @param loc      Location to use for setting frame
