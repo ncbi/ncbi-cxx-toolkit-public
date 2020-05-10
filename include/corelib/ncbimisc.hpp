@@ -1009,8 +1009,6 @@ typedef TIntId TEntrezId;
 typedef int TTaxId;
 
 
-#ifdef NCBI_STRICT_GI
-
 /// a helper template to enforce constness of argument to GI_CONST macro
 template<class TId, TId id>
 class CConstIdChecker {
@@ -1018,10 +1016,13 @@ public:
     static const TId value = id;
 };
 
+#ifdef NCBI_STRICT_GI
+
 /// Macros to convert TGi to other types (int, unsigned etc.).
 #define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>((id).Get()))
 #define STRICT_ID_FROM(TIdType, TIntType, id) (TIdType(static_cast<TIdType::TId>(id)))
-#define STRICT_ID_CONST(type, id) (type(CConstIdChecker<type::TId, id>::value))
+#define STRICT_ID_CONST(type, id) \
+    (type(ncbi::CConstIdChecker<type::TId, id>::value))
 #define STRICT_ID_ZERO(type) STRICT_ID_CONST(type, 0)
 #define STRICT_ID_INVALID(type) STRICT_ID_CONST(type, -1)
 
@@ -1029,11 +1030,7 @@ public:
 
 #define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>(id))
 #define STRICT_ID_FROM(TIdType, TIntType, id) (static_cast<TIdType>(id))
-#ifdef NCBI_INT8_GI
-#define STRICT_ID_CONST(type, id) NCBI_CONST_INT8(id)
-#else
-#define STRICT_ID_CONST(type, id) id
-#endif
+#define STRICT_ID_CONST(type, id) ncbi::CConstIdChecker<type, id>::value
 #define STRICT_ID_ZERO(type) type(0)
 #define STRICT_ID_INVALID(type) type(-1)
 
