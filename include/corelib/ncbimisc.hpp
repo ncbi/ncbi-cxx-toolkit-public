@@ -1013,7 +1013,13 @@ typedef int TTaxId;
 template<class TId, TId id>
 class CConstIdChecker {
 public:
+#ifdef NCBI_COMPILER_ANY_CLANG
+    enum : TId {
+        value = id
+    };
+#else
     static const TId value = id;
+#endif
 };
 
 #ifdef NCBI_STRICT_GI
@@ -1030,7 +1036,7 @@ public:
 
 #define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>(id))
 #define STRICT_ID_FROM(TIdType, TIntType, id) (static_cast<TIdType>(id))
-#define STRICT_ID_CONST(type, id) ncbi::CConstIdChecker<type, id>::value
+#define STRICT_ID_CONST(type, id) (ncbi::CConstIdChecker<type, id>::value)
 #define STRICT_ID_ZERO(type) type(0)
 #define STRICT_ID_INVALID(type) type(-1)
 
