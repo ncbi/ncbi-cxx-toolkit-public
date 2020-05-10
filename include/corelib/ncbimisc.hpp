@@ -1029,7 +1029,11 @@ public:
 
 #define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>(id))
 #define STRICT_ID_FROM(TIdType, TIntType, id) (static_cast<TIdType>(id))
+#ifdef NCBI_INT8_GI
+#define STRICT_ID_CONST(type, id) NCBI_CONST_INT8(id)
+#else
 #define STRICT_ID_CONST(type, id) id
+#endif
 #define STRICT_ID_ZERO(type) type(0)
 #define STRICT_ID_INVALID(type) type(-1)
 
