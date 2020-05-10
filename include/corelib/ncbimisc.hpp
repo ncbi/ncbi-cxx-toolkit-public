@@ -1013,7 +1013,7 @@ typedef int TTaxId;
 template<class TId, TId id>
 class CConstIdChecker {
 public:
-#ifdef NCBI_COMPILER_ANY_CLANG
+#ifndef NCBI_COMPILER_MSVC
     enum : TId {
         value = id
     };
