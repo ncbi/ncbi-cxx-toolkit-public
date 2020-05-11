@@ -1028,7 +1028,7 @@ public:
 #define STRICT_ID_TO(TId, TInt, id) (static_cast<TInt>((id).Get()))
 #define STRICT_ID_FROM(TIdType, TIntType, id) (TIdType(static_cast<TIdType::TId>(id)))
 #define STRICT_ID_CONST(type, id) \
-    (type(ncbi::CConstIdChecker<type::TId, id>::value))
+    (type(static_cast<type::TId>(ncbi::CConstIdChecker<type::TId, id>::value)))
 #define STRICT_ID_ZERO(type) STRICT_ID_CONST(type, 0)
 #define STRICT_ID_INVALID(type) STRICT_ID_CONST(type, -1)
 
