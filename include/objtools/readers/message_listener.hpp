@@ -51,14 +51,19 @@ public:
     virtual ~ILineErrorListener() {}
 
     // IListener::Post() implementation
-/*
+    NCBI_STD_DEPRECATED("This method is no longer functional and will be removed in SC-25.") 
     virtual void Post(const IMessage& message)
     {
-        const ILineError* le = dynamic_cast<const ILineError*>(&message);
-        if (!le) return;
-        PutError(*le);
+        // Remove in SC-25
+        return;
     }
-*/
+
+    NCBI_STD_DEPRECATED("This method is redundant and will be removed in SC-25.") 
+    virtual void Push(const IObjtoolsMessage& message) 
+    {
+        // Remove in SC-25
+        PutMessage(message);
+    }
     /// Store error in the container, and 
     /// return true if error was stored fine, and
     /// return false if the caller should terminate all further processing.
