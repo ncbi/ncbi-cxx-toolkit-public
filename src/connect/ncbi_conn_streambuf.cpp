@@ -761,7 +761,7 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
             if (sync() == 0)
                 synced = true;
         }
-        catch (CIO_Exception& ex) {
+        catch (CIO_Exception& _DEBUG_ARG(ex)) {
             _ASSERT(!synced  &&  EIO_Status(ex.GetErrCode()) == m_Status);
         }
         catch (...) {

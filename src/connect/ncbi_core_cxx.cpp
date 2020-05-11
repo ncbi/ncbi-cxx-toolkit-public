@@ -444,9 +444,8 @@ static char* s_GetRequestID(ENcbiRequestID reqid)
     string id;
     switch (reqid) {
     case eNcbiRequestID_SID:
-        if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
+        if (!CDiagContext::GetRequestContext().IsSetSessionID())
             CDiagContext::GetRequestContext().SetSessionID();
-        }
         CDiagContext::GetRequestContext().GetSessionID().swap(id);
         break;
     case eNcbiRequestID_HitID:
