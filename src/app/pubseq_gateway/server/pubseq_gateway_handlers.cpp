@@ -236,8 +236,11 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         trace, now));
-
-        resp.Postpone(CPendingOperation(CPSGS_Request(move(req), context)));
+        unique_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), context));
+        unique_ptr<CPendingOperation>
+            pending_req(new CPendingOperation(move(request)));
+        resp.Postpone(move(pending_req));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get request: " +
                           string(exc.what());
@@ -339,7 +342,11 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
                                 trace, now));
-                resp.Postpone(CPendingOperation(CPSGS_Request(move(req), context)));
+                unique_ptr<CPSGS_Request>
+                    request(new CPSGS_Request(move(req), context));
+                unique_ptr<CPendingOperation>
+                    pending_req(new CPendingOperation(move(request)));
+                resp.Postpone(move(pending_req));
                 return 0;
             }
 
@@ -517,7 +524,11 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                         seq_id_type, include_data_flags, output_format,
                         use_cache, use_psg_protocol, subst_option,
                         trace, now));
-        resp.Postpone(CPendingOperation(CPSGS_Request(move(req), context)));
+        unique_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), context));
+        unique_ptr<CPendingOperation>
+            pending_req(new CPendingOperation(move(request)));
+        resp.Postpone(move(pending_req));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a resolve request: " +
                           string(exc.what());
@@ -655,7 +666,11 @@ int CPubseqGatewayApp::OnGetTSEChunk(HST::CHttpRequest &  req,
             req(new SPSGS_TSEChunkRequest(
                         tse_id, chunk_value, split_version_value,
                         use_cache, trace, now));
-        resp.Postpone(CPendingOperation(CPSGS_Request(move(req), context)));
+        unique_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), context));
+        unique_ptr<CPendingOperation>
+            pending_req(new CPendingOperation(move(request)));
+        resp.Postpone(move(pending_req));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_tse_chunk request: " +
                           string(exc.what());
@@ -774,7 +789,11 @@ int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, names, use_cache, trace, now));
-        resp.Postpone(CPendingOperation(CPSGS_Request(move(req), context)));
+        unique_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), context));
+        unique_ptr<CPendingOperation>
+            pending_req(new CPendingOperation(move(request)));
+        resp.Postpone(move(pending_req));
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_na request: " +
                           string(exc.what());

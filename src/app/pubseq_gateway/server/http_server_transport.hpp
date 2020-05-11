@@ -144,10 +144,10 @@ public:
 
     void Clear(void)
     {
-        if (m_PendingRec)
-            m_PendingRec->Clear();
+        if (m_PendingReq)
+            m_PendingReq->Clear();
 
-        m_PendingRec = nullptr;
+        m_PendingReq = nullptr;
         m_Req = nullptr;
         m_RespGenerator = {0};
         m_OutputIsReady = false;
@@ -160,9 +160,9 @@ public:
         m_ReplyContentType = ePSGS_NotSet;
     }
 
-    void AssignPendingRec(P &&  pending_rec)
+    void AssignPendingReq(unique_ptr<P> pending_req)
     {
-        m_PendingRec = std::make_shared<P>(std::move(pending_rec));
+        m_PendingReq = std::move(pending_req);
     }
 
     void SetContentLength(uint64_t  content_length)
@@ -234,7 +234,7 @@ public:
     void Send503(const char *  head, const char *  payload)
     { x_GenericSendError(503, head, payload); }
 
-    void Postpone(P &&  pending_rec)
+    void Postpone(unique_ptr<P>  pending_req)
     {
         switch (m_State) {
             case eReplyInitialized:
@@ -260,7 +260,7 @@ public:
                        "Connection is not assigned");
 
         m_Postponed = true;
-        m_HttpConn->RegisterPending(std::move(pending_rec), move(*this));
+        m_HttpConn->RegisterPending(move(pending_req), move(*this));
     }
 
     void PostponedStart(void)
@@ -271,7 +271,7 @@ public:
         if (m_HttpConn->IsClosed())
             NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
                        "Request handling can not be started after connection was closed");
-        m_PendingRec->Start(*this);
+        m_PendingReq->Start(*this);
     }
 
     void PeekPending(void)
@@ -280,7 +280,7 @@ public:
             if (!m_Postponed)
                 NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
                            "Request has not been postponed");
-            m_PendingRec->Peek(*this, true);
+            m_PendingReq->Peek(*this, true);
         } catch (const std::exception &  e) {
             Error(e.what());
         } catch (...) {
@@ -316,12 +316,12 @@ public:
         return m_Postponed;
     }
 
-    P& GetPendingRec(void)
+    P& GetPendingReq(void)
     {
-        if (!m_PendingRec)
-            NCBI_THROW(CPubseqGatewayException, ePendingRecNotAssigned,
-                       "PendingRec is not assigned");
-        return m_PendingRec.get();
+        if (!m_PendingReq)
+            NCBI_THROW(CPubseqGatewayException, ePendingReqNotAssigned,
+                       "PendingReq is not assigned");
+        return m_PendingReq.get();
     }
 
     h2o_req_t *  GetHandle(void) const
@@ -526,8 +526,8 @@ private:
 
         if (!m_OutputFinished && m_OutputIsReady)
             SendCancelled();
-        if (m_PendingRec)
-            m_PendingRec->Cancel();
+        if (m_PendingReq)
+            m_PendingReq->Cancel();
     }
 
     void x_GenericSendError(int  status, const char *  head,
@@ -636,7 +636,7 @@ private:
     EReplyState                     m_State;
     CHttpProto<P> *                 m_HttpProto;
     CHttpConnection<P> *            m_HttpConn;
-    std::shared_ptr<P>              m_PendingRec;
+    std::shared_ptr<P>              m_PendingReq;
     std::shared_ptr<CDataTrigger>   m_DataReady;
     EPSGS_ReplyMimeType             m_ReplyContentType;
 };
@@ -703,12 +703,12 @@ public:
         x_MaintainBacklog();
     }
 
-    void RegisterPending(P &&  pending_rec, CHttpReply<P> &&  hresp)
+    void RegisterPending(unique_ptr<P>  pending_req, CHttpReply<P> &&  hresp)
     {
         if (m_Pending.size() < m_HttpMaxPending) {
             auto req_it = x_RegisterPending(move(hresp), m_Pending);
             CHttpReply<P>& req = *req_it;
-            req.AssignPendingRec(std::move(pending_rec));
+            req.AssignPendingReq(move(pending_req));
             req.PostponedStart();
             if (req.GetState() >= CHttpReply<P>::eReplyFinished) {
                 PSG_TRACE("Pospone self-drained");
@@ -717,7 +717,7 @@ public:
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
             auto req_it = x_RegisterPending(move(hresp), m_Backlog);
             CHttpReply<P>& req = *req_it;
-            req.AssignPendingRec(std::move(pending_rec));
+            req.AssignPendingReq(move(pending_req));
         } else {
             hresp.Send503("Malfunction", "Too many pending requests");
         }

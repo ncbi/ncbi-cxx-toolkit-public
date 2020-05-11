@@ -48,8 +48,8 @@ class CPSGS_Reply;
 class CPSGCache
 {
 public:
-    CPSGCache(CPSGS_Request *  request,
-              CPSGS_Reply *  reply) :
+    CPSGCache(shared_ptr<CPSGS_Request>  request,
+              shared_ptr<CPSGS_Reply>  reply) :
         m_Allowed(false),
         m_NeedTrace(request->NeedTrace()),
         m_Request(request),
@@ -87,8 +87,8 @@ public:
     }
 
     CPSGCache(bool  allowed,
-              CPSGS_Request *  request,
-              CPSGS_Reply *  reply) :
+              shared_ptr<CPSGS_Request>  request,
+              shared_ptr<CPSGS_Reply>  reply) :
         m_Allowed(allowed),
         m_NeedTrace(request->NeedTrace()),
         m_Request(request),
@@ -134,10 +134,10 @@ private:
                                               CBlobRecord &  blob_record);
 
 private:
-    bool                m_Allowed;
-    bool                m_NeedTrace;
-    CPSGS_Request *     m_Request;
-    CPSGS_Reply *       m_Reply;
+    bool                        m_Allowed;
+    bool                        m_NeedTrace;
+    shared_ptr<CPSGS_Request>   m_Request;
+    shared_ptr<CPSGS_Reply>     m_Reply;
 };
 
 #endif

@@ -50,8 +50,8 @@ CAsyncSeqIdResolver::CAsyncSeqIdResolver(
                             bool                              composed_ok,
                             SBioseqResolution &&              bioseq_resolution,
                             CPendingOperation *               pending_op,
-                            CPSGS_Request *                   request,
-                            CPSGS_Reply *                     reply) :
+                            shared_ptr<CPSGS_Request>         request,
+                            shared_ptr<CPSGS_Reply>           reply) :
     m_OsltSeqId(oslt_seq_id),
     m_EffectiveSeqIdType(effective_seq_id_type),
     m_SecondaryIdList(std::move(secondary_id_list)),

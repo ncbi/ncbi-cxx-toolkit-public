@@ -115,8 +115,9 @@ struct SBioseqResolution
         m_AdjustmentError.clear();
     }
 
-    EPSGS_AccessionAdjustmentResult AdjustAccession(CPSGS_Request *  request,
-                                                    CPSGS_Reply *  reply);
+    EPSGS_AccessionAdjustmentResult
+    AdjustAccession(shared_ptr<CPSGS_Request>  request,
+                    shared_ptr<CPSGS_Reply>  reply);
 
     EPSGS_ResolutionResult          m_ResolutionResult;
     TPSGS_HighResolutionTimePoint   m_RequestStartTimestamp;

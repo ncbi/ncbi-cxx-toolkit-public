@@ -42,9 +42,9 @@ using namespace std::placeholders;
 
 
 CAsyncBioseqQuery::CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                                     CPendingOperation *   pending_op,
-                                     CPSGS_Request *       request,
-                                     CPSGS_Reply *         reply) :
+                                     CPendingOperation *  pending_op,
+                                     shared_ptr<CPSGS_Request>  request,
+                                     shared_ptr<CPSGS_Reply>  reply) :
     m_BioseqResolution(std::move(bioseq_resolution)),
     m_PendingOp(pending_op),
     m_Request(request),

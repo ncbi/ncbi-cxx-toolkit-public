@@ -53,7 +53,7 @@ public:
         eConnectionClosed,
         eRequestAlreadyFinished,
         eConnectionNotAssigned,
-        ePendingRecNotAssigned,
+        ePendingReqNotAssigned,
         eRequestPoolNotAvailable,
         eUnfinishedRequestNotScheduled,
         eWorkerAlreadyStarted,

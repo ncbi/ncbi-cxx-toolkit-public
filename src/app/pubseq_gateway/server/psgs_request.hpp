@@ -123,18 +123,11 @@ public:
     };
 
 public:
-    CPSGS_Request()
-    {}
-
+    CPSGS_Request();
     CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                   CRef<CRequestContext>  request_context);
 
     EPSGS_Type  GetRequestType(void) const;
-
-    CRef<CRequestContext>  GetRequestContext(void)
-    {
-        return m_RequestContext;
-    }
 
     template<typename TRequest> TRequest& GetRequest(void)
     {
@@ -149,8 +142,12 @@ public:
                    x_RequestTypeToString(GetRequestType()));
     }
 
+    CRef<CRequestContext>  GetRequestContext(void);
+    CRequestStatus::ECode  GetOverallStatus(void) const;
+    void UpdateOverallStatus(CRequestStatus::ECode  status);
     TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
     bool NeedTrace(void);
+    bool UsePsgProtocol(void);
 
     CPSGS_Request(const CPSGS_Request &) = default;
     CPSGS_Request(CPSGS_Request &&) = default;
@@ -163,6 +160,7 @@ private:
 private:
     unique_ptr<SPSGS_RequestBase>   m_Request;
     CRef<CRequestContext>           m_RequestContext;
+    CRequestStatus::ECode           m_OverallStatus;
 };
 
 

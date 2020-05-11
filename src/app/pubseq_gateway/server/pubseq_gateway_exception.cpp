@@ -60,8 +60,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eRequestAlreadyFinished";
         case eConnectionNotAssigned:
             return "eConnectionNotAssigned";
-        case ePendingRecNotAssigned:
-            return "ePendingRecNotAssigned";
+        case ePendingReqNotAssigned:
+            return "ePendingReqNotAssigned";
         case eRequestPoolNotAvailable:
             return "eRequestPoolNotAvailable";
         case eUnfinishedRequestNotScheduled:

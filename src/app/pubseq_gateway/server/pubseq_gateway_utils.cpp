@@ -44,8 +44,8 @@ USING_SCOPE(objects);
 // see CXX-10728
 // Need to replace the found accession with the seq_ids found accession
 EPSGS_AccessionAdjustmentResult
-SBioseqResolution::AdjustAccession(CPSGS_Request *  request,
-                                   CPSGS_Reply *  reply)
+SBioseqResolution::AdjustAccession(shared_ptr<CPSGS_Request>  request,
+                                   shared_ptr<CPSGS_Reply>  reply)
 {
     if (m_AdjustmentTried)
         return m_AccessionAdjustmentResult;

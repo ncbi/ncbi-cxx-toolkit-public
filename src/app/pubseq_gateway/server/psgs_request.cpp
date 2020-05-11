@@ -53,10 +53,16 @@ SPSGS_BlobId::SPSGS_BlobId(const string &  blob_id) :
 }
 
 
+CPSGS_Request::CPSGS_Request() :
+    m_OverallStatus(CRequestStatus::e200_Ok)
+{}
+
+
 CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                              CRef<CRequestContext>  request_context) :
     m_Request(move(req)),
-    m_RequestContext(request_context)
+    m_RequestContext(request_context),
+    m_OverallStatus(CRequestStatus::e200_Ok)
 {}
 
 
@@ -65,6 +71,24 @@ CPSGS_Request::EPSGS_Type  CPSGS_Request::GetRequestType(void) const
     if (m_Request)
         return m_Request->GetRequestType();
     return ePSGS_UnknownRequest;
+}
+
+
+CRef<CRequestContext>  CPSGS_Request::GetRequestContext(void)
+{
+    return m_RequestContext;
+}
+
+
+CRequestStatus::ECode  CPSGS_Request::GetOverallStatus(void) const
+{
+    return m_OverallStatus;
+}
+
+
+void CPSGS_Request::UpdateOverallStatus(CRequestStatus::ECode  status)
+{
+    m_OverallStatus = max(status, m_OverallStatus);
 }
 
 
@@ -93,6 +117,16 @@ bool CPSGS_Request::NeedTrace(void)
 
     NCBI_THROW(CPubseqGatewayException, eLogic,
                "User request is not initialized");
+}
+
+
+bool CPSGS_Request::UsePsgProtocol(void)
+{
+    // The only resolve request can send data without PSG protocol
+    if (GetRequestType() == ePSGS_ResolveRequest)
+        return GetRequest<SPSGS_ResolveRequest>().m_UsePsgProtocol;
+
+    return true;
 }
 
 

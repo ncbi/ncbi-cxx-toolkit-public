@@ -70,7 +70,7 @@ private:
     };
 
 public:
-    CPendingOperation(CPSGS_Request &&  user_request,
+    CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
                       size_t  initial_reply_chunks = 0);
     ~CPendingOperation();
 
@@ -81,11 +81,6 @@ public:
     void Cancel(void)
     {
         m_Cancelled = true;
-    }
-
-    void UpdateOverallStatus(CRequestStatus::ECode  status)
-    {
-        m_OverallStatus = max(status, m_OverallStatus);
     }
 
 public:
@@ -136,7 +131,7 @@ private:
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
-    void x_PrintRequestStop(int  status);
+    void x_PrintRequestStop(void);
     bool x_SatToSatName(const SPSGS_BlobBySeqIdRequest &  blob_request,
                         SPSGS_BlobId &  blob_id);
     bool x_TSEChunkSatToSatName(SPSGS_BlobId &  blob_id, bool  need_finish);
@@ -152,7 +147,6 @@ private:
                 unique_ptr<CCassFetch> &  fetch_details);
     void x_PeekIfNeeded(void);
 
-    bool x_UsePsgProtocol(void);
     void x_InitUrlIndentification(void);
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
                                   CPSGId2Info::TChunks  total_chunks,
@@ -257,8 +251,6 @@ private:
     SPSGS_ResolveRequest::TPSGS_BioseqIncludeData x_GetBioseqInfoFields(void);
     bool x_NonKeyBioseqInfoFieldsRequested(void);
 
-    unique_ptr<CPSGId2Info>     m_Id2Info;
-
 public:
     int16_t GetUrlSeqIdType(void) const                   { return m_UrlSeqIdType; }
     EPSGS_AccessionAdjustmentResult AdjustBioseqAccession(
@@ -267,16 +259,18 @@ public:
                             const CBioseqInfoRecord &  bioseq_info_record);
 
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
-    { return m_Reply.GetReply()->GetDataReadyCB(); }
+    { return m_Reply->GetReply()->GetDataReadyCB(); }
 
     void RegisterFetch(CCassFetch *  fetch)
     { m_FetchDetails.push_back(unique_ptr<CCassFetch>(fetch)); }
 
 private:
-    CRequestStatus::ECode                   m_OverallStatus;
-
     // Incoming request
-    CPSGS_Request                           m_UserRequest;
+    shared_ptr<CPSGS_Request>               m_UserRequest;
+    // Outcomin reply
+    shared_ptr<CPSGS_Reply>                 m_Reply;
+
+    unique_ptr<CPSGId2Info>                 m_Id2Info;
 
     CTempString                             m_UrlSeqId;
     int16_t                                 m_UrlSeqIdType;
@@ -286,8 +280,6 @@ private:
 
     // Cassandra data loaders; there could be many of them
     list<unique_ptr<CCassFetch>>            m_FetchDetails;
-
-    CPSGS_Reply                             m_Reply;
 
     // Async DB access support
     unique_ptr<CAsyncSeqIdResolver>         m_AsyncSeqIdResolver;

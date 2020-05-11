@@ -77,8 +77,8 @@ class CBlobPropCallback
     public:
         CBlobPropCallback(
                 CPendingOperation *  pending_op,
-                CPSGS_Request *  request,
-                CPSGS_Reply *  reply,
+                shared_ptr<CPSGS_Request>  request,
+                shared_ptr<CPSGS_Reply>  reply,
                 CCassBlobFetch *  fetch_details,
                 bool  need_timing) :
             m_PendingOp(pending_op),
@@ -126,8 +126,8 @@ class CBlobPropCallback
 
     private:
         CPendingOperation *                     m_PendingOp;
-        CPSGS_Request *                         m_Request;
-        CPSGS_Reply *                           m_Reply;
+        shared_ptr<CPSGS_Request>               m_Request;
+        shared_ptr<CPSGS_Reply>                 m_Reply;
         CCassBlobFetch *                        m_FetchDetails;
 
         // Avoid an infinite loop

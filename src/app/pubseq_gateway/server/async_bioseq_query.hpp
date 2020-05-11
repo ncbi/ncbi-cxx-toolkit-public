@@ -46,9 +46,9 @@ class CAsyncBioseqQuery
 {
 public:
     CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                      CPendingOperation *   pending_op,
-                      CPSGS_Request *       request,
-                      CPSGS_Reply *         reply);
+                      CPendingOperation *  pending_op,
+                      shared_ptr<CPSGS_Request>  request,
+                      shared_ptr<CPSGS_Reply>  reply);
 
 public:
     void MakeRequest(bool  with_seq_id_type);
@@ -62,8 +62,8 @@ public:
 private:
     SBioseqResolution                   m_BioseqResolution;
     CPendingOperation *                 m_PendingOp;
-    CPSGS_Request *                     m_Request;
-    CPSGS_Reply *                       m_Reply;
+    shared_ptr<CPSGS_Request>           m_Request;
+    shared_ptr<CPSGS_Reply>             m_Reply;
     bool                                m_NeedTrace;
 
     CCassFetch *                        m_Fetch;
