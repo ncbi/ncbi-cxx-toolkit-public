@@ -1855,14 +1855,114 @@ void CBioseqIndex::x_InitDescs (void)
     }
 }
 
-// Feature collection (delayed until needed)
-void CBioseqIndex::x_InitFeats (void)
+void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, bool surrogate, CScope& scope)
+
+{
+    if (policy == CSeqEntryIndex::eInternal || onlyNear) {
+
+        // do not fetch features from underlying sequence component records
+        if (surrogate) {
+            // delta with sublocation needs to map features from original Bioseq
+            sel.SetResolveAll();
+            sel.SetResolveDepth(1);
+        } else {
+            // otherwise limit collection to local records in top-level Seq-entry
+            sel.SetResolveDepth(0);
+        }
+        sel.SetExcludeExternal(true);
+
+    } else if (policy == CSeqEntryIndex::eExternal) {
+
+        // same as eAdaptive, except also allows external annots
+        sel.SetResolveAll();
+        sel.SetAdaptiveDepth(true);
+
+    } else if (policy == CSeqEntryIndex::eExhaustive) {
+
+        sel.SetResolveAll();
+         // experimental flag forces collection of features from all levels
+        sel.SetResolveDepth(kMax_Int);
+        // also ignores RefSeq/INSD barrier, far fetch policy user object
+
+    } else if (policy == CSeqEntryIndex::eAdaptive) {
+
+        sel.SetResolveAll();
+        // normal situation uses adaptive depth for feature collection,
+        // includes barrier between RefSeq and INSD accession types
+        sel.SetAdaptiveDepth(true);
+
+    } else if (policy == CSeqEntryIndex::eIncremental) {
+
+        // obsolete policy
+
+    }
+
+    if (depth > -1) {
+        sel.SetResolveDepth(depth);
+    }
+
+    if (policy != CSeqEntryIndex::eInternal && ! onlyNear) {
+        sel.IncludeNamedAnnotAccession("SNP");
+        sel.IncludeNamedAnnotAccession("CDD");
+     }
+
+    // bit flags exclude specific features
+    // source features are collected elsewhere
+    sel.ExcludeFeatType(CSeqFeatData::e_Biosrc);
+    // pub features are used in the REFERENCES section
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub);
+    // some feature types are always excluded (deprecated?)
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
+       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
+    // exclude other types based on user flags
+    if ((flags & CSeqEntryIndex::fHideImpFeats) != 0) {
+        sel.ExcludeFeatType(CSeqFeatData::e_Imp);
+    }
+    if ((flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
+        sel.ExcludeFeatType(CSeqFeatData::e_Variation);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+    }
+    if ((flags & CSeqEntryIndex::fHideSTSFeats) != 0) {
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
+    }
+    if ((flags & CSeqEntryIndex::fHideExonFeats) != 0) {
+        sel.ExcludeNamedAnnots("Exon");
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+    }
+    if ((flags & CSeqEntryIndex::fHideIntronFeats) != 0) {
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
+    }
+    if ((flags & CSeqEntryIndex::fHideMiscFeats) != 0) {
+        sel.ExcludeFeatType(CSeqFeatData::e_Site);
+        sel.ExcludeFeatType(CSeqFeatData::e_Bond);
+        sel.ExcludeFeatType(CSeqFeatData::e_Region);
+        sel.ExcludeFeatType(CSeqFeatData::e_Comment);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
+    }
+    if ((flags & CSeqEntryIndex::fHideGapFeats) != 0) {
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_assembly_gap);
+    }
+
+    // additional common settings
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
+       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
+
+    sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
+
+    // request exception to capture fetch failure
+    sel.SetFailUnresolved();
+}
+
+// Feature collection common implementation method (delayed until needed)
+void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
 
 {
     try {
-        if (m_FeatsInitialized) {
-           return;
-        }
+        // Do not bail on m_FeatsInitialized flag
 
         if (! m_DescsInitialized) {
             // initialize descriptors first to get m_ForceOnlyNearFeats flag
@@ -1873,148 +1973,11 @@ void CBioseqIndex::x_InitFeats (void)
 
         SAnnotSelector sel;
 
-        if (m_Policy != CSeqEntryIndex::eExternal) {
-            // unless explicitly desired, exclude external annots - need explicit show flags
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-                sel.ExcludeNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
-                sel.ExcludeNamedAnnots("CDD");
-            }
-            sel.ExcludeNamedAnnots("STS");
+        x_DefaultSelector(sel, m_Policy, m_Flags, m_Depth, m_ForceOnlyNearFeats, m_Surrogate, *m_Scope);
+
+        if (selp == 0) {
+            selp = &sel;
         }
-
-        if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
-
-            // do not fetch features from underlying sequence component records
-            if (m_Surrogate) {
-                // delta with sublocation needs to map features from original Bioseq
-                sel.SetResolveAll();
-                sel.SetResolveDepth(1);
-                sel.SetExcludeExternal();
-            } else {
-                // otherwise limit collection to local records in top-level Seq-entry
-                sel.SetResolveDepth(0);
-                sel.SetExcludeExternal();
-            }
-
-        } else if (m_Policy == CSeqEntryIndex::eExhaustive) {
-
-            sel.SetResolveAll();
-             // experimental flag forces collection of features from all levels
-            sel.SetResolveDepth(kMax_Int);
-            // also ignores RefSeq/INSD barrier, far fetch policy user object
-
-        } else if (m_Policy == CSeqEntryIndex::eExternal) {
-
-            // same as eAdaptive, except also allows external annots
-            sel.SetResolveAll();
-            sel.SetAdaptiveDepth(true);
-            // needs to be here to prevent external variations from overriding internal gene, mRNA, CDS, and exon features in
-            // asn2flat -id NG_008330 -faster -custom 2048 -style master -policy external
-            // but if present, suppresses genes in named annots in
-            // asn2flat -id EU826466 -custom 2048 -faster -o extern.gbf -policy external
-            sel.AddUnnamedAnnots();
-            // allow external SNPs
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("SNP");
-                sel.AddNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("CDD");
-                sel.AddNamedAnnots("CDD");
-            }
-            m_Scope->SetKeepExternalAnnotsForEdit();
-            // obey flag to hide CDD features by default in the web display
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
-                sel.ExcludeNamedAnnots("CDD");
-            }
-
-        } else if (m_Depth > -1) {
-
-            sel.SetResolveAll();
-            // explicit depth setting overrides adaptive depth (probably only needed for debugging)
-            sel.SetResolveDepth(m_Depth);
-
-        } else if (m_Policy == CSeqEntryIndex::eAdaptive) {
-
-            sel.SetResolveAll();
-            // normal situation uses adaptive depth for feature collection,
-            // includes barrier between RefSeq and INSD accession types
-            sel.SetAdaptiveDepth(true);
-
-            // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // but commenting it out is needed for
-            // asn2flat -id NW_003127872 -faster -custom 2048 -style master
-            // sel.AddUnnamedAnnots();
-
-            // allow external SNPs - testing for now, probably needs to be in external policy
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("SNP");
-                sel.AddNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("CDD");
-                sel.AddNamedAnnots("CDD");
-            }
-            m_Scope->SetKeepExternalAnnotsForEdit();
-
-        } else if (m_Policy == CSeqEntryIndex::eIncremental) {
-
-            // do not fetch features from underlying sequence component records
-            if (m_Surrogate) {
-                // delta with sublocation needs to map features from original Bioseq
-                sel.SetResolveAll();
-                sel.SetResolveDepth(1);
-                sel.SetExcludeExternal();
-            } else {
-                // otherwise limit collection to local records in top-level Seq-entry
-                sel.SetResolveAll();
-                sel.SetResolveDepth(0);
-                sel.SetExcludeExternal();
-            }
-        }
-
-        // bit flags exclude specific features
-        if ((m_Flags & CSeqEntryIndex::fHideImpFeats) != 0) {
-            sel.ExcludeFeatType(CSeqFeatData::e_Imp);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-            sel.ExcludeFeatType(CSeqFeatData::e_Variation);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideSTSFeats) != 0) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideExonFeats) != 0) {
-            sel.ExcludeNamedAnnots("Exon");
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideIntronFeats) != 0) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideMiscFeats) != 0) {
-            sel.ExcludeFeatType(CSeqFeatData::e_Site);
-            sel.ExcludeFeatType(CSeqFeatData::e_Bond);
-            sel.ExcludeFeatType(CSeqFeatData::e_Region);
-            sel.ExcludeFeatType(CSeqFeatData::e_Comment);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideGapFeats) != 0) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_assembly_gap);
-        }
-
-        // additional common settings
-        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
-           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
-           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
-
-        sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
-
-        // request exception to capture fetch failure
-        sel.SetFailUnresolved();
 
         bool onlyGeneRNACDS = false;
         if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {
@@ -2053,8 +2016,19 @@ void CBioseqIndex::x_InitFeats (void)
 
             CRef<feature::CFeatTree> ft = idxl->GetFeatTree();
 
+            // start collection over on each segment
+            m_SfxList.clear();
+
+            // iterate features on Bioseq or sublocation
+            CFeat_CI feat_it;
+            if (slpp == 0) {
+                feat_it = CFeat_CI(m_Bsh, *selp);
+            } else {
+                feat_it = CFeat_CI(*m_Scope, *slpp, *selp);
+            }
+
             // iterate features on Bioseq
-            for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
+            for (; feat_it; ++feat_it) {
                 const CMappedFeat mf = *feat_it;
 
                 if (onlyGeneRNACDS) {
@@ -2169,319 +2143,29 @@ void CBioseqIndex::x_InitFeats (void)
     }
 }
 
-// Feature collection (delayed until needed)
-void CBioseqIndex::x_InitFeatsByLoc (const CSeq_loc& slp)
+// Feature collection methods (delayed until needed)
+void CBioseqIndex::x_InitFeats (void)
 
 {
-    try {
-        // Do not bail on m_FeatsInitialized flag
+    x_InitFeats(0, 0);
+}
 
-        if (! m_DescsInitialized) {
-            // initialize descriptors first to get m_ForceOnlyNearFeats flag
-            x_InitDescs();
-        }
+void CBioseqIndex::x_InitFeats (SAnnotSelector& sel)
 
-        m_FeatsInitialized = true;
+{
+    x_InitFeats(&sel, 0);
+}
 
-        SAnnotSelector sel;
+void CBioseqIndex::x_InitFeats (CSeq_loc& slp)
 
-        if (m_Policy != CSeqEntryIndex::eExternal) {
-            // unless explicitly desired, exclude external annots - need explicit show flags
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-                sel.ExcludeNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
-                sel.ExcludeNamedAnnots("CDD");
-            }
-            sel.ExcludeNamedAnnots("STS");
-        }
+{
+    x_InitFeats(0, &slp);
+}
 
-        if (m_Policy == CSeqEntryIndex::eExhaustive) {
+void CBioseqIndex::x_InitFeats (SAnnotSelector& sel, CSeq_loc& slp)
 
-            sel.SetResolveAll();
-             // experimental flag forces collection of features from all levels
-            sel.SetResolveDepth(kMax_Int);
-            // also ignores RefSeq/INSD barrier, far fetch policy user object
-
-        } else if (m_Policy == CSeqEntryIndex::eExternal) {
-
-            // same as eAdaptive, except also allows external annots
-            sel.SetResolveAll();
-            sel.SetAdaptiveDepth(true);
-            // needs to be here to prevent external variations from overriding internal gene, mRNA, CDS, and exon features in
-            // asn2flat -id NG_008330 -faster -custom 2048 -style master -policy external
-            // but if present, suppresses genes in named annots in
-            // asn2flat -id EU826466 -custom 2048 -faster -o extern.gbf -policy external
-            sel.AddUnnamedAnnots();
-            // allow external SNPs
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("SNP");
-                sel.AddNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("CDD");
-                sel.AddNamedAnnots("CDD");
-            }
-            m_Scope->SetKeepExternalAnnotsForEdit();
-            // obey flag to hide CDD features by default in the web display
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
-                sel.ExcludeNamedAnnots("CDD");
-            }
-
-        } else if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
-
-            // do not fetch features from underlying sequence component records
-            if (m_Surrogate) {
-                // delta with sublocation needs to map features from original Bioseq
-                sel.SetResolveAll();
-                sel.SetResolveDepth(1);
-                sel.SetExcludeExternal();
-            } else {
-                // otherwise limit collection to local records in top-level Seq-entry
-                sel.SetResolveDepth(0);
-                sel.SetExcludeExternal();
-            }
-
-        } else if (m_Depth > -1) {
-
-            sel.SetResolveAll();
-            // explicit depth setting overrides adaptive depth (probably only needed for debugging)
-            sel.SetResolveDepth(m_Depth);
-
-        } else if (m_Policy == CSeqEntryIndex::eAdaptive) {
-
-            sel.SetResolveAll();
-            // normal situation uses adaptive depth for feature collection,
-            // includes barrier between RefSeq and INSD accession types
-            sel.SetAdaptiveDepth(true);
-
-            // calling AddUnnamedAnnots once again suppresses tRNA features in a ("tRNAscan-SE") named annot
-            // but commenting it out is needed for
-            // asn2flat -id NW_003127872 -faster -custom 2048 -style master
-            // sel.AddUnnamedAnnots();
-
-            // allow external SNPs - testing for now, probably needs to be in external policy
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("SNP");
-                sel.AddNamedAnnots("SNP");
-            }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-                sel.IncludeNamedAnnotAccession("CDD");
-                sel.AddNamedAnnots("CDD");
-            }
-            m_Scope->SetKeepExternalAnnotsForEdit();
-
-        } else if (m_Policy == CSeqEntryIndex::eIncremental) {
-
-            // do not fetch features from underlying sequence component records
-            if (m_Surrogate) {
-                // delta with sublocation needs to map features from original Bioseq
-                sel.SetResolveAll();
-                sel.SetResolveDepth(1);
-                sel.SetExcludeExternal();
-            } else {
-                // otherwise limit collection to local records in top-level Seq-entry
-                sel.SetResolveAll();
-                sel.SetResolveDepth(0);
-                sel.SetExcludeExternal();
-            }
-        }
-
-        // bit flags exclude specific features
-        if ((m_Flags & CSeqEntryIndex::fHideImpFeats) != 0) {
-            sel.ExcludeFeatType(CSeqFeatData::e_Imp);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-            sel.ExcludeFeatType(CSeqFeatData::e_Variation);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideSTSFeats) != 0) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideExonFeats) != 0) {
-            sel.ExcludeNamedAnnots("Exon");
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideIntronFeats) != 0) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideMiscFeats) != 0) {
-            sel.ExcludeFeatType(CSeqFeatData::e_Site);
-            sel.ExcludeFeatType(CSeqFeatData::e_Bond);
-            sel.ExcludeFeatType(CSeqFeatData::e_Region);
-            sel.ExcludeFeatType(CSeqFeatData::e_Comment);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
-        }
-        if ((m_Flags & CSeqEntryIndex::fHideGapFeats) != 0) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_assembly_gap);
-        }
-
-        // additional common settings
-        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
-           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
-           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
-
-        sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
-
-        // request exception to capture fetch failure
-        sel.SetFailUnresolved();
-
-        bool onlyGeneRNACDS = false;
-        if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {
-            onlyGeneRNACDS = true;
-        }
-
-        // variables for setting m_BestProteinFeature
-        TSeqPos longest = 0;
-        CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
-        CProt_ref::EProcessed processed;
-
-        // next gap
-        CGapIndex* sgx = NULL;
-        if (m_GapList.size() > 0) {
-            sgx = m_GapList[0];
-        }
-
-        CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
-        auto idxl = idx.Lock();
-        if (idxl) {
-            /*
-            if (! idxl->IsSmallGenomeSet()) {
-                // limit feature collection to immediate Bioseq-set parent
-                CRef<CSeqsetIndex> prnt = GetParent();
-                if (prnt) {
-                    CBioseq_set_Handle bssh = prnt->GetSeqsetHandle();
-                    if (bssh) {
-                        CSeq_entry_Handle pseh = bssh.GetParentEntry();
-                        if (pseh) {
-                            sel.SetLimitSeqEntry(pseh);
-                        }
-                    }
-                }
-            }
-            */
-
-            CRef<feature::CFeatTree> ft = idxl->GetFeatTree();
-
-            // start collection over on each segment
-            m_SfxList.clear();
-
-            // iterate features on Bioseq
-            for (CFeat_CI feat_it(*m_Scope, slp, sel); feat_it; ++feat_it) {
-                const CMappedFeat mf = *feat_it;
-
-                if (onlyGeneRNACDS) {
-                    const CSeqFeatData& data = mf.GetData();
-                    CSeqFeatData::E_Choice type = data.Which();
-                    if (type != CSeqFeatData::e_Gene &&
-                        type != CSeqFeatData::e_Rna &&
-                        type != CSeqFeatData::e_Cdregion) {
-                        continue;
-                    }
-                }
-
-                CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
-
-                CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
-                m_SfxList.push_back(sfx);
-
-                ft->AddFeature(mf);
-
-                // CFeatureIndex from CMappedFeat for use with GetBestGene
-                m_FeatIndexMap[mf] = sfx;
-
-                // set specific flags for various feature types
-                CSeqFeatData::E_Choice type = sfx->GetType();
-                CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
-
-                if (type == CSeqFeatData::e_Biosrc) {
-                    m_HasSource = true;
-                    if (! m_BioSource) {
-                        if (! mf.IsSetData ()) continue;
-                        const CSeqFeatData& sfdata = mf.GetData();
-                        const CBioSource& biosrc = sfdata.GetBiosrc();
-                        m_BioSource.Reset (&biosrc);
-                    }
-                    continue;
-                }
-
-                if (type == CSeqFeatData::e_Gene) {
-                    m_HasGene = true;
-                    if (m_HasMultiIntervalGenes) {
-                        continue;
-                    }
-                    const CSeq_loc& loc = mf.GetLocation ();
-                    switch (loc.Which()) {
-                        case CSeq_loc::e_Packed_int:
-                        case CSeq_loc::e_Packed_pnt:
-                        case CSeq_loc::e_Mix:
-                        case CSeq_loc::e_Equiv:
-                            m_HasMultiIntervalGenes = true;
-                            break;
-                        default:
-                            break;
-                    }
-                    continue;
-                }
-
-                if (subtype == CSeqFeatData::eSubtype_operon) {
-                    idxl->SetHasOperon(true);
-                    continue;
-                }
-
-                if (type == CSeqFeatData::e_Prot && IsAA()) {
-                    if (! mf.IsSetData ()) continue;
-                    const CSeqFeatData& sfdata = mf.GetData();
-                    const CProt_ref& prp = sfdata.GetProt();
-                    processed = CProt_ref::eProcessed_not_set;
-                    if (prp.IsSetProcessed()) {
-                        processed = prp.GetProcessed();
-                    }
-                    const CSeq_loc& loc = mf.GetLocation ();
-                    TSeqPos prot_length = sequence::GetLength(loc, m_Scope);
-                    if (prot_length > longest) {
-                        m_BestProtFeatInitialized = true;
-                        m_BestProteinFeature = sfx;
-                        longest = prot_length;
-                        bestprocessed = processed;
-                    } else if (prot_length == longest) {
-                        // unprocessed 0 > preprotein 1 > mat peptide 2
-                        if (processed < bestprocessed) {
-                            m_BestProtFeatInitialized = true;
-                            m_BestProteinFeature = sfx;
-                            longest = prot_length;
-                            bestprocessed = processed;
-                        }
-                    }
-                    continue;
-                }
-
-                if (type == CSeqFeatData::e_Cdregion && IsNA()) {
-                } else if (type == CSeqFeatData::e_Rna && IsNA()) {
-                } else if (type == CSeqFeatData::e_Prot && IsAA()) {
-                } else {
-                    continue;
-                }
-
-                // index feature for (local) product Bioseq (CDS -> protein, mRNA -> cDNA, or Prot -> peptide)
-                CSeq_id_Handle idh = mf.GetProductId();
-                if (idh) {
-                    string str = idh.AsString();
-                    CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(str);
-                    if (bsxp) {
-                        bsxp->m_FeatForProdInitialized = true;
-                        bsxp->m_FeatureForProduct = sfx;
-                    }
-                }
-            }
-        }
-    }
-    catch (CException& e) {
-        m_FetchFailure = true;
-        LOG_POST_X(6, Error << "Error in CBioseqIndex::x_InitFeatsByLoc: " << e.what());
-    }
+{
+    x_InitFeats(&sel, &slp);
 }
 
 // GetFeatureForProduct allows hypothetical protein defline generator to obtain gene locus tag

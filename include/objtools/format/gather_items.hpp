@@ -142,7 +142,7 @@ protected:
         CBioseqContext& ctx) const;
     void x_GatherFeaturesOnRangeIdx(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
-    size_t x_GatherFeaturesOnSegmentIdx(const CSeq_loc& loc, SAnnotSelector& sel,
+    size_t x_GatherFeaturesOnSegmentIdx(CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
     void x_GatherFeaturesOnRange(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;

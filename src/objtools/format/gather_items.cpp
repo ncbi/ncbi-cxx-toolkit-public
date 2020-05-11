@@ -3653,7 +3653,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 }
 
 size_t CFlatGatherer::x_GatherFeaturesOnSegmentIdx
-(const CSeq_loc& loc,
+(CSeq_loc& loc,
  SAnnotSelector& sel,
  CBioseqContext& ctx) const
 {
@@ -3681,7 +3681,7 @@ size_t CFlatGatherer::x_GatherFeaturesOnSegmentIdx
     CRef<CBioseqIndex> bsx = idx->GetBioseqIndex ();
     if (! bsx) return count;
 
-    count = bsx->IterateFeaturesByLoc(loc, [this, &ctx, &scope, &prev_feat, &loc_len,
+    count = bsx->IterateFeatures(loc, [this, &ctx, &scope, &prev_feat, &loc_len,
                               &item, &out, &slice_mapper, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();

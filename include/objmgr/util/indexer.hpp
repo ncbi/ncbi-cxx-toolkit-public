@@ -412,8 +412,9 @@ public:
 
     // Feature exploration iterator
     template<typename Fnc> size_t IterateFeatures (Fnc m);
-
-    template<typename Fnc> size_t IterateFeaturesByLoc (const CSeq_loc& slp, Fnc m);
+    template<typename Fnc> size_t IterateFeatures (SAnnotSelector& sel, Fnc m);
+    template<typename Fnc> size_t IterateFeatures (CSeq_loc& slp, Fnc m);
+    template<typename Fnc> size_t IterateFeatures (SAnnotSelector& sel, CSeq_loc& slp, Fnc m);
 
     // Getters
     CBioseq_Handle GetBioseqHandle (void) const { return m_Bsh; }
@@ -584,8 +585,14 @@ private:
 
     // Common feature collection, delayed until actually needed
     void x_InitFeats (void);
-    // Collect features by location
-    void x_InitFeatsByLoc (const CSeq_loc& slp);
+    void x_InitFeats (SAnnotSelector& sel);
+    void x_InitFeats (CSeq_loc& slp);
+    void x_InitFeats (SAnnotSelector& sel, CSeq_loc& slp);
+
+    void x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, bool surrogate, CScope& scope);
+
+    // common implementation method
+    void x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp);
 
     // Set BioSource flags
     void x_InitSource (void);
@@ -1071,16 +1078,15 @@ size_t CBioseqIndex::IterateFeatures (Fnc m)
     return count;
 }
 
-// Visit CFeatureIndex objects for range of features
 template<typename Fnc>
 inline
-size_t CBioseqIndex::IterateFeaturesByLoc (const CSeq_loc& slp, Fnc m)
+size_t CBioseqIndex::IterateFeatures (SAnnotSelector& sel, Fnc m)
 
 {
     int count = 0;
     try {
         // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
-        x_InitFeatsByLoc(slp);
+        x_InitFeats(sel);
 
         for (auto& sfx : m_SfxList) {
             count++;
@@ -1088,7 +1094,49 @@ size_t CBioseqIndex::IterateFeaturesByLoc (const CSeq_loc& slp, Fnc m)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateFeaturesByLoc: " << e.what());
+        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
+    }
+    return count;
+}
+
+template<typename Fnc>
+inline
+size_t CBioseqIndex::IterateFeatures (CSeq_loc& slp, Fnc m)
+
+{
+    int count = 0;
+    try {
+        // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
+        x_InitFeats(slp);
+
+        for (auto& sfx : m_SfxList) {
+            count++;
+            m(*sfx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
+    }
+    return count;
+}
+
+template<typename Fnc>
+inline
+size_t CBioseqIndex::IterateFeatures (SAnnotSelector& sel, CSeq_loc& slp, Fnc m)
+
+{
+    int count = 0;
+    try {
+        // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
+        x_InitFeats(sel, slp);
+
+        for (auto& sfx : m_SfxList) {
+            count++;
+            m(*sfx);
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
     }
     return count;
 }
