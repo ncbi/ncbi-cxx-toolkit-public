@@ -533,6 +533,14 @@ rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
         _TRACE("VDB "<<s_VDBVersion<<": "<<msg);
     }
     else {
+#ifdef NCBI_OS_MSWIN
+        if (sev_manip == Error &&
+            msg.find("name not found while resolving query within virtual file system module - failed to resolve accession 'NA") != NPOS &&
+            msg.find("' - Cannot resolve accession ( 404 )") != NPOS) {
+            *written = size;
+            return 0;
+        }
+#endif
         ERR_POST_X(2, sev_manip<<"VDB "<<s_VDBVersion<<": "<<msg);
     }
     *written = size;
