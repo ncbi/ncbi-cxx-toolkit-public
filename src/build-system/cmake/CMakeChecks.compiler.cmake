@@ -337,6 +337,8 @@ set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${NCBI_COMPILER_SHA
 #----------------------------------------------------------------------------
 
 if (NOT WIN32)
+    set(_ggdb "-ggdb3")
+    set(_ggdb1 "-ggdb1")
     if(NCBI_COMPILER_GCC)
 
         if("${NCBI_COMPILER_VERSION}" LESS "730")
@@ -365,9 +367,7 @@ if (NOT WIN32)
         if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
             set(NCBI_COMPILER_COMPONENTS GCC730)
         endif()
-    else()
-        set(_ggdb "-ggdb3")
-        set(_ggdb1 "-ggdb1")
+
     endif()
 
     if ("${CMAKE_DEBUG_SYMBOLS}" STREQUAL "")
