@@ -50,6 +50,7 @@ For more information please visit:  http://bitmagic.io
 #include <util/bitset/bmrandom.h>
 #include <util/bitset/bmvmin.h>
 #include <util/bitset/bmbmatrix.h>
+#include <util/bitset/bmintervals.h>
 #include <util/bitset/bmsparsevec.h>
 #include <util/bitset/bmsparsevec_algo.h>
 #include <util/bitset/bmsparsevec_serial.h>
@@ -366,6 +367,28 @@ const unsigned BITVECT_SIZE = 100000000 * 2;
 const unsigned ITERATIONS = 180000;
 //const unsigned PROGRESS_PRINT = 2000000;
 
+/// Reference (naive) inetrval detector based on population counting
+/// and boundaries tests
+///
+template<typename BV>
+bool test_interval(const BV& bv,
+                   typename BV::size_type left, typename BV::size_type right)
+{
+    if (left > right)
+        bm::xor_swap(left, right); // make sure left <= right
+    bool is_left(0), is_right(0);
+    if (left) // check left-1 bit (if exists)
+        is_left = bv.test(left - 1);
+    if ((is_left == false) && (right < bm::id_max - 1))
+        is_right = bv.test(right + 1); // check [...right] range condition
+    if (is_left == false && is_right == false)
+    {
+        typename BV::size_type cnt = bv.count_range(left, right);
+        if (cnt == (1 + right - left))
+            return true;
+    }
+    return false;
+}
 
 
 template<class BV>
@@ -432,6 +455,147 @@ void CheckVectors(bvect_mini &bvect_min,
                   bvect      &bvect_full,
                   unsigned size,
                   bool     detailed = true);
+
+
+extern "C" {
+    static
+    int bit_decode_func(void* handle_ptr, bm::id_t bit_idx)
+    {
+        std::vector<bm::id_t>* vp = (std::vector<bm::id_t>*)handle_ptr;
+        vp->push_back(bit_idx);
+        return 0;
+    }
+    /*
+    static
+    int bit_decode_func2(void* handle_ptr, bm::id_t bit_idx)
+    {
+        if (bit_idx > (65536 * 256))
+        {
+            throw 1;
+        }
+        std::vector<bm::id_t>* vp = (std::vector<bm::id_t>*)handle_ptr;
+        vp->push_back(bit_idx);
+        return 0;
+    }
+    */
+} // extern C
+
+
+template<class BV>
+void VisitorAllRangeTest(const BV& bv, typename BV::size_type step = 1)
+{
+    typename BV::size_type left, right, next, i_end;
+    bool non_empty = bv.find_range(left, right);
+    if (!non_empty)
+        return;
+    if (left < 65536)
+        left = 0;
+    if (right < 65536)
+        right = 65535;
+
+    auto drange = right - left;
+    if (!drange)
+        drange = 256;
+    if (!step)
+        step = drange / 100;
+    if (!step)
+        step = 1;
+
+    cout << "... VisitorAllRangeTest() step=" << step << endl;
+
+    auto pcnt = 256;
+    for (auto i = left; i <= right; i+=step)
+    {
+        {
+            bvect bv_control;
+            bm::bit_vistor_copy_functor<bvect> func(bv_control);
+            bm::for_each_bit_range(bv, i, right, func);
+
+            bvect bv2;
+            bv2.copy_range(bv, i, right);
+
+            bool eq = bv2.equal(bv_control);
+            assert(eq);
+        }
+        next = bv.get_next(i);
+        if (next)
+        {
+            auto delta = next - i;
+            if (delta > 32)
+            {
+                i += delta / 2;
+            }
+            else
+            if (delta == 1)
+            {
+                bool f = bm::find_interval_end(bv, next, i_end);
+                if (f)
+                {
+                    delta = i_end - i;
+                    if (delta > 4)
+                        i += delta / 2;
+                }
+                else
+                {
+                    assert(!bv.test(i));
+                }
+            }
+        }
+        if (!pcnt)
+        {
+            cout << "\r" << i << " / " << right << flush;
+            pcnt = 128;
+        }
+        --pcnt;
+
+    } // for i
+    cout << endl;
+
+    pcnt = 256;
+    for (; left <= right; left+=step, --right)
+    {
+        {
+            bvect bv_control;
+            bm::bit_vistor_copy_functor<bvect> func(bv_control);
+            bm::for_each_bit_range(bv, left, right, func);
+
+            bvect bv2;
+            bv2.copy_range(bv, left, right);
+
+            bool eq = bv2.equal(bv_control);
+            assert(eq);
+        }
+        next = bv.get_next(left);
+        if (next)
+        {
+            auto delta = next - left;
+            if (delta > 128)
+            {
+                left += delta / 2;
+            }
+            else
+            if (delta == 1)
+            {
+                bool f = bm::find_interval_end(bv, left, i_end);
+                if (f)
+                {
+                    delta = i_end - left;
+                    if (delta > 4)
+                        left += delta / 2;
+                }
+            }
+        }
+        if (!pcnt)
+        {
+            cout << "\r" << left << " / " << right << flush;
+            pcnt = 128;
+        }
+        --pcnt;
+
+    } // for i
+    cout << endl;
+}
+
 
 void generate_bvector(bvect& bv, unsigned vector_max = 40000000, bool optimize=true);
 
@@ -629,6 +793,19 @@ void FillSetsIntervals(bvect_mini* bvect_min,
         if (i < end)
         {
             bvect_full.set_range(i, end-1, set_flag);
+            bool all_one_range = bvect_full.is_all_one_range(i, end - 1);
+            assert(all_one_range == set_flag);
+            bool any_one = bvect_full.any_range(i, end - 1);
+            assert(any_one == set_flag);
+            bool is_int = bm::is_interval(bvect_full, i, end-1);
+            bool is_int_c = test_interval(bvect_full, i, end-1);
+            assert(is_int == is_int_c);
+            if (is_int)
+            {
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bvect_full, i, pos);
+                assert(b && pos == end-1);
+            }
         }
        
         for (j = i; j < end; ++j)
@@ -649,10 +826,7 @@ void FillSetsIntervals(bvect_mini* bvect_min,
                            
         } // j
 
-
         i = end;
-
-
         len = unsigned(rand()) % (factor* 10 * bm::gap_max_bits);
         if (len % 2)
         {
@@ -1026,11 +1200,7 @@ unsigned SerializationOperation(bvect*             bv_target,
 
    cout << "Operation deserialization... " << op << endl;
 
-    count=
-       od.deserialize(*bv_target,
-                                                  smem2,
-                                                  0,
-                                                  op);
+    count = od.deserialize(*bv_target, smem2, 0, op);
     cout << "OK" << endl;
 
     // check if operation was ok
@@ -1557,6 +1727,7 @@ bool FindRank(const T& bv, bm::id_t rank, bm::id_t from, bm::id_t& pos)
         << "pos=" << pos << " skip()pos=" << pos2
         << " from=" << from
         << endl;
+        assert(0);
         exit(1);
     }
     
@@ -1627,7 +1798,8 @@ void CheckRangeCopy(const bvect& bv, unsigned from, unsigned to)
 }
 
 
-template<class T> void CheckCountRange(const T& vect, 
+template<class T>
+void CheckCountRange(const T& vect, 
                                        unsigned left, 
                                        unsigned right)
 {
@@ -1866,6 +2038,316 @@ bool FindLastBit(const bvect& bv, bm::id_t& last_pos)
 }
 
 
+
+template<class BV>
+void IntervalsCheck(const BV& bv)
+{
+    cout << " ... IntervalsCheck" << endl;
+    BV bv_inv(bv);
+    bv_inv.invert();
+
+    typename BV::size_type intervals = bm::count_intervals(bv);
+    typename BV::size_type intervals_c = 1;
+
+    typename BV::enumerator en1 = bv.get_enumerator(0);
+    typename BV::enumerator en2 = bv_inv.get_enumerator(0);
+
+    while (en1.valid())
+    {
+        typename BV::size_type from = *en1;
+        typename BV::size_type to = *en2;
+        assert(from != to);
+
+        bool all_one, any_one;
+        bool is_int, is_int_c;
+        if (to == bm::id_max)
+        {
+            all_one = bv.is_all_one_range(from, to-1);
+            assert(all_one);
+            any_one = bv.any_range(from, to-1);
+            assert(any_one);
+            is_int = bm::is_interval(bv, from, to-1);
+            is_int_c = test_interval(bv, from, to-1);
+            assert(is_int == is_int_c);
+            {
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bv, from, pos);
+                assert(b == is_int);
+                if (b)
+                {
+                    assert(pos == to-1);
+                }
+            }
+            if (is_int)
+            {
+                bvect::size_type pos;
+                bool b = bm::find_interval_start(bv, from, pos);
+                assert(b && pos == from);
+                b = bm::find_interval_start(bv, to-1, pos);
+                assert(b && pos == from);
+            }
+
+            break;
+        }
+        else
+        {
+            all_one = bv.is_all_one_range(from, to);
+            assert(!all_one);
+            any_one = bv.any_range(from, to);
+            auto cnt = bv.count_range(from, to);
+            if (any_one)
+            {
+                assert(cnt);
+            }
+            else
+            {
+                assert(!cnt);
+            }
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+            if (is_int)
+            {
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bv, from, pos);
+                assert(b == is_int);
+                if (b)
+                {
+                    assert(pos == to);
+                }
+                b = bm::find_interval_start(bv, from, pos);
+                assert(b && pos == from);
+                pos = 0xDEADBEEF;
+                b = bm::find_interval_start(bv, to, pos);
+                assert(b && pos == from);
+            }
+
+        }
+
+
+        if (to == bm::id_max)
+        {}
+        else
+        {
+            ++intervals_c;
+        }
+        if (to < from)
+        {
+            --from;
+            assert(!bv.test(to));
+            all_one = bv.is_all_one_range(from, to);
+            assert(!all_one);
+            any_one = bv.any_range(from, to);
+            assert(!any_one);
+            typename BV::size_type cnt = bv.count_range(to, from);
+            assert(!cnt);
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+            if (is_int)
+            {
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bv, from, pos);
+                assert(b == is_int);
+                if (b)
+                {
+                    assert(pos == to);
+                }
+                b = bm::find_interval_start(bv, from, pos);
+                assert(b && pos == from);
+                pos = 0xDEADBEEF;
+                b = bm::find_interval_start(bv, to, pos);
+                assert(b && pos == from);
+            }
+
+            en2.go_to(from+1);
+            if (!en2.valid())
+                break;
+        }
+        else
+        {
+            --to;
+            assert(bv.test(to));
+            all_one = bv.is_all_one_range(from, to);
+            assert(all_one);
+            any_one = bv.any_range(from, to);
+            assert(any_one);
+            typename BV::size_type cnt = bv.count_range(from, to);
+            assert(cnt == (to - from + 1));
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+            if (is_int)
+            {
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bv, from, pos);
+                assert(b == is_int);
+                if (b)
+                {
+                    assert(pos == to);
+                }
+                b = bm::find_interval_start(bv, from, pos);
+                assert(b && pos == from);
+                pos = 0xDEADBEEF;
+                b = bm::find_interval_start(bv, to, pos);
+                assert(b && pos == from);
+            }
+
+            en1.go_to(to+1);
+        }
+
+    } // while
+    if (intervals != intervals_c)
+    {
+        typename BV::size_type diff;
+        diff = std::max(intervals, intervals_c) - std::min(intervals, intervals_c);
+        if (diff > 1)
+        {
+            cerr << "Intervals difference:" << diff << endl;
+            assert(0);
+            exit(1);
+        }
+    }
+}
+
+template<class BV>
+void interval_copy_range(BV& bv, const BV& bv_src,
+                         typename BV::size_type from, typename BV::size_type to)
+{
+    bv.clear();
+
+    if (from > to)
+        bm::xor_swap(from, to);
+
+    bm::interval_enumerator<bvect> ien(bv_src, from, false);
+    while (ien.valid())
+    {
+        auto st = ien.start();
+        assert(st >= from);
+        if (st > to)
+            break;
+        auto end = ien.end();
+        if (end > to)
+            end = to;
+
+        assert(st <= end);
+        bv.set_range(st, end);
+        if (!ien.advance())
+            break;
+    } // while
+}
+
+template<typename BV>
+void IntervalsEnumeratorCheck(const BV& bv, bool report)
+{
+    if (report)
+        cout << "..IntervalsEnumeratorCheck()" << flush;
+    bvect::allocator_pool_type pool;
+
+    typename BV::size_type f, l, m;
+    auto b = bv.find_range(f, l);
+    if (!b)
+    {
+        assert(bv.count() == 0);
+        return;
+    }
+    m = l - f;
+    if (!m)
+        m = l;
+
+    bool eq;
+    if (report)
+        cout << "1 " << flush;
+    // Full vector
+    {
+        bvect bv2; bvect bv2_c;
+        bvect::mem_pool_guard g1(pool, bv2);
+        bvect::mem_pool_guard g2(pool, bv2_c);
+
+        bv2_c.copy_range(bv, 0, bm::id_max-1);
+
+        interval_copy_range(bv2, bv, 0, bm::id_max - 1);
+        eq = bv2.equal(bv2_c);
+        assert(eq);
+    }
+    if (report)
+        cout << "2 " << flush;
+    // 0 -> frist
+    {
+        bvect bv2; bvect bv2_c;
+        bvect::mem_pool_guard g1(pool, bv2);
+        bvect::mem_pool_guard g2(pool, bv2_c);
+
+        bv2_c.copy_range(bv, 0, l);
+
+        interval_copy_range(bv2, bv, 0, l);
+        eq = bv2.equal(bv2_c);
+        assert(eq);
+    }
+
+    if (report)
+        cout << "3 " << flush;
+    // [first..last]
+    {
+        bvect bv2; bvect bv2_c;
+        bvect::mem_pool_guard g1(pool, bv2);
+        bvect::mem_pool_guard g2(pool, bv2_c);
+
+        bv2_c.copy_range(bv, f, l);
+
+        interval_copy_range(bv2, bv, f, l);
+        eq = bv2.equal(bv2_c);
+        assert(eq);
+    }
+    if (report)
+        cout << "4 " << flush;
+    // [last..]
+    {
+        bvect bv2; bvect bv2_c;
+        bvect::mem_pool_guard g1(pool, bv2);
+        bvect::mem_pool_guard g2(pool, bv2_c);
+
+        bv2_c.copy_range(bv, l, bm::id_max-1);
+
+        interval_copy_range(bv2, bv, l, bm::id_max - 1);
+        eq = bv2.equal(bv2_c);
+        assert(eq);
+    }
+    if (report)
+        cout << "5 " << flush;
+    // [mid..last]
+    {
+        bvect bv2; bvect bv2_c;
+        bvect::mem_pool_guard g1(pool, bv2);
+        bvect::mem_pool_guard g2(pool, bv2_c);
+
+        bv2_c.copy_range(bv, m, l);
+
+        interval_copy_range(bv2, bv, m, l);
+        eq = bv2.equal(bv2_c);
+        assert(eq);
+    }
+    if (report)
+        cout << "6 " << flush;
+    // [first..mid]
+    {
+        bvect bv2; bvect bv2_c;
+        bvect::mem_pool_guard g1(pool, bv2);
+        bvect::mem_pool_guard g2(pool, bv2_c);
+
+        bv2_c.copy_range(bv, f, m);
+
+        interval_copy_range(bv2, bv, f, m);
+        eq = bv2.equal(bv2_c);
+        assert(eq);
+    }
+    if (report)
+        cout << endl;
+}
+
+
+
+
 // vectors comparison check
 
 void CheckVectors(bvect_mini &bvect_min, 
@@ -1875,12 +2357,12 @@ void CheckVectors(bvect_mini &bvect_min,
 {
     cout << "\nVectors checking...bits to compare = " << size << endl;
 
-    cout << "Bitcount summary : " << endl;
+    cout << "Bitcount summary : ";
     unsigned min_count = bvect_min.bit_count();
-    cout << "minvector count = " << min_count << endl;
+    cout << " minvector count = " << min_count;
     unsigned count = bvect_full.count();
     unsigned full_count = bvect_full.recalc_count();
-    cout << "fullvector re-count = " << full_count << endl;
+    cout << " fullvector re-count = " << full_count << endl;
     
     if (min_count != full_count)
     {
@@ -1915,6 +2397,9 @@ void CheckVectors(bvect_mini &bvect_min,
             assert(pos1 == pos2);
         }
     }
+
+    IntervalsCheck(bvect_full);
+    IntervalsEnumeratorCheck(bvect_full, true);
     
     if (!detailed)
         return;
@@ -2041,9 +2526,39 @@ void DynamicMatrixTest()
                 assert(r[i] == i);
             }
         }
+    }
+    {
+        bm::dynamic_heap_matrix<unsigned, bvect::allocator_type> matr(3, 3);
+        matr.init();
+        matr.set_zero();
 
+        matr.set(0, 0, 10);
+        matr.set(1, 1, 100);
+        matr.set(2, 2, 200);
+
+        matr.set(1, 0, 1);
+        matr.set(2, 0, 2);
+        matr.set(2, 1, 21);
+
+        assert(matr.get(0, 0) == 10);
+        assert(matr.get(1, 1) == 100);
+        assert(matr.get(2, 2) == 200);
+
+
+        matr.replicate_triange();
+
+        assert(matr.get(0, 1) == 1);
+        assert(matr.get(0, 2) == 2);
+        assert(matr.get(1, 2) == 21);
+
+
+
+        bm::id64_t s;
+        matr.sum(s, 0);
+        assert(s == 13);
 
     }
+
     
     cout << "---------------------------- DynamicMatrixTest() test OK" << endl;
 }
@@ -3126,7 +3641,7 @@ void BlockBitEraseTest()
 
         blk0[1] = 15u; // ..01111
         bm::bit_block_erase(blk0, 33, false);
-        assert(blk0[1] == 0b111);
+        assert(blk0[1] == 7); //0b111
     }
     
     {
@@ -4743,6 +5258,7 @@ void BvectorShiftTest()
                 } // for
                 
                 bvect bv2;
+                agg.set_compute_count(false);
                 agg.combine_shift_right_and(bv2);
                 int cmp = bv1.compare(bv2);
                 if (cmp != 0)
@@ -4750,6 +5266,14 @@ void BvectorShiftTest()
                     cerr << "Shift-R compare failure!" << endl;
                     exit(1);
                 }
+                bvect bv3;
+                agg.set_compute_count(true);
+                agg.combine_shift_right_and(bv3);
+                assert(!bv3.any());
+                auto cnt = agg.count();
+                auto cnt_c = bv1.count();
+                assert(cnt == cnt_c);
+
             } // for
         }
     }
@@ -7547,6 +8071,79 @@ void BvectorFindFirstDiffTest()
     cout << "-------------------------------------- BvectorFindFirstDiffTest OK" << endl;
 }
 
+
+static
+void RankRangeSplitTest()
+{
+    cout << "-------------------------------------- RankRangeSplitTest" << endl;
+
+    std::vector<std::pair<bvect::size_type, bvect::size_type>> pair_vect;
+    {
+        bvect bv;
+        bm::rank_range_split(bv, 2, pair_vect);
+        assert(pair_vect.size()==0);
+    }
+
+    {
+        bvect bv { 1, 2, 10, 100, 200 };
+        bm::rank_range_split(bv, 2, pair_vect);
+        assert(pair_vect.size()==3);
+
+        assert(pair_vect[0].first == 1);
+        assert(pair_vect[0].second == 2);
+
+        assert(pair_vect[1].first == 3);
+        assert(pair_vect[1].second == 100);
+
+        assert(pair_vect[2].first == 101);
+        assert(pair_vect[2].second == 200);
+    }
+
+    {
+        bvect bv;
+
+        generate_bvector(bv);
+        bv.optimize();
+        auto cnt = bv.count();
+
+        bvect::size_type first, last;
+        bool b = bv.find_range(first, last);
+        assert(b);
+
+        for (bvect::size_type i = 1; i < cnt+1; ++i)
+        {
+            bm::rank_range_split(bv, i, pair_vect);
+            assert(pair_vect.size());
+            assert(pair_vect[0].first == first);
+            assert(pair_vect[pair_vect.size()-1].second == last);
+
+            bvect::size_type cnt_c = 0;
+            for (size_t k = 0; k < pair_vect.size(); ++k)
+            {
+                auto& p = pair_vect[k];
+                auto c = bv.count_range(p.first, p.second);
+                assert(c);
+                assert(c <= i);
+                cnt_c += c;
+                assert(p.first >= first);
+                assert(p.second <= last);
+                if (k < pair_vect.size()-1)
+                {
+                    assert(c == i);
+                }
+            } // for k
+
+            assert(cnt == cnt_c);
+            if (i % 500 == 0)
+            {
+                cout << "\r" << i << "/" << cnt << flush;
+            }
+        } // for i
+    }
+
+    cout << "\r-------------------------------------- RankRangeSplitTest OK" << endl;
+}
+
 static
 void DesrializationTest2()
 {
@@ -8233,7 +8830,7 @@ void AggregatorTest()
     bv2[65536]=true;
     
     agg.add(&bv1); agg.add(&bv2);
-    
+    agg.set_compute_count(false);
     agg.combine_shift_right_and(bv0);
     agg.reset();
     bool any = bv0.any();
@@ -8742,6 +9339,7 @@ void StressTestAggregatorShiftAND(unsigned repeats)
             } // for
             
             bvect bv_target1;
+            agg.set_compute_count(false);
             agg.combine_shift_right_and(bv_target1);
             auto cmp = bv_target1.compare(bv_target0);
             if (cmp != 0)
@@ -8752,6 +9350,15 @@ void StressTestAggregatorShiftAND(unsigned repeats)
             }
             if (i % 250 == 0)
                 cout << "\r" << i << flush;
+
+            bvect bv_target2;
+            agg.set_compute_count(true);
+            agg.combine_shift_right_and(bv_target2);
+            assert(!bv_target2.any());
+            auto cnt = agg.count();
+            auto cnt_c = bv_target1.count();
+            assert(cnt == cnt_c);
+
         } // for
         cout << "\n\n ---------- SHIFT-AND step: " << r << endl;
     } // for
@@ -9206,8 +9813,10 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed)
                     exit(1);
                 }
             }
+        }
 
-
+        {
+            VisitorAllRangeTest(*bvect_full2, 0); // test with automatic step
         }
 
         delete bvect_full2;
@@ -10017,9 +10626,9 @@ void GAPCheck()
    print_gap(gapv2, 0);
 
    unsigned dsize=0;
-   bm::gap_buff_op((gap_word_t*)gapv.get_buf(), 
+   bm::gap_buff_op<bm::gap_word_t, bm::and_func>((gap_word_t*)gapv.get_buf(),
                          gapv1.get_buf(), 0,
-                         gapv2.get_buf(), 0, bm::and_op, 
+                         gapv2.get_buf(), 0,
                          dsize); 
    print_gap(gapv, 0);
    gapv.control();
@@ -10301,13 +10910,12 @@ void SimpleGapFillSets(bvect&   bv0,
                        unsigned fill_factor)
 {
     bvect::bulk_insert_iterator bii0(bv0);
-    bvect::bulk_insert_iterator bii1(bv1);
-
     for (unsigned i = min; i < max; i += fill_factor)
     {
         bii0 = i;
-        bii1 = i;
+        bv1.set(i);
     } // for i
+    bii0.flush();
 }
 
 static
@@ -10320,7 +10928,7 @@ void GAPTestStress()
     {
         bvect bv0, bv1;
         SimpleGapFillSets(bv0, bv1, 0, BV_SIZE, ff);
-        bv1.optimize();
+        bv0.optimize();
         for (unsigned i = 0; i < BV_SIZE+1; ++i)
         {
             bool b0 = bv0.test(i);
@@ -10331,6 +10939,8 @@ void GAPTestStress()
                 exit(1);
             }
         } // for i
+        bool b = bv0.equal(bv1);
+        assert(b);
         if (ff % 100 == 0)
         {
             cout << "*" << flush;
@@ -12671,43 +13281,6 @@ void EnumeratorTest()
         }
     }
 
-    cout << "FULL bvector enumerator stress test ..." << endl;
-    {
-        bvect bvect1;
-        bvect1.set();
-
-        bvect::enumerator en = bvect1.first();
-        unsigned num = bvect1.get_first();
-        while (en.valid())
-        {
-            if (*en != num)
-            {
-                cout << "Enumeration comparison failed !" << 
-                        " enumerator = " << *en <<
-                        " get_next() = " << num << endl;
-                assert(0);
-                exit(1);
-            }
-
-            ++en;
-            num = bvect1.get_next(num);
-            {
-                bvect::enumerator en2(&bvect1, num);
-                if (*en2 != num)
-                {
-                    cout << "Enumeration comparison failed !" <<
-                            " enumerator = " << *en <<
-                            " get_next() = " << num << endl;
-                    assert(0);
-                    exit(1);
-                }
-                CompareEnumerators(en, en2);
-            }
-            if (num > (bm::set_sub_array_size * bm::gap_max_bits * 2))
-                break;
-        } // while
-    }
-    cout << "FULL bvector enumerator stress test ... OK" << endl;
 
     {
         bvect bvect1;
@@ -12820,6 +13393,45 @@ void EnumeratorTest()
             exit(1);
         }
     }
+
+    cout << "FULL bvector enumerator stress test ..." << endl;
+    {
+        bvect bvect1;
+        bvect1.set();
+
+        bvect::enumerator en = bvect1.first();
+        unsigned num = bvect1.get_first();
+        while (en.valid())
+        {
+            if (*en != num)
+            {
+                cout << "Enumeration comparison failed !" <<
+                        " enumerator = " << *en <<
+                        " get_next() = " << num << endl;
+                assert(0);
+                exit(1);
+            }
+
+            ++en;
+            num = bvect1.get_next(num);
+            {
+                bvect::enumerator en2(&bvect1, num);
+                if (*en2 != num)
+                {
+                    cout << "Enumeration comparison failed !" <<
+                            " enumerator = " << *en <<
+                            " get_next() = " << num << endl;
+                    assert(0);
+                    exit(1);
+                }
+                CompareEnumerators(en, en2);
+            }
+            if (num > (bm::set_sub_array_size * bm::gap_max_bits * 2))
+                break;
+        } // while
+    }
+    cout << "FULL bvector enumerator stress test ... OK" << endl;
+
 }
 
 
@@ -12860,6 +13472,272 @@ void BlockLevelTest()
 
 }
 
+
+
+
+static
+void IntervalEnumeratorTest()
+{
+    cout << "----------------------------- IntervalEnumeratorTest()" << endl;
+
+    bool valid;
+    cout << "empty bvector tests" << endl;
+    {
+        bm::interval_enumerator<bvect> ien;
+        valid = ien.valid();
+        assert(!valid);
+    }
+
+    {
+        bvect bv;
+        bm::interval_enumerator<bvect> ien(bv);
+
+        valid = ien.valid();
+        assert(!valid);
+    }
+
+    {
+        bm::interval_enumerator<bvect> ien1;
+        bm::interval_enumerator<bvect> ien2;
+
+        assert(ien1 == ien2);
+    }
+
+    cout << "inverted bvector tests" << endl;
+    {
+        bvect bv;
+        bv.invert();
+
+        {
+            bm::interval_enumerator<bvect> ien(bv);
+
+            valid = ien.valid();
+            assert(valid);
+            assert(ien.start() == 0);
+            assert(ien.end() == bm::id_max-1);
+            IntervalsEnumeratorCheck(bv, false);
+        }
+
+        bm::interval_enumerator<bvect> ien(bv, 1, false);
+        valid = ien.valid();
+        assert(valid);
+        assert(ien.start() == 1);
+        assert(ien.end() == bm::id_max-1);
+
+        bm::interval_enumerator<bvect> ien2(bv, 10, false);
+        valid = ien2.valid();
+        assert(valid);
+        assert(ien2.start() == 10);
+        assert(ien2.end() == bm::id_max-1);
+
+        ien.swap(ien2);
+        assert(ien.start() == 10);
+        assert(ien2.start() == 1);
+
+        bm::interval_enumerator<bvect> ien3(std::move(ien2));
+        assert(ien3.start() == 1);
+    }
+
+
+
+    cout << "GAP bvector tests" << endl;
+    {
+        bvect bv;
+        bv.set_range(0, 33);
+
+        bm::interval_enumerator<bvect> ien(bv);
+        valid = ien.valid();
+        assert(valid);
+        assert(ien.start() == 0);
+        assert(ien.end() == 33);
+
+        bv.set_range(bm::id_max/2, bm::id_max/2 + 2);
+        ien.go_to(100);
+        valid = ien.valid();
+        assert(valid);
+        assert(ien.start() == bm::id_max/2);
+        assert(ien.end() == bm::id_max/2 + 2);
+
+        bv.set_range(bm::id_max-1, bm::id_max-1);
+        ien.go_to(bm::id_max-2);
+        valid = ien.valid();
+        assert(valid);
+        assert(ien.start() == bm::id_max-1);
+        assert(ien.end() == bm::id_max-1);
+
+        ien.go_to(0);
+        valid = ien.valid();
+        assert(valid);
+        assert(ien.start() == 0);
+        assert(ien.end() == 33);
+
+        valid = ien.advance();
+        assert(valid);
+        assert(ien.start() == bm::id_max/2);
+        assert(ien.end() == bm::id_max/2 + 2);
+
+        valid = ien.advance();
+        assert(valid);
+        assert(ien.start() == bm::id_max-1);
+        assert(ien.end() == bm::id_max-1);
+
+        valid = ien.advance();
+        assert(!valid);
+        IntervalsEnumeratorCheck(bv, false);
+    }
+
+    {
+        bvect bv { 0 };
+        {
+            bm::interval_enumerator<bvect> ien(bv);
+
+            valid = ien.valid();
+            assert(valid);
+            assert(ien.start() == 0);
+            assert(ien.end() == 0);
+        }
+
+        bv.set(100);
+        bv.set(101);
+
+        {
+            bm::interval_enumerator<bvect> ien(bv, 1, false);
+
+            valid = ien.valid();
+            assert(valid);
+            assert(ien.start() == 100);
+            assert(ien.end() == 101);
+        }
+
+        bm::interval_enumerator<bvect> ien1(bv);
+        bm::interval_enumerator<bvect> ien2(bv, 1, false);
+        assert(ien1 != ien2);
+        assert(ien1 < ien2);
+        assert(ien1 <= ien2);
+        assert(ien2 > ien1);
+        assert(ien2 >= ien1);
+
+        IntervalsEnumeratorCheck(bv, false);
+    }
+
+
+
+    {
+        bvect bv { bm::id_max-1};
+        bm::interval_enumerator<bvect> ien(bv);
+
+        valid = ien.valid();
+        assert(valid);
+        assert(ien.start() == bm::id_max-1);
+        assert(ien.end() == bm::id_max-1);
+
+        IntervalsEnumeratorCheck(bv, false);
+    }
+
+    {
+        bvect bv { 0, 100, bm::id_max-1 };
+        for (unsigned pass = 0; pass < 2; ++pass)
+        {
+            bm::interval_enumerator<bvect> ien(bv);
+
+            valid = ien.valid();
+            assert(valid);
+            assert(ien.start() == 0);
+            assert(ien.end() == 0);
+            assert((*ien).first == 0);
+            assert(ien.get().second == 0);
+
+            valid = ien.advance();
+            assert(valid);
+            assert(ien.start() == 100);
+            assert(ien.end() == 100);
+
+            ++ien;
+            valid = ien.valid();
+            assert(valid);
+            assert(ien.start() == bm::id_max-1);
+            assert(ien.end() == bm::id_max-1);
+
+            ien++;
+            valid = ien.valid();
+            assert(!valid);
+            bv.optimize();
+
+        } // for pass
+    }
+
+    cout << "interval_enumerator +N stress test" << endl;
+    {
+        bvect::allocator_pool_type pool;
+
+        unsigned delta_max = 65536*2;
+        double duration = 0;
+        for (unsigned inc = 1; inc < delta_max; ++inc)
+        {
+            clock_t start = clock();
+            cout << "\rinc = " << inc << " of " << delta_max << " (" << duration << ")" << flush;
+            bvect bv;
+            bvect bv_c;
+            bvect::mem_pool_guard g1(pool, bv);
+            bvect::mem_pool_guard g2(pool, bv_c);
+
+            bvect::size_type test_max = 65535 * 256;
+
+            for (bvect::size_type i = 0; i < test_max; i+=inc)
+                bv.set(i);
+
+            for (unsigned pass = 0; pass < 2; ++pass)
+            {
+                IntervalsEnumeratorCheck(bv, false);
+                bm::interval_enumerator<bvect> ien(bv);
+                while (ien.valid())
+                {
+                    auto from = ien.start();
+                    auto to = ien.end();
+                    bv_c.set_range(from, to);
+                    if (!ien.advance())
+                        break;
+                }
+                bool eq = bv.equal(bv_c);
+                assert(eq);
+
+                {
+                    bvect::size_type copy_to = test_max/100;
+                    for (bvect::size_type k = 1; k < copy_to; ++k)
+                    {
+                        bvect bv2; bvect bv2_c;
+                        bv2_c.copy_range(bv, k, copy_to);
+
+                        interval_copy_range(bv2, bv, k, copy_to);
+                        eq = bv2.equal(bv2_c);
+                        assert(eq);
+                        copy_to -= rand()%128;
+                    }
+                }
+
+                bv.optimize();
+                bv_c.clear();
+            } // for pass
+
+            clock_t finish = clock();
+            clock_t elapsed_clocks = finish - start;
+            duration = (double)(elapsed_clocks) / CLOCKS_PER_SEC;
+
+            cout << "\rinc = " << inc << " of " << delta_max << " (" << duration << ")" << flush;
+
+            if (inc > 65536)
+                inc += rand() % 128; // fast pace randomiser
+        } // for inc
+
+    }
+
+
+
+
+    cout << "\n----------------------------- IntervalEnumeratorTest() OK" << endl;
+}
+
+
 /*
 __int64 CalcBitCount64(__int64 b)
 {
@@ -12882,6 +13760,8 @@ void FindNotNullPtrTest()
     bm::word_t*** arr = 0;
     unsigned arr_size = 895;
     arr = (bm::word_t***)::malloc(sizeof(void*) * arr_size);
+    if (!arr)
+        return;
 
     for (unsigned i = 0; i < arr_size; ++i)
     {
@@ -13109,7 +13989,25 @@ void SetTest()
             exit(1);
         }
     }
-    
+
+    {
+        bvect bvc;
+        bvect bv(bm::BM_GAP);
+        bv.set(10);
+        bvc.set(10);
+        bv.set(11);
+        bvc.set(11);
+
+        for (unsigned i = 100; i < 110; i+= 2)
+        {
+            bool b1 = bv.set_bit_no_check(i, true);
+            assert(b1);
+            bool b2 = bvc.set_bit_no_check(i, true);
+            assert(b2);
+        }
+        assert(bv.equal(bvc));
+    }
+
     {
         bvect bv_full;
         bv_full.invert();
@@ -13675,10 +14573,10 @@ void BitCountChangeTest()
     cnt = count_intervals(bv1);
     cout << "Inverted cnt=" << cnt << endl;
 
-    if (cnt != 2)
+    if (cnt != 1)
     {
         cout << "2.inverted count_intervals() failed " << cnt << endl;
-        exit(1);
+        assert(0); exit(1);
     }
 
     bv1.invert();
@@ -14058,6 +14956,261 @@ void BitCountChangeTest()
     cout << "---------------------------- BitCountChangeTest Ok." << endl;
 }
 
+static
+void BitRangeAllSetTest()
+{
+    cout << "---------------------------- BitRangeAllSetTest()" << endl;
+
+    BM_DECLARE_TEMP_BLOCK(tb1);
+    bm::bit_block_set(tb1, ~0u);
+
+    bool b;
+
+    {
+        b =  bm::bit_block_is_all_one_range(tb1, 0, 65535);
+        assert(b);
+        tb1[2047] &= ~(1<<31);
+
+        bool all_one = bm::check_block_one(tb1, true);
+        assert(!all_one);
+
+        auto cnt = bit_block_calc_count_range(tb1, 0, 65535);
+        assert(cnt == 65535);
+
+        b =  bm::bit_block_is_all_one_range(tb1, 0, 65535);
+        assert(!b);
+    }
+
+    cout << "---------------------------- BitRangeAllSetTest() Ok." << endl;
+}
+
+
+
+struct TestDecodeFunctor
+{
+    typedef std::vector<bvect::size_type> decode_vector;
+    typedef bvect::size_type   size_type;
+
+
+    TestDecodeFunctor(decode_vector& dvect)
+        : dvect_(dvect)
+    {
+        dvect_.resize(0);
+    }
+
+    void add_bits(size_type offset, const unsigned char* bits, unsigned size)
+    {
+        for (size_type i = 0; i < size; ++i)
+            dvect_.push_back(offset + bits[i]);
+    }
+    void add_range(size_type offset, unsigned size)
+    {
+        for (size_type i = 0; i < size; ++i)
+            dvect_.push_back(offset + i);
+    }
+
+    decode_vector& dvect_;
+};
+
+static
+void BitForEachRangeFuncTest()
+{
+    cout << "---------------------------- BitForEachRangeFuncTest()" << endl;
+
+    std::vector<bvect::size_type> dvect; // decode vector
+    BM_DECLARE_TEMP_BLOCK(tb1);
+
+    bm::bit_block_set(tb1, 0u);
+
+    {
+        TestDecodeFunctor func(dvect);
+        bm::for_each_bit_blk(FULL_BLOCK_FAKE_ADDR, 0u, 0u, 0u, func);
+        assert(dvect.size()==1);
+        assert(dvect[0] == 0);
+
+        dvect.resize(0);
+        bm::for_each_bit_blk(FULL_BLOCK_FAKE_ADDR, 0u, 0u, 10u, func);
+
+        assert(dvect.size()==11);
+        for (size_t i = 0; i < dvect.size(); ++i)
+        {
+            auto v = dvect[i];
+            assert(v == i);
+        } // for i
+    }
+
+    {
+        TestDecodeFunctor func(dvect);
+        bm::for_each_bit_blk(tb1, 0u, 0u, 0u, func);
+        assert(dvect.size()==0);
+
+        tb1[0] = 1;
+        bm::for_each_bit_blk(tb1, 0u, 0u, 0u, func);
+        assert(dvect.size()==1);
+        assert(dvect[0] == 0);
+        dvect.resize(0);
+
+        for (unsigned k = 0; k < 65535; ++k)
+        {
+            bm::for_each_bit_blk(tb1, k, 0, k, func);
+            assert(dvect.size()==1);
+            assert(dvect[0] == k);
+            dvect.resize(0);
+        }
+
+        tb1[0] = 3;
+
+        bm::for_each_bit_blk(tb1, 0u, 0u, 31u, func);
+        assert(dvect.size()==2);
+        assert(dvect[0] == 0);
+        assert(dvect[1] == 1);
+        dvect.resize(0);
+
+        bm::for_each_bit_blk(tb1, 0u, 1u, 31u, func);
+        assert(dvect.size()==1);
+        assert(dvect[0] == 1);
+        dvect.resize(0);
+
+        tb1[0] = (1u<<5) | (1u << 7) | (1u<<31);
+        bm::for_each_bit_blk(tb1, 0u, 4u, 31u, func);
+        assert(dvect.size()==3);
+        assert(dvect[0] == 5);
+        assert(dvect[1] == 7);
+        assert(dvect[2] == 31);
+        dvect.resize(0);
+
+        tb1[1] = 1;
+        bm::for_each_bit_blk(tb1, 0u, 0u, 37u, func);
+        assert(dvect.size()==4);
+        assert(dvect[0] == 5);
+        assert(dvect[1] == 7);
+        assert(dvect[2] == 31);
+        assert(dvect[3] == 32);
+        dvect.resize(0);
+
+
+        bm::for_each_bit_blk(tb1, 0u, 4u, 37u, func);
+        assert(dvect.size()==4);
+        assert(dvect[0] == 5);
+        assert(dvect[1] == 7);
+        assert(dvect[2] == 31);
+        assert(dvect[3] == 32);
+        dvect.resize(0);
+
+        bm::for_each_bit_blk(tb1, 120u, 31u, 32u, func);
+        assert(dvect.size()==2);
+        assert(dvect[0] == 31+120);
+        assert(dvect[1] == 32+120);
+        dvect.resize(0);
+
+    }
+
+    {
+        bm::bit_block_set(tb1, 0u);
+        tb1[0] = 1;
+        tb1[2047] = 1u << 31;
+
+        TestDecodeFunctor func(dvect);
+        tb1[1] = 1;
+        bm::for_each_bit_blk(tb1, 0u, 0u, 63u, func);
+        assert(dvect.size()==2);
+        assert(dvect[0] == 0);
+        assert(dvect[1] == 32);
+        dvect.resize(0);
+
+        tb1[1] = 0;
+
+        bm::for_each_bit_blk(tb1, 0u, 0u, 65535u, func);
+        assert(dvect.size()==2);
+        assert(dvect[0] == 0);
+        assert(dvect[1] == 65535);
+        dvect.resize(0);
+
+        tb1[0] = 1<<5;
+
+        bm::for_each_bit_blk(tb1, 0u, 3u, 65535u, func);
+        assert(dvect.size()==2);
+        assert(dvect[0] == 5);
+        assert(dvect[1] == 65535);
+        dvect.resize(0);
+
+        for (unsigned k = 0; k < 128; ++k)
+        {
+            bm::for_each_bit_blk(tb1, 0u, 65535u-k, 65535u, func);
+            assert(dvect.size()==1);
+            assert(dvect[0] == 65535);
+            dvect.resize(0);
+        }
+    }
+
+
+
+    cout << " for_each_bit_blk() stress 1 ..." << endl;
+    {
+        bm::bit_block_set(tb1, ~0u);
+
+        unsigned off = 1234567;
+        unsigned j = 65535;
+        for (unsigned i0 = 0; i0 <= j; ++i0)
+        {
+            TestDecodeFunctor func(dvect);
+
+            bm::for_each_bit_blk(FULL_BLOCK_FAKE_ADDR, off, i0, j, func);
+            for (size_t i = 0; i < dvect.size(); ++i)
+            {
+                auto v = dvect[i];
+                assert(v == (i0+off+i));
+            } // for i
+            dvect.resize(0);
+            bm::for_each_bit_blk(tb1, off, i0, j, func);
+            for (size_t i = 0; i < dvect.size(); ++i)
+            {
+                auto v = dvect[i];
+                assert(v == (i0+off+i));
+            } // for i
+
+        }
+    }
+
+    cout << " for_each_bit_blk() stress 2 ..." << endl;
+    {
+        bm::bit_block_set(tb1, ~0u);
+
+        unsigned off = 1234567;
+        unsigned j = 65535;
+        for (unsigned i0 = 0; i0 <= j; ++i0, --j)
+        {
+            TestDecodeFunctor func(dvect);
+
+            bm::for_each_bit_blk(FULL_BLOCK_FAKE_ADDR, off, i0, j, func);
+            assert(dvect.size() == j-i0+1);
+            for (size_t i = 0; i < dvect.size(); i+=2)
+            {
+                auto v = dvect[i];
+                assert(v == (i0+off+i));
+            } // for i
+            dvect.resize(0);
+
+            auto cnt = bm::bit_block_calc_count_range(tb1, i0, j);
+            assert(cnt == (j-i0+1));
+            bool all_one = bm::bit_block_is_all_one_range(tb1, i0, j);
+            assert(all_one);
+
+            bm::for_each_bit_blk(tb1, off, i0, j, func);
+            assert(dvect.size() == j-i0+1);
+
+            for (size_t i = 0; i < dvect.size(); i+=2)
+            {
+                auto v = dvect[i];
+                assert(v == (i0+off+i));
+            } // for i
+
+        }
+    }
+
+
+    cout << "---------------------------- BitForEachRangeFuncTest() Ok." << endl;
+}
 
 
 static
@@ -14963,6 +16116,605 @@ void CountRangeTest()
     
     cout << "---------------------------- CountRangeTest OK" << endl;
 }
+
+// -----------------------------------------------------------------------
+
+bvect::size_type
+from_arr[] = { 0, 0, 0,  0,  7,  1,   0,     65535, 65535,   0,     0,                 bm::id_max/2-2001, bm::id_max-2000, bm::id_max-1};
+bvect::size_type
+to_arr[]   = { 0, 1, 16, 32, 31, 255, 65535, 65536, 65536*2, 65537, bm::id_max/2-2000, bm::id_max/2+2000, bm::id_max-1,    bm::id_max-1};
+
+static
+void verify_all_one_ranges(const bvect& bv, bool all_one)
+{
+    size_t fr_size = sizeof(from_arr) / sizeof(from_arr[0]);
+    size_t to_size = sizeof(to_arr) / sizeof(to_arr[0]);
+
+    assert(fr_size == to_size);
+
+    for (unsigned t = 0; t < fr_size; ++t)
+    {
+        bool one_test, one_test_cnt, any_one_test;
+        bool is_int, is_int_c;
+        bvect::size_type from(from_arr[t]), to(to_arr[t]);
+
+        one_test = bv.is_all_one_range(from, to);
+        if (all_one)
+        {
+            assert(one_test);
+            any_one_test = bv.any_range(from, to);
+            assert(any_one_test);
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+            assert(!is_int);
+            if (is_int)
+            {
+                if (to < from)
+                    bm::xor_swap(to, from);
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bv, from, pos);
+                assert(b && pos == to);
+                b = bm::find_interval_start(bv, to, pos);
+                assert(b && pos == from);
+            }
+        }
+        else
+        {
+            auto cnt = bv.count_range(from, to);
+            one_test_cnt = (cnt == to - from + 1);
+            assert(one_test_cnt == one_test);
+            any_one_test = bv.any_range(from, to);
+            if (cnt)
+            {
+                assert(any_one_test);
+            }
+            else
+            {
+                assert(!any_one_test);
+            }
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+            if (is_int)
+            {
+                if (to < from)
+                    bm::xor_swap(to, from);
+                bvect::size_type pos;
+                bool b = bm::find_interval_end(bv, from, pos);
+                assert(b && pos == to);
+                b = bm::find_interval_start(bv, to, pos);
+                assert(b && pos == from);
+            }
+
+        }
+        // [from-1, to] range check
+        //
+        if (from)
+        {
+            --from;
+            one_test = bv.is_all_one_range(from, to);
+            any_one_test = bv.any_range(from, to);
+
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+
+            if (all_one)
+            {
+                assert(one_test);
+                assert(any_one_test);
+            }
+            else
+            {
+                auto cnt = bv.count_range(from, to);
+                one_test_cnt = (cnt == to - from + 1);
+                assert(one_test_cnt == one_test);
+                if (cnt)
+                {
+                    assert(any_one_test);
+                }
+                else
+                {
+                    assert(!any_one_test);
+                }
+            }
+            ++from;
+        }
+        // [from, to+1] range check
+        //
+        if (to < bm::id_max-1)
+        {
+            ++to;
+            one_test = bv.is_all_one_range(from, to);
+            any_one_test = bv.any_range(from, to);
+
+            is_int = bm::is_interval(bv, from, to);
+            is_int_c = test_interval(bv, from, to);
+            assert(is_int == is_int_c);
+
+            if (all_one)
+            {
+                assert(one_test);
+                assert(any_one_test);
+            }
+            else
+            {
+                auto cnt = bv.count_range(from, to);
+                one_test_cnt = (cnt == to - from + 1);
+                assert(one_test_cnt == one_test);
+                if (cnt)
+                {
+                    assert(any_one_test);
+                }
+                else
+                {
+                    assert(!any_one_test);
+                }
+            }
+            --to;
+        }
+
+    } // for t
+}
+
+static
+void Intervals_RangesTest()
+{
+    cout << "---------------------------- Intervals_RangesTest()" << endl;
+
+    bool b;
+    bvect::size_type pos;
+    cout << "Check empty bvector" << endl;
+    {{
+        bvect bv1;
+        verify_all_one_ranges(bv1, false);
+
+        b = bm::find_interval_end(bv1, 0, pos);
+        assert(!b);
+        b = bm::find_interval_start(bv1, 0, pos);
+        assert(!b);
+
+        bv1.set(0);
+        bv1.clear(0);
+        verify_all_one_ranges(bv1, false);
+        IntervalsCheck(bv1);
+    }}
+
+    cout << "Check inverted bvector..." << endl;
+    {{
+        bvect bv1;
+        bv1.invert();
+
+        verify_all_one_ranges(bv1, true);
+        IntervalsCheck(bv1);
+
+        b = bm::find_interval_end(bv1, 65536, pos);
+        assert(b && pos == bm::id_max-1);
+        b = bm::find_interval_end(bv1, 65536*4, pos);
+        assert(b && pos == bm::id_max-1);
+        b = bm::find_interval_end(bv1, bm::id_max/2, pos);
+        assert(b && pos == bm::id_max-1);
+        b = bm::find_interval_end(bv1, bm::id_max-2, pos);
+        assert(b && pos == bm::id_max-1);
+
+        b = bm::find_interval_start(bv1, 0, pos);
+        assert(b && pos == 0);
+        b = bm::find_interval_start(bv1, 65535, pos);
+        assert(b && pos == 0);
+        b = bm::find_interval_start(bv1, 65535*4, pos);
+        assert(b && pos == 0);
+        b = bm::find_interval_start(bv1, bm::id_max-1, pos);
+        assert(b && pos == 0);
+
+        for (bvect::size_type i = 0; i < bm::id_max/4; i+=rand()%256)
+        {
+            b = bm::find_interval_end(bv1, i, pos);
+            assert(b && pos == bm::id_max-1);
+
+            b = bm::find_interval_start(bv1, i, pos);
+            assert(b && pos == 0);
+        } // for i
+
+
+
+        bv1.optimize();
+        b = bm::find_interval_end(bv1, 1, pos);
+        assert(b && pos == bm::id_max-1);
+
+    }}
+
+
+    {{
+        bvect bv1;
+        bv1.set(5);
+        bv1.set(31);
+
+        b = bm::find_interval_end(bv1, 5, pos);
+        assert(b && pos == 5);
+        b = bm::find_interval_end(bv1, 31, pos);
+        assert(b && pos == 31);
+
+        b = bm::find_interval_start(bv1, 5, pos);
+        assert(b && pos == 5);
+        b = bm::find_interval_start(bv1, 31, pos);
+        assert(b && pos == 31);
+
+        bv1.set(6);
+
+        b = bm::find_interval_end(bv1, 5, pos);
+        assert(b && pos == 6);
+        b = bm::find_interval_end(bv1, 6, pos);
+        assert(b && pos == 6);
+
+        b = bm::find_interval_start(bv1, 5, pos);
+        assert(b && pos == 5);
+        b = bm::find_interval_start(bv1, 6, pos);
+        assert(b && pos == 5);
+
+    }}
+
+    {{
+        bvect::size_type base = 0;
+
+        for (; base < bm::id_max/2; base += 65536)
+        {
+            bvect bv1 { 31+base, 32+base, 33+base, 34+base };
+            b = bm::find_interval_end(bv1, 31+base, pos);
+            assert(b && pos == 34+base);
+            b = bm::find_interval_start(bv1, 31+base, pos);
+            assert(b && pos == 31+base);
+            b = bm::find_interval_start(bv1, 32+base, pos);
+            assert(b && pos == 31+base);
+            b = bm::find_interval_start(bv1, 34+base, pos);
+            assert(b && pos == 31+base);
+
+            b = bm::find_interval_start(bv1, 35+base, pos);
+            assert(!b);
+        } // for base
+    }}
+
+    {{
+        bvect bv1;
+        bv1.invert();
+        bv1.set(0, false);
+
+        //for (unsigned pass = 0; pass < 2; ++pass)
+        {
+            b = bm::find_interval_start(bv1, 65538, pos);
+            assert(b && pos == 1);
+            b = bm::find_interval_start(bv1, 65536*300, pos);
+            assert(b && pos == 1);
+            b = bm::find_interval_start(bv1, bm::id_max-1, pos);
+            assert(b && pos == 1);
+
+            bv1.set(31, false);
+
+            b = bm::find_interval_start(bv1, bm::id_max-1, pos);
+            assert(b && pos == 32);
+
+            bv1.set(65535, false);
+            b = bm::find_interval_start(bv1, 65536, pos);
+            assert(b && pos == 65536);
+            b = bm::find_interval_start(bv1, 65536*300, pos);
+            assert(b && pos == 65536);
+            b = bm::find_interval_start(bv1, bm::id_max-1, pos);
+            assert(b && pos == 65536);
+
+            bv1.set(65535*256-1, false);
+            b = bm::find_interval_start(bv1, 65535*256, pos);
+            assert(b && pos == 65535*256-1+1);
+
+            b = bm::find_interval_start(bv1, bm::id_max-1, pos);
+            assert(b && pos == 65535*256-1+1);
+            bv1.set(65535*256+1, false);
+            b = bm::find_interval_start(bv1, bm::id_max-1, pos);
+            assert(b && pos == 65535*256+1+1);
+
+        } // for pass
+
+    }}
+
+
+
+    {{
+        bvect bv1;
+        bv1.set(65536);
+
+        for (unsigned pass = 0; pass<2; ++pass)
+        {
+            b = bm::find_interval_start(bv1, 65536, pos);
+            assert(b && pos == 65536);
+
+            b = bm::find_interval_end(bv1, 65536, pos);
+            assert(b && pos == 65536);
+
+            bv1.optimize();
+            b = bm::find_interval_start(bv1, 65536, pos);
+            assert(b && pos == 65536);
+
+            b = bm::find_interval_end(bv1, 65536, pos);
+            assert(b && pos == 65536);
+
+            bv1.set(0);
+            bv1.set(1);
+
+            b = bm::find_interval_start(bv1, 0, pos);
+            assert(b && pos == 0);
+            pos = 0xDEADBEEF;
+            b = bm::find_interval_start(bv1, 1, pos);
+            assert(b && pos == 0);
+
+            bv1.optimize();
+
+        } // for unsigned
+    }}
+
+
+
+    {{
+        bvect bv1;
+        bv1.set_range(0, 65535);
+
+        b = bm::find_interval_end(bv1, 65536, pos);
+        assert(!b);
+        b = bm::find_interval_end(bv1, 0, pos);
+        assert(b);
+        assert(pos == 65535);
+        b = bm::find_interval_start(bv1, pos, pos);
+        assert(b && pos == 0);
+
+        b = bm::find_interval_end(bv1, 1234, pos);
+        assert(b);
+        assert(pos == 65535);
+
+        bv1[65536]=true;
+        bv1[65536]=false;
+
+        b = bm::find_interval_end(bv1, 65536, pos);
+        assert(!b);
+        b = bm::find_interval_end(bv1, 0, pos);
+        assert(b);
+        assert(pos == 65535);
+        b = bm::find_interval_end(bv1, 1234, pos);
+        assert(b);
+        assert(pos == 65535);
+
+        bv1[65536]=true;
+        b = bm::find_interval_end(bv1, 65536, pos);
+        assert(b);
+        assert(pos == 65536);
+        b = bm::find_interval_end(bv1, 1234, pos);
+        assert(b);
+        assert(pos == 65536);
+    }}
+
+
+    cout << "find_interval_start/end()... bit stress" << endl;
+    {{
+        bvect bv1;
+        bvect::size_type to = 65536*3 + 12;
+        for (bvect::size_type i = 0; i < to; ++i)
+            bv1.set(i);
+        for (bvect::size_type i = 0; i < to; ++i)
+        {
+            b = bm::find_interval_end(bv1, i, pos);
+            assert(b && pos == to-1);
+
+            b = bm::find_interval_start(bv1, i, pos);
+            assert(b && pos == 0);
+        } // for i
+        for (bvect::size_type j = to-1; j > 0; --j)
+        {
+            b = bm::find_interval_end(bv1, j, pos);
+            assert(b && pos == to-1);
+            b = bm::find_interval_start(bv1, j, pos);
+            assert(b && pos == 0);
+        } // for
+
+        --to;
+        for (bvect::size_type i = 0; i <= to; ++i, --to)
+        {
+            b = bm::find_interval_end(bv1, i, pos);
+            assert(b && pos == to);
+
+            b = bm::is_interval(bv1, i, to);
+            assert(b);
+
+            b = bm::find_interval_start(bv1, i, pos);
+            assert(b && pos == i);
+            b = bm::find_interval_start(bv1, to, pos);
+            assert(b && pos == i);
+
+            bv1.set(i, false);
+            bv1.set(to, false);
+
+            b = bm::find_interval_start(bv1, i, pos);
+            assert(!b);
+            b = bm::find_interval_start(bv1, to, pos);
+            assert(!b);
+
+        } // for i
+
+    }}
+
+    cout << "Check GAP ranges bvector" << endl;
+    {{
+        bvect bv1(bm::BM_GAP);
+        bv1.set_range(0,1);
+        bool one_test, any_one, is_int;
+        one_test = bv1.is_all_one_range(0, 0);
+        assert(one_test);
+        any_one = bv1.any_range(0, 0);
+        assert(any_one);
+        is_int = bm::is_interval(bv1, 0, 0);
+        assert(!is_int);
+
+
+        one_test = bv1.is_all_one_range(0, 1);
+        assert(one_test);
+        any_one = bv1.any_range(0, 0);
+        assert(any_one);
+        is_int = bm::is_interval(bv1, 0, 1);
+        assert(is_int);
+
+        one_test = bv1.is_all_one_range(1, 1);
+        assert(one_test);
+        any_one = bv1.any_range(1, 1);
+        assert(any_one);
+        one_test = bv1.is_all_one_range(1, 2);
+        assert(!one_test);
+        any_one = bv1.any_range(1, 2);
+        assert(any_one);
+        is_int = bm::is_interval(bv1, 1, 2);
+        assert(!is_int);
+
+        is_int = bm::is_interval(bv1, 256, 65536);
+        assert(!is_int);
+
+        bv1.set_range(256, 65536);
+        bv1.optimize();
+        one_test = bv1.is_all_one_range(256, 65535);
+        assert(one_test);
+        any_one = bv1.any_range(256, 65535);
+        assert(any_one);
+        is_int = bm::is_interval(bv1, 256, 65536);
+        assert(is_int);
+        is_int = bm::is_interval(bv1, 255, 65536);
+        assert(!is_int);
+        is_int = bm::is_interval(bv1, 254, 65536);
+        assert(!is_int);
+        is_int = bm::is_interval(bv1, 257, 65536);
+        assert(!is_int);
+        is_int = bm::is_interval(bv1, 257, 65535);
+        assert(!is_int);
+
+
+        one_test = bv1.is_all_one_range(65535, 65535);
+        assert(one_test);
+        one_test = bv1.is_all_one_range(65535, 65536);
+        assert(one_test);
+
+        one_test = bv1.is_all_one_range(65535, 65537);
+        assert(!one_test);
+        any_one = bv1.any_range(65535, 65537);
+        assert(any_one);
+        any_one = bv1.any_range(65538, 65537);
+        assert(!any_one);
+        any_one = bv1.any_range(65538, bm::id_max-1);
+        assert(!any_one);
+
+    }}
+
+    cout << "Check bit ranges bvector" << endl;
+    {{
+        bvect bv1;
+        bv1[1] = true; bv1[2] = true;
+        bool one_test, any_one;
+        one_test = bv1.is_all_one_range(0, 0);
+        assert(!one_test);
+        any_one = bv1.any_range(0, 0);
+        assert(!any_one);
+        any_one = bv1.any_range(0, 1);
+        assert(any_one);
+
+        one_test = bv1.is_all_one_range(0, 1);
+        assert(!one_test);
+        one_test = bv1.is_all_one_range(2, 1);
+        assert(one_test);
+        any_one = bv1.any_range(2, 1);
+        assert(any_one);
+
+        one_test = bv1.is_all_one_range(258, 65530);
+        assert(!one_test);
+
+        for (bvect::size_type i = 256; i <= 65536; ++i)
+        {
+            bv1.set(i);
+        }
+        one_test = bv1.is_all_one_range(258, 65530);
+        assert(one_test);
+        any_one = bv1.any_range(258, 65530);
+        assert(any_one);
+        one_test = bv1.is_all_one_range(256, 65535);
+        assert(one_test);
+        one_test = bv1.is_all_one_range(65535, 65535);
+        assert(one_test);
+        one_test = bv1.is_all_one_range(65535, 65536);
+        assert(one_test);
+        one_test = bv1.is_all_one_range(65536, 65537);
+        assert(!one_test);
+        any_one = bv1.any_range(65535, 65537);
+        assert(any_one);
+        any_one = bv1.any_range(65538, 65537);
+        assert(!any_one);
+        any_one = bv1.any_range(65538, bm::id_max-1);
+        assert(!any_one);
+
+    }}
+
+    cout << "Check set ranges" << endl;
+    {{
+        size_t fr_size = sizeof(from_arr) / sizeof(from_arr[0]);
+        size_t to_size = sizeof(to_arr) / sizeof(to_arr[0]);
+        assert(fr_size == to_size);
+
+        for (unsigned t = 0; t < fr_size; ++t)
+        {
+            bvect::size_type from(from_arr[t]), to(to_arr[t]);
+
+            {
+                bvect bv1;
+                bvect bv2(bm::BM_GAP);
+
+                if (to - from < 65536*10)
+                {
+                    for (bvect::size_type i = from; i <= to; ++i)
+                        bv1.set(i);
+                }
+                else
+                {
+                    bv1.set_range(from, to);
+                }
+                bv2.set_range(from, to);
+
+                bool one_test1 = bv1.is_all_one_range(from, to);
+                bool one_test2 = bv2.is_all_one_range(from, to);
+                assert(one_test1 == one_test2);
+
+                bool any_one1 = bv1.any_range(from, to);
+                bool any_one2 = bv2.any_range(from, to);
+                assert(any_one1 == any_one2);
+
+                if (from)
+                {
+                    any_one1 = bv1.any_range(from-1, from);
+                    assert(any_one1 == any_one2);
+                    any_one2 = bv2.any_range(from-1, from);
+                    assert(any_one1 == any_one2);
+                }
+
+                if (to < bm::id_max-1)
+                {
+                    any_one1 = bv1.any_range(to, to+1);
+                    assert(any_one1 == any_one2);
+                    any_one2 = bv2.any_range(to, to+1);
+                    assert(any_one1 == any_one2);
+                }
+
+                verify_all_one_ranges(bv1, false);
+                verify_all_one_ranges(bv2, false);
+
+                IntervalsCheck(bv1);
+                IntervalsCheck(bv2);
+            }
+        } // for t
+
+    }}
+
+    cout << "---------------------------- Intervals_RangesTest() OK\n" << endl;
+}
+
 
 static
 void KeepRangeTest()
@@ -18756,7 +20508,33 @@ static
 void TestSparseVectorGatherDecode()
 {
     cout << "---------------------------- Test sparse vector gather decode" << endl;
-    
+
+
+    {
+        unsigned base = 0;
+        sparse_vector_u32 sv0;
+        sv0[base+0] = 0;
+        sv0[base+1] = 1;
+        sv0[base+2] = 1;
+        sv0[base+3] = 1;
+
+        for (unsigned pass = 0; pass < 2; ++pass)
+        {
+            unsigned d[32] = { 25, };
+
+            auto sz = sv0.decode(&d[0], base + 1, 2);
+            assert(sz == 2);
+            assert(d[0] == 1);
+            assert(d[1] == 1);
+            sz = sv0.decode(&d[0], base + 2, 2);
+            assert(sz == 2);
+            assert(d[0] == 1);
+            assert(d[1] == 1);
+
+            sv0.optimize();
+        }
+    }
+
     sparse_vector_u32 sv;
     sparse_vector_u32 sv2;
     sparse_vector_u32 sv3;
@@ -19448,8 +21226,8 @@ void TestSparseVectorScan()
 
         bvect bv_control, bv_control2;
         bvect::allocator_pool_type pool;
-        bvect::mem_pool_guard(pool, bv_control);
-        bvect::mem_pool_guard(pool, bv_control2);
+        bvect::mem_pool_guard g1(pool, bv_control);
+        bvect::mem_pool_guard g2(pool, bv_control2);
 
         unsigned sv_size = 1256000;
         {
@@ -19529,7 +21307,7 @@ void TestSparseVectorScan()
             rsc_sparse_vector_u32 csv;
             
             bvect bv_control, bv_control2;
-            bvect::mem_pool_guard(pool, bv_control);
+            bvect::mem_pool_guard g0(pool, bv_control);
 
             unsigned sv_size = 67000;
             
@@ -19725,6 +21503,29 @@ void TestCompressedSparseVectorAlgo()
 
     // ----------------------------------------------------------
 
+    {
+        rsc_sparse_vector_u32 csv1;
+        rsc_sparse_vector_u32 csv2;
+        bm::sparse_vector<unsigned, bvect>::size_type pos;
+        bool f;
+
+        for (unsigned i = 0; i < 1022; ++i)
+        {
+            csv1.set(i, 65536);
+            csv2.set(i, 65536);
+        }
+        csv1.set(1023, 4);
+        csv2.set(1023, 8);
+
+        f = bm::sparse_vector_find_first_mismatch(csv1, csv2, pos);
+        assert(f);
+        assert(pos == 1023);
+
+        csv1.sync(); csv2.sync();
+        f = bm::sparse_vector_find_first_mismatch(csv1, csv2, pos);
+        assert(f);
+        assert(pos == 1023);
+    }
 
     {
         cout << endl << "Unique mismatch check" << endl;
@@ -23052,7 +24853,21 @@ void generate_bvector(bvect& bv, unsigned vector_max, bool optimize)
         {
             unsigned len = rand() % 64;
             bv.set_range(i, i + len);
-            i += len;
+            bool all_one_range = bv.is_all_one_range(i, i + len);
+            assert(all_one_range);
+            if (len)
+            {
+                bool is_int = bm::is_interval(bv, i, i+len);
+                assert(is_int);
+                bvect::size_type pos;
+                bool b = bm::find_interval_start(bv, i+len/2, pos);
+                assert(b);
+                assert(pos == i);
+                b = bm::find_interval_end(bv, i+len/2, pos);
+                assert(b);
+                assert(pos == i+len);
+            }
+            i += len+1;
             if (i > vector_max)
                 break;
         }
@@ -23061,104 +24876,164 @@ void generate_bvector(bvect& bv, unsigned vector_max, bool optimize)
         bv.optimize();
 }
 
-extern "C" {
-    static
-    int bit_decode_func(void* handle_ptr, bm::id_t bit_idx)
-    {
-        std::vector<bm::id_t>* vp = (std::vector<bm::id_t>*)handle_ptr;
-        vp->push_back(bit_idx);
-        return 0;
-    }
-    
-    static
-    int bit_decode_func2(void* handle_ptr, bm::id_t bit_idx)
-    {
-        if (bit_idx > (65536 * 256))
-        {
-            throw 1;
-        }
-        std::vector<bm::id_t>* vp = (std::vector<bm::id_t>*)handle_ptr;
-        vp->push_back(bit_idx);
-        return 0;
-    }
-} // extern C
 
 
 static
 void RangeForEachTest(bvect::size_type from, bvect::size_type to)
 {
-    bvect bv;
-    bv.set_range(from, to);
-    std::vector<bvect::size_type> v;
-    bm::visit_each_bit(bv, (void*)&v, bit_decode_func);
-    
-    assert(v.size() == bv.count());
-    assert(v[0] == from);
-    
-    for (size_t i = 1; i < v.size(); ++i)
+    bvect bv, bv1;
     {
-        bvect::size_type prev = v[i-1];
-        bvect::size_type curr = v[i];
-        assert(prev+1 == curr);
+        bv.set_range(from, to);
+
+        for (bvect::size_type i = from; i <= to; ++i)
+            bv1.set(i);
     }
-    bvect bv_control;
-    bm::combine_or(bv_control, v.begin(), v.end());
-    int res = bv.compare(bv_control);
-    assert(res == 0);
+
+    std::vector<bvect::size_type> v;
+    std::vector<bvect::size_type> v1;
+    {
+        bm::visit_each_bit(bv, (void*)&v, bit_decode_func);
+        bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
+
+        assert(v.size() == bv.count());
+        assert(v[0] == from);
+        assert(v1.size() == bv1.count());
+        assert(v1[0] == from);
+
+        for (size_t i = 1; i < v.size(); ++i)
+        {
+            bvect::size_type prev = v[i-1];
+            bvect::size_type curr = v[i];
+            assert(prev+1 == curr);
+            prev = v1[i-1];
+            curr = v1[i];
+            assert(prev+1 == curr);
+        }
+        {
+            bvect bv_control;
+            bm::combine_or(bv_control, v.begin(), v.end());
+            bool eq = bv.equal(bv_control);
+            assert(eq);
+            bv_control.clear();
+            bm::combine_or(bv_control, v1.begin(), v1.end());
+            eq = bv.equal(bv_control);
+            assert(eq);
+        }
+    }
 }
+
+
 
 static
 void BvectorBitForEachTest()
 {
     cout << "------------------------ bvector BitForEach Test" << endl;
     int res;
-    
+ 
     {
         cout << "test empty vector" << endl;
         bvect bv1;
-        std::vector<unsigned> v1;
-        
+        std::vector<bvect::size_type> v1, v2;
+
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
-        if (v1.size())
+        bm::visit_each_bit_range(bv1, 0, bm::id_max-1, (void*)&v2, bit_decode_func);
+        if (v1.size() || v2.size())
         {
             cerr << "1. Failed empty vector decode " << v1.size() << endl;
             exit(1);
         }
+
+
         bv1.init();
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
-        if (v1.size())
+        bm::visit_each_bit_range(bv1, 0, bm::id_max-1, (void*)&v2, bit_decode_func);
+        if (v1.size() || v2.size())
         {
             cerr << "2. Failed empty vector decode " << v1.size() << endl;
             exit(1);
         }
+
         
         bv1.set(100000, true);
         bv1.set(100000, false);
         
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
-        if (v1.size())
+        bm::visit_each_bit_range(bv1, 100000, 100000, (void*)&v2, bit_decode_func);
+        if (v1.size() || v2.size())
         {
             cerr << "3. Failed empty vector decode " << v1.size() << endl;
             exit(1);
         }
 
         bv1.optimize();
+
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
-        if (v1.size())
+        bm::visit_each_bit_range(bv1, 100000, 100000, (void*)&v2, bit_decode_func);
+        if (v1.size() || v2.size())
         {
             cerr << "3. Failed empty vector decode " << v1.size() << endl;
             exit(1);
         }
+        assert(v1 == v2);
     }
-    
+
+    {
+        std::vector<bvect::size_type> v1;
+
+        bvect bv(BM_GAP);
+        bv.set_range(20, 30);
+
+        bm::visit_each_bit_range(bv, 20, 20, (void*)&v1, bit_decode_func);
+        assert(v1.size()==1);
+        assert(v1[0] == 20);
+        v1.resize(0);
+
+        bm::visit_each_bit_range(bv, 20, 21, (void*)&v1, bit_decode_func);
+        assert(v1.size()==2);
+        assert(v1[0] == 20);
+        assert(v1[1] == 21);
+        v1.resize(0);
+
+        VisitorAllRangeTest(bv);
+
+        bv.set(50);
+        VisitorAllRangeTest(bv);
+
+        bv.set(65535);
+        VisitorAllRangeTest(bv);
+
+        bv.set_range(200, 300);
+        VisitorAllRangeTest(bv);
+
+        bv.set_range(2000, 3000);
+        bv.set_range(20000, 30000);
+
+
+        bv.set_range(65535-34, 65535);
+        VisitorAllRangeTest(bv);
+    }
+
+    {
+        std::vector<bvect::size_type> v1;
+
+        bvect bv(BM_GAP);
+        bv.set_range(bm::id_max-100, bm::id_max-1);
+        bv.set_range(bm::id_max-1000, bm::id_max-1000+23);
+        bv.optimize();
+
+        VisitorAllRangeTest(bv);
+    }
+
+
     {
         bvect bv1 { 0,1,2, 10, 32, 100, 65535,
                             65535+1, 65535+2, 65535+10, 65535+11, 65535+31,
                             20000000 };
         bvect bv2;
-        std::vector<unsigned> v1;
+        std::vector<unsigned> v1, v2;
         
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
+        bm::visit_each_bit_range(bv1, 0, bm::id_max-1, (void*)&v2, bit_decode_func);
 
         {
             for (size_t i = 0; i < v1.size(); ++i)
@@ -23172,6 +25047,10 @@ void BvectorBitForEachTest()
                       << " should be " << bv1.count() << std::endl;
             exit(1);
         }
+        if (v1 != v2)
+        {
+            assert(0);
+        }
         bm::combine_or(bv2, v1.begin(), v1.end());
         
         res = bv2.compare(bv1);
@@ -23180,6 +25059,8 @@ void BvectorBitForEachTest()
             std::cerr << "0. Bit for each failed comparison test. " << endl;
             exit(1);
         }
+
+        VisitorAllRangeTest(bv1);
         
         bv1.optimize();
         bv2.reset();
@@ -23206,9 +25087,11 @@ void BvectorBitForEachTest()
             std::cerr << "1. Bit for each failed comparison test. " << endl;
             exit(1);
         }
+        VisitorAllRangeTest(bv1);
 
     }
-    
+
+
     {
         bvect bv1, bv2;
         std::vector<unsigned> v1;
@@ -23217,7 +25100,6 @@ void BvectorBitForEachTest()
         v1.reserve(bv1.count());
         
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
-
         if (v1.size() != bv1.count())
         {
             std::cerr << "Bit for each failed size test. " << v1.size()
@@ -23225,7 +25107,6 @@ void BvectorBitForEachTest()
             exit(1);
         }
         bm::combine_or(bv2, v1.begin(), v1.end());
-        
         res = bv2.compare(bv1);
         if (res != 0)
         {
@@ -23237,6 +25118,9 @@ void BvectorBitForEachTest()
         
         v1.resize(0);
         bv2.clear(true);
+
+        VisitorAllRangeTest(bv1, (bvect::size_type)v1.size()/2048);
+
         bv1.optimize();
 
         bm::visit_each_bit(bv1, (void*)&v1, bit_decode_func);
@@ -23255,6 +25139,7 @@ void BvectorBitForEachTest()
             std::cerr << "Bit for each failed comparison test. " << endl;
             exit(1);
         }
+        VisitorAllRangeTest(bv1, (bvect::size_type)v1.size()/3048);
     }
     
     {
@@ -23263,6 +25148,62 @@ void BvectorBitForEachTest()
         RangeForEachTest(bm::id_max/2, bm::id_max/2 + (65536*256));
     }
 
+
+    cout << "Inverted bvector tests..." << endl;
+    {
+        bvect::size_type from(200), to(65536*3+5);
+        for (unsigned pass = 0; pass < 2; ++pass)
+        {
+            assert(from <=to);
+            bvect bv;
+            bv.invert();
+
+            bvect bv1(bv);
+            bv1.keep_range(from, to);
+            bvect bv2;
+            bv2.copy_range(bv, from, to);
+
+
+ //           std::vector<bvect::size_type> v1;
+            bvect bv_c;
+            {
+                bm::bit_vistor_copy_functor<bvect> func(bv_c);
+                bm::for_each_bit_range(bv, from, to, func);
+
+//            bm::visit_each_bit_range(bv, from, to, (void*)&v1, bit_decode_func);
+//            assert(v1.size() == to-from+1);
+//            bm::combine_or(bv_c, v1.begin(), v1.end());
+            }
+//            v1.resize(0);
+
+            bool eq;
+            eq = bv_c.equal(bv1);
+            assert(eq);
+            eq = bv_c.equal(bv2);
+            assert(eq);
+
+            bv_c.clear();
+/*
+            {
+            bm::visit_each_bit_range(bv1, from, to, (void*)&v1, bit_decode_func);
+            assert(v1.size() == to-from+1);
+            bm::combine_or(bv_c, v1.begin(), v1.end());
+            }
+
+            eq = bv_c.equal(bv1);
+            assert(eq);
+            eq = bv_c.equal(bv2);
+            assert(eq);
+*/
+            bv_c.clear();
+
+            to = bm::id_max/2;
+            ++from;
+        }
+    }
+
+    // dsabled for now as it produces excessive memory consumption
+    #if 0
     {
         bvect bv;
         bv.set();
@@ -23274,9 +25215,10 @@ void BvectorBitForEachTest()
         } catch (...)
         {
         }
-
     }
-    
+    #endif 
+    cout << "OK" << endl;
+
     
     cout << "------------------------ bvector BitForEach Test OK" << endl;
 }
@@ -24588,24 +26530,52 @@ static
 void CheckCompressedDecode(const rsc_sparse_vector_u32& csv,
                            unsigned from, unsigned size)
 {
-    std::vector<unsigned> vect;
+    std::vector<unsigned> vect, vect2, vect_tmp;
     vect.resize(size);
+    vect2.resize(size);
+    vect_tmp.resize(size);
     
     unsigned sz = csv.decode(&vect[0], from, size);
-    unsigned ex_idx = 0;
-    for (unsigned i = from; i < from + sz; ++i)
+    unsigned sz2 = csv.decode_buf(&vect2[0], &vect_tmp[0], from, size);
+    assert(sz == sz2);
+
     {
-        unsigned v = csv.get(i);
-        unsigned vx = vect[ex_idx];
-        if (v != vx)
+        rsc_sparse_vector_u32::const_iterator it = csv.get_const_iterator(from);
+
+        unsigned ex_idx = 0;
+        for (unsigned i = from; i < from + sz; ++i)
         {
-            cerr << "compressed vector decode mismatch from="
-                 << from << " idx=" << i
-                 << " v=" << v << " vx=" << vx
-                 << endl;
-            exit(1);
+            unsigned v = csv.get(i);
+            unsigned vx = vect[ex_idx];
+            unsigned vx2 = vect[ex_idx];
+            auto vx_it = *it;
+
+            //rsc_sparse_vector_u32::const_iterator it2 = csv.get_const_iterator(i);
+            //auto vx_it2 = it2.value();
+
+            if (v != vx || v != vx2 || v != vx_it /*|| vx_it != vx_it2*/)
+            {
+                cerr << "compressed vector decode mismatch from="
+                     << from << " i=" << i
+                     << " v=" << v << " vx=" << vx << " vx2=" << vx2
+                     << " vx_it = " << vx_it
+                     << " ex_idx=" << ex_idx
+                     << endl;
+                /*
+                vx_it = *it;
+                rsc_sparse_vector_u32::const_iterator it2 = csv.get_const_iterator(i);
+                vx_it = it2.value();
+
+                std::vector<unsigned> vect3;
+                vect3.resize(1024);
+                csv.decode(&vect3[0], i , 1024);
+                assert(vect3[0] == v);
+                assert(v == vx_it); */
+                assert(0); exit(1);
+            }
+            ++ex_idx;
+            ++it;
         }
-        ++ex_idx;
     }
 }
 
@@ -24742,7 +26712,7 @@ static
 void TestCompressSparseVector()
 {
     cout << " ------------------------------ Test Compressed Sparse Vector " << endl;
-    
+
     {
         rsc_sparse_vector_u32 csv1;
         assert(csv1.size() == 0);
@@ -24752,7 +26722,7 @@ void TestCompressSparseVector()
         rsc_sparse_vector_u32 csv3(csv1);
         assert(csv3.equal(csv2));
     }
-    
+
     {
     cout << "push_back() test" << endl;
     unsigned v, v1;
@@ -24816,6 +26786,36 @@ void TestCompressSparseVector()
         assert(found);
         assert(pos == 21);
 
+    }
+
+    // const_iterator tests
+    {
+        {
+        rsc_sparse_vector_u32 csv1;
+            {
+                rsc_sparse_vector_u32::const_iterator it;
+                assert(!it.valid());
+            }
+        csv1.push_back(0, 100);
+        csv1.push_back(2, 200);
+
+        csv1.sync();
+            {
+                rsc_sparse_vector_u32::const_iterator it(&csv1);
+                rsc_sparse_vector_u32::const_iterator it2(it);
+                assert(it2.valid());
+
+                assert(it.valid());
+                assert(*it == 100);
+                bool b = it.advance();
+                assert(b);
+                assert(*it == 0);
+                assert(it.is_null());
+                ++it;
+                assert(it.valid());
+                assert(it.value() == 200);
+            }
+        }
     }
     
     // back inserter tests
@@ -24948,83 +26948,235 @@ void TestCompressSparseVector()
         assert(csv.get(5) == 0);
     }
 
-    // set stress test
+
+    cout << "inc() and merge_not_null() tests" << endl;
     {
-        cout << "RSC set stress..." << endl;
-        std::vector<std::pair<unsigned, unsigned> > vect;
-        rsc_sparse_vector_u32 csv;
-        
-        const unsigned max_size = 2000000;
-        
-        cout << "Test set generation." << endl;
-        for (unsigned i = 0; i < max_size; i+=2)
-        {
-            std::pair<unsigned, unsigned> pr(i, i+10);
-            vect.push_back(pr);
-        } // for
-        
-        {
-            std::random_device rd;
-            std::mt19937 g(rd());
-            std::shuffle(vect.begin(), vect.end(), g);
-        }
-        
-        cout << "RSC set() " << endl;
-        unsigned i = 0;
-        for (auto rit = vect.rbegin(); rit != vect.rend(); ++rit)
-        {
-            std::pair<unsigned, unsigned> pr = *rit;
-            csv.set(pr.first, pr.second);
-            unsigned v = csv[pr.first];
-            assert(v == pr.second);
+        rsc_sparse_vector_u32::bvector_type bv { 1, 2, 10, 200, bm::id_max/2, bm::id_max-1 };
+        rsc_sparse_vector_u32 csv1(bv);
+        rsc_sparse_vector_u32 csv2(bv);
 
-            if (i % 4096 == 0)
-            {
-                cout << "\r" << pr.first << "/" << max_size << flush;
-                csv.optimize();
-            }
+        csv1.sync(); csv2.sync();
 
-            ++i;
-        } // for
-        
-        cout << "\nRSC verification..." << endl;
-        
-        csv.optimize();
-        csv.sync();
-        i = 0;
-        for (i = 0; i < vect.size(); ++i)
-        {
-            const std::pair<unsigned, unsigned>& pr = vect[i];
-            unsigned v = csv[pr.first];
-            assert(v == pr.second);
-            if (i % 4096 == 0)
-                cout << "\r" << pr.first << "/" << max_size << flush;
-        } // for
-        
-        cout << "\nRSC set null..." << endl;
+        csv1.inc(1);
+        csv1.inc(2, 10);
 
-        i = 0;
-        for (auto rit = vect.rbegin(); rit != vect.rend(); ++rit)
-        {
-            std::pair<unsigned, unsigned> pr = *rit;
-            csv.set_null(pr.first);
-            assert(csv.is_null(pr.first));
-            if (i % 4096 == 0)
-            {
-                cout << "\r" << i << "/" << max_size << flush;
-                csv.optimize();
-            }
-            ++i;
-        } // for
+        csv2.set(200, 7);
+        csv2.inc(bm::id_max/2);
+        csv2.inc(bm::id_max/2, 1);
+        csv2.inc(bm::id_max-1, 255);
 
+        csv1.merge_not_null(csv2);
 
-        
-        cout << "\nOK" << endl;
+        assert(csv1.in_sync());
+
+        assert(csv1.get(1) == 1);
+        assert(csv1.get(2) == 10);
+        assert(csv1.get(200) == 7);
+        assert(csv1.get(bm::id_max/2) == 2);
+        assert(csv1.get(bm::id_max-1) == 255);
     }
-    
+
+    {
+        rsc_sparse_vector_u32::bvector_type bv;
+        bv.set_range(1, 65536*2);
+
+        for (unsigned i = 1; i < 65536*2; ++i)
+        {
+            rsc_sparse_vector_u32 csv1(bv);
+            rsc_sparse_vector_u32 csv2(bv);
+            csv1.sync(); csv2.sync();
+
+            for (unsigned i0 = 1; i0 < i; ++i0)
+            {
+                csv1.set(i0, i0);
+                csv1.inc(i0, i0);
+            }
+            for (unsigned i1 = i+1; i1 < 65536*2; ++i1)
+            {
+                csv2.set(i1, i1);
+                csv2.inc(i1, i1);
+            }
+            csv1.merge_not_null(csv2);
+            assert(csv1.in_sync());
+
+            for (unsigned i0 = 1; i0 < i; ++i0)
+            {
+                assert(csv1.get(i0) == i0*2);
+            }
+            for (unsigned i1 = i+1; i1 < 65536*2; ++i1)
+            {
+                assert(csv1.get(i1) == i1*2);
+            }
+            assert(csv1.get(i) == 0);
+
+            if (i % 100 == 0)
+                cout << "\r" << i << flush;
+
+        } // for
+        cout << endl;
+    }
+
+    cout << "random assignmnet in sync() mode...." << endl;
+    {
+        bvect bv { 10, 20, 100, 200, bm::id_max/2, bm::id_max-1 };
+
+        bvect::size_type first, last, mid;
+        bv.find_range(first, last);
+        mid = first + ((last - first) / 4);
+
+        rsc_sparse_vector_u32 csv1;
+        rsc_sparse_vector_u32 csv2(bv);
+        {
+            bvect::enumerator en = bv.get_enumerator(mid);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                csv1.set(idx, idx);
+                csv1.inc(idx);
+            }
+            en.go_to(0);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                if (idx >= mid)
+                    break;
+                csv1.set(idx, idx);
+                csv1.inc(idx);
+            }
+            assert(!csv1.in_sync());
+        }
+        {
+            csv2.sync();
+            bvect::enumerator en = bv.get_enumerator(mid);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                csv2.set(idx, idx);
+                csv2.inc(idx);
+            }
+
+            en.go_to(0);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                if (idx >= mid)
+                    break;
+                csv2.set(idx, idx);
+                csv2.inc(idx);
+            }
+            assert(csv2.in_sync());
+
+        }
+        bool eq = csv1.equal(csv2);
+        if (!eq)
+        {
+            cerr << "Error: rsc_sparse_vector() add values check failed" << endl;
+            assert(0); exit(1);
+        }
+    }
+
+    cout << "random assignment in sync() mode.... [stress]" << endl;
+    {
+        bvect bv;
+        generate_bvector(bv);
+        bv.optimize();
+
+        bvect::size_type first, last, mid;
+        bv.find_range(first, last);
+        mid = first + ((last - first) / 4);
+
+        rsc_sparse_vector_u32 csv1;
+        rsc_sparse_vector_u32 csv2(bv);
+        {
+            bvect::enumerator en = bv.get_enumerator(mid);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                csv1.set(idx, idx & 0xFF);
+                csv1.inc(idx);
+
+            }
+            csv1.optimize();
+            en.go_to(0);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                if (idx >= mid)
+                    break;
+                csv1.set(idx, idx & 0xFF);
+                csv1.inc(idx);
+            }
+            csv1.optimize();
+        }
+        // sync mode
+        {
+            csv2.sync();
+            bvect::enumerator en = bv.get_enumerator(mid);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                csv2.set(idx, idx & 0xFF);
+                csv2.inc(idx);
+            }
+            assert(csv2.in_sync());
+            csv2.optimize();
+
+            en.go_to(0);
+            for (;en.valid(); ++en)
+            {
+                auto idx = *en;
+                if (idx >= mid)
+                    break;
+                csv2.set(idx, idx & 0xFF);
+                csv2.inc(idx);
+            }
+            assert(csv2.in_sync());
+            csv2.optimize();
+
+        }
+        bool eq = csv1.equal(csv2);
+        if (!eq)
+        {
+            cerr << "Error: rsc_sparse_vector() add values check failed" << endl;
+            assert(0); exit(1);
+        }
+    }
+
     
     {
-    cout << "decode() test" << endl;
+    cout << "decode() tests" << endl;
+
+        {
+            unsigned arr[10];
+            unsigned arr1[10];
+            unsigned arr2[10];
+            rsc_sparse_vector_u32 csv1;
+
+            csv1.push_back(5, 1);
+            csv1.push_back(6, 1);
+            csv1.push_back(8, 2);
+
+            csv1.push_back(100, 4);
+            csv1.sync();
+
+            auto sz = csv1.decode(&arr[0], 100, 1);
+            assert(sz==1);
+            assert(arr[0] == 4);
+
+            auto sz2 = csv1.decode_buf(&arr1[0], &arr2[0], 100, 1);
+            assert(sz2==1);
+            assert(arr1[0] == 4);
+
+
+            csv1.set_null(100);
+            csv1.sync();
+
+            sz = csv1.decode(&arr[0], 100, 1);
+            assert(sz == 0);
+
+            sz2 = csv1.decode_buf(&arr1[0], &arr2[0], 100, 1);
+            assert(sz2==0);
+        }
     
         {
         rsc_sparse_vector_u32 csv1;
@@ -25082,6 +27234,81 @@ void TestCompressSparseVector()
         }
 
         }
+    }
+
+
+    // set stress test
+    {
+        cout << "RSC set stress..." << endl;
+        std::vector<std::pair<unsigned, unsigned> > vect;
+        rsc_sparse_vector_u32 csv;
+
+        const unsigned max_size = 2000000;
+
+        cout << "Test set generation." << endl;
+        for (unsigned i = 0; i < max_size; i+=2)
+        {
+            std::pair<unsigned, unsigned> pr(i, i+10);
+            vect.push_back(pr);
+        } // for
+
+        {
+            std::random_device rd;
+            std::mt19937 g(rd());
+            std::shuffle(vect.begin(), vect.end(), g);
+        }
+
+        cout << "RSC set() " << endl;
+        unsigned i = 0;
+        for (auto rit = vect.rbegin(); rit != vect.rend(); ++rit)
+        {
+            std::pair<unsigned, unsigned> pr = *rit;
+            csv.set(pr.first, pr.second);
+            unsigned v = csv[pr.first];
+            assert(v == pr.second);
+
+            if (i % 4096 == 0)
+            {
+                cout << "\r" << pr.first << "/" << max_size << flush;
+                csv.optimize();
+            }
+
+            ++i;
+        } // for
+
+        cout << "\nRSC verification..." << endl;
+
+        csv.optimize();
+        csv.sync();
+        i = 0;
+        for (i = 0; i < vect.size(); ++i)
+        {
+            const std::pair<unsigned, unsigned>& pr = vect[i];
+            unsigned v = csv[pr.first];
+            assert(v == pr.second);
+            if (i % 4096 == 0)
+                cout << "\r" << pr.first << "/" << max_size << flush;
+        } // for
+
+        cout << "\nRSC set null..." << endl;
+
+        i = 0;
+        for (auto rit = vect.rbegin(); rit != vect.rend(); ++rit)
+        {
+            std::pair<unsigned, unsigned> pr = *rit;
+            csv.set_null(pr.first);
+            assert(csv.is_null(pr.first));
+            if (i % 4096 == 0)
+            {
+                cout << "\r" << i << "/" << max_size << flush;
+                csv.optimize();
+            }
+            ++i;
+        } // for
+
+
+
+        cout << "\nOK" << endl;
     }
 
     {
@@ -25367,6 +27594,8 @@ void TestCompressSparseVectorSerial()
 static
 void TestHeapVector()
 {
+    cout << " ------------------------------ TestHeapVector()" << endl;
+
     {
         bm::heap_vector<bm::id64_t, bvect::allocator_type, true> hv;
         hv.add() = ~10ull;
@@ -25374,6 +27603,7 @@ void TestHeapVector()
         assert(hv[0] == ~10ull);
         assert(hv[1] == ~0ull);
     }
+
     {
         bm::heap_vector<bm::id64_t, bvect::allocator_type, true> hv;
         for (unsigned i = 0; i < 65535; ++i)
@@ -25418,8 +27648,9 @@ void TestHeapVector()
         bm::heap_vector<bvect, bvect::allocator_type, false> hv4;
         hv4.swap(hv3);
         assert(hv3.size() == 0);
-
     }
+
+    cout << " ------------------------------ TestHeapVector() OK" << endl;
 
 }
 
@@ -25634,6 +27865,7 @@ int main(int argc, char *argv[])
 
     if (is_all || is_low_level)
     {
+
         TestRecomb();
 
         OptimGAPTest();
@@ -25676,9 +27908,13 @@ int main(int argc, char *argv[])
          TestBlockLast();
 
          BitForEachTest();
-        
+
          BitCountChangeTest();
          WordCmpTest();
+
+         BitRangeAllSetTest();
+
+         BitForEachRangeFuncTest();
         
         //BitBlockTransposeTest();
     }
@@ -25693,17 +27929,18 @@ int main(int argc, char *argv[])
       
         InterpolativeCodingTest();
         GammaEncoderTest();
+
         GAPCheck();
         SerializationBufferTest();
         TestBasicMatrix();
 
         DynamicMatrixTest();
+
         RSIndexTest();
     }
 
     if (is_all || is_bvbasic)
     {
-
          ExportTest();
          ResizeTest();
 
@@ -25714,9 +27951,13 @@ int main(int argc, char *argv[])
          EmptyBVTest();
          ClearAllTest();
 
+         CountRangeTest();
+
          EnumeratorTest();
 
-         CountRangeTest();
+         Intervals_RangesTest();
+
+         IntervalEnumeratorTest();
 
          KeepRangeTest();
 
@@ -25747,7 +27988,9 @@ int main(int argc, char *argv[])
         ComparisonTest();
 
         BvectorFindFirstDiffTest();
-        
+
+        RankRangeSplitTest();
+
         MutationTest();
         MutationOperationsTest();
         
@@ -25778,7 +28021,6 @@ int main(int argc, char *argv[])
 
     if (is_all || is_bvops)
     {
-
         AndOperationsTest(true); // enable detailed check
         OrOperationsTest(true);
         XorOperationsTest(true);
@@ -25797,6 +28039,7 @@ int main(int argc, char *argv[])
          AggregatorTest();
          StressTestAggregatorOR(100);
          StressTestAggregatorAND(100);
+
          StressTestAggregatorShiftAND(5);
 
     //     StressTestAggregatorSUB(100);

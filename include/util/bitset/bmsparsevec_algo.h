@@ -18,7 +18,7 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 /*! \file bmsparsevec_algo.h
-    \brief Algorithms for sparse_vector<>
+    \brief Algorithms for bm::sparse_vector
 */
 
 #ifndef BM__H__INCLUDED__
@@ -31,6 +31,7 @@ For more information please visit:  http://bitmagic.io
 #include "bmsparsevec.h"
 #include "bmaggregator.h"
 #include "bmbuffer.h"
+#include "bmalgo.h"
 #include "bmdef.h"
 
 #ifdef _MSC_VER
@@ -231,7 +232,7 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
         } // null_proc
     }
 
-    for (unsigned i = 0; mismatch & (i < plains1); ++i)
+    for (unsigned i = 0; mismatch && (i < plains1); ++i)
     {
         typename SV::bvector_type_const_ptr bv1 = sv1.get_plain(i);
         typename SV::bvector_type_const_ptr bv2 = sv2.get_plain(i);
@@ -503,7 +504,7 @@ public:
     /**
         \brief reset sparse vector binding
     */
-    void reset_binding();
+    void reset_binding() BMNOEXCEPT;
 
     /**
         \brief find all sparse vector elements EQ to search value
@@ -709,7 +710,7 @@ protected:
     int compare_str(const SV& sv, size_type idx, const value_type* str);
 
     /// compare sv[idx] with input value
-    int compare(const SV& sv, size_type idx, const value_type val);
+    int compare(const SV& sv, size_type idx, const value_type val) BMNOEXCEPT;
 
 protected:
     sparse_vector_scanner(const sparse_vector_scanner&) = delete;
@@ -1047,7 +1048,7 @@ void set2set_11_transform<SV>::remap(const bvector_type&        bv_in,
             {
                 sv_ptr_->gather(&gb_->buffer_[0], &gb_->gather_idx_[0], buf_cnt, BM_SORTED_UNIFORM);
                 bv_out.set(&gb_->buffer_[0], buf_cnt, BM_SORTED);
-                buf_cnt ^= buf_cnt;
+                buf_cnt = 0;
             }
             nb_old = nb;
             gb_->gather_idx_[buf_cnt++] = idx;
@@ -1061,7 +1062,7 @@ void set2set_11_transform<SV>::remap(const bvector_type&        bv_in,
         {
             sv_ptr_->gather(&gb_->buffer_[0], &gb_->gather_idx_[0], buf_cnt, BM_SORTED_UNIFORM);
             bv_out.set(&gb_->buffer_[0], buf_cnt, bm::BM_SORTED);
-            buf_cnt ^= buf_cnt;
+            buf_cnt = 0;
         }
     } // for en
     if (buf_cnt)
@@ -1157,7 +1158,7 @@ void sparse_vector_scanner<SV>::bind(const SV&  sv, bool sorted)
 //----------------------------------------------------------------------------
 
 template<typename SV>
-void sparse_vector_scanner<SV>::reset_binding()
+void sparse_vector_scanner<SV>::reset_binding() BMNOEXCEPT
 {
     bound_sv_ = 0;
     effective_str_max_ = 0;
@@ -2020,7 +2021,7 @@ int sparse_vector_scanner<SV>::compare_str(const SV& sv,
 template<typename SV>
 int sparse_vector_scanner<SV>::compare(const SV& sv,
                                        size_type idx,
-                                       const value_type val)
+                                       const value_type val) BMNOEXCEPT
 {
     // TODO: implement sentinel elements cache (similar to compare_str())
     return sv.compare(idx, val);

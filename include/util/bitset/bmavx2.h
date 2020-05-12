@@ -223,6 +223,66 @@ bm::id_t avx2_bit_count(const __m256i* BMRESTRICT block,
 }
 
 /*!
+    @brief Calculate population count based on digest
+
+    @return popcnt
+    @ingroup AVX2
+*/
+inline
+bm::id_t avx2_bit_block_count(const bm::word_t* const block,
+                              bm::id64_t digest)
+{
+    bm::id_t count = 0;
+    bm::id64_t* cnt64;
+    BM_AVX2_POPCNT_PROLOG;
+    __m256i cnt = _mm256_setzero_si256();
+    while (digest)
+    {
+        bm::id64_t t = bm::bmi_blsi_u64(digest); // d & -d;
+
+        unsigned wave = _mm_popcnt_u64(t - 1);
+        unsigned off = wave * bm::set_block_digest_wave_size;
+
+        const __m256i* BMRESTRICT wave_src = (__m256i*)&block[off];
+
+        __m256i m1A, m1B, m1C, m1D;
+        m1A = _mm256_load_si256(wave_src);
+        m1B = _mm256_load_si256(wave_src+1);
+        if (!_mm256_testz_si256(m1A, m1A))
+        {
+            BM_AVX2_BIT_COUNT(bc, m1A)
+            cnt = _mm256_add_epi64(cnt, bc);
+        }
+        if (!_mm256_testz_si256(m1B, m1B))
+        {
+            BM_AVX2_BIT_COUNT(bc, m1B)
+            cnt = _mm256_add_epi64(cnt, bc);
+        }
+
+        m1C = _mm256_load_si256(wave_src+2);
+        m1D = _mm256_load_si256(wave_src+3);
+        if (!_mm256_testz_si256(m1C, m1C))
+        {
+            BM_AVX2_BIT_COUNT(bc, m1C)
+            cnt = _mm256_add_epi64(cnt, bc);
+        }
+        if (!_mm256_testz_si256(m1D, m1D))
+        {
+            BM_AVX2_BIT_COUNT(bc, m1D)
+            cnt = _mm256_add_epi64(cnt, bc);
+        }
+
+        digest = bm::bmi_bslr_u64(digest); // d &= d - 1;
+    } // while
+    cnt64 = (bm::id64_t*)&cnt;
+    count = (unsigned)(cnt64[0] + cnt64[1] + cnt64[2] + cnt64[3]);
+    return count;
+
+}
+
+
+
+/*!
   @brief AND bit count for two aligned bit-blocks
   @ingroup AVX2
 */
@@ -1368,6 +1428,20 @@ bool avx2_is_all_one(const __m256i* BMRESTRICT block)
 }
 
 /*!
+    @brief check if wave of pointers is all 0xFFF
+    @ingroup AVX2
+*/
+BMFORCEINLINE
+bool avx2_test_all_one_wave(const void* ptr)
+{
+    __m256i maskF = _mm256_set1_epi32(~0u); // braodcast 0xFF
+   __m256i wcmpA = _mm256_cmpeq_epi8(_mm256_loadu_si256((__m256i*)ptr), maskF); // (w0 == maskF)
+    unsigned maskA = unsigned(_mm256_movemask_epi8(wcmpA));
+    return (maskA == ~0u);
+}
+
+
+/*!
     @brief check if wave of pointers is all NULL
     @ingroup AVX2
 */
@@ -2474,16 +2548,24 @@ int avx2_cmpge_u16(__m256i vect16, unsigned short value)
 }
 
 /**
-    hybrid binary search, starts as binary, then switches to scan
- 
+    Hybrid binary search, starts as binary, then switches to scan
+
     NOTE: AVX code uses _mm256_subs_epu16 - saturated substraction
     which gives 0 if A-B=0 if A < B (not negative a value).
- 
+
+   \param buf - GAP buffer pointer.
+   \param pos - index of the element.
+   \param is_set - output. GAP value (0 or 1).
+   \return GAP index.
+
     @ingroup AVX2
 */
 inline
-unsigned avx2_gap_test(const unsigned short* buf, unsigned pos)
+unsigned avx2_gap_bfind(const unsigned short* BMRESTRICT buf,
+                        unsigned pos, unsigned* BMRESTRICT is_set)
 {
+    BM_ASSERT(is_set);
+
     const unsigned linear_cutoff = 48;
     const unsigned unroll_factor = 16;
 
@@ -2500,8 +2582,9 @@ unsigned avx2_gap_test(const unsigned short* buf, unsigned pos)
         {
             if (buf[start] >= pos)
             {
-                res = ((*buf) & 1) ^ ((--start) & 1);
-                return res;
+                res = ((*buf) & 1) ^ ((start-1) & 1);
+                *is_set = res;
+                return start;
             }
         } // for
         BM_ASSERT(0);
@@ -2516,7 +2599,7 @@ unsigned avx2_gap_test(const unsigned short* buf, unsigned pos)
             // but stay within allocated block memory
             //
             dsize = arr_end - start;
-            
+
             __m256i mZ = _mm256_setzero_si256();
             __m256i mPos  = _mm256_set1_epi16((unsigned short)pos);
             __m256i vect16, mSub, mge_mask;
@@ -2532,8 +2615,9 @@ unsigned avx2_gap_test(const unsigned short* buf, unsigned pos)
                 {
                     int lz = _tzcnt_u32(mask) / 2;
                     start += lz;
-                    res = ((*buf) & 1) ^ ((--start) & 1);
-                    return res;
+                    res = ((*buf) & 1) ^ ((start-1) & 1);
+                    *is_set = res;
+                    return start;
                 }
             } // for k
             unsigned tail = unroll_factor - (end - start);
@@ -2544,22 +2628,19 @@ unsigned avx2_gap_test(const unsigned short* buf, unsigned pos)
                 mSub = _mm256_subs_epu16(mPos, vect16);
                 mge_mask = _mm256_cmpeq_epi16(mSub, mZ);
                 int mask = _mm256_movemask_epi8(mge_mask);
-                BM_ASSERT(mask);
-                // TODO: if should be not needed, cleanup
-                if (mask)
-                {
-                    int lz = _tzcnt_u32(mask) / 2;
-                    start += lz;
-                    res = ((*buf) & 1) ^ ((--start) & 1);
-                    return res;
-                }
-                start += unroll_factor; // remove with if when sure
+                BM_ASSERT(mask); // the rersult MUST be here at this point
+
+                int lz = _tzcnt_u32(mask) / 2;
+                start += lz;
+                res = ((*buf) & 1) ^ ((start-1) & 1);
+                *is_set = res;
+                return start;
             }
             for (; start < end; ++start)
             {
                 if (buf[start] >= pos)
                     break;
-            }
+            } // for
             break;
         }
         unsigned curr = (start + end) >> 1;
@@ -2568,8 +2649,22 @@ unsigned avx2_gap_test(const unsigned short* buf, unsigned pos)
         else
             end = curr;
     } // while
-    res = ((*buf) & 1) ^ ((--start) & 1);
-    return res;
+    res = ((*buf) & 1) ^ ((start-1) & 1);
+    *is_set = res;
+    return start;
+}
+
+
+/**
+    Hybrid binary search, starts as binary, then switches to scan
+    @ingroup AVX2
+*/
+inline
+unsigned avx2_gap_test(const unsigned short* BMRESTRICT buf, unsigned pos)
+{
+    unsigned is_set;
+    bm::avx2_gap_bfind(buf, pos, &is_set);
+    return is_set;
 }
 
 /**
@@ -3023,6 +3118,13 @@ void avx2_bit_block_xor(bm::word_t*  target_block,
 
 #define VECT_BIT_BLOCK_XOR(t, src, src_xor, d) \
     avx2_bit_block_xor(t, src, src_xor, d)
+
+#define VECT_GAP_BFIND(buf, pos, is_set) \
+    avx2_gap_bfind(buf, pos, is_set)
+
+#define VECT_BIT_COUNT_DIGEST(blk, d) \
+    avx2_bit_block_count(blk, d)
+
 
 } // namespace
 

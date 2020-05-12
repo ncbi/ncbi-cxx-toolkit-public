@@ -33,35 +33,35 @@ namespace bm
 class byte_buffer_ptr
 {
 public:
-    byte_buffer_ptr()
+    byte_buffer_ptr() BMNOEXCEPT
         : byte_buf_(0), size_(0)
     {}
     
     /// construct byte buffer pointer
     ///
-    byte_buffer_ptr(unsigned char* in_buf, size_t in_size)
+    byte_buffer_ptr(unsigned char* in_buf, size_t in_size) BMNOEXCEPT
         : byte_buf_(in_buf), size_(in_size)
     {}
     
     /// Set buffer pointer
-    void set_buf(unsigned char* in_buf, size_t in_size)
+    void set_buf(unsigned char* in_buf, size_t in_size) BMNOEXCEPT
     {
         byte_buf_ = in_buf; size_= in_size;
     }
 
     /// Get buffer size
-    size_t size() const { return size_; }
+    size_t size() const BMNOEXCEPT { return size_; }
     
     /// Get read access to buffer memory
-    const unsigned char* buf() const { return byte_buf_; }
+    const unsigned char* buf() const BMNOEXCEPT { return byte_buf_; }
 
     /// Get write access to buffer memory
-    unsigned char* data() { return byte_buf_; }
+    unsigned char* data() BMNOEXCEPT { return byte_buf_; }
 
-    bool operator==(const byte_buffer_ptr& lhs) const { return equal(lhs); }
+    bool operator==(const byte_buffer_ptr& lhs) const BMNOEXCEPT { return equal(lhs); }
     
     /// return true if content and size is the same
-    bool equal(const byte_buffer_ptr& lhs) const
+    bool equal(const byte_buffer_ptr& lhs) const BMNOEXCEPT
     {
         if (this == &lhs)
             return true;
@@ -89,7 +89,7 @@ public:
     typedef size_t                                           size_type;
     
 public:
-    byte_buffer() : capacity_(0), alloc_factor_(0)
+    byte_buffer() BMNOEXCEPT : capacity_(0), alloc_factor_(0)
     {}
     
     byte_buffer(size_t in_capacity)
@@ -98,7 +98,7 @@ public:
         allocate(in_capacity);
     }
     
-    byte_buffer(const byte_buffer& lhs)
+    byte_buffer(const byte_buffer& lhs) BMNOEXCEPT
     {
         byte_buf_ = 0;
         size_ = capacity_ = alloc_factor_ = 0;
@@ -110,7 +110,7 @@ public:
     
 #ifndef BM_NO_CXX11
     /// Move constructor
-    byte_buffer(byte_buffer&& in_buf) BMNOEXEPT
+    byte_buffer(byte_buffer&& in_buf) BMNOEXCEPT
     {
         byte_buf_ = in_buf.byte_buf_;
         in_buf.byte_buf_ = 0;
@@ -121,14 +121,14 @@ public:
     }
     
     /// Move assignment operator
-    byte_buffer& operator=(byte_buffer&& lhs) BMNOEXEPT
+    byte_buffer& operator=(byte_buffer&& lhs) BMNOEXCEPT
     {
         move_from(lhs);
         return *this;
     }
 #endif
 
-    byte_buffer& operator=(const byte_buffer& lhs)
+    byte_buffer& operator=(const byte_buffer& lhs) BMNOEXCEPT
     {
         if (this == &lhs)
             return *this;
@@ -143,7 +143,7 @@ public:
     }
     
     /// swap content with another buffer
-    void swap(byte_buffer& other) BMNOEXEPT
+    void swap(byte_buffer& other) BMNOEXCEPT
     {
         if (this == &other)
             return;
@@ -157,7 +157,7 @@ public:
     }
     
     /// take/move content from another buffer
-    void move_from(byte_buffer& other) BMNOEXEPT
+    void move_from(byte_buffer& other) BMNOEXCEPT
     {
         if (this == &other)
             return;
@@ -190,7 +190,7 @@ public:
     
     
     /// Get buffer capacity
-    size_t capacity() const { return capacity_; }
+    size_t capacity() const BMNOEXCEPT { return capacity_; }
 
     /// adjust current size (buffer content preserved)
     void resize(size_t new_size, bool copy_content = true)
@@ -213,6 +213,11 @@ public:
     {
         if (new_capacity <= capacity_)
             return;
+        if (!capacity_)
+        {
+            allocate(new_capacity);
+            return;
+        }
         
         byte_buffer tmp_buffer(new_capacity);
         tmp_buffer = *this;
@@ -247,7 +252,7 @@ public:
     }
     
     /// return memory consumtion
-    size_t mem_usage() const
+    size_t mem_usage() const BMNOEXCEPT
     {
         return sizeof(capacity_) + sizeof(alloc_factor_) +
                capacity();
@@ -258,7 +263,7 @@ private:
     void set_buf(unsigned char* buf, size_t size);
 
     /// compute number of words for the desired capacity
-    static size_t compute_words(size_t capacity)
+    static size_t compute_words(size_t capacity) BMNOEXCEPT
     {
         size_t words = (capacity / sizeof(bm::word_t))+1;
         return words;
@@ -307,10 +312,8 @@ public:
     typedef Val                                              value_type;
     typedef typename buffer_type::size_type                  size_type;
 
-    heap_vector()
-        : buffer_()    
-    {
-    }
+    heap_vector() BMNOEXCEPT : buffer_()
+    {}
 
     heap_vector(const heap_vector<Val, BVAlloc, trivial_type>& hv)
         : buffer_()
@@ -359,14 +362,14 @@ public:
         }
     }
     
-    value_type* data() { return (value_type*) buffer_.data(); }
+    value_type* data() BMNOEXCEPT { return (value_type*) buffer_.data(); }
 
-    void swap(heap_vector<Val, BVAlloc, trivial_type>& other) BMNOEXEPT
+    void swap(heap_vector<Val, BVAlloc, trivial_type>& other) BMNOEXCEPT
     {
         buffer_.swap(other.buffer_);
     }
 
-    const value_type& operator[](size_type pos) const
+    const value_type& operator[](size_type pos) const BMNOEXCEPT
     {
         BM_ASSERT(pos < size());
         size_type v_size = value_size();
@@ -374,7 +377,7 @@ public:
         return *reinterpret_cast<const value_type*>(p);
     }
 
-    value_type& operator[](size_type pos)
+    value_type& operator[](size_type pos) BMNOEXCEPT
     {
         BM_ASSERT(pos < size());
         size_type v_size = value_size();
@@ -393,22 +396,22 @@ public:
         return *reinterpret_cast<value_type*>(p);
     }
     
-    const value_type* begin() const
+    const value_type* begin() const BMNOEXCEPT
     {
         return (const value_type*) buffer_.buf();
     }
 
-    size_type size() const
+    size_type size() const BMNOEXCEPT
     {
         return buffer_.size() / value_size();
     }
 
-    size_type capacity() const
+    size_type capacity() const BMNOEXCEPT
     {
         return buffer_.capacity() / value_size();
     }
 
-    bool empty() const
+    bool empty() const BMNOEXCEPT
     {
         return (buffer_.size() == 0);
     }
@@ -492,7 +495,7 @@ protected:
         buffer_.resize(new_size * v_size);
     }
 
-    static size_type value_size()
+    static size_type value_size() BMNOEXCEPT
     {
         size_type size_of = sizeof(value_type);
         return size_of;
@@ -537,13 +540,13 @@ public:
         row_size_in_bytes = sizeof(value_type) * COLS
     };
 
-    static size_t rows() { return ROWS; }
-    static size_t cols() { return COLS; }
+    static size_t rows() BMNOEXCEPT { return ROWS; }
+    static size_t cols() BMNOEXCEPT { return COLS; }
 
     /**
         By default object is constructed NOT allocated.
     */
-    heap_matrix()
+    heap_matrix() BMNOEXCEPT
         : buffer_()
     {}
 
@@ -565,12 +568,12 @@ public:
         buffer_.resize(size_in_bytes);
     }
     
-    bool is_init() const
+    bool is_init() const BMNOEXCEPT
     {
         return buffer_.size();
     }
 
-    value_type get(size_type row_idx, size_type col_idx) const
+    value_type get(size_type row_idx, size_type col_idx) const BMNOEXCEPT
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(col_idx < COLS);
@@ -579,7 +582,7 @@ public:
         return ((const value_type*)buf)[col_idx];
     }
 
-    const value_type* row(size_type row_idx) const
+    const value_type* row(size_type row_idx) const BMNOEXCEPT
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(buffer_.size());
@@ -587,7 +590,7 @@ public:
         return (const value_type*) buf;
     }
 
-    value_type* row(size_type row_idx)
+    value_type* row(size_type row_idx) BMNOEXCEPT
     {
         BM_ASSERT(row_idx < ROWS);
         BM_ASSERT(buffer_.size());
@@ -597,21 +600,21 @@ public:
     }
 
     /** memset all buffer to all zeroes */
-    void set_zero()
+    void set_zero() BMNOEXCEPT
     {
         ::memset(buffer_.data(), 0, size_in_bytes);
     }
     
     /*!  swap content
     */
-    void swap(heap_matrix& other) BMNOEXEPT
+    void swap(heap_matrix& other) BMNOEXCEPT
     {
         buffer_.swap(other.buffer_);
     }
     
     /*!  move content from another matrix
     */
-    void move_from(heap_matrix& other) BMNOEXEPT
+    void move_from(heap_matrix& other) BMNOEXCEPT
     {
         buffer_.move_from(other.buffer_);
     }
@@ -624,7 +627,7 @@ public:
     /*! remapping: vect[idx] = matrix[idx, vect[idx] ]
     */
     template<typename VECT_TYPE>
-    void remap(VECT_TYPE* vect, size_type size) const
+    void remap(VECT_TYPE* vect, size_type size) const BMNOEXCEPT
     {
         BM_ASSERT(size <= ROWS);
         const unsigned char* buf = buffer_.buf();
@@ -641,7 +644,7 @@ public:
     /*! zero-terminated remap: vect[idx] = matrix[idx, vect[idx] ]
     */
     template<typename VECT_TYPE>
-    void remapz(VECT_TYPE* vect) const
+    void remapz(VECT_TYPE* vect) const BMNOEXCEPT
     {
         const unsigned char* buf = buffer_.buf();
         for (size_type i = 0; i < ROWS; ++i)
@@ -704,12 +707,12 @@ public:
         buffer_.resize(size_in_bytes());
     }
     
-    bool is_init() const
+    bool is_init() const BMNOEXCEPT
     {
         return buffer_.size();
     }
 
-    const value_type* row(size_type row_idx) const
+    const value_type* row(size_type row_idx) const BMNOEXCEPT
     {
         BM_ASSERT(row_idx < rows_);
         BM_ASSERT(buffer_.size());
@@ -717,7 +720,7 @@ public:
         return (const value_type*) buf;
     }
 
-    value_type* row(size_type row_idx)
+    value_type* row(size_type row_idx) BMNOEXCEPT
     {
         BM_ASSERT(row_idx < rows_);
         BM_ASSERT(buffer_.size());
@@ -726,15 +729,31 @@ public:
         return (value_type*)buf;
     }
 
+    value_type get(size_type row_idx, size_type col_idx) BMNOEXCEPT
+    {
+        BM_ASSERT(row_idx < rows_);
+        BM_ASSERT(col_idx < cols_);
+        const value_type* r = row(row_idx);
+        return r[col_idx];
+    }
+
+    void set(size_type row_idx, size_type col_idx, value_type v) BMNOEXCEPT
+    {
+        BM_ASSERT(row_idx < rows_);
+        BM_ASSERT(col_idx < cols_);
+        value_type* r = row(row_idx);
+        r[col_idx] = v;
+    }
+
     /** memset all buffer to all zeroes */
-    void set_zero()
+    void set_zero() BMNOEXCEPT
     {
         ::memset(buffer_.data(), 0, size_in_bytes());
     }
     
     /*!  swap content
     */
-    void swap(dynamic_heap_matrix& other) BMNOEXEPT
+    void swap(dynamic_heap_matrix& other) BMNOEXCEPT
     {
         bm::xor_swap(rows_, other.rows_);
         bm::xor_swap(cols_, other.cols_);
@@ -743,7 +762,7 @@ public:
     
     /*!  move content from another matrix
     */
-    void move_from(dynamic_heap_matrix& other) BMNOEXEPT
+    void move_from(dynamic_heap_matrix& other) BMNOEXCEPT
     {
         rows_ = other.rows_;
         cols_ = other.cols_;
@@ -751,16 +770,46 @@ public:
     }
 
     /** Get low-level buffer access */
-    buffer_type& get_buffer() { return buffer_; }
+    buffer_type& get_buffer() BMNOEXCEPT { return buffer_; }
     /** Get low-level buffer access */
-    const buffer_type& get_buffer() const { return buffer_; }
+    const buffer_type& get_buffer() const BMNOEXCEPT { return buffer_; }
+
+    /**
+        copy values of the left triangle elements to the right triangle
+        (operation specific to matrices with symmetric distances)
+     */
+    void replicate_triange() BMNOEXCEPT
+    {
+        BM_ASSERT(rows_ == cols_);
+        for (size_type i = 0; i < rows_; ++i)
+        {
+            for (size_type j = i+1; j < cols_; ++j)
+            {
+                set(i, j, get(j, i));
+            }
+        }
+    }
+    /**
+        Sum of row elements
+     */
+    template<typename ACC>
+    void sum(ACC& acc, size_type row_idx) const BMNOEXCEPT
+    {
+        BM_ASSERT(row_idx < rows_);
+        ACC s = 0;
+        const value_type* r = row(row_idx);
+        for (size_type j = 0; j < cols_; ++j)
+            s += r[j];
+        acc = s;
+    }
 
 protected:
-    size_type size_in_bytes() const
+
+    size_type size_in_bytes() const BMNOEXCEPT
     {
         return sizeof(value_type) * cols_ * rows_;
     }
-    size_type row_size_in_bytes() const
+    size_type row_size_in_bytes() const BMNOEXCEPT
     {
         return sizeof(value_type) * cols_;
     }

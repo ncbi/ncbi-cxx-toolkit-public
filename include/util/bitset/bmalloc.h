@@ -73,13 +73,10 @@ public:
         ptr = (bm::word_t*) ::_mm_malloc(n * sizeof(bm::word_t), BM_ALLOC_ALIGN);
     #endif
 #else
-            ptr = (bm::word_t*) ::malloc(n * sizeof(bm::word_t));
+        ptr = (bm::word_t*) ::malloc(n * sizeof(bm::word_t));
 #endif
-
         if (!ptr)
-        {
             throw std::bad_alloc();
-        }
         return ptr;
     }
 
@@ -87,7 +84,7 @@ public:
     The member function frees storage for an array of n bm::word_t 
     elements, by calling free. 
     */
-    static void deallocate(bm::word_t* p, size_t)
+    static void deallocate(bm::word_t* p, size_t) BMNOEXCEPT
     {
 #ifdef BM_ALLOC_ALIGN
     # ifdef _MSC_VER
@@ -120,9 +117,7 @@ public:
     {
         void* ptr = ::malloc(n * sizeof(void*));
         if (!ptr)
-        {
             throw std::bad_alloc();
-        }
         return ptr;
     }
 
@@ -130,7 +125,7 @@ public:
     The member function frees storage for an array of n bm::word_t 
     elements, by calling free. 
     */
-    static void deallocate(void* p, size_t)
+    static void deallocate(void* p, size_t) BMNOEXCEPT
     {
         ::free(p);
     }
@@ -147,7 +142,7 @@ public:
         n_pool_max_size = BM_DEFAULT_POOL_SIZE
     };
 
-    pointer_pool_array() : size_(0) 
+    pointer_pool_array() : pool_ptr_(0), size_(0) 
     {
         allocate_pool(n_pool_max_size);
     }
@@ -164,7 +159,7 @@ public:
     /// Push pointer to the pool (if it is not full)
     ///
     /// @return 0 if pointer is not accepted (pool is full)
-    unsigned push(void* ptr)
+    unsigned push(void* ptr) BMNOEXCEPT
     {
         if (size_ == n_pool_max_size - 1)
             return 0;
@@ -174,21 +169,22 @@ public:
 
     /// Get a pointer if there are any vacant
     ///
-    void* pop()
+    void* pop() BMNOEXCEPT
     {
-        if (size_ == 0)
+        if (!size_)
             return 0;
         return pool_ptr_[--size_];
     }
 private:
     void allocate_pool(size_t pool_size)
     {
+        BM_ASSERT(!pool_ptr_);
         pool_ptr_ = (void**)::malloc(sizeof(void*) * pool_size);
         if (!pool_ptr_)
             throw std::bad_alloc();
     }
 
-    void free_pool()
+    void free_pool() BMNOEXCEPT
     {
         ::free(pool_ptr_);
     }
@@ -218,21 +214,19 @@ public:
     bm::word_t* alloc_bit_block()
     {
         bm::word_t* ptr = (bm::word_t*)block_pool_.pop();
-        if (ptr == 0)
+        if (!ptr)
             ptr = block_alloc_.allocate(bm::set_block_size, 0);
         return ptr;
     }
     
-    void free_bit_block(bm::word_t* block)
+    void free_bit_block(bm::word_t* block) BMNOEXCEPT
     {
         BM_ASSERT(IS_VALID_ADDR(block));
         if (!block_pool_.push(block))
-        {
             block_alloc_.deallocate(block, bm::set_block_size);
-        }
     }
 
-    void free_pools()
+    void free_pools() BMNOEXCEPT
     {
         bm::word_t* block;
         do
@@ -267,19 +261,19 @@ public:
 
 public:
 
-    mem_alloc(const BA& block_alloc = BA(), const PA& ptr_alloc = PA())
+    mem_alloc(const BA& block_alloc = BA(), const PA& ptr_alloc = PA()) BMNOEXCEPT
     : block_alloc_(block_alloc),
       ptr_alloc_(ptr_alloc),
       alloc_pool_p_(0)
     {}
 
-    mem_alloc(const mem_alloc& ma)
+    mem_alloc(const mem_alloc& ma) BMNOEXCEPT
         : block_alloc_(ma.block_alloc_),
           ptr_alloc_(ma.ptr_alloc_),
           alloc_pool_p_(0) // do not inherit pool (has to be explicitly defined)
     {}
 
-    mem_alloc& operator=(const mem_alloc& ma)
+    mem_alloc& operator=(const mem_alloc& ma) BMNOEXCEPT
     {
         block_alloc_ = ma.block_alloc_;
         ptr_alloc_ = ma.ptr_alloc_;
@@ -289,26 +283,26 @@ public:
     
     /*! @brief Returns copy of the block allocator object
     */
-    block_allocator_type get_block_allocator() const 
+    block_allocator_type get_block_allocator() const BMNOEXCEPT
     { 
         return BA(block_alloc_); 
     }
 
     /*! @brief Returns copy of the ptr allocator object
     */
-    ptr_allocator_type get_ptr_allocator() const 
+    ptr_allocator_type get_ptr_allocator() const BMNOEXCEPT
     { 
        return PA(block_alloc_); 
     }
 
     /*! @brief set pointer to external pool */
-    void set_pool(allocator_pool_type* pool)
+    void set_pool(allocator_pool_type* pool) BMNOEXCEPT
     {
         alloc_pool_p_ = pool;
     }
 
     /*! @brief get pointer to allocation pool (if set) */
-    allocator_pool_type* get_pool()
+    allocator_pool_type* get_pool() BMNOEXCEPT
     {
         return alloc_pool_p_;
     }
@@ -328,7 +322,7 @@ public:
 
     /*! @brief Frees bit block allocated by alloc_bit_block.
     */
-    void free_bit_block(bm::word_t* block, unsigned alloc_factor = 1)
+    void free_bit_block(bm::word_t* block, unsigned alloc_factor = 1) BMNOEXCEPT
     {
         BM_ASSERT(IS_VALID_ADDR(block));
         if (alloc_pool_p_ && alloc_factor == 1)
@@ -377,7 +371,7 @@ public:
 
     /*! @brief Frees block of pointers.
     */
-    void free_ptr(void* p, size_t size)
+    void free_ptr(void* p, size_t size) BMNOEXCEPT
     {
         if (p)
             ptr_alloc_.deallocate(p, size);
@@ -427,7 +421,7 @@ void* aligned_new_malloc(size_t size)
 ///
 /// @internal
 inline
-void aligned_free(void* ptr)
+void aligned_free(void* ptr) BMNOEXCEPT
 {
     if (!ptr)
         return;

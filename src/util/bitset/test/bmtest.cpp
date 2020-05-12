@@ -29,7 +29,6 @@ For more information please visit:  http://bitmagic.io
 //#define BMSSE42OPT
 //#define BMAVX2OPT
 
-
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4996)
@@ -41,11 +40,13 @@ For more information please visit:  http://bitmagic.io
 
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 #include <util/bitset/ncbi_bitset_util.hpp>
+#include <util/bitset/bmintervals.h>
 #include <util/bitset/bmaggregator.h>
 #include <util/bitset/bmsparsevec.h>
 #include <util/bitset/bmsparsevec_algo.h>
 #include <util/bitset/bmsparsevec_serial.h>
 #include <util/bitset/bmstrsparsevec.h>
+#include <util/bitset/bmsparsevec_compr.h>
 #include <util/bitset/bmrandom.h>
 
 //#include <util/bitset/bmdbg.h>
@@ -391,20 +392,23 @@ void BitForEachTest()
         }
     }
     }
-    
+
+    // disabled (very slow)
+    #if 0
     if (platform_test)
     {
-    unsigned bit_list[32];
-    TimeTaker tt("BitList4 algorithm(sub-octet+switch)", REPEATS*20);
+        unsigned bit_list[32];
+        TimeTaker tt("BitList4 algorithm(sub-octet+switch)", REPEATS*20);
 
-    for (unsigned i = 0; i < REPEATS*100; ++i)
-    {    
-        for (unsigned j = 0; j < 65536; ++j)
+        for (unsigned i = 0; i < REPEATS*100; ++i)
         {
-            bm::bit_list_4(i*test_arr[j], bit_list);
+            for (unsigned j = 0; j < 65536; ++j)
+            {
+                bm::bit_list_4(i*test_arr[j], bit_list);
+            }
         }
     }
-    }
+    #endif
 
     {
         unsigned bit_list[32];
@@ -1292,10 +1296,13 @@ void SerializationTest()
         id_size += cnt * (unsigned)sizeof(unsigned);
     }
     }
-    
-    char cbuf[256];
+
+
+    char cbuf[256] = {0, };
+    sprintf(cbuf, "%u", value);
+    /*
     cout << cbuf << " " << id_size << " " << len << " " << value << endl;
-    
+    */
     
     
     delete bv;
@@ -2108,9 +2115,11 @@ void BitBlockShiftTest()
 
     {
         TimeTaker tt("Bit-block shift-r(1)", repeats);
-        for (i = 0; i < repeats; ++i)
         {
-            bm::bit_block_shift_r1(blk0, &acc0, 0);
+            for (i = 0; i < repeats; ++i)
+            {
+                bm::bit_block_shift_r1(blk0, &acc0, 0);
+            }
         }
     }
 
@@ -2220,16 +2229,18 @@ void ptest()
 typedef bm::sparse_vector<unsigned, bvect> svect;
 typedef bm::sparse_vector<unsigned, bvect> sparse_vector_u32;
 
+typedef bm::sparse_vector<unsigned, bvect > sparse_vector_u32;
+typedef bm::sparse_vector<unsigned long long, bvect > sparse_vector_u64;
+typedef bm::rsc_sparse_vector<unsigned, sparse_vector_u32> rsc_sparse_vector_u32;
+
+
 // create a benchmark svector with a few dufferent distribution patterns
 //
 static
 void FillSparseIntervals(svect& sv)
 {
     sv.resize(250000000);
-    
     unsigned i;
-    
-
     for (i = 256000; i < 712000 * 2; ++i)
     {
         sv.set(i, 0xFFE);
@@ -2238,17 +2249,29 @@ void FillSparseIntervals(svect& sv)
     {
         sv.set(i, i);
     }
-    
     for (i = 180000000; i < 190000000; ++i)
     {
         sv.set(i, rand() % 128000);
     }
-    
     for (i = 200000000; i < 210000000; ++i)
     {
         sv.set(i, rand() % 128000);
     }
+}
 
+template<class SV>
+void FillSparseNullVector(SV& sv, typename SV::size_type size,
+                          unsigned data_size, unsigned null_factor)
+{
+    typename SV::size_type i = 0;
+    for (; i < size; i+= null_factor)
+    {
+        typename SV::size_type k = 0;
+        for (;k < data_size; ++k, ++i)
+        {
+            sv[i] = 0x0DFA;
+        } // for k
+    } // for i
 }
 
 static
@@ -2328,6 +2351,8 @@ void SparseVectorAccessTest()
     }
     std::vector<unsigned> target_v;
     target_v.resize(idx.size());
+    std::vector<unsigned> target_v2;
+    target_v2.resize(idx.size());
 
     {
         TimeTaker tt("sparse_vector random element access test", REPEATS/10 );
@@ -2342,24 +2367,32 @@ void SparseVectorAccessTest()
     }
 
     {
-        TimeTaker tt("sparse_vectot<>::gather() ", REPEATS/10 );
+        TimeTaker tt("sparse_vectot<>::gather() ", REPEATS/5 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
         }
     }
-/*
 
     {
-        TimeTaker tt("sparse_vector extract test", REPEATS );
-        for (unsigned i = 0; i < REPEATS/10; ++i)
+        TimeTaker tt("sparse_vector<>::decode()", REPEATS / 5);
+        auto from = gather_from;
+        for (unsigned i = 0; i < REPEATS / 10; ++i)
         {
-            unsigned target_off = gather_to - gather_from;
-            sv1.extract(&target1[0], sv1.size());
-            //sv1.extract(&target[0], 256000, target_off);
+            auto dsize = sv1.decode(target_v2.data(), gather_from, (unsigned)idx.size(), (i == 0));
+            from += (dsize % 123);
         }
     }
-*/
+
+    {
+        if (target_v != target_v2)
+        {
+            std::cerr << "gather-decode check failed" << endl;
+            exit(1);
+        }
+    }
+
+
     {
         TimeTaker tt("sparse_vector const_iterator test", REPEATS );
         for (unsigned i = 0; i < REPEATS/10; ++i)
@@ -2374,6 +2407,7 @@ void SparseVectorAccessTest()
             }
         }
     }
+
 /*
     // check just in case
     //
@@ -2395,6 +2429,174 @@ void SparseVectorAccessTest()
     sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
 
 }
+
+void RSC_SparseVectorFillTest()
+{
+    bvect bv;// { 10, 20, 100, 200 };
+
+    generate_bvector(bv, 4000000);
+    bvect::size_type first, last, mid;
+    bv.find_range(first, last);
+    mid = first + ((last - first) / 4);
+
+
+    rsc_sparse_vector_u32 csv1;
+    rsc_sparse_vector_u32 csv2(bv);
+
+    {
+        TimeTaker tt("rsc_sparse_vector() set values", REPEATS*1);
+
+        bvect::enumerator en = bv.get_enumerator(mid);
+        for (;en.valid(); ++en)
+        {
+            auto idx = *en;
+            csv1.set(idx, 40);
+        }
+        en.go_to(0);
+        for (;en.valid(); ++en)
+        {
+            auto idx = *en;
+            if (idx >= mid)
+                break;
+            csv1.set(idx, 40);
+        }
+    }
+
+    {
+        TimeTaker tt("rsc_sparse_vector() set values (rs-index)", REPEATS*1);
+        csv2.sync();
+
+        bvect::enumerator en = bv.get_enumerator(mid);
+        for (;en.valid(); ++en)
+        {
+            auto idx = *en;
+            csv2.set(idx, 40);
+        }
+
+        en.go_to(0);
+        for (;en.valid(); ++en)
+        {
+            auto idx = *en;
+            if (idx >= mid)
+                break;
+            csv2.set(idx, 40);
+        }
+
+    }
+
+    bool eq = csv1.equal(csv2);
+    if (!eq)
+    {
+        cerr << "Error: rsc_sparse_vector() set values check failed" << endl;
+        assert(0); exit(1);
+    }
+
+}
+
+void RSC_SparseVectorAccesTest()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    unsigned test_size = 250000000;
+    unsigned dec_size = 65536 * 3;
+
+    std::vector<unsigned> vect, vect1, vect2;
+    vect.resize(dec_size);
+    vect1.resize(dec_size);
+    vect2.resize(dec_size);
+
+
+    sparse_vector_u32   sv1(bm::use_null);
+    rsc_sparse_vector_u32::size_type sz, sz1;
+
+
+    FillSparseNullVector(sv1, test_size, 2, 150);
+    {
+        rsc_sparse_vector_u32 csv1;
+        csv1.load_from(sv1);
+        csv1.optimize(tb);
+        sv1.clear();
+
+        {
+            TimeTaker tt("rsc_sparse_vector()::decode() test (sparse)", REPEATS*10 );
+            unsigned from = 0;
+            for (unsigned i = 0; i < REPEATS*10; ++i)
+            {
+                sz = csv1.decode(&vect[0], from, dec_size);
+                assert(sz); (void)sz;
+                from += 3;//rand() % dec_size;
+                if (from > csv1.size())
+                    from = 0;
+            } // for
+        }
+        {
+            TimeTaker tt("rsc_sparse_vector()::decode_buf() test (sparse)", REPEATS*10 );
+            unsigned from = 0;
+            for (unsigned i = 0; i < REPEATS*10; ++i)
+            {
+                sz1 = csv1.decode_buf(&vect1[0], &vect2[0], from, dec_size);
+                assert(sz); (void)sz;
+                from += 3;//rand() % dec_size;
+                if (from > csv1.size())
+                    from = 0;
+            } // for
+        }
+        assert (sz == sz1);
+        for (unsigned i = 0; i < sz; ++i)
+        {
+            auto v = vect[i];
+            auto v1 = vect1[i];
+            assert(v == v1);
+        }
+
+    }
+
+    FillSparseNullVector(sv1, test_size, 64, 5);
+    {
+        rsc_sparse_vector_u32 csv1;
+        csv1.load_from(sv1);
+        csv1.optimize(tb);
+        sv1.clear();
+
+        {
+            TimeTaker tt("rsc_sparse_vector<>::decode() test (dense)", REPEATS*10 );
+            unsigned from = 0;
+            for (unsigned i = 0; i < REPEATS*10; ++i)
+            {
+                sz = csv1.decode(&vect[0], from, dec_size);
+
+                assert(sz);(void)sz;
+                from += 7; // rand() % dec_size;
+                if (from > csv1.size())
+                    from = 0;
+            } // for
+        }
+        {
+            TimeTaker tt("rsc_sparse_vector()::decode_buf() test (dense)", REPEATS*10 );
+            unsigned from = 0;
+            for (unsigned i = 0; i < REPEATS*10; ++i)
+            {
+                sz1 = csv1.decode_buf(&vect1[0], &vect2[0], from, dec_size);
+                assert(sz); (void)sz;
+                from += 7; // rand() % dec_size;
+                if (from > csv1.size())
+                    from = 0;
+            } // for
+        }
+        assert (sz == sz1);
+        for (unsigned i = 0; i < sz; ++i)
+        {
+            assert(vect[i] == vect1[i]);
+        }
+
+    }
+
+
+
+}
+
+
+
 
 static
 void OptimizeTest()
@@ -2772,6 +2974,332 @@ void RangeCopyTest()
 
 }
 
+/// Reference (naive) interval detector based on population counting 
+/// and boundaries tests
+///
+template<typename BV>
+bool test_interval(const BV& bv,
+        typename BV::size_type left, typename BV::size_type right) noexcept
+{
+    if (left > right)
+        bm::xor_swap(left, right); // make sure left <= right
+    bool is_left(0), is_right(0);
+    if (left) // check left-1 bit (if exists)
+        is_left = bv.test(left - 1);
+    if ((is_left == false) && (right < bm::id_max - 1))
+        is_right = bv.test(right + 1); // check [...right] range condition
+    if (is_left == false && is_right == false)
+    {
+        typename BV::size_type cnt = bv.count_range(left, right);
+        if (cnt == (1 + right - left))
+            return true;
+    }
+    return false;
+}
+
+static
+void IntervalsTest()
+{
+    const unsigned vect_max = BSIZE * 2;
+    bvect bv, bv_inv;
+
+    // generate the test vector
+    {
+        bool b;
+        bvect::size_type istart(0), ilen(0);
+        bvect::bulk_insert_iterator iit(bv);
+        for (istart = 0; istart < vect_max; )
+        {
+            for (bvect::size_type i = istart; i <= (istart+ilen); ++i)
+            {
+                iit = i;
+            } // for i
+            iit.flush();
+
+            ilen += 1;
+            b = bv.test(istart + ilen);
+            assert(!b);
+            istart += (ilen + 2);
+            if (ilen > 1024)
+                ilen = 0;
+            
+        } // for istart
+    }
+    bv_inv = bv;
+    bv_inv.invert();
+    //auto cnt = bm::count_intervals(bv);
+    //cout << cnt << endl;
+
+    const char* msg = "bvector<>::is_all_one_range() (BITS)";
+    const char* msg2 = "bvector<>::any_range() (BITS)";
+    const char* msg3 = "bvector<>::count_range() (BITS)";
+    const char* msg4 = "bvector<>::is_interval() (BITS)";
+    const char* msg5 = "reference_is_interval() (BITS)";
+    const char* msg6 = "bvector<>::find_interval_start() (BITS)";
+    const char* msg7 = "bvector<>::find_interval_end() (BITS)";
+    const char* msg8 = "interval_enumerator<> (BITS)";
+    const char* msg9 = "bvector<>::enumerator (BITS)";
+
+    for (unsigned pass = 0; pass < 2; ++pass)
+    {
+        {
+            TimeTaker tt(msg3, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart + ilen); ++i)
+                {
+                    auto cnt = bv.count_range(istart, i);
+                    if (!cnt)
+                    {
+                        cerr << "Errro: count_range test failed! (1)" << endl;
+                        assert(0); exit(1);
+                    }
+                    auto icnt = bv_inv.count_range(istart, i);
+                    if (icnt)
+                    {
+                        cerr << "Errro: count_range test failed! (2)" << endl;
+                        assert(0); exit(1);
+                    }
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        {
+            TimeTaker tt(msg, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart+ilen); ++i)
+                {
+                    bool all_one = bv.is_all_one_range(istart, i);
+                    if (!all_one)
+                    {
+                        cerr << "Errro: is_all_one_range test failed! (1)" << endl;
+                        assert(0); exit(1);
+                    }
+                    all_one = bv_inv.is_all_one_range(istart, i);
+                    if (all_one)
+                    {
+                        cerr << "Errro: is_all_one_range test failed! (2)" << endl;
+                        assert(0); exit(1);
+                    }
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        {
+            TimeTaker tt(msg4, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart + ilen); ++i)
+                {
+                    bool is_int = bm::is_interval(bv, istart, i);
+                    if (!is_int)
+                    {
+                        if (i == istart + ilen)
+                        {
+                            cerr << "Error: is_interval test failed! (1)" << endl;
+                            is_int = bm::is_interval(bv, istart, i);
+                            assert(0); exit(1);
+                        }
+                    }
+                    else
+                    {
+                        assert(i == istart + ilen);
+                    }
+
+                    is_int = bm::is_interval(bv_inv, istart, i);
+                    if (is_int)
+                    {
+                        cerr << "Errro: is_interval test failed! (2)" << endl;
+                        assert(0); exit(1);
+                    }
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        {
+            TimeTaker tt(msg5, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart + ilen); ++i)
+                {
+                    bool is_int = test_interval(bv, istart, i);
+                    if (!is_int)
+                    {
+                        if (i == istart + ilen)
+                        {
+                            cerr << "Error: test_interval test failed! (1)" << endl;
+                            assert(0); exit(1);
+                        }
+                    }
+                    else
+                    {
+                        assert(i == istart + ilen);
+                    }
+                    is_int = test_interval(bv_inv, istart, i);
+                    if (is_int)
+                    {
+                        cerr << "Errro: test_interval test failed! (2)" << endl;
+                        assert(0); exit(1);
+                    }
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        {
+            TimeTaker tt(msg2, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart+ilen); ++i)
+                {
+                    bool any_one = bv.any_range(istart, i);
+                    if (!any_one)
+                    {
+                        cerr << "Errro: any_range test failed! (1)" << endl;
+                        assert(0); exit(1);
+                    }
+                    any_one = bv_inv.any_range(istart, i);
+                    if (any_one)
+                    {
+                        cerr << "Errro: any_range test failed! (2)" << endl;
+                        assert(0); exit(1);
+                    }
+
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        {
+            TimeTaker tt(msg6, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart + ilen); ++i)
+                {
+                    bvect::size_type pos;
+                    auto diff = i - istart;
+                    if (!diff)
+                        continue;
+                    bool b = bm::find_interval_start(bv, istart+diff, pos);
+                    assert(b); (void)b;
+                    assert(pos == istart);
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        {
+            TimeTaker tt(msg7, REPEATS * 1);
+            bvect::size_type istart(0), ilen(0);
+            for (istart = 0; istart < vect_max; )
+            {
+                for (bvect::size_type i = istart; i <= (istart + ilen); ++i)
+                {
+                    bvect::size_type pos;
+                    auto diff = i - istart;
+                    if (!diff)
+                        continue;
+                    bool b = bm::find_interval_end(bv, istart+diff, pos);
+                    assert(b); (void)b;
+                    assert(pos == istart+ilen);
+                } // for i
+                ilen += 1;
+                istart += (ilen + 2);
+                if (ilen > 1024)
+                    ilen = 0;
+            } // for istart
+        }
+
+        bvect::size_type cnt_c = bv.count();
+        {
+            TimeTaker tt(msg8, REPEATS * 1);
+   
+            for (unsigned i = 0; i < REPEATS; ++i)
+            {
+                bvect::size_type cnt = 0;
+                bm::interval_enumerator<bvect> ien(bv);
+                if (ien.valid())
+                {
+                    do {
+                        auto s = ien.start();
+                        auto e = ien.end();
+                        cnt += e - s + 1;
+                    } while (ien.advance());
+                }
+                assert(cnt == cnt_c);
+                if (cnt != cnt_c)
+                {
+                    cerr << "Count mismatch!" << endl;
+                    exit(1);
+                }
+            }
+        }
+        {
+            bvect::size_type sum = 0;
+            TimeTaker tt(msg9, REPEATS * 1);
+
+            for (unsigned i = 0; i < REPEATS; ++i)
+            {
+                bvect::size_type cnt = 0;
+                bvect::enumerator en = bv.get_enumerator(0);
+                while (en.valid())
+                {
+                    auto v = *en; 
+                    sum += v;
+                    ++cnt;
+                    ++en;
+                }
+                assert(cnt == cnt_c);
+            }
+            char buf[256];
+            sprintf(buf, "%u", sum); // this is to prevent unwanted optimizations by some compilers
+
+        }
+
+        bv.optimize();
+        bv_inv.optimize();
+
+        msg = "bvector<>::is_all_one_range() (BITS+GAPS)";
+        msg2 = "bvector<>::any_range() (BITS+GAPS)";
+        msg3 = "bvector<>::count_range() (BITS+GAPS)";
+        msg4 = "bvector<>::is_interval() (BITS+GAPS)";
+        msg5 = "reference_is_interval() (BITS+GAPS)";
+        msg6 = "bvector<>::find_interval_start() (BITS+GAPS)";
+        msg7 = "bvector<>::find_interval_end() (BITS+GAPS)";
+        msg8 = "interval_enumerator<> (BITS+GAPS)";
+        msg9 = "bvector<>::enumerator (BITS+GAPS)";
+    } // for pass
+
+}
+
 static
 void RankCompressionTest()
 {
@@ -3036,7 +3564,7 @@ void SparseVectorSerializationTest()
 
             bool f = bm::sparse_vector_find_first_mismatch(sv1, sv2, pos);
             assert(f);
-            cerr << "Mismatch at: " << pos << endl;
+            cerr << "Mismatch at: " << pos << " " << f << endl;
 
             sv_deserial.deserialize(sv2, buf);
 
@@ -3060,7 +3588,7 @@ void SparseVectorSerializationTest()
         cerr << "Error: SparseVectorSerializationTest() integrity failure! (2)" << endl;
         sparse_vector_u32::size_type pos;
         bool f = bm::sparse_vector_find_first_mismatch(sv1, sv3, pos);
-        assert(f);
+        assert(f); (void)f;
         cerr << "Mismatch at: " << pos << endl;
 
         sv_deserial.deserialize(sv3, buf);
@@ -3075,7 +3603,7 @@ void SparseVectorSerializationTest()
     }
     else
     {
-        cout << "sz1 = " << sz1 << " gain=" << (sz1 - sz2) << endl;
+        //cout << "sz1 = " << sz1 << " gain=" << (sz1 - sz2) << endl;
     }
 
 }
@@ -3269,7 +3797,7 @@ int main(void)
     MemCpyTest();
 
     BitCountTest();
-    
+
     BitCountSparseTest();
 
     BitForEachTest();
@@ -3298,6 +3826,8 @@ int main(void)
 
     RangeCopyTest();
 
+    IntervalsTest();
+
     AggregatorTest();
 
     OrTest();
@@ -3305,7 +3835,7 @@ int main(void)
     AndTest();
     XorTest();
 
-    SubTest();  
+    SubTest();
 
     InvertTest();  
 
@@ -3323,6 +3853,10 @@ int main(void)
     SparseVectorSerializationTest();
 
     SparseVectorRangeDeserializationTest();
+
+    RSC_SparseVectorFillTest();
+
+    RSC_SparseVectorAccesTest();
 
     RankCompressionTest();
 

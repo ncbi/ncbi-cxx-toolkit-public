@@ -46,7 +46,7 @@ namespace bm
     \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type count_and(const BV& bv1, const BV& bv2)
+typename BV::size_type count_and(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     return bm::distance_and_operation(bv1, bv2);
 }
@@ -59,7 +59,7 @@ typename BV::size_type count_and(const BV& bv1, const BV& bv2)
    \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type any_and(const BV& bv1, const BV& bv2)
+typename BV::size_type any_and(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_AND);
 
@@ -78,7 +78,7 @@ typename BV::size_type any_and(const BV& bv1, const BV& bv2)
 */
 template<class BV>
 bm::distance_metric_descriptor::size_type
-count_xor(const BV& bv1, const BV& bv2)
+count_xor(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_XOR);
 
@@ -94,7 +94,7 @@ count_xor(const BV& bv1, const BV& bv2)
    \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type any_xor(const BV& bv1, const BV& bv2)
+typename BV::size_type any_xor(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_XOR);
 
@@ -112,7 +112,7 @@ typename BV::size_type any_xor(const BV& bv1, const BV& bv2)
    \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type count_sub(const BV& bv1, const BV& bv2)
+typename BV::size_type count_sub(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
 
@@ -129,7 +129,7 @@ typename BV::size_type count_sub(const BV& bv1, const BV& bv2)
    \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type any_sub(const BV& bv1, const BV& bv2)
+typename BV::size_type any_sub(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
 
@@ -146,7 +146,7 @@ typename BV::size_type any_sub(const BV& bv1, const BV& bv2)
    \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type count_or(const BV& bv1, const BV& bv2)
+typename BV::size_type count_or(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_OR);
 
@@ -162,7 +162,7 @@ typename BV::size_type count_or(const BV& bv1, const BV& bv2)
    \ingroup  setalgo
 */
 template<class BV>
-typename BV::size_type any_or(const BV& bv1, const BV& bv2)
+typename BV::size_type any_or(const BV& bv1, const BV& bv2) BMNOEXCEPT
 {
     distance_metric_descriptor dmd(bm::COUNT_OR);
 
@@ -173,27 +173,28 @@ typename BV::size_type any_or(const BV& bv1, const BV& bv2)
 
 
 #define BM_SCANNER_OP(x) \
-    if (0 != (block = blk_blk[j+x])) \
+if (0 != (block = blk_blk[j+x])) \
+{ \
+    if (BM_IS_GAP(block)) \
     { \
-        if (BM_IS_GAP(block)) \
-        { \
-            bm::for_each_gap_blk(BMGAP_PTR(block), (r+j+x)*bm::bits_in_block,\
-                                 bit_functor); \
-        } \
-        else \
-        { \
-            bm::for_each_bit_blk(block, (r+j+x)*bm::bits_in_block,bit_functor); \
-        } \
-    }
+        bm::for_each_gap_blk(BMGAP_PTR(block), (r+j+x)*bm::bits_in_block,\
+                             bit_functor); \
+    } \
+    else \
+    { \
+        bm::for_each_bit_blk(block, (r+j+x)*bm::bits_in_block,bit_functor); \
+    } \
+}
     
 
 /**
     @brief bit-vector visitor scanner to traverse each 1 bit using C++ visitor
  
     @param bv - bit vector to scan
-    @param bit_functor (should support add_bits() and add_range() methods
+    @param bit_functor - visitor: should support add_bits(), add_range()
  
     \ingroup setalgo
+    @sa for_each_bit_range visit_each_bit
 */
 template<class BV, class Func>
 void for_each_bit(const BV&    bv,
@@ -248,10 +249,100 @@ void for_each_bit(const BV&    bv,
     }  // for i
 }
 
+/**
+    @brief bit-vector range visitor to traverse each 1 bit
+
+    @param bv - bit vector to scan
+    @param right - start of closed interval [from..to]
+    @param left   - end of close interval [from..to]
+    @param bit_functor - visitor: should support add_bits(), add_range()
+
+    \ingroup setalgo
+    @sa for_each_bit
+*/
+template<class BV, class Func>
+void for_each_bit_range(const BV&             bv,
+                       typename BV::size_type left,
+                       typename BV::size_type right,
+                       Func&                  bit_functor)
+{
+    if (left > right)
+        bm::xor_swap(left, right);
+    if (right == bm::id_max)
+        --right;
+    BM_ASSERT(left < bm::id_max && right < bm::id_max);
+
+    bm::for_each_bit_range_no_check(bv, left, right, bit_functor);
+}
+
+
 #undef BM_SCANNER_OP
 
+
+/// private adaptor for C-style callbacks
+///
+/// @internal
+///
+template <class VCBT, class size_type>
+struct bit_vitor_callback_adaptor
+{
+    typedef VCBT bit_visitor_callback_type;
+
+    bit_vitor_callback_adaptor(void* h, bit_visitor_callback_type cb_func)
+        : handle_(h), func_(cb_func)
+    {}
+
+    void add_bits(size_type offset, const unsigned char* bits, unsigned size)
+    {
+        for (unsigned i = 0; i < size; ++i)
+            func_(handle_, offset + bits[i]);
+    }
+    void add_range(size_type offset, size_type size)
+    {
+        for (size_type i = 0; i < size; ++i)
+            func_(handle_, offset + i);
+    }
+
+    void* handle_;
+    bit_visitor_callback_type func_;
+};
+
+
+/// Functor for bit-copy (for testing)
+///
+/// @internal
+///
+template <class BV>
+struct bit_vistor_copy_functor
+{
+    typedef typename BV::size_type size_type;
+
+    bit_vistor_copy_functor(BV& bv)
+        : bv_(bv)
+    {
+        bv_.init();
+    }
+
+    void add_bits(size_type offset, const unsigned char* bits, unsigned size)
+    {
+        BM_ASSERT(size);
+        for (unsigned i = 0; i < size; ++i)
+            bv_.set_bit_no_check(offset + bits[i]);
+    }
+    void add_range(size_type offset, size_type size)
+    {
+        BM_ASSERT(size);
+        bv_.set_range(offset, offset + size - 1);
+    }
+
+    BV& bv_;
+    bit_visitor_callback_type func_;
+};
+
+
+
 /**
-    @brief bit-vector visitor scanner to traverse each 1 bit using C callback
+    @brief bvector visitor scanner to traverse each 1 bit using C callback
  
     @param bv - bit vector to scan
     @param handle_ptr - handle to private memory used by callback
@@ -267,31 +358,99 @@ void visit_each_bit(const BV&                 bv,
                     bit_visitor_callback_type callback_ptr)
 {
     typedef typename BV::size_type size_type;
-    // private adaptor for C-style callbacks
-    struct callback_adaptor
-    {
-        callback_adaptor(void* h, bit_visitor_callback_type cb_func)
-        : handle_(h), func_(cb_func)
-        {}
-        
-        void add_bits(size_type offset, const unsigned char* bits, unsigned size)
-        {
-            for (unsigned i = 0; i < size; ++i)
-                func_(handle_, offset + bits[i]);
-        }
-        void add_range(size_type offset, unsigned size)
-        {
-            for (unsigned i = 0; i < size; ++i)
-                func_(handle_, offset + i);
-        }
-        
-        void* handle_;
-        bit_visitor_callback_type func_;
-    };
-    
-    callback_adaptor func(handle_ptr, callback_ptr);
+    bm::bit_vitor_callback_adaptor<bit_visitor_callback_type, size_type>
+            func(handle_ptr, callback_ptr);
     bm::for_each_bit(bv, func);
 }
+
+/**
+    @brief bvector visitor scanner to traverse each bits in range (C callback)
+
+    @param bv - bit vector to scan
+    @param left - from [left..right]
+    @param right - to [left..right]
+    @param handle_ptr - handle to private memory used by callback
+    @param callback_ptr - callback function
+
+    \ingroup setalgo
+
+    @sa bit_visitor_callback_type for_each_bit
+*/
+template<class BV>
+void visit_each_bit_range(const BV&                 bv,
+                          typename BV::size_type    left,
+                          typename BV::size_type    right,
+                          void*                     handle_ptr,
+                          bit_visitor_callback_type callback_ptr)
+{
+    typedef typename BV::size_type size_type;
+    bm::bit_vitor_callback_adaptor<bit_visitor_callback_type, size_type>
+            func(handle_ptr, callback_ptr);
+    bm::for_each_bit_range(bv, left, right, func);
+}
+
+/**
+    @brief Algorithm to identify bit-vector ranges (splits) for the rank
+
+    Rank range split algorithm walks the bit-vector to create list of
+    non-overlapping ranges [s1..e1],[s2..e2]...[sN...eN] with requested
+    (rank) number of 1 bits. All ranges should be the same popcount weight,
+    except the last one, which may have less.
+    Scan is progressing from left to right so result ranges will be
+    naturally sorted.
+
+    @param bv       - bit vector to perform the range split scan
+    @param rank     - requested number of bits in each range
+                      if 0 it will create single range [first..last]
+                      to cover the whole bv
+    @param target_v - [out] STL(or STL-like) vector of pairs to keep pairs results
+
+    \ingroup setalgo
+ */
+template<typename BV, typename PairVect>
+void rank_range_split(const BV&              bv,
+                      typename BV::size_type rank,
+                      PairVect&              target_v)
+{
+    target_v.resize(0);
+    typename BV::size_type first, last, pos;
+    bool found = bv.find_range(first, last);
+    if (!found) // empty bit-vector
+        return;
+
+    if (!rank) // if rank is not defined, include the whole vector [first..last]
+    {
+        typename PairVect::value_type pv;
+        pv.first = first; pv.second = last;
+        target_v.push_back(pv);
+        return;
+    }
+
+    while (1)
+    {
+        typename PairVect::value_type pv;
+        found = bv.find_rank(rank, first, pos);
+        if (found)
+        {
+            pv.first = first; pv.second = pos;
+            target_v.push_back(pv);
+            if (pos >= last)
+                break;
+            first = pos + 1;
+            continue;
+        }
+        // insufficient rank (last range)
+        found = bv.any_range(first, last);
+        if (found)
+        {
+            pv.first = first; pv.second = last;
+            target_v.push_back(pv);
+        }
+        break;
+    } // while
+
+}
+
 
 
 /**
@@ -559,6 +718,7 @@ void rank_compressor<BV>::compress_by_source(BV& bv_target,
     visitor_func func(bv_target, bv_idx, bc_idx);
     bm::for_each_bit(bv_src, func);
 }
+
 
 
 

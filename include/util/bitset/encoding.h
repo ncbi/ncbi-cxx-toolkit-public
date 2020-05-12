@@ -51,24 +51,24 @@ class encoder
 public:
     typedef unsigned char* position_type;
 public:
-    encoder(unsigned char* buf, size_t size);
-    void put_8(unsigned char c);
-    void put_16(bm::short_t  s);
-    void put_16(const bm::short_t* s, unsigned count);
-    void put_24(bm::word_t  w);
-    void put_32(bm::word_t  w);
-    void put_32(const bm::word_t* w, unsigned count);
-    void put_48(bm::id64_t w);
-    void put_64(bm::id64_t w);
+    encoder(unsigned char* buf, size_t size) BMNOEXCEPT;
+    void put_8(unsigned char c) BMNOEXCEPT;
+    void put_16(bm::short_t  s) BMNOEXCEPT;
+    void put_16(const bm::short_t* s, unsigned count) BMNOEXCEPT;
+    void put_24(bm::word_t  w) BMNOEXCEPT;
+    void put_32(bm::word_t  w) BMNOEXCEPT;
+    void put_32(const bm::word_t* w, unsigned count) BMNOEXCEPT;
+    void put_48(bm::id64_t w) BMNOEXCEPT;
+    void put_64(bm::id64_t w) BMNOEXCEPT;
     void put_prefixed_array_32(unsigned char c, 
-                               const bm::word_t* w, unsigned count);
+                               const bm::word_t* w, unsigned count) BMNOEXCEPT;
     void put_prefixed_array_16(unsigned char c, 
                                const bm::short_t* s, unsigned count,
-                               bool encode_count);
-    void memcpy(const unsigned char* src, size_t count);
-    size_t size() const;
-    unsigned char* get_pos() const;
-    void set_pos(unsigned char* buf_pos);
+                               bool encode_count) BMNOEXCEPT;
+    void memcpy(const unsigned char* src, size_t count) BMNOEXCEPT;
+    size_t size() const BMNOEXCEPT;
+    unsigned char* get_pos() const BMNOEXCEPT;
+    void set_pos(unsigned char* buf_pos) BMNOEXCEPT;
 private:
     unsigned char*  buf_;
     unsigned char*  start_;
@@ -83,25 +83,25 @@ private:
 class decoder_base
 {
 public:
-    decoder_base(const unsigned char* buf) { buf_ = start_ = buf; }
+    decoder_base(const unsigned char* buf) BMNOEXCEPT { buf_ = start_ = buf; }
     
     /// Reads character from the decoding buffer. 
-    unsigned char get_8() { return *buf_++; }
+    unsigned char get_8() BMNOEXCEPT { return *buf_++; }
     
     /// Returns size of the current decoding stream.
-    size_t size() const { return size_t(buf_ - start_); }
+    size_t size() const BMNOEXCEPT { return size_t(buf_ - start_); }
     
     /// change current position
-    void seek(int delta) { buf_ += delta; }
+    void seek(int delta) BMNOEXCEPT { buf_ += delta; }
     
     /// read bytes from the decode buffer
-    void memcpy(unsigned char* dst, size_t count);
+    void memcpy(unsigned char* dst, size_t count) BMNOEXCEPT;
     
     /// Return current buffer pointer
-    const unsigned char* get_pos() const { return buf_; }
+    const unsigned char* get_pos() const BMNOEXCEPT { return buf_; }
 
     /// Set current buffer pointer
-    void set_pos(const unsigned char* pos) { buf_ = pos; }
+    void set_pos(const unsigned char* pos) BMNOEXCEPT { buf_ = pos; }
 protected:
    const unsigned char*   buf_;
    const unsigned char*   start_;
@@ -117,16 +117,16 @@ protected:
 class decoder : public decoder_base
 {
 public:
-    decoder(const unsigned char* buf);
-    bm::short_t get_16();
-    bm::word_t get_24();
-    bm::word_t get_32();
-    bm::id64_t get_48();
-    bm::id64_t get_64();
-    void get_32(bm::word_t* w, unsigned count);
-    bool get_32_OR(bm::word_t* w, unsigned count);
-    void get_32_AND(bm::word_t* w, unsigned count);
-    void get_16(bm::short_t* s, unsigned count);
+    decoder(const unsigned char* buf) BMNOEXCEPT;
+    bm::short_t get_16() BMNOEXCEPT;
+    bm::word_t get_24() BMNOEXCEPT;
+    bm::word_t get_32() BMNOEXCEPT;
+    bm::id64_t get_48() BMNOEXCEPT;
+    bm::id64_t get_64() BMNOEXCEPT;
+    void get_32(bm::word_t* w, unsigned count) BMNOEXCEPT;
+    bool get_32_OR(bm::word_t* w, unsigned count) BMNOEXCEPT;
+    void get_32_AND(bm::word_t* w, unsigned count) BMNOEXCEPT;
+    void get_16(bm::short_t* s, unsigned count) BMNOEXCEPT;
 };
 
 // ----------------------------------------------------------------
@@ -181,23 +181,23 @@ public:
     ~bit_out() { flush(); }
     
     /// issue single bit into encode bit-stream
-    void put_bit(unsigned value);
+    void put_bit(unsigned value) BMNOEXCEPT;
 
     /// issue count bits out of value
-    void put_bits(unsigned value, unsigned count);
+    void put_bits(unsigned value, unsigned count) BMNOEXCEPT;
 
     /// issue 0 into output stream
-    void put_zero_bit();
+    void put_zero_bit() BMNOEXCEPT;
 
     /// issue specified number of 0s
-    void put_zero_bits(unsigned count);
+    void put_zero_bits(unsigned count) BMNOEXCEPT;
 
     /// Elias Gamma encode the specified value
-    void gamma(unsigned value);
+    void gamma(unsigned value) BMNOEXCEPT;
     
     /// Binary Interpolative array decode
     void bic_encode_u16(const bm::gap_word_t* arr, unsigned sz,
-                        bm::gap_word_t lo, bm::gap_word_t hi)
+                        bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT
     {
         bic_encode_u16_cm(arr, sz, lo, hi);
     }
@@ -205,24 +205,24 @@ public:
     /// Binary Interpolative encoding (array of 16-bit ints)
     void bic_encode_u16_rg(const bm::gap_word_t* arr, unsigned sz,
                            bm::gap_word_t lo,
-                           bm::gap_word_t hi);
+                           bm::gap_word_t hi) BMNOEXCEPT;
     
     /// Binary Interpolative encoding (array of 16-bit ints)
     /// cm - "center-minimal"
     void bic_encode_u16_cm(const bm::gap_word_t* arr, unsigned sz,
                            bm::gap_word_t lo,
-                           bm::gap_word_t hi);
+                           bm::gap_word_t hi) BMNOEXCEPT;
 
     /// Binary Interpolative encoding (array of 32-bit ints)
     /// cm - "center-minimal"
     void bic_encode_u32_cm(const bm::word_t* arr, unsigned sz,
-                           bm::word_t lo, bm::word_t hi);
+                           bm::word_t lo, bm::word_t hi) BMNOEXCEPT;
 
     /// Flush the incomplete 32-bit accumulator word
-    void flush() { if (used_bits_) flush_accum(); }
+    void flush() BMNOEXCEPT { if (used_bits_) flush_accum(); }
 
 private:
-    void flush_accum()
+    void flush_accum() BMNOEXCEPT
     {
         dest_.put_32(accum_);
         used_bits_ = accum_ = 0;
@@ -248,31 +248,32 @@ template<class TDecoder>
 class bit_in
 {
 public:
-    bit_in(TDecoder& decoder)
+    bit_in(TDecoder& decoder) BMNOEXCEPT
         : src_(decoder),
           used_bits_(unsigned(sizeof(accum_) * 8)),
-          accum_(0)
+          accum_(0) 
     {}
 
     /// decode unsigned value using Elias Gamma coding
-    unsigned gamma();
+    unsigned gamma() BMNOEXCEPT;
     
     /// read number of bits out of the stream
-    unsigned get_bits(unsigned count);
+    unsigned get_bits(unsigned count) BMNOEXCEPT;
 
     /// Binary Interpolative array decode
     void bic_decode_u16(bm::gap_word_t* arr, unsigned sz,
-                        bm::gap_word_t lo, bm::gap_word_t hi)
+                        bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT
     {
         bic_decode_u16_cm(arr, sz, lo, hi);
     }
     
     void bic_decode_u16_bitset(bm::word_t* block, unsigned sz,
-                               bm::gap_word_t lo, bm::gap_word_t hi)
+                               bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT
     {
         bic_decode_u16_cm_bitset(block, sz, lo, hi);
     }
-    void bic_decode_u16_dry(unsigned sz, bm::gap_word_t lo, bm::gap_word_t hi)
+    void bic_decode_u16_dry(unsigned sz,
+                            bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT
     {
         bic_decode_u16_cm_dry(sz, lo, hi);
     }
@@ -280,29 +281,32 @@ public:
 
     /// Binary Interpolative array decode
     void bic_decode_u16_rg(bm::gap_word_t* arr, unsigned sz,
-                           bm::gap_word_t lo, bm::gap_word_t hi);
+                           bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT;
     /// Binary Interpolative array decode
     void bic_decode_u16_cm(bm::gap_word_t* arr, unsigned sz,
-                           bm::gap_word_t lo, bm::gap_word_t hi);
+                           bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT;
 
     /// Binary Interpolative array decode (32-bit)
     void bic_decode_u32_cm(bm::word_t* arr, unsigned sz,
-                           bm::word_t lo, bm::word_t hi);
+                           bm::word_t lo, bm::word_t hi) BMNOEXCEPT;
 
 
     /// Binary Interpolative array decode into bitset (32-bit based)
     void bic_decode_u16_rg_bitset(bm::word_t* block, unsigned sz,
-                                  bm::gap_word_t lo, bm::gap_word_t hi);
+                                  bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT;
 
     /// Binary Interpolative array decode into /dev/null
-    void bic_decode_u16_rg_dry(unsigned sz, bm::gap_word_t lo, bm::gap_word_t hi);
+    void bic_decode_u16_rg_dry(unsigned sz,
+                               bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT;
 
     /// Binary Interpolative array decode into bitset (32-bit based)
     void bic_decode_u16_cm_bitset(bm::word_t* block, unsigned sz,
-                                  bm::gap_word_t lo, bm::gap_word_t hi);
+                                  bm::gap_word_t lo,
+                                  bm::gap_word_t hi) BMNOEXCEPT;
 
     /// Binary Interpolative array decode into /dev/null
-    void bic_decode_u16_cm_dry(unsigned sz, bm::gap_word_t lo, bm::gap_word_t hi);
+    void bic_decode_u16_cm_dry(unsigned sz,
+                               bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT;
 
 private:
     bit_in(const bit_in&);
@@ -377,7 +381,7 @@ private:
     \param buf - memory buffer pointer.
     \param size - size of the buffer
 */
-inline encoder::encoder(unsigned char* buf, size_t a_size)
+inline encoder::encoder(unsigned char* buf, size_t a_size) BMNOEXCEPT
 : buf_(buf), start_(buf)
 {
     size_ = a_size;
@@ -387,7 +391,7 @@ inline encoder::encoder(unsigned char* buf, size_t a_size)
 */
 inline void encoder::put_prefixed_array_32(unsigned char c, 
                                            const bm::word_t* w, 
-                                           unsigned count)
+                                           unsigned count) BMNOEXCEPT
 {
     put_8(c);
     put_32(w, count);
@@ -399,7 +403,7 @@ inline void encoder::put_prefixed_array_32(unsigned char c,
 inline void encoder::put_prefixed_array_16(unsigned char c, 
                                            const bm::short_t* s, 
                                            unsigned count,
-                                           bool encode_count)
+                                           bool encode_count) BMNOEXCEPT
 {
     put_8(c);
     if (encode_count)
@@ -413,7 +417,7 @@ inline void encoder::put_prefixed_array_16(unsigned char c,
    \brief Puts one character into the encoding buffer.
    \param c - character to encode
 */
-BMFORCEINLINE void encoder::put_8(unsigned char c)
+BMFORCEINLINE void encoder::put_8(unsigned char c) BMNOEXCEPT
 {
     *buf_++ = c;
 }
@@ -423,7 +427,7 @@ BMFORCEINLINE void encoder::put_8(unsigned char c)
    \brief Puts short word (16 bits) into the encoding buffer.
    \param s - short word to encode
 */
-BMFORCEINLINE void encoder::put_16(bm::short_t s)
+BMFORCEINLINE void encoder::put_16(bm::short_t s) BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     ::memcpy(buf_, &s, sizeof(bm::short_t)); // optimizer takes care of it
@@ -438,7 +442,7 @@ BMFORCEINLINE void encoder::put_16(bm::short_t s)
 /*!
    \brief Method puts array of short words (16 bits) into the encoding buffer.
 */
-inline void encoder::put_16(const bm::short_t* s, unsigned count)
+inline void encoder::put_16(const bm::short_t* s, unsigned count) BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     ::memcpy(buf_, s, sizeof(bm::short_t)*count);
@@ -465,7 +469,7 @@ inline void encoder::put_16(const bm::short_t* s, unsigned count)
     \brief copy bytes into target buffer or just rewind if src is NULL
 */
 inline
-void encoder::memcpy(const unsigned char* src, size_t count)
+void encoder::memcpy(const unsigned char* src, size_t count) BMNOEXCEPT
 {
     BM_ASSERT((buf_ + count) < (start_ + size_));
     if (src)
@@ -478,7 +482,7 @@ void encoder::memcpy(const unsigned char* src, size_t count)
    \fn unsigned encoder::size() const
    \brief Returns size of the current encoding stream.
 */
-inline size_t encoder::size() const
+inline size_t encoder::size() const BMNOEXCEPT
 {
     return size_t(buf_ - start_);
 }
@@ -486,7 +490,7 @@ inline size_t encoder::size() const
 /**
     \brief Get current memory stream position
 */
-inline encoder::position_type encoder::get_pos() const
+inline encoder::position_type encoder::get_pos() const BMNOEXCEPT
 {
     return buf_;
 }
@@ -494,7 +498,7 @@ inline encoder::position_type encoder::get_pos() const
 /**
     \brief Set current memory stream position
 */
-inline void encoder::set_pos(encoder::position_type buf_pos)
+inline void encoder::set_pos(encoder::position_type buf_pos) BMNOEXCEPT
 {
     buf_ = buf_pos;
 }
@@ -504,7 +508,7 @@ inline void encoder::set_pos(encoder::position_type buf_pos)
    \brief Puts 24 bits word into encoding buffer.
    \param w - word to encode.
 */
-inline void encoder::put_24(bm::word_t w)
+inline void encoder::put_24(bm::word_t w) BMNOEXCEPT
 {
     BM_ASSERT((w & ~(0xFFFFFFU)) == 0);
 
@@ -520,7 +524,7 @@ inline void encoder::put_24(bm::word_t w)
    \brief Puts 32 bits word into encoding buffer.
    \param w - word to encode.
 */
-inline void encoder::put_32(bm::word_t w)
+inline void encoder::put_32(bm::word_t w) BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     ::memcpy(buf_, &w, sizeof(bm::word_t));
@@ -538,7 +542,7 @@ inline void encoder::put_32(bm::word_t w)
    \brief Puts 48 bits word into encoding buffer.
    \param w - word to encode.
 */
-inline void encoder::put_48(bm::id64_t w)
+inline void encoder::put_48(bm::id64_t w) BMNOEXCEPT
 { 
     BM_ASSERT((w & ~(0xFFFFFFFFFFFFUL)) == 0);
     *buf_++ = (unsigned char)w;
@@ -555,7 +559,7 @@ inline void encoder::put_48(bm::id64_t w)
    \brief Puts 64 bits word into encoding buffer.
    \param w - word to encode.
 */
-inline void encoder::put_64(bm::id64_t w)
+inline void encoder::put_64(bm::id64_t w) BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     ::memcpy(buf_, &w, sizeof(bm::id64_t));
@@ -576,10 +580,10 @@ inline void encoder::put_64(bm::id64_t w)
 /*!
     \brief Encodes array of 32-bit words
 */
-inline 
-void encoder::put_32(const bm::word_t* w, unsigned count)
+inline void encoder::put_32(const bm::word_t* w, unsigned count) BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
+    // use memcpy() because compilers now understand it as an idiom and inline
     ::memcpy(buf_, w, sizeof(bm::word_t) * count);
     buf_ += sizeof(bm::word_t) * count;
 #else
@@ -611,7 +615,7 @@ void encoder::put_32(const bm::word_t* w, unsigned count)
     Load bytes from the decode buffer
 */
 inline
-void decoder_base::memcpy(unsigned char* dst, size_t count)
+void decoder_base::memcpy(unsigned char* dst, size_t count) BMNOEXCEPT
 {
     if (dst)
         ::memcpy(dst, buf_, count);
@@ -623,7 +627,7 @@ void decoder_base::memcpy(unsigned char* dst, size_t count)
    \brief Construction
    \param buf - pointer to the decoding memory. 
 */
-inline decoder::decoder(const unsigned char* buf) 
+inline decoder::decoder(const unsigned char* buf) BMNOEXCEPT
 : decoder_base(buf)
 {
 }
@@ -632,7 +636,7 @@ inline decoder::decoder(const unsigned char* buf)
    \fn bm::short_t decoder::get_16()
    \brief Reads 16-bit word from the decoding buffer.
 */
-BMFORCEINLINE bm::short_t decoder::get_16() 
+BMFORCEINLINE bm::short_t decoder::get_16() BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     bm::short_t a;
@@ -648,7 +652,7 @@ BMFORCEINLINE bm::short_t decoder::get_16()
    \fn bm::word_t decoder::get_24()
    \brief Reads 32-bit word from the decoding buffer.
 */
-inline bm::word_t decoder::get_24()
+inline bm::word_t decoder::get_24() BMNOEXCEPT
 {
     bm::word_t a = buf_[0] + ((unsigned)buf_[1] << 8) +
         ((unsigned)buf_[2] << 16);
@@ -661,7 +665,7 @@ inline bm::word_t decoder::get_24()
    \fn bm::word_t decoder::get_32()
    \brief Reads 32-bit word from the decoding buffer.
 */
-BMFORCEINLINE bm::word_t decoder::get_32() 
+BMFORCEINLINE bm::word_t decoder::get_32() BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     bm::word_t a;
@@ -679,7 +683,7 @@ BMFORCEINLINE bm::word_t decoder::get_32()
    \brief Reads 64-bit word from the decoding buffer.
 */
 inline
-bm::id64_t decoder::get_48()
+bm::id64_t decoder::get_48() BMNOEXCEPT
 {
     bm::id64_t a = buf_[0] +
         ((bm::id64_t)buf_[1] << 8) +
@@ -696,7 +700,7 @@ bm::id64_t decoder::get_48()
    \brief Reads 64-bit word from the decoding buffer.
 */
 inline
-bm::id64_t decoder::get_64()
+bm::id64_t decoder::get_64() BMNOEXCEPT
 {
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     bm::id64_t a;
@@ -722,7 +726,7 @@ bm::id64_t decoder::get_64()
    \param w - pointer on memory block to read into.
    \param count - size of memory block in words.
 */
-inline void decoder::get_32(bm::word_t* w, unsigned count)
+inline void decoder::get_32(bm::word_t* w, unsigned count) BMNOEXCEPT
 {
     if (!w) 
     {
@@ -754,7 +758,7 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
    \param count - should match bm::set_block_size
 */
 inline
-bool decoder::get_32_OR(bm::word_t* w, unsigned count)
+bool decoder::get_32_OR(bm::word_t* w, unsigned count) BMNOEXCEPT
 {
     if (!w)
     {
@@ -795,7 +799,7 @@ bool decoder::get_32_OR(bm::word_t* w, unsigned count)
    \param count - should match bm::set_block_size
 */
 inline
-void decoder::get_32_AND(bm::word_t* w, unsigned count)
+void decoder::get_32_AND(bm::word_t* w, unsigned count) BMNOEXCEPT
 {
     if (!w)
     {
@@ -833,7 +837,7 @@ void decoder::get_32_AND(bm::word_t* w, unsigned count)
    \param s - pointer on memory block to read into.
    \param count - size of memory block in words.
 */
-inline void decoder::get_16(bm::short_t* s, unsigned count)
+inline void decoder::get_16(bm::short_t* s, unsigned count) BMNOEXCEPT
 {
     if (!s) 
     {
@@ -1004,7 +1008,7 @@ void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
 //
 
 template<typename TEncoder>
-void bit_out<TEncoder>::put_bit(unsigned value)
+void bit_out<TEncoder>::put_bit(unsigned value) BMNOEXCEPT
 {
     BM_ASSERT(value <= 1);
     accum_ |= (value << used_bits_);
@@ -1015,7 +1019,7 @@ void bit_out<TEncoder>::put_bit(unsigned value)
 // ----------------------------------------------------------------------
 
 template<typename TEncoder>
-void bit_out<TEncoder>::put_bits(unsigned value, unsigned count)
+void bit_out<TEncoder>::put_bits(unsigned value, unsigned count) BMNOEXCEPT
 {
     unsigned used = used_bits_;
     unsigned acc = accum_;
@@ -1057,7 +1061,7 @@ void bit_out<TEncoder>::put_bits(unsigned value, unsigned count)
 // ----------------------------------------------------------------------
 
 template<typename TEncoder>
-void bit_out<TEncoder>::put_zero_bit()
+void bit_out<TEncoder>::put_zero_bit() BMNOEXCEPT
 {
     if (++used_bits_ == (sizeof(accum_) * 8))
         flush_accum();
@@ -1066,7 +1070,7 @@ void bit_out<TEncoder>::put_zero_bit()
 // ----------------------------------------------------------------------
 
 template<typename TEncoder>
-void bit_out<TEncoder>::put_zero_bits(unsigned count)
+void bit_out<TEncoder>::put_zero_bits(unsigned count) BMNOEXCEPT
 {
     unsigned used = used_bits_;
     unsigned free_bits = (sizeof(accum_) * 8) - used;
@@ -1096,7 +1100,7 @@ void bit_out<TEncoder>::put_zero_bits(unsigned count)
 // ----------------------------------------------------------------------
 
 template<typename TEncoder>
-void bit_out<TEncoder>::gamma(unsigned value)
+void bit_out<TEncoder>::gamma(unsigned value) BMNOEXCEPT
 {
     BM_ASSERT(value);
 
@@ -1168,9 +1172,10 @@ void bit_out<TEncoder>::gamma(unsigned value)
 // ----------------------------------------------------------------------
 
 template<typename TEncoder>
-void bit_out<TEncoder>::bic_encode_u16_rg(const bm::gap_word_t* arr,
-                                          unsigned sz,
-                                          bm::gap_word_t lo, bm::gap_word_t hi)
+void bit_out<TEncoder>::bic_encode_u16_rg(
+                                const bm::gap_word_t* arr,
+                                unsigned sz,
+                                bm::gap_word_t lo, bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1204,7 +1209,8 @@ void bit_out<TEncoder>::bic_encode_u16_rg(const bm::gap_word_t* arr,
 template<typename TEncoder>
 void bit_out<TEncoder>::bic_encode_u32_cm(const bm::word_t* arr,
                                           unsigned sz,
-                                          bm::word_t lo, bm::word_t hi)
+                                          bm::word_t lo,
+                                          bm::word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1292,7 +1298,7 @@ template<typename TEncoder>
 void bit_out<TEncoder>::bic_encode_u16_cm(const bm::gap_word_t* arr,
                                           unsigned sz_i,
                                           bm::gap_word_t lo_i,
-                                          bm::gap_word_t hi_i)
+                                          bm::gap_word_t hi_i) BMNOEXCEPT
 {
     BM_ASSERT(sz_i <= 65535);
 
@@ -1329,7 +1335,8 @@ void bit_out<TEncoder>::bic_encode_u16_cm(const bm::gap_word_t* arr,
 template<typename TEncoder>
 void bit_out<TEncoder>::bic_encode_u16_cm(const bm::gap_word_t* arr,
                                           unsigned sz,
-                                          bm::gap_word_t lo, bm::gap_word_t hi)
+                                          bm::gap_word_t lo,
+                                          bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1379,7 +1386,8 @@ void bit_out<TEncoder>::bic_encode_u16_cm(const bm::gap_word_t* arr,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u16_rg(bm::gap_word_t* arr, unsigned sz,
-                                         bm::gap_word_t lo, bm::gap_word_t hi)
+                                         bm::gap_word_t lo,
+                                         bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1421,7 +1429,8 @@ void bit_in<TDecoder>::bic_decode_u16_rg(bm::gap_word_t* arr, unsigned sz,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u32_cm(bm::word_t* arr, unsigned sz,
-                                         bm::word_t lo, bm::word_t hi)
+                                         bm::word_t lo,
+                                         bm::word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1472,7 +1481,8 @@ void bit_in<TDecoder>::bic_decode_u32_cm(bm::word_t* arr, unsigned sz,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u16_cm(bm::gap_word_t* arr, unsigned sz,
-                                         bm::gap_word_t lo, bm::gap_word_t hi)
+                                         bm::gap_word_t lo,
+                                         bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1523,7 +1533,8 @@ void bit_in<TDecoder>::bic_decode_u16_cm(bm::gap_word_t* arr, unsigned sz,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u16_cm_bitset(bm::word_t* block, unsigned sz,
-                              bm::gap_word_t lo, bm::gap_word_t hi)
+                              bm::gap_word_t lo,
+                              bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1579,7 +1590,8 @@ void bit_in<TDecoder>::bic_decode_u16_cm_bitset(bm::word_t* block, unsigned sz,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u16_cm_dry(unsigned sz,
-                              bm::gap_word_t lo, bm::gap_word_t hi)
+                              bm::gap_word_t lo,
+                              bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1630,7 +1642,8 @@ void bit_in<TDecoder>::bic_decode_u16_cm_dry(unsigned sz,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u16_rg_bitset(bm::word_t* block, unsigned sz,
-                                                bm::gap_word_t lo, bm::gap_word_t hi)
+                                                bm::gap_word_t lo,
+                                                bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1665,7 +1678,7 @@ void bit_in<TDecoder>::bic_decode_u16_rg_bitset(bm::word_t* block, unsigned sz,
         if (sz == 1)
             return;
         bic_decode_u16_rg_bitset(block, mid_idx, lo, bm::gap_word_t(val - 1));
-        // tail recursion:
+        // tail recursion of:
         //bic_decode_u16_bitset(block, sz - mid_idx - 1, bm::gap_word_t(val + 1), hi);
         sz  -= mid_idx + 1;
         lo = bm::gap_word_t(val + 1);
@@ -1676,7 +1689,8 @@ void bit_in<TDecoder>::bic_decode_u16_rg_bitset(bm::word_t* block, unsigned sz,
 
 template<class TDecoder>
 void bit_in<TDecoder>::bic_decode_u16_rg_dry(unsigned sz,
-                                   bm::gap_word_t lo, bm::gap_word_t hi)
+                                   bm::gap_word_t lo,
+                                   bm::gap_word_t hi) BMNOEXCEPT
 {
     for (;sz;)
     {
@@ -1705,7 +1719,6 @@ void bit_in<TDecoder>::bic_decode_u16_rg_dry(unsigned sz,
         if (sz == 1)
             return;
         bic_decode_u16_rg_dry(mid_idx, lo, bm::gap_word_t(val - 1));
-        //bic_decode_u16_dry(sz - mid_idx - 1, bm::gap_word_t(val + 1), hi);
         sz  -= mid_idx + 1;
         lo = bm::gap_word_t(val + 1);
     } // for sz
@@ -1716,7 +1729,7 @@ void bit_in<TDecoder>::bic_decode_u16_rg_dry(unsigned sz,
 // ----------------------------------------------------------------------
 
 template<class TDecoder>
-unsigned bit_in<TDecoder>::gamma()
+unsigned bit_in<TDecoder>::gamma() BMNOEXCEPT
 {
     unsigned acc = accum_;
     unsigned used = used_bits_;
@@ -1801,7 +1814,7 @@ ret:
 // ----------------------------------------------------------------------
 
 template<class TDecoder>
-unsigned bit_in<TDecoder>::get_bits(unsigned count)
+unsigned bit_in<TDecoder>::get_bits(unsigned count) BMNOEXCEPT
 {
     BM_ASSERT(count);
     const unsigned maskFF = ~0u;
