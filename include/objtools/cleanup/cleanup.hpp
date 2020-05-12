@@ -63,6 +63,7 @@ class CSeq_annot_Handle;
 class CSeq_feat_Handle;
 
 class CCleanupChange;
+class IObjtoolsListener;
 
 class NCBI_CLEANUP_EXPORT CCleanup : public CObject 
 {
@@ -504,7 +505,11 @@ public:
 /// @param str  string from which to parse code break
 /// @param scope scope in which to find sequences referenced (used for location comparisons)
 /// @return bool indicates string was successfully parsed and code break was added
-    static bool ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str, CScope& scope);
+    static bool ParseCodeBreak(const CSeq_feat& feat, 
+            CCdregion& cds, 
+            const CTempString& str, 
+            CScope& scope, 
+            IObjtoolsListener* pMessageListener=nullptr);
 
 /// Parses all valid transl_except Gb-quals into code-breaks for cdregion,
 /// then removes the transl_except Gb-quals that were successfully parsed

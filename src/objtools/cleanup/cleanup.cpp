@@ -66,10 +66,13 @@
 #include <objtools/edit/cds_fix.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanup_utils.hpp"
+#include <objtools/cleanup/cleanup_message.hpp>
 
 #include <util/strsearch.hpp>
 
 #include "newcleanupp.hpp"
+
+#include <objtools/logging/listener.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -4430,7 +4433,11 @@ bool CCleanup::ConvertDeltaSeqToRaw(CSeq_entry_Handle seh, CSeq_inst::EMol filte
 }
 
 
-bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str, CScope& scope)
+bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, 
+        CCdregion& cds, 
+        const CTempString& str, 
+        CScope& scope,
+        IObjtoolsListener* pMessageListener)
 {
     if (str.empty() || !feat.IsSetLocation()) {
         return false;
@@ -4472,7 +4479,19 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const strin
     }
 
     loc_pos = NStr::Find(str, "(pos:");
+
+    using TSubcode = CCleanupMessage::ESubcode;
+    auto postMessage =
+        [pMessageListener](string msg, TSubcode subcode) {
+            pMessageListener->PutMessage(
+                    CCleanupMessage(msg, eDiag_Error, CCleanupMessage::ECode::eCodeBreak, subcode));
+        };
+
     if (loc_pos == string::npos) {
+        if (pMessageListener) {
+            string msg = "Unable to identify code-break location in '" + str + "'";
+            postMessage(msg, TSubcode::eParseError);
+        }
         return false;
     }
     loc_pos += 5;
@@ -4498,11 +4517,26 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const strin
     break_loc = ReadLocFromText(pos, feat_loc_seq_id, &scope);
 
     if (break_loc == NULL) {
+        if (pMessageListener) {
+            string msg = "Unable to extract code-break location from '" + str + "'";
+            postMessage(msg, TSubcode::eParseError);
+        }
         return false;
-    } else if (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) > 3) {
+    }
+
+    if (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) > 3) {
+        if (pMessageListener) {
+            string msg = "code-break location exceeds 3 bases";
+            postMessage(msg, TSubcode::eBadLocation);
+        }
         return false;
-    } else if ((break_loc->IsInt() || break_loc->IsPnt()) &&
+    } 
+    if ((break_loc->IsInt() || break_loc->IsPnt()) &&
          sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained) {
+        if (pMessageListener) {
+            string msg = "code-break location lies outside of coding region";
+            postMessage(msg, TSubcode::eBadLocation);
+        }
         return false;
     }
 
