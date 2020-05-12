@@ -676,7 +676,7 @@ public:
     static typename enable_if< is_integral<typename TStrictId::TId>::value && is_member_function_pointer<decltype(&TStrictId::Get)>::value, string>::type
     NumericToString(TStrictId value, TNumToStringFlags flags = 0, int base = 10)
     {
-        return NumericToString(value.Get());
+        return NumericToString(value.Get(), flags, base);
     }
 
     /// Convert numeric value to string.
