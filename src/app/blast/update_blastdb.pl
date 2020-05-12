@@ -134,12 +134,21 @@ if (defined($opt_source)) {
 } else {
     # Try to auto-detect whether we're on the cloud
     if (defined($curl)) {
-        my $gcp_cmd = "$curl --connect-timeout 1 -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL;
+        my $tmpfile = File::Temp->new();
+        my $gcp_cmd = "$curl --connect-timeout 1 -sfo $tmpfile -H 'Metadata-Flavor: Google' " . GCP_URL;
         my $aws_cmd = "$curl --connect-timeout 1 -sfo /dev/null " . AMI_URL;
         print "$gcp_cmd\n" if DEBUG;
-        $location = "GCP" if (system($gcp_cmd) == 0);
+        if (system($gcp_cmd) == 0) { 
+	# status not always reliable.  Chekc that return is all digits.
+        	my $tmpfile_content = do { local $/; <$tmpfile>};
+        	print "tempfile: $tmpfile_content\n" if DEBUG;
+        	if ($tmpfile_content =~ m/^(\d+)$/) {
+            		$location = "GCP";
+                }
+        }
         print "$aws_cmd\n" if DEBUG;
         $location = "AWS" if (system($aws_cmd) == 0);
+        print "Loation is $location\n" if DEBUG;
     }
 }
 if ($location =~ /aws|gcp/i and not defined $curl) {
