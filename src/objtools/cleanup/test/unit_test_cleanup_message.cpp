@@ -66,15 +66,15 @@ BOOST_AUTO_TEST_CASE(Test_ParseCodeBreakMessages)
     BOOST_CHECK_EQUAL(listener.Count(), 3);
 
     auto it = listener.begin();
-    BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::eParseError));
+    BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::ESubcode::eParseError));
     BOOST_CHECK_EQUAL(it->GetText(), "Unable to identify code-break location in ':3..5,aa:Met'");
  
     ++it;
-    BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::eBadLocation));
+    BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::ESubcode::eBadLocation));
     BOOST_CHECK_EQUAL(it->GetText(), "code-break location exceeds 3 bases");
 
     ++it;
-    BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::eBadLocation));
+    BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::ESubcode::eBadLocation));
     BOOST_CHECK_EQUAL(it->GetText(), "code-break location lies outside of coding region");
 }
 
