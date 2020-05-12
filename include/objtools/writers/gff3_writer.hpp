@@ -144,7 +144,9 @@ public:
     typedef enum {
         fExtraQuals = (fGff2WriterLast << 1),
         fMicroIntrons = (fGff2WriterLast << 2),
-        fGff3WriterLast = fMicroIntrons,
+        fExcludeNucs = (fGff2WriterLast << 3), // for backward compatibility :-(
+        fIncludeProts = (fGff2WriterLast << 4),
+        fGff3WriterLast = fIncludeProts,
     } TFlags;
     
 public:
@@ -183,6 +185,9 @@ protected:
         CBioseq_Handle ) override;
 	virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
+
+    virtual bool xPassesFilterByViewMode(
+        CBioseq_Handle);
 
     virtual bool xWriteAlign(
         CAlign_CI align_it) override;

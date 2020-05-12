@@ -241,40 +241,4 @@ GU182347.1	Genbank	CDS	206731	206781	.	+	2	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;
 GU182347.1	Genbank	CDS	213455	213559	.	+	2	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;Dbxref=NCBI_GP:ADJ94589.1;Name=ADJ94589.1;gbkey=CDS;gene=KIR3DL2;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;protein_id=ADJ94589.1
 GU182347.1	Genbank	CDS	214020	214072	.	+	2	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;Dbxref=NCBI_GP:ADJ94589.1;Name=ADJ94589.1;gbkey=CDS;gene=KIR3DL2;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;protein_id=ADJ94589.1
 GU182347.1	Genbank	CDS	214172	214381	.	+	0	ID=cds-ADJ94589.1;Parent=rna-KIR3DL2;Dbxref=NCBI_GP:ADJ94589.1;Name=ADJ94589.1;gbkey=CDS;gene=KIR3DL2;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 2;protein_id=ADJ94589.1
-##sequence-region ADJ94578.1 1 410
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94578.1	Genbank	region	1	410	.	+	.	ID=ADJ94578.1:1..410;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94579.1 1 304
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94579.1	Genbank	region	1	304	.	+	.	ID=ADJ94579.1:1..304;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94580.1 1 348
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94580.1	Genbank	region	1	348	.	+	.	ID=ADJ94580.1:1..348;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94581.1 1 375
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94581.1	Genbank	region	1	375	.	+	.	ID=ADJ94581.1:1..375;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94582.1 1 304
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94582.1	Genbank	region	1	304	.	+	.	ID=ADJ94582.1:1..304;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94583.1 1 348
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94583.1	Genbank	region	1	348	.	+	.	ID=ADJ94583.1:1..348;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94584.1 1 377
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94584.1	Genbank	region	1	377	.	+	.	ID=ADJ94584.1:1..377;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94585.1 1 382
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94585.1	Genbank	region	1	382	.	+	.	ID=ADJ94585.1:1..382;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94586.1 1 375
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94586.1	Genbank	region	1	375	.	+	.	ID=ADJ94586.1:1..375;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94587.1 1 304
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94587.1	Genbank	region	1	304	.	+	.	ID=ADJ94587.1:1..304;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94588.1 1 304
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94588.1	Genbank	region	1	304	.	+	.	ID=ADJ94588.1:1..304;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
-##sequence-region ADJ94589.1 1 455
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-ADJ94589.1	Genbank	region	1	455	.	+	.	ID=ADJ94589.1:1..455;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=unassigned
 ###

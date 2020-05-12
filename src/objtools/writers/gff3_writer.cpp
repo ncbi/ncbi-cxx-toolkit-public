@@ -1273,10 +1273,45 @@ bool s_RangeContains(const CRange<TSeqPos>& range, const TSeqPos pos)
 
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::xPassesFilterByViewMode(
+    CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    if (!bsh.CanGetInst_Mol()) {
+        return ((m_uFlags & fIncludeProts)  &&  !(m_uFlags & fExcludeNucs));
+    }
+    const auto& mol = bsh.GetBioseqMolType();
+
+    if (!(m_uFlags & fExcludeNucs)) {
+        switch (mol) {
+        default:
+            break;
+        case CSeq_inst::eMol_dna:
+        case CSeq_inst::eMol_na:
+        case CSeq_inst::eMol_rna:
+            return true;
+        }
+    }
+    if (m_uFlags & fIncludeProts) {
+        switch (mol) {
+        default:
+            break;
+        case CSeq_inst::eMol_aa:
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh) 
 //  ----------------------------------------------------------------------------
 {
+    if (!xPassesFilterByViewMode(bsh)) {
+        return true; //nothing to do
+    }
+        
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
     }

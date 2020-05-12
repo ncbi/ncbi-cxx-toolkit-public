@@ -289,6 +289,22 @@ void CAnnotWriterApp::Init()
             "End of range", CArgDescriptions::eInteger );
     }}
 
+    // filters
+    {{
+        arg_desc->AddDefaultKey(
+            "view",
+            "STRING",
+            "Mol filter",
+            CArgDescriptions::eString,
+            "nucs-only");
+        arg_desc->SetConstraint(
+            "view", 
+            &(*new CArgAllow_Strings, 
+                "nucs-only",
+                "prots-only",
+                "all"));
+    }}
+
     //  flags
     {{
     arg_desc->AddFlag(
@@ -769,6 +785,15 @@ unsigned int CAnnotWriterApp::xGffFlags(
     if (args["micro-introns"]) {
         eFlags |= CGff3Writer::fMicroIntrons;
     }
+    auto viewType = args["view"].AsString();
+    if (viewType == "all") {
+        eFlags |= CGff3Writer::fIncludeProts;
+    }
+    if (viewType == "prots-only") {
+        eFlags |= CGff3Writer::fIncludeProts;
+        eFlags |= CGff3Writer::fExcludeNucs;
+    }
+    
     return eFlags;
 }
 

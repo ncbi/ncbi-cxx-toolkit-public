@@ -13,7 +13,4 @@ AB019592.1	DDBJ	N_region	205	216	.	+	.	ID=id-IgH-3;Parent=gene-IgH;gbkey=N_regio
 AB019592.1	DDBJ	V_gene_segment	1	171	.	+	.	ID=id-IgH-4;Parent=gene-IgH;Note=DP58;gbkey=V_segment;gene=IgH
 AB019592.1	DDBJ	exon	1	171	.	+	.	ID=exon-id-IgH-4-1;Parent=id-IgH-4;Note=DP58;gbkey=V_segment;gene=IgH
 AB019592.1	DDBJ	sequence_feature	217	853	.	+	.	ID=id-AB019592.1:217..853;Note=J segment region (Jh2c-Jh3c);gbkey=misc_feature
-##sequence-region BAA35003.1 1 75
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-BAA35003.1	DDBJ	region	1	75	.	+	.	ID=BAA35003.1:1..75;Dbxref=taxon:9606;Name=14;cell-type=B lymphocyte;chromosome=14;clone=KKa-3;gbkey=Src;isolate=HCL patient KKa;mol_type=unassigned;rearranged=true;sex=male
 ###

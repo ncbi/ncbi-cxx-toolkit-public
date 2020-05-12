@@ -38,28 +38,4 @@ NM_002020.5	RefSeq	exon	3593	3741	.	+	.	ID=id-FLT4-27;Parent=gene-FLT4;Dbxref=Ge
 NM_002020.5	RefSeq	exon	3742	3862	.	+	.	ID=id-FLT4-28;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
 NM_002020.5	RefSeq	exon	3863	3948	.	+	.	ID=id-FLT4-29;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
 NM_002020.5	RefSeq	exon	3949	4484	.	+	.	ID=id-FLT4-30;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
-##sequence-region NP_002011.2 1 1298
-##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-NP_002011.2	RefSeq	region	1	1298	.	+	.	ID=NP_002011.2:1..1298;Dbxref=taxon:9606;Name=5;chromosome=5;gbkey=Src;genome=genomic;map=5q35.3;mol_type=unassigned
-NP_002011.2	RefSeq	region	33	33	.	+	.	ID=id-NP_002011.2:33..33;Note=N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK%2C ECO:0000269|PubMed:23878260}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	104	104	.	+	.	ID=id-NP_002011.2:104..104;Note=N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK%2C ECO:0000269|PubMed:23878260}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	166	166	.	+	.	ID=id-NP_002011.2:166..166;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	251	251	.	+	.	ID=id-NP_002011.2:251..251;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	299	299	.	+	.	ID=id-NP_002011.2:299..299;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	411	411	.	+	.	ID=id-NP_002011.2:411..411;Note=N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK%2C ECO:0000269|PubMed:23878260}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	515	515	.	+	.	ID=id-NP_002011.2:515..515;Note=N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK%2C ECO:0000269|PubMed:23878260}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	527	527	.	+	.	ID=id-NP_002011.2:527..527;Note=N-linked (GlcNAc...) asparagine. {ECO:0000269|PubMed:16335952}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	594	594	.	+	.	ID=id-NP_002011.2:594..594;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	683	683	.	+	.	ID=id-NP_002011.2:683..683;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	690	690	.	+	.	ID=id-NP_002011.2:690..690;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	758	758	.	+	.	ID=id-NP_002011.2:758..758;Note=N-linked (GlcNAc...) asparagine. {ECO:0000255}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	776	796	.	+	.	ID=id-NP_002011.2:776..796;Note=propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	830	830	.	+	.	ID=id-NP_002011.2:830..830;Note=Phosphotyrosine%2C by SRC. {ECO:0000269|PubMed:20431062}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	833	833	.	+	.	ID=id-NP_002011.2:833..833;Note=Phosphotyrosine%2C by SRC. {ECO:0000269|PubMed:20431062}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	853	853	.	+	.	ID=id-NP_002011.2:853..853;Note=Phosphotyrosine%2C by SRC. {ECO:0000269|PubMed:20431062}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	1063	1063	.	+	.	ID=id-NP_002011.2:1063..1063;Note=Phosphotyrosine%2C by autocatalysis and SRC. {ECO:0000269|PubMed:16076871%2C ECO:0000269|PubMed:20431062}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	1068	1068	.	+	.	ID=id-NP_002011.2:1068..1068;Note=Phosphotyrosine%2C by autocatalysis. {ECO:0000269|PubMed:16076871%2C ECO:0000269|PubMed:20431062}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	1230	1230	.	+	.	ID=id-NP_002011.2:1230..1230;Note=Phosphotyrosine%2C by autocatalysis. {ECO:0000269|PubMed:12881528%2C ECO:0000269|PubMed:16076871}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	1231	1231	.	+	.	ID=id-NP_002011.2:1231..1231;Note=Phosphotyrosine%2C by autocatalysis. {ECO:0000269|PubMed:12881528%2C ECO:0000269|PubMed:16076871}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
-NP_002011.2	RefSeq	region	1265	1265	.	+	.	ID=id-NP_002011.2:1265..1265;Note=Phosphotyrosine%2C by autocatalysis. {ECO:0000269|PubMed:12881528}%3B propagated from UniProtKB/Swiss-Prot (P35916.3);gbkey=Site
 ###
