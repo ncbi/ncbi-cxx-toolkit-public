@@ -658,7 +658,7 @@ bool CWriteUtil::GetBestId(
     if (best_idh.IsGi()  &&  throwExceptionOnUnresolvedGi) {
         // we are not supposed to let any GI numbers see the light of day:
         string msg("Unable to resolve GI number ");
-        msg += NStr::IntToString(best_idh.GetGi());
+        msg += NStr::NumericToString(best_idh.GetGi());
         NCBI_THROW(CObjWriterException, eBadInput, msg);
     }
     string backup = best_id;
