@@ -1138,7 +1138,11 @@ bool CGff3Writer::xWriteSequenceHeader(
     string id;
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if ( pId ) {
-        if (!CWriteUtil::GetBestId(CSeq_id_Handle::GetHandle(*pId), bsh.GetScope(), id)) {
+        if (!CWriteUtil::GetBestId(
+                CSeq_id_Handle::GetHandle(*pId),
+                bsh.GetScope(), 
+                id, 
+                mThrowExceptionOnUnresolvedGi)) {
             id = "<unknown>";
         }
     }
@@ -1933,7 +1937,11 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
 
     if (mf.IsSetProduct()) {
         string transcript_id;
-        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), transcript_id)) {
+        if (CWriteUtil::GetBestId(
+                mf.GetProductId(), 
+                mf.GetScope(), 
+                transcript_id,
+                mThrowExceptionOnUnresolvedGi)) {
             record.SetAttribute("transcript_id", transcript_id);
             return true;
         }
@@ -2233,7 +2241,11 @@ bool CGff3Writer::xAssignSourceSeqId(
         auto ids = bsh.GetId();
         if (!ids.empty()) {
             auto id = ids.front();
-            CWriteUtil::GetBestId(id, bsh.GetScope(), bestId);
+            CWriteUtil::GetBestId(
+                id, 
+                bsh.GetScope(), 
+                bestId,
+                mThrowExceptionOnUnresolvedGi);
             record.SetSeqId(bestId);
             return true;
         }
@@ -2242,7 +2254,11 @@ bool CGff3Writer::xAssignSourceSeqId(
     }
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
-    if (!CWriteUtil::GetBestId(idh, bsh.GetScope(), bestId)) {
+    if (!CWriteUtil::GetBestId(
+            idh, 
+            bsh.GetScope(), 
+            bestId,
+            mThrowExceptionOnUnresolvedGi)) {
         record.SetSeqId(defaultId);
         return true;
     }
@@ -2907,7 +2923,8 @@ bool CGff3Writer::xWriteRecord(
         id = "";
         const CSeq_loc& loc = record.GetLocation();
         auto idh = sequence::GetIdHandle(loc, m_pScope);
-        if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
+        if (!CWriteUtil::GetBestId(
+                idh, *m_pScope, id, mThrowExceptionOnUnresolvedGi)) {
             id = ".";
         }
     }

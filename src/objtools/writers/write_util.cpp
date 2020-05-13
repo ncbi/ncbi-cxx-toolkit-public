@@ -45,6 +45,8 @@
 #include <objtools/writers/feature_context.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/writers/writer_exception.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -642,15 +644,22 @@ void CWriteUtil::ChangeToPackedInt(
 bool CWriteUtil::GetBestId(
     CSeq_id_Handle idh,
     CScope& scope,
-    string& best_id )
+    string& best_id,
+    bool throwExceptionOnUnresolvedGi)
 //  ----------------------------------------------------------------------------
 {
     if (!idh) {
         return false;
     }
     CSeq_id_Handle best_idh = sequence::GetId(idh, scope, sequence::eGetId_Best);
-    if (!best_idh) {
+    if (true  ||  !best_idh) {
         best_idh = idh;
+    }
+    if (best_idh.IsGi()  &&  throwExceptionOnUnresolvedGi) {
+        // we are not supposed to let any GI numbers see the light of day:
+        string msg("Unable to resolve GI number ");
+        msg += NStr::IntToString(best_idh.GetGi());
+        NCBI_THROW(CObjWriterException, eBadInput, msg);
     }
     string backup = best_id;
     try {
@@ -666,7 +675,8 @@ bool CWriteUtil::GetBestId(
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetBestId(
     const CMappedFeat& mf,
-    string& best_id)
+    string& best_id,
+    bool throwExceptionOnUnresolvedGi)
 //  ----------------------------------------------------------------------------
 {
 	CSeq_id_Handle idh = mf.GetLocationId();
@@ -675,7 +685,7 @@ bool CWriteUtil::GetBestId(
     }
     const CSeq_loc& loc = mf.GetLocation();
     idh = sequence::GetIdHandle(loc, &mf.GetScope());
-    return  GetBestId(idh, mf.GetScope(), best_id);
+    return  GetBestId(idh, mf.GetScope(), best_id, throwExceptionOnUnresolvedGi);
 }
 
 //  ----------------------------------------------------------------------------

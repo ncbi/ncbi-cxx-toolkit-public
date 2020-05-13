@@ -308,6 +308,10 @@ void CAnnotWriterApp::Init()
     //  flags
     {{
     arg_desc->AddFlag(
+        "throw-exception-on-unresolved-gi",
+        "throw if a gi cannot be converted to accession.version",
+        true);
+    arg_desc->AddFlag(
         "debug-output",
         "produce formally invalid output that is easy to read",
         true );
@@ -835,6 +839,11 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
             eDiag_Fatal);
     }
 
+    unsigned int baseFlags = CWriterBase::fNormal;
+    if (args["throw-exception-on-unresolved-gi"]) {
+        baseFlags |= CWriterBase::fThrowExceptionOnUnresolvedGi;
+    }
+
     const string strFormat = args["format"].AsString();
     if (strFormat == "gff"  ||  strFormat == "gff2") { 
         CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
@@ -848,7 +857,8 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
             CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs, sortAlignments);
             return pWriter;
         }
-        CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args), sortAlignments);
+        auto gffFlags = baseFlags |= xGffFlags(args);
+        CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, gffFlags, sortAlignments);
         xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         if (args["default-method"]) {
             pWriter->SetDefaultMethod(args["default-method"].AsString());

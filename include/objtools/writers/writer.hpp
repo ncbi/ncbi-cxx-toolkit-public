@@ -64,7 +64,8 @@ public:
     typedef enum {
         fNormal = 0,
         fDebugOutput = (1<<0),
-        fWriterBaseLast = fDebugOutput,
+        fThrowExceptionOnUnresolvedGi = (1<<1),
+        fWriterBaseLast = fThrowExceptionOnUnresolvedGi,
     } TFlags;
     
 protected:
@@ -75,7 +76,8 @@ protected:
         m_uFlags( uFlags ),
         mpCancelled(0), 
         m_Range(CRange<TSeqPos>::GetWhole()),
-        mpMessageListener(nullptr)
+        mpMessageListener(nullptr),
+        mThrowExceptionOnUnresolvedGi(uFlags & fThrowExceptionOnUnresolvedGi)
     {};
 public:
     virtual ~CWriterBase()
@@ -250,6 +252,7 @@ protected:
     unique_ptr<SAnnotSelector> m_Selector;
     CRange<TSeqPos> m_Range;
     CWriterListener* mpMessageListener;
+    bool mThrowExceptionOnUnresolvedGi;
 };
 
 

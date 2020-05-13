@@ -101,11 +101,13 @@ public:
     static bool GetBestId(
         CSeq_id_Handle,
         CScope&, 
-        string& );
+        string&,
+        bool throwExceptionOnUnresolvedGi=false);
 
     static bool GetBestId(
         const CMappedFeat&,
-        string& );
+        string&,
+        bool throwExceptionOnUnresolvedGi=false);
 
     static bool GetTrnaCodons(
         const CTrna_ext&,
