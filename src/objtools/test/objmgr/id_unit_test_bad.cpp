@@ -63,7 +63,7 @@ USING_SCOPE(objects);
 
 NCBI_PARAM_DECL(bool, TEST, TRACE);
 NCBI_PARAM_DEF_EX(bool, TEST, TRACE, false,
-                  eParam_NoThread, TEST_TRACE_POST);
+                  eParam_NoThread, TEST_TRACE);
 
 
 static
