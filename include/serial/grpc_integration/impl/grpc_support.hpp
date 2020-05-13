@@ -38,7 +38,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/request_status.hpp>
-#ifdef HAVE_LIBPROTOBUF
+#ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
 #  include <google/protobuf/message.h>
 #  if GOOGLE_PROTOBUF_VERSION >= 3002000
 #    define NCBI_GRPC_GET_BYTE_SIZE(msg) ((msg).ByteSizeLong())
@@ -103,7 +103,7 @@ public:
 private:
     CDiagContext&    m_DiagContext;
     CRequestContext& m_RequestContext;
-#ifdef HAVE_LIBPROTOBUF
+#ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
     const TMessage&  m_Reply;
 #endif
     bool             m_ManagingRequest;
@@ -169,7 +169,7 @@ CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
                                        const TMessage& reply)
     : m_DiagContext(GetDiagContext()),
       m_RequestContext(m_DiagContext.GetRequestContext()),
-#ifdef HAVE_LIBPROTOBUF
+#ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
       m_Reply(reply),
 #endif
       m_ManagingRequest(false)
