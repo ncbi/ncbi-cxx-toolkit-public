@@ -28,5 +28,5 @@ set(NCBI_PTBCFG_KNOWN_FOLDERS
   ${NCBI_PTBCFG_KNOWN_FOLDERS}
 )
 
-include(build-system/cmake/CMake.NCBItoolkit.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/CMake.NCBItoolkit.cmake)
 NCBI_add_subdirectory( ${NCBI_PTBCFG_KNOWN_FOLDERS})

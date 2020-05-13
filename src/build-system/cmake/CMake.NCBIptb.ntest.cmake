@@ -98,11 +98,7 @@ endfunction()
 
 ##############################################################################
 function(NCBI_internal_add_ncbi_checktarget)
-    if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
-        set(SCRIPT_NAME "${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix_cmake.sh")
-    else()
-        set(SCRIPT_NAME "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix_cmake.sh")
-    endif()
+    set(SCRIPT_NAME "${NCBITK_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix_cmake.sh")
     set(WORKDIR ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD})
     set(_checkdir ../check)
     set(_checkroot ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${_checkdir})

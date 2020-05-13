@@ -100,6 +100,7 @@
 #############################################################################
 # deprecated
 macro(NCBI_add_root_subdirectory)
+    message(WARNING "NCBI_add_root_subdirectory is deprecated, use NCBI_add_subdirectory instead")
     NCBI_add_subdirectory(${ARGV})
 endmacro()
 
@@ -108,6 +109,17 @@ function(NCBI_add_subdirectory)
     if(NCBI_PTBMODE_PARTS)
         return()
     endif()
+
+    if(NOT DEFINED NCBI_CURRENT_SOURCE_DIR)
+        set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
+    get_filename_component(_path ${NCBI_CURRENT_SOURCE_DIR} DIRECTORY)
+    if("${_path}" STREQUAL "${NCBITK_SRC_ROOT}")
+        set(NCBI_TREE_ROOT    ${NCBITK_TREE_ROOT})
+        set(NCBI_SRC_ROOT     ${NCBITK_SRC_ROOT})
+        set(NCBI_INC_ROOT     ${NCBITK_INC_ROOT})
+    endif()
+
     if(NCBI_PTBCFG_ENABLE_COLLECTOR AND NOT NCBI_PTB_HAS_ROOT)
         set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
         NCBI_internal_analyze_tree()
