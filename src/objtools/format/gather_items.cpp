@@ -4035,10 +4035,18 @@ static bool s_NotForceNearFeats(CBioseqContext& ctx)
     return true;
 }
 
-void CFlatGatherer::x_GatherFeatures(void) const
+void CFlatGatherer::x_GatherFeaturesIdx(void) const
 {
     CBioseqContext& ctx = *m_Current;
     const CFlatFileConfig& cfg = ctx.Config();
+    if ( ! cfg.UseSeqEntryIndexer()) return;
+
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CBioseq_Handle hdl = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+    if (! bsx) return;
+
     CFlatItemOStream& out = *m_ItemOS;
     CConstRef<IFlatItem> item;
 
@@ -4073,15 +4081,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
         loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
     }
 
-    // collect features
-    // if ( ctx.IsSegmented()  &&  cfg.IsStyleMaster()  &&  cfg.OldFeaturesOrder() ) {
-    if ( cfg.UseSeqEntryIndexer() && ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() && s_NotForceNearFeats(ctx) ) {
-        
-        CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
-        if (! idx) return;
-        CBioseq_Handle hdl = ctx.GetHandle();
-        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
-        if (! bsx) return;
+    if ( ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() && s_NotForceNearFeats(ctx)) {
 
         // Gaps of length zero are only shown for SwissProt Genpept records
         const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
@@ -4163,6 +4163,138 @@ void CFlatGatherer::x_GatherFeatures(void) const
     } else {
         x_GatherFeaturesOnLocation(loc, *selp, ctx);
     }
+
+    if ( ctx.IsProt() ) {
+        // Also collect features which this protein is their product.
+        // Currently there are only two possible candidates: Coding regions
+        // and Prot features (rare).
+        
+        // look for the Cdregion feature for this protein
+        CBioseq_Handle handle = ( ctx.CanGetMaster() ? ctx.GetMaster().GetHandle() : ctx.GetHandle() );
+        SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+        sel.SetByProduct().SetResolveDepth(0);
+        // try first in-TSE CDS
+        sel.SetLimitTSE(handle.GetTSE_Handle());
+        CFeat_CI feat_it(handle, sel);
+        if ( !feat_it ) {
+            // then any other CDS
+            sel.SetLimitNone().ExcludeTSE(handle.GetTSE_Handle());
+            feat_it = CFeat_CI(handle, sel);
+        }
+        if (feat_it) {
+            try {
+                CMappedFeat cds = *feat_it;
+
+                // map CDS location to its location on the product
+                CSeq_loc_Mapper mapper(*cds.GetOriginalSeq_feat(),
+                    CSeq_loc_Mapper::eLocationToProduct,
+                    &ctx.GetScope());
+                mapper.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle | CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
+                CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
+                cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
+
+                // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
+                // In that case, we shrink the cds's location back one residue.
+                if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
+                    const CSeq_id *cds_prod_seq_id = cds.GetProduct().GetId();
+                    if( cds_prod_seq_id != NULL ) {
+                        CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( *cds_prod_seq_id );
+                        if( prod_bioseq_handle ) {
+                            const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
+                            if( cds_prod->GetInt().GetTo() >= bioseq_len ) {
+                                cds_prod->SetInt().SetTo( bioseq_len - 1 );
+                            }
+                        }
+                    }
+                }
+
+                // if there are any gaps in the location, we know that there was an issue with the mapping, so
+                // we fall back on the product.
+                if( s_ContainsGaps(*cds_prod) ) {
+                    cds_prod->Assign( cds.GetProduct() );
+                }
+
+                // remove fuzz
+                cds_prod->SetPartialStart( false, eExtreme_Positional );
+                cds_prod->SetPartialStop ( false, eExtreme_Positional );
+
+                item.Reset(
+                    x_NewFeatureItem(cds, ctx, &*cds_prod, m_Feat_Tree,
+                        CFeatureItem::eMapped_from_cdna) );
+
+                out << item;
+            } catch (CAnnotMapperException& e) {
+                LOG_POST_X(2, Error << e );
+            }
+        }
+
+        // look for Prot features (only for RefSeq records or
+        // GenBank not release_mode).
+        if ( ctx.IsRefSeq()  ||  !cfg.ForGBRelease() ) {
+            SAnnotSelector prod_sel(CSeqFeatData::e_Prot, true);
+            prod_sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
+            prod_sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
+            prod_sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
+            CFeat_CI it(ctx.GetHandle(), prod_sel);
+            ctx.GetFeatTree().AddFeatures(it);
+            for ( ;  it;  ++it) {  
+                item.Reset(x_NewFeatureItem(*it,
+                                            ctx,
+                                            &it->GetProduct(),
+                                            m_Feat_Tree,
+                                            CFeatureItem::eMapped_from_prot) );
+                out << item;
+            }
+        }
+    }
+}
+
+void CFlatGatherer::x_GatherFeatures(void) const
+{
+    CBioseqContext& ctx = *m_Current;
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    if (cfg.UseSeqEntryIndexer()) {
+        x_GatherFeaturesIdx();
+        return;
+    }
+
+    CFlatItemOStream& out = *m_ItemOS;
+    CConstRef<IFlatItem> item;
+
+    SAnnotSelector sel;
+    SAnnotSelector* selp = &sel;
+    if (ctx.GetAnnotSelector() != NULL) {
+        selp = &ctx.SetAnnotSelector();
+    }
+    s_SetSelection(*selp, ctx);
+
+    // optionally map gene from genomic onto cDNA
+    if ( ctx.IsInGPS()  &&  cfg.CopyGeneToCDNA()  &&
+         ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) {
+        CMappedFeat mrna = GetMappedmRNAForProduct(ctx.GetHandle());
+        if (mrna) {
+            CMappedFeat gene = GetBestGeneForMrna(mrna, &ctx.GetFeatTree());
+            if (gene) {
+                CRef<CSeq_loc> loc(new CSeq_loc);
+                loc->SetWhole(*ctx.GetPrimaryId());
+                item.Reset( 
+                    x_NewFeatureItem(gene, ctx, loc, m_Feat_Tree,
+                                     CFeatureItem::eMapped_from_genomic) );
+                out << item;
+            }
+        }
+    }
+
+    CSeq_loc loc;
+    if ( ctx.GetMasterLocation() != 0 ) {
+        loc.Assign(*ctx.GetMasterLocation());
+    } else {
+        loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
+    }
+
+    // collect features
+    x_GatherFeaturesOnLocation(loc, *selp, ctx);
 
     if ( ctx.IsProt() ) {
         // Also collect features which this protein is their product.

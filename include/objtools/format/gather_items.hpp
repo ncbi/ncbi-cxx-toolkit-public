@@ -123,7 +123,8 @@ protected:
     void x_GatherCDSReferences(TReferences& refs) const;
 
     // features
-    void x_GatherFeatures  (void) const;
+    void x_GatherFeatures (void) const;
+    void x_GatherFeaturesIdx(void) const;
     void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CBioseqContext& ctx,
         CRef<CSeq_loc_Mapper> slice_mapper,
         CConstRef<CFeatureItem> cdsFeatureItem = CConstRef<CFeatureItem>() ) const;
