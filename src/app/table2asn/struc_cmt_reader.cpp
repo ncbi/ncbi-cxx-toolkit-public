@@ -67,8 +67,10 @@ void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& 
 {
     list<CStructComment> comments;
     LoadComments(reader, comments, CSeq_id::fParse_AnyLocal);
-    for (const CStructComment& comment: comments)
-       _AddStructuredComments(entry, comment);
+    for (CStructComment& comment : comments) {
+        _CheckStructuredCommentsSuffix(comment);
+        _AddStructuredComments(entry, comment);
+    }
 }
 
 void CTable2AsnStructuredCommentsReader::AddStructuredComments(objects::CSeq_descr& descr, const CStructComment& comments)
@@ -136,10 +138,36 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
     });
 }
 
+
+void CTable2AsnStructuredCommentsReader::_CheckStructuredCommentsSuffix(CStructComment& comments)
+{
+    // assumption: all descriptors are structural comments
+    for (auto& desc : comments.m_descs) {
+        string prefix, suffix;
+        auto& user = desc->GetUser();
+        for (auto& data : desc->GetUser().GetData()) {
+            if (data->IsSetLabel() && data->GetLabel().IsStr()) {
+                auto& label = data->GetLabel().GetStr();
+                if (label == "StructuredCommentPrefix") {
+                    prefix = data->GetData().GetStr();
+                }
+                else if (label == "StructuredCommentSuffix") {
+                    suffix = data->GetData().GetStr();
+                }
+            }
+        }
+        if (prefix.size() && !suffix.size()) {
+            desc->SetUser().AddField("StructuredCommentSuffix", prefix);
+        }
+    }
+}
+
+
 void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& entry)
 {
     CStructComment comments;
     LoadCommentsByRow(reader, comments);
+    _CheckStructuredCommentsSuffix(comments);
     VisitAllSeqDesc(entry, true, [comments](CBioseq* bioseq, CSeq_descr& descr)
     {
         if (bioseq && !bioseq->IsNa())

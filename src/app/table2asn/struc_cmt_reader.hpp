@@ -61,8 +61,9 @@ public:
 
 private:
     void _AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments);
+    static void _CheckStructuredCommentsSuffix(CStructComment& comments);
 
-   objects::ILineErrorListener* m_logger;
+    objects::ILineErrorListener* m_logger;
 };
 
 END_NCBI_SCOPE
