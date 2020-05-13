@@ -652,7 +652,7 @@ bool CWriteUtil::GetBestId(
         return false;
     }
     CSeq_id_Handle best_idh = sequence::GetId(idh, scope, sequence::eGetId_Best);
-    if (true  ||  !best_idh) {
+    if (!best_idh) {
         best_idh = idh;
     }
     if (best_idh.IsGi()  &&  throwExceptionOnUnresolvedGi) {
