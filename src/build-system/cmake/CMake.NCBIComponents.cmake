@@ -43,7 +43,7 @@ endif()
 if(WIN32)
   set(NCBI_COMPONENT_local_lbsm_FOUND NO)
 else()
-  if (EXISTS ${NCBI_SRC_ROOT}/connect/ncbi_lbsm.c)
+  if (EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
 #    message("local_lbsm found at ${NCBI_SRC_ROOT}/connect")
     set(NCBI_COMPONENT_local_lbsm_FOUND YES)
     set(HAVE_LOCAL_LBSM 1)
@@ -56,9 +56,9 @@ endif()
 
 #############################################################################
 # LocalPCRE
-if (EXISTS ${includedir}/util/regexp)
+if (EXISTS ${NCBITK_INC_ROOT}/util/regexp)
   set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
-  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
+  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
   set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
 else()
   set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
@@ -66,9 +66,9 @@ endif()
 
 #############################################################################
 # LocalZ
-if (EXISTS ${includedir}/util/compress/zlib)
+if (EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib)
   set(NCBI_COMPONENT_LocalZ_FOUND YES)
-  set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
+  set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
   set(NCBI_COMPONENT_LocalZ_NCBILIB z)
 else()
   set(NCBI_COMPONENT_LocalZ_FOUND NO)
@@ -76,9 +76,9 @@ endif()
 
 #############################################################################
 # LocalBZ2
-if (EXISTS ${includedir}/util/compress/bzip2)
+if (EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2)
   set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
-  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
+  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
   set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
 else()
   set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
@@ -86,9 +86,9 @@ endif()
 
 #############################################################################
 #LocalLMDB
-if (EXISTS ${includedir}/util/lmdb)
+if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb)
   set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
-  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${includedir}/util/lmdb)
+  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
   set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
 else()
   set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
@@ -96,8 +96,8 @@ endif()
 
 #############################################################################
 # FreeTDS
-set(FTDS95_INCLUDE  ${includedir}/dbapi/driver/ftds95  ${includedir}/dbapi/driver/ftds95/freetds)
-set(FTDS100_INCLUDE ${includedir}/dbapi/driver/ftds100 ${includedir}/dbapi/driver/ftds100/freetds)
+set(FTDS95_INCLUDE  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95/freetds)
+set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
 set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
 set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS100_INCLUDE})
@@ -132,8 +132,8 @@ endif()
 
 #############################################################################
 # FreeTDS
-set(FTDS95_INCLUDE  ${includedir}/dbapi/driver/ftds95  ${includedir}/dbapi/driver/ftds95/freetds)
-set(FTDS100_INCLUDE ${includedir}/dbapi/driver/ftds100 ${includedir}/dbapi/driver/ftds100/freetds)
+set(FTDS95_INCLUDE  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95/freetds)
+set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
 #############################################################################
 list(SORT NCBI_ALL_COMPONENTS)
