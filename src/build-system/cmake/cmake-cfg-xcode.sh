@@ -115,19 +115,19 @@ while [ $# != 0 ]; do
       ;; 
     --with-projects=*)
       PROJECT_LIST=${1#*=}
-      if [ -e "${tree_root}/$PROJECT_LIST" ]; then
+      if [ -f "${tree_root}/$PROJECT_LIST" ]; then
         PROJECT_LIST="${tree_root}/$PROJECT_LIST"
       fi
       ;; 
     --with-tags=*)
       PROJECT_TAGS=${1#*=}
-      if [ -e "${tree_root}/$PROJECT_TAGS" ]; then
+      if [ -f "${tree_root}/$PROJECT_TAGS" ]; then
         PROJECT_TAGS="${tree_root}/$PROJECT_TAGS"
       fi
       ;; 
     --with-targets=*)
       PROJECT_TARGETS=${1#*=}
-      if [ -e "${tree_root}/$PROJECT_TARGETS" ]; then
+      if [ -f "${tree_root}/$PROJECT_TARGETS" ]; then
         PROJECT_TARGETS="${tree_root}/$PROJECT_TARGETS"
       fi
       ;; 
