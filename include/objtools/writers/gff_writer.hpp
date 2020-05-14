@@ -359,15 +359,15 @@ protected:
     virtual bool x_WriteSeqEntryHandle(
         CSeq_entry_Handle );
 
-    virtual bool x_WriteBioseqHandle(
-        CBioseq_Handle );
-
     virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
+    virtual bool x_WriteBioseqHandle(
+        CBioseq_Handle );
 
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& );
+
 
     virtual bool xWriteAllChildren(
         CGffFeatureContext&,

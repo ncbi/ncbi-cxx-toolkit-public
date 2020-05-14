@@ -210,9 +210,21 @@ protected:
         CBioseq_Handle);
     virtual bool xWriteFeature(
         CFeat_CI feat_it) override;
-    virtual bool xWriteFeature(
+
+    virtual bool xWriteSequence(
+        CBioseq_Handle );
+    virtual bool xWriteNucleotideSequence(
+        CBioseq_Handle );
+    virtual bool xWriteProteinSequence(
+        CBioseq_Handle );
+
+    virtual bool xWriteNucleotideFeature(
         CGffFeatureContext&,
         const CMappedFeat&);
+    virtual bool xWriteProteinFeature(
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     virtual bool xWriteFeatureGene(
         CGffFeatureContext&,
         const CMappedFeat& );

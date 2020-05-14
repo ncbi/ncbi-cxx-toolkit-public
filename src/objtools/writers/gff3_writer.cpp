@@ -321,9 +321,11 @@ SAnnotSelector& CGff3Writer::SetAnnotSelector(void)
     selector.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub)
         .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
         .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq)
-        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
-        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_prot);
+        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue);
     selector.ExcludeFeatType(CSeqFeatData::e_Biosrc);
+    if (!(this->m_uFlags & CGff3Writer::fIncludeProts)) {
+        selector.ExcludeFeatSubtype(CSeqFeatData::eSubtype_prot);
+    }
     return selector;
 }
 
@@ -390,7 +392,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
 
     for ( /*0*/; feat_iter; ++feat_iter ) {
-        if ( ! xWriteFeature( fc, *feat_iter ) ) {
+        if ( ! xWriteNucleotideFeature( fc, *feat_iter ) ) {
             return false;
         }
     }
@@ -1323,7 +1325,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return false;
     }
 
-    if (!CGff2Writer::x_WriteBioseqHandle(bsh)) {
+    if (!xWriteSequence(bsh)) {
         return false;
     }
 
@@ -1364,7 +1366,7 @@ bool CGff3Writer::xWriteAllChildren(
     featTree.GetChildrenTo(mf, vChildren);
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
-        if (!xWriteFeature(fc, mChild)) {
+        if (!xWriteNucleotideFeature(fc, mChild)) {
             return false;
         }
         if (!xWriteAllChildren(fc, mChild)) {
@@ -1401,12 +1403,95 @@ bool CGff3Writer::xWriteFeature(
 
     CGffFeatureContext fc(feat_it, m_BioseqHandle, feat_it.GetAnnot());
 
-    return xWriteFeature(fc, *feat_it);
+    return xWriteNucleotideFeature(fc, *feat_it);
 }
 
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xWriteFeature(
+bool
+IsProteinSequense(
+    CBioseq_Handle bsh) 
+//  ----------------------------------------------------------------------------
+{
+    if (!bsh.CanGetInst_Mol()) {
+        return false;
+    }
+    return (bsh.GetInst_Mol() == CSeq_inst::eMol_aa);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteSequence(
+    CBioseq_Handle bsh ) 
+//  ----------------------------------------------------------------------------
+{
+    if (IsProteinSequense(bsh)) {
+        return xWriteProteinSequence(bsh);
+    }
+    return xWriteNucleotideSequence(bsh);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteProteinSequence(
+    CBioseq_Handle bsh ) 
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel = SetAnnotSelector();
+    sel.IncludeFeatType(CSeqFeatData::e_Prot);
+    const auto& display_range = GetRange();
+    CFeat_CI feat_iter(bsh, display_range, sel);
+    CGffFeatureContext fc(feat_iter, bsh);
+
+    while (feat_iter) {
+        CMappedFeat mf = *feat_iter;
+        xWriteProteinFeature(fc, mf);
+        ++feat_iter;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteNucleotideSequence(
+    CBioseq_Handle bsh ) 
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel = SetAnnotSelector();
+    const auto& display_range = GetRange();
+    CFeat_CI feat_iter(bsh, display_range, sel);
+    //CFeat_CI feat_iter(bsh);
+    CGffFeatureContext fc(feat_iter, bsh);
+
+    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
+        CMappedFeat mRoot = *pit;
+        fc.AssignShouldInheritPseudo(false);
+        if (!xWriteNucleotideFeature(fc, mRoot)) {
+            // error!
+            continue;
+        }
+        xWriteAllChildren(fc, mRoot);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteProteinFeature(
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    // Skip feature if it lies outside the display interval - RW-158
+    if (!GetRange().IsWhole() &&
+        mf.GetLocation().GetTotalRange().IntersectionWith(GetRange()).Empty()) {
+        return true;
+    }
+    return xWriteFeatureGeneric(fc, mf);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteNucleotideFeature(
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------

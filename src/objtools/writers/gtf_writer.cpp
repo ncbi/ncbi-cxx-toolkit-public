@@ -135,6 +135,30 @@ CGtfWriter::~CGtfWriter()
 };
 
 //  ----------------------------------------------------------------------------
+bool CGtfWriter::x_WriteBioseqHandle(
+    CBioseq_Handle bsh ) 
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel = SetAnnotSelector();
+    const auto& display_range = GetRange();
+    CFeat_CI feat_iter(bsh, display_range, sel);
+    CGffFeatureContext fc(feat_iter, bsh);
+
+    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
+        CMappedFeat mRoot = *pit;
+        fc.AssignShouldInheritPseudo(false);
+        if (!xWriteFeature(fc, mRoot)) {
+            // error!
+            continue;
+        }
+        xWriteAllChildren(fc, mRoot);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {

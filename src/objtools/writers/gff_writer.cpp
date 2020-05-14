@@ -213,16 +213,10 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CFeat_CI feat_iter(bsh, display_range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
 
-    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
-    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
-    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
-        CMappedFeat mRoot = *pit;
-        fc.AssignShouldInheritPseudo(false);
-        if (!xWriteFeature(fc, mRoot)) {
-            // error!
-            continue;
-        }
-        xWriteAllChildren(fc, mRoot);
+    while (feat_iter) {
+        CMappedFeat mf = *feat_iter;
+        xWriteFeature(fc, mf);
+        ++feat_iter;
     }
     return true;
 }
