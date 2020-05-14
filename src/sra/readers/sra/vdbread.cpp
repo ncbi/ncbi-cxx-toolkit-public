@@ -684,7 +684,13 @@ static void s_VDBInit()
         // redirect VDB log to C++ Toolkit
         if ( s_GetDiagHandler() ) {
             KLogInit();
-            KLogLevelSet(klogDebug);
+            KLogLevel ask_level;
+#ifdef _DEBUG
+            ask_level = klogDebug;
+#else
+            ask_level = klogInfo;
+#endif
+            KLogLevelSet(ask_level);
             KLogLibHandlerSet(VDBLogWriter, 0);
         }
         CKConfig config = s_InitProxyConfig();
