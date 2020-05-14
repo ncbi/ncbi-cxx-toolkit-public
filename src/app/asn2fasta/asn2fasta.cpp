@@ -178,6 +178,11 @@ void CAsn2FastaApp::Init(void)
         arg_desc->AddOptionalKey("id", "ID",
             "Specific ID to display", CArgDescriptions::eString);
 
+        
+        arg_desc->AddOptionalKey("ids", "IDFile",
+                                 "FIle of IDs to display, one per line",
+                                 CArgDescriptions::eInputFile);
+
         // input type:
         arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
             CArgDescriptions::eString, "any" );
@@ -438,10 +443,12 @@ int CAsn2FastaApp::Run(void)
 
         m_ResolveAll = args["resolve-all"];
 
+        int ret_value=0;
         if ( args["batch"] ) {
             x_BatchProcess(*is.release());
         }
-        else if ( args["id"] ) {
+        else 
+        if ( args["id"] ) {
             //
             //  Implies gbload; otherwise this feature would be pretty  
             //  useless...
@@ -449,11 +456,31 @@ int CAsn2FastaApp::Run(void)
             m_Scope->AddDefaults();
             string seqID = args["id"].AsString();
             HandleSeqID( seqID );
-        } else {
+        }
+        else
+        if ( args["ids"] ) {
+            CNcbiIstream& istr = args["ids"].AsInputFile();
+            string id_str;
+            while (NcbiGetlineEOL(istr, id_str)) {
+                id_str = NStr::TruncateSpaces(id_str);
+                if (id_str.empty()  ||  id_str[0] == '#') {
+                    continue;
+                }
+
+                try {
+                    HandleSeqID(id_str);
+                }
+                catch (CException& e) {
+                    ERR_POST(Error << e);
+                    ret_value = 1;
+                }       
+            }
+        }
+        else {
             string asn_type = args["type"].AsString();
             x_ProcessIStream(asn_type, *is);
         }
-        return 0;
+        return ret_value;
     }
     catch (CException& e) {
         ERR_POST(Error << e);
