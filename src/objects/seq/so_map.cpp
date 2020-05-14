@@ -840,7 +840,7 @@ bool CSoMap::xMapGeneric(
         {CSeqFeatData::eSubtype_primer_bind, "primer_binding_site"}, 
         {CSeqFeatData::eSubtype_promoter, "promoter"}, 
         {CSeqFeatData::eSubtype_propeptide, "propeptide"}, 
-        {CSeqFeatData::eSubtype_prot, "protein"},
+        {CSeqFeatData::eSubtype_prot, "polypeptide"},
         {CSeqFeatData::eSubtype_protein_bind, "protein_binding_site"},
         {CSeqFeatData::eSubtype_rep_origin, "origin_of_replication"},
         {CSeqFeatData::eSubtype_S_region, "S_region"},

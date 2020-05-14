@@ -70,6 +70,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature_edit.hpp>
+#include <objmgr/util/weight.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
@@ -1486,7 +1487,18 @@ bool CGff3Writer::xWriteProteinFeature(
         mf.GetLocation().GetTotalRange().IntersectionWith(GetRange()).Empty()) {
         return true;
     }
-    return xWriteFeatureGeneric(fc, mf);
+
+    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
+    if (!xAssignFeature(*pRecord, fc, mf)) {
+        return false;
+    }
+    if (mf.GetData().IsProt()  &&  mf.GetData().GetProt().IsSetName()) {
+        pRecord->AddAttribute("product", mf.GetData().GetProt().GetName().front());
+    }
+    auto weight = GetProteinWeight(mf.GetOriginalFeature(), *m_pScope, nullptr, 0);
+    pRecord->AddAttribute(
+        "calculated_mol_wt", NStr::NumericToString(int(weight+0.5)));
+    return xWriteRecord(*pRecord);
 }
 
 
