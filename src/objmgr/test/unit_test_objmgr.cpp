@@ -750,3 +750,59 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT4)
     }
 }
 #endif // NCBI_THREADS
+
+BOOST_AUTO_TEST_CASE(CppIterFeat)
+{
+    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_id> id1 = s_GetId(1);
+    CRef<CSeq_id> id2 = s_GetId2(1);
+    CRef<CSeq_entry> entry = s_GetEntry(1);
+    entry->SetSeq().SetAnnot().push_back(s_GetAnnot(*id2));
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry((const CSeq_entry&)*entry);
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*id1);
+    CRef<CSeq_loc> loc2(new CSeq_loc); loc2->SetWhole(*id2);
+    scope.AddSeq_annot(*s_GetAnnot(*id1, 3));
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 4u);
+    vector<CMappedFeat> vv;
+    for ( CFeat_CI it(scope, *loc1); it; ++it ) {
+        vv.push_back(*it);
+    }
+    BOOST_CHECK_EQUAL(vv.size(), 4u);
+    {{
+        auto vv_it = begin(vv);
+        for ( CFeat_CI it(scope, *loc1); it; ++it ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK_EQUAL(*it, *vv_it);
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto f : CFeat_CI(scope, *loc1) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK_EQUAL(f, *vv_it);
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto& f : CFeat_CI(scope, *loc1) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK_EQUAL(f, *vv_it);
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto&& f : CFeat_CI(scope, *loc1) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK_EQUAL(f, *vv_it);
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+}

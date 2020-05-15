@@ -168,12 +168,30 @@ public:
     void Update(void);
     void Rewind(void);
 
+    const CFeat_CI& begin() const
+    {
+        return *this;
+    }
+    CFeat_CI end() const
+    {
+        return CFeat_CI(*this, at_end);
+    }
+    bool operator!=(const CFeat_CI& it) const
+    {
+        return CAnnotTypes_CI::operator!=(it);
+    }
+
     const CMappedFeat& operator* (void) const;
     const CMappedFeat* operator-> (void) const;
 
 private:
     CFeat_CI& operator++ (int);
     CFeat_CI& operator-- (int);
+
+    CFeat_CI(const CFeat_CI& it, EAtEnd)
+        : CAnnotTypes_CI(it, at_end)
+    {
+    }
 
     void x_AddFeaturesWithId(const CTSE_Handle& tse,
                              const SAnnotSelector& sel,

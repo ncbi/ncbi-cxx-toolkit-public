@@ -134,6 +134,18 @@ protected:
     CAnnot_Collector& GetCollector(void);
     const TIterator& GetIterator(void) const;
 
+    enum EAtEnd {
+        at_end
+    };
+    CAnnotTypes_CI(const CAnnotTypes_CI& src, EAtEnd)
+        : m_CurrAnnot(src.x_GetAnnotSet().end())
+    {
+    }
+    bool operator!=(const CAnnotTypes_CI& it) const
+    {
+        return m_CurrAnnot != it.m_CurrAnnot;
+    }
+
 private:
     const TAnnotSet& x_GetAnnotSet(void) const;
     void x_Init(CScope& scope,
