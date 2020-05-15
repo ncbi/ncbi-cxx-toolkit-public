@@ -2791,7 +2791,22 @@ bool CGff3Writer::xWriteFeatureProtein(
     if (!xAssignFeature(*pRecord, fc, protein)) {
         return false;
     }
-    
+
+    // edit some feature types that for some reason are named differently
+    //  once a feature gets mapped onto the cds (rw-1096):
+    // note: if these proliferate then we have to find an somap mechanism
+    //  to take care of this.
+    map<string, string> proteinOnCdsFixups = {
+        { "mature_protein_region", "mature_protein_region_of_CDS"},
+        { "immature_peptide_region", "propeptide_region_of_CDS"},
+        { "signal_peptide", "signal_peptide_region_of_CDS"},
+        { "transit_peptide", "transit_peptide_region_of_CDS"},
+    };
+    auto fixupIt = proteinOnCdsFixups.find(pRecord->StrType());
+    if (fixupIt != proteinOnCdsFixups.end()) {
+        pRecord->SetType(fixupIt->second);
+    }
+
     // indicate seqId is Prot_id (rw-1090):
     pRecord->AddAttribute("protein_id", pRecord->StrSeqId());
     // map location to cds coordinates (id and span):
