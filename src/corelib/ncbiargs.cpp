@@ -2162,7 +2162,7 @@ CArgValue* CArgErrorHandler::HandleError(const CArgDesc& arg_desc,
         arg_desc.ProcessArgument(value);
         // Should never get past ProcessArgument()
     }
-    if ((arg_desc.GetFlags() & CArgDescriptions::fWarnOnInvalidValue) == 0) {
+    if ((arg_desc.GetFlags() & CArgDescriptions::fWarnOnInvalidValue) != 0) {
         ERR_POST_X(22, Warning << "Invalid value " << value <<
             " for argument " << arg_desc.GetName() <<
             " - argument will be ignored.");
