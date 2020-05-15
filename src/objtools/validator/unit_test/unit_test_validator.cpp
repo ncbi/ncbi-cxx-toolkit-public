@@ -24961,6 +24961,16 @@ BOOST_AUTO_TEST_CASE(Test_RW_1064)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    unit_test_util::SetTaxname(entry, "Salmonella badforyou");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
+        "Organism not found in taxonomy database"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod", "Salmonella organism name should contain the serovar value."));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
 }
 
 #if 0
