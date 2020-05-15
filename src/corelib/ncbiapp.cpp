@@ -69,11 +69,13 @@ BEGIN_NCBI_SCOPE
 //  Constants
 //
 
-static const char* s_ArgLogFile     = "-logfile";
-static const char* s_ArgCfgFile     = "-conffile";
-static const char* s_ArgVersion     = "-version";
-static const char* s_ArgFullVersion = "-version-full";
-static const char* s_ArgDryRun      = "-dryrun";
+static const char* s_ArgLogFile         = "-logfile";
+static const char* s_ArgCfgFile         = "-conffile";
+static const char* s_ArgVersion         = "-version";
+static const char* s_ArgFullVersion     = "-version-full";
+static const char* s_ArgFullVersionXml  = "-version-full-xml";
+static const char* s_ArgFullVersionJson = "-version-full-json";
+static const char* s_ArgDryRun          = "-dryrun";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -886,8 +888,7 @@ int CNcbiApplicationAPI::AppMain
             } else if ( NStr::strcmp(argv[i], s_ArgVersion) == 0 ) {
                 delete[] v;
                 // Print VERSION
-                cout << GetFullVersion().Print( appname,
-                    CVersionAPI::fVersionInfo | CVersionAPI::fPackageShort );
+                cout << GetFullVersion().Print( appname, CVersionAPI::fVersionInfo | CVersionAPI::fPackageShort );
                 diag_context.DiscardMessages();
                 return 0;
 
@@ -896,6 +897,18 @@ int CNcbiApplicationAPI::AppMain
                 delete[] v;
                 // Print full VERSION
                 cout << GetFullVersion().Print( appname );
+                diag_context.DiscardMessages();
+                return 0;
+            } else if ( NStr::strcmp(argv[i], s_ArgFullVersionXml) == 0 ) {
+                delete[] v;
+                // Print full VERSION in XML format
+                cout << GetFullVersion().PrintXml( appname );
+                diag_context.DiscardMessages();
+                return 0;
+            } else if ( NStr::strcmp(argv[i], s_ArgFullVersionJson) == 0 ) {
+                delete[] v;
+                // Print full VERSION in JSON format
+                cout << GetFullVersion().PrintJson( appname );
                 diag_context.DiscardMessages();
                 return 0;
 
@@ -1283,81 +1296,98 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 void CNcbiApplicationAPI::x_AddDefaultArgs(void)
 {
     if ( !m_DisableArgDesc ) {
-        for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions()) {
-        if (desc->IsAutoHelpEnabled()) {
-            if ((m_HideArgs & fHideHelp) != 0) {
-                if (desc->Exist("h")) {
-                    desc->Delete("h");
+        for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions())
+        {
+            if (desc->IsAutoHelpEnabled()) {
+                if ((m_HideArgs & fHideHelp) != 0) {
+                    if (desc->Exist("h")) {
+                        desc->Delete("h");
+                    }
                 }
             }
-        }
-        if ((m_HideArgs & fHideFullHelp) != 0) {
-            if (desc->Exist("help")) {
-                desc->Delete("help");
+            if ((m_HideArgs & fHideFullHelp) != 0) {
+                if (desc->Exist("help")) {
+                    desc->Delete("help");
+                }
             }
-        }
-        if ((m_HideArgs & fHideXmlHelp) != 0) {
-            if (desc->Exist("xmlhelp")) {
-                desc->Delete("xmlhelp");
+            if ((m_HideArgs & fHideXmlHelp) != 0) {
+                if (desc->Exist("xmlhelp")) {
+                    desc->Delete("xmlhelp");
+                }
             }
-        }
-        if ((m_HideArgs & fHideLogfile) != 0) {
-            if (desc->Exist(s_ArgLogFile + 1)) {
-                desc->Delete(s_ArgLogFile + 1);
+            if ((m_HideArgs & fHideLogfile) != 0) {
+                if (desc->Exist(s_ArgLogFile + 1)) {
+                    desc->Delete(s_ArgLogFile + 1);
+                }
+            } else {
+                if (!desc->Exist(s_ArgLogFile + 1)) {
+                    desc->AddOptionalKey
+                        (s_ArgLogFile+1, "File_Name",
+                            "File to which the program log should be redirected",
+                            CArgDescriptions::eOutputFile);
+                }
             }
-        } else {
-            if (!desc->Exist(s_ArgLogFile + 1)) {
-                desc->AddOptionalKey
-                    (s_ArgLogFile+1, "File_Name",
-                        "File to which the program log should be redirected",
-                        CArgDescriptions::eOutputFile);
+            if ((m_HideArgs & fHideConffile) != 0) {
+                if (desc->Exist(s_ArgCfgFile + 1)) {
+                    desc->Delete(s_ArgCfgFile + 1);
+                }
+            } else {
+                if (!desc->Exist(s_ArgCfgFile + 1)) {
+                    desc->AddOptionalKey
+                        (s_ArgCfgFile + 1, "File_Name",
+                            "Program's configuration (registry) data file",
+                            CArgDescriptions::eInputFile);
+                }
             }
-        }
-        if ((m_HideArgs & fHideConffile) != 0) {
-            if (desc->Exist(s_ArgCfgFile + 1)) {
-                desc->Delete(s_ArgCfgFile + 1);
+            if ((m_HideArgs & fHideVersion) != 0) {
+                if (desc->Exist(s_ArgVersion + 1)) {
+                    desc->Delete(s_ArgVersion + 1);
+                }
+            } else {
+                if (!desc->Exist(s_ArgVersion + 1)) {
+                    desc->AddFlag
+                        (s_ArgVersion + 1,
+                            "Print version number;  ignore other arguments");
+                }
             }
-        } else {
-            if (!desc->Exist(s_ArgCfgFile + 1)) {
-                desc->AddOptionalKey
-                    (s_ArgCfgFile + 1, "File_Name",
-                        "Program's configuration (registry) data file",
-                        CArgDescriptions::eInputFile);
+            if ((m_HideArgs & fHideFullVersion) != 0) {
+                if (desc->Exist(s_ArgFullVersion + 1)) {
+                    desc->Delete(s_ArgFullVersion + 1);
+                }
+                if (desc->Exist(s_ArgFullVersionXml+ 1)) {
+                    desc->Delete(s_ArgFullVersionXml + 1);
+                }
+                if (desc->Exist(s_ArgFullVersionJson + 1)) {
+                    desc->Delete(s_ArgFullVersionJson + 1);
+                }
+            } else {
+                if (!desc->Exist(s_ArgFullVersion + 1)) {
+                    desc->AddFlag
+                        (s_ArgFullVersion + 1,
+                            "Print extended version data;  ignore other arguments");
+                }
+                if (!desc->Exist(s_ArgFullVersionXml + 1)) {
+                    desc->AddFlag
+                        (s_ArgFullVersionXml + 1,
+                            "Print extended version data in XML format;  ignore other arguments");
+                }
+                if (!desc->Exist(s_ArgFullVersionJson + 1)) {
+                    desc->AddFlag
+                        (s_ArgFullVersionJson + 1,
+                            "Print extended version data in JSON format;  ignore other arguments");
+                }
             }
-        }
-        if ((m_HideArgs & fHideVersion) != 0) {
-            if (desc->Exist(s_ArgVersion + 1)) {
-                desc->Delete(s_ArgVersion + 1);
+            if ((m_HideArgs & fHideDryRun) != 0) {
+                if (desc->Exist(s_ArgDryRun + 1)) {
+                    desc->Delete(s_ArgDryRun + 1);
+                }
+            } else {
+                if (!desc->Exist(s_ArgDryRun + 1)) {
+                    desc->AddFlag
+                        (s_ArgDryRun + 1,
+                            "Dry run the application: do nothing, only test all preconditions");
+                }
             }
-        } else {
-            if (!desc->Exist(s_ArgVersion + 1)) {
-                desc->AddFlag
-                    (s_ArgVersion + 1,
-                        "Print version number;  ignore other arguments");
-            }
-        }
-        if ((m_HideArgs & fHideFullVersion) != 0) {
-            if (desc->Exist(s_ArgFullVersion + 1)) {
-                desc->Delete(s_ArgFullVersion + 1);
-            }
-        } else {
-            if (!desc->Exist(s_ArgFullVersion + 1)) {
-                desc->AddFlag
-                    (s_ArgFullVersion + 1,
-                        "Print extended version data;  ignore other arguments");
-            }
-        }
-        if ((m_HideArgs & fHideDryRun) != 0) {
-            if (desc->Exist(s_ArgDryRun + 1)) {
-                desc->Delete(s_ArgDryRun + 1);
-            }
-        } else {
-            if (!desc->Exist(s_ArgDryRun + 1)) {
-                desc->AddFlag
-                    (s_ArgDryRun + 1,
-                        "Dry run the application: do nothing, only test all preconditions");
-            }
-        }
         }
     }
 }
