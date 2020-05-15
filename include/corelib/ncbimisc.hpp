@@ -1436,7 +1436,7 @@ void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
 
 template<class Element, size_t Size>
 inline
-size_t ArraySize(const Element (&)[Size])
+constexpr size_t ArraySize(const Element (&)[Size])
 {
     return Size;
 }
