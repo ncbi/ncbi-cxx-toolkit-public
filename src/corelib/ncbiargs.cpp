@@ -2159,7 +2159,7 @@ CArgValue* CArgErrorHandler::HandleError(const CArgDesc& arg_desc,
 {
     if ((arg_desc.GetFlags() & CArgDescriptions::fIgnoreInvalidValue) == 0) {
         // Re-process invalid value to throw the same exception
-        arg_desc.ProcessArgument(value);
+        return arg_desc.ProcessArgument(value);
         // Should never get past ProcessArgument()
     }
     if ((arg_desc.GetFlags() & CArgDescriptions::fWarnOnInvalidValue) != 0) {
