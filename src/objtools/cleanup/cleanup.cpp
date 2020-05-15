@@ -2780,22 +2780,6 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
 
     CTSE_Handle tse = entry.GetTSE_Handle();
 
-    for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
-        bool change_this_gene;
-        CRef<CSeq_feat> new_gene(new CSeq_feat());
-        new_gene->Assign(*(gene_it->GetSeq_feat()));
-
-        change_this_gene = ExpandGeneToIncludeChildren(*new_gene, tse);
-
-        change_this_gene |= SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
-
-        if (change_this_gene) {
-            CSeq_feat_EditHandle gene_h(*gene_it);
-            gene_h.Replace(*new_gene);
-            any_changes = true;
-        }
-    }
-
     for (CFeat_CI rna_it(entry, SAnnotSelector(CSeqFeatData::e_Rna)); rna_it; ++rna_it) {
 
         const CSeq_feat& rna_feat = *(rna_it->GetSeq_feat());
@@ -2832,6 +2816,22 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                 any_changes = true;
             }
        }
+    }
+
+    for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
+        bool change_this_gene;
+        CRef<CSeq_feat> new_gene(new CSeq_feat());
+        new_gene->Assign(*(gene_it->GetSeq_feat()));
+
+        change_this_gene = ExpandGeneToIncludeChildren(*new_gene, tse);
+
+        change_this_gene |= SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
+
+        if (change_this_gene) {
+            CSeq_feat_EditHandle gene_h(*gene_it);
+            gene_h.Replace(*new_gene);
+            any_changes = true;
+        }
     }
 
     NormalizeDescriptorOrder(entry);
