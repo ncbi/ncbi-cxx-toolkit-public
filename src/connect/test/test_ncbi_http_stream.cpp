@@ -138,6 +138,8 @@ int CNCBITestHttpStreamApp::Run(void)
         string response;
         bool copied = false;
         try {
+            if (::rand() & 1)
+                http.Fetch();
             CNcbiOstrstream temp;
             copied = NcbiStreamCopy(temp, http);
             NcbiCerr << "\tTEMP   good:\t" << int(temp.good()) << NcbiEndl
