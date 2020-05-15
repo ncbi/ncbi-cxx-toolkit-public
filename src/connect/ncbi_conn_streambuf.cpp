@@ -785,9 +785,10 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
     // now wait for some input
     EIO_Status status = CONN_Wait(m_Conn, eIO_Read, timeout);
     if (status != eIO_Success) {
-        ERR_POST_X(16, x_Message("Fetch",
-                                 "CONN_Wait() failed",
-                                 status, timeout));
+        ERR_POST_X(16, (status == eIO_Timeout ? Warning : Error)
+                   << x_Message("Fetch",
+                                "CONN_Wait() failed",
+                                status, timeout));
     }
     return status;
 }
