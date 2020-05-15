@@ -33,7 +33,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
+#include "ncbi_servicep.h"
 #include <connect/ncbi_mbedtls.h>
 #include <stdlib.h>
 
@@ -211,7 +211,9 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
         status = eIO_Timeout;
         break;
     case MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE:
+    case MBEDTLS_ERR_SSL_NO_USABLE_CIPHERSUITE:
     case MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE:
+    case MBEDTLS_ERR_SSL_UNKNOWN_CIPHER:
     case MBEDTLS_ERR_SSL_INTERNAL_ERROR:
         status = eIO_NotSupported;
         break;
@@ -219,24 +221,25 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
     case MBEDTLS_ERR_SSL_BAD_INPUT_DATA:
         status = eIO_InvalidArg;
         break;
-    case MBEDTLS_ERR_NET_CONN_RESET:
     case MBEDTLS_ERR_SSL_CONN_EOF:
     case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
-    case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
         status = eIO_Closed;
+        break;
+    case MBEDTLS_ERR_NET_CONN_RESET:
+    case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+        status = eIO_Unknown;
         break;
     case MBEDTLS_ERR_NET_RECV_FAILED:
         if (sock->r_status != eIO_Success  &&
-            sock->r_status != eIO_Unknown) {
+            sock->r_status != eIO_Closed) {
             status = (EIO_Status) sock->r_status;
         } else
             status = eIO_Unknown;
         break;
     case MBEDTLS_ERR_NET_SEND_FAILED:
-        if (sock->w_status != eIO_Success  &&
-            sock->w_status != eIO_Unknown) {
+        if (sock->w_status != eIO_Success)
             status = (EIO_Status) sock->w_status;
-        } else
+        else
             status = eIO_Unknown;
         break;
     case MBEDTLS_ERR_SSL_NON_FATAL:
@@ -246,9 +249,9 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
         break;
     }
 
+    assert(status != eIO_Success);
     CORE_TRACEF(("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
                  error, IO_StatusStr(status)));
-
     return status;
 }
 
@@ -670,9 +673,12 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
                                 MBEDTLS_SSL_PRESET_DEFAULT);
     mbedtls_ssl_conf_authmode(&s_MbedTlsConf, MBEDTLS_SSL_VERIFY_NONE);
 
-    val = ConnNetInfo_GetValue(0, "MBEDTLS_LOGLEVEL", buf, sizeof(buf), 0);
-    if (!val  ||  !*val)
-        val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
+    val = ConnNetInfo_GetValueInternal(0, "MBEDTLS_LOGLEVEL",
+                                       buf, sizeof(buf), 0);
+    if (!val  ||  !*val) {
+        val = ConnNetInfo_GetValueInternal(0, "TLS_LOGLEVEL",
+                                           buf, sizeof(buf), 0);
+    }
     CORE_LOCK_READ;
     if (val  &&  *val) {
         ELOG_Level level;

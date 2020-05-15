@@ -33,7 +33,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
+#include "ncbi_servicep.h"
 #include <connect/ncbi_gnutls.h>
 #include <stdlib.h>
 
@@ -198,12 +198,39 @@ static EIO_Status x_RetryStatus(SOCK sock, EIO_Event direction)
 {
     EIO_Status status;
     if (direction == eIO_Open) {
+        if (sock->sock == SOCK_INVALID)
+            return eIO_Closed;
         EIO_Status r_status = SOCK_Status(sock, eIO_Read);
         EIO_Status w_status = SOCK_Status(sock, eIO_Write);
         status = r_status > w_status ? r_status : w_status;
     } else
         status = SOCK_Status(sock, direction);
     return status == eIO_Success ? eIO_Timeout : status;
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static EIO_Status x_AlertStatus(gnutls_alert_description_t alert,
+                                int/*bool*/ fatal)
+{
+    EIO_Status status;
+    switch (alert) {
+    case GNUTLS_A_CLOSE_NOTIFY:
+        status = fatal ? eIO_Unknown : eIO_Closed;
+        break;
+    case GNUTLS_A_USER_CANCELED:
+        status = eIO_Interrupt;
+        break;
+    case GNUTLS_A_NO_APPLICATION_PROTOCOL:
+        status = eIO_NotSupported;
+        break;
+    default:
+        status = eIO_Unknown;
+        break;
+    }
+    return status;
 }
 
 
@@ -226,31 +253,31 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
     else if (*error == GNUTLS_E_INTERRUPTED)
         status = eIO_Interrupt;
     else if (*error == GNUTLS_E_WARNING_ALERT_RECEIVED) {
-        status = eIO_Unknown;
-        *error = GNUTLS_E_APPLICATION_ERROR_MAX - gnutls_alert_get(session);
+        gnutls_alert_description_t alert = gnutls_alert_get(session);
+        status = x_AlertToStatus(alert, 0/*non-fatal*/);
+        *error = GNUTLS_E_APPLICATION_ERROR_MAX - alert;
     }
     else if (*error == GNUTLS_E_FATAL_ALERT_RECEIVED) {
-        status = eIO_Closed;
-        *error = GNUTLS_E_APPLICATION_ERROR_MAX - gnutls_alert_get(session);
+        gnutls_alert_description_t alert = gnutls_alert_get(session);
+        status = x_AlertToStatus(alert, 1/*fatal*/);
+        *error = GNUTLS_E_APPLICATION_ERROR_MAX - alert;
     }
     else if (*error == GNUTLS_E_PULL_ERROR
              &&  sock->r_status != eIO_Success
-             &&  sock->r_status != eIO_Unknown) {
+             &&  sock->r_status != eIO_Closed) {
         status = (EIO_Status) sock->r_status;
     }
     else if (*error == GNUTLS_E_PUSH_ERROR
-             &&  sock->w_status != eIO_Success
-             &&  sock->w_status != eIO_Unknown) {
+             &&  sock->w_status != eIO_Success) {
         status = (EIO_Status) sock->w_status;
     }
-    else if (gnutls_error_is_fatal(*error))
-        status = eIO_Closed;
     else
-        status = eIO_Unknown;
+        status = *error == GNUTLS_E_SESSION_EOF ? eIO_Closed : eIO_Unknown;
 
-    CORE_TRACEF(("GNUTLS error %d -> CONNECT GNUTLS status %s",
-                 *error, IO_StatusStr(status)));
-
+    assert(status != eIO_Success);
+    CORE_TRACEF(("GNUTLS error %d%s -> CONNECT GNUTLS status %s",
+                 *error, gnutls_error_is_fatal(*error) ? "(fatal)" : "",
+                 IO_StatusStr(status)));
     return status;
 }
 
@@ -338,7 +365,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
         return 0;
     }
 
-    ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
+    ConnNetInfo_GetValueInternal(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
     len = ctx->host ? strlen(ctx->host) : 0;
 
@@ -386,7 +413,7 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
 
     do {
         x_error = gnutls_handshake((gnutls_session_t) session);
-    } while (x_error  &&  x_error == GNUTLS_E_REHANDSHAKE);
+    } while (x_error == GNUTLS_E_REHANDSHAKE);
 
     if (x_error < 0) {
         status = x_ErrorToStatus(&x_error, (gnutls_session_t) session,
@@ -676,9 +703,12 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (!pull  ||  !push)
         return eIO_InvalidArg;
 
-    val = ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", buf, sizeof(buf), 0);
-    if (!val  ||  !*val)
-        val = ConnNetInfo_GetValue(0, "TLS_LOGLEVEL", buf, sizeof(buf), 0);
+    val = ConnNetInfo_GetValueInternal(0, "GNUTLS_LOGLEVEL",
+                                       buf, sizeof(buf), 0);
+    if (!val  ||  !*val) {
+        val = ConnNetInfo_GetValueInternal(0, "TLS_LOGLEVEL",
+                                           buf, sizeof(buf), 0);
+    }
     CORE_LOCK_READ;
     if (!val  ||  !*val)
         val = getenv("GNUTLS_DEBUG_LEVEL"); /* GNUTLS proprietary setting */
