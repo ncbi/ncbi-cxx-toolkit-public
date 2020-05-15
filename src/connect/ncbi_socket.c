@@ -2984,15 +2984,16 @@ static EIO_Status s_Read_(SOCK    sock,
     } else
         *n_read = 0;
 
-    if (sock->r_status == eIO_Closed  ||  sock->eof) {
+    if ((status = (EIO_Status) sock->r_status) == eIO_Closed  ||  sock->eof) {
         if (*n_read)
             return eIO_Success;
-        if (!sock->eof) {
+        if (status == eIO_Closed) {
             CORE_TRACEF(("%s[SOCK::Read] "
                          " Socket already shut down for reading",
                          s_ID(sock, _id)));
+            return eIO_Unknown;
         }
-        return eIO_Closed;
+        return eIO_Closed/*EOF*/;
     }
 
     done = 0/*false*/;
@@ -3038,15 +3039,6 @@ static EIO_Status s_Read_(SOCK    sock,
                         (void*) &error : 0,
                         status != eIO_Success ? 0 : x_read,
                         x_read ? " [decrypt]" : 0);
-            }
-
-            if (status == eIO_Closed  &&  !sock->eof) {
-                if (p_buf)
-                    free(p_buf);
-                sock->r_status = eIO_Closed;
-                sock->eof = 1/*true*/;
-                status = eIO_Unknown;
-                break/*bad error*/;
             }
         } else {
             x_read = 0;

@@ -166,12 +166,12 @@ static void TEST__client_1(SOCK sock)
     assert(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
-    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_ReadPlain) == eIO_Closed);
-    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_ReadPeek)  == eIO_Closed);
+    assert(SOCK_Read    (sock, 0,  0,&n_io_done,eIO_ReadPlain) == eIO_Unknown);
+    assert(SOCK_Read    (sock, 0,  0,&n_io_done,eIO_ReadPeek)  == eIO_Unknown);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
-    assert(SOCK_Read    (sock, buf, 1,&n_io_done,eIO_ReadPlain) == eIO_Closed);
-    assert(SOCK_Read    (sock, buf, 1,&n_io_done,eIO_ReadPeek)  == eIO_Closed);
+    assert(SOCK_Read    (sock, buf,1,&n_io_done,eIO_ReadPlain) == eIO_Unknown);
+    assert(SOCK_Read    (sock, buf,1,&n_io_done,eIO_ReadPeek)  == eIO_Unknown);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
 
