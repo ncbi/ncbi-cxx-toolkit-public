@@ -52,7 +52,7 @@ public:
 
     // IListener::Post() implementation
     NCBI_STD_DEPRECATED("This method is no longer functional and will be removed in SC-25.") 
-    virtual void Post(const IMessage& message)
+    virtual void Post(const IMessage& /*message*/)
     {
         // Remove in SC-25
         return;
