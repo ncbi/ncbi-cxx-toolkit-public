@@ -51,7 +51,7 @@ USING_SCOPE(objects);
 
 static void s_GetObject(const string& gene_id, CEntrezgene& eg_obj)
 {
-    usleep(333333); // per e-utils guidelines
+    SleepMilliSec(333); // per e-utils guidelines
     CRef<CEUtils_ConnContext> ctx(new CEUtils_ConnContext);
     CEFetch_Request req(ctx);
     req.SetDatabase("gene");
