@@ -712,7 +712,8 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     static RNA_IDS usedRnaIds;
     RNA_ID rnaId = mf.GetNamedQual("transcript_id");
     if (rnaId.empty()  &&  mf.IsSetProduct()) {
-        if (!CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), rnaId)) {
+        if (!CWriteUtil::GetBestId(
+                mf.GetProductId(), mf.GetScope(), rnaId), mThrowExceptionOnUnresolvedGi) {
             rnaId.clear();
         }
     }

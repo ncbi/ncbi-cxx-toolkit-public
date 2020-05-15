@@ -866,7 +866,8 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         return pWriter;
     }
     if (strFormat == "gtf") {
-        CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, xGffFlags(args));
+        auto gffFlags = baseFlags |= xGffFlags(args);
+        CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, gffFlags);
         xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;
     }

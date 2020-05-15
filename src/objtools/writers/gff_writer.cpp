@@ -458,7 +458,7 @@ bool CGff2Writer::xAssignFeatureSeqId(
     //  ----------------------------------------------------------------------------
 {
     string bestId;
-    if (!CWriteUtil::GetBestId(mf, bestId)) {
+    if (!CWriteUtil::GetBestId(mf, bestId, mThrowExceptionOnUnresolvedGi)) {
         bestId = ".";
     }
     record.SetSeqId(bestId);
@@ -717,7 +717,9 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
     }
     if (mf.IsSetProduct()) {
         string product;
-        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+        if (CWriteUtil::GetBestId(
+                mf.GetProductId(), mf.GetScope(), product, 
+                mThrowExceptionOnUnresolvedGi)) {
             record.AddAttribute("protein_id", product);
             return true;
         }
@@ -771,7 +773,8 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
             }
             
             string product;
-            if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+            if (CWriteUtil::GetBestId(
+                    mf.GetProductId(), mf.GetScope(), product, mThrowExceptionOnUnresolvedGi)) {
                 record.SetAttribute("product", product);
                 return true;
             }
