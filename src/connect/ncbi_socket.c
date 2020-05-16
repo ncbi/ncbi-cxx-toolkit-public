@@ -764,7 +764,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    n_out),               \
         infof(SOCK_struct,    path)
 #  endif /*NCBI_OS_MSWIN*/
-    CORE_LOGF_X(2, eLOG_Note,
+    CORE_LOGF_X(2, eLOG_Trace,
                 (kLayoutFormat,
                  (unsigned int) sizeof(TRIGGER_struct),
                  (unsigned int) sizeof(LSOCK_struct),
@@ -2634,12 +2634,12 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
     EIO_Status status;
     SSOCK_Poll poll;
 
-    errno = 0;
     *what = 0;
     *error = 0;
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
 
+    errno = 0;
     if (!writeable) {
         poll.sock   = sock;
         poll.event  = eIO_Write;
@@ -3040,22 +3040,21 @@ static EIO_Status s_Read_(SOCK    sock,
                         status != eIO_Success ? 0 : x_read,
                         x_read ? " [decrypt]" : 0);
             }
+
+            if (status == eIO_Closed  &&  !sock->eof)
+                sock->r_status = eIO_Closed;
         } else {
             x_read = 0;
             status = s_Recv(sock, x_buf, x_todo, &x_read, 0);
             assert(status == eIO_Success  ||  !x_read);
             assert(x_read <= x_todo);
         }
-        if (status != eIO_Success) {
+        if (status != eIO_Success  ||  !x_read) {
             if (p_buf)
                 free(p_buf);
-            break/*error*/;
-        }
-        if (!x_read) {
-            if (p_buf)
-                free(p_buf);
-            status = eIO_Closed;
-            break/*EOF*/;
+            if (status == eIO_Success)
+                status  = eIO_Closed/*EOF*/;
+            break;
         }
         assert(status == eIO_Success  &&  0 < x_read  &&  x_read <= x_todo);
 
@@ -3272,7 +3271,7 @@ static EIO_Status s_Wait(SOCK sock, EIO_Event event, const STimeout* timeout)
         return status;
     if (poll.revent == eIO_Close)
         return eIO_Unknown;
-    assert(poll.revent & event);
+    assert(!(poll.revent ^ (poll.revent & event)));
     return status/*success*/;
 }
 
@@ -7124,6 +7123,10 @@ extern EIO_Status SOCK_Pushback(SOCK        sock,
                                 const void* buf,
                                 size_t      size)
 {
+    if (size  &&  !buf) {
+        assert(0);
+        return eIO_InvalidArg;
+    }
     if (sock->sock == SOCK_INVALID) {
         char _id[MAXIDLEN];
         CORE_LOGF_X(67, eLOG_Error,
@@ -7131,10 +7134,6 @@ extern EIO_Status SOCK_Pushback(SOCK        sock,
                      " Invalid socket",
                      s_ID(sock, _id)));
         return eIO_Closed;
-    }
-    if (size  &&  !buf) {
-        assert(0);
-        return eIO_InvalidArg;
     }
     return s_Pushback(sock, buf, size) ? eIO_Success : eIO_Unknown;
 }
@@ -7149,7 +7148,7 @@ extern EIO_Status SOCK_Status(SOCK      sock,
         case eIO_Read:
         case eIO_Write:
             if (sock->sock == SOCK_INVALID)
-                return eIO_Closed;
+                return direction/*!eIO_Open*/ ? eIO_Unknown : eIO_Closed;
             if (!sock->connected  ||  sock->pending)
                 return eIO_Timeout;
             if (direction == eIO_Read) {
@@ -7736,7 +7735,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
             CORE_LOGF_ERRNO_EXX(114, eLOG_Error,
                                 error, strerr ? strerr : "",
                                 ("%s[DSOCK::Bind] "
-                                 " Cannot obtain free socket port",
+                                 " Cannot obtain a free socket port",
                                  s_ID(sock, _id)));
             UTIL_ReleaseBuffer(strerr);
             return eIO_Closed;
@@ -7862,7 +7861,7 @@ extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
                     ("%s[DSOCK::WaitMsg] "
                      " Invalid socket",
                      s_ID(sock, _id)));
-        return eIO_Closed;
+        return eIO_Unknown;
     }
     if (sock->type != eDatagram) {
         CORE_LOGF_X(95, eLOG_Error,
@@ -7880,7 +7879,7 @@ extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
     assert(poll.event == eIO_Read);
     if (status == eIO_Success  &&  poll.revent != eIO_Read) {
         assert(poll.revent == eIO_Close);
-        status = eIO_Unknown;
+        status = eIO_Closed;
     }
     if (s_ErrHook  &&  status != eIO_Success  &&  status != eIO_Timeout) {
         SSOCK_ErrInfo info;

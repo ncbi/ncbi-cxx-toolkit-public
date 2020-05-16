@@ -61,7 +61,7 @@
  *
  * I/O Socket (handle SOCK):
  *
- *  SOCK_Create[Ex]      (see also LSOCK_Accept)
+ *  SOCK_Create[Ex] (see also LSOCK_Accept)
  *  SOCK_CreateOnTop[Ex]
  *  SOCK_Reconnect
  *  SOCK_Shutdown
@@ -88,7 +88,7 @@
  *  SOCK_SetCork
  *  SOCK_DisableOSSendDelay
  *
- * Datagram Socket:
+ * Datagram Socket (handle SOCK):
  *
  *  DSOCK_Create[Ex]
  *  DSOCK_Bind
@@ -146,7 +146,7 @@
  *  SOCK_SetSelectInternalRestartTimeout
  *  SOCK_SetIOWaitSysAPI
  *
- * Secure Socket Layer:
+ * Secure Socket Layer (SSL):
  *
  *  SOCK_SetupSSL[Ex]
  *  SOCK_SSLName
@@ -1017,9 +1017,10 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  *        real I/O occurs to try to pick up additional data from the system.
  *        Keep this difference in mind when programming loops that heavily use
  *        "peek"s without "read"s.
- * @note  If on input "size" == 0, then "*n_read" is set to 0,
- *        and the return value can be either of eIO_Success, eIO_Closed or
- *        eIO_Unknown depending on connection status of the socket.
+ * @note  If on input "size" == 0, then "*n_read" is set to 0 on return,
+ *        and the return status value can be either of eIO_Success, eIO_Closed,
+ *        eIO_Timeout (if still connecting), or eIO_Unknown depending on the
+ *        _current_ state of the socket regardless of any pending read data.
  * @param sock
  *  [in]  socket handle
  * @param buf
@@ -1849,9 +1850,8 @@ typedef enum {
     eSOCK_ErrIO             /**< I/O-related error                           */
 } ESOCK_ErrType;
 
-
 typedef struct {
-    ESOCK_ErrType  type;
+    ESOCK_ErrType  type;    /**< See ESOCK_ErrType                           */
     SOCK           sock;    /**< Non-NULL when SOCK-related                  */
     const char*    host;    /**< Host name/IP (or path for non-IP SOCK)      */
     unsigned short port;    /**< Port (host byte order), 0 for non-IP SOCK   */
@@ -1933,10 +1933,11 @@ extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
  * @param buf
  *  [out] to be filled by smth. like "123.45.67.89\0"
  * @param bufsize
- *  [in]  max # of bytes to put to "buf"
+ *  [in]  max # of bytes to put into "buf" (including the terminating '\0')
  * @return
- *  Zero on success, non-zero on error.  Vaguely related to BSD's
- *  inet_ntoa(). On error "buf" returned emptied (buf[0] == '\0').
+ *  Zero on success, non-zero on error.  Vaguely related to BSD's inet_ntoa().
+ *  On error (including insufficient room in "buf" to store the result) "buf"
+ *  is returned empty (buf[0] == '\0').
  */
 extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
 (unsigned int addr,
@@ -1945,13 +1946,16 @@ extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
  );
 
 
-/** Check whether the given string represents a valid IP address.
+/** Check whether the given string represents a valid IPv4 address.
  * @param host
- *  [in]  '\0'-terminated string to check against being a plain IP address
+ *  [in]  '\0'-terminated string to check against being a plain IPv4 address
  * @param fullquad
- *  [in]  non-zero to only accept "host" if it is a full-quad IP notation
+ *  [in]  non-zero to only accept "host" if it is a full-quad IPv4 notation
  * @return
- *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
+ *  Non-zero (true) if given string is an IPv4 address, zero (false) otherwise.
+ * @note
+ *  Unless "fullquad" is requested, valid IPv4 addresses may have various
+ *  formats (e.g. legal to be 32-bit integers, or have fewer than 3 dots).
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
 (const char* host,
@@ -1961,9 +1965,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
 
 /** Equivalent of SOCK_isip(host, 0)
  * @param host
- *  [in]  '\0'-terminated string to check against being a plain IP address
+ *  [in]  '\0'-terminated string to check against being a plain IPv4 address
  * @return
- *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
+ *  Non-zero (true) if given string is an IPv4 address, zero (false) otherwise.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 (const char* host
@@ -1971,8 +1975,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 
 
 /** Check whether an address is a loopback one.
- * Return non-zero (true) if the IP address (in network byte order)
- * provided as an agrument, is a loopback one;  zero otherwise.
+ * Return non-zero (true) if the IPv4 address (in network byte order)  given
+ * in the agrument, is a loopback one;  zero otherwise.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
 (unsigned int ip
@@ -2018,12 +2022,12 @@ unsigned short SOCK_htons(unsigned short);
  * @param name
  *  [out] (guaranteed to be '\0'-terminated)
  * @param namelen
- *  [in]   max # of bytes allowed to put to "name"
+ *  [in]   max # of bytes allowed to put into "name"
  * @param log
  *  [in]   whether to log failures
  * @return
  *  Zero on success, non-zero on error.  See BSD gethostname().
- *  On error "name" returned emptied (name[0] == '\0').
+ *  On error (incl. insufficient room) "name" returned empty (name[0] == '\0').
  * @sa
  *  SOCK_gethostname
  */
@@ -2044,18 +2048,18 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  );
 
 
-/** Find and return IP address of a named host.  The call also accepts dotted
- * IP notation, in which case the conversion is done without consulting the
+/** Find and return IPv4 address of a named host.  The call also accepts dotted
+ * IPv4 notation, in which case the conversion is done without consulting the
  * name resolver).
  * @param hostname
  *  [in]  specified host, or the current host if hostname is 0
  * @param log
  *  [in]  whether to log failures
  * @return
- *  INET host address (in network byte order) of the specified host
- *  (or local host, if hostname is passed as NULL), which could have been
- *  specified as either domain name or an IP address in the dotted notation
- *  (e.g. "123.45.67.89\0").  Return 0 on error.
+ *  IPv4 host address (in network byte order) of the specified host (or of
+ *  local host, if hostname is passed as NULL), which could have been specified
+ *  as either a domain name or an IPv4 address in the dotted notation (e.g.
+ *  "123.45.67.89\0").  Return 0 on error.
  * @note "0.0.0.0" and "255.255.255.255" are both considered invalid.
  * @sa
  *  SOCK_gethostbyname, SOCK_gethostname
@@ -2075,11 +2079,11 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  );
 
 
-/** Take INET host address (in network byte order) or 0 for current host, and
+/** Take IPv4 host address (in network byte order) or 0 for current host, and
  * fill out the provided buffer with the name, which the address corresponds to
  * (in case of multiple names the primary name is used).
  * @param addr
- *  [in]  host address (0 means current host) in network byte order
+ *  [in]  IPv4 host address (0 means current host) in network byte order
  * @param name
  *  [out] buffer to store the name to
  * @param namelen
@@ -2088,7 +2092,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  *  [in]  whether to log failures
  * @return
  *  Value 0 means error;  success is denoted by the 'name' argument returned.
- *  Note that on error the name returned emptied (name[0] == '\0').
+ *  Note that on error the name gets emptied (name[0] == '\0').
  * @sa
  *  SOCK_gethostbyaddr
  */
@@ -2111,14 +2115,14 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
  );
 
 
-/** Get loopback IP address.
+/** Get loopback IPv4 address.
  * @return
  *  Loopback address (in network byte order).
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 
 
-/** Get (and cache for faster follow-up retrievals) the address of local host
+/** Get (and cache for faster follow-up retrievals) IPv4 address of local host
  * @param reget
  *  eOn      to forcibly recache and return the address;
  *  eDefault to recache only if unknown, return the cached value;
@@ -2165,7 +2169,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  * ":port" part if 'port' passed as zero.  If both the 'host' and the 'port'
  * parameters are zero, output is the literal ":0".
  * @param host
- *  in network byte order
+ *  IPv4 in network byte order
  * @param port
  *  in host byte order
  * @param buf
