@@ -212,7 +212,7 @@ static EIO_Status x_RetryStatus(SOCK sock, EIO_Event direction)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static EIO_Status x_AlertStatus(gnutls_alert_description_t alert,
+static EIO_Status x_AlertToStatus(gnutls_alert_description_t alert,
                                 int/*bool*/ fatal)
 {
     EIO_Status status;
