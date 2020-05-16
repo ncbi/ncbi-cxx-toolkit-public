@@ -1943,10 +1943,10 @@ extern EIO_Status URL_ConnectEx
         --user_hdr_len;
     }
 
-    /* select request method and its verbal representation */
+    /* check C-L, select request method and its verbal representation */
     x_c_l = content_length  &&  content_length != (size_t)(-1L) ? 1 : 0;
     if (x_req_meth == eReqMethod_Any)
-        x_req_meth  = x_c_l ? eReqMethod_Post : eReqMethod_Get;
+        x_req_meth  = content_length ? eReqMethod_Post : eReqMethod_Get;
     else if (x_c_l  &&  (x_req_meth == eReqMethod_Head  ||
                          x_req_meth == eReqMethod_Get)) {
         if (port)
