@@ -179,7 +179,9 @@ static EIO_Status x_RetryStatus(SOCK sock, EIO_Event direction)
     if (direction == eIO_Open) {
         EIO_Status r_status = SOCK_Status(sock, eIO_Read);
         EIO_Status w_status = SOCK_Status(sock, eIO_Write);
-        status = r_status > w_status ? r_status : w_status;
+        status = r_status != eIO_Closed  &&  w_status != eIO_Closed
+            ? r_status > w_status ? r_status : w_status
+            : eIO_Closed;
     } else
         status = SOCK_Status(sock, direction);
     return status == eIO_Success ? eIO_Timeout : status;
@@ -293,7 +295,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
         CORE_TRACEF(("CONNECT MBEDTLS status %s -> %s %d",
                      IO_StatusStr(status), error ? "error" : "errno", x_err));
         if (!error)
-            errno = x_err; /* restore errno that may be clobbered by log */
+            errno = x_err; /* restore errno that might have been clobbered */
     }}
 
     if (error)
