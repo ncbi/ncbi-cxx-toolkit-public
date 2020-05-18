@@ -50,6 +50,7 @@
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -458,7 +459,7 @@ bool CGff2Writer::xAssignFeatureSeqId(
     //  ----------------------------------------------------------------------------
 {
     string bestId;
-    if (!CWriteUtil::GetBestId(mf, bestId, mThrowExceptionOnUnresolvedGi)) {
+    if (!CGenbankIdResolve::Get().GetBestId(mf, bestId)) {
         bestId = ".";
     }
     record.SetSeqId(bestId);
@@ -717,9 +718,8 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
     }
     if (mf.IsSetProduct()) {
         string product;
-        if (CWriteUtil::GetBestId(
-                mf.GetProductId(), mf.GetScope(), product, 
-                mThrowExceptionOnUnresolvedGi)) {
+        if (CGenbankIdResolve::Get().GetBestId(
+                mf.GetProductId(), mf.GetScope(), product)) {
             record.AddAttribute("protein_id", product);
             return true;
         }
@@ -773,8 +773,8 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
             }
             
             string product;
-            if (CWriteUtil::GetBestId(
-                    mf.GetProductId(), mf.GetScope(), product, mThrowExceptionOnUnresolvedGi)) {
+            if (CGenbankIdResolve::Get().GetBestId(
+                    mf.GetProductId(), mf.GetScope(), product)) {
                 record.SetAttribute("product", product);
                 return true;
             }

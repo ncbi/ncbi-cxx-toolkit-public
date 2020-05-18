@@ -18,7 +18,8 @@ SRC = agp_write \
       src_writer \
       fasta_writer \
       aln_writer \
-	  psl_record psl_formatter psl_writer
+	  psl_record psl_formatter psl_writer \
+	  genbank_id_resolve
 
 DLL_LIB = variation_utils $(XFORMAT_LIBS) $(OBJEDIT_LIBS)
 

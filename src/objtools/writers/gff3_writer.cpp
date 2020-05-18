@@ -76,6 +76,7 @@
 #include <objtools/writers/write_util.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <array>
 #include <sstream>
@@ -1141,11 +1142,10 @@ bool CGff3Writer::xWriteSequenceHeader(
     string id;
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if ( pId ) {
-        if (!CWriteUtil::GetBestId(
+        if (!CGenbankIdResolve::Get().GetBestId(
                 CSeq_id_Handle::GetHandle(*pId),
                 bsh.GetScope(), 
-                id, 
-                mThrowExceptionOnUnresolvedGi)) {
+                id)) {
             id = "<unknown>";
         }
     }
@@ -2034,11 +2034,10 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
 
     if (mf.IsSetProduct()) {
         string transcript_id;
-        if (CWriteUtil::GetBestId(
+        if (CGenbankIdResolve::Get().GetBestId(
                 mf.GetProductId(), 
                 mf.GetScope(), 
-                transcript_id,
-                mThrowExceptionOnUnresolvedGi)) {
+                transcript_id)) {
             record.SetAttribute("transcript_id", transcript_id);
             return true;
         }
@@ -2338,11 +2337,10 @@ bool CGff3Writer::xAssignSourceSeqId(
         auto ids = bsh.GetId();
         if (!ids.empty()) {
             auto id = ids.front();
-            CWriteUtil::GetBestId(
+            CGenbankIdResolve::Get().GetBestId(
                 id, 
                 bsh.GetScope(), 
-                bestId,
-                mThrowExceptionOnUnresolvedGi);
+                bestId);
             record.SetSeqId(bestId);
             return true;
         }
@@ -2351,11 +2349,10 @@ bool CGff3Writer::xAssignSourceSeqId(
     }
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
-    if (!CWriteUtil::GetBestId(
+    if (!CGenbankIdResolve::Get().GetBestId(
             idh, 
             bsh.GetScope(), 
-            bestId,
-            mThrowExceptionOnUnresolvedGi)) {
+            bestId)) {
         record.SetSeqId(defaultId);
         return true;
     }
@@ -3034,8 +3031,8 @@ bool CGff3Writer::xWriteRecord(
         id = "";
         const CSeq_loc& loc = record.GetLocation();
         auto idh = sequence::GetIdHandle(loc, m_pScope);
-        if (!CWriteUtil::GetBestId(
-                idh, *m_pScope, id, mThrowExceptionOnUnresolvedGi)) {
+        if (!CGenbankIdResolve::Get().GetBestId(
+                idh, *m_pScope, id)) {
             id = ".";
         }
     }
@@ -3066,18 +3063,5 @@ string CGff3Writer::xNextAlignId()
     return string("aln") + NStr::UIntToString(m_uPendingAlignId++);
 }
 
-/*
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextCdsId(
-    const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-    string retainedId = mf.GetNamedQual("ID");
-    if (!retainedId.empty()) {
-        return retainedId;
-    }
-    return (string("cds") + NStr::UIntToString(m_uPendingCdsId++));
-}
-*/
 END_NCBI_SCOPE
 

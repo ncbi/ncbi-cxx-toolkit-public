@@ -90,6 +90,7 @@
 #include <objtools/writers/gvf_writer.hpp>
 #include <objtools/writers/aln_writer.hpp>
 #include <objtools/writers/psl_writer.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <algo/sequence/gene_model.hpp>
 
@@ -202,6 +203,9 @@ private:
 
     TSeqPos xGetTo(
         const CArgs& args) const;
+
+    void xSetupIdResolving(
+        const CArgs& args);
 
     string xAssemblyName() const;
     string xAssemblyAccession() const;
@@ -377,6 +381,8 @@ int CAnnotWriterApp::Run()
     m_pScope->AddDefaults();
 
     m_pErrorHandler.reset(new CAnnotWriterLogger);
+
+    xSetupIdResolving(args);
 
     try {
         CNcbiOstream* pOs = xInitOutputStream(args);
@@ -769,6 +775,17 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
 }
 
 //  -----------------------------------------------------------------------------
+void
+CAnnotWriterApp::xSetupIdResolving(
+    const CArgs& args)
+//  -----------------------------------------------------------------------------
+{
+    if (args["throw-exception-on-unresolved-gi"].AsBoolean()) {
+        CGenbankIdResolve::Get().SetThrowOnUnresolvedGi(true);
+    }
+}
+
+//  -----------------------------------------------------------------------------
 unsigned int CAnnotWriterApp::xGffFlags(
     const CArgs& args )
 //  -----------------------------------------------------------------------------
@@ -839,11 +856,6 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
             eDiag_Fatal);
     }
 
-    unsigned int baseFlags = CWriterBase::fNormal;
-    if (args["throw-exception-on-unresolved-gi"]) {
-        baseFlags |= CWriterBase::fThrowExceptionOnUnresolvedGi;
-    }
-
     const string strFormat = args["format"].AsString();
     if (strFormat == "gff"  ||  strFormat == "gff2") { 
         CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
@@ -857,7 +869,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
             CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs, sortAlignments);
             return pWriter;
         }
-        auto gffFlags = baseFlags |= xGffFlags(args);
+        auto gffFlags = xGffFlags(args);
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, gffFlags, sortAlignments);
         xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         if (args["default-method"]) {
@@ -866,7 +878,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         return pWriter;
     }
     if (strFormat == "gtf") {
-        auto gffFlags = baseFlags |= xGffFlags(args);
+        auto gffFlags = xGffFlags(args);
         CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, gffFlags);
         xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;

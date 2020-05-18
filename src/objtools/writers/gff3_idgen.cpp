@@ -74,6 +74,7 @@
 #include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/writers/gff3_idgen.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <array>
 #include <sstream>
@@ -131,7 +132,7 @@ string CGffIdGenerator::GetGffSourceId(
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if (pId) {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
-        if (CWriteUtil::GetBestId(idh, bsh.GetScope(), bestId)) {
+        if (CGenbankIdResolve::Get().GetBestId(idh, bsh.GetScope(), bestId)) {
             locationId = bestId;
         }
     }
@@ -139,7 +140,7 @@ string CGffIdGenerator::GetGffSourceId(
         auto ids = bsh.GetId();
         if (!ids.empty()) {
             auto id = ids.front();
-            CWriteUtil::GetBestId(id, bsh.GetScope(), bestId);
+            CGenbankIdResolve::Get().GetBestId(id, bsh.GetScope(), bestId);
             locationId = bestId;
         }
     }
@@ -352,7 +353,7 @@ string CGffIdGenerator::xExtractFeatureLocation(
     //  ----------------------------------------------------------------------------
 {
     string locationId;
-    if (!CWriteUtil::GetBestId(mf, locationId)) {
+    if (!CGenbankIdResolve::Get().GetBestId(mf, locationId)) {
         locationId = "unknown";
     } 
     auto inPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetFrom() + 1);

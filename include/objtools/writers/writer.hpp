@@ -43,6 +43,7 @@
 #include <objtools/writers/writer_message.hpp>
 #include <objtools/writers/writer_listener.hpp>
 #include <objtools/writers/writer_exception.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -64,8 +65,7 @@ public:
     typedef enum {
         fNormal = 0,
         fDebugOutput = (1<<0),
-        fThrowExceptionOnUnresolvedGi = (1<<1),
-        fWriterBaseLast = fThrowExceptionOnUnresolvedGi,
+        fWriterBaseLast = fDebugOutput,
     } TFlags;
     
 protected:
@@ -76,9 +76,10 @@ protected:
         m_uFlags( uFlags ),
         mpCancelled(0), 
         m_Range(CRange<TSeqPos>::GetWhole()),
-        mpMessageListener(nullptr),
-        mThrowExceptionOnUnresolvedGi(uFlags & fThrowExceptionOnUnresolvedGi)
-    {};
+        mpMessageListener(nullptr)
+    {
+    };
+
 public:
     virtual ~CWriterBase()
     {};
@@ -252,7 +253,6 @@ protected:
     unique_ptr<SAnnotSelector> m_Selector;
     CRange<TSeqPos> m_Range;
     CWriterListener* mpMessageListener;
-    bool mThrowExceptionOnUnresolvedGi;
 };
 
 

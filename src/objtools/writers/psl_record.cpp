@@ -52,6 +52,7 @@
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 #include "psl_record.hpp"
 
 #include <util/sequtil/sequtil_manip.hpp>
@@ -174,14 +175,14 @@ CPslRecord::xInitializeSequenceInfo(
 {
     const auto& queryId = splicedSeg.GetProduct_id();
     auto querySeqHandle = scope.GetBioseqHandle(queryId);
-    CWriteUtil::GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
+    CGenbankIdResolve::Get().GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
     mSizeQ = querySeqHandle.GetInst_Length();
     mStartQ = splicedSeg.GetSeqStart(0);
     mEndQ = splicedSeg.GetSeqStop(0) + 1;
 
     const auto& targetId = splicedSeg.GetGenomic_id();
     auto targetSeqHandle = scope.GetBioseqHandle(targetId);
-    CWriteUtil::GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
+    CGenbankIdResolve::Get().GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
     mSizeT = targetSeqHandle.GetInst_Length();
     mStartT = splicedSeg.GetSeqStart(1);
     mEndT = splicedSeg.GetSeqStop(1) + 1;
@@ -410,14 +411,14 @@ CPslRecord::xInitializeSequenceInfo(
 {
     const CSeq_id& idQ = denseSeg.GetSeq_id(0);
     auto seqHandleQ = scope.GetBioseqHandle(idQ);
-    CWriteUtil::GetBestId(seqHandleQ.GetSeq_id_Handle(), scope, mNameQ);
+    CGenbankIdResolve::Get().GetBestId(seqHandleQ.GetSeq_id_Handle(), scope, mNameQ);
     mSizeQ = seqHandleQ.GetInst_Length();
     mStartQ = denseSeg.GetSeqStart(0);
     mEndQ = denseSeg.GetSeqStop(0) + 1;
 
     const CSeq_id& idT = denseSeg.GetSeq_id(1);
     auto seqHandleT = scope.GetBioseqHandle(idT);
-    CWriteUtil::GetBestId(seqHandleT.GetSeq_id_Handle(), scope, mNameT);
+    CGenbankIdResolve::Get().GetBestId(seqHandleT.GetSeq_id_Handle(), scope, mNameT);
     mSizeT = seqHandleT.GetInst_Length();
     mStartT = denseSeg.GetSeqStart(1);
     mEndT = denseSeg.GetSeqStop(1) + 1;

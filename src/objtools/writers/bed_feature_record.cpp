@@ -44,6 +44,7 @@
 
 #include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/write_util.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -244,7 +245,7 @@ bool CBedFeatureRecord::AssignLocation(
         m_strChrom = interval.GetId().GetSeqIdString(true);
         try {
             string bestId;
-            CWriteUtil::GetBestId(
+            CGenbankIdResolve::Get().GetBestId(
                 CSeq_id_Handle::GetHandle(interval.GetId()), scope, bestId);
             m_strChrom = bestId;
             // its OK for this to silently fail. 

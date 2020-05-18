@@ -58,6 +58,7 @@
 #include <objtools/writers/gtf_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gtf_writer.hpp>
+#include <objtools/writers/genbank_id_resolve.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -712,8 +713,8 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     static RNA_IDS usedRnaIds;
     RNA_ID rnaId = mf.GetNamedQual("transcript_id");
     if (rnaId.empty()  &&  mf.IsSetProduct()) {
-        if (!CWriteUtil::GetBestId(
-                mf.GetProductId(), mf.GetScope(), rnaId), mThrowExceptionOnUnresolvedGi) {
+        if (!CGenbankIdResolve::Get().GetBestId(
+                mf.GetProductId(), mf.GetScope(), rnaId)) {
             rnaId.clear();
         }
     }
