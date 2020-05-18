@@ -135,20 +135,22 @@ if (defined($opt_source)) {
     # Try to auto-detect whether we're on the cloud
     if (defined($curl)) {
         my $tmpfile = File::Temp->new();
-        my $gcp_cmd = "$curl --connect-timeout 1 -sfo $tmpfile -H 'Metadata-Flavor: Google' " . GCP_URL;
-        my $aws_cmd = "$curl --connect-timeout 1 -sfo /dev/null " . AMI_URL;
+        my $gcp_cmd = "$curl --connect-timeout 3 --retry 3 --retry-max-time 30 -sfo $tmpfile -H 'Metadata-Flavor: Google' " . GCP_URL;
+        my $aws_cmd = "$curl --connect-timeout 3 --retry 3 --retry-max-time 30 -sfo /dev/null " . AMI_URL;
         print "$gcp_cmd\n" if DEBUG;
         if (system($gcp_cmd) == 0) { 
-	# status not always reliable.  Chekc that return is all digits.
-        	my $tmpfile_content = do { local $/; <$tmpfile>};
-        	print "tempfile: $tmpfile_content\n" if DEBUG;
-        	if ($tmpfile_content =~ m/^(\d+)$/) {
-            		$location = "GCP";
-                }
+            # status not always reliable.  Check that curl output is all digits.
+            my $tmpfile_content = do { local $/; <$tmpfile>};
+            print "curl output $tmpfile_content\n" if DEBUG;
+            $location = "GCP" if ($tmpfile_content =~ m/^(\d+)$/);
+        } elsif (DEBUG) {
+            # Consult https://ec.haxx.se/usingcurl/usingcurl-returns
+            print "curl to GCP metadata server returned ", $?>>8, "\n";
         }
+
         print "$aws_cmd\n" if DEBUG;
         $location = "AWS" if (system($aws_cmd) == 0);
-        print "Loation is $location\n" if DEBUG;
+        print "Location is $location\n" if DEBUG;
     }
 }
 if ($location =~ /aws|gcp/i and not defined $curl) {
