@@ -155,7 +155,6 @@ private:
     CRef<CAnnot_Collector> m_DataCollector;
     // Current annotation
     TIterator              m_CurrAnnot;
-    mutable TAnnotTypes    m_AnnotTypes;
 };
 
 

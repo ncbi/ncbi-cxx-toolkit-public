@@ -3845,6 +3845,20 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
 }
 
 
+const CAnnot_Collector::TAnnotTypes&
+CAnnot_Collector::x_GetAnnotTypes(void) const
+{
+    if (m_AnnotTypes2.empty() && m_AnnotTypes.any()) {
+        for (size_t i = 0; i < m_AnnotTypes.size(); ++i) {
+            if ( m_AnnotTypes.test(i) ) {
+                m_AnnotTypes2.push_back(CAnnotType_Index::GetTypeSelector(i));
+            }
+        }
+    }
+    return m_AnnotTypes2;
+}
+
+
 const CAnnot_Collector::TAnnotNames&
 CAnnot_Collector::x_GetAnnotNames(void) const
 {

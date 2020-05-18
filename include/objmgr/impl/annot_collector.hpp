@@ -494,8 +494,10 @@ private:
     typedef vector<CSeq_annot_Handle> TAnnotLocks;
     typedef SAnnotSelector::TAnnotTypesBitset TAnnotTypesBitset;
     typedef set<CAnnotName> TAnnotNames;
+    typedef vector<SAnnotTypeSelector> TAnnotTypes;
 
     const TAnnotNames& x_GetAnnotNames(void) const;
+    const TAnnotTypes& x_GetAnnotTypes(void) const;
 
     Uint8 x_GetCostOfLoadingInBytes(void) const;
     double x_GetCostOfLoadingInSeconds(void) const;
@@ -533,6 +535,7 @@ private:
     TMaxSearchSegments      m_SearchSegments;
     SAnnotSelector::EMaxSearchSegmentsAction m_SearchSegmentsAction;
     bool                    m_FromOtherTSE;
+    mutable TAnnotTypes     m_AnnotTypes2;
 
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
