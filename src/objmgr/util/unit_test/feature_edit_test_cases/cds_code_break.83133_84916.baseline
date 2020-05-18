@@ -1,6 +1,6 @@
 Seq-feat ::= {
   data cdregion {
-    frame two,
+    frame three,
     code {
       id 1
     },

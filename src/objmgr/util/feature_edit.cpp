@@ -340,7 +340,12 @@ CCdregion::EFrame CFeatTrim::x_GetNewFrame(const TSeqPos offset, const CCdregion
     }
 
     const TSeqPos old_frame = x_GetFrame(cdregion);
-    const TSeqPos new_frame = (old_frame + frame_change)%3;
+
+    // RW-1098 
+    const TSeqPos new_frame = 3 - ((3 + offset - old_frame)%3); 
+    // Note new_frame, thus defined, takes values 1,2,3,
+    // whereas old_frame takes values 0,1,2.
+    // However, 0 == 3 in modulo 3 arithmetic.
     if (new_frame == 1) {
         return CCdregion::eFrame_two;
     }
