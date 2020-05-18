@@ -159,6 +159,9 @@ public:
     CAlign_CI(const CSeq_entry_Handle& entry,
               const SAnnotSelector& sel);
 
+    CAlign_CI(const CAlign_CI& iter);
+    CAlign_CI& operator= (const CAlign_CI& iter);
+    
     virtual ~CAlign_CI(void);
 
     /// Move to the next object in iterated sequence
@@ -172,6 +175,19 @@ public:
 
     /// Check if iterator points to an object
     DECLARE_OPERATOR_BOOL(IsValid());
+
+    const CAlign_CI& begin() const
+    {
+        return *this;
+    }
+    CAlign_CI end() const
+    {
+        return CAlign_CI(*this, at_end);
+    }
+    bool operator!=(const CAlign_CI& it) const
+    {
+        return CAnnotTypes_CI::operator!=(it);
+    }
 
     /// Mapped alignment, not the original one
     const CSeq_align& operator* (void) const;
@@ -189,12 +205,24 @@ private:
     CAlign_CI operator++ (int);
     CAlign_CI operator-- (int);
 
+    CAlign_CI(const CAlign_CI& it, EAtEnd)
+        : CAnnotTypes_CI(it, at_end)
+    {
+    }
+
     mutable CConstRef<CSeq_align> m_MappedAlign;
 };
 
 
 inline
 CAlign_CI::CAlign_CI(void)
+{
+}
+
+
+inline
+CAlign_CI::CAlign_CI(const CAlign_CI& iter)
+    : CAnnotTypes_CI(iter)
 {
 }
 

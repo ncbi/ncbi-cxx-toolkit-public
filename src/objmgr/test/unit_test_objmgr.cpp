@@ -80,7 +80,7 @@ static CRef<CSeq_id> s_GetId2(size_t i)
 }
 
 
-static CRef<CSeq_entry> s_GetEntry(size_t i)
+static CRef<CSeq_entry> s_GetEntry(size_t i, TSeqPos length = 2)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& seq = entry->SetSeq();
@@ -89,8 +89,22 @@ static CRef<CSeq_entry> s_GetEntry(size_t i)
     CSeq_inst& inst = seq.SetInst();
     inst.SetRepr(inst.eRepr_raw);
     inst.SetMol(inst.eMol_aa);
-    inst.SetLength(2);
-    inst.SetSeq_data().SetIupacaa().Set("AA");
+    inst.SetLength(length);
+    inst.SetSeq_data().SetIupacaa().Set(string(length, 'A'));
+    return entry;
+}
+
+
+static CRef<CSeq_entry> s_GetDeltaSeqEntry(size_t i, size_t seg_i)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    CBioseq& seq = entry->SetSeq();
+    seq.SetId().push_back(s_GetId(i));
+    seq.SetId().push_back(s_GetId2(i));
+    CSeq_inst& inst = seq.SetInst();
+    inst.SetRepr(inst.eRepr_delta);
+    inst.SetMol(inst.eMol_aa);
+    inst.SetExt().SetRef().Set().SetWhole(*s_GetId(seg_i));
     return entry;
 }
 
@@ -103,6 +117,25 @@ static CRef<CSeq_annot> s_GetAnnot(CSeq_id& id, int count = 1)
         feat->SetLocation().SetWhole(id);
         feat->SetData().SetRegion("test");
         annot->SetData().SetFtable().push_back(feat);
+    }
+    return annot;
+}
+
+
+static CRef<CSeq_annot> s_GetAnnotAlign(CSeq_id& id1, CSeq_id& id2, int count = 1)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    for ( int i = 0; i < count; ++i ) {
+        CRef<CSeq_align> align(new CSeq_align);
+        align->SetType(CSeq_align::eType_not_set);
+        auto& segs = align->SetSegs().SetDenseg();
+        segs.SetNumseg(1);
+        segs.SetIds().push_back(Ref(&id1));
+        segs.SetIds().push_back(Ref(&id2));
+        segs.SetStarts().push_back(0);
+        segs.SetStarts().push_back(i*100);
+        segs.SetLens().push_back(2);
+        annot->SetData().SetAlign().push_back(align);
     }
     return annot;
 }
@@ -228,6 +261,7 @@ static CRef<CSeq_feat> s_CreateFeatForEdit(const CSeq_id* id)
 static CRef<CSeq_align> s_CreateAlignForEdit(const CSeq_id* id1, const CSeq_id* id2)
 {
     CRef<CSeq_align> align(new CSeq_align);
+    align->SetType(CSeq_align::eType_not_set);
     auto& segs = align->SetSegs().SetDenseg();
     segs.SetNumseg(1);
     segs.SetIds().push_back(Ref(SerialClone(*id1)));
@@ -761,7 +795,6 @@ BOOST_AUTO_TEST_CASE(CppIterFeat)
     entry->SetSeq().SetAnnot().push_back(s_GetAnnot(*id2));
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry((const CSeq_entry&)*entry);
     CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*id1);
-    CRef<CSeq_loc> loc2(new CSeq_loc); loc2->SetWhole(*id2);
     scope.AddSeq_annot(*s_GetAnnot(*id1, 3));
     BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 4u);
     vector<CMappedFeat> vv;
@@ -801,6 +834,80 @@ BOOST_AUTO_TEST_CASE(CppIterFeat)
         for ( auto&& f : CFeat_CI(scope, *loc1) ) {
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK_EQUAL(f, *vv_it);
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+}
+
+
+BOOST_AUTO_TEST_CASE(CppIterAlign)
+{
+    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    CScope scope(*CObjectManager::GetInstance());
+    const int master_num = 1;
+    const int segment_num = 2;
+    const int other_num = 3;
+    CRef<CSeq_id> master_id1 = s_GetId(master_num);
+    CRef<CSeq_id> master_id2 = s_GetId2(master_num);
+    CRef<CSeq_id> segment_id1 = s_GetId(segment_num);
+    CRef<CSeq_id> segment_id2 = s_GetId2(segment_num);
+    CRef<CSeq_id> other_id = s_GetId(other_num);
+    CRef<CSeq_entry> master_entry = s_GetDeltaSeqEntry(master_num, segment_num);
+    CRef<CSeq_entry> segment_entry = s_GetEntry(segment_num, 20);
+    master_entry->SetSeq().SetAnnot().push_back(s_GetAnnotAlign(*master_id2, *other_id));
+    CSeq_entry_Handle master_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*master_entry));
+    CSeq_entry_Handle segment_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*segment_entry));
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*master_id1);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*s_GetAnnotAlign(*segment_id2, *other_id, 3));
+    //LOG_POST("master "<<MSerial_AsnText<<*master_seh.GetCompleteObject());
+    //LOG_POST("segment "<<MSerial_AsnText<<*segment_seh.GetCompleteObject());
+    //LOG_POST("annot "<<MSerial_AsnText<<*ah.GetCompleteObject());
+    //LOG_POST("loc "<<MSerial_AsnText<<*loc1);
+    SAnnotSelector sel;
+    sel.SetResolveAll();
+    BOOST_CHECK_EQUAL(CAlign_CI(scope, *loc1, sel).GetSize(), 4u);
+    vector<CConstRef<CSeq_align>> vv;
+    for ( CAlign_CI it(scope, *loc1, sel); it; ++it ) {
+        vv.push_back(Ref(&*it));
+    }
+    BOOST_CHECK_EQUAL(vv.size(), 4u);
+    {{
+        auto vv_it = begin(vv);
+        for ( CAlign_CI it(scope, *loc1, sel); it; ++it ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(it->Equals(**vv_it));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    /* no CSeq_align copy
+    {{
+        auto vv_it = begin(vv);
+        for ( auto f : CAlign_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f.Equals(**vv_it));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    */
+    {{
+        auto vv_it = begin(vv);
+        for ( auto& f : CAlign_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f.Equals(**vv_it));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto&& f : CAlign_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f.Equals(**vv_it));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));

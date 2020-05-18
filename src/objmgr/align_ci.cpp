@@ -166,6 +166,16 @@ CAlign_CI::~CAlign_CI(void)
 }
 
 
+CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
+{
+    if ( this != &iter ) {
+        CAnnotTypes_CI::operator=(iter);
+        m_MappedAlign.Reset();
+    }
+    return *this;
+}
+
+
 CAlign_CI& CAlign_CI::operator++ (void)
 {
     Next();
@@ -193,7 +203,7 @@ const CSeq_align& CAlign_CI::operator* (void) const
 {
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
-    if (!m_MappedAlign) {
+    if (!m_MappedAlign || !m_MappedAlign->ReferencedOnlyOnce()) {
         if ( annot.GetMappingInfo().IsMapped() ) {
             m_MappedAlign.Reset(&annot.GetMappingInfo().GetMappedSeq_align(
                 annot.GetAlign()));
