@@ -36,6 +36,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
+#include "ncbi_servicep.h"
 #include <connect/ncbi_base64.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
@@ -65,7 +66,7 @@ enum EConnState {
     eCS_Discard      =   7,  /* NB: |eCS_DoneBody */
     eCS_Eom          = 0xF   /* NB: |eCS_Discard  */
 };
-typedef unsigned       EBConnState;   /* packed EConnState */
+typedef unsigned EBConnState;   /* packed EConnState */
 
 
 /* Whether the connector is allowed to connect
@@ -76,15 +77,15 @@ enum ECanConnect {
     fCC_Once,      /*   1 */
     fCC_Unlimited  /* 0|2 */
 };
-typedef unsigned       EBCanConnect;  /* packed ECanConnect */
+typedef unsigned EBCanConnect;  /* packed ECanConnect */
 
-typedef unsigned       EBSwitch;      /* packed ESwitch     */
+typedef unsigned EBSwitch;      /* packed ESwitch     */
 
 typedef enum {
-    eEM_Drop,  /*   0 */
-    eEM_Wait,  /* 1   */
-    eEM_Read,  /*   2 */
-    eEM_Flush  /* 1|2 */
+    eEM_Drop,      /*   0 */
+    eEM_Wait,      /* 1   */
+    eEM_Read,      /*   2 */
+    eEM_Flush      /* 1|2 */
 } EExtractMode;
 
 
@@ -168,20 +169,48 @@ static int                   s_MessageIssued = 0;
 static FHTTP_NcbiMessageHook s_MessageHook   = 0;
 
 
-/* -1=nothing to do;  0=failure;  1=success */
-static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
-                                       ERetry          auth)
+static int/*bool*/ x_UnsafeRedirectOK(SHttpConnector* uuu)
+{
+    if (uuu->unsafe_redir == eDefault) {
+        if (!(uuu->flags & fHTTP_UnsafeRedirects)) {
+            char val[32];
+            ConnNetInfo_GetValue(0, "HTTP_UNSAFE_REDIRECTS",
+                                 val, sizeof(val), 0);
+            uuu->unsafe_redir = ConnNetInfo_Boolean(val) ? eOn : eOff;
+        } else
+            uuu->unsafe_redir = eOn;
+    }
+    return uuu->unsafe_redir == eOn ? 1/*true*/ : 0/*false*/;
+}
+
+
+typedef enum {
+    /* Negative code: NOP;  positive: Error */
+    eHTTP_AuthMissing = -3,  /* No auth info available  */
+    eHTTP_AuthUnsafe  = -2,  /* Auth would be unsafe    */
+    eHTTP_AuthDone    = -1,  /* Auth already sent       */
+    eHTTP_AuthOK      =  0,  /* Success                 */
+    eHTTP_AuthError   =  1,  /* Auth can't/doesn't work */
+    eHTTP_AuthIllegal =  3,  /* Auth won't work now     */
+    eHTTP_AuthNotSupp =  2,  /* Unknown auth parameters */
+    eHTTP_AuthConnect =  4   /* Auth with CONNECT       */
+} EHTTP_Auth;
+
+
+static EHTTP_Auth x_Authenticate(SHttpConnector* uuu,
+                                 ERetry          auth,
+                                 int/*bool*/     retry)
 {
     static const char kProxyAuthorization[] = "Proxy-Authorization: Basic ";
     static const char kAuthorization[]      = "Authorization: Basic ";
-    char buf[80+sizeof(uuu->net_info->user)*4], *s;
+    char buf[80 + (CONN_USER_LEN + CONN_PASS_LEN)*3], *s;
     size_t taglen, userlen, passlen, len, n;
     const char *tag, *user, *pass;
 
     switch (auth) {
     case eRetry_Authenticate:
         if (uuu->auth_done)
-            return -1/*nothing to do*/;
+            return eHTTP_AuthDone;
         tag    = kAuthorization;
         taglen = sizeof(kAuthorization) - 1;
         user   = uuu->net_info->user;
@@ -189,7 +218,11 @@ static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
         break;
     case eRetry_ProxyAuthenticate:
         if (uuu->proxy_auth_done)
-            return -1/*nothing to do*/;
+            return eHTTP_AuthDone;
+        if (!uuu->net_info->http_proxy_host[0]  ||
+            !uuu->net_info->http_proxy_port) {
+            return retry ? eHTTP_AuthError : eHTTP_AuthMissing;
+        }
         tag    = kProxyAuthorization;
         taglen = sizeof(kProxyAuthorization) - 1;
         user   = uuu->net_info->http_proxy_user;
@@ -197,15 +230,20 @@ static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
         break;
     default:
         assert(0);
-        return 0/*failure*/;
+        return eHTTP_AuthError;
     }
     assert(tag  &&  user  &&  pass);
     if (!*user)
-        return -1/*nothing to do*/;
-
-    if (auth == eRetry_Authenticate)
+        return eHTTP_AuthMissing;
+    if (retry  &&  uuu->entity)
+        return eHTTP_AuthIllegal;
+    if (auth == eRetry_Authenticate) {
+        if (uuu->net_info->scheme != eURL_Https
+            &&  !x_UnsafeRedirectOK(uuu)) {
+            return eHTTP_AuthUnsafe;
+        }
         uuu->auth_done = 1/*true*/;
-    else
+    } else
         uuu->proxy_auth_done = 1/*true*/;
     userlen = strlen(user);
     passlen = strlen(pass);
@@ -230,70 +268,12 @@ static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
     userlen = (size_t)(s - buf);
     assert(userlen > taglen);
     userlen -= taglen + 1;
-    BASE64_Encode(s, len, &n, buf + taglen, userlen, &passlen, 0);
+    passlen = 0;
+    BASE64_Encode(s, len, &n, buf + taglen, userlen, &passlen, &passlen/*0*/);
     if (len != n  ||  buf[taglen + passlen])
-        return 0/*failure*/;
+        return eHTTP_AuthError;
     memcpy(buf, tag, taglen);
-    return ConnNetInfo_OverrideUserHeader(uuu->net_info, buf);
-}
-
-
-static int/*bool*/ x_UnsafeRedirectOK(SHttpConnector* uuu)
-{
-    if (uuu->unsafe_redir == eDefault) {
-        if (!(uuu->flags & fHTTP_UnsafeRedirects)) {
-            char val[32];
-            ConnNetInfo_GetValue(0, "HTTP_UNSAFE_REDIRECTS",
-                                 val, sizeof(val), 0);
-            uuu->unsafe_redir = ConnNetInfo_Boolean(val) ? eOn : eOff;
-        } else
-            uuu->unsafe_redir = eOn;
-    }
-    return uuu->unsafe_redir == eOn ? 1/*true*/ : 0/*false*/;
-}
-
-
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
-static int/*bool*/ x_IsWriteThru(const SHttpConnector* uuu)
-{
-    return !uuu->net_info->http_version  ||  !(uuu->flags & fHTTP_WriteThru)
-        ? 0/*false*/ : 1/*true*/;
-}
-
-
-typedef enum {
-    eHTTP_AuthUnknown = -2,
-    eHTTP_AuthUnsafe  = -1,
-    eHTTP_AuthOK      =  0,
-    eHTTP_AuthError   =  1,
-    eHTTP_AuthInvalid =  2,
-    eHTTP_AuthConnect =  3
-} EHTTP_Auth;
-
-
-static EHTTP_Auth x_RetryAuth(SHttpConnector* uuu, const SRetry* retry)
-{
-    switch (retry->mode) {
-    case eRetry_Authenticate:
-        if (uuu->net_info->scheme != eURL_Https
-            &&  !x_UnsafeRedirectOK(uuu)) {
-            return eHTTP_AuthUnsafe;
-        }
-        break;
-    case eRetry_ProxyAuthenticate:
-        if (!uuu->net_info->http_proxy_host[0]  ||
-            !uuu->net_info->http_proxy_port) {
-            return eHTTP_AuthError;
-        }
-        break;
-    default:
-        assert(0);
-        return eHTTP_AuthError/*failed*/;
-    }
-    return x_Authenticate(uuu, retry->mode) <= 0
-        ? eHTTP_AuthError : eHTTP_AuthOK;
+    return (EHTTP_Auth) !ConnNetInfo_OverrideUserHeader(uuu->net_info, buf);
 }
 
 
@@ -450,6 +430,16 @@ static int/*bool*/ x_RedirectOK(EBURLScheme    scheme_to,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ x_IsWriteThru(const SHttpConnector* uuu)
+{
+    return !uuu->net_info->http_version  ||  !(uuu->flags & fHTTP_WriteThru)
+        ? 0/*false*/ : 1/*true*/;
+}
+
+
 typedef enum {
     eHTTP_RedirectInvalid = -2,
     eHTTP_RedirectUnsafe  = -1,
@@ -566,20 +556,27 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                 switch (fail) {
                 case eHTTP_RedirectInvalid:
                     reason = "Invalid";
+                    status = eIO_Unknown;
                     break;
                 case eHTTP_RedirectUnsafe:
                     reason = "Prohibited";
+                    status = eIO_NotSupported;
                     break;
                 case eHTTP_RedirectError:
                     reason = "Cannot";
+                    status = eIO_Unknown;
                     break;
                 case eHTTP_RedirectTunnel:
                     reason = "Spurious tunnel";
+                    status = eIO_InvalidArg;
                     break;
                 default:
-                    reason = ""; 
+                    reason = "Unknown failure of";
+                    status = eIO_Unknown;
                     assert(0);
+                    break;
                 }
+                assert(status != eIO_Success);
                 CORE_LOGF_X(2, eLOG_Error,
                             ("[HTTP%s%s]  %s %s%s to %s%s%s",
                              url ? "; " : "",
@@ -593,8 +590,6 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                              retry->data ? "\""        : "<",
                              retry->data ? retry->data : "NULL",
                              retry->data ? "\""        : ">"));
-                status =
-                    fail > eHTTP_RedirectError ? eIO_NotSupported : eIO_Closed;
             } else {
                 CORE_LOGF_X(17, eLOG_Trace,
                             ("[HTTP%s%s]  %s \"%s\"",
@@ -615,34 +610,45 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                 if (!retry->data
                     ||  strncasecmp(retry->data, "basic",
                                     strcspn(retry->data, " \t")) != 0) {
-                    fail = eHTTP_AuthUnknown;
-                } else if (!(fail = x_RetryAuth(uuu, retry))
-                           &&  x_IsWriteThru(uuu)) {
-                    fail = eHTTP_AuthInvalid;
-                }
+                    fail = eHTTP_AuthNotSupp;
+                } else
+                    fail = x_Authenticate(uuu, retry->mode, 1/*retry*/);
             }
             if (fail) {
                 const char* reason;
                 switch (fail) {
                 case eHTTP_AuthConnect:
                     reason = "not allowed with CONNECT";
+                    status = eIO_Unknown;
                     break;
-                case eHTTP_AuthUnknown:
+                case eHTTP_AuthNotSupp:
                     reason = "not implemented";
+                    status = eIO_NotSupported;
                     break;
-                case eHTTP_AuthInvalid:
-                    reason = "must be pushed with write-through";
+                case eHTTP_AuthIllegal:
+                    reason = "cannot be done at this point";
+                    status = eIO_InvalidArg;
+                    break;
+                case eHTTP_AuthDone:
+                case eHTTP_AuthError:
+                    reason = "failed";
+                    status = eIO_Unknown;
                     break;
                 case eHTTP_AuthUnsafe:
                     reason = "prohibited";
+                    status = eIO_NotSupported;
                     break;
-                case eHTTP_AuthError:
-                    reason = "failed";
+                case eHTTP_AuthMissing:
+                    reason = "required";
+                    status = eIO_Unknown;
                     break;
                 default:
-                    reason = "";
+                    reason = "unknown failure";
+                    status = eIO_NotSupported;
                     assert(0);
+                    break;
                 }
+                assert(status != eIO_Success);
                 CORE_LOGF_X(3, eLOG_Error,
                             ("[HTTP%s%s]  %s %s %c%s%c",
                              url ? "; " : "",
@@ -653,7 +659,6 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                              "(["[!retry->data],
                              retry->data ? retry->data : "NULL",
                              ")]"[!retry->data]));
-                status = fail < 0 ? eIO_NotSupported : eIO_Closed;
             } else {
                 CORE_LOGF_X(18, eLOG_Trace,
                             ("[HTTP%s%s]  Authorizing%s",
@@ -669,7 +674,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                         ("[HTTP%s%s]  Unknown retry mode #%u",
                          url ? "; " : "",
                          url ? url  : "", (unsigned int) retry->mode));
-            status = eIO_Unknown;
+            status = eIO_InvalidArg;
             assert(0);
             break;
         }
@@ -695,7 +700,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             free(url);
     }
     uuu->can_connect = fCC_None;
-    return eIO_Closed;
+    return eIO_Unknown;
 }
 
 
@@ -811,7 +816,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             if (url)
                 free(url);
         }
-        return eIO_Closed;
+        return eIO_Unknown;
     }
 
     if (uuu->conn_state == eCS_Eom) {
@@ -901,7 +906,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                      &&  uuu->net_info->http_proxy_host[0]
                      &&  uuu->net_info->http_proxy_port)) {
                 if (uuu->net_info->http_push_auth
-                    &&  !x_Authenticate(uuu, eRetry_ProxyAuthenticate)) {
+                    &&  x_Authenticate(uuu, eRetry_ProxyAuthenticate, 0) > 0) {
                     status = eIO_Unknown;
                     break;
                 }
@@ -944,7 +949,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 if (uuu->net_info->http_push_auth
                     &&  (uuu->net_info->scheme == eURL_Https
                          ||  x_UnsafeRedirectOK(uuu))
-                    &&  !x_Authenticate(uuu, eRetry_Authenticate)) {
+                    &&  x_Authenticate(uuu, eRetry_Authenticate, 0) > 0) {
                     status = eIO_Unknown;
                     break;
                 }
@@ -1302,6 +1307,9 @@ static EIO_Status x_ReadChunkHead(SHttpConnector* uuu, int/*bool*/ first)
     size = 0;
     for (;;) {
         size_t off;
+        status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &buf, &off);
+        if (status != eIO_Success  ||  (size += off) != BUF_Size(buf))
+            break;
         if (size > 2) {
             if (!(str = (char*) malloc(size + 1)))
                 break;
@@ -1315,9 +1323,6 @@ static EIO_Status x_ReadChunkHead(SHttpConnector* uuu, int/*bool*/ first)
             str[size] = '\0';
             break;
         }
-        status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &buf, &off);
-        if (status != eIO_Success  ||  (size += off) != BUF_Size(buf))
-            break;
     }
 
     if (!str
@@ -1363,7 +1368,16 @@ static EIO_Status x_ReadChunkTail(SHttpConnector* uuu)
             return eIO_Closed;
         }
     } while (status == eIO_Success);
-    if (status == eIO_Closed  ||  !x_Pushback(uuu->sock, buf))
+    if (status == eIO_Closed) {
+        char* url = ConnNetInfo_URL(uuu->net_info);
+        CORE_LOGF_X(25, eLOG_Error,
+                    ("[HTTP%s%s]  Cannot read chunk tail",
+                     url ? "; " : "",
+                     url ? url  : ""));
+        if (url)
+            free(url);
+        status  = eIO_Unknown;
+    } else if (!x_Pushback(uuu->sock, buf))
         status  = eIO_Unknown;
     BUF_Destroy(buf);
     return status;
@@ -1455,7 +1469,8 @@ static int/*bool*/ x_ErrorHeaderOnly(SHttpConnector* uuu)
 {
     if (uuu->error_header == eDefault) {
         char val[32];
-        ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), 0);
+        ConnNetInfo_GetValueInternal(0, "HTTP_ERROR_HEADER_ONLY",
+                                     val, sizeof(val), 0);
         uuu->error_header = ConnNetInfo_Boolean(val) ? eOn : eOff;
     }
     return uuu->error_header == eOn ? 1/*true*/ : 0/*false*/;
@@ -1613,9 +1628,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     if (!(uuu->flags & fHTTP_KeepHeader)) {
         if (fatal) {
+            assert(http_code);
             if (!uuu->net_info->debug_printout  &&  !uuu->parse_header) {
                 char text[40];
-                assert(http_code);
                 if (!url)
                     url = ConnNetInfo_URL(uuu->net_info);
                 if (http_code > 0)
@@ -1918,16 +1933,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     if (uuu->net_info->debug_printout
         ||  header_parse == eHTTP_HeaderContinue) {
-        if (http_code > 0/*real error, w/only a very short body expected*/) {
-            static const STimeout kDefConnTimeout = {
-                (unsigned int)
-                  DEF_CONN_TIMEOUT,
-                (unsigned int)
-                ((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT)
-                 * 1000000.0)
-            };
-            SOCK_SetTimeout(uuu->sock, eIO_Read, &kDefConnTimeout);
-        }
+        if (http_code > 0/*real error, w/only a very short body expected*/)
+            SOCK_SetTimeout(uuu->sock, eIO_Read, &g_NcbiDefConnTimeout);
         do {
             n = 0;
             status = s_ReadData(uuu, &uuu->http, 0, &n, eIO_ReadPlain);
@@ -1944,10 +1951,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     if (uuu->net_info->debug_printout == eDebugPrintout_Some
         ||  header_parse == eHTTP_HeaderContinue) {
         const char* err = status != eIO_Closed ? IO_StatusStr(status) : 0;
-        if (!url)
-            url = ConnNetInfo_URL(uuu->net_info);
         assert(status != eIO_Success);
         assert(!err  ||  *err);
+        if (!url)
+            url = ConnNetInfo_URL(uuu->net_info);
         if (header_parse == eHTTP_HeaderContinue) {
             assert(err/*status != eIO_Closed*/);
             CORE_LOGF_X(19, eLOG_Warning,
@@ -2724,7 +2731,9 @@ static EIO_Status s_CreateHttpConnector
     int/*bool*/     sid;
 
     *http = 0;
-    xxx = net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
+    xxx = (net_info
+           ? ConnNetInfo_Clone(net_info)
+           : ConnNetInfo_CreateInternal(0));
     if (!xxx)
         return eIO_Unknown;
 
