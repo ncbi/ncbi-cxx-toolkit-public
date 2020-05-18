@@ -149,7 +149,12 @@ if (defined($opt_source)) {
         }
 
         print "$aws_cmd\n" if DEBUG;
-        $location = "AWS" if (system($aws_cmd) == 0);
+        if (system($aws_cmd) == 0) {
+            $location = "AWS";
+        } elsif (DEBUG) {
+            # Consult https://ec.haxx.se/usingcurl/usingcurl-returns
+            print "curl to AWS metadata server returned ", $?>>8, "\n";
+        }
         print "Location is $location\n" if DEBUG;
     }
 }
