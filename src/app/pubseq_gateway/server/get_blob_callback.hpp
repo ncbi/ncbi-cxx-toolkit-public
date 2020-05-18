@@ -34,17 +34,32 @@
 
 #include "http_server_transport.hpp"
 #include "cass_fetch.hpp"
+#include "pubseq_gateway.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
+#include <functional>
 
-class CPendingOperation;
+using TBlobChunkCB = function<void(CCassBlobFetch *  fetch_details,
+                                   CBlobRecord const &  blob,
+                                   const unsigned char *  chunk_data,
+                                   unsigned int  data_size,
+                                   int  chunk_no)>;
+using TBlobPropsCB = function<void(CCassBlobFetch *  fetch_details,
+                                   CBlobRecord const &  blob,
+                                   bool  is_found)>;
+using TBlobErrorCB = function<void(CCassBlobFetch *  fetch_details,
+                                   CRequestStatus::ECode  status,
+                                   int  code,
+                                   EDiagSev  severity,
+                                   const string &  message)>;
+
 
 class CBlobChunkCallback
 {
     public:
-        CBlobChunkCallback(
-                CPendingOperation *  pending_op,
-                CCassBlobFetch *  fetch_details) :
-            m_PendingOp(pending_op),
+        CBlobChunkCallback(TBlobChunkCB  blob_chunk_cb,
+                           CCassBlobFetch *  fetch_details) :
+            m_BlobChunkCB(blob_chunk_cb),
             m_FetchDetails(fetch_details),
             m_BlobSize(0),
             m_BlobRetrieveTiming(chrono::high_resolution_clock::now())
@@ -60,11 +75,11 @@ class CBlobChunkCallback
                     Register(eBlobRetrieve, eOpStatusFound,
                              m_BlobRetrieveTiming, m_BlobSize);
 
-            m_PendingOp->OnGetBlobChunk(m_FetchDetails, blob, data, size, chunk_no);
+            m_BlobChunkCB(m_FetchDetails, blob, data, size, chunk_no);
         }
 
     private:
-        CPendingOperation *     m_PendingOp;
+        TBlobChunkCB            m_BlobChunkCB;
         CCassBlobFetch *        m_FetchDetails;
 
         unsigned long                                   m_BlobSize;
@@ -76,12 +91,12 @@ class CBlobPropCallback
 {
     public:
         CBlobPropCallback(
-                CPendingOperation *  pending_op,
+                TBlobPropsCB  blob_prop_cb,
                 shared_ptr<CPSGS_Request>  request,
                 shared_ptr<CPSGS_Reply>  reply,
                 CCassBlobFetch *  fetch_details,
                 bool  need_timing) :
-            m_PendingOp(pending_op),
+            m_BlobPropCB(blob_prop_cb),
             m_Request(request),
             m_Reply(reply),
             m_FetchDetails(fetch_details),
@@ -119,19 +134,19 @@ class CBlobPropCallback
                 }
 
                 m_InProcess = true;
-                m_PendingOp->OnGetBlobProp(m_FetchDetails, blob, is_found);
+                m_BlobPropCB(m_FetchDetails, blob, is_found);
                 m_InProcess = false;
             }
         }
 
     private:
-        CPendingOperation *                     m_PendingOp;
-        shared_ptr<CPSGS_Request>               m_Request;
-        shared_ptr<CPSGS_Reply>                 m_Reply;
-        CCassBlobFetch *                        m_FetchDetails;
+        TBlobPropsCB                    m_BlobPropCB;
+        shared_ptr<CPSGS_Request>       m_Request;
+        shared_ptr<CPSGS_Reply>         m_Reply;
+        CCassBlobFetch *                m_FetchDetails;
 
         // Avoid an infinite loop
-        bool            m_InProcess;
+        bool                            m_InProcess;
 
         // Timing
         bool                                            m_NeedTiming;
@@ -142,10 +157,9 @@ class CBlobPropCallback
 class CGetBlobErrorCallback
 {
     public:
-        CGetBlobErrorCallback(
-                CPendingOperation *  pending_op,
-                CCassBlobFetch *  fetch_details) :
-            m_PendingOp(pending_op),
+        CGetBlobErrorCallback(TBlobErrorCB  blob_error_cb,
+                              CCassBlobFetch *  fetch_details) :
+            m_BlobErrorCB(blob_error_cb),
             m_FetchDetails(fetch_details),
             m_BlobRetrieveTiming(chrono::high_resolution_clock::now())
         {}
@@ -159,16 +173,15 @@ class CGetBlobErrorCallback
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(eBlobRetrieve, eOpStatusNotFound,
                              m_BlobRetrieveTiming);
-            m_PendingOp->OnGetBlobError(m_FetchDetails, status, code,
-                                        severity, message);
+            m_BlobErrorCB(m_FetchDetails, status, code, severity, message);
         }
 
     private:
-        CPendingOperation *                     m_PendingOp;
-        CCassBlobFetch *                        m_FetchDetails;
+        TBlobErrorCB        m_BlobErrorCB;
+        CCassBlobFetch *    m_FetchDetails;
 
         chrono::high_resolution_clock::time_point       m_BlobRetrieveTiming;
 };
 
-
 #endif
+

@@ -101,6 +101,11 @@ struct SPSGS_BlobId
     {
         return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
     }
+
+    bool operator != (const SPSGS_BlobId &  other) const
+    {
+        return !this->operator==(other);
+    }
 };
 
 
@@ -143,6 +148,7 @@ public:
     }
 
     CRef<CRequestContext>  GetRequestContext(void);
+    void SetRequestContext(void);
     CRequestStatus::ECode  GetOverallStatus(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);
     TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
@@ -335,6 +341,12 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     EPSGS_CacheAndDbUse     m_UseCache;
     string                  m_ClientId;
 
+    // Both cases: by seq_id/seq_id_type and by sat/sat_key store the
+    // required blob id here.
+    // When the seq_id/seq_id_type is resolved to sat/sat_key the m_BlobId
+    // is populated
+    SPSGS_BlobId            m_BlobId;
+
     // Processing fields: they are not coming from the client and used while
     // the request is in process.
     // Helps to avoid unnecessery cache updates;
@@ -377,10 +389,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     int                             m_SeqIdType;
     vector<SPSGS_BlobId>            m_ExcludeBlobs;
     EPSGS_AccSubstitutioOption      m_AccSubstOption;
-
-    // Processing field: when the seq_id/seq_id_type is resolved to sat/sat_key
-    // the m_BlobId field is populated
-    SPSGS_BlobId                    m_BlobId;
 
     SPSGS_BlobBySeqIdRequest(const string &  seq_id,
                              int  seq_id_type,
@@ -429,7 +437,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
 // Blob by sat/sat_key request (eBlobBySatSatKeyRequest)
 struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
 {
-    SPSGS_BlobId                    m_BlobId;
     CBlobRecord::TTimestamp         m_LastModified;
 
     SPSGS_BlobBySatSatKeyRequest(const SPSGS_BlobId &  blob_id,
@@ -440,9 +447,10 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
                                  EPSGS_Trace  trace,
                                  const TPSGS_HighResolutionTimePoint &  start_timestamp) :
         SPSGS_BlobRequestBase(tse_option, use_cache, client_id, trace, start_timestamp),
-        m_BlobId(blob_id),
         m_LastModified(last_modified)
-    {}
+    {
+        m_BlobId = blob_id;
+    }
 
     SPSGS_BlobBySatSatKeyRequest() :
         m_LastModified(INT64_MIN)

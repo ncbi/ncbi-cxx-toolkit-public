@@ -40,6 +40,7 @@
 #include "get_blob_callback.hpp"
 #include "split_history_callback.hpp"
 #include "insdc_utils.hpp"
+#include "get_processor.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -47,6 +48,8 @@
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
+
+using namespace std::placeholders;
 
 
 CPendingOperation::CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
@@ -98,7 +101,7 @@ CPendingOperation::CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
 CPendingOperation::~CPendingOperation()
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     switch (m_UserRequest->GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
@@ -147,7 +150,7 @@ CPendingOperation::~CPendingOperation()
     }
 
     // Just in case if a request ended without a normal request stop,
-    // finish it here as the last resort. (is it Cancel() case?)
+    // finish it here as the last resort.
     x_PrintRequestStop();
 }
 
@@ -155,7 +158,7 @@ CPendingOperation::~CPendingOperation()
 void CPendingOperation::Clear()
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     switch (m_UserRequest->GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
@@ -227,8 +230,8 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             x_ProcessGetRequest();
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            m_UrlUseCache = m_UserRequest->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_UseCache;
-            x_ProcessGetRequest();
+            m_GetProcessor.reset(new CPSGS_GetProcessor(m_UserRequest, m_Reply));
+            m_GetProcessor->Process();
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             m_UrlUseCache = m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_UseCache;
@@ -625,7 +628,7 @@ void CPendingOperation::OnBioseqDetailsRecord(
                                     SBioseqResolution &&  async_bioseq_info)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     switch (m_AsyncInterruptPoint) {
         case eResolveBioseqDetails:
@@ -663,7 +666,7 @@ void CPendingOperation::OnBioseqDetailsError(
                                 const TPSGS_HighResolutionTimePoint &  start_timestamp)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     switch (m_AsyncInterruptPoint) {
         case eResolveBioseqDetails:
@@ -816,11 +819,16 @@ void CPendingOperation::x_ProcessTSEChunkRequest(void)
                                           true, nullptr);
             fetch_details->SetLoader(load_task);
             load_task->SetDataReadyCB(GetDataReadyCB());
-            load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
-            load_task->SetPropsCallback(CBlobPropCallback(this, m_UserRequest,
-                                                          m_Reply,
-                                                          fetch_details.get(), false));
-            load_task->SetChunkCallback(CBlobChunkCallback(this, fetch_details.get()));
+            load_task->SetErrorCB(
+                CGetBlobErrorCallback(bind(&CPendingOperation::OnGetBlobError, this, _1, _2, _3, _4, _5),
+                                      fetch_details.get()));
+            load_task->SetPropsCallback(
+                CBlobPropCallback(bind(&CPendingOperation::OnGetBlobProp, this, _1, _2, _3),
+                                  m_UserRequest, m_Reply,
+                                  fetch_details.get(), false));
+            load_task->SetChunkCallback(
+                CBlobChunkCallback(bind(&CPendingOperation::OnGetBlobChunk, this, _1, _2, _3, _4, _5),
+                                   fetch_details.get()));
 
             if (m_UserRequest->NeedTrace()) {
                 m_Reply->SendTrace("Cassandra request: " +
@@ -1132,10 +1140,13 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     }
 
     load_task->SetDataReadyCB(GetDataReadyCB());
-    load_task->SetErrorCB(CGetBlobErrorCallback(this, fetch_details.get()));
-    load_task->SetPropsCallback(CBlobPropCallback(this, m_UserRequest, m_Reply,
-                                                  fetch_details.get(),
-                                                  blob_prop_cache_lookup_result != ePSGS_Found));
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(bind(&CPendingOperation::OnGetBlobError, this, _1, _2, _3, _4, _5),
+                              fetch_details.get()));
+    load_task->SetPropsCallback(
+        CBlobPropCallback(bind(&CPendingOperation::OnGetBlobProp, this, _1, _2, _3),
+                          m_UserRequest, m_Reply, fetch_details.get(),
+                          blob_prop_cache_lookup_result != ePSGS_Found));
 
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace("Cassandra request: " +
@@ -1159,6 +1170,17 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
         }
         return;
     }
+
+    if (m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
+        m_GetProcessor->ProcessEvent();
+        if (m_GetProcessor->IsFinished() && !resp.IsFinished() && resp.IsOutputReady() ) {
+            x_SendReplyCompletion(true);
+            m_Reply->Flush(true);
+        }
+        return;
+    }
+
+
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call resp->Send()  to send what we have if it is ready
@@ -1299,13 +1321,6 @@ void CPendingOperation::x_SendReplyCompletion(bool  forced)
         // No need to set the context/engage context resetter: they're set outside
         x_PrintRequestStop();
     }
-}
-
-
-void CPendingOperation::x_SetRequestContext(void)
-{
-    if (m_UserRequest->GetRequestContext().NotNull())
-        CDiagContext::SetRequestContext(m_UserRequest->GetRequestContext());
 }
 
 
@@ -1981,7 +1996,7 @@ bool CPendingOperation::OnNamedAnnotData(CNAnnotRecord &&        annot_record,
                                          int32_t                 sat)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     if (m_Cancelled) {
         fetch_details->GetLoader()->Cancel();
@@ -2024,7 +2039,7 @@ void CPendingOperation::OnNamedAnnotError(
                                 EDiagSev  severity, const string &  message)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();
@@ -2072,7 +2087,7 @@ void CPendingOperation::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                       CBlobRecord const &  blob, bool is_found)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace("Blob prop callback; found: " + to_string(is_found),
@@ -2326,7 +2341,7 @@ void CPendingOperation::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                        unsigned int  data_size, int  chunk_no)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     if (m_Cancelled) {
         fetch_details->GetLoader()->Cancel();
@@ -2376,7 +2391,7 @@ void CPendingOperation::OnGetBlobError(
                         EDiagSev  severity, const string &  message)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();
@@ -2472,7 +2487,7 @@ void CPendingOperation::OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_detail
                                           vector<SSplitHistoryRecord> && result)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     fetch_details->SetReadFinished();
 
@@ -2596,12 +2611,16 @@ void CPendingOperation::x_RequestTSEChunk(const SSplitHistoryRecord &  split_rec
     cass_blob_fetch->SetLoader(load_task);
 
     load_task->SetDataReadyCB(GetDataReadyCB());
-    load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
-    load_task->SetPropsCallback(CBlobPropCallback(this, m_UserRequest,
-                                                  m_Reply,
-                                                  cass_blob_fetch.get(),
-                                                  blob_prop_cache_lookup_result != ePSGS_Found));
-    load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(bind(&CPendingOperation::OnGetBlobError, this, _1, _2, _3, _4, _5),
+                              cass_blob_fetch.get()));
+    load_task->SetPropsCallback(
+        CBlobPropCallback(bind(&CPendingOperation::OnGetBlobProp, this, _1, _2, _3),
+                          m_UserRequest, m_Reply, cass_blob_fetch.get(),
+                          blob_prop_cache_lookup_result != ePSGS_Found));
+    load_task->SetChunkCallback(
+        CBlobChunkCallback(bind(&CPendingOperation::OnGetBlobChunk, this, _1, _2, _3, _4, _5),
+                           cass_blob_fetch.get()));
 
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace("Cassandra request: " +
@@ -2619,7 +2638,7 @@ void CPendingOperation::OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_d
                                                EDiagSev  severity, const string &  message)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();
@@ -2698,9 +2717,13 @@ void CPendingOperation::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_deta
     cass_blob_fetch->SetBlobPropSent();
 
     load_task->SetDataReadyCB(GetDataReadyCB());
-    load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(bind(&CPendingOperation::OnGetBlobError, this, _1, _2, _3, _4, _5),
+                              cass_blob_fetch.get()));
     load_task->SetPropsCallback(nullptr);
-    load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
+    load_task->SetChunkCallback(
+        CBlobChunkCallback(bind(&CPendingOperation::OnGetBlobChunk, this, _1, _2, _3, _4, _5),
+                           cass_blob_fetch.get()));
 
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace(
@@ -2818,12 +2841,16 @@ void CPendingOperation::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     cass_blob_fetch->SetLoader(load_task);
 
     load_task->SetDataReadyCB(GetDataReadyCB());
-    load_task->SetErrorCB(CGetBlobErrorCallback(this, cass_blob_fetch.get()));
-    load_task->SetPropsCallback(CBlobPropCallback(this, m_UserRequest,
-                                                  m_Reply,
-                                                  cass_blob_fetch.get(),
-                                                  blob_prop_cache_lookup_result != ePSGS_Found));
-    load_task->SetChunkCallback(CBlobChunkCallback(this, cass_blob_fetch.get()));
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(bind(&CPendingOperation::OnGetBlobError, this, _1, _2, _3, _4, _5),
+                              cass_blob_fetch.get()));
+    load_task->SetPropsCallback(
+        CBlobPropCallback(bind(&CPendingOperation::OnGetBlobProp, this, _1, _2, _3),
+                          m_UserRequest, m_Reply, cass_blob_fetch.get(),
+                          blob_prop_cache_lookup_result != ePSGS_Found));
+    load_task->SetChunkCallback(
+        CBlobChunkCallback(bind(&CPendingOperation::OnGetBlobChunk, this, _1, _2, _3, _4, _5),
+                           cass_blob_fetch.get()));
 
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace("Cassandra request: " +
@@ -2935,12 +2962,16 @@ void CPendingOperation::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
         }
 
         load_task->SetDataReadyCB(GetDataReadyCB());
-        load_task->SetErrorCB(CGetBlobErrorCallback(this, details.get()));
-        load_task->SetPropsCallback(CBlobPropCallback(this, m_UserRequest,
-                                                      m_Reply,
-                                                      details.get(),
-                                                      blob_prop_cache_lookup_result != ePSGS_Found));
-        load_task->SetChunkCallback(CBlobChunkCallback(this, details.get()));
+        load_task->SetErrorCB(
+            CGetBlobErrorCallback(bind(&CPendingOperation::OnGetBlobError, this, _1, _2, _3, _4, _5),
+                                  details.get()));
+        load_task->SetPropsCallback(
+            CBlobPropCallback(bind(&CPendingOperation::OnGetBlobProp, this, _1, _2, _3),
+                              m_UserRequest, m_Reply, details.get(),
+                              blob_prop_cache_lookup_result != ePSGS_Found));
+        load_task->SetChunkCallback(
+            CBlobChunkCallback(bind(&CPendingOperation::OnGetBlobChunk, this, _1, _2, _3, _4, _5),
+                               details.get()));
 
         m_FetchDetails.push_back(std::move(details));
     }
@@ -3006,7 +3037,7 @@ void CPendingOperation::OnSeqIdAsyncResolutionFinished(
                                 SBioseqResolution &&  async_bioseq_resolution)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     auto    app = CPubseqGatewayApp::GetInstance();
 
@@ -3046,7 +3077,7 @@ void CPendingOperation::OnSeqIdAsyncError(
                             const TPSGS_HighResolutionTimePoint &  start_timestamp)
 {
     CRequestContextResetter     context_resetter;
-    x_SetRequestContext();
+    m_UserRequest->SetRequestContext();
 
     switch (m_AsyncInterruptPoint) {
         case eAnnotSeqIdResolution:

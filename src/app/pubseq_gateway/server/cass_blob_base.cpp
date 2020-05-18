@@ -1,0 +1,869 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Sergey Satskiy
+ *
+ * File Description: base class for processors which retrieve blobs
+ *
+ */
+
+#include <ncbi_pch.hpp>
+
+#include <corelib/request_status.hpp>
+#include <corelib/ncbidiag.hpp>
+
+#include "cass_fetch.hpp"
+#include "psgs_request.hpp"
+#include "psgs_reply.hpp"
+#include "pubseq_gateway_utils.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway.hpp"
+#include "cass_blob_base.hpp"
+#include "pubseq_gateway_cache_utils.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
+
+using namespace std::placeholders;
+
+
+CPSGS_CassBlobBase::CPSGS_CassBlobBase()
+{}
+
+
+CPSGS_CassBlobBase::~CPSGS_CassBlobBase()
+{}
+
+
+void
+CPSGS_CassBlobBase::OnGetBlobProp(shared_ptr<CPSGS_Request>  request,
+                                  shared_ptr<CPSGS_Reply>  reply,
+                                  TBlobPropsCB  blob_props_cb,
+                                  TBlobChunkCB  blob_chunk_cb,
+                                  TBlobErrorCB  blob_error_cb,
+                                  CCassBlobFetch *  fetch_details,
+                                  CBlobRecord const &  blob,
+                                  bool is_found)
+{
+    CRequestContextResetter     context_resetter;
+    request->SetRequestContext();
+
+    if (request->NeedTrace()) {
+        reply->SendTrace("Blob prop callback; found: " + to_string(is_found),
+                         request->GetStartTimestamp());
+    }
+
+    if (is_found) {
+        // Found, send blob props back as JSON
+        reply->PrepareBlobPropData(
+            fetch_details,  ToJson(blob).Repr(CJsonNode::fStandardJson));
+
+        // Note: initially only blob_props are requested and at that moment the
+        //       TSE option is 'known'. So the initial request should be
+        //       finished, see m_FinishedRead = true
+        //       In the further requests of the blob data regardless with blob
+        //       props or not, the TSE option is set to unknown so the request
+        //       will be finished at the moment when blob chunks are handled.
+        switch (fetch_details->GetTSEOption()) {
+            case SPSGS_BlobRequestBase::ePSGS_NoneTSE:
+                x_OnBlobPropNoneTSE(reply, fetch_details);
+                break;
+            case SPSGS_BlobRequestBase::ePSGS_SlimTSE:
+                x_OnBlobPropSlimTSE(request, reply,
+                                    blob_props_cb, blob_chunk_cb, blob_error_cb,
+                                    fetch_details, blob);
+                break;
+            case SPSGS_BlobRequestBase::ePSGS_SmartTSE:
+                x_OnBlobPropSmartTSE(request, reply,
+                                     blob_props_cb, blob_chunk_cb, blob_error_cb,
+                                     fetch_details, blob);
+                break;
+            case SPSGS_BlobRequestBase::ePSGS_WholeTSE:
+                x_OnBlobPropWholeTSE(request, reply,
+                                     blob_props_cb, blob_chunk_cb, blob_error_cb,
+                                     fetch_details, blob);
+                break;
+            case SPSGS_BlobRequestBase::ePSGS_OrigTSE:
+                x_OnBlobPropOrigTSE(request, reply,
+                                    blob_chunk_cb, blob_error_cb,
+                                    fetch_details, blob);
+                break;
+            case SPSGS_BlobRequestBase::ePSGS_UnknownTSE:
+                // Used when INFO blobs are asked; i.e. chunks have been
+                // requested as well, so only the prop completion message needs
+                // to be sent.
+                reply->PrepareBlobPropCompletion(fetch_details);
+                break;
+        }
+    } else {
+        x_OnBlobPropNotFound(request, reply, fetch_details);
+    }
+}
+
+
+void
+CPSGS_CassBlobBase::x_OnBlobPropNoneTSE(shared_ptr<CPSGS_Reply>  reply,
+                                        CCassBlobFetch *  fetch_details)
+{
+    // Nothing else to be sent
+    reply->PrepareBlobPropCompletion(fetch_details);
+    x_SetFinished(reply, fetch_details);
+}
+
+
+void
+CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(shared_ptr<CPSGS_Request>  request,
+                                        shared_ptr<CPSGS_Reply>  reply,
+                                        TBlobPropsCB  blob_props_cb,
+                                        TBlobChunkCB  blob_chunk_cb,
+                                        TBlobErrorCB  blob_error_cb,
+                                        CCassBlobFetch *  fetch_details,
+                                        CBlobRecord const &  blob)
+{
+    auto        fetch_blob = fetch_details->GetBlobId();
+
+    // The handler deals with both kind of blob requests:
+    // - by sat/sat_key
+    // - by seq_id/seq_id_type
+    // So get the reference to the blob base request
+    auto &      blob_request = request->GetRequest<SPSGS_BlobRequestBase>();
+
+    fetch_details->SetReadFinished();
+    if (blob.GetId2Info().empty()) {
+        reply->PrepareBlobPropCompletion(fetch_details);
+
+        // An original blob may be required if its size is small
+        auto *          app = CPubseqGatewayApp::GetInstance();
+        unsigned int    slim_max_blob_size = app->GetSlimMaxBlobSize();
+
+        if (blob.GetSize() <= slim_max_blob_size) {
+            // The blob is small, get it, but first check in the
+            // exclude blob cache
+            if (x_CheckExcludeBlobCache(request, reply,
+                                        fetch_details,
+                                        blob_request) == ePSGS_InCache) {
+                reply->SignalProcessorFinished();
+                return;
+            }
+
+            x_RequestOriginalBlobChunks(request, reply,
+                                        blob_chunk_cb, blob_error_cb,
+                                        fetch_details, blob);
+        } else {
+            // Nothing else to be sent, the original blob is big
+        }
+        reply->SignalProcessorFinished();
+        return;
+    }
+
+    // Check the cache first - only if it is about the main
+    // blob request
+    if (x_CheckExcludeBlobCache(request, reply,
+                                fetch_details,
+                                blob_request) == ePSGS_InCache) {
+        reply->SignalProcessorFinished();
+        return;
+    }
+
+    // Not in the cache, request the split INFO blob only
+    x_RequestID2BlobChunks(request, reply, 
+                           blob_props_cb, blob_chunk_cb, blob_error_cb,
+                           fetch_details, blob, true);
+
+    // It is important to send completion after: there could be
+    // an error of converting/translating ID2 info
+    reply->PrepareBlobPropCompletion(fetch_details);
+    reply->SignalProcessorFinished();
+}
+
+
+void
+CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(shared_ptr<CPSGS_Request>  request,
+                                         shared_ptr<CPSGS_Reply>  reply,
+                                         TBlobPropsCB  blob_props_cb,
+                                         TBlobChunkCB  blob_chunk_cb,
+                                         TBlobErrorCB  blob_error_cb,
+                                         CCassBlobFetch *  fetch_details,
+                                         CBlobRecord const &  blob)
+{
+    fetch_details->SetReadFinished();
+    if (blob.GetId2Info().empty()) {
+        // Request original blob chunks
+        reply->PrepareBlobPropCompletion(fetch_details);
+        x_RequestOriginalBlobChunks(request, reply,
+                                    blob_chunk_cb, blob_error_cb,
+                                    fetch_details, blob);
+    } else {
+        // Request the split INFO blob only
+        x_RequestID2BlobChunks(request, reply,
+                               blob_props_cb, blob_chunk_cb, blob_error_cb,
+                               fetch_details, blob, true);
+
+        // It is important to send completion after: there could be
+        // an error of converting/translating ID2 info
+        reply->PrepareBlobPropCompletion(fetch_details);
+    }
+    reply->SignalProcessorFinished();
+}
+
+
+void
+CPSGS_CassBlobBase::x_OnBlobPropWholeTSE(shared_ptr<CPSGS_Request>  request,
+                                         shared_ptr<CPSGS_Reply>  reply,
+                                         TBlobPropsCB  blob_props_cb,
+                                         TBlobChunkCB  blob_chunk_cb,
+                                         TBlobErrorCB  blob_error_cb,
+                                         CCassBlobFetch *  fetch_details,
+                                         CBlobRecord const &  blob)
+{
+    fetch_details->SetReadFinished();
+    if (blob.GetId2Info().empty()) {
+        // Request original blob chunks
+        reply->PrepareBlobPropCompletion(fetch_details);
+        x_RequestOriginalBlobChunks(request, reply,
+                                    blob_chunk_cb, blob_error_cb,
+                                    fetch_details, blob);
+    } else {
+        // Request the split INFO blob and all split chunks
+        x_RequestID2BlobChunks(request, reply,
+                               blob_props_cb, blob_chunk_cb, blob_error_cb,
+                               fetch_details, blob, false);
+
+        // It is important to send completion after: there could be
+        // an error of converting/translating ID2 info
+        reply->PrepareBlobPropCompletion(fetch_details);
+    }
+    reply->SignalProcessorFinished();
+}
+
+
+void
+CPSGS_CassBlobBase::x_OnBlobPropOrigTSE(shared_ptr<CPSGS_Request>  request,
+                                        shared_ptr<CPSGS_Reply>  reply,
+                                        TBlobChunkCB  blob_chunk_cb,
+                                        TBlobErrorCB  blob_error_cb,
+                                        CCassBlobFetch *  fetch_details,
+                                        CBlobRecord const &  blob)
+{
+    fetch_details->SetReadFinished();
+    // Request original blob chunks
+    reply->PrepareBlobPropCompletion(fetch_details);
+    x_RequestOriginalBlobChunks(request, reply,
+                                blob_chunk_cb,
+                                blob_error_cb,
+                                fetch_details, blob);
+    reply->SignalProcessorFinished();
+}
+
+
+void
+CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(shared_ptr<CPSGS_Request>  request,
+                                                shared_ptr<CPSGS_Reply>  reply,
+                                                TBlobChunkCB  blob_chunk_cb,
+                                                TBlobErrorCB  blob_error_cb,
+                                                CCassBlobFetch *  fetch_details,
+                                                CBlobRecord const &  blob)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+
+    auto    trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
+    if (request->NeedTrace())
+        trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
+
+    // eUnknownTSE is safe here; no blob prop call will happen anyway
+    // eUnknownUseCache is safe here; no further resolution required
+    SPSGS_BlobBySatSatKeyRequest
+            orig_blob_request(fetch_details->GetBlobId(),
+                              blob.GetModified(),
+                              SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
+                              SPSGS_RequestBase::ePSGS_UnknownUseCache,
+                              fetch_details->GetClientId(),
+                              trace_flag,
+                              chrono::high_resolution_clock::now());
+
+    // Create the cass async loader
+    unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
+    CCassBlobTaskLoadBlob *             load_task =
+        new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                  app->GetCassandraMaxRetries(),
+                                  app->GetCassandraConnection(),
+                                  orig_blob_request.m_BlobId.m_SatName,
+                                  std::move(blob_record),
+                                  true, nullptr);
+
+    unique_ptr<CCassBlobFetch>  cass_blob_fetch;
+    cass_blob_fetch.reset(new CCassBlobFetch(orig_blob_request));
+    cass_blob_fetch->SetLoader(load_task);
+
+    // Blob props have already been rceived
+    cass_blob_fetch->SetBlobPropSent();
+
+    load_task->SetDataReadyCB(reply->GetReply()->GetDataReadyCB());
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(blob_error_cb, cass_blob_fetch.get()));
+    load_task->SetPropsCallback(nullptr);
+    load_task->SetChunkCallback(
+        CBlobChunkCallback(blob_chunk_cb, cass_blob_fetch.get()));
+
+    if (request->NeedTrace()) {
+        reply->SendTrace(
+            "Cassandra request: " + ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+            request->GetStartTimestamp());
+    }
+
+    m_FetchDetails.push_back(std::move(cass_blob_fetch));
+
+    load_task->Wait();
+}
+
+
+void
+CPSGS_CassBlobBase::x_RequestID2BlobChunks(shared_ptr<CPSGS_Request>  request,
+                                           shared_ptr<CPSGS_Reply>  reply,
+                                           TBlobPropsCB  blob_props_cb,
+                                           TBlobChunkCB  blob_chunk_cb,
+                                           TBlobErrorCB  blob_error_cb,
+                                           CCassBlobFetch *  fetch_details,
+                                           CBlobRecord const &  blob,
+                                           bool  info_blob_only)
+{
+    if (!x_ParseId2Info(request, reply, fetch_details, blob))
+        return;
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+
+    // Translate sat to keyspace
+    SPSGS_BlobId    info_blob_id(m_Id2Info->GetSat(), m_Id2Info->GetInfo());    // mandatory
+
+    if (!app->SatToSatName(m_Id2Info->GetSat(), info_blob_id.m_SatName)) {
+        // Error: send it in the context of the blob props
+        string      message = "Error mapping id2 info sat (" +
+                              to_string(m_Id2Info->GetSat()) +
+                              ") to a cassandra keyspace for the blob " +
+                              fetch_details->GetBlobId().ToString();
+        reply->PrepareBlobPropMessage(
+                                fetch_details, message,
+                                CRequestStatus::e500_InternalServerError,
+                                ePSGS_BadID2Info, eDiag_Error);
+        app->GetErrorCounters().IncServerSatToSatName();
+        request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        PSG_ERROR(message);
+        return;
+    }
+
+    auto    trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
+    if (request->NeedTrace())
+        trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
+
+    // Create the Id2Info requests.
+    // eUnknownTSE is treated in the blob prop handler as to do nothing (no
+    // sending completion message, no requesting other blobs)
+    // eUnknownUseCache is safe here; no further resolution
+    // empty client_id means that later on there will be no exclude blobs cache ops
+    SPSGS_BlobBySatSatKeyRequest
+        info_blob_request(info_blob_id, INT64_MIN,
+                          SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
+                          SPSGS_RequestBase::ePSGS_UnknownUseCache,
+                          "", trace_flag,
+                          chrono::high_resolution_clock::now());
+
+    // Prepare Id2Info retrieval
+    unique_ptr<CCassBlobFetch>  cass_blob_fetch;
+    cass_blob_fetch.reset(new CCassBlobFetch(info_blob_request));
+
+    unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+    CPSGCache                   psg_cache(request, reply);
+    auto                        blob_prop_cache_lookup_result =
+                                    psg_cache.LookupBlobProp(
+                                        info_blob_request.m_BlobId.m_Sat,
+                                        info_blob_request.m_BlobId.m_SatKey,
+                                        info_blob_request.m_LastModified,
+                                        *blob_record.get());
+    CCassBlobTaskLoadBlob *     load_task = nullptr;
+
+
+    if (blob_prop_cache_lookup_result == ePSGS_Found) {
+        load_task = new CCassBlobTaskLoadBlob(
+                        app->GetCassandraTimeout(),
+                        app->GetCassandraMaxRetries(),
+                        app->GetCassandraConnection(),
+                        info_blob_request.m_BlobId.m_SatName,
+                        std::move(blob_record),
+                        true, nullptr);
+    } else {
+        // The handler deals with both kind of blob requests:
+        // - by sat/sat_key
+        // - by seq_id/seq_id_type
+        // So get the reference to the blob base request
+        auto &      blob_request = request->GetRequest<SPSGS_BlobRequestBase>();
+
+        if (blob_request.m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
+            // No need to continue; it is forbidded to look for blob props in
+            // the Cassandra DB
+            string      message;
+
+            if (blob_prop_cache_lookup_result == ePSGS_NotFound) {
+                message = "Blob properties are not found";
+                request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+                reply->PrepareBlobPropMessage(
+                                    fetch_details, message,
+                                    CRequestStatus::e404_NotFound,
+                                    ePSGS_BlobPropsNotFound, eDiag_Error);
+            } else {
+                message = "Blob properties are not found due to LMDB cache error";
+                request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+                reply->PrepareBlobPropMessage(
+                                    fetch_details, message,
+                                    CRequestStatus::e500_InternalServerError,
+                                    ePSGS_BlobPropsNotFound, eDiag_Error);
+            }
+
+            PSG_WARNING(message);
+            return;
+        }
+
+        load_task = new CCassBlobTaskLoadBlob(
+                        app->GetCassandraTimeout(),
+                        app->GetCassandraMaxRetries(),
+                        app->GetCassandraConnection(),
+                        info_blob_request.m_BlobId.m_SatName,
+                        info_blob_request.m_BlobId.m_SatKey,
+                        true, nullptr);
+    }
+    cass_blob_fetch->SetLoader(load_task);
+
+    load_task->SetDataReadyCB(reply->GetReply()->GetDataReadyCB());
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(blob_error_cb, cass_blob_fetch.get()));
+    load_task->SetPropsCallback(
+        CBlobPropCallback(blob_props_cb,
+                          request, reply, cass_blob_fetch.get(),
+                          blob_prop_cache_lookup_result != ePSGS_Found));
+    load_task->SetChunkCallback(
+        CBlobChunkCallback(blob_chunk_cb, cass_blob_fetch.get()));
+
+    if (request->NeedTrace()) {
+        reply->SendTrace("Cassandra request: " +
+                           ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                           request->GetStartTimestamp());
+    }
+
+    m_FetchDetails.push_back(std::move(cass_blob_fetch));
+    auto    to_init_iter = m_FetchDetails.end();
+    --to_init_iter;
+
+    // We may need to request ID2 chunks
+    if (!info_blob_only) {
+        // Sat name is the same
+        x_RequestId2SplitBlobs(request, reply,
+                               blob_props_cb, blob_chunk_cb, blob_error_cb,
+                               fetch_details, info_blob_id.m_SatName);
+    }
+
+    // initiate retrieval: only those which were just created
+    while (to_init_iter != m_FetchDetails.end()) {
+        if (*to_init_iter)
+            (*to_init_iter)->GetLoader()->Wait();
+        ++to_init_iter;
+    }
+}
+
+
+void
+CPSGS_CassBlobBase::x_RequestId2SplitBlobs(shared_ptr<CPSGS_Request>  request,
+                                           shared_ptr<CPSGS_Reply>  reply,
+                                           TBlobPropsCB  blob_props_cb,
+                                           TBlobChunkCB  blob_chunk_cb,
+                                           TBlobErrorCB  blob_error_cb,
+                                           CCassBlobFetch *  fetch_details,
+                                           const string &  sat_name)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+
+    auto    trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
+    if (request->NeedTrace())
+        trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
+
+    for (int  chunk_no = 1; chunk_no <= m_Id2Info->GetChunks(); ++chunk_no) {
+        SPSGS_BlobId    chunks_blob_id(m_Id2Info->GetSat(),
+                                       m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
+        chunks_blob_id.m_SatName = sat_name;
+
+        // eUnknownTSE is treated in the blob prop handler as to do nothing (no
+        // sending completion message, no requesting other blobs)
+        // eUnknownUseCache is safe here; no further resolution required
+        // client_id is "" (empty string) so the split blobs do not participate
+        // in the exclude blob cache
+        SPSGS_BlobBySatSatKeyRequest
+            chunk_request(chunks_blob_id, INT64_MIN,
+                          SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
+                          SPSGS_RequestBase::ePSGS_UnknownUseCache,
+                          "", trace_flag,
+                          chrono::high_resolution_clock::now());
+
+        unique_ptr<CCassBlobFetch>   details;
+        details.reset(new CCassBlobFetch(chunk_request));
+
+        unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+        CPSGCache                   psg_cache(request, reply);
+        auto                        blob_prop_cache_lookup_result =
+                                        psg_cache.LookupBlobProp(
+                                            chunk_request.m_BlobId.m_Sat,
+                                            chunk_request.m_BlobId.m_SatKey,
+                                            chunk_request.m_LastModified,
+                                            *blob_record.get());
+        CCassBlobTaskLoadBlob *     load_task = nullptr;
+
+        if (blob_prop_cache_lookup_result == ePSGS_Found) {
+            load_task = new CCassBlobTaskLoadBlob(
+                            app->GetCassandraTimeout(),
+                            app->GetCassandraMaxRetries(),
+                            app->GetCassandraConnection(),
+                            chunk_request.m_BlobId.m_SatName,
+                            std::move(blob_record),
+                            true, nullptr);
+            details->SetLoader(load_task);
+        } else {
+            // The handler deals with both kind of blob requests:
+            // - by sat/sat_key
+            // - by seq_id/seq_id_type
+            // So get the reference to the blob base request
+            auto &      blob_request = request->GetRequest<SPSGS_BlobRequestBase>();
+
+            if (blob_request.m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
+                // No need to create a request because the Cassandra DB access
+                // is forbidden
+                string      message;
+                if (blob_prop_cache_lookup_result == ePSGS_NotFound) {
+                    message = "Blob properties are not found";
+                    request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+                    reply->PrepareBlobPropMessage(
+                                        details.get(), message,
+                                        CRequestStatus::e404_NotFound,
+                                        ePSGS_BlobPropsNotFound, eDiag_Error);
+                } else {
+                    message = "Blob properties are not found "
+                              "due to a blob proc cache lookup error";
+                    request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+                    reply->PrepareBlobPropMessage(
+                                        details.get(), message,
+                                        CRequestStatus::e500_InternalServerError,
+                                        ePSGS_BlobPropsNotFound, eDiag_Error);
+                }
+                reply->PrepareBlobPropCompletion(details.get());
+                PSG_WARNING(message);
+                continue;
+            }
+
+            load_task = new CCassBlobTaskLoadBlob(
+                            app->GetCassandraTimeout(),
+                            app->GetCassandraMaxRetries(),
+                            app->GetCassandraConnection(),
+                            chunk_request.m_BlobId.m_SatName,
+                            chunk_request.m_BlobId.m_SatKey,
+                            true, nullptr);
+            details->SetLoader(load_task);
+        }
+
+        load_task->SetDataReadyCB(reply->GetReply()->GetDataReadyCB());
+        load_task->SetErrorCB(
+            CGetBlobErrorCallback(blob_error_cb, details.get()));
+        load_task->SetPropsCallback(
+            CBlobPropCallback(blob_props_cb,
+                              request, reply, details.get(),
+                              blob_prop_cache_lookup_result != ePSGS_Found));
+        load_task->SetChunkCallback(
+            CBlobChunkCallback(blob_chunk_cb, details.get()));
+
+        m_FetchDetails.push_back(std::move(details));
+    }
+}
+
+
+
+CPSGS_CassBlobBase::EPSGS_BlobCacheCheckResult
+CPSGS_CassBlobBase::x_CheckExcludeBlobCache(shared_ptr<CPSGS_Request>  request,
+                                            shared_ptr<CPSGS_Reply>  reply,
+                                            CCassBlobFetch *  fetch_details,
+                                            SPSGS_BlobRequestBase &  blob_request)
+{
+    if (blob_request.m_ClientId.empty())
+        return ePSGS_NotInCache;
+
+    auto        fetch_blob = fetch_details->GetBlobId();
+    if (fetch_blob != blob_request.m_BlobId)
+        return ePSGS_NotInCache;
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    bool        completed = true;
+    auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
+                                            blob_request.m_ClientId,
+                                            blob_request.m_BlobId.m_Sat,
+                                            blob_request.m_BlobId.m_SatKey,
+                                            completed);
+    if (request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest &&
+        cache_result == ePSGS_AlreadyInCache) {
+        reply->PrepareBlobPropCompletion(fetch_details);
+        if (completed)
+            reply->PrepareBlobExcluded(blob_request.m_BlobId, ePSGS_Sent);
+        else
+            reply->PrepareBlobExcluded(blob_request.m_BlobId, ePSGS_InProgress);
+        return ePSGS_InCache;
+    }
+
+    if (cache_result == ePSGS_Added)
+        blob_request.m_ExcludeBlobCacheAdded = true;
+    return ePSGS_NotInCache;
+}
+
+
+void
+CPSGS_CassBlobBase::OnGetBlobError(shared_ptr<CPSGS_Request>  request,
+                                   shared_ptr<CPSGS_Reply>  reply,
+                                   CCassBlobFetch *  fetch_details,
+                                   CRequestStatus::ECode  status,
+                                   int  code,
+                                   EDiagSev  severity,
+                                   const string &  message)
+{
+    CRequestContextResetter     context_resetter;
+    request->SetRequestContext();
+
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
+
+    // It could be a message or an error
+    bool    is_error = (severity == eDiag_Error ||
+                        severity == eDiag_Critical ||
+                        severity == eDiag_Fatal);
+
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    if (status >= CRequestStatus::e400_BadRequest &&
+        status < CRequestStatus::e500_InternalServerError) {
+        PSG_WARNING(message);
+    } else {
+        PSG_ERROR(message);
+    }
+
+    if (request->NeedTrace()) {
+        reply->SendTrace("Blob error callback; status " + to_string(status),
+                         request->GetStartTimestamp());
+    }
+
+    if (status == CRequestStatus::e404_NotFound) {
+        app->GetErrorCounters().IncGetBlobNotFound();
+    } else {
+        if (is_error) {
+            if (code == CCassandraException::eQueryTimeout)
+                app->GetErrorCounters().IncCassQueryTimeoutError();
+            else
+                app->GetErrorCounters().IncUnknownError();
+        }
+    }
+
+    if (is_error) {
+        request->UpdateOverallStatus(
+                            CRequestStatus::e500_InternalServerError);
+
+        if (fetch_details->IsBlobPropStage()) {
+            reply->PrepareBlobPropMessage(
+                                fetch_details, message,
+                                CRequestStatus::e500_InternalServerError,
+                                code, severity);
+            reply->PrepareBlobPropCompletion(fetch_details);
+        } else {
+            reply->PrepareBlobMessage(
+                                fetch_details, message,
+                                CRequestStatus::e500_InternalServerError,
+                                code, severity);
+            reply->PrepareBlobCompletion(fetch_details);
+        }
+
+        // The handler deals with both kind of blob requests:
+        // - by sat/sat_key
+        // - by seq_id/seq_id_type
+        // So get the reference to the blob base request
+        auto &      blob_request = request->GetRequest<SPSGS_BlobRequestBase>();
+
+        if (fetch_details->GetBlobId() == blob_request.m_BlobId) {
+            if (blob_request.m_ExcludeBlobCacheAdded &&
+                ! blob_request.m_ClientId.empty()) {
+                app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
+                                                   blob_request.m_BlobId.m_Sat,
+                                                   blob_request.m_BlobId.m_SatKey);
+
+                // To prevent any updates
+                blob_request.m_ExcludeBlobCacheAdded = false;
+            }
+        }
+
+        // If it is an error then regardless what stage it was, props or
+        // chunks, there will be no more activity
+        fetch_details->SetReadFinished();
+    } else {
+        if (fetch_details->IsBlobPropStage())
+            reply->PrepareBlobPropMessage(fetch_details, message,
+                                          status, code, severity);
+        else
+            reply->PrepareBlobMessage(fetch_details, message,
+                                      status, code, severity);
+    }
+
+    x_SetFinished(reply, fetch_details);
+}
+
+
+void
+CPSGS_CassBlobBase::OnGetBlobChunk(shared_ptr<CPSGS_Request>  request,
+                                   shared_ptr<CPSGS_Reply>  reply,
+                                   bool  cancelled,
+                                   CCassBlobFetch *  fetch_details,
+                                   const unsigned char *  chunk_data,
+                                   unsigned int  data_size,
+                                   int  chunk_no)
+{
+    CRequestContextResetter     context_resetter;
+    request->SetRequestContext();
+
+    if (cancelled) {
+        fetch_details->GetLoader()->Cancel();
+        x_SetFinished(reply, fetch_details);
+        return;
+    }
+    if (reply->IsReplyFinished()) {
+        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+                                                     IncUnknownError();
+        PSG_ERROR("Unexpected data received "
+                  "while the output has finished, ignoring");
+        return;
+    }
+
+    if (chunk_no >= 0) {
+        if (request->NeedTrace()) {
+            reply->SendTrace("Blob chunk " + to_string(chunk_no) + " callback",
+                             request->GetStartTimestamp());
+        }
+
+        // A blob chunk; 0-length chunks are allowed too
+        reply->PrepareBlobData(fetch_details,
+                               chunk_data, data_size, chunk_no);
+    } else {
+        if (request->NeedTrace()) {
+            reply->SendTrace("Blob chunk no-more-data callback",
+                             request->GetStartTimestamp());
+        }
+
+        // End of the blob
+        reply->PrepareBlobCompletion(fetch_details);
+        x_SetFinished(reply, fetch_details);
+
+        // Note: no need to set the blob completed in the exclude blob cache.
+        // It will happen in Peek()
+    }
+}
+
+
+void
+CPSGS_CassBlobBase::x_OnBlobPropNotFound(shared_ptr<CPSGS_Request>  request,
+                                         shared_ptr<CPSGS_Reply>  reply,
+                                         CCassBlobFetch *  fetch_details)
+{
+    // Not found, report 500 because it is data inconsistency
+    // or 404 if it was requested via sat.sat_key
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetErrorCounters().IncBlobPropsNotFoundError();
+
+    auto    blob_id = fetch_details->GetBlobId();
+    string  message = "Blob " + blob_id.ToString() + " properties are not found";
+    if (fetch_details->GetFetchType() == ePSGS_BlobBySatSatKeyFetch) {
+        // User requested wrong sat_key, so it is a client error
+        PSG_WARNING(message);
+        request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        reply->PrepareBlobPropMessage(fetch_details, message,
+                                      CRequestStatus::e404_NotFound,
+                                      ePSGS_BlobPropsNotFound, eDiag_Error);
+    } else {
+        // Server error, data inconsistency
+        PSG_ERROR(message);
+        request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        reply->PrepareBlobPropMessage(fetch_details, message,
+                                      CRequestStatus::e500_InternalServerError,
+                                      ePSGS_BlobPropsNotFound, eDiag_Error);
+    }
+
+    // The handler deals with both kind of blob requests:
+    // - by sat/sat_key
+    // - by seq_id/seq_id_type
+    // So get the reference to the blob base request
+    auto &      blob_request = request->GetRequest<SPSGS_BlobRequestBase>();
+
+    if (blob_id == blob_request.m_BlobId) {
+        if (blob_request.m_ExcludeBlobCacheAdded && !blob_request.m_ClientId.empty()) {
+            app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
+                                               blob_request.m_BlobId.m_Sat,
+                                               blob_request.m_BlobId.m_SatKey);
+            blob_request.m_ExcludeBlobCacheAdded = false;
+        }
+    }
+
+    reply->PrepareBlobPropCompletion(fetch_details);
+    x_SetFinished(reply, fetch_details);
+}
+
+
+bool
+CPSGS_CassBlobBase::x_ParseId2Info(shared_ptr<CPSGS_Request>  request,
+                                   shared_ptr<CPSGS_Reply>  reply,
+                                   CCassBlobFetch *  fetch_details,
+                                   CBlobRecord const &  blob)
+{
+    string      err_msg;
+    try {
+        m_Id2Info.reset(new CPSGId2Info(blob.GetId2Info()));
+        return true;
+    } catch (const exception &  exc) {
+        err_msg = "Error extracting id2 info for the blob " +
+            fetch_details->GetBlobId().ToString() + ": " + exc.what();
+    } catch (...) {
+        err_msg = "Unknown error extracting id2 info for the blob " +
+            fetch_details->GetBlobId().ToString() + ".";
+    }
+
+    CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncInvalidId2InfoError();
+    reply->PrepareBlobPropMessage(
+        fetch_details, err_msg, CRequestStatus::e500_InternalServerError,
+        ePSGS_BadID2Info, eDiag_Error);
+    request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(err_msg);
+    return false;
+}
+
+
+void
+CPSGS_CassBlobBase::x_SetFinished(shared_ptr<CPSGS_Reply>  reply,
+                                  CCassBlobFetch *  fetch_details)
+{
+    fetch_details->SetReadFinished();
+    reply->SignalProcessorFinished();
+}
+

@@ -80,6 +80,13 @@ CRef<CRequestContext>  CPSGS_Request::GetRequestContext(void)
 }
 
 
+void CPSGS_Request::SetRequestContext(void)
+{
+    if (m_RequestContext.NotNull())
+        CDiagContext::SetRequestContext(m_RequestContext);
+}
+
+
 CRequestStatus::ECode  CPSGS_Request::GetOverallStatus(void) const
 {
     return m_OverallStatus;

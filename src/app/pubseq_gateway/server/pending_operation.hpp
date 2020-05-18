@@ -56,6 +56,8 @@ USING_SCOPE(objects);
 #include "id2info.hpp"
 
 
+class CPSGS_GetProcessor;
+
 
 class CPendingOperation
 {
@@ -130,7 +132,6 @@ private:
     void x_ProcessTSEChunkRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
-    void x_SetRequestContext(void);
     void x_PrintRequestStop(void);
     bool x_SatToSatName(const SPSGS_BlobBySeqIdRequest &  blob_request,
                         SPSGS_BlobId &  blob_id);
@@ -286,6 +287,8 @@ private:
     unique_ptr<CAsyncBioseqQuery>           m_AsyncBioseqDetailsQuery;
     EPSGS_AsyncInterruptPoint               m_AsyncInterruptPoint;
     TPSGS_HighResolutionTimePoint           m_AsyncCassResolutionStart;
+
+    unique_ptr<CPSGS_GetProcessor>          m_GetProcessor;
 };
 
 

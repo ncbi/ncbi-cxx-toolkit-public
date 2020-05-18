@@ -77,6 +77,8 @@ public:
         return ++m_NextItemId;
     }
 
+    void SignalProcessorFinished(void);
+
 public:
     // PSG protocol facilities
     void PrepareBioseqMessage(size_t  item_id, const string &  msg,

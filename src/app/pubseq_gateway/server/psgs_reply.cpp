@@ -60,6 +60,12 @@ void CPSGS_Reply::Clear(void)
 }
 
 
+void CPSGS_Reply::SignalProcessorFinished(void)
+{
+    m_Reply->PeekPending();
+}
+
+
 void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        const string &  msg,
                                        CRequestStatus::ECode  status,
