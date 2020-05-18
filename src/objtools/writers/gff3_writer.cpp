@@ -2602,8 +2602,7 @@ bool CGff3Writer::xWriteFeatureCds(
             iPhase = max(feature.GetData().GetCdregion().GetFrame()-1, 0);
         }
         else { 
-            iPhase = sequence::CFeatTrim::GetCdsFrame(feature, display_range);
-            iPhase = max(0, iPhase);
+            iPhase = sequence::CFeatTrim::GetCdsFrame(feature, display_range)-1;
         }
     }
     int iTotSize = -iPhase;
