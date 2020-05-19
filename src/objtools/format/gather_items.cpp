@@ -4081,7 +4081,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
     }
 
-    if ( ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() && s_NotForceNearFeats(ctx)) {
+    if ( ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && ctx.GetLocation().IsWhole() && */ s_NotForceNearFeats(ctx)) {
 
         // Gaps of length zero are only shown for SwissProt Genpept records
         const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
@@ -4122,8 +4122,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
                     if (seg.GetRefMinusStrand()) {
                         strand = eNa_strand_minus;
                     }
-                    // cout << "SEG " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
-                    CRef<CSeq_loc> sl = bsh.GetRangeSeq_loc(seg.GetPosition(), seg.GetEndPosition() - 1, strand);
+                    CRef<CSeq_loc> sl = bsh.GetRangeSeq_loc(seg.GetRefPosition(), seg.GetRefPosition() + seg.GetLength() - 1, strand);
                     if (sl) {
                         size_t count = x_GatherFeaturesOnSegmentIdx(*sl, *selp, ctx);
                         if (count > 0) {
@@ -4137,8 +4136,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
                     }
                 }
             } else {
-                // cout << "GAP " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
-                const bool noGapSizeProblem = ( false || (seg.GetPosition() < seg.GetEndPosition()) );
+                const bool noGapSizeProblem = ( false || (seg.GetRefPosition() < seg.GetEndPosition()) );
                 if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
                     CConstRef<IFlatItem> item;
                     if (gap_data.has_gap) {
@@ -4161,7 +4159,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         SetDiagFilter(eDiagFilter_All, "");
 
     } else {
-        x_GatherFeaturesOnLocation(loc, *selp, ctx);
+        x_GatherFeaturesOnSegmentIdx(loc, *selp, ctx);
     }
 
     if ( ctx.IsProt() ) {
