@@ -233,8 +233,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     const bool record_coords  = scrn_width && scrn_lefts && scrn_rights;
 
     // allocate space for the row
-    char* c_buff = new char[aln_len + 1];
-    char* c_buff_ptr = c_buff;
+    buffer.clear();
+    buffer.reserve(aln_len);
     string buff;
     
     const TNumseg& left_seg = x_GetSeqLeftSeg(row);
@@ -282,12 +282,10 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                 // add regular sequence to buffer
                 GetSeqString(buff, row, start, stop);
                 TSeqPos buf_len = min<TSeqPos>(buff.size(), seg_len);
-                memcpy(c_buff_ptr, buff.c_str(), buf_len);
-                c_buff_ptr += buf_len;
+                buffer += buff;
                 if (buf_len < seg_len) {
                     // Not enough chars in the sequence, add gap
                     buf_len = seg_len - buf_len;
-                    char* ch_buff = new char[buf_len + 1];
                     char fill_ch;
 
                     if (seg < left_seg  ||  seg > right_seg) {
@@ -296,11 +294,9 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                         fill_ch = GetGapChar(row);
                     }
 
-                    memset(ch_buff, fill_ch, buf_len);
-                    ch_buff[buf_len] = 0;
-                    memcpy(c_buff_ptr, ch_buff, buf_len);
-                    c_buff_ptr += buf_len;
-                    delete[] ch_buff;
+                    for (size_t i = 0; i < buf_len; ++i) {
+                        buffer += fill_ch;
+                    }
                 }
 
                 // take care of coords if necessary
@@ -364,7 +360,6 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             } else {
                 // add appropriate number of gap/end chars
                 
-                char* ch_buff = new char[seg_len + 1];
                 char fill_ch;
                 
                 if (seg < left_seg  ||  seg > right_seg) {
@@ -373,11 +368,9 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                     fill_ch = GetGapChar(row);
                 }
                 
-                memset(ch_buff, fill_ch, seg_len);
-                ch_buff[seg_len] = 0;
-                memcpy(c_buff_ptr, ch_buff, seg_len);
-                c_buff_ptr += seg_len;
-                delete[] ch_buff;
+                for (size_t i = 0; i < seg_len; ++i) {
+                    buffer += fill_ch;
+                }
             }
             aln_pos += len;
         }
@@ -403,9 +396,6 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             }
         }
     }
-    c_buff[aln_len] = '\0';
-    buffer = c_buff;
-    delete [] c_buff;
     return buffer;
 }
 
