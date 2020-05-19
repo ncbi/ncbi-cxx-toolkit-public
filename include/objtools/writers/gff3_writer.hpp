@@ -187,7 +187,7 @@ protected:
     virtual bool xPassesFilterByViewMode(
         CBioseq_Handle);
 
-    virtual SAnnotSelector& xGetJunkFilteringAnnotSelector();
+    virtual SAnnotSelector& xSetJunkFilteringAnnotSelector();
 
     virtual bool xWriteAlign(
         CAlign_CI align_it) override;

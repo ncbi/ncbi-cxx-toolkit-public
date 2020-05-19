@@ -316,7 +316,7 @@ CGff3Writer::CGff3Writer(
 
 
 //  ----------------------------------------------------------------------------
-SAnnotSelector& CGff3Writer::xGetJunkFilteringAnnotSelector(void)
+SAnnotSelector& CGff3Writer::xSetJunkFilteringAnnotSelector(void)
 //  ----------------------------------------------------------------------------
 {
     auto& selector = CGff2Writer::SetAnnotSelector();
@@ -383,7 +383,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
         return true;
     }
 
-    SAnnotSelector sel = xGetJunkFilteringAnnotSelector();
+    SAnnotSelector sel = xSetJunkFilteringAnnotSelector();
     sel.SetLimitSeqAnnot(sah).SetResolveNone();
     CRef<CSeq_loc> loc = Ref(new CSeq_loc());
     loc->SetWhole();
@@ -1308,7 +1308,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return true; //nothing to do
     }
 
-    xGetJunkFilteringAnnotSelector();
+    xSetJunkFilteringAnnotSelector();
         
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
