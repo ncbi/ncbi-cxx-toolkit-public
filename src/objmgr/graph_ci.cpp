@@ -350,5 +350,26 @@ CGraph_CI::~CGraph_CI(void)
 }
 
 
+CGraph_CI& CGraph_CI::operator= (const CGraph_CI& iter)
+{
+    if ( this != &iter ) {
+        CAnnotTypes_CI::operator=(iter);
+        x_Update();
+    }
+    return *this;
+}
+
+
+void CGraph_CI::x_Update(void)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), *GetIterator());
+    }
+    else {
+        m_Graph.Reset();
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

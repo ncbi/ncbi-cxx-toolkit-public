@@ -60,6 +60,12 @@ class CAnnotObject_Ref;
 class NCBI_XOBJMGR_EXPORT CMappedGraph
 {
 public:
+    /// empty CMappedGraph
+    CMappedGraph()
+        : m_GraphRef(0)
+        {
+        }
+
     /// Get original graph with unmapped location/product
     const CSeq_graph& GetOriginalGraph(void) const
         {
@@ -71,6 +77,23 @@ public:
 
     /// Get original graph handle
     CSeq_graph_Handle GetSeq_graph_Handle(void) const;
+
+    /// Check if it's the same graph
+    bool operator==(const CMappedGraph& graph) const
+    {
+        return GetAnnot() == graph.GetAnnot() &&
+            m_GraphRef->GetAnnotIndex() == graph.m_GraphRef->GetAnnotIndex();
+    }
+    bool operator!=(const CMappedGraph& graph) const
+    {
+        return !(*this == graph);
+    }
+    bool operator<(const CMappedGraph& graph) const
+    {
+        return (GetAnnot() < graph.GetAnnot()) ||
+            (GetAnnot() == graph.GetAnnot() &&
+             m_GraphRef->GetAnnotIndex() < graph.m_GraphRef->GetAnnotIndex());
+    }
 
     /// Graph mapped to the master sequence.
     /// WARNING! The function is rather slow and should be used with care.
@@ -299,6 +322,9 @@ public:
     CGraph_CI(const CSeq_entry_Handle& entry,
               const SAnnotSelector& sel);
 
+    CGraph_CI(const CGraph_CI& iter);
+    CGraph_CI& operator= (const CGraph_CI& iter);
+    
     virtual ~CGraph_CI(void);
 
     CGraph_CI& operator++ (void);
@@ -308,6 +334,19 @@ public:
 
     DECLARE_OPERATOR_BOOL(IsValid());
 
+    const CGraph_CI& begin() const
+    {
+        return *this;
+    }
+    CGraph_CI end() const
+    {
+        return CGraph_CI(*this, at_end);
+    }
+    bool operator!=(const CGraph_CI& it) const
+    {
+        return CAnnotTypes_CI::operator!=(it);
+    }
+
     const CMappedGraph& operator* (void) const;
     const CMappedGraph* operator-> (void) const;
 private:
@@ -315,6 +354,11 @@ private:
 
     CGraph_CI operator++ (int);
     CGraph_CI operator-- (int);
+
+    CGraph_CI(const CGraph_CI& it, EAtEnd)
+        : CAnnotTypes_CI(it, at_end)
+    {
+    }
 
     CMappedGraph m_Graph; // current graph object returned by operator->()
 };
@@ -325,16 +369,14 @@ CGraph_CI::CGraph_CI(void)
 {
 }
 
+
 inline
-void CGraph_CI::x_Update(void)
+CGraph_CI::CGraph_CI(const CGraph_CI& iter)
+    : CAnnotTypes_CI(iter)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), *GetIterator());
-    }
-    else {
-        m_Graph.Reset();
-    }
+    x_Update();
 }
+
 
 inline
 CGraph_CI& CGraph_CI::operator++ (void)

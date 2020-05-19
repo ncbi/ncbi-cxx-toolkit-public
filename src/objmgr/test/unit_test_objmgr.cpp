@@ -141,6 +141,25 @@ static CRef<CSeq_annot> s_GetAnnotAlign(CSeq_id& id1, CSeq_id& id2, int count = 
 }
 
 
+static CRef<CSeq_annot> s_GetAnnotGraph(CSeq_id& id, int count = 1)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    for ( int i = 0; i < count; ++i ) {
+        CRef<CSeq_graph> graph(new CSeq_graph);
+        graph->SetLoc().SetInt().SetId(id);
+        graph->SetLoc().SetInt().SetFrom(0);
+        graph->SetLoc().SetInt().SetTo(1);
+        graph->SetLoc().SetInt().SetStrand(eNa_strand_plus);
+        graph->SetGraph().SetByte().SetMin(0);
+        graph->SetGraph().SetByte().SetMax(1);
+        graph->SetGraph().SetByte().SetAxis(0);
+        graph->SetGraph().SetByte().SetValues().resize(2);
+        annot->SetData().SetGraph().push_back(graph);
+    }
+    return annot;
+}
+
+
 BOOST_AUTO_TEST_CASE(TestReResolve1)
 {
     // check re-resolve after adding
@@ -789,51 +808,66 @@ BOOST_AUTO_TEST_CASE(CppIterFeat)
 {
     // check re-resolve after adding, removing, and restoring, resolving only at the end
     CScope scope(*CObjectManager::GetInstance());
-    CRef<CSeq_id> id1 = s_GetId(1);
-    CRef<CSeq_id> id2 = s_GetId2(1);
-    CRef<CSeq_entry> entry = s_GetEntry(1);
-    entry->SetSeq().SetAnnot().push_back(s_GetAnnot(*id2));
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry((const CSeq_entry&)*entry);
-    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*id1);
-    scope.AddSeq_annot(*s_GetAnnot(*id1, 3));
-    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 4u);
+    const int master_num = 1;
+    const int segment_num = 2;
+    CRef<CSeq_id> master_id1 = s_GetId(master_num);
+    CRef<CSeq_id> master_id2 = s_GetId2(master_num);
+    CRef<CSeq_id> segment_id1 = s_GetId(segment_num);
+    CRef<CSeq_id> segment_id2 = s_GetId2(segment_num);
+    CRef<CSeq_entry> master_entry = s_GetDeltaSeqEntry(master_num, segment_num);
+    CRef<CSeq_entry> segment_entry = s_GetEntry(segment_num, 20);
+    master_entry->SetSeq().SetAnnot().push_back(s_GetAnnot(*master_id2));
+    CSeq_entry_Handle master_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*master_entry));
+    CSeq_entry_Handle segment_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*segment_entry));
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*master_id1);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*s_GetAnnot(*segment_id2, 3));
+    SAnnotSelector sel;
+    sel.SetResolveAll();
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(scope, *loc1, sel).GetSize(), 4u);
     vector<CMappedFeat> vv;
-    for ( CFeat_CI it(scope, *loc1); it; ++it ) {
+    for ( CFeat_CI it(scope, *loc1, sel); it; ++it ) {
         vv.push_back(*it);
     }
     BOOST_CHECK_EQUAL(vv.size(), 4u);
     {{
         auto vv_it = begin(vv);
-        for ( CFeat_CI it(scope, *loc1); it; ++it ) {
+        for ( CFeat_CI it(scope, *loc1, sel); it; ++it ) {
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK_EQUAL(*it, *vv_it);
+            BOOST_CHECK(it->GetMappedFeature().Equals(vv_it->GetMappedFeature()));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));
     }}
     {{
         auto vv_it = begin(vv);
-        for ( auto f : CFeat_CI(scope, *loc1) ) {
+        for ( auto f : CFeat_CI(scope, *loc1, sel) ) {
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK_EQUAL(f, *vv_it);
+            BOOST_CHECK(f.GetMappedFeature().Equals(vv_it->GetMappedFeature()));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));
     }}
     {{
         auto vv_it = begin(vv);
-        for ( auto& f : CFeat_CI(scope, *loc1) ) {
+        for ( auto& f : CFeat_CI(scope, *loc1, sel) ) {
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK_EQUAL(f, *vv_it);
+            BOOST_CHECK(f.GetMappedFeature().Equals(vv_it->GetMappedFeature()));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));
     }}
     {{
         auto vv_it = begin(vv);
-        for ( auto&& f : CFeat_CI(scope, *loc1) ) {
+        for ( auto&& f : CFeat_CI(scope, *loc1, sel) ) {
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK_EQUAL(f, *vv_it);
+            BOOST_CHECK(f.GetMappedFeature().Equals(vv_it->GetMappedFeature()));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));
@@ -868,6 +902,7 @@ BOOST_AUTO_TEST_CASE(CppIterAlign)
     //LOG_POST("loc "<<MSerial_AsnText<<*loc1);
     SAnnotSelector sel;
     sel.SetResolveAll();
+    BOOST_CHECK_EQUAL(CAlign_CI(scope, *loc1).GetSize(), 1u);
     BOOST_CHECK_EQUAL(CAlign_CI(scope, *loc1, sel).GetSize(), 4u);
     vector<CConstRef<CSeq_align>> vv;
     for ( CAlign_CI it(scope, *loc1, sel); it; ++it ) {
@@ -908,6 +943,81 @@ BOOST_AUTO_TEST_CASE(CppIterAlign)
         for ( auto&& f : CAlign_CI(scope, *loc1, sel) ) {
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK(f.Equals(**vv_it));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+}
+
+
+BOOST_AUTO_TEST_CASE(CppIterGraph)
+{
+    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    CScope scope(*CObjectManager::GetInstance());
+    const int master_num = 1;
+    const int segment_num = 2;
+    CRef<CSeq_id> master_id1 = s_GetId(master_num);
+    CRef<CSeq_id> master_id2 = s_GetId2(master_num);
+    CRef<CSeq_id> segment_id1 = s_GetId(segment_num);
+    CRef<CSeq_id> segment_id2 = s_GetId2(segment_num);
+    CRef<CSeq_entry> master_entry = s_GetDeltaSeqEntry(master_num, segment_num);
+    CRef<CSeq_entry> segment_entry = s_GetEntry(segment_num, 20);
+    master_entry->SetSeq().SetAnnot().push_back(s_GetAnnotGraph(*master_id2));
+    CSeq_entry_Handle master_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*master_entry));
+    CSeq_entry_Handle segment_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*segment_entry));
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*master_id1);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*s_GetAnnotGraph(*segment_id2, 3));
+    //LOG_POST("master "<<MSerial_AsnText<<*master_seh.GetCompleteObject());
+    //LOG_POST("segment "<<MSerial_AsnText<<*segment_seh.GetCompleteObject());
+    //LOG_POST("annot "<<MSerial_AsnText<<*ah.GetCompleteObject());
+    //LOG_POST("loc "<<MSerial_AsnText<<*loc1);
+    SAnnotSelector sel;
+    sel.SetResolveAll();
+    BOOST_CHECK_EQUAL(CGraph_CI(scope, *loc1).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CGraph_CI(scope, *loc1, sel).GetSize(), 4u);
+    vector<CMappedGraph> vv;
+    for ( CGraph_CI it(scope, *loc1, sel); it; ++it ) {
+        vv.push_back(*it);
+    }
+    BOOST_CHECK_EQUAL(vv.size(), 4u);
+    {{
+        auto vv_it = begin(vv);
+        for ( CGraph_CI it(scope, *loc1, sel); it; ++it ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(*it == *vv_it);
+            BOOST_CHECK(it->GetMappedGraph().Equals(vv_it->GetMappedGraph()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto f : CGraph_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f == *vv_it);
+            BOOST_CHECK(f.GetMappedGraph().Equals(vv_it->GetMappedGraph()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto& f : CGraph_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f == *vv_it);
+            BOOST_CHECK(f.GetMappedGraph().Equals(vv_it->GetMappedGraph()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto&& f : CGraph_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f == *vv_it);
+            BOOST_CHECK(f.GetMappedGraph().Equals(vv_it->GetMappedGraph()));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));
