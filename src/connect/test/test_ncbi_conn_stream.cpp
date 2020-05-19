@@ -31,13 +31,13 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <stdlib.h>
 #include <time.h>
-#include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"               /* CORE logging facilities */
 
 #include "test_assert.h"  // This header must go last
 

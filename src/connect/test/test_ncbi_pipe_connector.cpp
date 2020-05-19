@@ -171,7 +171,9 @@ int CTest::Run(void)
     size_t      n_written;
     EIO_Status  status;
 
-    ::srand((unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND);
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    ::srand(g_NCBI_ConnectRandomSeed);
 
     // Run the test
     ERR_POST(Info << "Starting PIPE CONNECTOR test...");

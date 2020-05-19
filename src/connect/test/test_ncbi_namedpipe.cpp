@@ -189,6 +189,10 @@ int CTest::Run(void)
 {
     const CArgs& args = GetArgs();
 
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    ::srand(g_NCBI_ConnectRandomSeed);
+
     m_PipeName = args["basename"].AsString();
     if ( m_PipeName.empty() ) {
         m_PipeName = kPipeName;
@@ -197,8 +201,6 @@ int CTest::Run(void)
         m_PipeName += '_' + args["suffix"].AsString();
     }
     ERR_POST(Info << "Using pipe name: " + m_PipeName);
-
-    ::srand((unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND);
     if (args["timeout"].HasValue()) {
         double tv = args["timeout"].AsDouble();
         m_Timeout.sec  = (unsigned int)  tv;
