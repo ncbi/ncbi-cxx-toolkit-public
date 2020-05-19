@@ -26,7 +26,7 @@ rm -f $port $server_log $client_log
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
 
-test_ncbi_trigger -delay 20000 -port $port server </dev/null >$server_log 2>&1 &
+test_ncbi_trigger -delay 15000 -port $port server </dev/null >$server_log 2>&1 &
 spid=$!
 trap 'kill -9 $spid 2>/dev/null; rm -f $port; echo "`date`."' 0 1 2 3 15
 
@@ -65,8 +65,8 @@ client_exit_code=$?
 wait $spid
 server_exit_code=$?
 
-test $server_exit_code != 0  &&  exit_code=$server_exit_code
 test $client_exit_code != 0  &&  exit_code=$client_exit_code
+test $server_exit_code != 0  &&  exit_code=$server_exit_code
 
 if [ $exit_code != 0 ]; then
   outlog "$server_log"

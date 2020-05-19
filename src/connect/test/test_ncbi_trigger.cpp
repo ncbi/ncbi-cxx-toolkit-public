@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -142,6 +143,10 @@ int CTest::Run(void)
 {
     const CArgs& args = GetArgs();
 
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    ::srand(g_NCBI_ConnectRandomSeed);
+
     m_Port = args["port"].AsString();
 
     if (args["delay"].HasValue()) {
@@ -205,19 +210,21 @@ void CTest::Client()
 
     CSocket socket("localhost", port);
 
+    EIO_Status status;
     size_t n_read = 0;
-    // the client is greedy but slow
+    // the client is greedy but slower
     for (int ok = 0;  ; ok = 1) {
         size_t x_read;
         char buf[12345];
-        EIO_Status status = socket.Read(buf, sizeof(buf), &x_read);
+        status = socket.Read(buf, sizeof(buf), &x_read);
+        ERR_POST(Info << "Client read: " << x_read << ", " << IO_StatusStr(status));
         _ASSERT(status == eIO_Success  ||  ok);
         n_read += x_read;
-        if (status == eIO_Closed)
+        if (status != eIO_Success  &&  status != eIO_Timeout)
             break;
         SleepMilliSec(100);
     }
-    ERR_POST(Info << "Bytes received: " << n_read);
+    ERR_POST(Info << "Bytes received: " << n_read << ", " << IO_StatusStr(status));
 }
 
 
@@ -262,7 +269,7 @@ void CTest::Server(void)
     vector<CSocketAPI::SPoll> polls;
     polls.push_back(CSocketAPI::SPoll(&s_Trigger, eIO_ReadWrite));
     polls.push_back(CSocketAPI::SPoll(&lsock,     eIO_ReadWrite));
-    polls.push_back(CSocketAPI::SPoll(&dsock,     eIO_ReadWrite));
+    polls.push_back(CSocketAPI::SPoll(&dsock,     eIO_Read));
 
     for (;;) {
         size_t n;
@@ -270,6 +277,7 @@ void CTest::Server(void)
         status = CSocketAPI::Poll(polls, &kTimeout, &n);
         if (status == eIO_Timeout) {
             _ASSERT(!n);
+            ERR_POST(Fatal << "No I/O ready");
             break;
         }
         _ASSERT(status == eIO_Success  &&  n);
@@ -281,7 +289,8 @@ void CTest::Server(void)
             if (polls[i].m_REvent == eIO_Close) {
                 _ASSERT(i > 1);
                 delete polls[i].m_Pollable;
-                ERR_POST(Info << "Client disconnected (while polling)...");
+                ERR_POST(Info << "Client " << (i-2) << " disconnected"
+                         " (while polling)...");
                 polls[i].m_Pollable = 0;
                 continue;
             }
@@ -292,6 +301,23 @@ void CTest::Server(void)
                     _ASSERT(polls[i].m_Pollable == &s_Trigger);
                     _ASSERT(polls[i].m_REvent == eIO_ReadWrite);
                     ERR_POST(Info << "Trigger activated...");
+                    for (n = 3;  n < polls.size();  ++n) {
+                        if (!polls[n].m_Pollable)
+                            continue;
+                        if (rand() & 1) {
+                            ERR_POST(Info << "Leaving client " << (n-2));
+                            continue;
+                        }
+                        sock = dynamic_cast<CSocket*>(polls[n].m_Pollable);
+                        if (rand() & 1) {
+                            ERR_POST(Info << "Aborting client " << (n-2));
+                            sock->Abort();
+                        } else
+                            ERR_POST(Info << "Closing client " << (n-2));
+                        sock->SetTimeout(eIO_Close, &kZero);
+                        polls[n].m_Pollable = 0;
+                        delete sock;
+                    }
                     polls.resize(1);
                     _ASSERT(s_Trigger.Reset() == eIO_Success);
                     _ASSERT(CSocketAPI::Poll(polls, &kZero) == eIO_Timeout);
@@ -302,7 +328,6 @@ void CTest::Server(void)
                     _ASSERT(polls[i].m_REvent == eIO_Read);
                     status = lsock.Accept(sock, &kZero);
                     _ASSERT(status == eIO_Success);
-                    ERR_POST(Info << "Client connected...");
                     sock->SetTimeout(eIO_ReadWrite, &kZero);
                     for (n = i + 1;  n < polls.size();  ++n) {
                         if (!polls[n].m_Pollable) {
@@ -311,11 +336,12 @@ void CTest::Server(void)
                             break;
                         }
                     }
+                    ERR_POST(Info << "Client " << (n-2) << " connected...");
                     if (n == polls.size())
                         polls.push_back(CSocketAPI::SPoll(sock,eIO_ReadWrite));
                     continue;
                 case 2:
-                    /* No activity is expected on an unnamed datagram socket */
+                    // No activity is expected on an unnamed datagram socket
                     _ASSERT(polls[i].m_Pollable == &dsock);
                     _ASSERT(0);
                     /*FALLTRHU*/
@@ -323,17 +349,19 @@ void CTest::Server(void)
                     break;
                 }
             }
-            _ASSERT(i > 1);
+            _ASSERT(i > 2);
             sock = dynamic_cast<CSocket*>(polls[i].m_Pollable);
             _ASSERT(sock);
             if (polls[i].m_REvent & eIO_Read) {
                 char buf[12345];
-                //ERR_POST(Info << "Client is sending...");
+                //ERR_POST(Info << "Client " << (i-2) << " is sending...");
                 status = sock->Read(buf, sizeof(buf));
-                if (status == eIO_Closed) {
-                    delete sock;
-                    ERR_POST(Info << "Client disconnected (while reading)...");
+                _ASSERT(status != eIO_Timeout);
+                if (status != eIO_Success) {
                     polls[i].m_Pollable = 0;
+                    delete sock;
+                    ERR_POST(Info << "Client " << (i-2) << " disconnected"
+                             " (while reading)... " << IO_StatusStr(status));
                     continue;
                 }
             }
@@ -344,12 +372,13 @@ void CTest::Server(void)
                 buf[2] = '\0';
                 for (n = 3;  n < sizeof(buf);  ++n)
                     buf[n] = rand() & 0xFF;
-                //ERR_POST(Info << "Client is receiving...");
+                //ERR_POST(Info << "Client " << (i-2) << " is receiving...");
                 status = sock->Write(buf, sizeof(buf));
                 if (status == eIO_Closed) {
-                    delete sock;
-                    ERR_POST(Info << "Client disconnected (while writing)...");
                     polls[i].m_Pollable = 0;
+                    delete sock;
+                    ERR_POST(Info << "Client " << (i-2) << " disconnected"
+                             " (while writing)... " << IO_StatusStr(status));
                     continue;
                 }
             }
