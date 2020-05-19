@@ -224,7 +224,10 @@ typedef int TCompareFlags;
 
 /// Compare the seq-locs. Depending on the selected flags the function
 /// checks if the seq-locs are abutting (loc2 immediately follows loc1),
-/// overlap (see ECompare) or both.
+/// overlap (see ECompare) or both. Unless fComparePositional flag is set,
+/// locations are compared using biological order of ranges: if locations
+/// are on minus strand, to be abutting the first location must begin
+/// right after the second location's end.
 NCBI_XOBJUTIL_EXPORT
 sequence::ECompare Compare(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,
