@@ -8097,6 +8097,7 @@ extern TNCBI_BigCount DSOCK_GetMessageCount(SOCK sock, EIO_Event direction)
         case eIO_Write:
             return sock->n_out;
         default:
+            assert(0);
             break;
         }
     }
@@ -8157,6 +8158,7 @@ extern TNCBI_BigCount SOCK_GetPosition(SOCK sock, EIO_Event direction)
                 return BUF_Size(sock->w_buf);
             return sock->n_written + (TNCBI_BigCount)          sock->w_len;
         default:
+            assert(0);
             break;
         }
     }
@@ -8173,6 +8175,7 @@ extern TNCBI_BigCount SOCK_GetCount(SOCK sock, EIO_Event direction)
         case eIO_Write:
             return sock->type == eDatagram ? sock->w_len : sock->n_written;
         default:
+            assert(0);
             break;
         }
     }
@@ -8189,6 +8192,7 @@ extern TNCBI_BigCount SOCK_GetTotalCount(SOCK sock, EIO_Event direction)
         case eIO_Write:
             return sock->type != eDatagram ? sock->n_out : sock->n_written;
         default:
+            assert(0);
             break;
         }
     }
