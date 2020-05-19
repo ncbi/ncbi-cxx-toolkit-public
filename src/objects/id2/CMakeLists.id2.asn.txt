@@ -3,8 +3,9 @@
 #############################################################################
 
 NCBI_begin_lib(id2)
+  NCBI_sources(id2_retriever_types id2_retriever id2_reply_dashboard)
   NCBI_dataspecs(id2.asn)
   NCBI_uses_toolkit_libraries(seqsplit)
-  NCBI_project_watchers(vasilche)
+  NCBI_project_watchers(ucko vasilche)
 NCBI_end_lib()
 
