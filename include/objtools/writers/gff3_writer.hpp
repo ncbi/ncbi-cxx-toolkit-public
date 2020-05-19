@@ -175,8 +175,6 @@ public:
         const string& asmblyName="",
         const string& asmblyAccession="" ) override;
 
-    virtual SAnnotSelector& SetAnnotSelector(void) override;
-
 protected:
     typedef list<pair<CConstRef<CSeq_align>, string>> TAlignCache;
 
@@ -188,6 +186,8 @@ protected:
 
     virtual bool xPassesFilterByViewMode(
         CBioseq_Handle);
+
+    virtual SAnnotSelector& xGetJunkFilteringAnnotSelector();
 
     virtual bool xWriteAlign(
         CAlign_CI align_it) override;

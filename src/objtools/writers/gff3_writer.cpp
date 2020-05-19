@@ -316,7 +316,7 @@ CGff3Writer::CGff3Writer(
 
 
 //  ----------------------------------------------------------------------------
-SAnnotSelector& CGff3Writer::SetAnnotSelector(void)
+SAnnotSelector& CGff3Writer::xGetJunkFilteringAnnotSelector(void)
 //  ----------------------------------------------------------------------------
 {
     auto& selector = CGff2Writer::SetAnnotSelector();
@@ -383,7 +383,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
         return true;
     }
 
-    SAnnotSelector sel = SetAnnotSelector();
+    SAnnotSelector sel = xGetJunkFilteringAnnotSelector();
     sel.SetLimitSeqAnnot(sah).SetResolveNone();
     CRef<CSeq_loc> loc = Ref(new CSeq_loc());
     loc->SetWhole();
@@ -1307,6 +1307,8 @@ bool CGff3Writer::x_WriteBioseqHandle(
     if (!xPassesFilterByViewMode(bsh)) {
         return true; //nothing to do
     }
+
+    xGetJunkFilteringAnnotSelector();
         
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
@@ -1398,24 +1400,11 @@ bool CGff3Writer::xWriteFeature(
 
 
 //  ----------------------------------------------------------------------------
-bool
-IsProteinSequense(
-    CBioseq_Handle bsh) 
-//  ----------------------------------------------------------------------------
-{
-    if (!bsh.CanGetInst_Mol()) {
-        return false;
-    }
-    return (bsh.GetInst_Mol() == CSeq_inst::eMol_aa);
-}
-
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteSequence(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    if (IsProteinSequense(bsh)) {
+    if (CWriteUtil::IsProteinSequence(bsh)) {
         return xWriteProteinSequence(bsh);
     }
     return xWriteNucleotideSequence(bsh);
