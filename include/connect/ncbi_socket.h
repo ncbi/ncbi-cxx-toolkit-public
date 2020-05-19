@@ -1689,10 +1689,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsSecure(SOCK sock);
  * @param direction
  *  [in]  either eIO_Read or eIO_Write
  * @return
- *  Current read or write logical position, which takes any pending (i.e. yet
- *  unread or still unwritten) data into account, by not reporting that in the
- *  position returned.  For datagram sockets, the position is always within the
- *  current message, and does not span from message to message but gets reset.
+ *  Current read or write logical position, which takes any pending (i.e. still
+ *  unwritten or yet unread) data into account, by reporting / not reporting
+ *  that, respectively, in the position returned.  For datagram sockets, the
+ *  position is always relative to the beginning of the current message, and
+ *  gets reset with every new message (i.e. does not span across the messages).
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
 (SOCK      sock,
