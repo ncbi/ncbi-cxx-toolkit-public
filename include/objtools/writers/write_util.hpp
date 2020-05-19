@@ -192,6 +192,13 @@ public:
 
     static string GetStringId(
         const CSeq_loc& loc);
+
+    static bool IsNucleotideSequence(
+        CBioseq_Handle);
+
+    static bool IsProteinSequence(
+        CBioseq_Handle);
+
 };
 
 END_objects_SCOPE

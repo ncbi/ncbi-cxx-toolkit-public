@@ -1284,28 +1284,17 @@ bool CGff3Writer::xPassesFilterByViewMode(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    if (!bsh.CanGetInst_Mol()) {
-        return ((m_uFlags & fIncludeProts)  &&  !(m_uFlags & fExcludeNucs));
+    if ((m_uFlags & fIncludeProts)  &&  !(m_uFlags & fExcludeNucs)) {
+        // after all, if we are seeing it here then it must be nuc or prot,
+        //  whether it is marked as such or not. 
+        return true;
     }
-    const auto& mol = bsh.GetBioseqMolType();
 
     if (!(m_uFlags & fExcludeNucs)) {
-        switch (mol) {
-        default:
-            break;
-        case CSeq_inst::eMol_dna:
-        case CSeq_inst::eMol_na:
-        case CSeq_inst::eMol_rna:
-            return true;
-        }
+        return CWriteUtil::IsNucleotideSequence(bsh);
     }
     if (m_uFlags & fIncludeProts) {
-        switch (mol) {
-        default:
-            break;
-        case CSeq_inst::eMol_aa:
-            return true;
-        }
+        return CWriteUtil::IsProteinSequence(bsh);
     }
     return false;
 }

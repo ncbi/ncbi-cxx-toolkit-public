@@ -1282,4 +1282,79 @@ string CWriteUtil::GetStringId(
     return "";
 }
 
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsNucleotideSequence(CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    if (bsh.CanGetInst_Mol()) {
+        const auto& mol = bsh.GetBioseqMolType();
+        switch (mol) {
+        default:
+            break;
+        case CSeq_inst::eMol_dna:
+        case CSeq_inst::eMol_na:
+        case CSeq_inst::eMol_rna:
+            return true;
+        case CSeq_inst::eMol_aa:
+            return false;
+        }
+    }
+    if (bsh.CanGetDescr()) {
+        const auto& descrs = bsh.GetDescr().Get();
+        for (const auto& pDescr: descrs) {
+            if (pDescr->IsMolinfo()  &&  pDescr->GetMolinfo().CanGetBiomol()) {
+                switch(pDescr->GetMolinfo().GetBiomol()) {
+                case CMolInfo::eBiomol_unknown:
+                case CMolInfo::eBiomol_other:
+                    break;
+                case CMolInfo::eBiomol_peptide:
+                    return false;
+                default:
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsProteinSequence(CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    if (bsh.CanGetInst_Mol()) {
+        const auto& mol = bsh.GetBioseqMolType();
+        switch (mol) {
+        default:
+            break;
+        case CSeq_inst::eMol_dna:
+        case CSeq_inst::eMol_na:
+        case CSeq_inst::eMol_rna:
+            return false;
+        case CSeq_inst::eMol_aa:
+            return true;
+        }
+    }
+    if (bsh.CanGetDescr()) {
+        const auto& descrs = bsh.GetDescr().Get();
+        for (const auto& pDescr: descrs) {
+            if (pDescr->IsMolinfo()  &&  pDescr->GetMolinfo().CanGetBiomol()) {
+                switch(pDescr->GetMolinfo().GetBiomol()) {
+                case CMolInfo::eBiomol_unknown:
+                case CMolInfo::eBiomol_other:
+                    break;
+                case CMolInfo::eBiomol_peptide:
+                    return true;
+                default:
+                    return false;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+
 END_NCBI_SCOPE
