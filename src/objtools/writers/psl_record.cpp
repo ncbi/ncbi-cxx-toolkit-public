@@ -176,6 +176,10 @@ CPslRecord::xInitializeSequenceInfo(
     const auto& queryId = splicedSeg.GetProduct_id();
     auto querySeqHandle = scope.GetBioseqHandle(queryId);
     CGenbankIdResolve::Get().GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
+    if (!querySeqHandle) {
+        throw CWriterMessage(
+            "Unable to resolve given query id", eDiag_Error);
+    }
     mSizeQ = querySeqHandle.GetInst_Length();
     mStartQ = splicedSeg.GetSeqStart(0);
     mEndQ = splicedSeg.GetSeqStop(0) + 1;
@@ -183,6 +187,10 @@ CPslRecord::xInitializeSequenceInfo(
     const auto& targetId = splicedSeg.GetGenomic_id();
     auto targetSeqHandle = scope.GetBioseqHandle(targetId);
     CGenbankIdResolve::Get().GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
+    if (!targetSeqHandle) {
+        throw CWriterMessage(
+            "Unable to resolve given target id", eDiag_Error);
+    }
     mSizeT = targetSeqHandle.GetInst_Length();
     mStartT = splicedSeg.GetSeqStart(1);
     mEndT = splicedSeg.GetSeqStop(1) + 1;
