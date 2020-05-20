@@ -843,6 +843,24 @@ void x_Pause(const char* msg, bool pause_key)
     }
 }
 
+TSeqPos s_GetLength(const CSeq_data& data)
+{
+    switch ( data.Which() ) {
+    case CSeq_data::e_Iupacna:
+        return data.GetIupacna().Get().size();
+    case CSeq_data::e_Iupacaa:
+        return data.GetIupacaa().Get().size();
+    case CSeq_data::e_Ncbi2na:
+        return data.GetNcbi2na().Get().size()*4;
+    case CSeq_data::e_Ncbi4na:
+        return data.GetNcbi2na().Get().size()*2;
+    case CSeq_data::e_Ncbi8na:
+        return data.GetNcbi2na().Get().size();
+    default:
+        return 0;
+    }
+}
+
 
 int CDemoApp::Run(void)
 {
@@ -1455,7 +1473,7 @@ int CDemoApp::Run(void)
                 seq_map.ResolvedRangeIterator(&scope,
                                               range_from,
                                               range_length,
-                                              eNa_strand_plus,
+                                              range_strand,
                                               1,
                                               flags);
             for ( ; seg; ++seg ) {
@@ -1843,21 +1861,19 @@ int CDemoApp::Run(void)
             prefetch_snp.clear();
             TSeqPos step = args["range_step"].AsInteger();
             for ( int i = 0; i < 2; ++i ) {
-                ENa_strand strand =
-                    minus_strand? eNa_strand_minus: eNa_strand_plus;
                 TSeqPos from = range_from + step/2*i;
                 TSeqPos to = range_to + step/2*i;
                 prefetch_snp.push_back
                     (CStdPrefetch::GetFeat_CI(*prefetch_manager,
                                               handle,
                                               CRange<TSeqPos>(from, to),
-                                              strand,
+                                              range_strand,
                                               snp_sel));
                 prefetch_seq.push_back
                     (prefetch_manager->AddAction
                      (new CPrefetchSeqData(handle,
                                            CRange<TSeqPos>(from, to),
-                                           strand,
+                                           range_strand,
                                            CBioseq_Handle::eCoding_Iupac)));
             }
         }
@@ -3029,7 +3045,7 @@ int CDemoApp::Run(void)
                     seq_map.ResolvedRangeIterator(&scope,
                                                   range_from,
                                                   range_length,
-                                                  eNa_strand_plus,
+                                                  range_strand,
                                                   level,
                                                   flags);
                 _ASSERT(level || seg.GetPosition() == range_from);
@@ -3048,7 +3064,10 @@ int CDemoApp::Run(void)
                         _ASSERT(seg.GetRefEndPosition()-seg.GetRefPosition() == seg.GetLength());
                         break;
                     case CSeqMap::eSeqData:
-                        NcbiCout << "data: ";
+                        NcbiCout << "data["<<s_GetLength(seg.GetRefData())<<"]: "
+                                 << (seg.GetRefMinusStrand()? "minus ": "")
+                                 << seg.GetRefPosition() << "-"
+                                 << seg.GetRefEndPosition();
                         break;
                     case CSeqMap::eSeqGap:
                         NcbiCout << "gap: ";
