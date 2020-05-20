@@ -492,14 +492,7 @@ bool CVcfWriter::x_WriteFeatureChrom(
 
     if (id.empty())
     {
-        CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
-                                                   &mf.GetScope());
-        string chrom = idh.AsString();
-        string db;
-        NStr::SplitInTwo( idh.AsString(), "|", db, id );
-        if (NStr::EndsWith(id, "|")) {
-            id = id.substr(0, id.size()-1);
-        }
+        CGenbankIdResolve::Get().GetBestId(mf, id);
     }
     m_Os << id;
     return true;
