@@ -13,7 +13,7 @@ extension="cmake_configure_ext.sh"
 NCBI_EXPERIMENTAL="ON"
 
 host_os=`uname`
-if test $host_os = "Darwin"; then
+if test -z "${CMAKE_CMD}" -a $host_os = "Darwin"; then
   CMAKE_CMD=/Applications/CMake.app/Contents/bin/cmake
 fi
 if [ -z "${CMAKE_CMD}" ]; then
