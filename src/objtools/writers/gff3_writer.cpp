@@ -2581,9 +2581,6 @@ bool CGff3Writer::xWriteFeatureCds(
         }
     }
     int iTotSize = -iPhase;
-    if (bStrandAdjust && iPhase) {
-        iPhase = 3-iPhase;
-    }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -2596,17 +2593,13 @@ bool CGff3Writer::xWriteFeatureCds(
             pExon->DropAttributes("start_range");
             pExon->DropAttributes("end_range");
             pExon->SetLocation(subint);
-            pExon->SetPhase( bStrandAdjust ? (3-iPhase) : iPhase );
+            pExon->SetPhase(iPhase);
             if (!xWriteRecord(*pExon)) {
                 return false;
             }
             iTotSize = (iTotSize + subint.GetLength());
-            if (!bStrandAdjust) {
-                iPhase = (3-iTotSize)%3; 
-            }
-            else {
-                iPhase = iTotSize%3;
-            }
+            const int posInCodon = (3+iTotSize)%3;
+            iPhase = posInCodon ? 3-posInCodon : 0;
         }
     }
     m_MrnaMapNew[mf] = pCds;
