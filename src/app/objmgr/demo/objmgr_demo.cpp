@@ -1027,6 +1027,7 @@ int CDemoApp::Run(void)
 #ifdef HAVE_PUBSEQ_OS
             DBAPI_RegisterDriver_FTDS();
             GenBankReaders_Register_Pubseq();
+            GenBankReaders_Register_Pubseq2();
 #endif
             CGBLoaderParams params(genbank_readers);
             if ( args["WebCubbyUser"] ) {
@@ -1119,6 +1120,13 @@ int CDemoApp::Run(void)
             GetRWConfig().Set("CSRA", "ACCESSIONS", old_param);
         }
     }
+    if (args["other_loaders"]) {
+        vector<string> names;
+        NStr::Split(args["other_loaders"].AsString(), ",", names);
+        ITERATE(vector<string>, i, names) {
+            other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
+        }
+    }
     if ( args["bam"] ) {
         vector<string> bams;
         NStr::Split(args["bam"].AsString(), " . ", bams, NStr::fSplit_ByPattern);
@@ -1132,13 +1140,6 @@ int CDemoApp::Run(void)
             other_loaders.push_back(pOm->RegisterDataLoader(0, "bam")->GetName());
             GetConfig().Set("BAM", "BAM_NAME", old_param);
             GetConfig().Set("BAM_LOADER", "MAPPER_FILE", old_param1);
-        }
-    }
-    if ( args["other_loaders"] ) {
-        vector<string> names;
-        NStr::Split(args["other_loaders"].AsString(), ",", names);
-        ITERATE ( vector<string>, i, names ) {
-            other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
         }
     }
 
