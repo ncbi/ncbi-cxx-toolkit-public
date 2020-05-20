@@ -308,6 +308,7 @@ CRef<CScope> CTestApplication::MakeScope(void) const
 #ifdef HAVE_PUBSEQ_OS
     DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
 #endif
     CGBDataLoader::RegisterInObjectManager(*pOm);
     
