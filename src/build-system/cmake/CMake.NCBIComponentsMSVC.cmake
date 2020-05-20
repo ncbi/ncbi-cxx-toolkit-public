@@ -15,7 +15,7 @@
 ##  HAVE_XXX
 
 
-set(NCBI_COMPONENT_MSWin_FOUND YES)
+set(NCBI_REQUIRE_MSWin_FOUND YES)
 #to debug
 #set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################

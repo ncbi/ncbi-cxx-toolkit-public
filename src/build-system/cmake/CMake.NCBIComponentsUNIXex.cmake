@@ -14,9 +14,9 @@
 ##  HAVE_LIBXXX
 ##  HAVE_XXX
 
-set(NCBI_COMPONENT_unix_FOUND YES)
+set(NCBI_REQUIRE_unix_FOUND YES)
 if(NOT APPLE)
-set(NCBI_COMPONENT_Linux_FOUND YES)
+set(NCBI_REQUIRE_Linux_FOUND YES)
 endif()
 option(USE_LOCAL_BZLIB "Use a local copy of libbz2")
 option(USE_LOCAL_PCRE "Use a local copy of libpcre")

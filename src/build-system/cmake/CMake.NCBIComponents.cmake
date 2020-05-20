@@ -115,7 +115,7 @@ if (NCBI_EXPERIMENTAL_DISABLE_HUNTER)
 
 if (MSVC)
   include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsMSVC.cmake)
-elseif (XCODE)
+elseif (APPLE)
   include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsXCODE.cmake)
 else()
     if(NCBI_EXPERIMENTAL_CFG)

@@ -15,8 +15,10 @@
 ##  HAVE_XXX
 
 
-set(NCBI_COMPONENT_XCODE_FOUND YES)
-set(NCBI_COMPONENT_unix_FOUND YES)
+set(NCBI_REQUIRE_unix_FOUND YES)
+if(XCODE)
+set(NCBI_REQUIRE_XCODE_FOUND YES)
+endif()
 #############################################################################
 # common settings
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
