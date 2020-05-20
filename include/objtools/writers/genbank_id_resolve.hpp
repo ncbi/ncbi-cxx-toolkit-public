@@ -69,8 +69,18 @@ public:
         const CMappedFeat&,
         string&);
 
+    bool 
+    GetBestId(
+        const CSeq_loc&,
+        string&);
+
+private:
+    CScope&
+    xGetDefaultScope();
+
 private:
     static CGenbankIdResolve* theResolver;
+    CRef<CScope> mpDefaultScope;
     bool mThrowOnUnresolvedGi;
 };
 

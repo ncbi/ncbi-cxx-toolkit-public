@@ -63,7 +63,6 @@ bool CGenbankIdResolve::GetBestId(
         return false;
     }
     CSeq_id_Handle best_idh = sequence::GetId(idh, scope, sequence::eGetId_Best);
-    /* !!!! */
     if (!best_idh) {
         best_idh = idh;
     }
@@ -99,5 +98,29 @@ bool CGenbankIdResolve::GetBestId(
     return  GetBestId(idh, mf.GetScope(), best_id);
 }
 
+//  -----------------------------------------------------------------------------
+bool CGenbankIdResolve::GetBestId(
+    const CSeq_loc& loc,
+    string& best_id)
+//  -----------------------------------------------------------------------------
+{
+    CSeq_id id;
+    id.Assign(*loc.GetId());
+    return GetBestId(
+        CSeq_id_Handle::GetHandle(id),
+        xGetDefaultScope(),
+        best_id);
+}
+    
+//  -----------------------------------------------------------------------------
+CScope& CGenbankIdResolve::xGetDefaultScope()
+//  -----------------------------------------------------------------------------
+{
+    if (!mpDefaultScope) {
+        mpDefaultScope.Reset(new CScope(*CObjectManager::GetInstance()));
+        mpDefaultScope->AddDefaults();
+    }
+    return *mpDefaultScope;
+}
 
 END_NCBI_SCOPE
