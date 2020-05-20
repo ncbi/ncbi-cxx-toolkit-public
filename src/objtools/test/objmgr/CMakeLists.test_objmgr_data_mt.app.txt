@@ -7,7 +7,7 @@ NCBI_begin_app(test_objmgr_data_mt)
   NCBI_requires(FreeTDS)
   NCBI_uses_toolkit_libraries(
     ncbi_xloader_genbank ncbi_xloader_lds2
-    ncbi_xreader_pubseqos test_mt xobjutil
+    ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 test_mt xobjutil
   )
   NCBI_project_watchers(vasilche)
   NCBI_set_test_assets(test_objmgr_data.id1 test_objmgr_data.id2 test_objmgr_data.id_wgs1 test_objmgr_data.id_wgs2)
