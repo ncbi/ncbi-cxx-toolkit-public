@@ -385,7 +385,7 @@ void CObjectsSniffer::ProbeAny(CObjectIStream& input)
         input.SetStreamPos(m_StreamPos);
         throw;
     }
-    catch ( exception& e ) {
+    catch ( exception& _DEBUG_ARG(e) ) {
         input.SetStreamPos(m_StreamPos);
         _TRACE_X(3,  "Exception reading "
                    << format_name << " " << e.what());
