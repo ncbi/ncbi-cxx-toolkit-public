@@ -3597,7 +3597,11 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             const CSeq_loc& loc = original_feat.GetLocation();
             CRef<CSeq_loc> loc2(new CSeq_loc);
             loc2->Assign(*feat_loc);
-            loc2->SetId(*loc.GetId());
+            const CSeq_id* id2 = loc.GetId();
+            // test needed for gene in X55766, to prevent seg fault, but still does not produce correct mixed location
+            if (id2) {
+                loc2->SetId(*id2);
+            }
  
             item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
             out << item;
@@ -4163,7 +4167,8 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         SetDiagFilter(eDiagFilter_All, "");
 
     } else {
-        x_GatherFeaturesOnSegmentIdx(loc, *selp, ctx);
+        // x_GatherFeaturesOnSegmentIdx(loc, *selp, ctx);
+        x_GatherFeaturesOnLocation(loc, *selp, ctx);;
     }
 
     if ( ctx.IsProt() ) {
