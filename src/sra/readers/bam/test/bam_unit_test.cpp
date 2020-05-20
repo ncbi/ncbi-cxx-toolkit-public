@@ -99,7 +99,6 @@ static string Hex(const vector<char>& v)
     return CNcbiOstrstreamToString(s);
 }
 
-
 BOOST_AUTO_TEST_CASE(OpenMultipleBAMFiles)
 {
     string urls[] = {
@@ -110,7 +109,7 @@ BOOST_AUTO_TEST_CASE(OpenMultipleBAMFiles)
         "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam",
         "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam.bai",
     };
-    const size_t URL_COUNT = sizeof(urls)/sizeof(urls[0]);
+    const size_t URL_COUNT = ArraySize(urls);
     uint64_t sizes[URL_COUNT];
     uint32_t magics[URL_COUNT];
     const uint64_t kMaxDataSize = 1*1024*1024;
