@@ -353,7 +353,7 @@ void CObjectOStreamJson::WriteBitString(const CBitString& obj)
         CBitString::statistics st;
         obj.calc_stat(&st);
         char* buf = (char*)malloc(st.max_serialize_mem);
-        unsigned int len = bm::serialize(obj, (unsigned char*)buf, tmp_block);
+        size_t len = bm::serialize(obj, (unsigned char*)buf, tmp_block);
         WriteBytes(buf,len);
         free(buf);
         bm::aligned_free(tmp_block);

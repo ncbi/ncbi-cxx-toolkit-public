@@ -456,7 +456,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
     bool compressed = IsCompressed();
 #endif
     char* buf=0;
-    unsigned int len = obj.size();
+    size_t len = obj.size();
     if (compressed) {
         CBitString::statistics st;
         obj.calc_stat(&st);
