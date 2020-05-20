@@ -884,6 +884,7 @@ bool CTestOM::TestApp_Init(void)
 #ifdef HAVE_PUBSEQ_OS
     DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
 #endif
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 

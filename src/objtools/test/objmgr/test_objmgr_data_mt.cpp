@@ -247,6 +247,7 @@ void CTestOM::InitOM(void)
 #ifdef HAVE_PUBSEQ_OS
     DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
 #endif
     CGBDataLoader::RegisterInObjectManager(*om);
     m_om = om;

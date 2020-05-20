@@ -101,6 +101,7 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
 #ifdef HAVE_PUBSEQ_OS
     DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
 #endif
     CGBDataLoader::RegisterInObjectManager(*om);
 
