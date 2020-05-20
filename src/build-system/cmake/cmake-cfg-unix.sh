@@ -269,6 +269,9 @@ if [ -n "$CC" ]; then
       if test $host_os = "Darwin"; then
         CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
         CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
+        if [ $CC_NAME = "clang" ]; then
+          CC_NAME="Clang"
+        fi
       else
         CC_NAME=`$CC --version | awk 'NR==1{print $1}' | tr '[:lower:]' '[:upper:]'`
         ver=`$CC -dumpfullversion 2>/dev/null || $CC -dumpversion 2>/dev/null`

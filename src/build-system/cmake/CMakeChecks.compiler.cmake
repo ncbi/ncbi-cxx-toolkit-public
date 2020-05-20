@@ -262,6 +262,7 @@ if (NOT buildconf)
   set(buildconf0 ${CMAKE_BUILD_TYPE})
   set(NCBI_BUILD_TYPE "${CMAKE_BUILD_TYPE}MT64")
 endif (NOT buildconf)
+set(NCBI_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}")
 
 if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-D_GLIBCXX_DEBUG)
@@ -469,7 +470,7 @@ message(STATUS "NCBI_COMPILER_WRAPPER = ${NCBI_COMPILER_WRAPPER}")
 
 set(CMAKE_SHARED_LINKER_FLAGS_RDYNAMIC "${CMAKE_SHARED_LINKER_FLAGS}") # for smooth transition, please don't use
 set(CMAKE_SHARED_LINKER_FLAGS_ALLOW_UNDEFINED "${CMAKE_SHARED_LINKER_FLAGS}")
-if ((NOT DEFINED ${APPLE}) OR (NOT ${APPLE}))
+if (NOT APPLE)
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 endif ()
 
@@ -484,7 +485,7 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 SET(CMAKE_INSTALL_RPATH "/$ORIGIN/../lib")
 
 #this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
-if (NOT WIN32)
+if (NOT WIN32 AND NOT APPLE)
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 endif()
 
