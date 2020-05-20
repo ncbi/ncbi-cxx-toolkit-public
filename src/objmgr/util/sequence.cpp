@@ -3568,7 +3568,7 @@ void x_Translate(const Container& seq,
                 prot.append(1, aa);
             }
         }
-    } catch (CSeqVectorException& ex) {
+    } catch (CSeqVectorException& /*ex*/) {
         // ran out of sequence
     }
 
@@ -3821,7 +3821,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
                 }
             }
         }
-    } catch (CSeqVectorException& ex) {
+    } catch (CSeqVectorException& /*ex*/) {
         // ran out of sequence
     }
 
