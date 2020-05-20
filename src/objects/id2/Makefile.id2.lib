@@ -1,10 +1,7 @@
 LIB = id2
-SRC = id2__ id2___ id2_retriever_types id2_retriever id2_reply_dashboard
+SRC = id2__ id2___
 
-WATCHERS = ucko vasilche
-
-# # temporary, for testing
-# CPPFLAGS = $(ORIG_CPPFLAGS) -DNCBI_ENABLE_SAFE_FLAGS
+WATCHERS = vasilche
 
 USES_LIBRARIES =  \
     seqsplit
