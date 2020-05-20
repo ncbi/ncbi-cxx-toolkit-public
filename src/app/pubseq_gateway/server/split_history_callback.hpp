@@ -35,15 +35,27 @@
 #include "http_server_transport.hpp"
 #include "cass_fetch.hpp"
 
-class CPendingOperation;
+#include <functional>
+
+
+using TSplitHistoryConsumeCB =
+                function<void(CCassSplitHistoryFetch *  fetch_details,
+                              vector<SSplitHistoryRecord> && result)>;
+using TSplitHistoryErrorCB =
+                function<void(CCassSplitHistoryFetch *  fetch_details,
+                              CRequestStatus::ECode  status,
+                              int  code,
+                              EDiagSev  severity,
+                              const string &  message)>;
+
 
 class CSplitHistoryConsumeCallback
 {
     public:
         CSplitHistoryConsumeCallback(
-                CPendingOperation *  pending_op,
+                TSplitHistoryConsumeCB  consume_cb,
                 CCassSplitHistoryFetch *  fetch_details) :
-            m_PendingOp(pending_op),
+            m_ConsumeCB(consume_cb),
             m_FetchDetails(fetch_details),
             m_SplitHistoryRetrieveTiming(chrono::high_resolution_clock::now())
         {}
@@ -58,11 +70,11 @@ class CSplitHistoryConsumeCallback
                 Register(eSplitHistoryRetrieve, op_status,
                          m_SplitHistoryRetrieveTiming);
 
-            m_PendingOp->OnGetSplitHistory(m_FetchDetails, std::move(result));
+            m_ConsumeCB(m_FetchDetails, std::move(result));
         }
 
     private:
-        CPendingOperation *                             m_PendingOp;
+        TSplitHistoryConsumeCB                          m_ConsumeCB;
         CCassSplitHistoryFetch *                        m_FetchDetails;
         chrono::high_resolution_clock::time_point       m_SplitHistoryRetrieveTiming;
 };
@@ -72,9 +84,9 @@ class CSplitHistoryErrorCallback
 {
     public:
         CSplitHistoryErrorCallback(
-                CPendingOperation *  pending_op,
+                TSplitHistoryErrorCB  error_cb,
                 CCassSplitHistoryFetch *  fetch_details) :
-            m_PendingOp(pending_op),
+            m_ErrorCB(error_cb),
             m_FetchDetails(fetch_details),
             m_SplitHistoryRetrieveTiming(chrono::high_resolution_clock::now())
         {}
@@ -88,15 +100,15 @@ class CSplitHistoryErrorCallback
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(eSplitHistoryRetrieve, eOpStatusNotFound,
                              m_SplitHistoryRetrieveTiming);
-            m_PendingOp->OnGetSplitHistoryError(m_FetchDetails, status, code,
-                                                severity, message);
+            m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 
     private:
-        CPendingOperation *                             m_PendingOp;
+        TSplitHistoryErrorCB                            m_ErrorCB;
         CCassSplitHistoryFetch *                        m_FetchDetails;
         chrono::high_resolution_clock::time_point       m_SplitHistoryRetrieveTiming;
 };
 
 
 #endif
+

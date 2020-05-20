@@ -56,7 +56,7 @@ USING_SCOPE(objects);
 #include "id2info.hpp"
 
 
-class CPSGS_GetProcessor;
+class IPSGS_Processor;
 
 
 class CPendingOperation
@@ -129,13 +129,11 @@ private:
     void x_ProcessAnnotRequest(SResolveInputSeqIdError &  err,
                                SBioseqResolution &  bioseq_resolution);
     void x_CompleteAnnotRequest(SBioseqResolution &  bioseq_resolution);
-    void x_ProcessTSEChunkRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
     void x_PrintRequestStop(void);
     bool x_SatToSatName(const SPSGS_BlobBySeqIdRequest &  blob_request,
                         SPSGS_BlobId &  blob_id);
-    bool x_TSEChunkSatToSatName(SPSGS_BlobId &  blob_id, bool  need_finish);
     void x_SendBlobPropError(size_t  item_id,
                              const string &  message,
                              int  error_code);
@@ -149,9 +147,6 @@ private:
     void x_PeekIfNeeded(void);
 
     void x_InitUrlIndentification(void);
-    bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
-                                  CPSGId2Info::TChunks  total_chunks,
-                                  bool  need_finish);
 
 private:
     bool x_ComposeOSLT(CSeq_id &  parsed_seq_id, int16_t &  effective_seq_id_type,
@@ -213,13 +208,6 @@ public:
                         CRequestStatus::ECode  status, int  code,
                         EDiagSev  severity, const string &  message);
 
-public:
-    void OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_details,
-                           vector<SSplitHistoryRecord> && result);
-    void OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_details,
-                                CRequestStatus::ECode  status, int  code,
-                                EDiagSev  severity, const string &  message);
-
 private:
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
@@ -237,12 +225,6 @@ private:
                                 CBlobRecord const &  blob, bool  info_blob_only);
     void x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details, const string &  sat_name);
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details, CBlobRecord const &  blob);
-    bool x_ParseTSEChunkId2Info(const string &  info,
-                                unique_ptr<CPSGId2Info> &  id2_info,
-                                const SPSGS_BlobId &  blob_id,
-                                bool  need_finish);
-    void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
-                           CCassSplitHistoryFetch *  fetch_details);
 
     void x_RegisterResolveTiming(const SBioseqResolution &  bioseq_resolution);
     void x_RegisterResolveTiming(CRequestStatus::ECode  status,
@@ -288,7 +270,7 @@ private:
     EPSGS_AsyncInterruptPoint               m_AsyncInterruptPoint;
     TPSGS_HighResolutionTimePoint           m_AsyncCassResolutionStart;
 
-    unique_ptr<CPSGS_GetProcessor>          m_GetProcessor;
+    unique_ptr<IPSGS_Processor>             m_Processor;
 };
 
 
