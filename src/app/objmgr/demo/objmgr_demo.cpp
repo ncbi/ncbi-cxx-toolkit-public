@@ -847,15 +847,15 @@ TSeqPos s_GetLength(const CSeq_data& data)
 {
     switch ( data.Which() ) {
     case CSeq_data::e_Iupacna:
-        return data.GetIupacna().Get().size();
+        return TSeqPos(data.GetIupacna().Get().size());
     case CSeq_data::e_Iupacaa:
-        return data.GetIupacaa().Get().size();
+        return TSeqPos(data.GetIupacaa().Get().size());
     case CSeq_data::e_Ncbi2na:
-        return data.GetNcbi2na().Get().size()*4;
+        return TSeqPos(data.GetNcbi2na().Get().size()*4);
     case CSeq_data::e_Ncbi4na:
-        return data.GetNcbi2na().Get().size()*2;
+        return TSeqPos(data.GetNcbi2na().Get().size()*2);
     case CSeq_data::e_Ncbi8na:
-        return data.GetNcbi2na().Get().size();
+        return TSeqPos(data.GetNcbi2na().Get().size());
     default:
         return 0;
     }
