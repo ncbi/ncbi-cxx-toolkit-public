@@ -16,6 +16,7 @@ LIBS = $(DATA_LOADERS_UTIL_LIBS) \
 	   $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 REQUIRES = BerkeleyDB SQLITE3
+POST_LINK = $(VDB_POST_LINK)
 
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
 

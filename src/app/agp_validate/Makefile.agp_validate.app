@@ -18,4 +18,5 @@ CXXFLAGS = $(ORIG_CXXFLAGS)
 # -Wno-parentheses
 
 WATCHERS = sapojnik drozdov foleyjp
+POST_LINK = $(VDB_POST_LINK)
 
