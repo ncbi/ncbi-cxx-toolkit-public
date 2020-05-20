@@ -383,7 +383,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
         return true;
     }
 
-    SAnnotSelector sel = xSetJunkFilteringAnnotSelector();
+    SAnnotSelector& sel = xSetJunkFilteringAnnotSelector();
     sel.SetLimitSeqAnnot(sah).SetResolveNone();
     CRef<CSeq_loc> loc = Ref(new CSeq_loc());
     loc->SetWhole();
