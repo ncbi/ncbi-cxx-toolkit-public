@@ -67,6 +67,7 @@ CAlnWriter::CAlnWriter(
 {
     m_pScope.Reset(&scope);
     m_Width = 60;
+    CGenbankIdResolve::Get().SetLabelType(CSeq_id::eFasta);
 };
 
 
@@ -230,7 +231,6 @@ bool CAlnWriter::WriteAlignDenseSeg(
     for (int row=0; row<num_rows; ++row) 
     {
         const CSeq_id& id = denseg.GetSeq_id(row);
-        ValidateSeqId(id);
         CRange<TSeqPos> range;
 
         CBioseq_Handle bsh;
@@ -260,19 +260,8 @@ bool CAlnWriter::WriteAlignDenseSeg(
             seqdata += GetSegString(seq_plus, coding, strand, start, len);
         }
 
-        string defline;
-        if (id.IsGi()) {
-            CSeq_id_Handle idh = sequence::GetId(id, *m_pScope, sequence::eGetId_ForceAcc);
-            if (idh) {
-                defline =  ">" + idh.GetSeqId()->AsFastaString();
-            }
-        }
-
-        if (NStr::IsBlank(defline))
-        {
-            defline = ">" + id.AsFastaString();
-        }
-
+        string best_id = GetBestId(id);
+        string defline = ">" + best_id;
         WriteContiguous(defline, seqdata);
     }
 
@@ -292,7 +281,6 @@ bool CAlnWriter::WriteAlignSplicedSeg(
     if (spliced_seg.IsSetGenomic_id()) {
         genomic_id = Ref(new CSeq_id()); 
         genomic_id->Assign(spliced_seg.GetGenomic_id());
-        ValidateSeqId(*genomic_id);
     }
 
 
@@ -300,7 +288,6 @@ bool CAlnWriter::WriteAlignSplicedSeg(
     if (spliced_seg.IsSetGenomic_id()) {
         product_id = Ref(new CSeq_id());
         product_id->Assign(spliced_seg.GetProduct_id());
-        ValidateSeqId(*product_id);
     }
 
 
@@ -327,11 +314,15 @@ bool CAlnWriter::WriteAlignSplicedSeg(
 unsigned int s_ProductLength(const CProduct_pos& start, const CProduct_pos& end)
 {   
     if (start.Which() != end.Which()) {
-        // Throw an exception
+        NCBI_THROW(CObjWriterException,
+            eBadInput,
+            "Unable to determine product length"); 
     } 
 
     if (start.Which() == CProduct_pos::e_not_set) {
-        // Throw an exception
+        NCBI_THROW(CObjWriterException,
+            eBadInput,
+            "Unable to determine product length"); 
     }
 
     const int length = end.AsSeqPos() - start.AsSeqPos();
@@ -378,7 +369,9 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         const auto genomic_end = exon->GetGenomic_end();
 
         if (genomic_end < genomic_start) {
-            // Throw an exception
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Bad genomic location: end < start"); 
         }
         const int genomic_length = genomic_end - genomic_start;
 
@@ -387,7 +380,9 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
 
 
         if (product_end < product_start) {
-            // Throw an exception
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Bad product location: end < start"); 
         }
         // product_length is now given in nucleotide units
         const int product_length = product_end - product_start;
@@ -396,7 +391,10 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         CBioseq_Handle bsh;
         CRange<TSeqPos> genomic_range;
         ProcessSeqId(genomic_id, bsh, genomic_range);
-        if (!bsh) { // Throw an exception
+        if (!bsh) {
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Unable to resolve genomic sequence"); 
         }
 
         string genomic_seq;
@@ -404,7 +402,10 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
 
         CRange<TSeqPos> product_range;
         ProcessSeqId(product_id, bsh, product_range);
-        if (!bsh) { // Throw an exception
+        if (!bsh) {
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Unable to resolve product sequence"); 
         }
 
         string product_seq;
@@ -415,12 +416,14 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         }
         else 
         if (product_length != genomic_length) {
-            // Throw an exception...maybe
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Lengths of genomic and product sequences don't match"); 
         }
 
-        WriteContiguous(">" + genomic_id.AsFastaString(), genomic_seq);
+        WriteContiguous(">" + GetBestId(genomic_id), genomic_seq);
 
-        WriteContiguous(">" + product_id.AsFastaString(), product_seq);
+        WriteContiguous(">" + GetBestId(product_id), product_seq);
     }
 
     return true;
@@ -499,7 +502,9 @@ string CAlnWriter::GetSegString(const string& seq_plus,
 {
     if (start >= 0) {
         if (start >= seq_plus.size()) {
-            // Throw an exception
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Bad location: impossible start"); 
         }
         if (strand != eNa_strand_minus) {
             return seq_plus.substr(start, len);
@@ -538,7 +543,6 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
 
     {
         const CSeq_id& first_id  = sparse_align.GetFirst_id();
-        ValidateSeqId(first_id);
         CBioseq_Handle bsh;
         CRange<TSeqPos> range;
         ProcessSeqId(first_id, bsh, range);
@@ -561,13 +565,11 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
             const auto len = sparse_align.GetLens()[seg];
             seqdata += GetSegString(seq_plus, coding, eNa_strand_plus, start, len);
         }
-
-        WriteContiguous(">" + first_id.AsFastaString(), seqdata);
+        WriteContiguous(">" + GetBestId(first_id), seqdata);
     }
 
     { // Second row
         const CSeq_id& second_id  = sparse_align.GetSecond_id();
-        ValidateSeqId(second_id);
         CBioseq_Handle bsh;
         CRange<TSeqPos> range;
         ProcessSeqId(second_id, bsh, range);
@@ -593,7 +595,7 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
             seqdata += GetSegString(seq_plus, coding, strands[seg], start, len);
         }
 
-        WriteContiguous(">" + second_id.AsFastaString(), seqdata);
+        WriteContiguous(">" + GetBestId(second_id), seqdata);
         
     }
     return true;
@@ -620,15 +622,14 @@ void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata)
 
 // -----------------------------------------------------------------------------
 
-void CAlnWriter::ValidateSeqId(const CSeq_id& id)
+string CAlnWriter::GetBestId(const CSeq_id& id)
 {
-    // for the side effect:
-    // throws if it's a Gi that can't be resolved to something better
-    string bestId;
+    string best_id;
     CGenbankIdResolve::Get().GetBestId(
         CSeq_id_Handle::GetHandle(id),
         *m_pScope,
-        bestId);
+        best_id);
+    return best_id;
 }
 
 // -----------------------------------------------------------------------------

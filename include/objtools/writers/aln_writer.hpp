@@ -105,7 +105,7 @@ protected:
 
     void WriteContiguous(const string& defline, const string& seqdata);
 
-    void ValidateSeqId(const CSeq_id&);
+    string GetBestId(const CSeq_id&);
 
     CRef<CScope> m_pScope;
     unsigned int m_Width;

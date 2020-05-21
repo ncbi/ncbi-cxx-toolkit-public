@@ -47,9 +47,6 @@ BEGIN_objects_SCOPE
 class NCBI_XOBJWRITE_EXPORT CGenbankIdResolve
 //  ---------------------------------------------------------------------------
 {
-protected:
-    CGenbankIdResolve(): mThrowOnUnresolvedGi(false) {};
-
 public:
     static CGenbankIdResolve&
     Get();
@@ -57,6 +54,10 @@ public:
     void
     SetThrowOnUnresolvedGi(
         bool doThrow) { mThrowOnUnresolvedGi = doThrow; };
+
+    void
+    SetLabelType(
+        CSeq_id::ELabelType labelType) { mLabelType = labelType; };
 
     bool 
     GetBestId(
@@ -75,6 +76,8 @@ public:
         string&);
 
 private:
+    CGenbankIdResolve();
+
     CScope&
     xGetDefaultScope();
 
@@ -82,6 +85,7 @@ private:
     static CGenbankIdResolve* theResolver;
     CRef<CScope> mpDefaultScope;
     bool mThrowOnUnresolvedGi;
+    CSeq_id::ELabelType mLabelType;
 };
 
 END_objects_SCOPE

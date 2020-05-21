@@ -42,6 +42,13 @@ USING_SCOPE(objects);
 CGenbankIdResolve* CGenbankIdResolve::theResolver = nullptr;
 
 //  ----------------------------------------------------------------------------
+CGenbankIdResolve::CGenbankIdResolve():
+    mThrowOnUnresolvedGi(false),
+    mLabelType(CSeq_id::eContent)
+//  ----------------------------------------------------------------------------
+{}
+
+//  ----------------------------------------------------------------------------
 CGenbankIdResolve&
 CGenbankIdResolve::Get()
 //  ----------------------------------------------------------------------------
@@ -74,7 +81,7 @@ bool CGenbankIdResolve::GetBestId(
     }
     string backup = best_id;
     try {
-        best_idh.GetSeqId()->GetLabel(&best_id, CSeq_id::eContent);
+        best_idh.GetSeqId()->GetLabel(&best_id, mLabelType);
     }
     catch (...) {
         best_id = backup;
