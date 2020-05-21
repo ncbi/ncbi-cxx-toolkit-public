@@ -94,6 +94,7 @@ public:
 
     // Get parent seq-annot
     CSeq_annot_Handle GetAnnot(void) const;
+    const CSeq_annot_Handle& GetSeq_annot_Handle(void) const;
 
     // Get number of annotations
     size_t GetSize(void) const;
@@ -220,6 +221,13 @@ const CAnnotTypes_CI::TIterator& CAnnotTypes_CI::GetIterator(void) const
 {
     _ASSERT( IsValid() );
     return m_CurrAnnot;
+}
+
+
+inline
+const CSeq_annot_Handle& CAnnotTypes_CI::GetSeq_annot_Handle(void) const
+{
+    return Get().GetSeq_annot_Handle();
 }
 
 

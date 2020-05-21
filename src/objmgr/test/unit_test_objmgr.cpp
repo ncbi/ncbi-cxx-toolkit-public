@@ -26,7 +26,7 @@
 * Authors:  Eugene Vasilchenko
 *
 * File Description:
-*   Unit test for data loading from ID.
+*   Unit test for various OM operations
 */
 
 #define NCBI_TEST_APPLICATION
@@ -43,6 +43,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/graph_ci.hpp>
+#include <objmgr/seq_table_ci.hpp>
 #include <objmgr/annot_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
 
@@ -51,6 +52,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seq/seq__.hpp>
+#include <objects/seqtable/seqtable__.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <serial/iterator.hpp>
 
@@ -156,6 +158,32 @@ static CRef<CSeq_annot> s_GetAnnotGraph(CSeq_id& id, int count = 1)
         graph->SetGraph().SetByte().SetValues().resize(2);
         annot->SetData().SetGraph().push_back(graph);
     }
+    return annot;
+}
+
+template<class T, class... Args>
+inline CRef<T> make_ref(Args&&... args)
+{
+    return CRef<T>(new T(std::forward<Args>(args)...));
+}
+
+template<class T, class... Args>
+inline CConstRef<T> make_const_ref(Args&&... args)
+{
+    return CConstRef<T>(new T(std::forward<Args>(args)...));
+}
+
+static CRef<CSeq_annot> s_GetAnnotTable(CSeq_id& id)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    CRef<CSeq_table> table(new CSeq_table);
+    table->SetFeat_type(0);
+    table->SetNum_rows(1);
+    CRef<CSeqTable_column> loc_col(new CSeqTable_column);
+    loc_col->SetHeader().SetField_name("Seq-table location");
+    loc_col->SetDefault().SetLoc(*make_ref<CSeq_loc>(id, 0, 1, eNa_strand_plus));
+    table->SetColumns().push_back(loc_col);
+    annot->SetData().SetSeq_table(*table);
     return annot;
 }
 
@@ -269,10 +297,7 @@ static CRef<CSeq_feat> s_CreateFeatForEdit(const CSeq_id* id)
 {
     CRef<CSeq_feat> feat(new CSeq_feat);
     feat->SetData().SetGene().SetLocus("test locus");
-    feat->SetLocation().SetInt().SetId(*SerialClone(*id));
-    feat->SetLocation().SetInt().SetFrom(419);
-    feat->SetLocation().SetInt().SetTo(1171);
-    feat->SetLocation().SetInt().SetStrand(eNa_strand_plus);
+    feat->SetLocation(*make_ref<CSeq_loc>(*SerialClone(*id), 419, 1171, eNa_strand_plus));
     return feat;
 }
 
@@ -295,10 +320,7 @@ static CRef<CSeq_align> s_CreateAlignForEdit(const CSeq_id* id1, const CSeq_id* 
 static CRef<CSeq_graph> s_CreateGraphForEdit(const CSeq_id* id)
 {
     CRef<CSeq_graph> graph(new CSeq_graph);
-    graph->SetLoc().SetInt().SetId(*SerialClone(*id));
-    graph->SetLoc().SetInt().SetFrom(419);
-    graph->SetLoc().SetInt().SetTo(1171);
-    graph->SetLoc().SetInt().SetStrand(eNa_strand_plus);
+    graph->SetLoc(*make_ref<CSeq_loc>(*SerialClone(*id), 419, 1171, eNa_strand_plus));
     graph->SetGraph().SetByte().SetMin(0);
     graph->SetGraph().SetByte().SetMax(1);
     graph->SetGraph().SetByte().SetAxis(0);
@@ -435,10 +457,8 @@ BOOST_AUTO_TEST_CASE(TestEditAnnotNoSeqAdd)
     CScope scope(*CObjectManager::GetInstance());
     CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
     CRef<CSeq_id> id2(new CSeq_id("KF591393"));
-    CRef<CSeq_loc> loc1(new CSeq_loc);
-    loc1->SetWhole(*id1);
-    CRef<CSeq_loc> loc2(new CSeq_loc);
-    loc2->SetWhole(*id2);
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*id1);
+    CRef<CSeq_loc> loc2(new CSeq_loc); loc2->SetWhole(*id2);
     CRef<CSeq_annot> annot(new CSeq_annot);
     annot->SetData().SetFtable();
     CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
@@ -456,10 +476,8 @@ BOOST_AUTO_TEST_CASE(TestEditAnnotNoSeqReplace)
     CScope scope(*CObjectManager::GetInstance());
     CRef<CSeq_id> id1(new CSeq_id("lcl|Seq1"));
     CRef<CSeq_id> id2(new CSeq_id("KF591393"));
-    CRef<CSeq_loc> loc1(new CSeq_loc);
-    loc1->SetWhole(*id1);
-    CRef<CSeq_loc> loc2(new CSeq_loc);
-    loc2->SetWhole(*id2);
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*id1);
+    CRef<CSeq_loc> loc2(new CSeq_loc); loc2->SetWhole(*id2);
     CRef<CSeq_feat> feat = s_CreateFeatForEdit(id1);
     CRef<CSeq_feat> feat2 = s_CreateFeatForEdit(id2);
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -1018,6 +1036,77 @@ BOOST_AUTO_TEST_CASE(CppIterGraph)
             BOOST_REQUIRE(vv_it != end(vv));
             BOOST_CHECK(f == *vv_it);
             BOOST_CHECK(f.GetMappedGraph().Equals(vv_it->GetMappedGraph()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+}
+
+
+BOOST_AUTO_TEST_CASE(CppIterTable)
+{
+    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    CScope scope(*CObjectManager::GetInstance());
+    const int master_num = 1;
+    const int segment_num = 2;
+    CRef<CSeq_id> master_id1 = s_GetId(master_num);
+    CRef<CSeq_id> master_id2 = s_GetId2(master_num);
+    CRef<CSeq_id> segment_id1 = s_GetId(segment_num);
+    CRef<CSeq_id> segment_id2 = s_GetId2(segment_num);
+    CRef<CSeq_entry> master_entry = s_GetDeltaSeqEntry(master_num, segment_num);
+    CRef<CSeq_entry> segment_entry = s_GetEntry(segment_num, 20);
+    master_entry->SetSeq().SetAnnot().push_back(s_GetAnnotTable(*master_id2));
+    CSeq_entry_Handle master_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*master_entry));
+    CSeq_entry_Handle segment_seh =
+        scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*segment_entry));
+    CRef<CSeq_loc> loc1(new CSeq_loc); loc1->SetWhole(*master_id1);
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*s_GetAnnotTable(*segment_id2));
+    SAnnotSelector sel;
+    sel.SetResolveAll();
+    BOOST_CHECK_EQUAL(CSeq_table_CI(scope, *loc1).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CSeq_table_CI(scope, *loc1, sel).GetSize(), 2u);
+    vector<CSeq_annot_Handle> vv;
+    for ( CSeq_table_CI it(scope, *loc1, sel); it; ++it ) {
+        vv.push_back(*it);
+    }
+    BOOST_CHECK_EQUAL(vv.size(), 2u);
+    {{
+        auto vv_it = begin(vv);
+        for ( CSeq_table_CI it(scope, *loc1, sel); it; ++it ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(*it == *vv_it);
+            //BOOST_CHECK(it->GetMappedTable().Equals(vv_it->GetMappedTable()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto f : CSeq_table_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f == *vv_it);
+            //BOOST_CHECK(f.GetMappedTable().Equals(vv_it->GetMappedTable()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto& f : CSeq_table_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f == *vv_it);
+            //BOOST_CHECK(f.GetMappedTable().Equals(vv_it->GetMappedTable()));
+            ++vv_it;
+        }
+        BOOST_CHECK(vv_it == end(vv));
+    }}
+    {{
+        auto vv_it = begin(vv);
+        for ( auto&& f : CSeq_table_CI(scope, *loc1, sel) ) {
+            BOOST_REQUIRE(vv_it != end(vv));
+            BOOST_CHECK(f == *vv_it);
+            //BOOST_CHECK(f.GetMappedTable().Equals(vv_it->GetMappedTable()));
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));

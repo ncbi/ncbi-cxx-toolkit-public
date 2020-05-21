@@ -138,6 +138,9 @@ public:
     const CSeq_loc& GetMappedLocation(void) const;
     const CSeq_loc& GetOriginalLocation(void) const;
 
+    CSeq_table_CI(const CSeq_table_CI& iter);
+    CSeq_table_CI& operator= (const CSeq_table_CI& iter);
+    
     virtual ~CSeq_table_CI(void);
 
     CSeq_table_CI& operator++ (void);
@@ -145,9 +148,35 @@ public:
 
     DECLARE_OPERATOR_BOOL(IsValid());
 
+    const CSeq_table_CI& begin() const
+    {
+        return *this;
+    }
+    CSeq_table_CI end() const
+    {
+        return CSeq_table_CI(*this, at_end);
+    }
+    bool operator!=(const CSeq_table_CI& it) const
+    {
+        return CAnnotTypes_CI::operator!=(it);
+    }
+
+    const CSeq_annot_Handle& operator* (void) const
+    {
+        return GetSeq_annot_Handle();
+    }
+    const CSeq_annot_Handle* operator-> (void) const
+    {
+        return &GetSeq_annot_Handle();
+    }
 private:
     CSeq_table_CI operator++ (int);
     CSeq_table_CI operator-- (int);
+
+    CSeq_table_CI(const CSeq_table_CI& it, EAtEnd)
+        : CAnnotTypes_CI(it, at_end)
+    {
+    }
 
     mutable CConstRef<CSeq_loc> m_MappedLoc;
 };
@@ -157,6 +186,14 @@ inline
 CSeq_table_CI::CSeq_table_CI(void)
 {
 }
+
+
+inline
+CSeq_table_CI::CSeq_table_CI(const CSeq_table_CI& iter)
+    : CAnnotTypes_CI(iter)
+{
+}
+
 
 inline
 CSeq_table_CI& CSeq_table_CI::operator++ (void)
