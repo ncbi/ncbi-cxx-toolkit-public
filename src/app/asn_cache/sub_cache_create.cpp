@@ -763,6 +763,11 @@ void CAsnSubCacheCreateApplication::Init(void)
                       "If the cache already exists, overwrite its current "
                       "contents; default action is to add to them");
 
+    arg_desc->AddFlag("allow-approximate-ids",
+                      "If this flag is specified, a bioseq retrieved by "
+                      "provided ID is considered good even if the exact ID "
+                      "does not appear in bioseq");
+
     arg_desc->SetDependency("skip-retrieval-failures",
                             CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-retrieval-failures",
@@ -1217,7 +1222,8 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
                                is_withdrawn ? "bioseq withdrawn"
                                             : "empty bioseq handle");
                 }
-                if (find(bsh.GetId().begin(), bsh.GetId().end(), idh) == bsh.GetId().end())
+                if (!GetArgs()["allow-approximate-ids"] &&
+                    find(bsh.GetId().begin(), bsh.GetId().end(), idh) == bsh.GetId().end())
                 {
                     NCBI_THROW(CException, eUnknown,
                                "Retrieved bioseq does not have this Seq-id");
