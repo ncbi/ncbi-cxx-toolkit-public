@@ -230,6 +230,7 @@ bool CAlnWriter::WriteAlignDenseSeg(
     for (int row=0; row<num_rows; ++row) 
     {
         const CSeq_id& id = denseg.GetSeq_id(row);
+        ValidateSeqId(id);
         CRange<TSeqPos> range;
 
         CBioseq_Handle bsh;
@@ -291,6 +292,7 @@ bool CAlnWriter::WriteAlignSplicedSeg(
     if (spliced_seg.IsSetGenomic_id()) {
         genomic_id = Ref(new CSeq_id()); 
         genomic_id->Assign(spliced_seg.GetGenomic_id());
+        ValidateSeqId(*genomic_id);
     }
 
 
@@ -298,6 +300,7 @@ bool CAlnWriter::WriteAlignSplicedSeg(
     if (spliced_seg.IsSetGenomic_id()) {
         product_id = Ref(new CSeq_id());
         product_id->Assign(spliced_seg.GetProduct_id());
+        ValidateSeqId(*product_id);
     }
 
 
@@ -533,8 +536,9 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
     const auto num_segs = sparse_align.GetNumseg();
     
 
-    { // First row
+    {
         const CSeq_id& first_id  = sparse_align.GetFirst_id();
+        ValidateSeqId(first_id);
         CBioseq_Handle bsh;
         CRange<TSeqPos> range;
         ProcessSeqId(first_id, bsh, range);
@@ -563,6 +567,7 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
 
     { // Second row
         const CSeq_id& second_id  = sparse_align.GetSecond_id();
+        ValidateSeqId(second_id);
         CBioseq_Handle bsh;
         CRange<TSeqPos> range;
         ProcessSeqId(second_id, bsh, range);
@@ -611,6 +616,19 @@ void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata)
         m_Os << seqdata.substr(pos, m_Width) << "\n";
         pos += m_Width;
     }
+}
+
+// -----------------------------------------------------------------------------
+
+void CAlnWriter::ValidateSeqId(const CSeq_id& id)
+{
+    // for the side effect:
+    // throws if it's a Gi that can't be resolved to something better
+    string bestId;
+    CGenbankIdResolve::Get().GetBestId(
+        CSeq_id_Handle::GetHandle(id),
+        *m_pScope,
+        bestId);
 }
 
 // -----------------------------------------------------------------------------
