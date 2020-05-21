@@ -13,6 +13,10 @@ if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
     endif()
 endif()
 
+string(TIMESTAMP NCBI_TIMESTAMP_START "%s")
+string(TIMESTAMP _start)
+message("Started: ${_start}")
+
 #############################################################################
 # Source tree description
 #

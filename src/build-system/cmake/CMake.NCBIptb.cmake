@@ -632,6 +632,18 @@ function(NCBI_register_hook _event _callback)
 endfunction()
 
 ##############################################################################
+macro(NCBI_util_elapsed _value)
+    if(DEFINED NCBI_TIMESTAMP_START)
+        string(TIMESTAMP _curtime "%s")
+        math(EXPR _delta "${_curtime} - ${NCBI_TIMESTAMP_START}")
+        string(TIMESTAMP _curtime "%H:%M:%S")
+        set(${_value} "${_curtime} (+${_delta}s)")
+    else()
+        string(TIMESTAMP ${_value} "%H:%M:%S")
+    endif()
+endmacro()
+
+##############################################################################
 macro(NCBI_util_parse_sign _input _value _negative)
     string(SUBSTRING ${_input} 0 1 _sign)
     if ("${_sign}" STREQUAL "-")
@@ -697,7 +709,8 @@ macro(NCBI_internal_analyze_tree)
         set(NCBI_PTB_THIS_SRC_ROOT ${NCBI_SRC_ROOT})
     endif()
 
-    message("Analyzing source tree...")
+    NCBI_util_elapsed(_elapsed)
+    message("${_elapsed}: Analyzing source tree...")
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS "")
 
     set(NCBI_PTBMODE_COLLECT_DEPS ON)
@@ -724,7 +737,8 @@ endif()
         return()
     endif()
 
-    message("Collecting projects...")
+    NCBI_util_elapsed(_elapsed)
+    message("${_elapsed}: Collecting projects...")
     list(REMOVE_DUPLICATES _allowedprojects)
     foreach(_prj IN LISTS _allowedprojects)
         NCBI_internal_collect_dependencies(${_prj})
@@ -772,7 +786,8 @@ endif()
 
     set(NCBI_PTB_ALLOWED_PROJECTS ${NCBI_PTB_ALLOWED_PROJECTS} PARENT_SCOPE)
     set(NCBI_PTB_ALLOWED_DIRS ${NCBI_PTB_ALLOWED_DIRS} PARENT_SCOPE)
-    message("Configuring projects...")
+    NCBI_util_elapsed(_elapsed)
+    message("${_elapsed}: Configuring projects...")
 endmacro()
 
 #############################################################################
@@ -783,6 +798,8 @@ function(NCBI_internal_end_of_config _variable _access _value)
     set(NCBI_PTB_CALLBACK_ALL_ADDED TRUE)
     NCBI_internal_print_report("Processed" TOTAL)
     NCBI_internal_print_report("Added" COUNT)
+    NCBI_util_elapsed(_elapsed)
+    message("${_elapsed}: Done")
 endfunction()
 
 #############################################################################
