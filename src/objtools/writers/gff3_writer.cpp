@@ -2571,15 +2571,17 @@ bool CGff3Writer::xWriteFeatureCds(
     bool bStrandAdjust = PackedInt.IsSetStrand()  
         &&  (PackedInt.GetStrand()  ==  eNa_strand_minus);
     int /*CCdregion::EFrame*/ iPhase = 0;
-    if (feature.GetData().GetCdregion().IsSetFrame()) {
-        const CRange<TSeqPos>& display_range = GetRange();
-        if (display_range.IsWhole())  {
+    const CRange<TSeqPos>& display_range = GetRange();
+    if (display_range.IsWhole())  {
+        if (feature.GetData().GetCdregion().IsSetFrame()) {
             iPhase = max(feature.GetData().GetCdregion().GetFrame()-1, 0);
         }
-        else { 
-            iPhase = sequence::CFeatTrim::GetCdsFrame(feature, display_range)-1;
-        }
     }
+    else {
+        iPhase = max(sequence::CFeatTrim::GetCdsFrame(feature, display_range)-1, 0);
+    }
+
+
     int iTotSize = -iPhase;
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
