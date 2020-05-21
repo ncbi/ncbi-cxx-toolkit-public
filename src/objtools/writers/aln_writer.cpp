@@ -539,7 +539,9 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
         CRange<TSeqPos> range;
         ProcessSeqId(first_id, bsh, range);
         if (!bsh) {
-            // Throw an exception
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Unable to resolve ID " + first_id.AsFastaString()); 
         }
         const CSeqUtil::ECoding coding = 
             (bsh.IsNucleotide())?
@@ -565,7 +567,9 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
         CRange<TSeqPos> range;
         ProcessSeqId(second_id, bsh, range);
         if (!bsh) {
-            // Throw an exception
+            NCBI_THROW(CObjWriterException,
+                eBadInput,
+                "Unable to resolve ID " + second_id.AsFastaString()); 
         }
         const CSeqUtil::ECoding coding = 
             (bsh.IsNucleotide())?
