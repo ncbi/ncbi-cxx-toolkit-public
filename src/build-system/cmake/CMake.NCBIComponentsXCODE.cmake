@@ -83,11 +83,12 @@ set(NCBI_ThirdParty_wxWidgets ${NCBI_ThirdPartyBasePath}/wxWidgets-3.1.3-ncbi1)
 set(NCBI_ThirdParty_GLEW      ${NCBI_ThirdPartyBasePath}/glew-1.5.8)
 set(NCBI_ThirdParty_FTGL      ${NCBI_ThirdPartyBasePath}/ftgl-2.1.3-rc5)
 set(NCBI_ThirdParty_FreeType  ${NCBI_OPT_ROOT})
+set(NCBI_ThirdParty_NGHTTP2   ${NCBI_ThirdPartyBasePath}/nghttp2-1.40.0)
+set(NCBI_ThirdParty_UV        ${NCBI_ThirdPartyBasePath}/libuv-1.35.0)
 
 #############################################################################
 #############################################################################
 
-set(_XCODE_EXTRA_LIBS)
 function(NCBI_define_component _name)
 
     if(NCBI_COMPONENT_${_name}_DISABLED)
@@ -124,8 +125,8 @@ function(NCBI_define_component _name)
         set(_suffixes .a .dylib)
     endif()
     set(_roots ${_root})
-#    set(_subdirs Release${NCBI_PlatformBits}/lib lib64 lib)
-    set(_subdirs Release${NCBI_PlatformBits}/lib lib64 ${_XCODE_EXTRA_LIBS})
+    set(_subdirs Release${NCBI_PlatformBits}/lib lib64 lib)
+#    set(_subdirs Release${NCBI_PlatformBits}/lib lib64 ${_XCODE_EXTRA_LIBS})
     if (BUILD_SHARED_LIBS AND DEFINED NCBI_ThirdParty_${_name}_SHLIB)
         set(_roots ${NCBI_ThirdParty_${_name}_SHLIB} ${_roots})
         set(_subdirs shlib64 shlib lib64 lib)
@@ -263,7 +264,6 @@ else()
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
 
-set(_XCODE_EXTRA_LIBS lib)
 #############################################################################
 # Boost.Test
 NCBI_define_component(Boost.Test boost_unit_test_framework)
@@ -271,11 +271,10 @@ NCBI_define_component(Boost.Test boost_unit_test_framework)
 #############################################################################
 # Boost.Spirit
 NCBI_define_component(Boost.Spirit boost_thread-mt)
-set(_XCODE_EXTRA_LIBS "")
 
 #############################################################################
 # JPEG
-NCBI_define_component(JPEG jpeg)
+#NCBI_define_component(JPEG jpeg)
 
 #############################################################################
 # PNG
@@ -288,7 +287,7 @@ list(APPEND NCBI_ALL_COMPONENTS GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_component(TIFF tiff)
+#NCBI_define_component(TIFF tiff)
 
 #############################################################################
 # TLS
@@ -443,10 +442,15 @@ NCBI_define_component(FTGL ftgl)
 
 #############################################################################
 # FreeType
-set(_XCODE_EXTRA_LIBS lib)
 NCBI_define_component(FreeType freetype)
 if(NCBI_COMPONENT_FreeType_FOUND)
     set(NCBI_COMPONENT_FreeType_INCLUDE ${NCBI_COMPONENT_FreeType_INCLUDE} ${NCBI_COMPONENT_FreeType_INCLUDE}/freetype2)
 endif()
-set(_XCODE_EXTRA_LIBS "")
 
+#############################################################################
+# NGHTTP2
+NCBI_define_component(NGHTTP2 nghttp2)
+
+#############################################################################
+# UV
+NCBI_define_component(UV uv)
