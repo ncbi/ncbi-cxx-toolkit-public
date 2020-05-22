@@ -59,6 +59,7 @@ set(KRB5_LIBS "-framework Kerberos" -liconv)
 ############################################################################
 set(NCBI_ThirdPartyBasePath ${NCBI_TOOLS_ROOT})
 
+set(NCBI_ThirdParty_BACKWARD   ${NCBI_ThirdPartyBasePath}/backward-cpp-1.3.20180206-44ae960)
 set(NCBI_ThirdParty_TLS        ${NCBI_ThirdPartyBasePath}/gnutls-3.4.0)
 #set(NCBI_ThirdParty_FASTCGI 
 set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost-1.62.0-ncbi1)
@@ -75,7 +76,7 @@ set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/safe-sw)
 set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/libxml-2.7.8)
 set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/libxml-2.7.8)
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
-set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite-3.8.10.1-ncbi1)
+set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite-3.26.0-ncbi1)
 #set(NCBI_ThirdParty_Sybase
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.10.6")
 set(NCBI_ThirdParty_VDB_ARCH x86_64)
@@ -85,6 +86,9 @@ set(NCBI_ThirdParty_FTGL      ${NCBI_ThirdPartyBasePath}/ftgl-2.1.3-rc5)
 set(NCBI_ThirdParty_FreeType  ${NCBI_OPT_ROOT})
 set(NCBI_ThirdParty_NGHTTP2   ${NCBI_ThirdPartyBasePath}/nghttp2-1.40.0)
 set(NCBI_ThirdParty_UV        ${NCBI_ThirdPartyBasePath}/libuv-1.35.0)
+set(NCBI_ThirdParty_GL2PS     ${NCBI_ThirdPartyBasePath}/gl2ps-1.4.0)
+set(NCBI_ThirdParty_Nettle    ${NCBI_ThirdPartyBasePath}/nettle-3.1.1)
+set(NCBI_ThirdParty_GMP       ${NCBI_ThirdPartyBasePath}/gmp-6.0.0a)
 
 #############################################################################
 #############################################################################
@@ -215,8 +219,20 @@ endmacro()
 set(NCBI_COMPONENT_NCBI_C_FOUND NO)
 
 #############################################################################
-# STACKTRACE
-set(NCBI_COMPONENT_STACKTRACE_FOUND NO)
+# BACKWARD, UNWIND
+if(NOT NCBI_COMPONENT_BACKWARD_DISABLED)
+    if(EXISTS ${NCBI_ThirdParty_BACKWARD}/include)
+        set(LIBBACKWARD_INCLUDE ${NCBI_ThirdParty_BACKWARD}/include)
+        set(HAVE_LIBBACKWARD_CPP YES)
+        set(NCBI_COMPONENT_BACKWARD_FOUND YES)
+        set(NCBI_COMPONENT_BACKWARD_INCLUDE ${LIBBACKWARD_INCLUDE})
+        list(APPEND NCBI_ALL_COMPONENTS BACKWARD)
+    else()
+        message("NOT FOUND BACKWARD")
+    endif()
+else(NOT NCBI_COMPONENT_BACKWARD_DISABLED)
+    message("DISABLED BACKWARD")
+endif(NOT NCBI_COMPONENT_BACKWARD_DISABLED)
 
 #############################################################################
 #LMDB
@@ -454,3 +470,15 @@ NCBI_define_component(NGHTTP2 nghttp2)
 #############################################################################
 # UV
 NCBI_define_component(UV uv)
+
+#############################################################################
+# GL2PS
+NCBI_define_component(GL2PS gl2ps)
+
+#############################################################################
+# Nettle
+NCBI_define_component(Nettle nettle hogweed)
+
+#############################################################################
+# GMP
+#NCBI_define_component(GMP gmp)
