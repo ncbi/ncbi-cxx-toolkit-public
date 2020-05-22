@@ -1470,12 +1470,14 @@ bool CGff3Writer::xWriteProteinFeature(
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
-    if (mf.GetData().IsProt()  &&  mf.GetData().GetProt().IsSetName()) {
-        pRecord->AddAttribute("product", mf.GetData().GetProt().GetName().front());
+    if (mf.GetData().IsProt()) {
+        if (mf.GetData().GetProt().IsSetName()) {
+            pRecord->AddAttribute("product", mf.GetData().GetProt().GetName().front());
+        }
+        auto weight = GetProteinWeight(mf.GetOriginalFeature(), *m_pScope, nullptr, 0);
+        pRecord->AddAttribute(
+            "calculated_mol_wt", NStr::NumericToString(int(weight+0.5)));
     }
-    auto weight = GetProteinWeight(mf.GetOriginalFeature(), *m_pScope, nullptr, 0);
-    pRecord->AddAttribute(
-        "calculated_mol_wt", NStr::NumericToString(int(weight+0.5)));
     return xWriteRecord(*pRecord);
 }
 
