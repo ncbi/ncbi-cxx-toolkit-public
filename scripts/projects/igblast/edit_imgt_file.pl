@@ -1,7 +1,8 @@
-#!/usr/bin/perl  -w
+#!/usr/bin/env perl
 
 
 use strict;
+use warnings;
 my $inputfile=shift (@ARGV);
 
 open(in_handle, $inputfile);
