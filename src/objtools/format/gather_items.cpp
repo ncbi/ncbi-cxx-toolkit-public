@@ -4198,8 +4198,8 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         SetDiagFilter(eDiagFilter_All, "");
 
     } else {
-        x_GatherFeaturesOnSegmentIdx(loc, *selp, ctx, true);
-        // x_GatherFeaturesOnLocation(loc, *selp, ctx);;
+        // x_GatherFeaturesOnSegmentIdx(loc, *selp, ctx, true);
+        x_GatherFeaturesOnLocation(loc, *selp, ctx);;
     }
 
     if ( ctx.IsProt() ) {
