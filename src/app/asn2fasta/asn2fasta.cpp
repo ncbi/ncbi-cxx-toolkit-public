@@ -447,8 +447,7 @@ int CAsn2FastaApp::Run(void)
         if ( args["batch"] ) {
             x_BatchProcess(*is.release());
         }
-        else 
-        if ( args["id"] ) {
+        else if ( args["id"] ) {
             //
             //  Implies gbload; otherwise this feature would be pretty  
             //  useless...
@@ -457,8 +456,7 @@ int CAsn2FastaApp::Run(void)
             string seqID = args["id"].AsString();
             HandleSeqID( seqID );
         }
-        else
-        if ( args["ids"] ) {
+        else if ( args["ids"] ) {
             CNcbiIstream& istr = args["ids"].AsInputFile();
             string id_str;
             while (NcbiGetlineEOL(istr, id_str)) {
