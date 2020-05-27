@@ -76,11 +76,6 @@
 #include <cstring>
 #include <algorithm>
 
-// backup functions for older VDB versions that do not have those
-static inline void KNSManagerSetSessionID(const void*, const void*) {}
-static inline void KNSManagerSetClientIP(const void*, const void*) {}
-static inline void KNSManagerSetPageHitID(const void*, const void*) {}
-
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   VDBReader
@@ -533,14 +528,6 @@ rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
         _TRACE("VDB "<<s_VDBVersion<<": "<<msg);
     }
     else {
-#ifdef NCBI_OS_MSWIN
-        if (sev_manip == Error &&
-            msg.find("name not found while resolving query within virtual file system module - failed to resolve accession 'NA") != NPOS &&
-            msg.find("' - Cannot resolve accession ( 404 )") != NPOS) {
-            *written = size;
-            return 0;
-        }
-#endif
         ERR_POST_X(2, sev_manip<<"VDB "<<s_VDBVersion<<": "<<msg);
     }
     *written = size;
@@ -596,15 +583,12 @@ static void s_InitAllKNS(KNSManager* kns_mgr)
     CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
     if ( req_ctx.IsSetSessionID() ) {
         KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
-        KNSManagerSetSessionID("", "");
     }
     if ( req_ctx.IsSetClientIP() ) {
         KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
-        KNSManagerSetClientIP("", "");
     }
     if ( req_ctx.IsSetHitID() ) {
         KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
-        KNSManagerSetPageHitID("", "");
     }
     CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     if ( app && app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
@@ -712,7 +696,9 @@ void CVDBMgr::x_Init(void)
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot open VDBManager", rc);
     }
-    s_InitLocalKNS(CKNSManager(CVFSManager(*this)));
+    CVFSManager vfs_mgr(*this);
+    VFSManagerLogNamesServiceErrors(vfs_mgr, false);
+    s_InitLocalKNS(CKNSManager(vfs_mgr));
 }
 
 
