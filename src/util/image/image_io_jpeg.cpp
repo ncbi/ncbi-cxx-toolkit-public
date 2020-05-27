@@ -702,7 +702,7 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
         jpeg_set_quality(&cinfo, quality, TRUE);
 
         // begin compression
-        jpeg_start_compress(&cinfo, true);
+        jpeg_start_compress(&cinfo, TRUE);
 
         // process our data on a line-by-line basis
         JSAMPROW data[1];
@@ -799,7 +799,7 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
         jpeg_set_quality(&cinfo, quality, TRUE);
 
         // begin compression
-        jpeg_start_compress(&cinfo, true);
+        jpeg_start_compress(&cinfo, TRUE);
 
         // process our data on a line-by-line basis
         const unsigned char* data_start =
