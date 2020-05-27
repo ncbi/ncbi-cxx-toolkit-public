@@ -3659,23 +3659,17 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 size_t CFlatGatherer::x_GatherFeaturesOnSegmentIdx
 (CSeq_loc& loc,
  SAnnotSelector& sel,
- CBioseqContext& ctx,
- bool whole) const
+ CBioseqContext& ctx) const
 {
     size_t count = 0;
 
     CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
 
-    CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
-
     // logic to handle offsets that occur when user sets
     // the -from and -to command-line parameters
     // build slice_mapper for mapping locations
-    CRef<CSeq_loc_Mapper> slice_mapper;
-    if (! whole) {
-        slice_mapper = s_MakeSliceMapper(loc, ctx);
-    }
+    CRef<CSeq_loc_Mapper> slice_mapper = s_MakeSliceMapper(loc, ctx);
 
     // Gaps of length zero are only shown for SwissProt Genpept records
     const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
@@ -3688,28 +3682,11 @@ size_t CFlatGatherer::x_GatherFeaturesOnSegmentIdx
 
     CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
     if (! idx) return count;
-    CRef<CBioseqIndex> bsx;
-    if (whole) {
-        CBioseq_Handle hdl = ctx.GetHandle();
-        bsx = idx->GetBioseqIndex (hdl);
-    } else {
-        bsx = idx->GetBioseqIndex (loc);
-    }
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex ();
     if (! bsx) return count;
 
-    const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
-
-    SGapIdxData gap_data{};
-
-    gap_data.num_gaps = gaps.size();
-    gap_data.next_gap = 0;
-
-    if (gap_data.num_gaps > 0 && ! ctx.Config().HideGapFeatures()) {
-        s_SetGapIdxData (gap_data, gaps);
-    }
-
-    count = bsx->IterateFeatures([this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
-                          gaps, &gap_data, showGapsOfSizeZero, whole, bsx](CFeatureIndex& sfx) {
+    count = bsx->IterateFeatures(loc, [this, &ctx, &scope, &prev_feat, &loc_len,
+                              &item, &out, &slice_mapper, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
@@ -3744,29 +3721,21 @@ size_t CFlatGatherer::x_GatherFeaturesOnSegmentIdx
 
             feat_loc = s_NormalizeNullsBetween( feat_loc );
 
+            feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
 
-            if (whole) {
-                item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
-            } else {
-
-                feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
-
-                // HANDLE GAPS SECTION GOES HERE
+            // HANDLE GAPS SECTION GOES HERE
 
 
-                const CSeq_loc& loc = original_feat.GetLocation();
-                CRef<CSeq_loc> loc2(new CSeq_loc);
-                loc2->Assign(*feat_loc);
-                const CSeq_id* id2 = loc.GetId();
-                // test needed for gene in X55766, to prevent seg fault, but still does not produce correct mixed location
-                if (id2) {
-                    loc2->SetId(*id2);
-                    item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
-                } else {
-                    item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
-                }
+            const CSeq_loc& loc = original_feat.GetLocation();
+            CRef<CSeq_loc> loc2(new CSeq_loc);
+            loc2->Assign(*feat_loc);
+            const CSeq_id* id2 = loc.GetId();
+            // test needed for gene in X55766, to prevent seg fault, but still does not produce correct mixed location
+            if (id2) {
+                loc2->SetId(*id2);
             }
- 
+
+            item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
             out << item;
 
             // Add more features depending on user preferences
@@ -4120,7 +4089,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
     }
 
-    if ( ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && ctx.GetLocation().IsWhole() && */ s_NotForceNearFeats(ctx)) {
+    if ( ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() && s_NotForceNearFeats(ctx)) {
 
         // Gaps of length zero are only shown for SwissProt Genpept records
         const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
@@ -4161,9 +4130,10 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
                     if (seg.GetRefMinusStrand()) {
                         strand = eNa_strand_minus;
                     }
-                    CRef<CSeq_loc> sl = bsh.GetRangeSeq_loc(seg.GetRefPosition(), seg.GetRefPosition() + seg.GetLength() - 1, strand);
+                    // cout << "SEG " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
+                    CRef<CSeq_loc> sl = bsh.GetRangeSeq_loc(seg.GetPosition(), seg.GetEndPosition() - 1, strand);
                     if (sl) {
-                        size_t count = x_GatherFeaturesOnSegmentIdx(*sl, *selp, ctx, false);
+                        size_t count = x_GatherFeaturesOnSegmentIdx(*sl, *selp, ctx);
                         if (count > 0) {
                             noFeatsSeen = false;
                         } else if (ctx.IsEMBL() || ctx.IsDDBJ()) {
@@ -4175,7 +4145,8 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
                     }
                 }
             } else {
-                const bool noGapSizeProblem = ( false || (seg.GetRefPosition() < seg.GetEndPosition()) );
+                // cout << "GAP " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
+                const bool noGapSizeProblem = ( false || (seg.GetPosition() < seg.GetEndPosition()) );
                 if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
                     CConstRef<IFlatItem> item;
                     if (gap_data.has_gap) {
@@ -4198,8 +4169,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         SetDiagFilter(eDiagFilter_All, "");
 
     } else {
-        // x_GatherFeaturesOnSegmentIdx(loc, *selp, ctx, true);
-        x_GatherFeaturesOnLocation(loc, *selp, ctx);;
+        x_GatherFeaturesOnLocation(loc, *selp, ctx);
     }
 
     if ( ctx.IsProt() ) {
