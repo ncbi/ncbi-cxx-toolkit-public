@@ -290,7 +290,7 @@ NCBI_define_component(Boost.Spirit boost_thread-mt)
 
 #############################################################################
 # JPEG
-#NCBI_define_component(JPEG jpeg)
+NCBI_define_component(JPEG jpeg)
 
 #############################################################################
 # PNG
@@ -303,7 +303,7 @@ list(APPEND NCBI_ALL_COMPONENTS GIF)
 
 #############################################################################
 # TIFF
-#NCBI_define_component(TIFF tiff)
+NCBI_define_component(TIFF tiff)
 
 #############################################################################
 # TLS
