@@ -4711,6 +4711,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MZCR\ts\tMuseo de Zoologia\t\t\t",
 "MZFC\ts\tMuseo de Zoologia \"Alfonso L. Herrera\"\t\t\t",
 "MZFN\ts\tMuseo Zoologico dell'Universita \"Federico II\"\t\t\t",
+"MZFS-DAR\tc\tMuseu de Zoologia da Universidade Estadual de Feira de Santana\t\t\t",
 "MZGZ\ts\tMuseum Zoologia del Giardino Zoologico\t\t\t",
 "MZH\ts\tZoolgical Museum, Finnish Museum of Natural History\t\t\t",
 "MZKI\tc\tMicrobial Culture Collection of National Institute of Chemistry\t\t\t",
