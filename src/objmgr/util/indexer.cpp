@@ -1953,6 +1953,11 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
 
     sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 
+    // limit exploration of far deltas with no features to avoid timeout
+    sel.SetMaxSearchSegments(500);
+    sel.SetMaxSearchSegmentsAction(SAnnotSelector::eMaxSearchSegmentsSilent);
+    sel.SetMaxSearchTime(25);
+
     // request exception to capture fetch failure
     sel.SetFailUnresolved();
 }

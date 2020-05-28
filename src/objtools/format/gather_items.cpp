@@ -4089,87 +4089,11 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
         loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
     }
 
-    if ( ctx.IsDelta() && ! ctx.IsDeltaLitOnly() && /* cfg.IsStyleMaster() && */ ctx.GetLocation().IsWhole() && s_NotForceNearFeats(ctx)) {
-
-        // Gaps of length zero are only shown for SwissProt Genpept records
-        const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
-
-        const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
-
-        SGapIdxData gap_data{};
-
-        gap_data.num_gaps = gaps.size();
-        gap_data.next_gap = 0;
-
-        if (gap_data.num_gaps > 0 && ! ctx.Config().HideGapFeatures()) {
-            s_SetGapIdxData (gap_data, gaps);
-        }
-
-        SSeqMapSelector msel;
-        msel.SetFlags(CSeqMap::fFindAny);
-        CBioseq_Handle bsh = ctx.GetHandle();
-
-        bool keepGoing = true;
-        bool noFeatsSeen = true;
-        int withoutFeats = 0;
-
-        SetDiagFilter(eDiagFilter_All, "!(1305.28,31)");
-
-        CConstRef<CSeqMap> seqmap;
-        if (ctx.GetLocation().IsWhole()) {
-            seqmap = &bsh.GetSeqMap();
-        } else {
-            seqmap = CSeqMap::CreateSeqMapForSeq_loc(loc, &ctx.GetScope());
-        }
-
-        for ( CSeqMap_CI seg(seqmap, &ctx.GetScope(), msel); seg; ++seg ) {
-            if (seg.GetType() != CSeqMap::eSeqGap) {
-                if (keepGoing) {
-                    // go over each of the segments
-                    ENa_strand strand = eNa_strand_unknown;
-                    if (seg.GetRefMinusStrand()) {
-                        strand = eNa_strand_minus;
-                    }
-                    // cout << "SEG " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
-                    CRef<CSeq_loc> sl = bsh.GetRangeSeq_loc(seg.GetPosition(), seg.GetEndPosition() - 1, strand);
-                    if (sl) {
-                        size_t count = x_GatherFeaturesOnSegmentIdx(*sl, *selp, ctx);
-                        if (count > 0) {
-                            noFeatsSeen = false;
-                        } else if (ctx.IsEMBL() || ctx.IsDDBJ()) {
-                            withoutFeats++;
-                            if (withoutFeats > 20 && noFeatsSeen) {
-                                keepGoing = false;
-                            }
-                        }
-                    }
-                }
-            } else {
-                // cout << "GAP " << seg.GetType() << " @ " << seg.GetPosition() << " - " << seg.GetEndPosition() << " " << seg.GetLength() << endl;
-                const bool noGapSizeProblem = ( false || (seg.GetPosition() < seg.GetEndPosition()) );
-                if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
-                    CConstRef<IFlatItem> item;
-                    if (gap_data.has_gap) {
-                        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start < gap_data.gap_end) );
-                        if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
-                            item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
-                                        gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
-                            out << item;
-                        }
-                        if (gap_data.next_gap < gap_data.num_gaps) {
-                            s_SetGapIdxData (gap_data, gaps);
-                        } else {
-                            gap_data.has_gap = false;
-                        }
-                    }
-                }
-            }
-        }
-
-        SetDiagFilter(eDiagFilter_All, "");
-
+    // collect features
+    if (ctx.GetLocation().IsWhole()) {
+        x_GatherFeaturesOnWholeLocationIdx(loc, sel, ctx);
     } else {
-        x_GatherFeaturesOnLocation(loc, *selp, ctx);
+        x_GatherFeaturesOnRangeIdx(loc, sel, ctx);
     }
 
     if ( ctx.IsProt() ) {
