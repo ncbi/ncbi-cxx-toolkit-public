@@ -86,6 +86,7 @@ CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
     m_Request(request),
     m_Accession(request.GetAccession()),
     m_ConsumeCallback(move(consume_callback)),
+    m_InheritanceAllowed(true),
     m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE),
     m_RestartCounter(0)
 {}
@@ -114,6 +115,11 @@ void CCassBioseqInfoTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiv
            "after the loading process has started");
     }
     CCassBlobWaiter::SetDataReadyCB3(callback);
+}
+
+void CCassBioseqInfoTaskFetch::AllowInheritance(bool value)
+{
+    m_InheritanceAllowed = value;
 }
 
 void CCassBioseqInfoTaskFetch::Cancel(void)
@@ -189,9 +195,11 @@ void CCassBioseqInfoTaskFetch::x_StartQuery(void)
 
 bool CCassBioseqInfoTaskFetch::x_InheritanceRequired()
 {
-    for (size_t i = 0; i < m_Records.size(); ++i) {
-        if (m_Records[i].GetState() != CBioseqInfoRecord::kStateAlive) {
-            m_InheritanceRequired.insert(i);
+    if (m_InheritanceAllowed) {
+        for (size_t i = 0; i < m_Records.size(); ++i) {
+            if (m_Records[i].GetState() != CBioseqInfoRecord::kStateAlive) {
+                m_InheritanceRequired.insert(i);
+            }
         }
     }
 

@@ -72,6 +72,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TBioseqInfoConsumeCallback callback);
+    void AllowInheritance(bool value);
     void Cancel(void);
 
  protected:
@@ -94,6 +95,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     TBioseqInfoConsumeCallback m_ConsumeCallback;
     vector<CBioseqInfoRecord> m_Records;
     set<size_t> m_InheritanceRequired;
+    bool m_InheritanceAllowed;
 
  protected:
     unsigned int m_PageSize;
