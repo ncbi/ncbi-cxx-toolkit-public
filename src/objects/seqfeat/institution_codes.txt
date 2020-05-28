@@ -4678,7 +4678,7 @@ MZCP	s	Universidade de Coimbra
 MZCR	s	Museo de Zoologia			
 MZFC	s	Museo de Zoologia "Alfonso L. Herrera"			
 MZFN	s	Museo Zoologico dell'Universita "Federico II"			
-MZFS-DAR	c	Museu de Zoologia da Universidade Estadual de Feira de Santana			
+MZFS-DAR	s	Museu de Zoologia da Universidade Estadual de Feira de Santana			
 MZGZ	s	Museum Zoologia del Giardino Zoologico			
 MZH	s	Zoolgical Museum, Finnish Museum of Natural History			
 MZKI	c	Microbial Culture Collection of National Institute of Chemistry			
