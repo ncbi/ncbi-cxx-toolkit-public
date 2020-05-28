@@ -26,6 +26,7 @@ fi
 ############################################################################# 
 # defaults
 BUILD_SHARED_LIBS="OFF"
+SKIP_ANALYSIS="OFF"
 
 ############################################################################# 
 Check_function_exists() {
@@ -62,6 +63,7 @@ OPTIONS:
   --with-features="LIST"     -- specify compilation features
                     examples:   --with-features="StrictGI"
   --with-build-root=name     -- specify a non-default build directory name
+  --without-analysis         -- skip source tree analysis
 EOF
 
   Check_function_exists configure_ext_Usage && configure_ext_Usage
@@ -151,6 +153,9 @@ while [ $# != 0 ]; do
       prebuilt_dir=`dirname $prebuilt_path`
       prebuilt_name=`basename $prebuilt_path`
       ;; 
+    --without-analysis)
+      SKIP_ANALYSIS="ON"
+      ;;
     *) 
       unknown="$unknown $1"
       ;; 
@@ -205,6 +210,7 @@ CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${PROJECT_LIST}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${PROJECT_TAGS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${PROJECT_TARGETS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${PROJECT_DETAILS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_SKIP_ANALYSIS=$(Quote "${SKIP_ANALYSIS}")"
 if [ -n "$INSTALL_PATH" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi

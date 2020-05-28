@@ -30,6 +30,7 @@ REM #########################################################################
 REM defaults
 set BUILD_SHARED_LIBS=OFF
 set VISUAL_STUDIO=2017
+set SKIP_ANALYSIS=OFF
 
 goto :RUN
 REM #########################################################################
@@ -63,6 +64,7 @@ echo                  examples:    --with-components="-Z"
 echo   --with-features="LIST"   -- specify compilation features
 echo                  examples:    --with-features="StrictGI"
 echo   --with-build-root=name   -- specify a non-default build directory name
+echo   --without-analysis       -- skip source tree analysis
 echo   --with-vs=N              -- use Visual Studio N generator 
 echo                  examples:    --with-vs=2017  (default)
 echo                               --with-vs=2019
@@ -128,6 +130,7 @@ if "%1"=="--with-targets"      (set PROJECT_TARGETS=%~2&   shift& goto :CONTINUE
 if "%1"=="--with-details"      (set PROJECT_DETAILS=%~2&   shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-vs"           (set VISUAL_STUDIO=%~2&     shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-install"      (set INSTALL_PATH=%~2&      shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--without-analysis"  (set SKIP_ANALYSIS=ON&             goto :CONTINUEPARSEARGS)
 if "%1"=="--with-generator"    (set CMAKE_GENERATOR=%~2&   shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-prebuilt"     (set prebuilt_dir=%~dp2& set prebuilt_name=%~nx2&   shift& goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
@@ -231,6 +234,7 @@ set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%PROJECT_LIST%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%PROJECT_TAGS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%PROJECT_TARGETS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_VERBOSE_PROJECTS="%PROJECT_DETAILS%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_SKIP_ANALYSIS=%SKIP_ANALYSIS%
 if not "%INSTALL_PATH%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_INSTALL_PATH="%INSTALL_PATH%"
 )

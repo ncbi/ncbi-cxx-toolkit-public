@@ -30,6 +30,7 @@ BUILD_TYPE="Debug"
 BUILD_SHARED_LIBS="OFF"
 USE_CCACHE="ON"
 USE_DISTCC="ON"
+SKIP_ANALYSIS="OFF"
 
 ############################################################################# 
 Check_function_exists() {
@@ -72,6 +73,7 @@ OPTIONS:
   --with-build-root=name     -- specify a non-default build directory name
   --without-ccache           -- do not use ccache
   --without-distcc           -- do not use distcc
+  --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X
 EOF
 
@@ -148,6 +150,9 @@ while [ $# -ne 0 ]; do
       ;; 
     --without-distcc)
       USE_DISTCC="OFF"
+      ;;
+    --without-analysis)
+      SKIP_ANALYSIS="ON"
       ;;
     --with-projects=*)
       PROJECT_LIST=${1#*=}
@@ -306,6 +311,7 @@ CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${PROJECT_LIST}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${PROJECT_TAGS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${PROJECT_TARGETS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${PROJECT_DETAILS}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_SKIP_ANALYSIS=$(Quote "${SKIP_ANALYSIS}")"
 if [ -n "$INSTALL_PATH" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
