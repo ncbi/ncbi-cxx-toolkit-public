@@ -282,6 +282,59 @@ void CFeatTrim::x_TrimLocation(const TSeqPos from, const TSeqPos to,
 }
 
 
+static TSeqPos s_GetTrimmedLength(const CSeq_loc& trimmed_loc)
+{
+
+    if (trimmed_loc.IsEmpty() || trimmed_loc.IsNull()) {
+        return 0;
+    }
+
+    if (trimmed_loc.IsPnt()) {
+        return 1;
+    }
+
+    if (trimmed_loc.IsInt()) {
+        return trimmed_loc.GetInt().GetLength();
+    }
+
+    if (trimmed_loc.IsPacked_int()) {
+        TSeqPos length=0;
+        for (auto pSubInt : trimmed_loc.GetPacked_int().Get()) {
+            length += pSubInt->GetLength();
+        }
+        return length;
+    }
+
+    if (trimmed_loc.IsPacked_pnt()) {
+        return trimmed_loc.GetPacked_pnt().GetPoints().size();
+    }
+
+    if (trimmed_loc.IsMix()) {
+        TSeqPos length=0;
+        for (auto pSubLoc : trimmed_loc.GetMix().Get()) {
+            length += s_GetTrimmedLength(*pSubLoc);
+        }
+        return length;
+    }
+
+    return 0;
+}
+
+static TSeqPos s_GetTrimmedLength(const CSeq_loc& loc, TSeqPos from, TSeqPos to)
+{
+    auto pTrimmedInt = Ref(new CSeq_loc());
+    CSeq_loc_CI loc_it(loc);
+    pTrimmedInt->SetInt().SetId().Assign(loc_it.GetSeq_id());
+    pTrimmedInt->SetInt().SetFrom(from);
+    pTrimmedInt->SetInt().SetTo(to);
+    auto pTrimmedLoc = loc.Intersect(*pTrimmedInt, CSeq_loc::fStrand_Ignore, nullptr);
+    if (pTrimmedLoc) {
+        return s_GetTrimmedLength(*pTrimmedLoc);
+    }
+    return 0;
+}
+
+
 TSeqPos CFeatTrim::x_GetStartOffset(const CSeq_feat& feat,
     TSeqPos from, TSeqPos to) 
 {
@@ -292,13 +345,19 @@ TSeqPos CFeatTrim::x_GetStartOffset(const CSeq_feat& feat,
     if (strand != eNa_strand_minus) {
         TSeqPos feat_from = feat_range.GetFrom();
         if (feat_from < from) {
-            offset = from - feat_from;
+            if (feat.GetLocation().IsInt()) {
+                return (from - feat_from);
+            }
+            return s_GetTrimmedLength(feat.GetLocation(), feat_from, from-1);
         }
     }
     else { // eNa_strand_minus
         TSeqPos feat_to = feat_range.GetTo();
         if (feat_to > to) {
-            offset = feat_to - to;
+            if (feat.GetLocation().IsInt()) {
+                return (feat_to - to);
+            }
+            return s_GetTrimmedLength(feat.GetLocation(), to+1, feat_to);
         }
     }
     return offset;
@@ -326,7 +385,6 @@ TSeqPos CFeatTrim::x_GetFrame(const CCdregion& cds)
 CCdregion::EFrame CFeatTrim::GetCdsFrame(const CSeq_feat& cds_feature, const CRange<TSeqPos>& range)
 {
     const TSeqPos offset = x_GetStartOffset(cds_feature, range.GetFrom(), range.GetTo());
-
     return x_GetNewFrame(offset, cds_feature.GetData().GetCdregion());
 }
 
