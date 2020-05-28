@@ -16,4 +16,4 @@ CHECK_CMD =
 CHECK_COPY = rna_edit_test_cases
 CHECK_TIMEOUT = 3000
 
-WATCHERS = filippov
+WATCHERS = gotvyans
