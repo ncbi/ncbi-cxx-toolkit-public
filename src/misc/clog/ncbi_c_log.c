@@ -2882,10 +2882,20 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
 {
     char*          hit_id = NULL;
     unsigned int*  sub_id = NULL;
-    char           buf[NCBILOG_HITID_MAX + 1];
+    char           buf[5*NCBILOG_HITID_MAX]; /* use much bigger buffer to avoid overflow: prefix + 3*hitid + subid */
+    size_t         prefix_len = 0;
     int n;
 
     VERIFY(sx_Info->phid[0]);
+
+    // Check prefix length 
+    if (prefix) {
+        prefix_len = strlen(prefix);
+        assert(prefix_len <= NCBILOG_HITID_MAX);
+        if (prefix_len > NCBILOG_HITID_MAX) {
+            return NULL;  /* error */
+        }
+    }
 
     /* Select PHID to use */
     if (s_IsInsideRequest(ctx)) {
@@ -2914,16 +2924,9 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     }
     s_LogSubHitID(ctx, buf);
 
-    /* And return new sub hit ID */
-    if (prefix) {
-        // sprintf() overflow check if prefix is specified
-        assert(strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ <= NCBILOG_HITID_MAX);
-        if (strlen(prefix) + strlen(hit_id) + n/*sub_id str size*/ > NCBILOG_HITID_MAX) {
-            return NULL;  /* error */
-        }
-    }
+    /* Generate sub hit ID string representation */
     n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
-    if (n <= 0) {
+    if (n <= 0  ||  n > NCBILOG_HITID_MAX) {
         return NULL;  /* error */
     }
     return s_StrDup(buf);
