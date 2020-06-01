@@ -11,6 +11,8 @@ set(NCBI_DEFAULT_HEADERS "*.h*;*impl/*.h*;*.inl;*impl/*.inl")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+# ---------------------------------------------------------------------------
+# compilation features
 if(ChaosMonkey IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_MONKEY)
 endif()
@@ -26,6 +28,16 @@ endif()
 if("$ENV{DEBUG_TRACE_FATAL_SIGNALS}" OR BackwardSig IN_LIST NCBI_PTBCFG_PROJECT_FEATURES )
     set(USE_LIBBACKWARD_SIG_HANDLING 1)
 endif()
+
+if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    set(CMAKE_DEBUG_SYMBOLS ON)
+endif()
+
+# see also
+#    CfgMT, CfgProps in WIN32
+#    MaxDebug, Coverage in UNIX
+
+# ---------------------------------------------------------------------------
 
 if (NCBI_EXPERIMENTAL_CFG)
 
@@ -127,7 +139,7 @@ if (WIN32)
             set(CMAKE_SHARED_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
             set(CMAKE_SHARED_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
         endif()
-        if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        if(CMAKE_DEBUG_SYMBOLS)
             set(CMAKE_EXE_LINKER_FLAGS "/DEBUG ${CMAKE_EXE_LINKER_FLAGS}")
             set(CMAKE_SHARED_LINKER_FLAGS "/DEBUG ${CMAKE_SHARED_LINKER_FLAGS}")
         endif()
@@ -268,10 +280,6 @@ if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-D_GLIBCXX_DEBUG)
 endif()
 
-if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-    set(CMAKE_DEBUG_SYMBOLS ON)
-endif()
-
 message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")
 message(STATUS "NCBI Compiler: ${NCBI_COMPILER}")
@@ -338,7 +346,7 @@ set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${NCBI_COMPILER_SHA
 #----------------------------------------------------------------------------
 
 if (NOT WIN32)
-    set(_ggdb "-ggdb3")
+    set(_ggdb3 "-ggdb3")
     set(_ggdb1 "-ggdb1")
     if(NCBI_COMPILER_GCC)
 
@@ -351,7 +359,7 @@ if (NOT WIN32)
         if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
             set(NCBI_COMPILER_COMPONENTS ICC1903)
         endif()
-        set(_ggdb "-g")
+        set(_ggdb3 "-g")
         set(_ggdb1 "")
 # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
 # stop short, as can otherwise happen.
@@ -363,6 +371,8 @@ if (NOT WIN32)
         set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
 
+    elseif(NCBI_COMPILER_APPLE_CLANG)
+
     elseif(NCBI_COMPILER_LLVM_CLANG)
 
         if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
@@ -371,16 +381,27 @@ if (NOT WIN32)
 
     endif()
 
-    if ("${CMAKE_DEBUG_SYMBOLS}" STREQUAL "")
+    if (CMAKE_DEBUG_SYMBOLS)
+        set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+        set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    else()
         set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
         set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-    else()
-        set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-        set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb} -O3 -DNDEBUG" CACHE STRING "" FORCE)
     endif()
-    set(CMAKE_CXX_FLAGS_DEBUG "-gdwarf-4 ${_ggdb} -O0 -D_DEBUG" CACHE STRING "" FORCE)
-    set(CMAKE_C_FLAGS_DEBUG   "-gdwarf-4 ${_ggdb} -O0 -D_DEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_DEBUG "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_DEBUG   "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
 endif() 
+
+if (CMAKE_COMPILER_IS_GNUCC)
+    if(Coverage IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} --coverage")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  --coverage")
+        set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}  --coverage")
+        set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS}  --coverage")
+        set(CMAKE_USE_CCACHE OFF)
+        set(CMAKE_USE_DISTCC OFF)
+    endif()
+endif()
 
 if (APPLE)
   add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
