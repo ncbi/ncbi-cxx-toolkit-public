@@ -51,6 +51,8 @@ public:
     static CGenbankIdResolve&
     Get();
 
+    ~CGenbankIdResolve();
+
     void
     SetThrowOnUnresolvedGi(
         bool doThrow) { mThrowOnUnresolvedGi = doThrow; };
@@ -82,7 +84,7 @@ private:
     xGetDefaultScope();
 
 private:
-    static CGenbankIdResolve* theResolver;
+    static unique_ptr<CGenbankIdResolve> theResolver;
     CRef<CScope> mpDefaultScope;
     bool mThrowOnUnresolvedGi;
     CSeq_id::ELabelType mLabelType;

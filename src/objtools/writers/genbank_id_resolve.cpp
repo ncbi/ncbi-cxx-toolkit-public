@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CGenbankIdResolve* CGenbankIdResolve::theResolver = nullptr;
+unique_ptr<CGenbankIdResolve> CGenbankIdResolve::theResolver(nullptr);
 
 //  ----------------------------------------------------------------------------
 CGenbankIdResolve::CGenbankIdResolve():
@@ -49,12 +49,17 @@ CGenbankIdResolve::CGenbankIdResolve():
 {}
 
 //  ----------------------------------------------------------------------------
+CGenbankIdResolve::~CGenbankIdResolve()
+//  ----------------------------------------------------------------------------
+{}
+
+//  ----------------------------------------------------------------------------
 CGenbankIdResolve&
 CGenbankIdResolve::Get()
 //  ----------------------------------------------------------------------------
 {
     if (!theResolver) {
-        theResolver = new CGenbankIdResolve();
+        theResolver.reset(new CGenbankIdResolve());
     }
     return *theResolver;
 }
