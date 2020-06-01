@@ -58,25 +58,26 @@ enum EPSGOperationStatus {
 };
 
 enum EPSGOperation {
-    eLookupLmdbSi2csi,
-    eLookupLmdbBioseqInfo,
-    eLookupLmdbBlobProp,
-    eLookupCassSi2csi,
-    eLookupCassBioseqInfo,
-    eLookupCassBlobProp,
+    // Low level: more or less monolit operations
+    eLookupLmdbSi2csi,              // (2)
+    eLookupLmdbBioseqInfo,          // (2)
+    eLookupLmdbBlobProp,            // (2)
+    eLookupCassSi2csi,              // (2)
+    eLookupCassBioseqInfo,          // (2)
+    eLookupCassBlobProp,            // (2)
 
-    eResolutionLmdb,
-    eResolutionCass,
+    eResolutionLmdb,                // (2) From request start
+    eResolutionCass,                // (2) From cassandra start
+
+    eResolutionError,               // (1) From request start
+    eResolutionNotFound,            // (1) From request start
+    eResolutionFound,               // (1) From request start
+    eResolutionFoundInCassandra,    // (5) From cassandra start
 
     eBlobRetrieve,
     eNARetrieve,
 
-    eSplitHistoryRetrieve,
-
-    eResolutionError,
-    eResolutionNotFound,
-    eResolutionFoundInCache,
-    eResolutionFoundInCassandra
+    eSplitHistoryRetrieve
 };
 
 
@@ -359,7 +360,7 @@ class COperationTiming
         // Resolution timing
         unique_ptr<CResolutionTiming>                       m_ResolutionErrorTiming;
         unique_ptr<CResolutionTiming>                       m_ResolutionNotFoundTiming;
-        unique_ptr<CResolutionTiming>                       m_ResolutionFoundInCacheTiming;
+        unique_ptr<CResolutionTiming>                       m_ResolutionFoundTiming;
 
         // 1, 2, 3, 4, 5+ trips to cassandra
         vector<unique_ptr<CResolutionTiming>>               m_ResolutionFoundCassandraTiming;

@@ -64,8 +64,6 @@ class CPendingOperation
 private:
     enum EPSGS_AsyncInterruptPoint {
         eAnnotSeqIdResolution,
-        eResolveSeqIdResolution,
-        eResolveBioseqDetails,
         eAnnotBioseqDetails,
         eGetSeqIdResolution,
         eGetBioseqDetails
@@ -93,15 +91,6 @@ public:
 
 private:
     // Serving the 'resolve' request
-    void x_ProcessResolveRequest(void);
-    void x_ProcessResolveRequest(SResolveInputSeqIdError &  err,
-                                 SBioseqResolution &  bioseq_resolution);
-    void x_CompleteResolveRequest(SBioseqResolution &  bioseq_resolution);
-    void x_OnResolveResolutionError(SResolveInputSeqIdError &  err,
-                                    const TPSGS_HighResolutionTimePoint &  start_timestamp);
-    void x_OnResolveResolutionError(CRequestStatus::ECode  status,
-                                    const string &  message,
-                                    const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_ResolveRequestBioseqInconsistency(const TPSGS_HighResolutionTimePoint &  start_timestamp);
     void x_ResolveRequestBioseqInconsistency(const string &  err_msg,
                                              const TPSGS_HighResolutionTimePoint &  start_timestamp);

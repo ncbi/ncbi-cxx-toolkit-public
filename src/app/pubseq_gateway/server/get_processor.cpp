@@ -49,10 +49,12 @@ CPSGS_GetProcessor::CPSGS_GetProcessor() :
 
 CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                                        shared_ptr<CPSGS_Reply> reply) :
+    CPSGS_CassProcessorBase(request, reply),
+    CPSGS_CassBlobBase(request, reply),
     m_Cancelled(false)
 {
-    m_Request = request;
-    m_Reply = reply;
+    IPSGS_Processor::m_Request = request;
+    IPSGS_Processor::m_Reply = reply;
 
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_BlobBySatSatKeyRequest>() everywhere
@@ -99,7 +101,8 @@ void CPSGS_GetProcessor::Process(void)
     fetch_details.reset(new CCassBlobFetch(*m_BlobRequest));
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
-    CPSGCache               psg_cache(m_Request, m_Reply);
+    CPSGCache               psg_cache(IPSGS_Processor::m_Request,
+                                      IPSGS_Processor::m_Reply);
     auto                    blob_prop_cache_lookup_result =
                                     psg_cache.LookupBlobProp(
                                         m_BlobRequest->m_BlobId.m_Sat,
@@ -113,19 +116,19 @@ void CPSGS_GetProcessor::Process(void)
                                               app->GetCassandraMaxRetries(),
                                               app->GetCassandraConnection(),
                                               m_BlobRequest->m_BlobId.m_SatName,
-                                              std::move(blob_record),
+                                              move(blob_record),
                                               false, nullptr);
         fetch_details->SetLoader(load_task);
     } else {
         if (m_BlobRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
             if (blob_prop_cache_lookup_result == ePSGS_NotFound)
-                m_Reply->PrepareReplyMessage(
+                IPSGS_Processor::m_Reply->PrepareReplyMessage(
                     "Blob properties are not found",
                     CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
             else
-                m_Reply->PrepareReplyMessage(
+                IPSGS_Processor::m_Reply->PrepareReplyMessage(
                     "Blob properties are not found due to a cache lookup error",
                     CRequestStatus::e500_InternalServerError,
                     ePSGS_BlobPropsNotFound, eDiag_Error);
@@ -143,7 +146,7 @@ void CPSGS_GetProcessor::Process(void)
 
             // Finished without reaching cassandra
             m_Completed = true;
-            m_Reply->SignalProcessorFinished();
+            IPSGS_Processor::m_Reply->SignalProcessorFinished();
             return;
         }
 
@@ -167,7 +170,7 @@ void CPSGS_GetProcessor::Process(void)
         }
     }
 
-    load_task->SetDataReadyCB(m_Reply->GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(bind(&CPSGS_GetProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
@@ -175,16 +178,19 @@ void CPSGS_GetProcessor::Process(void)
     load_task->SetPropsCallback(
         CBlobPropCallback(bind(&CPSGS_GetProcessor::OnGetBlobProp,
                                this, _1, _2, _3),
-                          m_Request, m_Reply, fetch_details.get(),
+                          IPSGS_Processor::m_Request,
+                          IPSGS_Processor::m_Reply,
+                          fetch_details.get(),
                           blob_prop_cache_lookup_result != ePSGS_Found));
 
-    if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Cassandra request: " +
-                           ToJson(*load_task).Repr(CJsonNode::fStandardJson),
-                           m_Request->GetStartTimestamp());
+    if (IPSGS_Processor::m_Request->NeedTrace()) {
+        IPSGS_Processor::m_Reply->SendTrace(
+                            "Cassandra request: " +
+                            ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                            IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(std::move(fetch_details));
+    m_FetchDetails.push_back(move(fetch_details));
 
     // Initiate cassandra request
     load_task->Wait();
@@ -195,8 +201,7 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                        CBlobRecord const &  blob,
                                        bool is_found)
 {
-    CPSGS_CassBlobBase::OnGetBlobProp(m_Request, m_Reply,
-                                      bind(&CPSGS_GetProcessor::OnGetBlobProp,
+    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetProcessor::OnGetBlobProp,
                                            this, _1, _2, _3),
                                       bind(&CPSGS_GetProcessor::OnGetBlobChunk,
                                            this, _1, _2, _3, _4, _5),
@@ -204,7 +209,7 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                            this, _1, _2, _3, _4, _5),
                                       fetch_details, blob, is_found);
 
-    if (m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
         x_Peek(false);
 }
 
@@ -215,11 +220,10 @@ void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                         EDiagSev  severity,
                                         const string &  message)
 {
-    CPSGS_CassBlobBase::OnGetBlobError(m_Request, m_Reply,
-                                       fetch_details, status, code,
+    CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
 
-    if (m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
         x_Peek(false);
 }
 
@@ -230,11 +234,10 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                         unsigned int  data_size,
                                         int  chunk_no)
 {
-    CPSGS_CassBlobBase::OnGetBlobChunk(m_Request, m_Reply, m_Cancelled,
-                                       fetch_details,
+    CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
-    if (m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
         x_Peek(false);
 }
 
@@ -271,8 +274,8 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
     }
 
     // Blob specific: ready packets need to be sent right away
-    if (m_Reply->GetReply()->IsOutputReady())
-        m_Reply->Flush(false);
+    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+        IPSGS_Processor::m_Reply->Flush(false);
 
     // Blob specific: deal with exclude blob cache
     if (AreAllFinishedRead()) {
@@ -280,7 +283,8 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
         // - by sat/sat_key
         // - by seq_id/seq_id_type
         // So get the reference to the blob base request
-        auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+        auto &      blob_request =
+                IPSGS_Processor::m_Request->GetRequest<SPSGS_BlobRequestBase>();
 
         if (blob_request.m_ExcludeBlobCacheAdded &&
             ! blob_request.m_ExcludeBlobCacheCompleted &&
@@ -307,8 +311,8 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
             fetch_details->GetLoader()->Wait();
 
     if (fetch_details->GetLoader()->HasError() &&
-            m_Reply->GetReply()->IsOutputReady() &&
-            ! m_Reply->GetReply()->IsFinished()) {
+            IPSGS_Processor::m_Reply->GetReply()->IsOutputReady() &&
+            ! IPSGS_Processor::m_Reply->GetReply()->IsFinished()) {
         // Send an error
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
@@ -318,21 +322,22 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
         if (blob_fetch->IsBlobPropStage()) {
-            m_Reply->PrepareBlobPropMessage(
+            IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                 blob_fetch, error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
-            m_Reply->PrepareBlobPropCompletion(blob_fetch);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(blob_fetch);
         } else {
-            m_Reply->PrepareBlobMessage(
+            IPSGS_Processor::m_Reply->PrepareBlobMessage(
                 blob_fetch, error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
-            m_Reply->PrepareBlobCompletion(blob_fetch);
+            IPSGS_Processor::m_Reply->PrepareBlobCompletion(blob_fetch);
         }
 
         // Mark finished
-        m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        IPSGS_Processor::m_Request->UpdateOverallStatus(
+                                    CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        m_Reply->SignalProcessorFinished();
+        IPSGS_Processor::m_Reply->SignalProcessorFinished();
     }
 }
 

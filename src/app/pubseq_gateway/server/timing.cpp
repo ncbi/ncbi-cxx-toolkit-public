@@ -546,7 +546,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_ResolutionNotFoundTiming.reset(
         new CResolutionTiming(min_stat_value, max_stat_value,
                               n_bins, scale_type, reset_to_default));
-    m_ResolutionFoundInCacheTiming.reset(
+    m_ResolutionFoundTiming.reset(
         new CResolutionTiming(min_stat_value, max_stat_value,
                               n_bins, scale_type, reset_to_default));
     // 1, 2, 3, 4, 5+ trips to cassandra
@@ -656,29 +656,31 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
           SInfo(m_ResolutionLmdbTiming[0].get(),
                 "LMDB resolution succeeded",
                 "The timing of a seq id successful resolution "
-                "when only LMDB cache was used (only the LMDB lookup time)"
+                "in LMDB cache (start: request is received)"
                )
         },
         { "ResolutionLmdbNotFound",
           SInfo(m_ResolutionLmdbTiming[1].get(),
                 "LMDB resolution not found",
                 "The timing of a seq id unsuccessful resolution "
-                "when all the tries in LMDB cache led to nothing"
+                "when all the tries in LMDB cache led to nothing "
+                "(start: request is received)"
                )
         },
         { "ResolutionCassFound",
           SInfo(m_ResolutionCassTiming[0].get(),
                 "Cassandra resolution succeeded",
                 "The timing of a seq id successful resolution "
-                "when only Cassandra was used (regardless how many queries were "
-                "made to Cassandra)"
+                "in Cassandra regardless how many queries were "
+                "made to Cassandra (start: first Cassandra query)"
                )
         },
         { "ResolutionCassNotFound",
           SInfo(m_ResolutionCassTiming[1].get(),
                 "Cassandra resolution not found",
                 "The timing of a seq id unsuccessful resolution "
-                "when all the tries in Cassandra led to nothing"
+                "when all the tries in Cassandra led to nothing "
+                "start: first Cassandra query)"
                )
         },
         { "NARetrieveFound",
@@ -722,56 +724,60 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         { "ResolutionError",
           SInfo(m_ResolutionErrorTiming.get(),
                 "Resolution error",
-                "The timing of a case when an error was detected while resolving seq id"
+                "The timing of a case when an error was detected while "
+                "resolving seq id regardless it was cache, Cassandra or both "
+                "(start: request is received)"
                )
         },
         { "ResolutionNotFound",
           SInfo(m_ResolutionNotFoundTiming.get(),
                 "Resolution not found",
                 "The timing of a case when resolution of a seq id did not succeed "
-                "(regardless it was cache, Cassandra or both)"
+                "regardless it was cache, Cassandra or both "
+                "(start: request is received)"
                )
         },
-        { "ResolutionFoundInCache",
-          SInfo(m_ResolutionFoundInCacheTiming.get(),
-                "Resolution succeeded using cache",
-                "The timing of a seq id successful resolution "
-                "when cache was used (starts at the request is received)"
+        { "ResolutionFound",
+          SInfo(m_ResolutionFoundTiming.get(),
+                "Resolution succeeded",
+                "The timing of a seq id successful resolution regardless it "
+                "was cache, Cassandra or both "
+                "(start: request is received)"
                )
         },
         { "ResolutionFoundCassandraIn1Try",
           SInfo(m_ResolutionFoundCassandraTiming[0].get(),
                 "Resolution succeeded via Cassandra (1 try)",
                 "The timing of a seq id resolution in Cassandra when "
-                "1 try was required"
+                "1 try was required (start: first Cassandra query)"
                )
         },
         { "ResolutionFoundCassandraIn2Tries",
           SInfo(m_ResolutionFoundCassandraTiming[1].get(),
                 "Resolution succeeded via Cassandra (2 tries)",
                 "The timing of a seq id resolution in Cassandra when "
-                "2 tries were required"
+                "2 tries were required (start: first Cassandra query)"
                )
         },
         { "ResolutionFoundCassandraIn3Tries",
           SInfo(m_ResolutionFoundCassandraTiming[2].get(),
                 "Resolution succeeded via Cassandra (3 tries)",
                 "The timing of a seq id resolution in Cassandra when "
-                "3 tries were required"
+                "3 tries were required (start: first Cassandra query)"
                )
         },
         { "ResolutionFoundCassandraIn4Tries",
           SInfo(m_ResolutionFoundCassandraTiming[3].get(),
                 "Resolution succeeded via Cassandra (4 tries)",
                 "The timing of a seq id resolution in Cassandra when "
-                "4 tries were required"
+                "4 tries were required (start: first Cassandra query)"
                )
         },
         { "ResolutionFoundCassandraIn5OrMoreTries",
           SInfo(m_ResolutionFoundCassandraTiming[4].get(),
                 "Resolution succeeded via Cassandra (5 tries or more)",
                 "The timing of a seq id resolution in Cassandra when "
-                "5 or more tries were required"
+                "5 or more tries were required (start: first Cassandra query)"
                )
         }
     };
@@ -920,8 +926,8 @@ void COperationTiming::Register(EPSGOperation  operation,
         case eResolutionNotFound:
             m_ResolutionNotFoundTiming->Add(mks);
             break;
-        case eResolutionFoundInCache:
-            m_ResolutionFoundInCacheTiming->Add(mks);
+        case eResolutionFound:
+            m_ResolutionFoundTiming->Add(mks);
             break;
         case eResolutionFoundInCassandra:
             // The blob_size here is the number of queries of Cassandra
@@ -956,7 +962,7 @@ void COperationTiming::Rotate(void)
 
     m_ResolutionErrorTiming->Rotate();
     m_ResolutionNotFoundTiming->Rotate();
-    m_ResolutionFoundInCacheTiming->Rotate();
+    m_ResolutionFoundTiming->Rotate();
     for (auto &  item : m_ResolutionFoundCassandraTiming)
         item->Rotate();
 
@@ -987,7 +993,7 @@ void COperationTiming::Reset(void)
 
     m_ResolutionErrorTiming->Reset();
     m_ResolutionNotFoundTiming->Reset();
-    m_ResolutionFoundInCacheTiming->Reset();
+    m_ResolutionFoundTiming->Reset();
     for (auto &  item : m_ResolutionFoundCassandraTiming)
         item->Reset();
 
@@ -1010,7 +1016,7 @@ COperationTiming::Serialize(int  most_ancient_time,
 
     // All the histograms have the same number of covered ticks
     ret.SetInteger(kSecondsCovered,
-                   tick_span * m_ResolutionFoundInCacheTiming->GetNumberOfCoveredTicks());
+                   tick_span * m_ResolutionFoundTiming->GetNumberOfCoveredTicks());
 
     if (histogram_names.empty()) {
         for (const auto &  name_to_histogram : m_NamesMap) {

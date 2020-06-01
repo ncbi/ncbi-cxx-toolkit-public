@@ -43,6 +43,15 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
 {}
 
 
+CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
+                                            shared_ptr<CPSGS_Request> request,
+                                            shared_ptr<CPSGS_Reply> reply) :
+    m_Completed(false),
+    m_Request(request),
+    m_Reply(reply)
+{}
+
+
 CPSGS_CassProcessorBase::~CPSGS_CassProcessorBase()
 {}
 

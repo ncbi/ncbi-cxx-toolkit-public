@@ -37,6 +37,8 @@
 #include <corelib/ncbidiag.hpp>
 
 #include "cass_fetch.hpp"
+#include "psgs_request.hpp"
+#include "psgs_reply.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -46,6 +48,8 @@ class CPSGS_CassProcessorBase
 {
 public:
     CPSGS_CassProcessorBase();
+    CPSGS_CassProcessorBase(shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply);
     virtual ~CPSGS_CassProcessorBase();
 
 protected:
@@ -60,6 +64,10 @@ protected:
     // when blob props must be searched only in cache and caches is not hit.
     // m_Completed signals such conditions
     bool                            m_Completed;
+
+    // Any cassandra processor will need both of these items
+    shared_ptr<CPSGS_Request>       m_Request;
+    shared_ptr<CPSGS_Reply>         m_Reply;
 };
 
 #endif  // PSGS_CASSPROCESSORBASE__HPP

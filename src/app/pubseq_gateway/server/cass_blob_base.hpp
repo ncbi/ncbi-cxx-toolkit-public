@@ -49,77 +49,58 @@ class CPSGS_CassBlobBase : virtual public CPSGS_CassProcessorBase
 {
 public:
     CPSGS_CassBlobBase();
+    CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
+                       shared_ptr<CPSGS_Reply>  reply);
     virtual ~CPSGS_CassBlobBase();
 
 protected:
-    void OnGetBlobProp(shared_ptr<CPSGS_Request>  request,
-                       shared_ptr<CPSGS_Reply>  reply,
-                       TBlobPropsCB  blob_props_cb,
+    void OnGetBlobProp(TBlobPropsCB  blob_props_cb,
                        TBlobChunkCB  blob_chunk_cb,
                        TBlobErrorCB  blob_error_cb,
                        CCassBlobFetch *  fetch_details,
                        CBlobRecord const &  blob, bool is_found);
-    void OnGetBlobError(shared_ptr<CPSGS_Request>  request,
-                        shared_ptr<CPSGS_Reply>  reply,
-                        CCassBlobFetch *  fetch_details,
+    void OnGetBlobError(CCassBlobFetch *  fetch_details,
                         CRequestStatus::ECode  status, int  code,
                         EDiagSev  severity, const string &  message);
-    void OnGetBlobChunk(shared_ptr<CPSGS_Request>  request,
-                        shared_ptr<CPSGS_Reply>  reply,
-                        bool  cancelled,
+    void OnGetBlobChunk(bool  cancelled,
                         CCassBlobFetch *  fetch_details,
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
 
 private:
-    void x_OnBlobPropNoneTSE(shared_ptr<CPSGS_Reply>  reply,
-                             CCassBlobFetch *  fetch_details);
-    void x_OnBlobPropSlimTSE(shared_ptr<CPSGS_Request>  request,
-                             shared_ptr<CPSGS_Reply>  reply,
-                             TBlobPropsCB  blob_props_cb,
+    void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
+    void x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
                              TBlobChunkCB  blob_chunk_cb,
                              TBlobErrorCB  blob_error_cb,
                              CCassBlobFetch *  fetch_details,
                              CBlobRecord const &  blob);
-    void x_OnBlobPropSmartTSE(shared_ptr<CPSGS_Request>  request,
-                              shared_ptr<CPSGS_Reply>  reply,
-                              TBlobPropsCB  blob_props_cb,
+    void x_OnBlobPropSmartTSE(TBlobPropsCB  blob_props_cb,
                               TBlobChunkCB  blob_chunk_cb,
                               TBlobErrorCB  blob_error_cb,
                               CCassBlobFetch *  fetch_details,
                               CBlobRecord const &  blob);
-    void x_OnBlobPropWholeTSE(shared_ptr<CPSGS_Request>  request,
-                              shared_ptr<CPSGS_Reply>  reply,
-                              TBlobPropsCB  blob_props_cb,
+    void x_OnBlobPropWholeTSE(TBlobPropsCB  blob_props_cb,
                               TBlobChunkCB  blob_chunk_cb,
                               TBlobErrorCB  blob_error_cb,
                               CCassBlobFetch *  fetch_details,
                               CBlobRecord const &  blob);
-    void x_OnBlobPropOrigTSE(shared_ptr<CPSGS_Request>  request,
-                             shared_ptr<CPSGS_Reply>  reply,
-                             TBlobChunkCB  blob_chunk_cb,
+    void x_OnBlobPropOrigTSE(TBlobChunkCB  blob_chunk_cb,
                              TBlobErrorCB  blob_error_cb,
                              CCassBlobFetch *  fetch_details,
                              CBlobRecord const &  blob);
 
 private:
-    void x_RequestOriginalBlobChunks(shared_ptr<CPSGS_Request>  request,
-                                     shared_ptr<CPSGS_Reply>  reply,
-                                     TBlobChunkCB  blob_chunk_cb,
+    void x_RequestOriginalBlobChunks(TBlobChunkCB  blob_chunk_cb,
                                      TBlobErrorCB  blob_error_cb,
                                      CCassBlobFetch *  fetch_details,
                                      CBlobRecord const &  blob);
-    void x_RequestID2BlobChunks(shared_ptr<CPSGS_Request>  request,
-                                shared_ptr<CPSGS_Reply>  reply,
-                                TBlobPropsCB  blob_props_cb,
+    void x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                                 TBlobChunkCB  blob_chunk_cb,
                                 TBlobErrorCB  blob_error_cb,
                                 CCassBlobFetch *  fetch_details,
                                 CBlobRecord const &  blob,
                                 bool  info_blob_only);
-    void x_RequestId2SplitBlobs(shared_ptr<CPSGS_Request>  request,
-                                shared_ptr<CPSGS_Reply>  reply,
-                                TBlobPropsCB  blob_props_cb,
+    void x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                                 TBlobChunkCB  blob_chunk_cb,
                                 TBlobErrorCB  blob_error_cb,
                                 CCassBlobFetch *  fetch_details,
@@ -133,21 +114,14 @@ private:
     };
 
     EPSGS_BlobCacheCheckResult
-    x_CheckExcludeBlobCache(shared_ptr<CPSGS_Request>  request,
-                            shared_ptr<CPSGS_Reply>  reply,
-                            CCassBlobFetch *  fetch_details,
+    x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
                             SPSGS_BlobRequestBase &  blob_request);
-    void x_OnBlobPropNotFound(shared_ptr<CPSGS_Request>  request,
-                              shared_ptr<CPSGS_Reply>  reply,
-                              CCassBlobFetch *  fetch_details);
-    bool x_ParseId2Info(shared_ptr<CPSGS_Request>  request,
-                        shared_ptr<CPSGS_Reply>  reply,
-                        CCassBlobFetch *  fetch_details,
+    void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
+    bool x_ParseId2Info(CCassBlobFetch *  fetch_details,
                         CBlobRecord const &  blob);
 
 private:
-    void x_SetFinished(shared_ptr<CPSGS_Reply>  reply,
-                       CCassBlobFetch *  fetch_details);
+    void x_SetFinished(CCassBlobFetch *  fetch_details);
 
 private:
     unique_ptr<CPSGId2Info>     m_Id2Info;

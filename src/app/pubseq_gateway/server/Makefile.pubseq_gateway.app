@@ -11,7 +11,8 @@ SRC = pubseq_gateway  \
       async_seq_id_resolver async_bioseq_query \
       exclude_blob_cache alerts timing cass_monitor id2info \
       insdc_utils introspection psgs_request get_processor cass_processor_base \
-      cass_blob_base tse_chunk_processor
+      cass_blob_base tse_chunk_processor resolve_processor resolve_base \
+      async_resolve_base async_bioseq_info_base
 
 LIBS = $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS) $(KRB5_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
@@ -19,7 +20,7 @@ LIB = $(SEQ_LIBS) pub medline biblio general xser psg_cassandra psg_protobuf psg
 
 REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF
 
-WATCHERS = satskyse dmitrie1
+WATCHERS = satskyse
 
 CHECK_CMD=test/tccheck.sh
 

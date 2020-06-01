@@ -86,6 +86,13 @@ struct SResolveInputSeqIdError
 
 struct SBioseqResolution
 {
+    SBioseqResolution() :
+        m_ResolutionResult(ePSGS_NotResolved),
+        m_CassQueryCount(0),
+        m_AdjustmentTried(false),
+        m_AccessionAdjustmentResult(ePSGS_NotRequired)
+    {}
+
     SBioseqResolution(const TPSGS_HighResolutionTimePoint &  request_start_timestamp) :
         m_ResolutionResult(ePSGS_NotResolved),
         m_RequestStartTimestamp(request_start_timestamp),

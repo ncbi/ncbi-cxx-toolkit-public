@@ -1,5 +1,5 @@
-#ifndef ASYNC_BIOSEQ_QUERY__HPP
-#define ASYNC_BIOSEQ_QUERY__HPP
+#ifndef PSGS_ASYNCBIOSEQINFOBASE__HPP
+#define PSGS_ASYNCBIOSEQINFOBASE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,32 +28,40 @@
  *
  * Authors: Sergey Satskiy
  *
- * File Description:
+ * File Description: base class for processors which need to retrieve bioseq
+ *                   info asynchronously
  *
  */
 
-
 #include <corelib/request_status.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
+#include "cass_fetch.hpp"
+#include "cass_processor_base.hpp"
+#include "async_resolve_base.hpp"
 
-class CPendingOperation;
-class CPSGS_Request;
-class CPSGS_Reply;
+#include <objects/seqloc/Seq_id.hpp>
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+USING_IDBLOB_SCOPE;
 
 
-class CAsyncBioseqQuery
+class CPSGS_AsyncBioseqInfoBase : virtual public CPSGS_CassProcessorBase
 {
 public:
-    CAsyncBioseqQuery(SBioseqResolution &&  bioseq_resolution,
-                      CPendingOperation *  pending_op,
-                      shared_ptr<CPSGS_Request>  request,
-                      shared_ptr<CPSGS_Reply>  reply);
+    CPSGS_AsyncBioseqInfoBase();
+    CPSGS_AsyncBioseqInfoBase(shared_ptr<CPSGS_Request> request,
+                              shared_ptr<CPSGS_Reply> reply,
+                              TSeqIdResolutionFinishedCB finished_cb,
+                              TSeqIdResolutionErrorCB error_cb);
+    virtual ~CPSGS_AsyncBioseqInfoBase();
 
-public:
-    void MakeRequest(void);
+protected:
+    void MakeRequest(SBioseqResolution &&  bioseq_resolution);
 
-public:
+private:
+    void x_MakeRequest(void);
     void x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records);
     void x_OnBioseqInfoWithoutSeqIdType(vector<CBioseqInfoRecord>&&  records);
     void x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
@@ -61,9 +69,10 @@ public:
 
 private:
     SBioseqResolution                   m_BioseqResolution;
-    CPendingOperation *                 m_PendingOp;
-    shared_ptr<CPSGS_Request>           m_Request;
-    shared_ptr<CPSGS_Reply>             m_Reply;
+
+    TSeqIdResolutionFinishedCB          m_FinishedCB;
+    TSeqIdResolutionErrorCB             m_ErrorCB;
+
     bool                                m_NeedTrace;
 
     CCassFetch *                        m_Fetch;
@@ -73,4 +82,5 @@ private:
     bool                                m_WithSeqIdType;
 };
 
-#endif
+#endif  // PSGS_ASYNCBIOSEQINFOBASE__HPP
+

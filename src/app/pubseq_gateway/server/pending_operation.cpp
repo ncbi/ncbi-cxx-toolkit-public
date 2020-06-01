@@ -42,6 +42,7 @@
 #include "insdc_utils.hpp"
 #include "get_processor.hpp"
 #include "tse_chunk_processor.hpp"
+#include "resolve_processor.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -223,8 +224,8 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
     auto    request_type = m_UserRequest->GetRequestType();
     switch (request_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
-            m_UrlUseCache = m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_UseCache;
-            x_ProcessResolveRequest();
+            m_Processor.reset(new CPSGS_ResolveProcessor(m_UserRequest, m_Reply));
+            m_Processor->Process();
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
             m_UrlUseCache = m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_UseCache;
@@ -356,7 +357,7 @@ void CPendingOperation::x_ProcessGetRequest(SResolveInputSeqIdError &  err,
                         new CAsyncBioseqQuery(std::move(bioseq_resolution),
                                               this, m_UserRequest, m_Reply));
                 // true => use seq_id_type
-                m_AsyncBioseqDetailsQuery->MakeRequest(true);
+                m_AsyncBioseqDetailsQuery->MakeRequest();
                 return;
             }
 
@@ -422,142 +423,6 @@ void CPendingOperation::x_GetRequestBioseqInconsistency(
 }
 
 
-void CPendingOperation::x_OnResolveResolutionError(
-                        SResolveInputSeqIdError &  err,
-                        const TPSGS_HighResolutionTimePoint &  start_timestamp)
-{
-    x_OnResolveResolutionError(err.m_ErrorCode, err.m_ErrorMessage,
-                               start_timestamp);
-}
-
-
-void CPendingOperation::x_OnResolveResolutionError(
-                        CRequestStatus::ECode  status,
-                        const string &  message,
-                        const TPSGS_HighResolutionTimePoint &  start_timestamp)
-{
-    m_UserRequest->UpdateOverallStatus(status);
-    PSG_WARNING(message);
-    if (m_UserRequest->UsePsgProtocol()) {
-        x_OnReplyError(status, ePSGS_UnresolvedSeqId, message, start_timestamp);
-    } else {
-        switch (status) {
-            case CRequestStatus::e400_BadRequest:
-                m_Reply->Send400(message.c_str());
-                break;
-            case CRequestStatus::e404_NotFound:
-                m_Reply->Send404(message.c_str());
-                break;
-            case CRequestStatus::e500_InternalServerError:
-                m_Reply->Send500(message.c_str());
-                break;
-            case CRequestStatus::e502_BadGateway:
-                m_Reply->Send502(message.c_str());
-                break;
-            case CRequestStatus::e503_ServiceUnavailable:
-                m_Reply->Send503(message.c_str());
-                break;
-            default:
-                m_Reply->Send400(message.c_str());
-        }
-        x_RegisterResolveTiming(status, start_timestamp);
-        x_PrintRequestStop();
-    }
-}
-
-
-void CPendingOperation::x_ProcessResolveRequest(void)
-{
-    SResolveInputSeqIdError     err;
-    auto                        start_timestamp =
-                                    m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_StartTimestamp;
-    SBioseqResolution           bioseq_resolution(start_timestamp);
-
-    x_ResolveInputSeqId(bioseq_resolution, err);
-    if (err.HasError()) {
-        x_OnResolveResolutionError(err, start_timestamp);
-        return;
-    }
-
-    // Async resolution may be required
-    if (bioseq_resolution.m_ResolutionResult == ePSGS_PostponedForDB) {
-        m_AsyncInterruptPoint = eResolveSeqIdResolution;
-        return;
-    }
-
-    x_ProcessResolveRequest(err, bioseq_resolution);
-}
-
-
-// Could be called by:
-// - sync processing (resolved via cache)
-// - async processing (resolved via DB)
-void CPendingOperation::x_ProcessResolveRequest(
-                                    SResolveInputSeqIdError &  err,
-                                    SBioseqResolution &  bioseq_resolution)
-{
-    if (!bioseq_resolution.IsValid()) {
-        if (err.HasError()) {
-            x_OnResolveResolutionError(err,
-                                       bioseq_resolution.m_RequestStartTimestamp);
-        } else {
-            // Could not resolve, send 404
-            string  err_msg = "Could not resolve seq_id " +
-                              m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqId;
-
-            if (m_UserRequest->UsePsgProtocol()) {
-                x_OnBioseqError(CRequestStatus::e404_NotFound, err_msg,
-                                bioseq_resolution.m_RequestStartTimestamp);
-            } else {
-                m_Reply->Send404(err_msg.c_str());
-                x_RegisterResolveTiming(CRequestStatus::e404_NotFound,
-                                        bioseq_resolution.m_RequestStartTimestamp);
-                x_PrintRequestStop();
-            }
-        }
-        return;
-    }
-
-    // A few cases here: comes from cache or DB
-    // ePSGS_Si2csiCache, ePSGS_Si2csiDB, ePSGS_BioseqCache, ePSGS_BioseqDB
-    if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
-        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache) {
-        // We have the following fields at hand:
-        // - accession, version, seq_id_type, gi
-        // May be it is what the user asked for
-        if (!CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo)) {
-            // Need to pull the full bioseq info
-            CPSGCache   psg_cache(m_UserRequest, m_Reply);
-            auto        cache_lookup_result =
-                                psg_cache.LookupBioseqInfo(bioseq_resolution);
-            if (cache_lookup_result != ePSGS_Found) {
-                // No cache hit (or not allowed); need to get to DB if allowed
-                if (m_UrlUseCache != SPSGS_RequestBase::ePSGS_CacheOnly) {
-                    // Async DB query
-                    m_AsyncInterruptPoint = eResolveBioseqDetails;
-                    m_AsyncBioseqDetailsQuery.reset(
-                            new CAsyncBioseqQuery(std::move(bioseq_resolution),
-                                                  this,
-                                                  m_UserRequest, m_Reply));
-                    // true => use seq_id_type
-                    m_AsyncBioseqDetailsQuery->MakeRequest(true);
-                    return;
-                }
-
-                // default error message
-                x_ResolveRequestBioseqInconsistency(
-                                        bioseq_resolution.m_RequestStartTimestamp);
-                return;
-            } else {
-                bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
-            }
-        }
-    }
-
-    x_CompleteResolveRequest(bioseq_resolution);
-}
-
-
 void CPendingOperation::x_ResolveRequestBioseqInconsistency(
                             const TPSGS_HighResolutionTimePoint &  start_timestamp)
 {
@@ -605,26 +470,6 @@ void CPendingOperation::x_ResolveRequestBioseqInconsistency(
 }
 
 
-// Could be called:
-// - synchronously
-// - asynchronously if additional request to bioseq info is required
-void CPendingOperation::x_CompleteResolveRequest(
-                                        SBioseqResolution &  bioseq_resolution)
-{
-    // Bioseq info is found, send it to the client
-    x_SendBioseqInfo(bioseq_resolution,
-                     m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
-    if (m_UserRequest->UsePsgProtocol()) {
-        x_SendReplyCompletion(true);
-        m_Reply->Flush();
-        x_RegisterResolveTiming(bioseq_resolution);
-    } else {
-        x_RegisterResolveTiming(bioseq_resolution);
-        x_PrintRequestStop();
-    }
-}
-
-
 void CPendingOperation::OnBioseqDetailsRecord(
                                     SBioseqResolution &&  async_bioseq_info)
 {
@@ -632,14 +477,6 @@ void CPendingOperation::OnBioseqDetailsRecord(
     m_UserRequest->SetRequestContext();
 
     switch (m_AsyncInterruptPoint) {
-        case eResolveBioseqDetails:
-            if (async_bioseq_info.IsValid())
-                x_CompleteResolveRequest(async_bioseq_info);
-            else
-                // default error message
-                x_ResolveRequestBioseqInconsistency(
-                                async_bioseq_info.m_RequestStartTimestamp);
-            break;
         case eGetBioseqDetails:
             if (async_bioseq_info.IsValid())
                 x_CompleteGetRequest(async_bioseq_info);
@@ -670,14 +507,6 @@ void CPendingOperation::OnBioseqDetailsError(
     m_UserRequest->SetRequestContext();
 
     switch (m_AsyncInterruptPoint) {
-        case eResolveBioseqDetails:
-            x_ResolveRequestBioseqInconsistency(
-                    "Data inconsistency: the bioseq key info was resolved for "
-                    "seq_id " +
-                    m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqId + " but the "
-                    "bioseq info is not found (database error: " +
-                    message + ")", start_timestamp);
-            break;
         case eGetBioseqDetails:
             x_GetRequestBioseqInconsistency(
                     "Data inconsistency: the bioseq key info was resolved for "
@@ -768,7 +597,7 @@ void CPendingOperation::x_ProcessAnnotRequest(
                                               this, m_UserRequest,
                                               m_Reply));
                 // true => use seq_id_type
-                m_AsyncBioseqDetailsQuery->MakeRequest(true);
+                m_AsyncBioseqDetailsQuery->MakeRequest();
                 return;
             }
 
@@ -1016,7 +845,8 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
     }
 
     if (m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest ||
-        m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_TSEChunkRequest) {
+        m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_TSEChunkRequest ||
+        m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest) {
         m_Processor->ProcessEvent();
         if (m_Processor->IsFinished() && !resp.IsFinished() && resp.IsOutputReady() ) {
             x_SendReplyCompletion(true);
@@ -2624,10 +2454,6 @@ void CPendingOperation::OnSeqIdAsyncResolutionFinished(
             x_ProcessAnnotRequest(async_bioseq_resolution.m_PostponedError,
                                   async_bioseq_resolution);
             break;
-        case eResolveSeqIdResolution:
-            x_ProcessResolveRequest(async_bioseq_resolution.m_PostponedError,
-                                    async_bioseq_resolution);
-            break;
         case eGetSeqIdResolution:
             x_ProcessGetRequest(async_bioseq_resolution.m_PostponedError,
                                 async_bioseq_resolution);
@@ -2650,9 +2476,6 @@ void CPendingOperation::OnSeqIdAsyncError(
         case eAnnotSeqIdResolution:
             x_OnReplyError(status, code, message, start_timestamp);
             return;
-        case eResolveSeqIdResolution:
-            x_OnResolveResolutionError(status, message, start_timestamp);
-            return;
         case eGetSeqIdResolution:
             x_OnReplyError(status, code, message, start_timestamp);
             return;
@@ -2673,7 +2496,7 @@ void CPendingOperation::x_RegisterResolveTiming(
                                       bioseq_resolution.m_RequestStartTimestamp,
                                       bioseq_resolution.m_CassQueryCount);
         else
-            app->GetTiming().Register(eResolutionFoundInCache,
+            app->GetTiming().Register(eResolutionFound,
                                       eOpStatusFound,
                                       bioseq_resolution.m_RequestStartTimestamp);
     }
