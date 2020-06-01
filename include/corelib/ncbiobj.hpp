@@ -619,6 +619,11 @@ public:
     typedef Locker locker_type;         ///< Define alias for locking type
     typedef CRef<C, Locker> TThisType;  ///< Alias for this template type
 
+    /// Helper template to template enable methods only for derived types
+    template<class T>
+    using enable_if_derived =
+        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
+    
     /// Constructor for null pointer.
     inline
     CRef(void) THROWS_NONE
@@ -633,53 +638,62 @@ public:
 
     /// Constructor for explicit type conversion from pointer to object.
     explicit CRef(TObjectType* ptr)
+        : m_Data(locker_type(), ptr)
         {
             if ( ptr ) {
                 m_Data.first().Lock(ptr);
-                m_Data.second() = ptr;
             }
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     CRef(TObjectType* ptr, const locker_type& locker_value)
-        : m_Data(locker_value, 0)
+        : m_Data(locker_value, ptr)
         {
             if ( ptr ) {
                 m_Data.first().Lock(ptr);
-                m_Data.second() = ptr;
             }
         }
 
-    /// Copy constructor from an existing CRef object, 
+    /// Copy constructor from an existing CRef object
     CRef(const TThisType& ref)
-        : m_Data(ref.GetLocker(), 0)
+        : m_Data(ref.m_Data)
         {
-            TObjectType* newPtr = ref.GetNCPointerOrNull();
-            if ( newPtr ) {
-                m_Data.first().Relock(newPtr);
-                m_Data.second() = newPtr;
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
             }
         }
 
-    template< class TDerived,
-              class = typename std::enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    /// Copy constructor from an existing CRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     CRef(const CRef<TDerived, Locker>& ref)
-        : m_Data(ref.GetLocker(), 0)
+        : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
-            TObjectType* newPtr = ref.GetNCPointerOrNull();
-            if ( newPtr ) {
-                m_Data.first().Relock(newPtr);
-                m_Data.second() = newPtr;
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
             }
         }
 
-    /// Copy constructor from an existing CRef object, 
+    /// Move constructor from an existing CRef object
     CRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = ref.m_Data.second() ) {
+            if ( TObjectType* ptr = m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, ref.m_Data.first());
                 ref.m_Data.second() = 0;
+            }
+        }
+
+    /// Move constructor from an existing CRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CRef(CRef<TDerived, Locker>&& ref)
+        : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
+        {
+            // we cannot use internals of CRef of derived type
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
+                ref.ReleaseOrNull();
             }
         }
 
@@ -896,18 +910,21 @@ public:
     /// Assignment operator for references.
     TThisType& operator=(const TThisType& ref)
         {
-            Reset(ref.m_Data.second());
+            x_Relock(ref.GetNCPointerOrNull());
             return *this;
         }
 
-    template<class TDerived>
+    /// Assignment operator for references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CRef<TDerived, Locker>& ref)
         {
-            CRef(ref).Swap(*this);
+            // we cannot use internals of CRef of derived type
+            x_Relock(ref.GetNCPointerOrNull());
             return *this;
         }
 
-    /// Assignment operator for references.
+    /// Move assignment operator for references.
     TThisType& operator=(TThisType&& ref)
         {
 #ifdef NCBI_COMPILER_MSVC
@@ -926,6 +943,18 @@ public:
             m_Data.second() = newPtr;
             if ( oldPtr ) {
                 m_Data.first().Unlock(oldPtr);
+            }
+            return *this;
+        }
+
+    /// Move assignment operator for references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(CRef<TDerived, Locker>&& ref)
+        {
+            // we cannot use internals of CRef of derived type
+            if ( x_Relock(ref.GetNCPointerOrNull()) ) {
+                ref.ReleaseOrNull();
             }
             return *this;
         }
@@ -1180,6 +1209,19 @@ public:
         }
 
 private:
+    TObjectType* x_Relock(TObjectType* newPtr)
+        {
+            TObjectType* oldPtr = m_Data.second();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+            }
+            m_Data.second() = newPtr;
+            if ( oldPtr ) {
+                m_Data.first().Unlock(oldPtr);
+            }
+            return newPtr;
+        }
+
     TObjectType* AtomicSwap(TObjectType* ptr)
         {
             // MIPSpro won't accept static_cast for some reason.
@@ -1214,6 +1256,11 @@ public:
     typedef Locker locker_type;             ///< Define alias for locking type
     typedef CConstRef<C, Locker> TThisType; ///< Alias for this template type
 
+    /// Helper template to template enable methods only for derived types
+    template<class T>
+    using enable_if_derived =
+        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
+
     /// Constructor for null pointer.
     inline
     CConstRef(void) THROWS_NONE
@@ -1228,76 +1275,85 @@ public:
 
     /// Constructor for explicit type conversion from pointer to object.
     explicit CConstRef(TObjectType* ptr)
+        : m_Data(locker_type(), ptr)
         {
             if ( ptr ) {
                 m_Data.first().Lock(ptr);
-                m_Data.second() = ptr;
             }
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     CConstRef(TObjectType* ptr, const locker_type& locker_value)
-        : m_Data(locker_value, 0)
+        : m_Data(locker_value, ptr)
         {
             if ( ptr ) {
                 m_Data.first().Lock(ptr);
-                m_Data.second() = ptr;
             }
         }
 
-    /// Constructor from an existing CConstRef object, 
+    /// Constructor from an existing CConstRef object
     CConstRef(const TThisType& ref)
-        : m_Data(ref.GetLocker(), 0)
+        : m_Data(ref.m_Data)
         {
-            TObjectType* newPtr = ref.GetPointerOrNull();
-            if ( newPtr ) {
-                m_Data.first().Relock(newPtr);
-                m_Data.second() = newPtr;
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
             }
         }
 
-    template< class TDerived,
-              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    /// Constructor from an existing CConstRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     CConstRef(const CConstRef<TDerived, Locker>& ref)
-        : m_Data(ref.GetLocker(), 0)
+        : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            TObjectType* newPtr = ref.GetPointerOrNull();
-            if ( newPtr ) {
-                m_Data.first().Relock(newPtr);
-                m_Data.second() = newPtr;
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
             }
         }
 
-    /// Constructor from an existing CConstRef object, 
+    /// Move constructor from an existing CConstRef object
     CConstRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = ref.m_Data.second() ) {
+            if ( TObjectType* ptr = m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, ref.m_Data.first());
                 ref.m_Data.second() = 0;
             }
         }
 
-    /// Constructor from an existing CRef object, 
-    CConstRef(const CRef<C, Locker>& ref)
-        : m_Data(ref.GetLocker(), 0)
+    /// Move constructor from an existing CConstRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CConstRef(CConstRef<TDerived, Locker>&& ref)
+        : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            TObjectType* newPtr = ref.GetPointerOrNull();
-            if ( newPtr ) {
-                m_Data.first().Relock(newPtr);
-                m_Data.second() = newPtr;
+            // we cannot use internals of CRef of derived type
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
+                ref.ReleaseOrNull();
             }
         }
 
-    template< class TDerived,
-              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    /// Constructor from an existing CRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     CConstRef(const CRef<TDerived, Locker>& ref)
-        : m_Data(ref.GetLocker(), 0)
+        : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            TObjectType* newPtr = ref.GetPointerOrNull();
-            if ( newPtr ) {
-                m_Data.first().Relock(newPtr);
-                m_Data.second() = newPtr;
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
+            }
+        }
+
+    /// Move constructor from an existing CRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CConstRef(CRef<TDerived, Locker>&& ref)
+        : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
+                ref.ReleaseOrNull();
             }
         }
 
@@ -1514,18 +1570,21 @@ public:
     /// Assignment operator for const references.
     TThisType& operator=(const TThisType& ref)
         {
-            Reset(ref.m_Data.second());
+            x_Relock(ref.GetPointerOrNull());
             return *this;
         }
 
-    template<class TDerived>
+    /// Assignment operator for const references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CConstRef<TDerived, Locker>& ref)
         {
-            CConstRef(ref).Swap(*this);
+            // we cannot use internals of CRef of derived type
+            x_Relock(ref.GetPointerOrNull());
             return *this;
         }
 
-    /// Assignment operator for const references.
+    /// Move assignment operator for const references.
     TThisType& operator=(TThisType&& ref)
         {
 #ifdef NCBI_COMPILER_MSVC
@@ -1548,17 +1607,35 @@ public:
             return *this;
         }
 
-    /// Assignment operator for assigning a reference to a const reference.
-    TThisType& operator=(const CRef<C, Locker>& ref)
+    /// Move assignment operator for const references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(CConstRef<TDerived, Locker>&& ref)
         {
-            Reset(ref.GetPointerOrNull());
+            // we cannot use internals of CRef of derived type
+            if ( x_Relock(ref.GetPointerOrNull()) ) {
+                ref.ReleaseOrNull();
+            }
             return *this;
         }
 
-    template<class TDerived>
+    /// Assignment operator for assigning a reference of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CRef<TDerived, Locker>& ref)
         {
-            CConstRef(ref).Swap(*this);
+            x_Relock(ref.GetPointerOrNull());
+            return *this;
+        }
+
+    /// Move assignment operator for assigning a reference of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(CRef<TDerived, Locker>&& ref)
+        {
+            if ( x_Relock(ref.GetPointerOrNull()) ) {
+                ref.ReleaseOrNull();
+            }
             return *this;
         }
 
@@ -1666,6 +1743,19 @@ public:
         }
 
 private:
+    TObjectType* x_Relock(TObjectType* newPtr)
+        {
+            TObjectType* oldPtr = m_Data.second();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+            }
+            m_Data.second() = newPtr;
+            if ( oldPtr ) {
+                m_Data.first().Unlock(oldPtr);
+            }
+            return newPtr;
+        }
+
     TObjectType* AtomicSwap(TObjectType* ptr)
         {
             // MIPSpro won't accept static_cast for some reason.
@@ -1926,6 +2016,12 @@ public:
     typedef typename TParent::TObjectType TObjectType;
     typedef typename TParent::locker_type locker_type;
     typedef CIRef<Interface, Locker> TThisType;
+
+    /// Helper template to template enable methods only for derived types
+    template<class T>
+    using enable_if_derived =
+        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
+    
     // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
@@ -1944,11 +2040,33 @@ public:
         {
         }
 
-    template< class TDerived,
-              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
-    CIRef(const CIRef<TDerived>& ref)
-        : CIRef(ref.GetNCPointerOrNull())
+    /// Constructor from existing ref
+    CIRef(const TThisType& ref)
+        : TParent(ref)
         {
+        }
+    
+    /// Constructor from existing ref of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CIRef(const CIRef<TDerived>& ref)
+        : TParent(ref.GetNCPointerOrNull())
+        {
+        }
+
+    /// Move constructor from existing ref
+    CIRef(TThisType&& ref)
+        : TParent(static_cast<TParent&&>(ref))
+        {
+        }
+    
+    /// Move constructor from existing ref of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CIRef(CIRef<TDerived>&& ref)
+        : TParent(ref.GetPointerOrNull())
+        {
+            ref.ReleaseOrNull();
         }
 
     /// Constructor for explicit type conversion from pointer to object.
@@ -1964,10 +2082,29 @@ public:
             return *this;
         }
 
-    template<class TDerived>
+    /// Assignment operator for references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CIRef<TDerived>& ref)
         {
-            CIRef(ref).Swap(*this);
+            TParent::operator=(ref.GetNCPointerOrNull());
+            return *this;
+        }
+
+    /// Move assignment operator for references.
+    TThisType& operator=(TThisType&& ref)
+        {
+            TParent::operator=(static_cast<TParent&&>(ref));
+            return *this;
+        }
+
+    /// Move assignment operator for references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(CIRef<TDerived>&& ref)
+        {
+            TParent::operator=(ref.GetNCPointerOrNull());
+            ref.ReleaseOrNull();
             return *this;
         }
 
@@ -2005,6 +2142,12 @@ public:
     typedef typename TParent::TObjectType TObjectType;
     typedef typename TParent::locker_type locker_type;
     typedef CConstIRef<Interface, Locker> TThisType;
+
+    /// Helper template to template enable methods only for derived types
+    template<class T>
+    using enable_if_derived =
+        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
+    
     // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
@@ -2029,24 +2172,50 @@ public:
         {
         }
 
-    /// Constructor from an existing CRef object, 
-    CConstIRef(const CIRef<Interface, Locker>& ref)
+    /// Constructor from an existing CConstRef object
+    CConstIRef(const TThisType& ref)
         : TParent(ref)
         {
         }
-
-    template< class TDerived,
-              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    
+    /// Constructor from an existing CConstRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     CConstIRef(const CConstIRef<TDerived>& ref)
-        : CConstIRef(ref.GetPointerOrNull())
+        : TParent(ref.GetPointerOrNull())
         {
         }
 
-    template< class TDerived,
-              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
-    CConstIRef(const CIRef<TDerived>& ref)
-        : CConstIRef(ref.GetPointerOrNull())
+    /// Move constructor from an existing CConstRef object
+    CConstIRef(TThisType&& ref)
+        : TParent(static_cast<TParent&&>(ref))
         {
+        }
+    
+    /// Move constructor from an existing CConstRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CConstIRef(CConstIRef<TDerived>&& ref)
+        : TParent(ref.GetPointerOrNull())
+        {
+            ref.ReleaseOrNull();
+        }
+
+    /// Constructor from an existing CRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CConstIRef(const CIRef<TDerived>& ref)
+        : TParent(ref.GetPointerOrNull())
+        {
+        }
+
+    /// Move constructor from an existing CRef object of derived type
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    CConstIRef(CIRef<TDerived>&& ref)
+        : TParent(ref.GetPointerOrNull())
+        {
+            ref.ReleaseOrNull();
         }
 
     /// Assignment operator for references.
@@ -2056,24 +2225,48 @@ public:
             return *this;
         }
 
-    template<class TDerived>
+    /// Assignment operator for references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CConstIRef<TDerived>& ref)
         {
-            CConstIRef(ref).Swap(*this);
+            TParent::operator=(ref.GetPointerOrNull());
+            return *this;
+        }
+
+    /// Move assignment operator for references.
+    TThisType& operator=(TThisType&& ref)
+        {
+            TParent::operator=(static_cast<TParent&&>(ref));
+            return *this;
+        }
+
+    /// Move assignment operator for references of derived types
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(CConstIRef<TDerived>&& ref)
+        {
+            TParent::operator=(ref.GetPointerOrNull());
+            ref.ReleaseOrNull();
             return *this;
         }
 
     /// Assignment operator for assigning a reference to a const reference.
-    TThisType& operator=(const CIRef<Interface, Locker>& ref)
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(const CIRef<TDerived>& ref)
         {
-            TParent::operator=(ref);
+            TParent::operator=(ref.GetPointerOrNull());
             return *this;
         }
 
-    template<class TDerived>
-    TThisType& operator=(const CIRef<TDerived>& ref)
+    /// Move assignment operator for assigning a reference to a const reference.
+    template<class TDerived,
+             class = typename enable_if_derived<TDerived>::type>
+    TThisType& operator=(CIRef<TDerived>&& ref)
         {
-            CConstIRef(ref).Swap(*this);
+            TParent::operator=(ref.GetPointerOrNull());
+            ref.ReleaseOrNull();
             return *this;
         }
 
