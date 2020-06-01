@@ -1190,8 +1190,9 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
             return score;
         }
         //cut trailing gaps
-        for(size_t endi = dim-1; endi >=0; --endi) {
-            if( transcript[endi] == eTS_Match || transcript[endi] == eTS_Replace ) {
+      //for(size_t endi = dim-1; endi >=0; --endi) {   // never stops CXX-11373
+        for(size_t endi = dim; endi-- > 0; ) {
+              if( transcript[endi] == eTS_Match || transcript[endi] == eTS_Replace ) {
                 dim = endi + 1;
                 break;
             } else if( transcript[endi] != eTS_Insert  && transcript[endi] != eTS_Delete ) {
