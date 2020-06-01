@@ -985,6 +985,120 @@ BOOST_AUTO_TEST_CASE(TestObjectSizes)
 
 /////////////////////////////////////////////////////////////////////////////
 
+
+template<class Src, class Dst, class Obj = typename Src::TObjectType>
+void s_TestCopyMove()
+{
+    NcbiCout << "TestCopyMove: "<<typeid(Src).name()<<" -> "<<typeid(Dst).name()
+             << NcbiEndl;
+    
+    BOOST_CHECK((std::is_constructible<Dst, const Dst&>::value));
+    BOOST_CHECK((std::is_constructible<Dst, const Src&>::value));
+    BOOST_CHECK((std::is_same<Src, Dst>::value ||
+                 !std::is_constructible<Src, const Dst&>::value));
+    
+    BOOST_CHECK((std::is_constructible<Dst, Dst&&>::value));
+    BOOST_CHECK((std::is_constructible<Dst, Src&&>::value));
+    BOOST_CHECK((std::is_same<Src, Dst>::value ||
+                 !std::is_constructible<Src, Dst&&>::value));
+    
+    BOOST_CHECK((std::is_convertible<const Dst&, Dst>::value));
+    BOOST_CHECK((std::is_convertible<const Src&, Dst>::value));
+    BOOST_CHECK((std::is_same<Src, Dst>::value ||
+                 !std::is_convertible<const Dst&, Src>::value));
+    
+    BOOST_CHECK((std::is_convertible<Dst&&, Dst>::value));
+    BOOST_CHECK((std::is_convertible<Src&&, Dst>::value));
+    BOOST_CHECK((std::is_same<Src, Dst>::value ||
+                 !std::is_convertible<Dst&&, Src>::value));
+    
+    Src obj0(new Obj());
+    BOOST_CHECK(obj0);
+    
+    // same type
+    Src obj1 = obj0; // copy constructor
+    BOOST_CHECK(obj1);
+    BOOST_CHECK(obj1 == obj0);
+    
+    Src obj2; obj2 = obj0; // assignment
+    BOOST_CHECK(obj2);
+    BOOST_CHECK(!(obj2 != obj0));
+
+    Src obj3 = move(obj1); // move constructor
+    BOOST_CHECK(obj3);
+    BOOST_CHECK(!obj1);
+
+    Src obj4; obj4 = move(obj2); // move assignment
+    BOOST_CHECK(obj4);
+    BOOST_CHECK(!obj2);
+
+    // different types
+    Dst obj5 = obj3; // copy constructor
+    BOOST_CHECK(obj5);
+    BOOST_CHECK(obj5 == obj3);
+
+    Dst obj6; obj6 = obj4; // assignment
+    BOOST_CHECK(obj6);
+    BOOST_CHECK(!(obj6 != obj4));
+
+    Dst obj7 = move(obj3); // move constructor
+    BOOST_CHECK(obj7);
+    BOOST_CHECK(!obj3);
+
+    Dst obj8; obj8 = move(obj4); // move assignment
+    BOOST_CHECK(obj8);
+    BOOST_CHECK(!obj4);
+}
+
+
+struct ITestMoveInt1
+{
+    virtual void foo() = 0;
+};
+struct ITestMoveInt2 : public ITestMoveInt1
+{
+    virtual void bar() = 0;
+};
+struct CTestMoveInt1 : public CObject, public ITestMoveInt1
+{
+    virtual void foo() override {}
+};
+struct CTestMoveInt2 : public CObject, public ITestMoveInt2
+{
+    virtual void foo() override {}
+    virtual void bar() override {}
+};
+
+BOOST_AUTO_TEST_CASE(TestCRefMove)
+{
+    if ( 1 ) {
+        s_TestCopyMove<CRef<CObjectFor<int>>, CRef<CObjectFor<int>>>();
+        s_TestCopyMove<CRef<CObjectFor<int>>, CConstRef<CObjectFor<int>>>();
+        s_TestCopyMove<CConstRef<CObjectFor<int>>, CConstRef<CObjectFor<int>>>();
+        s_TestCopyMove<CRef<CObjectFor<int>>, CRef<CObject>>();
+        s_TestCopyMove<CRef<CObjectFor<int>>, CConstRef<CObject>>();
+        s_TestCopyMove<CConstRef<CObjectFor<int>>, CConstRef<CObject>>();
+    }
+
+    if ( 1 ) {
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CIRef<ITestMoveInt2>, CTestMoveInt2>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt2>, CTestMoveInt2>();
+        s_TestCopyMove<CConstIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt2>, CTestMoveInt2>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CIRef<ITestMoveInt1>, CTestMoveInt2>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt1>, CTestMoveInt2>();
+        s_TestCopyMove<CConstIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt1>, CTestMoveInt2>();
+    }
+
+    // these should not compile
+    //CRef<CObjectFor<int>> t1 = obj4;
+    //CRef<CObjectFor<int>> t2; t2 = obj4;
+    //CRef<CObjectFor<int>> t3 = std::move(obj4);
+    //CRef<CObjectFor<int>> t4; t4 = std::move(obj4);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
 {
     const char test_string[] = "Quick brown fox jumps over the lazy dog";
