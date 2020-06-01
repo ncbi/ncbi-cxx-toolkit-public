@@ -675,9 +675,8 @@ public:
     CRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_LockFromMoveConstructor(ref.m_Data.first());
+            ref.m_Data.second() = 0;
         }
 
     /// Move constructor from an existing CRef object of derived type
@@ -686,9 +685,8 @@ public:
     CRef(CRef<TDerived, Locker>&& ref)
         : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
-            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_LockFromMoveConstructor(ref.m_Data.first());
+            ref.m_Data.second() = 0;
         }
 
     /// Destructor.
@@ -927,9 +925,8 @@ public:
                 return *this;
             }
 #endif
-            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
+            ref.m_Data.second() = 0;
             return *this;
         }
 
@@ -938,9 +935,8 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(CRef<TDerived, Locker>&& ref)
         {
-            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
+            ref.m_Data.second() = 0;
             return *this;
         }
 
@@ -1209,14 +1205,11 @@ private:
             }
         }
     // lock after move construction from another ref
-    // return non-null if source pointer needs to be reset to null
-    TObjectType* x_LockFromMoveConstructor(const Locker& src_locker)
+    void x_LockFromMoveConstructor(const Locker& src_locker)
         {
-            TObjectType* ptr = m_Data.second();
-            if ( ptr ) {
+            if ( TObjectType* ptr = m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, src_locker);
             }
-            return ptr;
         }
     // assign from another ref
     void x_AssignFromRef(TObjectType* newPtr)
@@ -1231,8 +1224,7 @@ private:
             }
         }
     // move-assign from another ref
-    // return non-null if source pointer needs to be reset to null
-    TObjectType* x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
+    void x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr ) {
@@ -1242,7 +1234,6 @@ private:
             if ( oldPtr ) {
                 m_Data.first().Unlock(oldPtr);
             }
-            return newPtr;
         }
 
     TObjectType* AtomicSwap(TObjectType* ptr)
@@ -1331,9 +1322,8 @@ public:
     CConstRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_LockFromMoveConstructor(ref.m_Data.first());
+            ref.m_Data.second() = 0;
         }
 
     /// Move constructor from an existing CConstRef object of derived type
@@ -1342,9 +1332,8 @@ public:
     CConstRef(CConstRef<TDerived, Locker>&& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_LockFromMoveConstructor(ref.m_Data.first());
+            ref.m_Data.second() = 0;
         }
 
     /// Constructor from an existing CRef object of derived type
@@ -1362,9 +1351,8 @@ public:
     CConstRef(CRef<TDerived, Locker>&& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_LockFromMoveConstructor(ref.m_Data.first());
+            ref.m_Data.second() = 0;
         }
 
     /// Destructor.
@@ -1604,9 +1592,8 @@ public:
                 return *this;
             }
 #endif
-            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
+            ref.m_Data.second() = 0;
             return *this;
         }
 
@@ -1615,9 +1602,8 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(CConstRef<TDerived, Locker>&& ref)
         {
-            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
+            ref.m_Data.second() = 0;
             return *this;
         }
 
@@ -1635,9 +1621,8 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(CRef<TDerived, Locker>&& ref)
         {
-            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
-                ref.m_Data.second() = 0;
-            }
+            x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
+            ref.m_Data.second() = 0;
             return *this;
         }
 
@@ -1760,14 +1745,11 @@ private:
             }
         }
     // lock after move construction from another ref
-    // return non-null if source pointer needs to be reset to null
-    TObjectType* x_LockFromMoveConstructor(const Locker& src_locker)
+    void x_LockFromMoveConstructor(const Locker& src_locker)
         {
-            TObjectType* ptr = m_Data.second();
-            if ( ptr ) {
+            if ( TObjectType* ptr = m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, src_locker);
             }
-            return ptr;
         }
     // assign from another ref
     void x_AssignFromRef(TObjectType* newPtr)
@@ -1782,8 +1764,7 @@ private:
             }
         }
     // move-assign from another ref
-    // return non-null if source pointer needs to be reset to null
-    TObjectType* x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
+    void x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr ) {
@@ -1793,7 +1774,6 @@ private:
             if ( oldPtr ) {
                 m_Data.first().Unlock(oldPtr);
             }
-            return newPtr;
         }
 
     TObjectType* AtomicSwap(TObjectType* ptr)
