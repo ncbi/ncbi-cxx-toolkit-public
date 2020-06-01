@@ -36,6 +36,7 @@
 
 
 #include <corelib/version_api.hpp>
+#include <common/ncbi_build_info.h>
 
 
 
@@ -50,6 +51,72 @@ BEGIN_NCBI_SCOPE
 #ifndef NCBI_BUILD_TIME
 # define NCBI_BUILD_TIME __DATE__ " " __TIME__
 #endif
+
+#ifdef NCBI_BUILD_TAG
+#  define NCBI_BUILD_TAG_PROXY  NCBI_AS_STRING(NCBI_BUILD_TAG)
+#else
+#  define NCBI_BUILD_TAG_PROXY  ""
+#endif
+
+// Cope with potentially having an older ncbi_build_info.h
+#ifndef NCBI_TEAMCITY_PROJECT_NAME_SBUILDINFO
+#  define NCBI_TEAMCITY_PROJECT_NAME_SBUILDINFO \
+    .Extra(SBuildInfo::eTeamCityProjectName, NCBI_TEAMCITY_PROJECT_NAME_PROXY)
+#  define NCBI_TEAMCITY_BUILDCONF_NAME_SBUILDINFO \
+    .Extra(SBuildInfo::eTeamCityBuildConf, NCBI_TEAMCITY_BUILDCONF_NAME_PROXY)
+#  define NCBI_TEAMCITY_BUILD_NUMBER_SBUILDINFO \
+    .Extra(SBuildInfo::eTeamCityBuildNumber, NCBI_TEAMCITY_BUILD_NUMBER_PROXY)
+#  define NCBI_SUBVERSION_REVISION_SBUILDINFO \
+    .Extra(SBuildInfo::eSubversionRevision, NCBI_SUBVERSION_REVISION_PROXY)
+#  define NCBI_SC_VERSION_SBUILDINFO \
+    .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY)
+#endif
+
+// Cope with potentially having an older ncbi_source_ver.h
+#ifndef NCBI_SRCTREE_VER_SBUILDINFO
+#  ifdef NCBI_SRCTREE_NAME_PROXY
+#    define NCBI_SRCTREE_VER_SBUILDINFO \
+    .Extra(NCBI_SRCTREE_NAME_PROXY, NCBI_SRCTREE_VER_PROXY)
+#  else
+#    define NCBI_SRCTREE_VER_SBUILDINFO /* empty */
+#  endif
+#endif
+
+#ifdef NCBI_APP_BUILT_AS
+#  define NCBI_BUILT_AS_SBUILDINFO \
+    .Extra(SBuildInfo::eBuiltAs, NCBI_AS_STRING(NCBI_APP_BUILT_AS))
+#else
+#  define NCBI_BUILT_AS_SBUILDINFO /* empty */
+#endif
+
+#ifdef NCBI_TEAMCITY_BUILD_ID
+#  define NCBI_BUILD_ID NCBI_TEAMCITY_BUILD_ID
+#elif defined(NCBI_BUILD_SESSION_ID)
+#  define NCBI_BUILD_ID NCBI_AS_STRING(NCBI_BUILD_SESSION_ID)
+#endif
+#ifdef NCBI_BUILD_ID
+#  define NCBI_BUILD_ID_SBUILDINFO .Extra(SBuildInfo::eBuildID, NCBI_BUILD_ID)
+#else
+#  define NCBI_BUILD_ID_SBUILDINFO /* empty */
+#endif
+
+#define NCBI_SBUILDINFO_DEFAULT_IMPL() \
+    NCBI_SBUILDINFO_DEFAULT_INSTANCE() \
+        NCBI_TEAMCITY_PROJECT_NAME_SBUILDINFO \
+        NCBI_TEAMCITY_BUILDCONF_NAME_SBUILDINFO \
+        NCBI_TEAMCITY_BUILD_NUMBER_SBUILDINFO \
+        NCBI_BUILD_ID_SBUILDINFO \
+        NCBI_SUBVERSION_REVISION_SBUILDINFO \
+        NCBI_SC_VERSION_SBUILDINFO \
+        NCBI_SRCTREE_VER_SBUILDINFO \
+        NCBI_BUILT_AS_SBUILDINFO
+
+#if defined(NCBI_USE_PCH) && !defined(NCBI_TEAMCITY_BUILD_NUMBER)
+#define NCBI_SBUILDINFO_DEFAULT() SBuildInfo()
+#else
+#define NCBI_SBUILDINFO_DEFAULT() NCBI_SBUILDINFO_DEFAULT_IMPL()
+#endif
+#define NCBI_APP_SBUILDINFO_DEFAULT() NCBI_SBUILDINFO_DEFAULT_IMPL()
 
 #ifdef NCBI_SBUILDINFO_DEFAULT_INSTANCE
 # undef NCBI_SBUILDINFO_DEFAULT_INSTANCE

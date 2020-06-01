@@ -35,6 +35,7 @@
 #include <common/ncbi_source_ver.h>
 #include <common/ncbi_package_ver.h>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/version.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/syslog.hpp>
@@ -2138,7 +2139,7 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
     CNcbiApplication* ins = CNcbiApplication::Instance();
     if (ins) {
         Print("ncbi_app_path", ins->GetProgramExecutablePath());
-        const CVersion& ver = ins->GetFullVersion();
+        const CVersionAPI& ver = ins->GetFullVersion();
         if (!ver.GetBuildInfo().date.empty()) {
             Print("ncbi_app_build_date", ver.GetBuildInfo().date);
         }
@@ -2186,7 +2187,7 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnRequest(void)
 {
     CNcbiApplication* ins = CNcbiApplication::Instance();
     if (ins) {
-        const CVersion& ver = ins->GetFullVersion();
+        const CVersionAPI& ver = ins->GetFullVersion();
         const CVersionInfo& vi = ver.GetVersionInfo();
 //#if defined (NCBI_SC_VERSION) && NCBI_SC_VERSION <= 21
 #if 1

@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/version_api.hpp>
+#include <corelib/version.hpp>
 #include <common/ncbi_package_ver.h>
 #include <common/ncbi_source_ver.h>
 

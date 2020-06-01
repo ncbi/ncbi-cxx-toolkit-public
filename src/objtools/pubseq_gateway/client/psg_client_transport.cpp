@@ -53,6 +53,7 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
+#include <corelib/version.hpp>
 #include <corelib/request_status.hpp>
 
 #include "psg_client_transport.hpp"

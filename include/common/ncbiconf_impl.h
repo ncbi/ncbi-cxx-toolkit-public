@@ -41,8 +41,6 @@
 #  error "The header can be used from <ncbiconf.h> only."
 #endif /*!FORWARDING_NCBICONF_H*/
 
-#include <common/ncbi_build_info.h>
-
 
 /** @addtogroup Portability
  *
