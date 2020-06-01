@@ -354,7 +354,6 @@ CPSGS_ResolveBase::x_ResolveSecondaryOSLTInCache(
 EPSGS_CacheLookupResult
 CPSGS_ResolveBase::x_ResolveAsIsInCache(
                                 SBioseqResolution &  bioseq_resolution,
-                                SResolveInputSeqIdError &  err,
                                 bool  need_as_is)
 {
     EPSGS_CacheLookupResult     cache_lookup_result = ePSGS_NotFound;
@@ -393,8 +392,8 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(
 
     if (cache_lookup_result == ePSGS_Failure) {
         bioseq_resolution.Reset();
-        err.m_ErrorMessage = "Cache lookup failure";
-        err.m_ErrorCode = CRequestStatus::e500_InternalServerError;
+        bioseq_resolution.m_PostponedError.m_ErrorMessage = "Cache lookup failure";
+        bioseq_resolution.m_PostponedError.m_ErrorCode = CRequestStatus::e500_InternalServerError;
     }
 
     return cache_lookup_result;
@@ -407,7 +406,6 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
                                 int16_t  effective_seq_id_type,
                                 const list<string> &  secondary_id_list,
                                 const string &  primary_id,
-                                SResolveInputSeqIdError &  err,
                                 SBioseqResolution &  bioseq_resolution)
 {
     const CTextseq_id *  text_seq_id = parsed_seq_id.GetTextseq_Id();
@@ -447,7 +445,7 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
     NStr::ToUpper(upper_seq_id);
     bool        need_as_is = primary_id != upper_seq_id;
     auto        cache_lookup_result =
-                    x_ResolveAsIsInCache(bioseq_resolution, err, need_as_is);
+                    x_ResolveAsIsInCache(bioseq_resolution, need_as_is);
     if (cache_lookup_result == ePSGS_Found)
         return;
     if (cache_lookup_result == ePSGS_Failure)
@@ -456,15 +454,14 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
     bioseq_resolution.Reset();
 
     if (cache_failure) {
-        err.m_ErrorMessage = "Cache lookup failure";
-        err.m_ErrorCode = CRequestStatus::e500_InternalServerError;
+        bioseq_resolution.m_PostponedError.m_ErrorMessage = "Cache lookup failure";
+        bioseq_resolution.m_PostponedError.m_ErrorCode = CRequestStatus::e500_InternalServerError;
     }
 }
 
 
 void
-CPSGS_ResolveBase::ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
-                                     SResolveInputSeqIdError &  err)
+CPSGS_ResolveBase::ResolveInputSeqId(SBioseqResolution &  bioseq_resolution)
 {
     auto            app = CPubseqGatewayApp::GetInstance();
     string          parse_err_msg;
@@ -488,9 +485,9 @@ CPSGS_ResolveBase::ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
         if (composed_ok)
             x_ResolveViaComposeOSLTInCache(oslt_seq_id, effective_seq_id_type,
                                            secondary_id_list, primary_id,
-                                           err, bioseq_resolution);
+                                           bioseq_resolution);
         else
-            x_ResolveAsIsInCache(bioseq_resolution, err);
+            x_ResolveAsIsInCache(bioseq_resolution);
 
         if (bioseq_resolution.IsValid()) {
             // Special case for the seq_id like gi|156232
@@ -542,12 +539,11 @@ CPSGS_ResolveBase::ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
         // Need to initiate async DB resolution
 
         // Memorize an error if there was one
-        if (!parse_err_msg.empty() && !err.HasError()) {
-            err.m_ErrorMessage = parse_err_msg;
-            err.m_ErrorCode = CRequestStatus::e404_NotFound;
+        if (! parse_err_msg.empty() &&
+            ! bioseq_resolution.m_PostponedError.HasError()) {
+            bioseq_resolution.m_PostponedError.m_ErrorMessage = parse_err_msg;
+            bioseq_resolution.m_PostponedError.m_ErrorCode = CRequestStatus::e404_NotFound;
         }
-
-        bioseq_resolution.m_PostponedError = move(err);
 
         // Async request
         m_AsyncStarted = true;
@@ -569,9 +565,11 @@ CPSGS_ResolveBase::ResolveInputSeqId(SBioseqResolution &  bioseq_resolution,
     // - LMDB error
     app->GetRequestCounters().IncNotResolved();
 
-    if (err.HasError()) {
-        x_OnSeqIdResolveError(err.m_ErrorCode, ePSGS_UnresolvedSeqId,
-                              eDiag_Error, err.m_ErrorMessage);
+    if (bioseq_resolution.m_PostponedError.HasError()) {
+        x_OnSeqIdResolveError(bioseq_resolution.m_PostponedError.m_ErrorCode,
+                              ePSGS_UnresolvedSeqId,
+                              eDiag_Error,
+                              bioseq_resolution.m_PostponedError.m_ErrorMessage);
         return;
     }
 

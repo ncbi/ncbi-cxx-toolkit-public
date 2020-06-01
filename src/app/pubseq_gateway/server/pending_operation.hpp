@@ -239,7 +239,7 @@ public:
 private:
     // Incoming request
     shared_ptr<CPSGS_Request>               m_UserRequest;
-    // Outcomin reply
+    // Outcoming reply
     shared_ptr<CPSGS_Reply>                 m_Reply;
 
     unique_ptr<CPSGId2Info>                 m_Id2Info;

@@ -83,12 +83,11 @@ CPSGS_ResolveProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 
 void CPSGS_ResolveProcessor::Process(void)
 {
-    SResolveInputSeqIdError     err;
     SBioseqResolution           bioseq_resolution(
                                         m_ResolveRequest->m_StartTimestamp);
 
     // In both cases: sync or async resolution --> a callback will be called
-    ResolveInputSeqId(bioseq_resolution, err);
+    ResolveInputSeqId(bioseq_resolution);
 }
 
 
