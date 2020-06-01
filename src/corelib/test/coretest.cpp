@@ -1013,7 +1013,9 @@ void s_TestCopyMove()
                  !std::is_convertible<Dst&&, Src>::value));
     
     Src obj0(new Obj());
-    BOOST_CHECK(obj0);
+    BOOST_REQUIRE(obj0);
+    BOOST_REQUIRE(dynamic_cast<const CObject*>(obj0.GetPointerOrNull()));
+    BOOST_CHECK(dynamic_cast<const CObject*>(obj0.GetPointerOrNull())->ReferencedOnlyOnce());
     
     // same type
     Src obj1 = obj0; // copy constructor
@@ -1048,6 +1050,15 @@ void s_TestCopyMove()
     Dst obj8; obj8 = move(obj4); // move assignment
     BOOST_CHECK(obj8);
     BOOST_CHECK(!obj4);
+
+    obj5 = null;
+    obj6 = null;
+    obj7 = null;
+    obj8 = null;
+
+    BOOST_REQUIRE(obj0);
+    BOOST_REQUIRE(dynamic_cast<const CObject*>(obj0.GetPointerOrNull()));
+    BOOST_CHECK(dynamic_cast<const CObject*>(obj0.GetPointerOrNull())->ReferencedOnlyOnce());
 }
 
 
