@@ -611,7 +611,10 @@ public:
 /// Define a template class that stores a pointer to an object and defines
 /// methods for referencing that object.
 
-template<class C, class Locker = typename CLockerTraits<C>::TLockerType>
+template<class C, class Locker = typename CLockerTraits<C>::TLockerType> class CRef;
+template<class C, class Locker = typename CLockerTraits<C>::TLockerType> class CConstRef;
+
+template<class C, class Locker>
 class CRef {
 public:
     typedef C element_type;             ///< Define alias element_type
@@ -623,6 +626,8 @@ public:
     template<class T>
     using enable_if_derived =
         typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
+    template<class TDerived, class TLocker> friend class CRef;
+    template<class TDerived, class TLocker> friend class CConstRef;
     
     /// Constructor for null pointer.
     inline
@@ -640,27 +645,21 @@ public:
     explicit CRef(TObjectType* ptr)
         : m_Data(locker_type(), ptr)
         {
-            if ( ptr ) {
-                m_Data.first().Lock(ptr);
-            }
+            x_LockFromPtr();
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     CRef(TObjectType* ptr, const locker_type& locker_value)
         : m_Data(locker_value, ptr)
         {
-            if ( ptr ) {
-                m_Data.first().Lock(ptr);
-            }
+            x_LockFromPtr();
         }
 
     /// Copy constructor from an existing CRef object
     CRef(const TThisType& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-            }
+            x_LockFromRef();
         }
 
     /// Copy constructor from an existing CRef object of derived type
@@ -669,17 +668,14 @@ public:
     CRef(const CRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-            }
+            x_LockFromRef();
         }
 
     /// Move constructor from an existing CRef object
     CRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().TransferLock(ptr, ref.m_Data.first());
+            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
                 ref.m_Data.second() = 0;
             }
         }
@@ -690,10 +686,8 @@ public:
     CRef(CRef<TDerived, Locker>&& ref)
         : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
-            // we cannot use internals of CRef of derived type
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-                ref.ReleaseOrNull();
+            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
+                ref.m_Data.second() = 0;
             }
         }
 
@@ -910,7 +904,7 @@ public:
     /// Assignment operator for references.
     TThisType& operator=(const TThisType& ref)
         {
-            x_Relock(ref.GetNCPointerOrNull());
+            x_AssignFromRef(ref.m_Data.second());
             return *this;
         }
 
@@ -919,8 +913,7 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CRef<TDerived, Locker>& ref)
         {
-            // we cannot use internals of CRef of derived type
-            x_Relock(ref.GetNCPointerOrNull());
+            x_AssignFromRef(ref.m_Data.second());
             return *this;
         }
 
@@ -934,15 +927,8 @@ public:
                 return *this;
             }
 #endif
-            TObjectType* oldPtr = m_Data.second();
-            TObjectType* newPtr = ref.m_Data.second();
-            if ( newPtr ) {
-                m_Data.first().TransferLock(newPtr, ref.m_Data.first());
+            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
                 ref.m_Data.second() = 0;
-            }
-            m_Data.second() = newPtr;
-            if ( oldPtr ) {
-                m_Data.first().Unlock(oldPtr);
             }
             return *this;
         }
@@ -952,9 +938,8 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(CRef<TDerived, Locker>&& ref)
         {
-            // we cannot use internals of CRef of derived type
-            if ( x_Relock(ref.GetNCPointerOrNull()) ) {
-                ref.ReleaseOrNull();
+            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
+                ref.m_Data.second() = 0;
             }
             return *this;
         }
@@ -1209,11 +1194,49 @@ public:
         }
 
 private:
-    TObjectType* x_Relock(TObjectType* newPtr)
+    // lock after construction from ptr
+    void x_LockFromPtr()
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Lock(ptr);
+            }
+        }
+    // lock after construction from another ref
+    void x_LockFromRef()
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
+            }
+        }
+    // lock after move construction from another ref
+    // return non-null if source pointer needs to be reset to null
+    TObjectType* x_LockFromMoveConstructor(const Locker& src_locker)
+        {
+            TObjectType* ptr = m_Data.second();
+            if ( ptr ) {
+                m_Data.first().TransferLock(ptr, src_locker);
+            }
+            return ptr;
+        }
+    // assign from another ref
+    void x_AssignFromRef(TObjectType* newPtr)
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr ) {
                 m_Data.first().Relock(newPtr);
+            }
+            m_Data.second() = newPtr;
+            if ( oldPtr ) {
+                m_Data.first().Unlock(oldPtr);
+            }
+        }
+    // move-assign from another ref
+    // return non-null if source pointer needs to be reset to null
+    TObjectType* x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
+        {
+            TObjectType* oldPtr = m_Data.second();
+            if ( newPtr ) {
+                m_Data.first().TransferLock(newPtr, src_locker);
             }
             m_Data.second() = newPtr;
             if ( oldPtr ) {
@@ -1248,7 +1271,7 @@ private:
 /// Define a template class that stores a pointer to an object and defines
 /// methods for constant referencing of object. 
 
-template<class C, class Locker = CObjectCounterLocker>
+template<class C, class Locker>
 class CConstRef {
 public:
     typedef C element_type;                 ///< Define alias element_type
@@ -1260,6 +1283,7 @@ public:
     template<class T>
     using enable_if_derived =
         typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
+    template<class TDerived, class TLocker> friend class CConstRef;
 
     /// Constructor for null pointer.
     inline
@@ -1277,27 +1301,21 @@ public:
     explicit CConstRef(TObjectType* ptr)
         : m_Data(locker_type(), ptr)
         {
-            if ( ptr ) {
-                m_Data.first().Lock(ptr);
-            }
+            x_LockFromPtr();
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     CConstRef(TObjectType* ptr, const locker_type& locker_value)
         : m_Data(locker_value, ptr)
         {
-            if ( ptr ) {
-                m_Data.first().Lock(ptr);
-            }
+            x_LockFromPtr();
         }
 
     /// Constructor from an existing CConstRef object
     CConstRef(const TThisType& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-            }
+            x_LockFromRef();
         }
 
     /// Constructor from an existing CConstRef object of derived type
@@ -1306,17 +1324,14 @@ public:
     CConstRef(const CConstRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-            }
+            x_LockFromRef();
         }
 
     /// Move constructor from an existing CConstRef object
     CConstRef(TThisType&& ref)
         : m_Data(ref.m_Data)
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().TransferLock(ptr, ref.m_Data.first());
+            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
                 ref.m_Data.second() = 0;
             }
         }
@@ -1327,10 +1342,8 @@ public:
     CConstRef(CConstRef<TDerived, Locker>&& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            // we cannot use internals of CRef of derived type
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-                ref.ReleaseOrNull();
+            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
+                ref.m_Data.second() = 0;
             }
         }
 
@@ -1340,9 +1353,7 @@ public:
     CConstRef(const CRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-            }
+            x_LockFromRef();
         }
 
     /// Move constructor from an existing CRef object of derived type
@@ -1351,9 +1362,8 @@ public:
     CConstRef(CRef<TDerived, Locker>&& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
-            if ( TObjectType* ptr = m_Data.second() ) {
-                m_Data.first().Relock(ptr);
-                ref.ReleaseOrNull();
+            if ( x_LockFromMoveConstructor(ref.m_Data.first()) ) {
+                ref.m_Data.second() = 0;
             }
         }
 
@@ -1570,7 +1580,7 @@ public:
     /// Assignment operator for const references.
     TThisType& operator=(const TThisType& ref)
         {
-            x_Relock(ref.GetPointerOrNull());
+            x_AssignFromRef(ref.m_Data.second());
             return *this;
         }
 
@@ -1580,7 +1590,7 @@ public:
     TThisType& operator=(const CConstRef<TDerived, Locker>& ref)
         {
             // we cannot use internals of CRef of derived type
-            x_Relock(ref.GetPointerOrNull());
+            x_AssignFromRef(ref.m_Data.second());
             return *this;
         }
 
@@ -1594,15 +1604,8 @@ public:
                 return *this;
             }
 #endif
-            TObjectType* oldPtr = m_Data.second();
-            TObjectType* newPtr = ref.m_Data.second();
-            if ( newPtr ) {
-                m_Data.first().TransferLock(newPtr, ref.m_Data.first());
+            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
                 ref.m_Data.second() = 0;
-            }
-            m_Data.second() = newPtr;
-            if ( oldPtr ) {
-                m_Data.first().Unlock(oldPtr);
             }
             return *this;
         }
@@ -1612,9 +1615,8 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(CConstRef<TDerived, Locker>&& ref)
         {
-            // we cannot use internals of CRef of derived type
-            if ( x_Relock(ref.GetPointerOrNull()) ) {
-                ref.ReleaseOrNull();
+            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
+                ref.m_Data.second() = 0;
             }
             return *this;
         }
@@ -1624,7 +1626,7 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(const CRef<TDerived, Locker>& ref)
         {
-            x_Relock(ref.GetPointerOrNull());
+            x_AssignFromRef(ref.m_Data.second());
             return *this;
         }
 
@@ -1633,8 +1635,8 @@ public:
              class = typename enable_if_derived<TDerived>::type>
     TThisType& operator=(CRef<TDerived, Locker>&& ref)
         {
-            if ( x_Relock(ref.GetPointerOrNull()) ) {
-                ref.ReleaseOrNull();
+            if ( x_MoveAssign(ref.m_Data.first(), ref.m_Data.second()) ) {
+                ref.m_Data.second() = 0;
             }
             return *this;
         }
@@ -1743,11 +1745,49 @@ public:
         }
 
 private:
-    TObjectType* x_Relock(TObjectType* newPtr)
+    // lock after construction from ptr
+    void x_LockFromPtr()
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Lock(ptr);
+            }
+        }
+    // lock after construction from another ref
+    void x_LockFromRef()
+        {
+            if ( TObjectType* ptr = m_Data.second() ) {
+                m_Data.first().Relock(ptr);
+            }
+        }
+    // lock after move construction from another ref
+    // return non-null if source pointer needs to be reset to null
+    TObjectType* x_LockFromMoveConstructor(const Locker& src_locker)
+        {
+            TObjectType* ptr = m_Data.second();
+            if ( ptr ) {
+                m_Data.first().TransferLock(ptr, src_locker);
+            }
+            return ptr;
+        }
+    // assign from another ref
+    void x_AssignFromRef(TObjectType* newPtr)
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr ) {
                 m_Data.first().Relock(newPtr);
+            }
+            m_Data.second() = newPtr;
+            if ( oldPtr ) {
+                m_Data.first().Unlock(oldPtr);
+            }
+        }
+    // move-assign from another ref
+    // return non-null if source pointer needs to be reset to null
+    TObjectType* x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
+        {
+            TObjectType* oldPtr = m_Data.second();
+            if ( newPtr ) {
+                m_Data.first().TransferLock(newPtr, src_locker);
             }
             m_Data.second() = newPtr;
             if ( oldPtr ) {
