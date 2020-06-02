@@ -56,7 +56,7 @@ if test -z "$1"; then
         app/lds)            echo "  app/lds             an application that uses local data store";;
         app/multicmd)       echo "  app/multicmd        a simple command-based application";;
         app/netcache)       echo "  app/netcache        an application that uses NetCache";;
-        app/netschedule)    echo "  app/netschedule     an NCBI GRID ^(NetSchedule^) application";;
+        app/netschedule)    echo "  app/netschedule     an NCBI GRID (NetSchedule) application";;
         app/objects)        echo "  app/objects         an application that uses ASN.1 objects";;
         app/objmgr)         echo "  app/objmgr          an application that uses Object Manager";;
         app/sdbapi)         echo "  app/sdbapi          a Simple-DBAPI application";;
