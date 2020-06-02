@@ -9,7 +9,7 @@
 APP = asn2flat
 SRC = asn2flat
 
-CDD_LIB = ncbi_xloader_cdd cdd_access ncbi_id2proc_cdd
+CDD_LIB = ncbi_xloader_cdd cdd_access
 SNP_LIB = $(ncbi_xloader_snp) dbsnp_ptis grpc_integration
 
 LIB  = $(OBJREAD_LIBS) $(XFORMAT_LIBS) valerr\
