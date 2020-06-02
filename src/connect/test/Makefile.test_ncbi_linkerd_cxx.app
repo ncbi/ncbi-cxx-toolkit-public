@@ -13,4 +13,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD =
 CHECK_TIMEOUT = 600
 
-WATCHERS = mcelhany
+WATCHERS = lavr

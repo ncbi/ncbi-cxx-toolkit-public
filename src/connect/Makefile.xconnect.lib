@@ -17,4 +17,4 @@ LIBS     = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 PROJ_TAG = core
 
-WATCHERS = lavr mcelhany
+WATCHERS = lavr

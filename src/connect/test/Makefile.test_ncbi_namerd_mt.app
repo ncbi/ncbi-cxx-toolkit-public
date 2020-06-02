@@ -11,4 +11,4 @@ CHECK_CMD = test_ncbi_namerd_mt.sh
 CHECK_COPY = test_ncbi_namerd_mt.sh test_ncbi_namerd_mt.ini
 CHECK_TIMEOUT = 600
 
-WATCHERS = lavr mcelhany
+WATCHERS = lavr

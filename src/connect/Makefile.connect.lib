@@ -20,4 +20,4 @@ LDFLAGS  = $(ORIG_LDFLAGS) $(AS_NEEDED)
 
 PROJ_TAG = core mod_loadinfo mod_caf
 
-WATCHERS = lavr mcelhany
+WATCHERS = lavr

@@ -21,4 +21,4 @@ CHECK_CMD = dbapi_svc_test.bash NAMERD NOSYBASE /CHECK_NAME=dbapi_svc_test_namer
 CHECK_CMD = dbapi_svc_test.bash NAMERD SYBASE   /CHECK_NAME=dbapi_svc_test_namerd_syb
 CHECK_TIMEOUT = 600
 
-WATCHERS = ucko mcelhany
+WATCHERS = ucko lavr

@@ -11,4 +11,4 @@ CHECK_CMD = test_ncbi_service_cxx_mt.sh
 CHECK_COPY = test_ncbi_service_cxx_mt.sh test_ncbi_service_cxx_mt.ini
 CHECK_TIMEOUT = 60
 
-WATCHERS = lavr mcelhany
+WATCHERS = lavr

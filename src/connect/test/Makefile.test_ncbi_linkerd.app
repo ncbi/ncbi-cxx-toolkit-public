@@ -14,4 +14,4 @@ CHECK_CMD = test_ncbi_linkerd.sh
 CHECK_COPY = test_ncbi_linkerd.sh ../../check/ncbi_test_data
 CHECK_TIMEOUT = 30
 
-WATCHERS = lavr mcelhany
+WATCHERS = lavr
