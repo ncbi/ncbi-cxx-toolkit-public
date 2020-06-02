@@ -12,7 +12,7 @@ cd "$initial_dir"
 tree_root=`pwd`
 
 build_root=$NCBI
-build_dir=cxx.cmake.stable
+build_dir=c++.cmake.stable
 
 repository="https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++"
 rep_inc="include"
