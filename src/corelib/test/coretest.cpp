@@ -986,7 +986,9 @@ BOOST_AUTO_TEST_CASE(TestObjectSizes)
 /////////////////////////////////////////////////////////////////////////////
 
 
-template<class Src, class Dst, class Obj = typename Src::TObjectType>
+template<class Src, class Dst,
+         class SrcObj = typename Src::TObjectType,
+         class DstObj = typename Dst::TObjectType>
 void s_TestCopyMove()
 {
     NcbiCout << "TestCopyMove: "<<typeid(Src).name()<<" -> "<<typeid(Dst).name()
@@ -1012,49 +1014,66 @@ void s_TestCopyMove()
     BOOST_CHECK((std::is_same<Src, Dst>::value ||
                  !std::is_convertible<Dst&&, Src>::value));
     
-    Src obj0(new Obj());
+    Src obj0(new SrcObj());
     BOOST_REQUIRE(obj0);
     BOOST_REQUIRE(dynamic_cast<const CObject*>(obj0.GetPointerOrNull()));
     BOOST_CHECK(dynamic_cast<const CObject*>(obj0.GetPointerOrNull())->ReferencedOnlyOnce());
     
     // same type
-    Src obj1 = obj0; // copy constructor
+    Src obj1 = obj0; // copy constructor !empty
     BOOST_CHECK(obj1);
     BOOST_CHECK(obj1 == obj0);
     
-    Src obj2; obj2 = obj0; // assignment
+    Src obj2; obj2 = obj0; // assignment !empty -> empty
     BOOST_CHECK(obj2);
     BOOST_CHECK(!(obj2 != obj0));
 
-    Src obj3 = move(obj1); // move constructor
+    Src obj3 = move(obj1); // move constructor !empty
     BOOST_CHECK(obj3);
     BOOST_CHECK(!obj1);
 
-    Src obj4; obj4 = move(obj2); // move assignment
+    Src obj4; obj4 = move(obj2); // move assignment !empty -> empty
     BOOST_CHECK(obj4);
     BOOST_CHECK(!obj2);
 
     // different types
-    Dst obj5 = obj3; // copy constructor
+    Dst obj5 = obj3; // copy constructor !empty
     BOOST_CHECK(obj5);
     BOOST_CHECK(obj5 == obj3);
 
-    Dst obj6; obj6 = obj4; // assignment
+    Dst obj6; obj6 = obj4; // assignment !empty -> empty
     BOOST_CHECK(obj6);
     BOOST_CHECK(!(obj6 != obj4));
 
-    Dst obj7 = move(obj3); // move constructor
+    Dst obj7 = move(obj3); // move constructor !empty
     BOOST_CHECK(obj7);
     BOOST_CHECK(!obj3);
 
-    Dst obj8; obj8 = move(obj4); // move assignment
+    Dst obj8; obj8 = move(obj4); // move assignment !empty -> empty
     BOOST_CHECK(obj8);
     BOOST_CHECK(!obj4);
 
-    obj5 = null;
-    obj6 = null;
-    obj7 = null;
-    obj8 = null;
+    obj6 = obj5; // assignment !empty -> !empty
+    BOOST_CHECK(obj5);
+    BOOST_CHECK(obj6);
+    
+    obj6 = move(obj5); // move assignment !empty -> !empty
+    BOOST_CHECK(!obj5);
+    BOOST_CHECK(obj6);
+
+    obj6 = obj3; // assignment empty -> !empty
+    BOOST_CHECK(!obj6);
+
+    obj8 = obj7; // assignment !empty -> !empty
+    BOOST_CHECK(obj7);
+    BOOST_CHECK(obj8);
+    
+    obj8 = move(obj7); // move assignment !empty -> !empty
+    BOOST_CHECK(!obj7);
+    BOOST_CHECK(obj8);
+
+    obj8 = move(Src()); // move assignment empty -> !empty
+    BOOST_CHECK(!obj8);
 
     BOOST_REQUIRE(obj0);
     BOOST_REQUIRE(dynamic_cast<const CObject*>(obj0.GetPointerOrNull()));
@@ -1064,41 +1083,64 @@ void s_TestCopyMove()
 
 struct ITestMoveInt1
 {
+    ITestMoveInt1() {}
+    virtual ~ITestMoveInt1() {}
+    
+    ITestMoveInt1(const ITestMoveInt1&) = delete;
+    ITestMoveInt1(ITestMoveInt1&&) = delete;
+    void operator=(const ITestMoveInt1&) = delete;
+    void operator=(ITestMoveInt1&&) = delete;
+    
     virtual void foo() = 0;
 };
 struct ITestMoveInt2 : public ITestMoveInt1
 {
+    virtual ~ITestMoveInt2() override {}
+    
     virtual void bar() = 0;
 };
+
 struct CTestMoveInt1 : public CObject, public ITestMoveInt1
 {
+    static int counter;
+    CTestMoveInt1() { ++counter; }
+    virtual ~CTestMoveInt1() { --counter; }
+    
     virtual void foo() override {}
 };
+int CTestMoveInt1::counter;
 struct CTestMoveInt2 : public CObject, public ITestMoveInt2
 {
+    static int counter;
+    CTestMoveInt2() { ++counter; }
+    virtual ~CTestMoveInt2() { --counter; }
+    
     virtual void foo() override {}
     virtual void bar() override {}
 };
+int CTestMoveInt2::counter;
 
 BOOST_AUTO_TEST_CASE(TestCRefMove)
 {
     if ( 1 ) {
-        s_TestCopyMove<CRef<CObjectFor<int>>, CRef<CObjectFor<int>>>();
-        s_TestCopyMove<CRef<CObjectFor<int>>, CConstRef<CObjectFor<int>>>();
-        s_TestCopyMove<CConstRef<CObjectFor<int>>, CConstRef<CObjectFor<int>>>();
-        s_TestCopyMove<CRef<CObjectFor<int>>, CRef<CObject>>();
-        s_TestCopyMove<CRef<CObjectFor<int>>, CConstRef<CObject>>();
-        s_TestCopyMove<CConstRef<CObjectFor<int>>, CConstRef<CObject>>();
+        s_TestCopyMove<CRef<CTestMoveInt1>, CRef<CTestMoveInt1>>();
+        s_TestCopyMove<CRef<CTestMoveInt1>, CConstRef<CTestMoveInt1>>();
+        s_TestCopyMove<CConstRef<CTestMoveInt1>, CConstRef<CTestMoveInt1>>();
+        s_TestCopyMove<CRef<CTestMoveInt1>, CRef<CObject>>();
+        s_TestCopyMove<CRef<CTestMoveInt1>, CConstRef<CObject>>();
+        s_TestCopyMove<CConstRef<CTestMoveInt1>, CConstRef<CObject>>();
     }
 
     if ( 1 ) {
-        s_TestCopyMove<CIRef<ITestMoveInt2>, CIRef<ITestMoveInt2>, CTestMoveInt2>();
-        s_TestCopyMove<CIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt2>, CTestMoveInt2>();
-        s_TestCopyMove<CConstIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt2>, CTestMoveInt2>();
-        s_TestCopyMove<CIRef<ITestMoveInt2>, CIRef<ITestMoveInt1>, CTestMoveInt2>();
-        s_TestCopyMove<CIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt1>, CTestMoveInt2>();
-        s_TestCopyMove<CConstIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt1>, CTestMoveInt2>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CIRef<ITestMoveInt2>, CTestMoveInt2, CTestMoveInt2>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt2>, CTestMoveInt2, CTestMoveInt2>();
+        s_TestCopyMove<CConstIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt2>, CTestMoveInt2, CTestMoveInt2>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CIRef<ITestMoveInt1>, CTestMoveInt2, CTestMoveInt1>();
+        s_TestCopyMove<CIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt1>, CTestMoveInt2, CTestMoveInt1>();
+        s_TestCopyMove<CConstIRef<ITestMoveInt2>, CConstIRef<ITestMoveInt1>, CTestMoveInt2, CTestMoveInt1>();
     }
+    BOOST_CHECK_EQUAL(CTestMoveInt1::counter, 0);
+    BOOST_CHECK_EQUAL(CTestMoveInt2::counter, 0);
 
     // these should not compile
     //CRef<CObjectFor<int>> t1 = obj4;
