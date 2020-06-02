@@ -8,9 +8,7 @@ REM #########################################################################
 
 set initial_dir=%CD%
 set script_name=%~nx0
-REM set script_dir=%~dp0
-cd %0\..
-set script_dir=%CD%
+set script_dir=%~dp0
 set tree_root=%initial_dir%
 set extension=cmake_configure_ext.bat
 

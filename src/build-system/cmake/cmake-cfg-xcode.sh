@@ -36,7 +36,7 @@ Check_function_exists() {
 
 Usage()
 {
-    cat <<EOF 1>&2
+    cat <<EOF
 USAGE:
   $script_name [OPTIONS]...
 SYNOPSIS:
