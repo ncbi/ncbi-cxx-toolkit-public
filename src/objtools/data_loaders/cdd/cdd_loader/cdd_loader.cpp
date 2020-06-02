@@ -42,7 +42,7 @@
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objtools/data_loaders/cdd/cdd_loader/cdd_loader.hpp>
 #include <objtools/data_loaders/cdd/cdd_loader/cdd_loader_impl.hpp>
-#include <objtools/data_loaders/cdd/id2proc_cdd/id2cdd_params.h>
+#include <objtools/data_loaders/cdd/id2cdd_params.h>
 
 
 BEGIN_NCBI_SCOPE
