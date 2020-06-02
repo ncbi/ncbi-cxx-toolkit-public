@@ -11,17 +11,19 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 cd "$initial_dir"
 tree_root=`pwd`
 
+build_root=$NCBI
+build_dir=cxx.cmake.stable
+
 repository="https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++"
 rep_inc="include"
 rep_src="src"
 rep_sample="sample"
-prj_tmp="CMakeLists.tmp"
 prj_prj="CMakeLists.txt"
 cfg_cfg="configure.sh"
 ############################################################################# 
 Usage()
 {
-    cat <<EOF 1>&2
+    cat <<EOF
 USAGE:
   $script_name <name> <type> [builddir] 
 SYNOPSIS:
@@ -30,7 +32,8 @@ ARGUMENTS:
   --help       -- print Usage
   <name>       -- project name (destination directory)
   <type>       -- project type
-  [builddir]   -- root directory of the pre-built NCBI C++ toolkit
+  builddir     -- root directory of the pre-built NCBI C++ toolkit
+                  default: $build_dir
 EOF
 if test -z "$1"; then
   echo
@@ -87,23 +90,69 @@ Error()
 }
 
 #----------------------------------------------------------------------------
-if [ $# -lt 2 ]; then
-  if [ $# -eq 1 ]; then
-    if [ $1 = "--help" -o $1 = "-help" -o $1 = "help" ]; then
-      Usage
-      exit 0
-    fi
+if [ $# -eq 0 ]; then
+  do_help="yes"
+fi
+pos=0
+unknown=""
+while [ $# -ne 0 ]; do
+  case "$1" in 
+    --help|-help|help|-h)
+      do_help="yes"
+    ;; 
+    *) 
+      if [ $pos -eq 0 ]; then
+        prj_name=$1
+      elif [ $pos -eq 1 ]; then
+        prj_type=$1
+      elif [ $pos -eq 2 ]; then
+        toolkit=$1
+      else
+        unknown="$unknown $1"
+      fi
+      pos=`expr $pos + 1`
+      ;; 
+  esac 
+  shift 
+done 
+
+
+if [ -n "$do_help" ]; then
+    Usage
+    exit 0
+fi
+if [ -n "$unknown" ]; then
+  Error "Unknown options: $unknown" 
+fi
+if [ -z "$prj_name" ]; then
+  Error "Mandatory argument 'name' is missing"
+fi
+if [ -z "$prj_type" ]; then
+  Error "Mandatory argument 'branch' is missing"
+fi
+if [ -z "$toolkit" ]; then
+  builddir=${build_root}/${build_dir}
+else
+  if [ -d "$toolkit" ]; then
+    builddir="$toolkit"
+  elif [ -d "${build_root}/$toolkit" ]; then
+    builddir="${build_root}/$toolkit"
+  elif [ -d "${build_root}/c++.cmake.$toolkit" ]; then
+    builddir="${build_root}/c++.cmake.$toolkit"
   fi
-  Error Mandatory argument is missing
 fi
-prj_name=$1
-prj_type=$2
-if [ $# -gt 2 ]; then
-  toolkit=$3
+if [ ! -d "$builddir" ]; then
+  echo "----------------------------------------------------------------------"
+  if [ -z "$toolkit" ]; then
+    echo "ERROR:  Directory not found: $builddir" 1>&2
+  else
+    echo "ERROR:  Directory not found: $toolkit" 1>&2
+  fi
+  echo "Try one of these:"
+  ls $NCBI | grep c++.cmake
+  exit 1
 fi
-if [ -z $toolkit ]; then
-  Error Mandatory argument builddir is missing
-fi
+
 if [ -e $prj_name ]; then
   Error File or directory $prj_name already exists
 fi
@@ -128,16 +177,14 @@ find $rep_src -name "Makefile.*" -exec rm -rf {} \; 1>/dev/null 2>/dev/null
 
 # create configure script
 host_os=`uname`
-if test $host_os = "Darwin"; then
-  cmake_cfg="cmake-cfg-xcode.sh"
-else
-  cmake_cfg="cmake-cfg-unix.sh"
-fi
+#if test $host_os = "Darwin"; then
+cmake_cfg="cmake-cfg-unix.sh"
+
 {
   echo "#!/bin/sh"
   echo "script_dir=\`dirname \$0\`"
   echo "script_name=\`basename \$0\`"
-  echo "exec $toolkit/src/build-system/cmake/$cmake_cfg --rootdir=\$script_dir --caller=\$script_name \"\$@\""
+  echo "exec $builddir/src/build-system/cmake/$cmake_cfg --rootdir=\$script_dir --caller=\$script_name \"\$@\""
 
 } > $cfg_cfg
 chmod a+x $cfg_cfg
@@ -146,7 +193,7 @@ chmod a+x $cfg_cfg
 {
   echo "cmake_minimum_required(VERSION 3.7)"
   echo "project($prj_name)"
-  echo "include($toolkit/src/build-system/cmake/CMake.NCBItoolkit.cmake)"
+  echo "include($builddir/src/build-system/cmake/CMake.NCBItoolkit.cmake)"
   echo "NCBI_add_subdirectory($rep_src)"
 } > $prj_prj
 

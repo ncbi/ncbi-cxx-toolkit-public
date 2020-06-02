@@ -11,11 +11,14 @@ set script_name=%~nx0
 set script_dir=%~dp0
 set tree_root=%initial_dir%
 
+set build_root=%NCBI%\Lib\Ncbi\CXX_Toolkit
+set build_vs=vs2017.64
+set build_dir=cxx.cmake.stable
+
 set repository=https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++
 set rep_inc=include
 set rep_src=src
 set rep_sample=sample
-set prj_tmp=CMakeLists.tmp
 set prj_prj=CMakeLists.txt
 set cfg_cfg=configure.bat
 goto :RUN
@@ -30,7 +33,8 @@ echo ARGUMENTS:
 echo   --help       -- print Usage
 echo   ^<name^>       -- project name (destination directory)
 echo   ^<type^>       -- project type
-echo   [builddir]   -- root directory of the pre-built NCBI C++ toolkit
+echo   builddir     -- root directory of the pre-built NCBI C++ toolkit
+echo                   default: %build_dir%
 if "%~1"=="" (
     echo:
     echo The following project types are available:
@@ -86,22 +90,45 @@ goto :eof
 
 REM -------------------------------------------------------------------------
 :RUN
-if "%1"=="--help" (
-  call :USAGE
-  goto :DONE
+
+if "%1"=="" (
+  set do_help=YES
 )
-if "%1"=="-help" (
-  call :USAGE
-  goto :DONE
+set pos=0
+set unknown=
+
+:PARSEARGS
+if "%~1"=="" goto :ENDPARSEARGS
+if "%1"=="--help"              (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="-help"               (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="help"                (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="-h"                  (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="--with-vs"           (set build_vs=vs%~2.64& shift& goto :CONTINUEPARSEARGS)
+if "%pos%"=="0" (
+  set prj_name=%~1
+) else if "%pos%"=="1" (
+  set prj_type=%~1
+) else if "%pos%"=="2" (
+  set toolkit=%~1
+) else (
+  set unknown=%unknown% %1
 )
-if "%1"=="help" (
+set /a pos=%pos% + 1
+:CONTINUEPARSEARGS
+shift
+goto :PARSEARGS
+:ENDPARSEARGS
+
+REM -------------------------------------------------------------------------
+if not "%do_help%"=="" (
   call :USAGE
   goto :DONE
 )
 echo:
-set prj_name=%~1
-set prj_type=%~2
-set toolkit=%~3
+if not "%unknown%"=="" (
+  call :ERROR unknown options: %unknown%
+  goto :DONE
+)
 if "%prj_name%"=="" (
   call :ERROR Mandatory argument 'name' is missing
   goto :DONE
@@ -111,9 +138,28 @@ if "%prj_type%"=="" (
   goto :DONE
 )
 if "%toolkit%"=="" (
-  call :ERROR Mandatory argument 'builddir' is missing
+  set builddir=%build_root%\%build_vs%\%build_dir%
+) else (
+  if exist "%toolkit%" (
+    set builddir=%toolkit%
+  ) else if exist "%build_root%\%build_vs%\%toolkit%" (
+    set builddir=%build_root%\%build_vs%\%toolkit%
+  ) else if exist "%build_root%\%build_vs%\cxx.cmake.%toolkit%" (
+    set builddir=%build_root%\%build_vs%\cxx.cmake.%toolkit%
+  )
+)
+if not exist "%builddir%" (
+  echo ----------------------------------------------------------------------
+  if "%toolkit%"=="" (
+    echo ERROR:  Directory not found: %builddir% 1>&2
+  ) else (
+    echo ERROR:  Directory not found: %toolkit% 1>&2
+  )
+  echo Try one of these:
+  dir /A:D /B "%build_root%\%build_vs%\cxx.cmake.*"
   goto :DONE
 )
+
 if exist %prj_name% (
   call :ERROR File or directory %prj_name% already exists
   goto :DONE
@@ -141,14 +187,14 @@ REM create configure script
     echo set script_dir=%%~dp0?
     echo set script_dir=%%script_dir:\?=%%
     echo set script_name=%%~nx0
-    echo "%toolkit%\src\build-system\cmake\cmake-cfg-vs.bat" --rootdir="%%script_dir%%" --caller=%%script_name%% %%*
+    echo "%builddir%\src\build-system\cmake\cmake-cfg-vs.bat" --rootdir="%%script_dir%%" --caller=%%script_name%% %%*
 ) >%cfg_cfg%
 
 REM modify CMakeLists.txt
 (
     echo cmake_minimum_required^(VERSION 3.7^)
     echo project^(%prj_name%^)
-    echo include^(%toolkit:\=/%/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
+    echo include^(%builddir:\=/%/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
     echo NCBI_add_subdirectory^(%rep_src%^)
 ) >%prj_prj%
 REM #########################################################################
