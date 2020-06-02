@@ -2608,8 +2608,10 @@ bool ExtendPartialFeatureEnds(CBioseq_Handle bsh)
             CRef<CSeq_feat> new_cds(new CSeq_feat());
             new_cds->Assign(*(f->GetOriginalSeq_feat()));
 
-            if (AdjustFeatureEnd5(*new_cds, related_features, bsh.GetScope()) ||
-                AdjustFeatureEnd3(*new_cds, related_features, bsh.GetScope())) {
+            const bool adjusted_5prime = AdjustFeatureEnd5(*new_cds, related_features, bsh.GetScope());
+            const bool adjusted_3prime = AdjustFeatureEnd3(*new_cds, related_features, bsh.GetScope());
+
+            if (adjusted_5prime || adjusted_3prime) {
                 feature::RetranslateCDS(*new_cds, bsh.GetScope());
                 CSeq_feat_EditHandle feh(*f);
                 feh.Replace(*new_cds);
