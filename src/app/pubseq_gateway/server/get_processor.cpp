@@ -41,14 +41,15 @@ USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
 
-CPSGS_GetProcessor::CPSGS_GetProcessor() :
+CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor() :
     m_BlobRequest(nullptr),
     m_Cancelled(false)
 {}
 
 
-CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
-                                       shared_ptr<CPSGS_Reply> reply) :
+CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor(
+                                        shared_ptr<CPSGS_Request> request,
+                                        shared_ptr<CPSGS_Reply> reply) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_CassBlobBase(request, reply),
     m_Cancelled(false)
@@ -62,21 +63,21 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
 }
 
 
-CPSGS_GetProcessor::~CPSGS_GetProcessor()
+CPSGS_GetBlobProcessor::~CPSGS_GetBlobProcessor()
 {}
 
 
 IPSGS_Processor*
-CPSGS_GetProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                    shared_ptr<CPSGS_Reply> reply) const
+CPSGS_GetBlobProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
+                                        shared_ptr<CPSGS_Reply> reply) const
 {
     if (request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest)
-        return new CPSGS_GetProcessor(request, reply);
+        return new CPSGS_GetBlobProcessor(request, reply);
     return nullptr;
 }
 
 
-void CPSGS_GetProcessor::Process(void)
+void CPSGS_GetBlobProcessor::Process(void)
 {
     auto * app = CPubseqGatewayApp::GetInstance();
 
@@ -172,11 +173,11 @@ void CPSGS_GetProcessor::Process(void)
 
     load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
     load_task->SetErrorCB(
-        CGetBlobErrorCallback(bind(&CPSGS_GetProcessor::OnGetBlobError,
+        CGetBlobErrorCallback(bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get()));
     load_task->SetPropsCallback(
-        CBlobPropCallback(bind(&CPSGS_GetProcessor::OnGetBlobProp,
+        CBlobPropCallback(bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
                                this, _1, _2, _3),
                           IPSGS_Processor::m_Request,
                           IPSGS_Processor::m_Reply,
@@ -197,15 +198,15 @@ void CPSGS_GetProcessor::Process(void)
 }
 
 
-void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
-                                       CBlobRecord const &  blob,
-                                       bool is_found)
+void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
+                                           CBlobRecord const &  blob,
+                                           bool is_found)
 {
-    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetProcessor::OnGetBlobProp,
+    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
                                            this, _1, _2, _3),
-                                      bind(&CPSGS_GetProcessor::OnGetBlobChunk,
+                                      bind(&CPSGS_GetBlobProcessor::OnGetBlobChunk,
                                            this, _1, _2, _3, _4, _5),
-                                      bind(&CPSGS_GetProcessor::OnGetBlobError,
+                                      bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
                                            this, _1, _2, _3, _4, _5),
                                       fetch_details, blob, is_found);
 
@@ -214,11 +215,11 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
-                                        CRequestStatus::ECode  status,
-                                        int  code,
-                                        EDiagSev  severity,
-                                        const string &  message)
+void CPSGS_GetBlobProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
+                                            CRequestStatus::ECode  status,
+                                            int  code,
+                                            EDiagSev  severity,
+                                            const string &  message)
 {
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
@@ -228,11 +229,11 @@ void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
-                                        CBlobRecord const &  blob,
-                                        const unsigned char *  chunk_data,
-                                        unsigned int  data_size,
-                                        int  chunk_no)
+void CPSGS_GetBlobProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
+                                            CBlobRecord const &  blob,
+                                            const unsigned char *  chunk_data,
+                                            unsigned int  data_size,
+                                            int  chunk_no)
 {
     CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
                                        chunk_data, data_size, chunk_no);
@@ -242,25 +243,25 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_GetProcessor::Cancel(void)
+void CPSGS_GetBlobProcessor::Cancel(void)
 {
     m_Cancelled = true;
 }
 
 
-bool CPSGS_GetProcessor::IsFinished(void)
+bool CPSGS_GetBlobProcessor::IsFinished(void)
 {
     return CPSGS_CassProcessorBase::IsFinished();
 }
 
 
-void CPSGS_GetProcessor::ProcessEvent(void)
+void CPSGS_GetBlobProcessor::ProcessEvent(void)
 {
     x_Peek(true);
 }
 
 
-void CPSGS_GetProcessor::x_Peek(bool  need_wait)
+void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
 {
     if (m_Cancelled)
         return;
@@ -300,8 +301,8 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 }
 
 
-void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                                bool  need_wait)
+void CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+                                    bool  need_wait)
 {
     if (!fetch_details->GetLoader())
         return;

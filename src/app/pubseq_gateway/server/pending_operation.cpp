@@ -231,7 +231,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             x_ProcessGetRequest();
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            m_Processor.reset(new CPSGS_GetProcessor(m_UserRequest, m_Reply));
+            m_Processor.reset(new CPSGS_GetBlobProcessor(m_UserRequest, m_Reply));
             m_Processor->Process();
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:

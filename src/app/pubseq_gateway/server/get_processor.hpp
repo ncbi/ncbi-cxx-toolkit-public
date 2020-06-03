@@ -1,5 +1,5 @@
-#ifndef PSGS_GETPROCESSOR__HPP
-#define PSGS_GETPROCESSOR__HPP
+#ifndef PSGS_GETBLOBPROCESSOR__HPP
+#define PSGS_GETBLOBPROCESSOR__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -42,8 +42,8 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_GetProcessor : public IPSGS_Processor,
-                           public CPSGS_CassBlobBase
+class CPSGS_GetBlobProcessor : public IPSGS_Processor,
+                               public CPSGS_CassBlobBase
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -54,10 +54,10 @@ public:
     virtual void ProcessEvent(void);
 
 public:
-    CPSGS_GetProcessor();
-    CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
-                       shared_ptr<CPSGS_Reply> reply);
-    virtual ~CPSGS_GetProcessor();
+    CPSGS_GetBlobProcessor();
+    CPSGS_GetBlobProcessor(shared_ptr<CPSGS_Request> request,
+                           shared_ptr<CPSGS_Reply> reply);
+    virtual ~CPSGS_GetBlobProcessor();
 
 private:
     void OnGetBlobProp(CCassBlobFetch *  fetch_details,
@@ -80,5 +80,5 @@ private:
     bool                            m_Cancelled;
 };
 
-#endif  // PSGS_GETPROCESSOR__HPP
+#endif  // PSGS_GETBLOBPROCESSOR__HPP
 
