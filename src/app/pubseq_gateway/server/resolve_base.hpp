@@ -107,7 +107,7 @@ private:
     void x_RegisterSuccessTiming(const SBioseqResolution &  bioseq_resolution);
 
 protected:
-    void ResolveInputSeqId(SBioseqResolution &  bioseq_resolution);
+    void ResolveInputSeqId(void);
 
 private:
     TSeqIdResolutionFinishedCB      m_FinalFinishedCB;

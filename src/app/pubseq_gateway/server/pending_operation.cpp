@@ -36,13 +36,12 @@
 #include "pubseq_gateway_convert_utils.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "pubseq_gateway_cache_utils.hpp"
-#include "named_annot_callback.hpp"
 #include "get_blob_callback.hpp"
-#include "split_history_callback.hpp"
 #include "insdc_utils.hpp"
 #include "get_processor.hpp"
 #include "tse_chunk_processor.hpp"
 #include "resolve_processor.hpp"
+#include "annot_processor.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -236,8 +235,8 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             m_Processor->Process();
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
-            m_UrlUseCache = m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_UseCache;
-            x_ProcessAnnotRequest();
+            m_Processor.reset(new CPSGS_AnnotProcessor(m_UserRequest, m_Reply));
+            m_Processor->Process();
             break;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
             m_Processor.reset(new CPSGS_TSEChunkProcessor(m_UserRequest, m_Reply));
@@ -485,13 +484,6 @@ void CPendingOperation::OnBioseqDetailsRecord(
                 x_GetRequestBioseqInconsistency(
                                 async_bioseq_info.m_RequestStartTimestamp);
             break;
-        case eAnnotBioseqDetails:
-            if (async_bioseq_info.IsValid())
-                x_CompleteAnnotRequest(async_bioseq_info);
-            else
-                x_ResolveRequestBioseqInconsistency(
-                                async_bioseq_info.m_RequestStartTimestamp);
-            break;
         default:
             ;
     }
@@ -515,156 +507,8 @@ void CPendingOperation::OnBioseqDetailsError(
                     "bioseq info is not found (database error: " + message +
                     ")", start_timestamp);
             break;
-        case eAnnotBioseqDetails:
-            x_ResolveRequestBioseqInconsistency(
-                    "Data inconsistency: the bioseq key info was resolved for "
-                    "seq_id " +
-                    m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqId + " but the "
-                    "bioseq info is not found (database error: " +
-                    message + ")", start_timestamp);
-            break;
         default:
             ;
-    }
-}
-
-
-void CPendingOperation::x_ProcessAnnotRequest(void)
-{
-    SResolveInputSeqIdError     err;
-    SBioseqResolution           bioseq_resolution(
-                m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_StartTimestamp);
-
-    x_ResolveInputSeqId(bioseq_resolution, err);
-    if (err.HasError()) {
-        PSG_WARNING(err.m_ErrorMessage);
-        x_OnReplyError(err.m_ErrorCode, ePSGS_UnresolvedSeqId, err.m_ErrorMessage,
-                       bioseq_resolution.m_RequestStartTimestamp);
-        return;
-    }
-
-    // Async resolution may be required
-    if (bioseq_resolution.m_ResolutionResult == ePSGS_PostponedForDB) {
-        m_AsyncInterruptPoint = eAnnotSeqIdResolution;
-        return;
-    }
-
-    x_ProcessAnnotRequest(err, bioseq_resolution);
-}
-
-
-// Could be called by:
-// - sync processing (resolved via cache)
-// - async processing (resolved via DB)
-void CPendingOperation::x_ProcessAnnotRequest(
-                                SResolveInputSeqIdError &  err,
-                                SBioseqResolution &  bioseq_resolution)
-{
-    if (!bioseq_resolution.IsValid()) {
-        if (err.HasError()) {
-            m_UserRequest->UpdateOverallStatus(err.m_ErrorCode);
-            PSG_WARNING(err.m_ErrorMessage);
-            x_OnReplyError(err.m_ErrorCode, ePSGS_UnresolvedSeqId,
-                           err.m_ErrorMessage,
-                           bioseq_resolution.m_RequestStartTimestamp);
-        } else {
-            // Could not resolve, send 404
-            x_OnReplyError(CRequestStatus::e404_NotFound, ePSGS_NoBioseqInfo,
-                           "Could not resolve seq_id " +
-                           m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqId,
-                           bioseq_resolution.m_RequestStartTimestamp);
-        }
-        return;
-    }
-
-    // A few cases here: comes from cache or DB
-    // ePSGS_Si2csiCache, ePSGS_Si2csiDB, ePSGS_BioseqCache, ePSGS_BioseqDB
-    if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
-        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache) {
-        // We have the following fields at hand:
-        // - accession, version, seq_id_type, gi
-        // However the get_na requires to send back the whole bioseq_info
-        CPSGCache   psg_cache(m_UserRequest, m_Reply);
-        auto        cache_lookup_result =
-                                psg_cache.LookupBioseqInfo(bioseq_resolution);
-        if (cache_lookup_result != ePSGS_Found) {
-            // No cache hit (or not allowed); need to get to DB if allowed
-            if (m_UrlUseCache != SPSGS_RequestBase::ePSGS_CacheOnly) {
-                // Async DB query
-                m_AsyncInterruptPoint = eAnnotBioseqDetails;
-                m_AsyncBioseqDetailsQuery.reset(
-                        new CAsyncBioseqQuery(std::move(bioseq_resolution),
-                                              this, m_UserRequest,
-                                              m_Reply));
-                // true => use seq_id_type
-                m_AsyncBioseqDetailsQuery->MakeRequest();
-                return;
-            }
-
-            // Error message
-            x_ResolveRequestBioseqInconsistency(
-                    bioseq_resolution.m_RequestStartTimestamp);
-            return;
-        } else {
-            bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
-        }
-    }
-
-    x_CompleteAnnotRequest(bioseq_resolution);
-}
-
-
-// Could be called:
-// - synchronously
-// - asynchronously if additional request to bioseq info is required
-void CPendingOperation::x_CompleteAnnotRequest(
-                                        SBioseqResolution &  bioseq_resolution)
-{
-    auto    app = CPubseqGatewayApp::GetInstance();
-
-    // At the moment the annotations request supports only json
-    x_SendBioseqInfo(bioseq_resolution, SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    x_RegisterResolveTiming(bioseq_resolution);
-
-    vector<pair<string, int32_t>>  bioseq_na_keyspaces =
-                CPubseqGatewayApp::GetInstance()->GetBioseqNAKeyspaces();
-
-    for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
-        unique_ptr<CCassNamedAnnotFetch>   details;
-        details.reset(new CCassNamedAnnotFetch(
-                            m_UserRequest->GetRequest<SPSGS_AnnotRequest>()));
-
-        CCassNAnnotTaskFetch *  fetch_task =
-                new CCassNAnnotTaskFetch(app->GetCassandraTimeout(),
-                                         app->GetCassandraMaxRetries(),
-                                         app->GetCassandraConnection(),
-                                         bioseq_na_keyspace.first,
-                                         bioseq_resolution.m_BioseqInfo.GetAccession(),
-                                         bioseq_resolution.m_BioseqInfo.GetVersion(),
-                                         bioseq_resolution.m_BioseqInfo.GetSeqIdType(),
-                                         m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_Names,
-                                         nullptr, nullptr);
-        details->SetLoader(fetch_task);
-
-        fetch_task->SetConsumeCallback(
-            CNamedAnnotationCallback(this, details.get(), bioseq_na_keyspace.second));
-        fetch_task->SetErrorCB(CNamedAnnotationErrorCallback(this, details.get()));
-        fetch_task->SetDataReadyCB(GetDataReadyCB());
-
-        if (m_UserRequest->NeedTrace()) {
-            m_Reply->SendTrace("Cassandra request: " +
-                ToJson(*fetch_task).Repr(CJsonNode::fStandardJson),
-                m_UserRequest->GetStartTimestamp());
-        }
-
-        m_FetchDetails.push_back(std::move(details));
-    }
-
-    // Initiate the retrieval loop
-    for (auto &  fetch_details: m_FetchDetails) {
-        if (fetch_details)
-            if (!fetch_details->ReadFinished())
-                fetch_details->GetLoader()->Wait();
     }
 }
 
@@ -846,7 +690,8 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
 
     if (m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest ||
         m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_TSEChunkRequest ||
-        m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest) {
+        m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest ||
+        m_UserRequest->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
         m_Processor->ProcessEvent();
         if (m_Processor->IsFinished() && !resp.IsFinished() && resp.IsOutputReady() ) {
             x_SendReplyCompletion(true);
@@ -1608,100 +1453,6 @@ void CPendingOperation::x_SendReplyError(const string &  msg,
     }
 }
 
-
-//
-// Named annotations callbacks
-//
-
-bool CPendingOperation::OnNamedAnnotData(CNAnnotRecord &&        annot_record,
-                                         bool                    last,
-                                         CCassNamedAnnotFetch *  fetch_details,
-                                         int32_t                 sat)
-{
-    CRequestContextResetter     context_resetter;
-    m_UserRequest->SetRequestContext();
-
-    if (m_Cancelled) {
-        fetch_details->GetLoader()->Cancel();
-        fetch_details->SetReadFinished();
-        return false;
-    }
-    if (m_Reply->IsReplyFinished()) {
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
-                                                     IncUnknownError();
-        PSG_ERROR("Unexpected data received "
-                  "while the output has finished, ignoring");
-        return false;
-    }
-
-    if (last) {
-        if (m_UserRequest->NeedTrace()) {
-            m_Reply->SendTrace("Named annotation no-more-data callback",
-                               m_UserRequest->GetStartTimestamp());
-        }
-        fetch_details->SetReadFinished();
-        x_SendReplyCompletion();
-    } else {
-        if (m_UserRequest->NeedTrace()) {
-            m_Reply->SendTrace("Named annotation data received",
-                               m_UserRequest->GetStartTimestamp());
-        }
-        m_Reply->PrepareNamedAnnotationData(
-                annot_record.GetAnnotName(),
-                ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
-    }
-
-    x_PeekIfNeeded();
-    return true;
-}
-
-
-void CPendingOperation::OnNamedAnnotError(
-                                CCassNamedAnnotFetch *  fetch_details,
-                                CRequestStatus::ECode  status, int  code,
-                                EDiagSev  severity, const string &  message)
-{
-    CRequestContextResetter     context_resetter;
-    m_UserRequest->SetRequestContext();
-
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
-    // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
-
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    PSG_ERROR(message);
-
-    if (is_error) {
-        if (code == CCassandraException::eQueryTimeout)
-            app->GetErrorCounters().IncCassQueryTimeoutError();
-        else
-            app->GetErrorCounters().IncUnknownError();
-    }
-
-    if (m_UserRequest->NeedTrace()) {
-        m_Reply->SendTrace("Named annotation error callback",
-                           m_UserRequest->GetStartTimestamp());
-    }
-
-    m_Reply->PrepareReplyMessage(message,
-                                 CRequestStatus::e500_InternalServerError,
-                                 code, severity);
-    if (is_error) {
-        m_UserRequest->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-
-        // There will be no more activity
-        fetch_details->SetReadFinished();
-    }
-
-    x_SendReplyCompletion();
-    x_PeekIfNeeded();
-}
-
-
 //
 // Blob callbacks
 //
@@ -2450,10 +2201,6 @@ void CPendingOperation::OnSeqIdAsyncResolutionFinished(
     // The results are populated by CAsyncSeqIdResolver in
     // m_PostponedSeqIdResolution
     switch (m_AsyncInterruptPoint) {
-        case eAnnotSeqIdResolution:
-            x_ProcessAnnotRequest(async_bioseq_resolution.m_PostponedError,
-                                  async_bioseq_resolution);
-            break;
         case eGetSeqIdResolution:
             x_ProcessGetRequest(async_bioseq_resolution.m_PostponedError,
                                 async_bioseq_resolution);
@@ -2473,9 +2220,6 @@ void CPendingOperation::OnSeqIdAsyncError(
     m_UserRequest->SetRequestContext();
 
     switch (m_AsyncInterruptPoint) {
-        case eAnnotSeqIdResolution:
-            x_OnReplyError(status, code, message, start_timestamp);
-            return;
         case eGetSeqIdResolution:
             x_OnReplyError(status, code, message, start_timestamp);
             return;

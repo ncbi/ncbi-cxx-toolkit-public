@@ -40,9 +40,7 @@ using namespace std;
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/nannot/record.hpp>
 USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
 
@@ -63,8 +61,6 @@ class CPendingOperation
 {
 private:
     enum EPSGS_AsyncInterruptPoint {
-        eAnnotSeqIdResolution,
-        eAnnotBioseqDetails,
         eGetSeqIdResolution,
         eGetBioseqDetails
     };
@@ -114,10 +110,6 @@ private:
     void x_StartMainBlobRequest(void);
 
 private:
-    void x_ProcessAnnotRequest(void);
-    void x_ProcessAnnotRequest(SResolveInputSeqIdError &  err,
-                               SBioseqResolution &  bioseq_resolution);
-    void x_CompleteAnnotRequest(SBioseqResolution &  bioseq_resolution);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
     void x_PrintRequestStop(void);
@@ -177,14 +169,6 @@ public:
     void OnSeqIdAsyncError(CRequestStatus::ECode  status, int  code,
                            EDiagSev  severity, const string &  message,
                            const TPSGS_HighResolutionTimePoint &  start_timestamp);
-
-public:
-    // Named annotations callbacks
-    bool OnNamedAnnotData(CNAnnotRecord &&  annot_record, bool  last,
-                          CCassNamedAnnotFetch *  fetch_details, int32_t  sat);
-    void OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
-                           CRequestStatus::ECode  status, int  code,
-                           EDiagSev  severity, const string &  message);
 
 public:
     // Get blob callbacks

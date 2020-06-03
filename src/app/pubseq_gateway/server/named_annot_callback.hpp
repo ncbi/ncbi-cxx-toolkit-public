@@ -36,15 +36,29 @@
 #include "pending_operation.hpp"
 #include "cass_fetch.hpp"
 
+#include <functional>
+
+using TNamedAnnotationCB = function<
+                                bool(CNAnnotRecord &&  annot_record,
+                                     bool  last,
+                                     CCassNamedAnnotFetch *  fetch_details,
+                                     int32_t  sat)>;
+using TNamedAnnotationErrorCB = function<
+                                void(CCassNamedAnnotFetch *  fetch_details,
+                                     CRequestStatus::ECode  status,
+                                     int  code,
+                                     EDiagSev  severity,
+                                     const string &  message)>;
+
 
 class CNamedAnnotationCallback
 {
     public:
         CNamedAnnotationCallback(
-                CPendingOperation *  pending_op,
+                TNamedAnnotationCB  named_annotation_cb,
                 CCassNamedAnnotFetch *  fetch_details,
                 int32_t  sat) :
-            m_PendingOp(pending_op),
+            m_NamedAnnotationCB(named_annotation_cb),
             m_FetchDetails(fetch_details),
             m_Sat(sat),
             m_AnnotCount(0),
@@ -64,12 +78,12 @@ class CNamedAnnotationCallback
             }
 
             ++m_AnnotCount;
-            return m_PendingOp->OnNamedAnnotData(std::move(annot_record),
-                                                 last, m_FetchDetails, m_Sat);
+            return m_NamedAnnotationCB(move(annot_record),
+                                       last, m_FetchDetails, m_Sat);
         }
 
     private:
-        CPendingOperation *                     m_PendingOp;
+        TNamedAnnotationCB                      m_NamedAnnotationCB;
         CCassNamedAnnotFetch *                  m_FetchDetails;
         int32_t                                 m_Sat;
 
@@ -82,9 +96,9 @@ class CNamedAnnotationErrorCallback
 {
     public:
         CNamedAnnotationErrorCallback(
-                CPendingOperation *  pending_op,
+                TNamedAnnotationErrorCB  error_cb,
                 CCassNamedAnnotFetch *  fetch_details) :
-            m_PendingOp(pending_op),
+            m_ErrorCB(error_cb),
             m_FetchDetails(fetch_details)
         {}
 
@@ -93,13 +107,12 @@ class CNamedAnnotationErrorCallback
                         EDiagSev  severity,
                         const string &  message)
         {
-            m_PendingOp->OnNamedAnnotError(m_FetchDetails,
-                                           status, code, severity, message);
+            m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 
     private:
-        CPendingOperation *                     m_PendingOp;
-        CCassNamedAnnotFetch *                  m_FetchDetails;
+        TNamedAnnotationErrorCB     m_ErrorCB;
+        CCassNamedAnnotFetch *      m_FetchDetails;
 };
 
 

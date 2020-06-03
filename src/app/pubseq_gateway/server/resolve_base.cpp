@@ -461,13 +461,14 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
 
 
 void
-CPSGS_ResolveBase::ResolveInputSeqId(SBioseqResolution &  bioseq_resolution)
+CPSGS_ResolveBase::ResolveInputSeqId(void)
 {
-    auto            app = CPubseqGatewayApp::GetInstance();
-    string          parse_err_msg;
-    CSeq_id         oslt_seq_id;
-    auto            parsing_result = x_ParseInputSeqId(oslt_seq_id,
-                                                       parse_err_msg);
+    SBioseqResolution   bioseq_resolution(m_Request->GetStartTimestamp());
+    auto                app = CPubseqGatewayApp::GetInstance();
+    string              parse_err_msg;
+    CSeq_id             oslt_seq_id;
+    auto                parsing_result = x_ParseInputSeqId(oslt_seq_id,
+                                                           parse_err_msg);
 
     // The results of the ComposeOSLT are used in both cache and DB
     int16_t         effective_seq_id_type;

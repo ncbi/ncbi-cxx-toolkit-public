@@ -10,7 +10,7 @@ NCBI_begin_app(pubseq_gateway)
     async_seq_id_resolver async_bioseq_query exclude_blob_cache alerts timing
     cass_monitor id2info insdc_utils introspection psgs_request get_processor
     cass_processor_base cass_blob_base tse_chunk_processor resolve_processor
-    resolve_base async_resolve_base async_bioseq_info_base
+    resolve_base async_resolve_base async_bioseq_info_base annot_processor
   )
   NCBI_uses_toolkit_libraries(seq psg_cassandra psg_protobuf psg_cache connext xconnserv xconnect)
   NCBI_requires(CASSANDRA MT Linux H2O LMDB UV PROTOBUF)
