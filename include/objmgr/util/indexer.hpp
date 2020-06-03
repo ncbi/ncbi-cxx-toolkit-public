@@ -862,6 +862,7 @@ public:
     // Constructor
     CFeatureIndex (CSeq_feat_Handle sfh,
                    const CMappedFeat mf,
+                   CConstRef<CSeq_loc> feat_loc,
                    CBioseqIndex& bsx);
 
 private:

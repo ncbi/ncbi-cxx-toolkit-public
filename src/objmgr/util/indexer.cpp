@@ -42,6 +42,7 @@
 
 #include <objmgr/util/indexer.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 #define NCBI_USE_ERRCODE_X  ObjMgr_Indexer
 
@@ -1962,6 +1963,24 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     sel.SetFailUnresolved();
 }
 
+static CMappedFeat s_GetMappedFeat(CRef<CSeq_feat>& feat, CScope& scope)
+{
+    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
+    temp_annot->SetData().SetFtable().push_back(feat);
+    scope.AddSeq_annot(*temp_annot);
+    CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*feat);
+    return CMappedFeat(sfh);
+}
+
+
+static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
+        const CRange<TSeqPos>& range,
+        CScope& scope)
+{
+    CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(feat, range);
+    return s_GetMappedFeat(trimmed_feat, scope);
+}
+
 // Feature collection common implementation method (delayed until needed)
 void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
 
@@ -2026,10 +2045,32 @@ void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
 
             // iterate features on Bioseq or sublocation
             CFeat_CI feat_it;
+            CRef<CSeq_loc_Mapper> slice_mapper;
             if (slpp == 0) {
                 feat_it = CFeat_CI(m_Bsh, *selp);
             } else {
-                feat_it = CFeat_CI(*m_Scope, *slpp, *selp);
+                SAnnotSelector sel_cpy = *selp;
+                sel_cpy.SetIgnoreStrand();
+                /*
+                if (selp->IsSetStrand() && selp->GetStrand() == eNa_strand_minus) {
+                    sel_cpy.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);
+                }
+                */
+                CConstRef<CSeq_id> bsid = m_Bsh.GetSeqId();
+                if (bsid) {
+                    SetDiagFilter(eDiagFilter_All, "!(1305.28,31)");
+                    CSeq_id seq_id;
+                    seq_id.Assign( *bsid );
+                    CSeq_loc old_loc;
+                    old_loc.SetInt().SetId( seq_id );
+                    old_loc.SetInt().SetFrom( 0 );
+                    old_loc.SetInt().SetTo( m_Length - 1 );
+                    slice_mapper = new CSeq_loc_Mapper( *slpp, old_loc, m_Scope );
+                    slice_mapper->SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
+                    slice_mapper->TruncateNonmappingRanges();
+                    SetDiagFilter(eDiagFilter_All, "");
+                }
+                feat_it = CFeat_CI(*m_Scope, *slpp, sel_cpy);
             }
 
             // iterate features on Bioseq
@@ -2048,7 +2089,17 @@ void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
 
                 CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
-                CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
+                const CSeq_feat& mpd = mf.GetMappedFeature();
+                CConstRef<CSeq_loc> feat_loc(&mpd.GetLocation());
+
+                if (slpp) {
+                    // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
+                    CRange<TSeqPos> range = slpp->GetTotalRange();
+                    CMappedFeat mapped_feat = s_GetTrimmedMappedFeat(mpd, range, *m_Scope);
+                    feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
+                }
+
+                CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, feat_loc, *this));
                 m_SfxList.push_back(sfx);
 
                 ft->AddFeature(mf);
@@ -3022,6 +3073,7 @@ CDescriptorIndex::CDescriptorIndex (const CSeqdesc& sd,
 // Constructor
 CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
                               const CMappedFeat mf,
+                              CConstRef<CSeq_loc> feat_loc,
                               CBioseqIndex& bsx)
     : m_Sfh(sfh),
       m_Mf(mf),
@@ -3030,11 +3082,9 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
     const CSeqFeatData& data = m_Mf.GetData();
     m_Type = data.Which();
     m_Subtype = data.GetSubtype();
-    const CSeq_feat& mpd = m_Mf.GetMappedFeature();
-    CConstRef<CSeq_loc> fl(&mpd.GetLocation());
-    m_Fl = fl;
-    m_Start = fl->GetStart(eExtreme_Positional);
-    m_End = fl->GetStop(eExtreme_Positional);
+    m_Fl = feat_loc;
+    m_Start = m_Fl->GetStart(eExtreme_Positional);
+    m_End = m_Fl->GetStop(eExtreme_Positional);
 }
 
 // Find CFeatureIndex object for best gene using internal CFeatTree
