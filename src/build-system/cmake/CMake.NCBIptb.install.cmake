@@ -209,8 +209,18 @@ function(NCBI_internal_install_root _variable _access)
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
     install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
 
-# install sources?
-    # TODO
+# install sources
+    if ($ENV{NCBIPTB_INSTALL_SRC})
+        get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
+        foreach(_dir IN LISTS _all_subdirs)
+            if (EXISTS ${NCBI_SRC_ROOT}/${_dir})
+                install( DIRECTORY ${NCBI_SRC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_SRC}
+                    FILES_MATCHING  PATTERN "*.c" PATTERN "*.c??" REGEX "/[.].*$" EXCLUDE)
+            endif()
+        endforeach()
+        file(GLOB _files LIST_DIRECTORIES false "${NCBI_SRC_ROOT}/*")
+        install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_SRC})
+    endif()
 
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
     install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
@@ -224,7 +234,7 @@ function(NCBI_internal_install_root _variable _access)
             REGEX "/[.].*$" EXCLUDE)
 
 # test results
-    if ($ENV{NCBITMP_INSTALL_CHECK})
+    if ($ENV{NCBIPTB_INSTALL_CHECK})
         install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}")
         install( DIRECTORY ${NCBI_BUILD_ROOT}/testing DESTINATION "${_dest}")
     else()
