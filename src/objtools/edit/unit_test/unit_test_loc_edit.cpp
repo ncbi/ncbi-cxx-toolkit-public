@@ -1978,6 +1978,47 @@ void CheckAdjustStop(TSeqPos stop, TSeqPos expect_stop, bool partial_stop, bool 
 }
 
 
+static void CheckAdjustStartAndStop(
+        const CRange<TSeqPos>& range, 
+        const CRange<TSeqPos>& expected_range, 
+        bool partial_start,
+        CCdregion::EFrame frame,
+        bool partial_stop,
+        bool is_minus=false) { // RW-1107
+
+    auto entry = unit_test_util::BuildGoodDeltaSeq();
+
+    auto cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+ 
+    cds->SetLocation().SetInt().SetFrom(range.GetFrom());
+    cds->SetLocation().SetInt().SetTo(range.GetTo());
+    if (is_minus) {
+        cds->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    }   
+    cds->SetLocation().SetPartialStart(partial_start, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(partial_stop, eExtreme_Biological);
+
+    STANDARD_SETUP
+    const bool change_expected = 
+    (range.GetFrom() != expected_range.GetFrom() || range.GetTo() != expected_range.GetTo());
+    BOOST_CHECK_EQUAL(edit::IsExtendable(*cds, scope), change_expected);
+
+    CBioseq_CI bi(seh);
+    BOOST_CHECK_EQUAL(edit::ExtendPartialFeatureEnds(*bi), change_expected);
+
+    CFeat_CI fi(*bi, CSeqFeatData::e_Cdregion);
+    BOOST_CHECK_EQUAL(fi->GetLocation().GetStart(eExtreme_Biological), is_minus ? expected_range.GetTo() : expected_range.GetFrom());
+    BOOST_CHECK_EQUAL(fi->GetLocation().GetStop(eExtreme_Biological), is_minus ? expected_range.GetFrom() : expected_range.GetTo());
+
+    CCdregion::EFrame after_frame = fi->GetData().GetCdregion().IsSetFrame() ? fi->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_one;
+    if (after_frame == CCdregion::eFrame_not_set) { 
+        after_frame = CCdregion::eFrame_not_set;
+    }
+    BOOST_CHECK_EQUAL(after_frame, frame);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_RW_566)
 {
     CheckAdjustStart(0, 0, false, CCdregion::eFrame_one);
@@ -2067,7 +2108,11 @@ BOOST_AUTO_TEST_CASE(Test_RW_566)
     CheckAdjustStop(25, 22, true, true);
     CheckAdjustStop(26, 26, false, true);
     CheckAdjustStop(26, 26, true, true);
-
+    
+    CheckAdjustStartAndStop(
+            CRange<TSeqPos>(1,31), 
+            CRange<TSeqPos>(0,33), 
+            true, CCdregion::eFrame_three, true, true);
 }
 
 
