@@ -40,28 +40,28 @@ configure_ext_ParseArgs()
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
-      BUILD_ROOT="Release"
+      : "${BUILD_ROOT:=../Release}"
       add_gpipe_warnings
       ;; 
     "--gpipe-dev")
       BUILD_TYPE="Debug"
       BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI"
-      BUILD_ROOT="Debug"
+      : "${BUILD_ROOT:=../Debug}"
       add_gpipe_warnings
       ;; 
     "--gpipe-cgi")
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="OFF"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
-      BUILD_ROOT="Static"
+      : "${BUILD_ROOT:=../Static}"
       add_gpipe_warnings
       ;; 
     "--gpipe-distrib")
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="OFF"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};-PCRE"
-      BUILD_ROOT="Distrib"
+      : "${BUILD_ROOT:=../Distrib}"
       add_gpipe_warnings
       ;; 
     *) 
