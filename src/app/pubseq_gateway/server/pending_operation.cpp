@@ -38,7 +38,7 @@
 #include "pubseq_gateway_cache_utils.hpp"
 #include "get_blob_callback.hpp"
 #include "insdc_utils.hpp"
-#include "get_processor.hpp"
+#include "getblob_processor.hpp"
 #include "tse_chunk_processor.hpp"
 #include "resolve_processor.hpp"
 #include "annot_processor.hpp"

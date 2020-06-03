@@ -30,7 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include "get_processor.hpp"
+#include "getblob_processor.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_cache_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"

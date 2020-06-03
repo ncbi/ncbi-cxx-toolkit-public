@@ -10,7 +10,7 @@ SRC = pubseq_gateway  \
       pubseq_gateway_cache_utils cass_fetch psgs_reply \
       async_seq_id_resolver async_bioseq_query \
       exclude_blob_cache alerts timing cass_monitor id2info \
-      insdc_utils introspection psgs_request get_processor cass_processor_base \
+      insdc_utils introspection psgs_request getblob_processor cass_processor_base \
       cass_blob_base tse_chunk_processor resolve_processor resolve_base \
       async_resolve_base async_bioseq_info_base annot_processor
 
