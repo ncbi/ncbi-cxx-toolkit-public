@@ -35,7 +35,7 @@ endif()
 
 # see also
 #    CfgMT, CfgProps in WIN32
-#    MaxDebug, Coverage in UNIX
+#    MaxDebug, Coverage, noSSE in UNIX
 
 # ---------------------------------------------------------------------------
 
@@ -452,6 +452,12 @@ if(OFF)
 	set_cxx_compiler_flag_optional("-std=gnu++14" "-std=gnu++11" "-std=c++11" "-std=c++0x")
 	set_c_compiler_flag_optional  ("-std=gnu11" "-std=c11" "-std=gnu99" "-std=c99")
 endif()
+
+if(NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+	set_cxx_compiler_flag_optional("-msse4.2")
+	set_c_compiler_flag_optional  ("-msse4.2")
+endif()
+
 
 find_program(CCACHE_EXECUTABLE ccache
              PATHS /usr/local/ccache/3.2.5/bin/)
