@@ -924,7 +924,7 @@ CObjectIStreamIterator<TRoot>::CData::x_NextSeqWithFilter(const CObjectInfo& obj
             case eAllRandom:
                 done.insert(mi_now);
                 // no break
-                /* FALLTHROUGH */
+                NCBI_FALLTHROUGH;
             case eAllSeq:
                 {
                     CObjectInfo oi = minfo.GetMember().GetTypeFamily() == eTypeFamilyPointer ?
