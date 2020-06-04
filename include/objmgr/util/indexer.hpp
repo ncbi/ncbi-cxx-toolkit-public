@@ -153,6 +153,8 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (CBioseq_Handle bsh);
     // Get Bioseq index by mapped feature
     CRef<CBioseqIndex> GetBioseqIndex (const CMappedFeat& mf);
+    // Get Bioseq index by sublocation
+    CRef<CBioseqIndex> GetBioseqIndex (const CSeq_loc& loc);
 
     // Seqset exploration iterator
     template<typename Fnc> size_t IterateSeqsets (Fnc m);
@@ -221,6 +223,8 @@ public:
     CRef<CBioseqIndex> GetBioseqIndex (string& str);
     // Get Bioseq index by feature
     CRef<CBioseqIndex> GetBioseqIndex (const CMappedFeat& mf);
+    // Get Bioseq index by sublocation
+    CRef<CBioseqIndex> GetBioseqIndex (const CSeq_loc& loc);
 
     // Seqset exploration iterator
     template<typename Fnc> size_t IterateSeqsets (Fnc m);

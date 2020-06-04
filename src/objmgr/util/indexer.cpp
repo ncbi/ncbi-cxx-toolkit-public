@@ -145,6 +145,13 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CMappedFeat& mf)
     return m_Idx->GetBioseqIndex(mf);
 }
 
+// Get Bioseq index by sublocation
+CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CSeq_loc& loc)
+
+{
+    return m_Idx->GetBioseqIndex(loc);
+}
+
 const vector<CRef<CBioseqIndex>>& CSeqEntryIndex::GetBioseqIndices(void)
 
 {
@@ -650,6 +657,14 @@ CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (const CMappedFeat& mf)
 {
     CSeq_id_Handle idh = mf.GetLocationId();
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(idh);
+    return GetBioseqIndex(bsh);
+}
+
+// Get Bioseq index by sublocation
+CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (const CSeq_loc& loc)
+
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
     return GetBioseqIndex(bsh);
 }
 

@@ -3501,7 +3501,8 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
     CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
     if (! idx) return;
-    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (loc);
+    // CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (loc);
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex ();
     if (! bsx) return;
 
     const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
@@ -3515,7 +3516,9 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
         s_SetGapIdxData (gap_data, gaps);
     }
 
-    bsx->IterateFeatures([this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
+    CSeq_loc slp;
+    slp.Assign(loc);
+    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
                           gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
