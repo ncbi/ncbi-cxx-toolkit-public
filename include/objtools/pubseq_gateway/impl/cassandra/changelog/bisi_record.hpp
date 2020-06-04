@@ -51,8 +51,8 @@ enum class TBiSiChangelogOperation : TBiSiChangelogOperationBase
 
 class CBiSiPartitionMaker
 {
-    const int64_t kChangelogGranularitySec = 120;
-    const int64_t kChangelogTtlSec = 14L * 24 * 3600;  // 14 days
+    static constexpr int64_t kChangelogGranularitySec = 120;
+    static constexpr int64_t kChangelogTtlSec = 14L * 24 * 3600;  // 14 days
 
  public:
     int64_t GetCurrentPartition() const
@@ -65,7 +65,12 @@ class CBiSiPartitionMaker
         return (update_time / granularity_ms) * granularity_ms;
     }
 
-    int64_t GetTTL() const
+    constexpr int64_t GetGranularitySec() const
+    {
+        return kChangelogGranularitySec;
+    }
+
+    constexpr int64_t GetTTLSec() const
     {
         return kChangelogTtlSec;
     }
