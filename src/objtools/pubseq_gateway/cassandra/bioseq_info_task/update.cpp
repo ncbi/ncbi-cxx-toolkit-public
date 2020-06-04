@@ -118,15 +118,15 @@ void CCassBioseqInfoTaskUpdate::Wait1(void)
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
-                int64_t partition = CBiSiPartitionMaker().GetCurrentPartition(), ttl = CBiSiPartitionMaker().GetTTL();
+                int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();
                 CBiChangelogRecord changelog_record(
                     partition,
                     m_Record->GetAccession(), m_Record->GetVersion(),
                     m_Record->GetSeqIdType(), m_Record->GetGI(),
                     TBiSiChangelogOperation::eChangeLogOpInsert
                 );
-                CBiSiChangelogWriter().WriteBiEvent(*qry, GetKeySpace(), changelog_record, ttl);
-                CBiSiChangelogWriter().WriteBiPartition(*qry, GetKeySpace(), partition, ttl);
+                CBiSiChangelogWriter().WriteBiEvent(*qry, GetKeySpace(), changelog_record, CBiSiPartitionMaker().GetTTLSec());
+                CBiSiChangelogWriter().WriteBiPartition(*qry, GetKeySpace(), partition, CBiSiPartitionMaker().GetTTLSec());
                 qry->RunBatch();
                 m_State = eWaitingPropsInserted;
                 break;

@@ -95,13 +95,13 @@ void CCassBioseqInfoTaskDelete::Wait1(void)
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
-                int64_t partition = CBiSiPartitionMaker().GetCurrentPartition(), ttl = CBiSiPartitionMaker().GetTTL();
+                int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();
                 CBiChangelogRecord changelog_record(
                     partition, m_Accession, m_Version, m_SeqIdType, m_GI,
                     TBiSiChangelogOperation::eChangeLogOpErase
                 );
-                CBiSiChangelogWriter().WriteBiEvent(*qry, GetKeySpace(), changelog_record, ttl);
-                CBiSiChangelogWriter().WriteBiPartition(*qry, GetKeySpace(), partition, ttl);
+                CBiSiChangelogWriter().WriteBiEvent(*qry, GetKeySpace(), changelog_record, CBiSiPartitionMaker().GetTTLSec());
+                CBiSiChangelogWriter().WriteBiPartition(*qry, GetKeySpace(), partition, CBiSiPartitionMaker().GetTTLSec());
                 qry->RunBatch();
                 m_State = eWaitingPropsDeleted;
                 break;

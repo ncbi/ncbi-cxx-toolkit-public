@@ -88,13 +88,13 @@ void CCassSI2CSITaskDelete::Wait1(void)
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
-                int64_t partition = CBiSiPartitionMaker().GetCurrentPartition(), ttl = CBiSiPartitionMaker().GetTTL();
+                int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();
                 CSiChangelogRecord changelog_record(
                     partition, m_SecSeqId, m_SecSeqIdType,
                     TBiSiChangelogOperation::eChangeLogOpErase
                 );
-                CBiSiChangelogWriter().WriteSiEvent(*qry, GetKeySpace(), changelog_record, ttl);
-                CBiSiChangelogWriter().WriteSiPartition(*qry, GetKeySpace(), partition, ttl);
+                CBiSiChangelogWriter().WriteSiEvent(*qry, GetKeySpace(), changelog_record, CBiSiPartitionMaker().GetTTLSec());
+                CBiSiChangelogWriter().WriteSiPartition(*qry, GetKeySpace(), partition, CBiSiPartitionMaker().GetTTLSec());
                 qry->RunBatch();
                 m_State = eWaitingPropsDeleted;
                 break;
