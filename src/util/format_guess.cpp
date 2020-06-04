@@ -236,6 +236,34 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] =
     "GFF Augustus",
     "JSON",
     "PSL",
+    "altGraphX",
+    "BED5 float score",
+    "BED graph",
+    "BED Rna elements",
+    "bigBarChart",
+    "BigBED",
+    "BigPSL",
+    "BigChain",
+    "BigMaf",
+    "BigWig",
+    "BroadPeak",
+    "Chain",
+    "ClonePos",
+    "ColoredExon",
+    "CtgPos",
+    "DowloadsOnly",
+    "EncodeFiveC",
+    "ExpRatio",
+    "FactorSource",
+    "GenePred",
+    "Ld2",
+    "NarrowPeak",
+    "NetAlign",
+    "PeptideMapping",
+    "Rmsk",
+    "Snake",
+    "VcfTabix",
+    "WigMaf"
 };
 
 const char*
@@ -543,7 +571,7 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
 void
 CFormatGuess::Initialize()
 {
-    NCBI_ASSERT(eFormat_max-2 == sizeof( s_CheckOrder ) / sizeof( int ),
+    NCBI_ASSERT(eFormat_maxSupported-1 == sizeof( s_CheckOrder ) / sizeof( int ),
         "Indices in s_CheckOrder do not match format count ---"
         "update s_CheckOrder to list all formats" 
     );

@@ -92,6 +92,37 @@ public:
         eGffAugustus         = 34, ///< GFFish output of Augustus Gene Prediction
         eJSON                = 35, ///< JSON 
         ePsl                 = 36, ///< PSL alignment format
+        eFormat_maxSupported = ePsl,
+        // The following formats are not yet recognized by CFormatGuess - CXX-10039
+        eAltGraphX, 
+        eBed5FloatScore,
+        eBedGraph,
+        eBedRnaElements,
+        eBigBarChart,
+        eBigBed,
+        eBigPsl,
+        eBigChain,
+        eBigMaf,
+        eBigWig,
+        eBroadPeak,
+        eChain,
+        eClonePos,
+        eColoredExon,
+        eCtgPos,
+        eDownloadsOnly,
+        eEncodeFiveC,
+        eExpRatio,
+        eFactorSource,
+        eGenePred,
+        eLd2,
+        eNarrowPeak,
+        eNetAlign,
+        ePeptideMapping,
+        eRmsk,
+        eSnake,
+        eVcfTabix,
+        eWigMaf,
+        
         /// Max value of EFormat
         eFormat_max
     };
