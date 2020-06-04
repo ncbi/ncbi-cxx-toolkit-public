@@ -912,11 +912,11 @@ public:
 
 #if !defined(NCBI_TEST_APPLICATION)
     template<typename T>
-    explicit CStrictId(T id, typename enable_if<is_same<T, TId>::value, T>::type dummy = 0) : m_Id(id) {}
+    explicit CStrictId(T id, typename enable_if<is_same<T, TId>::value, T>::type = 0) : m_Id(id) {}
 private:
 #else
     template<typename T>
-    CStrictId(T id, typename enable_if<is_arithmetic<T>::value, T>::type dummy = 0) : m_Id(id) {}
+    CStrictId(T id, typename enable_if<is_arithmetic<T>::value, T>::type = 0) : m_Id(id) {}
     template<typename T>
     typename enable_if<is_arithmetic<T>::value, TThis>::type& operator=(T id) { m_Id = id; return *this; }
     template<typename T>
