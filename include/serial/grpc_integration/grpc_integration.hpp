@@ -93,6 +93,14 @@ public:
 
 /// BEGIN_NCBI_GRPC_REQUEST -- Set up AppLog logging for the current
 /// (server-side) request handler.
+///
+/// The third argument may be either a reply google::protobuf::Message
+/// or a streaming grpc::ServerWriter<>.  In the case of a reply
+/// message, automatic wrap-up actions will include propagating its
+/// byte size to the request context's count of bytes written.  In the
+/// case of a streaming writer, however, there's no automatic way to
+/// determine that count, so callers are responsible for supplying it
+/// themselves.
 #define BEGIN_NCBI_GRPC_REQUEST(sctx, request, reply) \
     CGRPCRequestLogger request_logger##__LINE__       \
         (sctx, NCBI_CURRENT_FUNCTION, request, reply)

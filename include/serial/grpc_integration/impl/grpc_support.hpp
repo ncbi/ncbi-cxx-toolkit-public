@@ -73,6 +73,11 @@ namespace grpc {
 }
 #endif
 
+namespace grpc_impl {
+    namespace internal {
+        class ServerStreamingInterface;
+    }
+}
 
 /** @addtogroup Miscellaneous
  *
@@ -98,13 +103,16 @@ public:
     typedef google::protobuf::Message TMessage;
     CGRPCRequestLogger(TGRPCServerContext* sctx, CTempString method_name,
                        const TMessage& request, const TMessage& reply);
+    CGRPCRequestLogger(TGRPCServerContext* sctx, CTempString method_name,
+                       const TMessage& request,
+                       grpc_impl::internal::ServerStreamingInterface&);
     ~CGRPCRequestLogger();
 
 private:
     CDiagContext&    m_DiagContext;
     CRequestContext& m_RequestContext;
 #ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
-    const TMessage&  m_Reply;
+    const TMessage*  m_Reply;
 #endif
     bool             m_ManagingRequest;
 };
@@ -170,7 +178,7 @@ CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
     : m_DiagContext(GetDiagContext()),
       m_RequestContext(m_DiagContext.GetRequestContext()),
 #ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
-      m_Reply(reply),
+      m_Reply(&reply),
 #endif
       m_ManagingRequest(false)
 {
@@ -190,7 +198,9 @@ CGRPCRequestLogger::~CGRPCRequestLogger()
         m_RequestContext.SetRequestStatus
             (CRequestStatus::e500_InternalServerError);
     }
-    m_RequestContext.SetBytesWr(NCBI_GRPC_GET_BYTE_SIZE(m_Reply));
+    if (m_Reply != nullptr) {
+        m_RequestContext.SetBytesWr(NCBI_GRPC_GET_BYTE_SIZE(*m_Reply));
+    }
     if (m_ManagingRequest) {
         m_DiagContext.PrintRequestStop();
     }
