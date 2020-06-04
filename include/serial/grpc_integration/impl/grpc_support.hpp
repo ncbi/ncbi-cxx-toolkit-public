@@ -198,9 +198,11 @@ CGRPCRequestLogger::~CGRPCRequestLogger()
         m_RequestContext.SetRequestStatus
             (CRequestStatus::e500_InternalServerError);
     }
+#ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
     if (m_Reply != nullptr) {
         m_RequestContext.SetBytesWr(NCBI_GRPC_GET_BYTE_SIZE(*m_Reply));
     }
+#endif
     if (m_ManagingRequest) {
         m_DiagContext.PrintRequestStop();
     }
