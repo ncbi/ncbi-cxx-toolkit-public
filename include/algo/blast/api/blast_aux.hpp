@@ -43,6 +43,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <util/range.hpp>       // For TSeqRange
 #include <objects/seq/seqlocinfo.hpp>
+#include <objects/blast/Blast4_error.hpp>
 #include <objmgr/scope.hpp>
 
 // BLAST includes
@@ -57,6 +58,7 @@
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_psi.h>
 #include <algo/blast/core/blast_hspstream.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -238,6 +240,28 @@ private:
     //not deleted prematurely
     DECLARE_CLASS_STATIC_FAST_MUTEX(sm_Mutex);
     static Uint4 m_RefCounter;
+};
+
+/// Class to capture message from diag handler
+class NCBI_XBLAST_EXPORT CBlastAppDiagHandler : public CDiagHandler
+{
+public:
+	/// Constructor
+	CBlastAppDiagHandler():m_handler(GetDiagHandler(true)), m_save (true) {}
+	/// Destructor
+	~CBlastAppDiagHandler();
+	/// Save and post diag message
+	virtual void Post (const SDiagMessage & mess);
+	/// Reset messgae buffer, erase all saved message
+	void ResetMessages(void);
+	/// Call to turn off saving diag message, discard all saved message
+	void DoNotSaveMessages(void);
+	/// Return list of saved diag messages
+	list<CRef<objects::CBlast4_error> > & GetMessages(void) { return m_messages;}
+private :
+	CDiagHandler * m_handler;
+	list<CRef<objects::CBlast4_error> > m_messages;
+	bool m_save;
 };
 
 

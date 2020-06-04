@@ -1152,6 +1152,47 @@ LoadSequencesToScope(CScope::TIds& ids, vector<TSeqRange>& ranges, CRef<CScope> 
 	top_bh.GetSeqMap().CanResolveRange(&*scope, sel);
 }
 
+void CBlastAppDiagHandler::Post(const SDiagMessage & mess)
+{
+	if(m_handler != NULL) {
+		m_handler->Post(mess);
+	}
+	if(m_save) {
+		CRef<CBlast4_error> d(new CBlast4_error);
+		string m;
+		mess.Write(m);
+		d->SetMessage(NStr::Sanitize(m));
+		d->SetCode((int)mess.m_Severity);
+		{
+			DEFINE_STATIC_MUTEX(mx);
+			CMutexGuard guard(mx);
+			m_messages.push_back(d);
+		}
+	}
+}
+
+void CBlastAppDiagHandler::ResetMessages()
+{
+	DEFINE_STATIC_MUTEX(mx);
+	CMutexGuard guard(mx);
+	m_messages.clear();
+}
+
+CBlastAppDiagHandler::~CBlastAppDiagHandler()
+{
+	if(m_handler) {
+		SetDiagHandler(m_handler);
+		m_handler = NULL;
+	}
+}
+
+void CBlastAppDiagHandler::DoNotSaveMessages(void)
+{
+	m_save = false;
+	ResetMessages();
+}
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
