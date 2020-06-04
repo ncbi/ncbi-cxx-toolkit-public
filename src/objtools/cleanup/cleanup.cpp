@@ -2783,7 +2783,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     for (CFeat_CI rna_it(entry, SAnnotSelector(CSeqFeatData::e_Rna)); rna_it; ++rna_it) {
 
         const CSeq_feat& rna_feat = *(rna_it->GetSeq_feat());
-        if (rna_feat.IsSetData() && rna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && !rna_feat.IsSetPartial() && s_CleanupIsShortrRNA(rna_feat, &(entry.GetScope()))) {
+        if (rna_feat.IsSetData() && 
+            rna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA &&
+            s_CleanupIsShortrRNA(rna_feat, &(entry.GetScope()))) {
 
             bool change_this_rrna = false;
             CRef<CSeq_feat> new_rrna(new CSeq_feat());
