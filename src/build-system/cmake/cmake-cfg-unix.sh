@@ -19,7 +19,7 @@ fi
 if [ -z "${CMAKE_CMD}" ]; then
   CMAKE_CMD=`which cmake 2>/dev/null`
   if test $? -ne 0; then
-    echo ERROR: CMake is not found
+    echo ERROR: CMake is not found 1>&2
     exit 1
   fi
 fi
@@ -95,7 +95,10 @@ EOF
 Error()
 {
   Usage
-  test -z "$1"  ||  echo ERROR: $1 1>&2
+  if [ -n "$1" ]; then
+    echo ----------------------------------------------------------------------
+    echo ERROR: $1 1>&2
+  fi
   cd "$initial_dir"
   exit 1
 }
@@ -226,8 +229,7 @@ if [ -n "$prebuilt_dir" ]; then
   if [ -f $prebuilt_dir/$prebuilt_name/cmake/buildinfo ]; then
     source $prebuilt_dir/$prebuilt_name/cmake/buildinfo
   else
-    echo ERROR:  Buildinfo not found in $prebuilt_dir/$prebuilt_name
-    exit 1
+    Error "Buildinfo not found in $prebuilt_dir/$prebuilt_name"
   fi
 fi
 
@@ -349,7 +351,10 @@ if false; then
   echo mkdir -p ${BUILD_ROOT}/build 
   echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 else
-mkdir -p ${BUILD_ROOT}/build 
+mkdir -p ${BUILD_ROOT}/build
+if [ ! -d ${BUILD_ROOT}/build ]; then
+  Error "Failed to create directory: ${BUILD_ROOT}/build"
+fi
 cd ${BUILD_ROOT}/build 
 
 if [ -f "${tree_root}/CMakeLists.txt" ]; then

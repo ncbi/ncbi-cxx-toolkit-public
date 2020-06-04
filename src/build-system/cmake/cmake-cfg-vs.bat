@@ -20,8 +20,8 @@ if "%CMAKE_CMD%"=="" (
   )
 )
 if not exist "%CMAKE_CMD%" (
-  echo ERROR: CMake is not found
-  goto :DONE
+  echo ERROR: CMake is not found 1>&2
+  exit /b 1
 )
 
 REM #########################################################################
@@ -83,7 +83,7 @@ goto :eof
 call :USAGE
 if not "%~1"=="" (
   echo ----------------------------------------------------------------------
-  echo ERROR:  %*
+  echo ERROR:  %* 1>&2
 )
 goto :eof
 
@@ -156,7 +156,7 @@ if not "%unknown%"=="" (
 
 if not "%unknown%"=="" (
   call :ERROR unknown options: %unknown%
-  goto :DONE
+  goto :FAIL
 )
 
 if not "%prebuilt_dir%"=="" (
@@ -165,8 +165,8 @@ if not "%prebuilt_dir%"=="" (
     call "%TEMP%\%prebuilt_name%cmakebuildinfo.bat"
     del "%TEMP%\%prebuilt_name%cmakebuildinfo.bat"
   ) else (
-    echo ERROR:  Buildinfo not found in %prebuilt_dir%%prebuilt_name%
-    exit /b 1
+    call :ERROR Buildinfo not found in %prebuilt_dir%%prebuilt_name%
+    goto :FAIL
   )
 )
 
@@ -252,9 +252,14 @@ if defined have_configure_ext_PreCMake (
 if not exist "%BUILD_ROOT%\build" (
   mkdir "%BUILD_ROOT%\build"
 )
+if not exist "%BUILD_ROOT%\build" (
+  call :ERROR Failed to create directory: %BUILD_ROOT%\build
+  goto :FAIL
+)
 cd /d "%BUILD_ROOT%\build"
 
-REM echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
+rem echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
+rem goto :DONE
 if exist "%tree_root%\CMakeLists.txt" (
   "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%"
 ) else (
@@ -264,3 +269,9 @@ if exist "%tree_root%\CMakeLists.txt" (
 :DONE
 cd /d %initial_dir%
 endlocal
+exit /b 0
+
+:FAIL
+cd /d %initial_dir%
+endlocal
+exit /b 1
