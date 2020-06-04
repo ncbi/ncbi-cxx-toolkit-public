@@ -939,6 +939,7 @@ CCIM	c	Culture Collection of Industrial Microorganisms
 CCM	c	Czech Collection of Microorganisms	CCM<CZE>		
 CCM-A	c	Coleccion de Cultivos Microbianos			
 CCM-CIBE	c	Escuela Superior Politecnica del Litoral			
+CCM-UFV	c	Collection of Cyanobacteria and Microalgae at the Universidade Federal de Vicosa			
 CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
 CCM<USA-MT>	s	Carter County Museum			
 CCMA-UFSCar	c	Culture Collection of Freshwater Microalgae			
@@ -5136,6 +5137,7 @@ NRC	c	Division of Biological Sciences, National Research Council of Canada
 NRC<EGY>	s	National Research Centre			
 NRCC	s	National Research Council of Canada			
 NRCS	c	National Reference Center for Streptococci in Aachen			
+NRI	s	Texas A&M Natural Resources Institute			
 NRIBAS	s	National Research Institute of Biology, Academia Sinica			
 NRIC	c	NODAI Research Institute Culture Collection			
 NRL	c	Neisseria Reference Laboratory			
