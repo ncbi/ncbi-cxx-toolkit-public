@@ -127,24 +127,15 @@ public:
         // Select desired sequence record
         if (m_from > 0 && m_to > 0) {
 
-            // Create surrogate delta sequence pointing to Bioseq subrange (mixed indexing)
-            if (m_accn.empty()) {
-                // If no -accn argument, use first Bioseq
-                bsx = idx.GetBioseqIndex(m_from - 1, m_to - 1, m_revcomp);
-            } else {
-                bsx = idx.GetBioseqIndex(m_accn, m_from - 1, m_to - 1, m_revcomp);
-            }
-            if (bsx) {
-                DoOneBioseq(*bsx);
-            }
+            // subrange moved to IterateFeatures
 
-        } else if (! m_accn.empty()) {
+          } else if (! m_accn.empty()) {
 
-            // Process selected Bioseq
-            bsx = idx.GetBioseqIndex(m_accn);
-            if (bsx) {
-                DoOneBioseq(*bsx);
-            }
+              // Process selected Bioseq
+              bsx = idx.GetBioseqIndex(m_accn);
+              if (bsx) {
+                  DoOneBioseq(*bsx);
+              }
 
         } else {
 
