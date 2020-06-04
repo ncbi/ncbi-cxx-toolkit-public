@@ -365,6 +365,14 @@ public:
     ///  Bioseq, which TSE is to be removed from the cache.
     void RemoveFromHistory(const CBioseq_Handle& bioseq,
                            EActionIfLocked action = eKeepIfLocked);
+    /// Remove the Seq-id failed resolution from the scope's history.
+    /// @param seq_id
+    ///  Seq-id that failed resolution
+    void RemoveFromHistory(const CSeq_id_Handle& seq_id);
+    /// Remove the Seq-id failed resolution from the scope's history.
+    /// @param seq_id
+    ///  Seq-id that failed resolution
+    void RemoveFromHistory(const CSeq_id& seq_id);
 
     /// Revoke data loader from the scope. Throw exception if the
     /// operation fails (e.g. data source is in use or not found).

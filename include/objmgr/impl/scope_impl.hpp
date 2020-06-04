@@ -301,6 +301,7 @@ public:
     void ResetHistory(int action); // CScope::EActionIfLocked
     void ResetDataAndHistory(void);
     void RemoveFromHistory(const CTSE_Handle& tse, int action);
+    void RemoveFromHistory(const CSeq_id_Handle& seq_id);
 
     // Revoke data sources from the scope. Throw exception if the
     // operation fails (e.g. data source is in use or not found).

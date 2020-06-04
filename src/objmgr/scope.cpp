@@ -328,6 +328,18 @@ void CScope::ResetDataAndHistory(ERemoveDataLoaders)
 }
 
 
+void CScope::RemoveFromHistory(const CSeq_id_Handle& seq_id)
+{
+    m_Impl->RemoveFromHistory(seq_id);
+}
+
+
+void CScope::RemoveFromHistory(const CSeq_id& seq_id)
+{
+    RemoveFromHistory(CSeq_id_Handle::GetHandle(seq_id));
+}
+
+
 void CScope::RemoveFromHistory(const CBioseq_Handle& bioseq,
                                EActionIfLocked action)
 {

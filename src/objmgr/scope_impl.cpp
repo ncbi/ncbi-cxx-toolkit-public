@@ -2587,6 +2587,28 @@ void CScope_Impl::RemoveFromHistory(const CTSE_Handle& tse, int action)
 }
 
 
+void CScope_Impl::RemoveFromHistory(const CSeq_id_Handle& seq_id)
+{
+    if ( !seq_id ) {
+        return;
+    }
+    TConfWriteLockGuard guard(m_ConfLock);
+    // Clear removed bioseq handles
+    TSeq_idMap::iterator it = m_Seq_idMap.find(seq_id);
+    if ( it != m_Seq_idMap.end() ) {
+        it->second.x_ResetAnnotRef_Info();
+        if ( it->second.m_Bioseq_Info ) {
+            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
+            binfo.x_ResetAnnotRef_Info();
+            if ( binfo.IsDetached() ) {
+                binfo.m_SynCache.Reset();
+                m_Seq_idMap.erase(it);
+            }
+        }
+    }
+}
+
+
 void CScope_Impl::ResetHistory(int action)
 {
     TConfWriteLockGuard guard(m_ConfLock);

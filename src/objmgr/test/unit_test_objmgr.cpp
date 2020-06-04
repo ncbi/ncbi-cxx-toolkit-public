@@ -824,7 +824,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT4)
 
 BOOST_AUTO_TEST_CASE(CppIterFeat)
 {
-    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    // check for C++-11 style feature iteration
     CScope scope(*CObjectManager::GetInstance());
     const int master_num = 1;
     const int segment_num = 2;
@@ -895,7 +895,7 @@ BOOST_AUTO_TEST_CASE(CppIterFeat)
 
 BOOST_AUTO_TEST_CASE(CppIterAlign)
 {
-    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    // check for C++-11 style align iteration
     CScope scope(*CObjectManager::GetInstance());
     const int master_num = 1;
     const int segment_num = 2;
@@ -970,7 +970,7 @@ BOOST_AUTO_TEST_CASE(CppIterAlign)
 
 BOOST_AUTO_TEST_CASE(CppIterGraph)
 {
-    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    // check for C++-11 style graph iteration
     CScope scope(*CObjectManager::GetInstance());
     const int master_num = 1;
     const int segment_num = 2;
@@ -1045,7 +1045,7 @@ BOOST_AUTO_TEST_CASE(CppIterGraph)
 
 BOOST_AUTO_TEST_CASE(CppIterTable)
 {
-    // check re-resolve after adding, removing, and restoring, resolving only at the end
+    // check for C++-11 style Seq-table iteration
     CScope scope(*CObjectManager::GetInstance());
     const int master_num = 1;
     const int segment_num = 2;
@@ -1110,5 +1110,77 @@ BOOST_AUTO_TEST_CASE(CppIterTable)
             ++vv_it;
         }
         BOOST_CHECK(vv_it == end(vv));
+    }}
+}
+
+
+// verify error message
+class CExpectDiagHandler : public CDiagHandler
+{
+public:
+    CExpectDiagHandler()
+    {
+        Start();
+    }
+    ~CExpectDiagHandler()
+    {
+        Stop();
+    }
+    virtual void Post(const SDiagMessage& mess)
+    {
+        PostToConsole(mess);
+        string s;
+        mess.Write(s);
+        m_Messages.push_back(s);
+    }
+
+    void Start(void)
+    {
+        m_Messages.clear();
+        SetDiagHandler(this, false);
+    }
+    void Stop(void)
+    {
+        SetDiagStream(&cerr);
+    }
+    
+    vector<string> m_Messages;
+};
+
+
+BOOST_AUTO_TEST_CASE(AddSeqIdHistory)
+{
+    // check Seq-id history reset and re-resolve
+    CExpectDiagHandler diag;
+    string err_msg = "adding new data to a scope with non-empty history make data inconsistent";
+    {{
+        diag.Start();
+        CScope scope(*CObjectManager::GetInstance());
+        CRef<CSeq_id> id1 = s_GetId(1);
+        CRef<CSeq_entry> entry = s_GetEntry(1, 0);
+        BOOST_CHECK(!scope.GetBioseqHandle(*id1));
+        BOOST_CHECK(diag.m_Messages.empty());
+        LOG_POST("One message from CScope_Impl about data inconsistence is expected");
+        diag.Start();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry.GetNCObject());
+        BOOST_REQUIRE_EQUAL(diag.m_Messages.size(), 1u);
+        BOOST_CHECK(diag.m_Messages[0].find(err_msg) != NPOS);
+        diag.Start();
+        BOOST_CHECK(scope.GetBioseqHandle(*id1));
+        BOOST_CHECK(diag.m_Messages.empty());
+    }}
+    {{
+        diag.Start();
+        CScope scope(*CObjectManager::GetInstance());
+        CRef<CSeq_id> id1 = s_GetId(1);
+        CRef<CSeq_entry> entry = s_GetEntry(1, 0);
+        BOOST_CHECK(!scope.GetBioseqHandle(*id1));
+        BOOST_CHECK(diag.m_Messages.empty());
+        scope.RemoveFromHistory(*id1);
+        BOOST_CHECK(diag.m_Messages.empty());
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry.GetNCObject());
+        BOOST_CHECK(diag.m_Messages.empty());
+        BOOST_CHECK(scope.GetBioseqHandle(*id1));
+        BOOST_CHECK(diag.m_Messages.empty());
     }}
 }
