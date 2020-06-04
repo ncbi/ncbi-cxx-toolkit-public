@@ -154,14 +154,6 @@ public:
     // Get Bioseq index by mapped feature
     CRef<CBioseqIndex> GetBioseqIndex (const CMappedFeat& mf);
 
-    // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
-
-    // Get Bioseq index by sublocation
-    CRef<CBioseqIndex> GetBioseqIndex (const CSeq_loc& loc);
-    // Get Bioseq index by subrange
-    CRef<CBioseqIndex> GetBioseqIndex (const string& accn, int from, int to, bool rev_comp);
-    CRef<CBioseqIndex> GetBioseqIndex (int from, int to, bool rev_comp);
-
     // Seqset exploration iterator
     template<typename Fnc> size_t IterateSeqsets (Fnc m);
 
@@ -230,13 +222,6 @@ public:
     // Get Bioseq index by feature
     CRef<CBioseqIndex> GetBioseqIndex (const CMappedFeat& mf);
 
-    // Subrange processing creates a new CBioseqIndex around a temporary delta Bioseq
-    // Get Bioseq index by sublocation
-    CRef<CBioseqIndex> GetBioseqIndex (const CSeq_loc& loc);
-    // Get Bioseq index by subrange
-    CRef<CBioseqIndex> GetBioseqIndex (const string& accn, int from, int to, bool rev_comp);
-    CRef<CBioseqIndex> GetBioseqIndex (int from, int to, bool rev_comp);
-
     // Seqset exploration iterator
     template<typename Fnc> size_t IterateSeqsets (Fnc m);
 
@@ -273,14 +258,6 @@ private:
 
     // Recursive exploration to populate vector of index objects for Bioseqs in Seq-entry
     void x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt, int level = 0);
-
-    CRef<CSeq_id> x_MakeUniqueId(void);
-
-    // Create delta sequence referring to location, using temporary local ID
-    CRef<CBioseqIndex> x_DeltaIndex(const CSeq_loc& loc);
-
-    // Create location from range, to use in x_DeltaIndex
-    CConstRef<CSeq_loc> x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp);
 
 private:
     CRef<CObjectManager> m_Objmgr;
@@ -392,8 +369,7 @@ public:
                   CSeqMasterIndex& idx,
                   CSeqEntryIndex::EPolicy policy,
                   CSeqEntryIndex::TFlags flags,
-                  int depth,
-                  bool surrogate);
+                  int depth);
 
     // Destructor
     ~CBioseqIndex (void);
@@ -412,9 +388,7 @@ public:
 
     // Feature exploration iterator
     template<typename Fnc> size_t IterateFeatures (Fnc m);
-    template<typename Fnc> size_t IterateFeatures (SAnnotSelector& sel, Fnc m);
     template<typename Fnc> size_t IterateFeatures (CSeq_loc& slp, Fnc m);
-    template<typename Fnc> size_t IterateFeatures (SAnnotSelector& sel, CSeq_loc& slp, Fnc m);
 
     // Getters
     CBioseq_Handle GetBioseqHandle (void) const { return m_Bsh; }
@@ -585,14 +559,12 @@ private:
 
     // Common feature collection, delayed until actually needed
     void x_InitFeats (void);
-    void x_InitFeats (SAnnotSelector& sel);
     void x_InitFeats (CSeq_loc& slp);
-    void x_InitFeats (SAnnotSelector& sel, CSeq_loc& slp);
 
-    void x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, bool surrogate, CScope& scope);
+    void x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, CScope& scope);
 
     // common implementation method
-    void x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp);
+    void x_InitFeats (CSeq_loc* slpp);
 
     // Set BioSource flags
     void x_InitSource (void);
@@ -764,9 +736,6 @@ private:
 
     // Map fields
     string m_rEnzyme;
-
-    // true if this index is for a temporary subrange delta Bioseq
-    bool m_Surrogate;
 };
 
 
@@ -1081,27 +1050,6 @@ size_t CBioseqIndex::IterateFeatures (Fnc m)
 
 template<typename Fnc>
 inline
-size_t CBioseqIndex::IterateFeatures (SAnnotSelector& sel, Fnc m)
-
-{
-    int count = 0;
-    try {
-        // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
-        x_InitFeats(sel);
-
-        for (auto& sfx : m_SfxList) {
-            count++;
-            m(*sfx);
-        }
-    }
-    catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
-    }
-    return count;
-}
-
-template<typename Fnc>
-inline
 size_t CBioseqIndex::IterateFeatures (CSeq_loc& slp, Fnc m)
 
 {
@@ -1109,27 +1057,6 @@ size_t CBioseqIndex::IterateFeatures (CSeq_loc& slp, Fnc m)
     try {
         // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
         x_InitFeats(slp);
-
-        for (auto& sfx : m_SfxList) {
-            count++;
-            m(*sfx);
-        }
-    }
-    catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
-    }
-    return count;
-}
-
-template<typename Fnc>
-inline
-size_t CBioseqIndex::IterateFeatures (SAnnotSelector& sel, CSeq_loc& slp, Fnc m)
-
-{
-    int count = 0;
-    try {
-        // Delay feature collection until first request, but do not bail on m_FeatsInitialized flag
-        x_InitFeats(sel, slp);
 
         for (auto& sfx : m_SfxList) {
             count++;

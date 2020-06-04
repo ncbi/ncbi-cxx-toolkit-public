@@ -145,26 +145,6 @@ CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CMappedFeat& mf)
     return m_Idx->GetBioseqIndex(mf);
 }
 
-// Get Bioseq index by sublocation
-CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const CSeq_loc& loc)
-
-{
-    return m_Idx->GetBioseqIndex(loc);
-}
-
-// Get Bioseq index by subrange
-CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (const string& accn, int from, int to, bool rev_comp)
-
-{
-    return m_Idx->GetBioseqIndex(accn, from, to, rev_comp);
-}
-
-CRef<CBioseqIndex> CSeqEntryIndex::GetBioseqIndex (int from, int to, bool rev_comp)
-
-{
-    return m_Idx->GetBioseqIndex("", from, to, rev_comp);
-}
-
 const vector<CRef<CBioseqIndex>>& CSeqEntryIndex::GetBioseqIndices(void)
 
 {
@@ -460,7 +440,7 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, *this, m_Policy, m_Flags, m_Depth, false));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, *this, m_Policy, m_Flags, m_Depth));
 
             // record CBioseqIndex in vector for IterateBioseqs or GetBioseqIndex
             m_BsxList.push_back(bsx);
@@ -605,92 +585,6 @@ void CSeqMasterIndex::x_Init (void)
     }
 }
 
-// Support for temporary delta sequence referring to subrange of original sequence
-CRef<CSeq_id> CSeqMasterIndex::x_MakeUniqueId(void)
-{
-    CRef<CSeq_id> id(new CSeq_id());
-    bool good = false;
-    while (!good) {
-        id->SetLocal().SetStr("tmp_delta_subset_" + NStr::NumericToString(m_Counter.Add(1)));
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
-        if (! bsh) {
-            good = true;
-        }
-    }
-    return id;
-}
-
-CRef<CBioseqIndex> CSeqMasterIndex::x_DeltaIndex(const CSeq_loc& loc)
-
-{
-    try {
-        // create delta sequence referring to location or range, using temporary local Seq-id
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
-        CRef<CBioseq> delta(new CBioseq());
-        delta->SetId().push_back(x_MakeUniqueId());
-        delta->SetInst().Assign(bsh.GetInst());
-        delta->SetInst().ResetSeq_data();
-        delta->SetInst().ResetExt();
-        delta->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-        CRef<CDelta_seq> element(new CDelta_seq());
-        element->SetLoc().Assign(loc);
-        delta->SetInst().SetExt().SetDelta().Set().push_back(element);
-        delta->SetInst().SetLength(sequence::GetLength(loc, m_Scope));
-
-        // add to scope
-        CBioseq_Handle deltaBsh = m_Scope->AddBioseq(*delta);
-
-        if (deltaBsh) {
-            // create CBioseqIndex object for delta Bioseq
-            CRef<CSeqsetIndex> noparent;
-
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(deltaBsh, *delta, bsh, noparent, m_Tseh, m_Scope, *this, m_Policy, m_Flags, m_Depth, true));
-
-           return bsx;
-        }
-    }
-    catch (CException& e) {
-        LOG_POST_X(2, Error << "Error in CSeqMasterIndex::x_DeltaIndex: " << e.what());
-    }
-    return CRef<CBioseqIndex> ();
-}
-
-CConstRef<CSeq_loc> CSeqMasterIndex::x_SubRangeLoc(const string& accn, int from, int to, bool rev_comp)
-
-{
-    TAccnIndexMap::iterator it = m_AccnIndexMap.find(accn);
-    if (it != m_AccnIndexMap.end()) {
-        CRef<CBioseqIndex> bsx = it->second;
-        for (const CRef<CSeq_id>& id : bsx->GetBioseq().GetId()) {
-            switch (id->Which()) {
-                case CSeq_id::e_Other:
-                case CSeq_id::e_Genbank:
-                case CSeq_id::e_Embl:
-                case CSeq_id::e_Ddbj:
-                case CSeq_id::e_Tpg:
-                case CSeq_id::e_Tpe:
-                case CSeq_id::e_Tpd:
-                    {
-                        CSeq_loc::TStrand strand = eNa_strand_unknown;
-                        if (rev_comp) {
-                            strand = eNa_strand_minus;
-                        }
-                        CSeq_id& nc_id = const_cast<CSeq_id&>(*id);
-                        // create location from range
-                        CConstRef<CSeq_loc> loc(new CSeq_loc(nc_id, from, to, strand));
-                        if (loc) {
-                           return loc;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    return CConstRef<CSeq_loc> ();
-}
-
 // Get first Bioseq index
 CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (void)
 
@@ -759,46 +653,6 @@ CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (const CMappedFeat& mf)
     return GetBioseqIndex(bsh);
 }
 
-// Get Bioseq index by sublocation
-CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (const CSeq_loc& loc)
-
-{
-    CRef<CBioseqIndex> bsx = x_DeltaIndex(loc);
-
-    if (bsx) {
-        return bsx;
-    }
-    return CRef<CBioseqIndex> ();
-}
-
-// Get Bioseq index by subrange
-CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (const string& accn, int from, int to, bool rev_comp)
-
-{
-    string accession = accn;
-    if (accession.empty()) {
-        CRef<CBioseqIndex> bsx = GetBioseqIndex();
-        if (bsx) {
-            accession = bsx->GetAccession();
-        }
-    }
-
-    if (! accession.empty()) {
-        CConstRef<CSeq_loc> loc = x_SubRangeLoc(accession, from, to, rev_comp);
-
-        if (loc) {
-            return GetBioseqIndex(*loc);
-        }
-    }
-    return CRef<CBioseqIndex> ();
-}
-
-CRef<CBioseqIndex> CSeqMasterIndex::GetBioseqIndex (int from, int to, bool rev_comp)
-
-{
-    return GetBioseqIndex("", from, to, rev_comp);
-}
-
 // Allow access to internal vectors for application to use in iterators
 const vector<CRef<CBioseqIndex>>& CSeqMasterIndex::GetBioseqIndices(void)
 
@@ -843,8 +697,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                             CSeqMasterIndex& idx,
                             CSeqEntryIndex::EPolicy policy,
                             CSeqEntryIndex::TFlags flags,
-                            int depth,
-                            bool surrogate)
+                            int depth)
     : m_Bsh(bsh),
       m_Bsp(bsp),
       m_OrigBsh(obsh),
@@ -854,8 +707,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
       m_Idx(&idx),
       m_Policy(policy),
       m_Flags(flags),
-      m_Depth(depth),
-      m_Surrogate(surrogate)
+      m_Depth(depth)
 {
     m_FetchFailure = false;
 
@@ -1118,13 +970,6 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
 CBioseqIndex::~CBioseqIndex (void)
 
 {
-    if (m_Surrogate) {
-        try {
-            m_Scope->RemoveBioseq(m_Bsh);
-        } catch (CException&) {
-            // presumably still in use; let it be
-        }
-    }
 }
 
 // Gap collection (delayed until needed)
@@ -1856,20 +1701,13 @@ void CBioseqIndex::x_InitDescs (void)
     }
 }
 
-void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, bool surrogate, CScope& scope)
+void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, CScope& scope)
 
 {
     if (policy == CSeqEntryIndex::eInternal || onlyNear) {
 
         // do not fetch features from underlying sequence component records
-        if (surrogate) {
-            // delta with sublocation needs to map features from original Bioseq
-            sel.SetResolveAll();
-            sel.SetResolveDepth(1);
-        } else {
-            // otherwise limit collection to local records in top-level Seq-entry
-            sel.SetResolveDepth(0);
-        }
+        sel.SetResolveDepth(0);
         sel.SetExcludeExternal(true);
 
     } else if (policy == CSeqEntryIndex::eExternal) {
@@ -1982,7 +1820,7 @@ static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
 }
 
 // Feature collection common implementation method (delayed until needed)
-void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
+void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
 
 {
     try {
@@ -1997,11 +1835,7 @@ void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
 
         SAnnotSelector sel;
 
-        x_DefaultSelector(sel, m_Policy, m_Flags, m_Depth, m_ForceOnlyNearFeats, m_Surrogate, *m_Scope);
-
-        if (selp == 0) {
-            selp = &sel;
-        }
+        x_DefaultSelector(sel, m_Policy, m_Flags, m_Depth, m_ForceOnlyNearFeats, *m_Scope);
 
         bool onlyGeneRNACDS = false;
         if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {
@@ -2047,9 +1881,9 @@ void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
             CFeat_CI feat_it;
             CRef<CSeq_loc_Mapper> slice_mapper;
             if (slpp == 0) {
-                feat_it = CFeat_CI(m_Bsh, *selp);
+                feat_it = CFeat_CI(m_Bsh, sel);
             } else {
-                SAnnotSelector sel_cpy = *selp;
+                SAnnotSelector sel_cpy = sel;
                 sel_cpy.SetIgnoreStrand();
                 /*
                 if (selp->IsSetStrand() && selp->GetStrand() == eNa_strand_minus) {
@@ -2203,25 +2037,13 @@ void CBioseqIndex::x_InitFeats (SAnnotSelector* selp, CSeq_loc* slpp)
 void CBioseqIndex::x_InitFeats (void)
 
 {
-    x_InitFeats(0, 0);
-}
-
-void CBioseqIndex::x_InitFeats (SAnnotSelector& sel)
-
-{
-    x_InitFeats(&sel, 0);
+    x_InitFeats(0);
 }
 
 void CBioseqIndex::x_InitFeats (CSeq_loc& slp)
 
 {
-    x_InitFeats(0, &slp);
-}
-
-void CBioseqIndex::x_InitFeats (SAnnotSelector& sel, CSeq_loc& slp)
-
-{
-    x_InitFeats(&sel, &slp);
+    x_InitFeats(&slp);
 }
 
 // GetFeatureForProduct allows hypothetical protein defline generator to obtain gene locus tag
