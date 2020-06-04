@@ -268,6 +268,8 @@ const string kArgPrintMdTag("md_tag");
 const string kArgUnalignedOutput("out_unaligned");
 const string kArgUnalignedFormat("unaligned_fmt");
 
+const string kArgMTMode("mt_mode");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

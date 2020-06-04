@@ -469,6 +469,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgPrintMdTag;
 NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedOutput;
 /// Argument to specify format for reporting unaligned reads
 NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedFormat;
+/// Argument to specify mt mode (split by db or split by queries)
+NCBI_BLASTINPUT_EXPORT extern const string kArgMTMode;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
