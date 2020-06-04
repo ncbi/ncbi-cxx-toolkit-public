@@ -1151,6 +1151,7 @@ public:
 BOOST_AUTO_TEST_CASE(AddSeqIdHistory)
 {
     // check Seq-id history reset and re-resolve
+    auto old_level = SetDiagPostLevel(eDiag_Info);
     CExpectDiagHandler diag;
     string err_msg = "adding new data to a scope with non-empty history make data inconsistent";
     {{
@@ -1183,4 +1184,5 @@ BOOST_AUTO_TEST_CASE(AddSeqIdHistory)
         BOOST_CHECK(scope.GetBioseqHandle(*id1));
         BOOST_CHECK(diag.m_Messages.empty());
     }}
+    SetDiagPostLevel(old_level);
 }
