@@ -1,0 +1,41 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region NM_002020.5 1 4484
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+NM_002020.5	RefSeq	region	1	4484	.	+	.	ID=NM_002020.5:1..4484;Dbxref=taxon:9606;Name=5;chromosome=5;gbkey=Src;genome=genomic;map=5q35.3;mol_type=mRNA
+NM_002020.5	RefSeq	gene	1	4484	.	+	.	ID=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;Name=FLT4;description=fms related receptor tyrosine kinase 4;gbkey=Gene;gene=FLT4;gene_synonym=CHTD7,FLT-4,FLT41,LMPH1A,LMPHM1,PCL,VEGFR-3,VEGFR3
+NM_002020.5	RefSeq	CDS	56	3952	.	+	0	ID=cds-NP_002011.2;Parent=gene-FLT4;Dbxref=CCDS:CCDS43412.1,Genbank:NP_002011.2,GeneID:2324,HGNC:HGNC:3767,MIM:136352;Name=NP_002011.2;Note=isoform 2 precursor is encoded by transcript variant 2;gbkey=CDS;gene=FLT4;product=vascular endothelial growth factor receptor 3 isoform 2 precursor;protein_id=NP_002011.2
+NM_002020.5	RefSeq	signal_peptide_region_of_CDS	56	127	.	+	.	ID=id-NP_002011.2:1..24;Parent=cds-NP_002011.2;gbkey=Prot;inference=COORDINATES: ab initio prediction:SignalP:4.0
+NM_002020.5	RefSeq	mature_protein_region_of_CDS	128	3949	.	+	.	ID=id-NP_002011.2:25..1298;Parent=cds-NP_002011.2;gbkey=Prot;product=vascular endothelial growth factor receptor 3 isoform 2
+NM_002020.5	RefSeq	exon	1	113	.	+	.	ID=id-FLT4;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	114	210	.	+	.	ID=id-FLT4-2;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	211	455	.	+	.	ID=id-FLT4-3;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	456	568	.	+	.	ID=id-FLT4-4;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	569	731	.	+	.	ID=id-FLT4-5;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	732	871	.	+	.	ID=id-FLT4-6;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	872	1040	.	+	.	ID=id-FLT4-7;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	1041	1158	.	+	.	ID=id-FLT4-8;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	1159	1313	.	+	.	ID=id-FLT4-9;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	1314	1476	.	+	.	ID=id-FLT4-10;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	1477	1603	.	+	.	ID=id-FLT4-11;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	1604	1712	.	+	.	ID=id-FLT4-12;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	1713	2075	.	+	.	ID=id-FLT4-13;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2076	2222	.	+	.	ID=id-FLT4-14;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2223	2354	.	+	.	ID=id-FLT4-15;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2355	2461	.	+	.	ID=id-FLT4-16;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2462	2597	.	+	.	ID=id-FLT4-17;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2598	2702	.	+	.	ID=id-FLT4-18;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2703	2816	.	+	.	ID=id-FLT4-19;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2817	2905	.	+	.	ID=id-FLT4-20;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	2906	3056	.	+	.	ID=id-FLT4-21;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3057	3151	.	+	.	ID=id-FLT4-22;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3152	3274	.	+	.	ID=id-FLT4-23;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3275	3386	.	+	.	ID=id-FLT4-24;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3387	3486	.	+	.	ID=id-FLT4-25;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3487	3592	.	+	.	ID=id-FLT4-26;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3593	3741	.	+	.	ID=id-FLT4-27;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3742	3862	.	+	.	ID=id-FLT4-28;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3863	3948	.	+	.	ID=id-FLT4-29;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+NM_002020.5	RefSeq	exon	3949	4484	.	+	.	ID=id-FLT4-30;Parent=gene-FLT4;Dbxref=GeneID:2324,HGNC:HGNC:3767,MIM:136352;gbkey=exon;gene=FLT4;inference=alignment:Splign:2.1.0
+###

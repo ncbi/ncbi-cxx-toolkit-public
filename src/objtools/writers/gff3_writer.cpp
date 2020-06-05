@@ -2778,10 +2778,15 @@ bool CGff3Writer::xWriteFeatureProtein(
         pRecord->SetType(fixupIt->second);
     }
 
+    const auto& parentIt = m_MrnaMapNew.find(cds);
+    if (parentIt != m_MrnaMapNew.end()) {
+        string parentId = parentIt->second->Id();
+        pRecord->AddAttribute("Parent", parentId);
+    } 
     if (protein.IsSetProduct()) {
         string proteinId;
         CGenbankIdResolve::Get().GetBestId(protein.GetProduct(), proteinId);
-        pRecord->AddAttribute("protein_id",proteinId);
+        pRecord->AddAttribute("protein_id", proteinId);
     }
     const auto& prot = protein.GetData().GetProt();
     if (prot.IsSetName()) {
