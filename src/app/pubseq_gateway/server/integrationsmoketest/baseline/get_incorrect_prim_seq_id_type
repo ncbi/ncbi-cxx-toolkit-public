@@ -1,6 +1,6 @@
 [
 {
-    "reply": "NotFound",
+    "reply": "BioseqInfo",
     "errors": [
         "Seq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
     ]

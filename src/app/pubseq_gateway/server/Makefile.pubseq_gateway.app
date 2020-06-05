@@ -8,11 +8,11 @@ SRC = pubseq_gateway  \
       uv_extra pubseq_gateway_utils pubseq_gateway_stat \
       pubseq_gateway_handlers pubseq_gateway_convert_utils \
       pubseq_gateway_cache_utils cass_fetch psgs_reply \
-      async_seq_id_resolver async_bioseq_query \
       exclude_blob_cache alerts timing cass_monitor id2info \
       insdc_utils introspection psgs_request getblob_processor cass_processor_base \
       cass_blob_base tse_chunk_processor resolve_processor resolve_base \
-      async_resolve_base async_bioseq_info_base annot_processor
+      async_resolve_base async_bioseq_info_base annot_processor \
+      get_processor
 
 LIBS = $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS) $(KRB5_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)

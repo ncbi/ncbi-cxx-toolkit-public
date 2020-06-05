@@ -93,14 +93,6 @@ struct SBioseqResolution
         m_AccessionAdjustmentResult(ePSGS_NotRequired)
     {}
 
-    SBioseqResolution(const TPSGS_HighResolutionTimePoint &  request_start_timestamp) :
-        m_ResolutionResult(ePSGS_NotResolved),
-        m_RequestStartTimestamp(request_start_timestamp),
-        m_CassQueryCount(0),
-        m_AdjustmentTried(false),
-        m_AccessionAdjustmentResult(ePSGS_NotRequired)
-    {}
-
     SBioseqResolution(const SBioseqResolution &) = default;
     SBioseqResolution(SBioseqResolution &&) = default;
     SBioseqResolution &  operator=(const SBioseqResolution &) = default;
@@ -127,14 +119,13 @@ struct SBioseqResolution
                     shared_ptr<CPSGS_Reply>  reply);
 
     EPSGS_ResolutionResult          m_ResolutionResult;
-    TPSGS_HighResolutionTimePoint   m_RequestStartTimestamp;
     size_t                          m_CassQueryCount;
 
     // In case of the SI2CSI the only key fields are filled
     CBioseqInfoRecord               m_BioseqInfo;
 
-    // Most likely parsing error if so
-    SResolveInputSeqIdError         m_PostponedError;
+    // It could be a parsing error, retrieval error etc.
+    SResolveInputSeqIdError         m_Error;
 
     // The accession adjustment should happened exactly once so the results
     // of the call are saved for the use on the other stages

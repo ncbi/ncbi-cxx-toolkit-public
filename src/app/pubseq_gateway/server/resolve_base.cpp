@@ -392,8 +392,8 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(
 
     if (cache_lookup_result == ePSGS_Failure) {
         bioseq_resolution.Reset();
-        bioseq_resolution.m_PostponedError.m_ErrorMessage = "Cache lookup failure";
-        bioseq_resolution.m_PostponedError.m_ErrorCode = CRequestStatus::e500_InternalServerError;
+        bioseq_resolution.m_Error.m_ErrorMessage = "Cache lookup failure";
+        bioseq_resolution.m_Error.m_ErrorCode = CRequestStatus::e500_InternalServerError;
     }
 
     return cache_lookup_result;
@@ -454,8 +454,8 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
     bioseq_resolution.Reset();
 
     if (cache_failure) {
-        bioseq_resolution.m_PostponedError.m_ErrorMessage = "Cache lookup failure";
-        bioseq_resolution.m_PostponedError.m_ErrorCode = CRequestStatus::e500_InternalServerError;
+        bioseq_resolution.m_Error.m_ErrorMessage = "Cache lookup failure";
+        bioseq_resolution.m_Error.m_ErrorCode = CRequestStatus::e500_InternalServerError;
     }
 }
 
@@ -463,7 +463,7 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
 void
 CPSGS_ResolveBase::ResolveInputSeqId(void)
 {
-    SBioseqResolution   bioseq_resolution(m_Request->GetStartTimestamp());
+    SBioseqResolution   bioseq_resolution;
     auto                app = CPubseqGatewayApp::GetInstance();
     string              parse_err_msg;
     CSeq_id             oslt_seq_id;
@@ -541,9 +541,9 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
 
         // Memorize an error if there was one
         if (! parse_err_msg.empty() &&
-            ! bioseq_resolution.m_PostponedError.HasError()) {
-            bioseq_resolution.m_PostponedError.m_ErrorMessage = parse_err_msg;
-            bioseq_resolution.m_PostponedError.m_ErrorCode = CRequestStatus::e404_NotFound;
+            ! bioseq_resolution.m_Error.HasError()) {
+            bioseq_resolution.m_Error.m_ErrorMessage = parse_err_msg;
+            bioseq_resolution.m_Error.m_ErrorCode = CRequestStatus::e404_NotFound;
         }
 
         // Async request
@@ -566,11 +566,11 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
     // - LMDB error
     app->GetRequestCounters().IncNotResolved();
 
-    if (bioseq_resolution.m_PostponedError.HasError()) {
-        x_OnSeqIdResolveError(bioseq_resolution.m_PostponedError.m_ErrorCode,
+    if (bioseq_resolution.m_Error.HasError()) {
+        x_OnSeqIdResolveError(bioseq_resolution.m_Error.m_ErrorCode,
                               ePSGS_UnresolvedSeqId,
                               eDiag_Error,
-                              bioseq_resolution.m_PostponedError.m_ErrorMessage);
+                              bioseq_resolution.m_Error.m_ErrorMessage);
         return;
     }
 

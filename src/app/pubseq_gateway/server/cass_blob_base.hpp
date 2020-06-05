@@ -40,6 +40,7 @@
 #include "psgs_reply.hpp"
 #include "cass_processor_base.hpp"
 #include "get_blob_callback.hpp"
+#include "id2info.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
