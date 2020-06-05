@@ -75,8 +75,7 @@ cdd_pssm_input \
 deltablast_options \
 deltablast \
 magicblast_options \
-magicblast \
-blast_node 
+magicblast 
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
