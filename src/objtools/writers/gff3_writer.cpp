@@ -2778,8 +2778,12 @@ bool CGff3Writer::xWriteFeatureProtein(
         pRecord->SetType(fixupIt->second);
     }
 
-    // indicate seqId is Prot_id (rw-1090):
-    pRecord->AddAttribute("protein_id", pRecord->StrSeqId());
+    if (protein.IsSetProduct()) {
+        string proteinId;
+        CGenbankIdResolve::Get().GetBestId(protein.GetProduct(), proteinId);
+        pRecord->AddAttribute("protein_id",proteinId);
+    }
+
     // map location to cds coordinates (id and span):
     xAssignFeatureSeqId(*pRecord, fc, cds);
     CSeq_loc_Mapper prot_to_cds(cds.GetOriginalFeature(), 
