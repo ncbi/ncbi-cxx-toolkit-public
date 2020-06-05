@@ -203,13 +203,15 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
     
     string str;
     string s;
-    s.reserve(80);
+    string r;
+    s.reserve(82);
     CConstRef<CSeq_id> other_id;
 
     TSignedSeqPos last_stop = -1;
 
     ITERATE( TAlnConstList, it, seglist ) {
         s.erase();
+        r.erase();
         const CSeq_align& align = **it;
 
         TSeqPos this_start = align.GetSeqStart(0);
@@ -287,13 +289,18 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
         }
         s += tid;
         s.resize(39, ' ');
-        s += NStr::IntToString(align.GetSeqStart(1) + 1) + '-' +
+        r = NStr::IntToString(align.GetSeqStart(1) + 1) + '-' +
             NStr::IntToString(align.GetSeqStop(1) + 1);
+        s += r;
 
         ENa_strand s0 = align.GetSeqStrand(0);
         ENa_strand s1 = align.GetSeqStrand(1);
         if (s0 != s1) {
-            s.resize(59, ' ');
+            if (r.length() > 20) {
+                s.resize(61, ' ');
+            } else {
+                s.resize(59, ' ');
+            }
             s += 'c';
         }
 
