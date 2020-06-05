@@ -18,6 +18,11 @@ misc/third_party_static
 app$
 app/pubseq_gateway$
 app/pubseq_gateway/server$
+app/pubseq_gateway/server/test$
+app/pubseq_gateway/server/test/input$
+app/pubseq_gateway/server/integrationsmoketest$
+app/pubseq_gateway/server/integrationsmoketest/input$
+app/pubseq_gateway/server/integrationsmoketest/baseline$
 
 objtools$
 objtools/pubseq_gateway$
