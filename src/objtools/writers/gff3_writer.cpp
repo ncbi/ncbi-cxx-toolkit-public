@@ -2783,7 +2783,10 @@ bool CGff3Writer::xWriteFeatureProtein(
         CGenbankIdResolve::Get().GetBestId(protein.GetProduct(), proteinId);
         pRecord->AddAttribute("protein_id",proteinId);
     }
-
+    const auto& prot = protein.GetData().GetProt();
+    if (prot.IsSetName()) {
+        pRecord->AddAttribute("product", prot.GetName().front());
+    }
     // map location to cds coordinates (id and span):
     xAssignFeatureSeqId(*pRecord, fc, cds);
     CSeq_loc_Mapper prot_to_cds(cds.GetOriginalFeature(), 
