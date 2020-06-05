@@ -55,6 +55,14 @@ CRPSBlastMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            NStr::IntToString(kDfltRpsThreadingMode));
     arg_desc.SetConstraint(kArgNumThreads, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
+    arg_desc.AddDefaultKey(kArgMTMode, "int_value",
+                           "Multi-thread mode to use in RPS BLAST search:\n "
+                           "0 (auto) split by database vols\n "
+                           "1 split by queries",
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(0));
+       arg_desc.SetConstraint(kArgMTMode,
+                              new CArgAllowValuesBetween(0, 1, true));
 #endif
     arg_desc.SetCurrentGroup("");
 }
@@ -140,6 +148,63 @@ CRPSBlastAppArgs::GetQueryBatchSize() const
     return blast::GetQueryBatchSize(eRPSBlast, m_IsUngapped, is_remote);
 }
 
+/// Get the input stream
+CNcbiIstream&
+CRPSBlastAppArgs::GetInputStream()
+{
+    return CBlastAppArgs::GetInputStream();
+}
+/// Get the output stream
+CNcbiOstream&
+CRPSBlastAppArgs::GetOutputStream()
+{
+    return CBlastAppArgs::GetOutputStream();
+}
+
+/// Get the input stream
+CNcbiIstream&
+CRPSBlastNodeArgs::GetInputStream()
+{
+	if ( !m_InputStream ) {
+		abort();
+	}
+	return *m_InputStream;
+}
+/// Get the output stream
+CNcbiOstream&
+CRPSBlastNodeArgs::GetOutputStream()
+{
+	return m_OutputStream;
+}
+
+CRPSBlastNodeArgs::CRPSBlastNodeArgs(const string & input)
+{
+	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+}
+
+CRPSBlastNodeArgs::~CRPSBlastNodeArgs()
+{
+	if (m_InputStream) {
+		free(m_InputStream);
+		m_InputStream = NULL;
+	}
+}
+
+int
+CRPSBlastNodeArgs::GetQueryBatchSize() const
+{
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(eRPSBlast, m_IsUngapped, is_remote);
+}
+
+CRef<CBlastOptionsHandle>
+CRPSBlastNodeArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
+                                      const CArgs& /*args*/)
+{
+    CRef<CBlastOptionsHandle> retval
+        (new CBlastRPSOptionsHandle(locality));
+    return retval;
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

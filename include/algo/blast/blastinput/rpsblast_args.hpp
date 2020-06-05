@@ -56,11 +56,48 @@ public:
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
 
+    /// Get the input stream
+    virtual CNcbiIstream& GetInputStream();
+
+    /// Get the output stream
+    virtual CNcbiOstream& GetOutputStream();
+
+    virtual ~CRPSBlastAppArgs() {}
+
 protected:
     /// @inheritDoc
     virtual CRef<CBlastOptionsHandle>
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args);
+};
+
+class NCBI_BLASTINPUT_EXPORT CRPSBlastNodeArgs : public CRPSBlastAppArgs
+{
+public:
+    /// Constructor
+    CRPSBlastNodeArgs(const string & input);
+
+    /// @inheritDoc
+    virtual int GetQueryBatchSize() const;
+
+    /// Get the input stream
+    virtual CNcbiIstream& GetInputStream();
+
+    /// Get the output stream
+    virtual CNcbiOstream& GetOutputStream();
+
+    CNcbiOstrstream & GetOutputStrStream() { return m_OutputStream; }
+
+    virtual ~CRPSBlastNodeArgs();
+
+protected:
+    /// @inheritDoc
+    virtual CRef<CBlastOptionsHandle>
+    x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, const CArgs& args);
+
+private :
+    CNcbiOstrstream m_OutputStream;
+    CNcbiIstrstream * m_InputStream;
 };
 
 
