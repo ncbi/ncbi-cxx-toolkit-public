@@ -141,7 +141,7 @@ void CBadResiduesException::SBadResiduePositions::ConvertBadIndexesToString(
 
             pos_prefix = ", ";
         }
-        if( rangesFound.size() > maxRanges ) {
+        if (iRangesFound > maxRanges) {
             out << ", and more";
             return;
         }
