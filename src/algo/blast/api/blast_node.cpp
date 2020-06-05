@@ -36,7 +36,10 @@
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/api/blast_node.hpp>
+
+#if defined(NCBI_OS_UNIX)
 #include <unistd.h>
+#endif
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -155,7 +158,6 @@ bool CBlastMasterNode::Processing()
 						m_ActiveNodes.erase(chunk_num);
 						CTimeSpan s(diff);
 						_TRACE("Chunk #" << chunk_num << " completed in " << s.AsSmartString());
-						cerr << "Chunk #" << chunk_num << " completed in " << s.AsSmartString() << endl;
 						break;
 					}
 					case CBlastNodeMsg::ePostLog:
