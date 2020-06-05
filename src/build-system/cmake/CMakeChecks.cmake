@@ -381,7 +381,6 @@ endif()
         endif()
 
         configure_file(${_tk_common_include}/ncbi_build_ver.h.in ${NCBI_CFGINC_ROOT}/common/ncbi_build_ver.h)
-        configure_file(${_tk_common_include}/ncbi_revision.h.in ${NCBI_INC_ROOT}/common/ncbi_revision.h)
         if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
             configure_file(${_tk_common_include}/ncbi_revision.h.in ${NCBI_INC_ROOT}/common/ncbi_revision.h)
         else()
