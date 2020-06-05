@@ -35,6 +35,7 @@
 #include <algo/blast/blastinput/rpstblastn_args.hpp>
 #include <algo/blast/api/rpstblastn_options.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/blastinput/rpsblast_args.hpp>
 #include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -92,7 +93,7 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
-    m_MTArgs.Reset(new CMTArgs(true));
+    m_MTArgs.Reset(new CRPSBlastMTArgs());
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg); 
 
@@ -121,6 +122,64 @@ CRPSTBlastnAppArgs::GetQueryBatchSize() const
 {
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
     return blast::GetQueryBatchSize(eRPSTblastn, m_IsUngapped, is_remote);
+}
+
+/// Get the input stream
+CNcbiIstream&
+CRPSTBlastnAppArgs::GetInputStream()
+{
+    return CBlastAppArgs::GetInputStream();
+}
+/// Get the output stream
+CNcbiOstream&
+CRPSTBlastnAppArgs::GetOutputStream()
+{
+    return CBlastAppArgs::GetOutputStream();
+}
+
+/// Get the input stream
+CNcbiIstream&
+CRPSTBlastnNodeArgs::GetInputStream()
+{
+	if ( !m_InputStream ) {
+		abort();
+	}
+	return *m_InputStream;
+}
+/// Get the output stream
+CNcbiOstream&
+CRPSTBlastnNodeArgs::GetOutputStream()
+{
+	return m_OutputStream;
+}
+
+CRPSTBlastnNodeArgs::CRPSTBlastnNodeArgs(const string & input)
+{
+	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+}
+
+CRPSTBlastnNodeArgs::~CRPSTBlastnNodeArgs()
+{
+	if (m_InputStream) {
+		free(m_InputStream);
+		m_InputStream = NULL;
+	}
+}
+
+int
+CRPSTBlastnNodeArgs::GetQueryBatchSize() const
+{
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(eRPSTblastn, m_IsUngapped, is_remote);
+}
+
+CRef<CBlastOptionsHandle>
+CRPSTBlastnNodeArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
+                                      const CArgs& /*args*/)
+{
+    CRef<CBlastOptionsHandle> retval
+        (new CRPSTBlastnOptionsHandle(locality));
+    return retval;
 }
 
 END_SCOPE(blast)
