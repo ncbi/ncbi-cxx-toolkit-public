@@ -557,7 +557,7 @@ public:
     ///
     bool GetInheritedPropertyDefines( const string& prop_name,
 				      TInfoList& results_out,
-				      TTaxId subtree_root = ENTREZ_ID_CONST(1) );
+				      TTaxId subtree_root = TAX_ID_CONST(1) );
 
     //---------------------------------------------------
     // This function returns the list of "type materials" for the node with taxid given.

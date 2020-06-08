@@ -18,5 +18,5 @@ ival1._type = ncbi::TIntId
 ival2._type = ncbi::TIntId
 
 [Taxon1-name]
-taxid._type = ncbi::TEntrezId
-taxid._storage_type = ncbi::TIntId
+taxid._type = ncbi::TTaxId
+taxid._storage_type = int
