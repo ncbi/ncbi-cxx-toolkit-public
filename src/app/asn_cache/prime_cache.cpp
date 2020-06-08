@@ -978,7 +978,7 @@ int CPrimeCacheApplication::Run(void)
 
     if (args["taxid"]) {
         CLocalTaxon taxon(args);
-        TTaxId taxid = ENTREZ_ID_FROM(TIntId, args["taxid"].AsIntId());
+        TTaxId taxid = TAX_ID_FROM(TIntId, args["taxid"].AsIntId());
         CConstRef<COrg_ref> ref =
             taxon.GetOrgRef(taxid);
         if ( !ref ) {
