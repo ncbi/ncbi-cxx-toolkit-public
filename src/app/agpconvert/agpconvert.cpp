@@ -292,12 +292,12 @@ void CAgpconvertApplication::Init(void)
 
 
 static TTaxId s_GetTaxid(const COrg_ref& org_ref) {
-    TTaxId taxid = ZERO_ENTREZ_ID;
+    TTaxId taxid = ZERO_TAX_ID;
     int count = 0;
     ITERATE (COrg_ref::TDb, db_tag, org_ref.GetDb()) {
         if ((*db_tag)->GetDb() == "taxon") {
             count++;
-            taxid = ENTREZ_ID_FROM(CObject_id::TId, (*db_tag)->GetTag().GetId());
+            taxid = TAX_ID_FROM(CObject_id::TId, (*db_tag)->GetTag().GetId());
         }
     }
     if (count != 1) {
@@ -795,7 +795,7 @@ void CAgpconvertApplication::x_HandleTaxArgs( CRef<CSeqdesc> source_desc )
     }
 
     if (args["nt"]) {
-        TTaxId inp_taxid = ENTREZ_ID_FROM(int, args["nt"].AsInteger());
+        TTaxId inp_taxid = TAX_ID_FROM(int, args["nt"].AsInteger());
         nt_result = cl.GetById(inp_taxid);
         if (!nt_result->GetIs_species_level()) {
             throw runtime_error("taxid " + NStr::NumericToString(inp_taxid)
