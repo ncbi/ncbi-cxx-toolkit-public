@@ -764,7 +764,7 @@ void CGenbankFormatter::x_FormatOrganismLine(list<string>& l, const CSourceItem&
     // taxname
 #ifdef NEW_HTML_FMT
     string s;
-    GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, ENTREZ_ID_TO(int, source.GetTaxid()), source.GetTaxname());
+    GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, TAX_ID_TO(int, source.GetTaxid()), source.GetTaxname());
     Wrap(l, "ORGANISM", s, eSubp);
 #else
     if (source.GetContext()->Config().DoHTML()) {
