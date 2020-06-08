@@ -97,7 +97,8 @@ public:
         eLongSeqId = (1 << 10),         //print long sequences id (with bars)
         eRealtedInfoLinks = (1 << 11),  //Related information links - Linkout links with descriptions + others
         eShowTotalScore = (1 << 12),    //show total score column
-        eShowQueryCoverage = (1 << 13)  //show query coverage column
+        eShowQueryCoverage = (1 << 13),  //show query coverage column
+        eShowCSVDescr = (1 << 14)       //show comma separated descriptions table
     };
 
     ///Data Representing each defline
@@ -597,6 +598,7 @@ protected:
     ///
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
     void x_DisplayDeflineTableTemplateText(CNcbiOstream & out);
+    void x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out);
 
     void x_InitFormattingInfo(SScoreInfo* sci);    
     //For internal test
