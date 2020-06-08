@@ -259,7 +259,7 @@ void     BioseqIndexData( const objects::CBioseq&   bioseq,
         if (ancestor_set->IsSetDescr()) {
             /// taxid from Org descriptor; should be given lower precedence than taxid
             /// from source descriptor
-            TTaxId taxid_from_org = ZERO_ENTREZ_ID;
+            TTaxId taxid_from_org = ZERO_TAX_ID;
             ITERATE (objects::CBioseq_set::TDescr::Tdata, it,
                      ancestor_set->GetDescr().Get())
             {
@@ -267,14 +267,14 @@ void     BioseqIndexData( const objects::CBioseq&   bioseq,
                 if (desc.IsOrg()) {
                     taxid_from_org = desc.GetOrg().GetTaxId();
                 } else if (desc.IsSource() && desc.GetSource().IsSetOrg()) {
-                    taxid = ENTREZ_ID_TO(CAsnIndex::TTaxId, desc.GetSource().GetOrg().GetTaxId());
+                    taxid = TAX_ID_TO(CAsnIndex::TTaxId, desc.GetSource().GetOrg().GetTaxId());
                 }
                 if (taxid) {
                     break;
                 }
             }
             if (!taxid) {
-                taxid = ENTREZ_ID_TO(CAsnIndex::TTaxId, taxid_from_org);
+                taxid = TAX_ID_TO(CAsnIndex::TTaxId, taxid_from_org);
             }
         }
     }
