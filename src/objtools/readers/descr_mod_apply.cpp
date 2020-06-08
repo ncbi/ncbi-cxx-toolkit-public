@@ -530,9 +530,9 @@ bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_t
         const auto& value = x_GetModValue(mod_entry);
         m_pDescrCache->SetBioSource().SetOrg().SetTaxname(value);
         if (!preserve_taxid &&
-             m_pDescrCache->SetBioSource().GetOrg().GetTaxId() != ZERO_ENTREZ_ID) { 
+             m_pDescrCache->SetBioSource().GetOrg().GetTaxId() != ZERO_TAX_ID) {
             // clear taxid if it does not occur in this modifier set
-            m_pDescrCache->SetBioSource().SetOrg().SetTaxId(ZERO_ENTREZ_ID);
+            m_pDescrCache->SetBioSource().SetOrg().SetTaxId(ZERO_TAX_ID);
         }
         return true;
     }

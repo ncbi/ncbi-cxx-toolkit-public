@@ -1158,11 +1158,11 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
 
 
     if ((mod = FindMod(s_Mod_taxid)) != NULL) {
-        bsrc->SetOrg().SetTaxId( NStr::StringToNumeric<TEntrezId>(mod->value, NStr::fConvErr_NoThrow) );
+        bsrc->SetOrg().SetTaxId( NStr::StringToNumeric<TTaxId>(mod->value, NStr::fConvErr_NoThrow) );
     }
     else 
-    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != ZERO_ENTREZ_ID) {
-       bsrc->SetOrg().SetTaxId(ZERO_ENTREZ_ID);
+    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != ZERO_TAX_ID) {
+       bsrc->SetOrg().SetTaxId(ZERO_TAX_ID);
     }
 }
 
