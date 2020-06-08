@@ -747,7 +747,7 @@ CPSG_BlobId CPSG_BioseqInfo::GetBlobId() const
 
 TTaxId CPSG_BioseqInfo::GetTaxId() const
 {
-    return static_cast<TTaxId>(m_Data.GetInteger("tax_id"));
+    return TAX_ID_FROM(Int8, m_Data.GetInteger("tax_id"));
 }
 
 int CPSG_BioseqInfo::GetHash() const
