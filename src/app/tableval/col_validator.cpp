@@ -159,7 +159,7 @@ DEFINE_COL_VALIDATOR(taxid)
 
     try
     {
-        TTaxId taxid = NStr::StringToNumeric<TEntrezId>(value);
+        TTaxId taxid = NStr::StringToNumeric<TTaxId>(value);
         m_taxClient->GetById(taxid);
     }
     catch(const CException& ex)
