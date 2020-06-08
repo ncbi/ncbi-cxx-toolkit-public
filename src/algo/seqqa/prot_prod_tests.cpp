@@ -149,11 +149,11 @@ TTaxId s_GetTaxId(const CBioseq_Handle& hand)
     TTaxId taxid;
     while (it) {
         taxid = it->GetSource().GetOrg().GetTaxId();
-        if (taxid != ZERO_ENTREZ_ID) {
+        if (taxid != ZERO_TAX_ID) {
             return taxid;
         }
     }
-    return ZERO_ENTREZ_ID;
+    return ZERO_TAX_ID;
 }
 
 
@@ -195,7 +195,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
     CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
     TGi gi = sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
     TTaxId taxid = s_GetTaxId(hand);
-    if (taxid == ZERO_ENTREZ_ID) {
+    if (taxid == ZERO_TAX_ID) {
         throw runtime_error("CTestProtProd_EntrezNeighbors::RunTest: "
                             "taxid not found for " + id->GetSeqIdString(true));
     }
