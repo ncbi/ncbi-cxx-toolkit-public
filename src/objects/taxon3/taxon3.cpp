@@ -225,7 +225,7 @@ CTaxon3::SendTaxidList(const vector<TTaxId>& list,
     }
     ITERATE (vector<TTaxId>, it, list) {
         CRef<CT3Request> rq(new CT3Request);			
-	rq->SetTaxid(ENTREZ_ID_TO(int, *it));
+	rq->SetTaxid(TAX_ID_TO(int, *it));
 	request.SetRequest().push_back(rq);
     }
     return SendRequest (request);
