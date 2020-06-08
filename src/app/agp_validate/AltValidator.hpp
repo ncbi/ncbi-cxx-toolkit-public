@@ -104,7 +104,7 @@ private:
   {
     int currentVersion=0; 
     int len=0;
-    TTaxId taxid = ZERO_ENTREZ_ID;
+    TTaxId taxid = ZERO_TAX_ID;
     bool inDatabase=false;
   };
 

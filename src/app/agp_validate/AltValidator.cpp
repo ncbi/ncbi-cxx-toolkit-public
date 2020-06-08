@@ -173,12 +173,12 @@ TTaxId CAltValidator::x_GetTaxonSpecies(TTaxId taxid)
   string blast_name;
   string blast_name0;
 
-  TTaxId species_id = ZERO_ENTREZ_ID;
+  TTaxId species_id = ZERO_TAX_ID;
   TTaxId prev_id = taxid;
 
 
   for(TTaxId id = taxid;
-      is_species == true && id > ENTREZ_ID_CONST(1);
+      is_species == true && id > TAX_ID_CONST(1);
       id = taxon.GetParent(id)
   ) {
     CConstRef<COrg_ref> org_ref = taxon.GetOrgRef(
@@ -187,7 +187,7 @@ TTaxId CAltValidator::x_GetTaxonSpecies(TTaxId taxid)
     if(org_ref == null) {
       pAgpErr->Msg(CAgpErrEx::G_TaxError,
         string(" for taxid ")+ NStr::NumericToString(id) );
-      return ZERO_ENTREZ_ID;
+      return ZERO_TAX_ID;
     }
     if(id==taxid) blast_name0=blast_name;
 
@@ -198,7 +198,7 @@ TTaxId CAltValidator::x_GetTaxonSpecies(TTaxId taxid)
     }
   }
 
-  if(species_id==ZERO_ENTREZ_ID) {
+  if(species_id==ZERO_TAX_ID) {
     if(blast_name0.size()) {
       blast_name0 = NStr::NumericToString(taxid) + " (" + blast_name0 + ")";
     }
@@ -235,7 +235,7 @@ bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
 {
   if (m_TaxidMap.size() == 0) return true;
 
-  TTaxId agp_taxid = ZERO_ENTREZ_ID;
+  TTaxId agp_taxid = ZERO_TAX_ID;
   float agp_taxid_percent = 0;
 
   float max_percent = 0;
@@ -261,7 +261,7 @@ bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
     }
     else {
       cerr << "\nUnable to determine a Taxid for the AGP";
-      if(agp_taxid != ZERO_ENTREZ_ID) {
+      if(agp_taxid != ZERO_TAX_ID) {
         cerr << ":\nless than 80% of components have one common taxid="<<agp_taxid<<"";
       }
       // else: no taxid was found
@@ -362,7 +362,7 @@ void CAltValidator::x_QueryAccessions()
         auto& compInfo = m_ComponentInfoMap[accVer.GetAccession()];
         compInfo.currentVersion = accVer.GetVersion();
         compInfo.len = bioseqHandle.GetInst_Length();
-        compInfo.taxid = ENTREZ_ID_FROM(int, sequence::GetTaxId(bioseqHandle));
+        compInfo.taxid = TAX_ID_FROM(int, sequence::GetTaxId(bioseqHandle));
         compInfo.inDatabase=true;
     }
     m_Accessions.clear();
@@ -448,7 +448,7 @@ void CAltValidator::ProcessQueue()
                     " - cannot get version for "+acc);
             }
             else 
-            if (m_check_len_taxid && acc_data.taxid == ZERO_ENTREZ_ID) {
+            if (m_check_len_taxid && acc_data.taxid == ZERO_TAX_ID) {
                 pAgpErr->Msg(CAgpErrEx::G_DataError,
                     " - cannot retrieve taxonomic id for "+acc);
             }
@@ -465,7 +465,7 @@ void CAltValidator::ProcessQueue()
 
                 // Taxid check
                 TTaxId taxid = acc_data.taxid;
-                if(taxid != ZERO_ENTREZ_ID) {
+                if(taxid != ZERO_TAX_ID) {
                     if(m_SpeciesLevelTaxonCheck) {
                         taxid = x_GetSpecies(taxid);
                     }
