@@ -298,7 +298,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     if (included_info & CPSG_Request_Resolve::fChainState)   m_JsonObj["seq_state"].SetValue().SetInt8(bioseq_info->GetChainState());
     if (included_info & CPSG_Request_Resolve::fState)        m_JsonObj["state"].SetValue().SetInt8(bioseq_info->GetState());
     if (included_info & CPSG_Request_Resolve::fBlobId)       m_JsonObj["blob_id"].SetValue().SetString(bioseq_info->GetBlobId().Get());
-    if (included_info & CPSG_Request_Resolve::fTaxId)        m_JsonObj["tax_id"].SetValue().SetInt8(ENTREZ_ID_TO(Int8, bioseq_info->GetTaxId()));
+    if (included_info & CPSG_Request_Resolve::fTaxId)        m_JsonObj["tax_id"].SetValue().SetInt8(TAX_ID_TO(Int8, bioseq_info->GetTaxId()));
     if (included_info & CPSG_Request_Resolve::fHash)         m_JsonObj["hash"].SetValue().SetInt8(bioseq_info->GetHash());
     if (included_info & CPSG_Request_Resolve::fDateChanged)  m_JsonObj["date_changed"].SetValue().SetString(bioseq_info->GetDateChanged().AsString());
     if (included_info & CPSG_Request_Resolve::fGi)           m_JsonObj["gi"].SetValue().SetInt8(GI_TO(Int8, bioseq_info->GetGi()));
