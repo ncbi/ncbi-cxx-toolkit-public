@@ -266,7 +266,7 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 				m_taxClient->init();
 			}
 			TTaxId taxid = m_taxClient->GetTaxIDForSeqId(nodeData.seqId);
-			if (taxid >= ZERO_ENTREZ_ID)
+			if (taxid >= ZERO_TAX_ID)
 			{
 				if (m_taxLevel == BySuperkingdom)
 					node.annotation = m_taxClient->GetSuperKingdom(taxid);

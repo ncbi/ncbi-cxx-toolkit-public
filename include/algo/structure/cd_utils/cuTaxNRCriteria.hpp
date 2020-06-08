@@ -55,7 +55,7 @@ public:
     virtual ~CTaxNRItem() {};
 
     CTaxNRItem() : CNRItem() {
-        InitTaxItem(INVALID_TAX_ITEM_ID, INVALID_TAX_ITEM_ID, INVALID_ENTREZ_ID);
+        InitTaxItem(INVALID_TAX_ITEM_ID, INVALID_TAX_ITEM_ID, INVALID_TAX_ID);
     }
     CTaxNRItem(TItemId idIn, TTaxItemId prefTaxnodeIn, TTaxItemId modelOrgIn, TTaxId taxIdIn, bool keepIn=true) : CNRItem(idIn, keepIn) {
         InitTaxItem(prefTaxnodeIn, modelOrgIn, taxIdIn);

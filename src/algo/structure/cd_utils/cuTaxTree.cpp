@@ -51,7 +51,7 @@ TaxNode::TaxNode(const TaxNode& rhs): taxId(rhs.taxId),
 
 void TaxNode::init()
 {
-	taxId= INVALID_ENTREZ_ID;
+	taxId= INVALID_TAX_ID;
 	rankId =-1;
 
 	rowId = -1;
@@ -245,7 +245,7 @@ bool TaxTreeData::makeTaxonomyTree()
 	if (!m_taxDataSource->IsAlive())
 		return false;
 	//add root
-	TaxNode* root = TaxNode::makeTaxNode(ENTREZ_ID_CONST(1),"Root");
+	TaxNode* root = TaxNode::makeTaxNode(TAX_ID_CONST(1),"Root");
 	insert(begin(), *root);
 	delete root;
 	//retrieve tax lineage for each sequence and add it to the tree
@@ -263,7 +263,7 @@ void TaxTreeData::addRows(const AlignmentCollection& ac)
 		std::string seqName;
 		ac.Get_GI_or_PDB_String_FromAlignment(i, seqName);
 		TTaxId taxid = GetTaxIDForSequence(ac, i);
-		if (taxid <= ZERO_ENTREZ_ID)
+		if (taxid <= ZERO_TAX_ID)
 			m_failedRows.push_back(i);
 		else
 			addSeqTax(i, seqName, taxid);
@@ -297,7 +297,7 @@ void TaxTreeData::fillLeafCount(const TaxTreeIterator& cursor)
 void TaxTreeData::addSeqTax(int rowID, string seqName, TTaxId taxid)
 {
 	stack<TaxNode*> lineage;
-	if (taxid <= ZERO_ENTREZ_ID) //invalid tax node, ignore this sequence
+	if (taxid <= ZERO_TAX_ID) //invalid tax node, ignore this sequence
 		return;
 	TaxNode *seq = TaxNode::makeSeqLeaf(rowID, seqName);
 	string rankName;
@@ -382,7 +382,7 @@ short TaxTreeData::getRankId(string rankName)
  // get integer taxid for a sequence
 TTaxId TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowID)
 {
-    TTaxId taxid = ZERO_ENTREZ_ID;
+    TTaxId taxid = ZERO_TAX_ID;
     std::string err = "no gi or source info";
 	// try to get "official" tax info from gi
 	TGi gi = ZERO_GI;
@@ -399,7 +399,7 @@ TTaxId TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int r
             TTaxId localTaxid = m_taxDataSource->GetTaxIDFromBioseq(seqEntry->GetSeq(), true);
 			if(localTaxid != taxid)
 			{
-				if (taxid != ZERO_ENTREZ_ID) {
+				if (taxid != ZERO_TAX_ID) {
 				    string taxName = m_taxDataSource->GetTaxNameForTaxID(taxid);
 				    addTaxToBioseq(seqEntry->SetSeq(), taxid, taxName); 
 				} else

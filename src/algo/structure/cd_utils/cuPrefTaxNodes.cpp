@@ -169,7 +169,7 @@ TTaxId CPriorityTaxNodes::getTaxId(const CRef< CCdd_org_ref >& orgRef)
 		return org.GetTaxId();
 	}
 	else
-		return ZERO_ENTREZ_ID;
+		return ZERO_TAX_ID;
 }
 
 bool CPriorityTaxNodes::isActive(const CRef< CCdd_org_ref >& orgRef)
@@ -210,7 +210,7 @@ unsigned int CPriorityTaxNodes::CddOrgRefSetToTaxIds(const CCdd_org_ref_set& cdd
 
     for (; cddOrgRefListCit != citEnd; ++cddOrgRefListCit ) {
         taxId = getTaxId(*cddOrgRefListCit);
-        if (taxId > ZERO_ENTREZ_ID) {
+        if (taxId > ZERO_TAX_ID) {
             taxids.push_back(taxId);
             ++nAdded;
         } else if (notAddedIndices) {
@@ -226,10 +226,10 @@ TaxidToOrgMap::iterator CPriorityTaxNodes::findAncestor(TTaxId taxid, TaxClient*
 	TaxidToOrgMap::iterator titEnd = m_selectedTaxNodesMap.end(), tit = titEnd;
     TAncestorMap::iterator ancestorIt;
 
-    if (taxid != ZERO_ENTREZ_ID) {
+    if (taxid != ZERO_TAX_ID) {
         //  First see if this taxid has been seen before; if so, retrieve iterator from toMap...
         ancestorIt = m_ancestralTaxNodeMap.find(taxid);
-        if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= ZERO_ENTREZ_ID) {
+        if (ancestorIt != m_ancestralTaxNodeMap.end() && ancestorIt->second >= ZERO_TAX_ID) {
             tit = m_selectedTaxNodesMap.find(ancestorIt->second);
         }
 
@@ -266,7 +266,7 @@ bool CPriorityTaxNodes::GetPriorityTaxidAndName(TTaxId taxidIn, TTaxId& priority
     bool result = false;
 	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxidIn), itEnd = m_selectedTaxNodesMap.end();
 
-    priorityTaxid = ZERO_ENTREZ_ID;
+    priorityTaxid = ZERO_TAX_ID;
     nodeName = kEmptyStr;
     if (it != itEnd) {
         priorityTaxid = taxidIn;
@@ -293,7 +293,7 @@ int CPriorityTaxNodes::GetPriorityTaxnode(TTaxId taxid, const OrgNode*& orgNode,
 	TaxidToOrgMap::iterator it = m_selectedTaxNodesMap.find(taxid), itEnd = m_selectedTaxNodesMap.end();	
 
     orgNode = NULL;
-    if (taxid != ZERO_ENTREZ_ID) {
+    if (taxid != ZERO_TAX_ID) {
         if (it != itEnd)
         {
             orgNode = &(it->second);

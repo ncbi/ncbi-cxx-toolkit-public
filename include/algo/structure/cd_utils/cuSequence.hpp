@@ -50,7 +50,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
 // the taxid for environmental sequences
-const  TTaxId ENVIRONMENTAL_SEQUENCE_TAX_ID = ENTREZ_ID_CONST(256318);
+const  TTaxId ENVIRONMENTAL_SEQUENCE_TAX_ID = TAX_ID_CONST(256318);
 
 //  Wraps the CSeq_id.Match(id) method:  id1.Match(id2).
 NCBI_CDUTILS_EXPORT 

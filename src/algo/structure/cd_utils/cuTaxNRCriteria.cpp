@@ -150,7 +150,7 @@ CTaxNRCriteria::~CTaxNRCriteria() {
 
 TTaxId CTaxNRCriteria::GetTaxIdForId(const CBaseClusterer::TId& id) const {
     TId2TaxidMapCIt cit = m_id2Tax.find(id);
-    TTaxId result = (cit != m_id2Tax.end()) ? cit->second : INVALID_ENTREZ_ID;
+    TTaxId result = (cit != m_id2Tax.end()) ? cit->second : INVALID_TAX_ID;
     return result;
 }
 
@@ -170,7 +170,7 @@ void CTaxNRCriteria::InitializeCriteria() {
 
 TTaxId CTaxNRCriteria::GetTaxIdFromClient(const CBioseq& bioseq)
 {
-    return (m_taxClient) ? m_taxClient->GetTaxIDFromBioseq(bioseq, false) : INVALID_ENTREZ_ID;
+    return (m_taxClient) ? m_taxClient->GetTaxIDFromBioseq(bioseq, false) : INVALID_TAX_ID;
 }
 
 unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string* report) {
@@ -197,7 +197,7 @@ unsigned int CTaxNRCriteria::Apply(CBaseClusterer::TCluster*& clusterPtr, string
         id = *itemIt;
         taxId = m_id2Tax[id];
         nodeName.erase();
-        priorityNodeId = (taxId > ZERO_ENTREZ_ID && m_priorityTaxNodes) ? m_priorityTaxNodes->GetPriorityTaxnode(taxId, nodeName, m_taxClient) : badId;
+        priorityNodeId = (taxId > ZERO_TAX_ID && m_priorityTaxNodes) ? m_priorityTaxNodes->GetPriorityTaxnode(taxId, nodeName, m_taxClient) : badId;
         if (priorityNodeId == -1) priorityNodeId = badId;
 
         taxNRItem = new CTaxNRItem(id, (CTaxNRItem::TTaxItemId)(priorityNodeId), CTaxNRItem::INVALID_TAX_ITEM_ID, taxId, true);
@@ -232,15 +232,15 @@ int CTaxNRCriteria::CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) c
     CTaxNRItem lhsItem(lhs), rhsItem(rhs);
 
     //  If don't have valid field in the passed-in items, fill them in the temporaries.
-    if (lhsItem.taxId == INVALID_ENTREZ_ID) {
+    if (lhsItem.taxId == INVALID_TAX_ID) {
         //  Doing it this way since operator[] returns non-const reference.
         TId2TaxidMapCIt citLHS = m_id2Tax.find(lhs.itemId);
-        lhsItem.taxId = citLHS != m_id2Tax.end() ? citLHS->second : ZERO_ENTREZ_ID;
+        lhsItem.taxId = citLHS != m_id2Tax.end() ? citLHS->second : ZERO_TAX_ID;
     }
-    if (rhsItem.taxId == INVALID_ENTREZ_ID) {
+    if (rhsItem.taxId == INVALID_TAX_ID) {
         //  Doing it this way since operator[] returns non-const reference.
         TId2TaxidMapCIt citRHS = m_id2Tax.find(rhs.itemId);
-        rhsItem.taxId = citRHS != m_id2Tax.end() ? citRHS->second : ZERO_ENTREZ_ID;
+        rhsItem.taxId = citRHS != m_id2Tax.end() ? citRHS->second : ZERO_TAX_ID;
     }
 
     return (lhsItem.taxId == rhsItem.taxId) ? 0 : (lhsItem.taxId < rhsItem.taxId) ? -1 : 1;
