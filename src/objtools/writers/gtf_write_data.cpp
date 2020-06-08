@@ -101,9 +101,7 @@ string CGtfRecord::StrAttributes() const
     CGtfRecord::TAttrIt it;
 
     strAttributes += x_AttributeToString( "gene_id", GeneId() );
-    if ( StrType() != "gene" ) {
-        strAttributes += x_AttributeToString( "transcript_id", TranscriptId() );
-    }
+    strAttributes += x_AttributeToString( "transcript_id", TranscriptId() );
 
     for ( it = attrs.begin(); it != attrs.end(); ++it ) {
         string strKey = it->first;
