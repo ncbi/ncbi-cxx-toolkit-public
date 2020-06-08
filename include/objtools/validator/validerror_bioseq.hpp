@@ -147,6 +147,10 @@ public:
     static bool IsPdb(const CBioseq& seq);
     static bool IsPartial(const CBioseq& seq, CScope& scope);
 
+    bool HasCompleteGenomeTitle (void) const { return m_complete_genome_title; }
+
+    bool m_complete_genome_title;
+
     // DBLink user object counters
     int m_dblink_count;
     int m_taa_count;

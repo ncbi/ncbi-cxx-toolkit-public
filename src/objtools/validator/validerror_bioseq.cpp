@@ -1350,6 +1350,8 @@ void CValidError_bioseq::ValidateBioseqContext(
             ValidateCompleteGenome(seq);
         }
 
+        m_complete_genome_title = false;
+
         m_dblink_count = 0;
         m_taa_count = 0;
         m_bs_count = 0;
@@ -2751,6 +2753,10 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
     }
 
     string title = sequence::CDeflineGenerator().GenerateDefline(bsh);
+
+    if (NStr::Find(title, "complete genome") != NPOS) {
+        m_complete_genome_title = true;
+    }
 
 /*bsv
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
@@ -5825,6 +5831,12 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
     string comment_text = "";
     if (feat.IsSetComment()) {
         comment_text = feat.GetComment();
+    }
+
+    if (HasCompleteGenomeTitle() && feat.GetData().Which() == CSeqFeatData::e_Cdregion) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+            "Partial CDS on sequence whose title claims complete genome",
+            *(feat.GetSeq_feat()));
     }
 
     // partial location
