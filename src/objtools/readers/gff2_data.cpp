@@ -821,7 +821,9 @@ bool CGff2Record::xMigrateAttributes(
 
     it = attrs_left.find("partial");
     if (it != attrs_left.end()) {
-        pFeature->SetPartial(true);
+        if (!(flags & CGff2Reader::fGenbankMode)) {
+            pFeature->AddQualifier("partial", it->second);
+        }
         attrs_left.erase(it);
     }
 
