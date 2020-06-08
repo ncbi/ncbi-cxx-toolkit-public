@@ -55,8 +55,6 @@ NCBI_DEFINE_ERRCODE_X(VDBGraphReader,       2113,  0);
 NCBI_DEFINE_ERRCODE_X(VDBGraphLoader,       2114,  0);
 NCBI_DEFINE_ERRCODE_X(SNPReader,            2115,  0);
 NCBI_DEFINE_ERRCODE_X(SNPLoader,            2116,  0);
-NCBI_DEFINE_ERRCODE_X(ID2WGSProcessor,      2117,  0);
-NCBI_DEFINE_ERRCODE_X(ID2SNPProcessor,      2118,  0);
 NCBI_DEFINE_ERRCODE_X(WGSResolver,          2119,  0);
 
 
