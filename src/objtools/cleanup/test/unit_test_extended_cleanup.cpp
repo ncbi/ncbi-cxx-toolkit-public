@@ -1394,7 +1394,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4303)
     CSeqdesc_CI desc_ci(seh, CSeqdesc::e_Source);
     const COrg_ref& org = desc_ci->GetSource().GetOrg();
     BOOST_CHECK_EQUAL(org.IsSetSyn(), false);
-    BOOST_CHECK_EQUAL(org.GetTaxId(), ENTREZ_ID_CONST(83485));
+    BOOST_CHECK_EQUAL(org.GetTaxId(), TAX_ID_CONST(83485));
 
 }
 
