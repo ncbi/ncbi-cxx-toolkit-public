@@ -62,7 +62,7 @@ public:
 
 #ifdef NCBI_STRICT_ENTREZ_ID
     /// Explicit constructor from zero.
-    explicit CPmcID(std::nullptr_t zero)
+    explicit CPmcID(std::nullptr_t /*zero*/)
         : Tparent(ZERO_ENTREZ_ID) {}
 #endif
 };
