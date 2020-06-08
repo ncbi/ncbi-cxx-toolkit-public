@@ -39,8 +39,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-unique_ptr<CGenbankIdResolve> CGenbankIdResolve::theResolver(nullptr);
-
 //  ----------------------------------------------------------------------------
 CGenbankIdResolve::CGenbankIdResolve():
     mThrowOnUnresolvedGi(false),
@@ -58,10 +56,8 @@ CGenbankIdResolve&
 CGenbankIdResolve::Get()
 //  ----------------------------------------------------------------------------
 {
-    if (!theResolver) {
-        theResolver.reset(new CGenbankIdResolve());
-    }
-    return *theResolver;
+    static CGenbankIdResolve resolver;
+    return resolver;
 }
 
 //  ----------------------------------------------------------------------------

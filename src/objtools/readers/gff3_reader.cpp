@@ -326,11 +326,6 @@ CGff3Reader::xParseFeature(
     }
 
     //append feature to annot:
-    string id;
-    pRecord->GetAttribute("ID", id);
-    if (id == "Ga0365360_04_717396_717851") {
-        cerr << "";
-    }
     if (!xUpdateAnnotFeature(*pRecord, annot, pEC)) {
         return false;
     }
@@ -668,9 +663,6 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
     string id;
     if (!record.GetAttribute("ID", id)) {
         return false;
-    }
-    if (id == "Ga0365360_05_195_307") {
-        cerr << "";
     }
     IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
     if (it == m_MapIdToFeature.end()) {

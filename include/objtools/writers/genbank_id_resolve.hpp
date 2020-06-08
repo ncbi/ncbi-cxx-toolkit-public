@@ -84,7 +84,6 @@ private:
     xGetDefaultScope();
 
 private:
-    static unique_ptr<CGenbankIdResolve> theResolver;
     CRef<CScope> mpDefaultScope;
     bool mThrowOnUnresolvedGi;
     CSeq_id::ELabelType mLabelType;
