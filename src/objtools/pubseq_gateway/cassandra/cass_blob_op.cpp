@@ -38,6 +38,7 @@
 #include "blob_task/delete.hpp"
 #include "nannot_task/insert.hpp"
 #include "nannot_task/delete.hpp"
+#include "id2_split_task/insert.hpp"
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
@@ -178,6 +179,21 @@ void CCassBlobOp::InsertNAnnot(
     waiter.reset(new CCassNAnnotTaskInsert(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob, annot, max_retries,
+        move(error_cb)
+    ));
+}
+
+void CCassBlobOp::InsertID2Split(
+    unsigned int op_timeout_ms,
+    int32_t, unsigned int max_retries,
+    CBlobRecord * blob, CID2SplitRecord* id2_split,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter
+)
+{
+    waiter.reset(new CCassID2SplitTaskInsert(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        blob, id2_split, max_retries,
         move(error_cb)
     ));
 }
