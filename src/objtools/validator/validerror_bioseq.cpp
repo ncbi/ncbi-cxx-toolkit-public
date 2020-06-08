@@ -9728,7 +9728,7 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
                 if ( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
                   for (auto it: moltypes) {
                       string sName;
-                      if ( tax.GetScientificName( ENTREZ_ID_FROM(TIntId, it->GetIval1()), sName ) ) {
+                      if ( tax.GetScientificName(TAX_ID_FROM(TIntId, it->GetIval1()), sName ) ) {
                           if ( it->GetIval2() == 1 ) {
                               s_ViralTaxonMap [sName] = it->GetSval();
                           }

@@ -21479,7 +21479,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveLineageSourceNotes)
 
     bool removed = bsrc->RemoveLineageSourceNotes();
     BOOST_CHECK_EQUAL(removed, false); // it won't remove the notes as there is no taxid
-    bsrc->SetOrg().SetTaxId(ENTREZ_ID_CONST(11320));
+    bsrc->SetOrg().SetTaxId(TAX_ID_CONST(11320));
 
     removed = bsrc->RemoveLineageSourceNotes();
     BOOST_CHECK_EQUAL(removed, true);
