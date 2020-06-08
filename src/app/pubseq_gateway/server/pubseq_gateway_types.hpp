@@ -87,9 +87,9 @@ enum EPSGS_DbFetchType {
 
 
 enum EPSGS_CacheLookupResult {
-    ePSGS_Found,
-    ePSGS_NotFound,
-    ePSGS_Failure                // LMDB may throw an exception
+    ePSGS_CacheHit,
+    ePSGS_CacheNotHit,
+    ePSGS_CacheFailure          // LMDB may throw an exception
 };
 
 
@@ -113,9 +113,9 @@ enum EPSGS_ReplyMimeType {
 
 
 enum EPSGS_BlobSkipReason {
-    ePSGS_Excluded,
-    ePSGS_InProgress,
-    ePSGS_Sent
+    ePSGS_BlobExcluded,
+    ePSGS_BlobInProgress,
+    ePSGS_BlobSent
 };
 
 

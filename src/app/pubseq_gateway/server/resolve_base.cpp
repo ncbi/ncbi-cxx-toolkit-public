@@ -303,7 +303,7 @@ CPSGS_ResolveBase::x_ResolvePrimaryOSLTInCache(
                                 int16_t  effective_seq_id_type,
                                 SBioseqResolution &  bioseq_resolution)
 {
-    EPSGS_CacheLookupResult     bioseq_cache_lookup_result = ePSGS_NotFound;
+    EPSGS_CacheLookupResult     bioseq_cache_lookup_result = ePSGS_CacheNotHit;
 
     if (!primary_id.empty()) {
         CPSGCache           psg_cache(true, m_Request, m_Reply);
@@ -315,9 +315,9 @@ CPSGS_ResolveBase::x_ResolvePrimaryOSLTInCache(
 
         bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
                                         bioseq_resolution);
-        if (bioseq_cache_lookup_result == ePSGS_Found) {
+        if (bioseq_cache_lookup_result == ePSGS_CacheHit) {
             bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
-            return ePSGS_Found;
+            return ePSGS_CacheHit;
         }
 
         bioseq_resolution.Reset();
@@ -338,16 +338,16 @@ CPSGS_ResolveBase::x_ResolveSecondaryOSLTInCache(
     CPSGCache   psg_cache(true, m_Request, m_Reply);
     auto        si2csi_cache_lookup_result =
                         psg_cache.LookupSi2csi(bioseq_resolution);
-    if (si2csi_cache_lookup_result == ePSGS_Found) {
+    if (si2csi_cache_lookup_result == ePSGS_CacheHit) {
         bioseq_resolution.m_ResolutionResult = ePSGS_Si2csiCache;
-        return ePSGS_Found;
+        return ePSGS_CacheHit;
     }
 
     bioseq_resolution.Reset();
 
-    if (si2csi_cache_lookup_result == ePSGS_Failure)
-        return ePSGS_Failure;
-    return ePSGS_NotFound;
+    if (si2csi_cache_lookup_result == ePSGS_CacheFailure)
+        return ePSGS_CacheFailure;
+    return ePSGS_CacheNotHit;
 }
 
 
@@ -356,7 +356,7 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(
                                 SBioseqResolution &  bioseq_resolution,
                                 bool  need_as_is)
 {
-    EPSGS_CacheLookupResult     cache_lookup_result = ePSGS_NotFound;
+    EPSGS_CacheLookupResult     cache_lookup_result = ePSGS_CacheNotHit;
 
     // Capitalize seq_id
     string      upper_seq_id = GetRequestSeqId();
@@ -371,7 +371,7 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(
                                     bioseq_resolution);
     }
 
-    if (cache_lookup_result == ePSGS_NotFound) {
+    if (cache_lookup_result == ePSGS_CacheNotHit) {
         // 2. if there are | at the end => strip all trailing bars
         //    else => add one | at the end
         if (upper_seq_id[upper_seq_id.size() - 1] == '|') {
@@ -390,7 +390,7 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(
         }
     }
 
-    if (cache_lookup_result == ePSGS_Failure) {
+    if (cache_lookup_result == ePSGS_CacheFailure) {
         bioseq_resolution.Reset();
         bioseq_resolution.m_Error.m_ErrorMessage = "Cache lookup failure";
         bioseq_resolution.m_Error.m_ErrorCode = CRequestStatus::e500_InternalServerError;
@@ -417,9 +417,9 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
                     x_ResolvePrimaryOSLTInCache(primary_id, effective_version,
                                                 effective_seq_id_type,
                                                 bioseq_resolution);
-        if (cache_lookup_result == ePSGS_Found)
+        if (cache_lookup_result == ePSGS_CacheHit)
             return;
-        if (cache_lookup_result == ePSGS_Failure)
+        if (cache_lookup_result == ePSGS_CacheFailure)
             cache_failure = true;
     }
 
@@ -428,9 +428,9 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
                     x_ResolveSecondaryOSLTInCache(secondary_id,
                                                   effective_seq_id_type,
                                                   bioseq_resolution);
-        if (cache_lookup_result == ePSGS_Found)
+        if (cache_lookup_result == ePSGS_CacheHit)
             return;
-        if (cache_lookup_result == ePSGS_Failure) {
+        if (cache_lookup_result == ePSGS_CacheFailure) {
             cache_failure = true;
             break;
         }
@@ -446,9 +446,9 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
     bool        need_as_is = primary_id != upper_seq_id;
     auto        cache_lookup_result =
                     x_ResolveAsIsInCache(bioseq_resolution, need_as_is);
-    if (cache_lookup_result == ePSGS_Found)
+    if (cache_lookup_result == ePSGS_CacheHit)
         return;
-    if (cache_lookup_result == ePSGS_Failure)
+    if (cache_lookup_result == ePSGS_CacheFailure)
         cache_failure = true;
 
     bioseq_resolution.Reset();
@@ -502,7 +502,7 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
                     auto        bioseq_cache_lookup_result =
                                     psg_cache.LookupBioseqInfo(bioseq_resolution);
 
-                    if (bioseq_cache_lookup_result != ePSGS_Found) {
+                    if (bioseq_cache_lookup_result != ePSGS_CacheHit) {
                         // Not found or error
                         continue_with_cassandra = true;
                         bioseq_resolution.Reset();
@@ -630,7 +630,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
             CPSGCache   psg_cache(m_Request, m_Reply);
             auto        cache_lookup_result =
                                 psg_cache.LookupBioseqInfo(bioseq_resolution);
-            if (cache_lookup_result != ePSGS_Found) {
+            if (cache_lookup_result != ePSGS_CacheHit) {
                 // No cache hit (or not allowed); need to get to DB if allowed
                 if (x_GetRequestUseCache() != SPSGS_RequestBase::ePSGS_CacheOnly) {
                     // Async DB query

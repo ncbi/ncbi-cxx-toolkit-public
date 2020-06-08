@@ -335,13 +335,13 @@ string  GetBlobExcludeHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
     // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
     string      reason;
     switch (skip_reason) {
-        case ePSGS_Excluded:
+        case ePSGS_BlobExcluded:
             reason = s_Excluded;
             break;
-        case ePSGS_InProgress:
+        case ePSGS_BlobInProgress:
             reason = s_InProgress;
             break;
-        case ePSGS_Sent:
+        case ePSGS_BlobSent:
             reason = s_Sent;
             break;
     }

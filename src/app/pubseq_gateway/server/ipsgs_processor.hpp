@@ -39,9 +39,52 @@ USING_NCBI_SCOPE;
 
 
 /// Interface class (and self-factory) for request processor objects that can
-/// retrieve data from a given data source
+/// retrieve data from a given data source.
+/// The overal life cycle of the processors is as follows.
+/// There is a one-time processors registration stage. On this stage a default
+/// processor constructor will be used.
+/// Then at the time when a request comes, all the registred processors will
+/// receive the CreateProcessor(...) call. All not NULL processors will be
+/// considered as those which are able to process the request.
+/// Later the infrastructure will call the first processor Process() method and
+/// periodically will call IsFinished() method. Depending on the IsFinished()
+/// return value a request can be finished, or a next processor in the list
+/// will receive the Process() method.
+///
+/// There are a few agreements for the processors.
+/// - The server replies use PSG protocol. When something is needed to be sent
+///   to the client then m_Reply method should be used.
+/// - When a processor is finished it should call
+///   m_Reply->SignalProcessorFinished().
+/// - If a processor needs to do any logging then two thing need to be done:
+///   - Set request context fot the current thread.
+///   - Use one of the macro PSG_TRACE, PSG_INFO, PSG_WARNING, PSG_ERROR,
+///     PSG_CRITICAL, PSG_MESSAGE (pubseq_gateway_logging.hpp)
+///   - Reset request context
+///   E.g.:
+///   { CRequestContextResetter     context_resetter;
+///     m_Request->SetRequestContext();
+///     ...
+///     PSG_WARNING("Something"); }
+/// - The request context status must not be updated directly. Instead the
+///   following call to be used: m_Request->UpdateOverallStatus(...)
+/// - The ProcessEvents() method can be called periodically (in addition to
+///   some events like Cassandra data ready)
 class IPSGS_Processor
 {
+public:
+    /// The GetStatus() method returns a processor current status.
+    enum EPSGS_Status {
+        ePSGS_InProgress,   //< Processor is still working.
+                            //< The other processors (if any) will wait.
+        ePSGS_Found,        //< Processor finished and found what needed.
+                            //< The other processor (if any) will not start.
+        ePSGS_NotFound,     //< Processor finished and did not find anything.
+                            //< The other processor (if any) will start.
+        ePSGS_Error         //< Processor finished and there was an error.
+                            //< The other processor (if any) will start.
+    };
+
 public:
     IPSGS_Processor()
     {}
@@ -70,13 +113,14 @@ public:
     /// Cancel processing due to the user request
     virtual void Cancel(void) = 0;
 
-    /// Tells if the processor did evrything needed
+    /// Tells the processor status (if it has finished or in progress)
     /// @return
-    ///  true if there is nothing else to do
-    virtual bool IsFinished(void) = 0;
+    ///  the current processor status
+    virtual EPSGS_Status GetStatus(void) = 0;
 
     /// Called when an event happened which may require to have
     /// some processing. By default nothing should be done.
+    /// This method can be called as well on a timer event.
     virtual void ProcessEvent(void)
     {}
 

@@ -200,9 +200,20 @@ void CPSGS_ResolveProcessor::Cancel(void)
 }
 
 
-bool CPSGS_ResolveProcessor::IsFinished(void)
+IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::IsFinished();
+    if (CPSGS_CassProcessorBase::IsFinished()) {
+        switch (IPSGS_Processor::m_Request->GetOverallStatus()) {
+            case CRequestStatus::e200_Ok:
+                return ePSGS_Found;
+            case CRequestStatus::e404_NotFound:
+                return ePSGS_NotFound;
+            default:
+                return ePSGS_Error;
+        }
+    }
+
+    return ePSGS_InProgress;
 }
 
 

@@ -48,7 +48,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
     if (cache == nullptr)
-        return ePSGS_NotFound;
+        return ePSGS_CacheNotHit;
 
     auto    version = bioseq_resolution.m_BioseqInfo.GetVersion();
     auto    seq_id_type = bioseq_resolution.m_BioseqInfo.GetSeqIdType();
@@ -143,14 +143,14 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
         ERR_POST(Critical << "Exception while bioseq info cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch exception. Report failure.",
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while bioseq info cache lookup");
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     }
 
     if (cache_hit) {
@@ -159,7 +159,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbBioseqInfo, eOpStatusFound, start);
         app->GetCacheCounters().IncBioseqInfoCacheHit();
-        return ePSGS_Found;
+        return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
@@ -167,7 +167,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                            m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
     app->GetCacheCounters().IncBioseqInfoCacheMiss();
-    return ePSGS_NotFound;
+    return ePSGS_CacheNotHit;
 }
 
 
@@ -240,7 +240,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
         ERR_POST(Critical << "Exception while INSDC bioseq info cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch for INSDC types exception. "
@@ -249,7 +249,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
 
         ERR_POST(Critical << "Unknown exception while INSDC bioseq info cache lookup");
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     }
 
     if (cache_hit) {
@@ -258,7 +258,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbBioseqInfo, eOpStatusFound, start);
         app->GetCacheCounters().IncBioseqInfoCacheHit();
-        return ePSGS_Found;
+        return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
@@ -266,7 +266,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
                            m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
     app->GetCacheCounters().IncBioseqInfoCacheMiss();
-    return ePSGS_NotFound;
+    return ePSGS_CacheNotHit;
 }
 
 
@@ -277,7 +277,7 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
     if (cache == nullptr)
-        return ePSGS_NotFound;
+        return ePSGS_CacheNotHit;
 
     auto    seq_id_type = bioseq_resolution.m_BioseqInfo.GetSeqIdType();
 
@@ -338,14 +338,14 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
         ERR_POST(Critical << "Exception while csi cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch exception. Report failure.",
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while csi cache lookup");
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     }
 
     COperationTiming &      timing = app->GetTiming();
@@ -355,7 +355,7 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
                                m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbSi2csi, eOpStatusFound, start);
         app->GetCacheCounters().IncSi2csiCacheHit();
-        return ePSGS_Found;
+        return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
@@ -363,7 +363,7 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
                            m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbSi2csi, eOpStatusNotFound, start);
     app->GetCacheCounters().IncSi2csiCacheMiss();
-    return ePSGS_NotFound;
+    return ePSGS_CacheNotHit;
 }
 
 
@@ -377,7 +377,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
     if (cache == nullptr)
-        return ePSGS_NotFound;
+        return ePSGS_CacheNotHit;
 
     CBlobFetchRequest       fetch_request;
     fetch_request.SetSat(sat);
@@ -444,14 +444,14 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
         ERR_POST(Critical << "Exception while blob prop cache lookup: "
                           << exc.what());
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch exception. Report failure.",
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while blob prop cache lookup");
         app->GetErrorCounters().IncLMDBError();
-        return ePSGS_Failure;
+        return ePSGS_CacheFailure;
     }
 
     COperationTiming &      timing = app->GetTiming();
@@ -461,7 +461,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
                                m_Request->GetStartTimestamp());
         timing.Register(eLookupLmdbBlobProp, eOpStatusFound, start);
         app->GetCacheCounters().IncBlobPropCacheHit();
-        return ePSGS_Found;
+        return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
@@ -469,6 +469,6 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
                            m_Request->GetStartTimestamp());
     timing.Register(eLookupLmdbBlobProp, eOpStatusNotFound, start);
     app->GetCacheCounters().IncBlobPropCacheMiss();
-    return ePSGS_NotFound;
+    return ePSGS_CacheNotHit;
 }
 

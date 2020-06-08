@@ -93,7 +93,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
         psg_cache.LookupBlobProp(m_TSEChunkRequest->m_TSEId.m_Sat,
                                  m_TSEChunkRequest->m_TSEId.m_SatKey,
                                  last_modified, *blob_record.get());
-    if (blob_prop_cache_lookup_result == ePSGS_Found) {
+    if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         do {
             // Step 1: check the id2info presense
             if (blob_record->GetId2Info().empty()) {
@@ -143,10 +143,10 @@ void CPSGS_TSEChunkProcessor::Process(void)
             auto  tse_blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
                             chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
                             last_modified, *blob_record.get());
-            if (tse_blob_prop_cache_lookup_result != ePSGS_Found) {
+            if (tse_blob_prop_cache_lookup_result != ePSGS_CacheHit) {
                 err_msg = "TSE chunk blob " + chunk_blob_id.ToString() +
                           " properties are not found in cache";
-                if (tse_blob_prop_cache_lookup_result == ePSGS_Failure)
+                if (tse_blob_prop_cache_lookup_result == ePSGS_CacheFailure)
                     err_msg += " due to LMDB error";
                 PSG_WARNING(err_msg);
                 break;  // Continue with cassandra
@@ -203,7 +203,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
     } else {
         err_msg = "Blob " + m_TSEChunkRequest->m_TSEId.ToString() +
                   " properties are not found in cache";
-        if (blob_prop_cache_lookup_result == ePSGS_Failure)
+        if (blob_prop_cache_lookup_result == ePSGS_CacheFailure)
             err_msg += " due to LMDB error";
         PSG_WARNING(err_msg);
     }
@@ -539,12 +539,12 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
         psg_cache.LookupBlobProp(chunk_blob_id.m_Sat,
                                  chunk_blob_id.m_SatKey,
                                  last_modified, *blob_record.get());
-    if (blob_prop_cache_lookup_result != ePSGS_Found &&
+    if (blob_prop_cache_lookup_result != ePSGS_CacheHit &&
         fetch_details->GetUseCache() == SPSGS_RequestBase::ePSGS_CacheOnly) {
         // Cassandra is forbidden for the blob prop
         string  err_msg = "TSE chunk blob " + chunk_blob_id.ToString() +
                           " properties are not found in cache";
-        if (blob_prop_cache_lookup_result == ePSGS_Failure)
+        if (blob_prop_cache_lookup_result == ePSGS_CacheFailure)
             err_msg += " due to LMDB error";
         x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
                          ePSGS_BlobPropsNotFound);
@@ -566,7 +566,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     auto    app = CPubseqGatewayApp::GetInstance();
     CCassBlobTaskLoadBlob *     load_task = nullptr;
 
-    if (blob_prop_cache_lookup_result == ePSGS_Found) {
+    if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(
                             app->GetCassandraTimeout(),
                             app->GetCassandraMaxRetries(),
@@ -598,7 +598,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             IPSGS_Processor::m_Request,
             IPSGS_Processor::m_Reply,
             cass_blob_fetch.get(),
-            blob_prop_cache_lookup_result != ePSGS_Found));
+            blob_prop_cache_lookup_result != ePSGS_CacheHit));
     load_task->SetChunkCallback(
         CBlobChunkCallback(
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
@@ -623,9 +623,20 @@ void CPSGS_TSEChunkProcessor::Cancel(void)
 }
 
 
-bool CPSGS_TSEChunkProcessor::IsFinished(void)
+IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::IsFinished();
+    if (CPSGS_CassProcessorBase::IsFinished()) {
+        switch (IPSGS_Processor::m_Request->GetOverallStatus()) {
+            case CRequestStatus::e200_Ok:
+                return ePSGS_Found;
+            case CRequestStatus::e404_NotFound:
+                return ePSGS_NotFound;
+            default:
+                return ePSGS_Error;
+        }
+    }
+
+    return ePSGS_InProgress;
 }
 
 

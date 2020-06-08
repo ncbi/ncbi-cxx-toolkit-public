@@ -380,7 +380,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
     CCassBlobTaskLoadBlob *     load_task = nullptr;
 
 
-    if (blob_prop_cache_lookup_result == ePSGS_Found) {
+    if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(
                         app->GetCassandraTimeout(),
                         app->GetCassandraMaxRetries(),
@@ -400,7 +400,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
             // the Cassandra DB
             string      message;
 
-            if (blob_prop_cache_lookup_result == ePSGS_NotFound) {
+            if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                 message = "Blob properties are not found";
                 m_Request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
                 m_Reply->PrepareBlobPropMessage(
@@ -436,7 +436,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
     load_task->SetPropsCallback(
         CBlobPropCallback(blob_props_cb,
                           m_Request, m_Reply, cass_blob_fetch.get(),
-                          blob_prop_cache_lookup_result != ePSGS_Found));
+                          blob_prop_cache_lookup_result != ePSGS_CacheHit));
     load_task->SetChunkCallback(
         CBlobChunkCallback(blob_chunk_cb, cass_blob_fetch.get()));
 
@@ -509,7 +509,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                                             *blob_record.get());
         CCassBlobTaskLoadBlob *     load_task = nullptr;
 
-        if (blob_prop_cache_lookup_result == ePSGS_Found) {
+        if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
                             app->GetCassandraTimeout(),
                             app->GetCassandraMaxRetries(),
@@ -529,7 +529,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                 // No need to create a request because the Cassandra DB access
                 // is forbidden
                 string      message;
-                if (blob_prop_cache_lookup_result == ePSGS_NotFound) {
+                if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                     message = "Blob properties are not found";
                     m_Request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
                     m_Reply->PrepareBlobPropMessage(
@@ -566,7 +566,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
         load_task->SetPropsCallback(
             CBlobPropCallback(blob_props_cb,
                               m_Request, m_Reply, details.get(),
-                              blob_prop_cache_lookup_result != ePSGS_Found));
+                              blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
             CBlobChunkCallback(blob_chunk_cb, details.get()));
 
@@ -598,9 +598,11 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
         cache_result == ePSGS_AlreadyInCache) {
         m_Reply->PrepareBlobPropCompletion(fetch_details);
         if (completed)
-            m_Reply->PrepareBlobExcluded(blob_request.m_BlobId, ePSGS_Sent);
+            m_Reply->PrepareBlobExcluded(blob_request.m_BlobId,
+                                         ePSGS_BlobSent);
         else
-            m_Reply->PrepareBlobExcluded(blob_request.m_BlobId, ePSGS_InProgress);
+            m_Reply->PrepareBlobExcluded(blob_request.m_BlobId,
+                                         ePSGS_BlobInProgress);
         return ePSGS_InCache;
     }
 

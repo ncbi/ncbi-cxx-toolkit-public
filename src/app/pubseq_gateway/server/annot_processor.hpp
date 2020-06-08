@@ -50,7 +50,7 @@ public:
                                              shared_ptr<CPSGS_Reply> reply) const;
     virtual void Process(void);
     virtual void Cancel(void);
-    virtual bool IsFinished(void);
+    virtual EPSGS_Status GetStatus(void);
     virtual void ProcessEvent(void);
 
 public:

@@ -112,7 +112,7 @@ void CPSGS_GetBlobProcessor::Process(void)
                                         *blob_record.get());
 
     CCassBlobTaskLoadBlob *     load_task = nullptr;
-    if (blob_prop_cache_lookup_result == ePSGS_Found) {
+    if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
                                               app->GetCassandraMaxRetries(),
                                               app->GetCassandraConnection(),
@@ -123,7 +123,7 @@ void CPSGS_GetBlobProcessor::Process(void)
     } else {
         if (m_BlobRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
-            if (blob_prop_cache_lookup_result == ePSGS_NotFound)
+            if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
                 IPSGS_Processor::m_Reply->PrepareReplyMessage(
                     "Blob properties are not found",
                     CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
@@ -182,7 +182,7 @@ void CPSGS_GetBlobProcessor::Process(void)
                           IPSGS_Processor::m_Request,
                           IPSGS_Processor::m_Reply,
                           fetch_details.get(),
-                          blob_prop_cache_lookup_result != ePSGS_Found));
+                          blob_prop_cache_lookup_result != ePSGS_CacheHit));
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
@@ -249,9 +249,20 @@ void CPSGS_GetBlobProcessor::Cancel(void)
 }
 
 
-bool CPSGS_GetBlobProcessor::IsFinished(void)
+IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::IsFinished();
+    if (CPSGS_CassProcessorBase::IsFinished()) {
+        switch (IPSGS_Processor::m_Request->GetOverallStatus()) {
+            case CRequestStatus::e200_Ok:
+                return ePSGS_Found;
+            case CRequestStatus::e404_NotFound:
+                return ePSGS_NotFound;
+            default:
+                return ePSGS_Error;
+        }
+    }
+
+    return ePSGS_InProgress;
 }
 
 

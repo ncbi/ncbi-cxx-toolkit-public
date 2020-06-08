@@ -233,11 +233,13 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
 
     m_Processor->ProcessEvent();
 
-    if (m_Processor->IsFinished() && !resp.IsFinished() && resp.IsOutputReady() ) {
-        m_Reply->PrepareReplyCompletion();
-        m_Reply->Flush(true);
+    if (m_Processor->GetStatus() != IPSGS_Processor::ePSGS_InProgress) {
+        if (!resp.IsFinished() && resp.IsOutputReady() ) {
+            m_Reply->PrepareReplyCompletion();
+            m_Reply->Flush(true);
 
-        x_PrintRequestStop();
+            x_PrintRequestStop();
+        }
     }
 }
 

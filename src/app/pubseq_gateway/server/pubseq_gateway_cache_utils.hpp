@@ -99,14 +99,14 @@ public:
     {
         if (m_Allowed)
             return x_LookupBioseqInfo(bioseq_resolution);
-        return ePSGS_NotFound;
+        return ePSGS_CacheNotHit;
     }
 
     EPSGS_CacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     {
         if (m_Allowed)
             return x_LookupSi2csi(bioseq_resolution);
-        return ePSGS_NotFound;
+        return ePSGS_CacheNotHit;
     }
 
     EPSGS_CacheLookupResult  LookupBlobProp(int  sat,
@@ -116,7 +116,7 @@ public:
     {
         if (m_Allowed)
             return x_LookupBlobProp(sat, sat_key, last_modified, blob_record);
-        return ePSGS_NotFound;
+        return ePSGS_CacheNotHit;
     }
 
 private:
