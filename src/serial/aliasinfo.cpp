@@ -233,9 +233,11 @@ template class NCBI_XSERIAL_EXPORT CAliasBase<TIntId>;
 template class NCBI_XSERIAL_EXPORT CStdAliasBase<TIntId>;
 #endif
 
-template class NCBI_XSERIAL_EXPORT CAliasBase<CStrictId<SStrictId_Gi, TIntId>>;
-template class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId<SStrictId_Gi, TIntId>>;
-template class NCBI_XSERIAL_EXPORT CAliasBase<CStrictId<SStrictId_Entrez, TIntId>>;
-template class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId<SStrictId_Entrez, TIntId>>;
+template class NCBI_XSERIAL_EXPORT CAliasBase<CStrictId<SStrictId_Gi, SStrictId_Gi::TId>>;
+template class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId<SStrictId_Gi, SStrictId_Gi::TId>>;
+template class NCBI_XSERIAL_EXPORT CAliasBase<CStrictId<SStrictId_Entrez, SStrictId_Entrez::TId>>;
+template class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId<SStrictId_Entrez, SStrictId_Entrez::TId>>;
+template class NCBI_XSERIAL_EXPORT CAliasBase<CStrictId<SStrictId_Tax, SStrictId_Tax::TId>>;
+template class NCBI_XSERIAL_EXPORT CStdAliasBase<CStrictId<SStrictId_Tax, SStrictId_Tax::TId>>;
 
 END_NCBI_SCOPE
