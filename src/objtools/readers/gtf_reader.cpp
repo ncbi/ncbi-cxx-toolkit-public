@@ -181,6 +181,9 @@ CGtfReader::xProcessData(
 {
     for (const auto& lineData: readerData) {
         const auto& line = lineData.mData;
+        if (xIsTrackTerminator(line)) {
+            continue;
+        }
         if (xParseStructuredComment(line)) {
             continue;
         }
