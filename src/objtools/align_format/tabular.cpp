@@ -649,16 +649,16 @@ void CBlastTabularInfo::x_SetTaxInfoAll(const CBioseq_Handle & handle, const CRe
             CSeqdesc_CI desc_s(handle, CSeqdesc::e_Source);
             for (;desc_s; ++desc_s) {
                      TTaxId t = desc_s->GetSource().GetOrg().GetTaxId();
-                     if(t != ZERO_ENTREZ_ID) {
-                    	 m_SubjectTaxIds.insert(ENTREZ_ID_TO(int, t));
+                     if(t != ZERO_TAX_ID) {
+                    	 m_SubjectTaxIds.insert(TAX_ID_TO(int, t));
                      }
             }
 
             CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
             for (; desc; ++desc) {
                     TTaxId t= desc->GetOrg().GetTaxId();
-                    if(t != ZERO_ENTREZ_ID) {
-                    	m_SubjectTaxIds.insert(ENTREZ_ID_TO(int, t));
+                    if(t != ZERO_TAX_ID) {
+                    	m_SubjectTaxIds.insert(TAX_ID_TO(int, t));
                     }
             }
     }
