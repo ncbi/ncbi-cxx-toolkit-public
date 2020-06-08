@@ -49,6 +49,7 @@
 #include "cass_util.hpp"
 #include "blob_record.hpp"
 #include "nannot/record.hpp"
+#include "id2_split/record.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -519,6 +520,13 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         EBlobFlags flag,
         bool set_flag
     );
+
+    void InsertID2Split(
+        unsigned int op_timeout_ms,
+        int32_t, unsigned int max_retries,
+        CBlobRecord * blob, CID2SplitRecord* id2_split,
+        TDataErrorCallback error_cb,
+        unique_ptr<CCassBlobWaiter> & waiter);
 
     bool GetSetting(unsigned int op_timeout_ms, const string & name, string & value);
     void UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value);
