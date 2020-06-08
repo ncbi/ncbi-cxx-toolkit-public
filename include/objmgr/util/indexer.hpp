@@ -92,8 +92,7 @@ public:
         eAdaptive = 0,
         eInternal = 1,
         eExternal = 2,
-        eExhaustive = 3,
-        eIncremental = 4
+        eExhaustive = 3
     };
 
     enum EFlags {

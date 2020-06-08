@@ -1745,10 +1745,6 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         // includes barrier between RefSeq and INSD accession types
         sel.SetAdaptiveDepth(true);
 
-    } else if (policy == CSeqEntryIndex::eIncremental) {
-
-        // obsolete policy
-
     }
 
     if (depth > -1) {
