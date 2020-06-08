@@ -72,7 +72,7 @@ TTaxId
 COrg_ref::GetTaxId() const
 {
     if( ! IsSetDb() ) {
-        return ZERO_ENTREZ_ID;
+        return ZERO_TAX_ID;
     }
     const TDb& lDbTags = GetDb();
  
@@ -83,16 +83,16 @@ COrg_ref::GetTaxId() const
 	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
 	    const CObject_id& id = i->GetObject().GetTag();
 	    if( id.IsId() )
-		return ENTREZ_ID_FROM(CObject_id::TId, id.GetId());
+		return TAX_ID_FROM(CObject_id::TId, id.GetId());
 	}
     }
-    return ZERO_ENTREZ_ID;
+    return ZERO_TAX_ID;
 }
 
 TTaxId
 COrg_ref::SetTaxId( TTaxId tax_id )
 {
-    TTaxId old_id = ZERO_ENTREZ_ID;
+    TTaxId old_id = ZERO_TAX_ID;
 
     TDb& lDbTags = SetDb();
     // Try to update existing tax id first
@@ -102,15 +102,15 @@ COrg_ref::SetTaxId( TTaxId tax_id )
 	if( *i && i->GetObject().GetDb() == s_taxonName ) {
 	    CObject_id& id = i->GetObject().SetTag();
 	    if( id.IsId() )
-		old_id = ENTREZ_ID_FROM(CObject_id::TId, id.GetId());
-	    id.SetId() = ENTREZ_ID_TO(CObject_id::TId, tax_id);
+		old_id = TAX_ID_FROM(CObject_id::TId, id.GetId());
+	    id.SetId() = TAX_ID_TO(CObject_id::TId, tax_id);
 	    return old_id;
 	}
     }
     // Add new tag
     CRef< CDbtag > ref( new CDbtag() );
     ref->SetDb( s_taxonName );
-    ref->SetTag().SetId( ENTREZ_ID_TO(CObject_id::TId, tax_id) );
+    ref->SetTag().SetId(TAX_ID_TO(CObject_id::TId, tax_id) );
     SetDb().push_back( ref );
 
     return old_id;
@@ -487,7 +487,7 @@ bool COrg_ref::UpdateFromTable()
                 }
             }
             if (taxid > 0) {
-                SetTaxId(ENTREZ_ID_FROM(CObject_id::TId, taxid));
+                SetTaxId(TAX_ID_FROM(CObject_id::TId, taxid));
             }
         }
         if (lookup->IsSetLineage()) {
