@@ -94,10 +94,10 @@ void
 CBlastMasterNode::RegisterNode(CBlastNode * node, CBlastNodeMailbox * mailbox)
 {
 	if(node == NULL) {
-		 NCBI_THROW(CInputException, eInvalidInput, "Empty Node" );
+		 NCBI_THROW(CBlastException, eInvalidArgument, "Empty Node" );
 	}
 	if(mailbox == NULL) {
-		 NCBI_THROW(CInputException, eInvalidInput, "Empty mailbox" );
+		 NCBI_THROW(CBlastException, eInvalidArgument, "Empty mailbox" );
 	}
 	if(mailbox->GetNodeNum() != node->GetNodeNum()) {
 		 NCBI_THROW(CBlastException, eCoreBlastError, "Invalid mailbox node number" );
@@ -107,7 +107,7 @@ CBlastMasterNode::RegisterNode(CBlastNode * node, CBlastNodeMailbox * mailbox)
 		int node_num = node->GetNodeNum();
 		if ((m_PostOffice.find(node_num) != m_PostOffice.end()) ||
 	    	(m_RegisteredNodes.find(node_num) != m_RegisteredNodes.end())){
-		 	NCBI_THROW(CInputException, eInvalidInput, "Duplicate chunk num" );
+		 	NCBI_THROW(CBlastException, eInvalidArgument, "Duplicate chunk num" );
 		}
 		m_PostOffice[node_num]= mailbox;
 		m_RegisteredNodes[node_num] = node;
