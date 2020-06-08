@@ -35,7 +35,8 @@ endif()
 
 #set(Boost_DEBUG ON)
 find_package(Boost
-             COMPONENTS filesystem iostreams date_time regex system serialization thread
+             COMPONENTS date_time filesystem iostreams regex serialization
+               system thread
              REQUIRED)
 set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 
