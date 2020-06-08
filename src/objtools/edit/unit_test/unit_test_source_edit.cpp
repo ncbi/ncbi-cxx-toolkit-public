@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2100)
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(common);
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Pneumocystis carinii");
-    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), ENTREZ_ID_CONST(4754));
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), TAX_ID_CONST(4754));
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_forma_specialis, "rattus-tertii"), true);
     BOOST_CHECK(!common->IsSetGenome());
 
@@ -215,66 +215,66 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2100)
     //tax IDs are the same, but need to look up before merging to get taxnames to match
     src1->ResetOrg();
     src1->SetOrg().SetTaxname("Eremothecium gossypii ATCC 10895");
-    src1->SetOrg().SetTaxId(ENTREZ_ID_CONST(284811));
+    src1->SetOrg().SetTaxId(TAX_ID_CONST(284811));
     src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "ATCC 10895")));
     src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_culture_collection, "ATCC:10895")));
 
     src2->ResetOrg();
     src2->SetOrg().SetTaxname("Ashbya gossypii ATCC 10895");
-    src2->SetOrg().SetTaxId(ENTREZ_ID_CONST(284811));
+    src2->SetOrg().SetTaxId(TAX_ID_CONST(284811));
     src2->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "ATCC 10895")));
     src2->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_culture_collection, "ATCC:10895")));
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(common);
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Eremothecium gossypii ATCC 10895");
-    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), ENTREZ_ID_CONST(284811));
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), TAX_ID_CONST(284811));
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_strain, "ATCC 10895"), true);
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_culture_collection, "ATCC:10895"), true);
 
     //2 sub-sub strains with common strain above them
     src1->ResetOrg();
-    src1->SetOrg().SetTaxId(ENTREZ_ID_CONST(588858));
+    src1->SetOrg().SetTaxId(TAX_ID_CONST(588858));
     src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "14028S")));
     src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_serovar, "Typhimurium")));     
     src2->ResetOrg();
-    src2->SetOrg().SetTaxId(ENTREZ_ID_CONST(1159899));
+    src2->SetOrg().SetTaxId(TAX_ID_CONST(1159899));
     src2->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "LT2-4")));
     src2->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_serovar, "Typhimurium")));
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(common);
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Salmonella enterica subsp. enterica serovar Typhimurium str. LT2");
-    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), ENTREZ_ID_CONST(99287));
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), TAX_ID_CONST(99287));
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_serovar, "Typhimurium"), true);
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_strain, "LT2"), true);
 
     // 2 strains that their common parent is several levels up, but still under same species
     src1->ResetOrg();
-    src1->SetOrg().SetTaxId(ENTREZ_ID_CONST(588858));
+    src1->SetOrg().SetTaxId(TAX_ID_CONST(588858));
     src2->ResetOrg();
-    src2->SetOrg().SetTaxId(ENTREZ_ID_CONST(1410937));
+    src2->SetOrg().SetTaxId(TAX_ID_CONST(1410937));
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(common);
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Salmonella enterica subsp. enterica serovar Typhimurium");
-    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), ENTREZ_ID_CONST(90371));
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), TAX_ID_CONST(90371));
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_serovar, "Typhimurium"), true);
 
     // one taxid is parent of the other
     src1->ResetOrg();
-    src1->SetOrg().SetTaxId(ENTREZ_ID_CONST(588858));
+    src1->SetOrg().SetTaxId(TAX_ID_CONST(588858));
     src2->ResetOrg();
-    src2->SetOrg().SetTaxId(ENTREZ_ID_CONST(59201));
+    src2->SetOrg().SetTaxId(TAX_ID_CONST(59201));
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(common);
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Salmonella enterica subsp. enterica");
-    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), ENTREZ_ID_CONST(59201));
+    BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), TAX_ID_CONST(59201));
     BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_serovar, "Typhimurium"), false);
 
     // strains of different species
     // result should be failure, because 2 different species cannot be merged
     src1->ResetOrg();
-    src1->SetOrg().SetTaxId(ENTREZ_ID_CONST(1416749));
+    src1->SetOrg().SetTaxId(TAX_ID_CONST(1416749));
     src2->ResetOrg();
-    src2->SetOrg().SetTaxId(ENTREZ_ID_CONST(644337));
+    src2->SetOrg().SetTaxId(TAX_ID_CONST(644337));
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(!common);
 

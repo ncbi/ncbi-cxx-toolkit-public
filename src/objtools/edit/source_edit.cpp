@@ -190,10 +190,10 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
 
     TTaxId taxid1 = o1->GetTaxId();
     TTaxId taxid2 = o2->GetTaxId();
-    if (taxid1 == ZERO_ENTREZ_ID) {
+    if (taxid1 == ZERO_TAX_ID) {
         ERR_POST("No taxonomy ID for " + o1->GetTaxname());
         return common;
-    } else if (taxid2 == ZERO_ENTREZ_ID) {
+    } else if (taxid2 == ZERO_TAX_ID) {
         ERR_POST("No taxonomy ID for " + o2->GetTaxname());
         return common;
     } else if (taxid1 == taxid2) {
@@ -206,8 +206,8 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
         common = tmp1->MakeCommon(*tmp2);
     } else {
         CRef<CT3Request> rq(new CT3Request());
-        rq->SetJoin().Set().push_back(ENTREZ_ID_TO(int, taxid1));
-        rq->SetJoin().Set().push_back(ENTREZ_ID_TO(int, taxid2));
+        rq->SetJoin().Set().push_back(TAX_ID_TO(int, taxid1));
+        rq->SetJoin().Set().push_back(TAX_ID_TO(int, taxid2));
         string err_nums = "(" + NStr::NumericToString(taxid1) + "," + NStr::NumericToString(taxid2) + ")";
         CTaxon3_request request;
         request.SetRequest().push_back(rq);

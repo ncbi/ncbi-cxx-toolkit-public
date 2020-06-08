@@ -236,7 +236,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
     CMutexGuard guard(m_Mutex);
 
     TTaxId taxid = org.GetTaxId();
-    if (taxid == ZERO_ENTREZ_ID && !org.IsSetTaxname())
+    if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
         return;
 
     if (m_taxClient.get() == 0)
