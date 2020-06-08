@@ -952,6 +952,7 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 //#define NCBI_STRICT_GI
 //#define NCBI_INT8_GI
 //#define NCBI_STRICT_ENTREZ_ID
+//#define NCBI_STRICT_TAX_ID
 
 // Temporary fix: disable strict TEntrezId
 #ifdef NCBI_STRICT_ENTREZ_ID
@@ -959,35 +960,18 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 #endif
 
 #ifdef NCBI_STRICT_GI
+// Strict mode can be enabled only for Int8 GIs.
 # define NCBI_INT8_GI
 #else
 # undef NCBI_STRICT_ENTREZ_ID
+# undef NCBI_STRICT_TAX_ID
 #endif
-
-/// Key structs must always be defined - they are used in aliasinfo.cpp
-struct SStrictId_Gi {};
-struct SStrictId_Entrez {};
 
 #ifdef NCBI_INT8_GI
 
 // Generic id type which needs to be the same size as GI.
 typedef Int8 TIntId;
 typedef Uint8 TUintId;
-
-#ifdef NCBI_STRICT_GI
-
-// Strict mode can be enabled only for Int8 GIs.
-
-typedef CStrictId<SStrictId_Gi, TIntId> TGi;
-
-/// @deprecated: Use TGi/TEntrezId typedefs.
-NCBI_DEPRECATED typedef TGi CStrictGi;
-
-#else // NCBI_STRICT_GI
-
-typedef TIntId TGi;
-
-#endif // NCBI_STRICT_GI
 
 #else // NCBI_INT8_GI
 
@@ -998,15 +982,45 @@ typedef Uint4 TUintId;
 #endif
 
 
+/// Key structs must always be defined - they are used in aliasinfo.cpp
+struct SStrictId_Gi {
+    typedef TIntId TId;
+};
+struct SStrictId_Entrez {
+    typedef TIntId TId;
+};
+struct SStrictId_Tax {
+    typedef int TId;
+};
+
+
+#ifdef NCBI_STRICT_GI
+
+typedef CStrictId<SStrictId_Gi, SStrictId_Gi::TId> TGi;
+
+/// @deprecated: Use TGi/TEntrezId typedefs.
+NCBI_DEPRECATED typedef TGi CStrictGi;
+
+#else // NCBI_STRICT_GI
+
+typedef SStrictId_Gi::TId TGi;
+
+#endif // NCBI_STRICT_GI
+
+
 /// TEntrezId type for entrez ids which require the same strictness as TGi.
 #ifdef NCBI_STRICT_ENTREZ_ID
-typedef CStrictId<SStrictId_Entrez, TIntId> TEntrezId;
+typedef CStrictId<SStrictId_Entrez, SStrictId_Entrez::TId> TEntrezId;
 #else
-typedef TIntId TEntrezId;
+typedef SStrictId_Entrez::TId TEntrezId;
 #endif
 
-/// Taxon id type is the same as TEntrezId.
-typedef int TTaxId;
+/// Taxon id type.
+#ifdef NCBI_STRICT_TAX_ID
+typedef CStrictId<SStrictId_Tax, SStrictId_Tax::TId> TTaxId;
+#else
+typedef SStrictId_Tax::TId TTaxId;
+#endif
 
 
 /// a helper template to enforce constness of argument to GI_CONST macro
@@ -1061,6 +1075,19 @@ public:
 
 #define ZERO_ENTREZ_ID ENTREZ_ID_CONST(0)
 #define INVALID_ENTREZ_ID ENTREZ_ID_CONST(-1)
+
+#ifdef NCBI_STRICT_TAX_ID
+# define TAX_ID_TO(T, tax_id) STRICT_ID_TO(ncbi::TTaxId, T, tax_id)
+# define TAX_ID_FROM(T, value) STRICT_ID_FROM(ncbi::TTaxId, T, value)
+# define TAX_ID_CONST(id) STRICT_ID_CONST(ncbi::TTaxId, id)
+#else
+# define TAX_ID_TO(T, tax_id) (static_cast<T>(tax_id))
+# define TAX_ID_FROM(T, value) (static_cast<ncbi::TTaxId>(value))
+# define TAX_ID_CONST(id) id
+#endif
+
+#define ZERO_TAX_ID TAX_ID_CONST(0)
+#define INVALID_TAX_ID TAX_ID_CONST(-1)
 
 
 /// Convert gi-compatible int to/from other types.
