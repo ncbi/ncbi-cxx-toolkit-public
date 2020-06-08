@@ -310,7 +310,7 @@ protected:
         const CGtfAttributes::MultiValue&,
         CSeq_feat&);
 
-    bool xCdsIsPartial(
+    NCBI_DEPRECATED bool xCdsIsPartial(
         const CGtfReadRecord& );
 
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;

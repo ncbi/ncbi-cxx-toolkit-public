@@ -295,24 +295,7 @@ bool CGtfReader::xUpdateAnnotCds(
             return false;
         }
     }
-        
-    if ( xCdsIsPartial( gff ) ) {
-        CRef<CSeq_feat> pParent = xFindParentMrna(gff);
-        if (pParent) {
-            CSeq_loc& loc = pCds->SetLocation();
-            size_t uCdsStart = gff.SeqStart();
-            size_t uMrnaStart = pParent->GetLocation().GetStart( eExtreme_Positional );
-            if ( uCdsStart == uMrnaStart ) {
-                loc.SetPartialStart( true, eExtreme_Positional );
-            }
 
-            size_t uCdsStop =  gff.SeqStop();
-            size_t uMrnaStop = pParent->GetLocation().GetStop( eExtreme_Positional );
-            if ( uCdsStop == uMrnaStop  && gff.Type() != "stop_codon" ) {
-                loc.SetPartialStop( true, eExtreme_Positional );
-            }
-        }
-    }
     return true;
 }
 
