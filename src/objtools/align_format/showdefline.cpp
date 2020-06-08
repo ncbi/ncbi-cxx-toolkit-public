@@ -430,7 +430,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     }
 
     //get score and id url
-    if(m_Option & eHtml){
+    if(m_Option & (eHtml | eShowCSVDescr)){
         bool useTemplates = m_DeflineTemplates != NULL;
         bool advancedView = (m_DeflineTemplates != NULL) ? m_DeflineTemplates->advancedView : false;
         string accession;
@@ -580,7 +580,10 @@ void CShowBlastDefline::Display(CNcbiOstream & out)
         if(m_Option & eHtml) {//text        
             x_DisplayDeflineTableTemplate(out);
         }
-        else {
+        else if(m_Option & eShowCSVDescr) {
+            x_DisplayDeflineTableTemplateCSV(out);
+        }
+        else {//text        
             x_DisplayDeflineTableTemplateText(out);
         }
     }
@@ -1611,6 +1614,48 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
         delete sdl;
     }
 }
+void CShowBlastDefline::x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out)
+{
+    ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);        
+        string defLine = m_DeflineTemplates->defLineTmpl;
+        string seqid;
+        if(!sdl->id.Empty()){
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos ||sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)) {
+                sdl->id->GetLabel(&seqid, CSeq_id::eContent);
+            }
+        }
+
+        if(sdl->id_url != NcbiEmptyString) {
+	        string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);        
+            seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"dfln_seqid",seqid);            
+            defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);                 
+        }
+        else {
+            defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqid);
+        }
+
+	    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
+	    s_LimitDescrLength(descr);
+        if(NStr::Find(descr,",") != -1) {
+            descr = "\"" + descr + "\"";    
+        }
+	    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",descr);
+              
+            
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",(*iter)->bit_string);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",(*iter)->total_bit_string);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString((*iter)->percent_coverage) + "%");
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",(*iter)->evalue_string);    
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::DoubleToString((*iter)->percent_identity,2));
+        //defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqid);    
+
+        out << defLine;
+        delete sdl;
+    }
+
+}
+
 
 void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
 {
