@@ -604,7 +604,7 @@ public:
 	EAction Execute(const TITaxon1Node* pNode)
 	{
 
-        TBioTreeNodeId uid = ENTREZ_ID_TO(int, pNode->GetTaxId());
+        TBioTreeNodeId uid = TAX_ID_TO(int, pNode->GetTaxId());
 
         CRef<TCNode> cnode(new TCNode);
         cnode->SetId(uid);
@@ -616,7 +616,7 @@ public:
 		vector<TTaxId>::size_type psize = m_Parents.size();
 		if (psize != 0) {
 			TTaxId parent_tax_id = m_Parents[psize - 1];
-			cnode->SetParent(ENTREZ_ID_TO(int, parent_tax_id));
+			cnode->SetParent(TAX_ID_TO(int, parent_tax_id));
 		}
 
 

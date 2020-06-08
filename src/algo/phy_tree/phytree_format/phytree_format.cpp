@@ -942,7 +942,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
 
     for (int i=0;i < num_rows;i++) {
         bio_seq_handles[i] = scope.GetBioseqHandle(*seqids[i]);        
-        TTaxId tax_id = ZERO_ENTREZ_ID;
+        TTaxId tax_id = ZERO_TAX_ID;
         try{
             const COrg_ref& org_ref = sequence::GetOrg_ref(bio_seq_handles[i]);                                
             organisms[i] = org_ref.GetTaxname();
