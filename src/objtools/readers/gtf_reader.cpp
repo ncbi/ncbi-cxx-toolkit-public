@@ -950,8 +950,10 @@ bool CGtfReader::xProcessQualifierSpecialCase(
         return true;
     }
     if ( 0 == NStr::CompareNocase(key, "partial")) {
-        feature.SetPartial( true );
-        return true;
+        // RW-1108 - ignore partial attribute in Genbank mode
+        if (m_iFlags & CGtfReader::fGenbankMode) {
+            return true;
+        }
     }
     return false;
 }  
