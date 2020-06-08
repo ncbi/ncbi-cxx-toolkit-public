@@ -1238,7 +1238,7 @@ void CBioseqIndex::x_InitSource (void)
             }
             if (m_BioSource->CanGetOrg()) {
                 const COrg_ref& org = m_BioSource->GetOrg();
-                m_Taxid = ENTREZ_ID_TO(int, org.GetTaxId());
+                m_Taxid = TAX_ID_TO(int, org.GetTaxId());
             }
             if (m_BioSource->IsSetGenome()) {
                 m_Genome = m_BioSource->GetGenome();

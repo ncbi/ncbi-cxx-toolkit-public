@@ -1270,7 +1270,7 @@ int CBioseq_Info::GetTaxId(void) const
         return 0;
     }
     try {
-        return ENTREZ_ID_TO(int, org_ref->GetTaxId());
+        return TAX_ID_TO(int, org_ref->GetTaxId());
     }
     catch ( CException& /*ignored*/ ) {
         return 0;

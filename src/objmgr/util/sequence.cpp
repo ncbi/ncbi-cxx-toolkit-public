@@ -164,7 +164,7 @@ int GetTaxId(const CBioseq_Handle& handle)
 {
     const COrg_ref* org_ref = GetOrg_refOrNull(handle);
     if ( org_ref ) {
-        return ENTREZ_ID_TO(int, org_ref->GetTaxId());
+        return TAX_ID_TO(int, org_ref->GetTaxId());
     }
     return 0;
 }
