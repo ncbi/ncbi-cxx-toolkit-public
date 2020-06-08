@@ -476,11 +476,11 @@ void CAlignGroup::x_SeparateByTaxId(const TAlignList& alignments,
 
 TTaxId CAlignGroup::x_GetTaxId(const CSeq_id_Handle& id, CScope& scope)
 {
-    TTaxId tax_id = ZERO_ENTREZ_ID;
+    TTaxId tax_id = ZERO_TAX_ID;
     try {
         CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-        tax_id = ENTREZ_ID_FROM(int, sequence::GetTaxId(bsh));
-        if ( tax_id == ZERO_ENTREZ_ID ) {
+        tax_id = TAX_ID_FROM(int, sequence::GetTaxId(bsh));
+        if ( tax_id == ZERO_TAX_ID ) {
             if ( !m_Taxon1.get() ) {
                 m_Taxon1.reset(new CTaxon1);
                 m_Taxon1->Init();
@@ -502,7 +502,7 @@ CConstRef<COrg_ref> CAlignGroup::x_GetOrgRef(TTaxId tax_id)
     CConstRef<COrg_ref> org_ref;
     TTaxInfoMap::iterator tax_iter = m_TaxInfo.find(tax_id);
     if (tax_iter == m_TaxInfo.end()) {
-        if (tax_id != ZERO_ENTREZ_ID) {
+        if (tax_id != ZERO_TAX_ID) {
             if ( !m_Taxon1.get() ) {
                 m_Taxon1.reset(new CTaxon1);
                 m_Taxon1->Init();
