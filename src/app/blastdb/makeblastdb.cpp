@@ -361,7 +361,7 @@ static TTaxId s_GetTaxId(const CBioseq & bio)
 
         p_ptr = p_ptr->GetParentEntry();
     }
-    return ZERO_ENTREZ_ID;
+    return ZERO_TAX_ID;
 }
 
 static bool s_GenerateTitle(const CBioseq & bio)
@@ -502,7 +502,7 @@ public:
 
             if (0 == m_bio->GetTaxId()) {
                 TTaxId taxid = s_GetTaxId(*m_bio);
-                if (ZERO_ENTREZ_ID != taxid) {
+                if (ZERO_TAX_ID != taxid) {
                     CRef<CSeqdesc> des(new CSeqdesc);
                     des->SetOrg().SetTaxId(taxid);
                     m_bio->SetDescr().Set().push_back(des);
