@@ -1725,11 +1725,22 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.SetResolveDepth(0);
         sel.SetExcludeExternal(true);
 
+    } else if (policy == CSeqEntryIndex::eAdaptive) {
+
+        sel.SetResolveAll();
+        // normal situation uses adaptive depth for feature collection,
+        // includes barrier between RefSeq and INSD accession types
+        sel.SetAdaptiveDepth(true);
+
     } else if (policy == CSeqEntryIndex::eExternal) {
 
-        // same as eAdaptive, except also allows external annots
+        // same as eAdaptive
         sel.SetResolveAll();
         sel.SetAdaptiveDepth(true);
+
+        // except also allows external annots
+        sel.IncludeNamedAnnotAccession("SNP");
+        sel.IncludeNamedAnnotAccession("CDD");
 
     } else if (policy == CSeqEntryIndex::eExhaustive) {
 
@@ -1738,23 +1749,11 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.SetResolveDepth(kMax_Int);
         // also ignores RefSeq/INSD barrier, far fetch policy user object
 
-    } else if (policy == CSeqEntryIndex::eAdaptive) {
-
-        sel.SetResolveAll();
-        // normal situation uses adaptive depth for feature collection,
-        // includes barrier between RefSeq and INSD accession types
-        sel.SetAdaptiveDepth(true);
-
     }
 
     if (depth > -1) {
         sel.SetResolveDepth(depth);
     }
-
-    if (policy != CSeqEntryIndex::eInternal && ! onlyNear) {
-        sel.IncludeNamedAnnotAccession("SNP");
-        sel.IncludeNamedAnnotAccession("CDD");
-     }
 
     // bit flags exclude specific features
     // source features are collected elsewhere
@@ -1772,6 +1771,10 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     if ((flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
         sel.ExcludeFeatType(CSeqFeatData::e_Variation);
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+      sel.ExcludeNamedAnnotAccession("SNP");
+    }
+    if ((flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
+        sel.ExcludeNamedAnnotAccession("CDD");
     }
     if ((flags & CSeqEntryIndex::fHideSTSFeats) != 0) {
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
@@ -1922,14 +1925,35 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
             for (; feat_it; ++feat_it) {
                 const CMappedFeat mf = *feat_it;
 
+                const CSeqFeatData& data = mf.GetData();
+                CSeqFeatData::E_Choice typ = data.Which();
                 if (onlyGeneRNACDS) {
-                    const CSeqFeatData& data = mf.GetData();
-                    CSeqFeatData::E_Choice type = data.Which();
-                    if (type != CSeqFeatData::e_Gene &&
-                        type != CSeqFeatData::e_Rna &&
-                        type != CSeqFeatData::e_Cdregion) {
+                    if (typ != CSeqFeatData::e_Gene &&
+                        typ != CSeqFeatData::e_Rna &&
+                        typ != CSeqFeatData::e_Cdregion) {
                         continue;
                     }
+                }
+                bool skip = false;
+                CSeqFeatData::ESubtype subtyp = data.GetSubtype();
+                if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
+                    if (subtyp == CSeqFeatData::eSubtype_variation) {
+                        skip = true;
+                    }
+                }
+                if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
+                    if (subtyp == CSeqFeatData::eSubtype_region) {
+                        if (mf.IsSetDbxref()) {
+                            for (auto& dbx : mf.GetDbxref()) {
+                                if (dbx->GetType() == CDbtag::eDbtagType_CDD) {
+                                    skip = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (skip) {
+                    continue;
                 }
 
                 CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
