@@ -92,36 +92,35 @@ public:
         eGffAugustus         = 34, ///< GFFish output of Augustus Gene Prediction
         eJSON                = 35, ///< JSON 
         ePsl                 = 36, ///< PSL alignment format
-        eFormat_maxSupported = ePsl,
         // The following formats are not yet recognized by CFormatGuess - CXX-10039
-        eAltGraphX, 
-        eBed5FloatScore,
-        eBedGraph,
-        eBedRnaElements,
-        eBigBarChart,
-        eBigBed,
-        eBigPsl,
-        eBigChain,
-        eBigMaf,
-        eBigWig,
-        eBroadPeak,
-        eChain,
-        eClonePos,
-        eColoredExon,
-        eCtgPos,
-        eDownloadsOnly,
-        eEncodeFiveC,
-        eExpRatio,
-        eFactorSource,
-        eGenePred,
-        eLd2,
-        eNarrowPeak,
-        eNetAlign,
-        ePeptideMapping,
-        eRmsk,
-        eSnake,
-        eVcfTabix,
-        eWigMaf,
+        eAltGraphX           = 37, 
+        eBed5FloatScore      = 38,
+        eBedGraph            = 39,      
+        eBedRnaElements      = 40,
+        eBigBarChart         = 41,
+        eBigBed              = 42,
+        eBigPsl              = 43,    
+        eBigChain            = 44,
+        eBigMaf              = 45,
+        eBigWig              = 46,
+        eBroadPeak           = 47,
+        eChain               = 48,
+        eClonePos            = 49,
+        eColoredExon         = 50,
+        eCtgPos              = 51,
+        eDownloadsOnly       = 52,
+        eEncodeFiveC         = 53,
+        eExpRatio            = 54,
+        eFactorSource        = 55,
+        eGenePred            = 56,
+        eLd2                 = 57,
+        eNarrowPeak          = 58,
+        eNetAlign            = 59,
+        ePeptideMapping      = 60,
+        eRmsk                = 61,
+        eSnake               = 62,
+        eVcfTabix            = 63,
+        eWigMaf              = 64,
         
         /// Max value of EFormat
         eFormat_max
@@ -148,6 +147,8 @@ public:
         eDefault = 0,      ///< Return eUnknown
         eThrowOnBadSource, ///< Throw an exception if the data source (stream, file) can't be read
     };
+
+    static bool IsSupportedFormat(EFormat format);
 
     /// Hints for guessing formats. Two hint types can be used: preferred and
     /// disabled. Preferred are checked before any other formats. Disabled
@@ -225,6 +226,7 @@ public:
     CFormatGuess(CNcbiIstream& input);
 
     ~CFormatGuess();
+
 
     NCBI_DEPRECATED EFormat GuessFormat(EMode);
     NCBI_DEPRECATED bool TestFormat(EFormat, EMode);
@@ -363,6 +365,7 @@ protected:
     static int s_CheckOrder[];
     
     static const streamsize s_iTestBufferGranularity = 8096;
+
 
     CNcbiIstream& m_Stream;
     bool m_bOwnsStream;

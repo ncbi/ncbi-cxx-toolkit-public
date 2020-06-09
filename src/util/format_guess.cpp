@@ -409,6 +409,15 @@ CFormatGuess::~CFormatGuess()
     }
 }
 
+static const CFormatGuess::EFormat s_MaxSupportedFormat = CFormatGuess::ePsl;
+
+//  ----------------------------------------------------------------------------
+bool 
+CFormatGuess::IsSupportedFormat(EFormat format) 
+{
+    return (format > eUnknown && format <= s_MaxSupportedFormat);
+}
+
 //  ----------------------------------------------------------------------------
 CFormatGuess::EFormat
 CFormatGuess::GuessFormat( EMode )
@@ -571,7 +580,7 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
 void
 CFormatGuess::Initialize()
 {
-    NCBI_ASSERT(eFormat_maxSupported-1 == sizeof( s_CheckOrder ) / sizeof( int ),
+    NCBI_ASSERT(s_MaxSupportedFormat-1 == sizeof( s_CheckOrder ) / sizeof( int ),
         "Indices in s_CheckOrder do not match format count ---"
         "update s_CheckOrder to list all formats" 
     );
