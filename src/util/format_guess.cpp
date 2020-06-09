@@ -746,6 +746,10 @@ CFormatGuess::TestFormatPhrapAce(
         return false;
     }
 
+    if (memchr(m_pTestBuffer, 0, m_iTestDataSize)) { // Cannot contain NuLL bytes
+        return false;                                // RW-1102
+    }
+
     ITERATE( list<string>, it, m_TestLines ) {
         if ( IsLinePhrapId( *it ) ) {
             return true;
