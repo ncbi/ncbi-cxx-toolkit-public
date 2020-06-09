@@ -6,6 +6,9 @@
 --    readability at the suggestion of Peter Rice, EMBL
 --  Later additions by Taxonomy Group staff at NCBI
 --
+--  Version 4.6
+--     Renamed genetic code 24 to Rhabdopleuridae Mitochondrial
+--
 --  Version 4.5
 --     Added Cephalodiscidae mitochondrial genetic code 33
 --
@@ -263,7 +266,7 @@ Genetic-code-table ::= {
   -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG
  } ,
  {
-  name "Pterobranchia Mitochondrial" ,
+  name "Rhabdopleuridae Mitochondrial" ,
   id 24 ,
   ncbieaa  "FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSSKVVVVAAAADDEEGGGG",
   sncbieaa "---M------**-------M---------------M---------------M------------"

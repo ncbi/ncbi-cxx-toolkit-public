@@ -145,7 +145,7 @@ static const char* const s_GenCodeTblMemStr[] = {
     "  sncbieaa \"--*-------**--*-----------------M--M---------------M------------\"",
     " } ,",
     " {",
-    "  name \"Pterobranchia Mitochondrial\" ,",
+    "  name \"Rhabdopleuridae Mitochondrial\" ,",
     "  id 24 ,",
     "  ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSSKVVVVAAAADDEEGGGG\",",
     "  sncbieaa \"---M------**-------M---------------M---------------M------------\"",
