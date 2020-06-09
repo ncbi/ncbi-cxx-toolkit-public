@@ -470,6 +470,13 @@ static const char kData_Psl[] =
     "0,113384,118357,119600,125177,128804,130621,132096,138160,142867,145419,147143	"
     "41250327,41363720,41368682,41369871,41375472,41379109,41380925,41382200,41388270,41392978,41395514,41397253";
 
+
+BOOST_AUTO_TEST_CASE(TestSupportedFormats)
+{
+    BOOST_CHECK(CFormatGuess::IsSupportedFormat(CFormatGuess::ePsl));
+    BOOST_CHECK(!CFormatGuess::IsSupportedFormat(CFormatGuess::eAltGraphX));
+}
+
 BOOST_AUTO_TEST_CASE(TestEmptyFile)
 {
     CNcbiIstrstream str("");
