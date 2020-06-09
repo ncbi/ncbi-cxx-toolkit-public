@@ -185,7 +185,7 @@ CRPSBlastNodeArgs::CRPSBlastNodeArgs(const string & input)
 CRPSBlastNodeArgs::~CRPSBlastNodeArgs()
 {
 	if (m_InputStream) {
-		free(m_InputStream);
+		delete m_InputStream;
 		m_InputStream = NULL;
 	}
 }
