@@ -42,6 +42,9 @@ case "$1" in
        CC=$intel_root/Compiler/$1/bin/$CC
        gccver=7.3.0
      else
+       if [ -x $intel_root/Compiler/$1/bin/$CXX ]; then
+         $intel_root/Compiler/$1/bin/$CXX -dumpversion >/dev/null
+       fi
 echo "ERROR:  cannot find ICC version $1; you may need to adjust PATH explicitly."
 echo "or try one of these:"
 ls $intel_root/Compiler
