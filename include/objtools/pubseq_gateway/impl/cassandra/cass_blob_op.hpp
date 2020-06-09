@@ -523,7 +523,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
 
     void InsertID2Split(
         unsigned int op_timeout_ms,
-        int32_t, unsigned int max_retries,
+        unsigned int max_retries,
         CBlobRecord * blob, CID2SplitRecord* id2_split,
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter);
