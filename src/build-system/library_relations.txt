@@ -1424,6 +1424,8 @@ varrep needs xser
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs3party $(BLAST_THIRD_PARTY_LIBS)
 vdb2blast needs3party $(VDB_LIBS)
+vdb_reader needs3party $(ORIG_LIBS)
+vdb_reader needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
 vibnet needs3party ncbidesk
