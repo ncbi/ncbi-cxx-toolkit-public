@@ -3,7 +3,7 @@
 #############################################################################
 
 NCBI_begin_app(rpsblast)
-  NCBI_sources(rpsblast_app)
+  NCBI_sources(rpsblast_node rpsblast_app)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
   NCBI_uses_toolkit_libraries(blast_app_util)
   NCBI_requires(-Cygwin)
