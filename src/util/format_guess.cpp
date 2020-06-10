@@ -186,9 +186,9 @@ int CFormatGuess::s_CheckOrder[] =
     eTextASN,
     eAlignment,    
     eTaxplot,
-    ePhrapAce,
     eTable,
     eBinaryASN,
+    ePhrapAce,
     eUCSCRegion,
     eJSON
 };
@@ -737,6 +737,33 @@ bool CFormatGuess::TestFormatRepeatMasker(
         IsInputRepeatMaskerWithoutHeader();
 }
 
+
+//  ----------------------------------------------------------------------------
+
+static bool s_LooksLikeNucSeqData(const string& line, size_t minLength=10) {
+    if (line.size()<minLength) {
+        return false;
+    }
+
+    int nucCount=0;
+    for (auto c : line) {
+        if (isalpha(c)) {
+            auto index = static_cast<int>(c);
+            if (symbol_type_table[index] & fDNA_Main_Alphabet) {
+                ++nucCount;
+            }
+            continue;
+        }
+
+        if (!isspace(c)) {
+            return false;
+        }
+    }
+
+    return (nucCount/line.size() > 0.9);
+}
+
+
 //  ----------------------------------------------------------------------------
 bool
 CFormatGuess::TestFormatPhrapAce(
@@ -750,9 +777,15 @@ CFormatGuess::TestFormatPhrapAce(
         return false;                                // RW-1102
     }
 
-    ITERATE( list<string>, it, m_TestLines ) {
-        if ( IsLinePhrapId( *it ) ) {
-            return true;
+    bool foundId = false;
+    for (const auto& line : m_TestLines) {
+        if (foundId) {
+            if (s_LooksLikeNucSeqData(line)) {
+                return true;
+            }
+        }
+        else if (IsLinePhrapId(line)) {
+            foundId = true;
         }
     }
     return false;

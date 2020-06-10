@@ -302,7 +302,7 @@ static const char* kData_Table =
     " 0.559000 -0.459000 -0.464000 -0.458000  0.000000  0.322000 -0.454000\n"
     " 0.887000 -0.464000  1.196000 -0.463000  0.376000 -0.461000  0.547000\n"
     " 0.032000 -0.464000  0.066000  0.762000 -0.465000 -0.456000  0.919000\n";
-static const char* kData_TableHint_Preferred =
+static const char* kData_Table2 =
     "DNA        a         b         c         d         f         g\n"
     "-0.465000 -0.141000  0.507000 -0.462000 -0.464000  0.570000  1.356000\n"
     " 0.559000 -0.459000 -0.464000 -0.458000  0.000000  0.322000 -0.454000\n";
@@ -739,14 +739,10 @@ BOOST_AUTO_TEST_CASE(TestTable)
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eTable);
 }
 
-BOOST_AUTO_TEST_CASE(TestTableHint_Preferred)
+BOOST_AUTO_TEST_CASE(TestTable2)
 {
-    CNcbiIstrstream str(kData_TableHint_Preferred);
+    CNcbiIstrstream str(kData_Table2);
     CFormatGuess guess(str);
-    // Without hints it should be detected as phrap (false positive!)
-    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::ePhrapAce);
-    // With hint it becomes table
-    guess.GetFormatHints().AddPreferredFormat(CFormatGuess::eTable);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eTable);
 }
 
