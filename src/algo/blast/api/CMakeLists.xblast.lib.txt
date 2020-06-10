@@ -75,6 +75,7 @@ set(SRC_BLAST_CXX_CORE
     deltablast
     magicblast_options
     magicblast
+    blast_node
 )
 
 
