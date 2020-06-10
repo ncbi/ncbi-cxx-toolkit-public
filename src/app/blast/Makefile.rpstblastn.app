@@ -1,7 +1,7 @@
 WATCHERS = camacho madden fongah2
 
 APP = rpstblastn
-SRC = rpstblastn_app
+SRC = rpstblastn_node rpstblastn_app
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 LIB = blast_app_util $(LIB_:%=%$(STATIC))
 
