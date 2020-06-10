@@ -847,11 +847,6 @@ CFlatFileConfig::ECustom x_GetCustom(const CArgs& args)
 {
     int custom = args["custom"].AsInteger();
 
-    // ID-5865 : Set the "show SNP" and "show CDD" bits based on the value of the
-    // "enable-external" flag.
-    if (args["enable-external"] || args["policy"].AsString() == "external")
-        custom |= (CFlatFileConfig::fShowSNPFeatures | CFlatFileConfig::fShowCDDFeatures);
-
     return (CFlatFileConfig::ECustom)custom;
 }
 
@@ -915,6 +910,24 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     CFlatFileConfig::EPolicy        policy          = x_GetPolicy(args);
     CFlatFileConfig::TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
     CFlatFileConfig::ECustom        custom         = x_GetCustom(args);
+
+    // ID-5865 : Set the "show SNP" and "show CDD" bits based on the value of the
+    // "enable-external" flag.
+    if (args["no-external"]) {
+        int flg = (int) flags;
+        flg |= CFlatFileConfig::fHideCDDFeatures;
+        flg |= CFlatFileConfig::fHideSNPFeatures;
+        flags = (CFlatFileConfig::EFlags) flg;
+    } else if (args["enable-external"] || args["policy"].AsString() == "external") {
+        int cust = (int) custom;
+        if ((flags & CFlatFileConfig::fHideCDDFeatures) == 0) {
+            cust |= CFlatFileConfig::fShowCDDFeatures;
+        }
+        if ((flags & CFlatFileConfig::fHideSNPFeatures) == 0) {
+            cust |= CFlatFileConfig::fShowSNPFeatures;
+        }
+        custom = (CFlatFileConfig::ECustom) cust;
+    }
 
     SetFormat(format);
     SetMode(mode);

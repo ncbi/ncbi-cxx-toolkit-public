@@ -1771,7 +1771,7 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     if ((flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
         sel.ExcludeFeatType(CSeqFeatData::e_Variation);
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-      sel.ExcludeNamedAnnotAccession("SNP");
+        sel.ExcludeNamedAnnotAccession("SNP");
     }
     if ((flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
         sel.ExcludeNamedAnnotAccession("CDD");
