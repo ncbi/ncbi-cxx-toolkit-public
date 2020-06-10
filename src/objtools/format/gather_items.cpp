@@ -4307,42 +4307,25 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
 
     CBioseq_Handle  prot;
 
-    prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+    // prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+    prot = scope.GetBioseqHandle(*prot_id);
     // !!! need a flag for fetching far proteins
     if (!prot) {
         return;
     }
-
-    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
-    if (! idx) {
-        return;
-    }
-    
-    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (prot);
-    if (! bsx) return;
-
-    /*
     CFeat_CI it(prot, s_GetCdsProductSel(ctx));
     if (!it) {
         return;
     }
     ctx.GetFeatTree().AddFeatures( it ); // !!!
-    */
 
     // map from cds product to nucleotide
     CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
     prot_to_cds.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle );
     
     CSeq_feat_Handle prev;  // keep track of the previous feature
-    /*
-    for ( ; it; ++it )
-    */
-    bsx->IterateFeatures([this, &ctx, &scope, &prev, &cfg, &prot_to_cds, &slice_mapper, &cdsFeatureItem, bsx](CFeatureIndex& sfx) {
-
-        CMappedFeat mf = sfx.GetMappedFeat();
-        CSeq_feat_Handle curr = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
-        const CSeq_feat& original_feat = sfx.GetMappedFeat().GetOriginalFeature(); // it->GetOriginalFeature();
-
+    for ( ; it; ++it ) {
+        CSeq_feat_Handle curr = it->GetSeq_feat_Handle();
         const CSeq_loc& curr_loc = curr.GetLocation();
         CSeqFeatData::ESubtype subtype = curr.GetFeatSubtype();
 
@@ -4354,24 +4337,24 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             subtype != CSeqFeatData::eSubtype_transit_peptide_aa &&
             subtype != CSeqFeatData::eSubtype_preprotein &&
             subtype != CSeqFeatData::eSubtype_propeptide_aa) {
-            return;
+            continue;
         }
 
         if ( cfg.HideCDDFeatures()  &&
              (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
              s_IsCDD(curr) ) {
             // passing this test prevents mapping of COG CDD region features
-            return;
+            continue;
         }
 
         // suppress duplicate features (on protein)
         if (prev  &&  s_IsDuplicateFeatures(curr, prev)) {
-            return;
+            continue;
         }
 
         /// we need to cleanse CDD features
 
-        s_CleanCDDFeature(original_feat);
+        s_CleanCDDFeature(it->GetOriginalFeature());
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
@@ -4386,20 +4369,20 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             }
         }
         if (!loc  ||  loc->IsNull()) {
-            return;
+            continue;
         }
         if ( !s_SeqLocEndsOnBioseq(*loc, ctx, eEndsOnBioseqOpt_AnyPartOfSeqLoc, CSeqFeatData::e_Cdregion) ) {
-            return;
+            continue;
         }
 
         CConstRef<IFlatItem> item;
         // for command-line args "-from" and "-to"
-        CMappedFeat mapped_feat = mf;
+        CMappedFeat mapped_feat = *it;
         if( slice_mapper && loc ) {
             CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
             CRef<CSeq_loc> mapped_loc = slice_mapper->Map(*CFeatTrim::Apply(*loc, range));
             if( mapped_loc->IsNull() ) {
-                return;
+                continue;
             }
             CRef<CSeq_feat> feat(new CSeq_feat());
             feat->Assign(mapped_feat.GetMappedFeature());
@@ -4409,7 +4392,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             loc = mapped_loc;
         }
 
-        item = ConstRef( x_NewFeatureItem(mapped_feat, ctx, 
+        item = ConstRef( x_NewFeatureItem(*it, ctx, 
             s_NormalizeNullsBetween(loc), m_Feat_Tree,
             CFeatureItem::eMapped_from_prot, true,
             cdsFeatureItem ) );
@@ -4417,7 +4400,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
         *m_ItemOS << item;
 
         prev = curr;
-    });  //  end of iterate loop
+    }    
 }
 
 //  ============================================================================
