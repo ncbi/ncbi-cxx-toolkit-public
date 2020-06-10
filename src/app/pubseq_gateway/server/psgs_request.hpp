@@ -153,7 +153,6 @@ public:
     void UpdateOverallStatus(CRequestStatus::ECode  status);
     TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
     bool NeedTrace(void);
-    bool UsePsgProtocol(void);
 
     CPSGS_Request(const CPSGS_Request &) = default;
     CPSGS_Request(CPSGS_Request &&) = default;
@@ -281,7 +280,6 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
     TPSGS_BioseqIncludeData     m_IncludeDataFlags;
     EPSGS_OutputFormat          m_OutputFormat;
     EPSGS_CacheAndDbUse         m_UseCache;
-    bool                        m_UsePsgProtocol;
     EPSGS_AccSubstitutioOption  m_AccSubstOption;
 
     SPSGS_ResolveRequest(const string &  seq_id,
@@ -289,7 +287,6 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
                          TPSGS_BioseqIncludeData  include_data_flags,
                          EPSGS_OutputFormat  output_format,
                          EPSGS_CacheAndDbUse  use_cache,
-                         bool  use_psg_protocol,
                          EPSGS_AccSubstitutioOption  subst_option,
                          EPSGS_Trace  trace,
                          const TPSGS_HighResolutionTimePoint &  start_timestamp) :
@@ -298,7 +295,6 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
         m_UseCache(ePSGS_UnknownUseCache),
-        m_UsePsgProtocol(use_psg_protocol),
         m_AccSubstOption(subst_option)
     {}
 
@@ -307,7 +303,6 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_IncludeDataFlags(0),
         m_OutputFormat(ePSGS_UnknownFormat),
         m_UseCache(ePSGS_UnknownUseCache),
-        m_UsePsgProtocol(true),
         m_AccSubstOption(ePSGS_UnknownAccSubstitution)
     {}
 

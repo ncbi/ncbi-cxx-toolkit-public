@@ -104,38 +104,16 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
         IPSGS_Processor::m_Request->UpdateOverallStatus(status);
     PSG_WARNING(message);
 
-    if (m_ResolveRequest->m_UsePsgProtocol) {
-        if (status == CRequestStatus::e404_NotFound) {
-            size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-            IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                           status,
-                                                           ePSGS_NoBioseqInfo,
-                                                           eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
-        } else {
-            IPSGS_Processor::m_Reply->PrepareReplyMessage(message, status,
-                                                          code, severity);
-        }
+    if (status == CRequestStatus::e404_NotFound) {
+        size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
+                                                       status,
+                                                       ePSGS_NoBioseqInfo,
+                                                       eDiag_Error);
+        IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
     } else {
-        switch (status) {
-            case CRequestStatus::e400_BadRequest:
-                IPSGS_Processor::m_Reply->Send400(message.c_str());
-                break;
-            case CRequestStatus::e404_NotFound:
-                IPSGS_Processor::m_Reply->Send404(message.c_str());
-                break;
-            case CRequestStatus::e500_InternalServerError:
-                IPSGS_Processor::m_Reply->Send500(message.c_str());
-                break;
-            case CRequestStatus::e502_BadGateway:
-                IPSGS_Processor::m_Reply->Send502(message.c_str());
-                break;
-            case CRequestStatus::e503_ServiceUnavailable:
-                IPSGS_Processor::m_Reply->Send503(message.c_str());
-                break;
-            default:
-                IPSGS_Processor::m_Reply->Send400(message.c_str());
-        }
+        IPSGS_Processor::m_Reply->PrepareReplyMessage(message, status,
+                                                      code, severity);
     }
 
     m_Completed = true;
@@ -180,17 +158,10 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
         data_to_send = ToBioseqProtobuf(bioseq_resolution.m_BioseqInfo);
     }
 
-    if (m_ResolveRequest->m_UsePsgProtocol) {
-        size_t              item_id = IPSGS_Processor::m_Reply->GetItemId();
-        IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, data_to_send,
-                                                    effective_output_format);
-        IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
-    } else {
-        if (effective_output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat)
-            IPSGS_Processor::m_Reply->SendData(data_to_send, ePSGS_JsonMime);
-        else
-            IPSGS_Processor::m_Reply->SendData(data_to_send, ePSGS_BinaryMime);
-    }
+    size_t              item_id = IPSGS_Processor::m_Reply->GetItemId();
+    IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, data_to_send,
+                                                effective_output_format);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
 }
 
 

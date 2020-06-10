@@ -238,8 +238,7 @@ private:
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
         CTempString &  seq_id, int &  seq_id_type,
-        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache,
-        bool  use_psg_protocol);
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache);
 
 private:
     void x_ValidateArgs(void);

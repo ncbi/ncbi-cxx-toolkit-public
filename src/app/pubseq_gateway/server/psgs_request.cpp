@@ -111,29 +111,11 @@ TPSGS_HighResolutionTimePoint CPSGS_Request::GetStartTimestamp(void) const
 
 bool CPSGS_Request::NeedTrace(void)
 {
-    if (m_Request) {
-        auto    trace = m_Request->GetTrace();
-        if (GetRequestType() != ePSGS_ResolveRequest)
-            return trace == SPSGS_RequestBase::ePSGS_WithTracing;
-
-        // Tracing is compatible only with PSG protocol.
-        // The PSG protocol may be not used in case of resolve request.
-        return GetRequest<SPSGS_ResolveRequest>().m_UsePsgProtocol &&
-               trace == SPSGS_RequestBase::ePSGS_WithTracing;
-    }
+    if (m_Request)
+        return m_Request->GetTrace() == SPSGS_RequestBase::ePSGS_WithTracing;
 
     NCBI_THROW(CPubseqGatewayException, eLogic,
                "User request is not initialized");
-}
-
-
-bool CPSGS_Request::UsePsgProtocol(void)
-{
-    // The only resolve request can send data without PSG protocol
-    if (GetRequestType() == ePSGS_ResolveRequest)
-        return GetRequest<SPSGS_ResolveRequest>().m_UsePsgProtocol;
-
-    return true;
 }
 
 
