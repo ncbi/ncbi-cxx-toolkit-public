@@ -40,6 +40,7 @@ case "$1" in
      if $intel_root/Compiler/$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=$intel_root/Compiler/$1/bin/$CXX
        CC=$intel_root/Compiler/$1/bin/$CC
+       libICC=$intel_root/Compiler/$1/lib/intel64 
        gccver=7.3.0
      else
        if [ -x $intel_root/Compiler/$1/bin/$CXX ]; then
@@ -81,8 +82,8 @@ for gcc in /opt/ncbi/gcc/${gccver}/bin/gcc /usr/local/gcc/${gccver}/bin/gcc; do
 done
 NCBI_COMPILER_C_FLAGS="-gcc-name=${gccname}"
 NCBI_COMPILER_CXX_FLAGS="-gcc-name=${gccname}"
-NCBI_COMPILER_EXE_LINKER_FLAGS="-gcc-name=${gccname} -Wl,-rpath,${lib64}"
-NCBI_COMPILER_SHARED_LINKER_FLAGS="-gcc-name=${gccname} -Wl,-rpath,${lib64}"
+NCBI_COMPILER_EXE_LINKER_FLAGS="-gcc-name=${gccname} -Wl,-rpath,${lib64} -Wl,-rpath,${libICC}"
+NCBI_COMPILER_SHARED_LINKER_FLAGS="-gcc-name=${gccname} -Wl,-rpath,${lib64} -Wl,-rpath,${libICC}"
 export NCBI_COMPILER_C_FLAGS NCBI_COMPILER_CXX_FLAGS NCBI_COMPILER_EXE_LINKER_FLAGS NCBI_COMPILER_SHARED_LINKER_FLAGS
 export CC CXX
 

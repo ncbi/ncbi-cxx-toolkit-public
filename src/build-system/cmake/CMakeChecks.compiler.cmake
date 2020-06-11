@@ -361,13 +361,15 @@ if (NOT WIN32)
         endif()
         set(_ggdb3 "-g")
         set(_ggdb1 "")
+        unset(CMAKE_POSITION_INDEPENDENT_CODE)
 # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
 # stop short, as can otherwise happen.
         add_definitions(-D_GCC_NEXT_LIMITS_H)
 # -we70: "incomplete type is not allowed" should be an error, not a warning!
 # -wd2651: Suppress spurious "attribute does not apply to any entity"
 #          when deprecating enum values (via NCBI_STD_DEPRECATED).
-        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651")
+        set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -fPIC")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651 -fPIC")
         set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
 
