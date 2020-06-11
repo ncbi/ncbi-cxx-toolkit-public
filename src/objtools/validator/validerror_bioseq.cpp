@@ -6852,22 +6852,19 @@ bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
     } else {
         prot_tag = protein_id.substr(start_pos + 1, end_pos - start_pos - 1);
     }
-    CTempString tag = kEmptyStr;
-
+    
     if (dbtag.IsSetTag()) {
         if (dbtag.GetTag().IsStr()) {
-            tag = dbtag.GetTag().GetStr();
-        } else if (dbtag.GetTag().IsId()) {
-            tag = NStr::NumericToString(dbtag.GetTag().GetId());
+            if (NStr::Equal(dbtag.GetTag().GetStr(), prot_tag)) {
+                return true;
+            }
+        }
+        else if (dbtag.GetTag().IsId()) {
+            if (NStr::Equal(NStr::NumericToString(dbtag.GetTag().GetId()), prot_tag)) {
+                return true;
+            }
         }
     }
-
-    if (NStr::Equal(prot_tag, tag)) {
-        return true;
-    } else {
-        return false;
-    }
-
     return false;
 }
 
