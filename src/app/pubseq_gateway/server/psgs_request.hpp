@@ -291,7 +291,7 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
-        m_UseCache(ePSGS_UnknownUseCache),
+        m_UseCache(use_cache),
         m_AccSubstOption(subst_option)
     {}
 
