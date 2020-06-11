@@ -231,9 +231,12 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
         return;
     }
 
-    m_Processor->ProcessEvent();
-
     auto    processor_status = m_Processor->GetStatus();
+    if (processor_status == IPSGS_Processor::ePSGS_InProgress) {
+        m_Processor->ProcessEvent();
+        processor_status = m_Processor->GetStatus();
+    }
+
     if (processor_status != IPSGS_Processor::ePSGS_InProgress) {
         m_FinishStatuses.push_back(processor_status);
         if (!resp.IsFinished() && resp.IsOutputReady() ) {
