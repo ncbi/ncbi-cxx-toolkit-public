@@ -622,7 +622,7 @@ public:
 
 protected:
     typedef const char* TStr;
-    NCBI_STD_DEPRECATED("") static const TStr s_msg[];
+    static const TStr s_msg[]; // s_msg is deprecated and will be removed in SC-25. Use s_MessageMap instead.
 
     using TMsgMap = map<EErrCode,string>;
     static const TMsgMap sMessageMap;
