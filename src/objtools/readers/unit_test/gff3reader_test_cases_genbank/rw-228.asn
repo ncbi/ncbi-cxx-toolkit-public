@@ -3325,7 +3325,6 @@ Seq-annot ::= {
       data gene {
         locus "Gm20997"
       },
-      partial TRUE,
       location int {
         from 536046,
         to 538621,
@@ -3373,7 +3372,6 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      partial TRUE,
       except TRUE,
       comment "The sequence of the model RefSeq transcript was modified
  relative to this genomic sequence to represent the inferred CDS: inserted 1
@@ -3459,7 +3457,6 @@ Seq-annot ::= {
       data cdregion {
         frame one
       },
-      partial TRUE,
       except TRUE,
       comment "The sequence of the model RefSeq protein was modified relative
  to this genomic sequence to represent the inferred CDS: inserted 1 base in 1
