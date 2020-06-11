@@ -4744,7 +4744,7 @@ static const SFileSystem s_FileSystem[] = {
     memset(&st, 0, sizeof(st));                                \
     if (statvfs(path.c_str(), &st) != 0) {                     \
         CNcbiError::SetFromErrno();                            \
-        NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + path); \
     }                                                          \
     info->total_space  = (Uint8)st.f_bsize * st.f_blocks;      \
     if (st.f_frsize) {                                         \
@@ -4762,7 +4762,7 @@ static const SFileSystem s_FileSystem[] = {
     memset(&st, 0, sizeof(st));                                \
     if (statfs(path.c_str(), &st) != 0) {                      \
         CNcbiError::SetFromErrno();                            \
-        NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo,  string(msg) + path); \
     }                                                          \
     info->total_space  = (Uint8)st.f_bsize * st.f_blocks;      \
     info->free_space   = (Uint8)st.f_bsize * st.f_bavail;      \
@@ -5076,7 +5076,7 @@ void s_GetFileSystemInfo(const string&               path,
                                      &fs_flags,
                                      fs_name,
                                      sizeof(fs_name)/sizeof(fs_name[0])) ) {
-            NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + xpath);
+            NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + path);
         }
         info->filename_max = filename_max;
         ufs_name = _T_CSTRING(fs_name);
@@ -5088,7 +5088,7 @@ void s_GetFileSystemInfo(const string&               path,
         if ( !::GetDiskFreeSpaceEx(_T_XCSTRING(xpath),
                                    (PULARGE_INTEGER)&info->free_space,
                                    (PULARGE_INTEGER)&info->total_space, 0) ) {
-            NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + xpath);
+            NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + path);
         }
     }
 
@@ -5099,7 +5099,7 @@ void s_GetFileSystemInfo(const string&               path,
         if ( !::GetDiskFreeSpace(_T_XCSTRING(xpath),
                                  &dwSectPerClust, &dwBytesPerSect,
                                  NULL, NULL) ) {
-            NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + xpath);
+            NCBI_THROW(CFileErrnoException, eFileSystemInfo, string(msg) + path);
         }
         info->block_size = dwBytesPerSect * dwSectPerClust;
     }
@@ -5203,7 +5203,7 @@ void s_GetFileSystemInfo(const string&               path,
 #  elif defined(NCBI_OS_DARWIN)  &&  defined(HAVE_STATFS)
 
     GET_STATFS_INFO;
-    // Seems statfs structure on Darwin dont have any information 
+    // Seems statfs structure on Darwin doesn't have any information 
     // about name length, so rely on pathconf() only.
     //if (need_name_max) {
     //    info->filename_max = (unsigned long)st.f_namelen;
