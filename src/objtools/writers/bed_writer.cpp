@@ -512,7 +512,7 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
     CThreeFeatManager threeFeatManager;
     CBedFeatureRecord bedRecord;
 
-    SAnnotSelector& sel = SetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI pMf(sah, sel);
     for ( ; pMf; ++pMf ) {
         if (IsCanceled()) {
