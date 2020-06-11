@@ -39,6 +39,7 @@
 #include "cass_fetch.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "ipsgs_processor.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -53,8 +54,12 @@ public:
     virtual ~CPSGS_CassProcessorBase();
 
 protected:
-    bool IsFinished(void) const;
+    IPSGS_Processor::EPSGS_Status GetStatus(void) const;
     bool AreAllFinishedRead(void) const;
+    void UpdateOverallStatus(CRequestStatus::ECode  status);
+
+private:
+    IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;
 
 protected:
     // Cassandra data loaders; there could be many of them
@@ -68,6 +73,11 @@ protected:
     // Any cassandra processor will need both of these items
     shared_ptr<CPSGS_Request>       m_Request;
     shared_ptr<CPSGS_Reply>         m_Reply;
+
+    // The overall processor status.
+    // It should not interfere the other processor statuses and be updated
+    // exclusively on per processor basis.
+    CRequestStatus::ECode           m_Status;
 };
 
 #endif  // PSGS_CASSPROCESSORBASE__HPP

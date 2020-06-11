@@ -53,16 +53,14 @@ SPSGS_BlobId::SPSGS_BlobId(const string &  blob_id) :
 }
 
 
-CPSGS_Request::CPSGS_Request() :
-    m_OverallStatus(CRequestStatus::e200_Ok)
+CPSGS_Request::CPSGS_Request()
 {}
 
 
 CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                              CRef<CRequestContext>  request_context) :
     m_Request(move(req)),
-    m_RequestContext(request_context),
-    m_OverallStatus(CRequestStatus::e200_Ok)
+    m_RequestContext(request_context)
 {}
 
 
@@ -84,18 +82,6 @@ void CPSGS_Request::SetRequestContext(void)
 {
     if (m_RequestContext.NotNull())
         CDiagContext::SetRequestContext(m_RequestContext);
-}
-
-
-CRequestStatus::ECode  CPSGS_Request::GetOverallStatus(void) const
-{
-    return m_OverallStatus;
-}
-
-
-void CPSGS_Request::UpdateOverallStatus(CRequestStatus::ECode  status)
-{
-    m_OverallStatus = max(status, m_OverallStatus);
 }
 
 

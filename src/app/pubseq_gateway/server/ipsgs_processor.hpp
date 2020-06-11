@@ -66,8 +66,6 @@ USING_NCBI_SCOPE;
 ///     m_Request->SetRequestContext();
 ///     ...
 ///     PSG_WARNING("Something"); }
-/// - The request context status must not be updated directly. Instead the
-///   following call to be used: m_Request->UpdateOverallStatus(...)
 /// - The ProcessEvents() method can be called periodically (in addition to
 ///   some events like Cassandra data ready)
 class IPSGS_Processor

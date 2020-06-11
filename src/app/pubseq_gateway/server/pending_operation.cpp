@@ -233,7 +233,9 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
 
     m_Processor->ProcessEvent();
 
-    if (m_Processor->GetStatus() != IPSGS_Processor::ePSGS_InProgress) {
+    auto    processor_status = m_Processor->GetStatus();
+    if (processor_status != IPSGS_Processor::ePSGS_InProgress) {
+        m_FinishStatuses.push_back(processor_status);
         if (!resp.IsFinished() && resp.IsOutputReady() ) {
             m_Reply->PrepareReplyCompletion();
             m_Reply->Flush(true);
@@ -249,10 +251,32 @@ void CPendingOperation::x_PrintRequestStop(void)
     if (m_UserRequest->GetRequestContext().NotNull()) {
         CDiagContext::SetRequestContext(m_UserRequest->GetRequestContext());
         m_UserRequest->GetRequestContext()->SetReadOnly(false);
-        m_UserRequest->GetRequestContext()->SetRequestStatus(m_UserRequest->GetOverallStatus());
+        m_UserRequest->GetRequestContext()->SetRequestStatus(x_GetRequestStopStatus());
         GetDiagContext().PrintRequestStop();
         m_UserRequest->GetRequestContext().Reset();
         CDiagContext::SetRequestContext(NULL);
     }
+}
+
+
+CRequestStatus::ECode CPendingOperation::x_GetRequestStopStatus(void) const
+{
+    IPSGS_Processor::EPSGS_Status   best_status = IPSGS_Processor::ePSGS_Error;
+    for (const auto &  status : m_FinishStatuses) {
+        best_status = min(best_status, status);
+    }
+
+    switch (best_status) {
+        case IPSGS_Processor::ePSGS_Found:
+            return CRequestStatus::e200_Ok;
+        case IPSGS_Processor::ePSGS_NotFound:
+            return CRequestStatus::e404_NotFound;
+        default:
+            break;
+    }
+
+    // Do we need to distinguish between a user request error like 400 and
+    // a server problem like 500?
+    return CRequestStatus::e500_InternalServerError;
 }
 

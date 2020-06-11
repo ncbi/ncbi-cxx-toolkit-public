@@ -39,7 +39,8 @@
 
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
-    m_Completed(false)
+    m_Completed(false),
+    m_Status(CRequestStatus::e200_Ok)
 {}
 
 
@@ -48,7 +49,8 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
                                             shared_ptr<CPSGS_Reply> reply) :
     m_Completed(false),
     m_Request(request),
-    m_Reply(reply)
+    m_Reply(reply),
+    m_Status(CRequestStatus::e200_Ok)
 {}
 
 
@@ -56,12 +58,19 @@ CPSGS_CassProcessorBase::~CPSGS_CassProcessorBase()
 {}
 
 
-bool CPSGS_CassProcessorBase::IsFinished(void) const
+IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
 {
-    if (m_Completed)
-        return true;    // Finished before initiating any cassandra fetches
+    if (m_Completed) {
+        // Finished before initiating any cassandra fetches
+        return x_GetProcessorStatus();
+    }
 
-    return AreAllFinishedRead();
+    if (AreAllFinishedRead()) {
+        // Finished because all cassandra requests completed reading
+        return x_GetProcessorStatus();
+    }
+
+    return IPSGS_Processor::ePSGS_InProgress;
 }
 
 
@@ -76,5 +85,27 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
         }
     }
     return started_count != 0;
+}
+
+
+IPSGS_Processor::EPSGS_Status
+CPSGS_CassProcessorBase::x_GetProcessorStatus(void) const
+{
+    switch (m_Status) {
+        case CRequestStatus::e200_Ok:
+            return IPSGS_Processor::ePSGS_Found;
+        case CRequestStatus::e404_NotFound:
+            return IPSGS_Processor::ePSGS_NotFound;
+        default:
+            break;
+    }
+    return IPSGS_Processor::ePSGS_Error;
+}
+
+
+void
+CPSGS_CassProcessorBase::UpdateOverallStatus(CRequestStatus::ECode  status)
+{
+    m_Status = max(status, m_Status);
 }
 

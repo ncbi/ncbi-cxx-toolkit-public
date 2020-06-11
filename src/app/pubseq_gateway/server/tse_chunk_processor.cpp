@@ -325,7 +325,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
                               " is not found for the TSE id " +
                               fetch_details->GetTSEId().ToString();
         PSG_WARNING(message);
-        IPSGS_Processor::m_Request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
         IPSGS_Processor::m_Reply->PrepareReplyMessage(
                                     message,
                                     CRequestStatus::e404_NotFound,
@@ -436,7 +436,7 @@ CPSGS_TSEChunkProcessor::x_SendReplyError(const string &  msg,
 {
     IPSGS_Processor::m_Reply->PrepareReplyMessage(msg, status,
                                                   code, eDiag_Error);
-    IPSGS_Processor::m_Request->UpdateOverallStatus(status);
+    UpdateOverallStatus(status);
 
     if (status >= CRequestStatus::e400_BadRequest &&
         status < CRequestStatus::e500_InternalServerError) {
@@ -625,18 +625,7 @@ void CPSGS_TSEChunkProcessor::Cancel(void)
 
 IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
 {
-    if (CPSGS_CassProcessorBase::IsFinished()) {
-        switch (IPSGS_Processor::m_Request->GetOverallStatus()) {
-            case CRequestStatus::e200_Ok:
-                return ePSGS_Found;
-            case CRequestStatus::e404_NotFound:
-                return ePSGS_NotFound;
-            default:
-                return ePSGS_Error;
-        }
-    }
-
-    return ePSGS_InProgress;
+    return CPSGS_CassProcessorBase::GetStatus();
 }
 
 
@@ -699,7 +688,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         }
 
         // Mark finished
-        IPSGS_Processor::m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     }

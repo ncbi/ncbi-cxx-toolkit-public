@@ -149,8 +149,6 @@ public:
 
     CRef<CRequestContext>  GetRequestContext(void);
     void SetRequestContext(void);
-    CRequestStatus::ECode  GetOverallStatus(void) const;
-    void UpdateOverallStatus(CRequestStatus::ECode  status);
     TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
     bool NeedTrace(void);
 
@@ -165,7 +163,6 @@ private:
 private:
     unique_ptr<SPSGS_RequestBase>   m_Request;
     CRef<CRequestContext>           m_RequestContext;
-    CRequestStatus::ECode           m_OverallStatus;
 };
 
 

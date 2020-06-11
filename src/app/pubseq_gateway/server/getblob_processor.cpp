@@ -251,18 +251,7 @@ void CPSGS_GetBlobProcessor::Cancel(void)
 
 IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 {
-    if (CPSGS_CassProcessorBase::IsFinished()) {
-        switch (IPSGS_Processor::m_Request->GetOverallStatus()) {
-            case CRequestStatus::e200_Ok:
-                return ePSGS_Found;
-            case CRequestStatus::e404_NotFound:
-                return ePSGS_NotFound;
-            default:
-                return ePSGS_Error;
-        }
-    }
-
-    return ePSGS_InProgress;
+    return CPSGS_CassProcessorBase::GetStatus();
 }
 
 
@@ -346,8 +335,7 @@ void CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         }
 
         // Mark finished
-        IPSGS_Processor::m_Request->UpdateOverallStatus(
-                                    CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     }

@@ -48,6 +48,7 @@ USING_SCOPE(objects);
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
 #include "psgs_reply.hpp"
+#include "ipsgs_processor.hpp"
 
 
 class IPSGS_Processor;
@@ -77,6 +78,7 @@ public:
 
 private:
     void x_PrintRequestStop(void);
+    CRequestStatus::ECode x_GetRequestStopStatus(void) const;
 
 private:
     // Incoming request
@@ -86,6 +88,9 @@ private:
 
     bool                                    m_Cancelled;
     unique_ptr<IPSGS_Processor>             m_Processor;
+
+    // Each processor may finish with its own status
+    vector<IPSGS_Processor::EPSGS_Status>   m_FinishStatuses;
 };
 
 #endif

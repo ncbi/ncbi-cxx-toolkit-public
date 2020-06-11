@@ -101,7 +101,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Request->SetRequestContext();
 
     if (status != CRequestStatus::e404_NotFound)
-        IPSGS_Processor::m_Request->UpdateOverallStatus(status);
+        UpdateOverallStatus(status);
     PSG_WARNING(message);
 
     if (status == CRequestStatus::e404_NotFound) {
@@ -153,8 +153,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
         ePSGS_UnknownResolvedSatellite, eDiag_Error);
     IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, 2);
 
-    IPSGS_Processor::m_Request->UpdateOverallStatus(
-        CRequestStatus::e500_InternalServerError);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(msg);
 
     m_Completed = true;
@@ -368,18 +367,7 @@ void CPSGS_GetProcessor::Cancel(void)
 
 IPSGS_Processor::EPSGS_Status CPSGS_GetProcessor::GetStatus(void)
 {
-    if (CPSGS_CassProcessorBase::IsFinished()) {
-        switch (IPSGS_Processor::m_Request->GetOverallStatus()) {
-            case CRequestStatus::e200_Ok:
-                return ePSGS_Found;
-            case CRequestStatus::e404_NotFound:
-                return ePSGS_NotFound;
-            default:
-                return ePSGS_Error;
-        }
-    }
-
-    return ePSGS_InProgress;
+    return CPSGS_CassProcessorBase::GetStatus();
 }
 
 
@@ -463,8 +451,7 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         }
 
         // Mark finished
-        IPSGS_Processor::m_Request->UpdateOverallStatus(
-                                    CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     }

@@ -344,7 +344,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                                 CRequestStatus::e500_InternalServerError,
                                 ePSGS_BadID2Info, eDiag_Error);
         app->GetErrorCounters().IncServerSatToSatName();
-        m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         PSG_ERROR(message);
         return;
     }
@@ -402,14 +402,14 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
 
             if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                 message = "Blob properties are not found";
-                m_Request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+                UpdateOverallStatus(CRequestStatus::e404_NotFound);
                 m_Reply->PrepareBlobPropMessage(
                                     fetch_details, message,
                                     CRequestStatus::e404_NotFound,
                                     ePSGS_BlobPropsNotFound, eDiag_Error);
             } else {
                 message = "Blob properties are not found due to LMDB cache error";
-                m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+                UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                 m_Reply->PrepareBlobPropMessage(
                                     fetch_details, message,
                                     CRequestStatus::e500_InternalServerError,
@@ -531,7 +531,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                 string      message;
                 if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                     message = "Blob properties are not found";
-                    m_Request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+                    UpdateOverallStatus(CRequestStatus::e404_NotFound);
                     m_Reply->PrepareBlobPropMessage(
                                         details.get(), message,
                                         CRequestStatus::e404_NotFound,
@@ -539,7 +539,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                 } else {
                     message = "Blob properties are not found "
                               "due to a blob proc cache lookup error";
-                    m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+                    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                     m_Reply->PrepareBlobPropMessage(
                                         details.get(), message,
                                         CRequestStatus::e500_InternalServerError,
@@ -655,8 +655,7 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
     }
 
     if (is_error) {
-        m_Request->UpdateOverallStatus(
-                            CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
 
         if (fetch_details->IsBlobPropStage()) {
             m_Reply->PrepareBlobPropMessage(
@@ -767,14 +766,14 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     if (fetch_details->GetFetchType() == ePSGS_BlobBySatSatKeyFetch) {
         // User requested wrong sat_key, so it is a client error
         PSG_WARNING(message);
-        m_Request->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
         m_Reply->PrepareBlobPropMessage(fetch_details, message,
                                         CRequestStatus::e404_NotFound,
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
     } else {
         // Server error, data inconsistency
         PSG_ERROR(message);
-        m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Reply->PrepareBlobPropMessage(fetch_details, message,
                                         CRequestStatus::e500_InternalServerError,
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
@@ -820,7 +819,7 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
     m_Reply->PrepareBlobPropMessage(
         fetch_details, err_msg, CRequestStatus::e500_InternalServerError,
         ePSGS_BadID2Info, eDiag_Error);
-    m_Request->UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(err_msg);
     return false;
 }
