@@ -40,6 +40,7 @@
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "blast_app_util.hpp"
+#include "rpstblastn_node.hpp"
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/api/rpsblast_local.hpp>
 
@@ -64,6 +65,9 @@ private:
     /** @inheritDoc */
     virtual int Run();
 
+    int x_RunMTBySplitDB();
+    int x_RunMTBySplitQuery();
+
     /// This application's command line args
     CRef<CRPSTBlastnAppArgs> m_CmdLineArgs;
 };
@@ -80,7 +84,19 @@ void CRPSTBlastnApp::Init()
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
+
 int CRPSTBlastnApp::Run(void)
+{
+	const CArgs& args = GetArgs();
+	if ((args[kArgMTMode].AsInteger() == 0)  || (args[kArgNumThreads].AsInteger() <= 1)){
+		return x_RunMTBySplitDB();
+	}
+	else {
+		return x_RunMTBySplitQuery();
+	}
+}
+
+int CRPSTBlastnApp::x_RunMTBySplitDB(void)
 {
     int status = BLAST_EXIT_SUCCESS;
     CBlastAppDiagHandler bah;
@@ -205,6 +221,71 @@ int CRPSTBlastnApp::Run(void)
     }
     return status;
 }
+
+int CRPSTBlastnApp::x_RunMTBySplitQuery(void)
+{
+    int status = BLAST_EXIT_SUCCESS;
+    CBlastAppDiagHandler bah;
+    int batch_size = 8000;
+
+	char * mt_query_batch_env = getenv("BLAST_MT_QUERY_BATCH_SIZE");
+	if (mt_query_batch_env) {
+		batch_size = NStr::StringToInt(mt_query_batch_env);
+	}
+	cerr << "Batch Size: " << batch_size << endl;
+    // Allow the fasta reader to complain on invalid sequence input
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostPrefix("rpstblastn_mt");
+    SetDiagHandler(&bah, false);
+
+	try {
+    	const CArgs& args = GetArgs();
+    	const int kMaxNumOfThreads = args[kArgNumThreads].AsInteger();
+    	CRef<CBlastOptionsHandle> opts_hndl;
+        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
+        }
+        else {
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        }
+    	if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())){
+       		ERR_POST(Warning << "Query is Empty!");
+       		return BLAST_EXIT_SUCCESS;
+    	}
+    	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
+		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
+   		int chunk_num = 0;
+
+   		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 4500);
+		while (master_node.Processing()) {
+			if (!input.AtEOF()) {
+			 	if (!master_node.IsFull()) {
+			 		int q_index = 0;
+					string qb;
+					int num_q = input.GetQueryBatch(qb, q_index);
+					if (num_q > 0) {
+						CBlastNodeMailbox * mb(new CBlastNodeMailbox(chunk_num, master_node.GetBuzzer()));
+						CRPSTBlastnNode * t(new CRPSTBlastnNode(chunk_num, GetArguments(), args, bah, qb, q_index, num_q, mb));
+						master_node.RegisterNode(t, mb);
+						chunk_num ++;
+					}
+				}
+			}
+			else {
+				master_node.Shutdown();
+			}
+
+    	}
+
+	} CATCH_ALL (status)
+
+    if(!bah.GetMessages().empty()) {
+    	const CArgs & a = GetArgs();
+    	PrintErrorArchive(a, bah.GetMessages());
+    }
+    return status;
+}
+
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
