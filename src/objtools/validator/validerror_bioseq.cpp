@@ -1323,6 +1323,9 @@ void CValidError_bioseq::ValidateBioseqContext(
     bool is_patent = SeqIsPatent (seq);
 
     try {
+
+        m_complete_genome_title = false;
+
         // if there are no Seq-ids, the following tests can't be run
         if (seq.IsSetId()) {
 
@@ -1349,8 +1352,6 @@ void CValidError_bioseq::ValidateBioseqContext(
             // Detect absence of BioProject DBLink for complete bacterial genomes
             ValidateCompleteGenome(seq);
         }
-
-        m_complete_genome_title = false;
 
         m_dblink_count = 0;
         m_taa_count = 0;
@@ -5833,11 +5834,13 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         comment_text = feat.GetComment();
     }
 
+    /*
     if (HasCompleteGenomeTitle() && feat.GetData().Which() == CSeqFeatData::e_Cdregion) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
             "Partial CDS on sequence whose title claims complete genome",
             *(feat.GetSeq_feat()));
     }
+    */
 
     // partial location
     unsigned int errtype = eSeqlocPartial_Nostart;
