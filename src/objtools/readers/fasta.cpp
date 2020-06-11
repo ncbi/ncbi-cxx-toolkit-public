@@ -350,11 +350,12 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                 ParseDefLine(">", pMessageListener);
                 need_defline = false;
             } else {
+                const auto lineNum = LineNumber();
                 GetLineReader().UngetLine();
                 NCBI_THROW2(CObjReaderParseException, eNoDefline, 
                             "CFastaReader: Input doesn't start with"
-                            " a defline or comment around line " + NStr::NumericToString(LineNumber()),
-                             LineNumber() );
+                            " a defline or comment around line " + NStr::NumericToString(lineNum),
+                             lineNum);
             }
         }
 
