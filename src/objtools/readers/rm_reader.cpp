@@ -789,6 +789,9 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pMessageL
             continue;
         }
         ++record_counter;
+        //if (record_counter == 91555) {
+        //    cerr << "";
+        //}
 
         SRepeatRegion mask_data;
         if ( ! ParseRecord( line, mask_data ) ) {
@@ -941,7 +944,7 @@ bool CRepeatMaskerReader::ParseRecord(const string& record, SRepeatRegion& mask_
         // 8: "query (left)"
         ++it;
         StripParens(*it);
-        mask_data.query_left = NStr::StringToUInt( *it );
+        mask_data.query_left = NStr::StringToInt( *it );
 
         // 9: "" (meaning "strand")
         ++it;
@@ -973,15 +976,15 @@ bool CRepeatMaskerReader::ParseRecord(const string& record, SRepeatRegion& mask_
         // fields position 12 and 14 flip depending on the strand value.
         string rpt_left;
         if (mask_data.IsReverseStrand()) {
-            mask_data.rpt_pos_begin = NStr::StringToUInt( field14 );
+            mask_data.rpt_pos_begin = NStr::StringToInt( field14 );
             rpt_left = field12;
         } else {
-            mask_data.rpt_pos_begin = NStr::StringToUInt( field12 );
+            mask_data.rpt_pos_begin = NStr::StringToInt( field12 );
             rpt_left = field14;
         }
 
         StripParens(rpt_left);
-        mask_data.rpt_left = NStr::StringToUInt(rpt_left);
+        mask_data.rpt_left = NStr::StringToInt(rpt_left);
 
         // 15: "ID"
         ++it;
