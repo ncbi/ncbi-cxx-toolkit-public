@@ -70,6 +70,7 @@
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/ucscregion_reader.hpp>
+#include <objtools/readers/rm_reader.hpp>
 #include <objtools/readers/read_util.hpp>
 //#include <misc/hgvs/hgvs_reader.hpp>
 
@@ -163,6 +164,7 @@ private:
     void xProcessAgp(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessFasta(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessRmo(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     //void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
@@ -364,6 +366,7 @@ void CMultiReaderApp::Init(void)
             "ucsc",
             "hgvs",
             "psl",
+            "rmo",
             "guess") );
 
     arg_desc->AddDefaultKey("out-format", "FORMAT", 
@@ -808,6 +811,9 @@ CMultiReaderApp::xProcessSingleFile(
             case CFormatGuess::eFasta:
                 xProcessFasta(args, istr, ostr);
                 break;
+            case CFormatGuess::eRmo:
+                xProcessRmo(args, istr, ostr);
+                break;
             //case CFormatGuess::eHgvs:
             //    xProcessHgvs(args, istr, ostr);
             //    break;
@@ -1124,6 +1130,28 @@ void CMultiReaderApp::xProcess5ColFeatTable(
 //  ----------------------------------------------------------------------------
 {
     CFeature_table_reader reader;
+    CRef<ILineReader> pLineReader = ILineReader::New(istr);
+    while(istr) {
+        CRef<CSeq_annot> pSeqAnnot =
+            reader.ReadSeqAnnot(*pLineReader, m_pErrors.get());
+        if( ! pSeqAnnot || ! pSeqAnnot->IsFtable() || 
+            pSeqAnnot->GetData().GetFtable().empty() ) 
+        {
+            // empty annot
+            break;
+        }
+        xWriteObject(args, *pSeqAnnot, ostr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessRmo(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CRepeatMaskerReader reader;
     CRef<ILineReader> pLineReader = ILineReader::New(istr);
     while(istr) {
         CRef<CSeq_annot> pSeqAnnot =
