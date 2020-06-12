@@ -944,7 +944,7 @@ bool CRepeatMaskerReader::ParseRecord(const string& record, SRepeatRegion& mask_
         // 8: "query (left)"
         ++it;
         StripParens(*it);
-        mask_data.query_left = NStr::StringToInt( *it );
+        mask_data.query_left = NStr::StringToUInt( *it );
 
         // 9: "" (meaning "strand")
         ++it;
