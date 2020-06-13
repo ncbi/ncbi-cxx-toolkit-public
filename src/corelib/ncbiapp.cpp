@@ -194,12 +194,21 @@ CNcbiApplicationAPI::CNcbiApplicationAPI(const SBuildInfo& build_info)
     m_DryRun = false;
 }
 
+void CNcbiApplicationAPI::ExecuteOnExitActions()
+{
+    m_OnExitActions.ExecuteActions();
+}
+
 
 CNcbiApplicationAPI::~CNcbiApplicationAPI(void)
 {
     CThread::sm_IsExiting = true;
+
     // Execute exit actions before waiting for all threads to stop.
-    m_OnExitActions.ExecuteActions();
+    // NOTE: The exit actions may already be executed by higher-level
+    //       destructors. This is a final fail-safe place for this.
+    ExecuteOnExitActions();
+
 #if defined(NCBI_THREADS)
     CThread::WaitForAllThreads();
 #endif
@@ -242,6 +251,11 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 
 CNcbiApplication::~CNcbiApplication()
 {
+    // This earlier execution of the actions allows a safe use of
+    // CNcbiApplication::Instance() from the exit action functions. Instance()
+    // can return NULL pointer if called as part of CNcbiApplicationAPI dtor
+    // when the CNcbiApplication dtor already finished.
+    ExecuteOnExitActions();
 }
 
 

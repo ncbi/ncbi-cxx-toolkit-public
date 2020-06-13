@@ -395,7 +395,10 @@ public:
     NCBI_DEPRECATED virtual bool SetupDiag_AppSpecific(void);
 
     /// Add callback to be executed from CNcbiApplicationAPI destructor.
-    /// @sa CNcbiActionGuard
+    /// @note It is executed earlier, at CNcbiApplication destructor; and, it
+    ///       may be executed even earlier from destructors of other
+    ///       CNcbiApplicationAPI-derived classes.
+    /// @sa CNcbiActionGuard, ExecuteOnExitActions()
     template<class TFunc> void AddOnExitAction(TFunc func)
     {
         m_OnExitActions.AddAction(func);
@@ -615,6 +618,12 @@ protected:
     };
     typedef int TAppFlags;
     void SetAppFlags(TAppFlags flags) { m_AppFlags = flags; }
+
+    /// Should only be called from the destructors of classes derived from
+    /// CNcbiApplicationAPI - if it is necessary to access their data members
+    /// and virtual methods; or to dynamic_cast<> from the base app class.
+    /// @sa AddOnExitAction()
+    void ExecuteOnExitActions();
 
 private:
     /// Read standard NCBI application configuration settings.
