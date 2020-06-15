@@ -1322,14 +1322,21 @@ void CValidError_bioseq::ValidateBioseqContext(
 
     bool is_patent = SeqIsPatent (seq);
 
-    try {
+    bool is_complete = false;
+    CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
+    if (desc) {
+        const CMolInfo& mi = desc->GetMolinfo();
+        if (mi.GetCompleteness() == CMolInfo::eCompleteness_complete) {
+            is_complete = true;
+        }
+    }
 
-        m_complete_genome_title = false;
+    try {
 
         // if there are no Seq-ids, the following tests can't be run
         if (seq.IsSetId()) {
 
-            ValidateSeqFeatContext(seq);
+            ValidateSeqFeatContext(seq, is_complete);
 
             // Check for duplicate features and overlapping peptide features.
             ValidateDupOrOverlapFeats(seq);
@@ -2754,10 +2761,6 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
     }
 
     string title = sequence::CDeflineGenerator().GenerateDefline(bsh);
-
-    if (NStr::Find(title, "complete genome") != NPOS) {
-        m_complete_genome_title = true;
-    }
 
 /*bsv
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
@@ -5785,7 +5788,7 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
 
 
 void CValidError_bioseq::ValidateFeatPartialInContext (
-    const CMappedFeat& feat)
+    const CMappedFeat& feat, bool is_complete)
 {
     unsigned int partial_loc  = eSeqlocPartial_Complete;
 
@@ -5834,13 +5837,11 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         comment_text = feat.GetComment();
     }
 
-    /*
-    if (HasCompleteGenomeTitle() && feat.GetData().Which() == CSeqFeatData::e_Cdregion) {
+    if (is_complete && feat.GetData().Which() == CSeqFeatData::e_Cdregion) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-            "Partial CDS on sequence whose title claims complete genome",
+            "Partial CDS on complete sequence",
             *(feat.GetSeq_feat()));
     }
-    */
 
     // partial location
     unsigned int errtype = eSeqlocPartial_Nostart;
@@ -5937,7 +5938,7 @@ bool CValidError_bioseq::x_HasPGAPStructuredComment(CBioseq_Handle bsh)
 
 
 void CValidError_bioseq::ValidateSeqFeatContext(
-    const CBioseq& seq)
+    const CBioseq& seq, bool is_complete)
 {
     // test
     string accession = "";
@@ -6082,7 +6083,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                 m_FeatValidator.ValidateSeqFeatContext(feat, seq);
                 
                 if (seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
-                    ValidateFeatPartialInContext (*fi);
+                    ValidateFeatPartialInContext (*fi, is_complete);
                 }
 
                 if ( is_aa ) {                // protein

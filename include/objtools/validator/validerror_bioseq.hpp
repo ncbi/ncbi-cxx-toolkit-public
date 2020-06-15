@@ -147,10 +147,6 @@ public:
     static bool IsPdb(const CBioseq& seq);
     static bool IsPartial(const CBioseq& seq, CScope& scope);
 
-    bool HasCompleteGenomeTitle (void) const { return m_complete_genome_title; }
-
-    bool m_complete_genome_title;
-
     // DBLink user object counters
     int m_dblink_count;
     int m_taa_count;
@@ -193,13 +189,13 @@ private:
     void x_ReportImproperPartial(const CSeq_feat& feat);
     void x_ReportInternalPartial(const CSeq_feat& feat);
     bool x_PartialAdjacentToIntron(const CSeq_loc& loc);
-    void ValidateFeatPartialInContext (const CMappedFeat& feat);
+    void ValidateFeatPartialInContext (const CMappedFeat& feat, bool is_complete);
     void x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat);
 
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
     bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);
     bool x_IsSameAsCDS(const CMappedFeat& feat);
-    void ValidateSeqFeatContext(const CBioseq& seq);
+    void ValidateSeqFeatContext(const CBioseq& seq, bool is_complete);
     static bool x_HasPGAPStructuredComment(CBioseq_Handle bsh);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool viral, bool htgs, bool same_annot, bool same_label);
     bool x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs);
