@@ -314,15 +314,15 @@ CFlatFileConfig::CFlatFileConfig(
     TStyle style,
     TFlags flags,
     TView view,
-    TPolicy policy) :
-    m_Format(format), m_Mode(mode), m_Style(style), m_Flags(flags), m_View(view), m_Policy(policy)
+    TPolicy policy,
+    TCustom custom) :
+    m_Format(format), m_Mode(mode), m_Style(style), m_Flags(flags), m_View(view), m_Policy(policy), m_Custom(custom)
 {
     m_RefSeqConventions = false;
     SetGenbankBlocks(fGenbankBlocks_All);
     SetGenbankBlockCallback(NULL);
     SetCanceledCallback(NULL);
     BasicCleanup(false);
-    SetCustom(0);
 
     // FTable always requires master style
     if (m_Format == eFormat_FTable) {

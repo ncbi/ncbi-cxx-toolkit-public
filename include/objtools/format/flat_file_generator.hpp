@@ -69,7 +69,8 @@ public:
         CFlatFileConfig::TStyle    style  = CFlatFileConfig::eStyle_Normal,
         CFlatFileConfig::TFlags    flags  = 0,
         CFlatFileConfig::TView     view   = CFlatFileConfig::fViewNucleotides,
-        CFlatFileConfig::TCustom   custom = 0);
+        CFlatFileConfig::TCustom   custom = 0,
+        CFlatFileConfig::TPolicy   policy = CFlatFileConfig::ePolicy_Adaptive);
     
     // destructor
     ~CFlatFileGenerator(void);

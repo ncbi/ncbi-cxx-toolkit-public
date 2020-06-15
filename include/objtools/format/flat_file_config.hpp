@@ -390,7 +390,8 @@ public:
                     TStyle  style = eStyle_Normal,
                     TFlags  flags = 0,
                     TView   view = fViewNucleotides,
-                    TPolicy policy = ePolicy_Adaptive);
+                    TPolicy policy = ePolicy_Adaptive,
+                    TCustom custom = 0);
 
     // destructor
     ~CFlatFileConfig(void);
