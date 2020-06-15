@@ -545,7 +545,7 @@ private:
 
 
 CPSG_Task::CPSG_Task(TReply reply, CPSG_TaskGroup& group)
-    : m_Status(eIdle), m_Reply(reply), m_Group(group)
+    : m_Reply(reply), m_Status(eIdle), m_Group(group)
 {
 }
 
