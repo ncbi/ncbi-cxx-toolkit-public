@@ -3526,6 +3526,8 @@ static const char* const kBuiltInGuide[] = {
     "",
     "# Some \"EMBL\" WGS nucleotide accessions are really third-party annotations.",
     "special  CAADVW000000000-CAADVX999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CADEPO000000000-CADEVH999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CADEVJ000000000-CADFGZ999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" 8-character protein accessions are really third-party",
     "# annotations.",
