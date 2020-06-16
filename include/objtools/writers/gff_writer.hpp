@@ -55,7 +55,7 @@ BEGIN_objects_SCOPE
 /// format renderer.
 ///
 class NCBI_XOBJWRITE_EXPORT CGff2Writer:
-    public CWriterBase
+    public CWriterBase, CFeatWriter
 //  ============================================================================
 {
 public:

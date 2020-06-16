@@ -49,7 +49,7 @@ class CGtfRecord;
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGtfWriter:
-    public CGff2Writer, public CFeatWriter
+    public CGff2Writer
 //  ============================================================================
 {
 public:
@@ -118,9 +118,6 @@ protected:
 
     bool xWriteRecord( 
         const CGffWriteRecord* );
-
-    virtual bool xWriteFeature(
-        CFeat_CI) override;
 
     virtual bool xWriteFeature(
         CGffFeatureContext&,

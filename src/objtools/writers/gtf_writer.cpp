@@ -196,21 +196,6 @@ bool CGtfWriter::xWriteRecord(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeature(
-    CFeat_CI feat_it)
-//  ----------------------------------------------------------------------------
-{
-    if (!feat_it) {
-        return false;
-    }
-
-    CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it->GetAnnot());
-
-    return xWriteFeature(fc, *feat_it);
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteFeature(
     CGffFeatureContext& context,
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
