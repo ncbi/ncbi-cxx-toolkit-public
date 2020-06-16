@@ -51,7 +51,7 @@ public:
         eSeqIdError,
     };
 
-    virtual const char* GetErrCodeString() const
+    virtual const char* GetErrCodeString() const override
     {
         switch (GetErrCode()) {
             case eInvalidAnnot:

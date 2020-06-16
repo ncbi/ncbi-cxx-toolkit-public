@@ -49,7 +49,7 @@ public:
         eInvalidOutputDir,
     };
 
-    virtual const char* GetErrCodeString() const {
+    virtual const char* GetErrCodeString() const override {
         switch (GetErrCode()) {
         case eInvalidOutputDir:
             return "eInvalidOutputDir";
