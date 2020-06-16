@@ -2234,12 +2234,8 @@ void CFastaReader::SetGapLinkageEvidence(
 
 void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences)
 {
-    if (type == -1)
-        m_gap_type.Release();
-    else 
-         m_gap_type.Reset(new SGap::TGapTypeObj(type));
-
-
+    m_gap_type.Reset(new SGap::TGapTypeObj(type));
+    
     m_DefaultLinkageEvidence.clear();
     for (const auto& evidence : evidences) {
         m_DefaultLinkageEvidence.insert(static_cast<CLinkage_evidence::EType>(evidence));
