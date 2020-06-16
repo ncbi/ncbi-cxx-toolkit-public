@@ -5521,6 +5521,8 @@ void CFeatureItem::x_AddFTableAnticodon(
     case CTrna_ext::C_Aa::e_Ncbistdaa:
         aa = GetAAName(trna_ext.GetAa().GetNcbistdaa(), false);
         break;
+    default:
+        break;
     }
 
     string seq("---");
