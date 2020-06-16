@@ -141,14 +141,8 @@ public:
                 "Taxon update: " +
                 (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
                 reply->GetError().GetMessage();
-
-/*
-            logger->PutError(*auto_ptr<CLineError>(
-                CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
-                string("Taxon update: ") + 
-                (org.IsSetTaxname() ? org.GetTaxname() : NStr::IntToString(org.GetTaxId())) + ": " +
-                reply->GetError().GetMessage())));
-            */
+        
+            f_logger(error_message);
         }
         else
         if (reply->IsData() && reply->SetData().IsSetOrg())
