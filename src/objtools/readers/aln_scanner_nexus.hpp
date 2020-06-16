@@ -56,8 +56,8 @@ class CAlnScannerNexus:
 //  ============================================================================
 {
 public:
-    CAlnScannerNexus(): 
-        mGapChar(0), mMissingChar(0), mMatchChar(0) {};
+//    CAlnScannerNexus(): 
+//        mGapChar(0), mMissingChar(0), mMatchChar(0) {};
     ~CAlnScannerNexus() {};
 
     TDeflines& SetDeflines(void) { return mDeflines; }
@@ -136,7 +136,7 @@ protected:
         int &numUnmatchedLeftBrackets,
         bool &inCommand);
 
-    static int sFindCharOutsideComment(
+    static size_t sFindCharOutsideComment(
         char c,
         const string& line,
         int &numUnmatchedLeftBrackets,
@@ -148,9 +148,9 @@ protected:
 
     int mNumSequences = 0;
     int mSequenceSize = 0;
-    char mMatchChar;
-    char mMissingChar;
-    char mGapChar;
+    char mMatchChar=0;
+    char mMissingChar=0;
+    char mGapChar=0;
     bool mInBlock=false;
     string mCurrentBlock;
     int mBlockStartLine;

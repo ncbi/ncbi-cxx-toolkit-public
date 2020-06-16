@@ -421,7 +421,7 @@ CAlnScannerNexus::xProcessMatrix(
         }
         
         string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
-        auto dataSize = seqData.size();
+        const int dataSize = seqData.size();
 
 
         
@@ -666,7 +666,7 @@ CAlnScannerNexus::xGetArgPos(const TCommandArgs& args,
 
  
 //  ----------------------------------------------------------------------------
-int 
+size_t 
 CAlnScannerNexus::sFindCharOutsideComment(
         char c,
         const string& line,
@@ -674,7 +674,7 @@ CAlnScannerNexus::sFindCharOutsideComment(
         size_t startPos)
 //  ----------------------------------------------------------------------------
 {
-    for (int index=startPos; index<line.size(); ++index) {
+    for (auto index=startPos; index<line.size(); ++index) {
         if (line[index] == '[') {
             ++numUnmatchedLeftBrackets;
         }
@@ -836,10 +836,10 @@ sStripNexusComments(
         return;
     }
 
-    list<pair<int, int>> commentLimits;
-    int index=0;
-    int start=0;
-    int stop;
+    list<pair<size_t, size_t>> commentLimits;
+    size_t index=0;
+    size_t start=0;
+    size_t stop;
     while (index < line.size()) {
         const auto& c = line[index];
         if (c == '[') {
@@ -883,9 +883,9 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
         return;
     }
 
-    list<pair<int, int>> commentLimits;
-    int start=0;
-    int stop;
+    list<pair<size_t,size_t>> commentLimits;
+    size_t start=0;
+    size_t stop;
 
     if (!inCommand &&
         (numUnmatchedLeftBrackets == 0) &&
@@ -895,7 +895,7 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
 
     const auto len = line.size();
 
-    for (int index=0; index<len; ++index) {
+    for (size_t index=0; index<len; ++index) {
         const auto& c = line[index];
 
         if (inCommand) {

@@ -170,8 +170,8 @@ void CDefaultIdValidate::operator()(
 
 CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) : 
     m_fValidateIds(fValidateIds),
-    m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
     m_AlignFormat(EAlignFormat::UNKNOWN),
+    m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
     m_UseNexusInfo(true)
 {
     m_Errors.clear();
