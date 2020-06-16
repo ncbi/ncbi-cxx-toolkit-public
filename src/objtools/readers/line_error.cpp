@@ -153,9 +153,9 @@ CLineErrorEx::CLineErrorEx(
     : m_eProblem(eProblem), m_eSeverity( eSeverity ), 
       m_Code(code), m_Subcode(subcode),
     m_strSeqId(strSeqId), m_uLine( uLine ), 
-    m_strErrorMessage(strErrorMessage),
     m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
     m_strQualifierValue(strQualifierValue), 
+    m_strErrorMessage(strErrorMessage),
     m_vecOfOtherLines(vecOfOtherLines)
 { }
 
