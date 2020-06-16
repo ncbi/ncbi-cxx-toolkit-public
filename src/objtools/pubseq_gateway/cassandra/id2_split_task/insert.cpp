@@ -76,14 +76,15 @@ void CCassID2SplitTaskInsert::Wait1()
                 return;
 
         case eInit:
-#if 00000
+
           {
                 m_BlobInsertTask = unique_ptr<CCassBlobTaskInsertExtended>(
                      new CCassBlobTaskInsertExtended(
                          m_OpTimeoutMs, m_Conn, m_Keyspace,
                          m_Blob, true, m_MaxRetries,
                          [this]
-                         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+                         (CRequestStatus::ECode status, int code, EDiagSev severity,
+                          const string & message)
                          {this->m_ErrorCb(status, code, severity, message);}
                      )
                 );
@@ -104,11 +105,22 @@ void CCassID2SplitTaskInsert::Wait1()
                 }
                 break;
             }
-#endif
+
             case eInsertId2SplitInfo: {
                 m_QueryArr.resize(1);
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
                 auto qry = m_QueryArr[0].query;
+#if 00001
+                string sql = "INSERT INTO " + GetKeySpace() + ".split"
+                  " (ent, sat, sat_key, ent_type, split_id)"
+                  " VALUES(?, ?, ?, ?, ?)";
+                qry->SetSQL( sql, 5);
+                qry->BindInt32( 0, m_Id2Split->GetUniqueId());
+                qry->BindInt16( 1, m_Id2Split->GetSat());
+                qry->BindInt32( 2, m_Id2Split->GetSatKey());
+                qry->BindInt32( 3, m_Id2Split->GetEntType());
+                qry->BindInt32( 4, m_Id2Split->GetSplitId());
+#else
                 string sql = "INSERT INTO " + GetKeySpace() + ".split"
                   " (ent, sat, sat_key, ent_type,"
                   " split_id, user_name, length, full_length, modified, data)"
@@ -124,7 +136,7 @@ void CCassID2SplitTaskInsert::Wait1()
                 qry->BindInt32( 7, m_Id2Split->GetFullLen());
                 const CBlobRecord::TBlobChunk& chunk = m_Blob->GetChunk(0);
                 qry->BindBytes(8, chunk.data(), chunk.size());
-                //qry->BindBytes( 8, Buff, CompressedBufLen);
+#endif
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
@@ -143,9 +155,11 @@ void CCassID2SplitTaskInsert::Wait1()
 
             default: {
                 char msg[1024];
-                snprintf(msg, sizeof(msg), "Failed to insert named annot (key=%s.%d) unexpected state (%d)",
+                snprintf(msg, sizeof(msg),
+                    "Failed to insert named annot (key=%s.%d) unexpected state (%d)",
                     m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
+                Error( CRequestStatus::e502_BadGateway,
+                       CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }
     } while (b_need_repeat);
