@@ -1097,7 +1097,7 @@ CUser_object& CDescrCache::SetDBLink()
 CUser_object& CDescrCache::SetFileTrack()
 {
     return x_SetDescriptor(eFileTrack,
-        [this](const CSeqdesc& desc) {
+        [](const CSeqdesc& desc) {
             return (desc.IsUser() && s_IsUserType(desc.GetUser(), "FileTrack"));
         },
         [this]() {
@@ -1112,7 +1112,7 @@ CUser_object& CDescrCache::SetFileTrack()
 CUser_object& CDescrCache::SetTpaAssembly()
 {
     return x_SetDescriptor(eTpa,
-        [this](const CSeqdesc& desc) {
+        [](const CSeqdesc& desc) {
             return (desc.IsUser() && s_IsUserType(desc.GetUser(), "TpaAssembly"));
         },
         [this]() {
@@ -1127,7 +1127,7 @@ CUser_object& CDescrCache::SetTpaAssembly()
 CUser_object& CDescrCache::SetGenomeProjects()
 {
         return x_SetDescriptor(eGenomeProjects,
-        [this](const CSeqdesc& desc) {
+        [](const CSeqdesc& desc) {
             return (desc.IsUser() && s_IsUserType(desc.GetUser(), "GenomeProjectsDB"));
         },
         [this]() {
