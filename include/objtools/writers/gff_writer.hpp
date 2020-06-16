@@ -367,7 +367,8 @@ protected:
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& );
-
+    virtual bool xWriteFeature(
+        CFeat_CI feat_it);
 
     virtual bool xWriteAllChildren(
         CGffFeatureContext&,

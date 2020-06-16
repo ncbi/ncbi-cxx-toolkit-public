@@ -203,7 +203,7 @@ bool CGtfWriter::xWriteFeature(
         return false;
     }
 
-    CGffFeatureContext fc(feat_it, CBioseq_Handle(), CSeq_annot_Handle());
+    CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it->GetAnnot());
 
     return xWriteFeature(fc, *feat_it);
 }
@@ -217,15 +217,15 @@ bool CGtfWriter::xWriteFeature(
 {
     switch(mf.GetFeatSubtype()) {
         default:
-			if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-				return xWriteFeatureMrna(context, mf);
-			}
+            if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                return xWriteFeatureMrna(context, mf);
+            }
             // GTF is not interested --- ignore
             return true;
-		case CSeqFeatData::eSubtype_C_region:
-		case CSeqFeatData::eSubtype_D_segment:
-		case CSeqFeatData::eSubtype_J_segment:
-		case CSeqFeatData::eSubtype_V_segment:
+        case CSeqFeatData::eSubtype_C_region:
+        case CSeqFeatData::eSubtype_D_segment:
+        case CSeqFeatData::eSubtype_J_segment:
+        case CSeqFeatData::eSubtype_V_segment:
             return xWriteFeatureMrna(context, mf);
         case CSeqFeatData::eSubtype_gene: 
             return xWriteFeatureGene(context, mf);

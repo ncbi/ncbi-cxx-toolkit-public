@@ -165,7 +165,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     sel.SetMaxSize(1);
     for (CAnnot_CI aci(seh, sel); aci; ++aci) {
         CFeat_CI fit(*aci, SetAnnotSelector());
-        CGffFeatureContext fc(fit, CBioseq_Handle(), *aci);
         CSeq_id_Handle lastId;
         for ( /*0*/; fit; ++fit ) {
             CSeq_id_Handle currentId =fit->GetLocationId();
@@ -174,8 +173,8 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
                 lastId = currentId;
             }
                 
-            if (!xWriteFeature(fc, *fit)) {
-                    return false;
+            if (!xWriteFeature(fit)) {
+                return false;
             }
         }
     }
@@ -216,7 +215,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
 
     while (feat_iter) {
         CMappedFeat mf = *feat_iter;
-        xWriteFeature(fc, mf);
+        xWriteFeature(feat_iter);
         ++feat_iter;
     }
     return true;
@@ -234,7 +233,7 @@ bool CGff2Writer::xWriteAllChildren(
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
         if (!xWriteFeature(fc, mChild)) {
-            //error!
+            //error - but should have been handled elsewhere
             continue;
         }
         xWriteAllChildren(fc, mChild);
@@ -278,8 +277,8 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
 
-    for ( /*0*/; feat_iter; ++feat_iter ) {
-        if ( ! xWriteFeature( fc, *feat_iter ) ) {
+    for (/*0*/; feat_iter; ++feat_iter) {
+        if (!xWriteFeature(fc,*feat_iter)) {
             return false;
         }
     }
@@ -290,6 +289,14 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
 bool CGff2Writer::xWriteFeature(
     CGffFeatureContext& context,
     const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xWriteFeature(
+    CFeat_CI feat_it)
 //  ----------------------------------------------------------------------------
 {
     return false;

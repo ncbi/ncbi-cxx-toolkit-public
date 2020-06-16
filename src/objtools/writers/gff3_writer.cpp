@@ -1481,7 +1481,6 @@ bool CGff3Writer::xWriteProteinFeature(
     return xWriteRecord(*pRecord);
 }
 
-
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteNucleotideFeature(
     CGffFeatureContext& fc,
@@ -1493,7 +1492,6 @@ bool CGff3Writer::xWriteNucleotideFeature(
         mf.GetLocation().GetTotalRange().IntersectionWith(GetRange()).Empty()) {
         return true;
     }
-
 
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
