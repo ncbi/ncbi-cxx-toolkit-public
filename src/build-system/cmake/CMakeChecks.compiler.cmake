@@ -504,6 +504,7 @@ if (NOT APPLE)
 endif ()
 
 
+if (NOT WIN32 AND NOT APPLE)
 # Establishing sane RPATH definitions
 # use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
@@ -511,13 +512,12 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 # when building, use the install RPATH already
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-SET(CMAKE_INSTALL_RPATH "/$ORIGIN/../lib")
-
 #this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
-if (NOT WIN32 AND NOT APPLE)
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 endif()
 
+SET(CMAKE_INSTALL_RPATH "/$ORIGIN/../lib")
+
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
