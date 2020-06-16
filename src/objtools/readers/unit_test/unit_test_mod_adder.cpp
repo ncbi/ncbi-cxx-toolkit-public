@@ -148,54 +148,6 @@ private:
 };
 
 
-static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos)
-{ // Copied from CSourceModParser
-    size_t i = start;
-
-    eq_pos = CTempString::npos;
-    const char* s = line.data() + start;
-
-    int nested_brackets = -1;
-    while (i < line.size())
-    {
-        switch (*s)
-        {
-        case '[':
-            nested_brackets++;
-            if (nested_brackets == 0)
-            {
-                start = i;
-            }
-            break;
-        case '=':
-            if (nested_brackets >= 0 && eq_pos == CTempString::npos) {
-                eq_pos = i;
-            }
-            break;
-        case ']':
-            if (nested_brackets == 0)
-            {
-                stop = i;
-                return true;
-               // if (eq_pos == CTempString::npos)
-               //     eq_pos = i;
-               // return true;
-            }
-            else
-            if (nested_brackets < 0) {
-                return false;
-            }
-            else
-            {
-                nested_brackets--;
-            }
-        }
-        i++; s++;
-    }
-    return false;
-};
-
-
 static CRef<CBioseq> sCreateSkeletonBioseq(void)
 {
     auto pBioseq = Ref(new CBioseq());
@@ -209,19 +161,6 @@ static CRef<CBioseq> sCreateSkeletonBioseq(void)
     return pBioseq;
 }
 
-
-static CRef<CSeq_entry> sCreateSkeletonEntry(void)
-{
-    auto pSeqEntry = Ref(new CSeq_entry());
-    pSeqEntry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
-
-    auto pSubEntry = Ref(new CSeq_entry());
-    auto pBioseq = sCreateSkeletonBioseq();
-    pSubEntry->SetSeq(*pBioseq);
-    pSeqEntry->SetSet().SetSeq_set().push_back(pSubEntry);
-
-    return pSeqEntry;
-}
 
 struct SModInfo {
     string name;
