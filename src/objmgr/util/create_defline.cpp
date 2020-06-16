@@ -3412,43 +3412,45 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 }
             }
         }
-        const CBioSource_Base::TPcr_primers & primers = bios->GetPcr_primers();
-        if( primers.CanGet() ) {
-            ITERATE( CBioSource_Base::TPcr_primers::Tdata, it, primers.Get() ) {
+        if ( bios && bios->IsSetPcr_primers() ) {
+            const CBioSource_Base::TPcr_primers & primers = bios->GetPcr_primers();
+            if ( primers.CanGet() ) {
+                ITERATE( CBioSource_Base::TPcr_primers::Tdata, it, primers.Get() ) {
 
-                bool has_fwd_seq = false;
-                bool has_rev_seq = false;
+                    bool has_fwd_seq = false;
+                    bool has_rev_seq = false;
 
-                if( (*it)->IsSetForward() ) {
-                    const CPCRReaction_Base::TForward &forward = (*it)->GetForward();
-                    if( forward.CanGet() ) {
-                        ITERATE( CPCRReaction_Base::TForward::Tdata, it2, forward.Get() ) {
-                            const string &fwd_name = ( (*it2)->CanGetName() ? (*it2)->GetName().Get() : kEmptyStr );
-                            if( ! fwd_name.empty() ) {
-                                joiner.Add("fwd-primer-name", fwd_name);
-                            }
-                            const string &fwd_seq = ( (*it2)->CanGetSeq() ? (*it2)->GetSeq().Get() : kEmptyStr );
-                            // NStr::ToLower( fwd_seq );
-                            if( ! fwd_seq.empty() ) {
-                                joiner.Add("fwd-primer-seq", fwd_seq);
-                                has_fwd_seq = true;
+                    if( (*it)->IsSetForward() ) {
+                        const CPCRReaction_Base::TForward &forward = (*it)->GetForward();
+                        if( forward.CanGet() ) {
+                            ITERATE( CPCRReaction_Base::TForward::Tdata, it2, forward.Get() ) {
+                                const string &fwd_name = ( (*it2)->CanGetName() ? (*it2)->GetName().Get() : kEmptyStr );
+                                if( ! fwd_name.empty() ) {
+                                    joiner.Add("fwd-primer-name", fwd_name);
+                                }
+                                const string &fwd_seq = ( (*it2)->CanGetSeq() ? (*it2)->GetSeq().Get() : kEmptyStr );
+                                // NStr::ToLower( fwd_seq );
+                                if( ! fwd_seq.empty() ) {
+                                    joiner.Add("fwd-primer-seq", fwd_seq);
+                                    has_fwd_seq = true;
+                                }
                             }
                         }
                     }
-                }
-                if( (*it)->IsSetReverse() ) {
-                    const CPCRReaction_Base::TReverse &reverse = (*it)->GetReverse();
-                    if( reverse.CanGet() ) {
-                        ITERATE( CPCRReaction_Base::TReverse::Tdata, it2, reverse.Get() ) {
-                            const string &rev_name = ((*it2)->CanGetName() ? (*it2)->GetName().Get() : kEmptyStr );
-                            if( ! rev_name.empty() ) {
-                                joiner.Add("rev-primer-name", rev_name);
-                            }
-                            const string &rev_seq = ( (*it2)->CanGetSeq() ? (*it2)->GetSeq().Get() : kEmptyStr );
-                            // NStr::ToLower( rev_seq ); // do we need this? 
-                            if( ! rev_seq.empty() ) {
-                                joiner.Add("rev-primer-seq", rev_seq);
-                                has_rev_seq = true;
+                    if( (*it)->IsSetReverse() ) {
+                        const CPCRReaction_Base::TReverse &reverse = (*it)->GetReverse();
+                        if( reverse.CanGet() ) {
+                            ITERATE( CPCRReaction_Base::TReverse::Tdata, it2, reverse.Get() ) {
+                                const string &rev_name = ((*it2)->CanGetName() ? (*it2)->GetName().Get() : kEmptyStr );
+                                if( ! rev_name.empty() ) {
+                                    joiner.Add("rev-primer-name", rev_name);
+                                }
+                                const string &rev_seq = ( (*it2)->CanGetSeq() ? (*it2)->GetSeq().Get() : kEmptyStr );
+                                // NStr::ToLower( rev_seq ); // do we need this? 
+                                if( ! rev_seq.empty() ) {
+                                    joiner.Add("rev-primer-seq", rev_seq);
+                                    has_rev_seq = true;
+                                }
                             }
                         }
                     }
