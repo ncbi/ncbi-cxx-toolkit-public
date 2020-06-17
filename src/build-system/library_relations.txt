@@ -342,8 +342,8 @@ eclib needs $(CONNEXT)
 eclib needs xmlwrapp
 eclib needs xregexp
 eclib needs xutil
+edirect needs eueid
 edirect needs ncqhst
-edirect needs txclient
 edirect needs txserv
 egenedb needs $(COMPRESS_LIBS)
 egenedb needs $(CONNEXT)
