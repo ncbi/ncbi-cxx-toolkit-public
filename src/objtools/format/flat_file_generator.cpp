@@ -716,16 +716,16 @@ void CFlatFileGenerator::Generate
                 if ( cfg.OnlyNearFeatures() ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
-                if ( cfg.HideSNPFeatures() || !cfg.ShowSNPFeatures() ) {
+                if ( cfg.HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fHideSNPFeats;
                 }
-                if ( cfg.HideCDDFeatures() || !cfg.ShowCDDFeatures() ) {
+                if ( cfg.HideCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fHideCDDFeats;
                 }
-                if ( cfg.ShowSNPFeatures() && !cfg.HideSNPFeatures() ) {
+                if ( !cfg.HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fShowSNPFeats;
                 }
-                if ( cfg.ShowCDDFeatures() && !cfg.HideCDDFeatures() ) {
+                if ( !cfg.HideCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fShowCDDFeats;
                 }
                 if ( m_Ctx->GetConfig().IsPolicyInternal() ) {
