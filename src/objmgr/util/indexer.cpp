@@ -1934,27 +1934,6 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
                         continue;
                     }
                 }
-                bool skip = false;
-                CSeqFeatData::ESubtype subtyp = data.GetSubtype();
-                if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-                    if (subtyp == CSeqFeatData::eSubtype_variation) {
-                        skip = true;
-                    }
-                }
-                if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
-                    if (subtyp == CSeqFeatData::eSubtype_region) {
-                        if (mf.IsSetDbxref()) {
-                            for (auto& dbx : mf.GetDbxref()) {
-                                if (dbx->GetType() == CDbtag::eDbtagType_CDD) {
-                                    skip = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (skip) {
-                    continue;
-                }
 
                 CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
