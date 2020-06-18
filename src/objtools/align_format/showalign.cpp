@@ -1874,7 +1874,7 @@ void CDisplaySeqalign::x_InitAlignParams(CSeq_align_set &actual_aln_list)
         string name = CGBDataLoader::GetLoaderNameFromArgs();
         m_featScope->AddDataLoader(name);
     }
-    m_CanRetrieveSeq = CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope) == CAlignFormatUtil::eDbTypeNotSet ? false : true;
+    m_CanRetrieveSeq = CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope) == CAlignFormatUtil::eDbTypeNotSet ? false : true;    
     if(m_AlignOption & eHtml || m_AlignOption & eDynamicFeature){
         //set config file
         m_ConfigFile = new CNcbiIfstream(".ncbirc");
@@ -3748,8 +3748,6 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnTitle",CHTMLHelper::HTMLEncode(alnDispParams->title));
 	return alnDefLine;
 }
-string alnTitlesLinkTmpl;    ///< Template for displaying link for more defline titles
-        string alnTitlesTmpl;    ///< Template for displaying multiple defline titles
 
 string
 CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info)
@@ -3864,13 +3862,19 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             deflines = firstDefline;
         }
         else {
-            string alnTitles = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesTmpl,"seqTitles",deflines);
+            string alnTitles = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesTmpl,"seqTitles",deflines);                
             string alnTitleslnk = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesLinkTmpl,"titleNum",NStr::IntToString(m_NumBlastDefLines - 1));
+            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"allTitleNum",NStr::IntToString(m_NumBlastDefLines));            
+            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"acc",m_CurrAlnAccession);            
+            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"rid",m_Rid);            
+            
+            
             deflines = firstDefline + alnTitleslnk + alnTitles;
         }
     }
     return deflines;
 }
+
 
 
 string
