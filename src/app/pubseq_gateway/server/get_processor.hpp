@@ -53,6 +53,7 @@ public:
     virtual void Process(void);
     virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);
+    virtual string GetName(void) const;
     virtual void ProcessEvent(void);
 
 public:

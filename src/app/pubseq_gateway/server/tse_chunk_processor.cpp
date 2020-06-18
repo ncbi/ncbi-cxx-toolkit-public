@@ -629,6 +629,12 @@ IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
 }
 
 
+string CPSGS_TSEChunkProcessor::GetName(void) const
+{
+    return "LMBD cache/Cassandra get TSE chunk processor";
+}
+
+
 void CPSGS_TSEChunkProcessor::ProcessEvent(void)
 {
     x_Peek(true);

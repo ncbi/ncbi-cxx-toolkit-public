@@ -116,6 +116,11 @@ public:
     ///  the current processor status
     virtual EPSGS_Status GetStatus(void) = 0;
 
+    /// Tells the processor name (used in logging and tracing)
+    /// @return
+    ///  the processor name
+    virtual string GetName(void) const = 0;
+
     /// Called when an event happened which may require to have
     /// some processing. By default nothing should be done.
     /// This method can be called as well on a timer event.

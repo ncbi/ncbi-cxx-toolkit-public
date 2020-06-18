@@ -54,7 +54,8 @@ enum EPSGS_PubseqGatewayErrorCode {
                                          // in the bioseq_info record
     ePSGS_BioseqInfoMultipleRecords,
     ePSGS_ServerLogicError,
-    ePSGS_BioseqInfoAccessionAdjustmentError
+    ePSGS_BioseqInfoAccessionAdjustmentError,
+    ePSGS_NoProcessor
 };
 
 

@@ -35,6 +35,7 @@
 #include <corelib/request_ctx.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
+#include <connect/services/json_over_uttp.hpp>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -151,6 +152,8 @@ public:
     void SetRequestContext(void);
     TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
     bool NeedTrace(void);
+    virtual string GetName(void) const;
+    virtual CJsonNode Serialize(void) const;
 
     CPSGS_Request(const CPSGS_Request &) = default;
     CPSGS_Request(CPSGS_Request &&) = default;
@@ -211,6 +214,8 @@ struct SPSGS_RequestBase
     virtual ~SPSGS_RequestBase() {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const = 0;
+    virtual string GetName(void) const = 0;
+    virtual CJsonNode Serialize(void) const = 0;
 
     virtual EPSGS_Trace GetTrace(void) const
     {
@@ -307,6 +312,13 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
     {
         return CPSGS_Request::ePSGS_ResolveRequest;
     }
+
+    virtual string GetName(void) const
+    {
+        return "ID/resolve";
+    }
+
+    virtual CJsonNode Serialize(void) const;
 
     SPSGS_ResolveRequest(const SPSGS_ResolveRequest &) = default;
     SPSGS_ResolveRequest(SPSGS_ResolveRequest &&) = default;
@@ -408,6 +420,13 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
         return CPSGS_Request::ePSGS_BlobBySeqIdRequest;
     }
 
+    virtual string GetName(void) const
+    {
+        return "ID/get";
+    }
+
+    virtual CJsonNode Serialize(void) const;
+
     // Check if the resolved seq_id (to sat/sat_key) is in the user provided
     // exclude list
     bool IsExcludedBlob(void) const
@@ -453,6 +472,13 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
         return CPSGS_Request::ePSGS_BlobBySatSatKeyRequest;
     }
 
+    virtual string GetName(void) const
+    {
+        return "ID/getblob";
+    }
+
+    virtual CJsonNode Serialize(void) const;
+
     SPSGS_BlobBySatSatKeyRequest(const SPSGS_BlobBySatSatKeyRequest &) = default;
     SPSGS_BlobBySatSatKeyRequest(SPSGS_BlobBySatSatKeyRequest &&) = default;
     SPSGS_BlobBySatSatKeyRequest &  operator=(const SPSGS_BlobBySatSatKeyRequest &) = default;
@@ -489,6 +515,13 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
     {
         return CPSGS_Request::ePSGS_AnnotationRequest;
     }
+
+    virtual string GetName(void) const
+    {
+        return "ID/get_na";
+    }
+
+    virtual CJsonNode Serialize(void) const;
 
     SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = default;
     SPSGS_AnnotRequest(SPSGS_AnnotRequest &&) = default;
@@ -527,6 +560,13 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
     {
         return CPSGS_Request::ePSGS_TSEChunkRequest;
     }
+
+    virtual string GetName(void) const
+    {
+        return "ID/get_tse_chunk";
+    }
+
+    virtual CJsonNode Serialize(void) const;
 
     SPSGS_TSEChunkRequest(const SPSGS_TSEChunkRequest &) = default;
     SPSGS_TSEChunkRequest(SPSGS_TSEChunkRequest &&) = default;

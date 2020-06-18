@@ -49,6 +49,7 @@
 #include "exclude_blob_cache.hpp"
 #include "alerts.hpp"
 #include "timing.hpp"
+#include "psgs_dispatcher.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -217,6 +218,13 @@ public:
         return m_MaxRetries;
     }
 
+    list<unique_ptr<IPSGS_Processor>>
+        DispatchRequest(shared_ptr<CPSGS_Request> request,
+                        shared_ptr<CPSGS_Reply> reply) const
+    {
+        return m_RequestDispatcher.DispatchRequest(request, reply);
+    }
+
 private:
     struct SRequestParameter
     {
@@ -298,6 +306,7 @@ private:
                   HST::CHttpReply<CPendingOperation> &  resp);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
+    void x_RegisterProcessors(void);
 
 private:
     string                              m_Si2csiDbFile;
@@ -362,6 +371,9 @@ private:
 
     // Configured counter/statistics ID to name/description
     map<string, tuple<string, string>>  m_IdToNameAndDescription;
+
+    // Requests dispatcher
+    CPSGS_Dispatcher                    m_RequestDispatcher;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

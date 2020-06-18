@@ -79,6 +79,7 @@ public:
 private:
     void x_PrintRequestStop(void);
     CRequestStatus::ECode x_GetRequestStopStatus(void) const;
+    void x_FinalizeReply(void);
 
 private:
     // Incoming request
@@ -87,7 +88,10 @@ private:
     shared_ptr<CPSGS_Reply>                 m_Reply;
 
     bool                                    m_Cancelled;
-    unique_ptr<IPSGS_Processor>             m_Processor;
+
+    list<unique_ptr<IPSGS_Processor>>       m_Processors;
+    list<unique_ptr<IPSGS_Processor>>::iterator
+                                            m_CurrentProcessor;
 
     // Each processor may finish with its own status
     vector<IPSGS_Processor::EPSGS_Status>   m_FinishStatuses;

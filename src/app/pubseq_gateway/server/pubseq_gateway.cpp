@@ -52,6 +52,11 @@
 #include "shutdown_data.hpp"
 #include "cass_monitor.hpp"
 #include "introspection.hpp"
+#include "resolve_processor.hpp"
+#include "annot_processor.hpp"
+#include "get_processor.hpp"
+#include "getblob_processor.hpp"
+#include "tse_chunk_processor.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -129,6 +134,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
+
+    x_RegisterProcessors();
 }
 
 
@@ -1272,6 +1279,12 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
         HST::CHttpReply<CPendingOperation> &  resp,  const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity)
 {
+    if (resp.IsFinished()) {
+        // This is the case when a reply is already formed and sent to
+        // the client.
+        return;
+    }
+
     vector<h2o_iovec_t>     chunks;
     string                  header = GetReplyMessageHeader(message.size(),
                                                            status, code,
@@ -1379,6 +1392,22 @@ void CPubseqGatewayApp::x_ReadIdToNameAndDescriptionConfiguration(
                         " information. Expected <name>:::<description");
         }
     }
+}
+
+
+void CPubseqGatewayApp::x_RegisterProcessors(void)
+{
+    // Note: the order of adding defines the order of running
+    m_RequestDispatcher.AddProcessor(
+            unique_ptr<IPSGS_Processor>(new CPSGS_ResolveProcessor()));
+    m_RequestDispatcher.AddProcessor(
+            unique_ptr<IPSGS_Processor>(new CPSGS_GetProcessor()));
+    m_RequestDispatcher.AddProcessor(
+            unique_ptr<IPSGS_Processor>(new CPSGS_GetBlobProcessor()));
+    m_RequestDispatcher.AddProcessor(
+            unique_ptr<IPSGS_Processor>(new CPSGS_AnnotProcessor()));
+    m_RequestDispatcher.AddProcessor(
+            unique_ptr<IPSGS_Processor>(new CPSGS_TSEChunkProcessor()));
 }
 
 

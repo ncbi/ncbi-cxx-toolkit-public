@@ -255,6 +255,12 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 }
 
 
+string CPSGS_GetBlobProcessor::GetName(void) const
+{
+    return "LMDB cache/Cassandra get blob processor";
+}
+
+
 void CPSGS_GetBlobProcessor::ProcessEvent(void)
 {
     x_Peek(true);

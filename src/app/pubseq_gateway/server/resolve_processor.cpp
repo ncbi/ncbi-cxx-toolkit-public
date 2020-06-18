@@ -177,6 +177,12 @@ IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
 }
 
 
+string CPSGS_ResolveProcessor::GetName(void) const
+{
+    return "LMDB cache/Cassandra resolve processor";
+}
+
+
 void CPSGS_ResolveProcessor::ProcessEvent(void)
 {
     x_Peek(true);

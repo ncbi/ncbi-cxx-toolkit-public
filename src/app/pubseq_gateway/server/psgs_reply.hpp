@@ -72,6 +72,11 @@ public:
         return m_Reply->IsFinished();
     }
 
+    bool IsOutputReady(void) const
+    {
+        return m_Reply->IsOutputReady();
+    }
+
     size_t  GetItemId(void)
     {
         return ++m_NextItemId;

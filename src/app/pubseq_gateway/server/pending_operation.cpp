@@ -51,43 +51,12 @@ CPendingOperation::CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
     m_Reply(new CPSGS_Reply(initial_reply_chunks)),
     m_Cancelled(false)
 {
-    switch (m_UserRequest->GetRequestType()) {
-        case CPSGS_Request::ePSGS_ResolveRequest:
-            PSG_TRACE("CPendingOperation::CPendingOperation: resolution "
-                      "request by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            PSG_TRACE("CPendingOperation::CPendingOperation: blob "
-                      "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            PSG_TRACE("CPendingOperation::CPendingOperation: blob "
-                      "requested by sat/sat_key: " <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId.ToString() <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_AnnotationRequest:
-            PSG_TRACE("CPendingOperation::CPendingOperation: annotation "
-                      "request by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_TSEChunkRequest:
-            PSG_TRACE("CPendingOperation::CPendingOperation: TSE chunk "
-                      "request by sat/sat_key: " <<
-                      m_UserRequest->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId.ToString() <<
-                      ", this: " << this);
-            break;
-        default:
-            ;
-    }
+    CRequestContextResetter     context_resetter;
+    m_UserRequest->SetRequestContext();
+
+    PSG_TRACE("CPendingOperation::CPendingOperation() request: " <<
+              m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
+              ", this: " << this);
 }
 
 
@@ -96,43 +65,9 @@ CPendingOperation::~CPendingOperation()
     CRequestContextResetter     context_resetter;
     m_UserRequest->SetRequestContext();
 
-    switch (m_UserRequest->GetRequestType()) {
-        case CPSGS_Request::ePSGS_ResolveRequest:
-            PSG_TRACE("CPendingOperation::~CPendingOperation: resolve "
-                      "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
-                      "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
-                      "requested by sat/sat_key: " <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId.ToString() <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_AnnotationRequest:
-            PSG_TRACE("CPendingOperation::~CPendingOperation: annotation "
-                      "request by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_TSEChunkRequest:
-            PSG_TRACE("CPendingOperation::~CPendingOperation: TSE chunk "
-                      "request by sat/sat_key: " <<
-                      m_UserRequest->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId.ToString() <<
-                      ", this: " << this);
-            break;
-        default:
-            ;
-    }
+    PSG_TRACE("CPendingOperation::~CPendingOperation() request: " <<
+              m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
+              ", this: " << this);
 
     // Just in case if a request ended without a normal request stop,
     // finish it here as the last resort.
@@ -145,43 +80,9 @@ void CPendingOperation::Clear()
     CRequestContextResetter     context_resetter;
     m_UserRequest->SetRequestContext();
 
-    switch (m_UserRequest->GetRequestType()) {
-        case CPSGS_Request::ePSGS_ResolveRequest:
-            PSG_TRACE("CPendingOperation::Clear(): resolve "
-                      "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_ResolveRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            PSG_TRACE("CPendingOperation::Clear(): blob "
-                      "requested by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            PSG_TRACE("CPendingOperation::Clear(): blob "
-                      "requested by sat/sat_key: " <<
-                      m_UserRequest->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId.ToString() <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_AnnotationRequest:
-            PSG_TRACE("CPendingOperation::Clear(): annotation "
-                      "request by seq_id/seq_id_type: " <<
-                      m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqId << "." <<
-                      m_UserRequest->GetRequest<SPSGS_AnnotRequest>().m_SeqIdType <<
-                      ", this: " << this);
-            break;
-        case CPSGS_Request::ePSGS_TSEChunkRequest:
-            PSG_TRACE("CPendingOperation::Clear(): TSE chunk "
-                      "request by sat/sat_key: " <<
-                      m_UserRequest->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId.ToString() <<
-                      ", this: " << this);
-            break;
-        default:
-            ;
-    }
+    PSG_TRACE("CPendingOperation::Clear() request: " <<
+              m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
+              ", this: " << this);
 
     m_Reply->Clear();
     m_Cancelled = false;
@@ -190,34 +91,37 @@ void CPendingOperation::Clear()
 
 void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 {
+    auto *          app = CPubseqGatewayApp::GetInstance();
+
     m_Reply->SetReply(&resp);
-    auto    request_type = m_UserRequest->GetRequestType();
-    switch (request_type) {
-        case CPSGS_Request::ePSGS_ResolveRequest:
-            m_Processor.reset(new CPSGS_ResolveProcessor(m_UserRequest, m_Reply));
-            m_Processor->Process();
-            break;
-        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            m_Processor.reset(new CPSGS_GetProcessor(m_UserRequest, m_Reply));
-            m_Processor->Process();
-            break;
-        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            m_Processor.reset(new CPSGS_GetBlobProcessor(m_UserRequest, m_Reply));
-            m_Processor->Process();
-            break;
-        case CPSGS_Request::ePSGS_AnnotationRequest:
-            m_Processor.reset(new CPSGS_AnnotProcessor(m_UserRequest, m_Reply));
-            m_Processor->Process();
-            break;
-        case CPSGS_Request::ePSGS_TSEChunkRequest:
-            m_Processor.reset(new CPSGS_TSEChunkProcessor(m_UserRequest, m_Reply));
-            m_Processor->Process();
-            break;
-        default:
-            NCBI_THROW(CPubseqGatewayException, eLogic,
-                       "Unhandeled request type " +
-                       to_string(static_cast<int>(request_type)));
+
+    m_Processors = app->DispatchRequest(m_UserRequest, m_Reply);
+    if (m_Processors.empty()) {
+        string  msg = "CPendingOperation::Start(): no processors found "
+                      "to serve the request";
+        PSG_TRACE(msg);
+
+        m_FinishStatuses.push_back(IPSGS_Processor::ePSGS_NotFound);
+        m_Reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
+                                     ePSGS_NoProcessor, eDiag_Error);
+        m_Reply->PrepareReplyCompletion();
+        m_Reply->Flush(true);
+        x_PrintRequestStop();
+        return;
     }
+
+    m_CurrentProcessor = m_Processors.begin();
+    if (m_UserRequest->NeedTrace()) {
+        m_Reply->SendTrace(
+            "Start pending request: " +
+            m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) +
+            ". Number of processors: " + to_string(m_Processors.size()) +
+            ". Running processor: " + (*m_CurrentProcessor)->GetName(),
+            m_UserRequest->GetStartTimestamp());
+    }
+    PSG_TRACE("Running processor: " << (*m_CurrentProcessor)->GetName());
+
+    (*m_CurrentProcessor)->Process();
 }
 
 
@@ -231,20 +135,64 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
         return;
     }
 
-    auto    processor_status = m_Processor->GetStatus();
+    if (m_CurrentProcessor == m_Processors.end()) {
+        // No more processors
+        x_FinalizeReply();
+        return;
+    }
+
+
+    auto    processor_status = (*m_CurrentProcessor)->GetStatus();
     if (processor_status == IPSGS_Processor::ePSGS_InProgress) {
-        m_Processor->ProcessEvent();
-        processor_status = m_Processor->GetStatus();
+        // Note: the ProcessEvent() _may_ lead to the situation when a
+        // processor has completed its job. In this case the processor
+        // _may_ call SignalProcessorFinish() which leads to a recursive call
+        // of Peek() and thus can move the current processor iterator forward.
+        // To avoid it the current iterator is saved and checked that it is
+        // still the same processor in handling.
+        auto    current_processor = m_CurrentProcessor;
+        (*m_CurrentProcessor)->ProcessEvent();
+        if (current_processor != m_CurrentProcessor)
+            return;
+        processor_status = (*m_CurrentProcessor)->GetStatus();
     }
 
     if (processor_status != IPSGS_Processor::ePSGS_InProgress) {
         m_FinishStatuses.push_back(processor_status);
-        if (!resp.IsFinished() && resp.IsOutputReady() ) {
-            m_Reply->PrepareReplyCompletion();
-            m_Reply->Flush(true);
 
-            x_PrintRequestStop();
+        PSG_TRACE("Processor: " << (*m_CurrentProcessor)->GetName() <<
+                  " finished with status " << processor_status);
+        if (m_UserRequest->NeedTrace()) {
+            m_Reply->SendTrace(
+                "Processor: " + (*m_CurrentProcessor)->GetName() +
+                " finished with status " + to_string(processor_status),
+                m_UserRequest->GetStartTimestamp());
         }
+
+        ++m_CurrentProcessor;
+        if (m_CurrentProcessor == m_Processors.end()) {
+            x_FinalizeReply();
+        } else {
+            PSG_TRACE("Running next processor: " <<
+                      (*m_CurrentProcessor)->GetName());
+            if (m_UserRequest->NeedTrace()) {
+                m_Reply->SendTrace(
+                    "Running next processor: " + (*m_CurrentProcessor)->GetName(),
+                    m_UserRequest->GetStartTimestamp());
+            }
+            (*m_CurrentProcessor)->Process();
+        }
+    }
+}
+
+
+void CPendingOperation::x_FinalizeReply(void)
+{
+    if (!m_Reply->IsReplyFinished() && m_Reply->IsOutputReady()) {
+        m_Reply->PrepareReplyCompletion();
+        m_Reply->Flush(true);
+
+        x_PrintRequestStop();
     }
 }
 
