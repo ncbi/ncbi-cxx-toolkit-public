@@ -270,7 +270,11 @@ if [ -n "$CC" ]; then
   case "$ccname" in
     clang*)
       CC_NAME="Clang"
-      CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+      if test $host_os = "Darwin"; then
+        CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
+      else
+        CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+      fi
     ;;
     *)
       if test $host_os = "Darwin"; then
