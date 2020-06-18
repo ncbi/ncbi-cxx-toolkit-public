@@ -2159,6 +2159,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         string molID,chainID;
         NStr::SplitInTwo(firstAcc,"_",molID,chainID);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"molid",molID);
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",linkTitle);        
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kStructureDispl,"lnk",url_link);
