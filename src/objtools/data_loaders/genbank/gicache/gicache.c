@@ -281,7 +281,7 @@ ERROR:
 	GiDataIndex_Free(data_index);
 	data_index = NULL;
     data_index_notfound = TRUE;
-	LOG(SEV_ERROR, logmsg);
+	LOG(SEV_ERROR, "%s", logmsg);
 	return NULL;
 }
 
@@ -376,7 +376,7 @@ ERROR:
 		txn = NULL;
 	}
 	if (logmsg[0]) {
-		LOG(SEV_ERROR, logmsg);
+		LOG(SEV_ERROR, "%s", logmsg);
 	}
 	return 0;
 }
@@ -437,7 +437,7 @@ ERROR:
 		mdb_txn_abort(txn);
 		txn = NULL;
 	}
-	LOG(SEV_ERROR, logmsg);
+	LOG(SEV_ERROR, "%s", logmsg);
 	return -1;
 }
 
@@ -538,7 +538,7 @@ ERROR:
 		data_index->m_txn = NULL;
 	}
 	if (logmsg[0]) {
-		LOG(SEV_ERROR, logmsg);
+		LOG(SEV_ERROR, "%s", logmsg);
 	}
 	return 0;
 }
@@ -747,7 +747,7 @@ ERROR:
 		mdb_txn_abort(txn);
 		txn = NULL;
 	}
-	LOG(SEV_ERROR, logmsg);
+	LOG(SEV_ERROR, "%s", logmsg);
 	if (needopen) {
 		GICache_ReadEnd();
 	}
@@ -796,7 +796,7 @@ int GICache_DropDb() {
 	
     return 0;
 ERROR:
-	LOG(SEV_ERROR, logmsg);
+	LOG(SEV_ERROR, "%s", logmsg);
 	if (gi_cache && gi_cache->m_txn && transtarted) {
 		mdb_txn_abort(gi_cache->m_txn);
 		gi_cache->m_txn = NULL;
@@ -863,7 +863,7 @@ int GICache_SetMeta(const char* Name, const char* Value) {
     return 0;
 ERROR:
 	if (logmsg[0]) {
-		LOG(SEV_ERROR, logmsg);
+		LOG(SEV_ERROR, "%s", logmsg);
 	}
 	if (gi_cache && gi_cache->m_txn && transtarted) {
 		mdb_txn_abort(gi_cache->m_txn);
@@ -893,7 +893,7 @@ int GICache_UpdateMeta(int is_incremental, const char* DB, time_t starttime) {
     return 0;
 ERROR:
 	if (logmsg[0]) {
-		LOG(SEV_ERROR, logmsg);
+		LOG(SEV_ERROR, "%s", logmsg);
 	}
 	return 1;
 }
@@ -939,7 +939,7 @@ int	GICache_GetMeta(const char* Name, char* Value, size_t ValueSz) {
 
 ERROR:
 	if (logmsg[0]) {
-		LOG(SEV_ERROR, logmsg);
+		LOG(SEV_ERROR, "%s", logmsg);
 	}
 	if (gi_cache && txn) {
 		mdb_txn_abort(txn);
@@ -1041,7 +1041,7 @@ ERROR:
 		txn = NULL;
 	}
 	if (logmsg[0]) {
-		LOG(SEV_ERROR, logmsg);
+		LOG(SEV_ERROR, "%s", logmsg);
 	}
 	return -1;
 	
