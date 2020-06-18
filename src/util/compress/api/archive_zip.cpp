@@ -42,7 +42,13 @@ BEGIN_NCBI_SCOPE
 
 
 // Directly include miniz library
+
+#define MINIZ_NO_ZLIB_APIS      // disable zlib emulation, we have it separately anyway
+
 #include "miniz/miniz.c"
+#include "miniz/miniz_zip.c"
+#include "miniz/miniz_tdef.c"
+#include "miniz/miniz_tinfl.c"
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -220,10 +226,6 @@ size_t CArchiveZip::GetNumEntries(void)
     _ASSERT(m_Mode == eRead);
     ZIP_CHECK;
     mz_uint n = mz_zip_reader_get_num_files(ZIP_HANDLE);
-    // TODO: remove with zip64 support added to miniz
-    if (n == 65535) {
-        ZIP_THROW(eUnsupported, "Too many files in the archive");
-    }
     return n;
 }
 
@@ -451,14 +453,6 @@ void CArchiveZip::TestEntry(const CArchiveEntryInfo& info)
 void CArchiveZip::AddEntryFromFileSystem(const CArchiveEntryInfo& info, 
                                          const string& src_path, ELevel level)
 {
-    // TODO: remove with zip64 support added to miniz
-    {{
-        mz_uint n = mz_zip_reader_get_num_files(ZIP_HANDLE);
-        if (n >= 65534) {
-            ZIP_THROW(eAppend, "Too many files in the archive");
-        }
-    }}
-
     const string& comment = info.m_Comment;
     mz_uint16 comment_size = (mz_uint16)comment.size();
     mz_bool status;
@@ -483,14 +477,6 @@ void CArchiveZip::AddEntryFromFileSystem(const CArchiveEntryInfo& info,
 void CArchiveZip::AddEntryFromMemory(const CArchiveEntryInfo& info,
                                      void* buf, size_t size, ELevel level)
 {
-    // TODO: remove with zip64 support added to miniz
-    {{
-        mz_uint n = mz_zip_reader_get_num_files(ZIP_HANDLE);
-        if (n >= 65534) {
-            ZIP_THROW(eAppend, "Too many files in the archive");
-        }
-    }}
-
     const string& comment = info.m_Comment;
     mz_uint16 comment_size = (mz_uint16)comment.size();
     mz_bool status;

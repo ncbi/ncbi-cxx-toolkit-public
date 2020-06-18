@@ -31,11 +31,10 @@
  * File Description:
  *   Compression archive API - ZIP file support.
  *
- * Implementation based on 'miniz' v1.16 r1:
- *   https://code.google.com/p/miniz/
- *
- * It support zip32 implementation only, no zip64 support yet. The number
- * of files in the archive limited to 65535.
+ * Implementation based on this fork of 'miniz' library:
+ *   https://github.com/uroni/miniz
+ * It have support for ZIP64 format, can handle archive files > 4GB in size, 
+ * and the number of files in the archive is not limited to 65535.
  *
  */
 
