@@ -2649,11 +2649,23 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 {
                     if (featType == CSeqFeatData::e_Rna &&
                         sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA) {
-                        try {
+                        { 
                             CBioseq::TId ids;
-                            CSeq_id::ParseIDs(ids, val, 
-                                    CSeq_id::fParse_ValidLocal 
-                                    | CSeq_id::fParse_PartialOK);
+                            try {
+                                CSeq_id::ParseIDs(ids, val, 
+                                            CSeq_id::fParse_AnyLocal 
+                                        |   CSeq_id::fParse_PartialOK);
+
+                            }
+                            catch (CSeqIdException& e) 
+                            {
+                                x_ProcessMsg(
+                                    ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                                    feat_name, qual, val,
+                                    "Invalid transcript_id  : " + val);
+                                return true;
+                            }
+
                             for (const auto& id : ids) {
                                 auto id_string = id->GetSeqIdString(true);
                                 auto res = m_ProcessedTranscriptIds.insert(id_string);
@@ -2662,12 +2674,9 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                                         ILineError::eProblem_DuplicateIDs, eDiag_Error, 
                                         feat_name, qual, val, 
                                         "Transcript ID " + id_string + " appears on multiple mRNA features"
-                                        );
+                                    );
                                 }
                             }
-                        }
-                        catch (CException&) {
-                            return false;
                         }
                     }
                     x_AddGBQualToFeature(sfp, qual, val);
@@ -2681,41 +2690,48 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                     (featType == CSeqFeatData::e_Prot &&
                      sfdata.GetProt().IsSetProcessed() &&
                      sfdata.GetProt().GetProcessed() == CProt_ref::eProcessed_mature))
-                try {
+                {
                     CBioseq::TId ids;
-                    CSeq_id::ParseIDs(ids, val,                                
-                            CSeq_id::fParse_ValidLocal |
-                            CSeq_id::fParse_PartialOK);
-                    if (!ids.empty()) { 
-                        if (featType == CSeqFeatData::e_Cdregion) {
-                            for (const auto& id : ids) {
-                                auto id_string = id->GetSeqIdString(true);
-                                auto res = m_ProcessedProteinIds.insert(id_string);
-                                if (res.second == false) { // Insertion failed because Seq-id already encountered
-                                    x_ProcessMsg(
-                                        ILineError::eProblem_DuplicateIDs, eDiag_Error, 
-                                        feat_name, qual, val, 
-                                        "Protein ID " + id_string + " appears on multiple CDS features"
-                                        );
-                                }
+                    try {
+                        CSeq_id::ParseIDs(ids, val,                                
+                                CSeq_id::fParse_ValidLocal |
+                                CSeq_id::fParse_PartialOK);
+                    }
+                    catch (CSeqIdException& e) 
+                    {
+                        x_ProcessMsg(
+                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                                feat_name, qual, val,
+                                "Invalid protein_id  : " + val);
+                        return true;
+                    }
+                    
+                    if (featType == CSeqFeatData::e_Cdregion) {
+                        for (const auto& id : ids) {
+                            auto id_string = id->GetSeqIdString(true);
+                            auto res = m_ProcessedProteinIds.insert(id_string);
+                            if (res.second == false) { // Insertion failed because Seq-id already encountered
+                                x_ProcessMsg(
+                                    ILineError::eProblem_DuplicateIDs, eDiag_Error, 
+                                    feat_name, qual, val, 
+                                    "Protein ID " + id_string + " appears on multiple CDS features"
+                                );
                             }
-                        }
-                        
-                        if (featType != CSeqFeatData::e_Rna) { // mRNA only has a protein_id qualifier
-                            auto pBestId = GetBestId(ids);
-                            if (pBestId) {
-                                sfp->SetProduct().SetWhole(*pBestId);
-                            }
-                        }
-
-                        if (featType != CSeqFeatData::e_Prot) { // Mat-peptide has an instantiated product, but no qualifier
-                            x_AddGBQualToFeature(sfp, qual, val);
                         }
                     }
-                    return true;
-                } catch( CSeqIdException & ) {
-                    return false;
+                        
+                    if (featType != CSeqFeatData::e_Rna) { // mRNA only has a protein_id qualifier
+                        auto pBestId = GetBestId(ids);
+                        if (pBestId) {
+                            sfp->SetProduct().SetWhole(*pBestId);
+                        }
+                    }
                 }
+
+                if (featType != CSeqFeatData::e_Prot) { // Mat-peptide has an instantiated product, but no qualifier
+                    x_AddGBQualToFeature(sfp, qual, val);
+                }
+                return true;
             case eQual_regulatory_class:
                 // This should've been handled up in x_AddQualifierToImp
                 // so it's always a bad value to be here
