@@ -14,10 +14,9 @@
 
 if (WIN32)
     set(NCBI_DATATOOL_BASE "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc")
-elseif(XCODE)
-    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/XCode")
+elseif(APPLE)
+    set(NCBI_DATATOOL_BASE "/Volumes/win-coremake/App/Ncbi/cppcore/datatool/XCode")
 else()
-#FIXME: Not just Linux!
     set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64")
 endif()
 
