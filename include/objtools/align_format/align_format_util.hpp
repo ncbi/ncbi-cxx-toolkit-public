@@ -102,7 +102,9 @@ static const string kUnigeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">cluste
 
 ///structure
 // .ncbirc alias: STRUCTURE_URLhttps://www.ncbi.nlm.nih.gov/Structure/pdb/1AJ9 
-static const char kStructureUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/Structure/pdb/<@molid@>?log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kStructureUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?from=blast&blast_rep_id=<@label@>&query_id=<@queryID@>&command=view+annotations;set+annotation+cdd;set+annotation+site;set+view+detailed+view;select+chain+<@label@>;show+selection&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+
+
 //substitues <@lnk_displ@>
 static const char kStructureImg[] = "<img border=0 height=16 width=16 src=\"<@protocol@>//www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
