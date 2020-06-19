@@ -2966,7 +2966,7 @@ static bool s_IsCDD(const CSeq_feat_Handle& feat)
 {
     if (feat.GetAnnot().IsNamed()) {
         const string& name = feat.GetAnnot().GetName();
-        return (name == "Annot:CDD" || name == "CDDSearch");
+        return (name == "Annot:CDD" || name == "CDDSearch" || name == "CDD");
     }
     return false;
 }
