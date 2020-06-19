@@ -106,13 +106,7 @@ public:
         ILineReader& lr,
         ILineErrorListener* pErrors=nullptr);
 
-    bool IsInGenbankMode() const;
-
 protected:
-    virtual void xGetData(
-        ILineReader&,
-        TReaderData&);
-
     virtual void xProcessData(
         const TReaderData&,
         CSeq_annot&);
@@ -215,9 +209,6 @@ protected:
       
     virtual bool xParseAlignment(
         const string& strLine);
-
-    bool xNeedsNewSeqAnnot(
-        const string&);
 
     // Data:
     map<string, string> mCdsParentMap;

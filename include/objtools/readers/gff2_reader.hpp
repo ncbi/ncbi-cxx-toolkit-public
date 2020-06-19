@@ -117,6 +117,12 @@ public:
     //
     //  new stuff: 
     //
+    virtual void xGetData(
+        ILineReader&,
+        TReaderData&);
+
+    bool IsInGenbankMode() const;
+
     virtual bool xParseStructuredComment(
         const string&);
     
@@ -276,6 +282,9 @@ protected:
     void xSetAncestorXrefs(
         CSeq_feat&,
         CSeq_feat&);
+
+    bool xNeedsNewSeqAnnot(
+        const string&);
 
     //  data:
     //

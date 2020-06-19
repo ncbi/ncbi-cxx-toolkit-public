@@ -225,51 +225,6 @@ CGff3Reader::xProcessData(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::IsInGenbankMode() const
-//  ----------------------------------------------------------------------------
-{
-    return (m_iFlags & CGff3Reader::fGenbankMode);
-}
-
-//  ----------------------------------------------------------------------------
-void
-CGff3Reader::xGetData(
-    ILineReader& lr,
-    TReaderData& readerData)
-//  ----------------------------------------------------------------------------
-{
-    readerData.clear();
-    string line;
-    if (xGetLine(lr, line)) {
-        if (xNeedsNewSeqAnnot(line)) {
-            return;
-        }
-        if (xIsTrackLine(line)) {
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine(line);
-                xGetData(lr, readerData);
-                return;
-            }
-            m_PendingLine = line;
-            return;
-        }
-        if (xIsTrackTerminator(line)) {
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine("track");
-                xGetData(lr, readerData);
-            }
-            return;
-        }
-        if (!xIsCurrentDataType(line)) {
-            xUngetLine(lr);
-            return;
-        }
-    readerData.push_back(TReaderLine{m_uLineNumber, line});
-    }
-    ++m_uDataCount;
-}
-
-//  ----------------------------------------------------------------------------
 void CGff3Reader::xProcessAlignmentData(
     CSeq_annot& annot) 
 //  ----------------------------------------------------------------------------
@@ -1078,30 +1033,6 @@ void CGff3Reader::xPostProcessAnnot(
     }
     return CGff2Reader::xPostProcessAnnot(annot);
 }
-
-//  ---------------------------------------------------------------------------
-bool
-CGff3Reader::xNeedsNewSeqAnnot(
-    const string& line)
-//  ---------------------------------------------------------------------------
-{
-    if (IsInGenbankMode()) {
-        vector<string> columns;
-        NStr::Split(line, "\t ", columns, NStr::eMergeDelims);
-        string seqId = columns[0];
-        if (m_CurrentSeqId == seqId) {
-            return false;
-        }
-        m_CurrentSeqId = seqId;
-        if (mCurrentFeatureCount == 0) {
-            return false;
-        }
-        m_PendingLine = line;
-        return true;
-    }
-    return false;
-}
-
 
 END_objects_SCOPE
 END_NCBI_SCOPE

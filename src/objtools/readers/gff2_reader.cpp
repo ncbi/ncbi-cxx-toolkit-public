@@ -183,6 +183,44 @@ void CGff2Reader::xPostProcessAnnot(
 }
 
 //  ----------------------------------------------------------------------------
+void
+CGff2Reader::xGetData(
+    ILineReader& lr,
+    TReaderData& readerData)
+//  ----------------------------------------------------------------------------
+{
+    readerData.clear();
+    string line;
+    if (xGetLine(lr, line)) {
+        if (xNeedsNewSeqAnnot(line)) {
+            return;
+        }
+        if (xIsTrackLine(line)) {
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine(line);
+                xGetData(lr, readerData);
+                return;
+            }
+            m_PendingLine = line;
+            return;
+        }
+        if (xIsTrackTerminator(line)) {
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine("track");
+                xGetData(lr, readerData);
+            }
+            return;
+        }
+        if (!xIsCurrentDataType(line)) {
+            xUngetLine(lr);
+            return;
+        }
+    readerData.push_back(TReaderLine{m_uLineNumber, line});
+    }
+    ++m_uDataCount;
+}
+
+//  ----------------------------------------------------------------------------
 void CGff2Reader::xAssignAnnotId(
     CSeq_annot& annot,
     const string& givenId)
@@ -1346,6 +1384,38 @@ bool CGff2Reader::xIsIgnoredFeatureId(
 {
     return false;
 }
+
+//  ---------------------------------------------------------------------------
+bool
+CGff2Reader::xNeedsNewSeqAnnot(
+    const string& line)
+//  ---------------------------------------------------------------------------
+{
+    if (IsInGenbankMode()) {
+        vector<string> columns;
+        NStr::Split(line, "\t ", columns, NStr::eMergeDelims);
+        string seqId = columns[0];
+        if (m_CurrentSeqId == seqId) {
+            return false;
+        }
+        m_CurrentSeqId = seqId;
+        if (mCurrentFeatureCount == 0) {
+            return false;
+        }
+        m_PendingLine = line;
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::IsInGenbankMode() const
+//  ----------------------------------------------------------------------------
+{
+    return (m_iFlags & CGff2Reader::fGenbankMode);
+}
+
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE
