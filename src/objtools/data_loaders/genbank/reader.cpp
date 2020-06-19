@@ -77,6 +77,7 @@ CReader::CDebugPrinter::~CDebugPrinter()
 }
 
 
+#define DEFAULT_PREOPEN false
 #define DEFAULT_RETRY_COUNT 5
 #define DEFAULT_WAIT_TIME_ERRORS 2
 #define DEFAULT_WAIT_TIME 1
@@ -110,7 +111,7 @@ static CIncreasingTime::SAllParams s_WaitTimeParams = {
 CReader::CReader(void)
     : m_Dispatcher(0),
       m_MaxConnections(0),
-      m_PreopenConnection(true),
+      m_PreopenConnection(DEFAULT_PREOPEN),
       m_NextNewConnection(0),
       m_NumFreeConnections(0, 1000),
       m_MaximumRetryCount(3),
@@ -140,7 +141,7 @@ void CReader::InitParams(CConfig& conf,
         conf.GetBool(driver_name,
                      NCBI_GBLOADER_READER_PARAM_PREOPEN,
                      CConfig::eErr_NoThrow,
-                     true);
+                     DEFAULT_PREOPEN);
     SetPreopenConnection(open_initial_connection);
     m_WaitTimeErrors =
         conf.GetInt(driver_name,
