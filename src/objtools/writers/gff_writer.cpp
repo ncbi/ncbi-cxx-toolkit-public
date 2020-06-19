@@ -145,9 +145,8 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
-    bool isNucProtSet = ( (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&  
-        seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) );
-
+    bool isNucProtSet = (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&  
+        seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
     if (isNucProtSet) {
         for (CBioseq_CI bci(seh); bci; ++bci) {
             if (!x_WriteBioseqHandle(*bci)) {
@@ -156,6 +155,19 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
         }
         return true;
     }
+
+    bool isGenbankSet = (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&  
+        seh.GetSet().GetClass() == CBioseq_set::eClass_genbank);
+    if (isGenbankSet) {
+        for (CSeq_entry_CI seci(seh); seci; ++seci) {
+
+            if (!x_WriteSeqEntryHandle(*seci)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     if (seh.IsSeq()) {
         return x_WriteBioseqHandle(seh.GetSeq());
     }
@@ -208,6 +220,9 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
+    if (bsh.IsAa()) {
+        //return true;
+    }
     SAnnotSelector sel = SetAnnotSelector();
     const auto& display_range = GetRange();
     CFeat_CI feat_iter(bsh, display_range, sel);
