@@ -105,10 +105,13 @@ public:
                        const TMessage& request, const TMessage& reply);
     CGRPCRequestLogger(TGRPCServerContext* sctx, CTempString method_name,
                        const TMessage& request,
-                       grpc_impl::internal::ServerStreamingInterface&);
+                       const grpc_impl::internal::ServerStreamingInterface&);
     ~CGRPCRequestLogger();
 
 private:
+    void x_Init(TGRPCServerContext* sctx, CTempString method_name,
+                const TMessage& request);
+    
     CDiagContext&    m_DiagContext;
     CRequestContext& m_RequestContext;
 #ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
@@ -181,6 +184,25 @@ CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
       m_Reply(&reply),
 #endif
       m_ManagingRequest(false)
+{
+    x_Init(sctx, method_name, request);
+}
+
+inline
+CGRPCRequestLogger::CGRPCRequestLogger(
+    TGRPCServerContext* sctx, CTempString method_name, const TMessage& request,
+    const grpc_impl::internal::ServerStreamingInterface&)
+    : m_DiagContext(GetDiagContext()),
+      m_RequestContext(m_DiagContext.GetRequestContext()),
+      m_ManagingRequest(false)
+{
+    x_Init(sctx, method_name, request);
+}
+
+inline
+void CGRPCRequestLogger::x_Init(TGRPCServerContext* sctx,
+                                CTempString method_name,
+                                const TMessage& request)
 {
     if (m_DiagContext.GetAppState() < eDiagAppState_RequestBegin) {
         m_ManagingRequest = true;
