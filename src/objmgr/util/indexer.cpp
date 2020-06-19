@@ -1732,13 +1732,23 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         // includes barrier between RefSeq and INSD accession types
         sel.SetAdaptiveDepth(true);
 
+        // conditionally allows external annots, based on custom enable bits
+        // (may remove once transition to policy knob is complete)
+        // (fHideSNPFeats and fHideCDDFeats tests below will override)
+        if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
+            sel.IncludeNamedAnnotAccession("SNP");
+        }
+        if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
+            sel.IncludeNamedAnnotAccession("CDD");
+        }
+
     } else if (policy == CSeqEntryIndex::eExternal) {
 
         // same as eAdaptive
         sel.SetResolveAll();
         sel.SetAdaptiveDepth(true);
 
-        // except also allows external annots
+        // except also allows external annots without need for custom bits (fHideSNPFeats and fHideCDDFeats tests below will override)
         sel.IncludeNamedAnnotAccession("SNP");
         sel.IncludeNamedAnnotAccession("CDD");
 

@@ -718,23 +718,21 @@ void CFlatFileGenerator::Generate
                 }
                 if ( cfg.HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fHideSNPFeats;
+                } else if ( cfg.ShowSNPFeatures() ) {
+                    flags |= CSeqEntryIndex::fShowSNPFeats;
                 }
                 if ( cfg.HideCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fHideCDDFeats;
-                }
-                if ( !cfg.HideSNPFeatures() ) {
-                    flags |= CSeqEntryIndex::fShowSNPFeats;
-                }
-                if ( !cfg.HideCDDFeatures() ) {
+                } else if ( cfg.ShowCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fShowCDDFeats;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyInternal() ) {
+                if ( cfg.IsPolicyInternal() ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyExternal() ) {
+                if ( cfg.IsPolicyExternal() ) {
                     policy = CSeqEntryIndex::eExternal;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyExhaustive() ) {
+                if ( cfg.IsPolicyExhaustive() ) {
                     policy = CSeqEntryIndex::eExhaustive;
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
