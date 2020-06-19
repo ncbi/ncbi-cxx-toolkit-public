@@ -369,7 +369,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    const CVersionInfo vers (2,1,0);
+    const CVersionInfo vers (3,1,0);
     SetVersion (vers);
 }
 
