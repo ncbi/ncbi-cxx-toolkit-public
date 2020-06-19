@@ -2653,7 +2653,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                             CBioseq::TId ids;
                             try {
                                 CSeq_id::ParseIDs(ids, val, 
-                                            CSeq_id::fParse_AnyLocal 
+                                            CSeq_id::fParse_ValidLocal 
                                         |   CSeq_id::fParse_PartialOK);
 
                             }
