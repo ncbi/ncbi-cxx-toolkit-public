@@ -220,9 +220,6 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    if (bsh.IsAa()) {
-        //return true;
-    }
     SAnnotSelector sel = SetAnnotSelector();
     const auto& display_range = GetRange();
     CFeat_CI feat_iter(bsh, display_range, sel);
