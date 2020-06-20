@@ -723,6 +723,7 @@ gui_objutils needs xalgoalignutil
 gui_objutils needs xcgi
 gui_objutils needs xdiscrepancy
 gui_objutils needs xhtml
+gui_objutils needs xid_mapper
 gui_objutils needs xobjreadex
 gui_objutils needs xobjwrite
 gui_objutils needs xvalidate
@@ -1704,11 +1705,6 @@ xid_estsub needs taxon1
 xid_estsub needs xid_pubseqos
 xid_estsub needs xid_utils
 xid_estsub needs xregexp
-xid_increment needs $(OBJMGR_LIBS)
-xid_increment needs taxon1
-xid_increment needs xid_pubseqos
-xid_increment needs xid_utils
-xid_increment needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xid_mapper needs $(SOBJMGR_LIBS)
 xid_pubseqos needs $(COMPRESS_LIBS)
 xid_pubseqos needs $(CONNEXT)
@@ -1844,7 +1840,6 @@ xsvcgi needs ncbi_xloader_vdbgraph
 xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs trackmgrcli
 xsvcgi needs uudutil
-xsvcgi needs xid_mapper
 xsvcgi needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xsvcgi needs3party $(SYBASE_DLLS)
 xsvcgi needs3party $(SYBASE_LIBS)
