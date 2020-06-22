@@ -2649,33 +2649,30 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 {
                     if (featType == CSeqFeatData::e_Rna &&
                         sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA) {
-                        { 
-                            CBioseq::TId ids;
-                            try {
-                                CSeq_id::ParseIDs(ids, val, 
-                                            CSeq_id::fParse_ValidLocal 
-                                        |   CSeq_id::fParse_PartialOK);
+                        CBioseq::TId ids;
+                        try {
+                            CSeq_id::ParseIDs(ids, val, 
+                                CSeq_id::fParse_ValidLocal 
+                            |   CSeq_id::fParse_PartialOK);
+                        }
+                        catch (CSeqIdException& e) 
+                        {
+                            x_ProcessMsg(
+                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                                feat_name, qual, val,
+                                "Invalid transcript_id  : " + val);
+                            return true;
+                        }
 
-                            }
-                            catch (CSeqIdException& e) 
-                            {
+                        for (const auto& id : ids) {
+                            auto id_string = id->GetSeqIdString(true);
+                            auto res = m_ProcessedTranscriptIds.insert(id_string);
+                            if (res.second == false) { // Insertion failed because Seq-id already encountered
                                 x_ProcessMsg(
-                                    ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                                    feat_name, qual, val,
-                                    "Invalid transcript_id  : " + val);
-                                return true;
-                            }
-
-                            for (const auto& id : ids) {
-                                auto id_string = id->GetSeqIdString(true);
-                                auto res = m_ProcessedTranscriptIds.insert(id_string);
-                                if (res.second == false) { // Insertion failed because Seq-id already encountered
-                                    x_ProcessMsg(
-                                        ILineError::eProblem_DuplicateIDs, eDiag_Error, 
-                                        feat_name, qual, val, 
-                                        "Transcript ID " + id_string + " appears on multiple mRNA features"
-                                    );
-                                }
+                                    ILineError::eProblem_DuplicateIDs, eDiag_Error, 
+                                    feat_name, qual, val, 
+                                    "Transcript ID " + id_string + " appears on multiple mRNA features"
+                                );
                             }
                         }
                     }
