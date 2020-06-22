@@ -165,7 +165,8 @@ public:
             return !(*this == a);
         }
     };
-    
+
+    explicit
     limited_size_map(size_t size_limit = 0)
         : m_SizeLimit(size_limit)
         {
