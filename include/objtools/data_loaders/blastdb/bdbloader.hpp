@@ -39,6 +39,7 @@
 #include <objmgr/data_loader.hpp>
 #include <objtools/data_loaders/blastdb/blastdb_adapter.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <util/limited_size_map.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -151,7 +152,7 @@ public:
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
     
     /// A mapping from sequence identifier to blob ids.
-    typedef map< CSeq_id_Handle, int > TIdMap;
+    typedef limited_size_map<CSeq_id_Handle, int> TIdMap;
 
     /// @note this is added to temporarily comply with the toolkit's stable
     /// components rule of having backwards compatible APIs

@@ -167,6 +167,7 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
       m_DBName              (param.m_DbName),
       m_DBType              (param.m_DbType),
       m_BlastDb             (0),
+      m_Ids                 (1000),
       m_UseFixedSizeSlices  (param.m_UseFixedSizeSlices)
 {
     if (param.m_BlastDbHandle.NotEmpty()) {
