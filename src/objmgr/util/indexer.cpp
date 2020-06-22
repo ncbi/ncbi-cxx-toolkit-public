@@ -1725,6 +1725,10 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.SetResolveDepth(0);
         sel.SetExcludeExternal(true);
 
+        // excludes external annots, ignores custom bits
+        sel.ExcludeNamedAnnotAccession("SNP");
+        sel.ExcludeNamedAnnotAccession("CDD");
+
     } else if (policy == CSeqEntryIndex::eAdaptive) {
 
         sel.SetResolveAll();
@@ -1779,8 +1783,8 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.ExcludeFeatType(CSeqFeatData::e_Imp);
     }
     if ((flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-        sel.ExcludeFeatType(CSeqFeatData::e_Variation);
-        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+        // sel.ExcludeFeatType(CSeqFeatData::e_Variation);
+        // sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
         sel.ExcludeNamedAnnotAccession("SNP");
     }
     if ((flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
