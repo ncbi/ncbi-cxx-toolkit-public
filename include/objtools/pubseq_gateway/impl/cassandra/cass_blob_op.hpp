@@ -118,8 +118,8 @@ class CCassBlobWaiter
             try {
                 Wait1();
             } catch (const CCassandraException& e) {
+                // We will not re-throw here as CassandraException is not fatal
                 Error(CRequestStatus::e500_InternalServerError, e.GetErrCode(), eDiag_Error, e.what());
-                throw;
             } catch (const exception& e) {
                 Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, e.what());
                 throw;
@@ -252,23 +252,21 @@ class CCassBlobWaiter
 
     bool CheckReady(shared_ptr<CCassQuery> qry, unsigned int restart_counter, bool& need_repeat)
     {
-        async_rslt_t wr = (async_rslt_t)-1;
         need_repeat = false;
         try {
-            if (m_Async) {
-                wr = qry->WaitAsync(0);
-                if (wr == ar_wait)
-                    return false;
+            if (m_Async && qry->WaitAsync(0) == ar_wait) {
+                return false;
             }
             return true;
         } catch (const CCassandraException& e) {
-            if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) &&
-                CanRestart(qry, restart_counter))
+            if (
+                (e.GetErrCode() == CCassandraException::eQueryTimeout
+                    || e.GetErrCode() == CCassandraException::eQueryFailedRestartable)
+                && CanRestart(qry, restart_counter))
             {
                 need_repeat = true;
             } else {
-                Error(CRequestStatus::e502_BadGateway,
-                      e.GetErrCode(), eDiag_Error, e.what());
+                Error(CRequestStatus::e502_BadGateway, e.GetErrCode(), eDiag_Error, e.what());
             }
         }
 
