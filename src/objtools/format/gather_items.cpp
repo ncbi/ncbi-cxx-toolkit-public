@@ -4339,7 +4339,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             continue;
         }
 
-        if ( cfg.HideCDDFeatures()  &&
+        if ( ( cfg.HideCDDFeatures() || ! cfg.ShowCDDFeatures() )  &&
              (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
              s_IsCDD(curr) ) {
             // passing this test prevents mapping of COG CDD region features
