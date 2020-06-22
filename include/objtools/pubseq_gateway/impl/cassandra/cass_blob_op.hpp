@@ -121,12 +121,11 @@ class CCassBlobWaiter
                 // We will not re-throw here as CassandraException is not fatal
                 Error(CRequestStatus::e500_InternalServerError, e.GetErrCode(), eDiag_Error, e.what());
             } catch (const exception& e) {
+                // See ID-6241 There is a requirement to catch all exceptions and continue here
                 Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, e.what());
-                throw;
             } catch (...) {
-                Error(CRequestStatus::e500_InternalServerError,
-                      CCassandraException::eUnknown, eDiag_Error, "Unknown exception");
-                throw;
+                // See ID-6241 There is a requirement to catch all exceptions and continue here
+                Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, "Unknown exception");
             }
             if (m_Async) {
                 break;
