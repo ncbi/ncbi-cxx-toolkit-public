@@ -33,8 +33,8 @@
  *
  *   Minimum FTP implementation: RFC 1123 (4.1.2.13)
  *
- *   See <connect/ncbi_connector.h> for the detailed specification of
- *   the connector's methods and structures.
+ *   See <connect/ncbi_connector.h> for the detailed specification of the
+ *   connector's methods and structures.
  *
  *   Note:  We do not implement transfers of files whose names include CR or LF
  *          character(s):  for those to work, all FTP commands will have to be
@@ -48,6 +48,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#include "ncbi_servicep.h"
 #include <connect/ncbi_ftp_connector.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -106,6 +107,7 @@ typedef struct {
     EIO_Status        r_status;
     EIO_Status        w_status;
 } SFTPConnector;
+
 
 
 static const STimeout kFailsafeTimeout = { 10, 0 };
@@ -727,7 +729,7 @@ static EIO_Status x_FTPDir(SFTPConnector* xxx,
     if (toupper((unsigned char)(*cmd)) == 'R') { /* [X]RMD */
         if (code != 250)
             return eIO_Unknown;
-    }else if (toupper((unsigned char)(*cmd)) == 'C') { /* [X]CWD, CDUP/XCUP */
+    } else if (toupper((unsigned char)(*cmd)) == 'C') { /* [X]CWD, CDUP/XCUP */
         if (code != 200  &&  code != 250)
             return eIO_Unknown;
         /* fixup codes w/accordance to RFC959 */
@@ -861,7 +863,6 @@ static EIO_Status x_FTPEpsv(SFTPConnector*  xxx,
         return n == 200 ? eIO_Success : eIO_NotSupported;
     if (n != 229)
         return xxx->feat & fFtpFeature_APSV ? eIO_Unknown : eIO_NotSupported;
-    buf[sizeof(buf) - 1] = '\0';
     if (!(s = strchr(buf, '('))  ||  !(d = *++s)  ||  *++s != d  ||  *++s != d
         ||  sscanf(++s, "%u%c%n", &p, buf, &n) < 2  ||  p > 0xFFFF
         ||  *buf != d  ||  s[n] != ')') {
@@ -889,7 +890,6 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
     status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1, 0);
     if (status != eIO_Success  ||  code != 227)
         return eIO_Unknown;
-    buf[sizeof(buf) - 1] = '\0';
     for (;;) {
         char* c;
         size_t len;
@@ -1656,7 +1656,7 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
         if (timeout != &kZeroTimeout) {
             SOCK_SetTimeout(xxx->cntl, eIO_Read,
                             timeout ? timeout : &kFailsafeTimeout);
-            timeout  = &kZeroTimeout;
+            timeout  = &kZeroTimeout;  /* set timeout external / only once */
         }
         status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1, 0);
         if (status == eIO_Success) {
@@ -2080,9 +2080,7 @@ static EIO_Status s_VT_Flush
             : xxx->r_status != eIO_Success ? xxx->r_status
             : xxx->w_status != eIO_Success ? xxx->w_status : eIO_Closed;
     }
-    if (!BUF_Size(xxx->wbuf))
-        return eIO_Success;
-    return s_FTPExecute(xxx, timeout);
+    return BUF_Size(xxx->wbuf) ? s_FTPExecute(xxx, timeout) : eIO_Success;
 }
 
 
@@ -2286,7 +2284,9 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
         free(ccc);
         return 0;
     }
-    xinfo = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create("_FTP");
+    xinfo = (info
+             ? ConnNetInfo_Clone(info)
+             : ConnNetInfo_CreateInternal("_FTP"));
     if (!(xxx->info = xinfo)) {
         free(ccc);
         free(xxx);
