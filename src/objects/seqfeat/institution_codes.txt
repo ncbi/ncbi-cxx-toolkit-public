@@ -1442,6 +1442,7 @@ CTN	s	Free Library and Museum
 CTNRC	s	Thai National Reference Collections			
 CTR	s	Charles T. Ramsden historical collection			
 CTS	s	Chongqing Teachers College			
+CTUA	s	Coleccio&#769;n Teriolo&#769;gica de la Universidad de Antioquia			
 CTY	s	Canterbury Literary and Philosophical Institution			
 CU	sb	Cornell University			
 CUAC	s	Clemson University			

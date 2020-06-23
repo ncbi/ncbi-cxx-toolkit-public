@@ -1475,6 +1475,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CTNRC\ts\tThai National Reference Collections\t\t\t",
 "CTR\ts\tCharles T. Ramsden historical collection\t\t\t",
 "CTS\ts\tChongqing Teachers College\t\t\t",
+"CTUA\ts\tColeccio&#769;n Teriolo&#769;gica de la Universidad de Antioquia\t\t\t",
 "CTY\ts\tCanterbury Literary and Philosophical Institution\t\t\t",
 "CU\tsb\tCornell University\t\t\t",
 "CUAC\ts\tClemson University\t\t\t",
