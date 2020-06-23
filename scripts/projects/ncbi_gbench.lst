@@ -15,3 +15,7 @@ misc/third_party
 -[^gi].*/app
 -[^g].*/unit_test
 -algo/ms
+-internal/gbench/app/msaviewer
+-internal/gbench/app/sviewer
+-internal/gbench/app/treeview
+-internal/gbench/app/uud
