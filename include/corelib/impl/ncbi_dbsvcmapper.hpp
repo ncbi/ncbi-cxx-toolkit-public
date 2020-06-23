@@ -34,8 +34,7 @@
  */
 
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #ifdef NCBI_OS_MSWIN
 #  include <winsock2.h>
