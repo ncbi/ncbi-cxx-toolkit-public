@@ -794,7 +794,7 @@
 /* Enable GNU extensions on systems that have them.  */
     #ifndef _GNU_SOURCE
         #define _GNU_SOURCE 1
-        #define __USE_GNU
+//        #define __USE_GNU
     #endif
 #endif
 

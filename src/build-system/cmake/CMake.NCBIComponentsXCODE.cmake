@@ -282,7 +282,7 @@ endif()
 
 #############################################################################
 # Boost.Test
-NCBI_define_component(Boost.Test boost_unit_test_framework)
+NCBI_define_component(Boost.Test boost_unit_test_framework-clang-darwin)
 
 #############################################################################
 # Boost.Spirit
