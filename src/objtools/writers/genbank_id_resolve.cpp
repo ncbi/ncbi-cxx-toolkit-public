@@ -112,16 +112,13 @@ bool CGenbankIdResolve::GetBestId(
     string& best_id)
 //  -----------------------------------------------------------------------------
 {
-    CSeq_id id;
-    try {
-        id.Assign(*loc.GetId());
-    }
-    catch (CException&) {
+    const CSeq_id* pId = loc.GetId();
+    if (!pId) {
         NCBI_THROW(CObjWriterException, eBadInput, 
             "CGenbankIdResolve: Location without good ID");    
     }
     return GetBestId(
-        CSeq_id_Handle::GetHandle(id),
+        CSeq_id_Handle::GetHandle(*pId),
         xGetDefaultScope(),
         best_id);
 }
