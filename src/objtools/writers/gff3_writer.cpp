@@ -2229,24 +2229,30 @@ bool CGff3Writer::xAssignFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_loc> pLoc(new CSeq_loc(CSeq_loc::e_Mix));
+    CRef<CSeq_loc> pLoc(new CSeq_loc());
     try {
         if (mf.GetLocation().IsWhole()) {
             CSeq_loc whole;
+            whole.SetInt().SetId().Assign(*mf.GetLocation().GetId());
             whole.SetInt().SetFrom(0);
             whole.SetInt().SetTo(fc.BioseqHandle().GetInst_Length()-1);
-            pLoc->Add(whole);
+            pLoc->Assign(whole);
         } 
-        else  { // Trim the feature
-            pLoc->Add(*sequence::CFeatTrim::Apply(mf.GetLocation(), GetRange()));
-            CWriteUtil::ChangeToPackedInt(*pLoc);
+        else {
+            pLoc->Assign(mf.GetLocation());
         }
     }
     catch(CException&) {
         NCBI_THROW(CObjWriterException, eBadInput, 
             "CGff3Writer: Unable to assign record location.\n");
     }
+    
+    auto display_range = GetRange();
+    if (!display_range.IsWhole()) {
+        pLoc->Assign(*sequence::CFeatTrim::Apply(*pLoc, display_range));
+    }
 
+    CWriteUtil::ChangeToPackedInt(*pLoc);
     CBioseq_Handle bsh = fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
         record.InitLocation(*pLoc);
