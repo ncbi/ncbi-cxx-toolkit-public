@@ -44,6 +44,7 @@ class NCBI_XOBJREAD_EXPORT CSeqDBLMDB : public CObject
 {
 public:
     CSeqDBLMDB(const string & fname);
+    virtual ~CSeqDBLMDB();
     CSeqDBLMDB& operator=(const CSeqDBLMDB&) = delete;
     CSeqDBLMDB(const CSeqDBLMDB&) = delete;
 
@@ -104,6 +105,7 @@ private:
     string  m_Oid2TaxIdsFile;
     string  m_TaxId2OidsFile;
     string  m_TaxId2OffsetsFile;
+    mutable bool m_LMDBFileOpened;
 };
 
 /// Build the canonical LMDB file name for BLAST databases
@@ -137,8 +139,8 @@ class NCBI_XOBJREAD_EXPORT CBlastLMDBManager
 public:
 	static CBlastLMDBManager & GetInstance();
 	lmdb::env & GetReadEnvVol(const string & fname, MDB_dbi & db_volname, MDB_dbi & db_volinfo);
-	lmdb::env & GetReadEnvAcc(const string & fname, MDB_dbi & db_acc);
-	lmdb::env & GetReadEnvTax(const string & fname, MDB_dbi & db_tax);
+	lmdb::env & GetReadEnvAcc(const string & fname, MDB_dbi & db_acc, bool* opened = 0);
+	lmdb::env & GetReadEnvTax(const string & fname, MDB_dbi & db_tax, bool* opened = 0);
 	lmdb::env & GetWriteEnv(const string & fname, Uint8 map_size);
 
 	void CloseEnv(const string & fname);
@@ -149,7 +151,7 @@ private:
 	public:
 		CBlastEnv(const string & fname, ELMDBFileType file_type, bool read_only = true, Uint8 map_size =0);
 		lmdb::env & GetEnv() { return m_Env; }
-		const string & GetFilename () { return m_Filename; }
+		const string & GetFilename () const { return m_Filename; }
 		~CBlastEnv();
 		unsigned int AddReference(){ m_Count++; return m_Count;}
 		unsigned int RemoveReference(){ m_Count--; return m_Count;}
@@ -172,7 +174,7 @@ private:
 		vector<MDB_dbi> m_dbis;
 	};
 
-	CBlastEnv* GetBlastEnv(const string & fname, ELMDBFileType file_type);
+	CBlastEnv* GetBlastEnv(const string & fname, ELMDBFileType file_type, bool* opened = 0);
 	CBlastLMDBManager(){}
 	~CBlastLMDBManager();
 	friend class CSafeStatic_Allocator<CBlastLMDBManager>;

@@ -142,31 +142,41 @@ lmdb::env & CBlastLMDBManager::GetReadEnvVol(const string & fname,  MDB_dbi & db
 	db_volname = p->GetDbi(CBlastEnv::eDbiVolname);
 	return p->GetEnv();
 }
-lmdb::env & CBlastLMDBManager::GetReadEnvAcc(const string & fname, MDB_dbi & db_acc)
+lmdb::env & CBlastLMDBManager::GetReadEnvAcc(const string & fname, MDB_dbi & db_acc, bool* opened)
 {
-	CBlastEnv* p = GetBlastEnv(fname, eLMDB);
+	CBlastEnv* p = GetBlastEnv(fname, eLMDB, opened);
 	db_acc = p->GetDbi(CBlastEnv::eDbiAcc2oid);
 	return p->GetEnv();
 }
-lmdb::env & CBlastLMDBManager::GetReadEnvTax(const string & fname, MDB_dbi & db_tax)
+lmdb::env & CBlastLMDBManager::GetReadEnvTax(const string & fname, MDB_dbi & db_tax, bool* opened)
 {
-	CBlastEnv* p = GetBlastEnv(fname, eTaxId2Offsets);
+	CBlastEnv* p = GetBlastEnv(fname, eTaxId2Offsets, opened);
 	db_tax = p->GetDbi(CBlastEnv::eDbiTaxid2offset);
 	return p->GetEnv();
 }
 
 
-CBlastLMDBManager::CBlastEnv* CBlastLMDBManager::GetBlastEnv(const string & fname, ELMDBFileType file_type)
+CBlastLMDBManager::CBlastEnv* CBlastLMDBManager::GetBlastEnv(const string & fname,
+                                                             ELMDBFileType file_type,
+                                                             bool* opened)
 {
 	CFastMutexGuard guard(m_Mutex);
 	NON_CONST_ITERATE(list <CBlastEnv* >, itr, m_EnvList) {
 		if((*itr)->GetFilename() == fname)  {
 			(*itr)->AddReference();
+            if ( opened && !*opened ) {
+                (*itr)->AddReference();
+                *opened = true;
+            }
 			return (*itr);
 		}
 	}
 	CBlastEnv * p (new CBlastEnv(fname, file_type));
 	m_EnvList.push_back(p);
+    if ( opened && !*opened ) {
+        p->AddReference();
+        *opened = true;
+    }
 	return p;
 }
 
@@ -212,9 +222,17 @@ CSeqDBLMDB::CSeqDBLMDB(const string & fname)
       m_Oid2SeqIdsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eOid2SeqIds)),
       m_Oid2TaxIdsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eOid2TaxIds)),
       m_TaxId2OidsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eTaxId2Oids)),
-      m_TaxId2OffsetsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eTaxId2Offsets))
-
+      m_TaxId2OffsetsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eTaxId2Offsets)),
+      m_LMDBFileOpened(false)
 {
+}
+
+CSeqDBLMDB::~CSeqDBLMDB()
+{
+    if ( m_LMDBFileOpened ) {
+        CBlastLMDBManager::GetInstance().CloseEnv(m_LMDBFile);
+        m_LMDBFileOpened = false;
+    }
 }
 
 void 
@@ -224,7 +242,7 @@ CSeqDBLMDB::GetOid(const string & accession, vector<blastdb::TOid> & oids, const
     oids.clear();
     {
     MDB_dbi dbi_handle;
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle);
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle, &m_LMDBFileOpened);
     lmdb::dbi dbi(dbi_handle);
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
     auto cursor = lmdb::cursor::open(txn, dbi);
@@ -319,7 +337,7 @@ CSeqDBLMDB::GetOids(const vector<string>& accessions, vector<blastdb::TOid>& oid
     oids.resize(accessions.size(), kSeqDBEntryNotFound);
 
     MDB_dbi dbi_handle;
-	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle);
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle, &m_LMDBFileOpened);
 	{
     lmdb::dbi dbi(dbi_handle);
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
@@ -540,6 +558,7 @@ void CSeqDBLMDB::GetDBTaxIds(vector<Int4> & tax_ids) const
     		NCBI_THROW( CSeqDBException, eArgErr, "Taxonomy Id to Oids lookup error in " + dbname);
        	}
     }
+    CBlastLMDBManager::GetInstance().CloseEnv(m_TaxId2OffsetsFile);
 }
 
 void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOid>& oids, vector<Int4> & tax_ids_found) const
