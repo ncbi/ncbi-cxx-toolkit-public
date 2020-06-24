@@ -966,6 +966,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
             ++total_cnt;
         }
     }
+    mg.Release();
     vector< AutoPtr<CDB_Connection> > conns(pool_min);
     for (int i = total_cnt; i < pool_min; ++i) {
         try {
