@@ -1813,6 +1813,9 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
                 CBioseq_Handle bsh = GetBioseqHandle();
                 string na_acc;
                 (*func) (bsh, na_acc);
+                if (na_acc.length() > 0) {
+                    sel.IncludeNamedAnnotAccession(na_acc);
+                }
             } else {
                 // otherwise just give SNP name
                 sel.IncludeNamedAnnotAccession("SNP");
