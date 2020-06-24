@@ -58,6 +58,7 @@ class CGapIndex;
 class CDescriptorIndex;
 class CFeatureIndex;
 
+typedef void (*FAddSnpFunc)(CBioseq_Handle bsh, string& na_acc);
 
 // CSeqEntryIndex
 //
@@ -164,6 +165,10 @@ public:
 
     bool DistributedReferences(void);
 
+    void SetSnpFunc(FAddSnpFunc* snp);
+
+    FAddSnpFunc* GetSnpFunc(void);
+
     // Check all Bioseqs for failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure(void);
 
@@ -248,6 +253,10 @@ public:
 
     bool DistributedReferences (void) const { return m_DistributedReferences; }
 
+    void SetSnpFunc(FAddSnpFunc* snp);
+
+    FAddSnpFunc* GetSnpFunc(void);
+
     // Check all Bioseqs for failure to fetch remote sequence components or remote feature annotation
     bool IsFetchFailure(void);
 
@@ -292,6 +301,8 @@ private:
     bool m_IsSmallGenomeSet;
 
     bool m_DistributedReferences;
+
+    FAddSnpFunc* m_SnpFunc;
 
     mutable CAtomicCounter m_Counter;
 

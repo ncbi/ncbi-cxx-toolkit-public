@@ -170,6 +170,18 @@ bool CSeqEntryIndex::DistributedReferences(void)
     return m_Idx->DistributedReferences();
 }
 
+void CSeqEntryIndex::SetSnpFunc(FAddSnpFunc* snp)
+
+{
+    m_Idx->SetSnpFunc (snp);
+}
+
+FAddSnpFunc* CSeqEntryIndex::GetSnpFunc(void)
+
+{
+    return m_Idx->GetSnpFunc();
+}
+
 bool CSeqEntryIndex::IsFetchFailure(void)
 
 {
@@ -203,6 +215,7 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
     m_DistributedReferences = false;
+    m_SnpFunc = 0;
     m_IndexFailure = false;
 
     try {
@@ -248,6 +261,7 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
     m_DistributedReferences = false;
+    m_SnpFunc = 0;
     m_IndexFailure = false;
 
     try {
@@ -372,6 +386,20 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSeq_descr &descr, CSeqE
 
     x_Init();
 }
+
+void CSeqMasterIndex::SetSnpFunc (FAddSnpFunc* snp)
+
+{
+    m_SnpFunc = snp;
+}
+
+
+FAddSnpFunc* CSeqMasterIndex::GetSnpFunc (void)
+
+{
+    return m_SnpFunc;
+}
+
 
 // At end of program, poll all Bioseqs to check for far fetch failure flag
 bool CSeqMasterIndex::IsFetchFailure (void)
@@ -561,6 +589,7 @@ void CSeqMasterIndex::x_Init (void)
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
     m_DistributedReferences = false;
+    m_SnpFunc = 0;
     m_IndexFailure = false;
 
     try {
@@ -1719,15 +1748,23 @@ void CBioseqIndex::x_InitDescs (void)
 void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, CScope& scope)
 
 {
-    if (policy == CSeqEntryIndex::eInternal || onlyNear) {
+    bool snpOK = false;
+    bool cddOK = false;
+
+    if (policy == CSeqEntryIndex::eExhaustive) {
+
+        // experimental policy forces collection of features from all sequence levels
+        sel.SetResolveAll();
+        sel.SetResolveDepth(kMax_Int);
+        // ignores RefSeq/INSD barrier, overrides far fetch policy user object
+        // for now, always excludes external annots, ignores custom enable bits
+
+    } else if (policy == CSeqEntryIndex::eInternal || onlyNear) {
 
         // do not fetch features from underlying sequence component records
         sel.SetResolveDepth(0);
         sel.SetExcludeExternal(true);
-
-        // excludes external annots, ignores custom bits
-        sel.ExcludeNamedAnnotAccession("SNP");
-        sel.ExcludeNamedAnnotAccession("CDD");
+        // always excludes external annots, ignores custom enable bits
 
     } else if (policy == CSeqEntryIndex::eAdaptive) {
 
@@ -1737,13 +1774,11 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.SetAdaptiveDepth(true);
 
         // conditionally allows external annots, based on custom enable bits
-        // (may remove once transition to policy knob is complete)
-        // (fHideSNPFeats and fHideCDDFeats tests below will override)
         if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-            sel.IncludeNamedAnnotAccession("SNP");
+            snpOK = true;
         }
         if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-            sel.IncludeNamedAnnotAccession("CDD");
+            cddOK = true;
         }
 
     } else if (policy == CSeqEntryIndex::eExternal) {
@@ -1752,17 +1787,46 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.SetResolveAll();
         sel.SetAdaptiveDepth(true);
 
-        // except also allows external annots without need for custom bits (fHideSNPFeats and fHideCDDFeats tests below will override)
-        sel.IncludeNamedAnnotAccession("SNP");
+        // but always allows external annots without need for custom enable bits
+        snpOK = true;
+        cddOK = true;
+
+    }
+
+    // fHideSNPFeats and fHideCDDFeats flags override any earlier settings
+    if ((flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
+        snpOK = false;
+    }
+    if ((flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
+        cddOK = false;
+    }
+
+    // configure remote annot settings in selector
+    if ( snpOK ) {
+
+        CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
+        auto idxl = idx.Lock();
+        if (idxl) {
+            FAddSnpFunc* func = idxl->GetSnpFunc();
+            if (func) {
+                // under PubSeq Gateway, need to get exact accession for SNP retrieval
+                CBioseq_Handle bsh = GetBioseqHandle();
+                string na_acc;
+                (*func) (bsh, na_acc);
+            } else {
+                // otherwise just give SNP name
+                sel.IncludeNamedAnnotAccession("SNP");
+            }
+        }
+
+    } else {
+        sel.ExcludeNamedAnnotAccession("SNP");
+    }
+
+    if ( cddOK ) {
         sel.IncludeNamedAnnotAccession("CDD");
-
-    } else if (policy == CSeqEntryIndex::eExhaustive) {
-
-        sel.SetResolveAll();
-         // experimental flag forces collection of features from all levels
-        sel.SetResolveDepth(kMax_Int);
-        // also ignores RefSeq/INSD barrier, far fetch policy user object
-
+    } else {
+        sel.ExcludeNamedAnnotAccession("CDD");
     }
 
     if (depth > -1) {
@@ -1781,14 +1845,6 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     // exclude other types based on user flags
     if ((flags & CSeqEntryIndex::fHideImpFeats) != 0) {
         sel.ExcludeFeatType(CSeqFeatData::e_Imp);
-    }
-    if ((flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
-        // sel.ExcludeFeatType(CSeqFeatData::e_Variation);
-        // sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-        sel.ExcludeNamedAnnotAccession("SNP");
-    }
-    if ((flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
-        sel.ExcludeNamedAnnotAccession("CDD");
     }
     if ((flags & CSeqEntryIndex::fHideSTSFeats) != 0) {
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
