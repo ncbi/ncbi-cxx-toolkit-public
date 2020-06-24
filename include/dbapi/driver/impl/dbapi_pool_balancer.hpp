@@ -47,10 +47,10 @@ class CDBPoolBalancer : public CObject
 public:
     CDBPoolBalancer(const string& service_name,
                     const string& pool_name,
-                    I_DriverContext& driver_ctx,
-                    const IDBServiceMapper::TOptions& options);
+                    const IDBServiceMapper::TOptions& options,
+                    I_DriverContext* driver_ctx = nullptr);
 
-    TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams& params);
+    TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params);
 
 private:
     struct SEndpointInfo {
@@ -71,7 +71,7 @@ private:
     
     TEndpoints        m_Endpoints;
     multiset<double>  m_Rankings;
-    I_DriverContext&  m_DriverCtx;
+    I_DriverContext*  m_DriverCtx;
     unsigned int      m_TotalCount;
 };
 

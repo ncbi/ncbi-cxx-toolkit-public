@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "dbapi_pool_balancer.hpp"
+#include <dbapi/driver/impl/dbapi_pool_balancer.hpp>
 #include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/error_codes.hpp>
@@ -88,11 +88,12 @@ public:
 
 CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
                                  const string& pool_name,
-                                 I_DriverContext& driver_ctx,
-                                 const IDBServiceMapper::TOptions& options)
+                                 const IDBServiceMapper::TOptions& options,
+                                 I_DriverContext* driver_ctx)
     : m_DriverCtx(driver_ctx), m_TotalCount(0U)
 {
-    bool is_ftds = NStr::StartsWith(driver_ctx.GetDriverName(), "ftds");
+    bool is_ftds = (driver_ctx == nullptr
+                    ||  NStr::StartsWith(driver_ctx->GetDriverName(), "ftds"));
     for (auto it : options) {
         CTempString name = it->GetName();
         auto key = impl::MakeEndpointKey(it->GetHost(), it->GetPort());
@@ -127,10 +128,13 @@ CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
     }
     
     const impl::CDriverContext* ctx_impl
-        = dynamic_cast<const impl::CDriverContext*>(&driver_ctx);
+        = dynamic_cast<const impl::CDriverContext*>(driver_ctx);
     impl::CDriverContext::TCounts counts;
     if (ctx_impl == NULL) {
-        ERR_POST_X(1, Warning << "Called with non-standard IDriverContext");
+        if (driver_ctx != nullptr) {
+            ERR_POST_X(1, Warning <<
+                       "Called with non-standard IDriverContext");
+        }
     } else if (pool_name.empty()) {
         ctx_impl->GetCountsForService(service_name, &counts);
     } else {
@@ -177,7 +181,7 @@ CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
 }
 
 TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
-                                   const CDBConnParams& params)
+                                   const CDBConnParams* params)
 {
     TSvrRef             result;
     impl::TEndpointKey  conn_key = 0;
@@ -196,10 +200,11 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
         return result;
     }
 
-    if (/* m_TotalCount > 1  && */  conn != NULL) {
-        string pool_name = params.GetParam("pool_name");
-        CDBConnParams_DNC dnc_params(params);
-        *conn = IDBConnectionFactory::CtxMakeConnection(m_DriverCtx,
+    if (/* m_TotalCount > 1  && */  conn != nullptr  &&  params != nullptr
+        &&  m_DriverCtx != nullptr) {
+        string pool_name = params->GetParam("pool_name");
+        CDBConnParams_DNC dnc_params(*params);
+        *conn = IDBConnectionFactory::CtxMakeConnection(*m_DriverCtx,
                                                         dnc_params);
         if (*conn != NULL) {
             const string&  server_name  = (*conn)->ServerName();
@@ -214,7 +219,7 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
                            "Unrecognized endpoint for existing connection to "
                            << impl::ConvertN2A(host) << ":" << port
                            << " (" << server_name << ')');
-                excess = m_DriverCtx.NofConnections(server_name, pool_name);
+                excess = m_DriverCtx->NofConnections(server_name, pool_name);
                 result.Reset(&*it->second.ref);
             } else {
                 double scale_factor = m_TotalCount / total_ranking;
@@ -227,7 +232,7 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
                    << ":" << port << " (" << server_name
                    << ") for turnover; projected excess count " << excess);
             if (excess > 0.0) {
-                string        pool_max_str  = params.GetParam("pool_maxsize");
+                string        pool_max_str  = params->GetParam("pool_maxsize");
                 unsigned int  pool_max      = 0u;
                 if ( !pool_max_str.empty()  &&  pool_max_str != "default") {
                     NStr::StringToNumeric(pool_max_str, &pool_max,
@@ -306,8 +311,8 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
                 // This call might not close the exact connection we
                 // considered, but closing any connection to the
                 // relevant server is sufficient here.
-                m_DriverCtx.CloseUnusedConnections
-                    (server_name, params.GetParam("pool_name"), 1u);
+                m_DriverCtx->CloseUnusedConnections
+                    (server_name, params->GetParam("pool_name"), 1u);
             }
         }
     }

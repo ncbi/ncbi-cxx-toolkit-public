@@ -35,9 +35,9 @@
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_pool_balancer.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
-#include "dbapi_pool_balancer.hpp"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 
@@ -472,8 +472,8 @@ CDBConnectionFactory::DispatchServerName(
         &&  !service_name.empty()  ) {
         balancer.Reset(new CDBPoolBalancer
                        (service_name, params.GetParam("pool_name"),
-                        ctx.driver_ctx,
-                        rt_data.GetServerOptions(service_name)));
+                        rt_data.GetServerOptions(service_name),
+                        &ctx.driver_ctx));
     }
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
@@ -488,7 +488,7 @@ CDBConnectionFactory::DispatchServerName(
         // In this case we even won't try to map it.
         else if (!service_name.empty()) {
             if (balancer.NotEmpty()) {
-                dsp_srv = balancer->GetServer(&t_con, params);
+                dsp_srv = balancer->GetServer(&t_con, &params);
             }
             if (dsp_srv.Empty()) {
                 dsp_srv = rt_data.GetDispatchedServer(service_name);
@@ -537,8 +537,8 @@ CDBConnectionFactory::DispatchServerName(
                         balancer.Reset
                             (new CDBPoolBalancer
                              (service_name, params.GetParam("pool_name"),
-                              ctx.driver_ctx,
-                              rt_data.GetServerOptions(service_name, true)));
+                              rt_data.GetServerOptions(service_name, true),
+                              &ctx.driver_ctx));
                     }
                     full_retry_made = true;
                     continue;
