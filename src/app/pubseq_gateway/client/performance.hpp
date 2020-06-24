@@ -120,7 +120,7 @@ struct SMessage
     string thread_id;
     string rest;
 
-    bool operator<(const SMessage& rhs)
+    bool operator<(const SMessage& rhs) const
     {
         return milliseconds < rhs.milliseconds;
     }
