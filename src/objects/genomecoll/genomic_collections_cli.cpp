@@ -222,20 +222,33 @@ string CGenomicCollectionsService::ValidateChrType(const string& chrType, const 
 {
     CGCClient_ValidateChrTypeLocRequest req;
     CGCClientResponse reply;
-
     req.SetType(chrType);
     req.SetLocation(chrLoc);
 
     LogRequest(req);
-
-    try {
-        return AskGet_chrtype_valid(req, &reply);
-    } catch (CException& ) {
-        if (reply.IsSrvr_error())
-            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
-        throw;
-    }
+    
+    int retry_counter=0;
+    const int RETRY_MAX = 3;
+    for(retry_counter=1; retry_counter <= RETRY_MAX; retry_counter++) {
+        try {
+            return AskGet_chrtype_valid(req, &reply);
+        } catch (const CException& e) {
+            if( retry_counter == RETRY_MAX) {
+                if (reply.IsSrvr_error())
+                    throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
+                throw e;
+            } else {
+                ERR_POST(Warning <<"Try "<<retry_counter<<":"<<e.GetMsg());
+                SleepSec(10);
+            }
+        } // end catch
+    } // end retry for
+                
+    if (reply.IsSrvr_error())
+        throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
+    NCBI_THROW(CException, eUnknown, "ValidateChrType ran out of retries.");
 }
+
 
 CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindOneAssemblyBySequences(const string& sequence_acc, int filter, CGCClient_GetAssemblyBySequenceRequest::ESort sort)
 {
@@ -283,13 +296,26 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::x_FindAssembl
 
     LogRequest(req);
 
-    try {
-        return AskGet_assembly_by_sequence(req, &reply);
-    } catch (const CException& ) {
-        if (reply.IsSrvr_error())
-            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
-        throw;
-    }
+    int retry_counter=0;
+    const int RETRY_MAX = 3;
+    for(retry_counter=1; retry_counter <= RETRY_MAX; retry_counter++) {
+        try {
+            return AskGet_assembly_by_sequence(req, &reply);
+        } catch (const CException& e) {
+            if( retry_counter == RETRY_MAX) {
+                if (reply.IsSrvr_error())
+                    throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
+                throw e;
+            } else {
+                ERR_POST(Warning <<"Try "<<retry_counter<<":"<<e.GetMsg());
+                SleepSec(10);
+            }
+        } // end catch
+    } // end retry for
+                
+    if (reply.IsSrvr_error())
+        throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
+    NCBI_THROW(CException, eUnknown, "FindAssembliesBySequences ran out of retries.");
 }
 
 
@@ -302,14 +328,27 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
     req.SetEquivalency(equivalency);
 
     LogRequest(req);
-
-    try {
-        return AskGet_equivalent_assemblies(req, &reply);
-    } catch (const CException& ) {
-        if (reply.IsSrvr_error())
-            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
-        throw;
-    }
+        
+    int retry_counter=0;
+    const int RETRY_MAX = 3;
+    for(retry_counter=1; retry_counter <= RETRY_MAX; retry_counter++) {
+        try {
+            return AskGet_equivalent_assemblies(req, &reply);
+        } catch (const CException& e) {
+            if( retry_counter == RETRY_MAX) {
+                if (reply.IsSrvr_error())
+                    throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
+                throw e;
+            } else {
+                ERR_POST(Warning <<"Try "<<retry_counter<<":"<<e.GetMsg());
+                SleepSec(10);
+            }
+        } // end catch
+    } // end retry for
+                
+    if (reply.IsSrvr_error())
+        throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
+    NCBI_THROW(CException, eUnknown, "GetEquivalentAssemblies ran out of retries.");
 }
 
 
