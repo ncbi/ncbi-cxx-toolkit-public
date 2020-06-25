@@ -310,11 +310,11 @@ public:
     ///               be in a batch of converted sequences
     ///
     CBlastInput(CBlastInputSource* source, int batch_size = kMax_Int)
-        : m_Source(source), m_BatchSize(batch_size) {}
+        : m_Source(source), m_BatchSize(batch_size), m_NumSeqs(0), m_TotalLength(0) {}
 
     /// Destructor
     ///
-    ~CBlastInput() {}
+    ~CBlastInput(){}
 
     /// Read and convert all the sequences from the source
     /// @param scope CScope object to use in return value [in]
@@ -357,6 +357,8 @@ public:
     /// Determine if we have reached the end of the BLAST input
     bool End() { return m_Source->End(); }
 
+    int GetNumSeqsProcessed() const { return m_NumSeqs; }
+    int GetTotalLengthProcessed() const { return m_TotalLength; }
 private:
     CRef<CBlastInputSource> m_Source;  ///< pointer to source of sequences
     TSeqPos m_BatchSize;          ///< total size of one block of sequences
@@ -369,6 +371,12 @@ private:
 
     /// Perform the actual copy for assignment operator and copy constructor
     void do_copy(const CBlastInput& input);
+
+    // # of seqs processed
+    int m_NumSeqs;
+
+    // Total length processed
+    int m_TotalLength;
 };
 
 /// Auxiliary class for creating Bioseqs given SeqIds

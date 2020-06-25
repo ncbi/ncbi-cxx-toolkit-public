@@ -165,6 +165,8 @@ CBlastInput::GetNextSeqBatch(CScope& scope)
 
         retval->AddQuery(q);
     }
+    m_NumSeqs +=retval->Size();
+    m_TotalLength += size_read;
     _TRACE("Read " << retval->Size() << " queries");
     return retval;
 }
