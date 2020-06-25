@@ -169,6 +169,7 @@ CGtfReader::ReadSeqAnnot(
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
+    mCurrentFeatureCount = 0;
     return CReaderBase::ReadSeqAnnot(lineReader, pEC);
 }
 
