@@ -76,7 +76,8 @@ deltablast_options \
 deltablast \
 magicblast_options \
 magicblast \
-blast_node
+blast_node \
+blast_usage_report
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
