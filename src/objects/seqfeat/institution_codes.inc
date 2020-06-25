@@ -5175,7 +5175,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NRIBAS\ts\tNational Research Institute of Biology, Academia Sinica\t\t\t",
 "NRIC\tc\tNODAI Research Institute Culture Collection\t\t\t",
 "NRL\tc\tNeisseria Reference Laboratory\t\t\t",
-"NRM\ts\tSwedish Museum of Natural History\t\t\t",
+"NRM\ts\tSwedish Museum of Natural History\tSMNH\t\t",
 "NRN\ts\tNairn Literary Society Library, Public Library\t\t\t",
 "NRNZ\ts\tNorthland Regional Museum\t\t\t",
 "NRPSU\tc\tDepartment of Agro-industry, Faculty of Natural Resources\t\t\t",

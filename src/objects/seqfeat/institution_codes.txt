@@ -5142,7 +5142,7 @@ NRI	s	Texas A&M Natural Resources Institute
 NRIBAS	s	National Research Institute of Biology, Academia Sinica			
 NRIC	c	NODAI Research Institute Culture Collection			
 NRL	c	Neisseria Reference Laboratory			
-NRM	s	Swedish Museum of Natural History			
+NRM	s	Swedish Museum of Natural History	SMNH		
 NRN	s	Nairn Literary Society Library, Public Library			
 NRNZ	s	Northland Regional Museum			
 NRPSU	c	Department of Agro-industry, Faculty of Natural Resources			
