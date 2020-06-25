@@ -2183,7 +2183,8 @@ CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
                 cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
                 cur.GetNCObject().m_ObjStr >> *feat;
                 Put(cur);
-                if ( const CTextseq_id* id = feat->GetLocation().GetInt().GetId().GetTextseq_Id() ) {
+                CTypeConstIterator<CSeq_id> seq_id(Begin(feat->GetLocation()));
+                if ( const CTextseq_id* id = !seq_id? 0: seq_id->GetTextseq_Id() ) {
                     if ( id->IsSetVersion() ) {
                         m_FeatLocIdType = eFeatLocIdAccVer;
                     }
