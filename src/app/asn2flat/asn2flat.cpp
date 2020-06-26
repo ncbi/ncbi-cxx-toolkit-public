@@ -1539,7 +1539,7 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
 
     // SNP annotations can be available only for nucleotide human RefSeq records
     if (bsh.GetInst_Mol() == CSeq_inst::eMol_aa ||
-        sequence::GetTaxId(bsh) != 9606)
+        sequence::GetTaxId(bsh) != TAX_ID_CONST(9606))
         return 0;
 
     // Also skip large scaffolds and chromosomes

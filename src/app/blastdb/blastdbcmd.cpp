@@ -86,7 +86,7 @@ private:
 
     CBlastDB_FormatterConfig m_Config;
 
-    set<Int4> m_TaxIdList;
+    set<TTaxId> m_TaxIdList;
 
     /// Initializes Blast DB
     void x_InitBlastDB();
@@ -318,7 +318,7 @@ CBlastDBCmdApp::x_InitBlastDB_TaxIdList()
     	}
     }
     for(unsigned int i=0; i < ids.size(); i++) {
-    	m_TaxIdList.insert(NStr::StringToInt(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+    	m_TaxIdList.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
     }
 
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
@@ -645,16 +645,16 @@ CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
     CNcbiOstream& out = args[kArgOutput].AsOutputFile();
     const string& kFmt = args["outfmt"].AsString();
     CPrintTaxFields tf(out, kFmt);
-    set<Int4> tax_ids;
+    set<TTaxId> tax_ids;
     m_BlastDb->GetDBTaxIds(tax_ids);
     // Print basic database information
     out << "# of Tax IDs in Database: " << tax_ids.size() << endl;
 	SSeqDBTaxInfo info;
-    ITERATE(set<Int4>, itr, tax_ids) {
+    ITERATE(set<TTaxId>, itr, tax_ids) {
     	SSeqDBTaxInfo info;
     	if(tf.NeedTaxNames()){
     		CSeqDBTaxInfo::GetTaxNames(*itr, info);
-    		if(info.taxid == 0){
+    		if(info.taxid == ZERO_TAX_ID){
     			info.taxid = *itr;
    				info.scientific_name = NA;
    				info.common_name = NA;

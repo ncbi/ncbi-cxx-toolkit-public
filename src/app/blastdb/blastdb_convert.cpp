@@ -419,7 +419,7 @@ int CBlastdbConvertApp::Run(void)
              for (int oid = 0; oid < kNumOids; oid++) {
                   list<CRef<CSeq_id>> ids = vol->GetSeqIDs(oid);
                   lmdbdb->InsertEntries(ids, oid_total+oid);
-            	  set<int> tax_ids;
+            	  set<TTaxId> tax_ids;
             	  vol->GetAllTaxIDs(oid, tax_ids);
                   taxdb->InsertEntries(tax_ids, oid_total+oid);
              }

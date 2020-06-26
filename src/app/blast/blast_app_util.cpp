@@ -482,8 +482,8 @@ s_ImportDatabase(const CBlast4_subject& subj,
         	}
         }
         if (opts_builder.HaveTaxidList()) {
-        	list<int>  list = opts_builder.GetTaxidList();
-           	set<int> taxids(list.begin(), list.end());
+        	list<TTaxId>  list = opts_builder.GetTaxidList();
+           	set<TTaxId> taxids(list.begin(), list.end());
         	gilist->AddTaxIds(taxids);
         }
         search_db->SetGiList(gilist);
@@ -497,8 +497,8 @@ s_ImportDatabase(const CBlast4_subject& subj,
        	    }
         }
         if (opts_builder.HaveNegativeTaxidList()) {
-        	list<int>  list = opts_builder.GetNegativeTaxidList();
-           	set<int> taxids(list.begin(), list.end());
+        	list<TTaxId>  list = opts_builder.GetNegativeTaxidList();
+           	set<TTaxId> taxids(list.begin(), list.end());
            	gilist->AddTaxIds(taxids);
         }
         search_db->SetNegativeGiList(gilist);

@@ -500,7 +500,7 @@ public:
                 desr.Set().push_back(des);
             }
 
-            if (0 == m_bio->GetTaxId()) {
+            if (ZERO_TAX_ID == m_bio->GetTaxId()) {
                 TTaxId taxid = s_GetTaxId(*m_bio);
                 if (ZERO_TAX_ID != taxid) {
                     CRef<CSeqdesc> des(new CSeqdesc);
@@ -1023,7 +1023,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                     if (!leafs.empty()) {
                         const string id =
                                 bdl->GetSeqid().front()->AsFastaString();
-                        set<int> ids = leafTaxIds[id];
+                        set<TTaxId> ids = leafTaxIds[id];
                         ids.insert(leafs.begin(), leafs.end());
                         leafTaxIds[id] = ids;
                     }
@@ -1179,7 +1179,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
     if (args["taxid"].HasValue()) {
         _ASSERT( !args["taxid_map"].HasValue() );
-        CRef<CTaxIdSet> taxids(new CTaxIdSet(args["taxid"].AsInteger()));
+        CRef<CTaxIdSet> taxids(new CTaxIdSet(TAX_ID_FROM(int, args["taxid"].AsInteger())));
         m_DB->SetTaxids(*taxids);
     } else if (args["taxid_map"].HasValue()) {
         _ASSERT( !args["taxid"].HasValue() );

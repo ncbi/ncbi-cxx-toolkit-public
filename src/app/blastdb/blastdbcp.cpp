@@ -275,7 +275,7 @@ public:
                     CBlast_def_line::TTaxIds leafs = bdl->GetLeafTaxIds();
                     const string id =
                             bdl->GetSeqid().front()->AsFastaString();
-                    set<int> ids = m_LeafTaxids[id];
+                    set<TTaxId> ids = m_LeafTaxids[id];
                     ids.insert(leafs.begin(), leafs.end());
                     m_LeafTaxids[id] = ids;
                 }

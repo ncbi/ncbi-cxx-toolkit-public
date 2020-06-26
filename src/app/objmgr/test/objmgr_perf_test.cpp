@@ -641,7 +641,7 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
             }
             CSeq_inst::TMol moltype = m_Scope->GetSequenceType(idh);
             TSeqPos len = m_Scope->GetSequenceLength(idh);
-            int taxid = m_Scope->GetTaxId(idh);
+            TTaxId taxid = m_Scope->GetTaxId(idh);
             int hash = m_Scope->GetSequenceHash(idh);
             vector<string> synonyms;
             ITERATE(CScope::TIds, it, ids) {

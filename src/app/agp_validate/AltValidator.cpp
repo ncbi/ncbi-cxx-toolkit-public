@@ -362,7 +362,7 @@ void CAltValidator::x_QueryAccessions()
         auto& compInfo = m_ComponentInfoMap[accVer.GetAccession()];
         compInfo.currentVersion = accVer.GetVersion();
         compInfo.len = bioseqHandle.GetInst_Length();
-        compInfo.taxid = TAX_ID_FROM(int, sequence::GetTaxId(bioseqHandle));
+        compInfo.taxid = sequence::GetTaxId(bioseqHandle);
         compInfo.inDatabase=true;
     }
     m_Accessions.clear();

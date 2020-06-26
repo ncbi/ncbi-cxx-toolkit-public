@@ -542,7 +542,7 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 
     if (args["taxid"].HasValue()) {
         _ASSERT( !args["taxid_map"].HasValue() );
-        m_Taxids.Reset(new CTaxIdSet(args["taxid"].AsInteger()));
+        m_Taxids.Reset(new CTaxIdSet(TAX_ID_FROM(int, args["taxid"].AsInteger())));
     } else if (args["taxid_map"].HasValue()) {
         _ASSERT( !args["taxid"].HasValue() );
         _ASSERT( !m_Taxids.Empty() );

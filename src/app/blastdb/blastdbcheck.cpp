@@ -398,7 +398,7 @@ public:
             int nv = vols.size();
             
             SSeqDBTaxInfo taxinfo;
-            db.GetTaxInfo(9606, taxinfo);
+            db.GetTaxInfo(TAX_ID_CONST(9606), taxinfo);
             
             if (! d.size()) {
                 Log(db, e_Brief) << "[ERROR] db has empty date string" << endl;
@@ -502,12 +502,12 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
         }
 
         // If requested, make sure there's a taxID set for this Bioseq
-        if (((m_Flags & e_TaxIDSet) != 0) && (bs->GetTaxId() == 0)) {
+        if (((m_Flags & e_TaxIDSet) != 0) && (bs->GetTaxId() == ZERO_TAX_ID)) {
             // Try a different approach specific to Bioseqs created from BLAST DBs
             using namespace align_format;
             CScope scope(*CObjectManager::GetInstance());
             scope.AddBioseq(*bs);
-            if (CAlignFormatUtil::GetTaxidForSeqid(*bs->GetFirstId(), scope) == 0) {
+            if (CAlignFormatUtil::GetTaxidForSeqid(*bs->GetFirstId(), scope) == ZERO_TAX_ID) {
                 where = "taxid";
                 throw runtime_error("no taxid set");
             }
