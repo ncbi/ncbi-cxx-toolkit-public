@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include "annot_processor.hpp"
 #include "pubseq_gateway.hpp"
@@ -50,13 +51,15 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                                 shared_ptr<CPSGS_Request> request,
-                                shared_ptr<CPSGS_Reply> reply) :
+                                shared_ptr<CPSGS_Reply> reply,
+                                vector<string> &  valid_names) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished,
                            this, _1),
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4)),
+    m_ValidNames(move(valid_names)),
     m_Cancelled(false)
 {
     IPSGS_Processor::m_Request = request;
@@ -76,9 +79,33 @@ IPSGS_Processor*
 CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                       shared_ptr<CPSGS_Reply> reply) const
 {
-    if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest)
-        return new CPSGS_AnnotProcessor(request, reply);
-    return nullptr;
+    if (request->GetRequestType() != CPSGS_Request::ePSGS_AnnotationRequest)
+        return nullptr;
+
+    auto    valid_annots = x_FilterNames(request);
+    if (valid_annots.empty())
+        return nullptr;
+
+    return new CPSGS_AnnotProcessor(request, reply, valid_annots);
+}
+
+
+vector<string>
+CPSGS_AnnotProcessor::x_FilterNames(shared_ptr<CPSGS_Request> request)
+{
+    vector<string>  valid_annots;
+    for (const auto &  name : request->GetRequest<SPSGS_AnnotRequest>().m_Names) {
+        if (x_IsNameValid(name))
+            valid_annots.push_back(name);
+    }
+    return valid_annots;
+}
+
+
+bool CPSGS_AnnotProcessor::x_IsNameValid(const string &  name)
+{
+    static CRegexp  regexp("^NA\\d+\\.\\d+$", CRegexp::fCompile_ignore_case);
+    return regexp.IsMatch(name);
 }
 
 
@@ -149,7 +176,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
                                          bioseq_resolution.m_BioseqInfo.GetAccession(),
                                          bioseq_resolution.m_BioseqInfo.GetVersion(),
                                          bioseq_resolution.m_BioseqInfo.GetSeqIdType(),
-                                         m_AnnotRequest->m_Names,
+                                         m_ValidNames,
                                          nullptr, nullptr);
         details->SetLoader(fetch_task);
 

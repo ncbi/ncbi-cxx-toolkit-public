@@ -97,8 +97,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 
     m_Processors = app->DispatchRequest(m_UserRequest, m_Reply);
     if (m_Processors.empty()) {
-        string  msg = "CPendingOperation::Start(): no processors found "
-                      "to serve the request";
+        string  msg = "No processors found to serve the request";
         PSG_TRACE(msg);
 
         m_FinishStatuses.push_back(IPSGS_Processor::ePSGS_NotFound);

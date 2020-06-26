@@ -13,7 +13,7 @@ NCBI_begin_app(pubseq_gateway)
     resolve_base async_resolve_base async_bioseq_info_base annot_processor
     get_processor psgs_dispatcher
   )
-  NCBI_uses_toolkit_libraries(seq psg_cassandra psg_protobuf psg_cache connext xconnserv xconnect)
+  NCBI_uses_toolkit_libraries(xregexp seq psg_cassandra psg_protobuf psg_cache connext xconnserv xconnect)
   NCBI_requires(CASSANDRA MT Linux H2O LMDB UV PROTOBUF)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()

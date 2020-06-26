@@ -57,10 +57,13 @@ public:
 public:
     CPSGS_AnnotProcessor();
     CPSGS_AnnotProcessor(shared_ptr<CPSGS_Request> request,
-                         shared_ptr<CPSGS_Reply> reply);
+                         shared_ptr<CPSGS_Reply> reply,
+                         vector<string> &  valid_names);
     virtual ~CPSGS_AnnotProcessor();
 
 private:
+    static vector<string> x_FilterNames(shared_ptr<CPSGS_Request> request);
+    static bool x_IsNameValid(const string &  name);
     void x_OnSeqIdResolveError(
                         CRequestStatus::ECode  status,
                         int  code,
@@ -87,6 +90,10 @@ private:
                 bool  need_wait);
 
 private:
+    // The processor filters out some of the requested named annotations
+    // This vector holds those which can be processed
+    vector<string>              m_ValidNames;
+
     SPSGS_AnnotRequest *        m_AnnotRequest;
     bool                        m_Cancelled;
 };
