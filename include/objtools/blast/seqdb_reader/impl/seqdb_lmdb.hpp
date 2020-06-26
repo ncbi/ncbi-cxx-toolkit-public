@@ -83,21 +83,21 @@ public:
     /// Get Oids for Tax Ids list, idenitcal Oids are merged.
     /// @param tax_ids  Input tax ids /Output tax ids found
     /// @param oids  Oids found for input tax ids
-    void GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOid>& oids, vector<Int4> & tax_ids_found) const;
+    void GetOidsForTaxIds(const set<TTaxId> & tax_ids, vector<blastdb::TOid>& oids, vector<TTaxId> & tax_ids_found) const;
 
     /// Get Oids to exclude for Tax ids
     /// @parm ids Input tax ids to exclude /Output tax ids found
     /// @param rv Oids to exclude based on input tax id list
-    void NegativeTaxIdsToOids(const set<Int4>& ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
+    void NegativeTaxIdsToOids(const set<TTaxId>& ids, vector<blastdb::TOid>& rv, vector<TTaxId> & tax_ids_found) const;
 
     /// Get All Unique Tax Ids for db
     /// @parma tax_ids  Return all unique tax ids found in db
-    void GetDBTaxIds(vector<Int4> & tax_ids) const;
+    void GetDBTaxIds(vector<TTaxId> & tax_ids) const;
 
     /// Get Tax Ids for oid list
     /// @param oids Input oid list
     /// @param tax_ids Output tax id list
-    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const;
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
 private:
     string  m_LMDBFile;

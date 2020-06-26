@@ -244,7 +244,7 @@ public:
     /// @param persist
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int             oid,
-                   map<TGi, int> & gi_to_taxid,
+                   map<TGi, TTaxId> & gi_to_taxid,
                    bool            persist);
 
     /// Get taxids for an OID.
@@ -264,7 +264,7 @@ public:
     /// @param persist
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int           oid,
-                   vector<int> & taxids,
+                   vector<TTaxId> & taxids,
                    bool          persist);
 
     /// Get gi to taxid map for an OID.
@@ -284,13 +284,13 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetLeafTaxIDs(
             int                  oid,
-            map<TGi, set<int> >& gi_to_taxid_set,
+            map<TGi, set<TTaxId> >& gi_to_taxid_set,
             bool                 persist
     );
 
     /// Get all tax ids (leaf and non-leaf for an oid
     void GetAllTaxIDs(int           oid,
-                      set<int> & taxids);
+                      set<TTaxId> & taxids);
 
     /// Get gi to taxid map for an OID.
     ///
@@ -310,7 +310,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetLeafTaxIDs(
             int          oid,
-            vector<int>& gi_to_taxid_set,
+            vector<TTaxId>& gi_to_taxid_set,
             bool         persist
     );
 
@@ -727,7 +727,7 @@ public:
     ///   An integer identifying the taxid to fetch.
     /// @param info
     ///   A structure containing taxonomic description strings.
-    static void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
+    static void GetTaxInfo(TTaxId taxid, SSeqDBTaxInfo & info);
 
     /// Returns the sum of the sequence lengths.
     ///
@@ -1066,11 +1066,11 @@ public:
     /// Get Oid list for input tax ids
     /// @param tax_ids	taxonomy ids
     /// @param rv		oids corrpond to tax ids
-    void TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv);
+    void TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv);
 
     /// Get all unique tax ids from db
     /// @param tax_ids	return taxonomy ids in db
-    void GetDBTaxIds(set<Int4> & tax_ids);
+    void GetDBTaxIds(set<TTaxId> & tax_ids);
 
 private:
     CLASS_MARKER_FIELD("IMPL")

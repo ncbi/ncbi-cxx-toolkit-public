@@ -61,7 +61,7 @@ void CGeneFileWriter::x_ReadAndProcessFile
 // Data conversion and comparison functions
 
 void CGeneFileWriter::
-        x_GetOrgnameForTaxId(int nTaxId,
+        x_GetOrgnameForTaxId(TTaxId nTaxId,
                              string& strName)
 {
     if (m_seqDb.Empty())
@@ -154,9 +154,9 @@ bool CGeneFileWriter::
     // read taxId
     if (strItems[GENE_2_ACCN_TAX_ID_INDEX] != "-")
         lineData.nTaxId =
-            NStr::StringToInt(strItems[GENE_2_ACCN_TAX_ID_INDEX]);
+            NStr::StringToNumeric<TTaxId>(strItems[GENE_2_ACCN_TAX_ID_INDEX]);
     else
-        lineData.nTaxId = 0;
+        lineData.nTaxId = ZERO_TAX_ID;
 
     // read geneId
     if (strItems[GENE_2_ACCN_GENE_ID_INDEX] != "-")
@@ -193,7 +193,7 @@ void CGeneFileWriter::
         x_Gene2Accn_LineToRecord(const SGene2AccnLine& lineData,
                                  TTwoIntRecordVec& vecRecords)
 {
-    if (lineData.nTaxId > 0 && lineData.geneId > 0)
+    if (lineData.nTaxId > ZERO_TAX_ID && lineData.geneId > 0)
     {
         STwoIntRecord record;
         record.n2 = lineData.geneId;
@@ -456,9 +456,9 @@ bool CGeneFileWriter::
     // read taxId
     if (strItems[GENE_INFO_TAX_ID_INDEX] != "-")
         lineData.nTaxId =
-            NStr::StringToInt(strItems[GENE_INFO_TAX_ID_INDEX]);
+            NStr::StringToNumeric<TTaxId>(strItems[GENE_INFO_TAX_ID_INDEX]);
     else
-        lineData.nTaxId = 0;
+        lineData.nTaxId = ZERO_TAX_ID;
 
     // read gene name
     if (strItems[GENE_INFO_SYMBOL_INDEX] != "-")
@@ -479,7 +479,7 @@ void CGeneFileWriter::
         x_GeneInfo_LineToRecord(const SGeneInfoLine& lineData,
                                 TTwoIntRecordVec& vecRecords)
 {
-    if (lineData.nTaxId > 0 && lineData.geneId > 0)
+    if (lineData.nTaxId > ZERO_TAX_ID && lineData.geneId > 0)
     {
         STwoIntRecord record;
         record.n1 = lineData.geneId;

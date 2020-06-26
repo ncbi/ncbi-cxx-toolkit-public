@@ -161,24 +161,24 @@ void CSeqDBLMDBEntry::NegativeSeqIdsToOids(const vector<string>& ids, vector<bla
 	x_AdjustOidsOffset(rv);
 }
 
-void CSeqDBLMDBEntry::TaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const
+void CSeqDBLMDBEntry::TaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv, vector<TTaxId> & tax_ids_found) const
 {
 	m_LMDB->GetOidsForTaxIds(tax_ids, rv, tax_ids_found);
 	x_AdjustOidsOffset_TaxList(rv);
 }
 
-void CSeqDBLMDBEntry::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const
+void CSeqDBLMDBEntry::NegativeTaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv, vector<TTaxId> & tax_ids_found) const
 {
 	m_LMDB->NegativeTaxIdsToOids(tax_ids, rv, tax_ids_found);
 	x_AdjustOidsOffset_TaxList(rv);
 }
 
-void CSeqDBLMDBEntry::GetDBTaxIds(vector<Int4> & tax_ids) const
+void CSeqDBLMDBEntry::GetDBTaxIds(vector<TTaxId> & tax_ids) const
 {
 	m_LMDB->GetDBTaxIds(tax_ids);
 }
 
-void CSeqDBLMDBEntry::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const
+void CSeqDBLMDBEntry::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const
 {
 	if(m_isPartial) {
 		vector<TOid> tmp;
@@ -311,10 +311,10 @@ void CSeqDBLMDBSet::NegativeSeqIdsToOids(const vector<string>& ids, vector<blast
 
 }
 
-void CSeqDBLMDBSet::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+void CSeqDBLMDBSet::TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv) const
 {
-	vector<Int4> tax_ids_found;
-	set<Int4> rv_tax_ids;
+	vector<TTaxId> tax_ids_found;
+	set<TTaxId> rv_tax_ids;
 	m_LMDBEntrySet[0]->TaxIdsToOids(tax_ids, rv, tax_ids_found);
 	rv_tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
 	for(unsigned int i=1; i < m_LMDBEntrySet.size(); i++) {
@@ -331,10 +331,10 @@ void CSeqDBLMDBSet::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) 
 	tax_ids.swap(rv_tax_ids);
 }
 
-void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv) const
 {
-	vector<Int4> tax_ids_found;
-	set<Int4> rv_tax_ids;
+	vector<TTaxId> tax_ids_found;
+	set<TTaxId> rv_tax_ids;
 	m_LMDBEntrySet[0]->NegativeTaxIdsToOids(tax_ids, rv, tax_ids_found);
 	rv_tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
 	for(unsigned int i=1; i < m_LMDBEntrySet.size(); i++) {
@@ -352,9 +352,9 @@ void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOi
 	tax_ids.swap(rv_tax_ids);
 }
 
-void CSeqDBLMDBSet::GetDBTaxIds(set<Int4> & tax_ids) const
+void CSeqDBLMDBSet::GetDBTaxIds(set<TTaxId> & tax_ids) const
 {
-	vector<Int4> t;
+	vector<TTaxId> t;
 	m_LMDBEntrySet[0]->GetDBTaxIds(t);
 	tax_ids.insert(t.begin(), t.end());
 	for(unsigned int i=1; i < m_LMDBEntrySet.size(); i++) {
@@ -365,7 +365,7 @@ void CSeqDBLMDBSet::GetDBTaxIds(set<Int4> & tax_ids) const
 }
 
 
-void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const
+void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const
 {
 	if (m_LMDBEntrySet.size() > 1) {
     	vector<TOid> t;
@@ -373,7 +373,7 @@ void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int
     	for(unsigned int i =0; i < oids.size(); i++){
 		   	if (oids[i] >= m_LMDBEntrySet[j]->GetOIDEnd()){
 		   		if (t.size() > 0){
-		   			set<Int4> t_set;
+		   			set<TTaxId> t_set;
 		   			m_LMDBEntrySet[j]->GetTaxIdsForOids(t, t_set);
 		   			t.clear();
 		   			tax_ids.insert(t_set.begin(), t_set.end());
@@ -383,7 +383,7 @@ void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int
 		   	t.push_back(oids[i] - m_LMDBEntrySet[j]->GetOIDStart());
 		}
     	if (t.size() > 0){
-    		set<Int4> t_set;
+    		set<TTaxId> t_set;
     		m_LMDBEntrySet[j]->GetTaxIdsForOids(t, t_set);
     		tax_ids.insert(t_set.begin(), t_set.end());
     	}

@@ -530,7 +530,7 @@ private:
                                   const vector< vector<int> >    & membbits,
                                   const vector< vector<int> >    & linkouts,
                                   int                              pig,
-                                  set<Int4>                      & tax_ids,
+                                  set<TTaxId>                    & tax_ids,
                                   int                              OID=-1,
                                   bool                             parse_ids=true,
                                   bool                             long_seqid=false,
@@ -610,7 +610,7 @@ private:
     /// Binary header in format that will be written to disk.
     string m_BinHdr;
 
-    set<Int4> m_TaxIds;
+    set<TTaxId> m_TaxIds;
 
     // Volumes
 

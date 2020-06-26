@@ -141,9 +141,9 @@ protected:
     /// Cache the defline (for membership bits)
     CRef<CBlast_def_line_set> m_Defline;
     /// Pair with a gi2taxid map for one Oid
-    pair<TOID, map<TGi, int> > m_Gi2TaxidMap;
+    pair<TOID, map<TGi, TTaxId> > m_Gi2TaxidMap;
     /// Pair with a gi2taxid-set map for one Oid
-    pair<TOID, map<TGi, set<int> > > m_Gi2TaxidSetMap;
+    pair<TOID, map<TGi, set<TTaxId> > > m_Gi2TaxidSetMap;
     /// Pair with a gi2accesion map for one Oid
     pair<TOID, map<TGi, string> > m_Gi2AccMap;
     /// Pair with a gi2title map for one Oid
@@ -156,8 +156,8 @@ protected:
     bool m_UseLongSeqIds;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
-    int x_ExtractTaxId();
-    void x_ExtractLeafTaxIds(set<int>& taxids);
+    TTaxId x_ExtractTaxId();
+    void x_ExtractLeafTaxIds(set<TTaxId>& taxids);
     /// Sets the map
     void x_SetGi2AccMap();
     /// Sets the map

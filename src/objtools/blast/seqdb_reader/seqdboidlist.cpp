@@ -641,11 +641,11 @@ void s_ProcessTaxIdFilters(const vector<string> &     fnames,
 		return;
 	}
 
-	set<Int4> user_taxids;
+	set<TTaxId> user_taxids;
 	if(!user_list.Empty() && (user_list->GetNumTaxIds() > 0)) {
 		user_taxids = user_list->GetTaxIdsList();
 	}
-	set<Int4> neg_user_taxids;
+	set<TTaxId> neg_user_taxids;
 	if(!neg_user_list.Empty() && (neg_user_list->GetNumTaxIds() > 0)) {
 		neg_user_taxids = neg_user_list->GetTaxIdsList();
 	}
@@ -655,15 +655,15 @@ void s_ProcessTaxIdFilters(const vector<string> &     fnames,
 		vector<blastdb::TOid> oids;
 		CRef<CSeqDBGiList> list(new CSeqDBFileGiList(fnames[k], CSeqDBFileGiList::eTaxIdList));
 		s_GetFilteredOidRange(volset, fnames_vols[k], excluded_vols, list);
-		set<Int4> taxids;
+		set<TTaxId> taxids;
 		taxids = list->GetTaxIdsList();
 		if(taxids.size() == 0){
 			continue;
 		}
 		if(user_taxids.size() > 0){
-			vector<Int4> common;
+			vector<TTaxId> common;
 			common.resize(taxids.size());
-			vector<Int4>::iterator itr = set_intersection(taxids.begin(), taxids.end(),
+			vector<TTaxId>::iterator itr = set_intersection(taxids.begin(), taxids.end(),
 					                                      user_taxids.begin(), user_taxids.end(), common.begin());
 			common.resize(itr-common.begin());
 			if( common.size() == 0) {
@@ -673,9 +673,9 @@ void s_ProcessTaxIdFilters(const vector<string> &     fnames,
 			taxids.insert(common.begin(), common.end());
 		}
 		if(neg_user_taxids.size() > 0) {
-			vector<Int4> difference;
+			vector<TTaxId> difference;
 			difference.resize(taxids.size());
-			vector<Int4>::iterator itr = set_difference(taxids.begin(), taxids.end(),
+			vector<TTaxId>::iterator itr = set_difference(taxids.begin(), taxids.end(),
 								                        neg_user_taxids.begin(), neg_user_taxids.end(), difference.begin());
 			difference.resize(itr-difference.begin());
 			if(difference.size() == 0){

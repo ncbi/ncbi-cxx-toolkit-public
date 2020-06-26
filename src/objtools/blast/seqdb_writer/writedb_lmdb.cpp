@@ -383,17 +383,17 @@ CWriteDB_TaxID::~CWriteDB_TaxID()
     CFile(m_Db+"-lock").Remove();
 }
 
-int CWriteDB_TaxID::InsertEntries(const set<Int4> & tax_ids, const blastdb::TOid oid)
+int CWriteDB_TaxID::InsertEntries(const set<TTaxId> & tax_ids, const blastdb::TOid oid)
 {
     int count = 0;
     if(tax_ids.size() == 0) {
     	x_Resize();
-    	SKeyValuePair<blastdb::TOid>  kv(0, oid);
+    	SKeyValuePair<blastdb::TOid>  kv(ZERO_TAX_ID, oid);
     	m_TaxId2OidList.push_back(kv);
     	return 1;
     }
 
-    ITERATE(set<Int4>, itr, tax_ids) {
+    ITERATE(set<TTaxId>, itr, tax_ids) {
     	x_Resize();
     	SKeyValuePair<blastdb::TOid> kv(*itr, oid);
     	m_TaxId2OidList.push_back(kv);
@@ -420,13 +420,13 @@ void CWriteDB_TaxID::x_CommitTransaction()
     	}
     	for(; i < j; i++){
     		Uint8 & offset = m_TaxId2OffsetsList[i].value;
-    		Int4 & tax_id = m_TaxId2OffsetsList[i].tax_id;
+            TTaxId & tax_id = m_TaxId2OffsetsList[i].tax_id;
     		//cerr << m_list[i].id << endl;
 			lmdb::val value{&offset, sizeof(offset)};
 			lmdb::val key{&tax_id, sizeof(tax_id)};
 			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
 			if (!rc) {
-		 		NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id " + tax_id);
+		 		NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id " + NStr::NumericToString(tax_id));
 			}
 		}
     	txn.commit();
@@ -435,10 +435,11 @@ void CWriteDB_TaxID::x_CommitTransaction()
 
 }
 
-Uint4 s_WirteTaxIds(CNcbiOfstream & os, vector<Int4> & tax_ids)
+Uint4 s_WirteTaxIds(CNcbiOfstream & os, vector<TTaxId> & tax_ids)
 {
 	for(unsigned int j =0; j < tax_ids.size(); j++) {
-		os.write((char *)&tax_ids[j], 4);
+        Int4 tid = TAX_ID_TO(Int4, tax_ids[j]);
+		os.write((char *)&tid, 4);
 	}
 	return tax_ids.size();
 }
@@ -462,7 +463,7 @@ void CWriteDB_TaxID::x_CreateOidToTaxIdsLookupFile()
 	os.flush();
 
 	blastdb::TOid count = 0;
-	vector<Int4> tmp_tax_ids;
+	vector<TTaxId> tmp_tax_ids;
 	for(unsigned int i = 0; i < m_TaxId2OidList.size(); i++) {
 		if(i > 0 && m_TaxId2OidList[i].value != m_TaxId2OidList[i-1].value ) {
 			if((m_TaxId2OidList[i].value - m_TaxId2OidList[i-1].value) != 1) {

@@ -254,12 +254,12 @@ void CSeqDB::AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>&
      m_Impl->AccessionsToOids(accs, oids);
 }
 
-void CSeqDB::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+void CSeqDB::TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv) const
 {
      m_Impl->TaxIdsToOids(tax_ids, rv);
 }
 
-void CSeqDB::GetDBTaxIds(set<Int4> & tax_ids) const
+void CSeqDB::GetDBTaxIds(set<TTaxId> & tax_ids) const
 {
      m_Impl->GetDBTaxIds(tax_ids);
 }
@@ -434,11 +434,11 @@ CSeqDB::ESeqType CSeqDB::GetSequenceType() const
 }
 
 void CSeqDB::GetTaxIDs(int             oid,
-                       map<TGi, int> & gi_to_taxid,
+                       map<TGi, TTaxId> & gi_to_taxid,
                        bool            persist) const
 {
     ////m_Impl->Verify();
-    typedef map<TGi, int> TmpMap;
+    typedef map<TGi, TTaxId> TmpMap;
     TmpMap gi_to_taxid_tmp;
     m_Impl->GetTaxIDs(oid, gi_to_taxid_tmp, persist);
     if ( !persist ) {
@@ -451,7 +451,7 @@ void CSeqDB::GetTaxIDs(int             oid,
 }
 
 void CSeqDB::GetTaxIDs(int           oid,
-                       vector<int> & taxids,
+                       vector<TTaxId> & taxids,
                        bool          persist) const
 {
     ////m_Impl->Verify();
@@ -460,19 +460,19 @@ void CSeqDB::GetTaxIDs(int           oid,
 }
 
 void CSeqDB::GetAllTaxIDs(int           oid,
-                          set<int> & taxids) const
+                          set<TTaxId> & taxids) const
 {
     m_Impl->GetAllTaxIDs(oid, taxids);
 }
 
 void CSeqDB::GetLeafTaxIDs(
         int                  oid,
-        map<TGi, set<int> >& gi_to_taxid_set,
+        map<TGi, set<TTaxId> >& gi_to_taxid_set,
         bool                 persist
 ) const
 {
     ////m_Impl->Verify();
-    typedef map<TGi, set<int> > TmpMap;
+    typedef map<TGi, set<TTaxId> > TmpMap;
     TmpMap gi_to_taxid_set_tmp;
     m_Impl->GetLeafTaxIDs(oid, gi_to_taxid_set_tmp, persist);
     if ( !persist ) {
@@ -486,7 +486,7 @@ void CSeqDB::GetLeafTaxIDs(
 
 void CSeqDB::GetLeafTaxIDs(
         int          oid,
-        vector<int>& taxids,
+        vector<TTaxId>& taxids,
         bool         persist
 ) const
 {
@@ -1100,7 +1100,7 @@ void CSeqDB::GetAliasFileValues(TAliasFileValues & afv)
     ////m_Impl->Verify();
 }
 
-void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
+void CSeqDB::GetTaxInfo(TTaxId taxid, SSeqDBTaxInfo & info)
 {
     CSeqDBImpl::GetTaxInfo(taxid, info);
 }

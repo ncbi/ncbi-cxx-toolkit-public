@@ -254,7 +254,7 @@ CSeqDBGiListSet::x_ResolvePositiveList(CSeqDBAtlas            & atlas,
     		}
     		if(user_list->GetNumTaxIds() > 0) {
     			vector<blastdb::TOid> & oids = user_list->SetOidsForTaxIdsList();
-    			set<Int4> &  tax_ids = user_list->GetTaxIdsList();
+    			set<TTaxId> &  tax_ids = user_list->GetTaxIdsList();
     			lmdb_set.TaxIdsToOids(tax_ids, oids);
     		}
     		if((user_list->GetNumGis() == 0) && (user_list->GetNumTis() == 0) &&
@@ -332,7 +332,7 @@ CSeqDBGiListSet::x_ResolveNegativeList(CSeqDBAtlas            & atlas,
     		}
     		if(m_NegativeList->GetNumTaxIds() > 0) {
     			vector<blastdb::TOid> & oids = m_NegativeList->SetExcludedOids();
-    			set<Int4> &  tax_ids = m_NegativeList->GetTaxIdsList();
+    			set<TTaxId> &  tax_ids = m_NegativeList->GetTaxIdsList();
     			lmdb_set.NegativeTaxIdsToOids(tax_ids, oids);
     		}
 

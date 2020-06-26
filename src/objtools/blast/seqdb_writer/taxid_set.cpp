@@ -40,6 +40,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 #endif
 
+const TTaxId CTaxIdSet::kTaxIdNotSet = ZERO_TAX_ID;
+
 void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
 {
     while(f && (! f.eof())) {
@@ -62,7 +64,7 @@ void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
         }
         
         if (gi_str.size() && tx_str.size()) {
-            int taxid = NStr::StringToInt(tx_str, NStr::fAllowLeadingSpaces);
+            TTaxId taxid = NStr::StringToNumeric<TTaxId>(tx_str, NStr::fAllowLeadingSpaces);
             string key = AccessionToKey(gi_str);
             
             m_TaxIdMap[key] = taxid;
@@ -71,9 +73,9 @@ void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
     m_Matched = (m_GlobalTaxId != kTaxIdNotSet) || m_TaxIdMap.empty();
 }
 
-int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) 
+TTaxId CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) 
 {
-    int retval = m_GlobalTaxId;
+    TTaxId retval = m_GlobalTaxId;
 
     if (retval != kTaxIdNotSet) {
         return retval;
@@ -87,7 +89,7 @@ int CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline)
             if (key->empty())
                 continue;
             
-            map<string, int>::const_iterator item = m_TaxIdMap.find(*key);
+            map<string, TTaxId>::const_iterator item = m_TaxIdMap.find(*key);
             
             if (item != m_TaxIdMap.end()) {
                 retval = item->second;

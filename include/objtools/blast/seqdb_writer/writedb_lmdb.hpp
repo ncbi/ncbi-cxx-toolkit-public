@@ -143,7 +143,7 @@ public:
     /// @param tax_ids list for oid
     /// @return number of rows added to database
     /// @see InsertEntry
-    int InsertEntries(const set<Int4> & tax_ids, const blastdb::TOid oid);
+    int InsertEntries(const set<TTaxId> & tax_ids, const blastdb::TOid oid);
 
 private:
     void x_CommitTransaction();
@@ -157,9 +157,9 @@ private:
     unsigned int m_MaxEntryPerTxn;
     template <class valueType>
     struct SKeyValuePair {
-    	Int4 tax_id;
+        TTaxId tax_id;
     	valueType value;
-    	SKeyValuePair(int t, valueType v) : tax_id(t), value(v) {}
+    	SKeyValuePair(TTaxId t, valueType v) : tax_id(t), value(v) {}
     	static bool cmp_key(const SKeyValuePair & v, const SKeyValuePair & k) {
    			if(v.tax_id == k.tax_id) {
    				return v.value < k.value;

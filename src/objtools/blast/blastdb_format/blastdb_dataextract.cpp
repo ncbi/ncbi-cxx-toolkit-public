@@ -184,13 +184,13 @@ string CBlastDBExtractor::ExtractLinksInteger()
             if (seqid->IsGi()) {
                 if (seqid->GetGi() == m_Gi) {
                     ITERATE(CBlast_def_line::TLinks, links_int, (*itr)->GetLinks()) {
-                        retval += NStr::IntToString(*links_int) + SEPARATOR;
+                        retval += NStr::NumericToString(*links_int) + SEPARATOR;
                     }
                     break;
                 }
             } else {
                 ITERATE(CBlast_def_line::TLinks, links_int, (*itr)->GetLinks()) {
-                    retval += NStr::IntToString(*links_int) + SEPARATOR;
+                    retval += NStr::NumericToString(*links_int) + SEPARATOR;
                 }
             }
         }
@@ -384,28 +384,28 @@ string CBlastDBExtractor::ExtractTitle() {
 }
 
 string CBlastDBExtractor::ExtractTaxId() {
-    return NStr::IntToString(x_ExtractTaxId());
+    return NStr::NumericToString(x_ExtractTaxId());
 }
 
 string CBlastDBExtractor::ExtractLeafTaxIds() {
-    set<int> taxids;
+    set<TTaxId> taxids;
     x_ExtractLeafTaxIds(taxids);
     if (taxids.empty()) {
         return ExtractTaxId();
     }
     string retval;
-    ITERATE(set<int>, taxids_iter, taxids) {
+    ITERATE(set<TTaxId>, taxids_iter, taxids) {
         if (retval.empty()) {
-            retval = NStr::IntToString(*taxids_iter);
+            retval = NStr::NumericToString(*taxids_iter);
         } else {
-            retval += SEPARATOR + NStr::IntToString(*taxids_iter);
+            retval += SEPARATOR + NStr::NumericToString(*taxids_iter);
         }
     }
     return retval;
 }
 
 string CBlastDBExtractor::ExtractCommonTaxonomicName() {
-    const int kTaxID = x_ExtractTaxId();
+    const TTaxId kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
     string retval(NOT_AVAILABLE);
     try {
@@ -417,12 +417,12 @@ string CBlastDBExtractor::ExtractCommonTaxonomicName() {
 }
 
 string CBlastDBExtractor::ExtractLeafCommonTaxonomicNames() {
-    set<int> taxids;
+    set<TTaxId> taxids;
     x_ExtractLeafTaxIds(taxids);
     SSeqDBTaxInfo tax_info;
     string retval;
-    ITERATE(set<int>, taxid_iter, taxids) {
-        const int kTaxID = *taxid_iter;
+    ITERATE(set<TTaxId>, taxid_iter, taxids) {
+        const TTaxId kTaxID = *taxid_iter;
         try {
             m_BlastDb.GetTaxInfo(kTaxID, tax_info);
             _ASSERT(kTaxID == tax_info.taxid);
@@ -441,7 +441,7 @@ string CBlastDBExtractor::ExtractLeafCommonTaxonomicNames() {
 }
 
 string CBlastDBExtractor::ExtractScientificName() {
-    const int kTaxID = x_ExtractTaxId();
+    const TTaxId kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
     string retval(NOT_AVAILABLE);
     try {
@@ -453,12 +453,12 @@ string CBlastDBExtractor::ExtractScientificName() {
 }
 
 string CBlastDBExtractor::ExtractLeafScientificNames() {
-    set<int> taxids;
+    set<TTaxId> taxids;
     x_ExtractLeafTaxIds(taxids);
     SSeqDBTaxInfo tax_info;
     string retval;
-    ITERATE(set<int>, taxid_iter, taxids) {
-        const int kTaxID = *taxid_iter;
+    ITERATE(set<TTaxId>, taxid_iter, taxids) {
+        const TTaxId kTaxID = *taxid_iter;
         try {
             m_BlastDb.GetTaxInfo(kTaxID, tax_info);
             _ASSERT(kTaxID == tax_info.taxid);
@@ -477,7 +477,7 @@ string CBlastDBExtractor::ExtractLeafScientificNames() {
 }
 
 string CBlastDBExtractor::ExtractBlastName() {
-    const int kTaxID = x_ExtractTaxId();
+    const TTaxId kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
     string retval(NOT_AVAILABLE);
     try {
@@ -513,7 +513,7 @@ string CBlastDBExtractor::ExtractBlastName() {
 //}
 
 string CBlastDBExtractor::ExtractSuperKingdom() {
-    const int kTaxID = x_ExtractTaxId();
+    const TTaxId kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
     string retval(NOT_AVAILABLE);
     try {
@@ -739,7 +739,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     return out.str();
 }
 
-int CBlastDBExtractor::x_ExtractTaxId()
+TTaxId CBlastDBExtractor::x_ExtractTaxId()
 {
     x_SetGi();
 
@@ -752,12 +752,12 @@ int CBlastDBExtractor::x_ExtractTaxId()
         return m_Gi2TaxidMap.second[m_Gi];
     }
     // for database without Gi:
-    vector<int> taxid;
+    vector<TTaxId> taxid;
     m_BlastDb.GetTaxIDs(m_Oid, taxid);
-    return taxid.size() ? taxid[0] : 0;
+    return taxid.size() ? taxid[0] : ZERO_TAX_ID;
 }
 
-void CBlastDBExtractor::x_ExtractLeafTaxIds(set<int>& taxids)
+void CBlastDBExtractor::x_ExtractLeafTaxIds(set<TTaxId>& taxids)
 {
     x_SetGi();
 
@@ -768,12 +768,12 @@ void CBlastDBExtractor::x_ExtractLeafTaxIds(set<int>& taxids)
             m_BlastDb.GetLeafTaxIDs(m_Oid, m_Gi2TaxidSetMap.second);
         }
         taxids.clear();
-        const set<int>& taxid_set = m_Gi2TaxidSetMap.second[m_Gi];
+        const set<TTaxId>& taxid_set = m_Gi2TaxidSetMap.second[m_Gi];
         taxids.insert(taxid_set.begin(), taxid_set.end());
         return;
     }
     // for database without Gi:
-    vector<int> taxid;
+    vector<TTaxId> taxid;
     m_BlastDb.GetLeafTaxIDs(m_Oid, taxid);
     taxids.clear();
     taxids.insert(taxid.begin(), taxid.end());
@@ -861,7 +861,7 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
 		}
 	}
 	if ((fields.tax_id == 1) || (fields.tax_names == 1)) {
-		unsigned int tax_id = 0;
+        TTaxId tax_id = ZERO_TAX_ID;
 		if (dl.IsSetTaxid()) {
 			tax_id = dl.GetTaxid();
 		}
@@ -888,18 +888,18 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
 	}
 
 	if ((fields.leaf_node_tax_ids == 1) || (fields.leaf_node_tax_names == 1)) {
-		set<int>  tax_id_set = dl.GetLeafTaxIds();
+		set<TTaxId>  tax_id_set = dl.GetLeafTaxIds();
 		if (tax_id_set.empty()) {
 			if (dl.IsSetTaxid()) {
 				tax_id_set.insert(dl.GetTaxid());
 			}
 			else {
-				tax_id_set.insert(0);
+				tax_id_set.insert(ZERO_TAX_ID);
 			}
 		}
 
 		string separator = kEmptyStr;
-		ITERATE(set<int>, itr, tax_id_set) {
+		ITERATE(set<TTaxId>, itr, tax_id_set) {
 			if (fields.leaf_node_tax_names == 1) {
 				try {
 					SSeqDBTaxInfo taxinfo;
@@ -941,7 +941,7 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
 	if(fields.links == 1) {
 		if (dl.IsSetLinks()) {
 			ITERATE(CBlast_def_line::TLinks, links_int, dl.GetLinks()) {
-				results[CBlastDeflineUtil::links] += NStr::IntToString(*links_int) + SEPARATOR;
+				results[CBlastDeflineUtil::links] += NStr::NumericToString(*links_int) + SEPARATOR;
 			}
 		}
 		else {

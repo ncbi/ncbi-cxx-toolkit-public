@@ -528,7 +528,7 @@ CSeqDBLMDB::NegativeSeqIdsToOids(const vector<string>& ids, vector<blastdb::TOid
 
 }
 
-void CSeqDBLMDB::GetDBTaxIds(vector<Int4> & tax_ids) const
+void CSeqDBLMDB::GetDBTaxIds(vector<TTaxId> & tax_ids) const
 {
 
 	tax_ids.clear();
@@ -541,7 +541,7 @@ void CSeqDBLMDB::GetDBTaxIds(vector<Int4> & tax_ids) const
     	auto cursor = lmdb::cursor::open(txn, dbi);
     	lmdb::val key;
         while (cursor.get(key, MDB_NEXT)) {
-        	Int4 taxid = *((Int4 *)key.data());
+        	TTaxId taxid = TAX_ID_FROM(Int4, *((Int4 *)key.data()));
         	tax_ids.push_back(taxid);
         }
         cursor.close();
@@ -561,7 +561,7 @@ void CSeqDBLMDB::GetDBTaxIds(vector<Int4> & tax_ids) const
     CBlastLMDBManager::GetInstance().CloseEnv(m_TaxId2OffsetsFile);
 }
 
-void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOid>& oids, vector<Int4> & tax_ids_found) const
+void CSeqDBLMDB::GetOidsForTaxIds(const set<TTaxId> & tax_ids, vector<blastdb::TOid>& oids, vector<TTaxId> & tax_ids_found) const
 {
 
     try {
@@ -574,8 +574,8 @@ void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOi
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
    	lmdb::dbi dbi(dbi_handle);
     auto cursor = lmdb::cursor::open(txn, dbi);
-    ITERATE(set<Int4>, itr, tax_ids) {
-    	Int4 tax_id = *itr;
+    ITERATE(set<TTaxId>, itr, tax_ids) {
+    	Int4 tax_id = TAX_ID_TO(Int4, *itr);
         lmdb::val data2find(tax_id);
 
         if (cursor.get(data2find, MDB_SET)) {
@@ -645,14 +645,14 @@ public:
 		m_DataStart += (2* (num_of_oids + 1));
 	}
 
-	inline void GetTaxIdListForOid(blastdb::TOid oid, vector<Int4> & taxid_list);
+	inline void GetTaxIdListForOid(blastdb::TOid oid, vector<TTaxId> & taxid_list);
 private:
 
 	Uint8 * m_IndexStart;
 	Int4 * m_DataStart;
 };
 
-void CLookupTaxIds::GetTaxIdListForOid(blastdb::TOid oid, vector<Int4> & taxid_list)
+void CLookupTaxIds::GetTaxIdListForOid(blastdb::TOid oid, vector<TTaxId> & taxid_list)
 {
 	taxid_list.clear();
 	Uint8 * index_ptr = m_IndexStart + oid;
@@ -660,23 +660,23 @@ void CLookupTaxIds::GetTaxIdListForOid(blastdb::TOid oid, vector<Int4> & taxid_l
 	index_ptr--;
 	Int4 * begin = (oid == 0) ? m_DataStart:m_DataStart + (*index_ptr);
 	while (begin < end) {
-		taxid_list.push_back(*begin);
+		taxid_list.push_back(TAX_ID_FROM(Int4, *begin));
 		begin++;
 	}
 }
 
 void
-CSeqDBLMDB::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const
+CSeqDBLMDB::NegativeTaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv, vector<TTaxId> & tax_ids_found) const
 {
 	rv.clear();
 	vector<blastdb::TOid> oids;
 	GetOidsForTaxIds(tax_ids, oids, tax_ids_found);
 
 	CMemoryFile oid_file(m_Oid2TaxIdsFile);
-	set<Int4> tax_id_list(tax_ids.begin(), tax_ids.end());
+	set<TTaxId> tax_id_list(tax_ids.begin(), tax_ids.end());
 	CLookupTaxIds lookup(oid_file);
 	for(unsigned int i=0; i < oids.size(); i++) {
-		vector<Int4>  file_list;
+		vector<TTaxId>  file_list;
 		lookup.GetTaxIdListForOid(oids[i], file_list);
 		if(file_list.size() > tax_ids.size()) {
 			continue;
@@ -695,12 +695,12 @@ CSeqDBLMDB::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>
 	}
 }
 
-void CSeqDBLMDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const
+void CSeqDBLMDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const
 {
 	CMemoryFile oid_file(m_Oid2TaxIdsFile);
 	CLookupTaxIds lookup(oid_file);
 	for(unsigned int i=0; i < oids.size(); i++) {
-		vector<Int4>  taxid_list;
+		vector<TTaxId>  taxid_list;
 		lookup.GetTaxIdListForOid(oids[i], taxid_list);
 		tax_ids.insert(taxid_list.begin(), taxid_list.end());
 	}

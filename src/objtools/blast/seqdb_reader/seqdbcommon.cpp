@@ -1102,7 +1102,7 @@ void SeqDB_ReadMemoryTaxIdList(const char * fbeginp,
         }
 
         for(Int4 * elem = (bbeginp + 2); elem < bendp; ++elem) {
-           taxids.tax_ids.insert(SeqDB_GetStdOrd(elem));
+           taxids.tax_ids.insert(TAX_ID_FROM(Int4, SeqDB_GetStdOrd(elem)));
         }
     } else {
         Int4 elem(0);
@@ -1113,7 +1113,7 @@ void SeqDB_ReadMemoryTaxIdList(const char * fbeginp,
             if (dig == -1) {
                 // Skip blank lines or comments by ignoring zero.
                 if (elem != 0) {
-                    taxids.tax_ids.insert(elem);
+                    taxids.tax_ids.insert(TAX_ID_FROM(Int4, elem));
                 }
                 elem = 0;
                 continue;

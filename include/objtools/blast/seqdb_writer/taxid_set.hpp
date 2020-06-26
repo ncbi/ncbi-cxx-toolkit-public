@@ -44,9 +44,9 @@ BEGIN_NCBI_SCOPE
 
 class NCBI_XOBJWRITE_EXPORT CTaxIdSet : public CObject {
 public:
-    static const int kTaxIdNotSet = 0;
+    static const TTaxId kTaxIdNotSet;
 
-    CTaxIdSet(int global_taxid = kTaxIdNotSet)
+    CTaxIdSet(TTaxId global_taxid = kTaxIdNotSet)
         : m_GlobalTaxId(global_taxid),
           m_Matched(true) {}
     
@@ -60,14 +60,14 @@ public:
     bool HasEverFixedId() const { return m_Matched; };
     
 private:
-    int                m_GlobalTaxId;
-    map< string, int > m_TaxIdMap;
-    bool               m_Matched;
+    TTaxId                m_GlobalTaxId;
+    map< string, TTaxId > m_TaxIdMap;
+    bool                  m_Matched;
 
     /// Selects the most suitable tax id for the input passed in, checking the
     /// global taxid first, then the mapping provided by an input file, and
     /// finally what's found in the defline argument
-    int x_SelectBestTaxid(const objects::CBlast_def_line & defline);
+    TTaxId x_SelectBestTaxid(const objects::CBlast_def_line & defline);
     
 };
 

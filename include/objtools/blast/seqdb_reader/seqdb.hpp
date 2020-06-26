@@ -532,7 +532,7 @@ public:
     ///
     /// This finds the leaf-node TAXIDS associated with a given OID and
     /// computes a mapping from GI to taxid.  This mapping is added to the
-    /// map<int,set<int>> provided by the user.  If the "persist" flag is
+    /// map<TGi,set<TTaxId>> provided by the user.  If the "persist" flag is
     /// set to true, the new associations will simply be added to the
     /// map.  If it is false (the default), the map will be cleared
     /// first.
@@ -545,7 +545,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetLeafTaxIDs(
             int                  oid,
-            map<TGi, set<int> >& gi_to_taxid_set,
+            map<TGi, set<TTaxId> >& gi_to_taxid_set,
             bool                 persist = false
     ) const;
 
@@ -567,7 +567,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetLeafTaxIDs(
             int           oid,
-            vector<int> & taxids,
+            vector<TTaxId> & taxids,
             bool          persist = false
     ) const;
 
@@ -587,7 +587,7 @@ public:
     /// @param persist
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int             oid,
-                   map<TGi, int> & gi_to_taxid,
+                   map<TGi, TTaxId> & gi_to_taxid,
                    bool            persist = false) const;
 
     /// Get taxids for an OID.
@@ -607,7 +607,7 @@ public:
     /// @param persist
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int           oid,
-                   vector<int> & taxids,
+                   vector<TTaxId> & taxids,
                    bool          persist = false) const;
 
     /// Get all tax ids for an oid
@@ -618,7 +618,7 @@ public:
     /// @param taxids
     ///   A returned a set of taxids.
     void GetAllTaxIDs(int           oid,
-                      set<int> & taxids) const;
+                      set<TTaxId> & taxids) const;
 
     /// Get a CBioseq for a sequence.
     ///
@@ -1213,7 +1213,7 @@ public:
     ///   An integer identifying the taxid to fetch.
     /// @param info
     ///   A structure containing taxonomic description strings.
-    static void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
+    static void GetTaxInfo(TTaxId taxid, SSeqDBTaxInfo & info);
 
     /// Fetch data as a CSeq_data object.
     ///
@@ -1500,11 +1500,11 @@ public:
     /// Get Oid list for input tax ids
     /// @param tax_ids	taxonomy ids, return only tax ids found in db
     // @param rv		oids corrpond to tax ids
-    void TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
+    void TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv) const;
 
     /// Get all unique tax ids from db
     /// @param tax_ids	return taxonomy ids in db
-    void GetDBTaxIds(set<Int4> & tax_ids) const;
+    void GetDBTaxIds(set<TTaxId> & tax_ids) const;
 
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

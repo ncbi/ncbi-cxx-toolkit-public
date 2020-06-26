@@ -94,7 +94,7 @@ private:
     struct SGene2AccnLine
     {
         /// Taxonomy ID.
-        int nTaxId;
+        TTaxId nTaxId;
         /// Gene ID.
         int geneId;
         /// RNA Gi corresponding to this Gene ID (0 if none).
@@ -109,7 +109,7 @@ private:
     struct SGeneInfoLine
     {
         /// Taxonomy ID.
-        int nTaxId;
+        TTaxId nTaxId;
         /// Gene ID.
         int geneId;
         /// Gene Symbol.
@@ -273,7 +273,7 @@ private:
     ///     Taxonomy ID to look up.
     /// @param strName
     ///     Set to the scientific name of the organism.
-    void x_GetOrgnameForTaxId(int nTaxId, string& strName);
+    void x_GetOrgnameForTaxId(TTaxId nTaxId, string& strName);
 
     /// Get Gene Data offset given the Gene ID.
     ///

@@ -69,7 +69,7 @@ public:
     /// @param locked
     ///   The lock holder object for this thread.
     /// @return true if the taxonomic id was found
-    static bool GetTaxNames(Int4 tax_id, SSeqDBTaxInfo  & info);
+    static bool GetTaxNames(TTaxId tax_id, SSeqDBTaxInfo  & info);
     
 
 };

@@ -100,13 +100,13 @@ public:
 
     void NegativeSeqIdsToOids(const vector<string>& ids, vector<blastdb::TOid>& rv) const;
 
-    void TaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
+    void TaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv, vector<TTaxId> & tax_ids_found) const;
 
-    void NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
+    void NegativeTaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv, vector<TTaxId> & tax_ids_found) const;
 
-    void GetDBTaxIds(vector<Int4> & tax_ids) const;
+    void GetDBTaxIds(vector<TTaxId> & tax_ids) const;
 
-    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const;
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
 private:
     void x_AdjustOidsOffset(vector<TOid> & oids) const;
@@ -171,13 +171,13 @@ public:
 
     void NegativeSeqIdsToOids(const vector<string>& ids, vector<blastdb::TOid>& rv) const;
 
-    void TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
+    void TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv) const;
 
-    void NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
+    void NegativeTaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv) const;
 
-    void GetDBTaxIds(set<Int4> & tax_ids) const;
+    void GetDBTaxIds(set<TTaxId> & tax_ids) const;
 
-    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const;
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
 private:
     vector<CRef<CSeqDBLMDBEntry> >  m_LMDBEntrySet;

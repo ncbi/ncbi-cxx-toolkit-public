@@ -61,9 +61,9 @@ public:
     }
 
     /// Return the taxonomic identifier field (in host order)
-    Int4 GetTaxId()const
+    TTaxId GetTaxId()const
     {
-        return SeqDB_GetStdOrd(& m_Taxid);
+        return TAX_ID_FROM(Int4, SeqDB_GetStdOrd(& m_Taxid));
     }
 
     /// Return the offset field (in host order)
@@ -216,7 +216,7 @@ CTaxDBFileInfo::~CTaxDBFileInfo()
 }
 
 
-bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
+bool CSeqDBTaxInfo::GetTaxNames(TTaxId           tax_id,
                                 SSeqDBTaxInfo  & info )
 {
 	static CTaxDBFileInfo t;
@@ -227,8 +227,8 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
     
     const char * Data = t.GetDataPtr();
     const CSeqDBTaxId*  Index = t.GetIndexPtr();
-    Int4 low_taxid  = Index[low_index ].GetTaxId();
-    Int4 high_taxid = Index[high_index].GetTaxId();
+    TTaxId low_taxid  = Index[low_index ].GetTaxId();
+    TTaxId high_taxid = Index[high_index].GetTaxId();
 
     if((tax_id < low_taxid) || (tax_id > high_taxid))
         return false;
@@ -237,7 +237,7 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
     Int4 old_index = new_index;
     
     while(1) {
-        Int4 curr_taxid = Index[new_index].GetTaxId();
+        TTaxId curr_taxid = Index[new_index].GetTaxId();
         
         if (tax_id < curr_taxid) {
             high_index = new_index;

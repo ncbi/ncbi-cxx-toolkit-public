@@ -583,7 +583,7 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
         return;
     }
 
-    vector<int> taxids;
+    vector<TTaxId> taxids;
     string titles;
 
     // Scan the CBioseq for taxids and the title string.
@@ -616,7 +616,7 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
 
                         if (oi.IsId()) {
                             //defline->SetTaxid(oi.GetId());
-                            taxids.push_back(oi.GetId());
+                            taxids.push_back(TAX_ID_FROM(CObject_id::TId, oi.GetId()));
                         }
                     }
                 }
@@ -752,7 +752,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  const vector< vector<int> >    & membbits,
                                  const vector< vector<int> >    & linkouts,
                                  int                              pig,
-                                 set<Int4>                      & tax_ids,
+                                 set<TTaxId>                    & tax_ids,
                                  int                              OID,
                                  bool                             parse_ids,
                                  bool                             long_ids,
@@ -1553,7 +1553,7 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
     CConstRef<CBlast_def_line_set> deflines;
     string binary_header;
     vector< vector<int> > v1, v2;
-    set<Int4> t;
+    set<TTaxId> t;
 
     CConstRef<CBioseq> bsref(& bs);
     x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, t, -1, parse_ids,

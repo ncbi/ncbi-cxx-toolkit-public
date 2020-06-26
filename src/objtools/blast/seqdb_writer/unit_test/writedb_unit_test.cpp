@@ -2537,7 +2537,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathUnix)
 
 BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
 {
-    const int kTaxId(9986);
+    const TTaxId kTaxId = TAX_ID_CONST(9986);
     CTaxIdSet tis(kTaxId);
     const string kDbName("foo");
     CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
@@ -2563,7 +2563,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
     int total=db.GetNumSeqs();
     for (int oid=0; oid<total; oid++)
     {
-            vector<int> taxids;
+            vector<TTaxId> taxids;
             db.GetTaxIDs(oid, taxids);
             BOOST_REQUIRE(taxids.size() == 1);
             BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
@@ -2573,7 +2573,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
 
 BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMap)
 {
-    const int kTaxId(9986);
+    const TTaxId kTaxId = TAX_ID_CONST(9986);
     CRef<CTaxIdSet> tis(new CTaxIdSet());
     const string kDbName("foo");
     CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
@@ -2601,7 +2601,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMap)
     int total=db.GetNumSeqs();
     for (int oid=0; oid<total; oid++)
     {
-          vector<int> taxids;
+          vector<TTaxId> taxids;
           db.GetTaxIDs(oid, taxids);
           BOOST_REQUIRE(taxids.size() == 1);
           BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
@@ -2611,7 +2611,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMap)
 
 BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMapLclIds)
 {
-    const int kTaxId(382);
+    const TTaxId kTaxId = TAX_ID_CONST(382);
     CRef<CTaxIdSet> tis(new CTaxIdSet());
     const string kDbName("foo");
     CWriteDB blastdb(kDbName, CWriteDB::eProtein, kDbName);
@@ -2637,7 +2637,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMapLclIds)
     int total=db.GetNumSeqs();
     for (int oid=0; oid<total; oid++)
     {
-          vector<int> taxids;
+          vector<TTaxId> taxids;
           db.GetTaxIDs(oid, taxids);
           BOOST_REQUIRE(taxids.size() == 1);
           BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
@@ -3577,7 +3577,7 @@ BOOST_AUTO_TEST_CASE(LimitProteinDeflines)
 	CSeqDB readdb(dbname, CSeqDB::eProtein);
 	for(unsigned int i=0; i < kNumOfDeflines; i++){
 		CRef<CBlast_def_line_set> new_set = readdb.GetHdr(i);
-		set<int> t;
+		set<TTaxId> t;
 		readdb.GetAllTaxIDs(i, t);
 		BOOST_REQUIRE_EQUAL(num_taxids[i], t.size());
 		BOOST_REQUIRE_EQUAL(num_deflines[i], new_set->Set().size());

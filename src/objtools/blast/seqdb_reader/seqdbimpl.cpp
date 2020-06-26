@@ -438,7 +438,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 }
 
 void CSeqDBImpl::GetTaxIDs(int             oid,
-                           map<TGi, int> & gi_to_taxid,
+                           map<TGi, TTaxId> & gi_to_taxid,
                            bool            persist)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -474,7 +474,7 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
 }
 
 void CSeqDBImpl::GetTaxIDs(int           oid,
-                           vector<int> & taxids,
+                           vector<TTaxId> & taxids,
                            bool          persist)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -499,7 +499,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
 }
 
 void CSeqDBImpl::GetAllTaxIDs(int           oid,
-                              set<int> & taxids)
+                              set<TTaxId> & taxids)
 {
     CSeqDBLockHold locked(m_Atlas);
 
@@ -516,7 +516,7 @@ void CSeqDBImpl::GetAllTaxIDs(int           oid,
 
 void CSeqDBImpl::GetLeafTaxIDs(
         int                  oid,
-        map<TGi, set<int> >& gi_to_taxid_set,
+        map<TGi, set<TTaxId> >& gi_to_taxid_set,
         bool                 persist
 )
 {
@@ -553,7 +553,7 @@ void CSeqDBImpl::GetLeafTaxIDs(
 
 void CSeqDBImpl::GetLeafTaxIDs(
         int          oid,
-        vector<int>& taxids,
+        vector<TTaxId>& taxids,
         bool         persist
 )
 {
@@ -1317,7 +1317,7 @@ void CSeqDBImpl::AccessionToOids(const string & acc,
 }
 
 
-void CSeqDBImpl::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv)
+void CSeqDBImpl::TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv)
 {
     CHECK_MARKER();
     rv.clear();
@@ -1339,7 +1339,7 @@ void CSeqDBImpl::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv)
     return;
 }
 
-void CSeqDBImpl::GetDBTaxIds(set<Int4> & tax_ids)
+void CSeqDBImpl::GetDBTaxIds(set<TTaxId> & tax_ids)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -1629,7 +1629,7 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
     }
 }
 
-void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
+void CSeqDBImpl::GetTaxInfo(TTaxId taxid, SSeqDBTaxInfo & info)
 {
     if (! CSeqDBTaxInfo::GetTaxNames(taxid, info)) {
         CNcbiOstrstream oss;

@@ -72,9 +72,9 @@ BOOST_AUTO_TEST_CASE(CreateLMDBFile)
 		test_db.InsertVolumesInfo(vol_names, vol_num_oids);
 
 		CWriteDB_TaxID taxdb(tax_lmdb,100000);
-	    const int taxids[5] = { 9606, 562, 0, 2, 10239 };
+	    const TTaxId taxids[5] = { TAX_ID_CONST(9606), TAX_ID_CONST(562), TAX_ID_CONST(0), TAX_ID_CONST(2), TAX_ID_CONST(10239) };
 		for (int i=0; i < source_db.GetNumOIDs(); i++) {
-			set<int> t;
+			set<TTaxId> t;
 			for(int j=0; j < (i % 5 + 1); j++) {
 				t.insert(taxids[j]);
 			}
@@ -122,9 +122,9 @@ BOOST_AUTO_TEST_CASE(CreateLMDBFile)
 
 		/* Test Tax Ids */
 		vector<blastdb::TOid> tax_oids;
-		set<Int4> tax_ids;
-		tax_ids.insert(10239);
-		vector<Int4> rv_tax_ids;
+		set<TTaxId> tax_ids;
+		tax_ids.insert(TAX_ID_CONST(10239));
+		vector<TTaxId> rv_tax_ids;
 		test_db.GetOidsForTaxIds(tax_ids, tax_oids, rv_tax_ids);
 		for(unsigned int i=0; i < tax_ids.size(); i++) {
 			BOOST_REQUIRE_EQUAL(tax_oids[i] % 5, 4);

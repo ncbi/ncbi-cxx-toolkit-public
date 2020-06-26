@@ -1082,18 +1082,18 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
     //m_Atlas.Lock(locked);
 
     for(TBDLLConstIter iter = dl.begin(); iter != dl.end(); iter ++) {
-        int taxid = 0;
+        TTaxId taxid = ZERO_TAX_ID;
 
         if ((*iter)->CanGetTaxid()) {
             taxid = (*iter)->GetTaxid();
         }
-        if (taxid <= 0) {
+        if (taxid <= ZERO_TAX_ID) {
             continue;
         }
 
         bool have_org_desc = false;
 
-        if (use_taxinfo_cache && m_TaxCache.Lookup(taxid).NotEmpty()) {
+        if (use_taxinfo_cache && m_TaxCache.Lookup(TAX_ID_TO(int, taxid)).NotEmpty()) {
             have_org_desc = true;
         }
 
@@ -1110,11 +1110,11 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
 
         if (provide_new_taxonomy_info) {
             if (have_org_desc) {
-                taxonomy.push_back(m_TaxCache.Lookup(taxid));
+                taxonomy.push_back(m_TaxCache.Lookup(TAX_ID_TO(int, taxid)));
             } else {
                 CRef<CDbtag> org_tag(new CDbtag);
                 org_tag->SetDb(TAX_ORGREF_DB_NAME);
-                org_tag->SetTag().SetId(taxid);
+                org_tag->SetTag().SetId(TAX_ID_TO(int, taxid));
 
                 CRef<COrg_ref> org(new COrg_ref);
                 if (found_taxid_in_taxonomy_blastdb) {
@@ -1133,7 +1133,7 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
                 taxonomy.push_back(desc);
 
                 if (use_taxinfo_cache) {
-                    m_TaxCache.Lookup(taxid) = desc;
+                    m_TaxCache.Lookup(TAX_ID_TO(int, taxid)) = desc;
                 }
             }
         }
@@ -1845,7 +1845,7 @@ CSeqDBVol::GetFilteredHeader(int                    oid,
     return x_GetFilteredHeader(oid, NULL);
 }
 
-bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<int> & user_tax_ids)
+bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<TTaxId> & user_tax_ids)
 {
 	CBlast_def_line::TTaxIds tax_ids;
 	if (def.IsSetTaxid()) {
@@ -1853,8 +1853,12 @@ bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<int> & user_t
 	}
 	if(def.IsSetLinks()) {
 		CBlast_def_line::TLinks leaf_ids = def.GetLinks();
-		tax_ids.insert(leaf_ids.begin(), leaf_ids.end());
-	}
+#ifdef NCBI_STRICT_TAX_ID
+        ITERATE(CBlast_def_line::TLinks, it, leaf_ids) tax_ids.insert(TAX_ID_FROM(int, *it));
+#else
+        tax_ids.insert(leaf_ids.begin(), leaf_ids.end());
+#endif
+    }
 
 	if(user_tax_ids.size() > tax_ids.size()) {
 		ITERATE(CBlast_def_line::TTaxIds, itr, tax_ids) {
@@ -1865,7 +1869,7 @@ bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<int> & user_t
 
 	}
 	else {
-		ITERATE(set<int>, itr, user_tax_ids) {
+		ITERATE(set<TTaxId>, itr, user_tax_ids) {
 			if(tax_ids.find(*itr) != tax_ids.end()) {
 				return true;
 			}
@@ -1874,7 +1878,7 @@ bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<int> & user_t
 	return false;
 }
 
-bool s_IncludeDefline_NegativeTaxid(const CBlast_def_line & def, const set<int> & user_tax_ids)
+bool s_IncludeDefline_NegativeTaxid(const CBlast_def_line & def, const set<TTaxId> & user_tax_ids)
 {
 	CBlast_def_line::TTaxIds taxid_set = def.GetTaxIds();
 	if(taxid_set.size() > user_tax_ids.size()) {

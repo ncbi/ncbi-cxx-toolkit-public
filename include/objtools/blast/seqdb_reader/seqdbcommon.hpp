@@ -214,7 +214,7 @@ public:
     };
 
     struct STaxIdsOids {
-    	set<int> tax_ids;
+    	set<TTaxId> tax_ids;
     	vector<blastdb::TOid> oids;
     };
 
@@ -473,7 +473,7 @@ public:
     void GetPigList(vector<TPig>& pigs) const;
 
 
-    set<Int4> & GetTaxIdsList()
+    set<TTaxId> & GetTaxIdsList()
 	{
     	return m_TaxIdsOids.tax_ids;
 	}
@@ -507,9 +507,9 @@ public:
         m_SisOids.push_back(si);
     }
 
-    void AddTaxIds(const set<int> & tax_ids)
+    void AddTaxIds(const set<TTaxId> & tax_ids)
     {
-    	set<int> & tids = m_TaxIdsOids.tax_ids;
+    	set<TTaxId> & tids = m_TaxIdsOids.tax_ids;
     	tids.insert(tax_ids.begin(), tax_ids.end());
     }
 
@@ -1078,12 +1078,12 @@ public:
        	return m_ListInfo;
     }
 
-    void AddTaxIds(const set<int> & tax_ids)
+    void AddTaxIds(const set<TTaxId> & tax_ids)
     {
        	m_TaxIds.insert(tax_ids.begin(), tax_ids.end());
     }
 
-    set<Int4> & GetTaxIdsList()
+    set<TTaxId> & GetTaxIdsList()
     {
        	return m_TaxIds;
     }
@@ -1104,7 +1104,7 @@ protected:
 
     /// SeqIds to exclude from the SeqDB instance.
     vector<string> m_Sis;
-    set<Int4> m_TaxIds;
+    set<TTaxId> m_TaxIds;
 
 private:
     /// Prevent copy constructor.
@@ -1821,13 +1821,13 @@ typedef map< string, TSeqDBAliasFileVersions > TSeqDBAliasFileValues;
 struct SSeqDBTaxInfo {
     /// Default constructor
     /// @param t the taxonomy ID to set for this structure
-    SSeqDBTaxInfo(int t = 0)
+    SSeqDBTaxInfo(TTaxId t = ZERO_TAX_ID)
         : taxid(t)
     {
     }
 
     /// An identifier for this species or taxonomic group.
-    int taxid;
+    TTaxId taxid;
 
     /// Scientific name, such as "Aotus vociferans".
     string scientific_name;
