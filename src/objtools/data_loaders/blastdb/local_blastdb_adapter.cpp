@@ -48,15 +48,15 @@ CLocalBlastDbAdapter::GetSequenceType()
     return m_SeqDB->GetSequenceType();
 }
 
-int 
+TTaxId
 CLocalBlastDbAdapter::GetTaxId(const CSeq_id_Handle& idh)
 {
-    int retval = static_cast<int>(kInvalidSeqPos);
+    TTaxId retval = INVALID_TAX_ID;
     CConstRef<CSeq_id> id = idh.GetSeqId();
     if (id.NotEmpty()) {
         int oid = 0;
         if (SeqidToOid(*id, oid)) {
-            map<TGi, int> gi_to_taxid;
+            map<TGi, TTaxId> gi_to_taxid;
             m_SeqDB->GetTaxIDs(oid, gi_to_taxid);
             if (idh.IsGi()) {
                 retval = gi_to_taxid[idh.GetGi()];

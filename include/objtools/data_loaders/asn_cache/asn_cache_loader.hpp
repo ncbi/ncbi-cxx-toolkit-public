@@ -76,7 +76,7 @@ public:
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
 
     virtual TGi GetGi(const CSeq_id_Handle& idh);
-    virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh);
     virtual bool CanGetBlobById() const;
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);

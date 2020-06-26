@@ -69,7 +69,7 @@ public:
 	/** @inheritDoc */
     virtual bool SeqidToOid(const CSeq_id & id, int & oid);
 	/** @inheritDoc */
-    virtual int GetTaxId(const CSeq_id_Handle& id);
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& id);
     
 private:
     /// The BLAST database handle

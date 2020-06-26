@@ -208,7 +208,7 @@ void CAsnCache_DataLoader::GetIds(const CSeq_id_Handle& idh,
 }
 
 
-int CAsnCache_DataLoader::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CAsnCache_DataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     SCacheInfo& index = x_GetIndex();
     CFastMutexGuard LOCK(index.cache_mtx);
@@ -220,9 +220,9 @@ int CAsnCache_DataLoader::GetTaxId(const CSeq_id_Handle& idh)
     CSeq_id_Handle acc;
     if (index.cache->GetIdInfo(idh, acc, gi,
                                timestamp, sequence_length, tax_id)) {
-        return tax_id;
+        return TAX_ID_FROM(Uint4, tax_id);
     }
-    return -1;
+    return INVALID_TAX_ID;
 }
 
 

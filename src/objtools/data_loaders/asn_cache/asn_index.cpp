@@ -251,7 +251,7 @@ void     BioseqIndexData( const objects::CBioseq&   bioseq,
 
     /// Get taxid from bioseq if it is there; if not go up in Bioseq-set hierarchy
     /// to look for it
-    taxid = bioseq.GetTaxId();
+    taxid = TAX_ID_TO(CAsnIndex::TTaxId, bioseq.GetTaxId());
     for (CConstRef<objects::CBioseq_set> ancestor_set = bioseq.GetParentSet();
          ancestor_set && !taxid;
          ancestor_set = ancestor_set->GetParentSet())

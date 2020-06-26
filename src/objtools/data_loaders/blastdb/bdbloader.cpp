@@ -274,7 +274,7 @@ void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
     lock.SetLoaded();
 }
 
-int CBlastDbDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CBlastDbDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     return m_BlastDb->GetTaxId(idh);
 }

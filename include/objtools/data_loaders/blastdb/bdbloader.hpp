@@ -107,7 +107,7 @@ public:
     /// Load a description or data chunk.
     virtual void GetChunk(TChunk chunk);
 
-    virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh);
     virtual void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     virtual void GetSequenceLengths(const TIds& ids, TLoaded& loaded,

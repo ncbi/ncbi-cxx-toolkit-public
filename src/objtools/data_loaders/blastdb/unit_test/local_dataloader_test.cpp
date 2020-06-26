@@ -87,8 +87,8 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseq)
 
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE_EQUAL(624U, handle1.GetInst().GetLength());
-     int taxid = scope.GetTaxId(seqid1);
-     BOOST_REQUIRE_EQUAL(9913, taxid);
+     TTaxId taxid = scope.GetTaxId(seqid1);
+     BOOST_REQUIRE_EQUAL(TAX_ID_CONST(9913), taxid);
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
@@ -119,43 +119,43 @@ BOOST_AUTO_TEST_CASE(LocalFetchBatchData)
      CScope::TSeq_id_Handles idhs;
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(4)));
      reference_L.push_back(556);
-     reference_TI.push_back(9646);
+     reference_TI.push_back(TAX_ID_CONST(9646));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(7)));
      reference_L.push_back(437);
-     reference_TI.push_back(9913);
+     reference_TI.push_back(TAX_ID_CONST(9913));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(9)));
      reference_L.push_back(1512);
-     reference_TI.push_back(9913);
+     reference_TI.push_back(TAX_ID_CONST(9913));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(11)));
      reference_L.push_back(2367);
-     reference_TI.push_back(9913);
+     reference_TI.push_back(TAX_ID_CONST(9913));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(15)));
      reference_L.push_back(540);
-     reference_TI.push_back(9915);
+     reference_TI.push_back(TAX_ID_CONST(9915));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(16)));
      reference_L.push_back(1759);
-     reference_TI.push_back(9771);
+     reference_TI.push_back(TAX_ID_CONST(9771));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(17)));
      reference_L.push_back(1758);
-     reference_TI.push_back(9771);
+     reference_TI.push_back(TAX_ID_CONST(9771));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(18)));
      reference_L.push_back(1758);
-     reference_TI.push_back(9771);
+     reference_TI.push_back(TAX_ID_CONST(9771));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(19)));
      reference_L.push_back(422);
-     reference_TI.push_back(9771);
+     reference_TI.push_back(TAX_ID_CONST(9771));
 
      idhs.push_back(CSeq_id_Handle::GetHandle(GI_CONST(20)));
      reference_L.push_back(410);
-     reference_TI.push_back(9771);
+     reference_TI.push_back(TAX_ID_CONST(9771));
 
      reference_T.assign(idhs.size(), CSeq_inst::eMol_na);
      BOOST_REQUIRE_EQUAL(idhs.size(), reference_L.size());
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(50818468, handle1.GetInst().GetLength());
-     BOOST_REQUIRE_EQUAL(9606, scope.GetTaxId(seqid1));
+     BOOST_REQUIRE_EQUAL(TAX_ID_CONST(9606), scope.GetTaxId(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(232, handle1.GetInst().GetLength());
-     BOOST_REQUIRE_EQUAL(9031, scope.GetTaxId(seqid1));
+     BOOST_REQUIRE_EQUAL(TAX_ID_CONST(9031), scope.GetTaxId(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_aa, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
      BOOST_REQUIRE(!handle2);
      BOOST_REQUIRE(handle2.State_NoData());
-     BOOST_REQUIRE_EQUAL(-1, scope.GetTaxId(seqid2));
+     BOOST_REQUIRE_EQUAL(INVALID_TAX_ID, scope.GetTaxId(seqid2));
 
      CSeq_id seqid3(CSeq_id::e_Genbank, "EGA25625.1"); // by accession 
      CBioseq_Handle handle3 = scope.GetBioseqHandle(seqid3);
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(FetchNonRedundantEntry)
      scope.AddDataLoader(loader_name);
 
      const size_t kExpectedLength(536);
-     const size_t kExpectedTaxid(9606);
+     const TTaxId kExpectedTaxid = TAX_ID_CONST(9606);
 
      CSeq_id seqid1("NP_653295.1");  // human protein
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(FetchNonRedundantEntry)
      CBioseq_Handle monkey_handle = scope.GetBioseqHandle(monkey_id);
      BOOST_REQUIRE(monkey_handle);
      BOOST_REQUIRE_EQUAL(kExpectedLength, monkey_handle.GetInst().GetLength());
-     BOOST_CHECK_EQUAL(9598, scope.GetTaxId(monkey_id));
+     BOOST_CHECK_EQUAL(TAX_ID_CONST(9598), scope.GetTaxId(monkey_id));
 }
 
 END_SCOPE(blast)
