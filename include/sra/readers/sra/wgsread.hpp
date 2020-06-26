@@ -924,7 +924,7 @@ public:
     CTempString GetContigName(void) const;
 
     bool HasTaxId(void) const;
-    int GetTaxId(void) const;
+    TTaxId GetTaxId(void) const;
 
     bool HasSeqHash(void) const;
     int GetSeqHash(void) const;

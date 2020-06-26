@@ -908,12 +908,12 @@ string CCSRADataLoader_Impl::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
-int CCSRADataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CCSRADataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
     if ( GetBlobId(idh) ) {
-        return 0; // taxid is not defined
+        return ZERO_TAX_ID; // taxid is not defined
     }
-    return -1; // sequence is unknown
+    return INVALID_TAX_ID; // sequence is unknown
 }
 
 

@@ -340,7 +340,7 @@ string CBAMDataLoader::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
-int CBAMDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CBAMDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetTaxId(idh);
 }

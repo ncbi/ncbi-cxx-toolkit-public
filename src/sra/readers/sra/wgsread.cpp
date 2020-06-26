@@ -2861,10 +2861,10 @@ bool CWGSSeqIterator::HasTaxId(void) const
 }
 
 
-int CWGSSeqIterator::GetTaxId(void) const
+TTaxId CWGSSeqIterator::GetTaxId(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetTaxId");
-    return *m_Cur->TAXID(m_CurrId);
+    return TAX_ID_FROM(int, *m_Cur->TAXID(m_CurrId));
 }
 
 

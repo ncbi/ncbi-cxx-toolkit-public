@@ -160,7 +160,7 @@ public:
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     CDataLoader::SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
     CDataLoader::SGiFound GetGi(const CSeq_id_Handle& idh);
-    int GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceType(const CSeq_id_Handle& idh);

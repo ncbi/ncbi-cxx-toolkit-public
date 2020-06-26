@@ -126,7 +126,7 @@ public:
     virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh);
     virtual SGiFound GetGiFound(const CSeq_id_Handle& idh);
     virtual string GetLabel(const CSeq_id_Handle& idh);
-    virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh);
 
     static bool GetPileupGraphsParamDefault(void);
     static void SetPileupGraphsParamDefault(bool param);

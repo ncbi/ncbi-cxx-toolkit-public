@@ -102,7 +102,7 @@ public:
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh);
     virtual SGiFound GetGiFound(const CSeq_id_Handle& idh);
-    virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh);
     virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh);

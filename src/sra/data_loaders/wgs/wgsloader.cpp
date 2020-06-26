@@ -278,7 +278,7 @@ CWGSDataLoader::GetGiFound(const CSeq_id_Handle& idh)
 }
 
 
-int CWGSDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CWGSDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetTaxId(idh);
 }

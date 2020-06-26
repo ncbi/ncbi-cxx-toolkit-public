@@ -542,7 +542,7 @@ public:
     CDataSource::SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
     CDataSource::SGiFound GetGi(const CSeq_id_Handle& idh);
     string GetLabel(const CSeq_id_Handle& idh);
-    int GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CDataSource::STypeFound GetSequenceType(const CSeq_id_Handle& idh);
 

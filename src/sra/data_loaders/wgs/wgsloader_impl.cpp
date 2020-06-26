@@ -947,7 +947,7 @@ CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 }
 
 
-int CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
         if ( info.IsContig() ) {
@@ -957,9 +957,9 @@ int CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
                 }
             }
         }
-        return 0; // taxid is not defined
+        return ZERO_TAX_ID; // taxid is not defined
     }
-    return -1; // sequence is unknown
+    return INVALID_TAX_ID; // sequence is unknown
 }
 
 

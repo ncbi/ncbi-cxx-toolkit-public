@@ -574,12 +574,12 @@ string CBAMDataLoader_Impl::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
-int CBAMDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CBAMDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
     if ( IsShortSeq(idh) ) {
-        return 0;
+        return ZERO_TAX_ID;
     }
-    return -1;
+    return INVALID_TAX_ID;
 }
 
 

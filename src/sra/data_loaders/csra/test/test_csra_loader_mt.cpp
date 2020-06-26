@@ -315,14 +315,14 @@ bool CCSRATestApp::TestShortReads(int idx)
                     _ASSERT(scope.GetSequenceLength(id) == kInvalidSeqPos);
                     _ASSERT(scope.GetSequenceType(id) == CSeq_inst::eMol_not_set);
                     _ASSERT(!scope.GetBioseqHandle(id));
-                    _ASSERT(scope.GetTaxId(id) == -1);
+                    _ASSERT(scope.GetTaxId(id) == INVALID_TAX_ID);
                     continue;
                 }
                 ++seq_count;
                 _ASSERT(scope.GetIds(id).front() == id);
                 _ASSERT(scope.GetSequenceType(id) == CSeq_inst::eMol_na);
                 TSeqPos len = scope.GetSequenceLength(id);
-                int taxid = scope.GetTaxId(id);
+                TTaxId taxid = scope.GetTaxId(id);
 
                 if ( !m_FullSeq ) {
                     if ( m_Verbose ) {
