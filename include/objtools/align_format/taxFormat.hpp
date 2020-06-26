@@ -147,7 +147,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     void DisplayTaxonomyReport(CNcbiOstream& out);
     
     struct SSeqInfo {
-        int taxid;                       ///< taxid   
+        TTaxId taxid;                    ///< taxid   
         TGi   gi;                        ///< gi
         CRef<objects::CSeq_id> seqID;    ///< seqID used in defline
         string label;                    ///< sequence label        
@@ -160,7 +160,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     
                                              
     struct STaxInfo {
-        int taxid;                       ///< taxid   
+        TTaxId taxid;                    ///< taxid   
         string commonName;               ///< commonName
         string scientificName;           ///< scientificName  
         string blastName;                ///< blastName
@@ -172,7 +172,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
 
         unsigned int       numChildren;  ///< Number of childre for taxid 
         unsigned int       depth;        ///< Depth   
-        vector <int>       lineage;      ///< vector of taxids containg lineage for taxid  
+        vector <TTaxId>    lineage;      ///< vector of taxids containg lineage for taxid  
         unsigned int       numHits;      ///< Number of sequences in alignmnet corresponding to taxid and it's children
         unsigned int       numOrgs;      ///< Number of organism in alignmnet corresponding to taxid and it's children
     };
@@ -271,7 +271,7 @@ protected:
     SBlastResTaxInfo *m_TaxTreeinfo;        ///< SBlastResTaxInfo structure containing information for all taxids in common tree, intermediate nodes with no hits or only 1 child are removed
                                             ///< orderedTaxids are ordered by highest score    
     list <STaxInfo> m_AlnLineageTaxInfo;    ///< STaxInfo structure list contaning info for lineage report ordered by linage display order. All taxids are "mapped" to the best hit linage
-    vector <int> m_BestHitLineage;          ///< vector of <int> containing taxids for the best hit linage
+    vector <TTaxId> m_BestHitLineage;       ///< vector of <int> containing taxids for the best hit linage
 
       
     string m_Rid;    

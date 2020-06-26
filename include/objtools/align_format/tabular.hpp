@@ -347,12 +347,12 @@ private:
     string m_BTOP;            /// Blast-traceback-operations.
 
     //TaxInfo
-    set<int>			m_SubjectTaxIds;
+    set<TTaxId> 		m_SubjectTaxIds;
     vector<string>		m_SubjectSciNames;
     vector<string>		m_SubjectCommonNames;
     set<string>		m_SubjectBlastNames;
     set<string>		m_SubjectSuperKingdoms;
-    int				m_SubjectTaxId;
+    TTaxId			m_SubjectTaxId;
     string			m_SubjectSciName;
     string			m_SubjectCommonName;
     string			m_SubjectBlastName;

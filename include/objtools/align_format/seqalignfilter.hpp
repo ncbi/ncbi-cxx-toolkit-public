@@ -170,7 +170,7 @@ public:
                                       vector<int>& oid_vec);
     CRef<CSeq_align_set> FilterByTaxonomy(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
                                           CRef<CSeqDB> &seqdb,
-                                          const set<int>& taxids);
+                                          const set<TTaxId>& taxids);
 
     //--- Auxiliary methods used for seqalign filtering ---//
 

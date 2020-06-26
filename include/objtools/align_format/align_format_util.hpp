@@ -396,7 +396,7 @@ public:
         bool new_win;           ///< bool indicating if click of the url will open a new window
         CRange<TSeqPos> seqRange;///< sequence range
         bool flip;              ///< flip sequence in case of opposite strands
-        int taxid;              ///< taxid
+        TTaxId taxid;           ///< taxid
         bool addCssInfo;        ///< bool indicating that css info should be added
         string segs;            ///< string containing align segments in the the following format seg1Start-seg1End,seg2Start-seg2End
         string resourcesUrl;    ///< URL(s) to other resources from .ncbirc
@@ -408,7 +408,8 @@ public:
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid_in,int qn, 
-                    TGi gi_in,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
+                    TGi gi_in,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false,
+                    TTaxId txid = INVALID_TAX_ID,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid_in), 
                     queryNumber(qn), gi(gi_in), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
                     new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf),segs(seqSegs),
@@ -429,7 +430,7 @@ public:
         bool structure_linkout_as_group;
         bool for_alignment;
 
-        int taxid;        
+        TTaxId taxid;        
         int cur_align;        
         string taxName;
         string gnl;
@@ -896,7 +897,7 @@ public:
     ///@param id: seq id
     ///@param scope: scope to fetch this sequence
     ///
-    static int GetTaxidForSeqid(const objects::CSeq_id& id, objects::CScope& scope);
+    static TTaxId GetTaxidForSeqid(const objects::CSeq_id& id, objects::CScope& scope);
     
     ///return the frame for a given strand
     ///Note that start is zero bases.  It returns frame +/-(1-3).
@@ -950,7 +951,7 @@ public:
     ///@param query_number: the blast query number.
     ///@param for_alignment: is the URL generated for an alignment or a top defline?
     ///
-    static string BuildUserUrl(const objects::CBioseq::TId& ids, int taxid, string user_url,
+    static string BuildUserUrl(const objects::CBioseq::TId& ids, TTaxId taxid, string user_url,
                                string database, bool db_is_na, string rid,
                                int query_number, bool for_alignment);
 
@@ -1263,7 +1264,7 @@ public:
                                                  bool for_alignment, 
                                                  int cur_align,
                                                  string& linkoutOrder,
-                                                 int taxid,
+                                                 TTaxId taxid,
                                                  string &database,
                                                  int query_number,                                                 
                                                  string &user_url,
@@ -1297,7 +1298,7 @@ public:
                                                  bool for_alignment, 
                                                  int cur_align,
                                                  string& linkoutOrder,
-                                                 int taxid,
+                                                 TTaxId taxid,
                                                  string &database,
                                                  int query_number,                                                 
                                                  string &user_url,
@@ -1481,7 +1482,7 @@ public:
                                                 const objects::CSeq_id& aln_id,
                                                 list<TGi>& use_this_gi,
                                                 TGi& gi,
-                                                int& taxid);
+                                                TTaxId& taxid);
     ///Scan the the list of blast deflines and find seqID to be use in display    
     ///@param handle: CBioseq_Handle [in]
     ///@param aln_id: CSeq_id object for alignment seq [in]
@@ -1512,7 +1513,7 @@ public:
                                 const objects::CSeq_id& aln_id,
                                 list<string>& use_this_seq,
                                 TGi *gi = NULL,                                
-                                int *taxid  = NULL,
+                                TTaxId *taxid  = NULL,
                                 string *textSeqID = NULL);
 
 

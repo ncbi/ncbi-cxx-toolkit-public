@@ -515,7 +515,7 @@ protected:
         string middleLine;
         vector<objects::CAlnMap::TSignedRange> rowRng;
         vector<int> frame;
-        vector<int> taxid;
+        vector<TTaxId> taxid;
         vector<TSAlnFeatureInfoList> bioseqFeature;
         vector<TSAlnSeqlocInfoList> masked_regions;        
         size_t maxIdLen;
@@ -728,7 +728,7 @@ protected:
 
 
     CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(TGi giToUse,string accession,
-        int taxid,const list<CRef<objects::CSeq_id> >& ids);
+        TTaxId taxid,const list<CRef<objects::CSeq_id> >& ids);
 
     string x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse);
     void x_InitAlignLinks(SAlnDispParams *alnDispParams,const list< CRef<objects::CBlast_def_line > > &bdl_list,int lnkDispPrarms);

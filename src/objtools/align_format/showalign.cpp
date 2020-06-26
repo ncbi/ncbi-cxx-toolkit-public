@@ -981,7 +981,7 @@ string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giT
 }
 
 CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string accession,
-                                  int taxid,const list<CRef<CSeq_id> >& ids)
+                                  TTaxId taxid,const list<CRef<CSeq_id> >& ids)
 {
     string idString = m_AV->GetSeqId(1).GetSeqIdString();
 	CRange<TSeqPos> range = (m_AlnLinksParams.count(idString) > 0 && m_AlnLinksParams[idString].subjRange) ?
@@ -1228,7 +1228,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
     string middleLine;
     vector<CAlnMap::TSignedRange> rowRng(rowNum);
     vector<int> frame(rowNum);
-    vector<int> taxid(rowNum);
+    vector<TTaxId> taxid(rowNum);
     int max_feature_num = 0;
     vector<int> match(rowNum-1);
     vector<double> percent_ident(rowNum-1);
@@ -1271,7 +1271,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
             taxid[row] = CAlignFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
                                                             m_Scope);
         } else {
-            taxid[row] = 0;
+            taxid[row] = ZERO_TAX_ID;
         }
         rowRng[row] = m_AV->GetSeqAlnRange(row);
         frame[row] = (m_AV->GetWidth(row) == 3 ?
@@ -2203,7 +2203,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID,CSeq_id::eContent);//Just accession without db part like ref| or pdbd|
 
 		
-		int taxid = 0;
+		TTaxId taxid = ZERO_TAX_ID;
 		string type_temp = m_BlastType;
 		type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
 		if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
@@ -2261,7 +2261,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
 	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID,CSeq_id::eContent);
 	if(m_AlignOption&eHtml){
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
-        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,alnDispParams->ids);
+        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,ZERO_TAX_ID,alnDispParams->ids);
         alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&alnDispParams->ids);
 	}
 	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);
@@ -3109,7 +3109,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids) const
 	string dowloadUrl;
     string segs = x_GetSegs(1); //row=1
     string label =  CAlignFormatUtil::GetLabel(FindBestChoice(ids, CSeq_id::WorstRank));
-    string url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, 0, kDownloadUrl,
+    string url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, ZERO_TAX_ID, kDownloadUrl,
                                                          m_DbName,
                                                          m_IsDbNa, m_Rid, m_QueryNumber,
                                                          true);

@@ -660,7 +660,7 @@ CRef<CSeq_align_set> CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& seqali
     return new_aln;
 }
 
-bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<int> & user_tax_ids)
+bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<TTaxId> & user_tax_ids)
 {
     CBlast_def_line::TTaxIds tax_ids;
     if (def.IsSetTaxid()) {
@@ -668,7 +668,11 @@ bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<int> & 
     }
     if(def.IsSetLinks()) {
         CBlast_def_line::TLinks leaf_ids = def.GetLinks();
+#ifdef NCBI_STRICT_TAX_ID
+        ITERATE(CBlast_def_line::TLinks, it, leaf_ids) tax_ids.insert(TAX_ID_FROM(int, *it));
+#else
         tax_ids.insert(leaf_ids.begin(), leaf_ids.end());
+#endif
     }
 
     if(user_tax_ids.size() > tax_ids.size()) {
@@ -679,7 +683,7 @@ bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<int> & 
         }
     }
     else {
-        ITERATE(set<int>, itr, user_tax_ids) {
+        ITERATE(set<TTaxId>, itr, user_tax_ids) {
             if(tax_ids.find(*itr) != tax_ids.end()) {
                 return true;
             }
@@ -690,7 +694,7 @@ bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<int> & 
 
 
 static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_set>  &bdlRef,
-                                                         const set<int>& taxids,
+                                                         const set<TTaxId>& taxids,
                                                          CRef<CSeq_align> &in_align)
 {
     CRef<CSeq_align> sa_copy;
@@ -735,7 +739,7 @@ static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_se
 
 CRef<CSeq_align_set> CSeqAlignFilter::FilterByTaxonomy(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
                                                         CRef<CSeqDB> &seqdb,
-                                                        const set<int>& taxids)                                                                  
+                                                        const set<TTaxId>& taxids)
 {
     CConstRef<CSeq_id> previous_id, subjid;    
     bool success = false;

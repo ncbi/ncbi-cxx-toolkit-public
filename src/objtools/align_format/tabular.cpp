@@ -265,7 +265,7 @@ void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
 
 void CBlastTabularInfo::x_PrintSubjectTaxId()
 {
-	if(m_SubjectTaxId == 0) {
+	if(m_SubjectTaxId == ZERO_TAX_ID) {
 		m_Ostream << NA;
 		return;
 	}
@@ -279,7 +279,7 @@ void CBlastTabularInfo::x_PrintSubjectTaxIds()
 		return;
 	}
 
-    ITERATE(set<int>, iter, m_SubjectTaxIds) {
+    ITERATE(set<TTaxId>, iter, m_SubjectTaxIds) {
         if (iter != m_SubjectTaxIds.begin())
             m_Ostream << ";";
        m_Ostream << *iter;
@@ -575,7 +575,7 @@ bool s_IsValidName(const string & name)
 
 void CBlastTabularInfo::x_SetTaxInfo(const CBioseq_Handle & handle, const CRef<CBlast_def_line_set> & bdlRef)
 {
-    m_SubjectTaxId = 0;
+    m_SubjectTaxId = ZERO_TAX_ID;
     m_SubjectSciName.clear();
     m_SubjectCommonName.clear();
     m_SubjectBlastName.clear();
@@ -584,7 +584,7 @@ void CBlastTabularInfo::x_SetTaxInfo(const CBioseq_Handle & handle, const CRef<C
     if (bdlRef.NotEmpty() && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
     	ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
             if((*itr)->IsSetTaxid()) {
-                    if((*itr)->GetTaxid()) {
+                    if((*itr)->GetTaxid() != ZERO_TAX_ID) {
                     	m_SubjectTaxId = (*itr)->GetTaxid();
                     	break;
                     }
@@ -592,11 +592,11 @@ void CBlastTabularInfo::x_SetTaxInfo(const CBioseq_Handle & handle, const CRef<C
     	}
     }
 
-    if(m_SubjectTaxId == 0) {
+    if(m_SubjectTaxId == ZERO_TAX_ID) {
           m_SubjectTaxId = sequence::GetTaxId(handle);
     }
 
-    if(m_SubjectTaxId == 0)
+    if(m_SubjectTaxId == ZERO_TAX_ID)
             return;
 
     if( x_IsFieldRequested(eSubjectSciName) ||
@@ -650,7 +650,7 @@ void CBlastTabularInfo::x_SetTaxInfoAll(const CBioseq_Handle & handle, const CRe
             for (;desc_s; ++desc_s) {
                      TTaxId t = desc_s->GetSource().GetOrg().GetTaxId();
                      if(t != ZERO_TAX_ID) {
-                    	 m_SubjectTaxIds.insert(TAX_ID_TO(int, t));
+                    	 m_SubjectTaxIds.insert(t);
                      }
             }
 
@@ -658,7 +658,7 @@ void CBlastTabularInfo::x_SetTaxInfoAll(const CBioseq_Handle & handle, const CRe
             for (; desc; ++desc) {
                     TTaxId t= desc->GetOrg().GetTaxId();
                     if(t != ZERO_TAX_ID) {
-                    	m_SubjectTaxIds.insert(TAX_ID_TO(int, t));
+                    	m_SubjectTaxIds.insert(t);
                     }
             }
     }
@@ -670,7 +670,7 @@ void CBlastTabularInfo::x_SetTaxInfoAll(const CBioseq_Handle & handle, const CRe
         x_IsFieldRequested(eSubjectCommonNames) ||
         x_IsFieldRequested(eSubjectBlastNames) ||
         x_IsFieldRequested(eSubjectSuperKingdoms)) {
-            set<int>::iterator itr = m_SubjectTaxIds.begin();
+            set<TTaxId>::iterator itr = m_SubjectTaxIds.begin();
 
             for(; itr !=  m_SubjectTaxIds.end(); ++itr) {
             	try {

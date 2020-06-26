@@ -1082,9 +1082,9 @@ CAlignFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln)
     return sa;
 }
 
-int CAlignFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
+TTaxId CAlignFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
 {
-    int taxid = 0;
+    TTaxId taxid = ZERO_TAX_ID;
     try{
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         const CRef<CBlast_def_line_set> bdlRef = 
@@ -1819,7 +1819,7 @@ string s_GetBestIDForURL(CBioseq::TId& ids)
     return gnl;
 }
 
-string CAlignFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
+string CAlignFormatUtil::BuildUserUrl(const CBioseq::TId& ids, TTaxId taxid,
                                       string user_url, string database,
                                       bool db_is_na, string rid, int query_number,
                                       bool for_alignment) {
@@ -1906,8 +1906,8 @@ string CAlignFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
         link += "&gi=" + NStr::NumericToString(gi);
         link += "&term=" + NStr::NumericToString(gi) + NStr::URLEncode("[gi]");
     }
-    if(taxid > 0){
-        link += "&taxid=" + NStr::IntToString(taxid);
+    if(taxid > ZERO_TAX_ID){
+        link += "&taxid=" + NStr::NumericToString(taxid);
     }
     if (rid != NcbiEmptyString){
         link += "&RID=" + rid;
@@ -2220,7 +2220,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
             string user_url = (linkoutInfo.user_url.empty()) ? kMapviewBlastHitUrl : linkoutInfo.user_url;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"user_url",user_url);
 
-            string taxIDStr = (linkoutInfo.taxid > 0) ? NStr::IntToString(linkoutInfo.taxid) : "";
+            string taxIDStr = (linkoutInfo.taxid > ZERO_TAX_ID) ? NStr::NumericToString(linkoutInfo.taxid) : "";
             url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid",taxIDStr);  
     
             string queryNumStr = (linkoutInfo.query_number > 0) ? NStr::IntToString(linkoutInfo.query_number) : "";
@@ -2370,7 +2370,7 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                      for_alignment);
 
     linkoutInfo.cur_align = cur_align;
-    linkoutInfo.taxid = 0;
+    linkoutInfo.taxid = ZERO_TAX_ID;
     
     linkout_list = s_GetLinkoutUrl(linkout, 
                                    giString,
@@ -2529,11 +2529,11 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
     }       
 }
 
-static string s_GetTaxName(int taxid)
+static string s_GetTaxName(TTaxId taxid)
 {
     string taxName;
     try {
-        if(taxid != 0) {
+        if(taxid != ZERO_TAX_ID) {
             SSeqDBTaxInfo info;
             CSeqDB::GetTaxInfo(taxid, info);
             taxName = info.common_name;            
@@ -2665,7 +2665,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                                  bool for_alignment, 
                                                  int cur_align,
                                                  string& linkoutOrder,
-                                                 int taxid,
+                                                 TTaxId taxid,
                                                  string &database,
                                                  int query_number,                                                 
                                                  string &user_url,
@@ -2730,7 +2730,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(CBioseq::TId& cur_id,
                                                  bool for_alignment, 
                                                  int cur_align,
                                                  string& linkoutOrder,
-                                                 int taxid,
+                                                 TTaxId taxid,
                                                  string &database,
                                                  int query_number,                                                 
                                                  string &user_url,
@@ -3667,7 +3667,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
             wid->GetLabel(&id_string, CSeq_id::eContent);
             url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", NStr::URLEncode(id_string));  
             url_link = CAlignFormatUtil::MapTemplate(url_link,"db_name", NStr::URLEncode(seqUrlInfo->database)); 
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid", seqUrlInfo->taxid);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid", TAX_ID_TO(int, seqUrlInfo->taxid));
             temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",seqUrlInfo->defline):temp_class_info;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"title", id_string);
@@ -3748,8 +3748,8 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,obje
     
     seqUrlInfo->blastType = NStr::TruncateSpaces(NStr::ToLower(seqUrlInfo->blastType));
     
-    if(seqUrlInfo->taxid == -1) { //taxid is not set
-        seqUrlInfo->taxid = 0;            
+    if(seqUrlInfo->taxid == INVALID_TAX_ID) { //taxid is not set
+        seqUrlInfo->taxid = ZERO_TAX_ID;
         if ((seqUrlInfo->advancedView || seqUrlInfo->blastType == "mapview" || seqUrlInfo->blastType == "mapview_prev") || 
             seqUrlInfo->blastType == "gsfasta" || seqUrlInfo->blastType == "gsfasta_prev") {
             seqUrlInfo->taxid = GetTaxidForSeqid(id, scope);        
@@ -3966,7 +3966,7 @@ string CAlignFormatUtil::GetAlignedRegionsURL(SSeqURLInfo *seqUrlInfo,
     
     
     linkUrl = CAlignFormatUtil::BuildUserUrl(*ids, 
-                                                 0, 
+                                                 ZERO_TAX_ID,
                                                  kDownloadUrl,
                                                  seqUrlInfo->database,
                                                  seqUrlInfo->isDbNa, 
@@ -4352,7 +4352,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 TGi& gi)
                                            
 {
-    int taxid = 0;
+    TTaxId taxid = ZERO_TAX_ID;
     CRef<CSeq_id> wid = CAlignFormatUtil::GetDisplayIds(handle, aln_id, use_this_gi, gi, taxid);    
     return wid;
 }
@@ -4361,7 +4361,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,
                                 list<TGi>& use_this_gi,
                                 TGi& gi,
-                                int& taxid)
+                                TTaxId& taxid)
                                            
 {
     const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
@@ -4371,7 +4371,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     CRef<CSeq_id> wid;    
 
     gi = ZERO_GI;
-    taxid = 0;
+    taxid = ZERO_TAX_ID;
     if(bdl.empty()){
         wid = FindBestChoice(*ids, CSeq_id::WorstRank);        
         gi = FindGi(*ids);    
@@ -4524,7 +4524,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,
                                 list<string>& use_this_seq,
                                 TGi *gi,                                
-                                int *taxid,
+                                TTaxId *taxid,
                                 string *textSeqID)
                                            
 {
@@ -4535,7 +4535,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     CRef<CSeq_id> wid;    
 
     if(gi) *gi = ZERO_GI;
-    if(taxid) *taxid = 0;
+    if(taxid) *taxid = ZERO_TAX_ID;
     if(bdl.empty()){
         wid = FindBestChoice(*ids, CSeq_id::WorstRank);        
         if(gi) *gi = FindGi(*ids);    

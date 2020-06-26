@@ -378,7 +378,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     sdl->linkout = 0;
     sdl->is_new = false;
     sdl->was_checked = false;
-    sdl->taxid = 0;
+    sdl->taxid = ZERO_TAX_ID;
     //get psiblast stuff
 
     if(m_SeqStatus){
@@ -1562,7 +1562,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<string> &use_thi
             sdl->id->GetLabel(&accession, CSeq_id::eContent);
             CRange<TSeqPos> seqRange(0,0);
             CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,0);
+                                                     m_QueryNumber,sdl->gi,accession,0,blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,false,ZERO_TAX_ID);
             sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,*id,*m_ScopeRef);
             sdl->score_url = NcbiEmptyString;
         }
@@ -1780,7 +1780,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     if(m_AppLogInfo && (m_AppLogInfo->currInd < m_AppLogInfo->topMatchesNum)) {
         m_AppLogInfo->deflIdVec.push_back(deflId);
         m_AppLogInfo->accVec.push_back(deflAccs);
-        m_AppLogInfo->taxidVec.push_back(NStr::IntToString(sdl->taxid));
+        m_AppLogInfo->taxidVec.push_back(NStr::NumericToString(sdl->taxid));
         m_AppLogInfo->queryCoverageVec.push_back(NStr::IntToString(iter->percent_coverage));
         m_AppLogInfo->percentIdentityVec.push_back(NStr::DoubleToString(iter->percent_identity));
         m_AppLogInfo->currInd++;

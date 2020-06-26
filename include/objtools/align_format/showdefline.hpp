@@ -114,7 +114,7 @@ public:
         bool is_new;                   //is this sequence new (for psiblast)?
         bool was_checked;              //was this sequence checked before?
 	    string fullDefline;            //defline, containing all seq defines (PIG for example)
-        int    taxid;
+        TTaxId taxid;
         string  textSeqID;      
     };
 
