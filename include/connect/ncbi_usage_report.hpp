@@ -325,10 +325,10 @@ public:
     /// to allow checking reporting progress or failures, see EState for a list of states.
     /// @sa 
     ///   EState, CUsageReport::Send()
-    virtual void OnStateChange(EState state) {};
+    virtual void OnStateChange(EState /*state*/) {};
 
     /// Copy constructor.
-    CUsageReportJob(const CUsageReportJob& other) { x_CopyFrom(other); };
+    CUsageReportJob(const CUsageReportJob& other) : CUsageReportParameters(other) { m_State = other.m_State; };
     /// Copy assignment operator.
     CUsageReportJob& operator=(const CUsageReportJob& other) { x_CopyFrom(other); return *this; };
     
