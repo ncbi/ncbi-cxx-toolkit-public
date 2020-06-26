@@ -419,7 +419,7 @@ string CDataLoader::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
-int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     // default implementation based on GetRecordsNoBlobState();
     TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
@@ -429,7 +429,7 @@ int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
             return bs_info->GetTaxId();
         }
     }
-    return -1;
+    return INVALID_TAX_ID;
 }
 
 
@@ -623,8 +623,8 @@ void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
             continue;
         }
         
-        int taxid = GetTaxId(ids[i]);
-        if ( taxid != -1 ) {
+        TTaxId taxid = GetTaxId(ids[i]);
+        if ( taxid != INVALID_TAX_ID ) {
             ret[i] = taxid;
             loaded[i] = true;
         }

@@ -475,8 +475,8 @@ public:
     /// Return -1 if sequence is not found
     /// Return 0 if sequence doesn't have taxonomy id
     /// @sa EGetflags
-    int GetTaxId(const CSeq_id& id, TGetFlags flags = 0);
-    int GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags = 0);
+    TTaxId GetTaxId(const CSeq_id& id, TGetFlags flags = 0);
+    TTaxId GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags = 0);
 
     /// Get sequence length
     /// Return kInvalidSeqPos if sequence is not found
@@ -548,7 +548,7 @@ public:
     /// Return -1 for sequences that aren't found
     /// Return 0 for sequences that don't have taxonomy id
     /// @sa EGetflags
-    typedef vector<int> TTaxIds;
+    typedef vector<TTaxId> TTaxIds;
     TTaxIds GetTaxIds(const TSeq_id_Handles& idhs,
                       TGetFlags flags = 0);
     void GetTaxIds(TTaxIds* results,

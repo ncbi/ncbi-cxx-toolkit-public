@@ -1257,7 +1257,7 @@ const CSeqMap& CBioseq_Info::GetSeqMap(void) const
 }
 
 
-int CBioseq_Info::GetTaxId(void) const
+TTaxId CBioseq_Info::GetTaxId(void) const
 {
     const COrg_ref* org_ref = 0;
     if ( const CSeqdesc* desc_src = x_SearchFirstDesc(1<<CSeqdesc::e_Source) ) {
@@ -1267,13 +1267,13 @@ int CBioseq_Info::GetTaxId(void) const
         org_ref = &desc_org->GetOrg();
     }
     else {
-        return 0;
+        return ZERO_TAX_ID;
     }
     try {
-        return TAX_ID_TO(int, org_ref->GetTaxId());
+        return org_ref->GetTaxId();
     }
     catch ( CException& /*ignored*/ ) {
-        return 0;
+        return ZERO_TAX_ID;
     }
 }
 

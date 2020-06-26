@@ -243,7 +243,7 @@ public:
     string GetLabel(const CSeq_id_Handle& idh);
     // -1 if sequence not found
     // 0 if sequence doesn't have TaxID
-    int GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxId(const CSeq_id_Handle& idh);
     // kInvalidSeqPos if sequence not found
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     typedef CDataLoader::STypeFound STypeFound;
@@ -257,7 +257,7 @@ public:
     typedef vector<bool> TLoaded;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
-    typedef vector<int> TTaxIds;
+    typedef vector<TTaxId> TTaxIds;
     typedef vector<TSeqPos> TSequenceLengths;
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     typedef vector<int> TSequenceStates;

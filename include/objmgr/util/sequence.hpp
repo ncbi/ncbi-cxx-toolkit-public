@@ -677,7 +677,7 @@ const COrg_ref* GetOrg_refOrNull(const CBioseq_Handle& handle);
 /// return the tax-id associated with a given sequence.  This will return 0
 /// if no tax-id can be found.
 NCBI_XOBJUTIL_EXPORT
-int GetTaxId(const CBioseq_Handle& handle);
+TTaxId GetTaxId(const CBioseq_Handle& handle);
 
 /// Retrieve the MolInfo object for a given bioseq handle.  If the supplied
 /// sequence does not have a MolInfo associated with it, this will return NULL

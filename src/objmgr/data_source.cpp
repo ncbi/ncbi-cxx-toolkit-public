@@ -1309,9 +1309,9 @@ string CDataSource::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
-int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CDataSource::GetTaxId(const CSeq_id_Handle& idh)
 {
-    int ret = -1;
+    TTaxId ret = INVALID_TAX_ID;
     SSeqMatch_DS match = x_GetSeqMatch(idh);
     if ( match ) {
         ret = match.m_Bioseq->GetTaxId();

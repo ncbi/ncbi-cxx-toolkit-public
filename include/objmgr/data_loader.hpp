@@ -328,7 +328,7 @@ public:
     /// Request for a taxonomy id of a sequence.
     /// Returns -1 if sequence with requested id is not known.
     /// Returns 0 if existing sequence doesn't have TaxID
-    virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh);
 
     /// Request for a length of a sequence.
     /// Returns kInvalidSeqPos if sequence with requested id is not known.
@@ -385,7 +385,7 @@ public:
     typedef vector<bool> TLoaded;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
-    typedef vector<int> TTaxIds;
+    typedef vector<TTaxId> TTaxIds;
     typedef vector<TSeqPos> TSequenceLengths;
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
     typedef vector<int> TSequenceStates;

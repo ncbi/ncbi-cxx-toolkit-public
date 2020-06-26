@@ -459,13 +459,13 @@ string CScope::GetLabel(const CSeq_id_Handle& idh, TGetFlags flags)
 }
 
 
-int CScope::GetTaxId(const CSeq_id& id, TGetFlags flags)
+TTaxId CScope::GetTaxId(const CSeq_id& id, TGetFlags flags)
 {
     return GetTaxId(CSeq_id_Handle::GetHandle(id), flags);
 }
 
 
-int CScope::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
+TTaxId CScope::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
 {
     return m_Impl->GetTaxId(idh, flags);
 }

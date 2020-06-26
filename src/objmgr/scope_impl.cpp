@@ -2861,7 +2861,7 @@ string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, TGetFlags flags)
 }
 
 
-int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
+TTaxId CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
 {
     if ( !idh ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
@@ -2874,7 +2874,7 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
             const CDbtag& dbtag = id->GetGeneral();
             const CObject_id& obj_id = dbtag.GetTag();
             if ( obj_id.IsId() && dbtag.GetDb() == "TAXID" ) {
-                return obj_id.GetId();
+                return TAX_ID_FROM(int, obj_id.GetId());
             }
         }
     }
@@ -2887,8 +2887,8 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
         if ( info && info->HasBioseq() ) {
             TBioseq_Lock bioseq = info->GetLock(null);
-            int ret = info->GetObjectInfo().GetTaxId();
-            if ( !ret && (flags & CScope::fThrowOnMissingData) ) {
+            TTaxId ret = info->GetObjectInfo().GetTaxId();
+            if ( ret == ZERO_TAX_ID && (flags & CScope::fThrowOnMissingData) ) {
                 // no TaxID on the sequence
                 NCBI_THROW_FMT(CObjMgrException, eMissingData,
                                "CScope::GetTaxId("<<idh<<"): no TaxID");
@@ -2898,9 +2898,9 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
     }
 
     for (CPriority_I it(m_setDataSrc); it; ++it) {
-        int ret = it->GetDataSource().GetTaxId(idh);
-        if ( ret != -1 ) {
-            if ( !ret && (flags & CScope::fThrowOnMissingData) ) {
+        TTaxId ret = it->GetDataSource().GetTaxId(idh);
+        if ( ret != INVALID_TAX_ID ) {
+            if ( ret == ZERO_TAX_ID && (flags & CScope::fThrowOnMissingData) ) {
                 // no TaxID on the sequence
                 NCBI_THROW_FMT(CObjMgrException, eMissingData,
                                "CScope::GetTaxId("<<idh<<"): no TaxID");
@@ -2913,7 +2913,7 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags)
         NCBI_THROW_FMT(CObjMgrException, eFindFailed,
                        "CScope::GetTaxId("<<idh<<"): sequence not found");
     }
-    return -1;
+    return INVALID_TAX_ID;
 }
 
 
@@ -3538,7 +3538,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
     sorted_seq_ids.GetSortedIds(ids);
 
     size_t count = ids.size(), remaining = count;
-    ret.assign(count, -1);
+    ret.assign(count, INVALID_TAX_ID);
     vector<bool> loaded(count);
     if ( !(flags & CScope::fForceLoad) ) {
         for ( size_t i = 0; i < count; ++i ) {
@@ -3547,7 +3547,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
                 const CDbtag& dbtag = id->GetGeneral();
                 const CObject_id& obj_id = dbtag.GetTag();
                 if ( obj_id.IsId() && dbtag.GetDb() == "TAXID" ) {
-                    ret[i] = obj_id.GetId();
+                    ret[i] = TAX_ID_FROM(int, obj_id.GetId());
                     loaded[i] = true;
                     --remaining;
                 }

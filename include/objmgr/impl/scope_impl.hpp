@@ -338,7 +338,7 @@ public:
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags);
     TGi GetGi(const CSeq_id_Handle& idh, TGetFlags flags);
     string GetLabel(const CSeq_id_Handle& idh, TGetFlags flags);
-    int GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags);
+    TTaxId GetTaxId(const CSeq_id_Handle& idh, TGetFlags flags);
 
     /// Bulk retrieval methods
 
@@ -358,7 +358,7 @@ public:
     void GetLabels(TLabels& ret, const TIds& idhs, TGetFlags flags);
 
     // Get a set of taxids
-    typedef vector<int> TTaxIds;
+    typedef vector<TTaxId> TTaxIds;
     void GetTaxIds(TTaxIds& ret, const TIds& idhs, TGetFlags flags);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.

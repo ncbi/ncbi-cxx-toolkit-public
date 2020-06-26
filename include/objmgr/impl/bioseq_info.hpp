@@ -222,7 +222,7 @@ public:
     // Get some values from core:
     const CSeqMap& GetSeqMap(void) const;
 
-    int GetTaxId(void) const;
+    TTaxId GetTaxId(void) const;
 
     int GetSequenceClass(void) const;
 
