@@ -942,4 +942,11 @@ void QueryBatchCleanup()
 
 }
 
+void LogQueryInfo(CBlastUsageReport & report, const CBlastInput & q_info)
+{
+	report.AddParam(CBlastUsageReport::eTotalQueryLength, q_info.GetTotalLengthProcessed());
+	report.AddParam(CBlastUsageReport::eNumQueries, q_info.GetNumSeqsProcessed());
+}
+
+
 END_NCBI_SCOPE

@@ -38,6 +38,7 @@
 #include <objtools/readers/reader_exception.hpp>        
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>
 
 #include <objects/blast/Blast4_request.hpp>
 #include <algo/blast/api/uniform_search.hpp>
@@ -48,6 +49,7 @@
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <algo/blast/format/blastfmtutil.hpp>   // for CBlastFormatUtil
 #include <algo/blast/blastinput/blast_scope_src.hpp>    // for SDataLoaderConfig
+#include <algo/blast/api/blast_usage_report.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -310,6 +312,8 @@ void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg);
 
 /// Clean up formatter scope and release
 void QueryBatchCleanup();
+
+void LogQueryInfo(blast::CBlastUsageReport & report, const blast::CBlastInput & q_info);
 
 END_NCBI_SCOPE
 
