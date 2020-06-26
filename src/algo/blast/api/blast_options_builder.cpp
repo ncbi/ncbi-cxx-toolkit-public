@@ -396,7 +396,16 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 	    #endif
         }
         else if (CBlast4Field::Get(eBlastOpt_NegativeTaxidList).Match(p)) {
-    		m_NegativeTaxidList = v.GetInteger_list();
+#ifdef NCBI_STRICT_TAX_ID
+            const list<int>& int_list = v.GetInteger_list();
+            list<TTaxId> taxid_list;
+            ITERATE(list<int>, it, int_list) {
+                taxid_list.push_back(TAX_ID_FROM(int, *it));
+            }
+            m_NegativeTaxidList = taxid_list;
+#else
+            m_NegativeTaxidList = v.GetInteger_list();
+#endif
         } else {
             found = false;
         }
@@ -467,7 +476,16 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         
     case 'T':
     	if (CBlast4Field::Get(eBlastOpt_TaxidList).Match(p)) {
-    		m_TaxidList = v.GetInteger_list();
+#ifdef NCBI_STRICT_TAX_ID
+            const list<int>& int_list = v.GetInteger_list();
+            list<TTaxId> taxid_list;
+            ITERATE(list<int>, it, int_list) {
+                taxid_list.push_back(TAX_ID_FROM(int, *it));
+            }
+            m_TaxidList = taxid_list;
+#else
+            m_TaxidList = v.GetInteger_list();
+#endif
     	} else {
     		found = false;
     	}
@@ -773,7 +791,7 @@ bool CBlastOptionsBuilder::HaveTaxidList()
 	return m_TaxidList.Have();
 }
 
-list<int> CBlastOptionsBuilder::GetTaxidList()
+list<TTaxId> CBlastOptionsBuilder::GetTaxidList()
 {
 	return m_TaxidList.Get();
 }
@@ -783,7 +801,7 @@ bool CBlastOptionsBuilder::HaveNegativeTaxidList()
 	return m_NegativeTaxidList.Have();
 }
 
-list<int> CBlastOptionsBuilder::GetNegativeTaxidList()
+list<TTaxId> CBlastOptionsBuilder::GetNegativeTaxidList()
 {
  return m_NegativeTaxidList.Get();
 }

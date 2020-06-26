@@ -159,9 +159,9 @@ BOOST_AUTO_TEST_CASE(BuildArchiveWithTaxidList)
 
     CRef<CSearchDatabase> search_db(new CSearchDatabase("nt", CSearchDatabase::eBlastDbIsNucleotide));
     CRef<CSeqDBGiList> gilist(new CSeqDBGiList());
-    set<int> taxids;
-    taxids.insert(9606);
-    taxids.insert(9479);
+    set<TTaxId> taxids;
+    taxids.insert(TAX_ID_CONST(9606));
+    taxids.insert(TAX_ID_CONST(9479));
     gilist->AddTaxIds(taxids);
     search_db->SetGiList(gilist.GetPointer());
     CRef<objects::CBlast4_archive> archive =

@@ -2037,13 +2037,13 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         }
 
         if(bob.HaveTaxidList()){
-        	list<int> list = bob.GetTaxidList();
+        	list<TTaxId> list = bob.GetTaxidList();
         	m_TaxidList.clear();
         	m_TaxidList.insert(list.begin(), list.end());
         }
 
         if(bob.HaveNegativeTaxidList()){
-        	list<int> list = bob.GetNegativeTaxidList();
+        	list<TTaxId> list = bob.GetNegativeTaxidList();
         	m_NegativeTaxidList.clear();
         	m_NegativeTaxidList.insert(list.begin(), list.end());
         }

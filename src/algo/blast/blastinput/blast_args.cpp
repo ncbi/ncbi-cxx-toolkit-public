@@ -2334,13 +2334,13 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
         NStr::Split(in, ",", ids, NStr::fSplit_Tokenize);
     }
 
-	set<int> tax_ids;
+	set<TTaxId> tax_ids;
     for(unsigned int i=0; i < ids.size(); i++) {
     	try {
     		if(NStr::IsBlank(ids[i])){
     			continue;
     		}
-    		tax_ids.insert(NStr::StringToInt(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+    		tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
     	}
     	catch(CException & e){
     		NCBI_THROW(CInputException, eInvalidInput, "Invalid taxidlist file ");

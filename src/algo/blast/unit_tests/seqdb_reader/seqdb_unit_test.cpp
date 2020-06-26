@@ -1778,7 +1778,7 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid)
 
     BOOST_REQUIRE(oid1 != oid2);
 
-    map<TGi, int> gi2taxid;
+    map<TGi, TTaxId> gi2taxid;
 
     db.GetTaxIDs(oid1, gi2taxid);
     BOOST_REQUIRE_EQUAL((int)gi2taxid.size(), 44);
@@ -1832,7 +1832,7 @@ BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_gi_to_taxid_set)
 
     BOOST_REQUIRE(oid1 != oid2);
 
-    map<TGi, set<int> > gi2taxids;
+    map<TGi, set<TTaxId> > gi2taxids;
 
     set<int> expected1;
     expected1.insert(BEGIN(tax1), END(tax1));
@@ -1975,7 +1975,7 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_vector_of_taxids)
 
     BOOST_REQUIRE(oid1 != oid2);
 
-    vector<int> taxids;
+    vector<TTaxId> taxids;
 
     // At this point, taxids is empty.
     db.GetTaxIDs(oid1, taxids);
@@ -2046,7 +2046,7 @@ BOOST_AUTO_TEST_CASE(GetLeafTaxIDs_vector_of_taxids)
 
     BOOST_REQUIRE(oid1 != oid2);
 
-    vector<int> taxids;
+    vector<TTaxId> taxids;
 
     // At this point, taxids is empty.
     db.GetLeafTaxIDs(oid1, taxids);
@@ -3003,8 +3003,8 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     BOOST_REQUIRE_THROW(db.GetSeqLengthApprox(0), CSeqDBException);
     BOOST_REQUIRE_THROW(db.GetHdr(0), CSeqDBException);
 
-    map<TGi, int> gi_to_taxid;
-    vector<int>   taxids;
+    map<TGi, TTaxId> gi_to_taxid;
+    vector<TTaxId>   taxids;
     vector<TGi>   gis;
 
     BOOST_REQUIRE_THROW(db.GetTaxIDs(0, gi_to_taxid), CSeqDBException);
@@ -4173,13 +4173,12 @@ BOOST_AUTO_TEST_CASE(SingleTaxidBlastDefLine)
     BOOST_CHECK(bdl.IsSetTaxid() == false);
     BOOST_CHECK(bdl.IsSetLinks() == false);
 
-    const int zeroTaxid(0);
-    bdl.SetTaxid(zeroTaxid);
+    bdl.SetTaxid(ZERO_TAX_ID);
     BOOST_REQUIRE(bdl.IsSetTaxid() == true);
     BOOST_CHECK(bdl.IsSetLinks() == false);
-    BOOST_REQUIRE_EQUAL(zeroTaxid, bdl.GetTaxid());
+    BOOST_REQUIRE_EQUAL(ZERO_TAX_ID, bdl.GetTaxid());
 
-    const int kTaxid(9606);
+    const TTaxId kTaxid = TAX_ID_CONST(9606);
     bdl.SetTaxid(kTaxid);
     BOOST_REQUIRE(bdl.IsSetTaxid() == true);
     BOOST_CHECK(bdl.IsSetLinks() == false);
@@ -4381,9 +4380,9 @@ BOOST_AUTO_TEST_CASE(CombinedFilters)
     		pos_list->AddPig(pigs[i]);
     	}
 
-    	set<int> t;
-    	t.insert(9606);
-    	t.insert(83333);
+    	set<TTaxId> t;
+    	t.insert(TAX_ID_CONST(9606));
+    	t.insert(TAX_ID_CONST(83333));
    		neg_list->AddTaxIds(t);
 
     	CSeqDB db(db_name, CSeqDB::eProtein, &*pos_list, &* neg_list);
@@ -4402,9 +4401,9 @@ BOOST_AUTO_TEST_CASE(CombinedFilters)
     		pos_list->AddPig(pigs[i]);
     	}
 
-    	set<int> t;
-    	t.insert(9606);
-    	t.insert(83333);
+    	set<TTaxId> t;
+    	t.insert(TAX_ID_CONST(9606));
+    	t.insert(TAX_ID_CONST(83333));
    		pos_list->AddTaxIds(t);
 
     	CSeqDB db(db_name, CSeqDB::eProtein, &*pos_list);
@@ -4427,9 +4426,9 @@ BOOST_AUTO_TEST_CASE(CombinedFilters)
     	}
    		neg_list->SetPigList(p);
 
-    	set<int> t;
-    	t.insert(9606);
-    	t.insert(83333);
+    	set<TTaxId> t;
+    	t.insert(TAX_ID_CONST(9606));
+    	t.insert(TAX_ID_CONST(83333));
    		pos_list->AddTaxIds(t);
 
     	CSeqDB db(db_name, CSeqDB::eProtein, &*pos_list, &* neg_list);
@@ -4453,9 +4452,9 @@ BOOST_AUTO_TEST_CASE(CombinedFilters)
         	}
        		neg_list->SetPigList(p);
 
-        	set<int> t;
-        	t.insert(9606);
-        	t.insert(83333);
+        	set<TTaxId> t;
+        	t.insert(TAX_ID_CONST(9606));
+        	t.insert(TAX_ID_CONST(83333));
        		pos_list->AddTaxIds(t);
 
         	CSeqDB db(db_name, CSeqDB::eProtein, 1, 4, &*pos_list, &* neg_list);

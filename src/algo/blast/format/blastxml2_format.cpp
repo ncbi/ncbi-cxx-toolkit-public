@@ -377,8 +377,8 @@ s_SeqAlignToXMLHit(CRef<blastxml2::CHit>& hit,
         		if(defline.IsSetTitle())
         			hit_exp->SetTitle(defline.GetTitle());
 
-        		if(defline.IsSetTaxid() && defline.GetTaxid() != 0) {
-        			int tax_id = defline.GetTaxid();
+        		if(defline.IsSetTaxid() && defline.GetTaxid() != ZERO_TAX_ID) {
+        			TTaxId tax_id = defline.GetTaxid();
        				hit_exp->SetTaxid(tax_id);
         			if(hasTaxDB) {
         				 SSeqDBTaxInfo taxinfo;

@@ -302,8 +302,8 @@ BOOST_AUTO_TEST_CASE(Test_Negative_Duplicate_SeqIdList_MultiDB)
 
 BOOST_AUTO_TEST_CASE(Test_TaxIdList)
 {
-	set<int> tax_ids;
-    tax_ids.insert(1386);
+	set<TTaxId> tax_ids;
+    tax_ids.insert(TAX_ID_CONST(1386));
 
 	CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
 	taxid_list->AddTaxIds(tax_ids);
@@ -322,8 +322,8 @@ BOOST_AUTO_TEST_CASE(Test_TaxIdList)
 
 BOOST_AUTO_TEST_CASE(Test_TaxIdNotFound)
 {
-	set<int> tax_ids;
-    tax_ids.insert(1386);
+	set<TTaxId> tax_ids;
+    tax_ids.insert(TAX_ID_CONST(1386));
 
 	CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
 	taxid_list->AddTaxIds(tax_ids);
@@ -333,11 +333,11 @@ BOOST_AUTO_TEST_CASE(Test_TaxIdNotFound)
 
 BOOST_AUTO_TEST_CASE(Test_NeagtiveTaxIdList)
 {
-	set<int> tax_ids;
-    tax_ids.insert(1386);
+	set<TTaxId> tax_ids;
+    tax_ids.insert(TAX_ID_CONST(1386));
     {
     	CSeqDB wp("data/wp_nr_v5", CSeqDB::eProtein);
-    	set<int> tmp;
+    	set<TTaxId> tmp;
     	wp.GetAllTaxIDs(0, tmp);
     	tax_ids.insert(tmp.begin(), tmp.end());
     }
@@ -359,8 +359,8 @@ BOOST_AUTO_TEST_CASE(Test_NeagtiveTaxIdList)
 
 BOOST_AUTO_TEST_CASE(Test_TaxIdZero)
 {
-	set<int> tax_ids;
-    tax_ids.insert(0);
+	set<TTaxId> tax_ids;
+    tax_ids.insert(TAX_ID_CONST(0));
 
     {
     	CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
@@ -397,19 +397,19 @@ BOOST_AUTO_TEST_CASE(Test_TaxIdZero)
 BOOST_AUTO_TEST_CASE(Test_GetTaxIdsForOids)
 {
 	{
-		set<Int4> tax_ids;
+		set<TTaxId> tax_ids;
 		CSeqDB db("data/15_seqs_v5", CSeqDB::eNucleotide);
 		db.GetDBTaxIds(tax_ids);
 		BOOST_REQUIRE_EQUAL(tax_ids.size(), 4);
 	}
 	{
-		set<Int4> tax_ids;
+		set<TTaxId> tax_ids;
 		CSeqDB db("data/10_seqs_alias", CSeqDB::eNucleotide);
 		db.GetDBTaxIds(tax_ids);
 		BOOST_REQUIRE_EQUAL(tax_ids.size(), 2);
 	}
 	{
-		set<Int4> tax_ids;
+		set<TTaxId> tax_ids;
 		CSeqDB db("data/skip_vols_mix", CSeqDB::eNucleotide);
 		db.GetDBTaxIds(tax_ids);
 		BOOST_REQUIRE_EQUAL(tax_ids.size(), 3);
@@ -436,8 +436,8 @@ BOOST_AUTO_TEST_CASE(Test_AliasFileTaxIdsList)
 		BOOST_REQUIRE_EQUAL(19, found);
 	}
 	{
-		set<Int4> tax_ids;
-		tax_ids.insert(10116);
+		set<TTaxId> tax_ids;
+		tax_ids.insert(TAX_ID_CONST(10116));
 		CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
 	   	taxid_list->AddTaxIds(tax_ids);
 		CSeqDB db("data/taxid_alias", CSeqDB::eNucleotide, taxid_list.GetPointer());
@@ -448,8 +448,8 @@ BOOST_AUTO_TEST_CASE(Test_AliasFileTaxIdsList)
 		BOOST_REQUIRE_EQUAL(4, found);
 	}
 	{
-		set<Int4> tax_ids;
-		tax_ids.insert(10116);
+		set<TTaxId> tax_ids;
+		tax_ids.insert(TAX_ID_CONST(10116));
 		CRef<CSeqDBNegativeList> taxid_list(new CSeqDBNegativeList());
 	   	taxid_list->AddTaxIds(tax_ids);
 		CSeqDB db("data/taxid_alias", CSeqDB::eNucleotide, taxid_list.GetPointer());

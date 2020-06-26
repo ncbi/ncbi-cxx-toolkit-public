@@ -456,9 +456,17 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
     }
 
     CRef<CSeqDBGiList>& gilist = const_cast<CRef<CSeqDBGiList>& > (db->GetGiList());
-    if(gilist.NotEmpty()){
-    	vector<int> taxids((gilist->GetTaxIdsList().begin()), gilist->GetTaxIdsList().end());
-   		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_TaxidList), taxids);
+    if (gilist.NotEmpty()) {
+        vector<TTaxId> taxids((gilist->GetTaxIdsList().begin()), gilist->GetTaxIdsList().end());
+#ifdef NCBI_STRICT_TAX_ID
+        vector<int> int_taxids;
+        ITERATE(vector<TTaxId>, it, taxids) {
+            int_taxids.push_back(TAX_ID_TO(int, *it));
+        }
+        x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_TaxidList), int_taxids);
+#else
+        x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_TaxidList), taxids);
+#endif
     }
     // Set the negative GI list
     const CSearchDatabase::TGiList& neg_gi_list = db->GetNegativeGiListLimitation();
@@ -477,8 +485,16 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
 
     CRef<CSeqDBGiList>& neg_gilist = const_cast<CRef<CSeqDBGiList>& > (db->GetNegativeGiList());
     if(neg_gilist.NotEmpty()){
-       	vector<int> taxids((neg_gilist->GetTaxIdsList().begin()), neg_gilist->GetTaxIdsList().end());
-    	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeTaxidList), taxids);
+       	vector<TTaxId> taxids((neg_gilist->GetTaxIdsList().begin()), neg_gilist->GetTaxIdsList().end());
+#ifdef NCBI_STRICT_TAX_ID
+        vector<int> int_taxids;
+        ITERATE(vector<TTaxId>, it, taxids) {
+            int_taxids.push_back(TAX_ID_TO(int, *it));
+        }
+        x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeTaxidList), int_taxids);
+#else
+        x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeTaxidList), taxids);
+#endif
     }
 
     // Set the filtering algorithms
