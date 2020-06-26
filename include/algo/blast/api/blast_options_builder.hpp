@@ -126,13 +126,13 @@ public:
     bool HaveTaxidList();
 
     /// Get the Tax list.
-    list<int> GetTaxidList();
+    list<TTaxId> GetTaxidList();
 
     /// Check whether a negative tax id list is specified.
     bool HaveNegativeTaxidList();
 
     /// Get the negative tax id list.
-    list<int> GetNegativeTaxidList();
+    list<TTaxId> GetNegativeTaxidList();
 
     /// Check whether a database filtering algorithm ID is specified
     bool HasDbFilteringAlgorithmId();
@@ -328,10 +328,10 @@ private:
     string m_MbIndexName;
 
     /// The tax id list (or none).
-    SOptional< list<int> > m_TaxidList;
+    SOptional< list<TTaxId> > m_TaxidList;
 
     /// The negative tax id list (or none).
-    SOptional< list<int> > m_NegativeTaxidList;
+    SOptional< list<TTaxId> > m_NegativeTaxidList;
 };
 
 END_SCOPE(blast)

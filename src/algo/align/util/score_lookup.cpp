@@ -1265,7 +1265,7 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        return scope->GetTaxId(align.GetSeq_id(m_Row));
+        return TAX_ID_TO(double, scope->GetTaxId(align.GetSeq_id(m_Row)));
 
         /**
         return sequence::GetTaxId

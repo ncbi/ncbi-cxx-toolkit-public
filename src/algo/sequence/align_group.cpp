@@ -479,7 +479,7 @@ TTaxId CAlignGroup::x_GetTaxId(const CSeq_id_Handle& id, CScope& scope)
     TTaxId tax_id = ZERO_TAX_ID;
     try {
         CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-        tax_id = TAX_ID_FROM(int, sequence::GetTaxId(bsh));
+        tax_id = sequence::GetTaxId(bsh);
         if ( tax_id == ZERO_TAX_ID ) {
             if ( !m_Taxon1.get() ) {
                 m_Taxon1.reset(new CTaxon1);

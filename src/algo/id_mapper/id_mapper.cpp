@@ -464,7 +464,7 @@ CGencollIdMapper::x_Init_SeqLocMappers() const
 bool
 CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
 {
-    if (!(m_Assembly->GetTaxId() == 9606 &&
+    if (!(m_Assembly->GetTaxId() == TAX_ID_CONST(9606) &&
           NStr::Equal(m_Assembly->GetName(), "NCBI34")
          )
        ) {
@@ -492,7 +492,7 @@ CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
 CConstRef<CSeq_id>
 CGencollIdMapper::x_NCBI34_Map_IdFix(CConstRef<CSeq_id> SourceId) const
 {
-    if (!(m_Assembly->GetTaxId() == 9606 &&
+    if (!(m_Assembly->GetTaxId() == TAX_ID_CONST(9606) &&
           NStr::Equal(m_Assembly->GetName(), "NCBI34")
          )
        ) {
