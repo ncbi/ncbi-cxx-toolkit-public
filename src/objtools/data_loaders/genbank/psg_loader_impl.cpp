@@ -708,10 +708,10 @@ void CPSGDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-int CPSGDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CPSGDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
     auto seq_info = x_GetBioseqInfo(idh);
-    return seq_info ? TAX_ID_TO(int, seq_info->tax_id) : -1;
+    return seq_info ? seq_info->tax_id : INVALID_TAX_ID;
 }
 
 

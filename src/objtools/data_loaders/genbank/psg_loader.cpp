@@ -206,7 +206,7 @@ void CPSGDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
-int CPSGDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CPSGDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetTaxId(idh);
 }

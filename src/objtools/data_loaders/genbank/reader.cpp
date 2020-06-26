@@ -550,7 +550,7 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
         return true;
     }
 
-    int taxid = -1;
+    TTaxId taxid = INVALID_TAX_ID;
     m_Dispatcher->LoadBlobs(result, seq_id, fBlobHasCore|fBlobHasDescr, 0);
     CLoadLockBlobIds blobs(result, seq_id, static_cast<SAnnotSelector*>(0));
     _ASSERT(blobs.IsLoaded());
@@ -738,7 +738,7 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
         if ( !lock.IsLoadedTaxId() ) {
             m_Dispatcher->LoadSeq_idTaxId(result, ids[i]);
         }
-        if ( lock.IsLoadedTaxId() && lock.GetTaxId() != -1 ) {
+        if ( lock.IsLoadedTaxId() && lock.GetTaxId() != INVALID_TAX_ID ) {
             ret[i] = lock.GetTaxId();
             loaded[i] = true;
         }
@@ -1186,7 +1186,7 @@ void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
-                                    int taxid) const
+                                    TTaxId taxid) const
 {
     if ( !result.SetLoadedTaxId(seq_id, taxid) ) {
         return;

@@ -98,7 +98,7 @@ public:
     typedef vector<bool> TLoaded;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
-    typedef vector<int> TTaxIds;
+    typedef vector<TTaxId> TTaxIds;
     typedef vector<int> TStates;
     typedef vector<int> THashes;
     typedef vector<bool> TKnown;
@@ -192,7 +192,7 @@ public:
 
     void SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id,
-                               int taxid) const;
+                               TTaxId taxid) const;
     void SetAndSaveSequenceHash(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
                                 const TSequenceHash& hash) const;

@@ -257,8 +257,8 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
     CLoadLockTaxId lock(result, seq_id);
     if ( lock.IsLoadedTaxId() && lock.GetExpType() == GBL::eExpire_normal ) {
         CStoreBuffer str;
-        _ASSERT(lock.GetTaxId() != -1);
-        str.StoreInt4(lock.GetTaxId());
+        _ASSERT(lock.GetTaxId() != INVALID_TAX_ID);
+        str.StoreInt4(TAX_ID_TO(Int4, lock.GetTaxId()));
         x_WriteId(GetIdKey(seq_id), GetTaxIdSubkey(), str);
     }
 }

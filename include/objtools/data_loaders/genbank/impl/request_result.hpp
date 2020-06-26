@@ -305,7 +305,7 @@ public:
     typedef CDataLoader::SGiFound TSequenceGi;
     typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceGi> TCacheGi;
     typedef GBL::CInfoCache<CSeq_id_Handle, string> TCacheLabel;
-    typedef int TTaxId;
+    typedef ncbi::TTaxId TTaxId;
     typedef GBL::CInfoCache<CSeq_id_Handle, TTaxId> TCacheTaxId;
     typedef pair<CSeq_id_Handle, string> TKeyBlobIds;
     typedef GBL::CInfoCache<TKeyBlobIds, CFixedBlob_ids> TCacheBlobIds;
@@ -556,7 +556,7 @@ public:
 
     static bool IsFound(const TData& data)
         {
-            return data != -1;
+            return data != INVALID_TAX_ID;
         }
     bool IsFound(void) const
         {

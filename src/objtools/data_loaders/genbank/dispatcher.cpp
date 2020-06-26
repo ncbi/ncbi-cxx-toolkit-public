@@ -864,7 +864,7 @@ namespace {
     public:
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
-        typedef vector<int> TRet;
+        typedef vector<TTaxId> TRet;
         typedef CLoadLockTaxId CLoadLock;
         CCommandLoadTaxIds(CReaderRequestResult& result,
                            const TKey& key, TLoaded& loaded, TRet& ret)

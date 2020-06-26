@@ -518,7 +518,7 @@ public:
 class CDataTesterTaxId : public IBulkTester
 {
 public:
-    typedef int TDataValue;
+    typedef TTaxId TDataValue;
     typedef vector<TDataValue> TDataSet;
     TDataSet data, data_verify;
 
@@ -539,7 +539,7 @@ public:
     }
     void LoadVerify(CScope& scope)
     {
-        data_verify.resize(ids.size(), -1);
+        data_verify.resize(ids.size(), INVALID_TAX_ID);
         for (size_t i = 0; i < ids.size(); ++i) {
             CBioseq_Handle h = scope.GetBioseqHandle(ids[i]);
             if (h) {
@@ -550,11 +550,11 @@ public:
     }
     void LoadVerify(const vector<string>& lines)
     {
-        data_verify.resize(ids.size(), -1);
+        data_verify.resize(ids.size(), INVALID_TAX_ID);
         for (size_t i = 0; i < ids.size(); ++i) {
             const string& line = lines[i];
             if (!line.empty()) {
-                data_verify[i] = NStr::StringToNumeric<int>(line);
+                data_verify[i] = NStr::StringToNumeric<TTaxId>(line);
             }
         }
     }
@@ -569,7 +569,7 @@ public:
     }
     bool Valid(size_t i) const
     {
-        return data[i] != -1;
+        return data[i] != INVALID_TAX_ID;
     }
     bool Correct(size_t i) const
     {

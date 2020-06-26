@@ -106,7 +106,7 @@ public:
     typedef vector<bool> TKnown;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
-    typedef vector<int> TTaxIds;
+    typedef vector<TTaxId> TTaxIds;
     typedef vector<int> THashes;
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::EMol> TTypes;

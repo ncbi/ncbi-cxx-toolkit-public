@@ -714,18 +714,18 @@ string CGBDataLoader_Native::GetLabel(const CSeq_id_Handle& idh)
 }
 
 
-int CGBDataLoader_Native::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId CGBDataLoader_Native::GetTaxId(const CSeq_id_Handle& idh)
 {
     if ( CReadDispatcher::CannotProcess(idh) ) {
-        return -1;
+        return INVALID_TAX_ID;
     }
     CGBReaderRequestResult result(this, idh);
     CLoadLockTaxId lock(result, idh);
     if ( !lock.IsLoadedTaxId() ) {
         m_Dispatcher->LoadSeq_idTaxId(result, idh);
     }
-    int taxid = lock.IsLoadedTaxId()? lock.GetTaxId(): -1;
-    if ( taxid == -1 ) {
+    TTaxId taxid = lock.IsLoadedTaxId()? lock.GetTaxId(): INVALID_TAX_ID;
+    if ( taxid == INVALID_TAX_ID ) {
         return CDataLoader::GetTaxId(idh);
     }
     return taxid;
@@ -800,7 +800,7 @@ void CGBDataLoader_Native::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& 
         // we have to fall back to full sequence retrieval in such cases
         bool retry = false;
         for ( size_t i = 0; i < ids.size(); ++i ) {
-            if ( loaded[i] && ret[i] == -1 ) {
+            if ( loaded[i] && ret[i] == INVALID_TAX_ID ) {
                 loaded[i] = false;
                 retry = true;
             }

@@ -115,7 +115,7 @@ public:
     typedef CDataLoader::TTSE_LockSets TTSE_LockSets;
 
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
-    int GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceType(const CSeq_id_Handle& idh);

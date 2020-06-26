@@ -843,7 +843,7 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
         conn.Release();
         return false;
     }
-    int taxid = str.ParseInt4();
+    TTaxId taxid = TAX_ID_FROM(Int4, str.ParseInt4());
     if ( !str.Done() ) {
         conn.Release();
         return false;

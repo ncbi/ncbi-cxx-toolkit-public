@@ -125,7 +125,7 @@ public:
     virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh) override;
     virtual SGiFound GetGiFound(const CSeq_id_Handle& idh) override;
     virtual string GetLabel(const CSeq_id_Handle& idh) override;
-    virtual int GetTaxId(const CSeq_id_Handle& idh) override;
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh) override;
     virtual int GetSequenceState(const CSeq_id_Handle& idh) override;
     virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh) override;
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih) override;

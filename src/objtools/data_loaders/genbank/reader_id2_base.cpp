@@ -2519,7 +2519,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             SetAndSaveSeq_idLabel(result, seq_id, "");
         }
         if ( req.GetSeq_id_type() & req.eSeq_id_type_taxid ) {
-            SetAndSaveSeq_idTaxId(result, seq_id, -1);
+            SetAndSaveSeq_idTaxId(result, seq_id, INVALID_TAX_ID);
         }
         if ( req.GetSeq_id_type() & req.eSeq_id_type_hash ) {
             SetAndSaveSequenceHash(result, seq_id, TSequenceHash());
@@ -2590,14 +2590,14 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_taxid ) {
-        int taxid = -1;
+        TTaxId taxid = INVALID_TAX_ID;
         if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
                 const CObject_id& obj_id = dbtag.GetTag();
                 if ( obj_id.IsId() && dbtag.GetDb() == kSpecialId_taxid ) {
-                    taxid = obj_id.GetId();
+                    taxid = TAX_ID_FROM(CObject_id::TId, obj_id.GetId());
                     break;
                 }
             }
