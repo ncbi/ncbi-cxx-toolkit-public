@@ -87,6 +87,7 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
     	case eNegSeqIdList:		retval.assign("negative_seqidlist"); break;
     	case eIPGList:			retval.assign("ipglist"); break;
     	case eNegIPGList:		retval.assign("negative_ipglist"); break;
+    	case eCompBasedStats:	retval.assign("comp_based_stats"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();

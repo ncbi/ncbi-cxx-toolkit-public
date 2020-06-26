@@ -71,7 +71,8 @@ public:
 		eSeqIdList,
 		eNegSeqIdList,
 		eIPGList,
-		eNegIPGList
+		eNegIPGList,
+		eCompBasedStats
 	};
 	CBlastUsageReport();
 	~CBlastUsageReport();
