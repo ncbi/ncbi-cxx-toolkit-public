@@ -55,6 +55,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <algo/blast/format/sam.hpp>
 #include <objects/blast/blast__.hpp>
+#include <algo/blast/api/blast_usage_report.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -323,6 +324,10 @@ public:
 
     static void PrintArchive(CRef<objects::CBlast4_archive> archive,
             					  CNcbiOstream& out);
+
+    // Extract search info in CBlastFormat and add to blast report usage
+    void LogBlastSearchInfo(blast::CBlastUsageReport & report);
+
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;

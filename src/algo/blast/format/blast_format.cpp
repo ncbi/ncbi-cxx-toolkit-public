@@ -2416,3 +2416,89 @@ void CBlastFormat::x_InitSAMFormatter()
     m_SamFormatter.reset(new CBlast_SAM_Formatter(m_Outfile, *m_Scope,
         		                                  m_CustomOutputFormatSpec, pg));
 }
+
+bool s_SetCompBasedStats(EProgram program)
+{
+	 if (program == eBlastp || program == eTblastn ||
+	        program == ePSIBlast || program == ePSITblastn ||
+	        program == eRPSBlast || program == eRPSTblastn ||
+	        program == eBlastx  ||  program == eDeltaBlast) {
+		 return true;
+	 }
+	 return false;
+}
+
+void CBlastFormat::LogBlastSearchInfo(CBlastUsageReport & report)
+{
+	if (report.IsEnabled()) {
+		report.AddParam(CBlastUsageReport::eProgram, m_Program);
+		EProgram task = m_Options->GetProgram();
+		string task_str =  EProgramToTaskName(task);
+		report.AddParam(CBlastUsageReport::eTask, task_str);
+		report.AddParam(CBlastUsageReport::eEvalueThreshold, m_Options->GetEvalueThreshold());
+		report.AddParam(CBlastUsageReport::eHitListSize, m_Options->GetHitlistSize());
+		report.AddParam(CBlastUsageReport::eOutputFmt, m_FormatType);
+
+		if (s_SetCompBasedStats(task)) {
+			report.AddParam(CBlastUsageReport::eCompBasedStats, m_Options->GetCompositionBasedStats());
+		}
+
+		int num_seqs = 0;
+	    for (size_t i = 0; i < m_DbInfo.size(); i++) {
+	        num_seqs += m_DbInfo[i].number_seqs;
+	    }
+		if( m_IsBl2Seq) {
+			report.AddParam(CBlastUsageReport::eBl2seq, "true");
+			if (m_IsDbScan) {
+				report.AddParam(CBlastUsageReport::eNumSubjects, num_seqs);
+				report.AddParam(CBlastUsageReport::eSubjectsLength, GetDbTotalLength());
+			}
+			else if (m_SeqInfoSrc.NotEmpty()){
+				report.AddParam(CBlastUsageReport::eNumSubjects, (int) m_SeqInfoSrc->Size());
+				int total_subj_length = 0;
+				for (size_t i = 0; i < m_SeqInfoSrc->Size(); i++) {
+				       total_subj_length += m_SeqInfoSrc->GetLength(i);
+				}
+				report.AddParam(CBlastUsageReport::eSubjectsLength, total_subj_length);
+			}
+		}
+		else {
+			report.AddParam(CBlastUsageReport::eDBName, m_DbName);
+			report.AddParam(CBlastUsageReport::eDBLength, GetDbTotalLength());
+			report.AddParam(CBlastUsageReport::eDBNumSeqs, num_seqs);
+			report.AddParam(CBlastUsageReport::eDBDate, m_DbInfo[0].date);
+			if(m_SearchDb.NotEmpty()){
+				if(m_SearchDb->GetGiList().NotEmpty()) {
+					 CRef<CSeqDBGiList>  l = m_SearchDb->GetGiList();
+					 if (l->GetNumGis()) {
+						 report.AddParam(CBlastUsageReport::eGIList, true);
+					 }
+					 if (l->GetNumSis()){
+						 report.AddParam(CBlastUsageReport::eSeqIdList, true);
+					 }
+					 if (l->GetNumTaxIds()){
+						 report.AddParam(CBlastUsageReport::eTaxIdList, true);
+					 }
+					 if (l->GetNumPigs()) {
+						 report.AddParam(CBlastUsageReport::eIPGList, true);
+					 }
+				}
+				if(m_SearchDb->GetNegativeGiList().NotEmpty()) {
+					 CRef<CSeqDBGiList>  l = m_SearchDb->GetNegativeGiList();
+					 if (l->GetNumGis()) {
+						 report.AddParam(CBlastUsageReport::eNegGIList, true);
+					 }
+					 if (l->GetNumSis()){
+						 report.AddParam(CBlastUsageReport::eNegSeqIdList, true);
+					 }
+					 if (l->GetNumTaxIds()){
+						 report.AddParam(CBlastUsageReport::eNegTaxIdList, true);
+					 }
+					 if (l->GetNumPigs()) {
+						 report.AddParam(CBlastUsageReport::eNegIPGList, true);
+					 }
+				}
+			}
+		}
+	}
+}
