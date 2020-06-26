@@ -193,7 +193,7 @@ string CGC_Assembly::GetFileSafeDisplayName() const
 }
 
 
-int CGC_Assembly::GetTaxId() const
+TTaxId CGC_Assembly::GetTaxId() const
 {
     CConstRef<CGC_AssemblyDesc> desc;
     if (IsAssembly_set()) {
@@ -211,7 +211,7 @@ int CGC_Assembly::GetTaxId() const
             }
         }
     }
-    return TAX_ID_TO(int, tax_id);
+    return tax_id;
 }
 
 

@@ -121,7 +121,7 @@ public:
     bool IsAa(void) const;
 
     /// Determine the tax-id for this bioseq
-    int GetTaxId() const;
+    TTaxId GetTaxId() const;
 
     // convenience functions for access to Bioseq length
     bool IsSetLength(void) const;

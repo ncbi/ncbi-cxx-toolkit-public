@@ -87,7 +87,7 @@ public:
     const CGC_AssemblyDesc& GetDesc() const;
 
     /// Retrieve the tax-id for this assembly
-    int GetTaxId() const;
+    TTaxId GetTaxId() const;
 
     /// Retrieve the name of this assembly
     string GetName() const;

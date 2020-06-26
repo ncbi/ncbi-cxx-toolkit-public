@@ -732,9 +732,9 @@ string CDbtag::GetUrl(void) const
     return GetUrl( kEmptyStr, kEmptyStr, kEmptyStr );
 }
 
-string CDbtag::GetUrl(int taxid) const
+string CDbtag::GetUrl(TTaxId taxid) const
 {   
-    TTaxIdTaxnameMap::const_iterator find_iter = sc_TaxIdTaxnameMap.find(taxid);
+    TTaxIdTaxnameMap::const_iterator find_iter = sc_TaxIdTaxnameMap.find(TAX_ID_TO(int, taxid));
     if( find_iter == sc_TaxIdTaxnameMap.end() ) {
         return GetUrl();
     } else {

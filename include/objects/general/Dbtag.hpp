@@ -295,7 +295,7 @@ public:
     // @param taxid organism taxid for URL generation
     // @return
     //   the URL or an empty string if non is available
-    string GetUrl(int taxid) const;
+    string GetUrl(TTaxId taxid) const;
 
     // Get a URL to the resource (if available)
     // @param taxname organism taxname (e.g. "Danio rerio") for URL generation

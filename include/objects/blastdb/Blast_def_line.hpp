@@ -62,7 +62,7 @@ public:
 
     /// Set of leaf-node taxonomy IDs associated with this entry in the
     // BLAST database
-    typedef set<int> TTaxIds;
+    typedef set<TTaxId> TTaxIds;
     TTaxIds GetTaxIds() const;          // DEPRECATED, use GetLeafTaxIds
     void SetTaxIds(const TTaxIds& t);   // DEPRECATED, use SetLeafTaxIds
     TTaxIds GetLeafTaxIds() const;

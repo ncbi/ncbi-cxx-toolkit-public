@@ -74,7 +74,7 @@ CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
         bool overwrite = true;
         if (IsSetTaxid()) {
             const TTaxid taxid = GetTaxid();
-            if (taxid != 0) {
+            if (taxid != ZERO_TAX_ID) {
                 TTaxIds::iterator it = t.find(taxid);
                 if (it != t.end()) {
                     overwrite = false;
@@ -88,7 +88,7 @@ CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
         }
         // Save all of the input set to the 'links' field.
         ITERATE(TTaxIds, itr, t) {
-            SetLinks().push_back(*itr);
+            SetLinks().push_back(TAX_ID_TO(int, *itr));
         }
     }
 }
@@ -97,8 +97,7 @@ CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
 CBlast_def_line::TTaxIds
 CBlast_def_line::GetTaxIds() const
 {
-	static const int ZERO_TAXID =0;
-    TTaxIds retval;                 // set<int>, initially empty
+    TTaxIds retval;                 // set<TTaxId>, initially empty
 
     // If there's a 'taxid' value, add it to the result set.
     if (CanGetTaxid()) {
@@ -108,11 +107,15 @@ CBlast_def_line::GetTaxIds() const
     // If there are any 'links' values, add them to the result set.
     if (IsSetLinks()) {
         TLinks taxids = GetLinks();  // see ASN.1 spec comment
+#ifdef NCBI_STRICT_TAX_ID
+        ITERATE(TLinks, it, taxids) retval.insert(TAX_ID_FROM(int, *it));
+#else
         retval.insert(taxids.begin(), taxids.end());
+#endif
     }
 
     if(retval.size() > 1) {
-    	retval.erase(ZERO_TAXID);
+    	retval.erase(ZERO_TAX_ID);
     }
 
     // Remember, set containers guarantee that all members are unique,
@@ -129,7 +132,15 @@ CBlast_def_line::SetLeafTaxIds(const CBlast_def_line::TTaxIds& t)
     if (t.empty()) {
         ResetLinks();
     } else {
+#ifdef NCBI_STRICT_TAX_ID
+        TLinks& links = SetLinks();
+        links.clear();
+        ITERATE(TTaxIds, it, t) {
+            links.push_back(TAX_ID_TO(int, *it));
+        }
+#else
         SetLinks().assign(t.begin(), t.end());
+#endif
     }
 }
 
@@ -141,7 +152,11 @@ CBlast_def_line::GetLeafTaxIds() const
     // If there are any 'links' values, add them to the result set.
     if (IsSetLinks()) {
         TLinks taxids = GetLinks();  // see ASN.1 spec comment
+#ifdef NCBI_STRICT_TAX_ID
+        ITERATE(TLinks, it, taxids) retval.insert(TAX_ID_FROM(int, *it));
+#else
         retval.insert(taxids.begin(), taxids.end());
+#endif
     }
 
     // Return result set.

@@ -174,7 +174,7 @@ CBioseq::CBioseq(const CSeq_loc& loc, const string& str_id)
 
 
 /// Determine the tax-id for this bioseq
-int CBioseq::GetTaxId() const
+TTaxId CBioseq::GetTaxId() const
 {
     /// A taxid can be found either in a source descriptor (the newer form) or in a
     /// org descriptor. If both are there, the source descriptor should have precedence.
@@ -195,7 +195,7 @@ int CBioseq::GetTaxId() const
         }
     }
 
-    return TAX_ID_TO(int, taxid_from_source != ZERO_TAX_ID ? taxid_from_source : taxid_from_org);
+    return taxid_from_source != ZERO_TAX_ID ? taxid_from_source : taxid_from_org;
 }
 
 
