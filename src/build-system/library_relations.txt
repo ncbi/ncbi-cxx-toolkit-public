@@ -231,7 +231,7 @@ build_config needs simple_asm
 build_config needs xgencoll
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
-build_config_base needs gpinit_register
+build_config_base needs gpipe_attr
 bz2 needs3party $(ORIG_LIBS)
 cache_g needs generic_db_utils
 cares needs3party $(ORIG_LIBS)
@@ -1105,7 +1105,6 @@ pathogen_ctl needs gpipe_kmer
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
-pathogen_target_loader needs gpinit_register
 pathogen_target_loader needs pathogen_ctl
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
