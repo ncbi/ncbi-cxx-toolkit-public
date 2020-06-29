@@ -75,7 +75,8 @@ static void InheritPartialness(
 CConstRef<CSeq_align> 
 GetAlignmentForRna(
     const CMappedFeat& a_feat, 
-    CScope& a_scope)
+    CScope& a_scope,
+    bool ignore_errors)
 //  ============================================================================
 {
     CSeq_id_Handle feat_idh = a_feat.GetProductId();
@@ -97,16 +98,51 @@ GetAlignmentForRna(
         }
     }
     if(align_list.size() > 1) {
-        NCBI_THROW(CException, eUnknown, "Multiple alignments found.");
+        if(!ignore_errors) {
+            NCBI_THROW(CException, eUnknown, "Multiple alignments found.");
+        }
+/*      for(auto align: align_list) {
+            static size_t n(0);
+            auto_ptr<CObjectOStream> dump(CObjectOStream::Open(eSerial_AsnText, NStr::NumericToString(n) + ".asn1"));
+            *dump << *align;
+            ++n;
+        }
+*/
     }
     return (align_list.size() > 0 ? align_list.front() : CConstRef<CSeq_align>());
+}
+
+//  ============================================================================
+void CFeatureGenerator::x_SetAnnotName(
+    SAnnotSelector& sel, 
+    const string& annot_name)
+//  ============================================================================
+{
+    if(!annot_name.empty()) {
+        sel.ResetAnnotsNames();
+        if(annot_name =="Unnamed") {
+            sel.AddUnnamedAnnots();
+        } else {
+            sel.AddNamedAnnots(annot_name);
+            sel.ExcludeUnnamedAnnots();
+            if (NStr::StartsWith(annot_name, "NA0")) {
+                sel.IncludeNamedAnnotAccession(annot_name.find(".") == string::npos ? 
+                                                    annot_name + ".1" 
+                                                    : 
+                                                    annot_name);
+            }
+        }
+    }
 }
 
 
 //  ============================================================================
 void CFeatureGenerator::CreateMicroIntrons(
     CScope& scope,
-    CBioseq_Handle bsh) 
+    CBioseq_Handle bsh,
+    const string& annot_name,
+    TSeqRange* range,
+    bool ignore_errors) 
 //  ============================================================================
 {
     feature::CFeatTree feat_tree;
@@ -114,40 +150,57 @@ void CFeatureGenerator::CreateMicroIntrons(
     //create feature tree from all features 
     {{
          SAnnotSelector sel;
+         x_SetAnnotName(sel, annot_name);
          sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
          sel.IncludeFeatType(CSeqFeatData::e_Rna);
          sel.SetResolveAll().SetAdaptiveDepth(true);
-         CFeat_CI feat_it(bsh, sel);
+         CFeat_CI feat_it(range ? CFeat_CI(bsh, *range, sel) : CFeat_CI(bsh, sel));
          feat_tree.AddFeatures(feat_it);
-     }}
+    }}
 
-    SAnnotSelector sel;
-    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
-    sel.SetResolveAll().SetAdaptiveDepth(true);
-    for(CFeat_CI feat_it(bsh, sel); feat_it; ++feat_it) {
+    SAnnotSelector orig_sel;
+    orig_sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    x_SetAnnotName(orig_sel, annot_name);
+    orig_sel.SetResolveAll().SetAdaptiveDepth(true);
+    SAnnotSelector mrna_sel;
+    mrna_sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    mrna_sel.SetResolveAll().SetAdaptiveDepth(true);
+    for(CFeat_CI feat_it(range ? CFeat_CI(bsh, *range, orig_sel) : CFeat_CI(bsh, orig_sel)); feat_it; ++feat_it) {
         CSeq_feat_Handle cur_feat = feat_it->GetSeq_feat_Handle();
         CSeq_feat_Handle mrna_feat = feat_tree.GetParent(cur_feat, CSeqFeatData::e_Rna).GetSeq_feat_Handle();
         if(!mrna_feat) {
             continue;
         }
-        CConstRef<CSeq_align> align_ref = GetAlignmentForRna(mrna_feat, scope);
+        CConstRef<CSeq_align> align_ref = GetAlignmentForRna(mrna_feat, scope, ignore_errors);
         if(!align_ref) {
             continue;
         }
         const CSeq_align& cur_align = *align_ref;
         CBioseq_Handle mrna_bsh = scope.GetBioseqHandle(mrna_feat.GetProductId());
         if(!mrna_bsh) {
-            NCBI_THROW(CException, eUnknown, "Unable to get mRNA sequence.");
+            if(ignore_errors) {
+                continue;
+            } else {
+                NCBI_THROW(CException, eUnknown, "Unable to get mRNA sequence.");
+            }
         }
         CMappedFeat prod_cd_feat;
-        for(CFeat_CI prod_feat_it(mrna_bsh, sel); prod_feat_it; ++prod_feat_it) {
+        for(CFeat_CI prod_feat_it(mrna_bsh, mrna_sel); prod_feat_it; ++prod_feat_it) {
             if(prod_cd_feat) {
-                NCBI_THROW(CException, eUnknown, "Multiple cdregion features found on mRNA.");
+                if(ignore_errors) {
+                    continue;
+                } else {
+                    NCBI_THROW(CException, eUnknown, "Multiple cdregion features found on mRNA.");
+                }
             }
             prod_cd_feat = *prod_feat_it;
         }
         if(!prod_cd_feat) {
-            NCBI_THROW(CException, eUnknown, "Unable to find cdregion on mRNA: " + mrna_feat.GetProductId().AsString());
+            if(ignore_errors) {
+                continue;
+            } else {
+                NCBI_THROW(CException, eUnknown, "Unable to find cdregion on mRNA: " + mrna_feat.GetProductId().AsString());
+            }
         }
         CRef<CSeq_loc> projected_mrna_loc = 
             CFeatureGenerator::s_ProjectRNA(
@@ -184,5 +237,4 @@ void CFeatureGenerator::CreateMicroIntrons(
         cds_eh.Replace(*new_cds_feat);
     }
 }
-
 END_NCBI_SCOPE

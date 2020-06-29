@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
     class CSeq_annot;
     class CBioseq_set;
     class CBioseq_Handle;
+    class SAnnotSelector;
 END_SCOPE(objects)
 
 class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
@@ -184,13 +185,21 @@ public:
     static CRef<objects::CSeq_loc> s_ProjectCDS(const objects::CSeq_align& spliced_aln, 
                                                 const objects::CSeq_loc& product_cds_loc,
                                                 bool convert_overlaps = true);
+    // when specified, annot_name creates introns for features from a given annot_name
+    // non-NULL range limits processing to a specific range
     static void CreateMicroIntrons(
                                                 objects::CScope& scope,
-                                                objects::CBioseq_Handle bsh);
+                                                objects::CBioseq_Handle bsh,
+                                                const string& annot_name = "",
+                                                TSeqRange* range = NULL,
+                                                bool ignore_errors = false);
 
 private:
     struct SImplementation;
     auto_ptr<SImplementation> m_impl;
+
+    // adjust the selector to use a given annotation if not empty
+    static void x_SetAnnotName(objects::SAnnotSelector& sel, const string& annot_name);
 };
 
 
