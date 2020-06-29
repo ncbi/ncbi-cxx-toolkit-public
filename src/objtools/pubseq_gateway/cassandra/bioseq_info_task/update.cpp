@@ -60,6 +60,7 @@ CCassBioseqInfoTaskUpdate::CCassBioseqInfoTaskUpdate(
 )
     : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
     , m_Record(record)
+    , m_UseWritetime(false)
 {}
 
 
@@ -97,6 +98,9 @@ void CCassBioseqInfoTaskUpdate::Wait1(void)
                     " tax_id"
                     ")"
                     "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                if (m_UseWritetime && m_Record->GetWritetime() > 0) {
+                    sql += " USING TIMESTAMP " + to_string(m_Record->GetWritetime());
+                }
                 qry->NewBatch();
 
                 qry->SetSQL(sql, 15);

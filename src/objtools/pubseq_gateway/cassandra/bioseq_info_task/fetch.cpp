@@ -65,10 +65,11 @@ BEGIN_SCOPE()
     const int fnState = 11;
     const int fnTaxId = 12;
     const int fnName = 13;
+    const int fnWritetime = 14;
 
     const string kSelectStatement = "SELECT version, seq_id_type, "
         "date_changed, hash, gi, length, mol, sat, "
-        "sat_key, seq_ids, seq_state, state, tax_id, name FROM ";
+        "sat_key, seq_ids, seq_state, state, tax_id, name, writetime(sat_key) FROM ";
 
     using TField = CBioseqInfoFetchRequest::EFields;
 END_SCOPE()
@@ -251,7 +252,8 @@ void CCassBioseqInfoTaskFetch::x_PopulateRecord(CBioseqInfoRecord& record) const
         .SetSeqState(m_QueryArr[0].query->FieldGetInt8Value(fnSeqState))
         .SetState(m_QueryArr[0].query->FieldGetInt8Value(fnState))
         .SetTaxId(m_QueryArr[0].query->FieldGetInt32Value(fnTaxId))
-        .SetName(m_QueryArr[0].query->FieldGetStrValueDef(fnName, ""));
+        .SetName(m_QueryArr[0].query->FieldGetStrValueDef(fnName, ""))
+        .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(fnWritetime));
     m_QueryArr[0].query->FieldGetContainerValue(
         fnSeqIds, inserter(record.GetSeqIds(), record.GetSeqIds().end()));
 }
