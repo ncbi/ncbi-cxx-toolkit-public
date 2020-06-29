@@ -8272,7 +8272,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("GOE");
     ambig.push_back("PSS");
     ambig.push_back("CCB");
-    ambig.push_back("SMNH");
     ambig.push_back("SUM");
     ambig.push_back("NMPG");
     ambig.push_back("USP");
