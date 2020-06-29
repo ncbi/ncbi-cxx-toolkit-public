@@ -57,7 +57,6 @@ NCBI_add_subdirectory(
   winmasker
 )
 
-if (NCBI_EXPERIMENTAL_CFG)
 NCBI_add_subdirectory(
   dblb
   feat_import
@@ -72,5 +71,4 @@ NCBI_add_subdirectory(
   wig2table
   pubseq_gateway
 )
-endif()
 
