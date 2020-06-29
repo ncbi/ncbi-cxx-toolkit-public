@@ -874,10 +874,7 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 
     if (oids.empty()) {
         try {
-            TGi gi = GI_FROM(
-                    TIntId,
-                    NStr::StringToNumeric<TIntId>(acc, NStr::fConvErr_NoThrow)
-            );
+            TGi gi = NStr::StringToNumeric<TGi>(acc, NStr::fConvErr_NoThrow);
             int oid(-1);
 
             if (gi > ZERO_GI  &&  m_Impl->GiToOidwFilterCheck(gi, oid)) {

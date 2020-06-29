@@ -4229,14 +4229,14 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
         TGi gi = GI_FROM(Uint4, (big_gi + i));
 #ifndef NCBI_INT8_GI
         BOOST_REQUIRE_THROW(
-                CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi)),
+                CSeq_id(CSeq_id::e_Gi, gi),
                 CException
         );
         return;
 #else
         try {
             CRef<CSeq_id> seqid(
-                    new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi))
+                    new CSeq_id(CSeq_id::e_Gi, gi)
             );
             int oid;
             rdb->IdToOid(GI_TO(long, seqid->GetGi()), oid);

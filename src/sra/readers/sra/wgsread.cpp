@@ -4226,7 +4226,7 @@ static void s_AddGiRange(CID2S_Seq_loc::TLoc_set& loc_set,
         return;
     }
     CRef<CID2S_Seq_loc> loc(new CID2S_Seq_loc);
-    if ( gi_range_stop == gi_range_start+GI_FROM(TIntId, 1) ) {
+    if ( gi_range_stop == gi_range_start+GI_CONST(1) ) {
         loc->SetWhole_gi(gi_range_start);
     }
     else {
@@ -4292,7 +4292,7 @@ CRef<CID2S_Chunk_Info> SWGSFeatChunkInfo::CreateChunkInfo(int index,
                         s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
                         gi_range_start = gi;
                     }
-                    gi_range_stop = gi+GI_FROM(TIntId, 1);
+                    gi_range_stop = gi+GI_CONST(1);
                     continue;
                 }
             }
