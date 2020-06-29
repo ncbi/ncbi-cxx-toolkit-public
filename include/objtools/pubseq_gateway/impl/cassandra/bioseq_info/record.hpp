@@ -63,6 +63,7 @@ class CBioseqInfoRecord
     using TSeqState = int8_t;
     using TState = int8_t;
     using TTaxId = int32_t;
+    using TWritetime = int64_t;
 
     static const TState kStateAlive = 10;
 
@@ -80,6 +81,7 @@ class CBioseqInfoRecord
         , m_SeqState(-1)
         , m_State(-1)
         , m_TaxId(-1)
+        , m_Writetime(-1)
     {}
 
     void Reset(void);
@@ -185,6 +187,12 @@ class CBioseqInfoRecord
         return *this;
     }
 
+    CBioseqInfoRecord & SetWritetime(TWritetime  value)
+    {
+        m_Writetime = value;
+        return *this;
+    }
+
 
     // Getters
     TAccession const & GetAccession(void) const
@@ -267,6 +275,11 @@ class CBioseqInfoRecord
         return m_Name;
     }
 
+    TWritetime GetWritetime(void) const
+    {
+        return m_Writetime;
+    }
+
     string ToString(void) const;
 
  private:
@@ -286,6 +299,7 @@ class CBioseqInfoRecord
     TSeqState           m_SeqState;
     TState              m_State;
     TTaxId              m_TaxId;
+    TWritetime          m_Writetime;
 };
 
 using TBioseqInfoConsumeCallback = function<void(vector<CBioseqInfoRecord> &&)>;

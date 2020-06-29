@@ -64,11 +64,17 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    void UseWritetime(bool value)
+    {
+        m_UseWritetime = value;
+    }
+
 protected:
     virtual void Wait1(void) override;
 
 private:
     CBioseqInfoRecord * m_Record;
+    bool m_UseWritetime;
 };
 
 END_IDBLOB_SCOPE

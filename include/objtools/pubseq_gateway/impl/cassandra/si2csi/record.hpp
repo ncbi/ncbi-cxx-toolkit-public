@@ -56,13 +56,15 @@ class CSI2CSIRecord
     using TSecSeqState = int8_t;
     using TSeqIdType = int16_t;
     using TVersion = int16_t;
+    using TWritetime = int64_t;
 
     CSI2CSIRecord() :
         m_SecSeqIdType(-1),
         m_GI(-1),
         m_SecSeqState(-1),
         m_SeqIdType(-1),
-        m_Version(-1)
+        m_Version(-1),
+        m_Writetime(-1)
     {}
 
     CSI2CSIRecord(CSI2CSIRecord const &) = default;
@@ -113,6 +115,13 @@ class CSI2CSIRecord
         return *this;
     }
 
+    CSI2CSIRecord & SetWritetime(TWritetime  value)
+    {
+        m_Writetime = value;
+        return *this;
+    }
+
+
     // Getters
     TSecSeqId const & GetSecSeqId(void) const
     {
@@ -149,6 +158,11 @@ class CSI2CSIRecord
         return m_Version;
     }
 
+    TWritetime  GetWritetime(void) const
+    {
+        return m_Writetime;
+    }
+
     string ToString(void) const;
 
  private:
@@ -160,6 +174,7 @@ class CSI2CSIRecord
     TSecSeqState        m_SecSeqState;
     TSeqIdType          m_SeqIdType;
     TVersion            m_Version;
+    TWritetime          m_Writetime;
 };
 
 using TSI2CSIConsumeCallback = function<void(vector<CSI2CSIRecord> &&)>;
