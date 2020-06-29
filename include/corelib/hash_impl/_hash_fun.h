@@ -39,6 +39,8 @@ _STLP_BEGIN_NAMESPACE
 
 template <class _Key> struct hash { };
 
+/// @deprecated Avoid ncbi::hash(), use std::hash() instead.
+NCBI_DEPRECATED
 inline size_t __stl_hash_string(const char* __s)
 {
   _STLP_FIX_LITERAL_BUG(__s)
