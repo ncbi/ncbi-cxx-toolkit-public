@@ -220,7 +220,7 @@ public:
     string FindAccPath(const string& acc) const;
 
     void Close(void) {
-        *this = CVDBMgr();
+        Release();
     }
 
 
