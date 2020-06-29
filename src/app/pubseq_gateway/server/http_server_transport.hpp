@@ -114,9 +114,9 @@ public:
     {}
 
     CHttpReply(const CHttpReply&) = delete;
-    CHttpReply(CHttpReply&&) = default;
+    CHttpReply(CHttpReply&&) = delete;
     CHttpReply& operator=(const CHttpReply&) = delete;
-    CHttpReply& operator=(CHttpReply&&) = default;
+    CHttpReply& operator=(CHttpReply&&) = delete;
 
     ~CHttpReply()
     {
@@ -124,22 +124,6 @@ public:
         Clear();
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
-    }
-
-    void Reset(CHttpReply<P> &&  from)
-    {
-        if (from.m_State != eReplyInitialized)
-            NCBI_THROW(CPubseqGatewayException, eRequestAlreadyStarted,
-                       "Original request has alrady started");
-        if (from.m_Cancelled)
-            NCBI_THROW(CPubseqGatewayException, eRequestCancelled,
-                       "Original request is cancelled");
-        if (from.m_RespGenerator.stop != nullptr ||
-            from.m_RespGenerator.proceed != nullptr)
-            NCBI_THROW(CPubseqGatewayException,
-                       eRequestGeneratorAlreadyAssigned,
-                       "Original request generator is already assigned");
-        *this = move(from);
     }
 
     void Clear(void)
@@ -234,45 +218,8 @@ public:
     void Send503(const char *  head, const char *  payload)
     { x_GenericSendError(503, head, payload); }
 
-    void Postpone(unique_ptr<P>  pending_req)
-    {
-        switch (m_State) {
-            case eReplyInitialized:
-                if (m_Postponed)
-                    NCBI_THROW(CPubseqGatewayException,
-                               eRequestAlreadyPostponed,
-                               "Request has already been postponed");
-                break;
-            case eReplyStarted:
-                // req holds address of generator
-                NCBI_THROW(CPubseqGatewayException, eRequestCannotBePostponed,
-                           "Request that has already started "
-                           "can't be postponed");
-                break;
-            default:
-                NCBI_THROW(CPubseqGatewayException, eRequestAlreadyFinished,
-                           "Request has already been finished");
-                break;
-        }
-
-        if (!m_HttpConn)
-            NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
-                       "Connection is not assigned");
-
-        m_Postponed = true;
-        m_HttpConn->RegisterPending(move(pending_req), move(*this));
-    }
-
-    void PostponedStart(void)
-    {
-        if (!m_Postponed)
-            NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
-                       "Request has not been postponed");
-        if (m_HttpConn->IsClosed())
-            NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
-                       "Request handling can not be started after connection was closed");
-        m_PendingReq->Start(*this);
-    }
+    CHttpConnection<P> *  GetHttpConnection(void)
+    { return m_HttpConn; }
 
     void PeekPending(void)
     {
@@ -297,37 +244,30 @@ public:
     }
 
     EReplyState GetState(void) const
-    {
-        return m_State;
-    }
+    { return m_State; }
 
     bool IsFinished(void) const
-    {
-        return m_State >= eReplyFinished;
-    }
+    { return m_State >= eReplyFinished; }
 
     bool IsOutputReady(void) const
-    {
-        return m_OutputIsReady;
-    }
+    { return m_OutputIsReady; }
 
     bool IsPostponed(void) const
-    {
-        return m_Postponed;
-    }
+    { return m_Postponed; }
 
-    P& GetPendingReq(void)
+    void SetPostponed(void)
+    { m_Postponed = true; }
+
+    shared_ptr<P> GetPendingReq(void)
     {
         if (!m_PendingReq)
             NCBI_THROW(CPubseqGatewayException, ePendingReqNotAssigned,
                        "PendingReq is not assigned");
-        return m_PendingReq.get();
+        return m_PendingReq;
     }
 
     h2o_req_t *  GetHandle(void) const
-    {
-        return m_Req;
-    }
+    { return m_Req; }
 
     h2o_iovec_t PrepareChunk(const unsigned char *  data, unsigned int  size)
     {
@@ -340,9 +280,7 @@ public:
     }
 
     bool CheckResetDataTriggered(void)
-    {
-        return m_DataReady->CheckResetTriggered();
-    }
+    { return m_DataReady->CheckResetTriggered(); }
 
     void Error(const char *  what)
     {
@@ -660,14 +598,14 @@ public:
 
     void Reset(void)
     {
-        if (!m_Backlog.empty()) {
-            auto    cnt = m_Backlog.size();
-            m_Finished.splice(m_Finished.cend(), m_Backlog);
+        auto    cnt = m_Backlog.size();
+        if (cnt > 0) {
+            m_Backlog.clear();
             g_ShutdownData.m_ActiveRequestCount -= cnt;
         }
-        if (!m_Pending.empty()) {
-            auto    cnt = m_Pending.size();
-            m_Finished.splice(m_Finished.cend(), m_Pending);
+        cnt = m_Pending.size();
+        if (cnt > 0) {
+            m_Pending.clear();
             g_ShutdownData.m_ActiveRequestCount -= cnt;
         }
         m_IsClosed = false;
@@ -695,41 +633,77 @@ public:
     void PeekAsync(bool  chk_data_ready)
     {
         for (auto &  it: m_Pending) {
-            if (!chk_data_ready || it.CheckResetDataTriggered()) {
-                it.PeekPending();
+            if (!chk_data_ready || it->CheckResetDataTriggered()) {
+                it->PeekPending();
             }
         }
         x_MaintainFinished();
         x_MaintainBacklog();
     }
 
-    void RegisterPending(unique_ptr<P>  pending_req, CHttpReply<P> &&  hresp)
+    void RegisterPending(unique_ptr<P>  pending_req,
+                         shared_ptr<CHttpReply<P>>  hresp)
     {
         if (m_Pending.size() < m_HttpMaxPending) {
-            auto req_it = x_RegisterPending(move(hresp), m_Pending);
-            CHttpReply<P>& req = *req_it;
-            req.AssignPendingReq(move(pending_req));
-            req.PostponedStart();
-            if (req.GetState() >= CHttpReply<P>::eReplyFinished) {
-                PSG_TRACE("Pospone self-drained");
+            auto req_it = x_RegisterPending(hresp, m_Pending);
+            hresp->AssignPendingReq(move(pending_req));
+            PostponedStart(hresp);
+            if (hresp->IsFinished()) {
+                PSG_TRACE("Postpone self-drained");
                 x_UnregisterPending(req_it);
             }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
-            auto req_it = x_RegisterPending(move(hresp), m_Backlog);
-            CHttpReply<P>& req = *req_it;
-            req.AssignPendingReq(move(pending_req));
+            x_RegisterPending(hresp, m_Backlog);
+            hresp->AssignPendingReq(move(pending_req));
         } else {
-            hresp.Send503("Malfunction", "Too many pending requests");
+            hresp->Send503("Malfunction", "Too many pending requests");
         }
     }
 
-    CHttpReply<P> * FindPendingRequest(h2o_req_t *  req)
+    void PostponedStart(shared_ptr<CHttpReply<P>>  reply)
+    {
+        if (!reply->IsPostponed())
+            NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
+                       "Request has not been postponed");
+        if (IsClosed())
+            NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
+                       "Request handling can not be started after connection was closed");
+        reply->GetPendingReq()->Start(reply);
+    }
+
+    shared_ptr<CHttpReply<P>> FindPendingRequest(h2o_req_t *  req)
     {
         for (auto &  it: m_Pending) {
-            if (it.GetHandle() == req)
-                return &it;
+            if (it->GetHandle() == req)
+                return it;
         }
         return nullptr;
+    }
+
+    void Postpone(unique_ptr<P>  pending_req,
+                  shared_ptr<CHttpReply<P>>  reply)
+    {
+        switch (reply->GetState()) {
+            case CHttpReply<P>::eReplyInitialized:
+                if (reply->IsPostponed())
+                    NCBI_THROW(CPubseqGatewayException,
+                               eRequestAlreadyPostponed,
+                               "Request has already been postponed");
+                break;
+            case CHttpReply<P>::eReplyStarted:
+                // req holds address of generator
+                NCBI_THROW(CPubseqGatewayException, eRequestCannotBePostponed,
+                           "Request that has already started "
+                           "can't be postponed");
+                break;
+            default:
+                NCBI_THROW(CPubseqGatewayException, eRequestAlreadyFinished,
+                           "Request has already been finished");
+                break;
+        }
+
+        reply->SetPostponed();
+        RegisterPending(move(pending_req), reply);
     }
 
     void OnTimer(void)
@@ -740,24 +714,23 @@ public:
     }
 
 private:
-    unsigned short              m_HttpMaxBacklog;
-    unsigned short              m_HttpMaxPending;
-    bool                        m_IsClosed;
+    unsigned short                          m_HttpMaxBacklog;
+    unsigned short                          m_HttpMaxPending;
+    bool                                    m_IsClosed;
 
-    std::list<CHttpReply<P>>    m_Backlog;
-    std::list<CHttpReply<P>>    m_Pending;
-    std::list<CHttpReply<P>>    m_Finished;
+    std::list<shared_ptr<CHttpReply<P>>>    m_Backlog;
+    std::list<shared_ptr<CHttpReply<P>>>    m_Pending;
 
-    using reply_list_iterator_t = typename std::list<CHttpReply<P>>::iterator;
+    using reply_list_iterator_t = typename std::list<shared_ptr<CHttpReply<P>>>::iterator;
     void x_CancelAll(void)
     {
         x_CancelBacklog();
         while (!m_Pending.empty()) {
             x_MaintainFinished();
             for (auto &  it: m_Pending) {
-                if (it.GetState() < CHttpReply<P>::eReplyFinished) {
-                    it.CancelPending();
-                    it.PeekPending();
+                if (!it->IsFinished()) {
+                    it->CancelPending();
+                    it->PeekPending();
                 }
             }
             x_MaintainFinished();
@@ -766,24 +739,16 @@ private:
 
     void x_UnregisterPending(reply_list_iterator_t &  it)
     {
-        it->Clear();
-        m_Finished.splice(m_Finished.cend(), m_Pending, it);
-
+        m_Pending.erase(it);
         --g_ShutdownData.m_ActiveRequestCount;
     }
 
-    reply_list_iterator_t x_RegisterPending(CHttpReply<P> &&  hresp,
-                                            std::list<CHttpReply<P>> &  list)
+    reply_list_iterator_t x_RegisterPending(shared_ptr<CHttpReply<P>>  hresp,
+                                            list<shared_ptr<CHttpReply<P>>> &  reply_list)
     {
         ++g_ShutdownData.m_ActiveRequestCount;
-
-        if (m_Finished.size() > 0) {
-            list.splice(list.cend(), m_Finished, m_Finished.begin());
-            list.back().Reset(move(hresp));
-        } else {
-            list.push_back(move(hresp));
-        }
-        auto it = list.end();
+        reply_list.push_back(hresp);
+        auto it = reply_list.end();
         --it;
         return it;
     }
@@ -792,7 +757,7 @@ private:
     {
         auto    it = m_Pending.begin();
         while (it != m_Pending.end()) {
-            if (it->GetState() >= CHttpReply<P>::eReplyFinished) {
+            if ((*it)->IsFinished()) {
                 auto    next = it;
                 ++next;
                 x_UnregisterPending(it);
@@ -808,21 +773,19 @@ private:
         while (m_Pending.size() < m_HttpMaxPending && !m_Backlog.empty()) {
             auto    it = m_Backlog.begin();
             m_Pending.splice(m_Pending.cend(), m_Backlog, it);
-            it->PostponedStart();
+            PostponedStart(*it);
         }
     }
 
     void x_CancelBacklog(void)
     {
         if (!m_Backlog.empty()) {
-            for (auto& it : m_Backlog) {
-                it.CancelPending();
-                it.Clear();
+            for (auto &  it : m_Backlog) {
+                it->CancelPending();
             }
 
             auto    cnt = m_Backlog.size();
-            m_Finished.splice(m_Finished.cend(), m_Backlog);
-
+            m_Backlog.clear();
             g_ShutdownData.m_ActiveRequestCount -= cnt;
         }
     }
@@ -933,7 +896,7 @@ private:
 
 template<typename P>
 using HttpHandlerFunction_t = std::function<void(CHttpRequest &  req,
-                                                 CHttpReply<P> &  resp)>;
+                                                 shared_ptr<CHttpReply<P>>  resp)>;
 
 template<typename P>
 struct CHttpGateHandler
@@ -1058,8 +1021,9 @@ public:
     void OnAsyncWork(bool  cancel)
     {
         auto &      lst = m_Worker->GetConnList();
-        for (auto &  it: lst)
+        for (auto &  it: lst) {
             std::get<1>(it).PeekAsync(true);
+        }
     }
 
     static void DaemonStarted() {}
@@ -1071,10 +1035,10 @@ public:
         h2o_socket_t *      sock = conn->callbacks->get_socket(conn);
 
         assert(sock->on_close.data != nullptr);
-        CHttpConnection<P> *    http_conn =
+        CHttpConnection<P> *        http_conn =
                         static_cast<CHttpConnection<P>*>(sock->on_close.data);
-        CHttpRequest            hreq(req);
-        CHttpReply<P>           hresp(req, this, http_conn);
+        CHttpRequest                hreq(req);
+        shared_ptr<CHttpReply<P>>   hresp(new CHttpReply<P>(req, this, http_conn));
 
         try {
             if (rh->m_GetParser)
@@ -1082,12 +1046,12 @@ public:
             if (rh->m_PostParser)
                 hreq.SetPostParser(rh->m_PostParser);
             (*rh->m_Handler)(hreq, hresp);
-            switch (hresp.GetState()) {
+            switch (hresp->GetState()) {
                 case CHttpReply<P>::eReplyFinished:
                     return 0;
                 case CHttpReply<P>::eReplyStarted:
                 case CHttpReply<P>::eReplyInitialized:
-                    if (!hresp.IsPostponed())
+                    if (!hresp->IsPostponed())
                         NCBI_THROW(CPubseqGatewayException,
                                    eUnfinishedRequestNotScheduled,
                                    "Unfinished request hasn't "
@@ -1098,20 +1062,20 @@ public:
                     return -1;
             }
         } catch (const std::exception &  e) {
-            CHttpReply<P> *     repl = http_conn->FindPendingRequest(req);
+            auto    repl = http_conn->FindPendingRequest(req);
 
-            if (repl == nullptr)
-                repl = &hresp;
+            if (repl.get() == nullptr)
+                repl = hresp;
             if (repl->GetState() == CHttpReply<P>::eReplyInitialized) {
                 repl->Send503("Malfunction", e.what());
                 return 0;
             }
             return -1;
         } catch (...) {
-            CHttpReply<P> *     repl = http_conn->FindPendingRequest(req);
+            auto    repl = http_conn->FindPendingRequest(req);
 
-            if (repl == nullptr)
-                repl = &hresp;
+            if (repl.get() == nullptr)
+                repl = hresp;
             if (repl->GetState() == CHttpReply<P>::eReplyInitialized) {
                 repl->Send503("Malfunction", "unexpected failure");
                 return 0;

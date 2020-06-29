@@ -89,11 +89,11 @@ void CPendingOperation::Clear()
 }
 
 
-void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
+void CPendingOperation::Start(shared_ptr<HST::CHttpReply<CPendingOperation>> resp)
 {
     auto *          app = CPubseqGatewayApp::GetInstance();
 
-    m_Reply->SetReply(&resp);
+    m_Reply->SetReply(resp.get());
 
     m_Processors = app->DispatchRequest(m_UserRequest, m_Reply);
     if (m_Processors.empty()) {

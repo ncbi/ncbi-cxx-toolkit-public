@@ -139,46 +139,46 @@ public:
     }
 
     int OnBadURL(HST::CHttpRequest &  req,
-                 HST::CHttpReply<CPendingOperation> &  resp);
+                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnGet(HST::CHttpRequest &  req,
-              HST::CHttpReply<CPendingOperation> &  resp);
+              shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnGetBlob(HST::CHttpRequest &  req,
-                  HST::CHttpReply<CPendingOperation> &  resp);
+                  shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnResolve(HST::CHttpRequest &  req,
-                  HST::CHttpReply<CPendingOperation> &  resp);
+                  shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnGetTSEChunk(HST::CHttpRequest &  req,
-                      HST::CHttpReply<CPendingOperation> &  resp);
+                      shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnGetNA(HST::CHttpRequest &  req,
-                HST::CHttpReply<CPendingOperation> &  resp);
+                shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnConfig(HST::CHttpRequest &  req,
-                 HST::CHttpReply<CPendingOperation> &  resp);
+                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnInfo(HST::CHttpRequest &  req,
-               HST::CHttpReply<CPendingOperation> &  resp);
+               shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnStatus(HST::CHttpRequest &  req,
-                 HST::CHttpReply<CPendingOperation> &  resp);
+                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnShutdown(HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp);
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnGetAlerts(HST::CHttpRequest &  req,
-                    HST::CHttpReply<CPendingOperation> &  resp);
+                    shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnAckAlert(HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp);
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnStatistics(HST::CHttpRequest &  req,
-                     HST::CHttpReply<CPendingOperation> &  resp);
+                     shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     int OnTestIO(HST::CHttpRequest &  req,
-                 HST::CHttpReply<CPendingOperation> &  resp);
+                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
 
     virtual int Run(void);
 
@@ -236,15 +236,16 @@ private:
     };
 
     void x_SendUnknownClientSatelliteError(
-        HST::CHttpReply<CPendingOperation> &  resp,
+        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
         const SPSGS_BlobId &  blob_id, const string &  message);
     void x_SendMessageAndCompletionChunks(
-        HST::CHttpReply<CPendingOperation> &  resp,  const string &  message,
+        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+        const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity);
 
     bool x_ProcessCommonGetAndResolveParams(
         HST::CHttpRequest &  req,
-        HST::CHttpReply<CPendingOperation> &  resp,
+        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
         CTempString &  seq_id, int &  seq_id_type,
         SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache);
 
@@ -294,16 +295,16 @@ private:
                              string &  err_msg);
 
 private:
-    void x_InsufficientArguments(HST::CHttpReply<CPendingOperation> &  resp,
+    void x_InsufficientArguments(shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
                                  CRef<CRequestContext> &  context,
                                  const string &  err_msg);
-    void x_MalformedArguments(HST::CHttpReply<CPendingOperation> &  resp,
+    void x_MalformedArguments(shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
                               CRef<CRequestContext> &  context,
                               const string &  err_msg);
     bool x_IsShuttingDown(HST::CHttpRequest &  req,
-                          HST::CHttpReply<CPendingOperation> &  resp);
+                          shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
     bool x_IsDBOK(HST::CHttpRequest &  req,
-                  HST::CHttpReply<CPendingOperation> &  resp);
+                  shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);

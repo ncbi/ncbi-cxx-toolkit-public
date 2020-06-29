@@ -409,94 +409,94 @@ int CPubseqGatewayApp::Run(void)
     http_handler.emplace_back(
             "/ID/getblob",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnGetBlob(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ID/get",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnGet(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ID/resolve",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnResolve(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ID/get_tse_chunk",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnGetTSEChunk(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ID/get_na",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnGetNA(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/config",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnConfig(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/info",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnInfo(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/status",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnStatus(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/shutdown",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnShutdown(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/get_alerts",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnGetAlerts(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/ack_alert",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnAckAlert(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/statistics",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnStatistics(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/favicon.ico",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 // It's a browser, most probably admin request
-                resp.Send404("Not Found", "Not found");
+                resp->Send404("Not Found", "Not found");
                 return 0;
             }, &get_parser, nullptr);
 
@@ -513,7 +513,7 @@ int CPubseqGatewayApp::Run(void)
         http_handler.emplace_back(
                 "/TEST/io",
                 [this](HST::CHttpRequest &  req,
-                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                       shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
                 {
                     return OnTestIO(req, resp);
                 }, &get_parser, nullptr);
@@ -522,7 +522,7 @@ int CPubseqGatewayApp::Run(void)
     http_handler.emplace_back(
             "",
             [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
+                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp)->int
             {
                 return OnBadURL(req, resp);
             }, &get_parser, nullptr);
@@ -1276,10 +1276,11 @@ bool CPubseqGatewayApp::x_IsResolutionParamValid(const string &  param_name,
 // - a message chunk
 // - a reply completion chunk
 void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
-        HST::CHttpReply<CPendingOperation> &  resp,  const string &  message,
+        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+        const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity)
 {
-    if (resp.IsFinished()) {
+    if (resp->IsFinished()) {
         // This is the case when a reply is already formed and sent to
         // the client.
         return;
@@ -1289,21 +1290,21 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
     string                  header = GetReplyMessageHeader(message.size(),
                                                            status, code,
                                                            severity);
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
 
     // Add the error message
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(message.data()), message.size()));
 
     // Add reply completion
     string  reply_completion = GetReplyCompletionHeader(2);
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
 
-    resp.SetContentType(ePSGS_PSGMime);
-    resp.Send(chunks, true);
+    resp->SetContentType(ePSGS_PSGMime);
+    resp->Send(chunks, true);
 }
 
 
@@ -1311,7 +1312,7 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
 // by the user in the incoming URL. I.e. this error is treated as a client
 // error (opposite to a server data inconsistency)
 void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
-        HST::CHttpReply<CPendingOperation> &  resp,
+        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
         const SPSGS_BlobId &  blob_id,
         const string &  message)
 {
@@ -1322,31 +1323,31 @@ void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
                                               CRequestStatus::e404_NotFound,
                                               ePSGS_UnknownResolvedSatellite,
                                               eDiag_Error);
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
 
     // Add the error message
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(message.data()), message.size()));
 
     // Add meta with n_chunks
     string      meta = GetBlobCompletionHeader(1, blob_id, 2);
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(meta.data()), meta.size()));
 
     // Add reply completion
     string  reply_completion = GetReplyCompletionHeader(3);
-    chunks.push_back(resp.PrepareChunk(
+    chunks.push_back(resp->PrepareChunk(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
 
-    resp.SetContentType(ePSGS_PSGMime);
-    resp.Send(chunks, true);
+    resp->SetContentType(ePSGS_PSGMime);
+    resp->Send(chunks, true);
 }
 
 
 void CPubseqGatewayApp::x_MalformedArguments(
-                                HST::CHttpReply<CPendingOperation> &  resp,
+                                shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
                                 CRef<CRequestContext> &  context,
                                 const string &  err_msg)
 {
@@ -1360,7 +1361,7 @@ void CPubseqGatewayApp::x_MalformedArguments(
 
 
 void CPubseqGatewayApp::x_InsufficientArguments(
-                                HST::CHttpReply<CPendingOperation> &  resp,
+                                shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
                                 CRef<CRequestContext> &  context,
                                 const string &  err_msg)
 {
