@@ -428,7 +428,7 @@ CBioObjectId CTSE_Info::x_RegisterBioObject(CTSE_Info_Object& info)
     }
         
     uniq_id = CBioObjectId(CBioObjectId::eUniqNumber,
-                           m_InternalBioObjNumber++);
+                           ++m_InternalBioObjNumber);
     m_BioObjects[uniq_id] = &info;
     return uniq_id;
 }
