@@ -44,14 +44,9 @@ message("-----------------------------------------------------------------------
     message("Shared Libs:    ${BUILD_SHARED_LIBS}")
     message("Top Source Dir: ${top_src_dir}")
     message("Build Root:     ${build_root}")
-    if (NCBI_EXPERIMENTAL_CFG)
-        message("Executable Dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-        message("Archive Dir:    ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-        message("Library Dir:    ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
-    else()
-        message("Executable Dir: ${EXECUTABLE_OUTPUT_PATH}")
-        message("Library Dir:    ${LIBRARY_OUTPUT_PATH}")
-    endif()
+    message("Executable Dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+    message("Archive Dir:    ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+    message("Library Dir:    ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
     message("C Compiler:     ${CMAKE_C_COMPILER}")
     message("C++ Compiler:   ${CMAKE_CXX_COMPILER}")
     if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
@@ -67,30 +62,10 @@ message("-----------------------------------------------------------------------
     message("DataTool Ver:   ${_datatool_version}")
     message("DataTool Path:  ${NCBI_DATATOOL}")
     message("")
-    if (NCBI_EXPERIMENTAL_CFG)
-        message("Components Found:  ${NCBI_ALL_COMPONENTS}")
-    else()
-        message("Modules Found:  ${MOD_STR}")
-    endif()
+    message("Components Found:  ${NCBI_ALL_COMPONENTS}")
 
     message("------------------------------------------------------------------------------")
     message("")
 endfunction()
 
 ShowMainBoilerplate()
-
-if (NOT NCBI_EXPERIMENTAL_CFG)
-add_custom_target(show-config
-    COMMAND ${CMAKE_COMMAND} -e echo "ShowMainBoilerplate()"
-    COMMAND ${CMAKE_COMMAND} -e echo "PCRE:           ${PCRE_LIBRARIES}"
-    COMMAND ${CMAKE_COMMAND} -e echo "Boost:          ${Boost_INCLUDE_DIRS}"
-    COMMAND ${CMAKE_COMMAND} -e echo "wxWidgets:"
-    COMMAND ${CMAKE_COMMAND} -e echo "  include:      ${wxWidgets_INCLUDE_DIRS}"
-    COMMAND ${CMAKE_COMMAND} -e echo "  lib:          ${wxWidgets_LIBRARIES}"
-    COMMAND ${CMAKE_COMMAND} -e echo "  definitions:  ${wxWidgets_DEFNITIONS}"
-    COMMAND ${CMAKE_COMMAND} -e echo "  flags:        ${wxWidgets_CXX_FLAGS}"
-    COMMAND ${CMAKE_COMMAND} -e echo "GnuTLS:         ${GNUTLS_COMMENT}"
-    COMMAND ${CMAKE_COMMAND} -e echo "GnuTLS include: ${GNUTLS_INCLUDE}"
-    COMMAND ${CMAKE_COMMAND} -e echo "${EXTERNAL_LIBRARIES_COMMENT}"
-    )
-endif()

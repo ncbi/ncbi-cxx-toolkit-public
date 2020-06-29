@@ -204,7 +204,7 @@ CC_NAME=Xcode
 CC_VERSION=`xcodebuild -version | awk 'NR==1{print $2}'`
 ############################################################################# 
 
-CMAKE_ARGS="-DNCBI_EXPERIMENTAL=ON -G Xcode"
+CMAKE_ARGS="-G Xcode"
 
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_COMPONENTS=$(Quote "${PROJECT_COMPONENTS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_FEATURES=$(Quote "${PROJECT_FEATURES}")"

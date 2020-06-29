@@ -111,23 +111,16 @@ set(NCBI_COMPONENT_ODBC_NCBILIB    ncbi_xdbapi_odbc)
 set(NCBI_COMPONENT_FreeTDS_NCBILIB ct_ftds100 ncbi_xdbapi_ftds)
 
 #############################################################################
-if (NCBI_EXPERIMENTAL_DISABLE_HUNTER)
-
 if (MSVC)
   include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsMSVC.cmake)
 elseif (APPLE)
   include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsXCODE.cmake)
 else()
-    if(NCBI_EXPERIMENTAL_CFG)
+    if(ON)
         include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsUNIXex.cmake)
-#        include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsUNIX.cmake)
     else()
         include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsUNIX.cmake)
     endif()
-endif()
-
-else()
-  include(${top_src_dir}/src/build-system/cmake/CMake.NCBIComponentsUNIX.cmake)
 endif()
 
 #############################################################################

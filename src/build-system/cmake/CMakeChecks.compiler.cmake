@@ -10,6 +10,10 @@ set(NCBI_DEFAULT_HEADERS "*.h*;*impl/*.h*;*.inl;*impl/*.inl")
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+if (BUILD_SHARED_LIBS)
+    set(NCBI_DLL_BUILD 1)
+    set(NCBI_DLL_SUPPORT 1)
+endif()
 
 # ---------------------------------------------------------------------------
 # compilation features
@@ -37,16 +41,6 @@ endif()
 #    CfgMT, CfgProps in WIN32
 #    MaxDebug, Coverage, noSSE in UNIX
 
-# ---------------------------------------------------------------------------
-
-if (NCBI_EXPERIMENTAL_CFG)
-
-    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-    if (BUILD_SHARED_LIBS)
-        set(NCBI_DLL_BUILD 1)
-        set(NCBI_DLL_SUPPORT 1)
-    endif()
- 
 #----------------------------------------------------------------------------
 if (WIN32)
 
@@ -232,27 +226,19 @@ elseif (XCODE)
     set(NCBI_DEFAULT_USEPCH ON)
 
     return()
+endif()
 
 #----------------------------------------------------------------------------
-else()
-endif()
+# UNIX
 
-endif()
-
-if (WIN32)
-    set(NCBI_COMPILER_MSVC 1)
-    set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
-    set(NCBI_COMPILER_VERSION ${MSVC_VERSION})
-else()
-    set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
-    set(_tmp ${CMAKE_CXX_COMPILER_VERSION})
-    string(REPLACE "." ";" _tmp "${_tmp}")
-    list(GET _tmp 0 _v1)
-    list(GET _tmp 1 _v2)
-    list(GET _tmp 2 _v3)
-    set(NCBI_COMPILER_VERSION ${_v1}${_v2}${_v3})
-    set(NCBI_COMPILER_VERSION_DOTTED ${_v1}.${_v2}.${_v3})
-endif()
+set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
+set(_tmp ${CMAKE_CXX_COMPILER_VERSION})
+string(REPLACE "." ";" _tmp "${_tmp}")
+list(GET _tmp 0 _v1)
+list(GET _tmp 1 _v2)
+list(GET _tmp 2 _v3)
+set(NCBI_COMPILER_VERSION ${_v1}${_v2}${_v3})
+set(NCBI_COMPILER_VERSION_DOTTED ${_v1}.${_v2}.${_v3})
 
 if ("${NCBI_COMPILER}" STREQUAL "GNU")
     set(NCBI_COMPILER_GCC 1)
@@ -270,14 +256,6 @@ endif()
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug)
-endif()
-if ("${BUILD_SHARED_LIBS}" STREQUAL "")
-    set(BUILD_SHARED_LIBS OFF)
-endif()
-
-if (BUILD_SHARED_LIBS)
-    set(NCBI_DLL_BUILD 1)
-    set(NCBI_DLL_SUPPORT 1)
 endif()
 
 if (NOT buildconf)
@@ -356,54 +334,52 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${NCBI_COMPILER_EXE_LINKE
 set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${NCBI_COMPILER_SHARED_LINKER_FLAGS}")
 #----------------------------------------------------------------------------
 
-if (NOT WIN32)
-    set(_ggdb3 "-ggdb3")
-    set(_ggdb1 "-ggdb1")
-    if(NCBI_COMPILER_GCC)
+set(_ggdb3 "-ggdb3")
+set(_ggdb1 "-ggdb1")
+if(NCBI_COMPILER_GCC)
 
-        if("${NCBI_COMPILER_VERSION}" LESS "730")
-            add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-        endif()
+    if("${NCBI_COMPILER_VERSION}" LESS "730")
+        add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+    endif()
 
-    elseif(NCBI_COMPILER_ICC)
+elseif(NCBI_COMPILER_ICC)
 
-        if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
-            set(NCBI_COMPILER_COMPONENTS ICC1903)
-        endif()
-        set(_ggdb3 "-g")
-        set(_ggdb1 "")
-        unset(CMAKE_POSITION_INDEPENDENT_CODE)
+    if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
+        set(NCBI_COMPILER_COMPONENTS ICC1903)
+    endif()
+    set(_ggdb3 "-g")
+    set(_ggdb1 "")
+    unset(CMAKE_POSITION_INDEPENDENT_CODE)
 # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
 # stop short, as can otherwise happen.
-        add_definitions(-D_GCC_NEXT_LIMITS_H)
+    add_definitions(-D_GCC_NEXT_LIMITS_H)
 # -we70: "incomplete type is not allowed" should be an error, not a warning!
 # -wd2651: Suppress spurious "attribute does not apply to any entity"
 #          when deprecating enum values (via NCBI_STD_DEPRECATED).
-        set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -fPIC")
-        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651 -fPIC")
-        set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
+    set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -fPIC")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651 -fPIC")
+    set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
 
-    elseif(NCBI_COMPILER_APPLE_CLANG)
+elseif(NCBI_COMPILER_APPLE_CLANG)
 
-    elseif(NCBI_COMPILER_LLVM_CLANG)
+elseif(NCBI_COMPILER_LLVM_CLANG)
 
-        if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
-            set(NCBI_COMPILER_COMPONENTS GCC730)
-        endif()
-
+    if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
+        set(NCBI_COMPILER_COMPONENTS GCC730)
     endif()
 
-    if (CMAKE_DEBUG_SYMBOLS)
-        set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-        set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-    else()
-        set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-        set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-    endif()
-    set(CMAKE_CXX_FLAGS_DEBUG "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
-    set(CMAKE_C_FLAGS_DEBUG   "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
-endif() 
+endif()
+
+if (CMAKE_DEBUG_SYMBOLS)
+    set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+endif()
+set(CMAKE_CXX_FLAGS_DEBUG "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_DEBUG   "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
 
 if (CMAKE_COMPILER_IS_GNUCC)
     if(Coverage IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
@@ -458,13 +434,6 @@ macro(set_c_compiler_flag_optional)
         message(WARNING "The compiler ${CMAKE_C_COMPILER} has no support for any of ${ARGN}")
     endif()
 endmacro()
-
-# Check for appropriate C++11 flags
-#if (UNIX)
-if(OFF)
-	set_cxx_compiler_flag_optional("-std=gnu++14" "-std=gnu++11" "-std=c++11" "-std=c++0x")
-	set_c_compiler_flag_optional  ("-std=gnu11" "-std=c11" "-std=gnu99" "-std=c99")
-endif()
 
 if(NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 	set_cxx_compiler_flag_optional("-msse4.2")

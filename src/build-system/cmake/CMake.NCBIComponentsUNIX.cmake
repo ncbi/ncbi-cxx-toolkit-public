@@ -2,6 +2,8 @@
 # $Id$
 #############################################################################
 
+   NOT USED ANY MORE - use CMake.NCBIComponentsUNIXex.cmake instead
+
 ##
 ## NCBI CMake components description - UNIX/Linux
 ##

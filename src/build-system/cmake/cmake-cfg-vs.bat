@@ -221,8 +221,6 @@ if not "%PROJECT_TARGETS%"=="" (
 
 REM #########################################################################
 
-set CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
-
 if not "%CMAKE_GENERATOR%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -G "%CMAKE_GENERATOR%" %CMAKE_GENERATOR_ARGS%
 )

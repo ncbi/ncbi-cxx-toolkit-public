@@ -10,7 +10,6 @@ script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 tree_root=`pwd`
 extension="cmake_configure_ext.sh"
-NCBI_EXPERIMENTAL="ON"
 
 host_os=`uname`
 if test -z "${CMAKE_CMD}" -a $host_os = "Darwin"; then
@@ -299,8 +298,6 @@ else
   CC_VERSION=""
 fi
 ############################################################################# 
-
-CMAKE_ARGS="$CMAKE_ARGS -DNCBI_EXPERIMENTAL=$NCBI_EXPERIMENTAL"
 
 if [ -n "$CC" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"

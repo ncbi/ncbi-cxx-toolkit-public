@@ -265,17 +265,3 @@ macro( RunDatatool MODULE MODULE_SEARCH )
 
 endmacro( RunDatatool )
 
-##############################################################################
-##
-## only add executables if not running in Windows
-##
-
-if(NOT NCBI_EXPERIMENTAL_CFG)
-if (WIN32)
-	macro( include )
-		if (NOT ${ARGV0} MATCHES ".app.txt$")
-			_include(${ARGN})
-		endif (NOT ${ARGV0} MATCHES ".app.txt$")
-	endmacro(include)
-endif (WIN32)
-endif()
