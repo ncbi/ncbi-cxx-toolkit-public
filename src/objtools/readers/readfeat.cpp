@@ -769,10 +769,8 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
 typedef CStaticPairArrayMap <const char*, COrgMod::ESubtype, PCase_CStr> TOrgModMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sm_OrgModKeys, orgmod_key_to_subtype);
 
-
-typedef SStaticPair<const char *, int> TTrnaKey;
-
-static const TTrnaKey trna_key_to_subtype [] = {
+static const map<const char*, int, PNocase_CStr> sm_TrnaKeys 
+{
     {  "Ala",            'A'  },
     {  "Alanine",        'A'  },
     {  "Arg",            'R'  },
@@ -831,12 +829,10 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "Valine",         'V'  },
     {  "Xle",            'J'  },
     {  "Xxx",            'X'  },
+    {  "Undet",          'X'  },
     {  "fMet",           'M'  },
     {  "iMet",           'M'  }
 };
-
-typedef CStaticPairArrayMap <const char*, int, PCase_CStr> TTrnaMap;
-DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
 
 static 
@@ -1550,7 +1546,8 @@ CFeatureTableReader_Imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string
                                 seq_start - (aa_start+3);   
 
                 string abbrev = pos_str.substr (aa_start + 3, aa_length);
-                TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (abbrev.c_str ());
+                //TTrnaMap::const_iterator 
+                auto t_iter = sm_TrnaKeys.find (abbrev.c_str ());
                 if (t_iter == sm_TrnaKeys.end ()) {
                     // unable to parse
                     return false;
