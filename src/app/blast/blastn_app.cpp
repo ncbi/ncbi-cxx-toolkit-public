@@ -55,6 +55,15 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	cerr << "Enabled" << endl;
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        }
+    }
+
+    ~CBlastnApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.AsSmartString());
     }
 private:
     /** @inheritDoc */
@@ -64,6 +73,8 @@ private:
 
     /// This application's command line args
     CRef<CBlastnAppArgs> m_CmdLineArgs; 
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 void CBlastnApp::Init()
@@ -111,6 +122,7 @@ int CBlastnApp::Run(void)
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
+
         SDataLoaderConfig dlconfig =
             InitializeQueryDataLoaderConfiguration(query_opts->QueryIsProtein(),
                                                    db_adapter);
@@ -223,12 +235,17 @@ int CBlastnApp::Run(void)
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
+        LogQueryInfo(m_UsageReport, input);
+        formatter.LogBlastSearchInfo(m_UsageReport);
     } CATCH_ALL(status)
 
     if(!bah.GetMessages().empty()) {
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, bah.GetMessages());
     }
+
+	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 
