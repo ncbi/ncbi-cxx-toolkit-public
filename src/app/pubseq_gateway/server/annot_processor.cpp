@@ -190,8 +190,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
                 bind(&CPSGS_AnnotProcessor::x_OnNamedAnnotError,
                      this, _1, _2, _3, _4, _5),
                 details.get()));
-        fetch_task->SetDataReadyCB(
-            IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
+        fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
 
         if (IPSGS_Processor::m_Request->NeedTrace()) {
             IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +

@@ -67,6 +67,11 @@ public:
         return m_Reply;
     }
 
+    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
+    {
+        return m_Reply->GetDataReadyCB();
+    }
+
     bool IsReplyFinished(void) const
     {
         return m_Reply->IsFinished();

@@ -171,7 +171,7 @@ void CPSGS_GetBlobProcessor::Process(void)
         }
     }
 
-    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),

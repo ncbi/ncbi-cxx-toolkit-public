@@ -296,9 +296,8 @@ public:
         CancelPending();
     }
 
-    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB() {
-        return static_pointer_cast<CCassDataCallbackReceiver>(m_DataReady);
-    }
+    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
+    { return static_pointer_cast<CCassDataCallbackReceiver>(m_DataReady); }
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver

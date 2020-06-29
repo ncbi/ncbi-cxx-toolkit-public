@@ -298,7 +298,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(TBlobChunkCB  blob_chunk_cb,
     // Blob props have already been rceived
     cass_blob_fetch->SetBlobPropSent();
 
-    load_task->SetDataReadyCB(m_Reply->GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(blob_error_cb, cass_blob_fetch.get()));
     load_task->SetPropsCallback(nullptr);
@@ -430,7 +430,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
     }
     cass_blob_fetch->SetLoader(load_task);
 
-    load_task->SetDataReadyCB(m_Reply->GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(blob_error_cb, cass_blob_fetch.get()));
     load_task->SetPropsCallback(
@@ -560,7 +560,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
             details->SetLoader(load_task);
         }
 
-        load_task->SetDataReadyCB(m_Reply->GetReply()->GetDataReadyCB());
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
             CGetBlobErrorCallback(blob_error_cb, details.get()));
         load_task->SetPropsCallback(

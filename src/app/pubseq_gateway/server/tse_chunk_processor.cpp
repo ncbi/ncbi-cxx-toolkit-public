@@ -173,7 +173,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
                                           move(blob_record),
                                           true, nullptr);
             fetch_details->SetLoader(load_task);
-            load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
+            load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
             load_task->SetErrorCB(
                 CGetBlobErrorCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                                            this, _1, _2, _3, _4, _5),
@@ -225,7 +225,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
                                             m_TSEChunkRequest->m_SplitVersion,
                                             nullptr, nullptr);
     fetch_details->SetLoader(load_task);
-    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CSplitHistoryErrorCallback(
             bind(&CPSGS_TSEChunkProcessor::OnGetSplitHistoryError,
@@ -585,7 +585,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     }
     cass_blob_fetch->SetLoader(load_task);
 
-    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetReply()->GetDataReadyCB());
+    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,

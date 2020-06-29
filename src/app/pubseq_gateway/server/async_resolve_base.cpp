@@ -379,7 +379,7 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
 
     fetch_task->SetErrorCB(
         std::bind(&CPSGS_AsyncResolveBase::x_OnBioseqInfoError, this, _1, _2, _3, _4));
-    fetch_task->SetDataReadyCB(m_Reply->GetReply()->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
 
     m_BioseqInfoStart = chrono::high_resolution_clock::now();
     if (with_seq_id_type) {
@@ -434,7 +434,7 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
 
     fetch_task->SetConsumeCallback(std::bind(&CPSGS_AsyncResolveBase::x_OnSi2csiRecord, this, _1));
     fetch_task->SetErrorCB(std::bind(&CPSGS_AsyncResolveBase::x_OnSi2csiError, this, _1, _2, _3, _4));
-    fetch_task->SetDataReadyCB(m_Reply->GetReply()->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
 
     m_CurrentFetch = details.release();
 
