@@ -168,7 +168,7 @@ void CCassSI2CSITaskFetch::Wait1(void)
                                     .SetSecSeqState(m_QueryArr[0].query->FieldGetInt8Value(3))
                                     .SetSeqIdType(m_QueryArr[0].query->FieldGetInt16Value(4))
                                     .SetVersion(m_QueryArr[0].query->FieldGetInt16Value(5))
-                                    .SetWritetime(m_QueryArr[0].query->FieldGetInt16Value(6));
+                                    .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(6));
                             }
                         }
                         if (m_QueryArr[0].query->IsEOF()) {
