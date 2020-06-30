@@ -3964,7 +3964,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MADM\ts\tMuseu Municipal do Funchal\t\t\t",
 "MADS\ts\tMuseu de Historia Natural do Seminario do Funchal\t\t\t",
 "MAF\ts\tUniversidad Complutense, Departamento de Biologia Vegetal II\t\t\t",
-"MAFF\tc\tMAFF Genebank, Ministry of Agriculture Forestry and Fisheries\t\t\t",
+"MAFF\tc\tMAFF Genebank, Ministry of Agriculture Forestry and Fisheries\t\thttps://www.gene.affrc.go.jp/databases-micro_search_detail_en.php?maff=\t",
 "MAFF<FJI>\ts\tColo-i-Suva Silvicultural Station\t\t\t",
 "MAFI\ts\tMagyar Allami Foeldtani Intezet, Budapest - Hungarian Geological Survey\t\t\t",
 "MAFST\ts\tInstituto Forestal de la Moncloa\t\t\t",

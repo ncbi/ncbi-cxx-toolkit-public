@@ -3931,7 +3931,7 @@ MADJ	s	Jardim Botanico da Madeira
 MADM	s	Museu Municipal do Funchal			
 MADS	s	Museu de Historia Natural do Seminario do Funchal			
 MAF	s	Universidad Complutense, Departamento de Biologia Vegetal II			
-MAFF	c	MAFF Genebank, Ministry of Agriculture Forestry and Fisheries			
+MAFF	c	MAFF Genebank, Ministry of Agriculture Forestry and Fisheries		https://www.gene.affrc.go.jp/databases-micro_search_detail_en.php?maff=	
 MAFF<FJI>	s	Colo-i-Suva Silvicultural Station			
 MAFI	s	Magyar Allami Foeldtani Intezet, Budapest - Hungarian Geological Survey			
 MAFST	s	Instituto Forestal de la Moncloa			
