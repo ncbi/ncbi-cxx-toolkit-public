@@ -1888,24 +1888,6 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     sel.SetFailUnresolved();
 }
 
-static CMappedFeat s_GetMappedFeat(CRef<CSeq_feat>& feat, CScope& scope)
-{
-    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
-    temp_annot->SetData().SetFtable().push_back(feat);
-    scope.AddSeq_annot(*temp_annot);
-    CSeq_feat_Handle sfh = scope.GetSeq_featHandle(*feat);
-    return CMappedFeat(sfh);
-}
-
-
-static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
-        const CRange<TSeqPos>& range,
-        CScope& scope)
-{
-    CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(feat, range);
-    return s_GetMappedFeat(trimmed_feat, scope);
-}
-
 // Feature collection common implementation method (delayed until needed)
 void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
 
@@ -2010,14 +1992,9 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
 
                 CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
-                const CSeq_feat& mpd = mf.GetMappedFeature();
-                CConstRef<CSeq_loc> feat_loc(&mpd.GetLocation());
-
+                CConstRef<CSeq_loc> feat_loc(&mf.GetLocation());
                 if (slpp) {
-                    // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
-                    CRange<TSeqPos> range = slpp->GetTotalRange();
-                    CMappedFeat mapped_feat = s_GetTrimmedMappedFeat(mpd, range, *m_Scope);
-                    feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
+                    feat_loc.Reset( slice_mapper->Map( mf.GetLocation() ) );
                 }
 
                 CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, feat_loc, *this));
