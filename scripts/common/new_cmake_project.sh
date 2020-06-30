@@ -49,6 +49,7 @@ if test -z "$1"; then
         app/basic)          echo "  app/basic           a simple application";;
         app/blast)          echo "  app/blast           a BLAST application";;
         app/cgi)            echo "  app/cgi             a CGI application";;
+        app/connect)        echo "  app/connect         a Usage report logging";;
         app/dbapi)          echo "  app/dbapi           a DBAPI application";;
         app/deployable_cgi) echo "  app/deployable_cgi  a CD-deployable CGI application";;
         app/eutils)         echo "  app/eutils          an eUtils client application";;

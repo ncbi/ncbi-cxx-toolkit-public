@@ -49,6 +49,7 @@ if "%~1"=="" (
                             ) else if "%%c/%%d"=="app/basic"          (echo   app/basic           a simple application
                             ) else if "%%c/%%d"=="app/blast"          (echo   app/blast           a BLAST application
                             ) else if "%%c/%%d"=="app/cgi"            (echo   app/cgi             a CGI application
+                            ) else if "%%c/%%d"=="app/connect"        (echo   app/connect         a Usage report logging
                             ) else if "%%c/%%d"=="app/dbapi"          (echo   app/dbapi           a DBAPI application
                             ) else if "%%c/%%d"=="app/deployable_cgi" (echo   app/deployable_cgi  a CD-deployable CGI application
                             ) else if "%%c/%%d"=="app/eutils"         (echo   app/eutils          an eUtils client application
@@ -99,10 +100,11 @@ set unknown=
 
 :PARSEARGS
 if "%~1"=="" goto :ENDPARSEARGS
-if "%1"=="--help"              (set do_help=YES&       goto :CONTINUEPARSEARGS)
-if "%1"=="-help"               (set do_help=YES&       goto :CONTINUEPARSEARGS)
-if "%1"=="help"                (set do_help=YES&       goto :CONTINUEPARSEARGS)
-if "%1"=="-h"                  (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="--help"              (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
+if "%1"=="-help"               (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
+if "%1"=="help"                (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
+if "%1"=="-h"                  (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
+if "%1"=="/?"                  (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
 if "%1"=="--with-vs"           (set build_vs=vs%~2.64& shift& goto :CONTINUEPARSEARGS)
 if "%pos%"=="0" (
   set prj_name=%~1
