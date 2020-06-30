@@ -63,7 +63,7 @@ public:
     }
 
     ~CBlastnApp() {
-    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.AsSmartString());
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 private:
     /** @inheritDoc */
