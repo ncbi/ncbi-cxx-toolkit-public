@@ -130,7 +130,9 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     }
     if (errors.NotEmpty())
     {
-        ReportErrors(errors, m_context->GetOstream(".val", m_context->m_base_name));
+        CFile valFile = m_context->GenerateOutputFilename(".val");
+        CNcbiOfstream ostream(valFile.GetPath().c_str());
+        ReportErrors(errors, ostream);
     }
 }
 
@@ -274,6 +276,11 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry& entry) 
 {
+/*
+    CFile ecnFile(m_context->GenerateOutputFilename(".ecn"));
+    CNcbiOfstream ostream(ecnFile.GetPath().c_str());
+    VisitAllFeatures(entry, CUpdateECNumbers(ostream));
+    */
     VisitAllFeatures(entry, CUpdateECNumbers(m_context->GetOstream(".ecn")));
 }
 

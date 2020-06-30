@@ -809,6 +809,7 @@ int CTbl2AsnApp::Run(void)
                     m_context.m_output_filename;
 
                 m_context.m_base_name = basename;
+
                 CMaskFileName masks;
                 masks.Add("*" + args["x"].AsString());
 
@@ -1062,11 +1063,13 @@ void CTbl2AsnApp::ProcessOneEntry(
             config.BasicCleanup(false);
 
             CFlatFileGenerator ffgenerator;
+            CFile gbfFile = m_context.GenerateOutputFilename(".gbf");
+            CNcbiOfstream ostream(gbfFile.GetPath().c_str());
 
             if (submit.Empty())
-                ffgenerator.Generate(seh, m_context.GetOstream(".gbf"));
+                ffgenerator.Generate(seh, ostream);
             else
-                ffgenerator.Generate(*submit, *m_context.m_scope, m_context.GetOstream(".gbf"));
+                ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
         }
 	}
 }
