@@ -222,6 +222,21 @@ CNcbiOstream & CTable2AsnContext::GetOstream(CTempString suffix, CTempString bas
     return *rec.second.get();
 }
 
+
+void CTable2AsnContext::ClearOstream(const CTempString& suffix) 
+{
+    auto it = m_outputs.find(suffix);
+    if (it == m_outputs.end()) {
+        return;
+    }
+
+    it->second.first.clear();
+    if (it->second.second) {
+        it->second.second.release();
+    }
+}
+
+
 string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempString basename) const
 {
     string dir;

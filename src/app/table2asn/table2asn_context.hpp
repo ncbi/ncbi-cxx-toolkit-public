@@ -166,6 +166,8 @@ public:
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
 
     CNcbiOstream& GetOstream(CTempString suffix, CTempString basename=kEmptyStr);
+    void ClearOstream(const CTempString& suffix);
+
     string GenerateOutputFilename(const CTempString& ext, CTempString basename=kEmptyStr) const;
     void ReleaseOutputs();
 

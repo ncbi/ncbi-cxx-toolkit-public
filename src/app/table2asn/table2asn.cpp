@@ -1063,8 +1063,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             config.BasicCleanup(false);
 
             CFlatFileGenerator ffgenerator;
-            CFile gbfFile = m_context.GenerateOutputFilename(".gbf");
-            CNcbiOfstream ostream(gbfFile.GetPath().c_str());
+            auto& ostream = m_context.GetOstream(".gbf");
 
             if (submit.Empty())
                 ffgenerator.Generate(seh, ostream);
@@ -1247,6 +1246,12 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
             {
                 m_context.m_current_file = it->GetPath();
                 ProcessOneFile();
+                if (m_context.m_output_filename.empty()) {
+                    m_context.ClearOstream(".gbf");
+                    m_context.ClearOstream(".val");
+                    m_context.ClearOstream(".fixedproducts");
+                    m_context.ClearOstream(".ecn");
+                }
             }
         }
         else

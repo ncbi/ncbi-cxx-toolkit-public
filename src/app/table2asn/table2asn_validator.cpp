@@ -130,9 +130,7 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     }
     if (errors.NotEmpty())
     {
-        CFile valFile = m_context->GenerateOutputFilename(".val");
-        CNcbiOfstream ostream(valFile.GetPath().c_str());
-        ReportErrors(errors, ostream);
+        ReportErrors(errors, m_context->GetOstream(".val"));
     }
 }
 
@@ -213,12 +211,12 @@ void CTable2AsnValidator::ReportDiscrepancies()
 class CUpdateECNumbers 
 {
 public:
-    CUpdateECNumbers(CNcbiOstream& ostr) 
-        : m_Ostr(ostr) {}
+    CUpdateECNumbers(CTable2AsnContext& context) 
+        : m_Context(context) {}
 
     void operator()(CSeq_feat& feat);
 private:
-    CNcbiOstream& m_Ostr;
+    CTable2AsnContext& m_Context;
 };
 
 
@@ -239,7 +237,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         {
         case CProt_ref::eEC_deleted:
             xGetLabel(feat, label);
-            m_Ostr << label << "\tEC number deleted\t" << *it << '\t' << endl;
+            m_Context.GetOstream(".ecn") << label << "\tEC number deleted\t" << *it << '\t' << endl;
             it = EC.erase(it);
             continue;
             break;
@@ -248,7 +246,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
             xGetLabel(feat, label);
             const string& newvalue = CProt_ref::GetECNumberReplacement(*it);
             bool is_split = newvalue.find('\t') != string::npos;
-            m_Ostr << label <<
+            m_Context.GetOstream(".ecn") << label <<
             (is_split ? "\tEC number split\t" : "\tEC number changed\t")
             << *it << '\t' << newvalue << endl;
             if (is_split) {
@@ -260,7 +258,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         break;
         case CProt_ref::eEC_unknown:
             xGetLabel(feat, label);
-            m_Ostr << label << "\tEC number invalid\t" << *it << '\t' << endl;
+            m_Context.GetOstream(".ecn") << label << "\tEC number invalid\t" << *it << '\t' << endl;
             break;
         default:
             break;
@@ -276,12 +274,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry& entry) 
 {
-/*
-    CFile ecnFile(m_context->GenerateOutputFilename(".ecn"));
-    CNcbiOfstream ostream(ecnFile.GetPath().c_str());
-    VisitAllFeatures(entry, CUpdateECNumbers(ostream));
-    */
-    VisitAllFeatures(entry, CUpdateECNumbers(m_context->GetOstream(".ecn")));
+    VisitAllFeatures(entry, CUpdateECNumbers(*m_context));
 }
 
 END_NCBI_SCOPE
