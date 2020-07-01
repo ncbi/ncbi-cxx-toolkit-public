@@ -42,8 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
-
-#include "../changelog/writer.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

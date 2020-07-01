@@ -30,14 +30,13 @@
 
 #include <ncbi_pch.hpp>
 
-#include "writer.hpp"
-
 #include <string>
 #include <sstream>
 
 #include <corelib/ncbitime.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/changelog/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
