@@ -558,6 +558,7 @@ gpipe_fileutils needs xutil
 gpipe_ftp needs aligndb_reader
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
+gpipe_ftp needs gpipe_alnutil
 gpipe_ftp needs simple_asm
 gpipe_ftp needs xalgoalignutil
 gpipe_ftp needs xgencoll
@@ -566,6 +567,7 @@ gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs aligndb_reader
 gpipe_ftp_new needs gcaccess_utils
 gpipe_ftp_new needs gpinit
+gpipe_ftp_new needs gpipe_alnutil
 gpipe_ftp_new needs simple_asm
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xgencoll
