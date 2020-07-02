@@ -170,6 +170,8 @@ private:
     
     bool xTryProcessInputId(
         const CArgs& );
+    bool xTryProcessInputIdList(
+        const CArgs& );
     bool xTryProcessInputFile(
         const CArgs& );
 
@@ -235,6 +237,9 @@ void CAnnotWriterApp::Init()
             "Input file name", CArgDescriptions::eInputFile );
         arg_desc->AddOptionalKey( "id", "InputID",
             "Input ID (accession or GI number)", CArgDescriptions::eString );
+        arg_desc->AddOptionalKey( "ids", "InputIDs",
+            "Comma separated list of Input IDs (accession or GI number)",
+            CArgDescriptions::eString );
     }}
 
     // format
@@ -362,7 +367,6 @@ void CAnnotWriterApp::Init()
     }}
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
-    
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -399,6 +403,10 @@ int CAnnotWriterApp::Run()
             m_pWriter->SetRange().SetTo(xGetTo(args));
         }
         
+        if (xTryProcessInputIdList(args)) {
+            pOs->flush();
+            return 0;
+        }
         if (xTryProcessInputId(args)) {
             pOs->flush();
             return 0;
@@ -450,12 +458,37 @@ bool CAnnotWriterApp::xTryProcessInputId(
     }
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(args["id"].AsString());
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
+    //CSeq_entry_Handle seh = bsh.GetParentEntry();
     CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
     if (!args["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
     m_pWriter->WriteBioseqHandle(bsh);
+    //m_pWriter->WriteSeqEntryHandle(seh.GetTopLevelEntry());
     m_pWriter->WriteFooter();
+    return true;
+}    
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessInputIdList(
+    const CArgs& args)
+//  -----------------------------------------------------------------------------
+{
+    if(!args["ids"]) {
+        return false;
+    }
+    vector<string> inputIds;
+    NStr::Split(args["ids"].AsString(), ",", inputIds);
+    for (auto inputId: inputIds) {
+        CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(inputId);
+        CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
+        CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
+        if (!args["skip-headers"]) {
+            m_pWriter->WriteHeader();
+        }
+        m_pWriter->WriteBioseqHandle(bsh);
+        m_pWriter->WriteFooter();
+    }
     return true;
 }    
 
