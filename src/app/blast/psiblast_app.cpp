@@ -62,6 +62,13 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        }
+    }
+    ~CPsiBlastApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 private:
     /** @inheritDoc */
@@ -113,6 +120,8 @@ private:
     CConstRef<CBlastAncillaryData> m_AncillaryData;
 
     CBlastAppDiagHandler m_bah;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 void CPsiBlastApp::Init()
@@ -553,11 +562,16 @@ int CPsiBlastApp::Run(void)
         if (m_CmdLineArgs->ProduceDebugOutput())
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
 
+        LogQueryInfo(m_UsageReport, *input);
+        formatter.LogBlastSearchInfo(m_UsageReport);
+
     } CATCH_ALL(status)
     if(!m_bah.GetMessages().empty()) {
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, m_bah.GetMessages());
     }
+	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 
