@@ -57,7 +57,6 @@ public:
         SetFullVersion(version);
         m_StopWatch.Start();
         if (m_UsageReport.IsEnabled()) {
-        	cerr << "Enabled" << endl;
         	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
         }
     }
