@@ -342,6 +342,21 @@ bool TrimEntry(CConstRef<CSeq_entry> &entry, CBioseq_Handle bsh)
   return trimmed;
 }
 
+bool HasNameAndAccession(const CSeq_id_Handle &idh)
+{
+    const CTextseq_id *text_seqid = idh.GetSeqId()->GetTextseq_Id();
+    return text_seqid && text_seqid->IsSetName() && text_seqid->IsSetAccession();
+}
+
+CSeq_id_Handle StrippedAccVer(const CSeq_id_Handle &idh)
+{
+    const CTextseq_id *text_seqid = idh.GetSeqId()->GetTextseq_Id();
+    string accver = text_seqid->GetAccession();
+    if (text_seqid->IsSetVersion()) {
+        accver += '.' + NStr::NumericToString(text_seqid->GetVersion());
+    }
+    return CSeq_id_Handle::GetHandle(accver);
+}
 
 struct SBlobCopier
 {
@@ -1133,6 +1148,11 @@ size_t CAsnSubCacheCreateApplication::WriteBlobsInSubCache(const vector<CDir>& m
                  if (*id_it != it->first.m_Idh) {
                      index_map.insert(TIndexMapById::value_type(*id_it, it->second));
                  }
+                 if (HasNameAndAccession(*id_it)) {
+                     /// Special case for seq-ids with both accession and name;
+                     /// also index by accession.version only
+                     index_map.insert(TIndexMapById::value_type(StrippedAccVer(*id_it), it->second));
+                 }
              }
              if (m_cached_seq_ids.count(it->first.m_Idh)) {
                  m_output_seq_ids.insert(output_idh);
@@ -1252,7 +1272,12 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
 
                 /// Add all biodeq's ids to index map, pointing to same blob
                 ITERATE (vector<CSeq_id_Handle>, id_it, blob_it->m_Ids) {
-                    index_map[*id_it] = &blob_locations.back();;
+                    index_map[*id_it] = &blob_locations.back();
+                    if (HasNameAndAccession(*id_it)) {
+                        /// Special case for seq-ids with both accession and name;
+                        /// also index by accession.version only
+                        index_map[StrippedAccVer(*id_it)] = &blob_locations.back();
+                    }
                 }
             }
         }
