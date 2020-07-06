@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 
     	string output = CNcbiOstrstreamToString(output_stream);
         const string ref[5] = {
-        		"O19910	NP_045082	phycocyanin alpha subunit [Cyanidium caldarium]<>RecName: Full=C-phycocyanin alpha chain [Cyanidium caldarium]<>unknown [Cyanidium caldarium]",
+        		"O19910	NP_045082	phycocyanin alpha subunit [Cyanidium caldarium]<>RecName: Full=C-phycocyanin alpha subunit [Cyanidium caldarium]<>unknown [Cyanidium caldarium]",
         		"O19910	AAB01593	cpcA [Cyanidium caldarium]",
         		"O19910	P00306	RecName: Full=C-phycocyanin alpha chain [Galdieria sulphuraria]<>C-phycocyanin alpha chain [validated] - red alga (Cyanidium caldarium) [Cyanidium caldarium]<>phycocyanin alpha subunits [Cyanidium caldarium]<>Chain A, Phycocyanin [Cyanidium caldarium]",
         		"O19910	YP_009051179	phycocyanin alpha subunit [Galdieria sulphuraria]<>[pt] C-phycocyanin alpha chain [Galdieria sulphuraria]<>Chain A, C-phycocyanin Alpha Chain [Galdieria sulphuraria]<>Chain A, C-phycocyanin Alpha Chain [Galdieria sulphuraria]<>phycocyanin alpha subunit [Galdieria sulphuraria]<>[pt] C-phycocyanin alpha chain [Galdieria sulphuraria]",
