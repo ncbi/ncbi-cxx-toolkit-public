@@ -1661,7 +1661,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddFlag(kArgExtendAlign5end, "Extend V gene alignment at 5' end", true);
 
-    arg_desc.AddFlag(kArgExtendAlign3end, "Extend V gene alignment at 3' end", true);
+    arg_desc.AddFlag(kArgExtendAlign3end, "Extend J gene alignment at 3' end", true);
 
     arg_desc.AddDefaultKey(kArgMinVLength, "Min_V_Length",
                            "Minimal required V gene length",
