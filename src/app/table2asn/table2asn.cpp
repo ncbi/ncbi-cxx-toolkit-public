@@ -1058,11 +1058,10 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_make_flatfile)
         {
-            CFlatFileConfig config;
+            CFlatFileGenerator ffgenerator(
+                    CFlatFileConfig::eFormat_GenBank, 
+                    CFlatFileConfig::eMode_Entrez);
 
-            config.BasicCleanup(false);
-
-            CFlatFileGenerator ffgenerator;
             auto& ostream = m_context.GetOstream(".gbf");
 
             if (submit.Empty())
