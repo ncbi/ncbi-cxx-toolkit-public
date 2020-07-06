@@ -764,7 +764,7 @@ void CGenbankFormatter::x_FormatOrganismLine(list<string>& l, const CSourceItem&
     // taxname
 #ifdef NEW_HTML_FMT
     string s;
-    GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, TAX_ID_TO(int, source.GetTaxid()), source.GetTaxname());
+    GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, source.GetTaxid(), source.GetTaxname());
     Wrap(l, "ORGANISM", s, eSubp);
 #else
     if (source.GetContext()->Config().DoHTML()) {
@@ -852,7 +852,7 @@ void CGenbankFormatter::FormatReference
     x_Consortium(l, ref, ctx);
     x_Title(l, ref, ctx);
     x_Journal(l, ref, ctx);
-    if (ref.GetPMID() == 0) {  // suppress MEDLINE if has PUBMED
+    if (ref.GetPMID() == ZERO_ENTREZ_ID) {  // suppress MEDLINE if has PUBMED
         x_Medline(l, ref, ctx);
     }
     x_Pubmed(l, ref, ctx);
@@ -1054,10 +1054,10 @@ void CGenbankFormatter::x_Medline
     bool bHtml = ctx.Config().DoHTML();
 
     string strDummy( "[PUBMED-ID]" );
-    if ( ref.GetMUID() != 0 ) {
+    if ( ref.GetMUID() != ZERO_ENTREZ_ID) {
         Wrap(l, GetWidth(), "MEDLINE", strDummy, eSubp);
     }
-    string strPubmed( NStr::IntToString( ref.GetMUID() ) );
+    string strPubmed( NStr::NumericToString( ref.GetMUID() ) );
     if ( bHtml ) {
         string strLink = "<a href=\"";
         strLink += strLinkBasePubmed;
@@ -1079,10 +1079,10 @@ void CGenbankFormatter::x_Pubmed
  CBioseqContext& ctx) const
 {
     
-    if ( ref.GetPMID() == 0 ) {
+    if ( ref.GetPMID() == ZERO_ENTREZ_ID) {
         return;
     }
-    string strPubmed = NStr::IntToString( ref.GetPMID() );
+    string strPubmed = NStr::NumericToString( ref.GetPMID() );
     if ( ctx.Config().DoHTML() ) {
         string strRaw = strPubmed;
         strPubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/";

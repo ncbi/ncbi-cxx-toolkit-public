@@ -168,7 +168,7 @@ void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
 
     m_Taxname = &bsx->GetTaxname();
     m_Common = &bsx->GetCommon();
-    m_Taxid = TAX_ID_FROM(int, bsx->GetTaxid());
+    m_Taxid = bsx->GetTaxid();
     m_UsingAnamorph = bsx->IsUsingAnamorph();
 
     const string& lineage = bsx->GetLineage();

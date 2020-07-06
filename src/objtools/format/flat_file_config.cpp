@@ -971,7 +971,7 @@ void CHTMLEmptyFormatter::FormatNucSearch(CNcbiOstream& os, const string& id) co
     os << id;
 }
 
-void CHTMLEmptyFormatter::FormatTaxid(string& str, const int taxid, const string& taxname) const
+void CHTMLEmptyFormatter::FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const
 {
     str = taxname;
 }

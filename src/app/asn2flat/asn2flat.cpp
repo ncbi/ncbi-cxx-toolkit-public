@@ -89,7 +89,7 @@ public:
     void FormatTranscriptId(string &, const CSeq_id& seq_id, const string& nuc_id) const;
     void FormatNucSearch(CNcbiOstream& os, const string& id) const;
     void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const;
-    void FormatTaxid(string& str, const int taxid, const string& taxname) const;
+    void FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const;
     void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const;
     void FormatModelEvidence(string& str, const SModelEvidance& me) const;
     void FormatTranscript(string& str, const string& name) const;
@@ -156,10 +156,10 @@ void CHTMLFormatterEx::FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi
     str += strLinkBaseNuc + NStr::NumericToString(gi) + "\">" + acc_id + "</a>";
 }
 
-void CHTMLFormatterEx::FormatTaxid(string& str, const int taxid, const string& taxname) const
+void CHTMLFormatterEx::FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const
 {
     if (!NStr::StartsWith(taxname, "Unknown", NStr::eNocase)) {
-        if (taxid > 0) {
+        if (taxid > ZERO_TAX_ID) {
             str += "<a href=\"";
             str += strLinkBaseTaxonomy;
             str += "id=";

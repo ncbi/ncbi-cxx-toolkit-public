@@ -504,7 +504,7 @@ public:
 
     const string& GetCommon (void);
     const string& GetLineage (void);
-    int GetTaxid (void);
+    TTaxId GetTaxid (void);
     bool IsUsingAnamorph (void);
 
     CTempString GetGenus (void);
@@ -683,7 +683,7 @@ private:
 
     string m_Common;
     string m_Lineage;
-    int m_Taxid;
+    TTaxId m_Taxid;
     bool m_UsingAnamorph;
 
     CTempString m_Genus;

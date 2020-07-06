@@ -828,7 +828,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Taxname.clear();
     m_Common.clear();
     m_Lineage.clear();
-    m_Taxid = 0;
+    m_Taxid = ZERO_TAX_ID;
     m_UsingAnamorph = false;
     m_Genus.clear();
     m_Species.clear();
@@ -1267,7 +1267,7 @@ void CBioseqIndex::x_InitSource (void)
             }
             if (m_BioSource->CanGetOrg()) {
                 const COrg_ref& org = m_BioSource->GetOrg();
-                m_Taxid = TAX_ID_TO(int, org.GetTaxId());
+                m_Taxid = org.GetTaxId();
             }
             if (m_BioSource->IsSetGenome()) {
                 m_Genome = m_BioSource->GetGenome();
@@ -2348,7 +2348,7 @@ const string& CBioseqIndex::GetLineage (void)
     return m_Lineage;
 }
 
-int CBioseqIndex::GetTaxid (void)
+TTaxId CBioseqIndex::GetTaxid (void)
 
 {
     if (! m_SourcesInitialized) {
