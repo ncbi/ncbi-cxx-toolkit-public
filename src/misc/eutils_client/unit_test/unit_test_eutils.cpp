@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(TestLinkOut)
     
     //The same with accessions
     {
-        vector<objects::CSeq_id_Handle> acc = { objects::CSeq_id_Handle::GetHandle("DQ896796.1"), objects::CSeq_id_Handle::GetHandle("DQ896797.1") };
+        vector<objects::CSeq_id_Handle> acc = { objects::CSeq_id_Handle::GetHandle("DQ896796.2"), objects::CSeq_id_Handle::GetHandle("DQ896797.2") };
         BOOST_REQUIRE_NO_THROW(cli.LinkOut("nucleotide", acc, doc, "llinkslib"));
         const xml::node& root = doc.get_root_node();
 
