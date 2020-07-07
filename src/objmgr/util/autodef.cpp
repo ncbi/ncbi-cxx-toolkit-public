@@ -880,6 +880,9 @@ string CAutoDef::x_GetNonFeatureListEnding()
         case CAutoDefOptions::eListAllFeatures:
             end = " sequence.";
             break;
+        case CAutoDefOptions::eWholeGenomeShotgunSequence:
+            end = " whole genome shotgun sequence.";
+            break;
         default:
             break;
     }

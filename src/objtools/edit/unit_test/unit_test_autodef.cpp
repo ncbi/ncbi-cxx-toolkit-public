@@ -2688,5 +2688,27 @@ BOOST_AUTO_TEST_CASE(Test_GB_8854)
     TestRepeatRegion(entry);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_ClauseListOptions)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    AddTitle(entry, "Sebaea microphylla, complete sequence.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eCompleteSequence);
+
+    AddTitle(entry, "Sebaea microphylla, complete genome.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eCompleteGenome);
+
+    AddTitle(entry, "Sebaea microphylla, partial sequence.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::ePartialSequence);
+
+    AddTitle(entry, "Sebaea microphylla, partial genome.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::ePartialGenome);
+
+    AddTitle(entry, "Sebaea microphylla whole genome shotgun sequence.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eWholeGenomeShotgunSequence);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

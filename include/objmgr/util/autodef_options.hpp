@@ -104,7 +104,8 @@ public:
         eCompleteGenome,
         ePartialSequence,
         ePartialGenome,
-        eSequence
+        eSequence,
+        eWholeGenomeShotgunSequence
     };
 
     typedef unsigned int TFeatureListType;

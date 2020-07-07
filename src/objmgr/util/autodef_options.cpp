@@ -217,7 +217,8 @@ const TNameValPair sc_FeatureListTypeStr[] = {
         { "List All Features", CAutoDefOptions::eListAllFeatures },
         { "Partial Genome", CAutoDefOptions::ePartialGenome },
         { "Partial Sequence", CAutoDefOptions::ePartialSequence },
-        { "Sequence", CAutoDefOptions::eSequence }
+        { "Sequence", CAutoDefOptions::eSequence },
+        { "Whole Genome Shotgun Sequence", CAutoDefOptions::eWholeGenomeShotgunSequence }
 };
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TNameValPairMap, sc_FeatureListTypeStrsMap, sc_FeatureListTypeStr);
 
