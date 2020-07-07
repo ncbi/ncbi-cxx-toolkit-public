@@ -151,13 +151,14 @@ extern const char* NcbiDumpIPRange(const SIPRange* range,
 {
     char result[150];
 
-    if (!range  ||  !buf  ||  !bufsize)
+    if (!buf  ||  !bufsize)
+        return 0;
+    *buf = '\0';
+    if (!range)
         return 0;
 
-    if (range->type == eIPRange_Application) {
-        *buf = '\0';
+    if (range->type == eIPRange_Application)
         return buf;
-    }
 
     if (range->type != eIPRange_None) {
         char* s = result;
