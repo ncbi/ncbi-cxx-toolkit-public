@@ -1,0 +1,944 @@
+/* ftamain.c
+ *
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * File Name:  ftamain.c
+ *
+ * Author: Karl Sirotkin, Hsiu-Chuan Chen
+ *
+ * File Description:
+ * -----------------
+ *      Main routines for parsing flat files to ASN.1 file format.
+ * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
+ *
+ */
+#include <ncbi_pch.hpp>
+
+#include <objtools/flatfile/ftacpp.hpp>
+
+#include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Auth_list.hpp>
+
+#include <objtools/flatfile/index.h>
+#include <objtools/flatfile/utilfun.h>
+#include <objtools/flatfile/indx_blk.h>
+#include <objtools/flatfile/sprot.h>
+#include <objtools/flatfile/embl.h>
+#include <objtools/flatfile/genbank.h>
+#include <objtools/flatfile/entry.h>
+
+#include <objtools/flatfile/asci_blk.h>
+#include <objtools/flatfile/ff2asn.h>
+#include <objtools/flatfile/ftanet.h>
+#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatdefn.h>
+
+#include "add.h"
+#include "loadfeat.h"
+#include "gb_ascii.h"
+#include "sp_ascii.h"
+#include "pir_ascii.h"
+#include "em_ascii.h"
+#include "utilfeat.h"
+#include "buf_data_loader.h"
+
+#ifdef THIS_FILE
+#    undef THIS_FILE
+#endif
+#define THIS_FILE "ftamain.cpp"
+
+typedef struct ff_entries {
+    CharPtr                offset;
+    CharPtr                acc;
+    Int2                   vernum;
+    struct ff_entries PNTR next;
+} FFEntries, PNTR FFEntriesPtr;
+
+FFEntriesPtr ffep = NULL;
+
+extern bool    PrfAscii PROTO((ParserPtr pp));
+extern bool    XMLAscii PROTO((ParserPtr pp));
+
+extern void    fta_init_gbdataloader();
+
+// LCOV_EXCL_START
+// Excluded per Mark's request on 12/14/2016
+// Must be restored to test parsing from string buffer
+/**********************************************************
+ *
+ *   static void CkSegmentSet(pp):
+ *
+ *      After building index block, before parsing ascii
+ *   block.
+ *      Report "WARN" message to the whole segment set
+ *   if any one segment entry was missing, then treat
+ *   the whole set to be the individual one, s.t. set each
+ *   segment entry's segnum = segtotal = 0.
+ *
+ *                                              6-24-93
+ *
+ **********************************************************/
+static void CkSegmentSet(ParserPtr pp)
+{
+    Int4    i;
+    Int4    j;
+    Int4    bindx;
+    Int4    total;
+    CharPtr locus;
+
+    bool flag;
+    bool drop;
+    bool notdrop;
+
+    for(i = 0; i < pp->indx;)
+    {
+        if(pp->entrylist[i]->segtotal == 0)
+        {
+            i++;
+            continue;
+        }
+
+        bindx = i;
+
+        total = pp->entrylist[bindx]->segtotal;
+        locus = pp->entrylist[bindx]->blocusname;
+
+        flag = (pp->entrylist[bindx]->segnum != 1);
+
+        for(i++; i < pp->indx &&
+            StringCmp(pp->entrylist[i]->blocusname, locus) == 0; i++)
+        {
+            if(pp->entrylist[i-1]->segnum + 1 != pp->entrylist[i]->segnum)
+                flag = true;
+        }
+        if(i - bindx != total)
+            flag = true;
+
+        if(flag)               /* warning the whole segment set */
+        {
+            ErrPostEx(SEV_ERROR, ERR_SEGMENT_MissSegEntry,
+                      "%s|%s: Missing members of segmented set.",
+                      pp->entrylist[bindx]->locusname,
+                      pp->entrylist[bindx]->acnum);
+
+            for(j = bindx; j < i; j++)
+            {
+                pp->curindx = j;
+
+                pp->entrylist[j]->segnum = 0;
+                pp->entrylist[j]->segtotal = 0;
+
+                if(pp->debug == false)
+                    pp->entrylist[j]->drop = 1;
+            }
+        } /* if, flag */
+        else            /* assign all drop = 0 if they have "mix ownership" */
+        {
+            for(j = bindx, drop = notdrop = false; j < i; j++)
+            {
+                if(pp->entrylist[j]->drop == 0)
+                    notdrop = true;
+                else
+                    drop = true;
+            }
+
+            if(drop && notdrop)       /* mix ownership */
+            {
+                for(j = bindx; j < i; j++)
+                    pp->entrylist[j]->drop = 0;
+                if(drop)
+                    pp->num_drop--;
+            }
+        }
+    }
+}
+// LCOV_EXCL_STOP
+
+/**********************************************************/
+static bool CompareAccs(const IndexblkPtr& p1, const IndexblkPtr& p2)
+{
+    return StringCmp(p1->acnum, p2->acnum) < 0;
+}
+
+/**********************************************************/
+static bool CompareAccsV(const IndexblkPtr& p1, const IndexblkPtr& p2)
+{
+    int i = StringCmp(p1->acnum, p2->acnum);
+    if (i != 0)
+        return i < 0;
+
+    return p1->vernum < p2->vernum;
+}
+
+/**********************************************************
+ *
+ *   static int CompareData(pp1, pp2):
+ *
+ *      Group all the segments data together.
+ *      To solve duplicated entries which have the same
+ *   accession number but locusname changed.
+ *      Sorted by blocusname, segtotal, segnum, acnum,
+ *   offset.
+ *
+ *                                              3-9-93
+ *
+ **********************************************************/
+static bool CompareData(const IndexblkPtr& p1, const IndexblkPtr& p2)
+{
+    int retval = StringCmp(p1->blocusname, p2->blocusname);
+    if (retval == 0)
+    {
+        if(p1->segtotal != 0 || p2->segtotal != 0)
+        {
+            if(p1->segtotal == p2->segtotal)
+            {
+                retval = p1->segnum - p2->segnum;
+
+                if(retval == 0)
+                {
+                    retval = StringCmp(p1->acnum, p2->acnum);
+
+                    if(retval == 0)
+                        retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
+                }
+            } /* segtotal */
+            else
+                retval = p1->segtotal - p2->segtotal;
+        }
+        else
+        {
+            retval = StringCmp(p1->acnum, p2->acnum);
+
+            if(retval == 0)
+                retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
+        }
+    }
+
+    return retval < 0;
+}
+
+/**********************************************************/
+static bool CompareDataV(const IndexblkPtr& p1, const IndexblkPtr& p2)
+{
+    int retval = StringCmp(p1->blocusname, p2->blocusname);
+
+    if (retval == 0)
+    {
+        if(p1->segtotal != 0 || p2->segtotal != 0)
+        {
+            if(p1->segtotal == p2->segtotal)
+            {
+                retval = p1->segnum - p2->segnum;
+
+                if(retval == 0)
+                {
+                    retval = StringCmp(p1->acnum, p2->acnum);
+
+                    if(retval == 0)
+                    {
+                        retval = p1->vernum - p2->vernum;
+                        if(retval == 0)
+                            retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
+                    }
+                }
+            } /* segtotal */
+            else
+                retval = p1->segtotal - p2->segtotal;
+        }
+        else
+        {
+            retval = StringCmp(p1->acnum, p2->acnum);
+
+            if(retval == 0)
+            {
+                retval = p1->vernum - p2->vernum;
+                if(retval == 0)
+                    retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
+            }
+        }
+    }
+
+    return retval < 0;
+}
+
+/**********************************************************/
+static void CheckDupEntries(ParserPtr pp)
+{
+    Int4             i;
+    Int4             j;
+    IndexblkPtr      first;
+    IndexblkPtr      second;
+    IndexblkPtr PNTR tibp;
+
+    i = pp->indx * sizeof(IndexblkPtr);
+    tibp = (IndexblkPtr PNTR) MemNew(i);
+    MemCpy(tibp, pp->entrylist, i);
+
+    std::sort(tibp, tibp + pp->indx, (pp->accver ? CompareAccsV : CompareAccs));
+
+    for(i = 0; i < pp->indx; i++)
+    {
+        first = tibp[i];
+        if(first->drop != 0)
+            continue;
+        for(j = i + 1; j < pp->indx; j++)
+        {
+            second = tibp[j];
+            if(second->drop != 0)
+                continue;
+            if(StringCmp(first->acnum, second->acnum) < 0)
+                break;
+
+            if(pp->accver && first->vernum != second->vernum)
+                break;
+
+            ncbi::objects::CDate::ECompare dtm = first->date->Compare(*second->date);
+            if (dtm == ncbi::objects::CDate::eCompare_before)
+            {
+                /* 2 after 1 take 2 remove 1
+                 */
+                first->drop = 1;
+                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
+                          "%s (%s) skipped in favor of another entry with a later update date",
+                          first->acnum, first->locusname);
+            }
+            else if (dtm == ncbi::objects::CDate::eCompare_same)
+            {
+                if(first->offset > second->offset)
+                {
+                    /* 1 larger than 2 take 1 remove 2
+                     */
+                    second->drop = 1;
+                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
+                              "%s (%s) skipped in favor of another entry located at a larger byte offset",
+                              second->acnum, second->locusname);
+                }
+                else                    /* take 2 remove 1 */
+                {
+                    first->drop = 1;
+                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
+                              "%s (%s) skipped in favor of another entry located at a larger byte offset",
+                              first->acnum, first->locusname);
+                }
+            }
+            else                        /* take 1 remove 2 */
+            {
+                second->drop = 1;
+                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
+                          "%s (%s) skipped in favor of another entry with a later update date",
+                          second->acnum, second->locusname);
+            }
+        }
+    }
+    MemFree(tibp);
+}
+
+static void WriteBioseqSet(ParserPtr pp)
+{
+    ncbi::objects::CBioseq_set bio_set;
+
+    if (pp->source == ParFlat_PIR)
+        bio_set.SetClass(ncbi::objects::CBioseq_set::eClass_pir);
+    else
+        bio_set.SetClass(ncbi::objects::CBioseq_set::eClass_genbank);
+
+    if(pp->release_str != NULL)
+        bio_set.SetRelease(pp->release_str);
+
+    bio_set.SetSeq_set().splice(bio_set.SetSeq_set().end(), pp->entries);
+
+    if (!pp->qamode)
+    {
+        bio_set.SetDate().SetToTime(ncbi::CTime(ncbi::CTime::eCurrent), ncbi::objects::CDate::ePrecision_day);
+    }
+
+    ncbi::CNcbiOfstream ostr(pp->outfile.c_str());
+
+    if (pp->output_binary)
+        ostr << MSerial_AsnBinary << bio_set;
+    else
+        ostr << MSerial_AsnText << bio_set;
+}
+
+static void WriteSeqSubmit(ParserPtr pp)
+{
+    ncbi::objects::CSeq_submit seq_submit;
+    ncbi::objects::CSubmit_block& submit_blk = seq_submit.SetSub();
+
+    submit_blk.SetCit().SetAuthors().SetNames().SetStr().push_back(pp->authors_str);
+
+    TEntryList& entries = seq_submit.SetData().SetEntrys();
+    entries.splice(entries.end(), pp->entries);
+
+    ncbi::CNcbiOfstream ostr(pp->outfile.c_str());
+    ostr << MSerial_AsnText << seq_submit;
+}
+
+/**********************************************************/
+static void CloseAll(ParserPtr pp)
+{
+    CloseFiles(pp);
+
+    if (!pp->outfile.empty())
+    {
+        if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
+        {
+            WriteBioseqSet(pp);
+        }
+        else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
+        {
+            WriteSeqSubmit(pp);
+        }
+    }
+
+    FreeParser(pp);
+}
+
+/**********************************************************/
+Int2 fta_main(ParserPtr pp, bool already)
+{
+    ErrClear();
+
+    if (!already)
+        fta_init_servers(pp);
+
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "INDEXING", NULL);
+
+    bool good = FlatFileIndex(pp, NULL);
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+    if(!good)
+    {
+        if(!already)
+            fta_fini_servers(pp);
+        CloseAll(pp);
+        return((good == false) ? 1 : 0);
+    }
+
+    fta_init_gbdataloader();
+    GetScope().AddDefaults();
+
+    if(pp->format == ParFlat_SPROT || pp->format == ParFlat_PIR ||
+       pp->format == ParFlat_PRF)
+    {
+        FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+
+        if(pp->format == ParFlat_SPROT)
+            good = SprotAscii(pp);
+        else if(pp->format == ParFlat_PIR)
+            good = PirAscii(pp);
+        else
+            good = PrfAscii(pp);
+        if(!already)
+            fta_fini_servers(pp);
+        CloseAll(pp);
+
+        FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+        return((good == false) ? 1 : 0);
+    }
+
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
+
+    fta_entrez_fetch_enable(pp);
+
+    /* CompareData: group all the segments data together
+     */
+    if(pp->sort)
+    {
+        std::sort(pp->entrylist, pp->entrylist + pp->indx, (pp->accver ? CompareDataV : CompareData));
+    }
+
+    CkSegmentSet(pp);           /* check for missing entries in segment set */
+    ErrClear();
+
+    CheckDupEntries(pp);
+
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup,
+              "Parsing %ld entries", (size_t) pp->indx);
+
+    pp->pbp = new ProtBlk;
+    pp->pbp->ibp = new InfoBioseq;
+
+    if(pp->num_drop > 0)
+    {
+        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum,
+                  "%ld invalid accession%s skipped", (size_t) pp->num_drop,
+                  (pp->num_drop == 1) ? "" : "s");
+    }
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+
+    if(pp->format == ParFlat_GENBANK)
+    {
+        good = GenBankAscii(pp);
+    }
+    else if(pp->format == ParFlat_EMBL)
+    {
+        good = EmblAscii(pp);
+    }
+    else if(pp->format == ParFlat_XML)
+    {
+        good = XMLAscii(pp);
+    }
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+    if(!already)
+        fta_fini_servers(pp);
+
+    GetScope().ResetHistory();
+
+    fta_entrez_fetch_disable(pp);
+
+    CloseAll(pp);
+
+    // TransTableFreeAll(); // TODO probably needs to be replaced with C++ functionality
+    return((good == false) ? 1 : 0);
+}
+
+/**********************************************************/
+static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
+{
+    if (ncbi::NStr::EqualNocase(source, "PIR"))
+    {
+        pp.acprefix = ParFlat_PIR_AC;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Pir;
+        pp.source = ParFlat_PIR;
+    }
+    else if (ncbi::NStr::EqualNocase(source, "PRF"))
+    {
+        pp.acprefix = ParFlat_PRF_AC;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Prf;
+        pp.source = ParFlat_PRF;
+    }
+    else if (ncbi::NStr::EqualNocase(source, "SPROT"))
+    {
+        pp.acprefix = ParFlat_SPROT_AC;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Swissprot;
+        pp.source = ParFlat_SPROT;
+    }
+    else if (ncbi::NStr::EqualNocase(source, "LANL"))
+    {
+        pp.acprefix = ParFlat_LANL_AC;         /* lanl or genbank */
+        pp.seqtype = ncbi::objects::CSeq_id::e_Genbank;
+        pp.source = ParFlat_LANL;
+    }
+    else if (ncbi::NStr::EqualNocase(source, "EMBL"))
+    {
+        pp.acprefix = ParFlat_EMBL_AC;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Embl;
+        pp.source = ParFlat_EMBL;
+    }
+    else if (ncbi::NStr::EqualNocase(source, "DDBJ"))
+    {
+        pp.acprefix = ParFlat_DDBJ_AC;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Ddbj;
+        pp.source = ParFlat_DDBJ;
+    }
+    else if (ncbi::NStr::EqualNocase(source, "FLYBASE"))
+    {
+        pp.source = ParFlat_FLYBASE;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Genbank;
+        pp.acprefix = NULL;
+        if(pp.format != ParFlat_GENBANK)
+        {
+            ErrPostEx(SEV_FATAL, ERR_ZERO,
+                      "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
+            return false;
+        }
+    }
+    else if (ncbi::NStr::EqualNocase(source, "REFSEQ"))
+    {
+        pp.source = ParFlat_REFSEQ;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Other;
+        pp.acprefix = NULL;
+        if(pp.format != ParFlat_GENBANK)
+        {
+            ErrPostEx(SEV_FATAL, ERR_ZERO,
+                      "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
+            return false;
+        }
+    }
+    else if (ncbi::NStr::EqualNocase(source, "NCBI"))
+    {
+        /* for NCBI, the legal formats are embl and genbank, and
+         * filenames, etc. need to be set accordingly. For example,
+         * in -i (subtool) mode, both embl and genbank format might
+         * be expected.
+         */
+        if(pp.format != ParFlat_EMBL && pp.format != ParFlat_GENBANK &&
+           pp.format != ParFlat_XML)
+        {
+            ErrPostEx(SEV_FATAL, ERR_ZERO,
+                      "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
+            return false;
+        }
+
+        pp.acprefix = ParFlat_NCBI_AC;
+        pp.seqtype = ncbi::objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
+                                                               GenBank SEQIDS - Karl */
+        pp.source = ParFlat_NCBI;
+    }
+    else
+    {
+        ErrPostEx(SEV_FATAL, ERR_ZERO,
+                  "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ", source.c_str());
+        return false;
+    }
+
+    /* parse regardless of source, overwrite prefix
+     */
+    if (all)
+    {
+        pp.acprefix = NULL;
+        pp.all = ParFlat_ALL;
+        pp.accpref = NULL;
+    }
+    else
+        pp.accpref = (CharPtr PNTR) GetAccArray(pp.source);
+
+    pp.citat = (pp.source != ParFlat_SPROT);
+
+    return true;
+}
+
+// LCOV_EXCL_START
+// Excluded per Mark's request on 12/14/2016
+// Must be restored to test parsing from string buffer
+/**********************************************************/
+// TODO function is not used 
+void Flat2AsnCheck(CharPtr ffentry, CharPtr source, CharPtr format,
+                   bool accver, Int4 mode, Int4 limit)
+{
+    ParserPtr pp;
+    Int2      form;
+
+    if (ncbi::NStr::EqualNocase(format, "embl"))
+        form = ParFlat_EMBL;
+    else if (ncbi::NStr::EqualNocase(format, "genbank"))
+        form = ParFlat_GENBANK;
+    else if (ncbi::NStr::EqualNocase(format, "sprot"))
+        form = ParFlat_SPROT;
+    else if (ncbi::NStr::EqualNocase(format, "xml"))
+        form = ParFlat_XML;
+    else
+    {
+        ErrPostEx(SEV_ERROR, ERR_ZERO, "Unknown format of flat entry");
+        return;
+    }
+
+    pp = new Parser;
+    pp->format = form;
+
+    if (!FillAccsBySource(*pp, source, false))
+    {
+        delete pp;
+        return;
+    }
+
+    /* As of June, 2004 the sequence length limitation removed
+     */
+    pp->limit = 0;
+    pp->sort = true;
+    pp->accver = accver;
+    pp->mode = mode;
+    pp->convert = true;
+    pp->taxserver = 1;
+    pp->medserver = 1;
+    pp->sp_dt_seq_ver = true;
+    pp->cleanup = 1;
+    pp->allow_crossdb_featloc = false;
+    pp->genenull = true;
+    pp->qsfile = NULL;
+    pp->qsfd = NULL;
+    pp->qamode = false;
+
+    pp->ffbuf = (FileBufPtr) MemNew(sizeof(FileBuf));
+    pp->ffbuf->start = ffentry;
+    pp->ffbuf->current = pp->ffbuf->start;
+
+    fta_fill_find_pub_option(pp, false, false);
+    fta_main(pp, true);
+}
+// LCOV_EXCL_STOP
+
+ncbi::objects::CScope& GetScope()
+{
+    static ncbi::objects::CScope scope(*ncbi::objects::CObjectManager::GetInstance());
+
+    return scope;
+}
+
+// CErrorMgr class implements RAII paradigm
+/*
+class CErrorMgr
+{
+public:
+    CErrorMgr() {
+        FtaErrInit();
+    }
+
+    ~CErrorMgr() {
+        FtaErrFini();
+    }
+};
+*/
+
+TEntryList& fta_parse_buf(Parser& pp, const char* buf)
+{
+    if (buf == NULL || *buf == '\0') {
+        return pp.entries;
+    }
+
+    if (pp.fpo == nullptr) {
+        fta_fill_find_pub_option(&pp, false, false);
+    }
+
+    pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
+
+//    CErrorMgr err_mgr;
+
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
+    ErrClear();
+
+    pp.ffbuf = (FileBufPtr)MemNew(sizeof(FileBuf));
+    pp.ffbuf->start = buf;
+    pp.ffbuf->current = buf;
+
+    FtaDeletePrefix(PREFIX_LOCUS);
+
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "INDEXING", NULL);
+
+    bool good = FlatFileIndex(&pp, NULL);
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+    if (!good) {
+        ResetParserStruct(&pp);
+        return pp.entries;
+    }
+
+    fta_init_servers(&pp);
+
+    CRef<ncbi::objects::CObjectManager> obj_mgr = ncbi::objects::CObjectManager::GetInstance();
+    ncbi::objects::CBuffer_DataLoader::RegisterInObjectManager(*obj_mgr, &pp, ncbi::objects::CObjectManager::eDefault, ncbi::objects::CObjectManager::kPriority_Default);
+
+    GetScope().AddDefaults();
+
+    if (pp.format == ParFlat_SPROT || pp.format == ParFlat_PIR ||
+        pp.format == ParFlat_PRF) {
+        FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+
+        if (pp.format == ParFlat_SPROT)
+            good = SprotAscii(&pp);
+        else if (pp.format == ParFlat_PIR)
+            good = PirAscii(&pp);
+        else
+            good = PrfAscii(&pp);
+
+        FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+        fta_fini_servers(&pp);
+
+        if (!good) {
+            ResetParserStruct(&pp);
+        }
+        return pp.entries;
+    }
+
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
+
+    fta_entrez_fetch_enable(&pp);
+
+    /*if (pp->ffdb == 0)
+        fetchname = "index";
+    else
+        fetchname = "FFDBFetch";
+
+    if (pp->procid != 0) {
+        omp = ObjMgrWriteLock();
+        ompp = ObjMgrProcFind(omp, pp->procid, fetchname, OMPROC_FETCH);
+        ObjMgrUnlock();
+    }
+    else
+        ompp = NULL;
+
+    if (ompp != NULL)
+        ompp->procdata = (Pointer)pp;
+    else {
+        pp->procid = ObjMgrProcLoad(OMPROC_FETCH, fetchname, "fetch",
+                                    OBJ_SEQID, 0, OBJ_BIOSEQ, 0, pp,
+                                    (pp->ffdb == 0) ?
+                                    (ObjMgrGenFunc)IndexFetch :
+                                    (ObjMgrGenFunc)FFDBFetch,
+                                    PROC_PRIORITY_DEFAULT);
+    }*/
+
+    if (pp.sort) {
+        std::sort(pp.entrylist, pp.entrylist + pp.indx, (pp.accver ? CompareDataV : CompareData));
+    }
+
+    CkSegmentSet(&pp);           /* check for missing entries in segment set */
+    ErrClear();
+    CheckDupEntries(&pp);
+
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup,
+              "Parsing %ld entries", (size_t)pp.indx);
+
+    if (pp.num_drop > 0) {
+        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum,
+                  "%ld invalid accession%s skipped", (size_t)pp.num_drop,
+                  (pp.num_drop == 1) ? "" : "s");
+    }
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+    FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+
+    good = FALSE;
+
+    pp.pbp = new ProtBlk;
+    pp.pbp->ibp = new InfoBioseq;
+
+    if (pp.format == ParFlat_GENBANK) {
+        good = GenBankAscii(&pp);
+    }
+    else if (pp.format == ParFlat_EMBL) {
+        good = EmblAscii(&pp);
+    }
+    else if (pp.format == ParFlat_XML) {
+        good = XMLAscii(&pp);
+    }
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+    if (!good) {
+        ResetParserStruct(&pp);
+    }
+
+    //? SeqMgrFreeCache();
+    //? FreeFFEntries();
+
+    fta_entrez_fetch_disable(&pp);
+    fta_fini_servers(&pp);
+
+    return pp.entries;
+
+    /*if (pp->procid != 0) {
+        omp = ObjMgrWriteLock();
+        ompp = ObjMgrProcFind(omp, pp->procid, fetchname, OMPROC_FETCH);
+        ObjMgrUnlock();
+        if (ompp != NULL)
+            ompp->procdata = NULL;
+    }
+
+    TransTableFreeAll();*/
+}
+
+bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source)
+{
+    if (format == "embl")
+        pp.format = ParFlat_EMBL;
+    else if (format == "genbank")
+        pp.format = ParFlat_GENBANK;
+    else if (format == "sprot")
+        pp.format = ParFlat_SPROT;
+    else if (format == "pir")
+        pp.format = ParFlat_PIR;
+    else if (format == "prf")
+        pp.format = ParFlat_PRF;
+    else if (format == "xml")
+        pp.format = ParFlat_XML;
+    else {
+        ErrPostEx(SEV_FATAL, ERR_ZERO,
+                  "Sorry, the format is not available yet ==> available format embl, genbank, pir, prf, sprot, xml.");
+        return false;
+    }
+
+    return FillAccsBySource(pp, source, pp.all != 0);
+}
+
+void fta_init_pp(Parser& pp)
+{
+	pp.ign_toks = false;
+	pp.date = false;
+	pp.convert = true;
+	pp.seg_acc = false;
+	pp.no_date = false;
+	pp.sort = true;
+	pp.debug = false;
+	pp.segment = false;
+	pp.accver = true;
+	pp.histacc = true;
+	pp.transl = false;
+	pp.entrez_fetch = 1;
+	pp.taxserver = 0;
+	pp.medserver = 0;
+	pp.ffdb = false;
+
+	/* as of june, 2004 the sequence length limitation removed
+	*/
+	pp.limit = 0;
+	pp.all = 0;
+	pp.fpo = nullptr;
+	fta_fill_find_pub_option(&pp, false, false);
+
+	pp.indx = 0;
+	pp.entrylist = nullptr;
+	pp.curindx = 0;
+	pp.ifp = nullptr;
+	pp.ffbuf = nullptr;
+	pp.seqtype = 0;
+	pp.num_drop = 0;
+	pp.acprefix = nullptr;
+	pp.pbp = nullptr;
+	pp.citat = false;
+	pp.no_code = false;
+	pp.accpref = nullptr;
+	pp.user_data = nullptr;
+	pp.ff_get_entry = nullptr;
+	pp.ff_get_entry_v = nullptr;
+	pp.ff_get_qscore = nullptr;
+	pp.ff_get_qscore_pp = nullptr;
+	pp.ff_get_entry_pp = nullptr;
+	pp.ff_get_entry_v_pp = nullptr;
+	pp.ign_bad_qs = false;
+	pp.mode = FTA_RELEASE_MODE;
+	pp.sp_dt_seq_ver = true;
+	pp.simple_genes = false;
+	pp.cleanup = 1;
+	pp.allow_crossdb_featloc = false;
+	pp.genenull = true;
+	pp.qsfile = nullptr;
+	pp.qsfd = nullptr;
+	pp.qamode = false;
+}

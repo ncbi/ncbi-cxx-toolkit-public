@@ -1,0 +1,72 @@
+#############################################################################
+# $Id$
+#############################################################################
+# 
+#
+
+NCBI_begin_lib(xflatfile)
+  NCBI_sources(
+    xgbfeat
+    xgbparint
+    xutils
+    valnode
+    ftaerr
+
+    block
+    em_index
+    entry
+    gb_index
+    indx_blk
+    pir_index
+    prf_index
+    sp_index
+    utilfun
+    xm_index
+    xmlmisc
+
+    add
+    asci_blk
+    citation
+    em_ascii
+    fcleanup
+    fta_qscore
+    fta_src
+    ftamain
+    gb_ascii
+    genref
+    ind
+    loadfeat
+    nucprot
+    pir_ascii
+    prf_ascii
+    ref
+    sp_ascii
+    sp_ref
+    utilfeat
+    utilref
+    xm_ascii
+    buf_data_loader
+
+    ftanet
+    ftamed
+  )
+  NCBI_uses_toolkit_libraries(
+    xcleanup ctransition
+
+    ncbigbcxx
+
+    gui_utils
+    ncbi_xdbapi_ftds
+    ncbiindxcxx
+    ncbiprsncxx
+    taxon1
+    xid_utils
+
+    ncbi_xloader_genbank
+    gui_utils
+    ncbi_xdbapi_ftds
+    ncbiindxcxx
+    taxon1
+    xid_utils
+  )
+NCBI_end_lib()

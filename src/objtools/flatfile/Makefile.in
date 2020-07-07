@@ -1,0 +1,4 @@
+LIB_PROJ = flatfile
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
