@@ -51,12 +51,6 @@ USING_NCBI_SCOPE;
 class CCassNAnnotTaskFetch
     : public CCassBlobWaiter
 {
-
-
- /*
-
-
-    };*/
     enum EBlobFetchState {
         eInit = 0,
         eFetchStarted,

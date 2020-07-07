@@ -50,10 +50,12 @@ class CNAnnotRecord {
     using TSatKey = int32_t;
     using TCoord = int32_t;
     using TAnnotInfo = string;
+    using TWritetime = int64_t;
 
  public:
     CNAnnotRecord()
         : m_Modified(0)
+        , m_Writetime(0)
         , m_SatKey(0)
         , m_Start(0)
         , m_Stop()
@@ -62,6 +64,8 @@ class CNAnnotRecord {
     {
     }
 
+    CNAnnotRecord(CNAnnotRecord const &) = default;
+    CNAnnotRecord(CNAnnotRecord&&) = default;
     CNAnnotRecord& operator=(CNAnnotRecord const &) = default;
     CNAnnotRecord& operator=(CNAnnotRecord&&) = default;
 
@@ -125,6 +129,12 @@ class CNAnnotRecord {
         return *this;
     }
 
+    CNAnnotRecord& SetWritetime(TWritetime  value)
+    {
+        m_Writetime = value;
+        return *this;
+    }
+
     // ---------------- Getters ------------------------
     string const & GetAccession() const
     {
@@ -171,6 +181,11 @@ class CNAnnotRecord {
         return m_AnnotInfo;
     }
 
+    TWritetime GetWritetime(void) const
+    {
+        return m_Writetime;
+    }
+
     string ToString() const;
 
  private:
@@ -178,6 +193,7 @@ class CNAnnotRecord {
     string m_AnnotName;
     TAnnotInfo m_AnnotInfo;
     TTimestamp m_Modified;
+    TWritetime m_Writetime;
     TSatKey m_SatKey;
     TCoord m_Start;
     TCoord m_Stop;
