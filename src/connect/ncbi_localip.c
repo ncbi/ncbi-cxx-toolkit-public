@@ -105,23 +105,15 @@ static SIPRange s_LocalIP[256 + 1] = { { eIPRange_None } };
 
 static const SIPRange* x_IsOverlappingRange(const SIPRange* start,
                                             const SIPRange* range,
-                                            unsigned int domain, size_t n)
+                                            size_t n)
 {
     size_t i;
-    unsigned int section = 0;
     assert(n < SizeOf(s_LocalIP));
-    for (i = start ? (start - s_LocalIP) + 1 : 0;  i < n;  ++i) {
-        if (s_LocalIP[i].type == eIPRange_Application) {
-            if (start  &&  domain)
-                break;
-            section = s_LocalIP[i].b;
-            continue;
-        }
-        if (domain  &&  section  &&  domain != section)
-            continue;
+    for (i = start ? start - s_LocalIP : 0;  i < n;  ++i) {
         assert(s_LocalIP[i].type);
-        if (NcbiIsInIPRange(&s_LocalIP[i], &range->a)  ||
-            NcbiIsInIPRange(range, &s_LocalIP[i].a)) {
+        if (s_LocalIP[i].type != eIPRange_Application
+            &&  (NcbiIsInIPRange(&s_LocalIP[i], &range->a)  ||
+                 NcbiIsInIPRange(range, &s_LocalIP[i].a))) {
             return &s_LocalIP[i];
         }
     }
@@ -198,8 +190,9 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn, const char* source)
                              source, lineno, err));
                 continue;
             }
-            over = 0;
-            while ((over = x_IsOverlappingRange(over, &local, domain, n)) !=0){
+            for (over = 0;
+                 (over = x_IsOverlappingRange(over, &local, n)) != 0;
+                 ++over) {
                 char buf[150];
                 const char* s
                     = strchr(NcbiDumpIPRange(over, buf, sizeof(buf)), ' ');
