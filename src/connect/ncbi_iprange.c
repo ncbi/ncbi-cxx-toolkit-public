@@ -92,47 +92,44 @@ extern SIPRange NcbiTrueIPRange(const SIPRange* range)
 {
     unsigned int a;
     SIPRange retval;
-    if (range) {
-        switch (range->type) {
-        default:
-            assert(0);
-            /*FALLTHRU*/
-        case eIPRange_None:
-        case eIPRange_Application:
-            memset(&retval, 0, sizeof(retval));
-            /*retval.type = eIPRange_None;*/
-            return retval;
-        case eIPRange_Host:
-            assert(!range->b);
-            if (!NcbiIsIPv4(&range->a)) {
-                retval = *range;
-                return retval;
-            }
-            retval.a =                 range->a;
-            retval.b = NcbiIPv6ToIPv4(&range->a, 0);
-            break;
-        case eIPRange_Range:
-            assert(NcbiIsIPv4(&range->a)  &&  range->b);
-            assert(SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0)) <
-                   SOCK_NetToHostLong(range->b));
-            retval.a = range->a;
-            retval.b = range->b;
-            break;
-        case eIPRange_Network:
-            assert(!NcbiIsEmptyIPv6(&range->a)  &&  range->b);
-            if (!NcbiIsIPv4(&range->a)) {
-                retval = *range;
-                return retval;
-            }
-            a = NcbiIPv6ToIPv4(&range->a, 0);
-            assert(a  &&  !(a & ~range->b));
-            retval.a = range->a;
-            retval.b =        a | ~range->b;
-            break;
-        }
-        retval.type = eIPRange_Range;
-    } else
+    switch (range ? range->type : eIPRange_None) {
+    default:
+        assert(0);
+        /*FALLTHRU*/
+    case eIPRange_None:
+    case eIPRange_Application:
         memset(&retval, 0, sizeof(retval));
+        /*retval.type = eIPRange_None;*/
+        return retval;
+    case eIPRange_Host:
+        assert(!range->b);
+        if (!NcbiIsIPv4(&range->a)) {
+            retval = *range;
+            return retval;
+        }
+        retval.a =                 range->a;
+        retval.b = NcbiIPv6ToIPv4(&range->a, 0);
+        break;
+    case eIPRange_Range:
+        assert(NcbiIsIPv4(&range->a)  &&  range->b);
+        assert(SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0)) <
+               SOCK_NetToHostLong(range->b));
+        retval.a = range->a;
+        retval.b = range->b;
+        break;
+    case eIPRange_Network:
+        assert(!NcbiIsEmptyIPv6(&range->a)  &&  range->b);
+        if (!NcbiIsIPv4(&range->a)) {
+            retval = *range;
+            return retval;
+        }
+        a = NcbiIPv6ToIPv4(&range->a, 0);
+        assert(a  &&  !(a & ~range->b));
+        retval.a = range->a;
+        retval.b =        a | ~range->b;
+        break;
+    }
+    retval.type = eIPRange_Range;
     return retval;
 }
 
@@ -153,47 +150,52 @@ extern const char* NcbiDumpIPRange(const SIPRange* range,
 
     if (!buf  ||  !bufsize)
         return 0;
-    *buf = '\0';
-    if (!range)
+    if (!range) {
+        *buf = '\0';
         return 0;
-
-    if (range->type == eIPRange_Application)
+    }
+    if (range->type == eIPRange_Application) {
+        *buf = '\0';
         return buf;
+    }
 
     if (range->type != eIPRange_None) {
-        char* s = result;
         SIPRange temp = NcbiTrueIPRange(range);
+        char* s = result;
         switch (range->type) {
         case eIPRange_Host:
             assert(!range->b);
-            strcpy(s, "Host");
+            memcpy(s, "Host", 4);
             s += 4;
             break;
         case eIPRange_Range:
-            assert(range->b);
             assert(NcbiIsIPv4(&range->a));
-            strcpy(s, "Range");
+            assert(range->b);
+            memcpy(s, "Range", 5);
             s += 5;
             break;
         case eIPRange_Network:
             assert(range->b);
-            strcpy(s, "Network");
+            memcpy(s, "Network", 7);
             s += 7;
             break;
         default:
+            *buf = '\0';
             assert(0);
             return 0;
         }
         *s++ = ' ';
-        if (!NcbiIsIPv4(&range->a)) {
-            assert(range->type != eIPRange_Range);
+        if (temp.type != eIPRange_Range) {
+            assert(!NcbiIsIPv4(&range->a));
+            assert(memcmp(&temp, range, sizeof(temp)) == 0);
             s = NcbiIPv6ToString(s, x_size(result, sizeof(result), s),
-                                 &range->a);
+                                 &temp.a);
             assert(s + 40 < result + sizeof(result));
-            if (s  &&  range->type == eIPRange_Network)
-                sprintf(s, "/%u", range->b);
+            if (s  &&  temp.type == eIPRange_Network)
+                sprintf(s, "/%u", temp.b);
         } else {
-            if (SOCK_ntoa(NcbiIPv6ToIPv4(&range->a, 0),
+            assert(memcmp(&temp.a, &range->a, sizeof(temp.a)) == 0);
+            if (SOCK_ntoa(NcbiIPv6ToIPv4(&temp.a, 0),
                           s, x_size(result, sizeof(result), s)) != 0) {
                 strcpy(s++, "?");
             } else
