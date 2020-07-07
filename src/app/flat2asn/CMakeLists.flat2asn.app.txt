@@ -1,0 +1,9 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(flat2asn)
+  NCBI_sources(flat2asn)
+  NCBI_uses_toolkit_libraries(xflatfile ctransition)
+NCBI_end_app()
+
