@@ -103,14 +103,25 @@ static SIPRange s_LocalIP[256 + 1] = { { eIPRange_None } };
 #  include "ext/ncbi_localip.c"
 
 
-static const SIPRange* x_IsOverlappingRange(const SIPRange* range, size_t n)
+static const SIPRange* x_IsOverlappingRange(const SIPRange* start,
+                                            const SIPRange* range,
+                                            unsigned int domain, size_t n)
 {
     size_t i;
+    unsigned int section = 0;
     assert(n < SizeOf(s_LocalIP));
-    for (i = 0;  i < n;  ++i) {
-        if (s_LocalIP[i].type != eIPRange_Application
-            &&  (NcbiIsInIPRange(&s_LocalIP[i], &range->a)  ||
-                 NcbiIsInIPRange(range, &s_LocalIP[i].a))) {
+    for (i = start ? (start - s_LocalIP) + 1 : 0;  i < n;  ++i) {
+        if (s_LocalIP[i].type == eIPRange_Application) {
+            if (start  &&  domain)
+                break;
+            section = s_LocalIP[i].b;
+            continue;
+        }
+        if (domain  &&  section  &&  domain != section)
+            continue;
+        assert(s_LocalIP[i].type);
+        if (NcbiIsInIPRange(&s_LocalIP[i], &range->a)  ||
+            NcbiIsInIPRange(range, &s_LocalIP[i].a)) {
             return &s_LocalIP[i];
         }
     }
@@ -118,7 +129,7 @@ static const SIPRange* x_IsOverlappingRange(const SIPRange* range, size_t n)
 }
 
 
-static int/*bool*/ xx_LoadLocalIPs(CONN conn)
+static int/*bool*/ xx_LoadLocalIPs(CONN conn, const char* source)
 {
     unsigned int domain;
     EIO_Status status;
@@ -167,8 +178,8 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn)
                     &&  strcasecmp((const char*) s_LocalIP[len].a.octet,
                                    (const char*) local.a.octet) == 0) {
                     CORE_LOGF_X(2, eLOG_Error,
-                                ("Ignoring duplicate domain at line %u: '%s'",
-                                 lineno, c));
+                                ("%s:%u: Ignoring duplicate domain '%s'",
+                                 source, lineno, c));
                     break;
                 }
             }
@@ -183,42 +194,44 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn)
                 if (!*err)
                     err = c;
                 CORE_LOGF_X(3, eLOG_Error,
-                            ("Ignoring invalid local IP spec at line %u: '%s'",
-                             lineno, err));
+                            ("%s:%u: Ignoring invalid local IP spec '%s'",
+                             source, lineno, err));
                 continue;
             }
-            if ((over = x_IsOverlappingRange(&local, n)) != 0) {
-                char temp[150];
-                const char* tmp
-                    = strchr(NcbiDumpIPRange(over, temp, sizeof(temp)), ' ');
-                if (!tmp++)
-                    tmp = temp;
+            over = 0;
+            while ((over = x_IsOverlappingRange(over, &local, domain, n)) !=0){
+                char buf[150];
+                const char* s
+                    = strchr(NcbiDumpIPRange(over, buf, sizeof(buf)), ' ');
+                if (!s++)
+                    s = buf;
                 CORE_LOGF_X(4, eLOG_Warning,
-                            ("Local IP spec at line %u, '%s' overlaps with"
-                             " already defined one: %s", lineno, c, tmp));
+                            ("%s:%u: Local IP spec '%s' overlaps with an"
+                             " already defined one: %s", source, lineno, c,s));
             }
         }
         assert(local.type != eIPRange_None);
         if (n >= SizeOf(s_LocalIP)) {
             CORE_LOGF_X(5, eLOG_Error,
-                        ("Too many local IP specs, max %u allowed",
-                         (unsigned int)(n - 2/*localnet*/)));
+                        ("%s:%u: Too many local IP specs, max %u allowed",
+                         source, lineno, (unsigned int)(n - 2/*localnet*/)));
             break;
         }
         s_LocalIP[n++] = local;
     }
-    if (status != eIO_Closed  ||  n < 3)
-        return 0/*false*/;
 
-    if (n < SizeOf(s_LocalIP))
-        s_LocalIP[n].type = eIPRange_None;
-
-    n -= 2;  /* compensate for auto-added localnet(s) */
-    CORE_LOGF(eLOG_Trace, ("Done loading local IP specs, %u line%s, %u entr%s"
-                           " (%u domain%s)", lineno, &"s"[lineno == 1],
-                           (unsigned int) n, n == 1 ? "y" : "ies",
-                           domain, &"s"[domain == 1]));
-    return 1/*true*/;
+    if (status == eIO_Closed  &&  n > 2) {
+        if (n < SizeOf(s_LocalIP))
+            s_LocalIP[n].type = eIPRange_None;
+        n -= 2;  /* compensate for auto-added localnet(s) */
+        CORE_LOGF(eLOG_Trace, ("%s: Done loading local IP specs, %u line%s,"
+                               " %u entr%s (%u domain%s)", source,
+                               lineno, &"s"[lineno == 1],
+                               (unsigned int) n, n == 1 ? "y" : "ies",
+                               domain, &"s"[domain == 1]));
+        return 1/*true*/;
+    }
+    return 0/*false*/;
 }
 
 
@@ -226,10 +239,10 @@ static int/*bool*/ x_LoadLocalIPs(CONNECTOR c, const char* source)
 {
     CONN conn;
     int/*bool*/ loaded = 0/*false*/;
+    CORE_LOGF(eLOG_Trace,
+              ("Loading local IP specs from \"%s\"", source));
     if (c  &&  CONN_Create(c, &conn) == eIO_Success) {
-        CORE_LOGF(eLOG_Trace,
-                  ("Loading local IP specs from \"%s\"", source));
-        loaded = xx_LoadLocalIPs(conn);
+        loaded = xx_LoadLocalIPs(conn, source);
         CONN_Close(conn);
     } else if (c  &&  c->destroy)
         c->destroy(c);
@@ -255,6 +268,7 @@ static void s_LoadLocalIPs(void)
                 file = kFile[n];
             else if (strcasecmp(file, REG_CONN_LOCAL_IPS_DISABLE) == 0)
                 break;
+            errno = 0;
             if (NcbiSys_access(file, R_OK) == 0  &&
                 x_LoadLocalIPs(FILE_CreateConnector(file, 0), file)) {
                 return;
@@ -303,7 +317,7 @@ static void s_LoadLocalIPs(void)
                    "Cannot load local IP specs from " REG_CONN_LOCAL_IPS);
     }
 
-    CORE_LOG(eLOG_Trace, "Using default local IPv4 specs");
+    CORE_LOG(eLOG_Warning, "Using default local IPv4 specs");
     assert(SizeOf(s_LocalIP) > SizeOf(kLocalIP));
     for (n = 0;  n < SizeOf(kLocalIP);  ++n) {
         s_LocalIP[n].type = kLocalIP[n].t;
