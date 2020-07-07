@@ -23,7 +23,6 @@ NCBI_add_subdirectory(
   convert_seq
   discrepancy_report
   dustmasker
-  flat2asn
   formatguess
   gap_stats
   gi2taxid
