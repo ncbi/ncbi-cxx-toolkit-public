@@ -69,22 +69,22 @@ DEFINE_CLASS_STATIC_MUTEX(CRemoteUpdater::m_static_mutex);
 namespace
 {
 
-int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
+TEntrezId FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
 {
     for (auto pPub : arr) {
         if (pPub->IsPmid()) {
-            return ENTREZ_ID_TO(int, pPub->GetPmid().Get());
+            return pPub->GetPmid().Get();
         }
 
     }
-    return 0;
+    return ZERO_ENTREZ_ID;
 }
 
 // the method is not used at the momment
-void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
+void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, TEntrezId id)
 {
     try {
-        CPubMedId req(ENTREZ_ID_FROM(int, id));
+        CPubMedId req(id);
         CRef<CPub> new_pub = mlaClient.AskGetpubpmid(req);
         if (new_pub.NotEmpty())
         {
@@ -95,7 +95,7 @@ void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
 
             arr.clear();
             CRef<CPub> new_pmid(new CPub);
-            new_pmid->SetPmid().Set(ENTREZ_ID_FROM(int, id));
+            new_pmid->SetPmid().Set(id);
             arr.push_back(new_pmid);
             arr.push_back(new_pub);
         }
@@ -347,8 +347,8 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
         if (m_mlaClient.Empty())
             m_mlaClient.Reset(new CMLAClient);
 
-        int id = FindPMID(*m_mlaClient, arr);
-        if (id>0)
+        TEntrezId id = FindPMID(*m_mlaClient, arr);
+        if (id>ZERO_ENTREZ_ID)
         {
             CreatePubPMID(*m_mlaClient, arr, id);
         }
@@ -359,8 +359,8 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
             if ((**item_it).IsArticle())
             try
             {
-                id = m_mlaClient->AskCitmatchpmid(**item_it);
-                if (id>0)
+                id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(**item_it));
+                if (id>ZERO_ENTREZ_ID)
                 {
                     CreatePubPMID(*m_mlaClient, arr, id);
                     break;

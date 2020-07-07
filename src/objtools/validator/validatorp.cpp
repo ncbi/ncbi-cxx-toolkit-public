@@ -2553,7 +2553,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                     if (!found) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
                                  "Citation on feature refers to uid ["
-                                 + NStr::NumericToString(ENTREZ_ID_TO(int, (*cit_it)->GetPmid().Get()))
+                                 + NStr::NumericToString((*cit_it)->GetPmid().Get())
                                  + "] not on a publication in the record",
                                  f->GetOriginalFeature());
                     }

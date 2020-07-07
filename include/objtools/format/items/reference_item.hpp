@@ -157,8 +157,8 @@ public:
     bool              IsSetJournal (void) const { return m_Journal.NotEmpty(); }
     const CCit_jour&  GetJournal   (void) const { return *m_Journal;           }
 
-    int               GetPMID      (void) const { return m_PMID;               }
-    int               GetMUID      (void) const { return m_MUID;               }
+    TEntrezId         GetPMID      (void) const { return m_PMID;               }
+    TEntrezId         GetMUID      (void) const { return m_MUID;               }
     const string&     GetDOI       (void) const { return m_DOI;                }
     const string&     GetPII       (void) const { return m_ELocationPII;       }
     const string&     GetOldPII    (void) const { return m_OldPII;             }
@@ -236,8 +236,8 @@ private:
     CConstRef<CCit_jour>  m_Journal;
     CConstRef<CSeq_loc>   m_Loc;
     CConstRef<CDate>      m_Date;
-    int                   m_PMID;
-    int                   m_MUID;
+    TEntrezId             m_PMID;
+    TEntrezId             m_MUID;
     string                m_DOI;
     string                m_ELocationPII;
     string                m_OldPII;
@@ -259,7 +259,7 @@ inline
 const string& CReferenceItem::GetUniqueStr(void) const
 {
     // supress creation if other identifiers exist.
-    if (m_MUID == 0  &&  m_PMID == 0) {
+    if (m_MUID == ZERO_ENTREZ_ID  &&  m_PMID == ZERO_ENTREZ_ID) {
         x_CreateUniqueStr();
     }
     return m_UniqueStr;

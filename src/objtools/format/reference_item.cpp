@@ -192,7 +192,7 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_s
 
 CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
     CFlatItem(&ctx), m_PubType(ePub_not_set), m_Category(eUnknown),
-    m_PatentId(0), m_PMID(0), m_MUID(0), m_Serial(kMax_Int),
+    m_PatentId(0), m_PMID(ZERO_ENTREZ_ID), m_MUID(ZERO_ENTREZ_ID), m_Serial(kMax_Int),
     m_JustUids(true), m_Elect(false)
 {
     _ASSERT(desc.IsPub());
@@ -215,7 +215,7 @@ CReferenceItem::CReferenceItem
  CBioseqContext& ctx,
  const CSeq_loc* loc) :
     CFlatItem(&ctx), m_PubType(ePub_not_set), m_Category(eUnknown),
-    m_PatentId(0), m_PMID(0), m_MUID(0), m_Serial(kMax_Int),
+    m_PatentId(0), m_PMID(ZERO_ENTREZ_ID), m_MUID(ZERO_ENTREZ_ID), m_Serial(kMax_Int),
     m_JustUids(true), m_Elect(false)
 {
     _ASSERT(feat.GetData().IsPub());
@@ -242,7 +242,7 @@ CReferenceItem::CReferenceItem
 
 CReferenceItem::CReferenceItem(const CSubmit_block& sub, CBioseqContext& ctx) :
     CFlatItem(&ctx), m_PubType(ePub_sub), m_Category(eSubmission),
-    m_PatentId(0), m_PMID(0), m_MUID(0), m_Serial(kMax_Int),
+    m_PatentId(0), m_PMID(ZERO_ENTREZ_ID), m_MUID(ZERO_ENTREZ_ID), m_Serial(kMax_Int),
     m_JustUids(false), m_Elect(false)
 {
     x_SetObject(sub);
@@ -322,12 +322,12 @@ static bool s_ShouldRemoveRef
     }}
 
     // same PMID ( and overlap )
-    if( curr_ref.GetPMID() != 0 && prev_ref.GetPMID() != 0 ) {
+    if( curr_ref.GetPMID() != ZERO_ENTREZ_ID && prev_ref.GetPMID() != ZERO_ENTREZ_ID) {
         return ( curr_ref.GetPMID() == prev_ref.GetPMID() );
     }
         
     // same MUID ( and overlap )
-    if( curr_ref.GetMUID() != 0 && prev_ref.GetMUID() != 0 ) {
+    if( curr_ref.GetMUID() != ZERO_ENTREZ_ID && prev_ref.GetMUID() != ZERO_ENTREZ_ID) {
         return ( curr_ref.GetMUID() == prev_ref.GetMUID() );
     }
 
@@ -383,8 +383,8 @@ static void s_CombineRefs
     }}
 
     // most merging ops are only done if muid or pmid match
-    const bool same_muid = ( curr_ref.GetMUID() != 0 && (prev_ref.GetMUID() == curr_ref.GetMUID()) );
-    const bool same_pmid = ( curr_ref.GetPMID() != 0 && (prev_ref.GetPMID() == curr_ref.GetPMID()) );
+    const bool same_muid = ( curr_ref.GetMUID() != ZERO_ENTREZ_ID && (prev_ref.GetMUID() == curr_ref.GetMUID()) );
+    const bool same_pmid = ( curr_ref.GetPMID() != ZERO_ENTREZ_ID && (prev_ref.GetPMID() == curr_ref.GetPMID()) );
     if( (same_muid || same_pmid) &&
         ( prev_ref.GetRemark() != curr_ref.GetRemark() )  ) 
     {
@@ -597,9 +597,9 @@ bool CReferenceItem::Matches(const CPub& pub) const
 {
     switch (pub.Which()) {
     case CPub::e_Muid:
-        return pub.GetMuid() == ENTREZ_ID_FROM(int, GetMUID());
+        return pub.GetMuid() == GetMUID();
     case CPub::e_Pmid:
-        return pub.GetPmid() == ENTREZ_ID_FROM(int, GetPMID());
+        return pub.GetPmid() == GetPMID();
     case CPub::e_Equiv:
         ITERATE (CPub::TEquiv::Tdata, it, pub.GetEquiv().Get()) {
             if ( Matches(**it) ) {
@@ -612,7 +612,7 @@ bool CReferenceItem::Matches(const CPub& pub) const
         {{
             // you can only compare on unique string if the reference
             // does not have a pmid or muid (example accession: L40362.1)
-            if( GetMUID() == 0 && GetPMID() == 0 ) {
+            if( GetMUID() == ZERO_ENTREZ_ID && GetPMID() == ZERO_ENTREZ_ID) {
                 x_CreateUniqueStr();
                 const string& uniquestr = m_UniqueStr;
 
@@ -755,8 +755,8 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
         break;
 
     case CPub::e_Muid:
-        if (m_MUID == 0) {
-            m_MUID = ENTREZ_ID_TO(int, pub.GetMuid());
+        if (m_MUID == ZERO_ENTREZ_ID) {
+            m_MUID = pub.GetMuid();
             m_Category = ePublished;
         }
         break;
@@ -800,8 +800,8 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
         break;
 
     case CPub::e_Pmid:
-        if (m_PMID == 0) {
-            m_PMID = ENTREZ_ID_TO(int, pub.GetPmid().Get());
+        if (m_PMID == ZERO_ENTREZ_ID) {
+            m_PMID = pub.GetPmid().Get();
             m_Category = ePublished;
         }
         break;
@@ -882,13 +882,13 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
     }
 
     // MUID
-    if (gen.CanGetMuid()  &&  m_MUID == 0) {
-        m_MUID = ENTREZ_ID_TO(int, gen.GetMuid());
+    if (gen.CanGetMuid()  &&  m_MUID == ZERO_ENTREZ_ID) {
+        m_MUID = gen.GetMuid();
     }
     
     // PMID
-    if (gen.CanGetPmid()  &&  m_PMID == 0) {
-        m_PMID = ENTREZ_ID_TO(int, gen.GetPmid().Get());
+    if (gen.CanGetPmid()  &&  m_PMID == ZERO_ENTREZ_ID) {
+        m_PMID = gen.GetPmid().Get();
     }
 }
 
@@ -922,12 +922,12 @@ void CReferenceItem::x_Init(const CMedline_entry& mle, CBioseqContext& ctx)
 {
     m_Category = ePublished;
 
-    if (mle.CanGetUid()  &&  m_MUID == 0) {
-        m_MUID = ENTREZ_ID_TO(int, mle.GetUid());
+    if (mle.CanGetUid()  &&  m_MUID == ZERO_ENTREZ_ID) {
+        m_MUID = mle.GetUid();
     }
 
-    if (mle.CanGetPmid()  &&  m_PMID == 0) {
-        m_PMID = ENTREZ_ID_TO(int, mle.GetPmid().Get());
+    if (mle.CanGetPmid()  &&  m_PMID == ZERO_ENTREZ_ID) {
+        m_PMID = mle.GetPmid().Get();
     }
 
     if (mle.CanGetCit()) {
@@ -1033,13 +1033,13 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
         ITERATE (CArticleIdSet::Tdata, it, art.GetIds().Get()) {
             switch ((*it)->Which()) {
             case CArticleId::e_Pubmed:
-                if (m_PMID == 0) {
-                    m_PMID = ENTREZ_ID_TO(int, (*it)->GetPubmed().Get());
+                if (m_PMID == ZERO_ENTREZ_ID) {
+                    m_PMID = (*it)->GetPubmed().Get();
                 }
                 break;
             case CArticleId::e_Medline:
-                if (m_MUID == 0) {
-                    m_MUID = ENTREZ_ID_TO(int, (*it)->GetMedline().Get());
+                if (m_MUID == ZERO_ENTREZ_ID) {
+                    m_MUID = (*it)->GetMedline().Get();
                 }
                 break;
             case CArticleId::e_Doi:
@@ -1822,20 +1822,20 @@ bool LessThan::operator()
     // after: dates are the same, or both missing.
     
     // distinguish by uids (swap order for RefSeq)
-    if ( ref1->GetPMID() != 0  &&  ref2->GetPMID() != 0  &&
+    if ( ref1->GetPMID() != ZERO_ENTREZ_ID &&  ref2->GetPMID() != ZERO_ENTREZ_ID &&
          !(ref1->GetPMID() == ref2->GetPMID()) ) {
         return m_IsRefSeq ? (ref1->GetPMID() > ref2->GetPMID()) :
             (ref1->GetPMID() < ref2->GetPMID());
     }
-    if ( ref1->GetMUID() != 0  &&  ref2->GetMUID() != 0  &&
+    if ( ref1->GetMUID() != ZERO_ENTREZ_ID &&  ref2->GetMUID() != ZERO_ENTREZ_ID &&
          !(ref1->GetMUID() == ref2->GetMUID()) ) {
         return m_IsRefSeq ? (ref1->GetMUID() > ref2->GetMUID()) :
             (ref1->GetMUID() < ref2->GetMUID());
     }
 
     // just uids goes last
-    if ( (ref1->GetPMID() != 0  &&  ref2->GetPMID() != 0)  ||
-         (ref1->GetMUID() != 0  &&  ref2->GetMUID() != 0) ) {
+    if ( (ref1->GetPMID() != ZERO_ENTREZ_ID &&  ref2->GetPMID() != ZERO_ENTREZ_ID)  ||
+         (ref1->GetMUID() != ZERO_ENTREZ_ID &&  ref2->GetMUID() != ZERO_ENTREZ_ID) ) {
         if ( ref1->IsJustUids()  &&  !ref2->IsJustUids() ) {
             return true;
         } else if ( !ref1->IsJustUids()  &&  ref2->IsJustUids() ) {

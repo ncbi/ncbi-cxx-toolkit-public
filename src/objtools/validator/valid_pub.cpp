@@ -173,7 +173,7 @@ void CValidError_imp::ValidatePubdesc
         */
             
         case CPub::e_Article:
-            ValidatePubArticle(pub.GetArticle(), ENTREZ_ID_TO(int, uid), obj, ctx);
+            ValidatePubArticle(pub.GetArticle(), uid, obj, ctx);
             if (pubdesc.IsSetComment() && !NStr::IsBlank(pubdesc.GetComment())
                 && pub.GetArticle().IsSetFrom() && pub.GetArticle().GetFrom().IsJournal()
                 && pub.GetArticle().GetFrom().GetJournal().IsSetImp()
@@ -318,7 +318,7 @@ static bool IsInpress(const CCit_jour& jour)
 
 void CValidError_imp::ValidatePubArticle
 (const CCit_art& art,
- int uid,
+ TEntrezId uid,
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
@@ -338,12 +338,12 @@ void CValidError_imp::ValidatePubArticle
                 "Journal title missing", obj, ctx);
         }
 
-        if (uid == 0) {
+        if (uid == ZERO_ENTREZ_ID) {
             ValidatePubArticleNoPMID(art, obj, ctx);
         }
 
         if ( !has_iso_jta && !is_electronic_journal  &&
-            (uid > 0 || IsRequireISOJTA() || IsInpress(jour))) {
+            (uid > ZERO_ENTREZ_ID || IsRequireISOJTA() || IsInpress(jour))) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_MissingISOJTA,
                 "ISO journal title abbreviation missing", obj, ctx);
         }

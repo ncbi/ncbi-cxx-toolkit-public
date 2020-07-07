@@ -434,7 +434,7 @@ private:
     bool IsMixedStrands(const CSeq_loc& loc);
 
     void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidatePubArticle(const CCit_art& art, TEntrezId uid, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidatePubArticleNoPMID(const CCit_art& art, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void x_ValidatePages(const string& pages, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj, const CSeq_entry *ctx = 0);

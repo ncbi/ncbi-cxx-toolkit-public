@@ -1035,11 +1035,11 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
                 string value;
                 string pub_id_str;
                 int serial = (*ref_iter)->GetSerial();
-                int pmid = (*ref_iter)->GetPMID();
+                TEntrezId pmid = (*ref_iter)->GetPMID();
                 if (serial) {
                     pub_id_str = NStr::IntToString(serial);
-                } else if (pmid) {
-                    pub_id_str = NStr::IntToString(pmid);
+                } else if (pmid != ZERO_ENTREZ_ID) {
+                    pub_id_str = NStr::NumericToString(pmid);
                 }
                 /*
                 string pub_id_str =
@@ -1047,10 +1047,10 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
                      NStr::IntToString((*ref_iter)->GetSerial()));
                 */
 
-                if(bHtml && pmid) {
+                if(bHtml && pmid != ZERO_ENTREZ_ID) {
                     // create a link
                     value  = "[<a href=\"";
-                    value += strLinkBasePubmed + NStr::IntToString(pmid) + "\">" + pub_id_str + "</a>]";
+                    value += strLinkBasePubmed + NStr::NumericToString(pmid) + "\">" + pub_id_str + "</a>]";
                 } else {
                     value = '[' + pub_id_str + ']';
                 }

@@ -806,8 +806,8 @@ void CGBSeqFormatter::FormatReference
         str.append( s_CloseTag("          ", "GBXref"));
         str.append( s_CloseTag("        ", "GBReference_xref"));
     }
-    if ( ref.GetPMID() != 0 ) {
-        str.append( s_CombineStrings("        ", "GBReference_pubmed", ref.GetPMID()));
+    if ( ref.GetPMID() != ZERO_ENTREZ_ID ) {
+        str.append( s_CombineStrings("        ", "GBReference_pubmed", ENTREZ_ID_TO(int, ref.GetPMID())));
     }
     if ( !ref.GetRemark().empty() ) {
         str.append( s_CombineStrings("        ", "GBReference_remark", ref.GetRemark()));
