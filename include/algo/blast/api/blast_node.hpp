@@ -105,11 +105,14 @@ public :
 	 const CNcbiArguments & GetArguments() { return m_NcbiArgs; }
 	 void SendMsg(CBlastNodeMsg::EMsgType msg_type, void* ptr = NULL);
 	 string & GetNodeIdStr() { return m_NodeIdStr;}
+	 int GetNumOfQueries() {return m_NumOfQueries;}
+	 int GetQueriesLength() {return m_QueriesLength;}
 protected:
    	virtual ~CBlastNode(void);
    	virtual void* Main(void) = 0;
 	void SetState(EState state) { m_State = state; }
 	void SetStatus(int status) { m_Status = status; }
+	void SetQueriesLength(int l) { m_QueriesLength = l;}
 	int m_NodeNum;
 private:
 	const CNcbiArguments & m_NcbiArgs;
@@ -122,14 +125,14 @@ private:
 	CRef<CBlastNodeMailbox> m_Mailbox;
 	EState m_State;
 	int m_Status;
+	int m_QueriesLength;
 };
 
 
 class NCBI_XBLAST_EXPORT CBlastMasterNode
 {
 public:
-	CBlastMasterNode(CNcbiOstream & out_stream, int num_threads):
-		m_OutputStream(out_stream), m_MaxNumThreads(num_threads), m_MaxNumNodes(num_threads + 2) {m_StopWatch.Start();}
+	CBlastMasterNode(CNcbiOstream & out_stream, int num_threads);
 	typedef map<int, CRef<CBlastNodeMailbox> > TPostOffice;
 	typedef map<int, CRef<CBlastNode> > TRegisteredNodes;
 	typedef map<int, double> TActiveNodes;
@@ -149,6 +152,9 @@ public:
 	void FormatResults();
 	CConditionVariable & GetBuzzer() {return m_NewEvent;}
 	~CBlastMasterNode() {}
+	int GetNumOfQueries() { return m_NumQueries; }
+	Int8 GetQueriesLength() { return m_QueriesLength; }
+	int GetNumErrStatus() { return m_NumErrStatus; }
 private:
 	void x_WaitForNewEvent();
 
@@ -162,6 +168,9 @@ private:
 	TActiveNodes m_ActiveNodes;
 	TFormatQueue m_FormatQueue;
 	CConditionVariable m_NewEvent;
+	int m_NumErrStatus;
+	int m_NumQueries;
+	Int8 m_QueriesLength;
 };
 
 

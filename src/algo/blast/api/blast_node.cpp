@@ -59,7 +59,8 @@ CBlastNode::CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CA
                         int query_index, int num_queries, CBlastNodeMailbox * mailbox):
                         m_NodeNum(node_num), m_NcbiArgs(ncbi_args), m_Args(args),
                         m_Bah(bah), m_BlastProgram(blast_program),
-                        m_QueryIndex(query_index), m_NumOfQueries(num_queries)
+                        m_QueryIndex(query_index), m_NumOfQueries(num_queries),
+                        m_QueriesLength(0)
 {
 	if(mailbox != NULL) {
 		m_Mailbox.Reset(mailbox);
@@ -81,6 +82,13 @@ void CBlastNode::SendMsg(CBlastNodeMsg::EMsgType msg_type, void* ptr)
 		CRef<CBlastNodeMsg>  m( new CBlastNodeMsg(msg_type, ptr));
 		m_Mailbox->SendMsg(m);
 	}
+}
+
+CBlastMasterNode::CBlastMasterNode(CNcbiOstream & out_stream, int num_threads):
+		m_OutputStream(out_stream), m_MaxNumThreads(num_threads), m_MaxNumNodes(num_threads + 2),
+		m_NumErrStatus(0), m_NumQueries(0), m_QueriesLength(0)
+{
+	m_StopWatch.Start();
 }
 
 void
@@ -200,11 +208,14 @@ void CBlastMasterNode::FormatResults()
 			}
 		}
 		else if (msg->GetMsgType() == CBlastNodeMsg::eErrorExit) {
+			m_NumErrStatus++;
 			ERR_POST("Chunk # " << node_num << " exit with error (" << n->GetStatus() << ")");
 		}
 		else {
  			NCBI_THROW(CBlastException, eCoreBlastError, "Invalid msg type");
 		}
+		m_NumQueries += n->GetNumOfQueries();
+		m_QueriesLength += n->GetQueriesLength();
 		n->Detach();
 		m_PostOffice.erase(node_num);
 		m_RegisteredNodes.erase(node_num);
