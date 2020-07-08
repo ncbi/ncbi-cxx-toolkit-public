@@ -101,6 +101,7 @@ int CRPSTBlastnApp::Run(void)
 		return x_RunMTBySplitDB();
 	}
 	else {
+		m_UsageReport.AddParam(CBlastUsageReport::eMTMode, args[kArgMTMode].AsInteger());
 		return x_RunMTBySplitQuery();
 	}
 }
