@@ -372,7 +372,7 @@ extern int/*bool*/ NcbiIsLocalIPEx(const TNCBI_IPv6Addr* addr,
             CORE_UNLOCK;
     }
 
-    if (addr) {
+    if (addr  &&  !NcbiIsEmptyIPv6(addr)) {
         SNcbiDomainInfo x_info;
         memset(&x_info, 0, sizeof(x_info));
         for (n = 0;  n < SizeOf(s_LocalIP);  ++n) {

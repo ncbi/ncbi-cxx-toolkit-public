@@ -43,7 +43,7 @@
 extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
                                    const TNCBI_IPv6Addr* addr)
 {
-    if (range  &&  addr) {
+    if (range  &&  addr  &&  !NcbiIsEmptyIPv6(addr)) {
         unsigned int a, b, ip;
 
         if (range->type == eIPRange_Host) {
@@ -74,7 +74,7 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
             a  = NcbiIPv6ToIPv4(&range->a, 0);
             b  =                 range->b;
             ip = NcbiIPv6ToIPv4( addr,     0);
-            assert(a  &&  b  &&  ip);
+            assert(ip  &&  a  &&  b);
             return !((ip & b) ^ a);
         default:
             assert(0);
