@@ -56,6 +56,7 @@ void CBioseqInfoRecord::Reset(void)
     m_SeqState = -1;
     m_State = -1;
     m_TaxId = -1;
+    m_Writetime = -1;
 }
 
 string CBioseqInfoRecord::ToString(void) const

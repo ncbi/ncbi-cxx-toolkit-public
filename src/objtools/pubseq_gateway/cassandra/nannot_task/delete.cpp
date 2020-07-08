@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "delete.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/delete.hpp>
 
 #include <memory>
 #include <string>
@@ -42,6 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -75,21 +76,45 @@ void CCassNAnnotTaskDelete::Wait1()
                 m_QueryArr.resize(1);
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
                 auto query = m_QueryArr[0].query;
-                string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
-                    "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
-                    "IF sat_key = ? AND last_modified = ?";
-                query->SetSQL(sql, 6);
-                query->SetSerialConsistency(CASS_CONSISTENCY_LOCAL_SERIAL);
-                query->BindStr(0, m_Annot->GetAccession());
-                query->BindInt16(1, m_Annot->GetVersion());
-                query->BindInt16(2, m_Annot->GetSeqIdType());
-                query->BindStr(3, m_Annot->GetAnnotName());
-                query->BindInt32(4, m_Annot->GetSatKey());
-                query->BindInt64(5, m_Annot->GetModified());
-
+                query->NewBatch();
+                CNAnnotChangelogWriter().WriteChangelogEvent(
+                    query.get(),
+                    GetKeySpace(),
+                    CNAnnotChangelogRecord(
+                        m_Annot->GetAccession(),
+                        m_Annot->GetAnnotName(),
+                        m_Annot->GetVersion(),
+                        m_Annot->GetSeqIdType(),
+                        m_Annot->GetModified(),
+                        TChangelogOperation::eDeleted
+                    )
+                );
+                query->RunBatch();
                 UpdateLastActivity();
-                query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, false);
-                m_State = eWaitingBioseqNADeleted;
+                m_State = eWaitingChangelogInserted;
+                break;
+            }
+
+            case eWaitingChangelogInserted: {
+                if (CheckReady(m_QueryArr[0])) {
+                    auto query = m_QueryArr[0].query;
+                    query->Close();
+                    string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
+                        "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
+                        "IF sat_key = ? AND last_modified = ?";
+                    query->SetSQL(sql, 6);
+                    query->SetSerialConsistency(CASS_CONSISTENCY_LOCAL_SERIAL);
+                    query->BindStr(0, m_Annot->GetAccession());
+                    query->BindInt16(1, m_Annot->GetVersion());
+                    query->BindInt16(2, m_Annot->GetSeqIdType());
+                    query->BindStr(3, m_Annot->GetAnnotName());
+                    query->BindInt32(4, m_Annot->GetSatKey());
+                    query->BindInt64(5, m_Annot->GetModified());
+
+                    UpdateLastActivity();
+                    query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, false);
+                    m_State = eWaitingBioseqNADeleted;
+                }
                 break;
             }
 

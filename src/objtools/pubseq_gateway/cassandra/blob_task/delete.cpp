@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "delete.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete.hpp>
 
 #include <memory>
 #include <string>

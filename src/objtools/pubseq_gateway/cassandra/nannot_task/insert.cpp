@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "insert.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/insert.hpp>
 
 #include <memory>
 #include <string>
@@ -44,6 +44,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -58,11 +59,12 @@ CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
         TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, blob->GetKey(), true,
-        max_retries, move(data_error_cb)
+        op_timeout_ms, conn, keyspace, blob == nullptr ? annot->GetSatKey() : blob->GetKey(),
+        true, max_retries, move(data_error_cb)
       )
     , m_Blob(blob)
     , m_Annot(annot)
+    , m_UseWritetime(false)
 {}
 
 void CCassNAnnotTaskInsert::Wait1()
@@ -76,16 +78,19 @@ void CCassNAnnotTaskInsert::Wait1()
                 return;
 
             case eInit: {
-                m_BlobInsertTask = unique_ptr<CCassBlobTaskInsertExtended>(
-                     new CCassBlobTaskInsertExtended(
+                if (m_Blob == nullptr) {
+                    b_need_repeat = true;
+                    m_State = eInsertNAnnotInfo;
+                } else {
+                    m_BlobInsertTask = make_unique<CCassBlobTaskInsertExtended>(
                          m_OpTimeoutMs, m_Conn, m_Keyspace,
                          m_Blob, true, m_MaxRetries,
                          [this]
                          (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
                          {this->m_ErrorCb(status, code, severity, message);}
-                     )
-                );
-                m_State = eWaitingBlobInserted;
+                    );
+                    m_State = eWaitingBlobInserted;
+                }
                 break;
             }
 
@@ -110,6 +115,12 @@ void CCassNAnnotTaskInsert::Wait1()
                 string sql = "INSERT INTO " + GetKeySpace() + ".bioseq_na "
                       "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop, annot_info)"
                       "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                if (m_UseWritetime && m_Annot->GetWritetime() > 0) {
+                    sql += " USING TIMESTAMP " + to_string(m_Annot->GetWritetime());
+                }
+
+                qry->NewBatch();
+
                 qry->SetSQL(sql, 9);
                 qry->BindStr(0, m_Annot->GetAccession());
                 qry->BindInt16(1, m_Annot->GetVersion());
@@ -123,6 +134,21 @@ void CCassNAnnotTaskInsert::Wait1()
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                CNAnnotChangelogWriter().WriteChangelogEvent(
+                    qry.get(),
+                    GetKeySpace(),
+                    CNAnnotChangelogRecord(
+                        m_Annot->GetAccession(),
+                        m_Annot->GetAnnotName(),
+                        m_Annot->GetVersion(),
+                        m_Annot->GetSeqIdType(),
+                        m_Annot->GetModified(),
+                        TChangelogOperation::eUpdated
+                    )
+                );
+                qry->RunBatch();
+
                 m_State = eWaitingNAnnotInfoInserted;
                 break;
             }

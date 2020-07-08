@@ -37,7 +37,7 @@
 #include <string>
 #include <utility>
 
-#include "insert_extended.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>

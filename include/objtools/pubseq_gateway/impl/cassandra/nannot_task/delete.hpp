@@ -43,7 +43,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-#include "../blob_task/delete.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -53,6 +53,7 @@ class CCassNAnnotTaskDelete
 {
     enum ENAnnotDeleterState {
         eInit = 0,
+        eWaitingChangelogInserted,
         eWaitingBioseqNADeleted,
         eDeleteBlobRecord,
         eWaitingDeleteBlobRecord,

@@ -34,11 +34,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include "blob_task/insert_extended.hpp"
-#include "blob_task/delete.hpp"
-#include "nannot_task/insert.hpp"
-#include "nannot_task/delete.hpp"
 #include "id2_split_task/insert.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/insert.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/delete.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>

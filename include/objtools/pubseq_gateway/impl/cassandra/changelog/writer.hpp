@@ -36,6 +36,7 @@
 #include <corelib/ncbitime.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/changelog/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/na_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
@@ -46,6 +47,12 @@ class CBlobChangelogWriter {
  public:
     CBlobChangelogWriter() = default;
     void WriteChangelogEvent(CCassQuery* query, string const& keyspace, CBlobChangelogRecord const& record) const;
+};
+
+class CNAnnotChangelogWriter {
+ public:
+    CNAnnotChangelogWriter() = default;
+    void WriteChangelogEvent(CCassQuery* query, string const& keyspace, CNAnnotChangelogRecord const& record) const;
 };
 
 END_IDBLOB_SCOPE

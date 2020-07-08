@@ -43,7 +43,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-#include "../blob_task/insert_extended.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

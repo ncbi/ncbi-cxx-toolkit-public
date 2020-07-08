@@ -43,7 +43,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-#include "../blob_task/insert_extended.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -71,6 +71,11 @@ class CCassNAnnotTaskInsert
         TDataErrorCallback data_error_cb
     );
 
+    void UseWritetime(bool value)
+    {
+        m_UseWritetime = value;
+    }
+
  protected:
     virtual void Wait1(void) override;
 
@@ -78,6 +83,7 @@ class CCassNAnnotTaskInsert
     CBlobRecord * m_Blob;
     CNAnnotRecord * m_Annot;
     unique_ptr<CCassBlobTaskInsertExtended> m_BlobInsertTask;
+    bool m_UseWritetime;
 };
 
 END_IDBLOB_SCOPE
