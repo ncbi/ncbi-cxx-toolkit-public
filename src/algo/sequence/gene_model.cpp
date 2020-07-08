@@ -2373,7 +2373,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
         CSeqVector vec(*mapped_loc, *m_scope);
         TSeqPos start_gap = 0;
         for (; vec.IsInGap(start_gap); ++start_gap);
-        if (start_gap > 0) {
+        if (start_gap > 0 && start_gap < vec.size()) {
             offset += start_gap;
 
             CSeq_loc orig_mapped_loc;
@@ -2407,7 +2407,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
         }
         TSeqPos end_gap = 0;
         for (; vec.IsInGap(vec.size() - 1 - end_gap); ++end_gap);
-        if (end_gap > 0) {
+        if (end_gap > 0 && end_gap < vec.size()) {
             CSeq_loc orig_mapped_loc;
 
             bool no_utr = mapped_loc->GetStop(eExtreme_Biological) == loc->GetStop(eExtreme_Biological);
