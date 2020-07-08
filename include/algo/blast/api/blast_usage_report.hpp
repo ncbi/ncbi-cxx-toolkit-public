@@ -73,7 +73,11 @@ public:
 		eIPGList,
 		eNegIPGList,
 		eCompBasedStats,
-		eMTMode
+		eMTMode,
+		eNumQueryBatches,
+		eNumErrStatus,
+		ePSSMInput,
+		eConverged
 	};
 	CBlastUsageReport();
 	~CBlastUsageReport();
