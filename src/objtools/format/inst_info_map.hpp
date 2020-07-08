@@ -49,6 +49,7 @@ public:
             bool          prependCollection,
             int           pad_to,
             const string *pad_with,
+            const string *trim,
             const string *prefix,
             const string *suffix,
             const char   *inst_full_name ): 
@@ -57,6 +58,7 @@ public:
             m_PrependCollection(prependCollection),
             m_PadTo(pad_to),
             m_PadWith(pad_with),
+            m_Trim(trim),
             m_Prefix(prefix),
             m_Suffix(suffix),
             m_InstFullName(inst_full_name) { }
@@ -66,6 +68,7 @@ public:
         bool          m_PrependCollection;
         int           m_PadTo;
         const string *m_PadWith;
+        const string *m_Trim;
         const string *m_Prefix;
         const string *m_Suffix;
         const char   *m_InstFullName;

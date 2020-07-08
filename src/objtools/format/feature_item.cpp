@@ -6069,6 +6069,13 @@ static string s_GetSpecimenVoucherText(
         if( voucher_info_ref->m_Prefix != NULL ) {
             text << *voucher_info_ref->m_Prefix;
         }
+        if( voucher_info_ref->m_Trim != NULL ) {
+            const string& trim = *voucher_info_ref->m_Trim;
+            if (NStr::StartsWith(id, trim)) {
+                NStr::TrimPrefixInPlace(id, trim);
+                NStr::TruncateSpacesInPlace(id);
+            }
+        }
         if( voucher_info_ref->m_PadTo > 0 && voucher_info_ref->m_PadWith != NULL) {
             int len_id = id.length();
             int len_pad = voucher_info_ref->m_PadWith->length();
