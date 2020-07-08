@@ -762,8 +762,8 @@ extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED SOCK URL_Connect
  * the "pattern") to it.  If "n_discarded" is not NULL then "*n_discarded"
  * will get the number of actually stripped bytes.  If there was some excess
  * read, push it back to the original source (and not count as discarded).
- * NOTE:  If "pattern_size" == 0, then "pattern" is ignored (and assumed to be
- * NULL), and the stripping continues until EOF;  if "pattern" is NULL and
+ * NOTE:  If "pattern_size" == 0, then "pattern" is ignored (and is assumed to
+ * be NULL), and the stripping continues until EOF;  if "pattern" is NULL and
  * "pattern_size" is not 0, then exactly "pattern_size" bytes will have
  * attempted to be stripped (unless an I/O error occurs prematurely).
  *
