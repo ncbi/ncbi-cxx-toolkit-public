@@ -2205,6 +2205,9 @@ same id type" } },
    { eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
    { "CDSdoesNotMatchVDJC",
      "The CDS does not have a parent VDJ or C segment" } },
+   { eErr_SEQ_FEAT_GeneOnNucPositionOfPeptide,
+   { "GeneOnNucPositionOfPeptide",
+     "Peptide under CDS matches small Gene" } },
 
 /* SEQ_ALIGN */
 
