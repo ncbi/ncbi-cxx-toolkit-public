@@ -949,4 +949,34 @@ void LogQueryInfo(CBlastUsageReport & report, const CBlastInput & q_info)
 }
 
 
+void LogRPSBlastOptions(blast::CBlastUsageReport & report, const CBlastOptions & opt)
+{
+	report.AddParam(CBlastUsageReport::eProgram, Blast_ProgramNameFromType(opt.GetProgramType()));
+	report.AddParam(CBlastUsageReport::eEvalueThreshold, opt.GetEvalueThreshold());
+	report.AddParam(CBlastUsageReport::eHitListSize, opt.GetHitlistSize());
+    report.AddParam(CBlastUsageReport::eCompBasedStats, opt.GetCompositionBasedStats());
+}
+
+void LogRPSCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & args)
+{
+	if (args.GetBlastDatabaseArgs().NotEmpty() &&
+		args.GetBlastDatabaseArgs()->GetSearchDatabase().NotEmpty() &&
+		args.GetBlastDatabaseArgs()->GetSearchDatabase()->GetSeqDb().NotEmpty()) {
+
+		CRef<CSeqDB> db = args.GetBlastDatabaseArgs()->GetSearchDatabase()->GetSeqDb();
+		string db_name = db->GetDBNameList();
+		int off = db_name.find_last_of(CFile::GetPathSeparator());
+	    if (off != -1) {
+	    	db_name.erase(0, off+1);
+		}
+		report.AddParam(CBlastUsageReport::eDBName, db_name);
+		report.AddParam(CBlastUsageReport::eDBLength, (Int8) db->GetTotalLength());
+		report.AddParam(CBlastUsageReport::eDBNumSeqs, db->GetNumSeqs());
+		report.AddParam(CBlastUsageReport::eDBDate, db->GetDate());
+	}
+
+	if(args.GetFormattingArgs().NotEmpty()){
+		report.AddParam(CBlastUsageReport::eOutputFmt, args.GetFormattingArgs()->GetFormattedOutputChoice());
+	}
+}
 END_NCBI_SCOPE

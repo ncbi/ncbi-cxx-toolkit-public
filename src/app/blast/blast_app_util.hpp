@@ -315,6 +315,10 @@ void QueryBatchCleanup();
 
 void LogQueryInfo(blast::CBlastUsageReport & report, const blast::CBlastInput & q_info);
 
+/// Log blast usage opts for rpsblast apps
+void LogRPSBlastOptions(blast::CBlastUsageReport & report, const blast::CBlastOptions & opt);
+void LogRPSCmdOptions(blast::CBlastUsageReport & report, const blast::CBlastAppArgs & args);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

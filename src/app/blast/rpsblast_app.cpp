@@ -58,6 +58,13 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        }
+    }
+    ~CRPSBlastApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 private:
     /** @inheritDoc */
@@ -70,6 +77,8 @@ private:
 
     /// This application's command line args
     CRef<CRPSBlastAppArgs> m_CmdLineArgs;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 void CRPSBlastApp::Init()
@@ -91,6 +100,7 @@ int CRPSBlastApp::Run(void)
 		return x_RunMTBySplitDB();
 	}
 	else {
+		m_UsageReport.AddParam(CBlastUsageReport::eMTMode, args[kArgMTMode].AsInteger());
 		return x_RunMTBySplitQuery();
 	}
 }
@@ -220,11 +230,15 @@ int CRPSBlastApp::x_RunMTBySplitDB(void)
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
+        LogQueryInfo(m_UsageReport, input);
+        formatter.LogBlastSearchInfo(m_UsageReport);
     } CATCH_ALL(status)
     if(!bah.GetMessages().empty()) {
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, bah.GetMessages());
     }
+	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 
@@ -263,6 +277,8 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
 		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
    		int chunk_num = 0;
 
+   		LogRPSBlastOptions(m_UsageReport, opts_hndl->GetOptions());
+   		LogRPSCmdOptions(m_UsageReport, *m_CmdLineArgs);
    		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 360);
 		while (master_node.Processing()) {
 			if (!input.AtEOF()) {
@@ -280,6 +296,10 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
 			}
 			else {
 				master_node.Shutdown();
+				m_UsageReport.AddParam(CBlastUsageReport::eNumQueries, master_node.GetNumOfQueries());
+				m_UsageReport.AddParam(CBlastUsageReport::eTotalQueryLength, master_node.GetQueriesLength());
+				m_UsageReport.AddParam(CBlastUsageReport::eNumErrStatus, master_node.GetNumErrStatus());
+				m_UsageReport.AddParam(CBlastUsageReport::eNumQueryBatches, chunk_num);
 			}
     	}
 
@@ -289,6 +309,8 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, bah.GetMessages());
     }
+	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 
 }
