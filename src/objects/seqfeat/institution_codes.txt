@@ -432,7 +432,7 @@ BCCM/IHEM	c	Belgian Coordinated Collections of Microorganisms / IHEM Fungi colle
 BCCM/ITM	c	Belgian Coordinated Collections of Microorganisms / ITM Mycobacteria Collection	ITM		
 BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
 BCCM/MUCL	c	Belgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
-BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	ULC	http://bccm.belspo.be/catalogues/ulc-strain-details?ACCESSION_NUMBER=	
+BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	ULC	https://bccm.belspo.be/catalogues/bm-details?accession_number=	
 BCCN	c	Brucella Culture Collection			
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo			
 BCF	s	Universitat de Barcelona, Laboratori de Botanica			
@@ -1790,6 +1790,7 @@ ECH	s	Elmira College
 ECK	s	Buffalo State College			
 ECM	s	Hubei College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
 ECNB	s	Escuela Nacional Ciencias			
+ECNU	s	Museum of Biology, East China Normal University, School of Life Sciences			
 ECOCHM	s	Coleccion de Mamiferos del Museo de Zoologia-ECOSUR			
 ECOL	s	Collection du Laborataire d'Ecologie			
 ECOMAR<FRA>	s	ECOMAR lab University of Reunion			
