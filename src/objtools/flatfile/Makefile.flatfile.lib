@@ -41,3 +41,7 @@ SRC     = \
     ftamed
 
 LIB     = xflatfile
+
+ASN_DEP = genome_collection mla submit taxon1
+
+WATCHERS = kachalos
