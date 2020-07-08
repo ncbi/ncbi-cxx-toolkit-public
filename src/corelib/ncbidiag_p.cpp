@@ -311,10 +311,12 @@ void CDiagFilter::Clean(void)
 void CDiagFilter::Fill(const char* filter_string)
 {
     try {
+        m_Filter.clear();
         CDiagSyntaxParser parser;
         CNcbiIstrstream in(filter_string);
 
         parser.Parse(in, *this);
+        m_Filter = filter_string;
     }
     catch (const CDiagSyntaxParser::TErrorInfo& err_info) {
         CNcbiOstrstream message;
@@ -325,6 +327,13 @@ void CDiagFilter::Fill(const char* filter_string)
                    CNcbiOstrstreamToString(message));
     }
 }
+
+void CDiagFilter::Append(const char* filter_string)
+{
+    string new_filter = m_Filter + " " + filter_string;
+    Fill(new_filter.c_str());
+}
+
 
 EDiagFilterAction CDiagFilter::Check(const CNcbiDiag&  msg,
                                      const CException* ex) const
@@ -642,7 +651,9 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
             if ( !isspace((unsigned char) symbol) ) {
                 if ( symbol == '[' ||
                      symbol == '(' ||
-                    (symbol == '!' && CT_TO_CHAR_TYPE(in.peek()) == '(')) {
+                     symbol == '/' ||
+                    (symbol == '!' && CT_TO_CHAR_TYPE(in.peek()) == '(') ||
+                    (symbol == '!' && CT_TO_CHAR_TYPE(in.peek()) == '/')) {
                     in.putback( symbol );
                     --m_Pos;
                     state = eStart;

@@ -2570,6 +2570,25 @@ enum EDiagFilter {
 NCBI_XNCBI_EXPORT
 extern void SetDiagFilter(EDiagFilter what, const char* filter_str);
 
+/// Get current diagnostic filter
+///
+/// @param what
+///    Filter is set for, only eDiagFilter_Trace and eDiagFilter_Post values are allowed,
+///    otherwise the function returns empty string.
+/// @sa SetDiagFilter
+NCBI_XNCBI_EXPORT
+extern string GetDiagFilter(EDiagFilter what);
+
+/// Append diagnostic filter
+///
+/// @param what
+///    Filter is set for
+/// @param filter_str
+///    Filter string
+/// @sa SetDiagFilter
+NCBI_XNCBI_EXPORT
+extern void AppendDiagFilter(EDiagFilter what, const char* filter_str);
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///

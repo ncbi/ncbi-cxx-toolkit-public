@@ -260,6 +260,10 @@ public:
     /// Print state
     void Print(ostream& out) const;
 
+    const string& GetFilterStr(void) const { return m_Filter; }
+
+    void Append(const char* filter_string);
+
 private:
     /// Check if the filter accepts errcode
     EDiagFilterAction x_CheckErrCode(int code, int subcode, EDiagSev sev) const;
@@ -296,6 +300,7 @@ private:
 
 private:
     typedef deque< AutoPtr<CDiagMatcher> >  TMatchers;
+    string m_Filter;
     TMatchers m_Matchers;
     size_t    m_NotMatchersNum;
 };

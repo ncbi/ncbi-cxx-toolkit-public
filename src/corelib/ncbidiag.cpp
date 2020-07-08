@@ -7507,6 +7507,30 @@ extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
 }
 
 
+extern string GetDiagFilter(EDiagFilter what)
+{
+    CDiagLock lock(CDiagLock::eWrite);
+    if (what == eDiagFilter_Trace)
+        return s_TraceFilter->GetFilterStr();
+
+    if (what == eDiagFilter_Post)
+        return s_PostFilter->GetFilterStr();
+
+    return kEmptyStr;
+}
+
+
+extern void AppendDiagFilter(EDiagFilter what, const char* filter_str)
+{
+    CDiagLock lock(CDiagLock::eWrite);
+    if (what == eDiagFilter_Trace || what == eDiagFilter_All)
+        s_TraceFilter->Append(filter_str);
+
+    if (what == eDiagFilter_Post || what == eDiagFilter_All)
+        s_PostFilter->Append(filter_str);
+}
+
+
 
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
