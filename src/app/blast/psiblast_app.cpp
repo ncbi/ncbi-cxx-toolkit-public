@@ -377,6 +377,7 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
         retval = x_RunLocalPsiBlastIterations(query, pssm, scope, db_adapter,
                                               opts_hndl, formatter, kNumIterations);
     }
+   	m_UsageReport.AddParam(CBlastUsageReport::eConverged, retval);
     return retval;
 }
 
@@ -468,6 +469,7 @@ int CPsiBlastApp::Run(void)
             _TRACE("PSI-BLAST running with FASTA input");
         } else {
             _TRACE("PSI-BLAST running with PSSM input");
+        	m_UsageReport.AddParam(CBlastUsageReport::ePSSMInput, true);
         } 
 
         /*** Get the formatting options ***/
