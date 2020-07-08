@@ -13,7 +13,7 @@ LIB_ = w_hit_matrix gui_glmesa w_gl w_data w_wx gui_objutils gbproj \
        gencoll_client sqlitewrapp gui_utils snputil ximage \
        entrez2cli entrez2 eutils_client \
        valerr biotree entrezgene xconnserv xqueryparse $(EUTILS_LIBS) xmlwrapp \
-       test_boost $(BLAST_LIBS) $(OBJMGR_LIBS)
+       test_boost $(BLAST_LIBS) $(OBJMGR_LIBS) xid_mapper
 
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(OSMESA_LIBS) $(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(GLEW_LIBS) \
