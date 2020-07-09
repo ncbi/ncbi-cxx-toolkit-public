@@ -75,9 +75,8 @@ private:
     map<unsigned, string> m_Data;
 };
 
-SSocketAddress::SSocketAddress(const string& n, unsigned short p) :
-    host(SSocketAddressImpl::GetInstance().GetHost(n)),
-    port(p)
+SSocketAddress::SHost::SHost(const string& h) :
+    host(SSocketAddressImpl::GetInstance().GetHost(h))
 {
 }
 
@@ -91,7 +90,7 @@ SSocketAddress SSocketAddress::Parse(const string& address)
     string host, port;
 
     if (NStr::SplitInTwo(address, ":", host, port)) {
-        return { move(host), NStr::StringToNumeric<unsigned short>(port) };
+        return { host, port };
     }
 
     return { 0, 0 };

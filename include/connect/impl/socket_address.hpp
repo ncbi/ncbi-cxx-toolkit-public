@@ -47,8 +47,22 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     unsigned host;
     unsigned short port;
 
-    SSocketAddress(unsigned h, unsigned short p) : host(h), port(p) {}
-    SSocketAddress(const string& n, unsigned short p);
+    struct NCBI_XCONNECT_EXPORT SHost
+    {
+        unsigned host;
+        SHost(unsigned h) : host(h) {}
+        SHost(const string& h);
+    };
+
+    struct SPort
+    {
+        unsigned short port;
+        SPort(unsigned short p) : port(p) {}
+        SPort(const string& p)  : port(NStr::StringToNumeric<unsigned short>(p)) {}
+        SPort(CTempString p)    : port(NStr::StringToNumeric<unsigned short>(p)) {}
+    };
+
+    SSocketAddress(SHost h, SPort p) : host(h.host), port(p.port) {}
 
     explicit operator bool() const { return host && port; }
     string GetHostName() const;
