@@ -73,11 +73,16 @@ public:
 		eIPGList,
 		eNegIPGList,
 		eCompBasedStats,
+		eRange,
 		eMTMode,
 		eNumQueryBatches,
 		eNumErrStatus,
 		ePSSMInput,
-		eConverged
+		eConverged,
+		eDBInfo,
+		eDBTaxInfo,
+		eDBEntry,
+		eDBDumpAll
 	};
 	CBlastUsageReport();
 	~CBlastUsageReport();

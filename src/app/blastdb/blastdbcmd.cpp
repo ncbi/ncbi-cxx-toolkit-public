@@ -64,6 +64,14 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, "blastdbcmd");
+        }
+    }
+    ~CBlastDBCmdApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 private:
     /** @inheritDoc */
@@ -87,6 +95,9 @@ private:
     CBlastDB_FormatterConfig m_Config;
 
     set<TTaxId> m_TaxIdList;
+
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 
     /// Initializes Blast DB
     void x_InitBlastDB();
@@ -129,7 +140,10 @@ private:
     void x_PrintBlastDatabaseTaxInformation();
 
     int x_ProcessBatchPig(CBlastDB_Formatter & fmt);
+
+    void x_AddCmdOptions();
 };
+
 
 string s_PreProcessAccessionsForDBv5(const string & id)
 {
@@ -161,6 +175,7 @@ string s_PreProcessAccessionsForDBv5(const string & id)
 	return NStr::ToUpper(rv);
 
 }
+
 
 bool
 CBlastDBCmdApp::x_GetOids(const string & id, vector<int> & oids)
@@ -1127,11 +1142,54 @@ int CBlastDBCmdApp::Run(void)
         	x_InitBlastDB();
        		status = x_ProcessSearchRequest();
         }
+    	x_AddCmdOptions();
 
     } CATCH_ALL(status)
 
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
+
+void CBlastDBCmdApp::x_AddCmdOptions()
+{
+	const CArgs & args = GetArgs();
+    if (args["info"]) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBInfo, true);
+    }
+    else if (args["tax_info"]) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTaxInfo, true);
+    }
+    else if(args[kArgTaxIdList].HasValue() || args[kArgTaxIdListFile].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eTaxIdList, true);
+	}
+    else if(args["ipg"].HasValue() || args["ipg_batch"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eIPGList, true);
+    }
+    else if(args["entry"].HasValue() || args["entry_batch"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBEntry, true);
+    	 if (args["entry"].HasValue() && args["entry"].AsString() == "all") {
+    	 	m_UsageReport.AddParam(CBlastUsageReport::eDBDumpAll, true);
+    	}
+		else {
+    	 	m_UsageReport.AddParam(CBlastUsageReport::eDBEntry, true);
+		}
+    }
+    if(args["outfmt"].HasValue()) {
+    	m_UsageReport.AddParam(CBlastUsageReport::eOutputFmt, args["outfmt"].AsString());
+    }
+
+
+	string db_name = m_BlastDb->GetDBNameList();
+	int off = db_name.find_last_of(CFile::GetPathSeparator());
+    if (off != -1) {
+    	db_name.erase(0, off+1);
+	}
+	m_UsageReport.AddParam(CBlastUsageReport::eDBName, db_name);
+	m_UsageReport.AddParam(CBlastUsageReport::eDBLength, (Int8) m_BlastDb->GetTotalLength());
+	m_UsageReport.AddParam(CBlastUsageReport::eDBNumSeqs, m_BlastDb->GetNumSeqs());
+	m_UsageReport.AddParam(CBlastUsageReport::eDBDate, m_BlastDb->GetDate());
+}
+
 
 
 #ifndef SKIP_DOXYGEN_PROCESSING

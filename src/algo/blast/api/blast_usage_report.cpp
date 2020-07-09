@@ -88,11 +88,16 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
     	case eIPGList:			retval.assign("ipglist"); break;
     	case eNegIPGList:		retval.assign("negative_ipglist"); break;
     	case eCompBasedStats:	retval.assign("comp_based_stats"); break;
+    	case eRange:			retval.assign("range"); break;
     	case eMTMode:			retval.assign("mt_mode"); break;
     	case eNumQueryBatches:	retval.assign("num_query_batches"); break;
     	case eNumErrStatus:		retval.assign("num_error_status"); break;
     	case ePSSMInput:		retval.assign("pssm_input"); break;
     	case eConverged:	    retval.assign("converged"); break;
+    	case eDBInfo:			retval.assign("db_info"); break;
+		case eDBTaxInfo:		retval.assign("db_tax_info"); break;
+		case eDBEntry:			retval.assign("db_entry"); break;
+		case eDBDumpAll:		retval.assign("db_entry_all"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();
