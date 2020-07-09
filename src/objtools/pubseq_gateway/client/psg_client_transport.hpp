@@ -418,9 +418,9 @@ private:
 };
 
 template <typename THandle>
-struct SPSG_UvHandle : protected THandle
+struct SUv_Handle : protected THandle
 {
-    SPSG_UvHandle(uv_close_cb cb = nullptr) : m_Cb(cb) {}
+    SUv_Handle(uv_close_cb cb = nullptr) : m_Cb(cb) {}
 
     void Close()
     {
@@ -431,9 +431,9 @@ private:
     uv_close_cb m_Cb;
 };
 
-struct SPSG_UvWrite
+struct SUv_Write
 {
-    SPSG_UvWrite(void* user_data, size_t buf_size);
+    SUv_Write(void* user_data, size_t buf_size);
 
     vector<char>& GetBuffer() { _ASSERT(m_CurrentBuffer); return m_CurrentBuffer->data; }
     int Write(uv_stream_t* handle, uv_write_cb cb);
@@ -456,9 +456,9 @@ private:
     SBuffer* m_CurrentBuffer = nullptr;
 };
 
-struct SPSG_UvConnect
+struct SUv_Connect
 {
-    SPSG_UvConnect(void* user_data, const SSocketAddress& address);
+    SUv_Connect(void* user_data, const SSocketAddress& address);
 
     int operator()(uv_tcp_t* handle, uv_connect_cb cb);
 
@@ -467,13 +467,13 @@ private:
     uv_connect_t m_Request;
 };
 
-struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
+struct SUv_Tcp : SUv_Handle<uv_tcp_t>
 {
     using TConnectCb = function<void(int)>;
     using TReadCb = function<void(const char*, ssize_t)>;
     using TWriteCb = function<void(int)>;
 
-    SPSG_UvTcp(uv_loop_t *loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
+    SUv_Tcp(uv_loop_t *loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
             TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
 
     int Write();
@@ -496,29 +496,29 @@ private:
     void OnClose(uv_handle_t*);
 
     template <class THandle, class ...TArgs1, class ...TArgs2>
-    static void OnCallback(void (SPSG_UvTcp::*member)(THandle*, TArgs1...), THandle* handle, TArgs2&&... args)
+    static void OnCallback(void (SUv_Tcp::*member)(THandle*, TArgs1...), THandle* handle, TArgs2&&... args)
     {
-        auto that = static_cast<SPSG_UvTcp*>(handle->data);
+        auto that = static_cast<SUv_Tcp*>(handle->data);
         (that->*member)(handle, forward<TArgs2>(args)...);
     }
 
-    static void s_OnAlloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) { OnCallback(&SPSG_UvTcp::OnAlloc, handle, suggested_size, buf); }
-    static void s_OnRead(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) { OnCallback(&SPSG_UvTcp::OnRead, stream, nread, buf); }
-    static void s_OnWrite(uv_write_t* req, int status) { OnCallback(&SPSG_UvTcp::OnWrite, req, status); }
-    static void s_OnConnect(uv_connect_t* req, int status) { OnCallback(&SPSG_UvTcp::OnConnect, req, status); }
-    static void s_OnClose(uv_handle_t* handle) { OnCallback(&SPSG_UvTcp::OnClose, handle); }
+    static void s_OnAlloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) { OnCallback(&SUv_Tcp::OnAlloc, handle, suggested_size, buf); }
+    static void s_OnRead(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) { OnCallback(&SUv_Tcp::OnRead, stream, nread, buf); }
+    static void s_OnWrite(uv_write_t* req, int status) { OnCallback(&SUv_Tcp::OnWrite, req, status); }
+    static void s_OnConnect(uv_connect_t* req, int status) { OnCallback(&SUv_Tcp::OnConnect, req, status); }
+    static void s_OnClose(uv_handle_t* handle) { OnCallback(&SUv_Tcp::OnClose, handle); }
 
     uv_loop_t* m_Loop;
     EState m_State = eClosed;
     vector<char> m_ReadBuffer;
-    SPSG_UvConnect m_Connect;
-    SPSG_UvWrite m_Write;
+    SUv_Connect m_Connect;
+    SUv_Write m_Write;
     TConnectCb m_ConnectCb;
     TReadCb m_ReadCb;
     TWriteCb m_WriteCb;
 };
 
-struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
+struct SUv_Async : SUv_Handle<uv_async_t>
 {
     void Init(void* d, uv_loop_t* l, uv_async_cb cb)
     {
@@ -537,9 +537,9 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
     }
 };
 
-struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
+struct SUv_Timer : SUv_Handle<uv_timer_t>
 {
-    SPSG_UvTimer(void* d, uv_timer_cb cb, uint64_t t, uint64_t r) :
+    SUv_Timer(void* d, uv_timer_cb cb, uint64_t t, uint64_t r) :
         m_Cb(cb),
         m_Timeout(t),
         m_Repeat(r)
@@ -567,7 +567,7 @@ struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
             ERR_POST("uv_timer_stop failed " << uv_strerror(rc));
         }
 
-        SPSG_UvHandle<uv_timer_t>::Close();
+        SUv_Handle<uv_timer_t>::Close();
     }
 
 private:
@@ -576,9 +576,9 @@ private:
     const uint64_t m_Repeat;
 };
 
-struct SPSG_UvBarrier
+struct SUv_Barrier
 {
-    SPSG_UvBarrier(unsigned count)
+    SUv_Barrier(unsigned count)
     {
         if (auto rc = uv_barrier_init(&m_Barrier, count)) {
             ERR_POST(Fatal << "uv_barrier_init failed " << uv_strerror(rc));
@@ -600,9 +600,9 @@ private:
     uv_barrier_t m_Barrier;
 };
 
-struct SPSG_UvLoop : uv_loop_t
+struct SUv_Loop : uv_loop_t
 {
-    SPSG_UvLoop()
+    SUv_Loop()
     {
         if (auto rc = uv_loop_init(this)) {
             ERR_POST(Fatal << "uv_loop_init failed " << uv_strerror(rc));
@@ -616,7 +616,7 @@ struct SPSG_UvLoop : uv_loop_t
         }
     }
 
-    ~SPSG_UvLoop()
+    ~SUv_Loop()
     {
         if (auto rc = uv_loop_close(this)) {
             ERR_POST("uv_loop_close failed " << uv_strerror(rc));
@@ -687,7 +687,7 @@ private:
     unsigned m_Seconds = 0;
 };
 
-struct SPSG_AsyncQueue : SPSG_UvAsync
+struct SPSG_AsyncQueue : SUv_Async
 {
     using TRequest = shared_ptr<SPSG_Request>;
 
@@ -706,7 +706,7 @@ struct SPSG_AsyncQueue : SPSG_UvAsync
         }
     }
 
-    using SPSG_UvAsync::Signal;
+    using SUv_Async::Signal;
 
 private:
     CMPMCQueue<TRequest> m_Queue;
@@ -789,8 +789,8 @@ private:
     const SSocketAddress& m_Address;
     SPSG_ThreadSafe<SStats> m_Stats;
     atomic<EThrottling> m_Active;
-    SPSG_UvTimer m_Timer;
-    SPSG_UvAsync m_Signal;
+    SUv_Timer m_Timer;
+    SUv_Async m_Signal;
 };
 
 struct SPSG_Server
@@ -901,7 +901,7 @@ private:
 
     const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_AsyncQueue& m_Queue;
-    SPSG_UvTcp m_Tcp;
+    SUv_Tcp m_Tcp;
     SPSG_NgHttp2Session m_Session;
 
     TRequests m_Requests;
@@ -911,7 +911,7 @@ template <class TImpl>
 struct SPSG_Thread : public TImpl
 {
     template <class... TArgs>
-    SPSG_Thread(SPSG_UvBarrier& barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
+    SPSG_Thread(SUv_Barrier& barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
         TImpl(forward<TArgs>(args)...),
         m_Timer(this, s_OnTimer, timeout, repeat),
         m_Thread(s_Execute, this, ref(barrier))
@@ -940,9 +940,9 @@ private:
         io->TImpl::OnTimer(handle);
     }
 
-    static void s_Execute(SPSG_Thread* io, SPSG_UvBarrier& barrier)
+    static void s_Execute(SPSG_Thread* io, SUv_Barrier& barrier)
     {
-        SPSG_UvLoop loop;
+        SUv_Loop loop;
 
         io->TImpl::OnExecute(loop);
         io->m_Shutdown.Init(io, &loop, s_OnShutdown);
@@ -956,8 +956,8 @@ private:
         io->TImpl::AfterExecute();
     }
 
-    SPSG_UvAsync m_Shutdown;
-    SPSG_UvTimer m_Timer;
+    SUv_Async m_Shutdown;
+    SUv_Timer m_Timer;
     thread m_Thread;
 };
 
@@ -1060,7 +1060,7 @@ struct SPSG_IoCoordinator
     const string& GetClientId() const { return m_ClientId; }
 
 private:
-    SPSG_UvBarrier m_Barrier;
+    SUv_Barrier m_Barrier;
     SPSG_IoImpl::TSpaceCV m_Space;
     SPSG_Servers::TTS m_Servers;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;

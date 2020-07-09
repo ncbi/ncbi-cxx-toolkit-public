@@ -482,7 +482,7 @@ void SPSG_Request::Add()
 }
 
 
-SPSG_UvWrite::SPSG_UvWrite(void* user_data, size_t buf_size) :
+SUv_Write::SUv_Write(void* user_data, size_t buf_size) :
     m_UserData(user_data),
     m_BufSize(buf_size)
 {
@@ -490,7 +490,7 @@ SPSG_UvWrite::SPSG_UvWrite(void* user_data, size_t buf_size) :
     PSG_UV_WRITE_TRACE(this << " created");
 }
 
-int SPSG_UvWrite::Write(uv_stream_t* handle, uv_write_cb cb)
+int SUv_Write::Write(uv_stream_t* handle, uv_write_cb cb)
 {
     _ASSERT(m_CurrentBuffer);
     auto& request     = m_CurrentBuffer->request;
@@ -555,7 +555,7 @@ int SPSG_UvWrite::Write(uv_stream_t* handle, uv_write_cb cb)
     return 0;
 }
 
-void SPSG_UvWrite::OnWrite(uv_write_t* req)
+void SUv_Write::OnWrite(uv_write_t* req)
 {
     for (auto& buffer : m_Buffers) {
         if (&buffer.request == req) {
@@ -572,7 +572,7 @@ void SPSG_UvWrite::OnWrite(uv_write_t* req)
     _TROUBLE;
 }
 
-void SPSG_UvWrite::Reset()
+void SUv_Write::Reset()
 {
     PSG_UV_WRITE_TRACE(this << " reset");
 
@@ -582,7 +582,7 @@ void SPSG_UvWrite::Reset()
     }
 }
 
-void SPSG_UvWrite::NewBuffer()
+void SUv_Write::NewBuffer()
 {
     m_Buffers.emplace_front();
     m_CurrentBuffer = &m_Buffers.front();
@@ -593,7 +593,7 @@ void SPSG_UvWrite::NewBuffer()
 }
 
 
-SPSG_UvConnect::SPSG_UvConnect(void* user_data, const SSocketAddress& address)
+SUv_Connect::SUv_Connect(void* user_data, const SSocketAddress& address)
 {
     m_Request.data = user_data;
 
@@ -605,15 +605,15 @@ SPSG_UvConnect::SPSG_UvConnect(void* user_data, const SSocketAddress& address)
 #endif
 }
 
-int SPSG_UvConnect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
+int SUv_Connect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
 {
     return uv_tcp_connect(&m_Request, handle, reinterpret_cast<sockaddr*>(&m_Address), cb);
 }
 
 
-SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
+SUv_Tcp::SUv_Tcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
         TConnectCb connect_cb, TReadCb rcb, TWriteCb write_cb) :
-    SPSG_UvHandle<uv_tcp_t>(s_OnClose),
+    SUv_Handle<uv_tcp_t>(s_OnClose),
     m_Loop(l),
     m_Connect(this, address),
     m_Write(this, wr_buf_size),
@@ -627,7 +627,7 @@ SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_bu
     PSG_UV_TCP_TRACE(this << " created");
 }
 
-int SPSG_UvTcp::Write()
+int SUv_Tcp::Write()
 {
     if (m_State == eClosed) {
         auto rv = uv_tcp_init(m_Loop, this);
@@ -664,7 +664,7 @@ int SPSG_UvTcp::Write()
     return 0;
 }
 
-void SPSG_UvTcp::Close()
+void SUv_Tcp::Close()
 {
     if (m_State == eConnected) {
         auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
@@ -681,13 +681,13 @@ void SPSG_UvTcp::Close()
     if ((m_State != eClosing) && (m_State != eClosed)) {
         PSG_UV_TCP_TRACE(this << " closing");
         m_State = eClosing;
-        SPSG_UvHandle<uv_tcp_t>::Close();
+        SUv_Handle<uv_tcp_t>::Close();
     } else {
         PSG_UV_TCP_TRACE(this << " already closing/closed");
     }
 }
 
-void SPSG_UvTcp::OnConnect(uv_connect_t*, int status)
+void SUv_Tcp::OnConnect(uv_connect_t*, int status)
 {
     if (status >= 0) {
         status = uv_tcp_nodelay(this, 1);
@@ -714,14 +714,14 @@ void SPSG_UvTcp::OnConnect(uv_connect_t*, int status)
     m_ConnectCb(status);
 }
 
-void SPSG_UvTcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
+void SUv_Tcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 {
     m_ReadBuffer.resize(suggested_size);
     buf->base = m_ReadBuffer.data();
     buf->len = static_cast<decltype(buf->len)>(m_ReadBuffer.size());
 }
 
-void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
+void SUv_Tcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
         PSG_UV_TCP_TRACE(this << " read failed: " << s_LibuvError(nread));
@@ -733,7 +733,7 @@ void SPSG_UvTcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
     m_ReadCb(buf->base, nread);
 }
 
-void SPSG_UvTcp::OnWrite(uv_write_t* req, int status)
+void SUv_Tcp::OnWrite(uv_write_t* req, int status)
 {
     if (status < 0) {
         PSG_UV_TCP_TRACE(this << '/' << req << " write failed: " << uv_strerror(status));
@@ -746,7 +746,7 @@ void SPSG_UvTcp::OnWrite(uv_write_t* req, int status)
     m_WriteCb(status);
 }
 
-void SPSG_UvTcp::OnClose(uv_handle_t*)
+void SUv_Tcp::OnClose(uv_handle_t*)
 {
     PSG_UV_TCP_TRACE(this << " closed");
     m_State = eClosed;
