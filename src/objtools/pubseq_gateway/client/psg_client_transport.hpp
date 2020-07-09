@@ -433,7 +433,7 @@ private:
 
 struct SPSG_UvWrite
 {
-    SPSG_UvWrite(void* user_data);
+    SPSG_UvWrite(void* user_data, size_t buf_size);
 
     vector<char>& GetBuffer() { _ASSERT(m_CurrentBuffer); return m_CurrentBuffer->data; }
     int Write(uv_stream_t* handle, uv_write_cb cb);
@@ -451,7 +451,7 @@ private:
     void NewBuffer();
 
     void* const m_UserData;
-    const TPSG_WriteHiwater m_WriteHiwater;
+    const size_t m_BufSize;
     forward_list<SBuffer> m_Buffers;
     SBuffer* m_CurrentBuffer = nullptr;
 };
@@ -473,7 +473,7 @@ struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
     using TReadCb = function<void(const char*, ssize_t)>;
     using TWriteCb = function<void(int)>;
 
-    SPSG_UvTcp(uv_loop_t *loop, const SSocketAddress& address,
+    SPSG_UvTcp(uv_loop_t *loop, const SSocketAddress& address, size_t buf_size,
             TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
 
     int Write();

@@ -363,8 +363,8 @@ _DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false
 NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
 typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
 
-NCBI_PARAM_DECL(size_t, PSG, write_hiwater);
-using TPSG_WriteHiwater = PSG_PARAM_VALUE_TYPE(PSG, write_hiwater);
+NCBI_PARAM_DECL(size_t, PSG, wr_buf_size);
+typedef NCBI_PARAM_TYPE(PSG, wr_buf_size) TPSG_WrBufSize;
 
 NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;

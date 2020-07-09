@@ -61,7 +61,7 @@
 BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
-NCBI_PARAM_DEF(size_t, PSG, write_hiwater,            64 * 1024);
+NCBI_PARAM_DEF(size_t,   PSG, wr_buf_size,            64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 6);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
@@ -482,9 +482,9 @@ void SPSG_Request::Add()
 }
 
 
-SPSG_UvWrite::SPSG_UvWrite(void* user_data) :
+SPSG_UvWrite::SPSG_UvWrite(void* user_data, size_t buf_size) :
     m_UserData(user_data),
-    m_WriteHiwater(TPSG_WriteHiwater::eGetDefault)
+    m_BufSize(buf_size)
 {
     NewBuffer();
     PSG_UV_WRITE_TRACE(this << " created");
@@ -589,7 +589,7 @@ void SPSG_UvWrite::NewBuffer()
 
     PSG_UV_WRITE_TRACE(this << '/' << &m_CurrentBuffer->request << " new buffer");
     m_CurrentBuffer->request.data = m_UserData;
-    m_CurrentBuffer->data.reserve(m_WriteHiwater);
+    m_CurrentBuffer->data.reserve(m_BufSize);
 }
 
 
@@ -611,12 +611,12 @@ int SPSG_UvConnect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
 }
 
 
-SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address,
+SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address, size_t buf_size,
         TConnectCb connect_cb, TReadCb rcb, TWriteCb write_cb) :
     SPSG_UvHandle<uv_tcp_t>(s_OnClose),
     m_Loop(l),
     m_Connect(this, address),
-    m_Write(this),
+    m_Write(this, buf_size),
     m_ConnectCb(connect_cb),
     m_ReadCb(rcb),
     m_WriteCb(write_cb)
@@ -998,7 +998,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
     server(s),
     m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
     m_Queue(queue),
-    m_Tcp(loop, s.address,
+    m_Tcp(loop, s.address, TPSG_WrBufSize::GetDefault(),
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
             bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
