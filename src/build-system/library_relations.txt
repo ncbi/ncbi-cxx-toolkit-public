@@ -510,7 +510,7 @@ gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
 gpipe_align_format needs xobjwrite
-gpipe_alloc needs xncbi
+gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs xalnmgr
 gpipe_an_base needs gencoll_client
@@ -1660,6 +1660,8 @@ xerces-c needs3party $(ORIG_LIBS)
 xerces-c needs3party $(Z_LIBS)
 xfcgi includes xcgi
 xfcgi needs3party $(FASTCGI_LIBS)
+xflatfile includes ncbiprscxx
+xflatfile includes ncbiprsncxx
 xformat needs gbseq
 xformat needs xalnmgr
 xformat needs xcleanup
