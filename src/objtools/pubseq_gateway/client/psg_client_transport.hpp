@@ -75,7 +75,7 @@ BEGIN_NCBI_SCOPE
 #define PSG_DISCOVERY_TRACE(message)       _TRACE(message)
 
 template <class TType>
-struct SPSG_ThreadSafe : SPSG_CV<0>
+struct SPSG_ThreadSafe
 {
     template <class T>
     struct SLock : private unique_lock<std::mutex>
@@ -98,13 +98,16 @@ struct SPSG_ThreadSafe : SPSG_CV<0>
     template <class... TArgs>
     SPSG_ThreadSafe(TArgs&&... args) : m_Object(forward<TArgs>(args)...) {}
 
-    SLock<      TType> GetLock()       { return { &m_Object, GetMutex() }; }
-    SLock<const TType> GetLock() const { return { &m_Object, GetMutex() }; }
+    SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
+    SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
 
     // Direct access to the protected object (e.g. to access atomic members).
     // All thread-safe members must be explicitly marked volatile to be available.
           volatile TType& GetMTSafe()       { return m_Object; }
     const volatile TType& GetMTSafe() const { return m_Object; }
+
+protected:
+    mutex m_Mutex;
 
 private:
     TType m_Object;
@@ -340,7 +343,7 @@ struct SPSG_Reply
 
     struct SItem
     {
-        using TTS = SPSG_ThreadSafe<SItem>;
+        using TTS = SPSG_CV<0, SPSG_ThreadSafe<SItem>>;
 
         vector<SPSG_Chunk> chunks;
         SPSG_Args args;
@@ -351,15 +354,7 @@ struct SPSG_Reply
         void SetSuccess();
     };
 
-    // Forbid signals on reply
-    class SItemsTS : public SPSG_ThreadSafe<list<SItem::TTS>>
-    {
-        using SPSG_ThreadSafe::NotifyOne;
-        using SPSG_ThreadSafe::NotifyAll;
-        using SPSG_ThreadSafe::WaitUntil;
-    };
-
-    SItemsTS items;
+    SPSG_ThreadSafe<list<SItem::TTS>> items;
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
 

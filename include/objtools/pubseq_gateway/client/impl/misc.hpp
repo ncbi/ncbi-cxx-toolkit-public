@@ -42,24 +42,35 @@
 
 BEGIN_NCBI_SCOPE
 
-template <int ITERS, typename MUTEX = void, int SLEEP_US = 10, int WAIT_MS = 100>
-struct SPSG_CV
+template <int ITERS, class TBase>
+struct SPSG_CV_Base : TBase
 {
-    template <typename M, typename NA = void>
-    struct SAddMutex
-    {
-    };
+    mutex& GetMutex() { return TBase::m_Mutex; }
+};
 
-    template <typename NA>
-    struct SAddMutex<mutex, NA>
-    {
-        mutable mutex m;
-    };
+template <int ITERS>
+struct SPSG_CV_Base<ITERS, void>
+{
+};
+
+template <>
+struct SPSG_CV_Base<0, void>
+{
+    mutex& GetMutex() { return m_Mutex; }
 
 private:
+    mutex m_Mutex;
+};
+
+template <int ITERS, typename TBase = void>
+struct SPSG_CV : SPSG_CV_Base<ITERS, TBase>
+{
+private:
     template <int I, typename NA = void>
-    struct SImpl : SAddMutex<MUTEX>
+    struct SImpl
     {
+        SImpl(SPSG_CV_Base<I, TBase>&) {}
+
         void NotifyOne() {}
         void NotifyAll() {}
 
@@ -77,7 +88,8 @@ private:
     private:
         bool x_WaitUntil()
         {
-            this_thread::sleep_for(chrono::microseconds(SLEEP_US));
+            constexpr auto kWait = chrono::microseconds(10);
+            this_thread::sleep_for(kWait);
 
             if (m_I-- > 0) {
                 return true;
@@ -95,9 +107,7 @@ private:
     {
         using clock = chrono::system_clock;
 
-        mutable mutex m;
-
-        SImpl() : m_Signal(0) {}
+        SImpl(SPSG_CV_Base<0, TBase>& base) : m_Base(base), m_Signal(0) {}
 
         void NotifyOne() { x_Signal(); m_CV.notify_one(); }
         void NotifyAll() { x_Signal(); m_CV.notify_all(); }
@@ -110,9 +120,9 @@ private:
         template <typename T = bool>
         bool WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
         {
+            constexpr auto kWait = chrono::milliseconds(100);
             const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
-            const clock::duration wait = chrono::milliseconds(WAIT_MS);
-            const auto max = clock::now() + wait;
+            const auto max = clock::now() + kWait;
 
             do {
                 if (until < max) {
@@ -142,7 +152,7 @@ private:
         template <class... TArgs>
         bool x_Wait(TArgs&&... args)
         {
-            unique_lock<mutex> lock(m);
+            unique_lock<mutex> lock(m_Base.GetMutex());
             auto p = [&](){ return m_Signal > 0; };
 
             if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
@@ -165,15 +175,18 @@ private:
 
         void x_Signal()
         {
-            lock_guard<mutex> lock(m);
+            lock_guard<mutex> lock(m_Base.GetMutex());
             m_Signal++;
         }
 
+        SPSG_CV_Base<ITERS, TBase>& m_Base;
         condition_variable m_CV;
         int m_Signal;
     };
 
 public:
+    SPSG_CV() : m_Impl(*this) {}
+
     void NotifyOne() volatile { GetImpl().NotifyOne(); }
     void NotifyAll() volatile { GetImpl().NotifyAll(); }
 
@@ -182,9 +195,6 @@ public:
     {
         return GetImpl().WaitUntil(forward<TArgs>(args)...);
     }
-
-protected:
-    mutex& GetMutex() const { return m_Impl.m; }
 
 private:
     using TImpl = SImpl<ITERS>;
