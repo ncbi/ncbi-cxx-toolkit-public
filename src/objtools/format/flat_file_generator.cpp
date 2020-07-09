@@ -319,6 +319,9 @@ void CFlatFileGenerator::Generate
                 if ( m_Ctx->GetConfig().IsPolicyExhaustive() ) {
                     policy = CSeqEntryIndex::eExhaustive;
                 }
+                if ( m_Ctx->GetConfig().IsPolicyProduction() ) {
+                    policy = CSeqEntryIndex::eProduction;
+                }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
                 if (idx->IsIndexFailure()) {
@@ -734,6 +737,9 @@ void CFlatFileGenerator::Generate
                 }
                 if ( cfg.IsPolicyExhaustive() ) {
                     policy = CSeqEntryIndex::eExhaustive;
+                }
+                if ( cfg.IsPolicyProduction() ) {
+                    policy = CSeqEntryIndex::eProduction;
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
