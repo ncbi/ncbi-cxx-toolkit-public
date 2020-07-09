@@ -73,24 +73,6 @@ BEGIN_NCBI_SCOPE
 #define PSG_IO_TRACE(message)              _TRACE(message)
 #define PSG_DISCOVERY_TRACE(message)       _TRACE(message)
 
-struct SPSG_Error : string
-{
-    enum EError{
-        eNgHttp2Cb = 1,
-        eShutdown,
-        eException,
-        eTimeout,
-    };
-
-    template <class ...TArgs>
-    SPSG_Error(TArgs&&... args) : string(Build(forward<TArgs>(args)...)) {}
-
-private:
-    static string Build(EError error, const char* details);
-    static string Build(ssize_t error);
-    static string Build(ssize_t error, const char* details);
-};
-
 struct SPSG_Args : CUrlArgs
 {
     using CUrlArgs::CUrlArgs;
@@ -178,8 +160,8 @@ private:
     void Event(SSocketAddress, const string&)       { Event(eSend);    }
     void Event(const SPSG_Args&, const SPSG_Chunk&) { Event(eReceive); }
     void Event(uint32_t)                            { Event(eClose);   }
-    void Event(unsigned, const SPSG_Error&)         { Event(eRetry);   }
-    void Event(const SPSG_Error&)                   { Event(eFail);    }
+    void Event(unsigned, const SUvNgHttp2_Error&)   { Event(eRetry);   }
+    void Event(const SUvNgHttp2_Error&)             { Event(eFail);    }
 
     void Event(EType type)
     {
@@ -191,8 +173,8 @@ private:
     void Print(SSocketAddress address, const string& path);
     void Print(const SPSG_Args& args, const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
-    void Print(unsigned retries, const SPSG_Error& error);
-    void Print(const SPSG_Error& error);
+    void Print(unsigned retries, const SUvNgHttp2_Error& error);
+    void Print(const SUvNgHttp2_Error& error);
 
     bool IsPerf() const
     {
@@ -520,13 +502,13 @@ struct SPSG_IoSession
         catch(const CException& e) {
             ostringstream os;
             os << e.GetErrCodeString() << " - " << e.GetMsg();
-            Reset(SPSG_Error::eException, os.str().c_str());
+            Reset(os.str().c_str());
         }
         catch(const std::exception& e) {
-            Reset(SPSG_Error::eException, e.what());
+            Reset(e.what());
         }
         catch(...) {
-            Reset(SPSG_Error::eException, "Unexpected exception");
+            Reset("Unexpected exception");
         }
 
         return error;
@@ -543,16 +525,10 @@ private:
 
     bool Send();
     bool Write();
-    bool Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error);
+    bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error);
     void RequestComplete(TRequests::iterator& it);
 
-    void Reset(SPSG_Error error);
-
-    template <class ...TArgs>
-    void Reset(TArgs&&... args)
-    {
-        Reset(SPSG_Error(forward<TArgs>(args)...));
-    }
+    void Reset(SUvNgHttp2_Error error);
 
     int OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len);
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
@@ -587,7 +563,7 @@ private:
     static int s_OnError(nghttp2_session*, const char* msg, size_t, void* user_data)
     {
         auto that = static_cast<SPSG_IoSession*>(user_data);
-        that->Reset(SPSG_Error::eNgHttp2Cb, msg);
+        that->Reset(msg);
         return 0;
     }
 

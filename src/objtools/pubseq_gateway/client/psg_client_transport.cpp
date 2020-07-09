@@ -128,15 +128,15 @@ void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
 
 void SDebugPrintout::Print(uint32_t error_code)
 {
-    ERR_POST(Message << id << ": Closed with status " << nghttp2_http2_strerror(error_code));
+    ERR_POST(Message << id << ": Closed with status " << SUvNgHttp2_Error::NgHttp2Str(error_code));
 }
 
-void SDebugPrintout::Print(unsigned retries, const SPSG_Error& error)
+void SDebugPrintout::Print(unsigned retries, const SUvNgHttp2_Error& error)
 {
     ERR_POST(Message << id << ": Retrying (" << retries << " retries remaining) after " << error);
 }
 
-void SDebugPrintout::Print(const SPSG_Error& error)
+void SDebugPrintout::Print(const SUvNgHttp2_Error& error)
 {
     ERR_POST(Message << id << ": Gave up after " << error);
 }
@@ -158,27 +158,6 @@ SDebugPrintout::~SDebugPrintout()
         cout << os.str();
         cout.flush();
     }
-}
-
-string SPSG_Error::Build(EError error, const char* details)
-{
-    stringstream ss;
-    ss << "error: " << details << " (" << error << ")";
-    return ss.str();
-}
-
-string SPSG_Error::Build(ssize_t error)
-{
-    stringstream ss;
-    ss << "nghttp2 error: " << s_NgHttp2Error(error) << " (" << error << ")";
-    return ss.str();
-}
-
-string SPSG_Error::Build(ssize_t error, const char* details)
-{
-    stringstream ss;
-    ss << "libuv error: " << details << " - " << s_LibuvError(error) << " (" << error << ")";
-    return ss.str();
 }
 
 void SPSG_Reply::SState::AddError(string message, EState new_state)
@@ -505,7 +484,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     return 0;
 }
 
-bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error)
+bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error)
 {
     SContextSetter setter(req->context);
     auto& debug_printout = req->reply->debug_printout;
@@ -541,7 +520,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
 
         // If there is an error and the request is allowed to Retry
         if (error_code) {
-            SPSG_Error error(error_code);
+            auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
             if (!Retry(req, error)) {
                 ERR_POST("Request failed with " << error);
@@ -590,7 +569,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 void SPSG_IoSession::StartClose()
 {
     PSG_IO_SESSION_TRACE(this << " closing");
-    Reset(SPSG_Error::eShutdown, "Shutdown is in process");
+    Reset("Shutdown is in process");
     m_Tcp.Close();
 }
 
@@ -599,7 +578,7 @@ bool SPSG_IoSession::Send()
     auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer());
 
     if (send_rv < 0) {
-        Reset(send_rv);
+        Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
 
     } else if (send_rv > 0) {
         return Write();
@@ -611,7 +590,7 @@ bool SPSG_IoSession::Send()
 bool SPSG_IoSession::Write()
 {
     if (auto write_rv = m_Tcp.Write()) {
-        Reset(write_rv, "Failed to write");
+        Reset(SUvNgHttp2_Error::FromLibuv(write_rv, "on write"));
         return false;
     }
 
@@ -623,7 +602,7 @@ void SPSG_IoSession::OnConnect(int status)
     PSG_IO_SESSION_TRACE(this << " connected: " << status);
 
     if (status < 0) {
-        Reset(status, "Failed to connect/start read");
+        Reset(SUvNgHttp2_Error::FromLibuv(status, "on connecting"));
     } else {
         Write();
     }
@@ -634,7 +613,7 @@ void SPSG_IoSession::OnWrite(int status)
     PSG_IO_SESSION_TRACE(this << " wrote: " << status);
 
     if (status < 0) {
-        Reset(status, "Failed to submit request");
+        Reset(SUvNgHttp2_Error::FromLibuv(status, "on writing"));
     }
 }
 
@@ -643,14 +622,14 @@ void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
     PSG_IO_SESSION_TRACE(this << " read: " << nread);
 
     if (nread < 0) {
-        Reset(nread, nread == UV_EOF ? "Server disconnected" : "Failed to receive server reply");
+        Reset(SUvNgHttp2_Error::FromLibuv(nread, "on reading"));
         return;
     }
 
     auto readlen = m_Session.Recv((const uint8_t*)buf, nread);
 
     if (readlen < 0) {
-        Reset(readlen);
+        Reset(SUvNgHttp2_Error::FromNgHttp2(readlen, "on receive"));
     } else {
         Send();
     }
@@ -681,9 +660,11 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
     auto stream_id = m_Session.Submit(m_Headers.data(), headers_size);
 
     if (stream_id < 0) {
+        auto error(SUvNgHttp2_Error::FromNgHttp2(stream_id, "on submit"));
+
         // Do not reset all requests unless throttling has been activated
-        if (!Retry(req, stream_id) && server.throttling.Active()) {
-            Reset(stream_id);
+        if (!Retry(req, error) && server.throttling.Active()) {
+            Reset(move(error));
         }
 
         return false;
@@ -707,7 +688,7 @@ void SPSG_IoSession::RequestComplete(TRequests::iterator& it)
 
 void SPSG_IoSession::CheckRequestExpiration()
 {
-    const SPSG_Error error(SPSG_Error::eTimeout, "request timeout");
+    const SUvNgHttp2_Error error("Request timeout");
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {
@@ -719,7 +700,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     }
 }
 
-void SPSG_IoSession::Reset(SPSG_Error error)
+void SPSG_IoSession::Reset(SUvNgHttp2_Error error)
 {
     PSG_IO_SESSION_TRACE(this << " resetting with " << error);
     m_Session.Del();

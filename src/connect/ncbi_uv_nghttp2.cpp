@@ -84,14 +84,14 @@ int SUv_Write::Write(uv_stream_t* handle, uv_write_cb cb)
 
     // If unexpected error
     } else if (try_rv != UV_EAGAIN) {
-        NCBI_UV_WRITE_TRACE(this << '/' << &request << " try-write failed: " << uv_strerror(try_rv));
+        NCBI_UV_WRITE_TRACE(this << '/' << &request << " try-write failed: " << SUvNgHttp2_Error::LibuvStr(try_rv));
         return try_rv;
     }
 
     auto rv = uv_write(&request, handle, &buf, 1, cb);
 
     if (rv < 0) {
-        NCBI_UV_WRITE_TRACE(this << '/' << &request << " pre-write failed");
+        NCBI_UV_WRITE_TRACE(this << '/' << &request << " pre-write failed: " << SUvNgHttp2_Error::LibuvStr(rv));
         return rv;
     }
 
@@ -192,14 +192,14 @@ int SUv_Tcp::Write()
         auto rv = uv_tcp_init(m_Loop, this);
 
         if (rv < 0) {
-            NCBI_UV_TCP_TRACE(this << " init failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << " init failed: " << SUvNgHttp2_Error::LibuvStr(rv));
             return rv;
         }
 
         rv = m_Connect(this, s_OnConnect);
 
         if (rv < 0) {
-            NCBI_UV_TCP_TRACE(this << " pre-connect failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << " pre-connect failed: " << SUvNgHttp2_Error::LibuvStr(rv));
             Close();
             return rv;
         }
@@ -212,7 +212,7 @@ int SUv_Tcp::Write()
         auto rv = m_Write.Write((uv_stream_t*)this, s_OnWrite);
 
         if (rv < 0) {
-            NCBI_UV_TCP_TRACE(this << "  pre-write failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << "  pre-write failed: " << SUvNgHttp2_Error::LibuvStr(rv));
             Close();
             return rv;
         }
@@ -229,7 +229,7 @@ void SUv_Tcp::Close()
         auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
 
         if (rv < 0) {
-            NCBI_UV_TCP_TRACE(this << " read stop failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << " read stop failed: " << SUvNgHttp2_Error::LibuvStr(rv));
         } else {
             NCBI_UV_TCP_TRACE(this << " read stopped");
         }
@@ -260,13 +260,13 @@ void SUv_Tcp::OnConnect(uv_connect_t*, int status)
                 m_ConnectCb(status);
                 return;
             } else {
-                NCBI_UV_TCP_TRACE(this << " read start failed: " << uv_strerror(status));
+                NCBI_UV_TCP_TRACE(this << " read start failed: " << SUvNgHttp2_Error::LibuvStr(status));
             }
         } else {
-            NCBI_UV_TCP_TRACE(this << " nodelay failed: " << uv_strerror(status));
+            NCBI_UV_TCP_TRACE(this << " nodelay failed: " << SUvNgHttp2_Error::LibuvStr(status));
         }
     } else {
-        NCBI_UV_TCP_TRACE(this << " connect failed: " << uv_strerror(status));
+        NCBI_UV_TCP_TRACE(this << " connect failed: " << SUvNgHttp2_Error::LibuvStr(status));
     }
 
     Close();
@@ -283,7 +283,7 @@ void SUv_Tcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 void SUv_Tcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
-        NCBI_UV_TCP_TRACE(this << " read failed: " << s_LibuvError(nread));
+        NCBI_UV_TCP_TRACE(this << " read failed: " << SUvNgHttp2_Error::LibuvStr(nread));
         Close();
     } else {
         NCBI_UV_TCP_TRACE(this << " read: " << nread);
@@ -295,7 +295,7 @@ void SUv_Tcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 void SUv_Tcp::OnWrite(uv_write_t* req, int status)
 {
     if (status < 0) {
-        NCBI_UV_TCP_TRACE(this << '/' << req << " write failed: " << uv_strerror(status));
+        NCBI_UV_TCP_TRACE(this << '/' << req << " write failed: " << SUvNgHttp2_Error::LibuvStr(status));
         Close();
     } else {
         NCBI_UV_TCP_TRACE(this << '/' << req << " wrote");
@@ -396,7 +396,7 @@ int SNgHttp2_Session::Init()
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
     if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " submit settings failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " submit settings failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
         return x_DelOnError(rv);
     }
 
@@ -416,7 +416,7 @@ void SNgHttp2_Session::Del()
     auto rv = nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
 
     if (rv) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " terminate failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " terminate failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
     } else {
         NCBI_NGHTTP2_SESSION_TRACE(this << " terminated");
     }
@@ -431,7 +431,7 @@ int32_t SNgHttp2_Session::Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_da
     auto rv = nghttp2_submit_request(m_Session, nullptr, nva, nvlen, data_prd, nullptr);
 
     if (rv < 0) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " submit failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
     } else {
         NCBI_NGHTTP2_SESSION_TRACE(this << " submitted");
     }
@@ -446,7 +446,7 @@ int SNgHttp2_Session::Resume(int32_t stream_id)
     auto rv = nghttp2_session_resume_data(m_Session, stream_id);
 
     if (rv < 0) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " resume failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " resume failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
     } else {
         NCBI_NGHTTP2_SESSION_TRACE(this << " resumed");
     }
@@ -479,11 +479,11 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
             total += rv;
 
         } else if (rv < 0) {
-            NCBI_NGHTTP2_SESSION_TRACE(this << " send failed: " << s_NgHttp2Error(rv));
+            NCBI_NGHTTP2_SESSION_TRACE(this << " send failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
             return x_DelOnError(rv);
 
         } else {
-            NCBI_NGHTTP2_SESSION_TRACE(this << " sended: " << total);
+            NCBI_NGHTTP2_SESSION_TRACE(this << " sent: " << total);
             return total;
         }
     }
@@ -505,7 +505,7 @@ ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
         }
 
         if (rv < 0) {
-            NCBI_NGHTTP2_SESSION_TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
+            NCBI_NGHTTP2_SESSION_TRACE(this << " receive failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
             return x_DelOnError(rv);
         } else {
             NCBI_NGHTTP2_SESSION_TRACE(this << " received: " << total);

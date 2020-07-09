@@ -42,10 +42,46 @@
 #include <array>
 #include <functional>
 #include <forward_list>
+#include <sstream>
 #include <type_traits>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+
+struct SUvNgHttp2_Error
+{
+    SUvNgHttp2_Error(const char* m) : m_Value("error: ") { m_Value += m; }
+
+    template <typename T>
+    static SUvNgHttp2_Error FromNgHttp2(T e, const char* w) { return { "nghttp2 error: ", NgHttp2Str<T>, e, w }; }
+
+    template <typename T>
+    static SUvNgHttp2_Error FromLibuv(T e, const char* w) { return { "libuv error: ", LibuvStr<T>, e, w }; }
+
+    template <typename T, enable_if_t<is_signed<T>::value, T> = 0>
+    static const char* NgHttp2Str(T e) { return nghttp2_strerror(static_cast<int>(e)); }
+
+    template <typename T, enable_if_t<is_unsigned<T>::value, T> = 0>
+    static const char* NgHttp2Str(T e) { return nghttp2_http2_strerror(static_cast<uint32_t>(e));; }
+
+    template <typename T, enable_if_t<is_signed<T>::value, T> = 0>
+    static const char* LibuvStr(T e) { return uv_strerror(static_cast<int>(e)); }
+
+    operator string() const { return m_Value; }
+
+    friend ostream& operator<<(ostream& os, const SUvNgHttp2_Error& error) { return os << error.m_Value; }
+
+private:
+    template <typename TFunc, typename T>
+    SUvNgHttp2_Error(const char* t, TFunc f, T e, const char* w)
+    {
+        stringstream os;
+        os << t << f(e) << " (" << e << ") " << w;
+        m_Value = os.str();
+    };
+
+    string m_Value;
+};
 
 template <typename THandle>
 struct SUv_Handle : protected THandle
@@ -159,7 +195,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Async : SUv_Handle<uv_async_t>
     void Init(void* d, uv_loop_t* l, uv_async_cb cb)
     {
         if (auto rc = uv_async_init(l, this, cb)) {
-            ERR_POST(Fatal << "uv_async_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_async_init failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
 
         data = d;
@@ -168,7 +204,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Async : SUv_Handle<uv_async_t>
     void Signal()
     {
         if (auto rc = uv_async_send(this)) {
-            ERR_POST(Fatal << "uv_async_send failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_async_send failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 };
@@ -186,21 +222,21 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Timer : SUv_Handle<uv_timer_t>
     void Init(uv_loop_t* l)
     {
         if (auto rc = uv_timer_init(l, this)) {
-            ERR_POST(Fatal << "uv_timer_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_timer_init failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 
     void Start()
     {
         if (auto rc = uv_timer_start(this, m_Cb, m_Timeout, m_Repeat)) {
-            ERR_POST(Fatal << "uv_timer_start failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_timer_start failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 
     void Close()
     {
         if (auto rc = uv_timer_stop(this)) {
-            ERR_POST("uv_timer_stop failed " << uv_strerror(rc));
+            ERR_POST("uv_timer_stop failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
 
         SUv_Handle<uv_timer_t>::Close();
@@ -217,7 +253,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Barrier
     SUv_Barrier(unsigned count)
     {
         if (auto rc = uv_barrier_init(&m_Barrier, count)) {
-            ERR_POST(Fatal << "uv_barrier_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_barrier_init failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 
@@ -228,7 +264,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Barrier
         if (rc > 0) {
             uv_barrier_destroy(&m_Barrier);
         } else if (rc < 0) {
-            ERR_POST(Fatal << "uv_barrier_wait failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_barrier_wait failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 
@@ -241,7 +277,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Loop : uv_loop_t
     SUv_Loop()
     {
         if (auto rc = uv_loop_init(this)) {
-            ERR_POST(Fatal << "uv_loop_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_loop_init failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 
@@ -250,14 +286,14 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Loop : uv_loop_t
         auto rc = uv_run(this, mode);
 
         if (rc < 0) {
-            ERR_POST(Fatal << "uv_run failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_run failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 
     ~SUv_Loop()
     {
         if (auto rc = uv_loop_close(this)) {
-            ERR_POST("uv_loop_close failed " << uv_strerror(rc));
+            ERR_POST("uv_loop_close failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
 };
@@ -347,20 +383,6 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_UserAgent
 private:
     static string Init();
 };
-
-template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
-const char* s_LibuvError(TInt error_code)
-{
-    return uv_strerror(static_cast<int>(error_code));
-}
-
-template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
-const char* s_NgHttp2Error(TInt error_code)
-{
-    return error_code < 0 ?
-        nghttp2_strerror(static_cast<int>(error_code)) :
-        nghttp2_http2_strerror(static_cast<uint32_t>(error_code));
-}
 
 END_NCBI_SCOPE
 
