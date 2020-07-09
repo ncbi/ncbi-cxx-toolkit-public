@@ -378,7 +378,8 @@ SNgHttp2_Session::SNgHttp2_Session(string authority, void* user_data, uint32_t m
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
-        nghttp2_error_callback              on_error) :
+        nghttp2_error_callback              on_error,
+        nghttp2_on_frame_recv_callback      on_frame_recv) :
     m_Authority(move(authority)),
     m_Headers{{
         { ":method", "GET" },
@@ -395,6 +396,7 @@ SNgHttp2_Session::SNgHttp2_Session(string authority, void* user_data, uint32_t m
     m_OnStreamClose(on_stream_close),
     m_OnHeader(on_header),
     m_OnError(on_error),
+    m_OnFrameRecv(on_frame_recv),
     m_MaxStreams(max_streams, max_streams)
 {
     NCBI_NGHTTP2_SESSION_TRACE(this << " created");
@@ -411,6 +413,7 @@ int SNgHttp2_Session::Init()
     nghttp2_session_callbacks_set_on_stream_close_callback(   callbacks, m_OnStreamClose);
     nghttp2_session_callbacks_set_on_header_callback(         callbacks, m_OnHeader);
     nghttp2_session_callbacks_set_error_callback(             callbacks, m_OnError);
+    if (m_OnFrameRecv) nghttp2_session_callbacks_set_on_frame_recv_callback(callbacks, m_OnFrameRecv);
 
     nghttp2_session_client_new(&m_Session, callbacks, m_UserData);
     nghttp2_session_callbacks_del(callbacks);
