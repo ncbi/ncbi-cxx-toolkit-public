@@ -523,7 +523,7 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
     void Init(void* d, uv_loop_t* l, uv_async_cb cb)
     {
         if (auto rc = uv_async_init(l, this, cb)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_async_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_async_init failed " << uv_strerror(rc));
         }
 
         data = d;
@@ -532,7 +532,7 @@ struct SPSG_UvAsync : SPSG_UvHandle<uv_async_t>
     void Signal()
     {
         if (auto rc = uv_async_send(this)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_async_send failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_async_send failed " << uv_strerror(rc));
         }
     }
 };
@@ -550,14 +550,14 @@ struct SPSG_UvTimer : SPSG_UvHandle<uv_timer_t>
     void Init(uv_loop_t* l)
     {
         if (auto rc = uv_timer_init(l, this)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_timer_init failed " << uv_strerror(rc));
         }
     }
 
     void Start()
     {
         if (auto rc = uv_timer_start(this, m_Cb, m_Timeout, m_Repeat)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_timer_start failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_timer_start failed " << uv_strerror(rc));
         }
     }
 
@@ -581,7 +581,7 @@ struct SPSG_UvBarrier
     SPSG_UvBarrier(unsigned count)
     {
         if (auto rc = uv_barrier_init(&m_Barrier, count)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_barrier_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_barrier_init failed " << uv_strerror(rc));
         }
     }
 
@@ -592,7 +592,7 @@ struct SPSG_UvBarrier
         if (rc > 0) {
             uv_barrier_destroy(&m_Barrier);
         } else if (rc < 0) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_barrier_wait failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_barrier_wait failed " << uv_strerror(rc));
         }
     }
 
@@ -605,14 +605,14 @@ struct SPSG_UvLoop : uv_loop_t
     SPSG_UvLoop()
     {
         if (auto rc = uv_loop_init(this)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_loop_init failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_loop_init failed " << uv_strerror(rc));
         }
     }
 
     void Run()
     {
         if (auto rc = uv_run(this, UV_RUN_DEFAULT)) {
-            NCBI_THROW_FMT(CPSG_Exception, eInternalError, "uv_run failed " << uv_strerror(rc));
+            ERR_POST(Fatal << "uv_run failed " << uv_strerror(rc));
         }
     }
 
