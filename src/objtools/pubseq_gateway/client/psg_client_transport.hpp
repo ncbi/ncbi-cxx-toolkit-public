@@ -473,7 +473,7 @@ struct SPSG_UvTcp : SPSG_UvHandle<uv_tcp_t>
     using TReadCb = function<void(const char*, ssize_t)>;
     using TWriteCb = function<void(int)>;
 
-    SPSG_UvTcp(uv_loop_t *loop, const SSocketAddress& address, size_t buf_size,
+    SPSG_UvTcp(uv_loop_t *loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
             TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
 
     int Write();

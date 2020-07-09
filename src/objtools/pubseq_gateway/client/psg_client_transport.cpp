@@ -611,18 +611,18 @@ int SPSG_UvConnect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
 }
 
 
-SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address, size_t buf_size,
+SPSG_UvTcp::SPSG_UvTcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
         TConnectCb connect_cb, TReadCb rcb, TWriteCb write_cb) :
     SPSG_UvHandle<uv_tcp_t>(s_OnClose),
     m_Loop(l),
     m_Connect(this, address),
-    m_Write(this, buf_size),
+    m_Write(this, wr_buf_size),
     m_ConnectCb(connect_cb),
     m_ReadCb(rcb),
     m_WriteCb(write_cb)
 {
     data = this;
-    m_ReadBuffer.reserve(TPSG_RdBufSize::GetDefault());
+    m_ReadBuffer.reserve(rd_buf_size);
 
     PSG_UV_TCP_TRACE(this << " created");
 }
@@ -998,7 +998,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
     server(s),
     m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
     m_Queue(queue),
-    m_Tcp(loop, s.address, TPSG_WrBufSize::GetDefault(),
+    m_Tcp(loop, s.address, TPSG_RdBufSize::GetDefault(), TPSG_WrBufSize::GetDefault(),
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
             bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
