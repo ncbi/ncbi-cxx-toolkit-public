@@ -146,10 +146,10 @@ void CHttpHeaders::ClearAll(void)
 }
 
 
-void CHttpHeaders::ParseHttpHeader(const CTempString& headers)
+void s_ParseHttpHeader(const CTempString& from, CHttpHeaders::THeaders& to)
 {
     list<CTempString> lines;
-    NStr::Split(headers, HTTP_EOL, lines,
+    NStr::Split(from, HTTP_EOL, lines,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     string name, value;
@@ -163,8 +163,15 @@ void CHttpHeaders::ParseHttpHeader(const CTempString& headers)
         name  = line->substr(0, delim);
         value = line->substr(delim + 1);
         NStr::TruncateSpacesInPlace(value, NStr::eTrunc_Both);
-        m_Headers[name].push_back(value);
+        to[name].push_back(value);
     }
+}
+
+
+// Have to keep this method as it may be used by some clients
+void CHttpHeaders::ParseHttpHeader(const CTempString& headers)
+{
+    s_ParseHttpHeader(headers, m_Headers);
 }
 
 
@@ -501,25 +508,13 @@ bool CHttpResponse::CanGetContentStream(void) const
 }
 
 
-void CHttpResponse::x_ParseHeader(const char* header)
+void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, string status_text)
 {
-    // Prevent collecting multiple headers on redirects.
-    m_Headers->ClearAll();
-    m_Headers->ParseHttpHeader(header);
-    
-    m_Session->x_SetCookies(m_Headers->GetAllValues(CHttpHeaders::eSetCookie),
-        &m_Location);
-
-    // Parse status code/text.
-    const char* eol = strstr(header, HTTP_EOL);
-    string status = eol ? string(header, eol - header) : header;
-    if ( NStr::StartsWith(status, "HTTP/") ) {
-        int text_pos = 0;
-        sscanf(status.c_str(), "%*s %d %n", &m_StatusCode, &text_pos);
-        if (text_pos > 0) {
-            m_StatusText = status.substr(text_pos);
-        }
-    }
+    m_Headers->m_Headers.swap(headers);
+    m_StatusCode = status_code;
+    m_StatusText = move(status_text);
+    const auto& cookies = m_Headers->GetAllValues(CHttpHeaders::eSetCookie);
+    m_Session->x_SetCookies(cookies, &m_Location);
 }
 
 
@@ -786,9 +781,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
     // Save headers set automatically (e.g. from CONN_HTTP_USER_HEADER).
     if (net_info->http_user_header) {
-        CHttpHeaders usr_hdr;
-        usr_hdr.ParseHttpHeader(net_info->http_user_header);
-        m_Headers->Merge(usr_hdr);
+        s_ParseHttpHeader(net_info->http_user_header, m_Headers->m_Headers);
     }
 
     x_AdjustHeaders(use_form_data);
@@ -869,7 +862,24 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
     // Response can be NULL, e.g. if an exception was thrown while
     // initializing the request.
     if ( resp ) {
-        resp->x_ParseHeader(http_header);
+        // Prevent collecting multiple headers on redirects.
+        CHttpHeaders::THeaders headers;
+        s_ParseHttpHeader(http_header, headers);
+        
+        // Parse status code/text.
+        const char* eol = strstr(http_header, HTTP_EOL);
+        string status = eol ? string(http_header, eol - http_header) : http_header;
+        int status_code = 0;
+        string status_text;
+        if ( NStr::StartsWith(status, "HTTP/") ) {
+            int text_pos = 0;
+            sscanf(status.c_str(), "%*s %d %n", &status_code, &text_pos);
+            if (text_pos > 0) {
+                status_text = status.substr(text_pos);
+            }
+        }
+
+        resp->x_Update(headers, status_code, status_text);
     }
     // Always read response body - normal content or error.
     return eHTTP_HeaderContinue;

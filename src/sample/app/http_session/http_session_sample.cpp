@@ -384,12 +384,11 @@ bool CHttpSessionApp::PrintResponse(const CHttpSession* session,
     cout << "Status: " << response.GetStatusCode() << " "
          << response.GetStatusText() << endl;
     if ( m_PrintHeaders ) {
-        list<string> headers;
-        NStr::Split(response.Headers().GetHttpHeader(), "\n\r", headers,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         cout << "--- Headers ---" << endl;
-        for (const auto& v : headers) {
-            cout << v << endl;
+        for (const auto& header : response.Headers().Get()) {
+            for (const auto& value : header.second) {
+                cout << header.first << ": " << value << endl;
+            }
         }
     }
 

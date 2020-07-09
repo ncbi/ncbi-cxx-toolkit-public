@@ -215,6 +215,9 @@ public:
     virtual ~CHttpHeaders(void) {}
 
 private:
+    friend class CHttpResponse;
+    friend class CHttpRequest;
+
     // Prohibit copying headers.
     CHttpHeaders(const CHttpHeaders&);
     CHttpHeaders& operator=(const CHttpHeaders&);
@@ -236,6 +239,8 @@ public:
     /// Get all headers as a single string as required by CConn_HttpStream.
     /// Each header line is terminated by a single HTTP_EOL.
     string GetHttpHeader(void) const;
+
+    const THeaders& Get() const { return m_Headers; }
 
     /// Get string representation of the given name.
     static const char* GetHeaderName(EHeaderName name);
@@ -417,9 +422,8 @@ private:
 
     CHttpResponse(CHttpSession& session, const CUrl& url, shared_ptr<iostream> stream = {});
 
-    // Parse response headers, update location, parse cookies and
-    // store them in the session.
-    void x_ParseHeader(const char* header);
+    // Update response headers and location, parse cookies and store them in the session.
+    void x_Update(CHttpHeaders::THeaders headers, int status_code, string status_text);
 
     CRef<CHttpSession>      m_Session;
     CUrl                    m_Url;      // Original URL
