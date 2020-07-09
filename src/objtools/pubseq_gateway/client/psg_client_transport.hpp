@@ -215,7 +215,7 @@ private:
 
     enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
 
-    void Event(const char*, const string&)          { Event(eSend);    }
+    void Event(SSocketAddress, const string&)       { Event(eSend);    }
     void Event(const SPSG_Args&, const SPSG_Chunk&) { Event(eReceive); }
     void Event(uint32_t)                            { Event(eClose);   }
     void Event(unsigned, const SPSG_Error&)         { Event(eRetry);   }
@@ -228,7 +228,7 @@ private:
         m_Events.emplace_back(ms, type, thread_id);
     }
 
-    void Print(const char* authority, const string& path);
+    void Print(SSocketAddress address, const string& path);
     void Print(const SPSG_Args& args, const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
     void Print(unsigned retries, const SPSG_Error& error);
@@ -425,7 +425,7 @@ struct SPSG_NgHttp2Session
 
     void Del();
 
-    int32_t Submit(shared_ptr<SPSG_Request>& req);
+    int32_t Submit(const string& path, CRequestContext* new_context, void* stream_user_data);
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 

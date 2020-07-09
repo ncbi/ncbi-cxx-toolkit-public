@@ -100,17 +100,16 @@ NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgC
 
 struct SContextSetter
 {
-    template <class TRequest>
-    SContextSetter(TRequest req) { CDiagContext::SetRequestContext(req->context); }
+    SContextSetter(CRequestContext* context) { CDiagContext::SetRequestContext(context); }
     ~SContextSetter()            { CDiagContext::SetRequestContext(nullptr);      }
 
     SContextSetter(const SContextSetter&) = delete;
     void operator=(const SContextSetter&) = delete;
 };
 
-void SDebugPrintout::Print(const char* authority, const string& path)
+void SDebugPrintout::Print(SSocketAddress address, const string& path)
 {
-    ERR_POST(Message << id << ": " << authority << path);
+    ERR_POST(Message << id << ": " << address.AsString() << path);
 }
 
 void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
@@ -365,7 +364,7 @@ void SPSG_Request::AddIo()
 
 void SPSG_Request::Add()
 {
-    SContextSetter setter(this);
+    SContextSetter setter(context);
 
     reply->debug_printout << m_Buffer.args << m_Buffer.chunk << endl;
 
@@ -612,14 +611,13 @@ void SPSG_NgHttp2Session::Del()
     x_DelOnError(-1);
 }
 
-int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
+int32_t SPSG_NgHttp2Session::Submit(const string& path, CRequestContext* new_context, void* stream_user_data)
 {
     if (auto rv = Init()) return rv;
 
-    SContextSetter setter(req);
+    SContextSetter setter(new_context);
     CRequestContext& context = CDiagContext::GetRequestContext();
 
-    const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
     auto headers_size = m_Headers.size();
@@ -636,13 +634,11 @@ int32_t SPSG_NgHttp2Session::Submit(shared_ptr<SPSG_Request>& req)
         --headers_size;
     }
 
-    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, req.get());
+    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, stream_user_data);
 
     if (rv < 0) {
         PSG_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
     } else {
-        auto authority = (const char*)m_Headers[eAuthority].value;
-        req->reply->debug_printout << authority << path << endl;
         PSG_NGHTTP2_SESSION_TRACE(this << " submitted");
     }
 
@@ -743,7 +739,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 
 bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SPSG_Error& error)
 {
-    SContextSetter setter(req);
+    SContextSetter setter(req->context);
     auto& debug_printout = req->reply->debug_printout;
     auto retries = req->GetRetries();
 
@@ -772,7 +768,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
         auto& req = it->second;
         auto& debug_printout = req->reply->debug_printout;
 
-        SContextSetter setter(req);
+        SContextSetter setter(req->context);
         debug_printout << error_code << endl;
 
         // If there is an error and the request is allowed to Retry
@@ -896,7 +892,8 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
-    auto stream_id = m_Session.Submit(req);
+    const auto& path = req->full_path;
+    auto stream_id = m_Session.Submit(path, req->context, req.get());
 
     if (stream_id < 0) {
         // Do not reset all requests unless throttling has been activated
@@ -907,6 +904,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         return false;
     }
 
+    req->reply->debug_printout << server.address << path << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
     m_Requests.emplace(stream_id, move(req));
     return Send();
