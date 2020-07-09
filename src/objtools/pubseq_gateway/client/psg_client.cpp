@@ -1060,6 +1060,11 @@ bool CPSG_Queue::IsEmpty() const
     return m_Impl->Empty();
 }
 
+CPSG_Queue::TApiLock CPSG_Queue::GetApiLock()
+{
+    return SImpl::GetApiLock();
+}
+
 
 END_NCBI_SCOPE
 

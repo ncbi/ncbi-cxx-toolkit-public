@@ -858,6 +858,20 @@ public:
     /// Check whether the queue was stopped/reset and is now empty.
     bool IsEmpty() const;
 
+
+    /// Check whether the queue has been initialized.
+    bool IsInitialized() const { return static_cast<bool>(m_Impl); }
+
+
+    /// Get an API lock.
+    /// Holding this API lock is essential if numerous short-lived queue instances are used.
+    /// It prevents an internal I/O implementation (threads, TCP connections, HTTP sessions, etc)
+    /// from being destroyed (on destroying last remaining queue instance)
+    /// and then re-created (with new queue instance).
+    using TApiLock = shared_ptr<void>;
+    static TApiLock GetApiLock();
+
+
     CPSG_Queue(CPSG_Queue&&);
     CPSG_Queue& operator=(CPSG_Queue&&);
 

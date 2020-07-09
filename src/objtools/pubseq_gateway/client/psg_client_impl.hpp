@@ -93,6 +93,8 @@ struct CPSG_Queue::SImpl : CPSG_WaitingStack<shared_ptr<CPSG_Reply>>
 
     bool SendRequest(shared_ptr<const CPSG_Request> request, const CDeadline& deadline);
 
+    static TApiLock GetApiLock() { return CService::GetMap(); }
+
 private:
     class CService
     {
@@ -100,7 +102,6 @@ private:
         using TMap = unordered_map<string, unique_ptr<SPSG_IoCoordinator>>;
 
         SPSG_IoCoordinator& GetIoC(const string& service);
-        static shared_ptr<TMap> GetMap();
 
         shared_ptr<TMap> m_Map;
         static pair<mutex, weak_ptr<TMap>> sm_Instance;
@@ -109,6 +110,8 @@ private:
         SPSG_IoCoordinator& ioc;
 
         CService(const string& service) : m_Map(GetMap()), ioc(GetIoC(service)) {}
+
+        static shared_ptr<TMap> GetMap();
     };
 
     string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request);
