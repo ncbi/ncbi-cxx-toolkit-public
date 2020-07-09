@@ -770,6 +770,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Topology = NCBI_SEQTOPOLOGY(not_set);
 
     m_IsDelta = false;
+    m_IsDeltaLitOnly = false;
     m_IsVirtual = false;
     m_IsMap = false;
 
@@ -782,6 +783,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
 
     m_Accession.clear();
 
+    m_IsRefSeq = false;
     m_IsNC = false;
     m_IsNM = false;
     m_IsNR = false;
@@ -897,16 +899,44 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
             m_IsVirtual = (repr == CSeq_inst::eRepr_virtual);
             m_IsMap = (repr == CSeq_inst::eRepr_map);
         }
+        if (m_IsDelta && m_Bsh.IsSetInst_Ext()) {
+            const CBioseq_Handle::TInst_Ext& ext = m_Bsh.GetInst_Ext();
+            bool hasLoc = false;
+            if ( ext.IsDelta() ) {
+                ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
+                    if ( (*it)->IsLoc() ) {
+                        const CSeq_loc& loc = (*it)->GetLoc();
+                        if (loc.IsNull()) continue;
+                        hasLoc = true;
+                    }
+                }
+            }
+            if (! hasLoc) {
+                m_IsDeltaLitOnly = true;
+            }
+        }
     }
 
     // process Seq-ids
     for (CSeq_id_Handle sid : obsh.GetId()) {
+        // first switch to set RefSeq and ThirdParty flags
         switch (sid.Which()) {
+            case NCBI_SEQID(Other):
+                m_IsRefSeq = true;
+                break;
             case NCBI_SEQID(Tpg):
             case NCBI_SEQID(Tpe):
             case NCBI_SEQID(Tpd):
                 m_ThirdParty = true;
-                // fall through
+                break;
+            default:
+                break;
+        }
+        // second switch now avoids complicated flag setting logic
+        switch (sid.Which()) {
+            case NCBI_SEQID(Tpg):
+            case NCBI_SEQID(Tpe):
+            case NCBI_SEQID(Tpd):
             case NCBI_SEQID(Other):
             case NCBI_SEQID(Genbank):
             case NCBI_SEQID(Embl):
@@ -1751,7 +1781,22 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     bool snpOK = false;
     bool cddOK = false;
 
-    if (policy == CSeqEntryIndex::eExhaustive) {
+    if (policy == CSeqEntryIndex::eProduction) {
+
+        sel.SetResolveAll();
+        // normal situation uses adaptive depth for feature collection,
+        // includes barrier between RefSeq and INSD accession types
+        sel.SetAdaptiveDepth(true);
+
+        // conditionally allows external annots, based on custom enable bits
+        if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
+            snpOK = true;
+        }
+        if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
+            cddOK = true;
+        }
+
+    } else if (policy == CSeqEntryIndex::eExhaustive) {
 
         // experimental policy forces collection of features from all sequence levels
         sel.SetResolveAll();

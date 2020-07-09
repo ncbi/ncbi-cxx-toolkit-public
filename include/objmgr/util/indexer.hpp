@@ -93,7 +93,8 @@ public:
         eAdaptive = 0,
         eInternal = 1,
         eExternal = 2,
-        eExhaustive = 3
+        eExhaustive = 3,
+        eProduction = 4
     };
 
     enum EFlags {
@@ -453,12 +454,14 @@ public:
     CSeq_inst::TLength GetLength (void) const { return m_Length; }
 
     bool IsDelta (void) const { return m_IsDelta; }
+    bool IsDeltaLitOnly (void) const { return m_IsDeltaLitOnly; }
     bool IsVirtual (void) const { return m_IsVirtual; }
     bool IsMap (void) const { return m_IsMap; }
 
     // Seq-id fields
     const string& GetAccession (void) const { return m_Accession; }
 
+    bool IsRefSeq (void) const { return m_IsRefSeq; }
     bool IsNC (void) const { return m_IsNC; }
     bool IsNM (void) const { return m_IsNM; }
     bool IsNR (void) const { return m_IsNR; }
@@ -630,12 +633,14 @@ private:
     CSeq_inst::TLength m_Length;
 
     bool m_IsDelta;
+    bool m_IsDeltaLitOnly;
     bool m_IsVirtual;
     bool m_IsMap;
 
     // Seq-id fields
     string m_Accession;
 
+    bool m_IsRefSeq;
     bool m_IsNC;
     bool m_IsNM;
     bool m_IsNR;
