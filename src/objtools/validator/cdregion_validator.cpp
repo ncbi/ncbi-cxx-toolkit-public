@@ -769,6 +769,7 @@ void CCdregionValidator::Validate()
 
     x_ValidateBadMRNAOverlap();
     x_ValidateFarProducts();
+    x_ValidateCDSPeptides();
     x_ValidateCDSPartial();
 
     if (x_IsProductMisplaced()) {
@@ -1219,6 +1220,100 @@ void CCdregionValidator::x_ValidateFarProducts()
             PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together");
             m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", *(mrna.GetSeq_feat()));
         }
+    }
+}
+
+
+void CCdregionValidator::x_ValidateCDSPeptides()
+{
+    try {
+    if (!m_Feat.GetData().IsCdregion()  ||  !m_Feat.CanGetProduct()) {
+        return;
+    }
+
+    CBioseq_Handle prot = m_Scope.GetBioseqHandle(m_Feat.GetProduct());
+    if (!prot) {
+        return;
+    }
+    CBioseq_Handle nuc = m_Scope.GetBioseqHandle(m_Feat.GetLocation());
+    if (!nuc) {
+        return;
+    }
+    // check for self-referential CDS feature
+    if (nuc == prot) {
+        return;
+    }
+
+    const CGene_ref* cds_ref = 0;
+
+    // map from cds product to nucleotide
+    const string prev = GetDiagFilter(eDiagFilter_Post);
+    SetDiagFilter(eDiagFilter_All, "!(1305.28,31)");
+    CSeq_loc_Mapper prot_to_cds(m_Feat, CSeq_loc_Mapper::eProductToLocation, &m_Scope);
+    SetDiagFilter(eDiagFilter_All, prev.c_str());
+
+    for (CFeat_CI it(prot, CSeqFeatData::e_Prot); it; ++it) {
+        CSeq_feat_Handle curr = it->GetSeq_feat_Handle();
+        CSeqFeatData::ESubtype subtype = curr.GetFeatSubtype();
+
+        if (subtype != CSeqFeatData::eSubtype_preprotein &&
+            subtype != CSeqFeatData::eSubtype_mat_peptide_aa &&
+            subtype != CSeqFeatData::eSubtype_sig_peptide_aa &&
+            subtype != CSeqFeatData::eSubtype_transit_peptide_aa &&
+            subtype != CSeqFeatData::eSubtype_propeptide_aa) {
+            continue;
+        }
+
+        // see if already has gene xref
+        if (curr.GetGeneXref()) {
+            continue;
+        }
+
+        if (! cds_ref) {
+            // wait until first mat_peptide found to avoid expensive computation on CDS /gene qualifier
+            CConstRef<CSeq_feat> cgene = sequence::GetBestOverlappingFeat (m_Feat.GetLocation(), CSeqFeatData::eSubtype_gene, sequence::eOverlap_SubsetRev, m_Scope);
+            if (cgene && cgene->CanGetData() && cgene->GetData().IsGene()) {
+                const CGene_ref& cgref = cgene->GetData().GetGene();
+                cds_ref = &cgref;
+            } else {
+                // if CDS does not have overlapping gene, bail out of function
+                return;
+            }
+        }
+
+        const CSeq_loc& loc = curr.GetLocation();
+        // map prot location to nuc location
+        CRef<CSeq_loc> nloc(prot_to_cds.Map(loc));
+        if (! nloc) {
+            continue;
+        }
+
+        const CGene_ref* pep_ref = 0;
+        CConstRef<CSeq_feat> pgene = sequence::GetBestOverlappingFeat (*nloc, CSeqFeatData::eSubtype_gene, sequence::eOverlap_SubsetRev, m_Scope);
+        if (pgene && pgene->CanGetData() && pgene->GetData().IsGene()) {
+            const CGene_ref& pgref = pgene->GetData().GetGene();
+            pep_ref = &pgref;
+        }
+
+        if (! cds_ref || ! pep_ref) {
+            continue;
+        }
+        if (cds_ref->IsSetLocus_tag() && pep_ref->IsSetLocus_tag()) {
+            if (cds_ref->GetLocus_tag() == pep_ref->GetLocus_tag()) {
+               continue;
+            }
+        } else if (cds_ref->IsSetLocus() && pep_ref->IsSetLocus()) {
+            if (cds_ref->GetLocus() == pep_ref->GetLocus()) {
+                continue;
+            }
+        }
+
+        if (pgene) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneOnNucPositionOfPeptide,
+                    "Peptide under CDS matches small Gene");
+        }
+    }
+    } catch (CException) {
     }
 }
 

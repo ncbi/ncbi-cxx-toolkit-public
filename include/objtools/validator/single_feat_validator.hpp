@@ -213,6 +213,7 @@ protected:
     bool x_HasGoodParent();
     virtual void x_ValidateSeqFeatLoc() override;
     void x_ValidateFarProducts();
+    void x_ValidateCDSPeptides();
     void x_ValidateCDSPartial();
     bool x_BypassCDSPartialTest() const;
     bool x_CDS3primePartialTest() const;
