@@ -487,7 +487,7 @@ SUv_Write::SUv_Write(void* user_data, size_t buf_size) :
     m_BufSize(buf_size)
 {
     NewBuffer();
-    PSG_UV_WRITE_TRACE(this << " created");
+    NCBI_UV_WRITE_TRACE(this << " created");
 }
 
 int SUv_Write::Write(uv_stream_t* handle, uv_write_cb cb)
@@ -500,7 +500,7 @@ int SUv_Write::Write(uv_stream_t* handle, uv_write_cb cb)
     _ASSERT(!in_progress);
 
     if (data.empty()) {
-        PSG_UV_WRITE_TRACE(this << " empty write");
+        NCBI_UV_WRITE_TRACE(this << " empty write");
         return 0;
     }
 
@@ -512,31 +512,31 @@ int SUv_Write::Write(uv_stream_t* handle, uv_write_cb cb)
 
     // If immediately sent everything
     if (try_rv == static_cast<int>(data.size())) {
-        PSG_UV_WRITE_TRACE(this << '/' << &request << " try-wrote: " << try_rv);
+        NCBI_UV_WRITE_TRACE(this << '/' << &request << " try-wrote: " << try_rv);
         data.clear();
         return 0;
 
     // If sent partially
     } else if (try_rv > 0) {
-        PSG_UV_WRITE_TRACE(this << '/' << &request << " try-wrote partially: " << try_rv);
+        NCBI_UV_WRITE_TRACE(this << '/' << &request << " try-wrote partially: " << try_rv);
         _ASSERT(try_rv < static_cast<int>(data.size()));
         buf.base += try_rv;
         buf.len -= try_rv;
 
     // If unexpected error
     } else if (try_rv != UV_EAGAIN) {
-        PSG_UV_WRITE_TRACE(this << '/' << &request << " try-write failed: " << uv_strerror(try_rv));
+        NCBI_UV_WRITE_TRACE(this << '/' << &request << " try-write failed: " << uv_strerror(try_rv));
         return try_rv;
     }
 
     auto rv = uv_write(&request, handle, &buf, 1, cb);
 
     if (rv < 0) {
-        PSG_UV_WRITE_TRACE(this << '/' << &request << " pre-write failed");
+        NCBI_UV_WRITE_TRACE(this << '/' << &request << " pre-write failed");
         return rv;
     }
 
-    PSG_UV_WRITE_TRACE(this << '/' << &request << " writing: " << data.size());
+    NCBI_UV_WRITE_TRACE(this << '/' << &request << " writing: " << data.size());
     in_progress = true;
 
     // Looking for unused buffer
@@ -544,7 +544,7 @@ int SUv_Write::Write(uv_stream_t* handle, uv_write_cb cb)
         if (!buffer.in_progress) {
             _ASSERT(buffer.data.empty());
 
-            PSG_UV_WRITE_TRACE(this << '/' << &buffer.request << " switching to");
+            NCBI_UV_WRITE_TRACE(this << '/' << &buffer.request << " switching to");
             m_CurrentBuffer = &buffer;
             return 0;
         }
@@ -562,7 +562,7 @@ void SUv_Write::OnWrite(uv_write_t* req)
             _ASSERT(buffer.data.size());
             _ASSERT(buffer.in_progress);
 
-            PSG_UV_WRITE_TRACE(this << '/' << req << " wrote");
+            NCBI_UV_WRITE_TRACE(this << '/' << req << " wrote");
             buffer.data.clear();
             buffer.in_progress = false;
             return;
@@ -574,7 +574,7 @@ void SUv_Write::OnWrite(uv_write_t* req)
 
 void SUv_Write::Reset()
 {
-    PSG_UV_WRITE_TRACE(this << " reset");
+    NCBI_UV_WRITE_TRACE(this << " reset");
 
     for (auto& buffer : m_Buffers) {
         buffer.data.clear();
@@ -587,7 +587,7 @@ void SUv_Write::NewBuffer()
     m_Buffers.emplace_front();
     m_CurrentBuffer = &m_Buffers.front();
 
-    PSG_UV_WRITE_TRACE(this << '/' << &m_CurrentBuffer->request << " new buffer");
+    NCBI_UV_WRITE_TRACE(this << '/' << &m_CurrentBuffer->request << " new buffer");
     m_CurrentBuffer->request.data = m_UserData;
     m_CurrentBuffer->data.reserve(m_BufSize);
 }
@@ -624,7 +624,7 @@ SUv_Tcp::SUv_Tcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size
     data = this;
     m_ReadBuffer.reserve(rd_buf_size);
 
-    PSG_UV_TCP_TRACE(this << " created");
+    NCBI_UV_TCP_TRACE(this << " created");
 }
 
 int SUv_Tcp::Write()
@@ -633,19 +633,19 @@ int SUv_Tcp::Write()
         auto rv = uv_tcp_init(m_Loop, this);
 
         if (rv < 0) {
-            PSG_UV_TCP_TRACE(this << " init failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << " init failed: " << uv_strerror(rv));
             return rv;
         }
 
         rv = m_Connect(this, s_OnConnect);
 
         if (rv < 0) {
-            PSG_UV_TCP_TRACE(this << " pre-connect failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << " pre-connect failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
-        PSG_UV_TCP_TRACE(this << " connecting");
+        NCBI_UV_TCP_TRACE(this << " connecting");
         m_State = eConnecting;
     }
 
@@ -653,12 +653,12 @@ int SUv_Tcp::Write()
         auto rv = m_Write.Write((uv_stream_t*)this, s_OnWrite);
 
         if (rv < 0) {
-            PSG_UV_TCP_TRACE(this << "  pre-write failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << "  pre-write failed: " << uv_strerror(rv));
             Close();
             return rv;
         }
 
-        PSG_UV_TCP_TRACE(this << " writing");
+        NCBI_UV_TCP_TRACE(this << " writing");
     }
 
     return 0;
@@ -670,20 +670,20 @@ void SUv_Tcp::Close()
         auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
 
         if (rv < 0) {
-            PSG_UV_TCP_TRACE(this << " read stop failed: " << uv_strerror(rv));
+            NCBI_UV_TCP_TRACE(this << " read stop failed: " << uv_strerror(rv));
         } else {
-            PSG_UV_TCP_TRACE(this << " read stopped");
+            NCBI_UV_TCP_TRACE(this << " read stopped");
         }
     }
 
     m_Write.Reset();
 
     if ((m_State != eClosing) && (m_State != eClosed)) {
-        PSG_UV_TCP_TRACE(this << " closing");
+        NCBI_UV_TCP_TRACE(this << " closing");
         m_State = eClosing;
         SUv_Handle<uv_tcp_t>::Close();
     } else {
-        PSG_UV_TCP_TRACE(this << " already closing/closed");
+        NCBI_UV_TCP_TRACE(this << " already closing/closed");
     }
 }
 
@@ -696,18 +696,18 @@ void SUv_Tcp::OnConnect(uv_connect_t*, int status)
             status = uv_read_start((uv_stream_t*)this, s_OnAlloc, s_OnRead);
 
             if (status >= 0) {
-                PSG_UV_TCP_TRACE(this << " connected");
+                NCBI_UV_TCP_TRACE(this << " connected");
                 m_State = eConnected;
                 m_ConnectCb(status);
                 return;
             } else {
-                PSG_UV_TCP_TRACE(this << " read start failed: " << uv_strerror(status));
+                NCBI_UV_TCP_TRACE(this << " read start failed: " << uv_strerror(status));
             }
         } else {
-            PSG_UV_TCP_TRACE(this << " nodelay failed: " << uv_strerror(status));
+            NCBI_UV_TCP_TRACE(this << " nodelay failed: " << uv_strerror(status));
         }
     } else {
-        PSG_UV_TCP_TRACE(this << " connect failed: " << uv_strerror(status));
+        NCBI_UV_TCP_TRACE(this << " connect failed: " << uv_strerror(status));
     }
 
     Close();
@@ -724,10 +724,10 @@ void SUv_Tcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 void SUv_Tcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     if (nread < 0) {
-        PSG_UV_TCP_TRACE(this << " read failed: " << s_LibuvError(nread));
+        NCBI_UV_TCP_TRACE(this << " read failed: " << s_LibuvError(nread));
         Close();
     } else {
-        PSG_UV_TCP_TRACE(this << " read: " << nread);
+        NCBI_UV_TCP_TRACE(this << " read: " << nread);
     }
 
     m_ReadCb(buf->base, nread);
@@ -736,10 +736,10 @@ void SUv_Tcp::OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 void SUv_Tcp::OnWrite(uv_write_t* req, int status)
 {
     if (status < 0) {
-        PSG_UV_TCP_TRACE(this << '/' << req << " write failed: " << uv_strerror(status));
+        NCBI_UV_TCP_TRACE(this << '/' << req << " write failed: " << uv_strerror(status));
         Close();
     } else {
-        PSG_UV_TCP_TRACE(this << '/' << req << " wrote");
+        NCBI_UV_TCP_TRACE(this << '/' << req << " wrote");
         m_Write.OnWrite(req);
     }
 
@@ -748,7 +748,7 @@ void SUv_Tcp::OnWrite(uv_write_t* req, int status)
 
 void SUv_Tcp::OnClose(uv_handle_t*)
 {
-    PSG_UV_TCP_TRACE(this << " closed");
+    NCBI_UV_TCP_TRACE(this << " closed");
     m_State = eClosed;
 }
 
