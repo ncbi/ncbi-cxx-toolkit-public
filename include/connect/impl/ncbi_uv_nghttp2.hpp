@@ -314,6 +314,14 @@ private:
     pair<uint32_t, const uint32_t> m_MaxStreams;
 };
 
+struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_UserAgent
+{
+    static const string& Get() { static const string user_agent(Init()); return user_agent; }
+
+private:
+    static string Init();
+};
+
 template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
 const char* s_LibuvError(TInt error_code)
 {

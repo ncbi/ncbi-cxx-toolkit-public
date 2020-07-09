@@ -331,14 +331,12 @@ void SNgHttp2_Session::SHeader::operator=(const string& v)
     valuelen = v.size();
 }
 
-struct SUserAgent : string
+struct SUvNgHttp2_UserAgentImpl : string
 {
-    SUserAgent();
-
-    static const string& Get() { static const SUserAgent user_agent; return user_agent; }
+    SUvNgHttp2_UserAgentImpl();
 };
 
-SUserAgent::SUserAgent()
+SUvNgHttp2_UserAgentImpl::SUvNgHttp2_UserAgentImpl()
 {
     if (auto app = CNcbiApplication::InstanceGuard()) {
         const auto& full_version = app->GetFullVersion();
@@ -372,6 +370,11 @@ SUserAgent::SUserAgent()
         "UNKNOWN"
 #endif
         );
+}
+
+string SUvNgHttp2_UserAgent::Init()
+{
+    return SUvNgHttp2_UserAgentImpl();
 }
 
 SNgHttp2_Session::SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
@@ -465,7 +468,7 @@ int32_t SNgHttp2_Session::Submit(const string& path, CRequestContext* new_contex
 
     m_Headers[eAuthority] = m_Authority;
     m_Headers[ePath] = path;
-    m_Headers[eUserAgent] = SUserAgent::Get();
+    m_Headers[eUserAgent] = SUvNgHttp2_UserAgent::Get();
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
 
