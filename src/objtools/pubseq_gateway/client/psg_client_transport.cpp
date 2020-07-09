@@ -476,18 +476,18 @@ void SPSG_Request::Add()
 constexpr uint8_t kDefaultFlags = NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE;
 
 template <size_t N, size_t V>
-SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], const char (&v)[V]) :
+SNgHttp2_Session::SHeader::SHeader(const char (&n)[N], const char (&v)[V]) :
     nghttp2_nv{ (uint8_t*)n, (uint8_t*)v, N - 1, V - 1, kDefaultFlags }
 {
 }
 
 template <size_t N>
-SPSG_NgHttp2Session::SHeader::SHeader(const char (&n)[N], uint8_t f) :
+SNgHttp2_Session::SHeader::SHeader(const char (&n)[N], uint8_t f) :
     nghttp2_nv{ (uint8_t*)n, nullptr, N - 1, 0, uint8_t(NGHTTP2_NV_FLAG_NO_COPY_NAME | f) }
 {
 }
 
-void SPSG_NgHttp2Session::SHeader::operator=(const string& v)
+void SNgHttp2_Session::SHeader::operator=(const string& v)
 {
     value = (uint8_t*)v.c_str();
     valuelen = v.size();
@@ -536,7 +536,7 @@ SUserAgent::SUserAgent()
         );
 }
 
-SPSG_NgHttp2Session::SPSG_NgHttp2Session(string authority, void* user_data, uint32_t max_streams,
+SNgHttp2_Session::SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
@@ -562,7 +562,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(string authority, void* user_data, uint
     PSG_NGHTTP2_SESSION_TRACE(this << " created");
 }
 
-int SPSG_NgHttp2Session::Init()
+int SNgHttp2_Session::Init()
 {
     if (m_Session) return 0;
 
@@ -593,7 +593,7 @@ int SPSG_NgHttp2Session::Init()
     return 0;
 }
 
-void SPSG_NgHttp2Session::Del()
+void SNgHttp2_Session::Del()
 {
     if (!m_Session) {
         PSG_NGHTTP2_SESSION_TRACE(this << " already terminated");
@@ -611,7 +611,7 @@ void SPSG_NgHttp2Session::Del()
     x_DelOnError(-1);
 }
 
-int32_t SPSG_NgHttp2Session::Submit(const string& path, CRequestContext* new_context, void* stream_user_data)
+int32_t SNgHttp2_Session::Submit(const string& path, CRequestContext* new_context, void* stream_user_data)
 {
     if (auto rv = Init()) return rv;
 
@@ -645,7 +645,7 @@ int32_t SPSG_NgHttp2Session::Submit(const string& path, CRequestContext* new_con
     return x_DelOnError(rv);
 }
 
-ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
+ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 {
     if (auto rv = Init()) return rv;
 
@@ -680,7 +680,7 @@ ssize_t SPSG_NgHttp2Session::Send(vector<char>& buffer)
     }
 }
 
-ssize_t SPSG_NgHttp2Session::Recv(const uint8_t* buffer, size_t size)
+ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
 {
     if (auto rv = Init()) return rv;
 

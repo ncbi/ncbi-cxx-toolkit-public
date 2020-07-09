@@ -415,9 +415,9 @@ private:
     unsigned m_Retries;
 };
 
-struct SPSG_NgHttp2Session
+struct SNgHttp2_Session
 {
-    SPSG_NgHttp2Session(string authority, void* user_data, uint32_t max_streams,
+    SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
             nghttp2_on_data_chunk_recv_callback on_data,
             nghttp2_on_stream_close_callback    on_stream_close,
             nghttp2_on_header_callback          on_header,
@@ -690,7 +690,7 @@ private:
     const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_AsyncQueue& m_Queue;
     SUv_Tcp m_Tcp;
-    SPSG_NgHttp2Session m_Session;
+    SNgHttp2_Session m_Session;
 
     TRequests m_Requests;
 };
