@@ -312,7 +312,16 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    void OnReplyData(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
+    bool OnReplyData(const char* data, size_t len)
+    {
+        while (len) {
+            if (!(this->*m_State)(data, len)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     unsigned GetRetries()
     {
@@ -320,10 +329,10 @@ struct SPSG_Request
     }
 
 private:
-    void StatePrefix(const char*& data, size_t& len);
-    void StateArgs(const char*& data, size_t& len);
-    void StateData(const char*& data, size_t& len);
-    void StateIo(const char*& data, size_t& len) { data += len; len = 0; }
+    bool StatePrefix(const char*& data, size_t& len);
+    bool StateArgs(const char*& data, size_t& len);
+    bool StateData(const char*& data, size_t& len);
+    bool StateIo(const char*& data, size_t& len) { data += len; len = 0; return true; }
 
     void SetStatePrefix()  { Add(); m_State = &SPSG_Request::StatePrefix; }
     void SetStateArgs()           { m_State = &SPSG_Request::StateArgs;   }
@@ -332,7 +341,7 @@ private:
     void Add();
     void AddIo();
 
-    using TState = void (SPSG_Request::*)(const char*& data, size_t& len);
+    using TState = bool (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;
 
     struct SBuffer
@@ -493,27 +502,6 @@ struct SPSG_IoSession
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
-    template <typename TReturn, class ...TArgs1, class ...TArgs2>
-    TReturn TryCatch(TReturn (SPSG_IoSession::*member)(TArgs1...), TReturn error, TArgs2&&... args)
-    {
-        try {
-            return (this->*member)(forward<TArgs2>(args)...);
-        }
-        catch(const CException& e) {
-            ostringstream os;
-            os << e.GetErrCodeString() << " - " << e.GetMsg();
-            Reset(os.str().c_str());
-        }
-        catch(const std::exception& e) {
-            Reset(e.what());
-        }
-        catch(...) {
-            Reset("Unexpected exception");
-        }
-
-        return error;
-    }
-
 private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
 
@@ -534,13 +522,13 @@ private:
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
     int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
             const uint8_t* value, size_t valuelen, uint8_t flags);
-    int OnError(nghttp2_session* session, const char* msg, size_t len);
+    int OnError(nghttp2_session*, const char* msg, size_t) { Reset(msg); return 0; }
 
     template <class ...TArgs1, class ...TArgs2>
     static int OnNgHttp2(void* user_data, int (SPSG_IoSession::*member)(TArgs1...), TArgs2&&... args)
     {
         auto that = static_cast<SPSG_IoSession*>(user_data);
-        return that->TryCatch(member, (int)NGHTTP2_ERR_CALLBACK_FAILURE, forward<TArgs2>(args)...);
+        return (that->*member)(forward<TArgs2>(args)...);
     }
 
     static int s_OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data,
@@ -560,11 +548,9 @@ private:
         return OnNgHttp2(user_data, &SPSG_IoSession::OnHeader, session, frame, name, namelen, value, valuelen, flags);
     }
 
-    static int s_OnError(nghttp2_session*, const char* msg, size_t, void* user_data)
+    static int s_OnError(nghttp2_session* session, const char* msg, size_t len, void* user_data)
     {
-        auto that = static_cast<SPSG_IoSession*>(user_data);
-        that->Reset(msg);
-        return 0;
+        return OnNgHttp2(user_data, &SPSG_IoSession::OnError, session, msg, len);
     }
 
     const string m_Authority;

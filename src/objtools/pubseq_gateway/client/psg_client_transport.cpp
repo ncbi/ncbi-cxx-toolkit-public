@@ -223,7 +223,7 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
     if (params.client_mode == EPSG_PsgClientMode::eIo) AddIo();
 }
 
-void SPSG_Request::StatePrefix(const char*& data, size_t& len)
+bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
 {
     static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
 
@@ -240,29 +240,25 @@ void SPSG_Request::StatePrefix(const char*& data, size_t& len)
         // Full prefix matched
         if (++index == kPrefix.size()) {
             SetStateArgs();
-            return;
+            return true;
         }
 
-        if (!len) return;
+        if (!len) return true;
     }
 
     // Check failed
     const auto remaining = min(len, kPrefix.size() - index);
-    const string wrong_prefix(data, remaining);
-
-    if (index) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Prefix mismatch, offending part '" << wrong_prefix << '\'');
-    } else {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, wrong_prefix);
-    }
+    const auto wrong_prefix(NStr::PrintableString(string(data, remaining)));
+    ERR_POST("Prefix mismatch: " << (index ? "offending part " : "") << '\'' << wrong_prefix << '\'');
+    return false;
 }
 
-void SPSG_Request::StateArgs(const char*& data, size_t& len)
+bool SPSG_Request::StateArgs(const char*& data, size_t& len)
 {
     // Accumulating args
     while (*data != '\n') {
         m_Buffer.args_buffer.push_back(*data++);
-        if (!--len) return;
+        if (!--len) return true;
     }
 
     ++data;
@@ -279,15 +275,17 @@ void SPSG_Request::StateArgs(const char*& data, size_t& len)
     } else {
         SetStatePrefix();
     }
+
+    return true;
 }
 
-void SPSG_Request::StateData(const char*& data, size_t& len)
+bool SPSG_Request::StateData(const char*& data, size_t& len)
 {
     // Accumulating data
     const auto data_size = min(m_Buffer.data_to_read, len);
 
     // Do not add an empty part
-    if (!data_size) return;
+    if (!data_size) return true;
 
     auto& chunk = m_Buffer.chunk;
     chunk.append(data, data_size);
@@ -298,6 +296,8 @@ void SPSG_Request::StateData(const char*& data, size_t& len)
     if (!m_Buffer.data_to_read) {
         SetStatePrefix();
     }
+
+    return true;
 }
 
 void SPSG_Request::AddIo()
@@ -476,9 +476,9 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
-        it->second->OnReplyData((const char*)data, len);
-    } else {
-        ERR_POST(this << ": OnData: stream_id: " << stream_id << " not found");
+        if (!it->second->OnReplyData((const char*)data, len)) {
+            Reset("Failed to parse response data");
+        }
     }
 
     return 0;
@@ -935,7 +935,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t*)
                     space->NotifyOne();
 
                     _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
-                    bool result = session.TryCatch(&SPSG_IoSession::ProcessRequest, false, req);
+                    bool result = session.ProcessRequest(req);
 
                     if (result) {
                         PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
@@ -1089,8 +1089,9 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
 
 bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline)
 {
-    if (m_Io.size() == 0)
-        NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
+    if (m_Io.size() == 0) {
+        ERR_POST(Fatal << "IO is not open");
+    }
 
     auto counter = m_RequestCounter++;
     const auto first = (counter++ / params.requests_per_io) % m_Io.size();
