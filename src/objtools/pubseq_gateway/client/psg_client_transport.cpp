@@ -447,17 +447,15 @@ void SPSG_Request::Add()
 
 /** SPSG_IoSession */
 
-SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop) :
+template <class... TNgHttp2Cbs>
+SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks) :
     SUvNgHttp2_SessionBase(
             loop,
             s.address,
             TPSG_RdBufSize::GetDefault(),
             TPSG_WrBufSize::GetDefault(),
             TPSG_MaxConcurrentStreams::GetDefault(),
-            s_OnData,
-            s_OnStreamClose,
-            s_OnHeader,
-            s_OnError),
+            forward<TNgHttp2Cbs>(callbacks)...),
     server(s),
     m_Headers{{
         { ":method", "GET" },

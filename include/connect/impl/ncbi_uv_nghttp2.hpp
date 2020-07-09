@@ -421,6 +421,42 @@ private:
     virtual void OnReset(SUvNgHttp2_Error error) = 0;
 };
 
+template <class TImpl>
+struct SUvNgHttp2_Session : TImpl
+{
+    template <class... TArgs>
+    SUvNgHttp2_Session(TArgs&&... args) :
+        TImpl(forward<TArgs>(args)..., s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+    {}
+
+private:
+    static SUvNgHttp2_Session* GetThat(void* user_data)
+    {
+        _ASSERT(user_data);
+        return static_cast<SUvNgHttp2_Session*>(user_data);
+    }
+
+    static int s_OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len, void* user_data)
+    {
+        return GetThat(user_data)->OnData(session, flags, stream_id, data, len);
+    }
+
+    static int s_OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code, void* user_data)
+    {
+        return GetThat(user_data)->OnStreamClose(session, stream_id, error_code);
+    }
+
+    static int s_OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen, const uint8_t* value, size_t valuelen, uint8_t flags, void* user_data)
+    {
+        return GetThat(user_data)->OnHeader(session, frame, name, namelen, value, valuelen, flags);
+    }
+
+    static int s_OnError(nghttp2_session* session, const char* msg, size_t len, void* user_data)
+    {
+        return GetThat(user_data)->OnError(session, msg, len);
+    }
+};
+
 END_NCBI_SCOPE
 
 #endif

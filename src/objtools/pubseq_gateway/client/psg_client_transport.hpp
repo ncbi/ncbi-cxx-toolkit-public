@@ -494,11 +494,19 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
 {
     SPSG_Server& server;
 
-    SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop);
+    template <class... TNgHttp2Cbs>
+    SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
     bool ProcessRequest(shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
+
+protected:
+    int OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len);
+    int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
+    int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
+            const uint8_t* value, size_t valuelen, uint8_t flags);
+    int OnError(nghttp2_session*, const char* msg, size_t) { Reset(msg); return 0; }
 
 private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
@@ -509,41 +517,6 @@ private:
     void RequestComplete(TRequests::iterator& it);
 
     void OnReset(SUvNgHttp2_Error error) override;
-
-    int OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len);
-    int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
-    int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
-            const uint8_t* value, size_t valuelen, uint8_t flags);
-    int OnError(nghttp2_session*, const char* msg, size_t) { Reset(msg); return 0; }
-
-    template <class ...TArgs1, class ...TArgs2>
-    static int OnNgHttp2(void* user_data, int (SPSG_IoSession::*member)(TArgs1...), TArgs2&&... args)
-    {
-        auto that = static_cast<SPSG_IoSession*>(user_data);
-        return (that->*member)(forward<TArgs2>(args)...);
-    }
-
-    static int s_OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data,
-            size_t len, void* user_data)
-    {
-        return OnNgHttp2(user_data, &SPSG_IoSession::OnData, session, flags, stream_id, data, len);
-    }
-
-    static int s_OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code, void* user_data)
-    {
-        return OnNgHttp2(user_data, &SPSG_IoSession::OnStreamClose, session, stream_id, error_code);
-    }
-
-    static int s_OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
-            const uint8_t* value, size_t valuelen, uint8_t flags, void* user_data)
-    {
-        return OnNgHttp2(user_data, &SPSG_IoSession::OnHeader, session, frame, name, namelen, value, valuelen, flags);
-    }
-
-    static int s_OnError(nghttp2_session* session, const char* msg, size_t len, void* user_data)
-    {
-        return OnNgHttp2(user_data, &SPSG_IoSession::OnError, session, msg, len);
-    }
 
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE>, eSize> m_Headers;
     const TPSG_RequestTimeout m_RequestTimeout;
@@ -671,7 +644,7 @@ private:
     }
 
     SPSG_Servers::TTS& m_Servers;
-    deque<pair<SPSG_IoSession, double>> m_Sessions;
+    deque<pair<SUvNgHttp2_Session<SPSG_IoSession>, double>> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
 };
 
