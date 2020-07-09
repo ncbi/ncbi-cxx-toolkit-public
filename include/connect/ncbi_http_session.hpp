@@ -531,6 +531,8 @@ private:
     // new values.
     void x_AddCookieHeader(const CUrl& url, bool initial);
 
+    void x_AdjustHeaders(bool use_form_data);
+
     // CConn_HttpStream callback for parsing headers.
     // 'user_data' must point to a CHttpRequest object.
     static EHTTP_HeaderParse sx_ParseHeader(const char*, void*, int);

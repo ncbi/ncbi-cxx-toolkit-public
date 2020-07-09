@@ -695,6 +695,11 @@ CHttpResponse CHttpRequest::Execute(void)
         // Only POST and PUT support sending form data.
         bool have_data = m_FormData  &&  !m_FormData.Empty();
         if ( !m_Response ) {
+            if (m_Stream) {
+                NCBI_THROW(CHttpSessionException, eBadRequest,
+                    "An attempt to execute HTTP request already being executed");
+            }
+
             x_InitConnection(have_data);
         }
         _ASSERT(m_Response);
@@ -721,6 +726,11 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
             "Request method does not allow writing to the output stream");
     }
     if ( !m_Stream ) {
+        if (m_Response) {
+            NCBI_THROW(CHttpSessionException, eBadRequest,
+                "An attempt to execute HTTP request already being executed");
+        }
+
         x_InitConnection(false);
     }
     _ASSERT(m_Response);
@@ -746,12 +756,18 @@ CHttpFormData& CHttpRequest::FormData(void)
 }
 
 
+void CHttpRequest::x_AdjustHeaders(bool use_form_data)
+{
+    x_AddCookieHeader(m_Url, true);
+    if (use_form_data) {
+        m_Headers->SetValue(CHttpHeaders::eContentType,
+            m_FormData->GetContentTypeStr());
+    }
+}
+
+
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
-    if (m_Response  ||  m_Stream) {
-        NCBI_THROW(CHttpSessionException, eBadRequest,
-            "An attempt to execute HTTP request already being executed");
-    }
     SConnNetInfo* net_info = ConnNetInfo_Create(
         m_Url.IsService() ? m_Url.GetService().c_str() : 0);
     if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
@@ -775,11 +791,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         m_Headers->Merge(usr_hdr);
     }
 
-    x_AddCookieHeader(m_Url, true);
-    if (use_form_data) {
-        m_Headers->SetValue(CHttpHeaders::eContentType,
-            m_FormData->GetContentTypeStr());
-    }
+    x_AdjustHeaders(use_form_data);
     string headers = m_Headers->GetHttpHeader();
 
     if ( !m_Timeout.IsDefault() ) {
