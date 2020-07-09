@@ -79,6 +79,8 @@ public:
 		eNumErrStatus,
 		ePSSMInput,
 		eConverged,
+		eArchiveInput,
+		eRIDInput,
 		eDBInfo,
 		eDBTaxInfo,
 		eDBEntry,

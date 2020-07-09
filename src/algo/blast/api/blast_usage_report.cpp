@@ -94,6 +94,8 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
     	case eNumErrStatus:		retval.assign("num_error_status"); break;
     	case ePSSMInput:		retval.assign("pssm_input"); break;
     	case eConverged:	    retval.assign("converged"); break;
+    	case eArchiveInput:	    retval.assign("archive"); break;
+    	case eRIDInput:	    	retval.assign("rid"); break;
     	case eDBInfo:			retval.assign("db_info"); break;
 		case eDBTaxInfo:		retval.assign("db_tax_info"); break;
 		case eDBEntry:			retval.assign("db_entry"); break;
