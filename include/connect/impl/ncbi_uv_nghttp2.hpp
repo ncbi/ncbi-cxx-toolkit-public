@@ -37,7 +37,9 @@
 #include <common/ncbi_export.h>
 
 #include <uv.h>
+#include <nghttp2/nghttp2.h>
 
+#include <array>
 #include <functional>
 #include <forward_list>
 #include <type_traits>
@@ -260,10 +262,68 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Loop : uv_loop_t
     }
 };
 
+struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
+{
+    SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
+            nghttp2_on_data_chunk_recv_callback on_data,
+            nghttp2_on_stream_close_callback    on_stream_close,
+            nghttp2_on_header_callback          on_header,
+            nghttp2_error_callback              on_error);
+
+    void Del();
+
+    int32_t Submit(const string& path, CRequestContext* new_context, void* stream_user_data);
+    ssize_t Send(vector<char>& buffer);
+    ssize_t Recv(const uint8_t* buffer, size_t size);
+
+    uint32_t GetMaxStreams() const { return m_MaxStreams.first; }
+
+private:
+    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
+
+    struct SHeader : nghttp2_nv
+    {
+        template <size_t N, size_t V> SHeader(const char (&n)[N], const char (&v)[V]);
+        template <size_t N>           SHeader(const char (&n)[N], uint8_t f = NGHTTP2_NV_FLAG_NONE);
+        void operator=(const string& v);
+    };
+
+    int Init();
+
+    template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
+    TInt x_DelOnError(TInt rv)
+    {
+        if (rv < 0) {
+            nghttp2_session_del(m_Session);
+            m_Session = nullptr;
+        }
+
+        return rv;
+    }
+
+    nghttp2_session* m_Session = nullptr;
+    const string m_Authority;
+    array<SHeader, eSize> m_Headers;
+    void* m_UserData;
+    nghttp2_on_data_chunk_recv_callback m_OnData;
+    nghttp2_on_stream_close_callback    m_OnStreamClose;
+    nghttp2_on_header_callback          m_OnHeader;
+    nghttp2_error_callback              m_OnError;
+    pair<uint32_t, const uint32_t> m_MaxStreams;
+};
+
 template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
 const char* s_LibuvError(TInt error_code)
 {
     return uv_strerror(static_cast<int>(error_code));
+}
+
+template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
+const char* s_NgHttp2Error(TInt error_code)
+{
+    return error_code < 0 ?
+        nghttp2_strerror(static_cast<int>(error_code)) :
+        nghttp2_http2_strerror(static_cast<uint32_t>(error_code));
 }
 
 END_NCBI_SCOPE

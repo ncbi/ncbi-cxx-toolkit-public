@@ -59,8 +59,6 @@
 #include <random>
 #include <type_traits>
 
-#include <nghttp2/nghttp2.h>
-
 #include "mpmc_nw.hpp"
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
 #include <connect/services/netservice_api.hpp>
@@ -71,7 +69,6 @@
 BEGIN_NCBI_SCOPE
 
 // Different TRACE macros allow turning off tracing in some classes
-#define NCBI_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
 #define PSG_THROTTLING_TRACE(message)      _TRACE(message)
 #define PSG_IO_SESSION_TRACE(message)      _TRACE(message)
 #define PSG_IO_TRACE(message)              _TRACE(message)
@@ -413,56 +410,6 @@ private:
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     unsigned m_Retries;
-};
-
-struct SNgHttp2_Session
-{
-    SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
-            nghttp2_on_data_chunk_recv_callback on_data,
-            nghttp2_on_stream_close_callback    on_stream_close,
-            nghttp2_on_header_callback          on_header,
-            nghttp2_error_callback              on_error);
-
-    void Del();
-
-    int32_t Submit(const string& path, CRequestContext* new_context, void* stream_user_data);
-    ssize_t Send(vector<char>& buffer);
-    ssize_t Recv(const uint8_t* buffer, size_t size);
-
-    uint32_t GetMaxStreams() const { return m_MaxStreams.first; }
-
-private:
-    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
-
-    struct SHeader : nghttp2_nv
-    {
-        template <size_t N, size_t V> SHeader(const char (&n)[N], const char (&v)[V]);
-        template <size_t N>           SHeader(const char (&n)[N], uint8_t f = NGHTTP2_NV_FLAG_NONE);
-        void operator=(const string& v);
-    };
-
-    int Init();
-
-    template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
-    TInt x_DelOnError(TInt rv)
-    {
-        if (rv < 0) {
-            nghttp2_session_del(m_Session);
-            m_Session = nullptr;
-        }
-
-        return rv;
-    }
-
-    nghttp2_session* m_Session = nullptr;
-    const string m_Authority;
-    array<SHeader, eSize> m_Headers;
-    void* m_UserData;
-    nghttp2_on_data_chunk_recv_callback m_OnData;
-    nghttp2_on_stream_close_callback    m_OnStreamClose;
-    nghttp2_on_header_callback          m_OnHeader;
-    nghttp2_error_callback              m_OnError;
-    pair<uint32_t, const uint32_t> m_MaxStreams;
 };
 
 struct SPSG_TimedRequest
