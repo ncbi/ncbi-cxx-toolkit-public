@@ -53,7 +53,6 @@
 #include <utility>
 #include <condition_variable>
 #include <forward_list>
-#include <mutex>
 #include <chrono>
 #include <sstream>
 #include <random>
@@ -73,45 +72,6 @@ BEGIN_NCBI_SCOPE
 #define PSG_IO_SESSION_TRACE(message)      _TRACE(message)
 #define PSG_IO_TRACE(message)              _TRACE(message)
 #define PSG_DISCOVERY_TRACE(message)       _TRACE(message)
-
-template <class TType>
-struct SPSG_ThreadSafe
-{
-    template <class T>
-    struct SLock : private unique_lock<std::mutex>
-    {
-        T& operator*()  { return *m_Object; }
-        T* operator->() { return  m_Object; }
-
-        // A safe and elegant RAII alternative to explicit scopes or 'unlock' method.
-        // It allows locks to be declared inside 'if' condition.
-        using unique_lock<std::mutex>::operator bool;
-
-    private:
-        SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) { _ASSERT(m_Object); }
-
-        T* m_Object;
-
-        friend struct SPSG_ThreadSafe;
-    };
-
-    template <class... TArgs>
-    SPSG_ThreadSafe(TArgs&&... args) : m_Object(forward<TArgs>(args)...) {}
-
-    SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
-    SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
-
-    // Direct access to the protected object (e.g. to access atomic members).
-    // All thread-safe members must be explicitly marked volatile to be available.
-          volatile TType& GetMTSafe()       { return m_Object; }
-    const volatile TType& GetMTSafe() const { return m_Object; }
-
-protected:
-    mutex m_Mutex;
-
-private:
-    TType m_Object;
-};
 
 struct SPSG_Error : string
 {
@@ -343,7 +303,7 @@ struct SPSG_Reply
 
     struct SItem
     {
-        using TTS = SPSG_CV<0, SPSG_ThreadSafe<SItem>>;
+        using TTS = SPSG_CV<0, SThreadSafe<SItem>>;
 
         vector<SPSG_Chunk> chunks;
         SPSG_Args args;
@@ -354,7 +314,7 @@ struct SPSG_Reply
         void SetSuccess();
     };
 
-    SPSG_ThreadSafe<list<SItem::TTS>> items;
+    SThreadSafe<list<SItem::TTS>> items;
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
 
@@ -520,7 +480,7 @@ private:
     }
 
     const SSocketAddress& m_Address;
-    SPSG_ThreadSafe<SStats> m_Stats;
+    SThreadSafe<SStats> m_Stats;
     atomic<EThrottling> m_Active;
     SUv_Timer m_Timer;
     SUv_Async m_Signal;
@@ -698,7 +658,7 @@ private:
 struct SPSG_Servers : protected deque<SPSG_Server>
 {
     using TBase = deque<SPSG_Server>;
-    using TTS = SPSG_ThreadSafe<SPSG_Servers>;
+    using TTS = SThreadSafe<SPSG_Servers>;
 
     // Only methods that do not use/change size can be used directly
     using TBase::begin;

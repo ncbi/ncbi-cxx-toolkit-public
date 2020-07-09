@@ -36,6 +36,7 @@
 #include <corelib/ncbistr.hpp>
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -92,6 +93,45 @@ private:
     const string m_ServiceName;
     shared_ptr<void> m_Data;
     const bool m_IsSingleServer;
+};
+
+template <class TType>
+struct SThreadSafe
+{
+    template <class T>
+    struct SLock : private unique_lock<std::mutex>
+    {
+        T& operator*()  { return *m_Object; }
+        T* operator->() { return  m_Object; }
+
+        // More convenient RAII alternative to explicit scopes or 'unlock' method.
+        // It allows locks to be declared inside 'if' condition.
+        using unique_lock<std::mutex>::operator bool;
+
+    private:
+        SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) { _ASSERT(m_Object); }
+
+        T* m_Object;
+
+        friend struct SThreadSafe;
+    };
+
+    template <class... TArgs>
+    SThreadSafe(TArgs&&... args) : m_Object(forward<TArgs>(args)...) {}
+
+    SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
+    SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
+
+    // Direct access to the protected object (e.g. to access atomic members).
+    // All thread-safe members must be explicitly marked volatile to be available.
+          volatile TType& GetMTSafe()       { return m_Object; }
+    const volatile TType& GetMTSafe() const { return m_Object; }
+
+protected:
+    mutex m_Mutex;
+
+private:
+    TType m_Object;
 };
 
 END_NCBI_SCOPE
