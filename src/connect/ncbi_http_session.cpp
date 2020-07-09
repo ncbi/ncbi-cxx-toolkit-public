@@ -463,7 +463,7 @@ bool CHttpFormData::IsEmpty(void) const
 //
 
 
-CHttpResponse::CHttpResponse(CHttpSession&   session,
+CHttpResponse::CHttpResponse(CHttpSession_Base&   session,
                              const CUrl&     url,
                              shared_ptr<iostream> stream)
     : m_Session(&session),
@@ -544,7 +544,7 @@ unsigned short x_RetriesToMaxtry(unsigned short retries)
 }
 
 
-CHttpRequest::CHttpRequest(CHttpSession& session,
+CHttpRequest::CHttpRequest(CHttpSession_Base& session,
                            const CUrl&   url,
                            EReqMethod    method)
     : m_Session(&session),
@@ -695,7 +695,7 @@ CHttpResponse CHttpRequest::Execute(void)
                     "An attempt to execute HTTP request already being executed");
             }
 
-            x_InitConnection(have_data);
+            m_Session->x_StartRequest(*this, have_data);
         }
         _ASSERT(m_Response);
         _ASSERT(m_Stream);
@@ -726,7 +726,7 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
                 "An attempt to execute HTTP request already being executed");
         }
 
-        x_InitConnection(false);
+        m_Session->x_StartRequest(*this, false);
     }
     _ASSERT(m_Response);
     _ASSERT(m_Stream);
@@ -978,24 +978,24 @@ CHttpRequest& CHttpRequest::SetRetryProcessing(ESwitch on_off)
 
 
 ///////////////////////////////////////////////////////
-//  CHttpSession::
+//  CHttpSession_Base::
 //
 
 
-CHttpSession::CHttpSession(void)
+CHttpSession_Base::CHttpSession_Base(void)
     : m_Protocol(eHTTP_10),
       m_HttpFlags(0)
 {
 }
 
 
-CHttpRequest CHttpSession::NewRequest(const CUrl& url, ERequestMethod method)
+CHttpRequest CHttpSession_Base::NewRequest(const CUrl& url, ERequestMethod method)
 {
     return CHttpRequest(*this, url, EReqMethod(method));
 }
 
 
-CHttpResponse CHttpSession::Get(const CUrl&     url,
+CHttpResponse CHttpSession_Base::Get(const CUrl& url,
                                 const CTimeout& timeout,
                                 THttpRetries    retries)
 {
@@ -1006,7 +1006,7 @@ CHttpResponse CHttpSession::Get(const CUrl&     url,
 }
 
 
-CHttpResponse CHttpSession::Post(const CUrl&     url,
+CHttpResponse CHttpSession_Base::Post(const CUrl& url,
                                  CTempString     data,
                                  CTempString     content_type,
                                  const CTimeout& timeout,
@@ -1026,7 +1026,7 @@ CHttpResponse CHttpSession::Post(const CUrl&     url,
 }
 
 
-CHttpResponse CHttpSession::Put(const CUrl&     url,
+CHttpResponse CHttpSession_Base::Put(const CUrl& url,
                                 CTempString     data,
                                 CTempString     content_type,
                                 const CTimeout& timeout,
@@ -1050,7 +1050,7 @@ CHttpResponse CHttpSession::Put(const CUrl&     url,
 DEFINE_STATIC_FAST_MUTEX(s_SessionMutex);
 
 
-void CHttpSession::x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
+void CHttpSession_Base::x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
                                 const CUrl*                        url)
 {
     CFastMutexGuard lock(s_SessionMutex);
@@ -1060,7 +1060,7 @@ void CHttpSession::x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
 }
 
 
-string CHttpSession::x_GetCookies(const CUrl& url) const
+string CHttpSession_Base::x_GetCookies(const CUrl& url) const
 {
     string cookies;
     CFastMutexGuard lock(s_SessionMutex);

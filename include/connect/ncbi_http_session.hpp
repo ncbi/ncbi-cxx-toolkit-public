@@ -121,7 +121,7 @@ CHttpResponse g_HttpPut(const CUrl&         url,
                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
                         THttpRetries        retries = null);
 
-class CHttpSession;
+class CHttpSession_Base;
 
 
 class NCBI_XCONNECT_EXPORT CHttpHeaders : public CObject
@@ -420,12 +420,12 @@ public:
 private:
     friend class CHttpRequest;
 
-    CHttpResponse(CHttpSession& session, const CUrl& url, shared_ptr<iostream> stream = {});
+    CHttpResponse(CHttpSession_Base& session, const CUrl& url, shared_ptr<iostream> stream = {});
 
     // Update response headers and location, parse cookies and store them in the session.
     void x_Update(CHttpHeaders::THeaders headers, int status_code, string status_text);
 
-    CRef<CHttpSession>      m_Session;
+    CRef<CHttpSession_Base> m_Session;
     CUrl                    m_Url;      // Original URL
     CUrl                    m_Location; // Redirection or the original URL.
     shared_ptr<iostream>    m_Stream;
@@ -507,9 +507,10 @@ public:
     }
 
 private:
-    friend class CHttpSession;
+    friend class CHttpSession_Base;
+    friend class CHttpSessionImpl1x;
 
-    CHttpRequest(CHttpSession& session, const CUrl& url, EReqMethod method);
+    CHttpRequest(CHttpSession_Base& session, const CUrl& url, EReqMethod method);
 
     class CAdjustUrlCallback_Base : public CObject {
     public:
@@ -546,7 +547,7 @@ private:
                          void*         user_data,
                          unsigned int  failure_count);
 
-    CRef<CHttpSession>  m_Session;
+    CRef<CHttpSession_Base> m_Session;
     CUrl                m_Url;
     bool                m_IsService;
     EReqMethod          m_Method;
@@ -563,7 +564,7 @@ private:
 
 
 /// HTTP session class, holding common data for multiple requests.
-class NCBI_XCONNECT_EXPORT CHttpSession : public CObject,
+class NCBI_XCONNECT_EXPORT CHttpSession_Base : public CObject,
                                           virtual protected CConnIniter
 {
 public:
@@ -647,12 +648,14 @@ public:
     /// @sa GetHttpFlags
     void SetHttpFlags(THTTP_Flags flags) { m_HttpFlags = flags; }
 
-    CHttpSession(void);
-    virtual ~CHttpSession(void) {}
+    CHttpSession_Base(void);
+    virtual ~CHttpSession_Base(void) {}
 
 private:
     friend class CHttpRequest;
     friend class CHttpResponse;
+
+    virtual void x_StartRequest(CHttpRequest& req, bool use_form_data) = 0;
 
     // Save cookies returned by a response.
     void x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
@@ -664,6 +667,32 @@ private:
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
 };
+
+
+template <class TImpl>
+class CHttpSessionTmpl : public CHttpSession_Base
+{
+    void x_StartRequest(CHttpRequest& req, bool use_form_data) override
+    {
+        TImpl::StartRequest(GetProtocol(), req, use_form_data);
+    }
+};
+
+
+class CHttpSessionImpl1x
+{
+    friend class CHttpSessionTmpl<CHttpSessionImpl1x>;
+
+    static void StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data)
+    {
+        _ASSERT(protocol <= CHttpSession_Base::eHTTP_11);
+        req.x_InitConnection(use_form_data);
+    }
+};
+
+
+/// @sa CHttpSession_Base
+using CHttpSession = CHttpSessionTmpl<CHttpSessionImpl1x>;
 
 
 /////////////////////////////////////////////////////////////////////////////
