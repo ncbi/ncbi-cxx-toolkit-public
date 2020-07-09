@@ -67,7 +67,7 @@ public:
         m_StopWatch.Start();
         if (m_UsageReport.IsEnabled()) {
         	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
-        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, "blastdbcmd");
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "blastdbcmd");
         }
     }
     ~CBlastDBCmdApp() {
