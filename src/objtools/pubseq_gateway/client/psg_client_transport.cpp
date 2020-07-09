@@ -559,7 +559,7 @@ SNgHttp2_Session::SNgHttp2_Session(string authority, void* user_data, uint32_t m
     m_OnError(on_error),
     m_MaxStreams(max_streams, max_streams)
 {
-    PSG_NGHTTP2_SESSION_TRACE(this << " created");
+    NCBI_NGHTTP2_SESSION_TRACE(this << " created");
 }
 
 int SNgHttp2_Session::Init()
@@ -583,11 +583,11 @@ int SNgHttp2_Session::Init()
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
     if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
-        PSG_NGHTTP2_SESSION_TRACE(this << " submit settings failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " submit settings failed: " << s_NgHttp2Error(rv));
         return x_DelOnError(rv);
     }
 
-    PSG_NGHTTP2_SESSION_TRACE(this << " initialized");
+    NCBI_NGHTTP2_SESSION_TRACE(this << " initialized");
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     m_MaxStreams.first = min(max_streams, m_MaxStreams.second);
     return 0;
@@ -596,16 +596,16 @@ int SNgHttp2_Session::Init()
 void SNgHttp2_Session::Del()
 {
     if (!m_Session) {
-        PSG_NGHTTP2_SESSION_TRACE(this << " already terminated");
+        NCBI_NGHTTP2_SESSION_TRACE(this << " already terminated");
         return;
     }
 
     auto rv = nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
 
     if (rv) {
-        PSG_NGHTTP2_SESSION_TRACE(this << " terminate failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " terminate failed: " << s_NgHttp2Error(rv));
     } else {
-        PSG_NGHTTP2_SESSION_TRACE(this << " terminated");
+        NCBI_NGHTTP2_SESSION_TRACE(this << " terminated");
     }
 
     x_DelOnError(-1);
@@ -637,9 +637,9 @@ int32_t SNgHttp2_Session::Submit(const string& path, CRequestContext* new_contex
     auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, stream_user_data);
 
     if (rv < 0) {
-        PSG_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
+        NCBI_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
     } else {
-        PSG_NGHTTP2_SESSION_TRACE(this << " submitted");
+        NCBI_NGHTTP2_SESSION_TRACE(this << " submitted");
     }
 
     return x_DelOnError(rv);
@@ -651,11 +651,11 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 
     if (nghttp2_session_want_write(m_Session) == 0) {
         if (nghttp2_session_want_read(m_Session) == 0) {
-            PSG_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
+            NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
             return x_DelOnError(-1);
         }
 
-        PSG_NGHTTP2_SESSION_TRACE(this << " does not want to write");
+        NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write");
         return 0;
     }
 
@@ -670,11 +670,11 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
             total += rv;
 
         } else if (rv < 0) {
-            PSG_NGHTTP2_SESSION_TRACE(this << " send failed: " << s_NgHttp2Error(rv));
+            NCBI_NGHTTP2_SESSION_TRACE(this << " send failed: " << s_NgHttp2Error(rv));
             return x_DelOnError(rv);
 
         } else {
-            PSG_NGHTTP2_SESSION_TRACE(this << " sended: " << total);
+            NCBI_NGHTTP2_SESSION_TRACE(this << " sended: " << total);
             return total;
         }
     }
@@ -696,10 +696,10 @@ ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
         }
 
         if (rv < 0) {
-            PSG_NGHTTP2_SESSION_TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
+            NCBI_NGHTTP2_SESSION_TRACE(this << " receive failed: " << s_NgHttp2Error(rv));
             return x_DelOnError(rv);
         } else {
-            PSG_NGHTTP2_SESSION_TRACE(this << " received: " << total);
+            NCBI_NGHTTP2_SESSION_TRACE(this << " received: " << total);
             return total;
         }
     }

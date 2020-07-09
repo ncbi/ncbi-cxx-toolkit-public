@@ -71,7 +71,7 @@
 BEGIN_NCBI_SCOPE
 
 // Different TRACE macros allow turning off tracing in some classes
-#define PSG_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
+#define NCBI_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
 #define PSG_THROTTLING_TRACE(message)      _TRACE(message)
 #define PSG_IO_SESSION_TRACE(message)      _TRACE(message)
 #define PSG_IO_TRACE(message)              _TRACE(message)
