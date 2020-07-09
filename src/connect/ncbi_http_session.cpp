@@ -458,11 +458,11 @@ bool CHttpFormData::IsEmpty(void) const
 
 CHttpResponse::CHttpResponse(CHttpSession&   session,
                              const CUrl&     url,
-                             CHttpStreamRef& stream)
+                             shared_ptr<iostream> stream)
     : m_Session(&session),
       m_Url(url),
       m_Location(url),
-      m_Stream(&stream),
+      m_Stream(move(stream)),
       m_Headers(new CHttpHeaders),
       m_StatusCode(0)
 {
@@ -471,27 +471,27 @@ CHttpResponse::CHttpResponse(CHttpSession&   session,
 
 CNcbiIstream& CHttpResponse::ContentStream(void) const
 {
-    _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
+    _ASSERT(m_Stream);
     if ( !CanGetContentStream() ) {
         NCBI_THROW(CHttpSessionException, eBadStream,
             string("Content stream is not available for status '") +
             NStr::NumericToString(m_StatusCode) + " " +
             m_StatusText + "'");
     }
-    return m_Stream->GetConnStream();
+    return *m_Stream;
 }
 
 
 CNcbiIstream& CHttpResponse::ErrorStream(void) const
 {
-    _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
+    _ASSERT(m_Stream);
     if ( CanGetContentStream() ) {
         NCBI_THROW(CHttpSessionException, eBadStream,
             string("Error stream is not available for status '") +
             NStr::NumericToString(m_StatusCode) + " " +
             m_StatusText + "'");
     }
-    return m_Stream->GetConnStream();
+    return *m_Stream;
 }
 
 
@@ -698,14 +698,13 @@ CHttpResponse CHttpRequest::Execute(void)
             x_InitConnection(have_data);
         }
         _ASSERT(m_Response);
-        _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
-        CConn_IOStream& out = m_Stream->GetConnStream();
+        _ASSERT(m_Stream);
         if ( have_data ) {
-            m_FormData->WriteFormData(out);
+            m_FormData->WriteFormData(*m_Stream);
         }
         // Send data to the server and close output stream.
-        out.peek();
-        m_Stream.Reset();
+        m_Stream->peek();
+        m_Stream.reset();
         ret = m_Response;
         m_Response.Reset();
     }
@@ -725,8 +724,8 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
         x_InitConnection(false);
     }
     _ASSERT(m_Response);
-    _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
-    return m_Stream->GetConnStream();
+    _ASSERT(m_Stream);
+    return *m_Stream;
 }
 
 
@@ -791,12 +790,11 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         net_info->max_try = x_RetriesToMaxtry(m_Retries);
     }
 
-    m_Stream.Reset(new TStreamRef);
-    m_Response.Reset(new CHttpResponse(*m_Session, m_Url, *m_Stream));
+    m_Response.Reset(new CHttpResponse(*m_Session, m_Url));
     if ( !m_Url.IsService() ) {
         // Connect using HTTP.
         m_IsService = false;
-        m_Stream->SetConnStream(new CConn_HttpStream(
+        m_Stream.reset(new CConn_HttpStream(
             m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
             net_info,
             headers.c_str(),
@@ -817,12 +815,13 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
         ConnNetInfo_SetUserHeader(net_info, headers.c_str());
-        m_Stream->SetConnStream(new CConn_ServiceStream(
+        m_Stream.reset(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
             fSERV_Http,
             net_info,
             &x_extra));
     }
+    m_Response->m_Stream = m_Stream;
     ConnNetInfo_Destroy(net_info);
 }
 

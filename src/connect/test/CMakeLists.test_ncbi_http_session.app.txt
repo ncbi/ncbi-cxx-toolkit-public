@@ -5,7 +5,7 @@
 NCBI_begin_app(test_ncbi_http_session)
   NCBI_sources(test_ncbi_http_session)
   NCBI_uses_toolkit_libraries(xconnect)
-  NCBI_project_watchers(lavr)
+  NCBI_project_watchers(lavr sadyrovr)
   NCBI_add_test()
 NCBI_end_app()
 

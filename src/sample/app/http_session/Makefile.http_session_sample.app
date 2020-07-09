@@ -22,4 +22,4 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD  =
 
-WATCHERS = grichenk
+WATCHERS = grichenk sadyrovr

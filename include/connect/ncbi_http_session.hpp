@@ -415,23 +415,7 @@ public:
 private:
     friend class CHttpRequest;
 
-    // CObject wrapper for CConn_HttpStream.
-    // Should not be used directly.
-    class CHttpStreamRef : public CObject
-    {
-    public:
-        CHttpStreamRef(void) {}
-        virtual ~CHttpStreamRef(void) {}
-        bool IsInitialized(void) const { return m_ConnStream.get() ? true : false; }
-        CConn_IOStream& GetConnStream(void) const { return *m_ConnStream; }
-        void SetConnStream(CConn_IOStream* stream) { m_ConnStream.reset(stream); }
-    private:
-        CHttpStreamRef(const CHttpStreamRef&);
-        CHttpStreamRef& operator=(const CHttpStreamRef&);
-        auto_ptr<CConn_IOStream> m_ConnStream;
-    };
-
-    CHttpResponse(CHttpSession& session, const CUrl& url, CHttpStreamRef& stream);
+    CHttpResponse(CHttpSession& session, const CUrl& url, shared_ptr<iostream> stream = {});
 
     // Parse response headers, update location, parse cookies and
     // store them in the session.
@@ -440,7 +424,7 @@ private:
     CRef<CHttpSession>      m_Session;
     CUrl                    m_Url;      // Original URL
     CUrl                    m_Location; // Redirection or the original URL.
-    CRef<CHttpStreamRef>    m_Stream;
+    shared_ptr<iostream>    m_Stream;
     CRef<CHttpHeaders>      m_Headers;
     int                     m_StatusCode;
     string                  m_StatusText;
@@ -556,15 +540,13 @@ private:
                          void*         user_data,
                          unsigned int  failure_count);
 
-    typedef CHttpResponse::CHttpStreamRef TStreamRef;
-
     CRef<CHttpSession>  m_Session;
     CUrl                m_Url;
     bool                m_IsService;
     EReqMethod          m_Method;
     CRef<CHttpHeaders>  m_Headers;
     CRef<CHttpFormData> m_FormData;
-    CRef<TStreamRef>    m_Stream;
+    shared_ptr<iostream> m_Stream;
     CRef<CHttpResponse> m_Response; // current response or null
     CTimeout            m_Timeout;
     THttpRetries        m_Retries;
