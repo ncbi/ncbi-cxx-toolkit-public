@@ -633,9 +633,6 @@ struct SPSG_IoSession
 private:
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
-    SPSG_IoSession(SPSG_IoSession&&) = delete;
-    SPSG_IoSession& operator=(SPSG_IoSession&&) = delete;
-
     void OnConnect(int status);
     void OnWrite(int status);
     void OnRead(const char* buf, ssize_t nread);

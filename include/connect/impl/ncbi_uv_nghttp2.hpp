@@ -56,6 +56,12 @@ struct SUv_Handle : protected THandle
     }
 
 private:
+    SUv_Handle(const SUv_Handle&) = delete;
+    SUv_Handle(SUv_Handle&&) = delete;
+
+    SUv_Handle& operator=(const SUv_Handle&) = delete;
+    SUv_Handle& operator=(SUv_Handle&&) = delete;
+
     uv_close_cb m_Cb;
 };
 
@@ -237,9 +243,11 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Loop : uv_loop_t
         }
     }
 
-    void Run()
+    void Run(uv_run_mode mode = UV_RUN_DEFAULT)
     {
-        if (auto rc = uv_run(this, UV_RUN_DEFAULT)) {
+        auto rc = uv_run(this, mode);
+
+        if (rc < 0) {
             ERR_POST(Fatal << "uv_run failed " << uv_strerror(rc));
         }
     }
