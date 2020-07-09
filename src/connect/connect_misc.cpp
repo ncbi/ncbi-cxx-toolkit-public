@@ -31,7 +31,7 @@
 
 #include "ncbi_servicep.h"
 
-#include <connect/impl/socket_address.hpp>
+#include <connect/impl/connect_misc.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>

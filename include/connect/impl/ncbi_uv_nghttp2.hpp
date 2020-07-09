@@ -30,7 +30,7 @@
  *
  */
 
-#include "socket_address.hpp"
+#include "connect_misc.hpp"
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbidbg.hpp>

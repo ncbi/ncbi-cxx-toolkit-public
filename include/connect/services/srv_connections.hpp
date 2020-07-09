@@ -34,7 +34,7 @@
 
 #include "util.hpp"
 
-#include <connect/impl/socket_address.hpp>
+#include <connect/impl/connect_misc.hpp>
 #include <connect/ncbi_socket.hpp>
 
 #include <corelib/reader_writer.hpp>
