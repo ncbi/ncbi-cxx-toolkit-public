@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = ncbi_uv_nghttp2
+SRC = ncbi_uv_nghttp2 ncbi_http2_session
 
 LIB = xxconnect2
 

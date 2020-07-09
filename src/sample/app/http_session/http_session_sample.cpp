@@ -35,7 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistr.hpp>
-#include <connect/ncbi_http_session.hpp>
+#include <connect/ncbi_http2_session.hpp>
 
 // This header is not necessary for real application,
 // but required for automatic testsuite.
@@ -56,7 +56,7 @@ public:
     virtual void Init(void);
     virtual int Run(void);
 
-    bool PrintResponse(const CHttpSession* session, const CHttpResponse& response);
+    bool PrintResponse(const CHttp2Session* session, const CHttpResponse& response);
 
 private:
     void SetupRequest(CHttpRequest& request);
@@ -105,6 +105,7 @@ void CHttpSessionApp::Init()
                               "HTTP session sample application");
 
     arg_desc->AddFlag("http-11", "Use HTTP/1.1 protocol", true);
+    arg_desc->AddFlag("http-2", "Use HTTP/2 protocol", true);
     arg_desc->AddFlag("print-headers", "Print HTTP response headers", true);
     arg_desc->AddFlag("print-cookies", "Print HTTP cookies", true);
     arg_desc->AddFlag("print-body", "Print HTTP response body", true);
@@ -179,11 +180,14 @@ int CHttpSessionApp::Run(void)
     m_PrintHeaders = args["print-headers"];
     m_PrintCookies = args["print-cookies"];
     m_PrintBody = args["print-body"];
-    bool http11 = args["http-11"];
 
-    CHttpSession session;
-    if ( http11 ) {
+    CHttp2Session session;
+
+    if ( args["http-11"] ) {
         session.SetProtocol(CHttpSession::eHTTP_11);
+
+    } else if ( args["http-2"] ) {
+        session.SetProtocol(CHttpSession::eHTTP_2);
     }
 
     bool skip_defaults = false;
@@ -378,7 +382,7 @@ int CHttpSessionApp::Run(void)
 
 
 
-bool CHttpSessionApp::PrintResponse(const CHttpSession* session,
+bool CHttpSessionApp::PrintResponse(const CHttp2Session* session,
                                     const CHttpResponse& response)
 {
     cout << "Status: " << response.GetStatusCode() << " "

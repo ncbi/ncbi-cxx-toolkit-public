@@ -2,9 +2,10 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(http_session_sample)
-  NCBI_sources(http_session_sample)
-  NCBI_uses_toolkit_libraries(connssl xconnect xxconnect2)
-  NCBI_project_watchers(grichenk sadyrovr)
+NCBI_begin_app(test_ncbi_http2_session)
+  NCBI_sources(test_ncbi_http2_session)
+  NCBI_uses_toolkit_libraries(xxconnect2)
+  NCBI_project_watchers(sadyrovr)
   NCBI_add_test()
 NCBI_end_app()
+

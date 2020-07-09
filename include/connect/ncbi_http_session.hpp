@@ -509,6 +509,7 @@ public:
 private:
     friend class CHttpSession_Base;
     friend class CHttpSessionImpl1x;
+    friend class CHttpSessionImpl2;
 
     CHttpRequest(CHttpSession_Base& session, const CUrl& url, EReqMethod method);
 
@@ -529,6 +530,7 @@ private:
 
     // Open connection, initialize response.
     void x_InitConnection(bool use_form_data);
+    void x_InitConnection2(shared_ptr<iostream> stream, bool is_service);
 
     bool x_CanSendData(void) const;
 
@@ -537,6 +539,7 @@ private:
     void x_AddCookieHeader(const CUrl& url, bool initial);
 
     void x_AdjustHeaders(bool use_form_data);
+    void x_UpdateResponse(CHttpHeaders::THeaders headers, int status_code, string status_text);
 
     // CConn_HttpStream callback for parsing headers.
     // 'user_data' must point to a CHttpRequest object.
@@ -633,7 +636,8 @@ public:
     /// HTTP protocol version.
     enum EProtocol {
         eHTTP_10, ///< HTTP/1.0
-        eHTTP_11  ///< HTTP/1.1
+        eHTTP_11, ///< HTTP/1.1
+        eHTTP_2,  ///< HTTP/2
     };
 
     /// Get protocol version.

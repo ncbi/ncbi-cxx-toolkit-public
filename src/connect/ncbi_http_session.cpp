@@ -761,6 +761,14 @@ void CHttpRequest::x_AdjustHeaders(bool use_form_data)
 }
 
 
+void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_code, string status_text)
+{
+    if (m_Response) {
+        m_Response->x_Update(move(headers), status_code, move(status_text));
+    }
+}
+
+
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(
@@ -828,6 +836,14 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     m_Response->m_Stream = m_Stream;
     ConnNetInfo_Destroy(net_info);
+}
+
+
+void CHttpRequest::x_InitConnection2(shared_ptr<iostream> stream, bool is_service)
+{
+    m_Stream = move(stream);
+    m_IsService = is_service;
+    m_Response.Reset(new CHttpResponse(*m_Session, m_Url, m_Stream));
 }
 
 
