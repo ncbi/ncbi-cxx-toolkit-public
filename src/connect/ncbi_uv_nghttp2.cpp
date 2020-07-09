@@ -424,16 +424,31 @@ void SNgHttp2_Session::Del()
     x_DelOnError(-1);
 }
 
-int32_t SNgHttp2_Session::Submit(const nghttp2_nv *nva, size_t nvlen)
+int32_t SNgHttp2_Session::Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd)
 {
     if (auto rv = Init()) return rv;
 
-    auto rv = nghttp2_submit_request(m_Session, nullptr, nva, nvlen, nullptr, nullptr);
+    auto rv = nghttp2_submit_request(m_Session, nullptr, nva, nvlen, data_prd, nullptr);
 
     if (rv < 0) {
         NCBI_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
     } else {
         NCBI_NGHTTP2_SESSION_TRACE(this << " submitted");
+    }
+
+    return x_DelOnError(rv);
+}
+
+int SNgHttp2_Session::Resume(int32_t stream_id)
+{
+    if (auto rv = Init()) return rv;
+
+    auto rv = nghttp2_session_resume_data(m_Session, stream_id);
+
+    if (rv < 0) {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " resume failed: " << s_NgHttp2Error(rv));
+    } else {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " resumed");
     }
 
     return x_DelOnError(rv);

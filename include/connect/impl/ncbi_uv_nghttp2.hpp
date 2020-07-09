@@ -308,7 +308,9 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
 
     void Del();
 
-    int32_t Submit(const nghttp2_nv *nva, size_t nvlen);
+    int32_t Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd = nullptr);
+    int Resume(int32_t stream_id);
+
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
