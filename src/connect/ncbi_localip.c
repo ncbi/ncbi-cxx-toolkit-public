@@ -182,7 +182,9 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn, const char* source)
         } else {
             const SIPRange* over;
             if (*err  ||  !NcbiParseIPRange(&local, c)
-                || (local.type == eIPRange_Host && NcbiIsEmptyIPv6(&local.a))){
+                ||  ((local.type == eIPRange_Host  ||
+                      local.type == eIPRange_Range)
+                     &&  NcbiIsEmptyIPv6(&local.a))) {
                 if (!*err)
                     err = c;
                 CORE_LOGF_X(3, eLOG_Error,
@@ -372,7 +374,7 @@ extern int/*bool*/ NcbiIsLocalIPEx(const TNCBI_IPv6Addr* addr,
             CORE_UNLOCK;
     }
 
-    if (addr  &&  !NcbiIsEmptyIPv6(addr)) {
+    if (!NcbiIsEmptyIPv6(addr)) {
         SNcbiDomainInfo x_info;
         memset(&x_info, 0, sizeof(x_info));
         for (n = 0;  n < SizeOf(s_LocalIP);  ++n) {
