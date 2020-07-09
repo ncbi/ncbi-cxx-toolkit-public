@@ -448,8 +448,17 @@ void SPSG_Request::Add()
 /** SPSG_IoSession */
 
 SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop) :
+    SUvNgHttp2_SessionBase(
+            loop,
+            s.address,
+            TPSG_RdBufSize::GetDefault(),
+            TPSG_WrBufSize::GetDefault(),
+            TPSG_MaxConcurrentStreams::GetDefault(),
+            s_OnData,
+            s_OnStreamClose,
+            s_OnHeader,
+            s_OnError),
     server(s),
-    m_Authority(s.address.AsString()),
     m_Headers{{
         { ":method", "GET" },
         { ":scheme", "http" },
@@ -461,12 +470,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
         { "x-forwarded-for" }
     }},
     m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
-    m_Queue(queue),
-    m_Tcp(loop, s.address, TPSG_RdBufSize::GetDefault(), TPSG_WrBufSize::GetDefault(),
-            bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
-            bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
-            bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
-    m_Session(this, TPSG_MaxConcurrentStreams::GetDefault(), s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+    m_Queue(queue)
 {
 }
 
@@ -566,75 +570,6 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     return 0;
 }
 
-void SPSG_IoSession::StartClose()
-{
-    PSG_IO_SESSION_TRACE(this << " closing");
-    Reset("Shutdown is in process");
-    m_Tcp.Close();
-}
-
-bool SPSG_IoSession::Send()
-{
-    auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer());
-
-    if (send_rv < 0) {
-        Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
-
-    } else if (send_rv > 0) {
-        return Write();
-    }
-
-    return false;
-}
-
-bool SPSG_IoSession::Write()
-{
-    if (auto write_rv = m_Tcp.Write()) {
-        Reset(SUvNgHttp2_Error::FromLibuv(write_rv, "on write"));
-        return false;
-    }
-
-    return true;
-}
-
-void SPSG_IoSession::OnConnect(int status)
-{
-    PSG_IO_SESSION_TRACE(this << " connected: " << status);
-
-    if (status < 0) {
-        Reset(SUvNgHttp2_Error::FromLibuv(status, "on connecting"));
-    } else {
-        Write();
-    }
-}
-
-void SPSG_IoSession::OnWrite(int status)
-{
-    PSG_IO_SESSION_TRACE(this << " wrote: " << status);
-
-    if (status < 0) {
-        Reset(SUvNgHttp2_Error::FromLibuv(status, "on writing"));
-    }
-}
-
-void SPSG_IoSession::OnRead(const char* buf, ssize_t nread)
-{
-    PSG_IO_SESSION_TRACE(this << " read: " << nread);
-
-    if (nread < 0) {
-        Reset(SUvNgHttp2_Error::FromLibuv(nread, "on reading"));
-        return;
-    }
-
-    auto readlen = m_Session.Recv((const uint8_t*)buf, nread);
-
-    if (readlen < 0) {
-        Reset(SUvNgHttp2_Error::FromNgHttp2(readlen, "on receive"));
-    } else {
-        Send();
-    }
-}
-
 bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
@@ -700,12 +635,8 @@ void SPSG_IoSession::CheckRequestExpiration()
     }
 }
 
-void SPSG_IoSession::Reset(SUvNgHttp2_Error error)
+void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
 {
-    PSG_IO_SESSION_TRACE(this << " resetting with " << error);
-    m_Session.Del();
-    m_Tcp.Close();
-
     bool some_requests_failed = false;
 
     for (auto& pair : m_Requests) {
@@ -842,7 +773,7 @@ void SPSG_IoImpl::OnShutdown(uv_async_t*)
     queue.Close();
 
     for (auto& session : m_Sessions) {
-        session.first.StartClose();
+        session.first.Reset("Shutdown is in process");
     }
 }
 

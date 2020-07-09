@@ -490,13 +490,11 @@ struct SPSG_Server
     {}
 };
 
-struct SPSG_IoSession
+struct SPSG_IoSession : SUvNgHttp2_SessionBase
 {
     SPSG_Server& server;
 
     SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop);
-
-    void StartClose();
 
     bool ProcessRequest(shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
@@ -507,16 +505,10 @@ private:
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
-    void OnConnect(int status);
-    void OnWrite(int status);
-    void OnRead(const char* buf, ssize_t nread);
-
-    bool Send();
-    bool Write();
     bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error);
     void RequestComplete(TRequests::iterator& it);
 
-    void Reset(SUvNgHttp2_Error error);
+    void OnReset(SUvNgHttp2_Error error) override;
 
     int OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len);
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
@@ -553,13 +545,9 @@ private:
         return OnNgHttp2(user_data, &SPSG_IoSession::OnError, session, msg, len);
     }
 
-    const string m_Authority;
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE>, eSize> m_Headers;
     const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_AsyncQueue& m_Queue;
-    SUv_Tcp m_Tcp;
-    SNgHttp2_Session m_Session;
-
     TRequests m_Requests;
 };
 

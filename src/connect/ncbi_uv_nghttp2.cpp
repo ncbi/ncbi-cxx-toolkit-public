@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 #define NCBI_UV_WRITE_TRACE(message)        _TRACE(message)
 #define NCBI_UV_TCP_TRACE(message)          _TRACE(message)
 #define NCBI_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
+#define NCBI_UVNGHTTP2_SESSION_TRACE(message) _TRACE(message)
 
 SUv_Write::SUv_Write(void* user_data, size_t buf_size) :
     m_UserData(user_data),
@@ -512,6 +513,76 @@ ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
             return total;
         }
     }
+}
+
+bool SUvNgHttp2_SessionBase::Send()
+{
+    auto send_rv = m_Session.Send(m_Tcp.GetWriteBuffer());
+
+    if (send_rv < 0) {
+        Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
+
+    } else if (send_rv > 0) {
+        return Write();
+    }
+
+    return false;
+}
+
+bool SUvNgHttp2_SessionBase::Write()
+{
+    if (auto write_rv = m_Tcp.Write()) {
+        Reset(SUvNgHttp2_Error::FromLibuv(write_rv, "on write"));
+        return false;
+    }
+
+    return true;
+}
+
+void SUvNgHttp2_SessionBase::OnConnect(int status)
+{
+    NCBI_UVNGHTTP2_SESSION_TRACE(this << " connected: " << status);
+
+    if (status < 0) {
+        Reset(SUvNgHttp2_Error::FromLibuv(status, "on connecting"));
+    } else {
+        Write();
+    }
+}
+
+void SUvNgHttp2_SessionBase::OnWrite(int status)
+{
+    NCBI_UVNGHTTP2_SESSION_TRACE(this << " wrote: " << status);
+
+    if (status < 0) {
+        Reset(SUvNgHttp2_Error::FromLibuv(status, "on writing"));
+    }
+}
+
+void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
+{
+    NCBI_UVNGHTTP2_SESSION_TRACE(this << " read: " << nread);
+
+    if (nread < 0) {
+        Reset(SUvNgHttp2_Error::FromLibuv(nread, "on reading"));
+        return;
+    }
+
+    auto readlen = m_Session.Recv((const uint8_t*)buf, nread);
+
+    if (readlen < 0) {
+        Reset(SUvNgHttp2_Error::FromNgHttp2(readlen, "on receive"));
+    } else {
+        Send();
+    }
+}
+
+void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error)
+{
+    NCBI_UVNGHTTP2_SESSION_TRACE(this << " resetting with " << error);
+    m_Session.Del();
+    m_Tcp.Close();
+    OnReset(move(error));
 }
 
 END_NCBI_SCOPE

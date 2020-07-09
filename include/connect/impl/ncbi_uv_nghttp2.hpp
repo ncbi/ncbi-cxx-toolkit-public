@@ -384,6 +384,43 @@ private:
     static string Init();
 };
 
+struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
+{
+    template <class ...TArgs>
+    SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TArgs&&... args) :
+        m_Authority(address.AsString()),
+        m_Tcp(
+                loop,
+                address,
+                rd_buf_size,
+                wr_buf_size,
+                bind(&SUvNgHttp2_SessionBase::OnConnect, this, placeholders::_1),
+                bind(&SUvNgHttp2_SessionBase::OnRead, this, placeholders::_1, placeholders::_2),
+                bind(&SUvNgHttp2_SessionBase::OnWrite, this, placeholders::_1)),
+        m_Session(this, forward<TArgs>(args)...)
+    {}
+
+    virtual ~SUvNgHttp2_SessionBase() {}
+
+    void Reset(SUvNgHttp2_Error error);
+
+protected:
+    bool Send();
+
+    const string m_Authority;
+    SUv_Tcp m_Tcp;
+    SNgHttp2_Session m_Session;
+
+private:
+    bool Write();
+
+    void OnConnect(int status);
+    void OnWrite(int status);
+    void OnRead(const char* buf, ssize_t nread);
+
+    virtual void OnReset(SUvNgHttp2_Error error) = 0;
+};
+
 END_NCBI_SCOPE
 
 #endif
