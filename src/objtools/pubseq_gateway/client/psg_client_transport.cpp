@@ -537,7 +537,7 @@ SUserAgent::SUserAgent()
         );
 }
 
-SPSG_NgHttp2Session::SPSG_NgHttp2Session(string authority, void* user_data,
+SPSG_NgHttp2Session::SPSG_NgHttp2Session(string authority, void* user_data, uint32_t max_streams,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
@@ -558,7 +558,7 @@ SPSG_NgHttp2Session::SPSG_NgHttp2Session(string authority, void* user_data,
     m_OnStreamClose(on_stream_close),
     m_OnHeader(on_header),
     m_OnError(on_error),
-    m_MaxStreams(TPSG_MaxConcurrentStreams::GetDefault())
+    m_MaxStreams(max_streams, max_streams)
 {
     PSG_NGHTTP2_SESSION_TRACE(this << " created");
 }
@@ -579,7 +579,7 @@ int SPSG_NgHttp2Session::Init()
     nghttp2_session_callbacks_del(callbacks);
 
     nghttp2_settings_entry iv[1] = {
-        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, TPSG_MaxConcurrentStreams::GetDefault()}
+        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, m_MaxStreams.second}
     };
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
@@ -590,7 +590,7 @@ int SPSG_NgHttp2Session::Init()
 
     PSG_NGHTTP2_SESSION_TRACE(this << " initialized");
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
-    m_MaxStreams = min(max_streams, TPSG_MaxConcurrentStreams::GetDefault());
+    m_MaxStreams.first = min(max_streams, m_MaxStreams.second);
     return 0;
 }
 
@@ -723,7 +723,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
             bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
-    m_Session(s.address.AsString(), this, s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+    m_Session(s.address.AsString(), this, TPSG_MaxConcurrentStreams::GetDefault(), s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
 {
 }
 

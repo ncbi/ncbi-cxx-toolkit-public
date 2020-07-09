@@ -417,7 +417,7 @@ private:
 
 struct SPSG_NgHttp2Session
 {
-    SPSG_NgHttp2Session(string authority, void* user_data,
+    SPSG_NgHttp2Session(string authority, void* user_data, uint32_t max_streams,
             nghttp2_on_data_chunk_recv_callback on_data,
             nghttp2_on_stream_close_callback    on_stream_close,
             nghttp2_on_header_callback          on_header,
@@ -429,7 +429,7 @@ struct SPSG_NgHttp2Session
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
-    uint32_t GetMaxStreams() const { return m_MaxStreams; }
+    uint32_t GetMaxStreams() const { return m_MaxStreams.first; }
 
 private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
@@ -462,7 +462,7 @@ private:
     nghttp2_on_stream_close_callback    m_OnStreamClose;
     nghttp2_on_header_callback          m_OnHeader;
     nghttp2_error_callback              m_OnError;
-    uint32_t m_MaxStreams;
+    pair<uint32_t, const uint32_t> m_MaxStreams;
 };
 
 struct SPSG_TimedRequest
