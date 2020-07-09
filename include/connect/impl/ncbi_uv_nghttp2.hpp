@@ -262,9 +262,44 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Loop : uv_loop_t
     }
 };
 
+template <uint8_t DEFAULT>
+struct SNgHttp2_Header : nghttp2_nv
+{
+    struct SConvert
+    {
+        uint8_t* str;
+        size_t len;
+        uint8_t flags;
+
+        template <size_t SIZE>
+        SConvert(const char (&s)[SIZE]) : SConvert(s, SIZE - 1) {}
+        SConvert(const string& s) : SConvert(s.c_str(), s.size()) {}
+        SConvert(uint8_t f) : SConvert(nullptr, 0, f) {}
+        SConvert(const char* s, size_t l, uint8_t f = DEFAULT) : str((uint8_t*)s), len(l), flags(f) {}
+        SConvert(const string&& v) = delete;
+    };
+
+    SNgHttp2_Header(initializer_list<SConvert> l) :
+        SNgHttp2_Header(Get(l, 0), Get(l, 1))
+    {}
+
+    SNgHttp2_Header(const SConvert& n, const SConvert& v) :
+        nghttp2_nv{ n.str, v.str, n.len, v.len, uint8_t((n.flags & NGHTTP2_NV_FLAG_NO_COPY_NAME) | (v.flags & NGHTTP2_NV_FLAG_NO_COPY_VALUE)) }
+    {}
+
+    void operator=(SConvert v)
+    {
+        value = v.str;
+        valuelen = v.len;
+    }
+
+private:
+    static SConvert Get(initializer_list<SConvert> l, size_t i)  { return l.size() <= i ? NGHTTP2_NV_FLAG_NONE : *(l.begin() + i); }
+};
+
 struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
 {
-    SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
+    SNgHttp2_Session(void* user_data, uint32_t max_streams,
             nghttp2_on_data_chunk_recv_callback on_data,
             nghttp2_on_stream_close_callback    on_stream_close,
             nghttp2_on_header_callback          on_header,
@@ -273,22 +308,13 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
 
     void Del();
 
-    int32_t Submit(const string& path, CRequestContext* new_context, void* stream_user_data);
+    int32_t Submit(const nghttp2_nv *nva, size_t nvlen);
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
     uint32_t GetMaxStreams() const { return m_MaxStreams.first; }
 
 private:
-    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
-
-    struct SHeader : nghttp2_nv
-    {
-        template <size_t N, size_t V> SHeader(const char (&n)[N], const char (&v)[V]);
-        template <size_t N>           SHeader(const char (&n)[N], uint8_t f = NGHTTP2_NV_FLAG_NONE);
-        void operator=(const string& v);
-    };
-
     int Init();
 
     template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
@@ -303,8 +329,6 @@ private:
     }
 
     nghttp2_session* m_Session = nullptr;
-    const string m_Authority;
-    array<SHeader, eSize> m_Headers;
     void* m_UserData;
     nghttp2_on_data_chunk_recv_callback m_OnData;
     nghttp2_on_stream_close_callback    m_OnStreamClose;

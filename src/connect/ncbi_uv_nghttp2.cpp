@@ -311,26 +311,6 @@ void SUv_Tcp::OnClose(uv_handle_t*)
     m_State = eClosed;
 }
 
-constexpr uint8_t kDefaultFlags = NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE;
-
-template <size_t N, size_t V>
-SNgHttp2_Session::SHeader::SHeader(const char (&n)[N], const char (&v)[V]) :
-    nghttp2_nv{ (uint8_t*)n, (uint8_t*)v, N - 1, V - 1, kDefaultFlags }
-{
-}
-
-template <size_t N>
-SNgHttp2_Session::SHeader::SHeader(const char (&n)[N], uint8_t f) :
-    nghttp2_nv{ (uint8_t*)n, nullptr, N - 1, 0, uint8_t(NGHTTP2_NV_FLAG_NO_COPY_NAME | f) }
-{
-}
-
-void SNgHttp2_Session::SHeader::operator=(const string& v)
-{
-    value = (uint8_t*)v.c_str();
-    valuelen = v.size();
-}
-
 struct SUvNgHttp2_UserAgentImpl : string
 {
     SUvNgHttp2_UserAgentImpl();
@@ -377,23 +357,12 @@ string SUvNgHttp2_UserAgent::Init()
     return SUvNgHttp2_UserAgentImpl();
 }
 
-SNgHttp2_Session::SNgHttp2_Session(string authority, void* user_data, uint32_t max_streams,
+SNgHttp2_Session::SNgHttp2_Session(void* user_data, uint32_t max_streams,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
         nghttp2_error_callback              on_error,
         nghttp2_on_frame_recv_callback      on_frame_recv) :
-    m_Authority(move(authority)),
-    m_Headers{{
-        { ":method", "GET" },
-        { ":scheme", "http" },
-        { ":authority" },
-        { ":path", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
-        { "user-agent", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
-        { "http_ncbi_sid" },
-        { "http_ncbi_phid" },
-        { "x-forwarded-for" }
-    }},
     m_UserData(user_data),
     m_OnData(on_data),
     m_OnStreamClose(on_stream_close),
@@ -455,30 +424,11 @@ void SNgHttp2_Session::Del()
     x_DelOnError(-1);
 }
 
-int32_t SNgHttp2_Session::Submit(const string& path, CRequestContext* new_context, void* stream_user_data)
+int32_t SNgHttp2_Session::Submit(const nghttp2_nv *nva, size_t nvlen)
 {
     if (auto rv = Init()) return rv;
 
-    CDiagContext::SetRequestContext(new_context);
-    CRequestContext& context = CDiagContext::GetRequestContext();
-
-    const auto& session_id = context.GetSessionID();
-    const auto& sub_hit_id = context.GetNextSubHitID();
-    auto headers_size = m_Headers.size();
-
-    m_Headers[eAuthority] = m_Authority;
-    m_Headers[ePath] = path;
-    m_Headers[eUserAgent] = SUvNgHttp2_UserAgent::Get();
-    m_Headers[eSessionID] = session_id;
-    m_Headers[eSubHitID] = sub_hit_id;
-
-    if (context.IsSetClientIP()) {
-        m_Headers[eClientIP] = context.GetClientIP();
-    } else {
-        --headers_size;
-    }
-
-    auto rv = nghttp2_submit_request(m_Session, nullptr, m_Headers.data(), headers_size, nullptr, stream_user_data);
+    auto rv = nghttp2_submit_request(m_Session, nullptr, nva, nvlen, nullptr, nullptr);
 
     if (rv < 0) {
         NCBI_NGHTTP2_SESSION_TRACE(this << " submit failed: " << s_NgHttp2Error(rv));
@@ -486,7 +436,6 @@ int32_t SNgHttp2_Session::Submit(const string& path, CRequestContext* new_contex
         NCBI_NGHTTP2_SESSION_TRACE(this << " submitted");
     }
 
-    CDiagContext::SetRequestContext(nullptr);
     return x_DelOnError(rv);
 }
 

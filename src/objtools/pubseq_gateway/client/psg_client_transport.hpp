@@ -578,6 +578,8 @@ struct SPSG_IoSession
     }
 
 private:
+    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
+
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
     void OnConnect(int status);
@@ -634,6 +636,8 @@ private:
         return 0;
     }
 
+    const string m_Authority;
+    array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE>, eSize> m_Headers;
     const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_AsyncQueue& m_Queue;
     SUv_Tcp m_Tcp;

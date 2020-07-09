@@ -470,13 +470,24 @@ void SPSG_Request::Add()
 
 SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop) :
     server(s),
+    m_Authority(s.address.AsString()),
+    m_Headers{{
+        { ":method", "GET" },
+        { ":scheme", "http" },
+        { ":authority", m_Authority },
+        { ":path", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
+        { "user-agent", SUvNgHttp2_UserAgent::Get() },
+        { "http_ncbi_sid" },
+        { "http_ncbi_phid" },
+        { "x-forwarded-for" }
+    }},
     m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
     m_Queue(queue),
     m_Tcp(loop, s.address, TPSG_RdBufSize::GetDefault(), TPSG_WrBufSize::GetDefault(),
             bind(&SPSG_IoSession::OnConnect, this, placeholders::_1),
             bind(&SPSG_IoSession::OnRead, this, placeholders::_1, placeholders::_2),
             bind(&SPSG_IoSession::OnWrite, this, placeholders::_1)),
-    m_Session(s.address.AsString(), this, TPSG_MaxConcurrentStreams::GetDefault(), s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+    m_Session(this, TPSG_MaxConcurrentStreams::GetDefault(), s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
 {
 }
 
@@ -649,8 +660,25 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
+    SContextSetter setter(req->context);
+    CRequestContext& context = CDiagContext::GetRequestContext();
+
     const auto& path = req->full_path;
-    auto stream_id = m_Session.Submit(path, req->context, req.get());
+    const auto& session_id = context.GetSessionID();
+    const auto& sub_hit_id = context.GetNextSubHitID();
+    auto headers_size = m_Headers.size();
+
+    m_Headers[ePath] = path;
+    m_Headers[eSessionID] = session_id;
+    m_Headers[eSubHitID] = sub_hit_id;
+
+    if (context.IsSetClientIP()) {
+        m_Headers[eClientIP] = context.GetClientIP();
+    } else {
+        --headers_size;
+    }
+
+    auto stream_id = m_Session.Submit(m_Headers.data(), headers_size);
 
     if (stream_id < 0) {
         // Do not reset all requests unless throttling has been activated
