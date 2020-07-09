@@ -1,0 +1,15 @@
+# $Id$
+
+SRC = ncbi_uv_nghttp2
+
+LIB = xxconnect2
+
+LIB_OR_DLL = both
+DLL_LIB = xconnect
+
+CPPFLAGS = $(LIBUV_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS = $(XXCONNECT2_LIBS) $(ORIG_LIBS)
+
+WATCHERS = sadyrovr
+
+USES_LIBRARIES = xconnect

@@ -1522,6 +1522,14 @@
 #  define NCBI_XLOADER_CDD_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library xxconnect2
+ */
+#ifdef NCBI_XXCONNECT2_EXPORTS
+#  define NCBI_XXCONNECT2_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XXCONNECT2_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
 

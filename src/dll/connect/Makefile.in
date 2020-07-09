@@ -3,6 +3,7 @@
 SUB_PROJ =  \
     ncbi_xblobstorage_netcache \
     ncbi_xcache_netcache \
+    xxconnect2 \
     xconnext
 
 srcdir = @srcdir@

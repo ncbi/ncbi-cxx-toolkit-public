@@ -1,0 +1,9 @@
+# $Id$
+
+DLL = xxconnect2
+
+HOSTED_LIBS    = xxconnect2
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_XXCONNECT2_EXPORTS

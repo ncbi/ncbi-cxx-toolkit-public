@@ -60,9 +60,9 @@
 #include <type_traits>
 
 #include <nghttp2/nghttp2.h>
-#include <uv.h>
 
 #include "mpmc_nw.hpp"
+#include <connect/impl/ncbi_uv_nghttp2.hpp>
 #include <connect/services/netservice_api.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_url.hpp>
@@ -71,8 +71,6 @@
 BEGIN_NCBI_SCOPE
 
 // Different TRACE macros allow turning off tracing in some classes
-#define NCBI_UV_WRITE_TRACE(message)        _TRACE(message)
-#define NCBI_UV_TCP_TRACE(message)          _TRACE(message)
 #define PSG_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
 #define PSG_THROTTLING_TRACE(message)      _TRACE(message)
 #define PSG_IO_SESSION_TRACE(message)      _TRACE(message)
@@ -415,213 +413,6 @@ private:
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     unsigned m_Retries;
-};
-
-template <typename THandle>
-struct SUv_Handle : protected THandle
-{
-    SUv_Handle(uv_close_cb cb = nullptr) : m_Cb(cb) {}
-
-    void Close()
-    {
-        uv_close(reinterpret_cast<uv_handle_t*>(this), m_Cb);
-    }
-
-private:
-    uv_close_cb m_Cb;
-};
-
-struct SUv_Write
-{
-    SUv_Write(void* user_data, size_t buf_size);
-
-    vector<char>& GetBuffer() { _ASSERT(m_CurrentBuffer); return m_CurrentBuffer->data; }
-    int Write(uv_stream_t* handle, uv_write_cb cb);
-    void OnWrite(uv_write_t* req);
-    void Reset();
-
-private:
-    struct SBuffer
-    {
-        uv_write_t request;
-        vector<char> data;
-        bool in_progress = false;
-    };
-
-    void NewBuffer();
-
-    void* const m_UserData;
-    const size_t m_BufSize;
-    forward_list<SBuffer> m_Buffers;
-    SBuffer* m_CurrentBuffer = nullptr;
-};
-
-struct SUv_Connect
-{
-    SUv_Connect(void* user_data, const SSocketAddress& address);
-
-    int operator()(uv_tcp_t* handle, uv_connect_cb cb);
-
-private:
-    struct sockaddr_in m_Address;
-    uv_connect_t m_Request;
-};
-
-struct SUv_Tcp : SUv_Handle<uv_tcp_t>
-{
-    using TConnectCb = function<void(int)>;
-    using TReadCb = function<void(const char*, ssize_t)>;
-    using TWriteCb = function<void(int)>;
-
-    SUv_Tcp(uv_loop_t *loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size,
-            TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
-
-    int Write();
-    void Close();
-
-    vector<char>& GetWriteBuffer() { return m_Write.GetBuffer(); }
-
-private:
-    enum EState {
-        eClosed,
-        eConnecting,
-        eConnected,
-        eClosing,
-    };
-
-    void OnConnect(uv_connect_t* req, int status);
-    void OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf);
-    void OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf);
-    void OnWrite(uv_write_t*, int status);
-    void OnClose(uv_handle_t*);
-
-    template <class THandle, class ...TArgs1, class ...TArgs2>
-    static void OnCallback(void (SUv_Tcp::*member)(THandle*, TArgs1...), THandle* handle, TArgs2&&... args)
-    {
-        auto that = static_cast<SUv_Tcp*>(handle->data);
-        (that->*member)(handle, forward<TArgs2>(args)...);
-    }
-
-    static void s_OnAlloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) { OnCallback(&SUv_Tcp::OnAlloc, handle, suggested_size, buf); }
-    static void s_OnRead(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) { OnCallback(&SUv_Tcp::OnRead, stream, nread, buf); }
-    static void s_OnWrite(uv_write_t* req, int status) { OnCallback(&SUv_Tcp::OnWrite, req, status); }
-    static void s_OnConnect(uv_connect_t* req, int status) { OnCallback(&SUv_Tcp::OnConnect, req, status); }
-    static void s_OnClose(uv_handle_t* handle) { OnCallback(&SUv_Tcp::OnClose, handle); }
-
-    uv_loop_t* m_Loop;
-    EState m_State = eClosed;
-    vector<char> m_ReadBuffer;
-    SUv_Connect m_Connect;
-    SUv_Write m_Write;
-    TConnectCb m_ConnectCb;
-    TReadCb m_ReadCb;
-    TWriteCb m_WriteCb;
-};
-
-struct SUv_Async : SUv_Handle<uv_async_t>
-{
-    void Init(void* d, uv_loop_t* l, uv_async_cb cb)
-    {
-        if (auto rc = uv_async_init(l, this, cb)) {
-            ERR_POST(Fatal << "uv_async_init failed " << uv_strerror(rc));
-        }
-
-        data = d;
-    }
-
-    void Signal()
-    {
-        if (auto rc = uv_async_send(this)) {
-            ERR_POST(Fatal << "uv_async_send failed " << uv_strerror(rc));
-        }
-    }
-};
-
-struct SUv_Timer : SUv_Handle<uv_timer_t>
-{
-    SUv_Timer(void* d, uv_timer_cb cb, uint64_t t, uint64_t r) :
-        m_Cb(cb),
-        m_Timeout(t),
-        m_Repeat(r)
-    {
-        data = d;
-    }
-
-    void Init(uv_loop_t* l)
-    {
-        if (auto rc = uv_timer_init(l, this)) {
-            ERR_POST(Fatal << "uv_timer_init failed " << uv_strerror(rc));
-        }
-    }
-
-    void Start()
-    {
-        if (auto rc = uv_timer_start(this, m_Cb, m_Timeout, m_Repeat)) {
-            ERR_POST(Fatal << "uv_timer_start failed " << uv_strerror(rc));
-        }
-    }
-
-    void Close()
-    {
-        if (auto rc = uv_timer_stop(this)) {
-            ERR_POST("uv_timer_stop failed " << uv_strerror(rc));
-        }
-
-        SUv_Handle<uv_timer_t>::Close();
-    }
-
-private:
-    uv_timer_cb m_Cb;
-    const uint64_t m_Timeout;
-    const uint64_t m_Repeat;
-};
-
-struct SUv_Barrier
-{
-    SUv_Barrier(unsigned count)
-    {
-        if (auto rc = uv_barrier_init(&m_Barrier, count)) {
-            ERR_POST(Fatal << "uv_barrier_init failed " << uv_strerror(rc));
-        }
-    }
-
-    void Wait()
-    {
-        auto rc = uv_barrier_wait(&m_Barrier);
-
-        if (rc > 0) {
-            uv_barrier_destroy(&m_Barrier);
-        } else if (rc < 0) {
-            ERR_POST(Fatal << "uv_barrier_wait failed " << uv_strerror(rc));
-        }
-    }
-
-private:
-    uv_barrier_t m_Barrier;
-};
-
-struct SUv_Loop : uv_loop_t
-{
-    SUv_Loop()
-    {
-        if (auto rc = uv_loop_init(this)) {
-            ERR_POST(Fatal << "uv_loop_init failed " << uv_strerror(rc));
-        }
-    }
-
-    void Run()
-    {
-        if (auto rc = uv_run(this, UV_RUN_DEFAULT)) {
-            ERR_POST(Fatal << "uv_run failed " << uv_strerror(rc));
-        }
-    }
-
-    ~SUv_Loop()
-    {
-        if (auto rc = uv_loop_close(this)) {
-            ERR_POST("uv_loop_close failed " << uv_strerror(rc));
-        }
-    }
 };
 
 struct SPSG_NgHttp2Session
