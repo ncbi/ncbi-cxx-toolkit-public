@@ -87,6 +87,7 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
     	case eNegSeqIdList:		retval.assign("negative_seqidlist"); break;
     	case eIPGList:			retval.assign("ipglist"); break;
     	case eNegIPGList:		retval.assign("negative_ipglist"); break;
+    	case eMaskAlgo:			retval.assign("mask_algo"); break;
     	case eCompBasedStats:	retval.assign("comp_based_stats"); break;
     	case eRange:			retval.assign("range"); break;
     	case eMTMode:			retval.assign("mt_mode"); break;
@@ -100,6 +101,10 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
 		case eDBTaxInfo:		retval.assign("db_tax_info"); break;
 		case eDBEntry:			retval.assign("db_entry"); break;
 		case eDBDumpAll:		retval.assign("db_entry_all"); break;
+		case eDBType:			retval.assign("db_type"); break;
+		case eInputType:		retval.assign("input_type"); break;
+		case eParseSeqIDs:		retval.assign("parse_seqids"); break;
+		case eSeqType:			retval.assign("seq_type"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();

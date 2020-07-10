@@ -72,6 +72,7 @@ public:
 		eNegSeqIdList,
 		eIPGList,
 		eNegIPGList,
+		eMaskAlgo,
 		eCompBasedStats,
 		eRange,
 		eMTMode,
@@ -84,7 +85,12 @@ public:
 		eDBInfo,
 		eDBTaxInfo,
 		eDBEntry,
-		eDBDumpAll
+		eDBDumpAll,
+		eDBType,
+		eInputType,
+		eParseSeqIDs,
+		eSeqType
+
 	};
 	CBlastUsageReport();
 	~CBlastUsageReport();

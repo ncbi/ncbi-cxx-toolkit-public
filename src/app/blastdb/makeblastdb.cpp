@@ -91,6 +91,14 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "makeblastdb");
+        }
+    }
+    ~CMakeBlastDBApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 
 private:
@@ -124,6 +132,8 @@ private:
     void x_VerifyInputFilesType(const vector<CTempString>& filenames,
                                 CMakeBlastDBApp::ESupportedInputFormats input_type);
 
+    void x_AddCmdOptions();
+
     // Data
 
     CNcbiOstream * m_LogFile;
@@ -135,6 +145,8 @@ private:
     bool m_IsModifyMode;
 
     bool m_SkipUnver;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 /// Reads an object defined in a NCBI ASN.1 spec from a stream in multiple
@@ -1206,7 +1218,32 @@ int CMakeBlastDBApp::Run(void)
     int status = 0;
     try { x_BuildDatabase(); }
     CATCH_ALL(status)
+    x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
+}
+
+void CMakeBlastDBApp::x_AddCmdOptions()
+{
+	const CArgs & args = GetArgs();
+    if (args["input_type"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eInputType, args["input_type"].AsString());
+    }
+    if (args[kArgDbType].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eSeqType, args[kArgDbType].AsString());
+    }
+    if(args["taxid"].HasValue() || args["taxid_map"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eTaxIdList, true);
+	}
+    if(args["parse_seqids"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eParseSeqIDs, args["parse_seqids"].AsBoolean());
+    }
+    if (args["gi_mask"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eGIList, true);
+    }
+    else if(args["mask_data"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eMaskAlgo, true);
+	}
 }
 
 
