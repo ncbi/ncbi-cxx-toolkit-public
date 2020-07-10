@@ -510,7 +510,7 @@ gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
 gpipe_align_format needs xobjwrite
-gpipe_alloc needs3party $(ORIG_LIBS)
+gpipe_alloc needs xncbi
 gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs xalnmgr
 gpipe_an_base needs gencoll_client
@@ -1640,8 +1640,6 @@ xconnect includes connssl
 xconnect needs xncbi
 xconnext includes $(CONNEXT)
 xconnext needs xconnect
-xxconnect2 needs xconnect
-xxconnect2 needs3party $(XXCONNECT2_LIBS)
 xconnserv needs xthrserv
 xcser needs xser
 xcser needs3party $(NCBI_C_ncbi)
