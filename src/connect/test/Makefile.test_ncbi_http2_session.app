@@ -6,4 +6,6 @@ LIB = xxconnect2 xconnect xncbi
 
 LIBS = $(XXCONNECT2_LIBS) $(ORIG_LIBS)
 
+REQUIRES = MT
+
 WATCHERS = sadyrovr
