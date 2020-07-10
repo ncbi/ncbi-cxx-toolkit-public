@@ -1640,6 +1640,8 @@ xconnect includes connssl
 xconnect needs xncbi
 xconnext includes $(CONNEXT)
 xconnext needs xconnect
+xxconnect2 needs xconnect
+xxconnect2 needs3party $(XXCONNECT2_LIBS)
 xconnserv needs xthrserv
 xcser needs xser
 xcser needs3party $(NCBI_C_ncbi)
