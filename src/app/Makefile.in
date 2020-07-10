@@ -3,7 +3,7 @@
 # Miscellaneous applications
 #################################
 
-SUB_PROJ = asn2asn asn2fasta asn2flat asnval asn_cleanup \
+SUB_PROJ = asn2asn asn2fasta asn2flat flat2asn asnval asn_cleanup \
            id1_fetch blast convert_seq \
            nmer_repeats objmgr gi2taxid netschedule grid netstorage igblast \
            winmasker dustmasker segmasker blastdb vecscreen \
