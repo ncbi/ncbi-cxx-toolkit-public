@@ -1,3 +1,14 @@
+Release 1.10.0 (2020-07-10)
+
+    * PSG: add anti recursion flag (CXX-11438)
+    * PSG: create and use a high level Reply object at the very beginning
+      (CXX-11425)
+    * PSG server MaxDebug configuration segfault (CXX-11402)
+    * PSG server get_na processor filter (CXX-11401)
+    * PSG: incorrect handling of the CHttpReply<> instance (CXX-11397)
+    * PSG - add API to retrieve biodata from other (non-Cassandra/LMDB) sources
+      (CXX-11312)
+
 Release 1.9.0 (2020-04-09)
 
     * Updated libuv 1.35.0, datastax 2.15.1, lmdb 0.9.24 (CXX-11268)
