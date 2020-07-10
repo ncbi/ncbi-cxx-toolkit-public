@@ -244,6 +244,8 @@ private:
 
     int x_Run(void);
 
+    void x_AddCmdOptions();
+
     // Data
     CNcbiOstream * m_LogFile;
     CNcbiIstream * m_InPssmList;
@@ -276,6 +278,9 @@ private:
 
 	bool m_UpdateFreqRatios;
 	bool m_UseModelThreshold;
+
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 CMakeProfileDBApp::CMakeProfileDBApp(void)
@@ -291,6 +296,11 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
 	CRef<CVersion> version(new CVersion());
 	version->SetVersionInfo(new CBlastVersion());
 	SetFullVersion(version);
+    m_StopWatch.Start();
+    if (m_UsageReport.IsEnabled()) {
+    	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+    	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "makeprofiledb");
+    }
 }
 
 CMakeProfileDBApp::~CMakeProfileDBApp()
@@ -348,6 +358,7 @@ CMakeProfileDBApp::~CMakeProfileDBApp()
 		 string pog_str = m_OutDbName + ".pog";
 		 CFile(pog_str).Remove();
 	 }
+	 m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
 }
 
 void CMakeProfileDBApp::x_SetupArgDescriptions(void)
@@ -1732,8 +1743,23 @@ int CMakeProfileDBApp::Run(void)
 	    LOG_POST(Error << "Error: Unknown exception");
 	    status = BLAST_UNKNOWN_ERROR;
 	}
+
+	x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
 	return status;
 }
+
+void CMakeProfileDBApp::x_AddCmdOptions()
+{
+	const CArgs & args = GetArgs();
+    if (args["dbtype"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBType, args["dbtype"].AsString());
+    }
+    if(args["taxid"].HasValue() || args["taxid_map"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eTaxIdList, true);
+	}
+}
+
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
