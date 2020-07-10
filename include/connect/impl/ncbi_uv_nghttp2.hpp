@@ -309,6 +309,7 @@ struct SNgHttp2_Header : nghttp2_nv
 
         template <size_t SIZE>
         SConvert(const char (&s)[SIZE]) : SConvert(s, SIZE - 1) {}
+        SConvert(const char* s) : SConvert(s, strlen(s)) {} // For gcc 5.x.x
         SConvert(const string& s) : SConvert(s.c_str(), s.size()) {}
         SConvert(uint8_t f) : SConvert(nullptr, 0, f) {}
         SConvert(const char* s, size_t l, uint8_t f = DEFAULT) : str((uint8_t*)s), len(l), flags(f) {}
