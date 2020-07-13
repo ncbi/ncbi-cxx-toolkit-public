@@ -77,6 +77,7 @@ void CCassBlobTaskDelete::Wait1()
                 string sql = "SELECT last_modified FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                 qry->SetSQL(sql, 1);
                 qry->BindInt32(0, m_Key);
+                SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 UpdateLastActivity();
                 m_State = eReadingVersions;
@@ -133,6 +134,7 @@ void CCassBlobTaskDelete::Wait1()
                 qry->SetSQL(sql, 1);
                 qry->BindInt32(0, m_Key);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                SetupQueryCB3(qry);
                 qry->RunBatch();
                 m_State = eWaitDeleteData;
                 break;

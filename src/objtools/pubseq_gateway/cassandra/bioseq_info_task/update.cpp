@@ -131,6 +131,7 @@ void CCassBioseqInfoTaskUpdate::Wait1(void)
                 );
                 CBiSiChangelogWriter().WriteBiEvent(*qry, GetKeySpace(), changelog_record, CBiSiPartitionMaker().GetTTLSec());
                 CBiSiChangelogWriter().WriteBiPartition(*qry, GetKeySpace(), partition, CBiSiPartitionMaker().GetTTLSec());
+                SetupQueryCB3(qry);
                 qry->RunBatch();
                 m_State = eWaitingPropsInserted;
                 break;

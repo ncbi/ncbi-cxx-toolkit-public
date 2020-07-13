@@ -89,6 +89,12 @@ void CCassNAnnotTaskInsert::Wait1()
                          (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
                          {this->m_ErrorCb(status, code, severity, message);}
                     );
+                    {
+                        auto DataReadyCb3 = m_DataReadyCb3.lock();
+                        if (DataReadyCb3) {
+                            m_BlobInsertTask->SetDataReadyCB3(DataReadyCb3);
+                        }
+                    }
                     m_State = eWaitingBlobInserted;
                 }
                 break;
@@ -147,6 +153,7 @@ void CCassNAnnotTaskInsert::Wait1()
                         TChangelogOperation::eUpdated
                     )
                 );
+                SetupQueryCB3(qry);
                 qry->RunBatch();
 
                 m_State = eWaitingNAnnotInfoInserted;

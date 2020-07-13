@@ -106,6 +106,7 @@ void CCassSI2CSITaskUpdate::Wait1(void)
                 );
                 CBiSiChangelogWriter().WriteSiEvent(*qry, GetKeySpace(), changelog_record, CBiSiPartitionMaker().GetTTLSec());
                 CBiSiChangelogWriter().WriteSiPartition(*qry, GetKeySpace(), partition, CBiSiPartitionMaker().GetTTLSec());
+                SetupQueryCB3(qry);
                 qry->RunBatch();
                 m_State = eWaitingPropsInserted;
                 break;

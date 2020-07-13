@@ -201,6 +201,14 @@ class CCassBlobWaiter
         }
     }
 
+    void SetupQueryCB3(shared_ptr<CCassQuery>& query)
+    {
+        auto DataReadyCb3 = m_DataReadyCb3.lock();
+        if (DataReadyCb3) {
+            query->SetOnData3(DataReadyCb3);
+        }
+    }
+
     void Error(CRequestStatus::ECode  status,
                int  code,
                EDiagSev  severity,

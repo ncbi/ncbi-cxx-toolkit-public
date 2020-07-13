@@ -107,6 +107,7 @@ void CCassBlobTaskInsertExtended::Wait1()
                         const CBlobRecord::TBlobChunk& chunk = m_Blob->GetChunk(i);
                         qry->BindBytes(3, chunk.data(), chunk.size());
                         UpdateLastActivity();
+                        SetupQueryCB3(qry);
                         qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                     }
                 }
@@ -193,6 +194,7 @@ void CCassBlobTaskInsertExtended::Wait1()
                     GetKeySpace(),
                     CBlobChangelogRecord(m_Blob->GetKey(), m_Blob->GetModified(), TChangelogOperation::eUpdated)
                 );
+                SetupQueryCB3(qry);
                 qry->RunBatch();
                 m_State = eWaitingPropsInserted;
                 break;

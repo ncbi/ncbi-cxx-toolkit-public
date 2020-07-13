@@ -91,6 +91,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 qry->SetSQL(sql, 2);
                 qry->BindInt32(0, m_Key);
                 qry->BindInt64(1, m_LastModified);
+                SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 UpdateLastActivity();
                 m_State = eReadingWriteTime;
@@ -152,6 +153,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                     CBlobChangelogRecord(m_Key, m_LastModified, TChangelogOperation::eDeleted)
                 );
 
+                SetupQueryCB3(qry);
                 qry->RunBatch();
                 m_State = eWaitDeleteData;
                 break;
