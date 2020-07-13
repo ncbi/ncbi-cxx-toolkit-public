@@ -34,6 +34,7 @@
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/impl/criteria.hpp>
 #include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
+#include <algo/blast/api/blast_usage_report.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -46,6 +47,9 @@ class BlastdbCopyApplication : public CNcbiApplication
 {
 public:
     BlastdbCopyApplication();
+    ~BlastdbCopyApplication() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
+    }
 
 private: /* Private Methods */
     virtual void Init(void);
@@ -69,6 +73,9 @@ private: /* Private Data */
     const string kTargetOnly;
     const string kMembershipBits;
     const string kCopyOnly;
+
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -82,6 +89,11 @@ BlastdbCopyApplication::BlastdbCopyApplication()
     CRef<CVersion> version(new CVersion());
     version->SetVersionInfo(1, 0);
     SetFullVersion(version);
+    m_StopWatch.Start();
+    if (m_UsageReport.IsEnabled()) {
+    	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+    	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "blastdbcp");
+    }
 }
 
 
