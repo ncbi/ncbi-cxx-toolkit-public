@@ -78,7 +78,7 @@ set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/libxml-2.7.8)
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite-3.26.0-ncbi1)
 #set(NCBI_ThirdParty_Sybase
-set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.10.7")
+set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.10.8")
 set(NCBI_ThirdParty_VDB_ARCH x86_64)
 set(NCBI_ThirdParty_wxWidgets ${NCBI_ThirdPartyBasePath}/wxWidgets-3.1.3-ncbi1)
 set(NCBI_ThirdParty_GLEW      ${NCBI_ThirdPartyBasePath}/glew-1.5.8)
