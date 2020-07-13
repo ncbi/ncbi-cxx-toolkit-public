@@ -326,7 +326,7 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                            this, _1, _2, _3, _4, _5),
                                       fetch_details, blob, is_found);
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -340,7 +340,7 @@ void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -354,7 +354,7 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
     CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -390,14 +390,14 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
-    // 3 -> call resp->Send()  to send what we have if it is ready
+    // 3 -> call reply->Send()  to send what we have if it is ready
     for (auto &  details: m_FetchDetails) {
         if (details)
             x_Peek(details, need_wait);
     }
 
     // Blob specific: ready packets need to be sent right away
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         IPSGS_Processor::m_Reply->Flush(false);
 
     // Blob specific: deal with exclude blob cache
@@ -434,8 +434,8 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
             fetch_details->GetLoader()->Wait();
 
     if (fetch_details->GetLoader()->HasError() &&
-            IPSGS_Processor::m_Reply->GetReply()->IsOutputReady() &&
-            ! IPSGS_Processor::m_Reply->GetReply()->IsFinished()) {
+            IPSGS_Processor::m_Reply->IsOutputReady() &&
+            ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();

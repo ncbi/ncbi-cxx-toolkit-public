@@ -32,54 +32,43 @@
  *
  */
 
-
-#include "http_server_transport.hpp"
 #include <corelib/request_status.hpp>
+#include <h2o.h>
+
+#include "pubseq_gateway_types.hpp"
+#include "psgs_request.hpp"
 
 
 class CPendingOperation;
 class CCassBlobFetch;
 struct SPSGS_BlobId;
-
+template<typename P> class CHttpReply;
+namespace idblob { class CCassDataCallbackReceiver; }
 
 // Keeps track of the protocol replies
 class CPSGS_Reply
 {
 public:
-    CPSGS_Reply(size_t  initial_reply_chunks) :
-        m_Reply(nullptr),
+    CPSGS_Reply(unique_ptr<CHttpReply<CPendingOperation>>  low_level_reply) :
+        m_Reply(low_level_reply.release()),
         m_NextItemId(0),
-        m_TotalSentReplyChunks(initial_reply_chunks)
+        m_TotalSentReplyChunks(0)
     {}
+
+    ~CPSGS_Reply();
 
 public:
     void Flush(void);
     void Flush(bool  is_last);
     void Clear(void);
+    shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
+    bool IsFinished(void) const;
+    bool IsOutputReady(void) const;
+    void SetContentType(EPSGS_ReplyMimeType  mime_type);
 
-    void SetReply(HST::CHttpReply<CPendingOperation> *  reply)
-    {
-        m_Reply = reply;
-    }
-
-    HST::CHttpReply<CPendingOperation> *  GetReply(void)
+    CHttpReply<CPendingOperation> *  GetHttpReply(void)
     {
         return m_Reply;
-    }
-
-    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
-    {
-        return m_Reply->GetDataReadyCB();
-    }
-
-    bool IsReplyFinished(void) const
-    {
-        return m_Reply->IsFinished();
-    }
-
-    bool IsOutputReady(void) const
-    {
-        return m_Reply->IsOutputReady();
     }
 
     size_t  GetItemId(void)
@@ -145,10 +134,10 @@ public:
     void Send503(const char *  msg);
 
 private:
-    HST::CHttpReply<CPendingOperation> *    m_Reply;
-    size_t                                  m_NextItemId;
-    int32_t                                 m_TotalSentReplyChunks;
-    vector<h2o_iovec_t>                     m_Chunks;
+    CHttpReply<CPendingOperation> *     m_Reply;
+    size_t                              m_NextItemId;
+    int32_t                             m_TotalSentReplyChunks;
+    vector<h2o_iovec_t>                 m_Chunks;
 };
 
 

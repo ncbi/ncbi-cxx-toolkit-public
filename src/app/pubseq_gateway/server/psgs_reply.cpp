@@ -33,9 +33,16 @@
 #include <ncbi_pch.hpp>
 
 #include "pending_operation.hpp"
+#include "http_server_transport.hpp"
 #include "psgs_reply.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "cass_fetch.hpp"
+
+
+CPSGS_Reply::~CPSGS_Reply()
+{
+    delete m_Reply;
+}
 
 
 void CPSGS_Reply::Flush(void)
@@ -60,9 +67,33 @@ void CPSGS_Reply::Clear(void)
 }
 
 
+void CPSGS_Reply::SetContentType(EPSGS_ReplyMimeType  mime_type)
+{
+    m_Reply->SetContentType(mime_type);
+}
+
+
 void CPSGS_Reply::SignalProcessorFinished(void)
 {
     m_Reply->PeekPending();
+}
+
+
+shared_ptr<CCassDataCallbackReceiver> CPSGS_Reply::GetDataReadyCB(void)
+{
+    return m_Reply->GetDataReadyCB();
+}
+
+
+bool CPSGS_Reply::IsFinished(void) const
+{
+    return m_Reply->IsFinished();
+}
+
+
+bool CPSGS_Reply::IsOutputReady(void) const
+{
+    return m_Reply->IsOutputReady();
 }
 
 
@@ -345,34 +376,34 @@ void CPSGS_Reply::SendData(const string &  data_to_send,
 void CPSGS_Reply::Send400(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send400("Bad Request", msg);
+    m_Reply->Send400(msg);
 }
 
 
 void CPSGS_Reply::Send404(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send404("Not Found", msg);
+    m_Reply->Send404(msg);
 }
 
 
 void CPSGS_Reply::Send500(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send500("Internal Server Error", msg);
+    m_Reply->Send500(msg);
 }
 
 
 void CPSGS_Reply::Send502(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send502("Bad Gateway", msg);
+    m_Reply->Send502(msg);
 }
 
 
 void CPSGS_Reply::Send503(const char *  msg)
 {
     m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send503("Service Unavailable", msg);
+    m_Reply->Send503(msg);
 }
 

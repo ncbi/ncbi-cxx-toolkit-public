@@ -720,7 +720,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
         x_SetFinished(fetch_details);
         return;
     }
-    if (m_Reply->IsReplyFinished()) {
+    if (m_Reply->IsFinished()) {
         CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                      IncUnknownError();
         PSG_ERROR("Unexpected data received "

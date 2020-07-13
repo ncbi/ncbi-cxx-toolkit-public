@@ -32,7 +32,6 @@
  *
  */
 
-#include "http_server_transport.hpp"
 #include "cass_fetch.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"

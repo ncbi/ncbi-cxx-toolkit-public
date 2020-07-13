@@ -138,47 +138,20 @@ public:
         return m_SlimMaxBlobSize;
     }
 
-    int OnBadURL(HST::CHttpRequest &  req,
-                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnGet(HST::CHttpRequest &  req,
-              shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnGetBlob(HST::CHttpRequest &  req,
-                  shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnResolve(HST::CHttpRequest &  req,
-                  shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnGetTSEChunk(HST::CHttpRequest &  req,
-                      shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnGetNA(HST::CHttpRequest &  req,
-                shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnConfig(HST::CHttpRequest &  req,
-                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnInfo(HST::CHttpRequest &  req,
-               shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnStatus(HST::CHttpRequest &  req,
-                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnShutdown(HST::CHttpRequest &  req,
-                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnGetAlerts(HST::CHttpRequest &  req,
-                    shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnAckAlert(HST::CHttpRequest &  req,
-                   shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnStatistics(HST::CHttpRequest &  req,
-                     shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-
-    int OnTestIO(HST::CHttpRequest &  req,
-                 shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
+    int OnBadURL(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnGet(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnGetBlob(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnResolve(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnGetTSEChunk(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnGetNA(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnConfig(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnInfo(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnShutdown(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnGetAlerts(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnAckAlert(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnStatistics(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnTestIO(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
 
     virtual int Run(void);
 
@@ -236,29 +209,29 @@ private:
     };
 
     void x_SendUnknownClientSatelliteError(
-        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+        shared_ptr<CPSGS_Reply>  reply,
         const SPSGS_BlobId &  blob_id, const string &  message);
     void x_SendMessageAndCompletionChunks(
-        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+        shared_ptr<CPSGS_Reply>  reply,
         const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity);
 
     bool x_ProcessCommonGetAndResolveParams(
-        HST::CHttpRequest &  req,
-        shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+        CHttpRequest &  req,
+        shared_ptr<CPSGS_Reply>  reply,
         CTempString &  seq_id, int &  seq_id_type,
         SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache);
 
 private:
     void x_ValidateArgs(void);
     string  x_GetCmdLineArguments(void) const;
-    CRef<CRequestContext>  x_CreateRequestContext(HST::CHttpRequest &  req) const;
+    CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req) const;
     void x_PrintRequestStop(CRef<CRequestContext>  context, int  status);
 
-    SRequestParameter  x_GetParam(HST::CHttpRequest &  req,
+    SRequestParameter  x_GetParam(CHttpRequest &  req,
                                   const string &  name) const;
     SPSGS_RequestBase::EPSGS_CacheAndDbUse x_GetUseCacheParameter(
-                                                HST::CHttpRequest &  req,
+                                                CHttpRequest &  req,
                                                 string &  err_msg);
     bool x_IsBoolParamValid(const string &  param_name,
                             const CTempString &  param_value,
@@ -289,22 +262,20 @@ private:
                                             const string &  param_name,
                                             const CTempString &  param_value,
                                             string &  err_msg) const;
-    bool x_GetTraceParameter(HST::CHttpRequest &  req,
+    bool x_GetTraceParameter(CHttpRequest &  req,
                              const string &  param_name,
                              SPSGS_RequestBase::EPSGS_Trace &  trace,
                              string &  err_msg);
 
 private:
-    void x_InsufficientArguments(shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+    void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
                                  CRef<CRequestContext> &  context,
                                  const string &  err_msg);
-    void x_MalformedArguments(shared_ptr<HST::CHttpReply<CPendingOperation>>  resp,
+    void x_MalformedArguments(shared_ptr<CPSGS_Reply>  reply,
                               CRef<CRequestContext> &  context,
                               const string &  err_msg);
-    bool x_IsShuttingDown(HST::CHttpRequest &  req,
-                          shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
-    bool x_IsDBOK(HST::CHttpRequest &  req,
-                  shared_ptr<HST::CHttpReply<CPendingOperation>>  resp);
+    bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply);
+    bool x_IsDBOK(shared_ptr<CPSGS_Reply>  reply);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
@@ -351,7 +322,7 @@ private:
     unsigned long                       m_SlimMaxBlobSize;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
-    unique_ptr<HST::CHttpDaemon<CPendingOperation>>
+    unique_ptr<CHttpDaemon<CPendingOperation>>
                                         m_TcpDaemon;
 
     // The server counters

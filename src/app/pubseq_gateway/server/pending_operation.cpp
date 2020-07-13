@@ -46,9 +46,9 @@ USING_IDBLOB_SCOPE;
 
 
 CPendingOperation::CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
-                                     size_t  initial_reply_chunks) :
+                                     shared_ptr<CPSGS_Reply>  reply) :
     m_UserRequest(move(user_request)),
-    m_Reply(new CPSGS_Reply(initial_reply_chunks)),
+    m_Reply(reply),
     m_Cancelled(false)
 {
     CRequestContextResetter     context_resetter;
@@ -89,11 +89,9 @@ void CPendingOperation::Clear()
 }
 
 
-void CPendingOperation::Start(shared_ptr<HST::CHttpReply<CPendingOperation>> resp)
+void CPendingOperation::Start(void)
 {
     auto *          app = CPubseqGatewayApp::GetInstance();
-
-    m_Reply->SetReply(resp.get());
 
     m_Processors = app->DispatchRequest(m_UserRequest, m_Reply);
     if (m_Processors.empty()) {
@@ -124,12 +122,11 @@ void CPendingOperation::Start(shared_ptr<HST::CHttpReply<CPendingOperation>> res
 }
 
 
-void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
-                             bool  need_wait)
+void CPendingOperation::Peek(bool  need_wait)
 {
     if (m_Cancelled) {
-        if (resp.IsOutputReady() && !resp.IsFinished()) {
-            resp.Send(nullptr, 0, true, true);
+        if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {
+            m_Reply->GetHttpReply()->Send(nullptr, 0, true, true);
         }
         return;
     }
@@ -187,7 +184,7 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
 
 void CPendingOperation::x_FinalizeReply(void)
 {
-    if (!m_Reply->IsReplyFinished() && m_Reply->IsOutputReady()) {
+    if (!m_Reply->IsFinished() && m_Reply->IsOutputReady()) {
         m_Reply->PrepareReplyCompletion();
         m_Reply->Flush(true);
 

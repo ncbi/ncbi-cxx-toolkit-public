@@ -44,7 +44,6 @@ using namespace std;
 USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
 
-#include "http_server_transport.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
 #include "psgs_reply.hpp"
@@ -58,12 +57,12 @@ class CPendingOperation
 {
 public:
     CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
-                      size_t  initial_reply_chunks = 0);
+                      shared_ptr<CPSGS_Reply>  reply);
     ~CPendingOperation();
 
-    void Clear();
-    void Start(shared_ptr<HST::CHttpReply<CPendingOperation>> resp);
-    void Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait);
+    void Clear(void);
+    void Start(void);
+    void Peek(bool  need_wait);
 
     void Cancel(void)
     {
