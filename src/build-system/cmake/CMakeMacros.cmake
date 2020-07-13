@@ -6,6 +6,7 @@
 ## layout of libraries for development at NCBI.
 ##
 
+if(OFF)
 macro(find_package arg_mod)
     # uncomment this for extensive logging
     #set(_NCBI_MODULE_DEBUG True)
@@ -71,7 +72,7 @@ macro(find_package arg_mod)
         endif()
     endif()
 endmacro()
-
+endif()
 
 ##############################################################################
 ##
