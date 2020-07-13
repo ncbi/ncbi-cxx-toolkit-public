@@ -1,8 +1,6 @@
 #############################################################################
 # $Id$
 #############################################################################
-# 
-#
 
 NCBI_begin_lib(xflatfile)
   NCBI_sources(
@@ -53,20 +51,11 @@ NCBI_begin_lib(xflatfile)
   NCBI_uses_toolkit_libraries(
     xcleanup ctransition
 
-    ncbigbcxx
-
-    gui_utils
     ncbi_xdbapi_ftds
-    ncbiindxcxx
-    ncbiprsncxx
     taxon1
-    xid_utils
 
     ncbi_xloader_genbank
-    gui_utils
     ncbi_xdbapi_ftds
-    ncbiindxcxx
     taxon1
-    xid_utils
   )
 NCBI_end_lib()
