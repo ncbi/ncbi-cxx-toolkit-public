@@ -64,6 +64,14 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "blastdbcheck");
+        }
+    }
+    ~CBlastDbCheckApplication() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
     
 private:
@@ -73,6 +81,11 @@ private:
     virtual int  Run(void);
     /** @inheritDoc */
     virtual void Exit(void);
+
+    void x_AddCmdOptions();
+
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 
@@ -1491,9 +1504,32 @@ int CBlastDbCheckApplication::Run(void)
         
         status = okay ? 0 : 1;
     } CATCH_ALL(status)
+
+    x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 
+
+void CBlastDbCheckApplication::x_AddCmdOptions()
+{
+	const CArgs & args = GetArgs();
+    if(args["random"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "random");
+    }
+    else if (args["full"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "full");
+    }
+    else if (args["stride"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "stride");
+    }
+    else if(args["ends"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "end");
+    }
+    else {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "default");
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup

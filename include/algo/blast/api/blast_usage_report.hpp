@@ -89,9 +89,11 @@ public:
 		eDBType,
 		eInputType,
 		eParseSeqIDs,
-		eSeqType
-
+		eSeqType,
+		eDBTest,
+		eDBAliasMode
 	};
+
 	CBlastUsageReport();
 	~CBlastUsageReport();
 	void AddParam(EUsageParams p, int val);

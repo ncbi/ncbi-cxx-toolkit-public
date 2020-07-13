@@ -105,6 +105,8 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
 		case eInputType:		retval.assign("input_type"); break;
 		case eParseSeqIDs:		retval.assign("parse_seqids"); break;
 		case eSeqType:			retval.assign("seq_type"); break;
+		case eDBTest:			retval.assign("db_test"); break;
+		case eDBAliasMode:		retval.assign("db_alias_mode"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();

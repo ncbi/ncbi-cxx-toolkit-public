@@ -59,6 +59,14 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "blastdb_aliastool");
+        }
+    }
+    ~CBlastDBAliasApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 private:
     /** @inheritDoc */
@@ -81,6 +89,7 @@ private:
     int x_ConvertSeqIDFile() const;
     void x_SeqIDFileInfo() const;
 
+    void x_AddCmdOptions();
     /// Documentation for this program
     static const char * const DOCUMENTATION;
 
@@ -108,6 +117,9 @@ private:
     }
     vector<string> x_GetDbsToAggregate(const string dbs, const string file) const;
     void x_AddVDBsToAliasFile( string filename, bool append, string title = kEmptyStr) const;
+
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
@@ -619,8 +631,47 @@ int CBlastDBAliasApp::Run(void)
         }
 
     } CATCH_ALL(status)
+    x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
+
+void CBlastDBAliasApp::x_AddCmdOptions()
+{
+	const CArgs & args = GetArgs();
+	 if (args["gi_file_in"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "gi_file_conversion");
+	 }
+	 else if (args["seqid_file_in"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "seqid_file_conversion");
+	 }
+	 else if (args["seqid_file_info"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "get_seqid_file_info");
+	 }
+
+	 if (args["dblist"].HasValue() || args["dblist_file"].HasValue() || args["num_volumes"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "create_alias_db");
+	 }
+	 else if (args[kArgDb].HasValue() && args[kArgGiList]){
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "create_gilist_alias_db");
+	 }
+	 else if (args[kArgDb].HasValue() && args[kArgSeqIdList]){
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "create_seqidlist_alias_db");
+	 }
+	 else if (args[kArgDb].HasValue() && args[kArgTaxIdListFile]) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "create_taxidlist_alias_db");
+	 }
+
+	 if (args["vdblist"].HasValue() || args["vdblist_file"].HasValue()) {
+	   	if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
+	   		m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "add_vdblist");
+	   	}
+	   	else {
+	   		m_UsageReport.AddParam(CBlastUsageReport::eDBAliasMode, (string) "create_vdb_alias_db");
+	   	}
+	 }
+}
+
 
 
 #ifndef SKIP_DOXYGEN_PROCESSING

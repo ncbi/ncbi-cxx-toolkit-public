@@ -112,6 +112,14 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "convert2blastmask");
+        }
+    }
+    ~CConvert2BlastMaskApplication() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 
 private:
@@ -122,8 +130,12 @@ private:
     CMaskFromFasta* x_GetReader();
     CMaskWriterBlastDbMaskInfo* x_GetWriter();
 
+    void x_AddCmdOptions();
+
     /// Contains the description of this application
     static const char * const USAGE_LINE;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 const char * const CConvert2BlastMaskApplication::USAGE_LINE 
@@ -218,12 +230,29 @@ int CConvert2BlastMaskApplication::Run(void) {
         cerr << e.what() << endl;
         retval = 1;
     }
+    x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, retval);
     return retval;
 }
 
 void CConvert2BlastMaskApplication::Exit(void)
 {
     SetDiagStream(0);
+}
+
+void CConvert2BlastMaskApplication::x_AddCmdOptions()
+{
+	const CArgs & args = GetArgs();
+    if (args["masking_algorithm"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eMaskAlgo, args["masking_algorithm"].AsString());
+    }
+    if (args["outfmt"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eOutputFmt, args["outfmt"].AsString());
+    }
+    if (args["parse_seqids"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eParseSeqIDs, true);
+    }
+
 }
 
 #ifndef SKIP_DOXYGEN_PROCESSING
