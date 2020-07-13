@@ -11,7 +11,7 @@ NCBI_begin_lib(xmlwrapp)
     extension_element https_input_impl
   )
   NCBI_disable_pch()
-  NCBI_requires(XML XSLT)
+  NCBI_requires(EXSLT)
   NCBI_uses_toolkit_libraries(xconnect)
   NCBI_project_watchers(satskyse)
 NCBI_end_lib()
