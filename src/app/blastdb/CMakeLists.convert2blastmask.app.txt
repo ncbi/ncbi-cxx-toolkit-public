@@ -4,7 +4,7 @@
 
 NCBI_begin_app(convert2blastmask)
   NCBI_sources(convert2blastmask)
-  NCBI_uses_toolkit_libraries(blast seqmasks_io)
+  NCBI_uses_toolkit_libraries(blast seqmasks_io xblast)
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
   NCBI_project_watchers(camacho fongah2)
 NCBI_end_app()
