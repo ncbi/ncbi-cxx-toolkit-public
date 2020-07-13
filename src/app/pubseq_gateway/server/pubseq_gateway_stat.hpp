@@ -61,7 +61,8 @@ public:
         m_BlobPropsNotFoundError(0), m_LMDBError(0),
         m_CassQueryTimeoutError(0),
         m_InvalidId2InfoError(0),
-        m_SplitHistoryNotFoundError(0)
+        m_SplitHistoryNotFoundError(0),
+        m_MaxHopsExceededError(0)
     {}
 
     void IncBadUrlPath(void)
@@ -100,6 +101,9 @@ public:
     void IncSplitHistoryNotFoundError(void)
     { ++m_SplitHistoryNotFoundError; }
 
+    void IncMaxHopsExceededError(void)
+    { ++m_MaxHopsExceededError; }
+
     void PopulateDictionary(CJsonNode &  dict) const;
 
 private:
@@ -115,6 +119,7 @@ private:
     atomic_uint_fast64_t        m_CassQueryTimeoutError;
     atomic_uint_fast64_t        m_InvalidId2InfoError;
     atomic_uint_fast64_t        m_SplitHistoryNotFoundError;
+    atomic_uint_fast64_t        m_MaxHopsExceededError;
 };
 
 

@@ -86,6 +86,7 @@ const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
 const string            kDefaultAuthToken = "";
 const bool              kDefaultAllowIOTest = false;
 const unsigned long     kDefaultSlimMaxBlobSize = 10 * 1024;
+const unsigned int      kDefaultMaxHops = 2;
 const unsigned long     kDefaultSmallBlobSize = 16;
 
 static const string     kDaemonizeArgName = "daemonize";
@@ -129,6 +130,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
+    m_MaxHops(kDefaultMaxHops),
     m_ExcludeBlobCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection)
 {
@@ -203,6 +205,7 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     m_SlimMaxBlobSize = x_GetDataSize(registry, "SERVER", "slim_max_blob_size",
                                       kDefaultSlimMaxBlobSize);
+    m_MaxHops = registry.GetInt("SERVER", "max_hops", kDefaultMaxHops);
 
     try {
         m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
@@ -783,6 +786,15 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                     to_string(kTickSpan) + ").");
         m_TickSpan = kTickSpan;
     }
+
+    if (m_MaxHops <= 0) {
+        PSG_WARNING("Invalid [SERVER]/max_hops value (" +
+                    to_string(m_MaxHops) + "). "
+                    "The max hops must be greater than 0. The max hops is "
+                    "reset to the default value (" +
+                    to_string(kDefaultMaxHops) + ").");
+        m_MaxHops = kDefaultMaxHops;
+    }
 }
 
 
@@ -1030,6 +1042,58 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
             trace = SPSGS_RequestBase::ePSGS_WithTracing;
         else
             trace = SPSGS_RequestBase::ePSGS_NoTracing;;
+    }
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
+                             shared_ptr<CPSGS_Reply>  reply,
+                             int &  hops)
+{
+    static string   kHopsParam = "hops";
+
+    hops = 0;   // Default value
+    SRequestParameter   hops_param = x_GetParam(req, kHopsParam);
+
+    if (hops_param.m_Found) {
+        string      err_msg;
+        if (!x_ConvertIntParameter(kHopsParam, hops_param.m_Value,
+                                   hops, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_WARNING(err_msg);
+            return false;
+        }
+
+        if (hops < 0) {
+            err_msg = "Invalid 'hops' value " + to_string(hops) +
+                      ". It must be > 0.";
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_WARNING(err_msg);
+            return false;
+        }
+
+        if (hops > m_MaxHops) {
+            err_msg = "The 'hops' value " + to_string(hops) +
+                      " exceeds the server configured value " +
+                      to_string(m_MaxHops) + ".";
+            m_ErrorCounters.IncMaxHopsExceededError();
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_WARNING(err_msg);
+            return false;
+        }
     }
     return true;
 }

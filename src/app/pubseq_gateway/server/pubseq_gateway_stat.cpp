@@ -131,7 +131,12 @@ static map<string, tuple<string, string>>   s_IdToNameDescription =
     },
     { kSplitHistoryNotFoundErrorCount,
         { "Split history not found error count",
-          "Number of time a split history was not found"
+          "Number of times a split history was not found"
+        }
+    },
+    { kMaxHopsExceededErrorCount,
+        { "Max hops exceeded error count",
+          "Number of times the max number of hops was exceeded"
         }
     },
     { kTotalErrorCount,
@@ -391,6 +396,10 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_SplitHistoryNotFoundError;
     err_sum += value;
     AppendValueNode(dict, kSplitHistoryNotFoundErrorCount, value);
+
+    value = m_MaxHopsExceededError;
+    err_sum += value;
+    AppendValueNode(dict, kMaxHopsExceededErrorCount, value);
 
     AppendValueNode(dict, kTotalErrorCount, err_sum);
 }

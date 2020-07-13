@@ -52,6 +52,7 @@ static const string     kLMDBErrorCount("LMDBErrorCount");
 static const string     kCassQueryTimeoutErrorCount("CassQueryTimeoutErrorCount");
 static const string     kInvalidId2InfoErrorCount("InvalidId2InfoErrorCount");
 static const string     kSplitHistoryNotFoundErrorCount("SplitHistoryNotFoundErrorCount");
+static const string     kMaxHopsExceededErrorCount("MaxHopsExceededErrorCount");
 static const string     kTotalErrorCount("TotalErrorCount");
 static const string     kInputSeqIdNotResolved("InputSeqIdNotResolved");
 static const string     kTSEChunkSplitVersionCacheMatched("TSEChunkSplitVersionCacheMatched");

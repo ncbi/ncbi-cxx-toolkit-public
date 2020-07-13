@@ -167,6 +167,10 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
+    int     hops;
+    if (!x_GetHops(req, reply, hops))
+        return 0;
+
     try {
         // Reply should use PSG protocol
         reply->SetContentType(ePSGS_PSGMime);
@@ -236,7 +240,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         tse_option, use_cache, subst_option,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        trace, now));
+                        hops, trace, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
@@ -274,6 +278,10 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
     auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    int     hops;
+    if (!x_GetHops(req, reply, hops))
+        return 0;
 
     try {
         // Reply should use PSG protocol
@@ -344,7 +352,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                 tse_option, use_cache,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
-                                trace, now));
+                                hops, trace, now));
                 unique_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
                 unique_ptr<CPendingOperation>
@@ -395,6 +403,10 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
     auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    int     hops;
+    if (!x_GetHops(req, reply, hops))
+        return 0;
 
     try {
         // It is always a PSG protocol from now on
@@ -488,7 +500,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             req(new SPSGS_ResolveRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, include_data_flags, output_format,
-                        use_cache, subst_option, trace, now));
+                        use_cache, subst_option, hops, trace, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
@@ -526,6 +538,10 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
     auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    int     hops;
+    if (!x_GetHops(req, reply, hops))
+        return 0;
 
     try {
         // Reply should use PSG protocol
@@ -622,7 +638,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
                         tse_id, chunk_value, split_version_value,
-                        use_cache, trace, now));
+                        use_cache, hops, trace, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
@@ -660,6 +676,10 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
     auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    int     hops;
+    if (!x_GetHops(req, reply, hops))
+        return 0;
 
     // It is always a PSG protocol
     reply->SetContentType(ePSGS_PSGMime);
@@ -726,7 +746,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
-                        seq_id_type, names, use_cache, trace, now));
+                        seq_id_type, names, use_cache, hops, trace, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>

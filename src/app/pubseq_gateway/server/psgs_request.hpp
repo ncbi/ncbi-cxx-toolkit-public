@@ -198,17 +198,20 @@ struct SPSGS_RequestBase
         ePSGS_WithTracing
     };
 
+    int                             m_Hops;
     EPSGS_Trace                     m_Trace;
     TPSGS_HighResolutionTimePoint   m_StartTimestamp;
 
     SPSGS_RequestBase() :
+        m_Hops(0),
         m_Trace(ePSGS_NoTracing),
         m_StartTimestamp(chrono::high_resolution_clock::now())
     {}
 
-    SPSGS_RequestBase(EPSGS_Trace  trace,
+    SPSGS_RequestBase(int  hops,
+                      EPSGS_Trace  trace,
                       const TPSGS_HighResolutionTimePoint &  start) :
-        m_Trace(trace), m_StartTimestamp(start)
+        m_Hops(hops), m_Trace(trace), m_StartTimestamp(start)
     {}
 
     virtual ~SPSGS_RequestBase() {}
@@ -290,9 +293,10 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
                          EPSGS_OutputFormat  output_format,
                          EPSGS_CacheAndDbUse  use_cache,
                          EPSGS_AccSubstitutioOption  subst_option,
+                         int  hops,
                          EPSGS_Trace  trace,
                          const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace, start_timestamp),
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
@@ -362,9 +366,10 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     SPSGS_BlobRequestBase(EPSGS_TSEOption  tse_option,
                           EPSGS_CacheAndDbUse  use_cache,
                           const string &  client_id,
+                          int  hops,
                           EPSGS_Trace  trace,
                           const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace, start_timestamp),
         m_TSEOption(tse_option),
         m_UseCache(use_cache),
         m_ClientId(client_id),
@@ -401,9 +406,10 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              EPSGS_CacheAndDbUse  use_cache,
                              EPSGS_AccSubstitutioOption  subst_option,
                              const string &  client_id,
+                             int  hops,
                              EPSGS_Trace  trace,
                              const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, trace, start_timestamp),
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace, start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(move(exclude_blobs)),
@@ -455,9 +461,10 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
                                  EPSGS_TSEOption  tse_option,
                                  EPSGS_CacheAndDbUse  use_cache,
                                  const string &  client_id,
+                                 int  hops,
                                  EPSGS_Trace  trace,
                                  const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, trace, start_timestamp),
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace, start_timestamp),
         m_LastModified(last_modified)
     {
         m_BlobId = blob_id;
@@ -497,9 +504,10 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
                        int  seq_id_type,
                        vector<string> &  names,
                        EPSGS_CacheAndDbUse  use_cache,
+                       int  hops,
                        EPSGS_Trace  trace,
                        const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace, start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
@@ -541,9 +549,10 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
                           int64_t  chunk,
                           SSplitHistoryRecord::TSplitVersion  split_version,
                           EPSGS_CacheAndDbUse  use_cache,
+                          int  hops,
                           EPSGS_Trace  trace,
                           const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace, start_timestamp),
         m_TSEId(tse_id),
         m_Chunk(chunk),
         m_SplitVersion(split_version),

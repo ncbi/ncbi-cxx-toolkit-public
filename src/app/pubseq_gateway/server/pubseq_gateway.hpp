@@ -266,6 +266,8 @@ private:
                              const string &  param_name,
                              SPSGS_RequestBase::EPSGS_Trace &  trace,
                              string &  err_msg);
+    bool x_GetHops(CHttpRequest &  req,
+                   shared_ptr<CPSGS_Reply>  reply, int &  hops);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
@@ -320,6 +322,7 @@ private:
     unique_ptr<char []>                 m_IOTestBuffer;
 
     unsigned long                       m_SlimMaxBlobSize;
+    int                                 m_MaxHops;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<CHttpDaemon<CPendingOperation>>
