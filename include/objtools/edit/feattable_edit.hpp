@@ -76,6 +76,7 @@ public:
         bool forEukaryote);
     void GenerateMissingParentFeaturesForEukaryote();
     void GenerateMissingParentFeaturesForProkaryote();
+    void ProcessCodonRecognized();
     unsigned int PendingLocusTagNumber() const {
         return mLocusTagNumber;
     }
@@ -113,6 +114,8 @@ protected:
         const CMappedFeat& mrna);
     void xPutErrorDifferingProteinIds(
         const CMappedFeat& mrna);
+    void xPutErrorBadCodonRecognized(
+        const string codonRecognized);
 
 
     void xFeatureAddQualifier(

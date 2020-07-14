@@ -38,6 +38,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -355,7 +357,74 @@ void CFeatTableEdit::EliminateBadQualifiers()
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::ProcessCodonRecognized()
+//  ----------------------------------------------------------------------------
+{
+    static map<char, list<char>> sIUPACmap {
+        {'A', list<char>({'A'})},
+        {'G', list<char>({'G'})},
+        {'C', list<char>({'C'})},
+        {'T', list<char>({'T'})},
+        {'U', list<char>({'U'})},
+        {'M', list<char>({'A', 'C'})},
+        {'R', list<char>({'A', 'G'})},
+        {'W', list<char>({'A', 'T'})},
+        {'S', list<char>({'C', 'G'})},
+        {'Y', list<char>({'C', 'T'})},
+        {'K', list<char>({'G', 'T'})},
+        {'V', list<char>({'A', 'C', 'G'})},
+        {'H', list<char>({'A', 'C', 'T'})},
+        {'D', list<char>({'A', 'G', 'T'})},
+        {'B', list<char>({'C', 'G', 'T'})},
+        {'N', list<char>({'A', 'C', 'G', 'T'})}
+    };
 
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_tRNA);
+    CFeat_CI it(mHandle, sel);
+    for (; it; ++it) {
+        CMappedFeat mf = *it;
+        auto codonRecognized = mf.GetNamedQual("codon_recognized");
+        if (codonRecognized.empty()) {
+            continue;
+        }
+        if (codonRecognized.size() != 3) {
+            xPutErrorBadCodonRecognized(codonRecognized);
+            return;
+        }
+        NStr::ToUpper(codonRecognized);
+
+        const CSeq_feat& origFeat = mf.GetOriginalFeature();
+
+        CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
+        pEditedFeat->Assign(origFeat);
+        CRNA_ref::C_Ext::TTRNA & extTrna = pEditedFeat->SetData().SetRna().SetExt().SetTRNA();
+
+        set<int> codons;
+        try {
+            for (char char1 : sIUPACmap.at(codonRecognized[0])) {
+                for (char char2 : sIUPACmap.at(codonRecognized[1])) {
+                    for (char char3 : sIUPACmap.at(codonRecognized[2])) {
+                        const auto codonIndex = CGen_code_table::CodonToIndex(char1, char2, char3);
+                        codons.insert(codonIndex);
+                    }
+                }
+            }
+        }
+        catch(CException&) {
+            xPutErrorBadCodonRecognized(codonRecognized);
+            return;
+        }
+        if (!codons.empty()) {
+            for (const auto codonIndex : codons) {
+                extTrna.SetCodon().push_back(codonIndex);
+            }
+            CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
+            feh.Replace(*pEditedFeat);
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------
 void CFeatTableEdit::GenerateProteinAndTranscriptIds()
@@ -1582,6 +1651,20 @@ CFeatTableEdit::xPutErrorMissingTranscriptId(
 
 //  ----------------------------------------------------------------------------
 void
+CFeatTableEdit::xPutErrorBadCodonRecognized(
+    const string codonRecognized)
+//  ----------------------------------------------------------------------------
+{
+    if (!mpMessageListener) {
+        return;
+    }
+    string message = "tRNA with bad codon recognized attribute \"" +
+        codonRecognized + "\".";
+    xPutError(message);
+}
+
+//  ----------------------------------------------------------------------------
+void
 CFeatTableEdit::xPutErrorMissingProteinId(
     CMappedFeat mf)
     //  ----------------------------------------------------------------------------
@@ -1606,7 +1689,7 @@ CFeatTableEdit::xPutErrorMissingProteinId(
 void
 CFeatTableEdit::xPutErrorDifferingProteinIds(
     const CMappedFeat& mrna)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;
@@ -1624,7 +1707,7 @@ CFeatTableEdit::xPutErrorDifferingProteinIds(
 void
 CFeatTableEdit::xPutErrorDifferingTranscriptIds(
     const CMappedFeat& mrna)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     if (!mpMessageListener) {
         return;

@@ -879,6 +879,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
         }
         fte.GenerateProteinAndTranscriptIds();
         //fte.InstantiateProducts();
+        fte.ProcessCodonRecognized();
         fte.EliminateBadQualifiers();
         fte.SubmitFixProducts();
 
