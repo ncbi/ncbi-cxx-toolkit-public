@@ -159,10 +159,10 @@ string CVersionInfo::PrintJson(void) const
     os << "{";
     bool need_separator = false;
     if (m_Major >= 0) {
-        os << "\"major\": \"" << m_Major <<
-            "\", \"minor\": \"" << (m_Minor >= 0 ? m_Minor : 0) << "\"";
+        os << "\"major\": " << m_Major <<
+            ", \"minor\": " << (m_Minor >= 0 ? m_Minor : 0);
         if (m_PatchLevel >= 0) {
-            os << ", \"patch_level\": \"" << m_PatchLevel << "\"";
+            os << ", \"patch_level\": " << m_PatchLevel;
         }
         need_separator = true;
     }
@@ -435,8 +435,9 @@ string CComponentVersionInfoAPI::PrintJson(void) const
     os << "{ \"name\": \"" <<
         NStr::JsonEncode(GetComponentName()) <<
             "\", \"version_info\": " <<
-            CVersionInfo::PrintJson() << endl <<
-            m_BuildInfo.PrintJson() << "}" << endl;
+            CVersionInfo::PrintJson() << ",\n" <<
+            "        \"build_info\": " <<
+            m_BuildInfo.PrintJson() << "}";
     return CNcbiOstrstreamToString(os);
 }
 
@@ -573,22 +574,21 @@ string SBuildInfo::PrintJson(void) const
 {
     CNcbiOstrstream os;
     bool need_separator = false;
-    os << '{' << endl;
+    os << '{';
     if ( !date.empty() ) {
         os << "\"" << ExtraNameJson(eBuildDate) << "\": \"" << NStr::JsonEncode(date) << '\"';
         need_separator = true;
     }
     if ( !tag.empty() ) {
-        if ( need_separator ) os << ',' << endl;
+        if ( need_separator ) os << ", ";
         os << '\"' << ExtraNameJson(eBuildTag) << "\": \"" << NStr::JsonEncode(tag) << '\"';
         need_separator = true;
     }
     for( const auto& e : m_extra) {
-        if ( need_separator ) os << "," << endl;
+        if ( need_separator ) os << ", ";
         os << '\"' << ExtraNameJson(e.first) << "\": \"" << NStr::JsonEncode(e.second) << '\"';
         need_separator = true;
     }
-    if ( need_separator ) os << endl;
     os << '}';
     return CNcbiOstrstreamToString(os);
 }
@@ -810,7 +810,7 @@ string CVersionAPI::PrintJson(const string& appname, TPrintFlags flags) const
 
     if (flags & fComponents) {
         if ( need_separator ) os << ",\n";
-        os << "    \"components\": [";
+        os << "    \"component\": [";
         need_separator = false;
         for (const auto& c : m_Components) {
             if ( need_separator ) os << ",";
