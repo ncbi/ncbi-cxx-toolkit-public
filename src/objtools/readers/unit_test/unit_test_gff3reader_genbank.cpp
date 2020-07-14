@@ -39,6 +39,7 @@
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
+#include <objtools/edit/feattable_edit.hpp>
 #include "error_logger.hpp"
 
 #include <cstdio>
@@ -135,6 +136,13 @@ private:
     string mExtErrors;
 };
 
+void GenbankPostProcess(CSeq_annot& annot, CErrorLogger* pLogger)
+{
+    edit::CFeatTableEdit fte(annot, "LT", 1, 1, pLogger);
+    fte.ProcessCodonRecognized();
+    // add more over time ...
+}
+
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
@@ -163,8 +171,9 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "    Produced new error listing " << output << "." << endl;
 
     CNcbiOfstream ofstr(output.c_str());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        ofstr << MSerial_AsnText << **cit;
+    for (auto it: annots){
+        GenbankPostProcess(*it, &logger);
+        ofstr << MSerial_AsnText << *it;
         ofstr.flush();
     }
     ofstr.close();
@@ -218,8 +227,9 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        ofstr << MSerial_AsnText << **cit;
+    for (auto it: annots){
+        GenbankPostProcess(*it, &logger);
+        ofstr << MSerial_AsnText << *it;
         ofstr.flush();
     }
     ifstr.close();
