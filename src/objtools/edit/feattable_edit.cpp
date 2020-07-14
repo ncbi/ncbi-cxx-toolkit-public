@@ -422,6 +422,7 @@ void CFeatTableEdit::ProcessCodonRecognized()
             }
             CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
             feh.Replace(*pEditedFeat);
+            feh.RemoveQualifier("codon_recognized");
         }
     }
 }
