@@ -202,19 +202,21 @@ CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
 
     CRef<CSeq_loc> container(new CSeq_loc(CSeq_loc::e_Mix));
 
-    for(size_t i = 0; i < str1.size() - seq.size(); i++) {
-        if(SeqsMatch(seq, &str1[i])) {
-            CRef<CSeq_loc> repeat_unit_loc(new CSeq_loc);
-            repeat_unit_loc->Assign(*loc1);
+    if (str1.size() >= seq.size()) {
+        for (size_t i = 0u; i < str1.size() - seq.size(); ++i) {
+            if (SeqsMatch(seq, &str1[i])) {
+                CRef<CSeq_loc> repeat_unit_loc(new CSeq_loc);
+                repeat_unit_loc->Assign(*loc1);
 
-            if(sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
-                repeat_unit_loc->SetInt().SetTo() -= i;
-                repeat_unit_loc->SetInt().SetFrom(repeat_unit_loc->GetInt().GetTo() - (seq.size() - 1));
-            } else {
-                repeat_unit_loc->SetInt().SetFrom() += i;
-                repeat_unit_loc->SetInt().SetTo(repeat_unit_loc->GetInt().GetFrom() + (seq.size() - 1));
+                if (sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
+                    repeat_unit_loc->SetInt().SetTo() -= i;
+                    repeat_unit_loc->SetInt().SetFrom(repeat_unit_loc->GetInt().GetTo() - (seq.size() - 1));
+                } else {
+                    repeat_unit_loc->SetInt().SetFrom() += i;
+                    repeat_unit_loc->SetInt().SetTo(repeat_unit_loc->GetInt().GetFrom() + (seq.size() - 1));
+                }
+                container->SetMix().Set().push_back(repeat_unit_loc);
             }
-            container->SetMix().Set().push_back(repeat_unit_loc);
         }
     }
 
