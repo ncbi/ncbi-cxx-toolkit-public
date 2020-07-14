@@ -3,12 +3,7 @@ Seq-annot ::= {
     {
       id local id 1,
       data rna {
-        type tRNA,
-        ext tRNA {
-          codon {
-            0
-          }
-        }
+        type tRNA
       },
       location int {
         from 381,
@@ -22,6 +17,10 @@ Seq-annot ::= {
           val "tRNA-Lys1_tRNA"
         },
         {
+          qual "codon_recognized",
+          val "ttt"
+        },
+        {
           qual "product",
           val "tRNA-Lys"
         }
@@ -30,12 +29,7 @@ Seq-annot ::= {
     {
       id local id 2,
       data rna {
-        type tRNA,
-        ext tRNA {
-          codon {
-            0
-          }
-        }
+        type tRNA
       },
       location int {
         from 487,
@@ -49,6 +43,10 @@ Seq-annot ::= {
           val "tRNA-Lys4_tRNA"
         },
         {
+          qual "codon_recognized",
+          val "ttt"
+        },
+        {
           qual "product",
           val "tRNA-Lys"
         }
@@ -57,12 +55,7 @@ Seq-annot ::= {
     {
       id local id 3,
       data rna {
-        type tRNA,
-        ext tRNA {
-          codon {
-            59
-          }
-        }
+        type tRNA
       },
       location int {
         from 597,
@@ -74,6 +67,10 @@ Seq-annot ::= {
         {
           qual "ID",
           val "tRNA-Leu1_tRNA"
+        },
+        {
+          qual "codon_recognized",
+          val "gag"
         },
         {
           qual "product",

@@ -136,13 +136,6 @@ private:
     string mExtErrors;
 };
 
-void GenbankPostProcess(CSeq_annot& annot, CErrorLogger* pLogger)
-{
-    edit::CFeatTableEdit fte(annot, "LT", 1, 1, pLogger);
-    fte.ProcessCodonRecognized();
-    // add more over time ...
-}
-
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
@@ -172,7 +165,6 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     CNcbiOfstream ofstr(output.c_str());
     for (auto it: annots){
-        GenbankPostProcess(*it, &logger);
         ofstr << MSerial_AsnText << *it;
         ofstr.flush();
     }
@@ -228,7 +220,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
     for (auto it: annots){
-        GenbankPostProcess(*it, &logger);
         ofstr << MSerial_AsnText << *it;
         ofstr.flush();
     }
