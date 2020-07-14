@@ -308,6 +308,7 @@ string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_re
     }
 
     os << ioc.GetClientId();
+    if (const auto hops = user_request->m_Hops) os << "&hops=" << hops;
     return os.str();
 }
 

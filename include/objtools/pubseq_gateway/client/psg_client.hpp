@@ -87,6 +87,9 @@ public:
     // Get request ID
     string GetId() const { return x_GetId(); }
 
+    /// Set hops
+    void SetHops(unsigned hops) { m_Hops = hops; }
+
 protected:
     CPSG_Request(shared_ptr<void> user_context = {},
                  CRef<CRequestContext> request_context = {})
@@ -105,6 +108,7 @@ private:
 
     shared_ptr<void> m_UserContext;
     CRef<CRequestContext> m_RequestContext;
+    unsigned m_Hops = 0;
 
     friend class CPSG_Queue;
 };
