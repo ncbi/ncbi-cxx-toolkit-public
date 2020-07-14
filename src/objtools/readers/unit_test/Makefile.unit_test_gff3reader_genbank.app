@@ -3,7 +3,7 @@
 APP = unit_test_gff3reader_genbank
 SRC = unit_test_gff3reader_genbank
 
-LIB  = xunittestutil $(OBJREAD_LIBS) xobjutil test_boost $(SOBJMGR_LIBS)
+LIB  = xunittestutil $(OBJEDIT_LIBS) $(OBJREAD_LIBS) xobjutil test_boost $(SOBJMGR_LIBS)
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
