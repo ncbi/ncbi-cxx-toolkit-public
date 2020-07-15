@@ -1050,75 +1050,80 @@ void CFeatureTableReader::_ParseCdregions(CSeq_entry& entry)
         entry.GetSet().GetClass() != CBioseq_set::eClass_nuc_prot)
         return;
 
-    m_scope.Reset(new CScope(*CObjectManager::GetInstance()));
-    m_scope->AddDefaults();
+    auto& seq_set = entry.SetSet().SetSeq_set();
+    auto entry_it = find_if(seq_set.begin(), seq_set.end(),
+            [](CRef<CSeq_entry> pEntry) {
+                return 
+                (pEntry &&
+                 pEntry->IsSeq() &&
+                 pEntry->GetSeq().IsSetInst() &&
+                 pEntry->GetSeq().IsNa() &&
+                 pEntry->GetSeq().IsSetAnnot());
+            });
 
-    CSeq_entry_Handle entry_h = m_scope->AddTopLevelSeqEntry(entry);
+    if (entry_it == seq_set.end()) {
+        return;
+    }
+
+    m_bioseq.Reset(&((*entry_it)->SetSeq()));
+    auto& annots = m_bioseq->SetAnnot();
+
+    // Find first feature table
+    auto annot_it = 
+        find_if(annots.begin(), annots.end(), 
+                [](CRef<CSeq_annot> pAnnot) { return pAnnot && pAnnot->IsFtable(); });
+
+    if (annot_it == annots.end()) {
+        return;
+    }
+
+    auto main_ftable = *annot_it;
+    // Merge any remaining feature tables into main_ftable
+    ++annot_it;
+    while(annot_it != annots.end()) {
+        auto pAnnot = *annot_it;
+        if (pAnnot->IsFtable()) {
+            main_ftable->SetData().SetFtable().merge(
+                pAnnot->SetData().SetFtable());
+            annot_it = annots.erase(annot_it);
+            continue;
+        }
+        ++annot_it;
+    }
+        
+    _AddFeatures();
+
+    //copy sequence feature table to edit it
+    auto seq_ftable = main_ftable->SetData().SetFtable();
 
     // Create empty annotation holding cdregion features
     CRef<CSeq_annot> set_annot(new CSeq_annot);
     CSeq_annot::TData::TFtable& set_ftable = set_annot->SetData().SetFtable();
     entry.SetSet().SetAnnot().push_back(set_annot);
 
-    for (auto seq: entry.SetSet().SetSeq_set())
+    m_scope.Reset(new CScope(*CObjectManager::GetInstance()));
+    m_scope->AddDefaults();
+    CSeq_entry_Handle entry_h = m_scope->AddTopLevelSeqEntry(entry);
+    _MoveCdRegions(entry_h, *m_bioseq, seq_ftable, set_ftable);
+
+    _ClearTrees();
+    m_scope->RemoveTopLevelSeqEntry(entry_h);
+
+    if (seq_ftable.empty()) {
+        m_bioseq->SetAnnot().remove(main_ftable);
+    } else {
+        main_ftable->SetData().SetFtable() = move(seq_ftable);
+    }
+
+    if (m_bioseq->GetAnnot().empty())
     {
-        if (!(seq->IsSeq() &&
-            seq->GetSeq().IsSetInst() &&
-            seq->GetSeq().IsNa() &&
-            seq->GetSeq().IsSetAnnot()))
-            continue;
-
-        m_bioseq.Reset(&seq->SetSeq());
-
-        CRef<CSeq_annot> main_ftable;
-
-        for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin();
-            seq->SetSeq().SetAnnot().end() != annot_it;)
-        {
-            CRef<CSeq_annot> seq_annot(*annot_it);
-
-            if (seq_annot->IsFtable())
-            {
-
-                if (main_ftable.IsNull())
-                    main_ftable = seq_annot;
-                else {
-                    main_ftable->SetData().SetFtable().merge(
-                        seq_annot->SetData().SetFtable());
-                    annot_it = seq->SetSeq().SetAnnot().erase(annot_it++);
-                    continue;
-                }
-            }
-
-            ++annot_it;
-        }
-
-        _AddFeatures();
-
-        //copy sequence feature table to edit it
-        auto seq_ftable = main_ftable->SetData().SetFtable();
-
-        _MoveCdRegions(entry_h, seq->GetSeq(), seq_ftable, set_ftable);
-
-        _ClearTrees();
-
-        if (seq_ftable.empty()) {
-            seq->SetSeq().SetAnnot().remove(main_ftable);
-        } else {
-            main_ftable->SetData().SetFtable() = move(seq_ftable);
-        }
-
-        if (seq->GetSeq().GetAnnot().empty())
-        {
-            seq->SetSeq().ResetAnnot();
-        }
+            m_bioseq->ResetAnnot();
     }
     if (set_ftable.empty())
     {
         entry.SetSet().ResetAnnot();
     }
 
-    m_scope->RemoveTopLevelSeqEntry(entry_h);
     if (false)
     {
         CNcbiOfstream debug_annot("annot.sqn");
