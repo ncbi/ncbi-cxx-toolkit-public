@@ -687,7 +687,7 @@ class CHttpSessionImpl1x
 {
     friend class CHttpSessionTmpl<CHttpSessionImpl1x>;
 
-    static void StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data)
+    static void StartRequest(CHttpSession_Base::EProtocol _DEBUG_ARG(protocol), CHttpRequest& req, bool use_form_data)
     {
         _ASSERT(protocol <= CHttpSession_Base::eHTTP_11);
         req.x_InitConnection(use_form_data);
