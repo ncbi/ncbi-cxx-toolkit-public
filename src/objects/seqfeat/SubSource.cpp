@@ -2019,26 +2019,6 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         return kEmptyStr;
     }
 
-    // adjust for special cases
-    if (NStr::StartsWith(countryname, "Norway: Svalbard")) {
-        countryname = "Svalbard";
-    }
-
-    if (NStr::StartsWith (countryname, "Hong Kong")) {
-        size_t pos = NStr::Find(countryname, ":");
-        if (pos != NPOS) {
-            countryname[pos] = ',';
-        }
-        countryname = "China: " + countryname;
-    }
-    if (NStr::StartsWith (countryname, "Puerto Rico")) {
-      size_t pos = NStr::Find(countryname, ":");
-      if (pos != NPOS) {
-          countryname[pos] = ',';
-      }
-      countryname = "USA: " + countryname;
-    }
-
     // get rid of comments after semicolon or comma in country name
     size_t pos = NStr::Find(countryname, ";");
     if (pos != NPOS) {
@@ -2047,6 +2027,11 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     pos = NStr::Find(countryname, ",");
     if (pos != NPOS) {
          countryname = countryname.substr(0, pos);
+    }
+
+    // adjust for special cases
+    if (NStr::StartsWith(countryname, "Norway: Svalbard")) {
+        countryname = "Svalbard";
     }
 
     string country = countryname;
