@@ -601,6 +601,15 @@ CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const CTempString& SeqIdCode)
     }
 }
 
+const char* CSeq_id::WhichFastaTag(E_Choice choice)
+{
+    if (choice >= 0  &&  choice < ArraySize(s_TextId)) {
+        return s_TextId[choice];
+    } else {
+        return kEmptyCStr;
+    }
+}
+
 static inline bool s_HasFastaTag(const CTempString& s)
 {
     // > rather than >= because there should be content after the bar.

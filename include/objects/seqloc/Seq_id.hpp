@@ -213,6 +213,9 @@ public:
     /// Converts a string to a choice, no need to require a member.
     static E_Choice WhichInverseSeqId(const CTempString& SeqIdCode);
 
+    /// Converts a choice to a FASTA tag, with no trailing vertical bar.
+    static const char* WhichFastaTag(E_Choice choice);
+
     /// For IdentifyAccession (below)
     enum EAccessionInfo {
         // Mask for Seq_id type; allow 8 bits to be safe
