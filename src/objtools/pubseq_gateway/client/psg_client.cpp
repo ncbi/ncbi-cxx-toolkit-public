@@ -698,10 +698,10 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
         error = !seq_id.IsArray() || (seq_id.GetSize() != 2);
 
         if (!error) {
-            auto tag = objects::CSeq_id::eFasta_AsTypeAndContent;
             auto type = static_cast<CPSG_BioId::TType>(seq_id.GetAt(0).AsInteger());
             auto content = seq_id.GetAt(1).AsString();
-            rv.emplace_back(objects::CSeq_id(tag, type, content).AsFastaString());
+            rv.emplace_back(string(objects::CSeq_id::WhichFastaTag(type))
+                            + '|' + content);
         }
     }
 
