@@ -65,6 +65,7 @@ NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
 NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
+NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
 NCBI_PARAM_DEF(bool,     PSG, throttle_hold_until_active_in_lb,            false);
@@ -905,33 +906,101 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
     const auto& service_name = m_Service.GetServiceName();
     auto discovered = m_Service();
 
-    auto regular_total = 0.0;
-    auto standby_total = 0.0;
+    auto total_preferred_regular_rate = 0.0;
+    auto total_preferred_standby_rate = 0.0;
+    auto total_regular_rate = 0.0;
+    auto total_standby_rate = 0.0;
 
-    // Accumulate regular and standby rates to normalize server rates later
+    // Accumulate totals
     for (auto& server : discovered) {
-        _DEBUG_ARG(const auto& server_name = server.first.AsString());
+        const auto is_server_preferred = server.first.host == CSocketAPI::GetLocalHostAddress();
 
         if (server.second >= kRegularRate) {
-            regular_total += server.second;
-            PSG_DISCOVERY_TRACE("Server '" << server_name << "' with rate " << server.second << " considered regular");
+            if (is_server_preferred) {
+                total_preferred_regular_rate += server.second;
+            }
+
+            total_regular_rate += server.second;
 
         } else if (server.second >= kStandbyRate) {
-            standby_total += server.second;
-            PSG_DISCOVERY_TRACE("Server '" << server_name << "' with rate " << server.second << " considered standby");
+            if (is_server_preferred) {
+                total_preferred_standby_rate += server.second;
+            }
 
-        } else {
-            PSG_DISCOVERY_TRACE("Server '" << server_name << "' with rate " << server.second << " ignored");
+            total_standby_rate += server.second;
         }
     }
 
-    if (!regular_total && !standby_total) {
+    if ((total_regular_rate == 0.0) && (total_standby_rate == 0.0)) {
         ERR_POST("No servers in service '" << service_name << '\'');
         return;
     }
 
-    const auto min_rate = regular_total ? kRegularRate : kStandbyRate;
-    const auto rate_total = regular_total ? regular_total : standby_total;
+    const auto localhost_preference = TPSG_LocalhostPreference::GetDefault();
+    const auto total_preferred_standby_percentage = localhost_preference ? 1.0 - 1.0 / localhost_preference : 0.0;
+    const auto have_any_regular_servers = total_regular_rate > 0.0;
+    const auto have_nonpreferred_regular_servers = total_regular_rate > total_preferred_regular_rate;
+    const auto have_nonpreferred_standby_servers = total_standby_rate > total_preferred_standby_rate;
+    const auto regular_rate_adjustment =
+        (localhost_preference <= 1) ||
+        (total_preferred_regular_rate != 0.0) ||
+        (total_preferred_standby_rate == 0.0) ||
+        (!have_nonpreferred_regular_servers && !have_nonpreferred_standby_servers);
+    auto rate_total = 0.0;
+
+    // Adjust discovered rates
+    for (auto& server : discovered) {
+        const auto is_server_preferred = server.first.host == CSocketAPI::GetLocalHostAddress();
+        const auto old_rate = server.second;
+
+        if (server.second >= kRegularRate) {
+            if (is_server_preferred) {
+                if (regular_rate_adjustment) {
+                    server.second *= localhost_preference;
+                } else if (have_nonpreferred_regular_servers) {
+                    server.second = 0.0;
+                } else if (have_nonpreferred_standby_servers) {
+                    server.second = 0.0;
+                }
+            } else {
+                if (regular_rate_adjustment) {
+                    // No adjustments
+                } else if (have_nonpreferred_regular_servers) {
+                    server.second *= (1 - total_preferred_standby_percentage) / total_regular_rate;
+                } else if (have_nonpreferred_standby_servers) {
+                    server.second = 0.0;
+                }
+            }
+        } else if (server.second >= kStandbyRate) {
+            if (is_server_preferred) {
+                if (regular_rate_adjustment && have_any_regular_servers) {
+                    server.second = 0.0;
+                } else if (regular_rate_adjustment) {
+                    server.second *= localhost_preference;
+                } else if (have_nonpreferred_regular_servers) {
+                    server.second *= total_preferred_standby_percentage / total_preferred_standby_rate;
+                } else if (have_nonpreferred_standby_servers) {
+                    server.second *= total_preferred_standby_percentage / total_preferred_standby_rate;
+                }
+            } else {
+                if (regular_rate_adjustment && have_any_regular_servers && (localhost_preference || have_nonpreferred_regular_servers)) {
+                    server.second = 0.0;
+                } else if (regular_rate_adjustment) {
+                    // No adjustments
+                } else if (have_nonpreferred_regular_servers) {
+                    server.second = 0.0;
+                } else if (have_nonpreferred_standby_servers) {
+                    server.second *= (1 - total_preferred_standby_percentage) / (total_standby_rate - total_preferred_standby_rate);
+                }
+            }
+        }
+
+        rate_total += server.second;
+
+        if (old_rate != server.second) {
+            PSG_DISCOVERY_TRACE("Rate for '" << server.first.AsString() << "' adjusted from " << old_rate << " to " << server.second);
+        }
+    }
 
     auto servers_locked = m_Servers.GetLock();
     auto& servers = *servers_locked;
@@ -943,7 +1012,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
         _DEBUG_ARG(const auto& server_name = server.address.AsString());
 
-        if ((it == discovered.end()) || (it->second < min_rate)) {
+        if ((it == discovered.end()) || (it->second <= numeric_limits<double>::epsilon())) {
             server.rate = 0.0;
             PSG_DISCOVERY_TRACE("Server '" << server_name << "' disabled in service '" << service_name << '\'');
 
@@ -967,7 +1036,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
     // Add new servers
     for (auto& server : discovered) {
-        if (server.second >= min_rate) {
+        if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
             servers.emplace_back(server.first, rate, m_ThrottleParams, handle->loop);
             PSG_DISCOVERY_TRACE("Server '" << server.first.AsString() << "' added to service '" <<
