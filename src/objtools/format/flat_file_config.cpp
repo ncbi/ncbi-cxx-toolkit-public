@@ -535,7 +535,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "Far fetch policy",
                                  CArgDescriptions::eString, "adaptive");
          arg_desc->SetConstraint("policy",
-                                 &(*new CArgAllow_Strings, "adaptive", "internal", "external", "exhaustive", "production"));
+                                 &(*new CArgAllow_Strings, "adaptive", "internal", "external", "exhaustive", "ftp", "web"));
 
          // flags (default: 0)
          arg_desc->AddDefaultKey("flags", "Flags",
@@ -746,8 +746,10 @@ CFlatFileConfig::EPolicy x_GetPolicy(const CArgs& args)
         return CFlatFileConfig::ePolicy_External;
     } else if ( Policy == "exhaustive" ) {
         return CFlatFileConfig::ePolicy_Exhaustive;
-      } else if ( Policy == "production" ) {
-          return CFlatFileConfig::ePolicy_Production;
+    } else if ( Policy == "ftp" ) {
+        return CFlatFileConfig::ePolicy_Ftp;
+    } else if ( Policy == "web" ) {
+        return CFlatFileConfig::ePolicy_Web;
     }
 
     // default

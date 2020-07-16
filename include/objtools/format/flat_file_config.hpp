@@ -217,7 +217,8 @@ public:
         ePolicy_Internal,
         ePolicy_External,
         ePolicy_Exhaustive,
-        ePolicy_Production
+        ePolicy_Ftp,
+        ePolicy_Web
     };
 
     // These flags are used to select the GenBank sections to print or skip.
@@ -496,14 +497,16 @@ public:
     bool IsPolicyInternal(void) const { return m_Policy == ePolicy_Internal; }
     bool IsPolicyExternal (void) const { return m_Policy == ePolicy_External;  }
     bool IsPolicyExhaustive (void) const { return m_Policy == ePolicy_Exhaustive;  }
-    bool IsPolicyProduction (void) const { return m_Policy == ePolicy_Production;  }
+    bool IsPolicyFtp (void) const { return m_Policy == ePolicy_Ftp;  }
+    bool IsPolicyWeb (void) const { return m_Policy == ePolicy_Web;  }
     // setters
     void SetPolicy(const TPolicy& Policy) { m_Policy = Policy;  }
     void SetPolicyAdaptive (void) { m_Policy = ePolicy_Adaptive;  }
     void SetPolicyInternal(void) { m_Policy = ePolicy_Internal; }
     void SetPolicyExternal (void) { m_Policy = ePolicy_External;  }
     void SetPolicyExhaustive (void) { m_Policy = ePolicy_Exhaustive;  }
-    void SetPolicyProduction (void) { m_Policy = ePolicy_Production;  }
+    void SetPolicyFtp (void) { m_Policy = ePolicy_Ftp;  }
+    void SetPolicyWeb (void) { m_Policy = ePolicy_Web;  }
 
     // -- Flags
     // getters

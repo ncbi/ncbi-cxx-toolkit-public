@@ -1781,12 +1781,31 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     bool snpOK = false;
     bool cddOK = false;
 
-    if (policy == CSeqEntryIndex::eProduction) {
+    if (policy == CSeqEntryIndex::eFtp) {
 
-        sel.SetResolveAll();
-        // normal situation uses adaptive depth for feature collection,
-        // includes barrier between RefSeq and INSD accession types
-        sel.SetAdaptiveDepth(true);
+        if (m_IsRefSeq) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        } else if (m_IsDeltaLitOnly) {
+            sel.SetResolveDepth(0);
+            sel.SetExcludeExternal(true);
+        } else {
+            sel.SetResolveDepth(0);
+            sel.SetExcludeExternal(true);
+        }
+
+    } else if (policy == CSeqEntryIndex::eWeb) {
+
+        if (m_IsRefSeq) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        } else if (m_IsDeltaLitOnly) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        } else {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        }
 
         // conditionally allows external annots, based on custom enable bits
         if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
@@ -1796,6 +1815,7 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
             cddOK = true;
         }
 
+        // experimental policy forces collection of features from all sequence levels
     } else if (policy == CSeqEntryIndex::eExhaustive) {
 
         // experimental policy forces collection of features from all sequence levels
