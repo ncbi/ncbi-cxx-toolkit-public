@@ -504,7 +504,8 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
     debug_printout << error << endl;
     req->reply->reply_item.GetLock()->state.AddError(error);
     server.throttling.AddFailure();
-    PSG_THROTTLING_TRACE("Server '" << server.address.AsString() << "' failed to process request '" <<
+    _DEBUG_ARG(const auto& server_name = server.address.AsString());
+    PSG_THROTTLING_TRACE("Server '" << server_name << "' failed to process request '" <<
             debug_printout.id << '\'');
     return false;
 }
@@ -531,7 +532,8 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
         } else {
             req->reply->SetSuccess();
             server.throttling.AddSuccess();
-            PSG_THROTTLING_TRACE("Server '" << server.address.AsString() << "' processed request '" <<
+            _DEBUG_ARG(const auto& server_name = server.address.AsString());
+            PSG_THROTTLING_TRACE("Server '" << server_name << "' processed request '" <<
                     debug_printout.id << "' successfully");
         }
 
@@ -798,7 +800,8 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
         auto& server = servers[servers_size - new_servers];
         auto session_params = forward_as_tuple(server, queue, handle->loop);
         m_Sessions.emplace_back(piecewise_construct, move(session_params), forward_as_tuple(0.0));
-        PSG_IO_TRACE("Session for server '" << server.address.AsString() << "' was added");
+        _DEBUG_ARG(const auto& server_name = server.address.AsString());
+        PSG_IO_TRACE("Session for server '" << server_name << "' was added");
     }
 }
 
@@ -998,7 +1001,8 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         rate_total += server.second;
 
         if (old_rate != server.second) {
-            PSG_DISCOVERY_TRACE("Rate for '" << server.first.AsString() << "' adjusted from " << old_rate << " to " << server.second);
+            _DEBUG_ARG(const auto& server_name = server.first.AsString());
+            PSG_DISCOVERY_TRACE("Rate for '" << server_name << "' adjusted from " << old_rate << " to " << server.second);
         }
     }
 
@@ -1039,7 +1043,8 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
             servers.emplace_back(server.first, rate, m_ThrottleParams, handle->loop);
-            PSG_DISCOVERY_TRACE("Server '" << server.first.AsString() << "' added to service '" <<
+            _DEBUG_ARG(const auto& server_name = server.first.AsString());
+            PSG_DISCOVERY_TRACE("Server '" << server_name << "' added to service '" <<
                     service_name << "' with rate = " << rate);
         }
     }
