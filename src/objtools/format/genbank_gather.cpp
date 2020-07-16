@@ -214,7 +214,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     {
         GATHER_VIA_FUNC(Tsa, x_GatherTLS);
     } else if ( ctx.DoContigStyle() ) {
-        if ( cfg.ShowContigFeatures() ) {
+        if ( cfg.ShowContigFeatures() || cfg.IsPolicyFtp() ) {
             GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
         }
         else if ( cfg.IsModeEntrez() && m_Current->GetLocation().IsWhole()) {
