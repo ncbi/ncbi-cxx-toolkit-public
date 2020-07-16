@@ -859,7 +859,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         }
     }
 
-    if ( args["faster"] ) {
+    if ( args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web" ) {
 
             try {
                 if ( args["from"]  ||  args["to"]  ||  args["strand"] ) {

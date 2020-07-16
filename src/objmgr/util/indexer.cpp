@@ -1781,42 +1781,7 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     bool snpOK = false;
     bool cddOK = false;
 
-    if (policy == CSeqEntryIndex::eFtp) {
-
-        if (m_IsRefSeq) {
-            sel.SetResolveAll();
-            sel.SetAdaptiveDepth(true);
-        } else if (m_IsDeltaLitOnly) {
-            sel.SetResolveDepth(0);
-            sel.SetExcludeExternal(true);
-        } else {
-            sel.SetResolveDepth(0);
-            sel.SetExcludeExternal(true);
-        }
-
-    } else if (policy == CSeqEntryIndex::eWeb) {
-
-        if (m_IsRefSeq) {
-            sel.SetResolveAll();
-            sel.SetAdaptiveDepth(true);
-        } else if (m_IsDeltaLitOnly) {
-            sel.SetResolveAll();
-            sel.SetAdaptiveDepth(true);
-        } else {
-            sel.SetResolveAll();
-            sel.SetAdaptiveDepth(true);
-        }
-
-        // conditionally allows external annots, based on custom enable bits
-        if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-            snpOK = true;
-        }
-        if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-            cddOK = true;
-        }
-
-        // experimental policy forces collection of features from all sequence levels
-    } else if (policy == CSeqEntryIndex::eExhaustive) {
+    if (policy == CSeqEntryIndex::eExhaustive) {
 
         // experimental policy forces collection of features from all sequence levels
         sel.SetResolveAll();
@@ -1856,6 +1821,41 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         snpOK = true;
         cddOK = true;
 
+    } else if (policy == CSeqEntryIndex::eFtp) {
+
+        // for public ftp releases
+        if (m_IsRefSeq) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        } else if (m_IsDeltaLitOnly) {
+            sel.SetResolveDepth(0);
+            sel.SetExcludeExternal(true);
+        } else {
+            sel.SetResolveDepth(0);
+            sel.SetExcludeExternal(true);
+        }
+
+    } else if (policy == CSeqEntryIndex::eWeb) {
+
+        // for public web pages
+        if (m_IsRefSeq) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        } else if (m_IsDeltaLitOnly) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        } else {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
+        }
+
+        // conditionally allows external annots, based on custom enable bits
+        if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
+            snpOK = true;
+        }
+        if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
+            cddOK = true;
+        }
     }
 
     // fHideSNPFeats and fHideCDDFeats flags override any earlier settings
