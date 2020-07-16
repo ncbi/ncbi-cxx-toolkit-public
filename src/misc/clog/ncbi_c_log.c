@@ -1965,9 +1965,10 @@ static const char* sx_AppStateStr[] = {
 };
 
 /** Print common prefix to message buffer.
- *  Where <Common Prefix> is:
- *      <pid:5>/<tid:3>/<rid:4>/<state:2> <guid:16> <psn:4>/<tsn:4> <time> <host:15> <client:15> <session:24> <appname>
  *  Return number of written bytes (current position in message buffer), or zero on error.
+ *  See documentation about log format:
+ *    https://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.The_New_Post_Format
+ *  C++ implementation: CDiagContext::WriteStdPrefix() (src/corelib/ncbidiag.cpp)
  */
 static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
 {
