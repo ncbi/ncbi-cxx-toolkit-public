@@ -2006,7 +2006,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
     // if protein, get sources applicable to DNA location of CDS
     if ( ctx.IsProt() ) {
         // collect biosources features on bioseq
-        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
             CConstRef<CSeq_feat> src_feat = x_GetSourceFeatFromCDS (bh);
             if (src_feat.NotEmpty()) {
                 // CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
@@ -2028,7 +2028,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 
     if ( ! ctx.IsProt() ) {
         // collect biosources features on bioseq
-        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
             x_CollectSourceFeatures(bh, range, ctx, srcs);
         }
     }
@@ -2462,6 +2462,7 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
     return true;
 }
 
+// for the non-indexed, non-faster, older version of the flatfile generator
 void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
 {
     const CFlatFileConfig& cfg = ctx.Config();
