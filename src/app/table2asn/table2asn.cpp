@@ -1328,6 +1328,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     }
     else
     {
+        ProcessAnnotFile(name + ".gbf", result);
         ProcessAnnotFile(name + ".tbl", result);
         ProcessAnnotFile(name + ".gff", result);
         ProcessAnnotFile(name + ".gff3", result);
@@ -1435,5 +1436,22 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
 
 int main(int argc, const char* argv[])
 {
+    #ifdef _DEBUG
+    // this code converts single argument into multiple, just to simplify testing
+    std::list<std::string> split_args;
+    std::vector<const char*> new_argv;    
+
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
+    {
+        NStr::Split(argv[1], " ", split_args);
+        argc = 1 + split_args.size();
+        new_argv.reserve(argc);
+        new_argv.push_back(argv[0]);
+        for (auto& s: split_args)
+            new_argv.push_back(s.c_str());
+
+        argv = new_argv.data();
+    }
+    #endif
     return CTbl2AsnApp().AppMain(argc, argv, 0, eDS_Default, "table2asn.conf");
 }

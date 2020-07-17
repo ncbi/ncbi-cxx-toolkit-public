@@ -55,13 +55,16 @@ private:
     CRef<CSerialObject> xReadASN1(CObjectIStream& pObjIstrm);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, CNcbiIstream& instream);
     void x_PostProcessAnnot(objects::CSeq_entry& entry);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename);
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream);
 
-    CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
+    //CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
+    CFormatGuess::EFormat xInputGetFormat(CNcbiIstream&) const;
+    CFormatGuess::EFormat xAnnotGetFormat(CNcbiIstream&) const;
 
     int  m_iFlags;
     string m_AnnotName;

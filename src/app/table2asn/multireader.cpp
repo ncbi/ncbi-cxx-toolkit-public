@@ -360,18 +360,33 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
 }
 
-CFormatGuess::EFormat CMultiReader::xGetFormat(CNcbiIstream& istr) const
+CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr) const
     //  ----------------------------------------------------------------------------
 {
     CFormatGuess FG(istr);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
+    FG.GetFormatHints().DisableAllNonpreferred();
+
+    return FG.GuessFormat();
+}
+
+CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
+    //  ----------------------------------------------------------------------------
+{
+    CFormatGuess FG(istr);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileGenbank);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileEna);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileUniProt);
     FG.GetFormatHints().DisableAllNonpreferred();
 
     return FG.GuessFormat();
@@ -749,7 +764,7 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
 	CFormatGuess::EFormat format;
 	{
 		unique_ptr<istream> istream(new CNcbiIfstream(filename.c_str()));
-		format = xGetFormat(*istream);
+		format = xInputGetFormat(*istream);
 	}
 
     if (format == CFormatGuess::eTextASN) {
@@ -900,7 +915,7 @@ unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat 
     ESerialDataFormat eSerialDataFormat = eSerial_None;
     {{
         if (format == CFormatGuess::eUnknown)
-            format = CFormatGuess::Format(*instream);
+            format = xInputGetFormat(*instream);
 
         switch(format) {
         case CFormatGuess::eBinaryASN:
@@ -999,7 +1014,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
 {
     unique_ptr<istream> in(new CNcbiIfstream(filename.c_str()));
 
-    CFormatGuess::EFormat uFormat = xGetFormat(*in);
+    CFormatGuess::EFormat uFormat = xAnnotGetFormat(*in);
 
     if (uFormat == CFormatGuess::eUnknown)
     {        
@@ -1058,6 +1073,11 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     case CFormatGuess::eGtf:
     case CFormatGuess::eGffAugustus:
         entry = xReadGTF(*in);
+        break;
+    case CFormatGuess::eFlatFileGenbank:
+    case CFormatGuess::eFlatFileEna:
+    case CFormatGuess::eFlatFileUniProt:
+        entry = xReadFlatfile(uFormat, *in);
         break;
     default:
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -1204,6 +1224,12 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     x_PostProcessAnnot(*entry);
 
     return entry;
+}
+
+CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, CNcbiIstream& instream)
+{
+    NCBI_THROW2(CObjReaderParseException, eFormat,
+            "Flatfile annotation file format not yet implemented", 1);
 }
 
 END_NCBI_SCOPE
