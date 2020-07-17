@@ -267,6 +267,9 @@ static string x_RepairCountryName (string countryname)
       } else if (NStr::StartsWith (countryname, "Puerto Rico")) {
           countryname = "USA: Puerto Rico";
     }
+    if (NStr::StartsWith (countryname, "USA: Puerto Rico")) {
+        countryname = countryname.substr(5);
+    }
 
     return countryname;
 }
