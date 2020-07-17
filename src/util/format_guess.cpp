@@ -152,9 +152,9 @@ static void init_symbol_type_table(void)
 }
 
 
-// Must list all EFormats except eUnknown and eFormat_max. 
+// Must list all *supported* EFormats except eUnknown and eFormat_max. 
 // Will cause assertion if violated!
-int CFormatGuess::s_CheckOrder[] =
+vector<int> CFormatGuess::sm_CheckOrder =
 {
     eBam, // must precede eGZip!
     eZip,
@@ -180,6 +180,9 @@ int CFormatGuess::s_CheckOrder[] =
     eHgvs,
     eDistanceMatrix,
     eFlatFileSequence,
+    eFlatFileUniProt,
+    eFlatFileEna,
+    eFlatFileGenbank,
     eFiveColFeatureTable,
     eSnpMarkers,
     eFasta,
@@ -190,92 +193,94 @@ int CFormatGuess::s_CheckOrder[] =
     eBinaryASN,
     ePhrapAce,
     eUCSCRegion,
-    eJSON
+    eJSON,
 };
 
 
 // This array must stay in sync with enum EFormat, but that's not
 // supposed to change in the middle anyway, so the explicit size
 // should suffice to avoid accidental skew.
-const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] =
-{
-    "unknown",
-    "binary ASN.1",
-    "RepeatMasker",
-    "GFF/GTF Poisoned",
-    "Glimmer3",
-    "AGP",
-    "XML",
-    "WIGGLE",
-    "BED",
-    "BED15",
-    "Newick",
-    "alignment",
-    "distance matrix",
-    "flat-file sequence",
-    "five-column feature table",
-    "SNP Markers",
-    "FASTA",
-    "text ASN.1",
-    "Taxplot",
-    "Phrap ACE",
-    "table",
-    "GTF",
-    "GFF3",
-    "GFF2",
-    "HGVS",
-    "GVF",
-    "zip",
-    "gzip",
-    "bzip2",
-    "lzo",
-    "SRA",
-    "BAM",
-    "VCF",
-    "UCSC Region",
-    "GFF Augustus",
-    "JSON",
-    "PSL",
-    "altGraphX",
-    "BED5 float score",
-    "BED graph",
-    "BED Rna elements",
-    "bigBarChart",
-    "BigBED",
-    "BigPSL",
-    "BigChain",
-    "BigMaf",
-    "BigWig",
-    "BroadPeak",
-    "Chain",
-    "ClonePos",
-    "ColoredExon",
-    "CtgPos",
-    "DowloadsOnly",
-    "EncodeFiveC",
-    "ExpRatio",
-    "FactorSource",
-    "GenePred",
-    "Ld2",
-    "NarrowPeak",
-    "NetAlign",
-    "PeptideMapping",
-    "Rmsk",
-    "Snake",
-    "VcfTabix",
-    "WigMaf"
+const CFormatGuess::NAME_MAP CFormatGuess::sm_FormatNames = {
+    {eUnknown, "unknown"},
+    {eBinaryASN, "binary ASN.1"},
+    {eRmo, "RepeatMasker"},
+    {eGtf_POISENED, "GFF/GTF Poisoned"},
+    {eGlimmer3, "Glimmer3"},
+    {eAgp, "AGP"},
+    {eXml, "XML"},
+    {eWiggle, "WIGGLE"},
+    {eBed, "BED"},
+    {eBed15, "BED15"},
+    {eNewick, "Newick"},
+    {eAlignment, "alignment"},
+    {eDistanceMatrix, "distance matrix"},
+    {eFlatFileSequence, "flat-file sequence"},
+    {eFiveColFeatureTable, "five-column feature table"},
+    {eSnpMarkers, "SNP Markers"},
+    {eFasta, "FASTA"},
+    {eTextASN, "text ASN.1"},
+    {eTaxplot, "Taxplot"},
+    {ePhrapAce, "Phrap ACE"},
+    {eTable, "table"},
+    {eGtf, "GTF"},
+    {eGff3, "GFF3"},
+    {eGff2, "GFF2"},
+    {eHgvs, "HGVS"},
+    {eGvf, "GVF"},
+    {eZip, "zip"},
+    {eGZip, "gzip"},
+    {eBZip2, "bzip2"},
+    {eLzo, "lzo"},
+    {eSra, "SRA"},
+    {eBam, "BAM"},
+    {eVcf, "VCF"},
+    {eUCSCRegion, "UCSC Region"},
+    {eGffAugustus, "GFF Augustus"},
+    {eJSON, "JSON"},
+    {ePsl, "PSL"},
+    {eAltGraphX, "altGraphX"},
+    {eBed5FloatScore, "BED5 float score"},
+    {eBedGraph, "BED graph"},
+    {eBedRnaElements, "BED Rna elements"},
+    {eBigBarChart, "bigBarChart"},
+    {eBigBed, "BigBED"},
+    {eBigPsl, "BigPSL"},
+    {eBigChain, "BigChain"},
+    {eBigMaf, "BigMaf"},
+    {eBigWig, "BigWig"},
+    {eBroadPeak, "BroadPeak"},
+    {eChain, "Chain"},
+    {eClonePos, "ClonePos"},
+    {eColoredExon, "ColoredExon"},
+    {eCtgPos, "CtgPos"},
+    {eDownloadsOnly, "DowloadsOnly"},
+    {eEncodeFiveC, "EncodeFiveC"},
+    {eExpRatio, "ExpRatio"},
+    {eFactorSource, "FactorSource"},
+    {eGenePred, "GenePred"},
+    {eLd2, "Ld2"},
+    {eNarrowPeak, "NarrowPeak"},
+    {eNetAlign, "NetAlign"},
+    {ePeptideMapping, "PeptideMapping"},
+    {eRmsk, "Rmsk"},
+    {eSnake, "Snake"},
+    {eVcfTabix, "VcfTabix"},
+    {eWigMaf, "WigMaf"},
+    {eFlatFileGenbank, "Genbank FlatFile"},
+    {eFlatFileEna, "ENA FlatFile"},
+    {eFlatFileUniProt, "UniProt FlatFile"},
 };
 
 const char*
 CFormatGuess::GetFormatName(EFormat format)
 {
-    unsigned int i = static_cast<unsigned int>(format);
-    if (i >= static_cast <unsigned int>(eFormat_max)) {
+    auto formatIt = sm_FormatNames.find(format);
+    if (formatIt == sm_FormatNames.end()) {
         NCBI_THROW(CUtilException, eWrongData,
                    "CFormatGuess::GetFormatName: out-of-range format value "
-                   + NStr::IntToString(i));
+                   + NStr::IntToString(format));
     }
-    return sm_FormatNames[i];
+    return formatIt->second;
 }
 
 
@@ -409,13 +414,12 @@ CFormatGuess::~CFormatGuess()
     }
 }
 
-static const CFormatGuess::EFormat s_MaxSupportedFormat = CFormatGuess::ePsl;
-
 //  ----------------------------------------------------------------------------
 bool 
 CFormatGuess::IsSupportedFormat(EFormat format) 
 {
-    return (format > eUnknown && format <= s_MaxSupportedFormat);
+    return (std::find(sm_CheckOrder.begin(), sm_CheckOrder.end(), format) 
+        != sm_CheckOrder.end());
 }
 
 //  ----------------------------------------------------------------------------
@@ -448,12 +452,12 @@ CFormatGuess::GuessFormat(
     }
 
     EMode mode = eQuick;
-    size_t uFormatCount = ArraySize(s_CheckOrder);
+    size_t uFormatCount = sm_CheckOrder.size();
 
     // First, try to use hints
     if ( !m_Hints.IsEmpty() ) {
         for (size_t f = 0; f < uFormatCount; ++f) {
-            EFormat fmt = EFormat( s_CheckOrder[f] );
+            EFormat fmt = EFormat( sm_CheckOrder[f] );
             if (m_Hints.IsPreferred(fmt)  &&  x_TestFormat(fmt, mode)) {
                 return fmt;
             }
@@ -462,7 +466,7 @@ CFormatGuess::GuessFormat(
 
     // Check other formats, skip the ones that are disabled through hints
     for (size_t f = 0; f < uFormatCount; ++f) {
-        EFormat fmt = EFormat( s_CheckOrder[f] );
+        EFormat fmt = EFormat( sm_CheckOrder[f] );
         if ( ! m_Hints.IsDisabled(fmt)  &&  x_TestFormat(fmt, mode) ) {
             return fmt;
         }
@@ -569,6 +573,12 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatAugustus( mode );
     case eJSON:
         return TestFormatJson( mode );
+    case eFlatFileGenbank:
+        return TestFormatFlatFileGenbank( mode );
+    case eFlatFileEna:
+        return TestFormatFlatFileEna( mode );
+    case eFlatFileUniProt:
+        return TestFormatFlatFileUniProt( mode );
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
             "CFormatGuess::x_TestFormat(): Unsupported format ID (" +
@@ -580,13 +590,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
 void
 CFormatGuess::Initialize()
 {
-    NCBI_ASSERT(s_MaxSupportedFormat-1 == sizeof( s_CheckOrder ) / sizeof( int ),
-        "Indices in s_CheckOrder do not match format count ---"
-        "update s_CheckOrder to list all formats" 
-    );
-    NCBI_ASSERT(eFormat_max == sizeof(sm_FormatNames) / sizeof(const char*)
-                &&  sm_FormatNames[eFormat_max - 1] != NULL,
-                "sm_FormatNames does not list all possible formats");
+    NCBI_ASSERT(eFormat_max == sm_FormatNames.size(),
+        "sm_FormatNames does not list all possible formats");
     m_pTestBuffer = 0;
 
     m_bStatsAreValid = false;
@@ -2066,6 +2071,381 @@ bool CFormatGuess::TestFormatPsl(EMode mode)
         uPslLineCount++;
     }
     return (uPslLineCount != 0);
+}
+
+//  ----------------------------------------------------------------------------
+bool
+GenbankGetKeywordLine(
+    list<string>::iterator& lineIt,
+    list<string>::iterator endIt,
+    string& keyword,
+    string& data)
+//  ----------------------------------------------------------------------------
+{
+    if (lineIt == endIt) {
+        return false;
+    }
+    if (lineIt->size() > 79) {
+        return false;
+    }
+
+    vector<int> validIndents = {0, 2, 3, 5, 12, 21};
+    auto firstNotBlank = lineIt->find_first_not_of(" ");
+    while (firstNotBlank != 0) {
+        if (std::find(validIndents.begin(), validIndents.end(), firstNotBlank) == 
+                validIndents.end()) {
+            auto firstNotBlankOrDigit = lineIt->find_first_not_of(" 1234567890");
+            if (firstNotBlankOrDigit != 10) {
+                return false;
+            }
+        }
+        lineIt++;
+        if (lineIt == endIt) {
+            return false;
+        }
+        firstNotBlank = lineIt->find_first_not_of(" ");
+    }
+    try {
+        NStr::SplitInTwo(
+            *lineIt, " ", keyword, data, NStr::fSplit_MergeDelimiters);
+    }
+    catch (CException&) {
+        return false;
+    }
+    lineIt++;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::TestFormatFlatFileGenbank(
+    EMode /*unused*/)
+{
+    // see ftp://ftp.ncbi.nih.gov/genbank/gbrel.txt
+
+    if ( ! EnsureStats() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    // smell test:
+    // note: sample size at least 8000 characters, line length soft limited to
+    //  80 characters
+    if (m_TestLines.size() < 9) { // number of required records 
+        return false;
+    }
+    
+    string keyword, data, lookingFor;
+    auto recordIt = m_TestLines.begin();
+    auto endIt = m_TestLines.end();
+    NStr::SplitInTwo(
+        *recordIt, " ", keyword, data, NStr::fSplit_MergeDelimiters);
+
+    lookingFor = "LOCUS"; // excactly one
+    if (keyword != lookingFor) {
+        return false;
+    }
+    recordIt++;
+    if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+        return false;
+    }
+
+    lookingFor = "DEFINITION"; // one or more
+    if (keyword != lookingFor) {
+        return false;
+    }
+    while (keyword == lookingFor) {
+        if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+            return false;
+        }
+    }
+
+    lookingFor = "ACCESSION"; // one or more
+    if (keyword != lookingFor) {
+        return false;
+    }
+    while (keyword == lookingFor) {
+        if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+            return false;
+        }
+    }
+
+    bool nidSeen = false;
+    lookingFor = "NID"; // zero or one, can come before or after VERSION
+    if (keyword == lookingFor) {
+        nidSeen = true;
+        if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+            return false;
+        }
+    }
+
+    lookingFor = "VERSION"; // exactly one
+    if (keyword != lookingFor) {
+        return false;
+    }
+    if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+        return false;
+    }
+
+    if (!nidSeen) {
+        lookingFor = "NID"; // zero or one
+        if (keyword == lookingFor) {
+            if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+                return false;
+            }
+        }
+    }
+
+    lookingFor = "PROJECT"; // zero or more
+    while (keyword == lookingFor) {
+        if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+            return false;
+        }
+    }
+    
+    lookingFor = "DBLINK"; // zero or more
+    while (keyword == lookingFor) {
+        if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
+            return false;
+        }
+    }
+
+    lookingFor = "KEYWORDS"; // one or more
+    if (keyword != lookingFor) {
+        return false;
+    }
+
+    // I am convinced now. There may be flaws farther down but this input 
+    //  definitely wants to be a Genbank flat file.
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+EnaGetLineData(
+    list<string>::iterator& lineIt,
+    list<string>::iterator endIt,
+    string& lineCode,
+    string& lineData)
+//  ----------------------------------------------------------------------------
+{
+    while (lineIt != endIt  &&  NStr::StartsWith(*lineIt, "XX")) {
+        lineIt++;
+    }
+    if (lineIt == endIt) {
+        return false;
+    }
+    try {
+        NStr::SplitInTwo(
+            *lineIt, " ", lineCode, lineData, NStr::fSplit_MergeDelimiters);
+    }
+    catch(CException&) {
+        lineCode = *lineIt;
+        lineData = "";
+    }
+    lineIt++;
+    return true;
+}
+    
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::TestFormatFlatFileEna(
+    EMode /*unused*/)
+{
+    // see: ftp://ftp.ebi.ac.uk/pub/databases/ena/sequence/release/doc/usrman.txt
+
+    if ( ! EnsureStats() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    // smell test:
+    // note: sample size at least 8000 characters, line length soft limited to
+    //  78 characters
+    if (m_TestLines.size() < 19) { // number of required records 
+        return false;
+    }
+    
+    string lineCode, lineData, lookingFor;
+    auto recordIt = m_TestLines.begin();
+    auto endIt = m_TestLines.end();
+    NStr::SplitInTwo(
+        *recordIt, " ", lineCode, lineData, NStr::fSplit_MergeDelimiters);
+
+    lookingFor = "ID"; // excactly one
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    recordIt++;
+
+    lookingFor = "AC"; // one or more
+    if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+        return false;
+    }
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return false;
+        }
+    }
+
+    lookingFor = "PR"; // zero or more
+    while (lineCode == lookingFor) {
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return false;
+        }
+    }
+
+    lookingFor = "DT"; // two (first hard difference from UniProt)
+    for (int i = 0; i < 2; ++i) {
+        if (lineCode != lookingFor) {
+            return false;
+        }
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return false;
+        }
+    }
+
+    lookingFor = "DE"; // one or more
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return true;
+        }
+    }
+
+    lookingFor = "KW"; // one or more
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return true;
+        }
+    }
+
+    lookingFor = "OS"; // one or more
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return true;
+        }
+    }
+
+    lookingFor = "OC"; // one or more
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!EnaGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return true;
+        }
+    }
+
+    //  once here it's Ena or someone is messing with me
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+UniProtGetLineData(
+    list<string>::iterator& lineIt,
+    list<string>::iterator endIt,
+    string& lineCode,
+    string& lineData)
+//  ----------------------------------------------------------------------------
+{
+    if (lineIt == endIt) {
+        return false;
+    }
+    try {
+        NStr::SplitInTwo(
+            *lineIt, " ", lineCode, lineData, NStr::fSplit_MergeDelimiters);
+    }
+    catch(CException&) {
+        lineCode = *lineIt;
+        lineData = "";
+    }
+    lineIt++;
+    return true;
+}
+    
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::TestFormatFlatFileUniProt(
+    EMode /*unused*/)
+{
+    // see: https://web.expasy.org/docs/userman.html#genstruc
+
+    if ( ! EnsureStats() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    // smell test:
+    // note: sample size at least 8000 characters, line length soft limited to
+    //  75 characters
+    if (m_TestLines.size() < 15) { // number of required records 
+        return false;
+    }
+
+    // note:
+    // we are only trying to assert that the input is *meant* to be uniprot. 
+    // we should not be in the business of validation - this should happen 
+    // downstream, with better error messages than we could possibly provide here.
+    string lineCode, lineData, lookingFor;
+    auto recordIt = m_TestLines.begin();
+    auto endIt = m_TestLines.end();
+    NStr::SplitInTwo(
+        *recordIt, " ", lineCode, lineData, NStr::fSplit_MergeDelimiters);
+
+    lookingFor = "ID"; // excatly one
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    recordIt++;
+
+    lookingFor = "AC"; // one or more
+    if (!UniProtGetLineData(recordIt, endIt, lineCode, lineData)) {
+        return false;
+    }
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!UniProtGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return false;
+        }
+    }
+
+    lookingFor = "DT"; // three (first hard difference from UniProt)
+    for (int i = 0; i < 3; ++i) {
+        if (lineCode != lookingFor) {
+            return false;
+        }
+        if (!UniProtGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return false;
+        }
+    }
+
+
+    lookingFor = "DE"; // one or more
+    if (lineCode != lookingFor) {
+        return false;
+    }
+    while (lineCode == lookingFor) {
+        if (!UniProtGetLineData(recordIt, endIt, lineCode, lineData)) {
+            return true;
+        }
+    }
+
+    // optional "GN" line or first "OS" line
+    if (lineCode != "GN"  &&  lineCode != "OS") {
+        return false;
+    }
+    
+    //  once here it's UniProt or someone is messing with me
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

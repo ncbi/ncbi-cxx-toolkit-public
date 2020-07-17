@@ -121,7 +121,22 @@ public:
         eSnake               = 62,
         eVcfTabix            = 63,
         eWigMaf              = 64,
+
+        // The following formats *are* recognized by CFormatGuess:
+        eFlatFileGenbank     = 65,
+        eFlatFileEna         = 66,
+        eFlatFileUniProt     = 67,
         
+        // ***  Adding new format codes?  ***
+        //  (1) A sanity check in the  implementation depends on the format codes being 
+        //      consecutive. Hence no gaps allowed!
+        //  (2) Heed the warning above about never changing an already existing
+        //      format code!
+        //  (3) You must provide a display name for the new format. Do that in 
+        //      sm_FormatNames.
+        //  (4) You must add your new format to sm_CheckOrder (unless you don't want your 
+        //      format actually being checked and recognized.
+
         /// Max value of EFormat
         eFormat_max
     };
@@ -292,6 +307,10 @@ protected:
     bool TestFormatJson(EMode);
     bool TestFormatPsl(EMode);
 
+    bool TestFormatFlatFileGenbank(EMode);
+    bool TestFormatFlatFileEna(EMode);
+    bool TestFormatFlatFileUniProt(EMode);
+
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
 
@@ -355,14 +374,15 @@ private:
     bool x_IsBlankOrNumbers(const string& testString) const;
 
     // data:
-    static const char* const sm_FormatNames[eFormat_max];
+    using NAME_MAP = map<EFormat, const char*>;
+    static const NAME_MAP sm_FormatNames;
 
     bool x_TryProcessCLUSTALSeqData(const string& line, string& id, size_t& seg_length) const;
 
     bool x_LooksLikeCLUSTALConservedInfo(const string& line) const;
 
 protected:
-    static int s_CheckOrder[];
+    static vector<int> sm_CheckOrder;
     
     static const streamsize s_iTestBufferGranularity = 8096;
 
