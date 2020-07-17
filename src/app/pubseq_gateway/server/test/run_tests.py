@@ -61,6 +61,5 @@ else:
     server += ':2180'
 
 cmd = 'udc --variable PSG_SERVER:' + server + ' ' + dirname
-print(cmd)
 sys.exit(os.system(cmd))
 

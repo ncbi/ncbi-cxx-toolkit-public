@@ -80,7 +80,4 @@ static const string     kBioseqInfoFoundMany("BioseqInfoFoundMany");
 static const string     kSi2csiError("Si2csiError");
 static const string     kBioseqInfoError("BioseqInfoError");
 
-
-
-
 #endif

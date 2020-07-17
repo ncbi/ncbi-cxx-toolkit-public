@@ -41,7 +41,6 @@
 
 class CPendingOperation;
 class CCassBlobFetch;
-struct SPSGS_BlobId;
 template<typename P> class CHttpReply;
 namespace idblob { class CCassDataCallbackReceiver; }
 
@@ -100,7 +99,7 @@ public:
                          unsigned int  data_size, int  chunk_no);
     void PrepareBlobPropCompletion(size_t  item_id, size_t  chunk_count);
     void PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details);
-    void PrepareBlobMessage(size_t  item_id, const SPSGS_BlobId &  blob_id,
+    void PrepareBlobMessage(size_t  item_id, const string &  blob_id,
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity);
@@ -108,11 +107,11 @@ public:
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity);
-    void PrepareBlobCompletion(size_t  item_id, const SPSGS_BlobId &  blob_id,
+    void PrepareBlobCompletion(size_t  item_id, const string &  blob_id,
                                size_t  chunk_count);
-    void PrepareBlobExcluded(const SPSGS_BlobId &  blob_id,
+    void PrepareBlobExcluded(const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
-    void PrepareBlobExcluded(size_t  item_id, const SPSGS_BlobId &  blob_id,
+    void PrepareBlobExcluded(size_t  item_id, const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
     void PrepareReplyMessage(const string &  msg,

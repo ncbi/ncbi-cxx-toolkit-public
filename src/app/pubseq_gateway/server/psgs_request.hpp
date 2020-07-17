@@ -54,59 +54,39 @@ typedef chrono::high_resolution_clock::time_point  TPSGS_HighResolutionTimePoint
 // The blob sat eventually needs to be resolved to a sat name.
 struct SPSGS_BlobId
 {
-    CBioseqInfoRecord::TSat     m_Sat;
-    CBioseqInfoRecord::TSatKey  m_SatKey;
-
-    // Resolved sat
-    // The resolved sat appears later in the process
-    string                      m_SatName;
-
-    SPSGS_BlobId() :
-        m_Sat(-1), m_SatKey(-1)
+    SPSGS_BlobId()
     {}
 
-    SPSGS_BlobId(int  sat, int  sat_key) :
-        m_Sat(sat), m_SatKey(sat_key)
+    SPSGS_BlobId(const string &  blob_id) :
+        m_Id(blob_id)
     {}
-
-    SPSGS_BlobId(const string &  blob_id);
 
     SPSGS_BlobId(const SPSGS_BlobId &) = default;
     SPSGS_BlobId(SPSGS_BlobId &&) = default;
     SPSGS_BlobId &  operator=(const SPSGS_BlobId &) = default;
     SPSGS_BlobId &  operator=(SPSGS_BlobId &&) = default;
 
-    void SetSatName(const string &  name)
+    string GetId(void) const
     {
-        m_SatName = name;
-    }
-
-    string ToString(void) const
-    {
-        return to_string(m_Sat) + '.' + to_string(m_SatKey);
-    }
-
-    bool IsValid(void) const
-    {
-        return m_Sat >= 0 && m_SatKey >= 0;
+        return m_Id;
     }
 
     bool operator < (const SPSGS_BlobId &  other) const
     {
-        if (m_Sat == other.m_Sat)
-            return m_SatKey < other.m_SatKey;
-        return m_Sat < other.m_Sat;
+        return m_Id < other.m_Id;
     }
 
     bool operator == (const SPSGS_BlobId &  other) const
     {
-        return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
+        return m_Id == other.m_Id;
     }
 
     bool operator != (const SPSGS_BlobId &  other) const
     {
         return !this->operator==(other);
     }
+
+    string      m_Id;
 };
 
 
@@ -396,12 +376,12 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
 {
     string                          m_SeqId;
     int                             m_SeqIdType;
-    vector<SPSGS_BlobId>            m_ExcludeBlobs;
+    vector<string>                  m_ExcludeBlobs;
     EPSGS_AccSubstitutioOption      m_AccSubstOption;
 
     SPSGS_BlobBySeqIdRequest(const string &  seq_id,
                              int  seq_id_type,
-                             vector<SPSGS_BlobId> &  exclude_blobs,
+                             vector<string> &  exclude_blobs,
                              EPSGS_TSEOption  tse_option,
                              EPSGS_CacheAndDbUse  use_cache,
                              EPSGS_AccSubstitutioOption  subst_option,
@@ -432,17 +412,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     }
 
     virtual CJsonNode Serialize(void) const;
-
-    // Check if the resolved seq_id (to sat/sat_key) is in the user provided
-    // exclude list
-    bool IsExcludedBlob(void) const
-    {
-        for (const auto &  item : m_ExcludeBlobs) {
-            if (item == m_BlobId)
-                return true;
-        }
-        return false;
-    }
 
     SPSGS_BlobBySeqIdRequest(const SPSGS_BlobBySeqIdRequest &) = default;
     SPSGS_BlobBySeqIdRequest(SPSGS_BlobBySeqIdRequest &&) = default;

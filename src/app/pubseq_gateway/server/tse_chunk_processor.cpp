@@ -50,13 +50,16 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor() :
 
 CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
                                 shared_ptr<CPSGS_Request> request,
-                                shared_ptr<CPSGS_Reply> reply) :
+                                shared_ptr<CPSGS_Reply> reply,
+                                const SCass_BlobId &  blob_id) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_CassBlobBase(request, reply),
     m_Cancelled(false)
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;
+
+    m_BlobId = blob_id;
 
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_TSEChunkRequest>() everywhere
@@ -72,9 +75,15 @@ IPSGS_Processor*
 CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                          shared_ptr<CPSGS_Reply> reply) const
 {
-    if (request->GetRequestType() == CPSGS_Request::ePSGS_TSEChunkRequest)
-        return new CPSGS_TSEChunkProcessor(request, reply);
-    return nullptr;
+    if (request->GetRequestType() != CPSGS_Request::ePSGS_TSEChunkRequest)
+        return nullptr;
+
+    auto            blob_request = & request->GetRequest<SPSGS_TSEChunkRequest>();
+    SCass_BlobId    blob_id(blob_request->m_TSEId.GetId());
+    if (!blob_id.IsValid())
+        return nullptr;
+
+    return new CPSGS_TSEChunkProcessor(request, reply, blob_id);
 }
 
 
@@ -83,6 +92,21 @@ void CPSGS_TSEChunkProcessor::Process(void)
     auto    app = CPubseqGatewayApp::GetInstance();
     string  err_msg;
 
+    if (!m_BlobId.MapSatToKeyspace()) {
+        app->GetErrorCounters().IncClientSatToSatName();
+
+        err_msg = GetName() + " failed to map sat " +
+                  to_string(m_BlobId.m_Sat) + " to a Cassandra keyspace";
+        x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
+                         ePSGS_UnknownResolvedSatellite);
+        m_Completed = true;
+        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    }
+
     // First, check the blob prop cache, may be the requested version matches
     // the requested one
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
@@ -90,15 +114,15 @@ void CPSGS_TSEChunkProcessor::Process(void)
                                           IPSGS_Processor::m_Reply);
     int64_t                     last_modified = INT64_MIN;  // last modified is unknown
     auto                        blob_prop_cache_lookup_result =
-        psg_cache.LookupBlobProp(m_TSEChunkRequest->m_TSEId.m_Sat,
-                                 m_TSEChunkRequest->m_TSEId.m_SatKey,
+        psg_cache.LookupBlobProp(m_BlobId.m_Sat,
+                                 m_BlobId.m_SatKey,
                                  last_modified, *blob_record.get());
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         do {
             // Step 1: check the id2info presense
             if (blob_record->GetId2Info().empty()) {
                 app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
-                PSG_WARNING("Blob " + m_TSEChunkRequest->m_TSEId.ToString() +
+                PSG_WARNING("Blob " + m_BlobId.ToString() +
                             " properties id2info is empty in cache");
                 break;  // Continue with cassandra
             }
@@ -107,7 +131,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
             unique_ptr<CPSGId2Info>     id2_info;
             // false -> do not finish the request
             if (!x_ParseTSEChunkId2Info(blob_record->GetId2Info(),
-                                        id2_info, m_TSEChunkRequest->m_TSEId,
+                                        id2_info, m_BlobId,
                                         false)) {
                 app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
                 break;  // Continue with cassandra
@@ -116,7 +140,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
             // Step 3: check the split version in cache
             if (id2_info->GetSplitVersion() != m_TSEChunkRequest->m_SplitVersion) {
                 app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
-                PSG_WARNING("Blob " + m_TSEChunkRequest->m_TSEId.ToString() +
+                PSG_WARNING("Blob " + m_BlobId.ToString() +
                             " split version in cache does not match the requested one");
                 break;  // Continue with cassandra
             }
@@ -133,8 +157,8 @@ void CPSGS_TSEChunkProcessor::Process(void)
             // Chunk's blob id
             int64_t         sat_key = id2_info->GetInfo() -
                                       id2_info->GetChunks() - 1 + m_TSEChunkRequest->m_Chunk;
-            SPSGS_BlobId    chunk_blob_id(id2_info->GetSat(), sat_key);
-            if (!x_TSEChunkSatToSatName(chunk_blob_id, false)) {
+            SCass_BlobId    chunk_blob_id(id2_info->GetSat(), sat_key);
+            if (!x_TSEChunkSatToKeyspace(chunk_blob_id, false)) {
                 break;  // Continue with cassandra
             }
 
@@ -157,19 +181,20 @@ void CPSGS_TSEChunkProcessor::Process(void)
             if (IPSGS_Processor::m_Request->NeedTrace())
                 trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
             SPSGS_BlobBySatSatKeyRequest
-                        chunk_request(chunk_blob_id, INT64_MIN,
+                        chunk_request(SPSGS_BlobId(chunk_blob_id.ToString()),
+                                      INT64_MIN,
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                                      "", trace_flag,
+                                      "", 0, trace_flag,
                                       chrono::high_resolution_clock::now());
 
             unique_ptr<CCassBlobFetch>  fetch_details;
-            fetch_details.reset(new CCassBlobFetch(chunk_request));
+            fetch_details.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
             CCassBlobTaskLoadBlob *         load_task =
                 new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
                                           app->GetCassandraMaxRetries(),
                                           app->GetCassandraConnection(),
-                                          chunk_blob_id.m_SatName,
+                                          chunk_blob_id.m_Keyspace,
                                           move(blob_record),
                                           true, nullptr);
             fetch_details->SetLoader(load_task);
@@ -196,12 +221,12 @@ void CPSGS_TSEChunkProcessor::Process(void)
                             IPSGS_Processor::m_Request->GetStartTimestamp());
             }
 
-            m_FetchDetails.push_back(std::move(fetch_details));
+            m_FetchDetails.push_back(move(fetch_details));
             load_task->Wait();  // Initiate cassandra request
             return;
         } while (false);
     } else {
-        err_msg = "Blob " + m_TSEChunkRequest->m_TSEId.ToString() +
+        err_msg = "Blob " + m_BlobId.ToString() +
                   " properties are not found in cache";
         if (blob_prop_cache_lookup_result == ePSGS_CacheFailure)
             err_msg += " due to LMDB error";
@@ -215,13 +240,13 @@ void CPSGS_TSEChunkProcessor::Process(void)
 
     // Initiate async the history request
     unique_ptr<CCassSplitHistoryFetch>      fetch_details;
-    fetch_details.reset(new CCassSplitHistoryFetch(*m_TSEChunkRequest));
+    fetch_details.reset(new CCassSplitHistoryFetch(*m_TSEChunkRequest, m_BlobId));
     CCassBlobTaskFetchSplitHistory *   load_task =
         new  CCassBlobTaskFetchSplitHistory(app->GetCassandraTimeout(),
                                             app->GetCassandraMaxRetries(),
                                             app->GetCassandraConnection(),
-                                            m_TSEChunkRequest->m_TSEId.m_SatName,
-                                            m_TSEChunkRequest->m_TSEId.m_SatKey,
+                                            m_BlobId.m_Keyspace,
+                                            m_BlobId.m_SatKey,
                                             m_TSEChunkRequest->m_SplitVersion,
                                             nullptr, nullptr);
     fetch_details->SetLoader(load_task);
@@ -261,7 +286,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                            this, _1, _2, _3, _4, _5),
                                       fetch_details, blob, is_found);
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -275,7 +300,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -289,7 +314,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
     CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -340,7 +365,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
         x_RequestTSEChunk(result[0], fetch_details);
     }
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -391,7 +416,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
         fetch_details->SetReadFinished();
     }
 
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
 }
 
@@ -400,7 +425,7 @@ bool
 CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
                                         const string &  info,
                                         unique_ptr<CPSGId2Info> &  id2_info,
-                                        const SPSGS_BlobId &  blob_id,
+                                        const SCass_BlobId &  blob_id,
                                         bool  need_finish)
 {
     string      err_msg;
@@ -475,11 +500,11 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
 
 
 bool
-CPSGS_TSEChunkProcessor::x_TSEChunkSatToSatName(SPSGS_BlobId &  blob_id,
-                                                bool  need_finish)
+CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
+                                                 bool  need_finish)
 {
     auto *      app = CPubseqGatewayApp::GetInstance();
-    if (app->SatToSatName(blob_id.m_Sat, blob_id.m_SatName))
+    if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace))
         return true;
 
     app->GetErrorCounters().IncServerSatToSatName();
@@ -523,8 +548,8 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     // Resolve sat to satkey
     int64_t         sat_key = id2_info->GetInfo() - id2_info->GetChunks() - 1 +
                               fetch_details->GetChunk();
-    SPSGS_BlobId    chunk_blob_id(id2_info->GetSat(), sat_key);
-    if (!x_TSEChunkSatToSatName(chunk_blob_id, true))
+    SCass_BlobId    chunk_blob_id(id2_info->GetSat(), sat_key);
+    if (!x_TSEChunkSatToKeyspace(chunk_blob_id, true))
         return;
 
     // Look for the blob props
@@ -556,12 +581,12 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     if (IPSGS_Processor::m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
     SPSGS_BlobBySatSatKeyRequest
-        chunk_request(chunk_blob_id, INT64_MIN,
+        chunk_request(SPSGS_BlobId(chunk_blob_id.ToString()), INT64_MIN,
                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                      "", trace_flag, chrono::high_resolution_clock::now());
+                      "", 0, trace_flag, chrono::high_resolution_clock::now());
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
-    cass_blob_fetch.reset(new CCassBlobFetch(chunk_request));
+    cass_blob_fetch.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
 
     auto    app = CPubseqGatewayApp::GetInstance();
     CCassBlobTaskLoadBlob *     load_task = nullptr;
@@ -571,16 +596,16 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
                             app->GetCassandraTimeout(),
                             app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
-                            chunk_request.m_BlobId.m_SatName,
-                            std::move(blob_record),
+                            chunk_blob_id.m_Keyspace,
+                            move(blob_record),
                             true, nullptr);
     } else {
         load_task = new CCassBlobTaskLoadBlob(
                             app->GetCassandraTimeout(),
                             app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
-                            chunk_request.m_BlobId.m_SatName,
-                            chunk_request.m_BlobId.m_SatKey,
+                            chunk_blob_id.m_Keyspace,
+                            chunk_blob_id.m_SatKey,
                             true, nullptr);
     }
     cass_blob_fetch->SetLoader(load_task);
@@ -612,7 +637,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(std::move(cass_blob_fetch));
+    m_FetchDetails.push_back(move(cass_blob_fetch));
     load_task->Wait();
 }
 
@@ -648,14 +673,14 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
 
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
-    // 3 -> call resp->Send()  to send what we have if it is ready
+    // 3 -> call reply->Send()  to send what we have if it is ready
     for (auto &  details: m_FetchDetails) {
         if (details)
             x_Peek(details, need_wait);
     }
 
     // TSE chunk: ready packets need to be sent right away
-    if (IPSGS_Processor::m_Reply->GetReply()->IsOutputReady())
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
         IPSGS_Processor::m_Reply->Flush(false);
 }
 
@@ -671,8 +696,8 @@ void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
             fetch_details->GetLoader()->Wait();
 
     if (fetch_details->GetLoader()->HasError() &&
-            IPSGS_Processor::m_Reply->GetReply()->IsOutputReady() &&
-            ! IPSGS_Processor::m_Reply->GetReply()->IsFinished()) {
+            IPSGS_Processor::m_Reply->IsOutputReady() &&
+            ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();

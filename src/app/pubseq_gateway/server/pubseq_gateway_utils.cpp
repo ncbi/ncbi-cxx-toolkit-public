@@ -257,7 +257,7 @@ string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
 
 
 string  GetBlobPropHeader(size_t  item_id,
-                          const SPSGS_BlobId &  blob_id,
+                          const string &  blob_id,
                           size_t  blob_prop_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=2&item_type=blob_prop&chunk_type=data&size=550&sat=111
@@ -269,7 +269,7 @@ string  GetBlobPropHeader(size_t  item_id,
                 .append(s_AndSize)
                 .append(to_string(blob_prop_size))
                 .append(s_AndBlobId)
-                .append(blob_id.ToString())
+                .append(blob_id)
                 .append(1, '\n');
 }
 
@@ -308,7 +308,7 @@ string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
 }
 
 
-string  GetBlobChunkHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobChunkHeader(size_t  item_id, const string &  blob_id,
                            size_t  chunk_size,
                            size_t  chunk_number)
 {
@@ -322,14 +322,14 @@ string  GetBlobChunkHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                 .append(s_AndSize)
                 .append(to_string(chunk_size))
                 .append(s_AndBlobId)
-                .append(blob_id.ToString())
+                .append(blob_id)
                 .append(s_AndBlobChunk)
                 .append(to_string(chunk_number))
                 .append(1, '\n');
 }
 
 
-string  GetBlobExcludeHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobExcludeHeader(size_t  item_id, const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
@@ -352,14 +352,14 @@ string  GetBlobExcludeHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
-                .append(blob_id.ToString())
+                .append(blob_id)
                 .append(s_AndNChunksOne)
                 .append(s_AndReason)
                 .append(reason)
                 .append(1, '\n');
 }
 
-string  GetBlobCompletionHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobCompletionHeader(size_t  item_id, const string &  blob_id,
                                 size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=4&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
@@ -369,14 +369,14 @@ string  GetBlobCompletionHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
-                .append(blob_id.ToString())
+                .append(blob_id)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
 }
 
 
-string  GetBlobMessageHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobMessageHeader(size_t  item_id, const string &  blob_id,
                              size_t  msg_size,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity)
@@ -390,7 +390,7 @@ string  GetBlobMessageHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
                 .append(s_AndSize)
                 .append(to_string(msg_size))
                 .append(s_AndBlobId)
-                .append(blob_id.ToString())
+                .append(blob_id)
                 .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
                 .append(s_AndCode)

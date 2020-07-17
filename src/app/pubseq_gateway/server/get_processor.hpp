@@ -72,6 +72,7 @@ private:
                         SBioseqResolution &&  bioseq_resolution);
     void x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution);
     void x_GetBlob(void);
+    bool x_IsExcludedBlob(void) const;
 
 private:
     void OnGetBlobProp(CCassBlobFetch *  fetch_details,
@@ -91,6 +92,7 @@ private:
 
 private:
     SPSGS_BlobBySeqIdRequest *      m_BlobRequest;
+    vector<SCass_BlobId>            m_ExcludeBlobs;
     bool                            m_Cancelled;
 };
 

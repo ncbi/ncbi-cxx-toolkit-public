@@ -35,6 +35,7 @@
 
 #include "pubseq_gateway_types.hpp"
 #include "psgs_request.hpp"
+#include "cass_blob_id.hpp"
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
@@ -123,8 +124,9 @@ public:
 class CCassBlobFetch : public CCassFetch
 {
 public:
-    CCassBlobFetch(const SPSGS_BlobBySeqIdRequest &  blob_request) :
-        m_BlobId(blob_request.m_BlobId),
+    CCassBlobFetch(const SPSGS_BlobBySeqIdRequest &  blob_request,
+                   const SCass_BlobId &  blob_id) :
+        m_BlobId(blob_id),
         m_TSEOption(blob_request.m_TSEOption),
         m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
@@ -136,8 +138,9 @@ public:
         m_FetchType = ePSGS_BlobBySeqIdFetch;
     }
 
-    CCassBlobFetch(const SPSGS_BlobBySatSatKeyRequest &  blob_request) :
-        m_BlobId(blob_request.m_BlobId),
+    CCassBlobFetch(const SPSGS_BlobBySatSatKeyRequest &  blob_request,
+                   const SCass_BlobId &  blob_id) :
+        m_BlobId(blob_id),
         m_TSEOption(blob_request.m_TSEOption),
         m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
@@ -154,8 +157,9 @@ public:
     // - client id is empty so the cache of blobs sent to the user is not used
     // - UserProvidedBlobId == false is used to report a server error 500 in
     //   case the blob props are not found.
-    CCassBlobFetch(const SPSGS_TSEChunkRequest &  chunk_request) :
-        m_BlobId(chunk_request.m_TSEId),
+    CCassBlobFetch(const SPSGS_TSEChunkRequest &  chunk_request,
+                   const SCass_BlobId &  tse_id) :
+        m_BlobId(tse_id),
         m_TSEOption(SPSGS_BlobRequestBase::ePSGS_UnknownTSE),
         m_ClientId(""),
         m_BlobPropSent(false),
@@ -189,7 +193,7 @@ public:
     bool GetUserProvidedBlobId(void) const
     { return m_UserProvidedBlobId; }
 
-    SPSGS_BlobId GetBlobId(void) const
+    SCass_BlobId GetBlobId(void) const
     { return m_BlobId; }
 
     int32_t GetTotalSentBlobChunks(void) const
@@ -222,7 +226,7 @@ public:
     virtual void ResetCallbacks(void);
 
 private:
-    SPSGS_BlobId                            m_BlobId;
+    SCass_BlobId                            m_BlobId;
     SPSGS_BlobRequestBase::EPSGS_TSEOption  m_TSEOption;
     string                                  m_ClientId;
 
@@ -295,8 +299,9 @@ public:
 class CCassSplitHistoryFetch : public CCassFetch
 {
 public:
-    CCassSplitHistoryFetch(const SPSGS_TSEChunkRequest &  chunk_request) :
-        m_TSEId(chunk_request.m_TSEId),
+    CCassSplitHistoryFetch(const SPSGS_TSEChunkRequest &  chunk_request,
+                           const SCass_BlobId &  tse_id) :
+        m_TSEId(tse_id),
         m_Chunk(chunk_request.m_Chunk),
         m_SplitVersion(chunk_request.m_SplitVersion),
         m_UseCache(chunk_request.m_UseCache)
@@ -308,7 +313,7 @@ public:
     {}
 
 public:
-    SPSGS_BlobId  GetTSEId(void) const
+    SCass_BlobId  GetTSEId(void) const
     { return m_TSEId; }
 
     int64_t  GetChunk(void) const
@@ -330,7 +335,7 @@ public:
     virtual void ResetCallbacks(void);
 
 private:
-    SPSGS_BlobId                            m_TSEId;
+    SCass_BlobId                            m_TSEId;
     int64_t                                 m_Chunk;
     int64_t                                 m_SplitVersion;
     SPSGS_RequestBase::EPSGS_CacheAndDbUse  m_UseCache;

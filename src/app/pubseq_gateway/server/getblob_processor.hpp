@@ -57,7 +57,8 @@ public:
 public:
     CPSGS_GetBlobProcessor();
     CPSGS_GetBlobProcessor(shared_ptr<CPSGS_Request> request,
-                           shared_ptr<CPSGS_Reply> reply);
+                           shared_ptr<CPSGS_Reply> reply,
+                           const SCass_BlobId &  blob_id);
     virtual ~CPSGS_GetBlobProcessor();
 
 private:

@@ -64,6 +64,13 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>() everywhere
     m_BlobRequest = & request->GetRequest<SPSGS_BlobBySeqIdRequest>();
+
+    // Convert generic excluded blobs into cassandra blob ids
+    for (const auto &  blob_id_as_str : m_BlobRequest->m_ExcludeBlobs) {
+        SCass_BlobId    cass_blob_id(blob_id_as_str);
+        if (cass_blob_id.IsValid())
+            m_ExcludeBlobs.push_back(cass_blob_id);
+    }
 }
 
 
@@ -133,10 +140,10 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
 
     // Translate sat to keyspace
     auto *          app = CPubseqGatewayApp::GetInstance();
-    SPSGS_BlobId    blob_id(bioseq_resolution.m_BioseqInfo.GetSat(),
+    SCass_BlobId    blob_id(bioseq_resolution.m_BioseqInfo.GetSat(),
                             bioseq_resolution.m_BioseqInfo.GetSatKey());
-    if (app->SatToSatName(blob_id.m_Sat, blob_id.m_SatName)) {
-        m_BlobRequest->m_BlobId = blob_id;
+    if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace)) {
+        m_BlobId = blob_id;
         x_GetBlob();
         return;
     }
@@ -179,14 +186,24 @@ CPSGS_GetProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 }
 
 
+bool CPSGS_GetProcessor::x_IsExcludedBlob(void) const
+{
+    for (const auto & item : m_ExcludeBlobs) {
+        if (item == m_BlobId)
+            return true;
+    }
+    return false;
+}
+
+
 void CPSGS_GetProcessor::x_GetBlob(void)
 {
     auto * app = CPubseqGatewayApp::GetInstance();
 
-    if (m_BlobRequest->IsExcludedBlob()) {
+    if (x_IsExcludedBlob()) {
         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                m_BlobRequest->m_BlobId, ePSGS_BlobExcluded);
+                m_BlobId.ToString(), ePSGS_BlobExcluded);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
         return;
@@ -202,17 +219,17 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             auto        cache_result =
                 app->GetExcludeBlobCache()->AddBlobId(
                         m_BlobRequest->m_ClientId,
-                        m_BlobRequest->m_BlobId.m_Sat,
-                        m_BlobRequest->m_BlobId.m_SatKey,
+                        m_BlobId.m_Sat,
+                        m_BlobId.m_SatKey,
                         completed);
             if (cache_result == ePSGS_AlreadyInCache) {
                 if (completed)
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                    m_BlobRequest->m_BlobId,
+                                    m_BlobId.ToString(),
                                     ePSGS_BlobSent);
                 else
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                    m_BlobRequest->m_BlobId,
+                                    m_BlobId.ToString(),
                                     ePSGS_BlobInProgress);
                 m_Completed = true;
                 IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -225,7 +242,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
     }
 
     unique_ptr<CCassBlobFetch>  fetch_details;
-    fetch_details.reset(new CCassBlobFetch(*m_BlobRequest));
+    fetch_details.reset(new CCassBlobFetch(*m_BlobRequest, m_BlobId));
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,
@@ -233,8 +250,8 @@ void CPSGS_GetProcessor::x_GetBlob(void)
     int64_t                 last_modified = INT64_MIN;
     auto                    blob_prop_cache_lookup_result =
                                     psg_cache.LookupBlobProp(
-                                        m_BlobRequest->m_BlobId.m_Sat,
-                                        m_BlobRequest->m_BlobId.m_SatKey,
+                                        m_BlobId.m_Sat,
+                                        m_BlobId.m_SatKey,
                                         last_modified,
                                         *blob_record.get());
 
@@ -243,7 +260,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
         load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
                                               app->GetCassandraMaxRetries(),
                                               app->GetCassandraConnection(),
-                                              m_BlobRequest->m_BlobId.m_SatName,
+                                              m_BlobId.m_Keyspace,
                                               move(blob_record),
                                               false, nullptr);
         fetch_details->SetLoader(load_task);
@@ -265,8 +282,8 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                 !m_BlobRequest->m_ClientId.empty()) {
                 app->GetExcludeBlobCache()->Remove(
                         m_BlobRequest->m_ClientId,
-                        m_BlobRequest->m_BlobId.m_Sat,
-                        m_BlobRequest->m_BlobId.m_SatKey);
+                        m_BlobId.m_Sat,
+                        m_BlobId.m_SatKey);
 
                 // To prevent SetCompleted() later
                 m_BlobRequest->m_ExcludeBlobCacheAdded = false;
@@ -281,8 +298,8 @@ void CPSGS_GetProcessor::x_GetBlob(void)
         load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
                                               app->GetCassandraMaxRetries(),
                                               app->GetCassandraConnection(),
-                                              m_BlobRequest->m_BlobId.m_SatName,
-                                              m_BlobRequest->m_BlobId.m_SatKey,
+                                              m_BlobId.m_Keyspace,
+                                              m_BlobId.m_SatKey,
                                               false, nullptr);
         fetch_details->SetLoader(load_task);
     }
@@ -415,8 +432,8 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
             auto *  app = CPubseqGatewayApp::GetInstance();
             app->GetExcludeBlobCache()->SetCompleted(
                                             blob_request.m_ClientId,
-                                            blob_request.m_BlobId.m_Sat,
-                                            blob_request.m_BlobId.m_SatKey, true);
+                                            m_BlobId.m_Sat,
+                                            m_BlobId.m_SatKey, true);
             blob_request.m_ExcludeBlobCacheCompleted = true;
         }
     }

@@ -196,16 +196,12 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             }
         }
 
-        vector<SPSGS_BlobId>    exclude_blobs;
-        SRequestParameter       exclude_blobs_param = x_GetParam(req,
-                                                             kExcludeBlobsParam);
+        vector<string>      exclude_blobs;
+        SRequestParameter   exclude_blobs_param = x_GetParam(req,
+                                                         kExcludeBlobsParam);
         if (exclude_blobs_param.m_Found) {
             exclude_blobs = x_GetExcludeBlobs(kExcludeBlobsParam,
-                                              exclude_blobs_param.m_Value, err_msg);
-            if (!err_msg.empty()) {
-                x_MalformedArguments(reply, context, err_msg);
-                return 0;
-            }
+                                              exclude_blobs_param.m_Value);
         }
 
         SPSGS_RequestBase::EPSGS_AccSubstitutioOption
@@ -333,41 +329,28 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         {
             SPSGS_BlobId    blob_id(blob_id_param.m_Value);
 
-            if (!blob_id.IsValid()) {
+            if (blob_id.GetId().empty()) {
                 x_MalformedArguments(reply, context,
-                                     "Malformed 'blob_id' parameter. "
-                                     "Expected format 'sat.sat_key' where both "
-                                     "'sat' and 'sat_key' are integers.");
+                                     "The 'blob_id' parameter value has not been supplied");
                 return 0;
             }
 
-            if (SatToSatName(blob_id.m_Sat, blob_id.m_SatName)) {
-                SRequestParameter   client_id_param = x_GetParam(req,
-                                                                 kClientIdParam);
+            SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
-                m_RequestCounters.IncGetBlobBySatSatKey();
-                unique_ptr<SPSGS_RequestBase>
+            m_RequestCounters.IncGetBlobBySatSatKey();
+            unique_ptr<SPSGS_RequestBase>
                     req(new SPSGS_BlobBySatSatKeyRequest(
                                 blob_id, last_modified_value,
                                 tse_option, use_cache,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
                                 hops, trace, now));
-                unique_ptr<CPSGS_Request>
+            unique_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
-                unique_ptr<CPendingOperation>
+            unique_ptr<CPendingOperation>
                     pending_req(new CPendingOperation(move(request), reply));
-                auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-                http_conn->Postpone(move(pending_req), reply);
-                return 0;
-            }
-
-            m_ErrorCounters.IncClientSatToSatName();
-            string      message = string("Unknown satellite number ") +
-                                  to_string(blob_id.m_Sat);
-            x_SendUnknownClientSatelliteError(reply, blob_id, message);
-            PSG_WARNING(message);
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
+            auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
+            http_conn->Postpone(move(pending_req), reply);
             return 0;
         }
 
@@ -557,21 +540,9 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         }
 
         SPSGS_BlobId        tse_id(tse_id_param.m_Value);
-        if (!tse_id.IsValid()) {
+        if (tse_id.GetId().empty()) {
             x_MalformedArguments(reply, context,
-                                 "Malformed 'tse_id' parameter. "
-                                 "Expected format 'sat.sat_key' where both "
-                                 "'sat' and 'sat_key' are integers.");
-            return 0;
-        }
-
-        if (!SatToSatName(tse_id.m_Sat, tse_id.m_SatName)) {
-            m_ErrorCounters.IncClientSatToSatName();
-            string      message = string("Unknown satellite number ") +
-                                  to_string(tse_id.m_Sat);
-            x_SendUnknownClientSatelliteError(reply, tse_id, message);
-            PSG_WARNING(message);
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
+                                 "The 'tse_id' parameter value has not been supplied");
             return 0;
         }
 

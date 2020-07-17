@@ -145,7 +145,7 @@ string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
 string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count);
 
 // Blob prop messages
-string  GetBlobPropHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobPropHeader(size_t  item_id, const string &  blob_id,
                           size_t  blob_prop_size);
 string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
                                  CRequestStatus::ECode  status, int  code,
@@ -153,15 +153,15 @@ string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
 string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count);
 
 // Blob chunk messages
-string  GetBlobChunkHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobChunkHeader(size_t  item_id, const string &  blob_id,
                            size_t  chunk_size, size_t  chunk_number);
-string  GetBlobCompletionHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobCompletionHeader(size_t  item_id, const string &  blob_id,
                                 size_t  chunk_count);
-string  GetBlobMessageHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobMessageHeader(size_t  item_id, const string &  blob_id,
                              size_t  msg_size,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity);
-string  GetBlobExcludeHeader(size_t  item_id, const SPSGS_BlobId &  blob_id,
+string  GetBlobExcludeHeader(size_t  item_id, const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
 
 // Named annotation messages

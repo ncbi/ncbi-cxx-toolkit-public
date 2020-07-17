@@ -111,7 +111,7 @@ public:
     bool PopulateCassandraMapping(bool  need_accept_alert=false);
     void CheckCassMapping(void);
     void CloseCass(void);
-    bool SatToSatName(size_t  sat, string &  sat_name);
+    bool SatToKeyspace(int  sat, string &  sat_name);
 
     string GetBioseqKeyspace(void) const
     {
@@ -208,9 +208,6 @@ private:
         {}
     };
 
-    void x_SendUnknownClientSatelliteError(
-        shared_ptr<CPSGS_Reply>  reply,
-        const SPSGS_BlobId &  blob_id, const string &  message);
     void x_SendMessageAndCompletionChunks(
         shared_ptr<CPSGS_Reply>  reply,
         const string &  message,
@@ -251,9 +248,8 @@ private:
                               const string &  param_name,
                               const CTempString &  param_value,
                               string &  err_msg) const;
-    vector<SPSGS_BlobId> x_GetExcludeBlobs(const string &  param_name,
-                                           const CTempString &  param_value,
-                                           string &  err_msg) const;
+    vector<string> x_GetExcludeBlobs(const string &  param_name,
+                                     const CTempString &  param_value) const;
     unsigned long x_GetDataSize(const IRegistry &  reg,
                                 const string &  section,
                                 const string &  entry,

@@ -57,7 +57,8 @@ public:
 public:
     CPSGS_TSEChunkProcessor();
     CPSGS_TSEChunkProcessor(shared_ptr<CPSGS_Request> request,
-                            shared_ptr<CPSGS_Reply> reply);
+                            shared_ptr<CPSGS_Reply> reply,
+                            const SCass_BlobId &  blob_id);
     virtual ~CPSGS_TSEChunkProcessor();
 
 private:
@@ -79,7 +80,7 @@ private:
 private:
     bool x_ParseTSEChunkId2Info(const string &  info,
                                 unique_ptr<CPSGId2Info> &  id2_info,
-                                const SPSGS_BlobId &  blob_id,
+                                const SCass_BlobId &  blob_id,
                                 bool  need_finish);
     void x_SendReplyError(const string &  msg,
                           CRequestStatus::ECode  status,
@@ -87,8 +88,7 @@ private:
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
                                   CPSGId2Info::TChunks  total_chunks,
                                   bool  need_finish);
-    bool x_TSEChunkSatToSatName(SPSGS_BlobId &  blob_id,
-                                bool  need_finish);
+    bool x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id, bool  need_finish);
     void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
                            CCassSplitHistoryFetch *  fetch_details);
 

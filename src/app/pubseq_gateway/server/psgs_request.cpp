@@ -37,22 +37,6 @@
 USING_NCBI_SCOPE;
 
 
-SPSGS_BlobId::SPSGS_BlobId(const string &  blob_id) :
-    m_Sat(-1), m_SatKey(-1)
-{
-    list<string>    parts;
-    NStr::Split(blob_id, ".", parts);
-
-    if (parts.size() == 2) {
-        try {
-            m_Sat = NStr::StringToNumeric<int>(parts.front());
-            m_SatKey = NStr::StringToNumeric<int>(parts.back());
-        } catch (...) {
-        }
-    }
-}
-
-
 CPSGS_Request::CPSGS_Request()
 {}
 
@@ -177,7 +161,7 @@ CJsonNode SPSGS_BlobBySeqIdRequest::Serialize(void) const
 
     CJsonNode   exclude_blobs(CJsonNode::NewArrayNode());
     for (const auto &  blob_id : m_ExcludeBlobs) {
-        exclude_blobs.AppendString(blob_id.ToString());
+        exclude_blobs.AppendString(blob_id);
     }
     json.SetByKey("exclude blobs", exclude_blobs);
 
@@ -190,7 +174,7 @@ CJsonNode SPSGS_BlobBySatSatKeyRequest::Serialize(void) const
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     json.SetString("name", GetName());
-    json.SetString("blob id", m_BlobId.ToString());
+    json.SetString("blob id", m_BlobId.GetId());
     json.SetInteger("tse option", m_TSEOption);
     json.SetBoolean("use cache", m_UseCache);
     json.SetString("client id", m_ClientId);
@@ -225,7 +209,7 @@ CJsonNode SPSGS_TSEChunkRequest::Serialize(void) const
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     json.SetString("name", GetName());
-    json.SetString("tse id", m_TSEId.ToString());
+    json.SetString("tse id", m_TSEId.GetId());
     json.SetInteger("chunk", m_Chunk);
     json.SetInteger("split version", m_SplitVersion);
     json.SetBoolean("use cache", m_UseCache);

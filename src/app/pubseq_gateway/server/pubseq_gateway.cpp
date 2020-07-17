@@ -343,11 +343,13 @@ void CPubseqGatewayApp::CloseCass(void)
 }
 
 
-bool CPubseqGatewayApp::SatToSatName(size_t  sat, string &  sat_name)
+bool CPubseqGatewayApp::SatToKeyspace(int  sat, string &  sat_name)
 {
-    if (sat < m_SatNames.size()) {
-        sat_name = m_SatNames[sat];
-        return !sat_name.empty();
+    if (sat >= 0) {
+        if (sat < static_cast<int>(m_SatNames.size())) {
+            sat_name = m_SatNames[sat];
+            return !sat_name.empty();
+        }
     }
     return false;
 }
@@ -1099,28 +1101,26 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
 }
 
 
-vector<SPSGS_BlobId>
+vector<string>
 CPubseqGatewayApp::x_GetExcludeBlobs(const string &  param_name,
-                                     const CTempString &  param_value,
-                                     string &  err_msg) const
+                                     const CTempString &  param_value) const
 {
-    vector<SPSGS_BlobId>        result;
+    vector<string>              result;
     vector<string>              blob_ids;
     NStr::Split(param_value, ",", blob_ids);
 
+    size_t                      empty_count = 0;
     for (const auto &  item : blob_ids) {
-        SPSGS_BlobId     blob_id(item);
-        if (!blob_id.IsValid()) {
-            err_msg = "Invalid blob id in the '" + param_name +
-                      "' parameter comma separated list. Received: '" +
-                      string(item.data(), item.size()) +
-                      "'. Expected format 'sat.sat_key' where both "
-                      "'sat' and 'sat_key' are integers.";
-            result.clear();
-            break;
-        }
-        result.push_back(blob_id);
+        if (item.empty())
+            ++empty_count;
+        else
+            result.push_back(item);
     }
+
+    if (empty_count > 0)
+        PSG_WARNING("Found " << empty_count << " empty blob id(s) in the '" <<
+                    param_name << "' list (empty blob ids are ignored)");
+
     return result;
 }
 
@@ -1336,26 +1336,6 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
 
     reply->SetContentType(ePSGS_PSGMime);
     reply->PrepareReplyMessage(message, status, code, severity);
-    reply->PrepareReplyCompletion();
-    reply->Flush();
-}
-
-
-// Sends an unknown satellite error for the case when the satellite is provided
-// by the user in the incoming URL. I.e. this error is treated as a client
-// error (opposite to a server data inconsistency)
-void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
-        shared_ptr<CPSGS_Reply>  reply,
-        const SPSGS_BlobId &  blob_id,
-        const string &  message)
-{
-    auto    item_id = reply->GetItemId();
-    reply->SetContentType(ePSGS_PSGMime);
-    reply->PrepareBlobMessage(item_id, blob_id, message,
-                              CRequestStatus::e404_NotFound,
-                              ePSGS_UnknownResolvedSatellite,
-                              eDiag_Error);
-    reply->PrepareBlobCompletion(item_id, blob_id, 2);
     reply->PrepareReplyCompletion();
     reply->Flush();
 }

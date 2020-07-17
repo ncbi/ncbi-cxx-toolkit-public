@@ -41,6 +41,7 @@
 #include "cass_processor_base.hpp"
 #include "get_blob_callback.hpp"
 #include "id2info.hpp"
+#include "cass_blob_id.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -123,6 +124,10 @@ private:
 
 private:
     void x_SetFinished(CCassBlobFetch *  fetch_details);
+
+protected:
+    // Used for TSE chunk request and for get blob by sat/sat key request
+    SCass_BlobId                m_BlobId;
 
 private:
     unique_ptr<CPSGId2Info>     m_Id2Info;
