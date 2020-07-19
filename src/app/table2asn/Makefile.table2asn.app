@@ -12,7 +12,7 @@ SRC = table2asn multireader struc_cmt_reader table2asn_context feature_table_rea
       fcs_reader table2asn_validator src_quals fasta_ex suspect_feat descr_apply
 
 LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
-       xvalidate xobjwrite xobjreadex valerr biotree macro xflatfile\
+       xvalidate xobjwrite xobjreadex valerr biotree macro xflatfile ctransition \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) taxon1 xobjutil id2cli \
        xregexp $(PCRE_LIB) xqueryparse $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS) 
 
