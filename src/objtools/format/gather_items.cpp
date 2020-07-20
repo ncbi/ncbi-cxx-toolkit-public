@@ -3121,7 +3121,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             bool has_gap = gap_data.has_gap;
             int gap_start = gap_data.gap_start;
             int gap_end = gap_data.gap_end;
-            while (has_gap && gap_start < feat_start) {
+            while (has_gap && gap_start <= feat_start) {
                 const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
                 const bool gapMatch = ( subtype == CSeqFeatData::eSubtype_gap && feat_start == gap_start && feat_end == gap_end - 1 );
                 if ( noGapSizeProblem && ! gapMatch ) {
@@ -3207,7 +3207,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
 
     // when all features are done, output remaining gaps
     while (gap_data.has_gap) {
-        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start < gap_data.gap_end) );
+        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start <= gap_data.gap_end) );
         if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
             item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
                         gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
