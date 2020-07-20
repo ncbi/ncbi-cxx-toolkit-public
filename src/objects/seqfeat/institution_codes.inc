@@ -1077,7 +1077,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CGEC\ts\tChina Entomological Research Institute\t\t\t",
 "CGG\ts\tCambridge University Botanic Garden\t\t\t",
 "CGH\ts\tNational Museum of Prague\t\t\t",
-"CGMCC\tc\tChina General Microbiological Culture Collection Center\tAS\t\t",
+"CGMCC\tc\tChina General Microbiological Culture Collection Center\tAS\thttp://www.cgmcc.net/english/cata.php?stn=CGMCC%20\t",
 "CGMS\ts\tUniversidade Federal de Mato Grosso do Sul, Departamento de Biologia\t\t\t",
 "CGN\ts\tCentre for Genetic Resources, The Netherlands\t\t\t",
 "CGRIS\tb\tChinese Crop Germplasm Resources Information Network\t\t\t",
