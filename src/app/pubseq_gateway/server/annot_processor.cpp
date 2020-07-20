@@ -132,17 +132,19 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
         UpdateOverallStatus(status);
     PSG_WARNING(message);
 
+    size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     if (status == CRequestStatus::e404_NotFound) {
-        size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
         IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
                                                        status,
                                                        ePSGS_NoBioseqInfo,
                                                        eDiag_Error);
-        IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
     } else {
-        IPSGS_Processor::m_Reply->PrepareReplyMessage(message, status,
-                                                      code, severity);
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
+                                                       status,
+                                                       ePSGS_BioseqInfoError,
+                                                       severity);
     }
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
 
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -314,8 +316,10 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    IPSGS_Processor::m_Reply->PrepareReplyMessage(
-        message, CRequestStatus::e500_InternalServerError, code, severity);
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(),
+            GetName(), message, CRequestStatus::e500_InternalServerError,
+            code, severity);
     if (is_error) {
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
 
@@ -393,8 +397,9 @@ void CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         app->GetErrorCounters().IncUnknownError();
         PSG_ERROR(error);
 
-        IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                error, CRequestStatus::e500_InternalServerError,
+        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+                IPSGS_Processor::m_Reply->GetItemId(),
+                GetName(), error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
 
         // Mark finished

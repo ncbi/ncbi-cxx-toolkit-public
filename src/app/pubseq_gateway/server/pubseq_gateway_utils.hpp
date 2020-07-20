@@ -179,6 +179,14 @@ string  GetReplyMessageHeader(size_t  msg_size,
                               CRequestStatus::ECode  status, int  code,
                               EDiagSev  severity);
 
+// Processor messages
+string GetProcessorMessageHeader(size_t  item_id, const string &  processor_id,
+                                 size_t  msg_size, CRequestStatus::ECode  status,
+                                 int  code, EDiagSev  severity);
+string GetProcessorMessageCompletionHeader(size_t  item_id,
+                                           const string &  processor_id,
+                                           size_t  chunk_count);
+
 
 // Reset the request context if necessary
 class CRequestContextResetter

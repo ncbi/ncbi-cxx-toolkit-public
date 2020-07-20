@@ -97,8 +97,8 @@ void CPSGS_TSEChunkProcessor::Process(void)
 
         err_msg = GetName() + " failed to map sat " +
                   to_string(m_BlobId.m_Sat) + " to a Cassandra keyspace";
-        x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
-                         ePSGS_UnknownResolvedSatellite);
+        x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
+                             ePSGS_UnknownResolvedSatellite);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
 
@@ -351,11 +351,10 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
                               fetch_details->GetTSEId().ToString();
         PSG_WARNING(message);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
-        IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                                    message,
-                                    CRequestStatus::e404_NotFound,
-                                    ePSGS_SplitHistoryNotFound,
-                                    eDiag_Error);
+        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+                IPSGS_Processor::m_Reply->GetItemId(),
+                GetName(), message, CRequestStatus::e404_NotFound,
+                ePSGS_SplitHistoryNotFound, eDiag_Error);
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     } else {
         // Split history found.
@@ -403,8 +402,9 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
                 IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    IPSGS_Processor::m_Reply->PrepareReplyMessage(message, status,
-                                                  code, severity);
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(),
+            GetName(), message, status, code, severity);
 
     if (is_error) {
         if (code == CCassandraException::eQueryTimeout)
@@ -443,8 +443,8 @@ CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
     auto *  app = CPubseqGatewayApp::GetInstance();
     app->GetErrorCounters().IncInvalidId2InfoError();
     if (need_finish) {
-        x_SendReplyError(err_msg, CRequestStatus::e500_InternalServerError,
-                         ePSGS_InvalidId2Info);
+        x_SendProcessorError(err_msg, CRequestStatus::e500_InternalServerError,
+                             ePSGS_InvalidId2Info);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     } else {
@@ -455,12 +455,13 @@ CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
 
 
 void
-CPSGS_TSEChunkProcessor::x_SendReplyError(const string &  msg,
-                                          CRequestStatus::ECode  status,
-                                          int  code)
+CPSGS_TSEChunkProcessor::x_SendProcessorError(const string &  msg,
+                                              CRequestStatus::ECode  status,
+                                              int  code)
 {
-    IPSGS_Processor::m_Reply->PrepareReplyMessage(msg, status,
-                                                  code, eDiag_Error);
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+                IPSGS_Processor::m_Reply->GetItemId(),
+                GetName(), msg, status, code, eDiag_Error);
     UpdateOverallStatus(status);
 
     if (status >= CRequestStatus::e400_BadRequest &&
@@ -486,8 +487,8 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
         if (need_finish) {
             auto *  app = CPubseqGatewayApp::GetInstance();
             app->GetErrorCounters().IncMalformedArguments();
-            x_SendReplyError(msg, CRequestStatus::e400_BadRequest,
-                             ePSGS_MalformedParameter);
+            x_SendProcessorError(msg, CRequestStatus::e400_BadRequest,
+                                 ePSGS_MalformedParameter);
             m_Completed = true;
             IPSGS_Processor::m_Reply->SignalProcessorFinished();
         } else {
@@ -513,8 +514,8 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
                   to_string(blob_id.m_Sat) +
                   " for the blob " + blob_id.ToString();
     if (need_finish) {
-        x_SendReplyError(msg, CRequestStatus::e500_InternalServerError,
-                         ePSGS_UnknownResolvedSatellite);
+        x_SendProcessorError(msg, CRequestStatus::e500_InternalServerError,
+                             ePSGS_UnknownResolvedSatellite);
 
         // This method is used only in case of the TSE chunk requests.
         // So in case of errors - synchronous or asynchronous - it is
@@ -571,8 +572,8 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
                           " properties are not found in cache";
         if (blob_prop_cache_lookup_result == ePSGS_CacheFailure)
             err_msg += " due to LMDB error";
-        x_SendReplyError(err_msg, CRequestStatus::e404_NotFound,
-                         ePSGS_BlobPropsNotFound);
+        x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
+                             ePSGS_BlobPropsNotFound);
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
         return;
     }

@@ -228,7 +228,6 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
     fetch_details->SetBlobPropSent();
 }
 
-
 void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
                                      const string &         blob_id,
                                      const string &         msg,
@@ -318,6 +317,30 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
     ++m_TotalSentReplyChunks;
 }
 
+
+void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
+                                          const string &         processor_id,
+                                          const string &         msg,
+                                          CRequestStatus::ECode  status,
+                                          int                    err_code,
+                                          EDiagSev               severity)
+{
+    string      header = GetProcessorMessageHeader(item_id, processor_id,
+                                                   msg.size(),
+                                                   status, err_code, severity);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+    ++m_TotalSentReplyChunks;
+
+    string      completion = GetProcessorMessageCompletionHeader(item_id,
+                                                                 processor_id,
+                                                                 2);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(completion.data()), completion.size()));
+    ++m_TotalSentReplyChunks;
+}
 
 
 void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,

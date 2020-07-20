@@ -41,6 +41,7 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_MalformedParameter,
     ePSGS_UnknownResolvedSatellite,
     ePSGS_NoBioseqInfo,
+    ePSGS_BioseqInfoError,
     ePSGS_BadID2Info,
     ePSGS_UnpackingError,
     ePSGS_UnknownError,

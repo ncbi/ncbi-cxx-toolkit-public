@@ -114,6 +114,10 @@ public:
     void PrepareBlobExcluded(size_t  item_id, const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
+    void PrepareProcessorMessage(size_t  item_id, const string &  processor_id,
+                                 const string &  msg,
+                                 CRequestStatus::ECode  status, int  err_code,
+                                 EDiagSev  severity);
     void PrepareReplyMessage(const string &  msg,
                              CRequestStatus::ECode  status, int  err_code,
                              EDiagSev  severity);

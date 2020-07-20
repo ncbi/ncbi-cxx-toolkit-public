@@ -82,9 +82,9 @@ private:
                                 unique_ptr<CPSGId2Info> &  id2_info,
                                 const SCass_BlobId &  blob_id,
                                 bool  need_finish);
-    void x_SendReplyError(const string &  msg,
-                          CRequestStatus::ECode  status,
-                          int  code);
+    void x_SendProcessorError(const string &  msg,
+                              CRequestStatus::ECode  status,
+                              int  code);
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
                                   CPSGId2Info::TChunks  total_chunks,
                                   bool  need_finish);

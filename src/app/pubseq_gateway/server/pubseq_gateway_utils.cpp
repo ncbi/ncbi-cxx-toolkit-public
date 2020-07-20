@@ -139,6 +139,7 @@ static string   s_Fmt = "fmt=";
 static string   s_NA = "na=";
 static string   s_Reason = "reason=";
 static string   s_NChunksOne = "n_chunks=1";
+static string   s_ProcessorId = "processor_id=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -154,6 +155,7 @@ static string   s_BioseqNA = "bioseq_na";
 static string   s_Excluded = "excluded";
 static string   s_InProgress = "inprogress";
 static string   s_Sent = "sent";
+static string   s_Processor = "processor";
 
 // Combinations
 static string   s_AndSize = "&" + s_Size;
@@ -176,6 +178,9 @@ static string   s_BlobItem = s_ItemType + s_Blob;
 static string   s_AndBlobItem = "&" + s_BlobItem;
 static string   s_ReplyItem = s_ItemType + s_Reply;
 static string   s_AndReplyItem = "&" + s_ReplyItem;
+static string   s_ProcessorItem = s_ItemType + s_Processor;
+static string   s_AndProcessorItem = "&" + s_ProcessorItem;
+static string   s_AndProcessorId = "&" + s_ProcessorId;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_AndDataChunk = "&" + s_DataChunk;
@@ -484,6 +489,46 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count)
     return reply.append(to_string(item_id))
                 .append(s_AndBioseqNAItem)
                 .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
+                .append(to_string(chunk_count))
+                .append(1, '\n');
+}
+
+
+string GetProcessorMessageHeader(size_t  item_id, const string &  processor_id,
+                                 size_t  msg_size, CRequestStatus::ECode  status,
+                                 int  code, EDiagSev  severity)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndSize)
+                .append(to_string(msg_size))
+                .append(s_AndStatus)
+                .append(to_string(static_cast<int>(status)))
+                .append(s_AndCode)
+                .append(to_string(code))
+                .append(s_AndSeverity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
+}
+
+
+string GetProcessorMessageCompletionHeader(size_t  item_id,
+                                           const string &  processor_id,
+                                           size_t  chunk_count)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');

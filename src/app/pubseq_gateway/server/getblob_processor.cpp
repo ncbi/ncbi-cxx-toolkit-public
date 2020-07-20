@@ -96,11 +96,10 @@ void CPSGS_GetBlobProcessor::Process(void)
         string  err_msg = GetName() + " failed to map sat " +
                           to_string(m_BlobId.m_Sat) +
                           " to a Cassandra keyspace";
-        IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                                    err_msg,
-                                    CRequestStatus::e404_NotFound,
-                                    ePSGS_UnknownResolvedSatellite,
-                                    eDiag_Error);
+        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+                IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+                err_msg, CRequestStatus::e404_NotFound,
+                ePSGS_UnknownResolvedSatellite, eDiag_Error);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         PSG_WARNING(err_msg);
 
@@ -154,16 +153,18 @@ void CPSGS_GetBlobProcessor::Process(void)
     } else {
         if (m_BlobRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
+            size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
             if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
-                IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                    "Blob properties are not found",
+                IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
+                    item_id, "Blob properties are not found",
                     CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
             else
-                IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                    "Blob properties are not found due to a cache lookup error",
-                    CRequestStatus::e500_InternalServerError,
-                    ePSGS_BlobPropsNotFound, eDiag_Error);
+                IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
+                    item_id, "Blob properties are not found due to a cache lookup error",
+                    CRequestStatus::e500_InternalServerError, ePSGS_BlobPropsNotFound,
+                    eDiag_Error);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, 2);
 
             if (m_BlobRequest->m_ExcludeBlobCacheAdded &&
                 !m_BlobRequest->m_ClientId.empty()) {

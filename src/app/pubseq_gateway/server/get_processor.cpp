@@ -111,17 +111,19 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
         UpdateOverallStatus(status);
     PSG_WARNING(message);
 
+    size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     if (status == CRequestStatus::e404_NotFound) {
-        size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
         IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
                                                        status,
                                                        ePSGS_NoBioseqInfo,
                                                        eDiag_Error);
-        IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
     } else {
-        IPSGS_Processor::m_Reply->PrepareReplyMessage(message, status,
-                                                      code, severity);
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
+                                                       status,
+                                                       ePSGS_BioseqInfoError,
+                                                       severity);
     }
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
 
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -267,16 +269,18 @@ void CPSGS_GetProcessor::x_GetBlob(void)
     } else {
         if (m_BlobRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
+            size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
             if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
-                IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                    "Blob properties are not found",
+                IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
+                    item_id, "Blob properties are not found",
                     CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
             else
-                IPSGS_Processor::m_Reply->PrepareReplyMessage(
-                    "Blob properties are not found due to a cache lookup error",
-                    CRequestStatus::e500_InternalServerError,
-                    ePSGS_BlobPropsNotFound, eDiag_Error);
+                IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
+                    item_id, "Blob properties are not found due to a cache lookup error",
+                    CRequestStatus::e500_InternalServerError, ePSGS_BlobPropsNotFound,
+                    eDiag_Error);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, 2);
 
             if (m_BlobRequest->m_ExcludeBlobCacheAdded &&
                 !m_BlobRequest->m_ClientId.empty()) {
