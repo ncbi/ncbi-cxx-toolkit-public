@@ -159,6 +159,8 @@ while [ $# != 0 ]; do
     --without-analysis)
       SKIP_ANALYSIS="ON"
       ;;
+    [A-Z]*)
+      ;; 
     *) 
       unknown="$unknown $1"
       ;; 
@@ -197,14 +199,14 @@ fi
 ############################################################################# 
 XC=`which xcodebuild 2>/dev/null`
 if test $? -ne 0; then
-  echo ERROR: xcodebuild is not found
+  echo ERROR: xcodebuild is not found 1>&2
   exit 1
 fi
 CC_NAME=Xcode
 CC_VERSION=`xcodebuild -version | awk 'NR==1{print $2}'`
 ############################################################################# 
 
-CMAKE_ARGS="-G Xcode"
+CMAKE_ARGS="$CMAKE_ARGS -G Xcode"
 
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_COMPONENTS=$(Quote "${PROJECT_COMPONENTS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_FEATURES=$(Quote "${PROJECT_FEATURES}")"

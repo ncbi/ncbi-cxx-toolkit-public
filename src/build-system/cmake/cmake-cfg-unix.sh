@@ -8,6 +8,7 @@ initial_dir=`pwd`
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
+script_args="$@"
 tree_root=`pwd`
 extension="cmake_configure_ext.sh"
 
@@ -41,11 +42,15 @@ Usage()
 {
     cat <<EOF
 USAGE:
-  $script_name [OPTIONS]...
+  $script_name [compiler] [OPTIONS]...
 SYNOPSIS:
   Configure NCBI C++ toolkit using CMake build system.
 OPTIONS:
   --help                     -- print Usage
+  compiler                   -- compiler name and version
+                                'name' is one of GCC, ICC, Clang, Xcode
+                                'version' depends on 'name'
+                    examples:   GCC 7.3.0,  ICC 19.0,  Clang 7.0.0,  Xcode
   --without-debug            -- build release versions of libs and apps
   --with-debug               -- build debug versions of libs and apps (default)
   --with-max-debug           -- enable extra runtime checks (esp. of STL usage)
@@ -110,17 +115,20 @@ Quote() {
 # parse arguments
 
 do_help="no"
+cxx_name=""
+cxx_version=""
 unknown=""
-while [ $# -ne 0 ]; do
-  case "$1" in 
+for arg in ${script_args}
+do
+  case "$arg" in 
     --help|-help|help|-h)
       do_help="yes"
     ;; 
     --rootdir=*)
-      tree_root=`(cd "${1#*=}" ; pwd)`
+      tree_root=`(cd "${arg#*=}" ; pwd)`
       ;; 
     --caller=*)
-      script_name=${1#*=}
+      script_name=${arg#*=}
       ;; 
     --with-static|--without-dll) 
       BUILD_SHARED_LIBS=OFF
@@ -157,51 +165,56 @@ while [ $# -ne 0 ]; do
       SKIP_ANALYSIS="ON"
       ;;
     --with-projects=*)
-      PROJECT_LIST=${1#*=}
+      PROJECT_LIST=${arg#*=}
       if [ -f "${tree_root}/$PROJECT_LIST" ]; then
         PROJECT_LIST="${tree_root}/$PROJECT_LIST"
       fi
       ;; 
     --with-tags=*)
-      PROJECT_TAGS=${1#*=}
+      PROJECT_TAGS=${arg#*=}
       if [ -f "${tree_root}/$PROJECT_TAGS" ]; then
         PROJECT_TAGS="${tree_root}/$PROJECT_TAGS"
       fi
       ;; 
     --with-targets=*)
-      PROJECT_TARGETS=${1#*=}
+      PROJECT_TARGETS=${arg#*=}
       if [ -f "${tree_root}/$PROJECT_TARGETS" ]; then
         PROJECT_TARGETS="${tree_root}/$PROJECT_TARGETS"
       fi
       ;; 
     --with-details=*)
-      PROJECT_DETAILS=${1#*=}
+      PROJECT_DETAILS=${arg#*=}
       ;; 
     --with-install=*)
-      INSTALL_PATH=${1#*=}
+      INSTALL_PATH=${arg#*=}
       ;; 
     --with-generator=*)
-      CMAKE_GENERATOR=${1#*=}
+      CMAKE_GENERATOR=${arg#*=}
       ;; 
     --with-components=*)
-      PROJECT_COMPONENTS=${1#*=}
+      PROJECT_COMPONENTS=${arg#*=}
       ;; 
     --with-features=*)
-      PROJECT_FEATURES="$PROJECT_FEATURES;${1#*=}"
+      PROJECT_FEATURES="$PROJECT_FEATURES;${arg#*=}"
       ;; 
     --with-build-root=*)
-      BUILD_ROOT=${1#*=}
+      BUILD_ROOT=${arg#*=}
       ;; 
     --with-prebuilt=*)
-      prebuilt_path=${1#*=}
+      prebuilt_path=${arg#*=}
       prebuilt_dir=`dirname $prebuilt_path`
       prebuilt_name=`basename $prebuilt_path`
       ;; 
+    [A-Z]*)
+      cxx_name=$arg
+      ;; 
+    [1-9]*)
+      cxx_version=$arg
+      ;; 
     *) 
-      unknown="$unknown $1"
+      unknown="$unknown $arg"
       ;; 
   esac 
-  shift 
 done 
 
 if [ -f $tree_root/$extension ]; then
@@ -211,6 +224,20 @@ fi
 if [ $do_help = "yes" ]; then
   Usage
   exit 0
+fi
+
+if [ -z "$CMAKECFGRECURSIONGUARD" -a -n "$cxx_name" ]; then
+  if [ "$cxx_name" = "Xcode" ]; then
+    exec $script_dir/cmake-cfg-xcode.sh  "$@"
+    exit $?
+  elif [ -x "$script_dir/cm${cxx_name}.sh" ]; then
+    export CMAKECFGRECURSIONGUARD="lock"
+    exec $script_dir/cm${cxx_name}.sh  "$@"
+    exit $?
+  else
+    echo ERROR: configuration script for compiler $cxx_name not found 1>&2
+    exit 1
+  fi
 fi
 
 if [ -n "$unknown" ]; then
