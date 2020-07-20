@@ -360,71 +360,174 @@ static void CheckDupEntries(ParserPtr pp)
     MemFree(tibp);
 }
 
-static void WriteBioseqSet(ParserPtr pp)
+static ncbi::CRef<ncbi::CSerialObject> MakeBioseqSet(ParserPtr pp)
 {
-    ncbi::objects::CBioseq_set bio_set;
+    ncbi::CRef<ncbi::objects::CBioseq_set> bio_set(new ncbi::objects::CBioseq_set);
 
     if (pp->source == ParFlat_PIR)
-        bio_set.SetClass(ncbi::objects::CBioseq_set::eClass_pir);
+        bio_set->SetClass(ncbi::objects::CBioseq_set::eClass_pir);
     else
-        bio_set.SetClass(ncbi::objects::CBioseq_set::eClass_genbank);
+        bio_set->SetClass(ncbi::objects::CBioseq_set::eClass_genbank);
 
     if(pp->release_str != NULL)
-        bio_set.SetRelease(pp->release_str);
+        bio_set->SetRelease(pp->release_str);
 
-    bio_set.SetSeq_set().splice(bio_set.SetSeq_set().end(), pp->entries);
+    bio_set->SetSeq_set().splice(bio_set->SetSeq_set().end(), pp->entries);
 
     if (!pp->qamode)
     {
-        bio_set.SetDate().SetToTime(ncbi::CTime(ncbi::CTime::eCurrent), ncbi::objects::CDate::ePrecision_day);
+        bio_set->SetDate().SetToTime(ncbi::CTime(ncbi::CTime::eCurrent), ncbi::objects::CDate::ePrecision_day);
     }
 
-    ncbi::CNcbiOfstream ostr(pp->outfile.c_str());
-
-    if (pp->output_binary)
-        ostr << MSerial_AsnBinary << bio_set;
-    else
-        ostr << MSerial_AsnText << bio_set;
+    return bio_set;
 }
 
-static void WriteSeqSubmit(ParserPtr pp)
+static ncbi::CRef<ncbi::CSerialObject> MakeSeqSubmit(ParserPtr pp)
 {
-    ncbi::objects::CSeq_submit seq_submit;
-    ncbi::objects::CSubmit_block& submit_blk = seq_submit.SetSub();
+    ncbi::CRef<ncbi::objects::CSeq_submit> seq_submit(new ncbi::objects::CSeq_submit);
+    ncbi::objects::CSubmit_block& submit_blk = seq_submit->SetSub();
 
     submit_blk.SetCit().SetAuthors().SetNames().SetStr().push_back(pp->authors_str);
 
-    TEntryList& entries = seq_submit.SetData().SetEntrys();
+    TEntryList& entries = seq_submit->SetData().SetEntrys();
     entries.splice(entries.end(), pp->entries);
 
-    ncbi::CNcbiOfstream ostr(pp->outfile.c_str());
-    ostr << MSerial_AsnText << seq_submit;
+    return seq_submit;
 }
 
 /**********************************************************/
-static void CloseAll(ParserPtr pp)
+static void SetReleaseStr(ParserPtr pp)
+{
+    if (!pp->xml_comp)
+    {
+        if(pp->source == ParFlat_NCBI)
+        {
+            if(pp->format == ParFlat_GENBANK)
+                pp->release_str = "source:ncbi, format:genbank";
+            else if(pp->format == ParFlat_EMBL)
+                pp->release_str = "source:ncbi, format:embl";
+            else if(pp->format == ParFlat_XML)
+                pp->release_str = "source:ncbi, format:xml";
+        }
+        else if(pp->source == ParFlat_DDBJ)
+        {
+            if(pp->format == ParFlat_GENBANK)
+                pp->release_str = "source:ddbj, format:genbank";
+            else if(pp->format == ParFlat_EMBL)
+                pp->release_str = "source:ddbj, format:embl";
+            else if(pp->format == ParFlat_XML)
+                pp->release_str = "source:ddbj, format:xml";
+        }
+        else if(pp->source == ParFlat_LANL)
+        {
+            if(pp->format == ParFlat_XML)
+                pp->release_str = "source:lanl, format:xml";
+            else
+                pp->release_str = "source:lanl, format:genbank";
+        }
+        else if(pp->source == ParFlat_FLYBASE)
+        {
+            if(pp->format == ParFlat_XML)
+                pp->release_str = "source:flybase, format:xml";
+            else
+                pp->release_str = "source:flybase, format:genbank";
+        }
+        else if(pp->source == ParFlat_REFSEQ)
+        {
+            if(pp->format == ParFlat_XML)
+                pp->release_str = "source:refseq, format:xml";
+            else
+                pp->release_str = "source:refseq, format:genbank";
+        }
+        else if(pp->source == ParFlat_EMBL)
+        {
+            if(pp->format == ParFlat_XML)
+                pp->release_str = "source:embl, format:xml";
+            else
+                pp->release_str = "source:embl, format:embl";
+        }
+        else if(pp->source == ParFlat_SPROT)
+            pp->release_str = "source:swissprot, format:swissprot";
+        else if(pp->source == ParFlat_PIR)
+            pp->release_str = "source:pir, format:pir";
+        else if(pp->source == ParFlat_PRF)
+            pp->release_str = "source:prf, format:prf";
+        else
+            pp->release_str = "source:unknown, format:unknown";
+    }
+}
+
+/**********************************************************/
+static void GetAuthorsStr(ParserPtr pp)
+{
+    if(pp->source == ParFlat_EMBL)
+        pp->authors_str = "European Nucleotide Archive";
+    else if(pp->source == ParFlat_DDBJ)
+        pp->authors_str = "DNA Databank of Japan";
+    else if(pp->source == ParFlat_NCBI || pp->source == ParFlat_LANL ||
+            pp->source == ParFlat_REFSEQ)
+        pp->authors_str = "National Center for Biotechnology Information";
+    else if(pp->source == ParFlat_SPROT)
+        pp->authors_str = "UniProt KnowledgeBase";
+    else if(pp->source == ParFlat_PIR)
+        pp->authors_str = "PIR";
+    else if(pp->source == ParFlat_PRF)
+        pp->authors_str = "PRF";
+    else
+        pp->authors_str = "FlyBase";
+}
+
+/**********************************************************/
+static ncbi::CRef<ncbi::CSerialObject> CloseAll(ParserPtr pp)
 {
     CloseFiles(pp);
 
-    if (!pp->outfile.empty())
+    ncbi::CRef<ncbi::CSerialObject> ret;
+
+    if (!pp->entries.empty())
     {
         if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
         {
-            WriteBioseqSet(pp);
+            ret = MakeBioseqSet(pp);
         }
         else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
         {
-            WriteSeqSubmit(pp);
+            ret = MakeSeqSubmit(pp);
+        }
+
+        if (!pp->outfile.empty())
+        {
+            ncbi::CNcbiOfstream ostr(pp->outfile.c_str());
+
+            if (pp->output_binary)
+                ostr << MSerial_AsnBinary << *ret;
+            else
+                ostr << MSerial_AsnText << *ret;
         }
     }
 
     FreeParser(pp);
+    return ret;
 }
 
 /**********************************************************/
 Int2 fta_main(ParserPtr pp, bool already)
 {
+    ncbi::CRef<ncbi::CSerialObject> ret;
+
+    auto good = parse_flatfile(ret, pp, already);    
+
+    return((good == false) ? 1 : 0);
+}
+
+bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool already)
+{
     ErrClear();
+
+    if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
+        SetReleaseStr(pp);
+    else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
+        GetAuthorsStr(pp);
 
     if (!already)
         fta_init_servers(pp);
@@ -439,8 +542,8 @@ Int2 fta_main(ParserPtr pp, bool already)
     {
         if(!already)
             fta_fini_servers(pp);
-        CloseAll(pp);
-        return((good == false) ? 1 : 0);
+        ret = CloseAll(pp);
+        return good;
     }
 
     fta_init_gbdataloader();
@@ -459,11 +562,12 @@ Int2 fta_main(ParserPtr pp, bool already)
             good = PrfAscii(pp);
         if(!already)
             fta_fini_servers(pp);
-        CloseAll(pp);
+
+        ret = CloseAll(pp);
 
         FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-        return((good == false) ? 1 : 0);
+        return good;
     }
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
@@ -520,10 +624,10 @@ Int2 fta_main(ParserPtr pp, bool already)
 
     fta_entrez_fetch_disable(pp);
 
-    CloseAll(pp);
+    ret = CloseAll(pp);
 
     // TransTableFreeAll(); // TODO probably needs to be replaced with C++ functionality
-    return((good == false) ? 1 : 0);
+    return good;
 }
 
 /**********************************************************/

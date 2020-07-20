@@ -331,88 +331,6 @@ static bool OpenFiles(ParserPtr pp)
 }
 
 /**********************************************************/
-static void SetReleaseStr(ParserPtr pp)
-{
-    if (!pp->xml_comp)
-    {
-        if(pp->source == ParFlat_NCBI)
-        {
-            if(pp->format == ParFlat_GENBANK)
-                pp->release_str = "source:ncbi, format:genbank";
-            else if(pp->format == ParFlat_EMBL)
-                pp->release_str = "source:ncbi, format:embl";
-            else if(pp->format == ParFlat_XML)
-                pp->release_str = "source:ncbi, format:xml";
-        }
-        else if(pp->source == ParFlat_DDBJ)
-        {
-            if(pp->format == ParFlat_GENBANK)
-                pp->release_str = "source:ddbj, format:genbank";
-            else if(pp->format == ParFlat_EMBL)
-                pp->release_str = "source:ddbj, format:embl";
-            else if(pp->format == ParFlat_XML)
-                pp->release_str = "source:ddbj, format:xml";
-        }
-        else if(pp->source == ParFlat_LANL)
-        {
-            if(pp->format == ParFlat_XML)
-                pp->release_str = "source:lanl, format:xml";
-            else
-                pp->release_str = "source:lanl, format:genbank";
-        }
-        else if(pp->source == ParFlat_FLYBASE)
-        {
-            if(pp->format == ParFlat_XML)
-                pp->release_str = "source:flybase, format:xml";
-            else
-                pp->release_str = "source:flybase, format:genbank";
-        }
-        else if(pp->source == ParFlat_REFSEQ)
-        {
-            if(pp->format == ParFlat_XML)
-                pp->release_str = "source:refseq, format:xml";
-            else
-                pp->release_str = "source:refseq, format:genbank";
-        }
-        else if(pp->source == ParFlat_EMBL)
-        {
-            if(pp->format == ParFlat_XML)
-                pp->release_str = "source:embl, format:xml";
-            else
-                pp->release_str = "source:embl, format:embl";
-        }
-        else if(pp->source == ParFlat_SPROT)
-            pp->release_str = "source:swissprot, format:swissprot";
-        else if(pp->source == ParFlat_PIR)
-            pp->release_str = "source:pir, format:pir";
-        else if(pp->source == ParFlat_PRF)
-            pp->release_str = "source:prf, format:prf";
-        else
-            pp->release_str = "source:unknown, format:unknown";
-    }
-}
-
-/**********************************************************/
-static void GetAuthorsStr(ParserPtr pp)
-{
-    if(pp->source == ParFlat_EMBL)
-        pp->authors_str = "European Nucleotide Archive";
-    else if(pp->source == ParFlat_DDBJ)
-        pp->authors_str = "DNA Databank of Japan";
-    else if(pp->source == ParFlat_NCBI || pp->source == ParFlat_LANL ||
-            pp->source == ParFlat_REFSEQ)
-        pp->authors_str = "National Center for Biotechnology Information";
-    else if(pp->source == ParFlat_SPROT)
-        pp->authors_str = "UniProt KnowledgeBase";
-    else if(pp->source == ParFlat_PIR)
-        pp->authors_str = "PIR";
-    else if(pp->source == ParFlat_PRF)
-        pp->authors_str = "PRF";
-    else
-        pp->authors_str = "FlyBase";
-}
-
-/**********************************************************/
 static ParserPtr ParseArgs(CharPtr pgmname)
 {
     ParserPtr pp = new Parser;
@@ -434,9 +352,9 @@ static ParserPtr ParseArgs(CharPtr pgmname)
     }
 
     if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
-        SetReleaseStr(pp);
+        ;
     else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
-        GetAuthorsStr(pp);
+        ;
     else
     {
         delete pp;

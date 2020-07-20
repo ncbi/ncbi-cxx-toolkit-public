@@ -36,16 +36,19 @@
 #ifndef FTAMAIN_H
 #define FTAMAIN_H
 
-Int2 fta_main PROTO((ParserPtr pp, bool already));
-
 namespace ncbi
 {
     namespace objects
     {
         class CScope;
-    }
+    };
+    class CSerialObject;
 }
 
 ncbi::objects::CScope& GetScope();
+
+Int2 fta_main PROTO((ParserPtr pp, bool already));
+
+bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool already);
 
 #endif // FTAMAIN_H
