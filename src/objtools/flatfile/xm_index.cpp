@@ -1081,6 +1081,9 @@ CharPtr XMLLoadEntry(ParserPtr pp, bool err)
         c = fgetc(pp->ifp);
         if(c < 0)
             break;
+        if (c == 13) {
+            c = 10;
+        }
         if(c > 126 || (c < 32 && c != 10))
         {
             if (err)

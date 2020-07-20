@@ -137,6 +137,9 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     for (q = entry->offset; q < eptr; q++)
     {
+        if (*q == 13) {
+            *q = 10;
+        }
         if (*q > 126 || (*q < 32 && *q != 10))
         {
             ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar,

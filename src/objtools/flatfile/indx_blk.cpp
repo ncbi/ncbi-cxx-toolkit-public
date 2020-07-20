@@ -282,6 +282,15 @@ bool XReadFile(FILE PNTR fp, FinfoBlkPtr finfo)
             ++(finfo->line);
     }
 
+    auto n = strlen(finfo->str);
+    while (n) {
+        n--;
+        if (finfo->str[n] != '\n' && finfo->str[n] != '\r') {
+            break;
+        }
+        finfo->str[n] = 0;
+    }
+
     return(end_of_file);
 }
 
@@ -300,7 +309,7 @@ static Int2 FileGetsBuf(CharPtr res, Int4 size, FileBufPtr fpbuf)
     for(p = fpbuf->current, q = res, i = 0; i < l; i++, p++)
     {
         *q++ = *p;
-        if(*p == '\n')
+        if(*p == '\n' || *p == '\r')
         {
             p++;
             break;
