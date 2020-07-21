@@ -6,7 +6,7 @@
 
 WATCHERS = thiessen lanczyck
 
-REQUIRES = objects wxWidgets OpenGL MESA PLATFORM_DB PNG
+REQUIRES = objects wxWidgets OpenGL PNG
 
 APP = cn3d
 
@@ -69,15 +69,8 @@ SRC =	aaa_dummy_pch \
 	vector_math \
 	viewer_base \
 	viewer_window_base
-  
-LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp xstruct_thread \
-        xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqmasks_io seqdb $(OBJREAD_LIBS) \
-	xalnmgr tables xobjutil id1cli id1 ncbimime cdd cn3d mmdb blast_services xnetblastcli xnetblast scoremat \
-	taxon1 blastdb xregexp entrez2cli xconnect entrez2 gui_glmesa-static gui_opengl gui_print \
-	gui_objutils-static gui_utils-static ximage \
-	$(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB) $(LMDB_LIB) $(PLATFORM_DB_LIB)
 
-CPPFLAGS = $(PLATFORM_DB_SYMBOLS) \
+CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
 	$(WXWIDGETS_INCLUDE) \
 	$(Z_INCLUDE) $(PNG_INCLUDE) $(PCRE_INCLUDE)
@@ -86,12 +79,29 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 
 LDFLAGS = $(FAST_LDFLAGS)
 
-LIBS = $(PLATFORM_DB_LIBS) \
+LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp xstruct_thread \
+        xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqmasks_io seqdb $(OBJREAD_LIBS) \
+	xalnmgr tables xobjutil id1cli id1 ncbimime cdd cn3d mmdb blast_services xnetblastcli xnetblast scoremat \
+	taxon1 blastdb xregexp entrez2cli xconnect entrez2 \
+	$(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB) $(LMDB_LIB)
+
+LIBS = \
 	$(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) \
-	$(IMAGE_LIBS) $(OSMESA_STATIC_LIBS) $(BZ2_LIBS) $(DL_LIBS) \
 	$(Z_LIBS) $(PNG_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
 	$(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
+####
+#  Linux build: add the following to use MESA
+####
+#  for REQUIRES:
+#	MESA
+#
+#  for LIB:
+#	gui_glmesa-static gui_opengl gui_print gui_objutils-static gui_utils-static ximage \
+#
+#  for LIBS:
+#	$(IMAGE_LIBS) $(OSMESA_STATIC_LIBS) $(BZ2_LIBS) $(DL_LIBS) \
+####
 
 # for distribution on linux/gcc, do:
 #   gcc  ....  -lpthread -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
