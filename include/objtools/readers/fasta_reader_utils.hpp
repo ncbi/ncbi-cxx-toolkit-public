@@ -76,7 +76,8 @@ public:
     struct SDeflineParseInfo {
         TBaseFlags fBaseFlags;
         TFastaFlags fFastaFlags;
-        TSeqPos maxIdLength;
+        TSeqPos maxIdLength=0; // If maxIdLength is zero, the code uses the 
+                               // default values specified in CSeq_id
         TSeqPos lineNumber;
     };
 

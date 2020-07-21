@@ -505,6 +505,7 @@ void CFastaReader::SetMaxIDLength(Uint4 max_len)
     CFastaDeflineReader::s_MaxLocalIDLength =
     CFastaDeflineReader::s_MaxGeneralTagLength =
     CFastaDeflineReader::s_MaxAccessionLength = m_MaxIDLength = max_len;
+    m_bModifiedMaxIdLength=true;
 }
 
 
@@ -583,10 +584,7 @@ bool CFastaReader::xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EM
 void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
     SDefLineParseInfo parseInfo;
-    parseInfo.fBaseFlags = m_iFlags;
-    parseInfo.fFastaFlags = GetFlags();
-    parseInfo.maxIdLength = m_MaxIDLength;
-    parseInfo.lineNumber = LineNumber();
+    x_SetDeflineParseInfo(parseInfo);
 
     CFastaDeflineReader::SDeflineData data;
     CFastaDeflineReader::ParseDefline(s, parseInfo, data, pMessageListener, m_fIdCheck);
@@ -678,14 +676,21 @@ bool CFastaReader::ParseIDs(
 bool CFastaReader::ParseIDs(
     const TStr& s, ILineErrorListener * pMessageListener)
 {
-
     SDefLineParseInfo info;
+    x_SetDeflineParseInfo(info);
+    
+    return CFastaDeflineReader::ParseIDs(s, info, m_ignorable, SetIDs(), pMessageListener);
+}
+
+
+void CFastaReader::x_SetDeflineParseInfo(SDefLineParseInfo& info)
+{
     info.fBaseFlags = m_iFlags;
     info.fFastaFlags = GetFlags();
-    info.maxIdLength = m_MaxIDLength;
+    info.maxIdLength = m_bModifiedMaxIdLength ?
+                       m_MaxIDLength :
+                       0;
     info.lineNumber = LineNumber();
-
-    return CFastaDeflineReader::ParseIDs(s, info, m_ignorable, SetIDs(), pMessageListener);
 }
 
 

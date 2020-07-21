@@ -341,6 +341,11 @@ private:
                      TSeqPos line_number,
                      CBioseq& bioseq,
                      ILineErrorListener* pMessageListener);
+
+    void x_SetDeflineParseInfo(SDefLineParseInfo& info);
+
+    bool m_bModifiedMaxIdLength=false;
+
 protected:
     struct SGap : public CObject {
         enum EKnownSize {

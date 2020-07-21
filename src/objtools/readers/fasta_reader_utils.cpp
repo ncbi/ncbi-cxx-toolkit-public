@@ -540,9 +540,11 @@ bool CFastaDeflineReader::ParseIDs(
 
 
     CFastaIdValidate idValidate(info.fFastaFlags);
-    idValidate.SetMaxLocalIDLength(info.maxIdLength);
-    idValidate.SetMaxGeneralTagLength(info.maxIdLength);
-    idValidate.SetMaxAccessionLength(info.maxIdLength);
+    if (info.maxIdLength) {
+        idValidate.SetMaxLocalIDLength(info.maxIdLength);
+        idValidate.SetMaxGeneralTagLength(info.maxIdLength);
+        idValidate.SetMaxAccessionLength(info.maxIdLength);
+    }
     idValidate(ids, info.lineNumber, CIdErrorReporter(pMessageListener, ignoreGeneralParsingError));
 
     return true;
@@ -570,6 +572,11 @@ void CSeqIdCheck::operator()(const TIds& ids,
     }
 
     CFastaIdValidate s_IdValidate(info.fFastaFlags);
+    if (info.maxIdLength) {
+        s_IdValidate.SetMaxLocalIDLength(info.maxIdLength);
+        s_IdValidate.SetMaxGeneralTagLength(info.maxIdLength);
+        s_IdValidate.SetMaxAccessionLength(info.maxIdLength);
+    }
     s_IdValidate(ids, info.lineNumber, CIdErrorReporter(listener));
 }
 
