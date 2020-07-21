@@ -211,6 +211,9 @@ do
     [1-9]*)
       cxx_version=$arg
       ;; 
+    -D*)
+      CMAKE_ARGS="$CMAKE_ARGS $arg"
+      ;; 
     *) 
       unknown="$unknown $arg"
       ;; 
