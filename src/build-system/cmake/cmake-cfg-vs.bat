@@ -131,6 +131,9 @@ if "%1"=="--with-install"      (set INSTALL_PATH=%~2&      shift& goto :CONTINUE
 if "%1"=="--without-analysis"  (set SKIP_ANALYSIS=ON&             goto :CONTINUEPARSEARGS)
 if "%1"=="--with-generator"    (set CMAKE_GENERATOR=%~2&   shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-prebuilt"     (set prebuilt_dir=%~dp2& set prebuilt_name=%~nx2&   shift& goto :CONTINUEPARSEARGS)
+set first=%1
+set first=%first:~0,2%
+if "%first%"=="-D"             (set CMAKE_ARGS=%CMAKE_ARGS% %1=%2& shift& goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
 shift
