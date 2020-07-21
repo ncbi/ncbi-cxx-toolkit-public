@@ -65,13 +65,13 @@ set(NCBI_ThirdParty_FASTCGI       ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FAST
 set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
 set(NCBI_ThirdParty_SQLITE3       ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE3 root")
 set(NCBI_ThirdParty_BerkeleyDB    ${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1 CACHE PATH "BerkeleyDB root")
-set(NCBI_ThirdParty_SybaseNetPath "/opt/sybase/clients/16.0-64bit")
-set(NCBI_ThirdParty_Sybase        "/opt/sybase/clients/16.0-64bit/OCS-16_0")
+set(NCBI_ThirdParty_SybaseNetPath "/opt/sybase/clients/16.0-64bit" CACHE PATH "SybaseNetPath")
+set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
 set(NCBI_ThirdParty_PYTHON        "/opt/python-3.8" CACHE PATH "PYTHON root")
-set(NCBI_ThirdParty_VDB           ${NCBI_OPT_ROOT}/trace_software/vdb/vdb-versions/cxx_toolkit/2)
+set(NCBI_ThirdParty_VDB           ${NCBI_OPT_ROOT}/trace_software/vdb/vdb-versions/cxx_toolkit/2 CACHE PATH "VDB root")
 set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XML root")
-set(NCBI_ThirdParty_XSLT          ${NCBI_ThirdParty_XML})
-set(NCBI_ThirdParty_EXSLT         ${NCBI_ThirdParty_XML})
+set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XSLT root")
+set(NCBI_ThirdParty_EXSLT         ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_XLSXWRITER    ${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9 CACHE PATH "XLSXWRITER root")
 set(NCBI_ThirdParty_FTGL          ${NCBI_TOOLS_ROOT}/ftgl-2.1.3-rc5 CACHE PATH "FTGL root")
 set(NCBI_ThirdParty_GLEW          ${NCBI_TOOLS_ROOT}/glew-1.5.8 CACHE PATH "GLEW root")
@@ -80,21 +80,21 @@ set(NCBI_ThirdParty_OSMesa        ${NCBI_ThirdParty_OpenGL})
 set(NCBI_ThirdParty_XERCES        ${NCBI_TOOLS_ROOT}/xerces-3.1.2 CACHE PATH "XERCES root")
 set(NCBI_ThirdParty_GRPC          ${NCBI_TOOLS_ROOT}/grpc-1.28.1-ncbi1 CACHE PATH "GRPC root")
 set(NCBI_ThirdParty_Boring        ${NCBI_ThirdParty_GRPC})
-set(NCBI_ThirdParty_PROTOBUF      ${NCBI_ThirdParty_GRPC})
+set(NCBI_ThirdParty_PROTOBUF      ${NCBI_TOOLS_ROOT}/grpc-1.28.1-ncbi1 CACHE PATH "PROTOBUF root")
 set(NCBI_ThirdParty_XALAN         ${NCBI_TOOLS_ROOT}/xalan-1.11 CACHE PATH "XALAN root")
 set(NCBI_ThirdParty_GPG           ${NCBI_TOOLS_ROOT}/libgpg-error-1.6 CACHE PATH "GPG root")
 set(NCBI_ThirdParty_GCRYPT        ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3 CACHE PATH "GCRYPT root")
 set(NCBI_ThirdParty_MSGSL         ${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94 CACHE PATH "MSGSL root")
-set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current")
+set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current" CACHE PATH "SGE root")
 set(NCBI_ThirdParty_MONGOCXX      ${NCBI_TOOLS_ROOT}/mongodb-3.4.0 CACHE PATH "MONGOCXX root")
 set(NCBI_ThirdParty_MONGOC        ${NCBI_TOOLS_ROOT}/mongo-c-driver-1.14.0 CACHE PATH "MONGOC root")
 set(NCBI_ThirdParty_LEVELDB       ${NCBI_TOOLS_ROOT}/leveldb-1.21 CACHE PATH "LEVELDB root")
-set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1)
+set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1 CACHE PATH "wxWidgets root")
 set( NCBI_ThirdParty_UV           ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
 set(NCBI_ThirdParty_NGHTTP2       ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHTTP2 root")
 set(NCBI_ThirdParty_GL2PS         ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2PS root")
 set(NCBI_ThirdParty_GMOCK         ${NCBI_TOOLS_ROOT}/googletest-1.8.1 CACHE PATH "GMOCK root")
-set(NCBI_ThirdParty_GTEST         ${NCBI_ThirdParty_GMOCK})
+set(NCBI_ThirdParty_GTEST         ${NCBI_TOOLS_ROOT}/googletest-1.8.1 CACHE PATH "GTEST root")
 set(NCBI_ThirdParty_CASSANDRA     ${NCBI_TOOLS_ROOT}/datastax-cpp-driver-2.9.0-ncbi1 CACHE PATH "CASSANDRA root")
 set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.5 CACHE PATH "H2O root")
 
@@ -721,12 +721,17 @@ endif()
 
 #############################################################################
 # Sybase
+
+file(GLOB _files LIST_DIRECTORIES TRUE "${NCBI_ThirdParty_SybaseNetPath}/OCS*")
+if(_files)
+    list(GET _files 0 NCBI_ThirdParty_Sybase)
+endif()
 #NCBI_define_component(Sybase sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
 NCBI_define_component(Sybase          sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(NCBI_COMPONENT_Sybase_DEFINES ${NCBI_COMPONENT_Sybase_DEFINES} SYB_LP64)
     set(SYBASE_PATH ${NCBI_ThirdParty_SybaseNetPath})
-    set(SYBASE_LCL_PATH "")
+    set(SYBASE_LCL_PATH "${NCBI_ThirdParty_SybaseLocalPath}")
 endif()
 
 #############################################################################
@@ -781,25 +786,26 @@ else()
     if(ON)
         NCBI_find_package(GTK2 GTK2)
         NCBI_find_package(FONTCONFIG Fontconfig)
+        set(_wx_ver 3.1)
         NCBI_define_component(wxWidgets
-            wx_gtk2_gl-3.1
-            wx_gtk2_richtext-3.1
-            wx_gtk2_aui-3.1
-            wx_gtk2_propgrid-3.1
-            wx_gtk2_xrc-3.1
-            wx_gtk2_html-3.1
-            wx_gtk2_qa-3.1
-            wx_gtk2_adv-3.1
-            wx_gtk2_core-3.1
-            wx_base_xml-3.1
-            wx_base_net-3.1
-            wx_base-3.1
-            wxscintilla-3.1
+            wx_gtk2_gl-${_wx_ver}
+            wx_gtk2_richtext-${_wx_ver}
+            wx_gtk2_aui-${_wx_ver}
+            wx_gtk2_propgrid-${_wx_ver}
+            wx_gtk2_xrc-${_wx_ver}
+            wx_gtk2_html-${_wx_ver}
+            wx_gtk2_qa-${_wx_ver}
+            wx_gtk2_adv-${_wx_ver}
+            wx_gtk2_core-${_wx_ver}
+            wx_base_xml-${_wx_ver}
+            wx_base_net-${_wx_ver}
+            wx_base-${_wx_ver}
+            wxscintilla-${_wx_ver}
         )
         if(NCBI_COMPONENT_wxWidgets_FOUND)
             list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
             get_filename_component(_libdir ${_lib} DIRECTORY)
-            set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-3.1 ${_libdir}/wx/include/gtk2-ansi-3.1 ${NCBI_COMPONENT_GTK2_INCLUDE})
+            set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-${_wx_ver} ${_libdir}/wx/include/gtk2-ansi-${_wx_ver} ${NCBI_COMPONENT_GTK2_INCLUDE})
             set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} ${NCBI_COMPONENT_FONTCONFIG_LIBS} ${NCBI_COMPONENT_GTK2_LIBS} -lXxf86vm -lSM -lexpat)
             if(BUILD_SHARED_LIBS)
                 set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
