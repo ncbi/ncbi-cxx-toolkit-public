@@ -1814,7 +1814,7 @@ EEBP	s	Estacao Experimental de Biologia e Piscicultura de Pirassununga
 EELM	s	Estacion Experimental Agricola de la Molina			
 EERU	s	Economic Entomology  Research Unit			
 EFC	s	Escola de Florestas			
-EFCC	s	Epping Forest Conservation Centre			
+EFCC	c	Entomopathogenic Fungal Collection			
 EFH	s	Forestry Commission			
 EFM	s	Epping Forest Museum, Corporation of London			
 EFWM	s	Department of Entomology			
@@ -5194,7 +5194,7 @@ NTOU	sc	Institute of Marine Biology, National Taiwan Ocean University
 NTS	s	Nevada Operations Office, U.S. Department of Energy			
 NTSC	s	University of North Texas, Biological Sciences Department			
 NTUF	s	National Taiwan University, Forestry Department			
-NTUM	s	National Taiwan University			
+NTUM	s	National Taiwan University Museum			
 NTUMA	s	National Taiwan University			
 NU<THA>	c	Department of Microbiology, Faculty of Science			
 NU<ZAF>	s	University of Natal, School of Botany and Zoology			
