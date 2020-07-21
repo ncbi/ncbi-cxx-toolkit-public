@@ -50,6 +50,7 @@
 #include "alerts.hpp"
 #include "timing.hpp"
 #include "psgs_dispatcher.hpp"
+#include "osg_connection.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -189,6 +190,16 @@ public:
     unsigned int GetCassandraMaxRetries(void) const
     {
         return m_MaxRetries;
+    }
+
+    bool GetOSGEnabled() const
+    {
+        return m_OSGConnectionPool;
+    }
+
+    const CRef<psg::osg::COSGConnectionPool>& GetOSGConnectionPool() const
+    {
+        return m_OSGConnectionPool;
     }
 
     list<unique_ptr<IPSGS_Processor>>
@@ -343,6 +354,8 @@ private:
     // Configured counter/statistics ID to name/description
     map<string, tuple<string, string>>  m_IdToNameAndDescription;
 
+    CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
+    
     // Requests dispatcher
     CPSGS_Dispatcher                    m_RequestDispatcher;
 

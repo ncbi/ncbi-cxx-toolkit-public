@@ -57,6 +57,7 @@
 #include "get_processor.hpp"
 #include "getblob_processor.hpp"
 #include "tse_chunk_processor.hpp"
+#include "osg_processor.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -243,6 +244,13 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_TickSpan = registry.GetInt("STATISTICS", "tick_span", kTickSpan);
 
     x_ReadIdToNameAndDescriptionConfiguration(registry, "COUNTERS");
+
+    if ( registry.GetBool("OSG", "enabled", false) ) {
+        m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
+        m_OSGConnectionPool->AppParseArgs(args);
+        m_OSGConnectionPool->LoadConfig(registry);
+        m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
+    }
 
     // It throws an exception in case of inability to start
     x_ValidateArgs();
@@ -1404,6 +1412,8 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
             unique_ptr<IPSGS_Processor>(new CPSGS_AnnotProcessor()));
     m_RequestDispatcher.AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_TSEChunkProcessor()));
+    m_RequestDispatcher.AddProcessor(
+        unique_ptr<IPSGS_Processor>(new psg::osg::CPSGS_OSGProcessor()));
 }
 
 
