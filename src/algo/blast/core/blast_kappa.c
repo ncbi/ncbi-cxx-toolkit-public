@@ -3468,7 +3468,9 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 
                 int tid = 0;
 #ifdef _OPENMP
-                tid = omp_get_thread_num();
+                if(actual_num_threads > 1) {
+                	tid = omp_get_thread_num();
+                }
 #endif
                 seqSrc               = seqsrc_tld[tid];
                 scoringParams        = score_params_tld[tid];
