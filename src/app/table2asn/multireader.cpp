@@ -79,6 +79,14 @@
 
 #include <objtools/edit/feattable_edit.hpp>
 
+//#include <objtools/flatfile/ftacpp.hpp>
+#include <objtools/flatfile/index.h>
+//#include <objtools/flatfile/fta_parse_buf.h>
+//#include <objtools/flatfile/ftanet.h>
+#include <objtools/flatfile/fta_parser.h>
+#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/ftablock.h>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
@@ -983,6 +991,7 @@ public:
             }
         }
         else
+        if (m_line_reader.NotEmpty())
         {
             while (!m_line_reader->AtEOF()) {
                 CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
@@ -1077,7 +1086,8 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     case CFormatGuess::eFlatFileGenbank:
     case CFormatGuess::eFlatFileEna:
     case CFormatGuess::eFlatFileUniProt:
-        entry = xReadFlatfile(uFormat, *in);
+        in.reset();
+        entry = xReadFlatfile(uFormat, filename);
         break;
     default:
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -1226,10 +1236,61 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     return entry;
 }
 
-CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, CNcbiIstream& instream)
+CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename)
 {
-    NCBI_THROW2(CObjReaderParseException, eFormat,
-            "Flatfile annotation file format not yet implemented", 1);
+    std::unique_ptr<Parser> pp(new Parser);
+    switch (format)
+    {
+        case CFormatGuess::eFlatFileGenbank:
+            pp->format = ParFlat_GENBANK;
+            pp->source = ParFlat_GENBANK;
+            pp->seqtype = ncbi::objects::CSeq_id::e_Genbank;
+            break;
+        case CFormatGuess::eFlatFileEna:
+            pp->format = ParFlat_EMBL;
+            pp->source = ParFlat_EMBL;
+            pp->acprefix = ParFlat_EMBL_AC;
+            pp->seqtype = ncbi::objects::CSeq_id::e_Embl;
+            break;
+        case CFormatGuess::eFlatFileUniProt:
+            pp->format = ParFlat_SPROT;
+            pp->source = ParFlat_SPROT;
+            pp->seqtype = ncbi::objects::CSeq_id::e_Swissprot;
+            break;
+        default:
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                "This flat file format is not supported: " + filename, 0);
+            break;
+    }
+#ifdef WIN32
+    pp->ifp = fopen(filename.c_str(), "rb");
+#else
+    pp->ifp = fopen(filename.c_str(), "r");
+#endif
+    pp->output_format = FTA_OUTPUT_BIOSEQSET;
+
+    CRef<ncbi::CSerialObject> obj;
+    parse_flatfile(obj, pp.release(), false);
+    if (obj.NotEmpty())
+    {
+        //cerr << MSerial_AsnText << *obj;
+
+        if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo())
+        {
+            auto bioseq_set = Ref(CTypeConverter<CBioseq_set>::SafeCast(obj.GetPointerOrNull()));            
+            auto entry = Ref(new objects::CSeq_entry);
+            entry->SetSeq();
+            auto& annot = entry->SetAnnot();
+            for (auto& bioseq: bioseq_set->SetSeq_set())
+            {
+                if (bioseq->IsSetAnnot())
+                   annot.splice(annot.end(), bioseq->SetAnnot());
+            }
+            if (entry->IsSetAnnot())
+                return entry;
+        }
+    }
+    return {};
 }
 
 END_NCBI_SCOPE

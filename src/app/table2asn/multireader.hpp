@@ -55,7 +55,7 @@ private:
     CRef<CSerialObject> xReadASN1(CObjectIStream& pObjIstrm);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
-    CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
     void x_PostProcessAnnot(objects::CSeq_entry& entry);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
 
