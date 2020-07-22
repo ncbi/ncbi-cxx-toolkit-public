@@ -335,6 +335,24 @@ namespace {
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(TestSetMaxIDLength)
+{
+    const string kData = 
+        ">lcl|ThisIdHasMoreThan50Characters000000000000000000000000000000\n"
+        "ACTACGTACGTACGTACGTACGTACGTACTACGTACGTACGTACGT\n";
+    const static CFastaReader::TFlags kFlags = 
+        CFastaReader::fAssumeNuc | 
+        CFastaReader::fForceType |
+        CFastaReader::fValidate;
+
+    CMemoryLineReader line_reader( kData.c_str(), kData.length() );
+    CFastaReader fasta_reader( line_reader, kFlags );
+    fasta_reader.SetMaxIDLength(70);
+    BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
+}
+
+
 BOOST_AUTO_TEST_CASE(TestBadResidues)
 {
     const string kData = 
