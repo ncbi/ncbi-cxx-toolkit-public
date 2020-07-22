@@ -161,6 +161,9 @@ while [ $# != 0 ]; do
       ;;
     [A-Z]*)
       ;; 
+    -D*)
+      CMAKE_ARGS="$CMAKE_ARGS $1"
+      ;; 
     *) 
       unknown="$unknown $1"
       ;; 
