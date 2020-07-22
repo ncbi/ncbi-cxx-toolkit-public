@@ -60,8 +60,7 @@ class CBiSiPartitionMaker
         CTime time;
         time.SetCurrent();
         int64_t update_time = CTimeToTimeTms(time);
-        auto granularity = kChangelogGranularitySec;
-        int64_t granularity_ms = chrono::milliseconds(granularity).count();
+        int64_t granularity_ms = kChangelogGranularitySec * 1000;
         return (update_time / granularity_ms) * granularity_ms;
     }
 
