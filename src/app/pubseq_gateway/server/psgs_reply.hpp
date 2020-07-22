@@ -79,41 +79,68 @@ public:
 
 public:
     // PSG protocol facilities
-    void PrepareBioseqMessage(size_t  item_id, const string &  msg,
+    void PrepareBioseqMessage(size_t  item_id,
+                              const string &  processor_id,
+                              const string &  msg,
                               CRequestStatus::ECode  status,
                               int  err_code, EDiagSev  severity);
-    void PrepareBioseqData(size_t  item_id, const string &  content,
+    void PrepareBioseqData(size_t  item_id,
+                           const string &  processor_id,
+                           const string &  content,
                            SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format);
-    void PrepareBioseqCompletion(size_t  item_id, size_t  chunk_count);
-    void PrepareBlobPropMessage(size_t  item_id, const string &  msg,
-                                CRequestStatus::ECode  status,
-                                int  err_code, EDiagSev  severity);
-    void PrepareBlobPropMessage(CCassBlobFetch *  fetch_details,
+    void PrepareBioseqCompletion(size_t  item_id,
+                                 const string &  processor_id,
+                                 size_t  chunk_count);
+    void PrepareBlobPropMessage(size_t  item_id,
+                                const string &  processor_id,
                                 const string &  msg,
-                                CRequestStatus::ECode  status, int  err_code,
+                                CRequestStatus::ECode  status,
+                                int  err_code,
+                                EDiagSev  severity);
+    void PrepareBlobPropMessage(CCassBlobFetch *  fetch_details,
+                                const string &  processor_id,
+                                const string &  msg,
+                                CRequestStatus::ECode  status,
+                                int  err_code,
                                 EDiagSev  severity);
     void PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+                             const string &  processor_id,
                              const string &  content);
     void PrepareBlobData(CCassBlobFetch *  fetch_details,
+                         const string &  processor_id,
                          const unsigned char *  chunk_data,
-                         unsigned int  data_size, int  chunk_no);
-    void PrepareBlobPropCompletion(size_t  item_id, size_t  chunk_count);
-    void PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details);
-    void PrepareBlobMessage(size_t  item_id, const string &  blob_id,
+                         unsigned int  data_size,
+                         int  chunk_no);
+    void PrepareBlobPropCompletion(size_t  item_id,
+                                   const string &  processor_id,
+                                   size_t  chunk_count);
+    void PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
+                                   const string &  processor_id);
+    void PrepareBlobMessage(size_t  item_id,
+                            const string &  processor_id,
+                            const string &  blob_id,
                             const string &  msg,
-                            CRequestStatus::ECode  status, int  err_code,
+                            CRequestStatus::ECode  status,
+                            int  err_code,
                             EDiagSev  severity);
     void PrepareBlobMessage(CCassBlobFetch *  fetch_details,
+                            const string &  processor_id,
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity);
-    void PrepareBlobCompletion(size_t  item_id, const string &  blob_id,
+    void PrepareBlobCompletion(size_t  item_id,
+                               const string &  processor_id,
+                               const string &  blob_id,
                                size_t  chunk_count);
     void PrepareBlobExcluded(const string &  blob_id,
+                             const string &  processor_id,
                              EPSGS_BlobSkipReason  skip_reason);
-    void PrepareBlobExcluded(size_t  item_id, const string &  blob_id,
+    void PrepareBlobExcluded(size_t  item_id,
+                             const string &  processor_id,
+                             const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
-    void PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
+    void PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
+                               const string &  processor_id);
     void PrepareProcessorMessage(size_t  item_id, const string &  processor_id,
                                  const string &  msg,
                                  CRequestStatus::ECode  status, int  err_code,
@@ -122,6 +149,7 @@ public:
                              CRequestStatus::ECode  status, int  err_code,
                              EDiagSev  severity);
     void PrepareNamedAnnotationData(const string &  annot_name,
+                                    const string &  processor_id,
                                     const string &  content);
     void PrepareReplyCompletion(void);
     void SendTrace(const string &  msg,

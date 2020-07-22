@@ -52,7 +52,8 @@ class CPSGS_CassBlobBase : virtual public CPSGS_CassProcessorBase
 public:
     CPSGS_CassBlobBase();
     CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
-                       shared_ptr<CPSGS_Reply>  reply);
+                       shared_ptr<CPSGS_Reply>  reply,
+                       const string &  processor_id);
     virtual ~CPSGS_CassBlobBase();
 
 protected:
@@ -131,6 +132,7 @@ protected:
 
 private:
     unique_ptr<CPSGId2Info>     m_Id2Info;
+    string                      m_ProcessorId;
 };
 
 #endif  // PSGS_CASSBLOBBASE__HPP

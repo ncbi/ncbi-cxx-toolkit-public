@@ -55,7 +55,7 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                            this, _1),
                       bind(&CPSGS_GetProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4)),
-    CPSGS_CassBlobBase(request, reply),
+    CPSGS_CassBlobBase(request, reply, GetName()),
     m_Cancelled(false)
 {
     IPSGS_Processor::m_Request = request;
@@ -113,17 +113,17 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                       status,
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                       message, status,
                                                        ePSGS_NoBioseqInfo,
                                                        eDiag_Error);
     } else {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                       status,
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                       message, status,
                                                        ePSGS_BioseqInfoError,
                                                        severity);
     }
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -158,9 +158,9 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     app->GetErrorCounters().IncServerSatToSatName();
 
     IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-        item_id, msg, CRequestStatus::e500_InternalServerError,
+        item_id, GetName(), msg, CRequestStatus::e500_InternalServerError,
         ePSGS_UnknownResolvedSatellite, eDiag_Error);
-    IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, 2);
+    IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, GetName(), 2);
 
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(msg);
@@ -183,8 +183,9 @@ CPSGS_GetProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                         Repr(CJsonNode::fStandardJson);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
-            item_id, data_to_send, SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
+            item_id, GetName(), data_to_send,
+            SPSGS_ResolveRequest::ePSGS_JsonFormat);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 }
 
 
@@ -204,7 +205,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
 
     if (x_IsExcludedBlob()) {
         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                IPSGS_Processor::m_Reply->GetItemId(),
+                IPSGS_Processor::m_Reply->GetItemId(), GetName(),
                 m_BlobId.ToString(), ePSGS_BlobExcluded);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -227,11 +228,11 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             if (cache_result == ePSGS_AlreadyInCache) {
                 if (completed)
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                    m_BlobId.ToString(),
+                                    m_BlobId.ToString(), GetName(),
                                     ePSGS_BlobSent);
                 else
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                    m_BlobId.ToString(),
+                                    m_BlobId.ToString(), GetName(),
                                     ePSGS_BlobInProgress);
                 m_Completed = true;
                 IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -272,15 +273,19 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
             if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                    item_id, "Blob properties are not found",
+                    item_id, GetName(),
+                    "Blob properties are not found",
                     CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
             else
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                    item_id, "Blob properties are not found due to a cache lookup error",
+                    item_id, GetName(),
+                    "Blob properties are not found due to a cache lookup error",
                     CRequestStatus::e500_InternalServerError, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, 2);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,
+                                                                GetName(),
+                                                                2);
 
             if (m_BlobRequest->m_ExcludeBlobCacheAdded &&
                 !m_BlobRequest->m_ClientId.empty()) {
@@ -467,14 +472,18 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
         if (blob_fetch->IsBlobPropStage()) {
             IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                blob_fetch, error, CRequestStatus::e500_InternalServerError,
+                blob_fetch, GetName(),
+                error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(blob_fetch);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(blob_fetch,
+                                                                GetName());
         } else {
             IPSGS_Processor::m_Reply->PrepareBlobMessage(
-                blob_fetch, error, CRequestStatus::e500_InternalServerError,
+                blob_fetch, GetName(),
+                error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobCompletion(blob_fetch);
+            IPSGS_Processor::m_Reply->PrepareBlobCompletion(blob_fetch,
+                                                            GetName());
         }
 
         // Mark finished

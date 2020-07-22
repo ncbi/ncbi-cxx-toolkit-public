@@ -170,8 +170,8 @@ void CPSGS_OSGResolveBase::SendResult(const string& data_to_send,
                                       EOutputFormat output_format)
 {
     size_t item_id = GetReply()->GetItemId();
-    GetReply()->PrepareBioseqData(item_id, data_to_send, output_format);
-    GetReply()->PrepareBioseqCompletion(item_id, 2);
+    GetReply()->PrepareBioseqData(item_id, GetName(), data_to_send, output_format);
+    GetReply()->PrepareBioseqCompletion(item_id, GetName(), 2);
 }
 
 

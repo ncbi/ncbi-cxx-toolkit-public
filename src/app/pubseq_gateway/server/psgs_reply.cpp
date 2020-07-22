@@ -98,12 +98,14 @@ bool CPSGS_Reply::IsOutputReady(void) const
 
 
 void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
+                                       const string &  processor_id,
                                        const string &  msg,
                                        CRequestStatus::ECode  status,
                                        int  err_code,
                                        EDiagSev  severity)
 {
-    string  header = GetBioseqMessageHeader(item_id, msg.size(), status,
+    string  header = GetBioseqMessageHeader(item_id, processor_id,
+                                            msg.size(), status,
                                             err_code, severity);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
@@ -116,11 +118,12 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
 
 void CPSGS_Reply::PrepareBioseqData(
                     size_t  item_id,
+                    const string &  processor_id,
                     const string &  content,
                     SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
-    string      header = GetBioseqInfoHeader(item_id, content.size(),
-                                             output_format);
+    string      header = GetBioseqInfoHeader(item_id, processor_id,
+                                             content.size(), output_format);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -130,9 +133,12 @@ void CPSGS_Reply::PrepareBioseqData(
 
 
 void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
+                                          const string &  processor_id,
                                           size_t  chunk_count)
 {
-    string      bioseq_meta = GetBioseqCompletionHeader(item_id, chunk_count);
+    string      bioseq_meta = GetBioseqCompletionHeader(item_id,
+                                                        processor_id,
+                                                        chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(bioseq_meta.data()),
                 bioseq_meta.size()));
@@ -141,13 +147,15 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
 
 
 void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
+                                         const string &         processor_id,
                                          const string &         msg,
                                          CRequestStatus::ECode  status,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
-    string      header = GetBlobPropMessageHeader(item_id, msg.size(),
-                                                  status, err_code, severity);
+    string      header = GetBlobPropMessageHeader(item_id, processor_id,
+                                                  msg.size(), status, err_code,
+                                                  severity);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -157,21 +165,24 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
 
 
 void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
+                                         const string &         processor_id,
                                          const string &         msg,
                                          CRequestStatus::ECode  status,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
     PrepareBlobPropMessage(fetch_details->GetBlobPropItemId(this),
-                           msg, status, err_code, severity);
+                           processor_id, msg, status, err_code, severity);
     fetch_details->IncrementTotalSentBlobChunks();
 }
 
 
 void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+                                      const string &    processor_id,
                                       const string &    content)
 {
     string  header = GetBlobPropHeader(fetch_details->GetBlobPropItemId(this),
+                                       processor_id,
                                        fetch_details->GetBlobId().ToString(),
                                        content.size());
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -185,6 +196,7 @@ void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
 
 
 void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
+                                  const string &         processor_id,
                                   const unsigned char *  chunk_data,
                                   unsigned int           data_size,
                                   int                    chunk_no)
@@ -194,6 +206,7 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
 
     string  header = GetBlobChunkHeader(
                             fetch_details->GetBlobChunkItemId(this),
+                            processor_id,
                             fetch_details->GetBlobId().ToString(),
                             data_size, chunk_no);
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -206,9 +219,11 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
 
 
 void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
+                                            const string &  processor_id,
                                             size_t  chunk_count)
 {
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
+                                                             processor_id,
                                                              chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(blob_prop_meta.data()),
@@ -217,10 +232,12 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
+void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
+                                            const string &  processor_id)
 {
     // +1 is for the completion itself
     PrepareBlobPropCompletion(fetch_details->GetBlobPropItemId(this),
+                              processor_id,
                               fetch_details->GetTotalSentBlobChunks() + 1);
 
     // From now the counter will count chunks for the blob data
@@ -229,13 +246,15 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
 }
 
 void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
+                                     const string &         processor_id,
                                      const string &         blob_id,
                                      const string &         msg,
                                      CRequestStatus::ECode  status,
                                      int                    err_code,
                                      EDiagSev               severity)
 {
-    string      header = GetBlobMessageHeader(item_id, blob_id, msg.size(),
+    string      header = GetBlobMessageHeader(item_id, processor_id,
+                                              blob_id, msg.size(),
                                               status, err_code, severity);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
@@ -246,12 +265,14 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
 
 
 void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
+                                     const string &         processor_id,
                                      const string &         msg,
                                      CRequestStatus::ECode  status,
                                      int                    err_code,
                                      EDiagSev               severity)
 {
     PrepareBlobMessage(fetch_details->GetBlobChunkItemId(this),
+                       processor_id,
                        fetch_details->GetBlobId().ToString(),
                        msg, status, err_code, severity);
     fetch_details->IncrementTotalSentBlobChunks();
@@ -259,10 +280,12 @@ void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
 
 
 void CPSGS_Reply::PrepareBlobCompletion(size_t          item_id,
+                                        const string &  processor_id,
                                         const string &  blob_id,
                                         size_t          chunk_count)
 {
-    string completion = GetBlobCompletionHeader(item_id, blob_id, chunk_count);
+    string completion = GetBlobCompletionHeader(item_id, processor_id,
+                                                blob_id, chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
@@ -270,10 +293,12 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t          item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobExcluded(const string &  blob_id,
+void CPSGS_Reply::PrepareBlobExcluded(const string &        blob_id,
+                                      const string &        processor_id,
                                       EPSGS_BlobSkipReason  skip_reason)
 {
-    string  exclude = GetBlobExcludeHeader(GetItemId(), blob_id, skip_reason);
+    string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
+                                           blob_id, skip_reason);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
@@ -282,10 +307,12 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &  blob_id,
 
 
 void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
+                                      const string &        processor_id,
                                       const string &        blob_id,
                                       EPSGS_BlobSkipReason  skip_reason)
 {
-    string  exclude = GetBlobExcludeHeader(item_id, blob_id, skip_reason);
+    string  exclude = GetBlobExcludeHeader(item_id, processor_id,
+                                           blob_id, skip_reason);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
@@ -293,10 +320,12 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
+void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
+                                        const string &    processor_id)
 {
     // +1 is for the completion itself
     PrepareBlobCompletion(fetch_details->GetBlobChunkItemId(this),
+                          processor_id,
                           fetch_details->GetBlobId().ToString(),
                           fetch_details->GetTotalSentBlobChunks() + 1);
     fetch_details->IncrementTotalSentBlobChunks();
@@ -344,11 +373,12 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
 
 
 void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
+                                             const string &  processor_id,
                                              const string &  content)
 {
     size_t      item_id = GetItemId();
-    string      header = GetNamedAnnotationHeader(item_id, annot_name,
-                                                  content.size());
+    string      header = GetNamedAnnotationHeader(item_id, processor_id,
+                                                  annot_name, content.size());
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -356,7 +386,9 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
     ++m_TotalSentReplyChunks;
 
     // There are always 2 chunks
-    string      bioseq_na_meta = GetNamedAnnotationCompletionHeader(item_id, 2);
+    string      bioseq_na_meta = GetNamedAnnotationCompletionHeader(item_id,
+                                                                    processor_id,
+                                                                    2);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(bioseq_na_meta.data()),
                 bioseq_na_meta.size()));

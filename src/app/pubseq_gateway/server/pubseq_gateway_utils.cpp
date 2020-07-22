@@ -207,13 +207,17 @@ static string SeverityToLowerString(EDiagSev  severity)
 }
 
 
-string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
+string  GetBioseqInfoHeader(size_t  item_id,
+                            const string &  processor_id,
+                            size_t  bioseq_info_size,
                             SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
-    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
+    // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
     string      reply(s_ReplyBegin);
 
     reply.append(to_string(item_id))
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
          .append(s_AndBioseqInfoItem)
          .append(s_AndDataChunk)
          .append(s_AndSize)
@@ -226,13 +230,18 @@ string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
 }
 
 
-string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
-                               CRequestStatus::ECode  status, int  code,
+string  GetBioseqMessageHeader(size_t  item_id,
+                               const string &  processor_id,
+                               size_t  msg_size,
+                               CRequestStatus::ECode  status,
+                               int  code,
                                EDiagSev  severity)
 {
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBioseqInfoItem)
                 .append(s_AndMessageChunk)
                 .append(s_AndSize)
@@ -247,12 +256,16 @@ string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
 }
 
 
-string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
+string  GetBioseqCompletionHeader(size_t  item_id,
+                                  const string &  processor_id,
+                                  size_t  chunk_count)
 {
-    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=meta&n_chunks=1
+    // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=meta&n_chunks=1
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBioseqInfoItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndNChunks)
@@ -262,13 +275,16 @@ string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
 
 
 string  GetBlobPropHeader(size_t  item_id,
+                          const string &  processor_id,
                           const string &  blob_id,
                           size_t  blob_prop_size)
 {
-    // E.g. PSG-Reply-Chunk: item_id=2&item_type=blob_prop&chunk_type=data&size=550&sat=111
+    // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550&sat=111
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobPropItem)
                 .append(s_AndDataChunk)
                 .append(s_AndSize)
@@ -279,13 +295,18 @@ string  GetBlobPropHeader(size_t  item_id,
 }
 
 
-string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
-                                 CRequestStatus::ECode  status, int  code,
+string  GetBlobPropMessageHeader(size_t  item_id,
+                                 const string &  processor_id,
+                                 size_t  msg_size,
+                                 CRequestStatus::ECode  status,
+                                 int  code,
                                  EDiagSev  severity)
 {
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobPropItem)
                 .append(s_AndMessageChunk)
                 .append(s_AndSize)
@@ -300,11 +321,15 @@ string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
 }
 
 
-string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
+string  GetBlobPropCompletionHeader(size_t  item_id,
+                                    const string &  processor_id,
+                                    size_t  chunk_count)
 {
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobPropItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndNChunks)
@@ -313,15 +338,19 @@ string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
 }
 
 
-string  GetBlobChunkHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobChunkHeader(size_t  item_id,
+                           const string &  processor_id,
+                           const string &  blob_id,
                            size_t  chunk_size,
                            size_t  chunk_number)
 {
-    // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37&flags=7F
+    // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37&flags=7F
     // Note: flags are hexadecimal
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndDataChunk)
                 .append(s_AndSize)
@@ -334,10 +363,12 @@ string  GetBlobChunkHeader(size_t  item_id, const string &  blob_id,
 }
 
 
-string  GetBlobExcludeHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobExcludeHeader(size_t  item_id,
+                             const string &  processor_id,
+                             const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason)
 {
-    // E.g. PSG-Reply-Chunk: item_id=5&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
+    // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
     string      reason;
     switch (skip_reason) {
         case ePSGS_BlobExcluded:
@@ -354,6 +385,8 @@ string  GetBlobExcludeHeader(size_t  item_id, const string &  blob_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
@@ -364,13 +397,17 @@ string  GetBlobExcludeHeader(size_t  item_id, const string &  blob_id,
                 .append(1, '\n');
 }
 
-string  GetBlobCompletionHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobCompletionHeader(size_t  item_id,
+                                const string &  processor_id,
+                                const string &  blob_id,
                                 size_t  chunk_count)
 {
-    // E.g. PSG-Reply-Chunk: item_id=4&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
+    // E.g. PSG-Reply-Chunk: item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
@@ -381,15 +418,20 @@ string  GetBlobCompletionHeader(size_t  item_id, const string &  blob_id,
 }
 
 
-string  GetBlobMessageHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobMessageHeader(size_t  item_id,
+                             const string &  processor_id,
+                             const string &  blob_id,
                              size_t  msg_size,
-                             CRequestStatus::ECode  status, int  code,
+                             CRequestStatus::ECode  status,
+                             int  code,
                              EDiagSev  severity)
 {
-    // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
+    // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMessageChunk)
                 .append(s_AndSize)
@@ -417,7 +459,8 @@ string  GetReplyCompletionHeader(size_t  chunk_count)
 
 
 string  GetReplyMessageHeader(size_t  msg_size,
-                              CRequestStatus::ECode  status, int  code,
+                              CRequestStatus::ECode  status,
+                              int  code,
                               EDiagSev  severity)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
@@ -439,13 +482,16 @@ string  GetReplyMessageHeader(size_t  msg_size,
 
 
 string GetNamedAnnotationHeader(size_t  item_id,
+                                const string &  processor_id,
                                 const string &  annot_name,
                                 size_t  annotation_size)
 {
-    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1
+    // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBioseqNAItem)
                 .append(s_AndDataChunk)
                 .append(s_AndSize)
@@ -456,19 +502,21 @@ string GetNamedAnnotationHeader(size_t  item_id,
 }
 
 
-string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
-                                       CRequestStatus::ECode  status, int  code,
+string GetNamedAnnotationMessageHeader(size_t  item_id,
+                                       const string &  processor_id,
+                                       size_t  msg_size,
+                                       CRequestStatus::ECode  status,
+                                       int  code,
                                        EDiagSev  severity)
 {
-    // The error/warning messages for named annotations are not linked to a
-    // particular annotation (at least not now). So it is sent as the whole
-    // reply message.
-    // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
+    // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
 
     string      reply(s_ReplyBegin);
 
-    return reply.append(1, '0')
-                .append(s_AndReplyItem)
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBioseqNAItem)
                 .append(s_AndMessageChunk)
                 .append(s_AndSize)
                 .append(to_string(msg_size))
@@ -482,11 +530,15 @@ string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
 }
 
 
-string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count)
+string GetNamedAnnotationMessageCompletionHeader(size_t  item_id,
+                                                 const string &  processor_id,
+                                                 size_t  chunk_count)
 {
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
                 .append(s_AndBioseqNAItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndNChunks)
@@ -495,17 +547,37 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count)
 }
 
 
-string GetProcessorMessageHeader(size_t  item_id, const string &  processor_id,
-                                 size_t  msg_size, CRequestStatus::ECode  status,
-                                 int  code, EDiagSev  severity)
+string GetNamedAnnotationCompletionHeader(size_t  item_id,
+                                          const string &  processor_id,
+                                          size_t  chunk_count)
 {
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(s_AndProcessorItem)
-                .append(s_AndMessageChunk)
                 .append(s_AndProcessorId)
                 .append(NStr::URLEncode(processor_id))
+                .append(s_AndBioseqNAItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
+                .append(to_string(chunk_count))
+                .append(1, '\n');
+}
+
+
+string GetProcessorMessageHeader(size_t  item_id,
+                                 const string &  processor_id,
+                                 size_t  msg_size,
+                                 CRequestStatus::ECode  status,
+                                 int  code,
+                                 EDiagSev  severity)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndProcessorItem)
+                .append(s_AndMessageChunk)
                 .append(s_AndSize)
                 .append(to_string(msg_size))
                 .append(s_AndStatus)
@@ -525,10 +597,10 @@ string GetProcessorMessageCompletionHeader(size_t  item_id,
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
-                .append(s_AndProcessorItem)
-                .append(s_AndMetaChunk)
                 .append(s_AndProcessorId)
                 .append(NStr::URLEncode(processor_id))
+                .append(s_AndProcessorItem)
+                .append(s_AndMetaChunk)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');

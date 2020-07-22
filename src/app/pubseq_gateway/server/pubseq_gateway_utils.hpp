@@ -137,40 +137,74 @@ struct SBioseqResolution
 
 
 // Bioseq messages
-string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
+string  GetBioseqInfoHeader(size_t  item_id,
+                            const string &  processor_id,
+                            size_t  bioseq_info_size,
                             SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format);
-string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
-                               CRequestStatus::ECode  status, int  code,
+string  GetBioseqMessageHeader(size_t  item_id,
+                               const string &  processor_id,
+                               size_t  msg_size,
+                               CRequestStatus::ECode  status,
+                               int  code,
                                EDiagSev  severity);
-string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count);
+string  GetBioseqCompletionHeader(size_t  item_id,
+                                  const string &  processor_id,
+                                  size_t  chunk_count);
 
 // Blob prop messages
-string  GetBlobPropHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobPropHeader(size_t  item_id,
+                          const string &  processor_id,
+                          const string &  blob_id,
                           size_t  blob_prop_size);
-string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
-                                 CRequestStatus::ECode  status, int  code,
+string  GetBlobPropMessageHeader(size_t  item_id,
+                                 const string &  processor_id,
+                                 size_t  msg_size,
+                                 CRequestStatus::ECode  status,
+                                 int  code,
                                  EDiagSev  severity);
-string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count);
+string  GetBlobPropCompletionHeader(size_t  item_id,
+                                    const string &  processor_id,
+                                    size_t  chunk_count);
 
 // Blob chunk messages
-string  GetBlobChunkHeader(size_t  item_id, const string &  blob_id,
-                           size_t  chunk_size, size_t  chunk_number);
-string  GetBlobCompletionHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobChunkHeader(size_t  item_id,
+                           const string &  processor_id,
+                           const string &  blob_id,
+                           size_t  chunk_size,
+                           size_t  chunk_number);
+string  GetBlobCompletionHeader(size_t  item_id,
+                                const string &  processor_id,
+                                const string &  blob_id,
                                 size_t  chunk_count);
-string  GetBlobMessageHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobMessageHeader(size_t  item_id,
+                             const string &  processor_id,
+                             const string &  blob_id,
                              size_t  msg_size,
-                             CRequestStatus::ECode  status, int  code,
+                             CRequestStatus::ECode  status,
+                             int  code,
                              EDiagSev  severity);
-string  GetBlobExcludeHeader(size_t  item_id, const string &  blob_id,
+string  GetBlobExcludeHeader(size_t  item_id,
+                             const string &  processor_id,
+                             const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
 
 // Named annotation messages
-string GetNamedAnnotationHeader(size_t  item_id, const string &  annot_name,
+string GetNamedAnnotationHeader(size_t  item_id,
+                                const string &  processor_id,
+                                const string &  annot_name,
                                 size_t  annotation_size);
-string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
-                                       CRequestStatus::ECode  status, int  code,
+string GetNamedAnnotationMessageHeader(size_t  item_id,
+                                       const string &  processor_id,
+                                       size_t  msg_size,
+                                       CRequestStatus::ECode  status,
+                                       int  code,
                                        EDiagSev  severity);
-string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count);
+string GetNamedAnnotationMessageCompletionHeader(size_t  item_id,
+                                                 const string &  processor_id,
+                                                 size_t  chunk_count);
+string GetNamedAnnotationCompletionHeader(size_t  item_id,
+                                          const string &  processor_id,
+                                          size_t  chunk_count);
 
 
 // Reply messages
@@ -180,9 +214,12 @@ string  GetReplyMessageHeader(size_t  msg_size,
                               EDiagSev  severity);
 
 // Processor messages
-string GetProcessorMessageHeader(size_t  item_id, const string &  processor_id,
-                                 size_t  msg_size, CRequestStatus::ECode  status,
-                                 int  code, EDiagSev  severity);
+string GetProcessorMessageHeader(size_t  item_id,
+                                 const string &  processor_id,
+                                 size_t  msg_size,
+                                 CRequestStatus::ECode  status,
+                                 int  code,
+                                 EDiagSev  severity);
 string GetProcessorMessageCompletionHeader(size_t  item_id,
                                            const string &  processor_id,
                                            size_t  chunk_count);

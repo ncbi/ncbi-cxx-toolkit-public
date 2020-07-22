@@ -52,8 +52,10 @@ CPSGS_CassBlobBase::CPSGS_CassBlobBase()
 
 
 CPSGS_CassBlobBase::CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
-                                       shared_ptr<CPSGS_Reply>  reply) :
-    CPSGS_CassProcessorBase(request, reply)
+                                       shared_ptr<CPSGS_Reply>  reply,
+                                       const string &  processor_id) :
+    CPSGS_CassProcessorBase(request, reply),
+    m_ProcessorId(processor_id)
 {}
 
 
@@ -80,7 +82,8 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
     if (is_found) {
         // Found, send blob props back as JSON
         m_Reply->PrepareBlobPropData(
-            fetch_details,  ToJson(blob).Repr(CJsonNode::fStandardJson));
+            fetch_details, m_ProcessorId,
+            ToJson(blob).Repr(CJsonNode::fStandardJson));
 
         // Note: initially only blob_props are requested and at that moment the
         //       TSE option is 'known'. So the initial request should be
@@ -112,7 +115,8 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
                 // Used when INFO blobs are asked; i.e. chunks have been
                 // requested as well, so only the prop completion message needs
                 // to be sent.
-                m_Reply->PrepareBlobPropCompletion(fetch_details);
+                m_Reply->PrepareBlobPropCompletion(fetch_details,
+                                                   m_ProcessorId);
                 break;
         }
     } else {
@@ -125,7 +129,7 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
 {
     // Nothing else to be sent
-    m_Reply->PrepareBlobPropCompletion(fetch_details);
+    m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     x_SetFinished(fetch_details);
 }
 
@@ -147,7 +151,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
 
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
-        m_Reply->PrepareBlobPropCompletion(fetch_details);
+        m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
 
         // An original blob may be required if its size is small
         auto *          app = CPubseqGatewayApp::GetInstance();
@@ -185,7 +189,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
 
     // It is important to send completion after: there could be
     // an error of converting/translating ID2 info
-    m_Reply->PrepareBlobPropCompletion(fetch_details);
+    m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     m_Reply->SignalProcessorFinished();
 }
 
@@ -200,7 +204,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(TBlobPropsCB  blob_props_cb,
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         // Request original blob chunks
-        m_Reply->PrepareBlobPropCompletion(fetch_details);
+        m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
         x_RequestOriginalBlobChunks(blob_chunk_cb, blob_error_cb,
                                     fetch_details, blob);
     } else {
@@ -210,7 +214,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(TBlobPropsCB  blob_props_cb,
 
         // It is important to send completion after: there could be
         // an error of converting/translating ID2 info
-        m_Reply->PrepareBlobPropCompletion(fetch_details);
+        m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     }
     m_Reply->SignalProcessorFinished();
 }
@@ -226,7 +230,7 @@ CPSGS_CassBlobBase::x_OnBlobPropWholeTSE(TBlobPropsCB  blob_props_cb,
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         // Request original blob chunks
-        m_Reply->PrepareBlobPropCompletion(fetch_details);
+        m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
         x_RequestOriginalBlobChunks(blob_chunk_cb, blob_error_cb,
                                     fetch_details, blob);
     } else {
@@ -236,7 +240,7 @@ CPSGS_CassBlobBase::x_OnBlobPropWholeTSE(TBlobPropsCB  blob_props_cb,
 
         // It is important to send completion after: there could be
         // an error of converting/translating ID2 info
-        m_Reply->PrepareBlobPropCompletion(fetch_details);
+        m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     }
     m_Reply->SignalProcessorFinished();
 }
@@ -250,7 +254,7 @@ CPSGS_CassBlobBase::x_OnBlobPropOrigTSE(TBlobChunkCB  blob_chunk_cb,
 {
     fetch_details->SetReadFinished();
     // Request original blob chunks
-    m_Reply->PrepareBlobPropCompletion(fetch_details);
+    m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     x_RequestOriginalBlobChunks(blob_chunk_cb,
                                 blob_error_cb,
                                 fetch_details, blob);
@@ -341,7 +345,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                               ") to a cassandra keyspace for the blob " +
                               fetch_details->GetBlobId().ToString();
         m_Reply->PrepareBlobPropMessage(
-                                fetch_details, message,
+                                fetch_details, m_ProcessorId, message,
                                 CRequestStatus::e500_InternalServerError,
                                 ePSGS_BadID2Info, eDiag_Error);
         app->GetErrorCounters().IncServerSatToSatName();
@@ -406,14 +410,14 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                 message = "Blob properties are not found";
                 UpdateOverallStatus(CRequestStatus::e404_NotFound);
                 m_Reply->PrepareBlobPropMessage(
-                                    fetch_details, message,
+                                    fetch_details, m_ProcessorId, message,
                                     CRequestStatus::e404_NotFound,
                                     ePSGS_BlobPropsNotFound, eDiag_Error);
             } else {
                 message = "Blob properties are not found due to LMDB cache error";
                 UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                 m_Reply->PrepareBlobPropMessage(
-                                    fetch_details, message,
+                                    fetch_details, m_ProcessorId, message,
                                     CRequestStatus::e500_InternalServerError,
                                     ePSGS_BlobPropsNotFound, eDiag_Error);
             }
@@ -536,7 +540,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                     message = "Blob properties are not found";
                     UpdateOverallStatus(CRequestStatus::e404_NotFound);
                     m_Reply->PrepareBlobPropMessage(
-                                        details.get(), message,
+                                        details.get(), m_ProcessorId, message,
                                         CRequestStatus::e404_NotFound,
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
                 } else {
@@ -544,11 +548,11 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                               "due to a blob proc cache lookup error";
                     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                     m_Reply->PrepareBlobPropMessage(
-                                        details.get(), message,
+                                        details.get(), m_ProcessorId, message,
                                         CRequestStatus::e500_InternalServerError,
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
                 }
-                m_Reply->PrepareBlobPropCompletion(details.get());
+                m_Reply->PrepareBlobPropCompletion(details.get(), m_ProcessorId);
                 PSG_WARNING(message);
                 continue;
             }
@@ -599,11 +603,13 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
                                             completed);
     if (m_Request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest &&
         cache_result == ePSGS_AlreadyInCache) {
-        m_Reply->PrepareBlobPropCompletion(fetch_details);
+        m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
         if (completed)
-            m_Reply->PrepareBlobExcluded(m_BlobId.ToString(), ePSGS_BlobSent);
+            m_Reply->PrepareBlobExcluded(m_BlobId.ToString(), m_ProcessorId,
+                                         ePSGS_BlobSent);
         else
-            m_Reply->PrepareBlobExcluded(m_BlobId.ToString(), ePSGS_BlobInProgress);
+            m_Reply->PrepareBlobExcluded(m_BlobId.ToString(), m_ProcessorId,
+                                         ePSGS_BlobInProgress);
         return ePSGS_InCache;
     }
 
@@ -660,16 +666,16 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
 
         if (fetch_details->IsBlobPropStage()) {
             m_Reply->PrepareBlobPropMessage(
-                                fetch_details, message,
+                                fetch_details, m_ProcessorId, message,
                                 CRequestStatus::e500_InternalServerError,
                                 code, severity);
-            m_Reply->PrepareBlobPropCompletion(fetch_details);
+            m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
         } else {
             m_Reply->PrepareBlobMessage(
-                                fetch_details, message,
+                                fetch_details, m_ProcessorId, message,
                                 CRequestStatus::e500_InternalServerError,
                                 code, severity);
-            m_Reply->PrepareBlobCompletion(fetch_details);
+            m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
         }
 
         // The handler deals with both kind of blob requests:
@@ -695,10 +701,10 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
         fetch_details->SetReadFinished();
     } else {
         if (fetch_details->IsBlobPropStage())
-            m_Reply->PrepareBlobPropMessage(fetch_details, message,
-                                            status, code, severity);
+            m_Reply->PrepareBlobPropMessage(fetch_details, m_ProcessorId,
+                                            message, status, code, severity);
         else
-            m_Reply->PrepareBlobMessage(fetch_details, message,
+            m_Reply->PrepareBlobMessage(fetch_details, m_ProcessorId, message,
                                         status, code, severity);
     }
 
@@ -736,7 +742,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
         }
 
         // A blob chunk; 0-length chunks are allowed too
-        m_Reply->PrepareBlobData(fetch_details,
+        m_Reply->PrepareBlobData(fetch_details, m_ProcessorId,
                                  chunk_data, data_size, chunk_no);
     } else {
         if (m_Request->NeedTrace()) {
@@ -745,7 +751,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
         }
 
         // End of the blob
-        m_Reply->PrepareBlobCompletion(fetch_details);
+        m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
         x_SetFinished(fetch_details);
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -768,14 +774,14 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
         // User requested wrong sat_key, so it is a client error
         PSG_WARNING(message);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
-        m_Reply->PrepareBlobPropMessage(fetch_details, message,
+        m_Reply->PrepareBlobPropMessage(fetch_details, m_ProcessorId, message,
                                         CRequestStatus::e404_NotFound,
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
     } else {
         // Server error, data inconsistency
         PSG_ERROR(message);
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        m_Reply->PrepareBlobPropMessage(fetch_details, message,
+        m_Reply->PrepareBlobPropMessage(fetch_details, m_ProcessorId, message,
                                         CRequestStatus::e500_InternalServerError,
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
     }
@@ -795,7 +801,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
         }
     }
 
-    m_Reply->PrepareBlobPropCompletion(fetch_details);
+    m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     x_SetFinished(fetch_details);
 }
 
@@ -818,7 +824,8 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
 
     CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncInvalidId2InfoError();
     m_Reply->PrepareBlobPropMessage(
-        fetch_details, err_msg, CRequestStatus::e500_InternalServerError,
+        fetch_details, m_ProcessorId,
+        err_msg, CRequestStatus::e500_InternalServerError,
         ePSGS_BadID2Info, eDiag_Error);
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(err_msg);

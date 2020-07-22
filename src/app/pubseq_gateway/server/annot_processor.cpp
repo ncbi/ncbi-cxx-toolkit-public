@@ -134,17 +134,17 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                       status,
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                       message, status,
                                                        ePSGS_NoBioseqInfo,
                                                        eDiag_Error);
     } else {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                       status,
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                       message, status,
                                                        ePSGS_BioseqInfoError,
                                                        severity);
     }
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -225,8 +225,9 @@ CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                         Repr(CJsonNode::fStandardJson);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
-            item_id, data_to_send, SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
+            item_id, GetName(), data_to_send,
+            SPSGS_ResolveRequest::ePSGS_JsonFormat);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 }
 
 
@@ -274,7 +275,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
     IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
-        annot_record.GetAnnotName(),
+        annot_record.GetAnnotName(), GetName(),
         ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
 
     x_Peek(false);

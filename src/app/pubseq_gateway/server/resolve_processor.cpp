@@ -106,17 +106,17 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                       status,
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                       message, status,
                                                        ePSGS_NoBioseqInfo,
                                                        eDiag_Error);
     } else {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, message,
-                                                       status,
+        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                       message, status,
                                                        ePSGS_BioseqInfoError,
                                                        severity);
     }
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
@@ -161,9 +161,10 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
     }
 
     size_t              item_id = IPSGS_Processor::m_Reply->GetItemId();
-    IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, data_to_send,
+    IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, GetName(),
+                                                data_to_send,
                                                 effective_output_format);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 }
 
 

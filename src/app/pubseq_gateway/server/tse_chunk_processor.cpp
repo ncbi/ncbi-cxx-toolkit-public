@@ -53,7 +53,7 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
                                 shared_ptr<CPSGS_Reply> reply,
                                 const SCass_BlobId &  blob_id) :
     CPSGS_CassProcessorBase(request, reply),
-    CPSGS_CassBlobBase(request, reply),
+    CPSGS_CassBlobBase(request, reply, GetName()),
     m_Cancelled(false)
 {
     IPSGS_Processor::m_Request = request;
@@ -709,14 +709,18 @@ void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
         if (blob_fetch->IsBlobPropStage()) {
             IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                blob_fetch, error, CRequestStatus::e500_InternalServerError,
+                blob_fetch, GetName(),
+                error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(blob_fetch);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(blob_fetch,
+                                                                GetName());
         } else {
             IPSGS_Processor::m_Reply->PrepareBlobMessage(
-                blob_fetch, error, CRequestStatus::e500_InternalServerError,
+                blob_fetch, GetName(),
+                error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobCompletion(blob_fetch);
+            IPSGS_Processor::m_Reply->PrepareBlobCompletion(blob_fetch,
+                                                            GetName());
         }
 
         // Mark finished
