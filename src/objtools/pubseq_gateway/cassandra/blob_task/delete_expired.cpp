@@ -104,22 +104,20 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 if (!CheckReady(it)) {
                     break;
                 }
+                it.query->NextRow();
+                UpdateLastActivity();
                 if (!it.query->IsEOF()) {
-                    UpdateLastActivity();
-                    async_rslt_t wr = it.query->NextRow();
-                    if (wr == ar_dataready) {
-                        CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(0);
-                        CloseAll();
-                        CTime expiration(CTime::eEmpty, CTime::eUTC);
-                        expiration.SetTimeT(write_timestamp / 1000000);
-                        expiration.SetMicroSecond(write_timestamp % 1000000);
-                        expiration.AddSecond(m_Expiration);
-                        if (CTime(CTime::eCurrent, CTime::eUTC) > expiration) {
-                            m_State = eDeleteData;
-                            b_need_repeat = true;
-                        } else {
-                            m_State = eDone;
-                        }
+                    CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(0);
+                    CloseAll();
+                    CTime expiration(CTime::eEmpty, CTime::eUTC);
+                    expiration.SetTimeT(write_timestamp / 1000000);
+                    expiration.SetMicroSecond(write_timestamp % 1000000);
+                    expiration.AddSecond(m_Expiration);
+                    if (CTime(CTime::eCurrent, CTime::eUTC) > expiration) {
+                        m_State = eDeleteData;
+                        b_need_repeat = true;
+                    } else {
+                        m_State = eDone;
                     }
                 } else {
                     CloseAll();
