@@ -677,11 +677,14 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
             return 0/*failure*/;
         hdrlen = 0;
     }
+    assert(hdr);
 
     /* NB: "user_header" can be part of "info->user_header",
      * so create a copy of it even for delete operations! */
-    if (!(newhdr = (char*) malloc(newhdrlen + 1)))
-        return 0/*failure*/;
+    if (!(newhdr = (char*) malloc(newhdrlen + 1))) {
+        retval = 0/*failure*/;
+        goto out;
+    }
     memcpy(newhdr, user_header, newhdrlen + 1);
 
     retval = 1/*assume best: success*/;
@@ -722,10 +725,9 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
                 goto ignore;
             break;
         default:
-            assert(0);
             retval = 0/*failure*/;
-            newlen = 0;
-            break;
+            assert(0);
+            goto out;
         }
         if (newlen  &&  eol) {
             if (eol[-1] == '\r')
@@ -818,7 +820,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
         }
     }
 
-    assert(hdr);
+ out:
     if (!*hdr) {
         assert(!hdrlen);
         free(hdr);
@@ -827,7 +829,8 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
     info->http_user_header = hdr;
     if (retval  &&  op != eUserHeaderOp_Delete)
         retval = ConnNetInfo_AppendUserHeader(info, newhdr);
-    free(newhdr);
+    if (newhdr)
+        free(newhdr);
 
     return retval;
 }
