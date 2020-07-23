@@ -259,28 +259,27 @@ struct SH2S_ReaderWriter : IReaderWriter
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override
     {
-        return ReadFsm(&SH2S_ReaderWriter::ReadImpl, buf, count, bytes_read);
+        return ReadFsm([&]() { return ReadImpl(buf, count, bytes_read); });
     }
 
     ERW_Result PendingCount(size_t* count) override
     {
-        return ReadFsm(&SH2S_ReaderWriter::PendingCountImpl, count);
+        return ReadFsm([&]() { return PendingCountImpl(count); });
     }
 
     ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override;
     ERW_Result Flush() override;
 
 private:
-    enum EState { eWriting, eReading, eEof, eError };
+    enum EState { eWriting, eWaiting, eReading, eEof, eError };
 
-    template <class ...TArgs1, class ...TArgs2>
-    ERW_Result ReadFsm(ERW_Result (SH2S_ReaderWriter::*member)(TArgs1...), TArgs2&&... args);
-
+    ERW_Result ReadFsm(function<ERW_Result()> impl);
     ERW_Result ReadImpl(void* buf, size_t count, size_t* bytes_read);
     ERW_Result PendingCountImpl(size_t* count);
 
-    ERW_Result ReceiveData();
-    ERW_Result ReceiveResponse();
+    ERW_Result Receive(ERW_Result (SH2S_ReaderWriter::*member)(TH2S_ResponseEvent&));
+    ERW_Result ReceiveData(TH2S_ResponseEvent& incoming);
+    ERW_Result ReceiveResponse(TH2S_ResponseEvent& incoming);
 
     void Push(TH2S_RequestEvent event)
     {

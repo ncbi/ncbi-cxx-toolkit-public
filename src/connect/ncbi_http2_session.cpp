@@ -125,25 +125,28 @@ ERW_Result SH2S_ReaderWriter::Flush()
     return eRW_Success;
 }
 
-template <class ...TArgs1, class ...TArgs2>
-ERW_Result SH2S_ReaderWriter::ReadFsm(ERW_Result (SH2S_ReaderWriter::*member)(TArgs1...), TArgs2&&... args)
+ERW_Result SH2S_ReaderWriter::ReadFsm(function<ERW_Result()> impl)
 {
-    for (;;) {
+    auto rv = eRW_Success;
+
+    do {
         switch (m_State) {
             case eWriting:
-                ReceiveResponse();
+                Push(TH2S_RequestEvent(TH2S_RequestEvent::eEof, m_ResponseQueue));
+                m_State = eWaiting;
+                /* FALL THROUGH */
+
+            case eWaiting:
+                rv = Receive(&SH2S_ReaderWriter::ReceiveResponse);
                 break;
 
             case eReading:
                 if (m_IncomingData.empty()) {
-                    const auto rv = ReceiveData();
-
-                    if (rv != eRW_Success) {
-                        return rv;
-                    }
+                    rv = Receive(&SH2S_ReaderWriter::ReceiveData);
+                    break;
                 }
 
-                return (this->*member)(forward<TArgs2>(args)...);
+                return impl();
 
             case eEof:
                 return eRW_Eof;
@@ -152,6 +155,9 @@ ERW_Result SH2S_ReaderWriter::ReadFsm(ERW_Result (SH2S_ReaderWriter::*member)(TA
                 return eRW_Error;
         }
     }
+    while (rv == eRW_Success);
+
+    return rv;
 }
 
 ERW_Result SH2S_ReaderWriter::ReadImpl(void* buf, size_t count, size_t* bytes_read)
@@ -176,21 +182,25 @@ ERW_Result SH2S_ReaderWriter::PendingCountImpl(size_t* count)
     return eRW_Success;
 }
 
-ERW_Result SH2S_ReaderWriter::ReceiveData()
+ERW_Result SH2S_ReaderWriter::Receive(ERW_Result (SH2S_ReaderWriter::*member)(TH2S_ResponseEvent&))
 {
-    _ASSERT(m_State == eReading);
-
     Process();
 
     auto queue_locked = m_ResponseQueue->GetLock();
 
     if (queue_locked->empty()) {
-        return eRW_Timeout;
+        return eRW_Success;
     }
 
     TH2S_ResponseEvent incoming(move(queue_locked->front()));
     queue_locked->pop();
     queue_locked.Unlock();
+    return (this->*member)(incoming);
+}
+
+ERW_Result SH2S_ReaderWriter::ReceiveData(TH2S_ResponseEvent& incoming)
+{
+    _ASSERT(m_State == eReading);
 
     switch (incoming.GetType()) {
         case TH2S_ResponseEvent::eData:
@@ -216,48 +226,32 @@ ERW_Result SH2S_ReaderWriter::ReceiveData()
     return eRW_Error;
 }
 
-ERW_Result SH2S_ReaderWriter::ReceiveResponse()
+ERW_Result SH2S_ReaderWriter::ReceiveResponse(TH2S_ResponseEvent& incoming)
 {
-    _ASSERT(m_State == eWriting);
+    _ASSERT(m_State == eWaiting);
 
-    Push(TH2S_RequestEvent(TH2S_RequestEvent::eEof, m_ResponseQueue));
+    switch (incoming.GetType()) {
+        case TH2S_ResponseEvent::eStart:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+            m_State = eReading;
+            m_UpdateResponse(move(incoming.GetStart()));
+            return eRW_Success;
 
-    for (;;) {
-        Process();
+        case TH2S_ResponseEvent::eData:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
+            break;
 
-        auto queue_locked = m_ResponseQueue->GetLock();
+        case TH2S_ResponseEvent::eEof:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
+            break;
 
-        if (queue_locked->empty()) {
-            continue;
-        }
-
-        TH2S_ResponseEvent incoming(move(queue_locked->front()));
-        queue_locked->pop();
-        queue_locked.Unlock();
-
-        switch (incoming.GetType()) {
-            case TH2S_ResponseEvent::eStart:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
-                m_State = eReading;
-                m_UpdateResponse(move(incoming.GetStart()));
-                return eRW_Success;
-
-            case TH2S_ResponseEvent::eData:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
-                break;
-
-            case TH2S_ResponseEvent::eEof:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
-                break;
-
-            case TH2S_ResponseEvent::eError:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
-                break;
-        }
-
-        m_State = eError;
-        return eRW_Error;
+        case TH2S_ResponseEvent::eError:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+            break;
     }
+
+    m_State = eError;
+    return eRW_Error;
 }
 
 ssize_t SH2S_IoStream::DataSourceRead(void* session, uint8_t* buf, size_t length, uint32_t* data_flags)
