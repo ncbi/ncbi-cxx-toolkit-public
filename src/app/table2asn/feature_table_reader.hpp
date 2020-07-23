@@ -63,7 +63,6 @@ private:
     void _ParseCdregions(objects::CSeq_entry& entry);
     void _MergeCDSFeatures_impl(objects::CSeq_entry& entry);
     CRef<objects::CSeq_entry> _TranslateProtein(
-       objects::CSeq_entry_Handle top_entry_h, 
        const objects::CBioseq& bioseq,
        objects::CSeq_feat& cd_feature);
 
@@ -80,9 +79,9 @@ private:
     bool _AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
     void _MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
 
-    CConstRef<objects::CSeq_feat> _FindFeature(const objects::CSeq_feat& feature, bool gene);
-    CConstRef<objects::CSeq_feat> _FindFeature(const objects::CFeat_id& id);
-    CConstRef<objects::CSeq_feat> _GetLinkedFeature(const objects::CSeq_feat& cd_feature, bool gene);
+    CRef<objects::CSeq_feat> _FindFeature(const objects::CSeq_feat& feature, bool gene);
+    CRef<objects::CSeq_feat> _FindFeature(const objects::CFeat_id& id);
+    CRef<objects::CSeq_feat> _GetLinkedFeature(const objects::CSeq_feat& cd_feature, bool gene);
     void _AddFeatures();
     void _ClearTrees();
     CRef<objects::feature::CFeatTree> _GetFeatTree();

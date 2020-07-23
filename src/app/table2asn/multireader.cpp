@@ -874,7 +874,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq();
     reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
-
+    
     x_PostProcessAnnot(*entry);
 
     return entry;
@@ -1103,6 +1103,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
 
 bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 {
+
     CAnnotationLoader annot_loader;
 
     if (xGetAnnotLoader(annot_loader, filename))
@@ -1139,6 +1140,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                     // update one at once would change all the features
                     annot_id.Reset((CSeq_id*)annot_it->GetData().GetFtable().front()->GetLocation().GetId());
                 }
+
 
             CBioseq::TId ids;
             CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*annot_id);
@@ -1192,6 +1194,8 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                         break;
                     }
                 }
+               
+
                 if (existing.Empty())
                     bioseq.SetAnnot().push_back(annot_it);
                 else
