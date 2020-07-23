@@ -306,7 +306,6 @@ extern int/*bool*/ BUF_Pushback(BUF* buf, const void* src, size_t size)
         assert(size);
         if (!(head = s_BUF_AllocChunk(size, (*buf)->unit)))
             return 0/*failure*/;
-        assert(head->data);
         if (skip) {
             /* fill up the skip area */
             memcpy(next->data, (const char*) src + size, skip);
@@ -323,7 +322,7 @@ extern int/*bool*/ BUF_Pushback(BUF* buf, const void* src, size_t size)
     }
 
     /* write remaining data */
-    assert(head->skip >= size);
+    assert(head->data  &&  head->skip >= size);
     head->skip -= size;
     dst = head->data + head->skip;
     if (dst != src)
