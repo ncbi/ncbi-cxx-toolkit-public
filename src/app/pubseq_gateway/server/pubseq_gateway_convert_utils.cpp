@@ -54,6 +54,7 @@ static const string     kHash = "hash";
 static const string     kDateChanged = "date_changed";
 static const string     kSeqIds = "seq_ids";
 static const string     kName = "name";
+static const string     kBlobId = "blob_id";
 
 static const string     kKey = "key";
 static const string     kLastModified = "last_modified";
@@ -141,7 +142,8 @@ string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info)
 
 
 CJsonNode  ToJson(const CBioseqInfoRecord &  bioseq_info,
-                  SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags)
+                  SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
+                  const string &  custom_blob_id)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
@@ -163,8 +165,19 @@ CJsonNode  ToJson(const CBioseqInfoRecord &  bioseq_info,
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_MoleculeType)
         json.SetInteger(kMol, bioseq_info.GetMol());
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_BlobId) {
-        json.SetInteger(kSat, bioseq_info.GetSat());
-        json.SetInteger(kSatKey, bioseq_info.GetSatKey());
+        if (custom_blob_id.empty()) {
+            json.SetInteger(kSat, bioseq_info.GetSat());
+            json.SetInteger(kSatKey, bioseq_info.GetSatKey());
+
+            // Adding blob_id as a string for future replacement of the separate
+            // sat and sat_key
+            json.SetString(kBlobId, to_string(bioseq_info.GetSat()) + "." +
+                                    to_string(bioseq_info.GetSatKey()));
+        } else {
+            // If a custom blob_id is provided then there is no need to send
+            // the one from bioseq info
+            json.SetString(kBlobId, custom_blob_id);
+        }
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqIds) {
         CJsonNode       seq_ids(CJsonNode::NewArrayNode());
