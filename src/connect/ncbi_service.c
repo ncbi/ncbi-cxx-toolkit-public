@@ -96,7 +96,7 @@ static char* x_ServiceName(unsigned int depth,
                            int/*bool*/ ismask, int/*bool*/ isfast)
 {
     char   buf[128];
-    size_t len;
+    size_t len = 0;
 
     assert(!svc == !service);
     assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
