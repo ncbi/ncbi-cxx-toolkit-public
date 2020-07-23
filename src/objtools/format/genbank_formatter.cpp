@@ -523,7 +523,7 @@ void CGenbankFormatter::FormatVersion
         version_line << version.GetAccession();
         if ( version.GetGi() > ZERO_GI ) {
             const CFlatFileConfig& cfg = GetContext().GetConfig();
-            if (! cfg.HideGI()) {
+            if (! (cfg.HideGI() || cfg.IsPolicyFtp())) {
                 version_line << "  GI:" << version.GetGi();
             }
         }
