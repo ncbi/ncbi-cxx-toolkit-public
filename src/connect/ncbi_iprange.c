@@ -355,9 +355,9 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
             if (*p)
                 goto out;
             temp  = dots > 0 ? addr : 0;
-            temp &= (unsigned int)(~((1 << ((4 - dots) << 3)) - 1));
-            temp |= (unsigned int)   (d << ((3 - dots) << 3));
-            temp |= (unsigned int)  ((1 << ((3 - dots) << 3)) - 1);
+            temp &= (unsigned int)(~((1UL << ((4 - dots) << 3)) - 1));
+            temp |= (unsigned int)   (d   << ((3 - dots) << 3));
+            temp |= (unsigned int)  ((1U  << ((3 - dots) << 3)) - 1);
             NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
             if (addr == temp) {
                 range->b    = 0;
