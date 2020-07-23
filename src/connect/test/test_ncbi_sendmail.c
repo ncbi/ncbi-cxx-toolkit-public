@@ -332,8 +332,8 @@ int main(int argc, const char* argv[])
     if (!(huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)))
         CORE_LOG(eLOG_Fatal, "Test failed: Cannot allocate memory");
     for (n = 0;  n < TEST_HUGE_BODY_SIZE - 1;  ++n)
-        huge_body[n] = "0123456789\nABCDEFGHIJKLMNOPQRSTUVWXYZ ."[rand() % 39];
-    huge_body[n] = 0;
+        huge_body[n] = "0123456789-\n ABCDEFGHIJKLMNOPQRSTUVWXYZ."[rand()%40];
+    huge_body[n] = '\0';
     retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", huge_body, &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
