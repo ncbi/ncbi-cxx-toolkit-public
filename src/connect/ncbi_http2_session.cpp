@@ -37,21 +37,53 @@
 BEGIN_NCBI_SCOPE
 
 
-template <class TDerived, class TBase>
-unique_ptr<TDerived> s_Move(unique_ptr<TBase>& base)
-{
-    return unique_ptr<TDerived>(static_cast<TDerived*>(base.release()));
-}
-
-SH2S_Request::SH2S_Request(EReqMethod m, CUrl u, CHttpHeaders::THeaders h, TH2S_WeakResponseQueue q) :
-    SH2S_RequestEvent(move(q)),
+SH2S_Request::SStart::SStart(EReqMethod m, CUrl u, CHttpHeaders::THeaders h) :
     method(m),
     url(move(u)),
     headers(move(h))
 {
 }
 
-SH2S_ReaderWriter::SH2S_ReaderWriter(TUpdateResponse update_response, shared_ptr<TH2S_ResponseQueue> response_queue, unique_ptr<SH2S_Request> request) :
+template <class TBase>
+SH2S_Event<TBase>::SH2S_Event(SH2S_Event&& other) :
+    TBase(move(other)),
+    m_Type(other.m_Type)
+{
+    switch (m_Type)
+    {
+        case eStart: new(&m_Start) TStart(move(other.m_Start)); break;
+        case eData:  new(&m_Data) TH2S_Data(move(other.m_Data)); break;
+        case eEof:   break;
+        case eError: break;
+    }
+}
+
+template <class TBase>
+SH2S_Event<TBase>::~SH2S_Event()
+{
+    switch (m_Type)
+    {
+        case eStart: m_Start.~TStart(); break;
+        case eData:  m_Data.~TH2S_Data(); break;
+        case eEof:   break;
+        case eError: break;
+    }
+}
+
+template <class TBase>
+const char* SH2S_Event<TBase>::GetTypeName() const
+{
+    switch (m_Type) {
+        case eStart: return "";
+        case eData:  return "data ";
+        case eEof:   return "eof ";
+        case eError: return "error ";
+    }
+
+    return nullptr;
+}
+
+SH2S_ReaderWriter::SH2S_ReaderWriter(TUpdateResponse update_response, shared_ptr<TH2S_ResponseQueue> response_queue, TH2S_RequestEvent request) :
     m_UpdateResponse(update_response),
     m_ResponseQueue(move(response_queue))
 {
@@ -71,14 +103,7 @@ ERW_Result SH2S_ReaderWriter::Write(const void* buf, size_t count, size_t* bytes
     // No need to send empty data
     if (count) {
         const auto begin = static_cast<const char*>(buf);
-
-        if (m_OutgoingData) {
-            auto& data = m_OutgoingData->data;
-            data.insert(data.end(), begin, begin + count);
-        } else {
-            vector<char> data(begin, begin + count);
-            m_OutgoingData.reset(new TH2S_RequestData(move(data), m_ResponseQueue));
-        }
+        m_OutgoingData.insert(m_OutgoingData.end(), begin, begin + count);
     }
 
     if (bytes_written) *bytes_written = count;
@@ -91,8 +116,8 @@ ERW_Result SH2S_ReaderWriter::Flush()
         return eRW_Error;
     }
 
-    if (m_OutgoingData) {
-        Push(move(m_OutgoingData));
+    if (!m_OutgoingData.empty()) {
+        Push(TH2S_RequestEvent(move(m_OutgoingData), m_ResponseQueue));
 
         Process();
     }
@@ -110,7 +135,7 @@ ERW_Result SH2S_ReaderWriter::ReadFsm(ERW_Result (SH2S_ReaderWriter::*member)(TA
                 break;
 
             case eReading:
-                if (!m_IncomingData) {
+                if (m_IncomingData.empty()) {
                     const auto rv = ReceiveData();
 
                     if (rv != eRW_Success) {
@@ -131,16 +156,14 @@ ERW_Result SH2S_ReaderWriter::ReadFsm(ERW_Result (SH2S_ReaderWriter::*member)(TA
 
 ERW_Result SH2S_ReaderWriter::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
-    _ASSERT(m_IncomingData);
-
-    auto& data = m_IncomingData->data;
+    auto& data = m_IncomingData;
     const auto copied = min(count, data.size());
     memcpy(buf, data.data(), copied);
 
     if (count < data.size()) {
         data.erase(data.begin(), data.begin() + copied);
     } else {
-        m_IncomingData.reset();
+        m_IncomingData.clear();
     }
 
     if (bytes_read) *bytes_read = copied;
@@ -149,9 +172,7 @@ ERW_Result SH2S_ReaderWriter::ReadImpl(void* buf, size_t count, size_t* bytes_re
 
 ERW_Result SH2S_ReaderWriter::PendingCountImpl(size_t* count)
 {
-    _ASSERT(m_IncomingData);
-
-    if (count) *count = m_IncomingData->data.size();
+    if (count) *count = m_IncomingData.size();
     return eRW_Success;
 }
 
@@ -161,67 +182,81 @@ ERW_Result SH2S_ReaderWriter::ReceiveData()
 
     Process();
 
-    if (auto incoming = m_ResponseQueue->GetLock()->Pop()) {
-        switch (incoming->GetType()) {
-            case SH2S_ResponseEvent::eData:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << *incoming);
-                m_IncomingData = s_Move<TH2S_ResponseData>(incoming);
-                return eRW_Success;
+    auto queue_locked = m_ResponseQueue->GetLock();
 
-            case SH2S_ResponseEvent::eResponse:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << *incoming);
-                break;
-
-            case SH2S_ResponseEvent::eEof:
-                m_State = eEof;
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << *incoming);
-                return eRW_Eof;
-
-            case SH2S_ResponseEvent::eError:
-                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << *incoming);
-                break;
-        }
-
-        m_State = eError;
-        return eRW_Error;
+    if (queue_locked->empty()) {
+        return eRW_Timeout;
     }
 
-    return eRW_Timeout;
+    TH2S_ResponseEvent incoming(move(queue_locked->front()));
+    queue_locked->pop();
+    queue_locked.Unlock();
+
+    switch (incoming.GetType()) {
+        case TH2S_ResponseEvent::eData:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+            m_IncomingData = move(incoming.GetData());
+            return eRW_Success;
+
+        case TH2S_ResponseEvent::eStart:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
+            break;
+
+        case TH2S_ResponseEvent::eEof:
+            m_State = eEof;
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+            return eRW_Eof;
+
+        case TH2S_ResponseEvent::eError:
+            H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+            break;
+    }
+
+    m_State = eError;
+    return eRW_Error;
 }
 
 ERW_Result SH2S_ReaderWriter::ReceiveResponse()
 {
     _ASSERT(m_State == eWriting);
 
-    Push(unique_ptr<SH2S_RequestEvent>(new TH2S_RequestEof(m_ResponseQueue)));
+    Push(TH2S_RequestEvent(TH2S_RequestEvent::eEof, m_ResponseQueue));
 
     for (;;) {
         Process();
 
-        if (auto incoming = m_ResponseQueue->GetLock()->Pop()) {
-            switch (incoming->GetType()) {
-                case SH2S_ResponseEvent::eResponse:
-                    H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << *incoming);
-                    m_State = eReading;
-                    m_UpdateResponse(move(static_cast<SH2S_Response*>(incoming.get())->headers));
-                    return eRW_Success;
+        auto queue_locked = m_ResponseQueue->GetLock();
 
-                case SH2S_ResponseEvent::eData:
-                    H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << *incoming);
-                    break;
-
-                case SH2S_ResponseEvent::eEof:
-                    H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << *incoming);
-                    break;
-
-                case SH2S_ResponseEvent::eError:
-                    H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << *incoming);
-                    break;
-            }
-
-            m_State = eError;
-            return eRW_Error;
+        if (queue_locked->empty()) {
+            continue;
         }
+
+        TH2S_ResponseEvent incoming(move(queue_locked->front()));
+        queue_locked->pop();
+        queue_locked.Unlock();
+
+        switch (incoming.GetType()) {
+            case TH2S_ResponseEvent::eStart:
+                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+                m_State = eReading;
+                m_UpdateResponse(move(incoming.GetStart()));
+                return eRW_Success;
+
+            case TH2S_ResponseEvent::eData:
+                H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
+                break;
+
+            case TH2S_ResponseEvent::eEof:
+                H2S_RW_TRACE(m_ResponseQueue.get() << " pop unexpected " << incoming);
+                break;
+
+            case TH2S_ResponseEvent::eError:
+                H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
+                break;
+        }
+
+        m_State = eError;
+        return eRW_Error;
     }
 }
 
@@ -295,11 +330,10 @@ THeader::SConvert s_GetMethodName(TReqMethod method)
     }
 }
 
-bool SH2S_Session::Request(unique_ptr<SH2S_Request> request)
+bool SH2S_Session::Request(TH2S_RequestEvent event)
 {
-    _ASSERT(request);
-
-    auto& url = request->url;
+    auto& request = event.GetStart();
+    auto& url = request.url;
     auto scheme = url.GetScheme();
     auto query_string = url.GetOriginalArgsString();
     auto abs_path_ref = url.GetPath();
@@ -309,7 +343,7 @@ bool SH2S_Session::Request(unique_ptr<SH2S_Request> request)
     }
 
     vector<THeader> nghttp2_headers{{
-        { ":method", s_GetMethodName(request->method) },
+        { ":method", s_GetMethodName(request.method) },
         { ":scheme", scheme },
         { ":authority", m_Authority },
         { ":path", abs_path_ref },
@@ -317,15 +351,15 @@ bool SH2S_Session::Request(unique_ptr<SH2S_Request> request)
     }};
 
     // This is not precise but at least something
-    nghttp2_headers.reserve(request->headers.size() + nghttp2_headers.size());
+    nghttp2_headers.reserve(request.headers.size() + nghttp2_headers.size());
 
-    for (const auto& p : request->headers) {
+    for (const auto& p : request.headers) {
         for (const auto& v : p.second) {
             nghttp2_headers.emplace_back(p.first, v);
         }
     }
 
-    auto& response_queue = request->response_queue;
+    auto& response_queue = event.response_queue;
     m_Streams.emplace_front(response_queue);
     auto it = m_Streams.begin();
 
@@ -337,11 +371,11 @@ bool SH2S_Session::Request(unique_ptr<SH2S_Request> request)
 
     if (it->stream_id < 0) {
         m_Streams.pop_front();
-        H2S_SESSION_TRACE(this << '/' << response_queue << " fail to submit " << *request);
+        H2S_SESSION_TRACE(this << '/' << response_queue << " fail to submit " << event);
         return false;
     }
 
-    H2S_SESSION_TRACE(this << '/' << response_queue << " submit " << *request);
+    H2S_SESSION_TRACE(this << '/' << response_queue << " submit " << event);
     m_StreamsByIds.emplace(it->stream_id, it);
     m_StreamsByQueues.emplace(response_queue, it);
     m_SessionsByQueues.emplace(move(response_queue), *this);
@@ -349,11 +383,9 @@ bool SH2S_Session::Request(unique_ptr<SH2S_Request> request)
 }
 
 template <class TFunc>
-bool SH2S_Session::Event(unique_ptr<SH2S_RequestEvent>& event, TFunc f)
+bool SH2S_Session::Event(TH2S_RequestEvent& event, TFunc f)
 {
-    _ASSERT(event);
-
-    auto& response_queue = event->response_queue;
+    auto& response_queue = event.response_queue;
     auto it = Find(response_queue);
 
     if (it != m_Streams.end()) {
@@ -365,12 +397,12 @@ bool SH2S_Session::Event(unique_ptr<SH2S_RequestEvent>& event, TFunc f)
 
         if (!m_Session.Resume(it->stream_id)) {
             it->in_progress = true;
-            H2S_SESSION_TRACE(this << '/' << response_queue << " resume for " << *event);
+            H2S_SESSION_TRACE(this << '/' << response_queue << " resume for " << event);
             return Send();
         }
     }
 
-    H2S_SESSION_TRACE(this << '/' << response_queue << " fail to resume for " << *event);
+    H2S_SESSION_TRACE(this << '/' << response_queue << " fail to resume for " << event);
     return false;
 }
 
@@ -380,7 +412,7 @@ int SH2S_Session::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const uin
 
     if (it != m_Streams.end()) {
         auto begin = reinterpret_cast<const char*>(data);
-        Push(it->response_queue, new TH2S_ResponseData(vector<char>(begin, begin + len)));
+        Push(it->response_queue, TH2S_Data(begin, begin + len));
     }
 
     return 0;
@@ -402,7 +434,7 @@ int SH2S_Session::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t er
         m_StreamsByQueues.erase(response_queue);
         m_StreamsByIds.erase(stream_id);
         m_Streams.erase(it);
-        Push(response_queue, new SH2S_Error<SH2S_ResponseEvent>);
+        Push(response_queue, TH2S_ResponseEvent::eError);
     }
 
     return 0;
@@ -437,7 +469,7 @@ void SH2S_Session::OnReset(SUvNgHttp2_Error)
     for (auto& stream : m_Streams) {
         auto& response_queue = stream.response_queue;
         m_SessionsByQueues.erase(response_queue);
-        Push(response_queue, new SH2S_Error<SH2S_ResponseEvent>);
+        Push(response_queue, TH2S_ResponseEvent::eError);
     }
 
     m_Streams.clear();
@@ -459,11 +491,11 @@ int SH2S_Session::OnFrameRecv(nghttp2_session*, const nghttp2_frame *frame)
             auto& response_queue = it->response_queue;
 
             if (is_headers_frame) {
-                Push(response_queue, new SH2S_Response(move(it->headers)));
+                Push(response_queue, move(it->headers));
             }
 
             if (is_eof) {
-                Push(response_queue, new SH2S_Eof<SH2S_ResponseEvent>);
+                Push(response_queue, TH2S_ResponseEvent::eEof);
             }
         }
     }
@@ -484,73 +516,81 @@ SH2S_IoCoordinator::~SH2S_IoCoordinator()
 void SH2S_IoCoordinator::Process()
 {
     // Retrieve all events from the queue
-    while (auto outgoing = SH2S_Io::GetInstance().request_queue.GetLock()->Pop()) {
-        auto response_queue = outgoing->response_queue;
+    for (;;) {
+        auto queue_locked = SH2S_Io::GetInstance().request_queue.GetLock();
+
+        if (queue_locked->empty()) {
+            break;
+        }
+
+        TH2S_RequestEvent outgoing(move(queue_locked->front()));
+        queue_locked->pop();
+        queue_locked.Unlock();
+
+        auto response_queue = outgoing.response_queue;
         auto session = m_SessionsByQueues.find(response_queue);
         const bool new_request = session == m_SessionsByQueues.end();
 
-        switch (outgoing->GetType()) {
-            case SH2S_RequestEvent::eRequest:
+        switch (outgoing.GetType()) {
+            case TH2S_RequestEvent::eStart:
                 if (new_request) {
-                    H2S_IOC_TRACE(response_queue << " pop " << *outgoing);
+                    H2S_IOC_TRACE(response_queue << " pop " << outgoing);
+                    auto& request = outgoing.GetStart();
 
-                    auto request = s_Move<SH2S_Request>(outgoing);
-
-                    if (auto new_session = NewSession(request->url)) {
-                        if (new_session->Request(move(request))) {
+                    if (auto new_session = NewSession(request.url)) {
+                        if (new_session->Request(move(outgoing))) {
                             continue;
                         }
                     }
                 } else {
-                    H2S_IOC_TRACE(response_queue << " pop unexpected " << *outgoing);
+                    H2S_IOC_TRACE(response_queue << " pop unexpected " << outgoing);
                 }
 
                 // Report error
                 break;
 
-            case SH2S_RequestEvent::eData:
+            case TH2S_RequestEvent::eData:
                 if (!new_request) {
-                    H2S_IOC_TRACE(response_queue << " pop request " << *outgoing);
+                    H2S_IOC_TRACE(response_queue << " pop " << outgoing);
 
-                    auto data = static_cast<TH2S_RequestData*>(outgoing.get());
-                    auto l = [data](SH2S_IoStream& stream) { stream.pending.emplace(move(data->data)); };
+                    auto l = [&](SH2S_IoStream& stream) { stream.pending.emplace(move(outgoing.GetData())); };
 
                     if (session->second.get().Event(outgoing, l)) {
                         continue;
                     }
                 } else {
-                    H2S_IOC_TRACE(response_queue << " pop unexpected " << *outgoing);
+                    H2S_IOC_TRACE(response_queue << " pop unexpected " << outgoing);
                 }
 
                 // Report error
                 break;
 
-            case SH2S_RequestEvent::eEof:
+            case TH2S_RequestEvent::eEof:
                 if (!new_request) {
-                    H2S_IOC_TRACE(response_queue << " pop " << *outgoing);
+                    H2S_IOC_TRACE(response_queue << " pop " << outgoing);
                     auto l = [](SH2S_IoStream& stream) { stream.eof = true; };
 
                     if (session->second.get().Event(outgoing, l)) {
                         continue;
                     }
                 } else {
-                    H2S_IOC_TRACE(response_queue << " pop unexpected " << *outgoing);
+                    H2S_IOC_TRACE(response_queue << " pop unexpected " << outgoing);
                 }
 
                 // Report error
                 break;
 
-            case SH2S_RequestEvent::eError:
+            case TH2S_RequestEvent::eError:
                 // No need to report incoming error back
-                H2S_IOC_TRACE(response_queue << " pop " << *outgoing);
+                H2S_IOC_TRACE(response_queue << " pop " << outgoing);
                 continue;
         }
 
-        // Cannot use outgoing->response_queue here as outgoing may already be released (by s_Move)
+        // Cannot use outgoing here as it may already be empty (moved from)
         // We can only report error if we still have corresponding queue
         if (auto queue = response_queue.lock()) {
-            unique_ptr<SH2S_ResponseEvent> event(new SH2S_Error<SH2S_ResponseEvent>);
-            H2S_IOC_TRACE(response_queue << " push " << *event);
+            TH2S_ResponseEvent event(TH2S_ResponseEvent::eError);
+            H2S_IOC_TRACE(response_queue << " push " << event);
             queue->GetLock()->emplace(move(event));
         }
     }
@@ -612,7 +652,7 @@ void CHttpSessionImpl2::StartRequest(CHttpSession_Base::EProtocol protocol, CHtt
 
     auto update_response = [&](CHttpHeaders::THeaders headers) { UpdateResponse(req, move(headers)); };
     auto response_queue = make_shared<TH2S_ResponseQueue>();
-    unique_ptr<SH2S_Request> request(new SH2S_Request(req.m_Method, req.m_Url, req.m_Headers->Get(), response_queue));
+    TH2S_RequestEvent request(SH2S_Request::SStart(req.m_Method, req.m_Url, req.m_Headers->Get()), response_queue);
 
     unique_ptr<IReaderWriter> rw(new SH2S_ReaderWriter(move(update_response), move(response_queue), move(request)));
     auto stream = make_shared<CRWStream>(rw.release(), 0, nullptr, CRWStreambuf::fOwnAll);

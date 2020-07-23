@@ -101,12 +101,14 @@ struct SThreadSafe
     template <class T>
     struct SLock : private unique_lock<std::mutex>
     {
-        T& operator*()  { return *m_Object; }
-        T* operator->() { return  m_Object; }
+        T& operator*()  { _ASSERT(m_Object); return *m_Object; }
+        T* operator->() { _ASSERT(m_Object); return  m_Object; }
 
         // More convenient RAII alternative to explicit scopes or 'unlock' method.
         // It allows locks to be declared inside 'if' condition.
         using unique_lock<std::mutex>::operator bool;
+
+        void Unlock() { m_Object = nullptr; unlock(); }
 
     private:
         SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) { _ASSERT(m_Object); }

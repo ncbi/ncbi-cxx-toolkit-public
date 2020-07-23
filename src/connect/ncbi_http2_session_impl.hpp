@@ -49,99 +49,62 @@ BEGIN_NCBI_SCOPE
 #define H2S_IOC_TRACE(message)     _TRACE(message)
 
 
-template <class TEventBase>
-struct SH2S_Queue : queue<unique_ptr<TEventBase>>
+using TH2S_Data = vector<char>;
+
+template <class TBase>
+struct SH2S_Event : TBase
 {
-    unique_ptr<TEventBase> Pop()
-    {
-        using TBase = queue<unique_ptr<TEventBase>>;
+    using TStart = typename TBase::SStart;
 
-        if (TBase::empty()) {
-            return {};
-        }
-
-        auto rv = move(TBase::front());
-        TBase::pop();
-        return rv;
-    }
-};
-
-template <class TEventBase>
-using TH2S_TsQueue = SThreadSafe<SH2S_Queue<TEventBase>>;
-
-template <class TEventBase>
-struct SH2S_Data : TEventBase
-{
-    vector<char> data;
+    enum EType { eStart, eData, eEof, eError };
 
     template <class ...TArgs>
-    SH2S_Data(vector<char> d, TArgs&&... args) :
-        TEventBase(forward<TArgs>(args)...),
-        data(move(d))
-    {}
+    SH2S_Event(TStart start, TArgs&&... args) : TBase(forward<TArgs>(args)...), m_Type(eStart) , m_Start(move(start)) {}
 
-    typename TEventBase::EType GetType() const override { return TEventBase::eData; }
-
-private:
-    const char* GetTypeName() const override { return "data "; }
-};
-
-template <class TEventBase>
-struct SH2S_Error : TEventBase
-{
     template <class ...TArgs>
-    SH2S_Error(TArgs&&... args) :
-        TEventBase(forward<TArgs>(args)...)
-    {}
+    SH2S_Event(TH2S_Data data, TArgs&&... args) : TBase(forward<TArgs>(args)...), m_Type(eData) , m_Data(move(data)) {}
 
-    typename TEventBase::EType GetType() const override { return TEventBase::eError; }
-
-private:
-    const char* GetTypeName() const override { return "error "; }
-};
-
-template <class TEventBase>
-struct SH2S_Eof : TEventBase
-{
     template <class ...TArgs>
-    SH2S_Eof(TArgs&&... args) :
-        TEventBase(forward<TArgs>(args)...)
-    {}
+    SH2S_Event(EType type, TArgs&&... args) : TBase(forward<TArgs>(args)...), m_Type(type) {}
 
-    typename TEventBase::EType GetType() const override { return TEventBase::eEof; }
+    SH2S_Event(SH2S_Event&& other);
 
-private:
-    const char* GetTypeName() const override { return "eof "; }
-};
+    ~SH2S_Event();
 
-struct SH2S_Event
-{
-    virtual ~SH2S_Event() = default;
+    EType GetType() const { return m_Type; }
+
+    TStart&    GetStart() { _ASSERT(m_Type == eStart); return m_Start; }
+    TH2S_Data& GetData()  { _ASSERT(m_Type == eData);  return m_Data;  }
 
 private:
-    virtual const char* GetClassName() const = 0;
-    virtual const char* GetTypeName() const = 0;
+    const char* GetTypeName() const;
+
+    EType m_Type;
+
+    union {
+        TStart m_Start;
+        TH2S_Data m_Data;
+    };
 
     friend ostream& operator<<(ostream& os, const SH2S_Event& e)
     {
-        return os << e.GetClassName() << e.GetTypeName() << &e;
+        return os << e.GetBaseName() << e.GetTypeName() << &e;
     }
 };
 
-struct SH2S_ResponseEvent : SH2S_Event
-{
-    enum EType { eResponse, eData, eEof, eError };
+template <class TEvent>
+using TH2S_Queue = SThreadSafe<queue<TEvent>>;
 
-    virtual EType GetType() const = 0;
+struct SH2S_Response
+{
+    using SStart = CHttpHeaders::THeaders;
 
 protected:
-    SH2S_ResponseEvent() = default;
-
-private:
-    const char* GetClassName() const override { return "response "; }
+    const char* GetBaseName() const { return "response "; }
 };
 
-using TH2S_ResponseQueue = TH2S_TsQueue<SH2S_ResponseEvent>;
+using TH2S_ResponseEvent = SH2S_Event<SH2S_Response>;
+using TH2S_ResponseQueue = TH2S_Queue<TH2S_ResponseEvent>;
 
 struct TH2S_WeakResponseQueue : weak_ptr<TH2S_ResponseQueue>
 {
@@ -159,52 +122,27 @@ private:
     const void* const m_Id;
 };
 
-struct SH2S_RequestEvent : SH2S_Event
+struct SH2S_Request
 {
-    enum EType { eRequest, eData, eEof, eError };
+    struct SStart
+    {
+        EReqMethod method;
+        CUrl url;
+        CHttpHeaders::THeaders headers;
+
+        SStart(EReqMethod m, CUrl u, CHttpHeaders::THeaders h);
+    };
 
     TH2S_WeakResponseQueue response_queue;
 
-    virtual EType GetType() const = 0;
+    SH2S_Request(TH2S_WeakResponseQueue q) : response_queue(move(q)) {}
 
 protected:
-    SH2S_RequestEvent(TH2S_WeakResponseQueue q) : response_queue(move(q)) {}
-
-private:
-    const char* GetClassName() const override { return "request "; }
+    const char* GetBaseName() const { return "request "; }
 };
 
-using TH2S_RequestQueue = TH2S_TsQueue<SH2S_RequestEvent>;
-
-struct SH2S_Request : SH2S_RequestEvent
-{
-    EReqMethod method;
-    CUrl url;
-    CHttpHeaders::THeaders headers;
-
-    SH2S_Request(EReqMethod m, CUrl u, CHttpHeaders::THeaders h, TH2S_WeakResponseQueue q);
-
-    EType GetType() const override { return eRequest; }
-
-private:
-    const char* GetTypeName() const override { return ""; }
-};
-
-using TH2S_RequestData = SH2S_Data<SH2S_RequestEvent>;
-using TH2S_RequestEof  = SH2S_Eof<SH2S_RequestEvent>;
-
-struct SH2S_Response : SH2S_ResponseEvent
-{
-    CHttpHeaders::THeaders headers;
-
-    SH2S_Response(CHttpHeaders::THeaders h) : headers(move(h)) {}
-    EType GetType() const override { return eResponse; }
-
-private:
-    const char* GetTypeName() const override { return ""; }
-};
-
-using TH2S_ResponseData = SH2S_Data<SH2S_ResponseEvent>;
+using TH2S_RequestEvent = SH2S_Event<SH2S_Request>;
+using TH2S_RequestQueue = TH2S_Queue<TH2S_RequestEvent>;
 
 struct SH2S_IoStream
 {
@@ -212,7 +150,7 @@ struct SH2S_IoStream
     int32_t stream_id = 0;
     bool in_progress = true;
     size_t sent = 0;
-    queue<vector<char>> pending;
+    queue<TH2S_Data> pending;
     bool eof = false;
     CHttpHeaders::THeaders headers;
 
@@ -230,10 +168,10 @@ struct SH2S_Session : SUvNgHttp2_SessionBase
     template <class... TNgHttp2Cbs>
     SH2S_Session(const SSocketAddress& address, uv_loop_t* loop, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks);
 
-    bool Request(unique_ptr<SH2S_Request> request);
+    bool Request(TH2S_RequestEvent request);
 
     template <class TFunc>
-    bool Event(unique_ptr<SH2S_RequestEvent>& event, TFunc f);
+    bool Event(TH2S_RequestEvent& event, TFunc f);
 
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Streams.size(); }
 
@@ -262,13 +200,11 @@ private:
     int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame);
     void OnReset(SUvNgHttp2_Error error) override;
 
-    void Push(TH2S_WeakResponseQueue& response_queue, SH2S_ResponseEvent *p)
+    void Push(TH2S_WeakResponseQueue& response_queue, TH2S_ResponseEvent event)
     {
-        unique_ptr<SH2S_ResponseEvent> event(p);
-
         // We can only send event if we still have corresponding queue
         if (auto queue = response_queue.lock()) {
-            H2S_SESSION_TRACE(this << '/' << response_queue << " push " << *event);
+            H2S_SESSION_TRACE(this << '/' << response_queue << " push " << event);
             queue->GetLock()->emplace(move(event));
         }
     }
@@ -319,7 +255,7 @@ struct SH2S_ReaderWriter : IReaderWriter
 {
     using TUpdateResponse = function<void(CHttpHeaders::THeaders)>;
 
-    SH2S_ReaderWriter(TUpdateResponse update_response, shared_ptr<TH2S_ResponseQueue> response_queue, unique_ptr<SH2S_Request> request);
+    SH2S_ReaderWriter(TUpdateResponse update_response, shared_ptr<TH2S_ResponseQueue> response_queue, TH2S_RequestEvent request);
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override
     {
@@ -346,9 +282,9 @@ private:
     ERW_Result ReceiveData();
     ERW_Result ReceiveResponse();
 
-    void Push(unique_ptr<SH2S_RequestEvent> event)
+    void Push(TH2S_RequestEvent event)
     {
-        H2S_RW_TRACE(m_ResponseQueue.get() << " push " << *event);
+        H2S_RW_TRACE(m_ResponseQueue.get() << " push " << event);
         SH2S_Io::GetInstance().request_queue.GetLock()->emplace(move(event));
     }
 
@@ -356,8 +292,8 @@ private:
 
     TUpdateResponse m_UpdateResponse;
     shared_ptr<TH2S_ResponseQueue> m_ResponseQueue;
-    unique_ptr<TH2S_RequestData> m_OutgoingData;
-    unique_ptr<TH2S_ResponseData> m_IncomingData;
+    TH2S_Data m_OutgoingData;
+    TH2S_Data m_IncomingData;
     EState m_State = eWriting;
 };
 
