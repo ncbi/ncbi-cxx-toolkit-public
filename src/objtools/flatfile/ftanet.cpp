@@ -552,6 +552,8 @@ static Uint1 fta_init_pubseq(void)
 /**********************************************************/
 void fta_entrez_fetch_enable(ParserPtr pp)
 {
+    return; // RW-707
+
     if(pp->entrez_fetch != 0)
     {
         pp->entrez_fetch = fta_init_pubseq();
