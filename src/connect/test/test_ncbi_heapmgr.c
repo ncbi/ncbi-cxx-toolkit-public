@@ -154,7 +154,7 @@ int main(int argc, const char* argv[])
                                   ("Done @%u, size %u",
                                    HEAP_ADDR(blk, heap), blk->size));
                     } else
-                        CORE_LOG(eLOG_Error, "Allocation failed");
+                        CORE_LOG(eLOG_Fatal, "Allocation failed");
                     c = (char*) blk + sizeof(*blk);
                     while (i--)
                         *c++ = rand();
