@@ -185,6 +185,7 @@ static int s_Server(const char* sport)
             != eIO_Success){
             CORE_LOGF(eLOG_Error, ("[Server]  Cannot set write timeout: %s",
                                    IO_StatusStr(status)));
+            free(buf);
             break;
         }
 
