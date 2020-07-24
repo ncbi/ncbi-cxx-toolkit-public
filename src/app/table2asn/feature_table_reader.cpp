@@ -296,21 +296,16 @@ namespace
         return protein_name;
     }
 
-    CRef<CBioseq> LocateProtein(CConstRef<CSeq_entry> proteins, const CSeq_feat& feature)
+    CRef<CBioseq> LocateProtein(CRef<CSeq_entry> proteins, const CSeq_feat& feature)
     {
         if (proteins.NotEmpty() && feature.IsSetProduct())
         {
-            const CSeq_id* id = feature.GetProduct().GetId();
-            ITERATE(CSeq_entry::TSet::TSeq_set, it, proteins->GetSet().GetSeq_set())
-            {
-                ITERATE(CBioseq::TId, seq_it, (**it).GetSeq().GetId())
-                {
-                    if ((**seq_it).Compare(*id) == CSeq_id::e_YES)
-                    {
-                        auto pProtein = Ref(new CBioseq());
-                        pProtein->Assign((*it)->GetSeq());
-                        return pProtein;
-                        
+            const CSeq_id* pProductId = feature.GetProduct().GetId();
+
+            for (auto pProtEntry : proteins->SetSet().SetSeq_set()) {
+                for (auto pId : pProtEntry->GetSeq().GetId()) {
+                    if (pId->Compare(*pProductId) == CSeq_id::e_YES) {
+                        return CRef<CBioseq>(&(pProtEntry->SetSeq()));
                     }
                 }
             }
