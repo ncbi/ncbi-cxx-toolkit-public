@@ -515,39 +515,38 @@ void CFeatureTableReader::_AddFeatures()
 
 }
 
-CRef<CSeq_feat> CFeatureTableReader::_FindFeature(const objects::CSeq_feat& feature, bool gene)
+
+CRef<CSeq_feat> CFeatureTableReader::x_FindGeneByLocusTag(const objects::CSeq_feat& cds) const
 {
-    if (!feature.GetData().IsCdregion() || !feature.IsSetQual())
+    if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
         return CRef<CSeq_feat>();
 
-    if (gene)
-    {
-        const auto& qual = feature.GetNamedQual("locus_tag");
-        if (!qual.empty())
-        {
-            auto it = m_locus_to_gene.find(qual);
-            if (it != m_locus_to_gene.end()) {
-                return it->second;
-            }
-        }
-    }
-    else {
-        const auto& transcript_id = feature.GetNamedQual("transcript_id");
-        if (!transcript_id.empty()) 
-        { // braces seem to be wrong
-            auto it = m_transcript_to_mrna.find(transcript_id);
-            if (it != m_transcript_to_mrna.end()) {
-                return it->second;
-            }
-        }
+    const auto& locus_tag = cds.GetNamedQual("locus_tag");
+    return x_GetFeatFromMap(locus_tag, m_locus_to_gene);
+}
 
-        const auto& protein_id = feature.GetNamedQual("protein_id");
-        if (!protein_id.empty())
-        {
-            auto it = m_protein_to_mrna.find(protein_id);
-                if (it != m_protein_to_mrna.end()) {
-                    return it->second;
-            }
+
+CRef<CSeq_feat> CFeatureTableReader::x_FindMrnaByQual(const objects::CSeq_feat& cds) const
+{
+    if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
+        return CRef<CSeq_feat>();
+
+    const auto& transcript_id = cds.GetNamedQual("transcript_id");
+    auto pMrna = x_GetFeatFromMap(transcript_id, m_transcript_to_mrna);
+    if (!pMrna) {
+        const auto& protein_id = cds.GetNamedQual("protein_id");
+        pMrna = x_GetFeatFromMap(protein_id, m_protein_to_mrna);
+    }
+
+    return pMrna;
+}
+
+CRef<CSeq_feat> CFeatureTableReader::x_GetFeatFromMap(const string& key, const TFeatMap& featMap) const
+{
+    if (!key.empty()) {
+        auto it = featMap.find(key);
+        if (it != featMap.end()) {
+            return it->second;
         }
     }
     return CRef<CSeq_feat>();
@@ -580,58 +579,63 @@ CRef<CSeq_feat> CFeatureTableReader::_FindFeature(const CFeat_id& id)
 }
 
 
-CRef<CSeq_feat> CFeatureTableReader::_GetLinkedFeature(const CSeq_feat& cd_feature, bool gene)
+CRef<CSeq_feat> CFeatureTableReader::x_GetParentGene(const CSeq_feat& cds) 
 {
-    CRef<CSeq_feat> feature;
-    for (auto xref_it: cd_feature.GetXref())
-    {
-        if (!xref_it->IsSetId())
-        {
-            if (gene && xref_it->IsSetData() && xref_it->GetData().IsGene() && xref_it->GetData().GetGene().IsSetLocus_tag())
-            {
-                auto it = m_locus_to_gene.find(xref_it->GetData().GetGene().GetLocus_tag());
-                if (it != m_locus_to_gene.end())
-                    return it->second;
+    for (auto pXref : cds.GetXref()) {
+        if (pXref->IsSetId()) {
+            auto pLinkedFeat = _FindFeature(pXref->GetId());
+            if (pLinkedFeat && 
+                pLinkedFeat->IsSetData() &&
+                pLinkedFeat->GetData().IsGene()) {
+                return pLinkedFeat;
             }
-            continue;
-        };
+        }
+            
+        if (pXref->IsSetData() &&
+            pXref->GetData().IsGene() &&
+            pXref->GetData().GetGene().IsSetLocus_tag()) {
+            auto pGene = x_GetFeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), m_locus_to_gene);
+            if (pGene) {
+                return pGene;
+            }
+        } 
+    } 
 
-        feature = _FindFeature(xref_it->GetId());
-        if (!feature.Empty() && feature->IsSetData())
-        {
-            if (gene)
-            {
-                if (feature->GetData().IsGene())
-                    return feature;
-            }
-            else
-            {
-                if (feature->GetData().IsRna() &&
-                    feature->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA)
-                    return feature;
+    auto pGene = x_FindGeneByLocusTag(cds); 
+    if (!pGene) {
+        CMappedFeat mappedCds(m_scope->GetSeq_featHandle(cds));
+        auto mappedGene = feature::GetBestGeneForCds(mappedCds, _GetFeatTree());
+        if (mappedGene) {
+            pGene.Reset(const_cast<CSeq_feat*>(&mappedGene.GetOriginalFeature()));
+        }
+    }
+    return pGene;
+}
+
+
+CRef<CSeq_feat> CFeatureTableReader::x_GetParentMrna(const CSeq_feat& cds)
+{
+    for (auto pXref : cds.GetXref()) {
+        if (pXref->IsSetId()) {
+            auto pLinkedFeat = _FindFeature(pXref->GetId());
+            if (pLinkedFeat &&
+                pLinkedFeat->IsSetData() &&
+                pLinkedFeat->GetData().IsRna() &&
+                pLinkedFeat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
+                return pLinkedFeat;
             }
         }
     }
 
-    feature = _FindFeature(cd_feature, gene);
-
-    if (feature.Empty())
-    {
-
-        CMappedFeat cds(m_scope->GetSeq_featHandle(cd_feature));
-        CMappedFeat other;
-        if (gene) {
-            other = feature::GetBestGeneForCds(cds, _GetFeatTree());
+    auto pMrna = x_FindMrnaByQual(cds);
+    if (!pMrna) {
+        CMappedFeat mappedCds(m_scope->GetSeq_featHandle(cds));
+        auto mappedMrna = feature::GetBestMrnaForCds(mappedCds, _GetFeatTree());
+        if (mappedMrna) {
+            pMrna.Reset(const_cast<CSeq_feat*>(&mappedMrna.GetOriginalFeature()));
         }
-        else {
-            other = feature::GetBestMrnaForCds(cds, _GetFeatTree());
-        }
-
-        if (other)
-            feature.Reset(const_cast<CSeq_feat*>(&other.GetOriginalFeature()));
-
     }
-    return feature;
+    return pMrna;
 }
 
 
@@ -725,8 +729,8 @@ static void s_SetProtRef(const CSeq_feat& cds,
 
 CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, CSeq_feat& cd_feature)
 {
-    CRef<CSeq_feat> mrna = _GetLinkedFeature(cd_feature, false);
-    CRef<CSeq_feat> gene = _GetLinkedFeature(cd_feature, true);
+    CRef<CSeq_feat> mrna = x_GetParentMrna(cd_feature);
+    CRef<CSeq_feat> gene = x_GetParentGene(cd_feature);
 
     bool was_extended = false;
 

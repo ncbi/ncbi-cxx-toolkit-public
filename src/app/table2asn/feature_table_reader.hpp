@@ -79,12 +79,17 @@ private:
     bool _AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
     void _MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
 
-    CRef<objects::CSeq_feat> _FindFeature(const objects::CSeq_feat& feature, bool gene);
+    CRef<objects::CSeq_feat> x_GetParentGene(const objects::CSeq_feat& cds);
+    CRef<objects::CSeq_feat> x_GetParentMrna(const objects::CSeq_feat& cds);
+    CRef<objects::CSeq_feat> x_FindGeneByLocusTag(const objects::CSeq_feat& cds) const;
+    CRef<objects::CSeq_feat> x_FindMrnaByQual(const objects::CSeq_feat& cds) const;
+    CRef<objects::CSeq_feat> x_GetFeatFromMap(const string& key, const TFeatMap& featMap) const;
+
     CRef<objects::CSeq_feat> _FindFeature(const objects::CFeat_id& id);
-    CRef<objects::CSeq_feat> _GetLinkedFeature(const objects::CSeq_feat& cd_feature, bool gene);
     void _AddFeatures();
     void _ClearTrees();
     CRef<objects::feature::CFeatTree> _GetFeatTree();
+
     
 
 
