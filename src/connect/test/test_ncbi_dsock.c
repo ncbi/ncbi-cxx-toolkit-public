@@ -170,6 +170,8 @@ static int s_Server(const char* sport)
                 CORE_LOGF(eLOG_Error,("[Server]  Cannot read msg @ byte %lu:"
                                       " %s", (unsigned long) len,
                                       IO_StatusStr(status)));
+                if (status == eIO_Closed)
+                    break;
                 continue;
             }
             len += n;
