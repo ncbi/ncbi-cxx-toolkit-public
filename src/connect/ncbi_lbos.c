@@ -1261,7 +1261,7 @@ static int s_LBOS_CheckAnnounceArgs(const char* service,
      * or be NULL */
     if (!g_LBOS_StringIsNullOrEmpty(host)) {
         for (i = 0;  i < strlen(host);  i++) {
-            if (!isalnum(host[i]) && (host[i] != '.')) {
+            if (!isalnum((unsigned char) host[i]) && (host[i] != '.')) {
                 CORE_LOG(eLOG_Critical, "Error with announcement, " 
                                         "ip has incorrect format "
                                         "(only digits and dots are allowed). "
@@ -2215,7 +2215,7 @@ unsigned short LBOS_AnnounceFromRegistry(const char*  registry_section,
     
     /* Check port that it is a number of max 5 digits and no other symbols   */
     for (i = 0;  i < strlen(port_str);  i++) {
-        if (!isdigit(port_str[i])) {
+        if (!isdigit((unsigned char) port_str[i])) {
             CORE_LOGF_X(eLBOS_InvalidArgs, eLOG_Warning, 
                         ("Port \"%s\" in section %s is invalid", port_str, 
                         registry_section));
@@ -2454,7 +2454,7 @@ static int s_LBOS_CheckConfArgs(const char* service, const char** lbos_answer)
         return 0;
     }
     for (i = 0;  i < strlen(service);  i++) {
-        if (isspace(service[i])) {
+        if (isspace((unsigned char) service[i])) {
             CORE_LOGF_X(eLBOS_InvalidArgs, eLOG_Warning, 
                         ("s_LBOS_CheckConfArgs: service "
                         "\"%s\" contains invalid character", service));

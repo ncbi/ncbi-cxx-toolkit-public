@@ -661,7 +661,7 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
         int     now_hour = tm_now.tm_hour;
         int     now_min  = tm_now.tm_min;
         int     now_sec  = tm_now.tm_sec;
-        char    now_str[32]; /* need 21 for 'yyyy-mm-ddThh:mm:ssZ' */
+        char    now_str[40]; /* need 21 for 'yyyy-mm-ddThh:mm:ssZ' */
         double  td_diff, td_hour, td_min, td_sec;
         const char* td_sign;
 
