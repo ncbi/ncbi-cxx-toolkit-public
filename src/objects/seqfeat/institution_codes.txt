@@ -1066,6 +1066,7 @@ CHEL	s	Chelsea Physic Garden
 CHELB	s	Cheltenham College for Boys			
 CHEP	s	Escuela Superior Politecnica del Chimborazo			
 CHER	s	Yu. Fedcovich Chernivtsi State University, Botany Department			
+CHFC-EA	sc	Chilean Fungal Collection	CHFC,ChFC		
 CHFD	s	Chelmsford and Essex Museum			
 CHI	s	University of Illinois, Biological Sciences Department			
 CHIA	s	National Chiayi Agricultural College, Forestry Department			

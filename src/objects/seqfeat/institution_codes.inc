@@ -1099,6 +1099,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CHELB\ts\tCheltenham College for Boys\t\t\t",
 "CHEP\ts\tEscuela Superior Politecnica del Chimborazo\t\t\t",
 "CHER\ts\tYu. Fedcovich Chernivtsi State University, Botany Department\t\t\t",
+"CHFC-EA\tsc\tChilean Fungal Collection\tCHFC,ChFC\t\t",
 "CHFD\ts\tChelmsford and Essex Museum\t\t\t",
 "CHI\ts\tUniversity of Illinois, Biological Sciences Department\t\t\t",
 "CHIA\ts\tNational Chiayi Agricultural College, Forestry Department\t\t\t",
