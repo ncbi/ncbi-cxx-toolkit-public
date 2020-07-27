@@ -872,7 +872,11 @@ bool CZipCompressionFile::Close(void)
 {
     // Close compression/decompression stream
     if ( m_Stream ) {
-        m_Stream->Finalize();
+        if (m_Mode == eMode_Read) {
+            m_Stream->Finalize(CCompressionStream::eRead);
+        } else {
+            m_Stream->Finalize(CCompressionStream::eWrite);
+        }
         GetStreamError();
         delete m_Stream;
         m_Stream = 0;
@@ -1037,18 +1041,19 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
                       /* out */      size_t* out_avail)
 {
     *out_avail = 0;
-    if ( !out_size ) {
-        return eStatus_Overflow;
-    }
-    // To simplify this method, limit output size,
-    // the upper level code will process all necessary
-    // data in the loop if necessary. 
-    LIMIT_SIZE_PARAM_UINT(out_size);
 
     // Default behavior on empty data -- don't write header/footer
     if ( !GetProcessedSize()  &&  !F_ISSET(fAllowEmptyData) ) {
-        return eStatus_EndOfData;
+        // This will set a badbit on a stream
+        return eStatus_Error;
     }
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
+
+    // To simplify this method, limit output size, the upper level code 
+    // will process all necessary data in the loop if necessary. 
+    LIMIT_SIZE_PARAM_UINT(out_size);
 
     // Write gzip file header if not done yet
     size_t header_len = 0;
@@ -1081,8 +1086,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
         // Write .gz file footer
         if ( F_ISSET(fWriteGZipFormat) ) {
             size_t footer_len = 
-                s_WriteGZipFooter(out_buf + *out_avail, STREAM->avail_out,
-                                  GetProcessedSize(), m_CRC32);
+                s_WriteGZipFooter(out_buf + *out_avail, STREAM->avail_out, GetProcessedSize(), m_CRC32);
             if ( !footer_len ) {
                 SetError(-1, "Cannot write gzip footer");
                 return eStatus_Overflow;
@@ -1090,6 +1094,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
             IncreaseOutputSize(footer_len);
             *out_avail += footer_len;
         }
+
         return eStatus_EndOfData;
     }
     ERR_COMPRESS(66, FormatErrorMessage("CZipCompressor::Finish", GetProcessedSize()));

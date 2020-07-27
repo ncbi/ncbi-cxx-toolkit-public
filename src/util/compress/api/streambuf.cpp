@@ -41,6 +41,10 @@
 
 BEGIN_NCBI_SCOPE
 
+
+// Throw an ios::failure exception on unrecoverable error
+#define THROW_FAILURE  THROW1_TRACE(IOS_BASE::failure, "eStatus_Error")
+
 // Abbreviation for long names
 #define CP  CCompressionProcessor
 #define CSP CCompressionStreamProcessor
@@ -187,7 +191,8 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
     CSP* sp = GetStreamProcessor(dir);
     // Check processor's status
     if ( sp->m_LastStatus == CP::eStatus_Error ) {
-        return -1;
+        THROW_FAILURE;
+        //return -1;
     }
     // Check that we have some data to process, before calling 
     // any compression/decompression methods, or we can get 
@@ -212,7 +217,8 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
     }
     CSP* sp = GetStreamProcessor(dir);
     if ( sp->m_LastStatus == CP::eStatus_Error ) {
-        return -1;
+        THROW_FAILURE;
+        //return -1;
     }
     if ( sp->m_State == CSP::eFinalize ) {
         // Already finalized
@@ -225,7 +231,8 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
         // Process remaining data in the preprocessing buffer
         Process(dir);
         if ( sp->m_LastStatus == CP::eStatus_Error ) {
-            return -1;
+            THROW_FAILURE;
+            //return -1;
         }
     }
     // Finish. Change state to 'finalized'.
@@ -240,7 +247,8 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
 
     // Check processor's status
     if ( sp->m_LastStatus == CP::eStatus_Error ) {
-        return -1;
+        THROW_FAILURE;
+        //return -1;
     }
     if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
         // Flush underlying stream (on write)
@@ -268,13 +276,11 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
         out_available = 0;
         if ( sp->m_State == CSP::eFinalize ) {
             // State is eFinalize
-            sp->m_LastStatus = 
-                sp->m_Processor->Finish(buf, out_size, &out_available);
+            sp->m_LastStatus = sp->m_Processor->Finish(buf, out_size, &out_available);
         } else {
             // State is eActive
             _VERIFY(sp->m_State == CSP::eActive);
-            sp->m_LastStatus = 
-                sp->m_Processor->Flush(buf, out_size, &out_available);
+            sp->m_LastStatus = sp->m_Processor->Flush(buf, out_size, &out_available);
             // No more data -- automatically finalize stream
             if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
                 sp->m_State = CSP::eFinalize;
@@ -282,7 +288,8 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
         } 
         // Check on error
         if ( sp->m_LastStatus == CP::eStatus_Error ) {
-            return -1;
+            THROW_FAILURE;
+            //return -1;
         }
         if ( dir == CCompressionStream::eRead ) {
             // Update the get's pointers
@@ -302,13 +309,9 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
             );
 
     // Flush underlying stream (on write)
-    if (dir == CCompressionStream::eWrite) {
-        if ( sp->m_LastStatus == CP::eStatus_EndOfData  ||
-             sp->m_State == CSP::eFinalize) {
-            if ( !WriteOutBufToStream(true /*force write*/) ) {
-                return -1;
-            }
-        }
+    if (dir == CCompressionStream::eWrite  &&  
+        !WriteOutBufToStream(true /*force write*/)) {
+        return -1;
     }
     return 0;
 }
@@ -383,8 +386,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
 
             // Refill the input buffer if necessary
             if ( m_Reader->m_Begin == m_Reader->m_End ) {
-                n_read = m_Stream->rdbuf()->sgetn(m_Reader->m_InBuf,
-                                                  m_Reader->m_InBufSize);
+                n_read = m_Stream->rdbuf()->sgetn(m_Reader->m_InBuf, m_Reader->m_InBufSize);
 #ifdef NCBI_COMPILER_WORKSHOP
                 if (n_read < 0) {
                     n_read = 0; // WS6 is known to return -1 from sgetn() :-/
@@ -406,8 +408,8 @@ bool CCompressionStreambuf::ProcessStreamRead()
             // Process next data portion
             in_len = m_Reader->m_End - m_Reader->m_Begin;
             m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
-                                m_Reader->m_Begin, in_len, egptr(), out_size,
-                                &in_available, &out_available);
+                                        m_Reader->m_Begin, in_len, egptr(), out_size,
+                                        &in_available, &out_available);
         } else {
             // Check available space in the output buffer
             if ( !out_size ) {
@@ -416,11 +418,11 @@ bool CCompressionStreambuf::ProcessStreamRead()
             // Get unprocessed data size
             in_len = m_Reader->m_End - m_Reader->m_Begin;
             in_available = in_len;
-            m_Reader->m_LastStatus = 
-                m_Reader->m_Processor->Flush(egptr(), out_size, &out_available);
+            m_Reader->m_LastStatus = m_Reader->m_Processor->Flush(egptr(), out_size, &out_available);
         }
         if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
-            return false;
+            THROW_FAILURE;
+            // return false;
         }
         // No more data -- automatically finalize stream
         if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
@@ -476,7 +478,8 @@ bool CCompressionStreambuf::ProcessStreamWrite()
 
         // Check on error / small output buffer
         if ( m_Writer->m_LastStatus == CP::eStatus_Error ) {
-            return false;
+            THROW_FAILURE;
+            //return false;
         }
         // No more data -- automatically finalize stream
         if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
@@ -525,8 +528,7 @@ bool CCompressionStreambuf::WriteOutBufToStream(bool force_write)
 }
 
 
-streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
-                                         streamsize count)
+streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize count)
 {
     // Check processor's state
     if ( !IsStreamProcessorOkay(CCompressionStream::eWrite) ) {
@@ -598,6 +600,13 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
         // Process block if necessary
         if ( done == count  ||  !ProcessStreamRead() ) {
             break;
+        }
+    }
+    if (count  &&  !done) {
+        // Something is going wrong, ProcessStreamRead() should produce some data.
+        // If returns nothing, it will unable to recover anyway.
+        if ( !m_Reader->m_Processor->AllowEmptyData() ) {
+            THROW_FAILURE;
         }
     }
     return done;

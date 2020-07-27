@@ -45,12 +45,14 @@ USING_NCBI_SCOPE;
 
 #define KB * NCBI_CONST_UINT8(1024)
 
-/// Number of tests.
-const size_t  kTestCount = 3;
-/// Length of data buffers for tests.
-const size_t  kTests[kTestCount] = {20, 16 KB, 40 KB};
+/// Length of data buffers for tests (>5 for overflow test)
+const size_t  kTests[] = {20, 16 KB, 41 KB};
+
 /// Output buffer length. ~20% more than maximum value from kTests[].
-const size_t  kBufLen = 45 KB;
+const size_t  kBufLen = size_t(41 KB * 1.2);
+
+/// Number of tests.
+const size_t  kTestCount = sizeof(kTests)/sizeof(kTests[0]);
 
 
 

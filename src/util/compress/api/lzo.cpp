@@ -948,7 +948,7 @@ long CLZOCompressionFile::Write(const void* buf, size_t len)
         NCBI_THROW(CCompressionException, eCompressionFile, 
             "[CLZOCompressionFile::Write]  File must be opened for writing");
     }
-    // Redefine standard behaviour for case of writing zero bytes
+    // Redefine standard behavior for case of writing zero bytes
     if (len == 0) {
         return 0;
     }
@@ -968,7 +968,11 @@ bool CLZOCompressionFile::Close(void)
 {
     // Close compression/decompression stream
     if ( m_Stream ) {
-        m_Stream->Finalize();
+        if (m_Mode == eMode_Read) {
+            m_Stream->Finalize(CCompressionStream::eRead);
+        } else {
+            m_Stream->Finalize(CCompressionStream::eWrite);
+        }
         GetStreamError();
         delete m_Stream;
         m_Stream = 0;
@@ -1153,6 +1157,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
                       /* out */      size_t* out_avail)
 {
     *out_avail = 0;
+
     if ( !out_size ) {
         return eStatus_Overflow;
     }
@@ -1169,13 +1174,20 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
             // should be flushed and Finish() called again.
             return eStatus_Overflow;
         }
-        // Neither buffers have data (flushing status is success and
-        // m_InLen == 0), return end-of-data state -- see below:
+        // Neither buffers have data
     }
 
     // Default behavior on empty data -- don't write header/footer
-    if ( !m_InLen  &&  !F_ISSET(fAllowEmptyData)) {
-        return eStatus_EndOfData;
+
+    if ( !F_ISSET(fAllowEmptyData) ) {
+        if ( !GetProcessedSize() ) {
+            // This will set a badbit on a stream
+            return eStatus_Error;
+        }
+        if ( !m_InLen ) {
+            // Special case, just an empty buffer
+            return eStatus_EndOfData;
+        }
     }
 
     // Write file header if not done yet
@@ -1431,7 +1443,6 @@ CCompressionProcessor::EStatus CLZODecompressor::Flush(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-   
     // If we have some data in the output cache buffer -- return it
     if ( m_DecompressMode != eMode_Unknown  &&  m_OutEndPtr != m_OutBegPtr ) {
         size_t n = min((size_t)(m_OutEndPtr - m_OutBegPtr), out_size);

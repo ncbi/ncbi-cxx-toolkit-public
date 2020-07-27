@@ -607,16 +607,18 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
                       /* out */      size_t* out_avail)
 {
     *out_avail = 0;
+
+    // Default behavior on empty data -- don't write header/footer
+    if ( !GetProcessedSize()  &&  !F_ISSET(fAllowEmptyData) ) {
+        // This will set a badbit on a stream
+        return eStatus_Error;
+    }
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    // Default behavior on empty data -- don't write header/footer
-    if ( !GetProcessedSize()  &&  !F_ISSET(fAllowEmptyData) ) {
-        return eStatus_EndOfData;
-    }
-    // To simplify this method, limit output size,
-    // the upper level code will process all necessary
-    // data in the loop if necessary. 
+
+    // To simplify this method, limit output size, the upper level code 
+    // will process all necessary data in the loop if necessary. 
     LIMIT_SIZE_PARAM_UINT(out_size);
 
     STREAM->next_in   = 0;
@@ -769,8 +771,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 }
 
 
-CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
-                      char*, size_t, size_t*)
+CCompressionProcessor::EStatus CBZip2Decompressor::Flush(char*, size_t, size_t*)
 {
     switch (m_DecompressMode) {
         case eMode_Unknown:
@@ -784,8 +785,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
 }
 
 
-CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
-                      char*, size_t, size_t*)
+CCompressionProcessor::EStatus CBZip2Decompressor::Finish(char*, size_t, size_t*)
 {
     switch (m_DecompressMode) {
         case eMode_Unknown:
@@ -798,7 +798,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
         default:
             ;
     }
-    return eStatus_Success;
+    return eStatus_EndOfData;
 }
 
 

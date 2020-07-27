@@ -79,11 +79,11 @@ BEGIN_NCBI_SCOPE
 //   can be lost there.
 //
 // Note:
-//   The compression streams write nothing into the output, if input data
-//   has not provided. This can be especially important for cases where
+//   The compression streams write nothing into the output if no input data
+//   has provided. This can be especially important for cases where
 //   the output data should have any header/footer (like .gz files for example).
-//   So, for empty input, you will have empty output, that may not be acceptable
-///  to external tools like gunzip and etc.
+//   So, for empty input, you will have an empty output, that may not be acceptable
+//   to external tools like gunzip and etc.
 //
 // Note:
 //   There is one special aspect of the output stream classes (CCompression[I]OStream).
@@ -506,6 +506,7 @@ class NCBI_XUTIL_EXPORT CTransparentProcessor : public CCompressionProcessor
 public:
     CTransparentProcessor(void) {};
     virtual ~CTransparentProcessor(void);
+    virtual bool AllowEmptyData() const { return true; }
 
 protected:
     virtual EStatus Init   (void);

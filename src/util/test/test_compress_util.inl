@@ -1,6 +1,6 @@
 //============================================================================
 //
-// Common constants and auciliary functions for ST and MT tests
+// Common constants and auxiliary functions for ST and MT tests
 //
 //============================================================================
 

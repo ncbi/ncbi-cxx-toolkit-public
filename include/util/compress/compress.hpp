@@ -339,6 +339,13 @@ public:
     /// compression session.
     bool IsBusy(void) const;
 
+    /// Return TRUE if fAllowEmptyData flag is set for this compression. 
+    /// @note
+    ///   Used by stream buffer, that don't have access to specific
+    ///   compression implementation flags. So this method should be 
+    ///   implemented in each processor.
+    virtual bool AllowEmptyData() const = 0;
+
     // Return number of processed/output bytes.
     size_t GetProcessedSize(void);
     size_t GetOutputSize(void);

@@ -174,7 +174,12 @@ CCompressionStream::~CCompressionStream(void)
 void CCompressionStream::Finalize(CCompressionStream::EDirection dir) 
 {
     if ( m_StreamBuf ) {
-        if ( m_StreamBuf->Finalize(dir) != 0 ) {
+        try {
+            if ( m_StreamBuf->Finalize(dir) != 0 ) {
+                setstate(badbit);
+            }
+        } catch (IOS_BASE::failure&) {
+            // Emulate stream behavior on IOS_BASE::failure exceptions
             setstate(badbit);
         }
     }
@@ -308,6 +313,7 @@ size_t CCompressionIOStream::Write(const void* buf, size_t len)
     }
     return ptr - (const char*)buf;
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////////

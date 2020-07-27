@@ -166,7 +166,7 @@ public:
 
     /// Initialize LZO library.
     ///
-    /// You shoud call this method only once, before any real
+    /// You should call this method only once, before any real
     /// compression/decompression operations.
     /// @li <b>Multi-Thread safety:</b>
     ///   If you are using this API in a multi-threaded application, and there
@@ -206,7 +206,7 @@ public:
     /// @param dst_len
     ///   [out] Size of compressed data in destination buffer.
     /// @return
-    ///   Return TRUE if operation was succesfully or FALSE otherwise.
+    ///   Return TRUE if operation was successfully or FALSE otherwise.
     ///   On success, 'dst_buf' contains compressed data of dst_len size.
     /// @note
     ///   Use fStreamFormat flag to compress data > 4GB.
@@ -361,7 +361,6 @@ protected:
                               void* dst_buf, size_t* dst_len /* out */,
                               TLZOFlags flags,
                               size_t* processed /* out */);
-
 protected:
     size_t                        m_BlockSize;  ///< Block size for (de)compression.
     // Compression parameters
@@ -412,7 +411,7 @@ public:
     /// @param mode
     ///   File open mode.
     /// @return
-    ///   TRUE if file was opened succesfully or FALSE otherwise.
+    ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CLZOCompression, Read, Write, Close
     virtual bool Open(const string& file_name, EMode mode);
@@ -430,7 +429,7 @@ public:
     ///   in the read mode, and set it in the write mode for compressed 
     ///   files.
     /// @return
-    ///   TRUE if file was opened succesfully or FALSE otherwise.
+    ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CLZOCompression, Read, Write, Close
     virtual bool Open(const string& file_name, EMode mode, SFileInfo* info);
@@ -482,7 +481,7 @@ protected:
 protected:
     EMode                  m_Mode;     ///< I/O mode (read/write).
     CNcbiFstream*          m_File;     ///< File stream.
-    CCompressionIOStream*  m_Stream;   ///< [De]comression stream.
+    CCompressionIOStream*  m_Stream;   ///< [De]compression stream.
 
 private:
     /// Private copy constructor to prohibit copy.
@@ -555,6 +554,13 @@ public:
     /// Destructor.
     virtual ~CLZOCompressor(void);
 
+    /// Return TRUE if fAllowEmptyData flag is set. 
+    /// @note
+    ///   Used by stream buffer, that don't have access to specific
+    ///   compression implementation flags.
+    virtual bool AllowEmptyData() const
+        { return (GetFlags() & fAllowEmptyData) == fAllowEmptyData; }
+
     /// Set information about compressed file.
     void SetFileInfo(const SFileInfo& info);
 
@@ -600,6 +606,13 @@ public:
 
     /// Destructor.
     virtual ~CLZODecompressor(void);
+
+    /// Return TRUE if fAllowEmptyData flag is set. 
+    /// @note
+    ///   Used by stream buffer, that don't have access to specific
+    ///   compression implementation flags.
+    virtual bool AllowEmptyData() const
+        { return (GetFlags() & fAllowEmptyData) == fAllowEmptyData; }
 
 protected:
     virtual EStatus Init   (void); 

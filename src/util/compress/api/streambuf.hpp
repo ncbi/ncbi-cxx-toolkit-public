@@ -121,7 +121,7 @@ protected:
     // Helper method for Sync/Finish.
     int Flush(CCompressionStream::EDirection dir);
 
-    // Process a data from the input buffer and put result into the out.buffer
+    // Process a data from the input buffer and put result into the output buffer
     bool Process(CCompressionStream::EDirection dir);
     bool ProcessStreamRead(void);
     bool ProcessStreamWrite(void);

@@ -359,6 +359,13 @@ public:
     /// Destructor.
     virtual ~CBZip2Compressor(void);
 
+    /// Return TRUE if fAllowEmptyData flag is set. 
+    /// @note
+    ///   Used by stream buffer, that don't have access to specific
+    ///   compression implementation flags.
+    virtual bool AllowEmptyData() const
+        { return (GetFlags() & fAllowEmptyData) == fAllowEmptyData; }
+
 protected:
     virtual EStatus Init   (void);
     virtual EStatus Process(const char* in_buf,  size_t  in_len,
@@ -393,6 +400,13 @@ public:
 
     /// Destructor.
     virtual ~CBZip2Decompressor(void);
+
+    /// Return TRUE if fAllowEmptyData flag is set. 
+    /// @note
+    ///   Used by stream buffer, that don't have access to specific
+    ///   compression implementation flags.
+    virtual bool AllowEmptyData() const
+        { return (GetFlags() & fAllowEmptyData) == fAllowEmptyData; }
 
 protected:
     virtual EStatus Init   (void); 

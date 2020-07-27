@@ -49,13 +49,13 @@ USING_NCBI_SCOPE;
 
 // -- regular tests
 
-/// Length of data buffers for tests
-const size_t  kRegTests[] = { 20, 16 KB, 100 KB };
+/// Length of data buffers for tests (>5 for overflow test)
+const size_t  kRegTests[] = { 20, 16 KB, 41 KB, 101 KB };
 
 // Maximum source size (maximum value from kReqTests[])
-const size_t kRegDataLen = 100 KB;
+const size_t kRegDataLen = 101 KB;
 /// Output buffer length. ~20% more than kRegDataLen.
-const size_t kRegBufLen = 120 KB;
+const size_t kRegBufLen = size_t(kRegDataLen * 1.2);
 
 
 
@@ -382,6 +382,11 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
     char   cmp_buf[kLen];
     size_t n;
 
+    assert(
+        CZipCompression::fAllowEmptyData == CBZip2Compression::fAllowEmptyData  &&
+        CZipCompression::fAllowEmptyData == CLZOCompression::fAllowEmptyData
+    );
+
     const size_t count = ArraySize(s_EmptyInputDataTests);
 
     for (size_t i = 0;  i < count;  ++i)
@@ -391,6 +396,8 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             continue;
         }
         ERR_POST(Trace << "Test # " << i+1);
+
+        bool allow_empty = (test.flags & CZipCompression::fAllowEmptyData) > 0;
 
         CNcbiIstrstream is_str("");
         unique_ptr<CCompression>                compression;
@@ -433,46 +440,61 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             assert(n == 0);
         }}
 
-        // Input stream tests
+        // Input stream
         {{
-            CCompressionIStream ics(is_str, stream_compressor.get());
-            assert(ics.good());
-            ics.read(dst_buf, kLen);
-            assert(ics.eof());
-            n = (size_t)ics.gcount();
-            assert(n == test.stream_output_size);
-            assert(ics.GetProcessedSize() == 0);
-            assert(ics.GetOutputSize() == n);
-
-            CCompressionIStream ids(is_str, stream_decompressor.get());
-            assert(ids.good());
-            ids.read(dst_buf, kLen);
-            assert(ids.eof());
-            n = (size_t)ids.gcount();
-            assert(n == 0);
-            assert(ids.GetProcessedSize() == 0);
-            assert(ids.GetOutputSize() == n);
+            // Compression
+            {{
+                CCompressionIStream ics(is_str, stream_compressor.get());
+                assert(ics.good());
+                ics.read(dst_buf, kLen);
+                if (allow_empty) {
+                    assert(ics.eof() && ics.fail()); // short read
+                } else {
+                    assert(ics.bad()); //error
+                }
+                n = (size_t)ics.gcount();
+                assert(n == test.stream_output_size);
+                assert(ics.GetProcessedSize() == 0);
+                assert(ics.GetOutputSize() == n);
+            }}
+            // Decompression
+            {{
+                CCompressionIStream ids(is_str, stream_decompressor.get());
+                assert(ids.good());
+                ids.read(dst_buf, kLen);
+                if (allow_empty) {
+                    assert(ids.eof() && ids.fail()); // short read
+                } else {
+                    assert(ids.bad()); // error
+                }
+                n = (size_t)ids.gcount();
+                assert(n == 0);
+                assert(ids.GetProcessedSize() == 0);
+                assert(ids.GetOutputSize() == n);
+            }}
         }}
 
-        // Output stream tests
+        // Output stream
         {{
+            // Compression
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ocs(os_str, stream_compressor.get());
                 assert(ocs.good());
                 ocs.Finalize();
-                assert(ocs.good());
+                assert(test.result ? ocs.good() : ocs.bad());
                 n = (size_t)GetOssSize(os_str);
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
             }}
+            // Decompression
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ods(os_str, stream_decompressor.get());
                 assert(ods.good());
                 ods.Finalize();
-                assert(test.result ? ods.good() : !ods.good());
+                assert(test.result ? ods.good() : ods.bad());
                 n = (size_t)GetOssSize(os_str);
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
@@ -480,8 +502,9 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             }}
         }}
 
-        // Output stream tests -- with flush()
+        // Output stream tests -- just with flush()
         {{
+            // Compression
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ocs(os_str, stream_compressor.get());
@@ -489,12 +512,13 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 ocs.flush();
                 assert(ocs.good());
                 ocs.Finalize();
-                assert(ocs.good());
+                assert(test.result ? ocs.good() : ocs.bad());
                 n = (size_t)GetOssSize(os_str);
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
             }}
+            // Decompression
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ods(os_str, stream_decompressor.get());
