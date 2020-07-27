@@ -232,7 +232,17 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(name), chunks));
 
     } else {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
+        if (TPSG_FailOnUnknownItems::GetDefault()) {
+            NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
+        }
+
+        static atomic_bool reported(false);
+
+        if (!reported.exchange(true)) {
+            ERR_POST("Received unknown item type: " << item_type);
+        }
+
+        return rv;
     }
 
     rv->m_Impl.reset(impl.release());
@@ -999,7 +1009,11 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
                 }
 
                 // Do not hold lock on item_ts around this call!
-                return m_Impl->Create(&item_ts);
+                if (auto rv = m_Impl->Create(&item_ts)) {
+                    return rv;
+                }
+
+                continue;
             }
         }
 

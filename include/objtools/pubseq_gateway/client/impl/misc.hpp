@@ -400,6 +400,9 @@ using TPSG_RequestRetries = PSG_PARAM_VALUE_TYPE(PSG, request_retries);
 NCBI_PARAM_DECL(unsigned, PSG, localhost_preference);
 typedef NCBI_PARAM_TYPE(PSG, localhost_preference) TPSG_LocalhostPreference;
 
+NCBI_PARAM_DECL(bool, PSG, fail_on_unknown_items);
+typedef NCBI_PARAM_TYPE(PSG, fail_on_unknown_items) TPSG_FailOnUnknownItems;
+
 NCBI_PARAM_DECL(double, PSG, throttle_relaxation_period);
 using TPSG_ThrottlePeriod = NCBI_PARAM_TYPE(PSG, throttle_relaxation_period);
 

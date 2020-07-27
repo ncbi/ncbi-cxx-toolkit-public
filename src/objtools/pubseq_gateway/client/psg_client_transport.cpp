@@ -66,6 +66,8 @@ NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
 NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
+NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
+
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
 NCBI_PARAM_DEF(bool,     PSG, throttle_hold_until_active_in_lb,            false);

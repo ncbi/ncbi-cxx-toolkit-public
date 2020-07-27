@@ -398,6 +398,7 @@ template <>
 int CPsgClientApp::RunRequest<STesting>(const string& service, const CArgs&)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
+    TPSG_FailOnUnknownItems::SetDefault(true);
 
     return CProcessing::Testing(service);
 }
