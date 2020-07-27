@@ -69,7 +69,7 @@ DEFINE_CLASS_STATIC_MUTEX(CRemoteUpdater::m_static_mutex);
 namespace
 {
 
-TEntrezId FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
+TEntrezId FindPMID(const CPub_equiv::Tdata& arr)
 {
     for (auto pPub : arr) {
         if (pPub->IsPmid()) {
@@ -330,6 +330,47 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
     xUpdatePubReferences(entry.SetDescr());
 }
 
+
+
+void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
+{
+    CMutexGuard guard(m_Mutex);
+
+    for (auto pDesc : seq_descr.Set()) {
+        if (!pDesc->IsPub() || !pDesc->GetPub().IsSetPub()) {
+            continue;
+        }   
+
+        auto& arr = pDesc->SetPub().SetPub().Set();
+        if (m_mlaClient.Empty()) 
+            m_mlaClient.Reset(new CMLAClient());
+
+        auto id = FindPMID(arr);
+        if (id>ZERO_ENTREZ_ID) {
+            CreatePubPMID(*m_mlaClient, arr, id);
+            continue;
+        }
+
+        for (auto pPubEquiv : arr) {
+            if (pPubEquiv->IsArticle()) {
+                try {
+                    id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(*pPubEquiv));
+                    if (id>ZERO_ENTREZ_ID) {
+                        CreatePubPMID(*m_mlaClient, arr, id);
+                        break;
+                    }
+                }
+                catch (CException&) 
+                {
+                }
+            }
+        
+        }
+        
+    }
+}
+
+/*
 void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
 {
     CMutexGuard guard(m_Mutex);
@@ -347,7 +388,7 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
         if (m_mlaClient.Empty())
             m_mlaClient.Reset(new CMLAClient);
 
-        TEntrezId id = FindPMID(*m_mlaClient, arr);
+        TEntrezId id = FindPMID(arr);
         if (id>ZERO_ENTREZ_ID)
         {
             CreatePubPMID(*m_mlaClient, arr, id);
@@ -366,12 +407,15 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
                     break;
                 }
             }
-            catch(CException& /*ex*/)
+            catch(CException&)
             {
+
+                throw;
             }
         }
     }
 }
+*/
 
 namespace
 {
