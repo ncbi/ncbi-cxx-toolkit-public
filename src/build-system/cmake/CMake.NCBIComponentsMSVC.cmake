@@ -71,7 +71,6 @@ set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/cxx_toolk
 set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python38 CACHE PATH "PYTHON root")
 set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.28.1 CACHE PATH "PROTOBUF root")
 set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.28.1 CACHE PATH "GRPC root")
-
 set(NCBI_ThirdParty_XALAN       ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814 CACHE PATH "XALAN root")
 set(NCBI_ThirdParty_XERCES      ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0 CACHE PATH "XERCES root")
 set(NCBI_ThirdParty_FTGL        ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
@@ -84,136 +83,6 @@ set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPar
 
 #############################################################################
 #############################################################################
-
-function(NCBI_define_component _name)
-
-    if(NCBI_COMPONENT_${_name}_DISABLED)
-        message("DISABLED ${_name}")
-        return()
-    endif()
-# root
-    if (DEFINED NCBI_ThirdParty_${_name})
-        set(_root ${NCBI_ThirdParty_${_name}})
-    else()
-        string(FIND ${_name} "." dotfound)
-        string(SUBSTRING ${_name} 0 ${dotfound} _dotname)
-        if (DEFINED NCBI_ThirdParty_${_dotname})
-            set(_root ${NCBI_ThirdParty_${_dotname}})
-        else()
-            message("NOT FOUND ${_name}: NCBI_ThirdParty_${_name} not found")
-            return()
-        endif()
-    endif()
-# include dir
-    if (EXISTS ${_root}/include)
-        set(_found YES)
-    else()
-        message("NOT FOUND ${_name}: ${_root}/include not found")
-        set(_found NO)
-    endif()
-# libraries
-    set(_args ${ARGN})
-    if (_found)
-        if(BUILD_SHARED_LIBS)
-            set(_locations lib_dll lib_static lib)
-        else()
-            set(_locations lib_static lib_dll lib)
-        endif()
-        set(_rt ${NCBI_CONFIGURATION_RUNTIMELIB})
-
-        foreach(_libdir IN LISTS _locations)
-            set(_found YES)
-            foreach(_cfg ${NCBI_CONFIGURATION_TYPES})
-                if(NCBI_TRACE_COMPONENT_${_name})
-                    message("${_name}: checking ${_root}/${_libdir}/${_cfg}${_rt}")
-                endif()
-                foreach(_lib IN LISTS _args)
-                    if(NOT EXISTS ${_root}/${_libdir}/${_cfg}${_rt}/${_lib})
-                        if(NCBI_TRACE_COMPONENT_${_name})
-                            message("${_name}: ${_root}/${_libdir}/${_cfg}${_rt}/${_lib} not found")
-                        endif()
-                        set(_found NO)
-                    endif()
-                endforeach()
-            endforeach()
-            if (_found)
-#                set(_libtype ${_libdir}/\$\(Configuration\))
-                set(_libtype ${_libdir}/$<CONFIG>${_rt})
-                break()
-            endif()
-        endforeach()
-
-        if (NOT _found)
-            set(_found YES)
-            foreach(_cfg ${NCBI_CONFIGURATION_TYPES})
-                if(NCBI_TRACE_COMPONENT_${_name})
-                    message("${_name}: checking ${_root}/${_cfg}${_rt}")
-                endif()
-                foreach(_lib IN LISTS _args)
-                    if(NOT EXISTS ${_root}/${_cfg}${_rt}/${_lib})
-                        if(NCBI_TRACE_COMPONENT_${_name})
-                            message("${_name}: ${_root}/${_cfg}${_rt}/${_lib} not found")
-                        endif()
-                        set(_found NO)
-                    endif()
-                endforeach()
-            endforeach()
-            if (_found)
-#                set(_libtype \$\(Configuration\))
-                set(_libtype $<CONFIG>${_rt})
-            endif()
-        endif()
-
-        if (NOT _found)
-            set(_locations lib libs)
-            foreach(_libdir IN LISTS _locations)
-                set(_found YES)
-                if(NCBI_TRACE_COMPONENT_${_name})
-                    message("${_name}: checking ${_root}/${_libdir}")
-                endif()
-                foreach(_lib IN LISTS _args)
-                    if(NOT EXISTS ${_root}/${_libdir}/${_lib})
-                        if(NCBI_TRACE_COMPONENT_${_name})
-                            message("${_name}: ${_root}/${_libdir}/${_lib} not found")
-                        endif()
-                        set(_found NO)
-                    endif()
-                endforeach()
-                if (_found)
-                    set(_libtype ${_libdir})
-                    break()
-                endif()
-            endforeach()
-        endif()
-
-        if (NOT _found)
-            message("NOT FOUND ${_name}: some libraries not found at ${_root}")
-        endif()
-    endif()
-
-    if (_found)
-        message(STATUS "Found ${_name}: ${_root}")
-        set(NCBI_COMPONENT_${_name}_FOUND YES PARENT_SCOPE)
-        set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include PARENT_SCOPE)
-        foreach(_lib IN LISTS _args)
-            set(NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS} ${_root}/${_libtype}/${_lib})
-        endforeach()
-        set(NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS} PARENT_SCOPE)
-        if (EXISTS ${_root}/bin)
-            set(NCBI_COMPONENT_${_name}_BINPATH ${_root}/bin PARENT_SCOPE)
-        endif()
-
-        string(TOUPPER ${_name} _upname)
-        set(HAVE_LIB${_upname} 1 PARENT_SCOPE)
-        string(REPLACE "." "_" _altname ${_upname})
-        set(HAVE_${_altname} 1 PARENT_SCOPE)
-
-        list(APPEND NCBI_ALL_COMPONENTS ${_name})
-        set(NCBI_ALL_COMPONENTS ${NCBI_ALL_COMPONENTS} PARENT_SCOPE)
-    else()
-        set(NCBI_COMPONENT_${_name}_FOUND NO)
-    endif()
-endfunction()
 
 #############################################################################
 #############################################################################
@@ -229,7 +98,7 @@ if(OFF)
                vibrant_ogl)
 endif()
 if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
-    NCBI_define_component(NCBI_C ncbiobj.lib ncbimmdb.lib ncbi.lib)
+    NCBI_define_Wcomponent(NCBI_C ncbiobj.lib ncbimmdb.lib ncbi.lib)
 else()
     message("DISABLED NCBI_C")
 endif()
@@ -268,7 +137,7 @@ endif()
 
 #############################################################################
 # LMDB
-NCBI_define_component(LMDB liblmdb.lib)
+NCBI_define_Wcomponent(LMDB liblmdb.lib)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
     set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
@@ -277,7 +146,7 @@ endif()
 
 #############################################################################
 # PCRE
-NCBI_define_component(PCRE libpcre.lib)
+NCBI_define_Wcomponent(PCRE libpcre.lib)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
@@ -286,7 +155,7 @@ endif()
 
 #############################################################################
 # Z
-NCBI_define_component(Z libz.lib)
+NCBI_define_Wcomponent(Z libz.lib)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
     set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
@@ -295,7 +164,7 @@ endif()
 
 #############################################################################
 # BZ2
-NCBI_define_component(BZ2 libbzip2.lib)
+NCBI_define_Wcomponent(BZ2 libbzip2.lib)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
     set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
@@ -304,60 +173,60 @@ endif()
 
 #############################################################################
 # LZO
-NCBI_define_component(LZO liblzo.lib)
+NCBI_define_Wcomponent(LZO liblzo.lib)
 
 #############################################################################
 # Boost.Test.Included
-NCBI_define_component(Boost.Test.Included)
+NCBI_define_Wcomponent(Boost.Test.Included)
 if(NCBI_COMPONENT_Boost.Test.Included_FOUND)
     set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
 endif()
 
 #############################################################################
 # Boost.Test
-NCBI_define_component(Boost.Test libboost_unit_test_framework.lib)
+NCBI_define_Wcomponent(Boost.Test libboost_unit_test_framework.lib)
 if(NCBI_COMPONENT_Boost.Test_FOUND)
     set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_NOMANGLE)
 endif()
 
 #############################################################################
 # Boost.Spirit
-NCBI_define_component(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
 if(NCBI_COMPONENT_Boost.Spirit_FOUND)
     set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
 endif()
 
 #############################################################################
 # Boost
-NCBI_define_component(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib  boost_system.lib)
+NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib  boost_system.lib)
 
 #############################################################################
 # JPEG
-NCBI_define_component(JPEG libjpeg.lib)
+NCBI_define_Wcomponent(JPEG libjpeg.lib)
 
 #############################################################################
 # PNG
-NCBI_define_component(PNG libpng.lib)
+NCBI_define_Wcomponent(PNG libpng.lib)
 
 #############################################################################
 # GIF
-NCBI_define_component(GIF libgif.lib)
+NCBI_define_Wcomponent(GIF libgif.lib)
 
 #############################################################################
 # TIFF
-NCBI_define_component(TIFF libtiff.lib)
+NCBI_define_Wcomponent(TIFF libtiff.lib)
 
 #############################################################################
 # TLS
-NCBI_define_component(TLS)
+NCBI_define_Wcomponent(TLS)
 
 #############################################################################
 # FASTCGI
-NCBI_define_component(FASTCGI libfcgi.lib)
+NCBI_define_Wcomponent(FASTCGI libfcgi.lib)
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_component(BerkeleyDB libdb.lib)
+NCBI_define_Wcomponent(BerkeleyDB libdb.lib)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -366,7 +235,7 @@ endif()
 
 #############################################################################
 # XML
-NCBI_define_component(XML libxml2.lib)
+NCBI_define_Wcomponent(XML libxml2.lib)
 if (NCBI_COMPONENT_XML_FOUND)
     if(NOT BUILD_SHARED_LIBS)
         set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
@@ -375,15 +244,15 @@ endif()
 
 #############################################################################
 # XSLT
-NCBI_define_component(XSLT libexslt.lib libxslt.lib)
+NCBI_define_Wcomponent(XSLT libexslt.lib libxslt.lib)
 
 #############################################################################
 # EXSLT
-NCBI_define_component(EXSLT libexslt.lib)
+NCBI_define_Wcomponent(EXSLT libexslt.lib)
 
 #############################################################################
 # SQLITE3
-NCBI_define_component(SQLITE3 sqlite3.lib)
+NCBI_define_Wcomponent(SQLITE3 sqlite3.lib)
 
 #############################################################################
 # LAPACK
@@ -391,7 +260,7 @@ set(NCBI_COMPONENT_LAPACK_FOUND NO)
 
 #############################################################################
 # Sybase
-NCBI_define_component(Sybase libsybdb.lib libsybct.lib libsybblk.lib libsybcs.lib)
+NCBI_define_Wcomponent(Sybase libsybdb.lib libsybct.lib libsybblk.lib libsybcs.lib)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(SYBASE_PATH ${NCBI_ThirdParty_Sybase}/Sybase)
     set(SYBASE_LCL_PATH "${NCBI_ThirdParty_SybaseLocalPath}")
@@ -433,7 +302,7 @@ endif(NOT NCBI_COMPONENT_VDB_DISABLED)
 
 #############################################################################
 # PYTHON
-NCBI_define_component(PYTHON python38.lib python3.lib)
+NCBI_define_Wcomponent(PYTHON python38.lib python3.lib)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
 endif()
@@ -445,8 +314,8 @@ set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
     message("NOT FOUND: ${NCBI_PROTOC_APP}")
 else()
-NCBI_define_component(PROTOBUF libprotobuf.lib)
-NCBI_define_component(GRPC grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib libprotobuf.lib
+NCBI_define_Wcomponent(PROTOBUF libprotobuf.lib)
+NCBI_define_Wcomponent(GRPC grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib libprotobuf.lib
                            upb.lib crypto.lib ssl.lib absl_throw_delegate.lib absl_strings.lib
                            absl_bad_optional_access.lib  absl_str_format_internal.lib
                            absl_raw_logging_internal.lib absl_int128.lib)
@@ -457,11 +326,11 @@ endif()
 
 ##############################################################################
 # XALAN
-NCBI_define_component(XALAN xalan-c.lib XalanMessages.lib)
+NCBI_define_Wcomponent(XALAN xalan-c.lib XalanMessages.lib)
 
 ##############################################################################
 # XERCES
-NCBI_define_component(XERCES xerces-c.lib)
+NCBI_define_Wcomponent(XERCES xerces-c.lib)
 if(NCBI_COMPONENT_XERCES_FOUND)
     if(BUILD_SHARED_LIBS)
         set(NCBI_COMPONENT_XERCES_DEFINES XERCES_DLL)
@@ -472,18 +341,18 @@ endif()
 
 ##############################################################################
 # FTGL
-NCBI_define_component(FTGL ftgl.lib)
+NCBI_define_Wcomponent(FTGL ftgl.lib)
 if(NCBI_COMPONENT_FTGL_FOUND)
     set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
 endif()
 
 ##############################################################################
 # FreeType
-NCBI_define_component(FreeType freetype.lib)
+NCBI_define_Wcomponent(FreeType freetype.lib)
 
 ##############################################################################
 # GLEW
-NCBI_define_component(GLEW glew32mx.lib)
+NCBI_define_Wcomponent(GLEW glew32mx.lib)
 if(NCBI_COMPONENT_GLEW_FOUND)
     if(BUILD_SHARED_LIBS)
         set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX)
@@ -494,7 +363,7 @@ endif()
 
 ##############################################################################
 # wxWidgets
-NCBI_define_component( wxWidgets
+NCBI_define_Wcomponent( wxWidgets
         wxbase.lib wxbase_net.lib wxbase_xml.lib wxmsw_core.lib wxmsw_gl.lib
         wxmsw_html.lib wxmsw_aui.lib wxmsw_adv.lib wxmsw_richtext.lib wxmsw_propgrid.lib
         wxmsw_xrc.lib wxexpat.lib wxjpeg.lib wxpng.lib wxregex.lib wxtiff.lib wxzlib.lib)
@@ -509,15 +378,15 @@ endif()
 
 ##############################################################################
 # UV
-NCBI_define_component(UV libuv.lib)
+NCBI_define_Wcomponent(UV libuv.lib)
 if(NCBI_COMPONENT_UV_FOUND)
     set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
 endif()
 
 ##############################################################################
 # NGHTTP2
-NCBI_define_component(NGHTTP2 nghttp2.lib)
+NCBI_define_Wcomponent(NGHTTP2 nghttp2.lib)
 
 ##############################################################################
 # GL2PS
-NCBI_define_component(GL2PS gl2ps.lib)
+NCBI_define_Wcomponent(GL2PS gl2ps.lib)
