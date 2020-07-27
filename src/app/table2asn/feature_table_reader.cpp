@@ -875,24 +875,69 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
     _MergeCDSFeatures_impl(entry);
 }
 
-static bool s_HasUnprocessedCdregions(const CSeq_entry& entry) 
-{
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    auto entryHandle = pScope->AddTopLevelSeqEntry(entry);
-    CBioseq_CI nucseqIt(entryHandle, CSeq_inst::eMol_na);
-    _ASSERT(nucseqIt);
-    CFeat_CI featIt(*nucseqIt, SAnnotSelector(CSeqFeatData::e_Cdregion));
-    while (featIt) {
-        auto idHandle = featIt->GetProductId();
-        if (!idHandle || !pScope->Exists(idHandle)) {
-            if (!sequence::IsPseudo(featIt->GetOriginalFeature(), *pScope)) {
-                return true;
+
+struct SCompareIds {
+    bool operator()(CConstRef<CSeq_id> left, CConstRef<CSeq_id> right) {
+        return *left < *right;
+    }
+};
+
+
+static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
+    
+    _ASSERT(nuc_prot.IsSet() && 
+            nuc_prot.GetSet().IsSetClass() &&
+            nuc_prot.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
+
+    set<CConstRef<CSeq_id>, SCompareIds> proteinIds;
+    CConstRef<CBioseq> pNucSeq;
+
+    const auto& bioseqSet = nuc_prot.GetSet();
+    for (const auto& pSubEntry : bioseqSet.GetSeq_set()) {
+        const auto& bioseq = pSubEntry->GetSeq();
+        if (bioseq.IsNa()) {
+            pNucSeq = CConstRef<CBioseq>(&bioseq);
+            if (!pNucSeq->IsSetAnnot()) {
+                return false;
+            }
+            continue;
+        }
+       // else collect protein ids
+       if (bioseq.IsSetId()) {
+           proteinIds.insert(begin(bioseq.GetId()), end(bioseq.GetId()));
+       }
+    }
+
+    CRef<CScope> pScope;
+    // Loop over cdregion features on the nucleotide sequence
+    for (auto pAnnot : pNucSeq->GetAnnot()) {
+        if (pAnnot->IsFtable()) {
+            for (auto pSeqFeat : pAnnot->GetData().GetFtable()) {
+                if (!pSeqFeat ||
+                    !pSeqFeat->IsSetData() ||
+                    !pSeqFeat->GetData().IsCdregion()) {
+                    continue;
+                }
+                // cdregion
+                if (!pSeqFeat->IsSetProduct() ||
+                    !pSeqFeat->GetProduct().GetId() ||
+                    proteinIds.find(CConstRef<CSeq_id>(pSeqFeat->GetProduct().GetId()))
+                    == proteinIds.end()) {
+                    if (!pScope) {
+                        pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+                        pScope->AddTopLevelSeqEntry(nuc_prot);
+                    }
+                    if (!sequence::IsPseudo(*pSeqFeat, *pScope)) {
+                        return true;
+                    }
+                }
             }
         }
-        ++featIt;
     }
+
     return false;
 }
+
 
 void CFeatureTableReader::_MergeCDSFeatures_impl(CSeq_entry& entry)
 {
