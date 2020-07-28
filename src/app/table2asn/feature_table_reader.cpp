@@ -877,7 +877,7 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 
 
 struct SCompareIds {
-    bool operator()(CConstRef<CSeq_id> left, CConstRef<CSeq_id> right) const {
+    bool operator()(const CSeq_id* const left, const CSeq_id* const right) const {
         return *left < *right;
     }
 };
@@ -889,14 +889,14 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
             nuc_prot.GetSet().IsSetClass() &&
             nuc_prot.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
 
-    set<CConstRef<CSeq_id>, SCompareIds> proteinIds;
-    CConstRef<CBioseq> pNucSeq;
+    set<const CSeq_id*, SCompareIds> proteinIds;
+    const CBioseq* pNucSeq=nullptr;
 
     const auto& bioseqSet = nuc_prot.GetSet();
     for (const auto& pSubEntry : bioseqSet.GetSeq_set()) {
         const auto& bioseq = pSubEntry->GetSeq();
         if (bioseq.IsNa()) {
-            pNucSeq = CConstRef<CBioseq>(&bioseq);
+            pNucSeq = &bioseq;
             if (!pNucSeq->IsSetAnnot()) {
                 return false;
             }
@@ -904,7 +904,9 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
         }
        // else collect protein ids
        if (bioseq.IsSetId()) {
-           proteinIds.insert(begin(bioseq.GetId()), end(bioseq.GetId()));
+           transform(begin(bioseq.GetId()), end(bioseq.GetId()), 
+                   inserter(proteinIds, proteinIds.end()), 
+                   [](const CRef<CSeq_id>& pId) { return pId.GetPointer(); });
        }
     }
 
@@ -921,7 +923,7 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
                 // cdregion
                 if (!pSeqFeat->IsSetProduct() ||
                     !pSeqFeat->GetProduct().GetId() ||
-                    proteinIds.find(CConstRef<CSeq_id>(pSeqFeat->GetProduct().GetId()))
+                    proteinIds.find(pSeqFeat->GetProduct().GetId())
                     == proteinIds.end()) {
                     if (!pScope) {
                         pScope = Ref(new CScope(*CObjectManager::GetInstance()));
