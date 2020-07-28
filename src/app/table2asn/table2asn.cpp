@@ -450,7 +450,7 @@ int CTbl2AsnApp::Run(void)
     }
 
     m_reader.reset(new CMultiReader(m_context));
-    m_context.m_remote_updater.reset(new edit::CRemoteUpdater);
+    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger.GetNCPointerOrNull()));
 
     // excluded per RW-589
 #if 0
@@ -950,17 +950,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
-        //m_context.m_remote_updater->UpdateOrgFromTaxon(m_context.m_logger, *entry);
-    
-        m_context.m_remote_updater->UpdateOrgFromTaxon(
-                [this](const string& error_message) {    
-                    if(m_context.m_logger) {
-                        m_context.m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(ILineError::eProblem_Unset, 
-                                                    eDiag_Warning, "", 0,
-                                                    error_message)));
-                    } 
-                }, 
-                *entry);
+        m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
     }
     else
     {
