@@ -579,7 +579,7 @@ AC_ARG_WITH(aws-sdk,
    [ --without-aws-sdk       do not use the Amazon Web Services SDK])
 AC_ARG_WITH(hiredis,
    [ --with-hiredis=DIR      use Hiredis installation in DIR])
-AC_ARG_WITH(grpc,
+AC_ARG_WITH(hiredis,
    [ --without-hiredis       do not use Hiredis])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])

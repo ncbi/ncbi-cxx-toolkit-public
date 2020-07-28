@@ -5689,9 +5689,9 @@ if test "${with_hiredis+set}" = set; then :
 fi
 
 
-# Check whether --with-grpc was given.
-if test "${with_grpc+set}" = set; then :
-  withval=$with_grpc;
+# Check whether --with-hiredis was given.
+if test "${with_hiredis+set}" = set; then :
+  withval=$with_hiredis;
 fi
 
 
