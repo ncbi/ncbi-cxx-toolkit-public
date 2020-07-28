@@ -8430,15 +8430,30 @@ if test -d "$AWS_SDK_PATH"; then
       fi
    done
 fi
+AWS_SDK_LDEP=
+AWS_SDK_STATIC_LDEP=
+for d in "$AWS_SDK_PATH/lib$bit64_sfx" "$AWS_SDK_PATH/lib" \
+         /usr/lib/$multiarch /usr/lib$bit64_sfx /usr/lib \
+         /usr/local/lib$bit64_sfx /usr/local/lib; do
+    if test -f "$d/libaws-cpp-sdk-s3.a"; then
+       AWS_SDK_LIBDIR=$d
+       if test -f "$AWS_SDK_LIBDIR/libaws-c-event-stream.a"; then
+          AWS_SDK_LDEP="-laws-c-event-stream -laws-checksums -laws-c-common"
+          AWS_SDK_STATIC_LDEP="-laws-c-event-stream-static -laws-checksums-static -laws-c-common-static"
+       fi
+       break
+    fi
+done
 NCBI_CHECK_THIRD_PARTY_LIB_EX(aws_sdk, AWS_SDK, aws-cpp-sdk-s3,
    [AC_LANG_PROGRAM([[@%:@include <aws/s3/S3Client.h>
                       @%:@include <aws/ec2/EC2Client.h>]],
        [[Aws::S3::S3Client s3cli;
          Aws::EC2::EC2Client ec2cli;]])],
-   [-laws-cpp-sdk-ec2 -laws-cpp-sdk-core], [$CURL_LIBS $OPENSSL_LIBS $Z_LIBS])
+   [-laws-cpp-sdk-ec2 -laws-cpp-sdk-core $AWS_SDK_LDEP],
+   [$CURL_LIBS $OPENSSL_LIBS $Z_LIBS])
 if test "$with_aws_sdk" != no -a \
-     -f "$AWS_SDK_PATH/lib$bit64_sfx/libaws-cpp-sdk-s3-static.a"; then
-    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static"
+     -f "$AWS_SDK_LIBDIR/libaws-cpp-sdk-s3-static.a"; then
+    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_LIBDIR -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static $AWS_SDK_STATIC_LDEP"
 else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi

@@ -32832,6 +32832,20 @@ if test -d "$AWS_SDK_PATH"; then
       fi
    done
 fi
+AWS_SDK_LDEP=
+AWS_SDK_STATIC_LDEP=
+for d in "$AWS_SDK_PATH/lib$bit64_sfx" "$AWS_SDK_PATH/lib" \
+         /usr/lib/$multiarch /usr/lib$bit64_sfx /usr/lib \
+         /usr/local/lib$bit64_sfx /usr/local/lib; do
+    if test -f "$d/libaws-cpp-sdk-s3.a"; then
+       AWS_SDK_LIBDIR=$d
+       if test -f "$AWS_SDK_LIBDIR/libaws-c-event-stream.a"; then
+          AWS_SDK_LDEP="-laws-c-event-stream -laws-checksums -laws-c-common"
+          AWS_SDK_STATIC_LDEP="-laws-c-event-stream-static -laws-checksums-static -laws-c-common-static"
+       fi
+       break
+    fi
+done
 if test "$with_aws_sdk" != "no"; then
     case "$AWS_SDK_PATH:$with_aws_sdk" in
        *:yes | *: | $with_aws_sdk* ) ;;
@@ -32907,10 +32921,10 @@ if test "$with_aws_sdk" != "no"; then
     AWS_SDK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       AWS_SDK_LIBS="$AWS_SDK_LIBPATH -laws-cpp-sdk-s3 -laws-cpp-sdk-ec2 -laws-cpp-sdk-core"
+       AWS_SDK_LIBS="$AWS_SDK_LIBPATH -laws-cpp-sdk-s3 -laws-cpp-sdk-ec2 -laws-cpp-sdk-core $AWS_SDK_LDEP"
     else
        AWS_SDK_INCLUDE=""
-       AWS_SDK_LIBS="-laws-cpp-sdk-s3 -laws-cpp-sdk-ec2 -laws-cpp-sdk-core"
+       AWS_SDK_LIBS="-laws-cpp-sdk-s3 -laws-cpp-sdk-ec2 -laws-cpp-sdk-core $AWS_SDK_LDEP"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libaws-cpp-sdk-s3$in_path" >&5
@@ -32964,8 +32978,8 @@ $as_echo "#define HAVE_LIBAWS_SDK 1" >>confdefs.h
 
 
 if test "$with_aws_sdk" != no -a \
-     -f "$AWS_SDK_PATH/lib$bit64_sfx/libaws-cpp-sdk-s3-static.a"; then
-    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static"
+     -f "$AWS_SDK_LIBDIR/libaws-cpp-sdk-s3-static.a"; then
+    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_LIBDIR -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static $AWS_SDK_STATIC_LDEP"
 else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi
