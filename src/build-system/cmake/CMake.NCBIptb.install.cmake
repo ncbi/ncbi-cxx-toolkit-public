@@ -16,12 +16,14 @@ function(NCBI_internal_install_target _variable _access)
     endif()
 
     if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
+        set(_doexport YES)
         set(_haspdb NO)
         set(_dest ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_ARCHIVE})
         if(WIN32)
             set_target_properties(${NCBI_PROJECT} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
         endif()
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
+        set(_doexport YES)
         set(_haspdb YES)
         if (WIN32)
             set(_dest    ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_SHARED})
@@ -30,6 +32,7 @@ function(NCBI_internal_install_target _variable _access)
             set(_dest ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_ARCHIVE})
         endif()
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP" OR ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
+        set(_doexport NO)
         set(_haspdb YES)
         set(_dest ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_RUNTIME})
         if (NOT "${NCBI_PTBCFG_INSTALL_TAGS}" STREQUAL "")
@@ -59,6 +62,12 @@ function(NCBI_internal_install_target _variable _access)
                 return()
             endif()
         endif()
+        if(${NCBI_PROJECT} MATCHES "test|demo|sample")
+            if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+                message("${NCBI_PROJECT} will not be installed because of its name")
+            endif()
+            return()
+        endif()
     else()
         return()
     endif()
@@ -82,12 +91,16 @@ function(NCBI_internal_install_target _variable _access)
     list(REMOVE_DUPLICATES _all_subdirs)
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR ${_all_subdirs})
 
+    set(_exp "")
     if (WIN32 OR XCODE)
         foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+            if(_doexport)
+                set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg})
+            endif()
             if (DEFINED _dest_ar)
                 install(
                     TARGETS ${NCBI_PROJECT}
-                    EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+                    ${_exp}
                     RUNTIME DESTINATION ${_dest}/${_cfg}
                     CONFIGURATIONS ${_cfg}
                     ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
@@ -96,7 +109,7 @@ function(NCBI_internal_install_target _variable _access)
             else()
                 install(
                     TARGETS ${NCBI_PROJECT}
-                    EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+                    ${_exp}
                     DESTINATION ${_dest}/${_cfg}
                     CONFIGURATIONS ${_cfg}
                 )
@@ -114,9 +127,12 @@ function(NCBI_internal_install_target _variable _access)
             endif()
         endforeach()
     else()
+        if(_doexport)
+            set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT})
+        endif()
         install(
             TARGETS ${NCBI_PROJECT}
-            EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
+            ${_exp}
             DESTINATION ${_dest}
         )
     endif()
