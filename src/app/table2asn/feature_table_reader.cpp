@@ -877,7 +877,7 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 
 
 struct SCompareIds {
-    bool operator()(CConstRef<CSeq_id> left, CConstRef<CSeq_id> right) {
+    bool operator()(CConstRef<CSeq_id> left, CConstRef<CSeq_id> right) const {
         return *left < *right;
     }
 };
