@@ -7332,7 +7332,7 @@ UPCT	s	Universidad Politecnica De Cartagena
 UPEI	s	University of Prince Edward Island, Biology Department			
 UPF	s	Universite de Polynesie Francaise Herbarium			
 UPIE	b	Unidad de Patologia Infecciosa y Epidemiologia			
-UPLB	s	Museum of Natural History, University of the Philippines			
+UPLB	s	University of Philippines Los Banos			
 UPM<FRA>	s	Departement des Siences de la Terre			
 UPM<MYS>	s	Universiti Pertanian Malaysia, Biology Department			
 UPM<RUS>	s	Udory Paleontological Museum			

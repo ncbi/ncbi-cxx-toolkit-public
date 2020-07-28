@@ -7365,7 +7365,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UPEI\ts\tUniversity of Prince Edward Island, Biology Department\t\t\t",
 "UPF\ts\tUniversite de Polynesie Francaise Herbarium\t\t\t",
 "UPIE\tb\tUnidad de Patologia Infecciosa y Epidemiologia\t\t\t",
-"UPLB\ts\tMuseum of Natural History, University of the Philippines\t\t\t",
+"UPLB\ts\tUniversity of Philippines Los Banos\t\t\t",
 "UPM<FRA>\ts\tDepartement des Siences de la Terre\t\t\t",
 "UPM<MYS>\ts\tUniversiti Pertanian Malaysia, Biology Department\t\t\t",
 "UPM<RUS>\ts\tUdory Paleontological Museum\t\t\t",
