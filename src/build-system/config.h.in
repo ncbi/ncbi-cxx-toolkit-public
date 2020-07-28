@@ -303,6 +303,9 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if libparquet is available. */
+#undef HAVE_LIBAPACHE_ARROW
+
 /* Define to 1 if libavrocpp is available. */
 #undef HAVE_LIBAVRO
 

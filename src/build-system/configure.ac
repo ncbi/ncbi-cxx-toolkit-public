@@ -75,7 +75,8 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
-                     libxlsxwriter, protobuf, grpc, msgsl, aws-sdk, hiredis],
+                     libxlsxwriter, protobuf, grpc, msgsl, aws-sdk, hiredis,
+                     apache-arrow],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -581,6 +582,10 @@ AC_ARG_WITH(hiredis,
    [ --with-hiredis=DIR      use Hiredis installation in DIR])
 AC_ARG_WITH(hiredis,
    [ --without-hiredis       do not use Hiredis])
+AC_ARG_WITH(apache-arrow,
+   [ --with-apache-arrow=DIR use Apache Arrow installation in DIR])
+AC_ARG_WITH(apache-arrow,
+   [ --without-apache-arrow  do not use Apache Arrow])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -648,7 +653,7 @@ gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
-libxlsxwriter protobuf grpc msgsl aws-sdk hiredis \
+libxlsxwriter protobuf grpc msgsl aws-sdk hiredis apache-arrow \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -8468,6 +8473,39 @@ else
     HIREDIS_STATIC_LIBS=$HIREDIS_LIBS
 fi
 
+case "$with_apache_arrow" in
+   yes | no | '' ) ;;
+   *             ) APACHE_ARROW_PATH=$with_apache_arrow ;;
+esac
+if test -d "$APACHE_ARROW_PATH"; then
+   NCBI_FIX_DIR(APACHE_ARROW_PATH)
+   for d in "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$asan_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$asan_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         APACHE_ARROW_PATH=$d
+         NCBI_FIX_DIR(APACHE_ARROW_PATH)
+         break
+      fi
+   done
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(apache_arrow, APACHE_ARROW, parquet,
+  [AC_LANG_PROGRAM([[@%:@include <parquet/api/reader.h>]],
+     [[parquet::ParquetFileReader pfr;]])],
+  [-larrow])
+if test "$with_apache_arrow" != no -a \
+     -f "$APACHE_ARROW_LIBDIR/libparquet-static.a"; then
+    APACHE_ARROW_STATIC_LIBS="-L$APACHE_ARROW_LIBDIR -lparquet-static -larrow-static -larrow_bundled_dependencies-static $BZ2_LIBS $Z_LIBS -lzstd"
+else
+    APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -9228,6 +9266,7 @@ AC_SUBST(GRPC_BIN)
 AC_SUBST(MSGSL_INCLUDE)
 AC_SUBST(AWS_SDK_STATIC_LIBS)
 AC_SUBST(HIREDIS_STATIC_LIBS)
+AC_SUBST(APACHE_ARROW_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
