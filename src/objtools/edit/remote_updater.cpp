@@ -57,6 +57,8 @@
 #include <objects/general/Name_std.hpp>
 
 #include <objtools/edit/remote_updater.hpp>
+#include <objtools/edit/edit_error.hpp>
+#include <objtools/logging/listener.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -80,29 +82,36 @@ TEntrezId FindPMID(const CPub_equiv::Tdata& arr)
     return ZERO_ENTREZ_ID;
 }
 
-// the method is not used at the momment
-void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, TEntrezId id)
+bool s_CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, IObjtoolsListener* pMessageListener, TEntrezId id)
 {
+    CRef<CPub> new_pub;
     try {
         CPubMedId req(id);
-        CRef<CPub> new_pub = mlaClient.AskGetpubpmid(req);
-        if (new_pub.NotEmpty())
-        {
-            // authors come back in a weird format that we need
-            // to convert to ISO
-            if (new_pub->IsSetAuthors())
-               CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
+        new_pub = mlaClient.AskGetpubpmid(req);
 
-            arr.clear();
-            CRef<CPub> new_pmid(new CPub);
-            new_pmid->SetPmid().Set(id);
-            arr.push_back(new_pmid);
-            arr.push_back(new_pub);
+    }
+    catch (exception& e) {
+        if (!pMessageListener) {
+            return false;
+        //    throw;
         }
-    } catch(...) {
-        // don't worry if we can't look it up
+        pMessageListener->PutMessage(
+            CObjEditMessage(e.what(), eDiag_Error));
+        return false;
     }
 
+    _ASSERT(new_pub);
+    // authors come back in a weird format that we need
+    // to convert to ISO
+    if (new_pub->IsSetAuthors())
+        CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
+
+    arr.clear();
+    CRef<CPub> new_pmid(new CPub);
+    new_pmid->SetPmid().Set(id);
+    arr.push_back(new_pmid);
+    arr.push_back(new_pub);
+    return true;
 }
 
 }// end anonymous namespace
@@ -130,6 +139,30 @@ public:
             m_cache->clear();
         }
     }
+
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, IObjtoolsListener* pMessageListener=nullptr)
+    {
+        CRef<COrg_ref> result;
+        CRef<CT3Reply> reply = GetOrgReply(org);
+        if (reply->IsError() && pMessageListener)
+        {
+            const string& error_message = 
+                "Taxon update: " +
+                (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
+                reply->GetError().GetMessage();
+
+            pMessageListener->PutMessage(
+                    CObjEditMessage(error_message, eDiag_Error));
+        
+        }
+        else
+        if (reply->IsData() && reply->SetData().IsSetOrg())
+        {
+            result.Reset(&reply->SetData().SetOrg());
+        }
+        return result;
+    }
+
 
     CRef<COrg_ref> GetOrg(const COrg_ref& org, CRemoteUpdater::FLogger f_logger)
     {
@@ -212,7 +245,7 @@ protected:
     auto_ptr<CCachedReplyMap> m_cache;
 };
 
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeqdesc& obj)
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& obj)
 {
     if (obj.IsOrg())
     {
@@ -226,7 +259,8 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeqdesc& obj)
 }
 
 void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
-{
+{ // remove after the deprecated UpdateOrgFromTaxon(FLogger, CSeqdes&) 
+  // has been removed.
     CMutexGuard guard(m_Mutex);
 
     TTaxId taxid = org.GetTaxId();
@@ -246,6 +280,42 @@ void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
     }
 }
 
+void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
+{
+    if (desc.IsOrg())
+    {
+        xUpdateOrgTaxname(desc.SetOrg());
+    }
+    else
+    if (desc.IsSource() && desc.GetSource().IsSetOrg())
+    {
+        xUpdateOrgTaxname(desc.SetSource().SetOrg());
+    }
+}
+
+
+void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
+{
+    CMutexGuard guard(m_Mutex);
+
+    TTaxId taxid = org.GetTaxId();
+    if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
+        return;
+
+    if (m_taxClient.get() == 0)
+    {
+        m_taxClient.reset(new CCachedTaxon3_impl);
+        m_taxClient->Init();
+    }
+        
+    CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, m_pMessageListener);
+    if (new_org.NotEmpty())
+    {
+        org.Assign(*new_org);
+    }
+}
+
+
 CRemoteUpdater& CRemoteUpdater::GetInstance()
 {
     CMutexGuard guard(m_static_mutex);
@@ -254,6 +324,12 @@ CRemoteUpdater& CRemoteUpdater::GetInstance()
 
     return instance;
 }
+
+CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener) :
+    m_pMessageListener(pMessageListener)
+{
+}
+
 
 CRemoteUpdater::CRemoteUpdater(bool enable_caching)
     :m_enable_caching(enable_caching)
@@ -274,7 +350,7 @@ void CRemoteUpdater::ClearCache()
     }
 }
 
-void CRemoteUpdater::UpdatePubReferences(objects::CSeq_entry_EditHandle& obj)
+void CRemoteUpdater::UpdatePubReferences(CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI it(obj); it; ++it)
     {
@@ -332,7 +408,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
 
 
 
-void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
+void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 {
     CMutexGuard guard(m_Mutex);
 
@@ -347,7 +423,7 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
 
         auto id = FindPMID(arr);
         if (id>ZERO_ENTREZ_ID) {
-            CreatePubPMID(*m_mlaClient, arr, id);
+            s_CreatePubPMID(*m_mlaClient, arr, m_pMessageListener, id);
             continue;
         }
 
@@ -356,12 +432,14 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
                 try {
                     id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(*pPubEquiv));
                     if (id>ZERO_ENTREZ_ID) {
-                        CreatePubPMID(*m_mlaClient, arr, id);
-                        break;
+                        if (s_CreatePubPMID(*m_mlaClient, arr, m_pMessageListener, id)) {
+                            break;
+                        }
                     }
                 }
                 catch (CException&) 
                 {
+                    //throw;
                 }
             }
         
@@ -422,13 +500,13 @@ namespace
     typedef set<CRef< CSeqdesc >* > TOwnerSet;
     typedef struct { TOwnerSet owner; CRef<COrg_ref> org_ref; } TOwner;
     typedef map<string, TOwner > TOrgMap;
-    void _UpdateOrgFromTaxon(CRemoteUpdater::FLogger logger, objects::CSeq_entry& entry, TOrgMap& m)
+    void _UpdateOrgFromTaxon(CSeq_entry& entry, TOrgMap& m)
     {
         if (entry.IsSet())
         {
             NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
             {
-                _UpdateOrgFromTaxon(logger, **it, m);
+                _UpdateOrgFromTaxon(**it, m);
             }
         }
 
@@ -442,13 +520,11 @@ namespace
             CRef<COrg_ref> org_ref;
             if (desc.IsOrg())
             {
-                //xUpdateOrgTaxname(logger, desc.SetOrg());
                 org_ref.Reset(&desc.SetOrg());
             }
             else
             if (desc.IsSource() && desc.GetSource().IsSetOrg())
             {
-                //xUpdateOrgTaxname(logger, desc.SetSource().SetOrg());
                 org_ref.Reset(&desc.SetSource().SetOrg());
             }
             if (org_ref)
@@ -480,11 +556,12 @@ namespace
         }
     }
 }
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeq_entry& entry)
+
+void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 {   
     TOrgMap org_to_update;
 
-    _UpdateOrgFromTaxon(logger, entry, org_to_update); 
+    _UpdateOrgFromTaxon(entry, org_to_update); 
     if (org_to_update.empty())
         return;
 
@@ -513,7 +590,14 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeq_entry& ent
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeq_entry_EditHandle& obj)
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger /*logger*/, CSeq_entry& entry)
+{
+    // this method is deprecated. 
+    // until we remove it, it simply calls the non-deprecated method
+    UpdateOrgFromTaxon(entry);   
+}
+
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it)
     {
@@ -523,6 +607,8 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeq_entry_Edit
         }
     }
 }
+
+
 
 namespace
 {

@@ -50,6 +50,7 @@ class CSeq_descr;
 class COrg_ref;
 class CMLAClient;
 class CAuth_list;
+class IObjtoolsListener;
 
 BEGIN_SCOPE(edit)
 
@@ -62,14 +63,20 @@ public:
    using FLogger = function<void(const string&)>;
 
    CRemoteUpdater(bool enable_caching = true);
+   CRemoteUpdater(IObjtoolsListener* pMessageListener);
    ~CRemoteUpdater();
 
    void UpdatePubReferences(CSerialObject& obj);
    void UpdatePubReferences(CSeq_entry_EditHandle& obj);
 
-   void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry& entry);
+   NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger /*f_logger*/, CSeq_entry& entry);
    void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
-   void UpdateOrgFromTaxon(FLogger f_logger, CSeqdesc& obj);
+   NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeqdesc& obj);
+
+   void UpdateOrgFromTaxon(CSeq_entry& entry);
+   void UpdateOrgFromTaxon(CSeqdesc& desc);
+
+
    void ClearCache();
    static void ConvertToStandardAuthors(CAuth_list& auth_list);
    static void PostProcessPubs(CSeq_entry_EditHandle& obj);
@@ -82,12 +89,14 @@ public:
 private:
    void xUpdatePubReferences(CSeq_entry& entry);
    void xUpdatePubReferences(CSeq_descr& descr);
-   void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org);
+   void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org); 
+   void xUpdateOrgTaxname(COrg_ref& org);
 
 
+   IObjtoolsListener* m_pMessageListener=nullptr;
    CRef<CMLAClient>  m_mlaClient;
    auto_ptr<CCachedTaxon3_impl>  m_taxClient;
-   bool m_enable_caching;
+   bool m_enable_caching=true;
    CMutex m_Mutex;
    DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
 };
