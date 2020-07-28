@@ -80,6 +80,7 @@ try_local() {
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
         test -d "$d/include/nghttp2"       &&  : ${NGHTTP2_PATH=$d}
+        test -d "$d/include/ngs-bam"       &&  : ${NGS_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
