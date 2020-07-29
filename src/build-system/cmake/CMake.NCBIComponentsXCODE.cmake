@@ -412,8 +412,8 @@ endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
-set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/protoc")
-set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/grpc_cpp_plugin")
+set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/protoc")
+set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/grpc_cpp_plugin")
 
 if(ON)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
