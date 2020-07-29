@@ -35,6 +35,7 @@
 #ifndef __REMOTE_UPDATER_HPP_INCLUDED__
 #define __REMOTE_UPDATER_HPP_INCLUDED__
 
+#include <corelib/ncbimisc.hpp>
 #include<functional>
 
 BEGIN_NCBI_SCOPE
@@ -51,6 +52,7 @@ class COrg_ref;
 class CMLAClient;
 class CAuth_list;
 class IObjtoolsListener;
+class CPub;
 
 BEGIN_SCOPE(edit)
 
@@ -68,6 +70,7 @@ public:
 
    void UpdatePubReferences(CSerialObject& obj);
    void UpdatePubReferences(CSeq_entry_EditHandle& obj);
+   void SetMaxMlaAttempts(int max);
 
    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger /*f_logger*/, CSeq_entry& entry);
    void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
@@ -91,7 +94,7 @@ private:
    void xUpdatePubReferences(CSeq_descr& descr);
    void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org); 
    void xUpdateOrgTaxname(COrg_ref& org);
-
+   bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
 
    IObjtoolsListener* m_pMessageListener=nullptr;
    CRef<CMLAClient>  m_mlaClient;
@@ -99,6 +102,7 @@ private:
    bool m_enable_caching=true;
    CMutex m_Mutex;
    DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
+   int m_MaxMlaAttempts=1;
 };
 
 END_SCOPE(edit)

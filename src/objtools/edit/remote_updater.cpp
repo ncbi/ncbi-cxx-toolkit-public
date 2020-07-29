@@ -71,7 +71,7 @@ DEFINE_CLASS_STATIC_MUTEX(CRemoteUpdater::m_static_mutex);
 namespace
 {
 
-TEntrezId FindPMID(const CPub_equiv::Tdata& arr)
+TEntrezId FindPMID(const list<CRef<CPub>>& arr)
 {
     for (auto pPub : arr) {
         if (pPub->IsPmid()) {
@@ -82,25 +82,56 @@ TEntrezId FindPMID(const CPub_equiv::Tdata& arr)
     return ZERO_ENTREZ_ID;
 }
 
-bool s_CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, IObjtoolsListener* pMessageListener, TEntrezId id)
-{
-    CRef<CPub> new_pub;
-    try {
-        CPubMedId req(id);
-        new_pub = mlaClient.AskGetpubpmid(req);
 
-    }
-    catch (exception& e) {
-        if (!pMessageListener) {
-            return false;
-        //    throw;
+CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
+{
+    CRef<CPub> result;
+    CPubMedId  request(id);
+    CMLAClient::TReply reply;
+
+    int maxCount = max(1, maxAttempts);
+    for (int count=0; count<maxCount; ++count) { 
+        try {
+            result = mlaClient.AskGetpubpmid(request, &reply);
         }
-        pMessageListener->PutMessage(
-            CObjEditMessage(e.what(), eDiag_Error));
+        catch(CException&) {
+            auto errorVal = reply.GetError();
+            switch(errorVal) {
+            case eError_val_cannot_connect_pmdb:
+            case eError_val_cannot_connect_searchbackend_pmdb:
+                if (count<maxCount-1) {
+                    continue;
+                }
+            default:
+                break;
+            }
+        
+            CNcbiOstrstream oss;
+            oss << "CMLAClient: failed to retrieve publication for PMID " 
+                << id << ": " 
+                << errorVal;
+            string msg = CNcbiOstrstreamToString(oss);
+            if (!pMessageListener) {
+                NCBI_THROW(CException, eUnknown, msg);
+            }
+
+            pMessageListener->PutMessage(CObjEditMessage(msg, eDiag_Error));
+            return CRef<CPub>();
+        }
+    }
+    return result;
+}
+
+}// end anonymous namespace
+
+bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
+{
+    CMLAClient::TReply reply;
+    auto new_pub = s_GetPubFrompmid(*m_mlaClient, id, m_MaxMlaAttempts, m_pMessageListener);
+    if (!new_pub) {
         return false;
     }
 
-    _ASSERT(new_pub);
     // authors come back in a weird format that we need
     // to convert to ISO
     if (new_pub->IsSetAuthors())
@@ -114,7 +145,11 @@ bool s_CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, IObjtoolsLis
     return true;
 }
 
-}// end anonymous namespace
+void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts) 
+{
+    m_MaxMlaAttempts = maxAttempts;
+}
+
 
 
 class CCachedTaxon3_impl
@@ -423,77 +458,29 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 
         auto id = FindPMID(arr);
         if (id>ZERO_ENTREZ_ID) {
-            s_CreatePubPMID(*m_mlaClient, arr, m_pMessageListener, id);
+            xUpdatePubPMID(arr, id);
             continue;
         }
 
         for (auto pPubEquiv : arr) {
             if (pPubEquiv->IsArticle()) {
+                CMLAClient::TReply reply;
                 try {
-                    id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(*pPubEquiv));
-                    if (id>ZERO_ENTREZ_ID) {
-                        if (s_CreatePubPMID(*m_mlaClient, arr, m_pMessageListener, id)) {
-                            break;
-                        }
-                    }
+                    id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(*pPubEquiv, &reply));
                 }
-                catch (CException&) 
+                catch(CException& e) 
                 {
-                    //throw;
+                    continue;
                 }
-            }
-        
-        }
-        
-    }
-}
-
-/*
-void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
-{
-    CMutexGuard guard(m_Mutex);
-
-    CSeq_descr::Tdata& descr = seq_descr.Set();
-    size_t count = descr.size();
-    CSeq_descr::Tdata::iterator it = descr.begin();
-
-    for (size_t i=0; i<count; ++it,  ++i)
-    {
-        if (! ( (**it).IsPub() && (**it).GetPub().IsSetPub() ) )
-            continue;
-
-        CPub_equiv::Tdata& arr = (**it).SetPub().SetPub().Set();
-        if (m_mlaClient.Empty())
-            m_mlaClient.Reset(new CMLAClient);
-
-        TEntrezId id = FindPMID(arr);
-        if (id>ZERO_ENTREZ_ID)
-        {
-            CreatePubPMID(*m_mlaClient, arr, id);
-        }
-        else
-        // nothing was found
-        NON_CONST_ITERATE(CPub_equiv::Tdata, item_it, arr)
-        {
-            if ((**item_it).IsArticle())
-            try
-            {
-                id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(**item_it));
-                if (id>ZERO_ENTREZ_ID)
-                {
-                    CreatePubPMID(*m_mlaClient, arr, id);
+                if (id>ZERO_ENTREZ_ID &&
+                    xUpdatePubPMID(arr,id)) {
                     break;
                 }
             }
-            catch(CException&)
-            {
-
-                throw;
-            }
         }
     }
 }
-*/
+
 
 namespace
 {
