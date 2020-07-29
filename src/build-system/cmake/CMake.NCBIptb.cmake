@@ -48,6 +48,7 @@
 ##
 ##      NCBI_hosts_projects(list of parts) - used to assemble composite shared libraries
 ##
+##      NCBI_set_property(property value)
 ##      NCBI_project_tags(     list of tags)
 ##      NCBI_project_watchers( list of watchers)
 ##
@@ -469,6 +470,11 @@ endmacro()
 #############################################################################
 macro(NCBI_add_definitions)
     set(NCBI_${NCBI_PROJECT}_DEFINES ${NCBI_${NCBI_PROJECT}_DEFINES} "${ARGV}")
+endmacro()
+
+#############################################################################
+macro(NCBI_set_property _property _value)
+    set(NCBI_${NCBI_PROJECT}_PROPERTY_${_property} ${_value})
 endmacro()
 
 #############################################################################
