@@ -7139,7 +7139,7 @@ UH	s	University of Hawaii
 UHCC	c	University of Helsinki Cyanobacteria Culture Collection			
 UHI	s	Ussishkin House, Botany Department			
 UHM	s	Manoa, College of Tropical Agriculture, Department of Entomology			
-UI<NGA>	s	University of Ibadan			
+UI<NGA>	sc	University of Ibadan			
 UI<USA-UT>	s	Bureau of Land Management (Uinta Herbarium)			
 UICC	c	University of Indonesia Culture Collection			
 UIDA	s	University of Idaho, Bird and Mammal Museum			

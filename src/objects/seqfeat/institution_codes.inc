@@ -7172,7 +7172,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UHCC\tc\tUniversity of Helsinki Cyanobacteria Culture Collection\t\t\t",
 "UHI\ts\tUssishkin House, Botany Department\t\t\t",
 "UHM\ts\tManoa, College of Tropical Agriculture, Department of Entomology\t\t\t",
-"UI<NGA>\ts\tUniversity of Ibadan\t\t\t",
+"UI<NGA>\tsc\tUniversity of Ibadan\t\t\t",
 "UI<USA-UT>\ts\tBureau of Land Management (Uinta Herbarium)\t\t\t",
 "UICC\tc\tUniversity of Indonesia Culture Collection\t\t\t",
 "UIDA\ts\tUniversity of Idaho, Bird and Mammal Museum\t\t\t",
