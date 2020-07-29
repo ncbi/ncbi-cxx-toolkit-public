@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/general/User_object.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -169,9 +170,18 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     }
 
     if (seh.IsSeq()) {
-        return x_WriteBioseqHandle(seh.GetSeq());
+        CBioseq_Handle bsh = seh.GetSeq();
+        CAnnot_CI aci(bsh, SAnnotSelector());
+        if (aci) {
+            return x_WriteBioseqHandle(bsh);
+        }
+        else {
+            const auto& cc = bsh.GetCompleteBioseq();
+            const auto& data = cc->GetAnnot().front();
+            auto ah = m_pScope->GetObjectHandle(*data);
+            return x_WriteSeqAnnotHandle(ah);
+        }
     }
-
     
     SAnnotSelector sel;
     sel.SetMaxSize(1);
