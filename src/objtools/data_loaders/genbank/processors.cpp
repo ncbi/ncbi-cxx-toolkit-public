@@ -763,7 +763,8 @@ bool s_IsGoodDescr(const CSeqdesc& desc, int mask, const TUserObjectTypesSet& uo
             if ( name == "DBLink" ||
                  name == "GenomeProjectsDB" ||
                  name == "StructuredComment" ||
-                 name == "FeatureFetchPolicy" ) {
+                 name == "FeatureFetchPolicy" ||
+                 name == "Unverified" ) {
                 // For StructuredComment, extract the comment prefix and add to the name
                 if (name == "StructuredComment") {
                     // This loop should normally stop on the first iteration...
