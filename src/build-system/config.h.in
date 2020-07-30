@@ -324,6 +324,9 @@
 /* Define to 1 if non-public CONNECT extensions are available. */
 #undef HAVE_LIBCONNEXT
 
+/* Define to 1 if libcppkafka is available. */
+#undef HAVE_LIBCPPKAFKA
+
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBCRYPT

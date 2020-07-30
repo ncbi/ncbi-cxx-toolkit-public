@@ -76,7 +76,7 @@ case "$with_3psw" in
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, aws-sdk, hiredis,
-                     apache-arrow],
+                     apache-arrow, cppkafka],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -586,6 +586,10 @@ AC_ARG_WITH(apache-arrow,
    [ --with-apache-arrow=DIR use Apache Arrow installation in DIR])
 AC_ARG_WITH(apache-arrow,
    [ --without-apache-arrow  do not use Apache Arrow])
+AC_ARG_WITH(cppkafka,
+   [ --with-cppkafka=DIR     use cppkafka installation in DIR])
+AC_ARG_WITH(cppkafka,
+   [ --without-cppkafka      do not use cppkafka])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -653,7 +657,7 @@ gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
-libxlsxwriter protobuf grpc msgsl aws-sdk hiredis apache-arrow \
+libxlsxwriter protobuf grpc msgsl aws-sdk hiredis apache-arrow cppkafka \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -8506,6 +8510,17 @@ else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
 
+NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
+  [AC_LANG_PROGRAM([[@%:@include <cppkafka/queue.h>]],
+      [[cppkafka::Queue q;]])],
+  [-lrdkafka])
+if test "$with_cppkafka" != no -a \
+     -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
+   CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static -lrdkafka"
+else
+   CPPKAFKA_STATIC_LIBS=$CPPKAFKA_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -9267,6 +9282,7 @@ AC_SUBST(MSGSL_INCLUDE)
 AC_SUBST(AWS_SDK_STATIC_LIBS)
 AC_SUBST(HIREDIS_STATIC_LIBS)
 AC_SUBST(APACHE_ARROW_STATIC_LIBS)
+AC_SUBST(CPPKAFKA_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)

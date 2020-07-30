@@ -666,6 +666,7 @@ PERL_INCLUDE
 UNLESS_PUBSEQOS
 ncbi_xreader_pubseqos2
 ncbi_xreader_pubseqos
+CPPKAFKA_STATIC_LIBS
 APACHE_ARROW_STATIC_LIBS
 HIREDIS_STATIC_LIBS
 AWS_SDK_STATIC_LIBS
@@ -914,6 +915,8 @@ srcdir
 top_srcdir
 build_root
 signature
+CPPKAFKA_LIBS
+CPPKAFKA_INCLUDE
 APACHE_ARROW_LIBS
 APACHE_ARROW_INCLUDE
 HIREDIS_LIBS
@@ -1326,6 +1329,7 @@ with_msgsl
 with_aws_sdk
 with_hiredis
 with_apache_arrow
+with_cppkafka
 with_3psw
 with_local_lbsm
 with_ncbi_crypt
@@ -1903,7 +1907,7 @@ gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
-libxlsxwriter protobuf grpc msgsl aws-sdk hiredis apache-arrow \
+libxlsxwriter protobuf grpc msgsl aws-sdk hiredis apache-arrow cppkafka \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -2337,6 +2341,8 @@ Optional Packages:
  --without-hiredis       do not use Hiredis
  --with-apache-arrow=DIR use Apache Arrow installation in DIR
  --without-apache-arrow  do not use Apache Arrow
+ --with-cppkafka=DIR     use cppkafka installation in DIR
+ --without-cppkafka      do not use cppkafka
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -3960,6 +3966,11 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-apache-arrow but --without-3psw"
          else
             with_apache-arrow=no
+         fi
+        if test "${with_cppkafka-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-cppkafka but --without-3psw"
+         else
+            with_cppkafka=no
          fi
 
       { NCBI=; unset NCBI;}
@@ -5715,6 +5726,18 @@ fi
 # Check whether --with-apache-arrow was given.
 if test "${with_apache_arrow+set}" = set; then :
   withval=$with_apache_arrow;
+fi
+
+
+# Check whether --with-cppkafka was given.
+if test "${with_cppkafka+set}" = set; then :
+  withval=$with_cppkafka;
+fi
+
+
+# Check whether --with-cppkafka was given.
+if test "${with_cppkafka+set}" = set; then :
+  withval=$with_cppkafka;
 fi
 
 
@@ -33327,6 +33350,142 @@ else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
 
+if test "$with_cppkafka" != "no"; then
+    case "$CPPKAFKA_PATH:$with_cppkafka" in
+       *:yes | *: | $with_cppkafka* ) ;;
+       * ) CPPKAFKA_PATH=$with_cppkafka ;;
+    esac
+    if test "$CPPKAFKA_PATH" != /usr -a -d "$CPPKAFKA_PATH"; then
+       in_path=" in $CPPKAFKA_PATH"
+       if test -z "$CPPKAFKA_INCLUDE" -a -d "$CPPKAFKA_PATH/include"; then
+          CPPKAFKA_INCLUDE="-I$CPPKAFKA_PATH/include"
+       fi
+       if test -n "$CPPKAFKA_LIBPATH"; then
+          :
+       elif test -d "$CPPKAFKA_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $CPPKAFKA_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    CPPKAFKA_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $CPPKAFKA_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    CPPKAFKA_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$CPPKAFKA_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $CPPKAFKA_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    CPPKAFKA_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $CPPKAFKA_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    CPPKAFKA_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       CPPKAFKA_LIBS="$CPPKAFKA_LIBPATH -lcppkafka -lrdkafka"
+    else
+       CPPKAFKA_INCLUDE=""
+       CPPKAFKA_LIBS="-lcppkafka -lrdkafka"
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcppkafka$in_path" >&5
+$as_echo_n "checking for libcppkafka$in_path... " >&6; }
+if ${ncbi_cv_lib_cppkafka+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $CPPKAFKA_INCLUDE $orig_CPPFLAGS"
+       LIBS="$CPPKAFKA_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <cppkafka/queue.h>
+int
+main ()
+{
+cppkafka::Queue q;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_cppkafka=yes
+else
+  ncbi_cv_lib_cppkafka=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_cppkafka" >&5
+$as_echo "$ncbi_cv_lib_cppkafka" >&6; }
+    if test "$ncbi_cv_lib_cppkafka" = "no"; then
+       if test "${with_cppkafka:=no}" != no; then
+       as_fn_error $? "--with-cppkafka explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_cppkafka" = "no"; then
+    CPPKAFKA_PATH="No_CPPKAFKA"
+    CPPKAFKA_INCLUDE=
+    CPPKAFKA_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}CPPKAFKA"; WithPackagesSep=" "
+    CPPKAFKA_INCLUDE=" $CPPKAFKA_INCLUDE"
+
+$as_echo "#define HAVE_LIBCPPKAFKA 1" >>confdefs.h
+
+ fi
+
+
+
+if test "$with_cppkafka" != no -a \
+     -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
+   CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static -lrdkafka"
+else
+   CPPKAFKA_STATIC_LIBS=$CPPKAFKA_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -33752,7 +33911,7 @@ for x in ChaosMonkey Int8GI StrictGI PSGLoader GCC KCC ICC AppleClang LLVMClang 
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW CPPKAFKA; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -33846,6 +34005,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
