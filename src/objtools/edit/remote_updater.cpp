@@ -83,6 +83,18 @@ TEntrezId FindPMID(const list<CRef<CPub>>& arr)
 }
 
 
+static bool s_IsConnectionFailure(EError_val mlaErrorVal) {
+    switch(mlaErrorVal) {
+    case eError_val_cannot_connect_pmdb:
+    case eError_val_cannot_connect_searchbackend_pmdb:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+
 CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
 {
     CRef<CPub> result;
@@ -93,23 +105,22 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
     for (int count=0; count<maxCount; ++count) { 
         try {
             result = mlaClient.AskGetpubpmid(request, &reply);
+            return result;
         }
         catch(CException&) {
             auto errorVal = reply.GetError();
-            switch(errorVal) {
-            case eError_val_cannot_connect_pmdb:
-            case eError_val_cannot_connect_searchbackend_pmdb:
-                if (count<maxCount-1) {
-                    continue;
-                }
-            default:
-                break;
+            auto isConnectionError = s_IsConnectionFailure(errorVal);
+            if (isConnectionError && count<maxCount-1) {
+                continue;
             }
         
             CNcbiOstrstream oss;
             oss << "CMLAClient: failed to retrieve publication for PMID " 
-                << id << ": " 
+                << id << ": "
                 << errorVal;
+            if (isConnectionError) {
+                oss << " : " << maxCount << " attempts made.";
+            }
             string msg = CNcbiOstrstreamToString(oss);
             if (!pMessageListener) {
                 NCBI_THROW(CException, eUnknown, msg);
