@@ -47,6 +47,8 @@
 
 BEGIN_NCBI_SCOPE
 
+bool CJsonResponse::sm_SetReplyType = true;
+
 struct SNewRequestContext
 {
     SNewRequestContext() :
@@ -131,9 +133,8 @@ SJsonOut::~SJsonOut()
 }
 
 template <class TItem>
-CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, bool set_reply_type) :
-    m_JsonObj(SetObject()),
-    m_SetReplyType(set_reply_type)
+CJsonResponse::CJsonResponse(EPSG_Status status, TItem item) :
+    m_JsonObj(SetObject())
 {
     if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
         m_JsonObj["request_id"].SetValue().SetString(*request_id);
@@ -194,7 +195,7 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 {
     auto reply_item_type = reply_item->GetType();
 
-    if (m_SetReplyType) {
+    if (sm_SetReplyType) {
         m_JsonObj["reply"].SetValue().SetString(s_GetItemName(reply_item_type));
     }
 
@@ -645,7 +646,7 @@ void CParallelProcessing::BatchResolve::Reporter(TReplyQueue& input, SJsonOut& o
             auto status = item->GetStatus(CDeadline::eInfinite);
             _ASSERT(status != EPSG_Status::eInProgress);
 
-            CJsonResponse result_doc(status, item, false);
+            CJsonResponse result_doc(status, item);
             output << result_doc;
         }
 
@@ -653,7 +654,7 @@ void CParallelProcessing::BatchResolve::Reporter(TReplyQueue& input, SJsonOut& o
         _ASSERT(status != EPSG_Status::eInProgress);
 
         if (status != EPSG_Status::eSuccess) {
-            CJsonResponse result_doc(status, reply, false);
+            CJsonResponse result_doc(status, reply);
             output << result_doc;
         }
     }

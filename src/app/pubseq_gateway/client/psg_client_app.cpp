@@ -347,6 +347,7 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const string& service, const
         ctx.SetSessionID();
         ctx.SetHitID();
 
+        CJsonResponse::SetReplyType(false);
         return CProcessing::ParallelProcessing(service, args, true, false);
     }
 }

@@ -76,11 +76,13 @@ class CJsonResponse : public CJson_Document
 {
 public:
     template <class TItem>
-    CJsonResponse(EPSG_Status status, TItem item, bool set_reply_type = true);
+    CJsonResponse(EPSG_Status status, TItem item);
 
     CJsonResponse(const string& id, bool result);
     CJsonResponse(const string& id, const CJson_Document& result);
     CJsonResponse(const string& id, int code, const string& message);
+
+    static void SetReplyType(bool value) { sm_SetReplyType = value; }
 
 private:
     CJsonResponse(const string& id);
@@ -98,7 +100,7 @@ private:
     void Fill(TItem item, EPSG_Status status);
 
     CJson_Object m_JsonObj;
-    const bool m_SetReplyType = true;
+    static bool sm_SetReplyType;
 };
 
 class CParallelProcessing
