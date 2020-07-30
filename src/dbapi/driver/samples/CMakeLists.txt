@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-
+NCBI_project_tags(sample)
 NCBI_project_watchers(ucko satskyse)
 NCBI_add_library(dbapi_sample_base)
 NCBI_add_app(lang_query dbapi_driver_check)
