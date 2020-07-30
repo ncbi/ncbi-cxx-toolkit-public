@@ -754,11 +754,20 @@ CPSG_BioseqInfo::TState CPSG_BioseqInfo::GetState() const
     return static_cast<TState>(m_Data.GetInteger("state"));
 }
 
+CPSG_BlobId s_GetBlobId(const CJsonNode& data)
+{
+    if (data.HasKey("blob_id")) {
+        return data.GetString("blob_id");
+    }
+
+    auto sat = static_cast<int>(data.GetInteger("sat"));
+    auto sat_key = static_cast<int>(data.GetInteger("sat_key"));
+    return { sat, sat_key };
+}
+
 CPSG_BlobId CPSG_BioseqInfo::GetBlobId() const
 {
-    auto sat = static_cast<int>(m_Data.GetInteger("sat"));
-    auto sat_key = static_cast<int>(m_Data.GetInteger("sat_key"));
-    return CPSG_BlobId(sat, sat_key);
+    return s_GetBlobId(m_Data);
 }
 
 TTaxId CPSG_BioseqInfo::GetTaxId() const
@@ -817,9 +826,7 @@ CRange<TSeqPos> CPSG_NamedAnnotInfo::GetRange() const
 
 CPSG_BlobId CPSG_NamedAnnotInfo::GetBlobId() const
 {
-    auto sat = static_cast<int>(m_Data.GetInteger("sat"));
-    auto sat_key = static_cast<int>(m_Data.GetInteger("sat_key"));
-    return { sat, sat_key };
+    return s_GetBlobId(m_Data);
 }
 
 Uint8 CPSG_NamedAnnotInfo::GetVersion() const
