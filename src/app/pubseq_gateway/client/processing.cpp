@@ -928,7 +928,7 @@ int CProcessing::Report(istream& is, ostream& os, double percentage)
 
 struct STestingContext : string
 {
-    enum EExpected { eSuccess, eReplyError, eReplyItemError };
+    enum EExpected { eSuccess, eFailure };
 
     EExpected expected;
 
@@ -946,20 +946,9 @@ shared_ptr<STestingContext> STestingContext::CreateContext(string id, CJson_Cons
         auto params_obj = params.GetObject();
 
         if (params_obj.has("expected_result")) {
-            auto expected = params_obj["expected_result"];
-
-            if (expected.IsObject()) {
-                auto expected_obj = expected.GetObject();
-                auto result = eSuccess;
-
-                if (expected_obj.has("fail")) {
-                    result = expected_obj["fail"].GetValue().GetString() == "reply" ? eReplyError : eReplyItemError;
-                }
-
-                return make_shared<STestingContext>(move(id), result);
-            } else {
-                error = "'expected_result' is not of object type";
-            }
+            auto expected = params_obj["expected_result"].GetValue().GetString();
+            auto result = expected == "success" ? eSuccess : eFailure;
+            return make_shared<STestingContext>(move(id), result);
         } else {
             error = "no 'expected_result' found";
         }
@@ -1054,11 +1043,11 @@ int CProcessing::Testing(const string& service)
 
         _ASSERT(request.get() == received_request.get());
 
-        const bool expect_reply_errors = expected_result->expected == STestingContext::eReplyError;
+        const bool expect_errors = expected_result->expected == STestingContext::eFailure;
         auto reply_status = reply->GetStatus(CDeadline::eInfinite);
 
         if (reply_status != EPSG_Status::eSuccess) {
-            if (!expect_reply_errors) {
+            if (!expect_errors) {
                 rv = SExitCode::eTestFail;
                 string prefix("Fail for request '" + request_id + "' expected to succeed: ");
                 stringstream ss;
@@ -1066,13 +1055,8 @@ int CProcessing::Testing(const string& service)
                 cerr << ss.rdbuf();
             }
 
-        } else if (expect_reply_errors) {
-            rv = SExitCode::eTestFail;
-            cerr << "Success for request '" << request_id << "' expected to fail" << endl;
-
         } else {
-            const bool expect_item_errors = expected_result->expected == STestingContext::eReplyItemError;
-            rv = s_CheckItems(expect_item_errors, request_id, reply);
+            rv = s_CheckItems(expect_errors, request_id, reply);
         }
     }
 
