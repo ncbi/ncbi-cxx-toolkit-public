@@ -85,7 +85,7 @@ public:
 private:
     CJsonResponse(const string& id);
 
-    void Fill(EPSG_Status status, shared_ptr<CPSG_Reply> reply);
+    void Fill(EPSG_Status status, shared_ptr<CPSG_Reply> reply) { Fill(reply, status); }
     void Fill(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item);
 
     void Fill(shared_ptr<CPSG_BlobData> blob_data);
@@ -95,7 +95,7 @@ private:
     void Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
 
     template <class TItem>
-    void Fill(TItem item, string type);
+    void Fill(TItem item, EPSG_Status status);
 
     CJson_Object m_JsonObj;
     const bool m_SetReplyType = true;

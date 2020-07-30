@@ -176,24 +176,30 @@ CJsonResponse::CJsonResponse(const string& id) :
     }
 }
 
-void CJsonResponse::Fill(EPSG_Status reply_status, shared_ptr<CPSG_Reply> reply)
+const char* s_GetItemName(CPSG_ReplyItem::EType type)
 {
-    Fill(reply, s_StrStatus(reply_status));
+    switch (type) {
+        case CPSG_ReplyItem::eBlobData:       return "BlobData";
+        case CPSG_ReplyItem::eBlobInfo:       return "BlobInfo";
+        case CPSG_ReplyItem::eSkippedBlob:    return "SkippedBlob";
+        case CPSG_ReplyItem::eBioseqInfo:     return "BioseqInfo";
+        case CPSG_ReplyItem::eNamedAnnotInfo: return "NamedAnnotInfo";
+        case CPSG_ReplyItem::eEndOfReply:     _TROUBLE;
+    }
+
+    return nullptr;
 }
 
 void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
 {
     auto reply_item_type = reply_item->GetType();
 
+    if (m_SetReplyType) {
+        m_JsonObj["reply"].SetValue().SetString(s_GetItemName(reply_item_type));
+    }
+
     if (reply_item_status != EPSG_Status::eSuccess) {
-        switch (reply_item_type) {
-            case CPSG_ReplyItem::eBlobData:       return Fill(reply_item, "BlobData");
-            case CPSG_ReplyItem::eBlobInfo:       return Fill(reply_item, "BlobInfo");
-            case CPSG_ReplyItem::eSkippedBlob:    return Fill(reply_item, "SkippedBlob");
-            case CPSG_ReplyItem::eBioseqInfo:     return Fill(reply_item, "BioseqInfo");
-            case CPSG_ReplyItem::eNamedAnnotInfo: return Fill(reply_item, "NamedAnnotInfo");
-            case CPSG_ReplyItem::eEndOfReply:     _TROUBLE; return;
-        }
+        return Fill(reply_item, reply_item_status);
     }
 
     switch (reply_item_type) {
@@ -220,7 +226,6 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
 {
-    if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString("BlobData");
     m_JsonObj["id"].SetValue().SetString(blob_data->GetId().Get());
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
@@ -229,7 +234,6 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
 {
-    if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString("BlobInfo");
     m_JsonObj["id"].SetValue().SetString(blob_info->GetId().Get());
     m_JsonObj["compression"].SetValue().SetString(blob_info->GetCompression());
     m_JsonObj["format"].SetValue().SetString(blob_info->GetFormat());
@@ -272,15 +276,12 @@ string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
 {
-    if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString("SkippedBlob");
     m_JsonObj["id"].SetValue().SetString(skipped_blob->GetId().Get());
     m_JsonObj["reason"].SetValue().SetString(s_ReasonToString(skipped_blob->GetReason()));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
-    if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString("BioseqInfo");
-
     const auto included_info = bioseq_info->IncludedInfo();
 
     if (included_info & CPSG_Request_Resolve::fCanonicalId)  m_JsonObj["canonical_id"].SetValue().SetString(bioseq_info->GetCanonicalId().Get());
@@ -306,7 +307,6 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
-    if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString("NamedAnnotInfo");
     m_JsonObj["name"].SetValue().SetString(named_annot_info->GetName());
 
     const auto range = named_annot_info->GetRange();
@@ -332,9 +332,9 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 }
 
 template <class TItem>
-void CJsonResponse::Fill(TItem item, string type)
+void CJsonResponse::Fill(TItem item, EPSG_Status status)
 {
-    if (m_SetReplyType) m_JsonObj["reply"].SetValue().SetString(type);
+    m_JsonObj["status"].SetValue().SetString(s_StrStatus(status));
 
     for (;;) {
         auto message = item->GetNextMessage();
