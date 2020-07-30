@@ -459,6 +459,9 @@ public:
     /// Get the reply that contains this item
     shared_ptr<CPSG_Reply> GetReply() const { return m_Reply; }
 
+    /// Get processor ID
+    const string& GetProcessorId() { return m_ProcessorId; }
+
     virtual ~CPSG_ReplyItem();
 
 protected:
@@ -469,6 +472,7 @@ private:
     unique_ptr<SImpl>      m_Impl;
     shared_ptr<CPSG_Reply> m_Reply;
     const EType            m_Type;
+    string                 m_ProcessorId;
 
     friend class CPSG_Reply;
 };

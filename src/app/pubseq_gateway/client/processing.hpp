@@ -83,6 +83,7 @@ public:
     CJsonResponse(const string& id, int code, const string& message);
 
     static void SetReplyType(bool value) { sm_SetReplyType = value; }
+    static void Verbose(bool value) { sm_Verbose = value; }
 
 private:
     CJsonResponse(const string& id);
@@ -101,6 +102,7 @@ private:
 
     CJson_Object m_JsonObj;
     static bool sm_SetReplyType;
+    static bool sm_Verbose;
 };
 
 class CParallelProcessing

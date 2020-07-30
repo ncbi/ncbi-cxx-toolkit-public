@@ -197,6 +197,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
     auto& chunks = item_locked->chunks;
     auto& args = item_locked->args;
     auto item_type = args.GetValue("item_type");
+    auto processor_id = args.GetValue("processor_id");
 
     if (item_type == "blob") {
         auto blob_id = args.GetValue("blob_id");
@@ -247,6 +248,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
     rv->m_Impl.reset(impl.release());
     rv->m_Reply = user_reply_locked;
+    rv->m_ProcessorId = move(processor_id);
     return rv;
 }
 

@@ -48,6 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 bool CJsonResponse::sm_SetReplyType = true;
+bool CJsonResponse::sm_Verbose = false;
 
 struct SNewRequestContext
 {
@@ -197,6 +198,10 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
     if (sm_SetReplyType) {
         m_JsonObj["reply"].SetValue().SetString(s_GetItemName(reply_item_type));
+    }
+
+    if (sm_Verbose) {
+        m_JsonObj["processor_id"].SetValue().SetString(reply_item->GetProcessorId());
     }
 
     if (reply_item_status != EPSG_Status::eSuccess) {
