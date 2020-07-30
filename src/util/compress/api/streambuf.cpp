@@ -602,6 +602,9 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
             break;
         }
     }
+#if 0
+    // NOTE: probably this guard not really necessary, it creates more problems with pushback streams.
+
     if (count  &&  !done) {
         // Something is going wrong, ProcessStreamRead() should produce some data.
         // If returns nothing, it will unable to recover anyway.
@@ -609,6 +612,7 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
             THROW_FAILURE;
         }
     }
+#endif
     return done;
 }
 
