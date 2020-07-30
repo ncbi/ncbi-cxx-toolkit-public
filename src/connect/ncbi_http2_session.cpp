@@ -654,5 +654,15 @@ void CHttpSessionImpl2::StartRequest(CHttpSession_Base::EProtocol protocol, CHtt
     req.x_InitConnection2(move(stream), /* TODO: */ false);
 }
 
+bool CHttpSessionImpl2::Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol)
+{
+    if (resp.GetStatusCode() || (protocol <= CHttpSession_Base::eHTTP_11)) {
+        return false;
+    }
+
+    protocol = CHttpSession_Base::eHTTP_11;
+    return true;
+}
+
 
 END_NCBI_SCOPE

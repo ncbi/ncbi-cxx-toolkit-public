@@ -684,6 +684,7 @@ CHttpResponse CHttpRequest::Execute(void)
     SRetryProcessing retry_processing(m_RetryProcessing, m_Deadline, m_Url,
             m_Method, m_Headers, m_FormData);
     CRef<CHttpResponse> ret;
+    auto protocol = m_Session->GetProtocol();
 
     do {
         // Connection not open yet.
@@ -695,7 +696,7 @@ CHttpResponse CHttpRequest::Execute(void)
                     "An attempt to execute HTTP request already being executed");
             }
 
-            m_Session->x_StartRequest(*this, have_data);
+            m_Session->x_StartRequest(protocol, *this, have_data);
         }
         _ASSERT(m_Response);
         _ASSERT(m_Stream);
@@ -708,7 +709,7 @@ CHttpResponse CHttpRequest::Execute(void)
         ret = m_Response;
         m_Response.Reset();
     }
-    while (retry_processing(ret->Headers()));
+    while (m_Session->x_Downgrade(*ret, protocol) || retry_processing(ret->Headers()));
 
     return *ret;
 }
@@ -726,7 +727,7 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
                 "An attempt to execute HTTP request already being executed");
         }
 
-        m_Session->x_StartRequest(*this, false);
+        m_Session->x_StartRequest(m_Session->GetProtocol(), *this, false);
     }
     _ASSERT(m_Response);
     _ASSERT(m_Stream);

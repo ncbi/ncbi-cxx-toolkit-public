@@ -659,7 +659,8 @@ private:
     friend class CHttpRequest;
     friend class CHttpResponse;
 
-    virtual void x_StartRequest(CHttpRequest& req, bool use_form_data) = 0;
+    virtual void x_StartRequest(EProtocol protocol, CHttpRequest& req, bool use_form_data) = 0;
+    virtual bool x_Downgrade(CHttpResponse& resp, EProtocol& protocol) const = 0;
 
     // Save cookies returned by a response.
     void x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
@@ -676,9 +677,14 @@ private:
 template <class TImpl>
 class CHttpSessionTmpl : public CHttpSession_Base
 {
-    void x_StartRequest(CHttpRequest& req, bool use_form_data) override
+    void x_StartRequest(EProtocol protocol, CHttpRequest& req, bool use_form_data) override
     {
-        TImpl::StartRequest(GetProtocol(), req, use_form_data);
+        TImpl::StartRequest(protocol, req, use_form_data);
+    }
+
+    bool x_Downgrade(CHttpResponse& resp, EProtocol& protocol) const override
+    {
+        return TImpl::Downgrade(resp, protocol);
     }
 };
 
@@ -691,6 +697,11 @@ class CHttpSessionImpl1x
     {
         _ASSERT(protocol <= CHttpSession_Base::eHTTP_11);
         req.x_InitConnection(use_form_data);
+    }
+
+    static bool Downgrade(CHttpResponse&, CHttpSession_Base::EProtocol&)
+    {
+        return false;
     }
 };
 
