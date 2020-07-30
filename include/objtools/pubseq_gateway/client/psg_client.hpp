@@ -441,6 +441,7 @@ public:
         eSkippedBlob,
         eBioseqInfo,
         eNamedAnnotInfo,
+        eProcessor,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
     };
 

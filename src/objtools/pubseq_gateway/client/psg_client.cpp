@@ -232,6 +232,9 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         auto name = args.GetValue("na");
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(name), chunks));
 
+    } else if (item_type == "processor") {
+        rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor));
+
     } else {
         if (TPSG_FailOnUnknownItems::GetDefault()) {
             NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);

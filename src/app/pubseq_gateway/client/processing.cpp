@@ -186,6 +186,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type)
         case CPSG_ReplyItem::eSkippedBlob:    return "SkippedBlob";
         case CPSG_ReplyItem::eBioseqInfo:     return "BioseqInfo";
         case CPSG_ReplyItem::eNamedAnnotInfo: return "NamedAnnotInfo";
+        case CPSG_ReplyItem::eProcessor:      return "Processor";
         case CPSG_ReplyItem::eEndOfReply:     _TROUBLE;
     }
 
@@ -223,6 +224,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
         case CPSG_ReplyItem::eNamedAnnotInfo:
             return Fill(static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item));
+
+        case CPSG_ReplyItem::eProcessor:
+            return Fill(reply_item, reply_item_status);
 
         case CPSG_ReplyItem::eEndOfReply:
             _TROUBLE;
