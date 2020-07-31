@@ -70,6 +70,8 @@ endif()
 if(EXISTS "${_testdata}")
     set(ENV{NCBI_TEST_DATA} "${_testdata}")
 endif()
+string(REPLACE  ";" " " _test_args "${NCBITEST_ARGS}")
+string(REPLACE  ";" " " _test_cmd  "${NCBITEST_COMMAND}")
 
 if(WIN32)
     set(ENV{PATH}    "${_cfg_bin}\\${NCBITEST_CONFIG};${_cfg_lib}\\${NCBITEST_CONFIG};${_scripts}$ENV{PATH}")
@@ -110,6 +112,8 @@ endif()
 set(ENV{CHECK_EXEC} " ")
 
 set(_result "1")
+string(TIMESTAMP _test_start "%m/%d/%Y %H:%M:%S")
+string(TIMESTAMP _time_start "%s")
 execute_process(
     COMMAND           ${NCBITEST_COMMAND} ${NCBITEST_ARGS}
     WORKING_DIRECTORY ${_workdir}
@@ -118,7 +122,23 @@ execute_process(
     OUTPUT_FILE       ${_output}
     ERROR_FILE        ${_output}
 )
+string(TIMESTAMP _test_stop "%m/%d/%Y %H:%M:%S")
+string(TIMESTAMP _time_stop "%s")
+math(EXPR _test_real "${_time_stop} - ${_time_start}")
 file(REMOVE_RECURSE ${_workdir})
+
+file(READ ${_output} _contents)
+set(_info)
+string(APPEND _info "======================================================================\n")
+string(APPEND _info "${NCBITEST_NAME}\n")
+string(APPEND _info "======================================================================\n")
+string(APPEND _info "\nCommand line: ${_test_cmd} ${_test_args}\n\n")
+string(APPEND _info ${_contents})
+string(APPEND _info "\nreal ${_test_real}\n")
+string(APPEND _info "Start time   : ${_test_start}\n")
+string(APPEND _info "Stop time    : ${_test_stop}\n")
+string(APPEND _info "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@ EXIT CODE: ${_result}\n")
+file(WRITE ${_output} ${_info})
 
 if (NOT ${_result} EQUAL "0")
     message(SEND_ERROR "Test ${NCBITEST_NAME} failed (error=${_result})")
