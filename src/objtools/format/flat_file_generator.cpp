@@ -792,6 +792,20 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
+(const CBioseq_Handle& bsh,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, *item_os, useSeqEntryIndexing);
+
+}
+
+
+void CFlatFileGenerator::Generate
 (const CSeq_submit& submit,
  CScope& scope,
  CNcbiOstream& os)

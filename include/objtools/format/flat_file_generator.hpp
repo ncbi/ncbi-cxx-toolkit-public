@@ -102,6 +102,7 @@ public:
 
     // Versions that loop through Bioseq components
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os, bool useSeqEntryIndexing);
+    void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os, bool useSeqEntryIndexing);
     void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, bool useSeqEntryIndexing);
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing);
 
