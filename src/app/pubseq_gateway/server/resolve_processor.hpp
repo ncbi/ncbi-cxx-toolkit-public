@@ -47,7 +47,8 @@ class CPSGS_ResolveProcessor : public IPSGS_Processor,
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                             shared_ptr<CPSGS_Reply> reply) const;
+                                             shared_ptr<CPSGS_Reply> reply,
+                                             TProcessorPriority  priority) const;
     virtual void Process(void);
     virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);
@@ -57,7 +58,8 @@ public:
 public:
     CPSGS_ResolveProcessor();
     CPSGS_ResolveProcessor(shared_ptr<CPSGS_Request> request,
-                           shared_ptr<CPSGS_Reply> reply);
+                           shared_ptr<CPSGS_Reply> reply,
+                           TProcessorPriority  priority);
     virtual ~CPSGS_ResolveProcessor();
 
 private:

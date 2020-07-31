@@ -204,6 +204,59 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
 }
 
 
+// If the name has already been processed then it returns a priority of
+// the processor which did it.
+// If the name is new to the list then returns kUnknownPriority
+// The highest priority will be stored together with the name.
+TProcessorPriority
+SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
+                                          const string &  name)
+{
+    TProcessorPriority      ret = kUnknownPriority;
+
+    for (auto &  item : m_Processed) {
+        if (item.second == name) {
+            ret = item.first;
+            item.first = max(item.first, priority);
+            break;
+        }
+    }
+
+    if (ret == kUnknownPriority) {
+        // Not found => add
+        m_Processed.push_back(make_pair(priority, name));
+    }
+
+    return ret;
+}
+
+
+// The names could be processed by the other processors which priority is
+// higher (or equal) than the given. Those names should not be provided.
+vector<string>
+SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
+{
+    vector<string>      ret = m_Names;
+
+    for (const auto &  item : m_Processed) {
+        if (item.first >= priority) {
+            auto    it = find(ret.begin(), ret.end(), item.second);
+            if (it != ret.end()) {
+                ret.erase(it);
+            }
+        }
+    }
+    return ret;
+}
+
+
+vector<pair<TProcessorPriority, string>>
+SPSGS_AnnotRequest::GetProcessedNames(void) const
+{
+    return m_Processed;
+}
+
+
 CJsonNode SPSGS_TSEChunkRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());

@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "pubseq_gateway_exception.hpp"
+#include "pubseq_gateway_types.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -464,11 +465,6 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
 
 struct SPSGS_AnnotRequest : public SPSGS_RequestBase
 {
-    string                  m_SeqId;
-    int                     m_SeqIdType;
-    vector<string>          m_Names;
-    EPSGS_CacheAndDbUse     m_UseCache;
-
     SPSGS_AnnotRequest(const string &  seq_id,
                        int  seq_id_type,
                        vector<string> &  names,
@@ -488,6 +484,11 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
         m_UseCache(ePSGS_UnknownUseCache)
     {}
 
+    SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = default;
+    SPSGS_AnnotRequest(SPSGS_AnnotRequest &&) = default;
+    SPSGS_AnnotRequest &  operator=(const SPSGS_AnnotRequest &) = default;
+    SPSGS_AnnotRequest &  operator=(SPSGS_AnnotRequest &&) = default;
+
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
     {
         return CPSGS_Request::ePSGS_AnnotationRequest;
@@ -500,10 +501,31 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
 
     virtual CJsonNode Serialize(void) const;
 
-    SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = default;
-    SPSGS_AnnotRequest(SPSGS_AnnotRequest &&) = default;
-    SPSGS_AnnotRequest &  operator=(const SPSGS_AnnotRequest &) = default;
-    SPSGS_AnnotRequest &  operator=(SPSGS_AnnotRequest &&) = default;
+    // Facilities to work with the list of already processed names
+
+    // If the given name is already in the list then the priority
+    // of the processor which has registered it before is returned
+    // If the given name is not in the list then kUnknownPriority constant is
+    // returned.
+    // The highest priority will be stored together with the name.
+    TProcessorPriority RegisterProcessedName(TProcessorPriority  priority,
+                                             const string &  name);
+
+    // Names which have not been processed by a processor which priority
+    // is higher than given
+    vector<string> GetNotProcessedName(TProcessorPriority  priority);
+
+    vector<pair<TProcessorPriority, string>>  GetProcessedNames(void) const;
+
+public:
+    string                  m_SeqId;
+    int                     m_SeqIdType;
+    vector<string>          m_Names;
+    EPSGS_CacheAndDbUse     m_UseCache;
+
+private:
+    // A list of names which have been already processed by some processors
+    vector<pair<TProcessorPriority, string>>    m_Processed;
 };
 
 

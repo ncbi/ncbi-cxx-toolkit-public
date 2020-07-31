@@ -52,18 +52,18 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                                 shared_ptr<CPSGS_Request> request,
                                 shared_ptr<CPSGS_Reply> reply,
-                                vector<string> &  valid_names) :
+                                TProcessorPriority  priority) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished,
                            this, _1),
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4)),
-    m_ValidNames(move(valid_names)),
     m_Cancelled(false)
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;
+    IPSGS_Processor::m_Priority = priority;
 
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_AnnotRequest>() everywhere
@@ -77,24 +77,25 @@ CPSGS_AnnotProcessor::~CPSGS_AnnotProcessor()
 
 IPSGS_Processor*
 CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                      shared_ptr<CPSGS_Reply> reply) const
+                                      shared_ptr<CPSGS_Reply> reply,
+                                      TProcessorPriority  priority) const
 {
     if (request->GetRequestType() != CPSGS_Request::ePSGS_AnnotationRequest)
         return nullptr;
 
-    auto    valid_annots = x_FilterNames(request);
+    auto    valid_annots = x_FilterNames(request->GetRequest<SPSGS_AnnotRequest>().m_Names);
     if (valid_annots.empty())
         return nullptr;
 
-    return new CPSGS_AnnotProcessor(request, reply, valid_annots);
+    return new CPSGS_AnnotProcessor(request, reply, priority);
 }
 
 
 vector<string>
-CPSGS_AnnotProcessor::x_FilterNames(shared_ptr<CPSGS_Request> request)
+CPSGS_AnnotProcessor::x_FilterNames(const vector<string> &  names)
 {
     vector<string>  valid_annots;
-    for (const auto &  name : request->GetRequest<SPSGS_AnnotRequest>().m_Names) {
+    for (const auto &  name : names) {
         if (x_IsNameValid(name))
             valid_annots.push_back(name);
     }
@@ -111,6 +112,18 @@ bool CPSGS_AnnotProcessor::x_IsNameValid(const string &  name)
 
 void CPSGS_AnnotProcessor::Process(void)
 {
+    // The other processors may have been triggered before this one.
+    // So check if there are still not processed yet names which can be
+    // processed by this processor
+    auto    not_processed_names = m_AnnotRequest->GetNotProcessedName(m_Priority);
+    m_ValidNames = x_FilterNames(not_processed_names);
+    if (m_ValidNames.empty()) {
+        UpdateOverallStatus(CRequestStatus::e200_Ok);
+        m_Completed = true;
+        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        return;
+    }
+
     // In both cases: sync or async resolution --> a callback will be called
     ResolveInputSeqId();
 }
@@ -274,9 +287,40 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
             "Named annotation data received",
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
-    IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
-        annot_record.GetAnnotName(), GetName(),
-        ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+
+    auto    other_proc_priority = m_AnnotRequest->RegisterProcessedName(
+                    m_Priority, annot_record.GetAnnotName());
+    if (other_proc_priority == kUnknownPriority) {
+        // Has not been processed yet at all
+        IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
+            annot_record.GetAnnotName(), GetName(),
+            ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+    } else if (other_proc_priority < m_Priority) {
+        // Was processed by a lower priority processor so it needs to be
+        // send anyway
+        if (IPSGS_Processor::m_Request->NeedTrace()) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "The NA name " + annot_record.GetAnnotName() + " has already "
+                "been processed by the other processor. The data are to be sent"
+                " because the other processor priority (" +
+                to_string(other_proc_priority) + ") is lower than mine (" +
+                to_string(m_Priority) + ")",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+        IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
+            annot_record.GetAnnotName(), GetName(),
+            ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+    } else {
+        // The other processor has already processed it
+        if (IPSGS_Processor::m_Request->NeedTrace()) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Skip sending NA name " + annot_record.GetAnnotName() +
+                " because the other processor with priority " +
+                to_string(other_proc_priority) + " has already processed it "
+                "(my priority is " + to_string(m_Priority) + ")",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+    }
 
     x_Peek(false);
     return true;

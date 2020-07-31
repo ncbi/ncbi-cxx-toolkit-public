@@ -49,7 +49,8 @@ CPSGS_ResolveProcessor::CPSGS_ResolveProcessor() :
 
 CPSGS_ResolveProcessor::CPSGS_ResolveProcessor(
                                 shared_ptr<CPSGS_Request> request,
-                                shared_ptr<CPSGS_Reply> reply) :
+                                shared_ptr<CPSGS_Reply> reply,
+                                TProcessorPriority  priority) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_ResolveProcessor::x_OnSeqIdResolveFinished,
@@ -60,6 +61,7 @@ CPSGS_ResolveProcessor::CPSGS_ResolveProcessor(
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;
+    IPSGS_Processor::m_Priority = priority;
 
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_ResolveRequest>() everywhere
@@ -73,10 +75,11 @@ CPSGS_ResolveProcessor::~CPSGS_ResolveProcessor()
 
 IPSGS_Processor*
 CPSGS_ResolveProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                        shared_ptr<CPSGS_Reply> reply) const
+                                        shared_ptr<CPSGS_Reply> reply,
+                                        TProcessorPriority  priority) const
 {
     if (request->GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest)
-        return new CPSGS_ResolveProcessor(request, reply);
+        return new CPSGS_ResolveProcessor(request, reply, priority);
     return nullptr;
 }
 

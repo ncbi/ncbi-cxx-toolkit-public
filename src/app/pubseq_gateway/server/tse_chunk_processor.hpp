@@ -47,7 +47,8 @@ class CPSGS_TSEChunkProcessor : public IPSGS_Processor,
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                             shared_ptr<CPSGS_Reply> reply) const;
+                                             shared_ptr<CPSGS_Reply> reply,
+                                             TProcessorPriority  priority) const;
     virtual void Process(void);
     virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);
@@ -58,6 +59,7 @@ public:
     CPSGS_TSEChunkProcessor();
     CPSGS_TSEChunkProcessor(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply,
+                            TProcessorPriority  priority,
                             const SCass_BlobId &  blob_id);
     virtual ~CPSGS_TSEChunkProcessor();
 

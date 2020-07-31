@@ -48,7 +48,8 @@ CPSGS_GetProcessor::CPSGS_GetProcessor() :
 
 
 CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
-                                       shared_ptr<CPSGS_Reply> reply) :
+                                       shared_ptr<CPSGS_Reply> reply,
+                                       TProcessorPriority  priority) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_GetProcessor::x_OnSeqIdResolveFinished,
@@ -60,6 +61,7 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;
+    IPSGS_Processor::m_Priority = priority;
 
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>() everywhere
@@ -80,10 +82,11 @@ CPSGS_GetProcessor::~CPSGS_GetProcessor()
 
 IPSGS_Processor*
 CPSGS_GetProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                    shared_ptr<CPSGS_Reply> reply) const
+                                    shared_ptr<CPSGS_Reply> reply,
+                                    TProcessorPriority  priority) const
 {
     if (request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest)
-        return new CPSGS_GetProcessor(request, reply);
+        return new CPSGS_GetProcessor(request, reply, priority);
     return nullptr;
 }
 

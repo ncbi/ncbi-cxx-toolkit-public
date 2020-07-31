@@ -55,7 +55,8 @@ CPSGS_OSGProcessor::~CPSGS_OSGProcessor()
 
 IPSGS_Processor*
 CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                    shared_ptr<CPSGS_Reply> reply) const
+                                    shared_ptr<CPSGS_Reply> reply,
+                                    TProcessorPriority priority) const
 {
     auto app = CPubseqGatewayApp::GetInstance();
     if ( !app->GetOSGEnabled() ) {

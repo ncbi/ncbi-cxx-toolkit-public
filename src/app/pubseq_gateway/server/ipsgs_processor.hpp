@@ -101,7 +101,8 @@ public:
     ///  New processor object if this processor can theoretically fulfill
     ///  (all or a part of) the request; else NULL.
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                             shared_ptr<CPSGS_Reply> reply) const = 0;
+                                             shared_ptr<CPSGS_Reply> reply,
+                                             TProcessorPriority  priority) const = 0;
 
     /// Main processing function
     /// @throw
@@ -143,9 +144,18 @@ public:
         return m_Reply;
     }
 
+    /// Provides the processor priority
+    /// @return
+    ///  The processor priority
+    TProcessorPriority GetPriority(void) const
+    {
+        return m_Priority;
+    }
+
 protected:
     shared_ptr<CPSGS_Request>  m_Request;
     shared_ptr<CPSGS_Reply>    m_Reply;
+    TProcessorPriority         m_Priority;
 };
 
 #endif  // IPSGS_PROCESSOR__HPP

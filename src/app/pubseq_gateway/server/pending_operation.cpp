@@ -165,6 +165,32 @@ void CPendingOperation::Peek(bool  need_wait)
                 m_UserRequest->GetStartTimestamp());
         }
 
+        if (processor_status == IPSGS_Processor::ePSGS_Found) {
+            switch (m_UserRequest->GetRequestType()) {
+                case CPSGS_Request::ePSGS_ResolveRequest:
+                case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+                case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+                case CPSGS_Request::ePSGS_TSEChunkRequest:
+                    // Upon success no need to continue
+                    x_FinalizeReply();
+                    return;
+                case CPSGS_Request::ePSGS_AnnotationRequest:
+                    // It needs to be checked if all the annotations are processed.
+                    {
+                        auto    proc_priority = (*m_CurrentProcessor)->GetPriority();
+                        auto    annot_request = m_UserRequest->GetRequest<SPSGS_AnnotRequest>();
+                        auto    not_processed_names = annot_request.GetNotProcessedName(proc_priority);
+                        if (not_processed_names.empty()) {
+                            x_FinalizeReply();
+                            return;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
         ++m_CurrentProcessor;
         if (m_CurrentProcessor == m_Processors.end()) {
             x_FinalizeReply();

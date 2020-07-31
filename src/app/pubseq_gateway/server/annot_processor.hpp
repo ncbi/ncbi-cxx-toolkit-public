@@ -47,7 +47,8 @@ class CPSGS_AnnotProcessor : public IPSGS_Processor,
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                             shared_ptr<CPSGS_Reply> reply) const;
+                                             shared_ptr<CPSGS_Reply> reply,
+                                             TProcessorPriority  priority) const;
     virtual void Process(void);
     virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);
@@ -58,11 +59,11 @@ public:
     CPSGS_AnnotProcessor();
     CPSGS_AnnotProcessor(shared_ptr<CPSGS_Request> request,
                          shared_ptr<CPSGS_Reply> reply,
-                         vector<string> &  valid_names);
+                         TProcessorPriority  priority);
     virtual ~CPSGS_AnnotProcessor();
 
 private:
-    static vector<string> x_FilterNames(shared_ptr<CPSGS_Request> request);
+    static vector<string> x_FilterNames(const vector<string> &  names);
     static bool x_IsNameValid(const string &  name);
     void x_OnSeqIdResolveError(
                         CRequestStatus::ECode  status,

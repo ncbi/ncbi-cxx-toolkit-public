@@ -46,11 +46,13 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
                                   shared_ptr<CPSGS_Reply> reply) const
 {
     list<unique_ptr<IPSGS_Processor>>       ret;
+    TProcessorPriority                      priority = m_Processors.size();
 
     for (auto const &  proc : m_Processors) {
-        IPSGS_Processor *   p = proc->CreateProcessor(request, reply);
+        IPSGS_Processor *   p = proc->CreateProcessor(request, reply, priority);
         if (p)
             ret.push_back(unique_ptr<IPSGS_Processor>(p));
+        --priority;
     }
     return ret;
 }

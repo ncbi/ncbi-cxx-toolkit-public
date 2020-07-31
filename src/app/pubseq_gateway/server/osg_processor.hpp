@@ -53,7 +53,8 @@ public:
     virtual ~CPSGS_OSGProcessor();
 
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                             shared_ptr<CPSGS_Reply> reply) const;
+                                             shared_ptr<CPSGS_Reply> reply,
+                                             TProcessorPriority priority) const;
     virtual void Process(void);
     virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);

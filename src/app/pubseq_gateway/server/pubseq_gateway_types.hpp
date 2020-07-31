@@ -32,6 +32,11 @@
  *
  */
 
+// Processor priority
+// The higher the value the higher the priority is
+typedef int     TProcessorPriority;
+const int       kUnknownPriority = -1;
+
 
 // Error codes for the PSG protocol messages
 enum EPSGS_PubseqGatewayErrorCode {

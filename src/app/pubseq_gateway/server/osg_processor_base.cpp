@@ -91,7 +91,8 @@ void SetDiagSeverity(EDiagSev severity)
 
 
 IPSGS_Processor* CPSGS_OSGProcessorBase::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                                         shared_ptr<CPSGS_Reply> reply) const
+                                                         shared_ptr<CPSGS_Reply> reply,
+                                                         TProcessorPriority priority) const
 {
     return nullptr;
 }
