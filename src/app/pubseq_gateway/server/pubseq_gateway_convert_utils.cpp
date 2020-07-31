@@ -222,13 +222,27 @@ CJsonNode  ToJson(const CBlobRecord &  blob_prop)
 }
 
 
-CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat)
+CJsonNode ToJson(const CNAnnotRecord &  annot_record,
+                 int32_t  sat,
+                 const string &  custom_blob_id)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     json.SetInteger(kLastModified, annot_record.GetModified());
-    json.SetInteger(kSat, sat);
-    json.SetInteger(kSatKey, annot_record.GetSatKey());
+    if (custom_blob_id.empty()) {
+        json.SetInteger(kSat, sat);
+        json.SetInteger(kSatKey, annot_record.GetSatKey());
+
+        // Adding blob_id as a string for future replacement of the separate
+        // sat and sat_key
+        json.SetString(kBlobId, to_string(sat) + "." +
+                                to_string(annot_record.GetSatKey()));
+    } else {
+        // If a custom blob_id is provided then there is no need to send
+        // the one from bioseq info
+        json.SetString(kBlobId, custom_blob_id);
+    }
+
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
     json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());

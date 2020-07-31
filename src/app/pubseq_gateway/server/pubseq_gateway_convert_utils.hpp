@@ -59,7 +59,8 @@ CJsonNode ToJson(const CBioseqInfoRecord &  bioseq_info,
                  SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
                  const string &  custom_blob_id = "");
 CJsonNode ToJson(const CBlobRecord &  blob);
-CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat);
+CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat,
+                 const string &  custom_blob_id = "");
 
 CJsonNode ToJson(const CBioseqInfoFetchRequest &  request);
 CJsonNode ToJson(const CSi2CsiFetchRequest &  request);
