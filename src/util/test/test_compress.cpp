@@ -383,8 +383,11 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
     size_t n;
 
     assert(
-        CZipCompression::fAllowEmptyData == CBZip2Compression::fAllowEmptyData  &&
+        CZipCompression::fAllowEmptyData == CBZip2Compression::fAllowEmptyData
+#ifdef HAVE_LIBLZO
+        &&
         CZipCompression::fAllowEmptyData == CLZOCompression::fAllowEmptyData
+#endif
     );
 
     const size_t count = ArraySize(s_EmptyInputDataTests);
