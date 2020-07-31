@@ -1111,7 +1111,7 @@ bool CSoMap::xMapRegulatory(
 //  ----------------------------------------------------------------------------
 {
     static const TYPEMAP mapRegulatoryClassToSoType = {
-        {"DNase_I_hypersensitive_site", "DNAseI_hypersensitive_site"},
+        {"DNase_I_hypersensitive_site", "DNaseI_hypersensitive_site"},
         {"GC_signal", "GC_rich_promoter_region"},
         {"enhancer_blocking_element", "enhancer_blocking_element"},
         {"epigenetically_modified_region", "epigenetically_modified_region"},
