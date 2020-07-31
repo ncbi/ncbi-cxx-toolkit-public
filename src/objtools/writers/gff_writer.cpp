@@ -1062,11 +1062,16 @@ bool CGff2Writer::xAssignFeatureAttributeExperiment(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    const string& experiment = mf.GetNamedQual("experiment");
-    if (experiment.empty()) {
-        return true;
+    vector<string> experiments;
+    const auto& quals = mf.GetQual();
+    for (const auto& qual: quals) {
+        if (qual->GetQual() == "experiment") {
+           experiments.push_back(qual->GetVal());
+        }
     }
-    record.SetAttribute("experiment", experiment);
+    if (!experiments.empty()) {
+        record.SetAttributes("experiment", experiments);
+    }
     return true; 
 }
 
