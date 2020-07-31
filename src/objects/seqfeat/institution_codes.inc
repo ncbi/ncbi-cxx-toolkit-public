@@ -7659,7 +7659,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VPCI\tc\tFungal Culture Collection\t\t\t",
 "VPH\ts\tVan Pharmaceutical Herbarium, Yuzuncu Yil University\t\t\t",
 "VPI\tsc\tVirginia Polytechnic Institute and State University\tVTMH\t\t",
-"VPI:F\ts\tVirginia Polytechnic Institute and State University, Fungal Collection\t",
+"VPI:F\ts\tVirginia Polytechnic Institute and State University, Fungal Collection\t\t",
 "VPIC\ts\tVirginia Polytechnic Institute and State University\t\t\t",
 "VPIMM\ts\tVirginia Polytechnic University, Mammal Museum\t\t\t",
 "VPM\ts\tVolgograd Provincial Museum\t\t\t",
