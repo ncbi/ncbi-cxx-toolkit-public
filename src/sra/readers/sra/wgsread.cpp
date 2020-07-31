@@ -1740,7 +1740,7 @@ CWGSDb::GetMasterDescrType(const CSeqdesc& desc)
                  name == "StructuredComment" ||
                  name == "FeatureFetchPolicy" ||
                  name == "Unverified") {
-                return eDescr_force;
+                return eDescr_default;
             }
         }
         return eDescr_skip;
@@ -1767,20 +1767,57 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
     m_IsSetMasterDescr = true;
 }
 
+static string
+s_GetUserObjectType(const CSeqdesc& desc)
+{
+    string uo_type;
+
+    if (desc.IsUser() && desc.GetUser().GetType().IsStr()) {
+        uo_type = desc.GetUser().GetType().GetStr();
+        if (uo_type == "StructuredComment") {
+            ITERATE (CUser_object::TData, it, desc.GetUser().GetData()) {
+                if ((*it)->GetLabel().IsStr() &&
+                    (*it)->GetLabel().GetStr() == "StructuredCommentPrefix") {
+                    string data = ((*it)->GetData().IsStr() ?
+                                   (string) (*it)->GetData().GetStr() :
+                                   NStr::IntToString((*it)->GetData().GetInt()));
+                    uo_type += "|" + data;
+                    break;
+                }
+            }
+        }
+    }
+
+    return uo_type;
+}
+
+static void 
+s_AddUserObjectType(const CSeqdesc& desc, set<string>& existing_uo_types)
+{
+    string uo_type = s_GetUserObjectType(desc);
+
+    if (!uo_type.empty() && existing_uo_types.count(uo_type) == 0) {
+        existing_uo_types.insert(uo_type);
+    }
+}
 
 void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq) const
 {
+    set<string> existing_uo_types;
+
     if ( !GetMasterDescr().empty() ) {
         unsigned type_mask = 0;
         
         ITERATE ( CSeq_descr::Tdata, it, descr.Get() ) {
             const CSeqdesc& desc = **it;
             type_mask |= 1 << desc.Which();
+            s_AddUserObjectType(desc, existing_uo_types);
         }
 
         if (main_seq && main_seq->IsSetDescr()) {
             for (auto& desc : main_seq->GetDescr().Get()) {
                 type_mask |= 1 << desc->Which();
+                s_AddUserObjectType(*desc, existing_uo_types);
             }
         }
 
@@ -1788,8 +1825,13 @@ void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq) con
             const CSeqdesc& desc = **it;
             if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
                  (type_mask & (1 << desc.Which())) ) {
+                bool skip = true;
+                string uo_type = s_GetUserObjectType(desc);
+                if (!uo_type.empty() && existing_uo_types.count(uo_type) == 0)
+                    skip = false;
                 // omit master descr if contig already has one of that type
-                continue;
+                if (skip)
+                    continue;
             }
             descr.Set().push_back(*it);
         }
