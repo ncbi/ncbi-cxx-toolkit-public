@@ -682,7 +682,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BPBM\ts\tBernice P. Bishop Museum\tBISHOP\t\t",
 "BPBM:Fish\ts\tBernice P. Bishop Museum, Fish Collection\t\t",
 "BPBM:IZ\ts\tBernice P. Bishop Museum, Invertebrate Zoology\t\t",
-"BPI\tsc\tU.S. National Fungus Collections, Systematic Botany and Mycology Laboratory\t\thttp://nt.ars-grin.gov/fungaldatabases/specimens/new_rptSpecimenOneRec.cfm?thisrec=BPI+&spec;\t",
+"BPI\tsc\tU.S. National Fungus Collections, Systematic Botany and Mycology Laboratory\t\t\t",
 "BPI<ZAF>\ts\tBernard Price Institute for Palaeontological Research\t\t\t",
 "BPIC\tc\tBenaki Phytopathological Institute Collection\t\t\t",
 "BPL\ts\tMuseum of Barnstaple & North Devon\t\t\t",

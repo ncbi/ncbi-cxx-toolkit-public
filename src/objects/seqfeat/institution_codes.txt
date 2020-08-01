@@ -649,7 +649,7 @@ BP	s	Hungarian Natural History Museum, Botanical Department
 BPBM	s	Bernice P. Bishop Museum	BISHOP		
 BPBM:Fish	s	Bernice P. Bishop Museum, Fish Collection		
 BPBM:IZ	s	Bernice P. Bishop Museum, Invertebrate Zoology		
-BPI	sc	U.S. National Fungus Collections, Systematic Botany and Mycology Laboratory		http://nt.ars-grin.gov/fungaldatabases/specimens/new_rptSpecimenOneRec.cfm?thisrec=BPI+&spec;	
+BPI	sc	U.S. National Fungus Collections, Systematic Botany and Mycology Laboratory			
 BPI<ZAF>	s	Bernard Price Institute for Palaeontological Research			
 BPIC	c	Benaki Phytopathological Institute Collection			
 BPL	s	Museum of Barnstaple & North Devon			
