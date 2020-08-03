@@ -451,6 +451,7 @@ int CTbl2AsnApp::Run(void)
 
     m_reader.reset(new CMultiReader(m_context));
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger.GetNCPointerOrNull()));
+    m_context.m_remote_updater->DisableErrorReporting(); // RW-1130
 
     // excluded per RW-589
 #if 0
