@@ -152,6 +152,10 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
                 CException, 
                 CCheckMsg(expectedMsg));
     }
+
+
+    updater.DisableErrorReporting();
+    BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
 }
 
 
