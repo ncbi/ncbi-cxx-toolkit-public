@@ -86,6 +86,7 @@ public:
    static void PostProcessPubs(CSeq_entry& obj);
    static void PostProcessPubs(CPubdesc& pubdesc);
 
+   void SetMLAClient(CMLAClient& mlaClient);
    // Use either shared singleton or individual instances
    static CRemoteUpdater& GetInstance();
 
@@ -102,7 +103,7 @@ private:
    bool m_enable_caching=true;
    CMutex m_Mutex;
    DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
-   int m_MaxMlaAttempts=1;
+   int m_MaxMlaAttempts=3;
 };
 
 END_SCOPE(edit)

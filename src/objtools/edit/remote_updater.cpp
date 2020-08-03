@@ -115,12 +115,14 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
             }
         
             CNcbiOstrstream oss;
-            oss << "CMLAClient: failed to retrieve publication for PMID " 
-                << id << ": "
-                << errorVal;
+            oss << "Failed to retrieve publication for PMID " 
+                << id 
+                << ". ";
             if (isConnectionError) {
-                oss << " : " << maxCount << " attempts made.";
+                oss << count+1 << " attempts made. ";
             }
+            oss << "CMLAClient : "
+                << errorVal;
             string msg = CNcbiOstrstreamToString(oss);
             if (!pMessageListener) {
                 NCBI_THROW(CException, eUnknown, msg);
@@ -785,7 +787,10 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
             PostProcessPubs((CPubdesc&)desc_it->GetPub());
         }
     }
-   
+}
+
+void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient) {
+    m_mlaClient.Reset(&mlaClient);
 }
 
 END_SCOPE(edit)
