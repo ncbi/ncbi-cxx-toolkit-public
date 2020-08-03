@@ -1014,6 +1014,7 @@ int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_R
 
 int CProcessing::Testing(const string& service)
 {
+    const TPSG_RequestTimeout kDefaultTimeout(TPSG_RequestTimeout::eGetDefault);
     CPSG_Queue queue(service);
     ifstream input_file("psg_client_test.json");
     SIoRedirector ior(cin, input_file);
@@ -1030,12 +1031,13 @@ int CProcessing::Testing(const string& service)
     SExitCode rv;
 
     for (const auto& request : requests) {
+        const CDeadline deadline(kDefaultTimeout);
         auto expected_result = request->GetUserContext<STestingContext>();
         const auto& request_id = *expected_result;
 
-        _VERIFY(queue.SendRequest(request, CDeadline::eInfinite));
+        _VERIFY(queue.SendRequest(request, deadline));
 
-        auto reply = queue.GetNextReply(CDeadline::eInfinite);
+        auto reply = queue.GetNextReply(deadline);
 
         _ASSERT(reply);
 
@@ -1044,9 +1046,13 @@ int CProcessing::Testing(const string& service)
         _ASSERT(request.get() == received_request.get());
 
         const bool expect_errors = expected_result->expected == STestingContext::eFailure;
-        auto reply_status = reply->GetStatus(CDeadline::eInfinite);
+        auto reply_status = reply->GetStatus(deadline);
 
-        if (reply_status != EPSG_Status::eSuccess) {
+        if (reply_status == EPSG_Status::eInProgress) {
+            rv = SExitCode::eTestFail;
+            cerr << "Timeout for request '" << request_id << "' expected to " << (expect_errors ? "fail" : "succeed") << '\n';
+
+        } else if (reply_status != EPSG_Status::eSuccess) {
             if (!expect_errors) {
                 rv = SExitCode::eTestFail;
                 string prefix("Fail for request '" + request_id + "' expected to succeed: ");
