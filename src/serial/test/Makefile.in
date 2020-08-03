@@ -4,7 +4,7 @@
 #################################
 
 ASN_PROJ = we_cpp
-APP_PROJ = test_serial
+APP_PROJ = test_serial test_serial_io
 PROJ_TAG = test
 
 srcdir = @srcdir@
