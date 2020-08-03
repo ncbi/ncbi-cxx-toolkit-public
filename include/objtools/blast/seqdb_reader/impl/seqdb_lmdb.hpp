@@ -164,13 +164,15 @@ private:
 		};
 		MDB_dbi GetDbi(EDbiType dbi_type);
 		void InitDbi(lmdb::env & env, ELMDBFileType file_type);
+		void SetMapSize(Uint8 map_size);
+		bool IsReadOnly() { return m_ReadOnly; }
+
 	private:
 		string m_Filename;
 		ELMDBFileType m_FileType;
 		lmdb::env m_Env;
 		unsigned int m_Count;
 		bool m_ReadOnly;
-		Uint8 m_MapSize;
 		vector<MDB_dbi> m_dbis;
 	};
 

@@ -48,6 +48,16 @@ USING_SCOPE(objects);
 
 BEGIN_NCBI_SCOPE
 
+#ifdef NCBI_OS_MSWIN
+#define DEFAULT_LMDB_MAP_SIZE 500000000
+#define DEFAULT_TAXID_MAP_SIZE 500000000
+#elif defined (NCBI_OS_DARWIN)
+#define DEFAULT_LMDB_MAP_SIZE 500000000
+#define DEFAULT_TAXID_MAP_SIZE 500000000
+#else
+#define DEFAULT_LMDB_MAP_SIZE 300000000000
+#define DEFAULT_TAXID_MAP_SIZE 100000000000
+#endif
 
 /// This class supports creation of a string accession to integer OID
 /// lmdb database
@@ -59,7 +69,7 @@ public:
 
     /// Constructor for LMDB write access
     /// @param dbname Database name
-    CWriteDB_LMDB(const string& dbname, Uint8 map_size = 300000000000, Uint8 capacity = 500000);
+    CWriteDB_LMDB(const string& dbname, Uint8 map_size = DEFAULT_LMDB_MAP_SIZE, Uint8 capacity = 500000);
 
     // Destructor
     ~CWriteDB_LMDB();
@@ -93,6 +103,8 @@ private:
     void x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOid oid);
     void x_CreateOidToSeqidsLookupFile();
     void x_Resize();
+    void x_IncreaseEnvMapSize();
+    unsigned int x_TryCommit(unsigned int s);
 
     string m_Db;
     lmdb::env  &m_Env;
@@ -130,7 +142,7 @@ public:
 
     /// Constructor for LMDB write access
     /// @param dbname Database name
-    CWriteDB_TaxID(const string& dbname, Uint8 map_size = 300000000000, Uint8 capacity = 500000);
+    CWriteDB_TaxID(const string& dbname, Uint8 map_size = DEFAULT_TAXID_MAP_SIZE, Uint8 capacity = 500000);
 
     // Destructor
     ~CWriteDB_TaxID();
@@ -150,6 +162,8 @@ private:
     void x_CreateOidToTaxIdsLookupFile();
     void x_CreateTaxIdToOidsLookupFile();
     void x_Resize();
+    void x_IncreaseEnvMapSize();
+    unsigned int x_TryCommit(unsigned int s);
 
     string m_Db;
     lmdb::env  &m_Env;

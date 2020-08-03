@@ -75,22 +75,23 @@ void CBlastLMDBManager::CBlastEnv::InitDbi(lmdb::env & env, ELMDBFileType file_t
 }
 
 CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, ELMDBFileType file_type, bool read_only, Uint8 map_size) :
-		m_Filename(fname), m_FileType(file_type),m_Env(lmdb::env::create()), m_Count(1), m_ReadOnly(read_only), m_MapSize(map_size)
+		m_Filename(fname), m_FileType(file_type),m_Env(lmdb::env::create()), m_Count(1), m_ReadOnly(read_only)
 {
 	const MDB_dbi num_db(3);
 	m_Env.set_max_dbs(num_db);
 	m_dbis.resize(eDbiMax, UINT_MAX);
 	if(m_ReadOnly) {
 		CFile tf(fname);
-		m_MapSize = (tf.GetLength()/10000 + 1) *10000;
-		m_Env.set_mapsize(m_MapSize);
+		Uint8 readMapSize = (tf.GetLength()/10000 + 1) *10000;
+		m_Env.set_mapsize(readMapSize);
 		m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR|MDB_NOLOCK|MDB_RDONLY, 0664);
         InitDbi(m_Env,file_type);
 	}
 	else {
+		LOG_POST(Info <<"Initial Map Size: " << map_size);
 		/// map_size 0 means use lmdb default
-		if(m_MapSize != 0) {
-			m_Env.set_mapsize(m_MapSize);
+		if(map_size != 0) {
+			m_Env.set_mapsize(map_size);
 		}
 		m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR , 0664);
 	}
@@ -130,6 +131,13 @@ MDB_dbi CBlastLMDBManager::CBlastEnv::GetDbi(EDbiType dbi_type)
 	return m_dbis[dbi_type];
 }
 
+void CBlastLMDBManager::CBlastEnv::SetMapSize(Uint8 map_size)
+{
+	if(!m_ReadOnly) {
+		m_Env.set_mapsize(map_size);
+	}
+}
+
 CBlastLMDBManager & CBlastLMDBManager::GetInstance() {
 	static CSafeStatic<CBlastLMDBManager> lmdb_manager;
 	return lmdb_manager.Get();
@@ -165,7 +173,6 @@ CBlastLMDBManager::CBlastEnv* CBlastLMDBManager::GetBlastEnv(const string & fnam
 		if((*itr)->GetFilename() == fname)  {
 			(*itr)->AddReference();
             if ( opened && !*opened ) {
-                (*itr)->AddReference();
                 *opened = true;
             }
 			return (*itr);
