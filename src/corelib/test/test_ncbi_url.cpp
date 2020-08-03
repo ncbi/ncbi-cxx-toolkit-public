@@ -415,4 +415,45 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK_EQUAL(url.GetService(), kServiceSimple);
         BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
     }
+
+    {
+        cout << "Testing: parse host:port" << endl;
+        CUrl url(string(kHostShort) + ":" + kPort);
+        BOOST_CHECK(url.GetScheme().empty());
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK_EQUAL(url.GetHost(), kHostShort);
+        BOOST_CHECK_EQUAL(url.GetPort(), kPort);
+        BOOST_CHECK(url.GetPath().empty());
+    }
+    {
+        cout << "Testing: parse host.net:port" << endl;
+        CUrl url(string(kHostFull) + ":" + kPort);
+        BOOST_CHECK(url.GetScheme().empty());
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK_EQUAL(url.GetHost(), kHostFull);
+        BOOST_CHECK_EQUAL(url.GetPort(), kPort);
+        BOOST_CHECK(url.GetPath().empty());
+    }
+    {
+        cout << "Testing: parse host:port/path" << endl;
+        CUrl url(string(kHostShort) + ":" + kPort + kPathAbs);
+        BOOST_CHECK(url.GetScheme().empty());
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK_EQUAL(url.GetHost(), kHostShort);
+        BOOST_CHECK_EQUAL(url.GetPort(), kPort);
+        BOOST_CHECK_EQUAL(url.GetPath(), kPathAbs);
+    }
+    {
+        cout << "Testing: parse host.net:port/path" << endl;
+        CUrl url(string(kHostFull) + ":" + kPort + kPathAbs);
+        BOOST_CHECK(url.GetScheme().empty());
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK_EQUAL(url.GetHost(), kHostFull);
+        BOOST_CHECK_EQUAL(url.GetPort(), kPort);
+        BOOST_CHECK_EQUAL(url.GetPath(), kPathAbs);
+    }
 }

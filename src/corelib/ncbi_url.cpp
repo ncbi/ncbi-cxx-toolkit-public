@@ -482,8 +482,27 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
         // No authority, check scheme.
         SIZE_TYPE scheme_end = orig_url.find(':');
         if (scheme_end != NPOS) {
-            x_SetScheme(orig_url.substr(0, scheme_end), *encoder);
+            string scheme = orig_url.substr(0, scheme_end);
             unparsed = orig_url.substr(scheme_end + 1);
+
+            // Check for special case: host:port[/path[...]] (see CXX-11455)
+            SIZE_TYPE port_end = unparsed.find_first_of("/?#");
+            string port = unparsed.substr(0, port_end);
+            if (!port.empty() && port.find_first_not_of("0123456789") == NPOS) {
+                x_SetHost(scheme, *encoder);
+                x_SetPort(port, *encoder);
+                if (port_end != NPOS) {
+                    unparsed = unparsed.substr(port_end);
+                }
+                else {
+                    unparsed.clear();
+                }
+                scheme.clear();
+            }
+
+            if (!scheme.empty()) {
+                x_SetScheme(orig_url.substr(0, scheme_end), *encoder);
+            }
         }
         else {
             unparsed = orig_url;
