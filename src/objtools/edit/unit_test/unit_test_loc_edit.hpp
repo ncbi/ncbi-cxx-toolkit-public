@@ -41,7 +41,7 @@ BEGIN_SCOPE(objects)
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
     CScope scope(*objmgr); \
     scope.AddDefaults(); \
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); 
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
 
 
