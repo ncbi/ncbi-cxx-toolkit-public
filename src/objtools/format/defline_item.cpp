@@ -104,8 +104,11 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     if (! Defliner.UsePDBCompoundForDefline()) {
         ctx.SetPDBCompoundForComment(true);
     }
-    // CompressSpaces( m_Defline );
-    CleanAndCompress (m_Defline, m_Defline.c_str());
+    if ( ctx.Config().ShowDeflineModifiers() ) {
+        CompressSpaces( m_Defline );
+    } else {
+        CleanAndCompress (m_Defline, m_Defline.c_str());
+    }
     ConvertQuotes(m_Defline);
     AddPeriod(m_Defline);
     CSeqdesc_CI di(ctx.GetHandle(), CSeqdesc::e_Title);
