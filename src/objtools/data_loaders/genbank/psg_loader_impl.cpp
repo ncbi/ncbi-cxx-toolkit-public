@@ -63,6 +63,48 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CBlobId;
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPsgBlobId
+/////////////////////////////////////////////////////////////////////////////
+
+
+CPsgBlobId::CPsgBlobId(const string& id)
+    : m_Id(id)
+{
+}
+
+
+CPsgBlobId::~CPsgBlobId()
+{
+}
+
+
+string CPsgBlobId::ToString(void) const
+{
+    return m_Id;
+}
+
+
+bool CPsgBlobId::operator==(const CBlobId& id_ref) const
+{
+    const CPsgBlobId* id = dynamic_cast<const CPsgBlobId*>(&id_ref);
+    return id && m_Id == id->m_Id;
+}
+
+
+bool CPsgBlobId::operator<(const CBlobId& id_ref) const
+{
+    const CPsgBlobId* id = dynamic_cast<const CPsgBlobId*>(&id_ref);
+    if ( !id ) {
+        return LessByTypeId(id_ref);
+    }
+    return m_Id < id->m_Id;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CPsgClientContext
 /////////////////////////////////////////////////////////////////////////////
@@ -361,7 +403,7 @@ blob_id = bioseq_info.GetBlobId().Get();
 
 
 SPsgBlobInfo::SPsgBlobInfo(const CPSG_BlobInfo& blob_info)
-    : blob_state(0), blob_version(0)
+    : blob_state(0), blob_version(0), split_version(0), use_get_blob_for_chunks(false)
 {
     blob_id_main = blob_info.GetId().Get();
     blob_id_split = blob_info.GetSplitInfoBlobId().Get();
@@ -373,6 +415,10 @@ SPsgBlobInfo::SPsgBlobInfo(const CPSG_BlobInfo& blob_info)
     blob_version = blob_info.GetVersion() / 60000;
 
     if (!blob_id_split.empty()) {
+        split_version = blob_info.GetSplitVersion();
+    }
+    if (!blob_id_split.empty() && blob_info.CanGetChunkBlobId()) {
+        use_get_blob_for_chunks = true;
         for (int chunk_id = 1;; ++chunk_id) {
             string chunk_blob_id = blob_info.GetChunkBlobId(chunk_id).Get();
             if (chunk_blob_id.empty()) break;
@@ -1239,16 +1285,24 @@ void CPSGDataLoader_Impl::LoadChunks(const CDataLoader::TChunkSet& chunks)
         }
 
         const SPsgBlobInfo& psg_blob_info = *psg_blob_found;
-        const string& str_chunk_blob_id = psg_blob_info.GetBlobIdForChunk(chunk.GetChunkId());
-        if (str_chunk_blob_id.empty()) {
-            _TRACE("Chunk blob-id not found for " << blob_id.ToPsgId() << ":" << chunk.GetChunkId());
-            break;
+        if ( psg_blob_info.use_get_blob_for_chunks ) {
+            const string& str_chunk_blob_id = psg_blob_info.GetBlobIdForChunk(chunk.GetChunkId());
+            if (str_chunk_blob_id.empty()) {
+                _TRACE("Chunk blob-id not found for " << blob_id.ToPsgId() << ":" << chunk.GetChunkId());
+                break;
+            }
+            
+            CPSG_BlobId chunk_blob_id(str_chunk_blob_id);
+            auto request = make_shared<CPSG_Request_Blob>(chunk_blob_id, kEmptyStr, context);
+            chunk_map[request.get()] = *it;
+            x_SendRequest(request);
         }
-
-        CPSG_BlobId chunk_blob_id(str_chunk_blob_id);
-        auto request = make_shared<CPSG_Request_Blob>(chunk_blob_id, kEmptyStr, context);
-        chunk_map[request.get()] = *it;
-        x_SendRequest(request);
+        else {
+            auto request = make_shared<CPSG_Request_TSE_Chunk>(psg_blob_info.blob_id_main, chunk.GetChunkId(),
+                                                               psg_blob_info.split_version, context);
+            chunk_map[request.get()] = *it;
+            x_SendRequest(request);
+        }
     }
 
     CPSG_TaskGroup group(*m_ThreadPool);

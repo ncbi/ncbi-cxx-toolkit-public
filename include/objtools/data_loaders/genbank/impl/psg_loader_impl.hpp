@@ -47,7 +47,26 @@ class CThreadPool;
 
 BEGIN_SCOPE(objects)
 
-using CPsgBlobId = CBlob_id;
+class CBlobId;
+
+class NCBI_XREADER_EXPORT CPsgBlobId : public CBlobId
+{
+public:
+    explicit CPsgBlobId(const string& id);
+    virtual ~CPsgBlobId();
+    
+    const string& ToPsgId() const
+        {
+            return m_Id;
+        }
+    
+    virtual string ToString(void) const override;
+    virtual bool operator<(const CBlobId& id) const override;
+    virtual bool operator==(const CBlobId& id) const override;
+    
+private:
+    string m_Id;
+};
 
 struct SPsgBioseqInfo
 {
@@ -83,6 +102,8 @@ struct SPsgBlobInfo
     string blob_id_split;
     int blob_state;
     int blob_version;
+    int split_version;
+    bool use_get_blob_for_chunks;
     TChunks chunks;
 
     const string& GetBlobIdForChunk(TChunkId chunk_id) const;
