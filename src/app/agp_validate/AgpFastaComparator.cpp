@@ -230,6 +230,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     // component ids are always interpreted as local
     fasta_flags &= ~CFastaReader::fParseRawID; 
     fasta_flags |= CFastaReader::fAddMods;
+    fasta_flags |= CFastaReader::fDisableParseRange; //rw-1155: match what the AGP parser does.
     lds_mgr->SetFastaFlags(fasta_flags);
 
     list<string> objfiles;
