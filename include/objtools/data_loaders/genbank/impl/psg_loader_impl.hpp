@@ -49,7 +49,7 @@ BEGIN_SCOPE(objects)
 
 class CBlobId;
 
-class NCBI_XREADER_EXPORT CPsgBlobId : public CBlobId
+class CPsgBlobId : public CBlobId
 {
 public:
     explicit CPsgBlobId(const string& id);
