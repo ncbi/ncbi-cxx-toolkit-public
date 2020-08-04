@@ -33350,6 +33350,50 @@ else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
 
+case "$with_cppkafka" in
+   yes | no | '' ) ;;
+   *             ) CPPKAFKA_PATH=$with_cppkafka ;;
+esac
+if test -d "$CPPKAFKA_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $CPPKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $CPPKAFKA_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            CPPKAFKA_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$CPPKAFKA_PATH" in
+               /*) ;;
+               * ) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         CPPKAFKA_PATH=$d
+         ncbi_fix_dir_tmp=`if cd $CPPKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $CPPKAFKA_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            CPPKAFKA_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$CPPKAFKA_PATH" in
+               /*) ;;
+               * ) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+
 if test "$with_cppkafka" != "no"; then
     case "$CPPKAFKA_PATH:$with_cppkafka" in
        *:yes | *: | $with_cppkafka* ) ;;
@@ -33440,11 +33484,11 @@ else
        LIBS="$CPPKAFKA_LIBS  $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <cppkafka/queue.h>
+#include <cppkafka/configuration.h>
 int
 main ()
 {
-cppkafka::Queue q;
+cppkafka::Configuration cfg; cfg.set("foo", "bar");
   ;
   return 0;
 }

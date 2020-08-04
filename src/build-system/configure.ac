@@ -8510,9 +8510,27 @@ else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
 
+case "$with_cppkafka" in
+   yes | no | '' ) ;;
+   *             ) CPPKAFKA_PATH=$with_cppkafka ;;
+esac
+if test -d "$CPPKAFKA_PATH"; then
+   NCBI_FIX_DIR(CPPKAFKA_PATH)
+   for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         CPPKAFKA_PATH=$d
+         NCBI_FIX_DIR(CPPKAFKA_PATH)
+         break
+      fi
+   done
+fi
+
 NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
-  [AC_LANG_PROGRAM([[@%:@include <cppkafka/queue.h>]],
-      [[cppkafka::Queue q;]])],
+  [AC_LANG_PROGRAM([[@%:@include <cppkafka/configuration.h>]],
+      [[cppkafka::Configuration cfg; cfg.set("foo", "bar");]])],
   [-lrdkafka])
 if test "$with_cppkafka" != no -a \
      -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
