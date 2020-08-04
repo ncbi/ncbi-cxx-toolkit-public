@@ -103,9 +103,19 @@ public:
                                 CRequestStatus::ECode  status,
                                 int  err_code,
                                 EDiagSev  severity);
+    void PrepareBlobPropData(size_t            item_id,
+                             const string &    processor_id,
+                             const string &    blob_id,
+                             const string &    content);
     void PrepareBlobPropData(CCassBlobFetch *  fetch_details,
-                             const string &  processor_id,
-                             const string &  content);
+                             const string &    processor_id,
+                             const string &    content);
+    void PrepareBlobData(size_t                 item_id,
+                         const string &         processor_id,
+                         const string &         blob_id,
+                         const unsigned char *  chunk_data,
+                         unsigned int           data_size,
+                         int                    chunk_no);
     void PrepareBlobData(CCassBlobFetch *  fetch_details,
                          const string &  processor_id,
                          const unsigned char *  chunk_data,

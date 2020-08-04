@@ -177,21 +177,56 @@ void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
 }
 
 
-void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+void CPSGS_Reply::PrepareBlobPropData(size_t            item_id,
                                       const string &    processor_id,
+                                      const string &    blob_id,
                                       const string &    content)
 {
-    string  header = GetBlobPropHeader(fetch_details->GetBlobPropItemId(this),
+    string  header = GetBlobPropHeader(item_id,
                                        processor_id,
-                                       fetch_details->GetBlobId().ToString(),
+                                       blob_id,
                                        content.size());
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(content.data()),
                     content.size()));
-    fetch_details->IncrementTotalSentBlobChunks();
     ++m_TotalSentReplyChunks;
+}
+
+
+void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+                                      const string &    processor_id,
+                                      const string &    content)
+{
+    PrepareBlobPropData(fetch_details->GetBlobPropItemId(this),
+                        processor_id,
+                        fetch_details->GetBlobId().ToString(),
+                        content);
+    fetch_details->IncrementTotalSentBlobChunks();
+}
+
+
+void CPSGS_Reply::PrepareBlobData(size_t                 item_id,
+                                  const string &         processor_id,
+                                  const string &         blob_id,
+                                  const unsigned char *  chunk_data,
+                                  unsigned int           data_size,
+                                  int                    chunk_no)
+{
+    ++m_TotalSentReplyChunks;
+
+    string  header = GetBlobChunkHeader(
+                            item_id,
+                            processor_id,
+                            blob_id,
+                            data_size, chunk_no);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(header.data()),
+                    header.size()));
+
+    if (data_size > 0 && chunk_data != nullptr)
+        m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
 }
 
 
@@ -202,19 +237,10 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
                                   int                    chunk_no)
 {
     fetch_details->IncrementTotalSentBlobChunks();
-    ++m_TotalSentReplyChunks;
-
-    string  header = GetBlobChunkHeader(
-                            fetch_details->GetBlobChunkItemId(this),
-                            processor_id,
-                            fetch_details->GetBlobId().ToString(),
-                            data_size, chunk_no);
-    m_Chunks.push_back(m_Reply->PrepareChunk(
-                    (const unsigned char *)(header.data()),
-                    header.size()));
-
-    if (data_size > 0 && chunk_data != nullptr)
-        m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
+    PrepareBlobData(fetch_details->GetBlobChunkItemId(this),
+                    processor_id,
+                    fetch_details->GetBlobId().ToString(),
+                    chunk_data, data_size, chunk_no);
 }
 
 
