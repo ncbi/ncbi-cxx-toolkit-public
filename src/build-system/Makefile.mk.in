@@ -850,10 +850,10 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary \
 OBJREAD_LIBS = xobjread variation submit xlogging
 
 # formatting code
-XFORMAT_LIBS = xformat xcleanup gbseq mlacli mla medlars pubmed valid $(OBJEDIT_LIBS)
+XFORMAT_LIBS = xformat xcleanup gbseq medlars pubmed valid $(OBJEDIT_LIBS)
 
 # object editing library
-OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) taxon3
+OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) taxon3 mlacli mla
 
 # standard data loader configuration, plus supporting libraries
 DATA_LOADERS_UTIL_LIB = data_loaders_util \
