@@ -1630,6 +1630,72 @@ public:
     }
 
     /**
+        Bit count all blocks to determine if it is very sparse
+    */
+    bool is_sparse_sblock(unsigned i, unsigned sparse_cut_off) const BMNOEXCEPT
+    {
+        if (!sparse_cut_off)
+            return false;
+        const unsigned non_sparse_cut_off = sparse_cut_off * bm::set_sub_array_size;
+
+        BM_ASSERT(i < top_block_size());
+        word_t*** blk_root = top_blocks_root();
+        if (!blk_root)
+            return false;
+        bm::word_t** blk_blk = blk_root[i];
+        if (!blk_blk || (bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
+            return false;
+        bm::id_t cnt_sum(0), effective_blocks(0), gap_len_sum(0);
+        for (unsigned j = 0; j < bm::set_sub_array_size; ++j)
+        {
+            const bm::word_t* blk = blk_blk[j]; //  this->get_block(i, j);
+            if (blk == FULL_BLOCK_FAKE_ADDR)
+                return false;
+            if (blk)
+            {
+                bm::id_t cnt;
+                if (BM_IS_GAP(blk))
+                {
+                    const bm::gap_word_t* gp = BMGAP_PTR(blk);
+                    cnt = bm::gap_bit_count_unr(gp);
+                    gap_len_sum += bm::gap_length(gp);
+                }
+                else // bitset
+                {
+                    cnt = bm::bit_block_count(blk);
+                }
+                if (cnt)
+                {
+                    ++effective_blocks;
+                    cnt_sum += cnt;
+                    if (cnt_sum > non_sparse_cut_off) // too many bits set
+                        return false;
+                }
+            }
+        } // for j
+
+        BM_ASSERT(effective_blocks <= bm::set_sub_array_size);
+        if (effective_blocks > 1)
+        {
+            if (cnt_sum < 5) // super-duper sparse ...
+                return false;
+            
+            bm::id_t blk_avg = cnt_sum / effective_blocks;
+            if (blk_avg <= sparse_cut_off)
+            {
+                if (gap_len_sum)
+                {
+                    gap_len_sum += effective_blocks * 3;
+                    if (gap_len_sum < cnt_sum)
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
         \brief Extends GAP block to the next level or converts it to bit block.
         \param nb - Block's linear index.
         \param blk - Blocks's pointer 

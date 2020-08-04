@@ -332,11 +332,7 @@ void random_subset<BV>::get_subset(BV&        bv_out,
                 }
                 else // bit-block
                 {
-                    arr_len = bm::bit_convert_to_arr(bit_list_,
-                                                     blk_src,
-                                                     bm::gap_max_bits,
-                                                     bm::gap_max_bits,
-                                                     0);
+                    arr_len = bm::bit_block_convert_to_arr(bit_list_, blk_src, 0);
                 }
                 BM_ASSERT(arr_len);
                 get_random_array(blk_out, bit_list_, arr_len, take_count);
@@ -405,11 +401,11 @@ void random_subset<BV>::get_block_subset(bm::word_t*       blk_out,
         }
         // now transform vacant bits to array, then pick random elements
         //
-        unsigned arr_len = bm::bit_convert_to_arr(bit_list_,
-                                              sub_block_, 
-                                              bm::gap_max_bits, 
-                                              bm::gap_max_bits,
-                                              0);
+        unsigned arr_len = 
+            bm::bit_block_convert_to_arr(bit_list_, sub_block_, 0);
+                           //                   bm::gap_max_bits, 
+                           //                   bm::gap_max_bits,
+                           //                   0);
         BM_ASSERT(arr_len);
         get_random_array(blk_out, bit_list_, arr_len, take_count);        
     }
@@ -428,6 +424,12 @@ unsigned random_subset<BV>::process_word(bm::word_t*       blk_out,
         mask ^= mask << 16;
     } while (mask == 0);
 
+    std::random_device rd;
+    #ifdef BM64ADDR
+        std::mt19937_64 mt_rand(rd());
+    #else
+        std::mt19937 mt_rand(rd());
+    #endif
     unsigned src_rand = blk_src[nword] & mask;
     new_bits = src_rand & ~blk_out[nword];
     if (new_bits)
@@ -442,7 +444,7 @@ unsigned random_subset<BV>::process_word(bm::word_t*       blk_out,
             unsigned char blist[64];
             unsigned arr_size = bm::bitscan_popcnt(new_bits, blist);
             BM_ASSERT(arr_size == new_count);
-            std::random_shuffle(blist, blist + arr_size);
+            std::shuffle(blist, blist + arr_size, mt_rand);
             unsigned value = 0;
             for (unsigned j = 0; j < take_count; ++j)
             {
@@ -468,7 +470,13 @@ void random_subset<BV>::get_random_array(bm::word_t*       blk_out,
                                          unsigned          bit_list_size,
                                          unsigned          count)
 {
-    std::random_shuffle(bit_list, bit_list + bit_list_size);
+    std::random_device rd;
+    #ifdef BM64ADDR
+        std::mt19937_64 mt_rand(rd());
+    #else
+        std::mt19937 mt_rand(rd());
+    #endif
+    std::shuffle(bit_list, bit_list + bit_list_size, mt_rand);
     for (unsigned i = 0; i < count; ++i)
     {
         bm::set_bit(blk_out, bit_list[i]);
