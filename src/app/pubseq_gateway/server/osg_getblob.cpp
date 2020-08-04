@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "osg_getblob.hpp"
+#include "osg_fetch.hpp"
 
 #include <objects/id2/id2__.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
@@ -44,8 +45,9 @@ BEGIN_NAMESPACE(osg);
 
 CPSGS_OSGGetBlob::CPSGS_OSGGetBlob(const CRef<COSGConnectionPool>& pool,
                                    const shared_ptr<CPSGS_Request>& request,
-                                   const shared_ptr<CPSGS_Reply>& reply)
-    : CPSGS_OSGGetBlobBase(pool, request, reply)
+                                   const shared_ptr<CPSGS_Reply>& reply,
+                                   TProcessorPriority priority)
+    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
 {
 }
 
@@ -69,14 +71,36 @@ void CPSGS_OSGGetBlob::CreateRequests()
 
 void CPSGS_OSGGetBlob::ProcessReplies()
 {
-    // TODO
+    for ( auto& f : GetFetches() ) {
+        for ( auto& r : f->GetReplies() ) {
+            switch ( r->GetReply().Which() ) {
+            case CID2_Reply::TReply::e_Init:
+            case CID2_Reply::TReply::e_Empty:
+                // do nothing
+                break;
+            case CID2_Reply::TReply::e_Get_blob:
+                ProcessBlobReply(*r);
+                break;
+            case CID2_Reply::TReply::e_Get_split_info:
+                ProcessBlobReply(*r);
+                break;
+            default:
+                ERR_POST(GetName()<<": "
+                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                break;
+            }
+        }
+    }
+    SendBlob();
+    FinalizeResult();
 }
 
 
 CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
                                        const shared_ptr<CPSGS_Request>& request,
-                                       const shared_ptr<CPSGS_Reply>& reply)
-    : CPSGS_OSGGetBlobBase(pool, request, reply)
+                                       const shared_ptr<CPSGS_Reply>& reply,
+                                       TProcessorPriority priority)
+    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
 {
 }
 
@@ -104,7 +128,25 @@ void CPSGS_OSGGetChunks::CreateRequests()
 
 void CPSGS_OSGGetChunks::ProcessReplies()
 {
-    // TODO
+    for ( auto& f : GetFetches() ) {
+        for ( auto& r : f->GetReplies() ) {
+            switch ( r->GetReply().Which() ) {
+            case CID2_Reply::TReply::e_Init:
+            case CID2_Reply::TReply::e_Empty:
+                // do nothing
+                break;
+            case CID2_Reply::TReply::e_Get_chunk:
+                ProcessBlobReply(*r);
+                break;
+            default:
+                ERR_POST(GetName()<<": "
+                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                break;
+            }
+        }
+    }
+    SendBlob();
+    FinalizeResult();
 }
 
 

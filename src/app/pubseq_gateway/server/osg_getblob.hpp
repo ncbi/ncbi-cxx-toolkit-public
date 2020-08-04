@@ -44,7 +44,8 @@ class CPSGS_OSGGetBlob : public CPSGS_OSGGetBlobBase
 public:
     CPSGS_OSGGetBlob(const CRef<COSGConnectionPool>& pool,
                      const shared_ptr<CPSGS_Request>& request,
-                     const shared_ptr<CPSGS_Reply>& reply);
+                     const shared_ptr<CPSGS_Reply>& reply,
+                     TProcessorPriority priority);
 
     virtual string GetName() const;
 
@@ -58,7 +59,8 @@ class CPSGS_OSGGetChunks : public CPSGS_OSGGetBlobBase
 public:
     CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
                        const shared_ptr<CPSGS_Request>& request,
-                       const shared_ptr<CPSGS_Reply>& reply);
+                       const shared_ptr<CPSGS_Reply>& reply,
+                       TProcessorPriority priority);
     
     virtual string GetName() const;
 

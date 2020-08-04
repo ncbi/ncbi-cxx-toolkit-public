@@ -35,16 +35,21 @@
 #include "osg_processor_base.hpp"
 
 BEGIN_NCBI_NAMESPACE;
+
+BEGIN_NAMESPACE(objects);
+
+class CID2_Blob_Id;
+
+END_NAMESPACE(objects);
+
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-class CPSGS_OSGResolveBase : public CPSGS_OSGProcessorBase
+class CPSGS_OSGResolveBase : virtual public CPSGS_OSGProcessorBase
 {
 public:
-    CPSGS_OSGResolveBase(const CRef<COSGConnectionPool>& pool,
-                         const shared_ptr<CPSGS_Request>& request,
-                         const shared_ptr<CPSGS_Reply>& reply);
+    CPSGS_OSGResolveBase();
     virtual ~CPSGS_OSGResolveBase();
 
     static bool CanResolve(const string& seq_id)
@@ -59,9 +64,10 @@ protected:
     typedef SPSGS_ResolveRequest::TPSGS_BioseqIncludeData TBioseqInfoFlags;
     
     CBioseqInfoRecord m_BioseqInfo;
+    string m_BlobId;
     TBioseqInfoFlags m_BioseqInfoFlags;
     
-    void ProcessReply(const CID2_Reply& reply);
+    void ProcessResolveReply(const CID2_Reply& reply);
     EOutputFormat GetOutputFormat(EOutputFormat format);
     void SendResult(const string& data_to_send, EOutputFormat format);
     void SendBioseqInfo(EOutputFormat output_format);

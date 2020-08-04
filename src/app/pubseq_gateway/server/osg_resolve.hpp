@@ -32,19 +32,31 @@
  *
  */
 
+#include "osg_processor_base.hpp"
 #include "osg_resolve_base.hpp"
+#include "osg_getblob_base.hpp"
 
 BEGIN_NCBI_NAMESPACE;
+
+BEGIN_NAMESPACE(objects);
+
+class CID2_Blob_Id;
+class CID2_Reply_Data;
+
+END_NAMESPACE(objects);
+
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-class CPSGS_OSGResolve : public CPSGS_OSGResolveBase
+class CPSGS_OSGResolve : virtual public CPSGS_OSGProcessorBase,
+                         public CPSGS_OSGResolveBase
 {
 public:
     CPSGS_OSGResolve(const CRef<COSGConnectionPool>& pool,
                      const shared_ptr<CPSGS_Request>& request,
-                     const shared_ptr<CPSGS_Reply>& reply);
+                     const shared_ptr<CPSGS_Reply>& reply,
+                     TProcessorPriority priority);
     virtual ~CPSGS_OSGResolve();
 
     virtual string GetName() const;
@@ -54,12 +66,15 @@ public:
 };
 
 
-class CPSGS_OSGGetBlobBySeqId : public CPSGS_OSGResolveBase
+class CPSGS_OSGGetBlobBySeqId : virtual public CPSGS_OSGProcessorBase,
+                                public CPSGS_OSGResolveBase,
+                                public CPSGS_OSGGetBlobBase
 {
 public:
     CPSGS_OSGGetBlobBySeqId(const CRef<COSGConnectionPool>& pool,
                             const shared_ptr<CPSGS_Request>& request,
-                            const shared_ptr<CPSGS_Reply>& reply);
+                            const shared_ptr<CPSGS_Reply>& reply,
+                            TProcessorPriority priority);
     virtual ~CPSGS_OSGGetBlobBySeqId();
 
     virtual string GetName() const;

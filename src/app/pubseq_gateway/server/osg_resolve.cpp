@@ -38,8 +38,9 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/id2/id2__.hpp>
-#include <objects/seqsplit/seqsplit__.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+//#include <objects/seqsplit/seqsplit__.hpp>
+//#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+//#include "pubseq_gateway_convert_utils.hpp"
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
@@ -48,8 +49,9 @@ BEGIN_NAMESPACE(osg);
 
 CPSGS_OSGResolve::CPSGS_OSGResolve(const CRef<COSGConnectionPool>& pool,
                                    const shared_ptr<CPSGS_Request>& request,
-                                   const shared_ptr<CPSGS_Reply>& reply)
-    : CPSGS_OSGResolveBase(pool, request, reply)
+                                   const shared_ptr<CPSGS_Reply>& reply,
+                                   TProcessorPriority priority)
+    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
 {
 }
 
@@ -103,7 +105,6 @@ void CPSGS_OSGResolve::CreateRequests()
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_blob_id();
         req.SetSeq_id().SetSeq_id().SetSeq_id().Set(psg_req.m_SeqId);
-        // TODO sources/external
         AddRequest(osg_req);
     }
 }
@@ -119,10 +120,10 @@ void CPSGS_OSGResolve::ProcessReplies()
                 // do nothing
                 break;
             case CID2_Reply::TReply::e_Get_seq_id:
-                ProcessReply(*r);
+                ProcessResolveReply(*r);
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
-                ProcessReply(*r);
+                ProcessResolveReply(*r);
                 break;
             default:
                 ERR_POST(GetName()<<": "
@@ -138,8 +139,9 @@ void CPSGS_OSGResolve::ProcessReplies()
 
 CPSGS_OSGGetBlobBySeqId::CPSGS_OSGGetBlobBySeqId(const CRef<COSGConnectionPool>& pool,
                                                  const shared_ptr<CPSGS_Request>& request,
-                                                 const shared_ptr<CPSGS_Reply>& reply)
-    : CPSGS_OSGResolveBase(pool, request, reply)
+                                                 const shared_ptr<CPSGS_Reply>& reply,
+                                                 TProcessorPriority priority)
+    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
 {
 }
 
@@ -160,7 +162,9 @@ void CPSGS_OSGGetBlobBySeqId::CreateRequests()
     auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>();
     CRef<CID2_Request> osg_req(new CID2_Request);
     auto& get_req = osg_req->SetRequest().SetGet_blob_info();
-    get_req.SetGet_data();
+    if ( psg_req.m_TSEOption != psg_req.ePSGS_NoneTSE ) {
+        get_req.SetGet_data();
+    }
     auto& req = get_req.SetBlob_id().SetResolve();
     req.SetRequest().SetSeq_id().SetSeq_id().SetSeq_id().Set(psg_req.m_SeqId);
     for ( auto& excl_id : psg_req.m_ExcludeBlobs ) {
@@ -174,8 +178,6 @@ void CPSGS_OSGGetBlobBySeqId::CreateRequests()
 
 void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
 {
-    CConstRef<CID2_Reply_Get_Blob> blob;
-    CConstRef<CID2S_Reply_Get_Split_Info> split_info;
     for ( auto& f : GetFetches() ) {
         for ( auto& r : f->GetReplies() ) {
             switch ( r->GetReply().Which() ) {
@@ -184,16 +186,16 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 // do nothing
                 break;
             case CID2_Reply::TReply::e_Get_seq_id:
-                ProcessReply(*r);
+                ProcessResolveReply(*r);
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
-                ProcessReply(*r);
+                ProcessResolveReply(*r);
                 break;
             case CID2_Reply::TReply::e_Get_blob:
-                blob = &r->GetReply().GetGet_blob();
+                ProcessBlobReply(*r);
                 break;
             case CID2_Reply::TReply::e_Get_split_info:
-                split_info = &r->GetReply().GetGet_split_info();
+                ProcessBlobReply(*r);
                 break;
             default:
                 ERR_POST(GetName()<<": "
@@ -202,8 +204,9 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
             }
         }
     }
-    // TODO
-    FinalizeResult(ePSGS_NotFound);
+    SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
+    SendBlob();
+    FinalizeResult();
 }
 
 

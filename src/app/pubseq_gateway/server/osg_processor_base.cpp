@@ -49,13 +49,15 @@ BEGIN_NAMESPACE(osg);
 
 CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(const CRef<COSGConnectionPool>& pool,
                                                const shared_ptr<CPSGS_Request>& request,
-                                               const shared_ptr<CPSGS_Reply>& reply)
+                                               const shared_ptr<CPSGS_Reply>& reply,
+                                               TProcessorPriority priority)
     : m_Context(request->GetRequestContext()),
       m_ConnectionPool(pool),
       m_Status(IPSGS_Processor::ePSGS_InProgress)
 {
     m_Request = request;
     m_Reply = reply;
+    m_Priority = priority;
     _ASSERT(m_ConnectionPool);
     _ASSERT(m_Request);
     _ASSERT(m_Reply);
@@ -163,11 +165,24 @@ IPSGS_Processor::EPSGS_Status CPSGS_OSGProcessorBase::GetStatus()
 }
 
 
-void CPSGS_OSGProcessorBase::FinalizeResult(EPSGS_Status status)
+void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 {
     _ASSERT(m_Status == ePSGS_InProgress || status == m_Status);
     m_Status = status;
+}
+
+
+void CPSGS_OSGProcessorBase::FinalizeResult()
+{
+    _ASSERT(m_Status != ePSGS_InProgress);
     GetReply()->SignalProcessorFinished();
+}
+
+
+void CPSGS_OSGProcessorBase::FinalizeResult(EPSGS_Status status)
+{
+    SetFinalStatus(status);
+    FinalizeResult();
 }
 
 

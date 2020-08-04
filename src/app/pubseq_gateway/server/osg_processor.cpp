@@ -67,26 +67,26 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     case CPSGS_Request::ePSGS_ResolveRequest:
         // VDB WGS sequences
         if ( CPSGS_OSGResolve::CanResolve(request->GetRequest<SPSGS_ResolveRequest>().m_SeqId) ) {
-            return new CPSGS_OSGResolve(app->GetOSGConnectionPool(), request, reply);
+            return new CPSGS_OSGResolve(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
         // VDB WGS sequences
         if ( CPSGS_OSGGetBlobBySeqId::CanResolve(request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId) ) {
-            return new CPSGS_OSGGetBlobBySeqId(app->GetOSGConnectionPool(), request, reply);
+            return new CPSGS_OSGGetBlobBySeqId(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
         if ( CPSGS_OSGGetBlob::CanLoad(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId) ) {
-            return new CPSGS_OSGGetBlob(app->GetOSGConnectionPool(), request, reply);
+            return new CPSGS_OSGGetBlob(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_TSEChunkRequest:
         if ( CPSGS_OSGGetChunks::CanLoad(request->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId) ) {
-            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply);
+            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 

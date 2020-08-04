@@ -36,9 +36,14 @@
 
 
 BEGIN_NCBI_NAMESPACE;
+
 BEGIN_NAMESPACE(objects);
 
 class CID2_Blob_Id;
+class CID2_Reply_Data;
+class CID2_Reply_Get_Blob;
+class CID2S_Reply_Get_Split_Info;
+class CID2S_Reply_Get_Chunk;
 
 END_NAMESPACE(objects);
 
@@ -46,12 +51,11 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-class CPSGS_OSGGetBlobBase : public CPSGS_OSGProcessorBase
+class CPSGS_OSGGetBlobBase : virtual public CPSGS_OSGProcessorBase
 {
 public:
-    CPSGS_OSGGetBlobBase(const CRef<COSGConnectionPool>& pool,
-                         const shared_ptr<CPSGS_Request>& request,
-                         const shared_ptr<CPSGS_Reply>& reply);
+    CPSGS_OSGGetBlobBase();
+    virtual ~CPSGS_OSGGetBlobBase();
 
     static bool CanLoad(const SPSGS_BlobId& blob_id)
         {
@@ -61,6 +65,52 @@ public:
     static bool IsOSGBlob(const SPSGS_BlobId& blob_id);
 
     static CRef<CID2_Blob_Id> GetOSGBlobId(const SPSGS_BlobId& blob_id);
+    static string GetPSGBlobId(const CID2_Blob_Id& blob_id);
+
+protected:
+    typedef int TID2BlobState;
+    typedef int TID2BlobVersion;
+    typedef int TID2SplitVersion;
+    typedef int TID2ChunkId;
+
+    void ProcessBlobReply(const CID2_Reply& reply);
+    void SendBlob();
+    
+    static string x_GetSplitInfoPSGBlobId(const string& main_blob_id);
+    static string x_GetChunkPSGBlobId(const string& main_blob_id,
+                                      TID2ChunkId chunk_id);
+    
+    string x_GetPSGDataBlobId(const CID2_Blob_Id& blob_id,
+                              const CID2_Reply_Data& data);
+    void x_SetBlobState(CBlobRecord& blob_props,
+                        TID2BlobState blob_state);
+    void x_SetBlobVersion(CBlobRecord& blob_props,
+                          const CID2_Blob_Id& blob_id);
+    void x_SetId2SplitInfo(CBlobRecord& blob_props,
+                           const string& main_blob_id,
+                           TID2SplitVersion split_version);
+    void x_SetBlobDataProps(CBlobRecord& blob_props,
+                            const CID2_Reply_Data& data);
+    
+    void x_SendBlobProps(const string& psg_blob_id,
+                         CBlobRecord& blob_props);
+    void x_SendBlobData(const string& psg_blob_id,
+                        const CID2_Reply_Data& data);
+
+    void x_SendMainEntry(const CID2_Blob_Id& osg_blob_id,
+                         TID2BlobState blob_state,
+                         const CID2_Reply_Data& data);
+    void x_SendSplitInfo(const CID2_Blob_Id& osg_blob_id,
+                         TID2BlobState blob_state,
+                         const CID2_Reply_Data& data,
+                         TID2SplitVersion split_version);
+    void x_SendChunk(const CID2_Blob_Id& osg_blob_id,
+                     const CID2_Reply_Data& data,
+                     TID2ChunkId chunk_id);
+    
+    CConstRef<CID2_Reply_Get_Blob> m_Blob;
+    CConstRef<CID2S_Reply_Get_Split_Info> m_SplitInfo;
+    CConstRef<CID2S_Reply_Get_Chunk> m_Chunk;
 };
 
 

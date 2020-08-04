@@ -84,7 +84,8 @@ class CPSGS_OSGProcessorBase : public IPSGS_Processor
 public:
     CPSGS_OSGProcessorBase(const CRef<COSGConnectionPool>& pool,
                            const shared_ptr<CPSGS_Request>& request,
-                           const shared_ptr<CPSGS_Reply>& reply);
+                           const shared_ptr<CPSGS_Reply>& reply,
+                           TProcessorPriority priority);
     virtual ~CPSGS_OSGProcessorBase();
 
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -99,7 +100,9 @@ protected:
     void CreateFetches();
     void AllocateOSGCaller();
     void WaitForFinish();
+    void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
+    void FinalizeResult();
 
     typedef vector<CRef<COSGFetch>> TFetches;
     

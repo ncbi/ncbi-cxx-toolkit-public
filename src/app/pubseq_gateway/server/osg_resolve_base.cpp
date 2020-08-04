@@ -41,17 +41,15 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include "pubseq_gateway_convert_utils.hpp"
 #include "osg_connection.hpp"
+#include "osg_getblob_base.hpp"
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-CPSGS_OSGResolveBase::CPSGS_OSGResolveBase(const CRef<COSGConnectionPool>& pool,
-                                           const shared_ptr<CPSGS_Request>& request,
-                                           const shared_ptr<CPSGS_Reply>& reply)
-    : CPSGS_OSGProcessorBase(pool, request, reply),
-      m_BioseqInfoFlags(0)
+CPSGS_OSGResolveBase::CPSGS_OSGResolveBase()
+    : m_BioseqInfoFlags(0)
 {
 }
 
@@ -61,14 +59,14 @@ CPSGS_OSGResolveBase::~CPSGS_OSGResolveBase()
 }
 
 
-//static const char kSpecialId_label[] = "LABEL";
+static const char kSpecialId_label[] = "LABEL";
 static const char kSpecialId_taxid[] = "TAXID";
 static const char kSpecialId_hash[] = "HASH";
 static const char kSpecialId_length[] = "Seq-inst.length";
 static const char kSpecialId_type[] = "Seq-inst.mol";
 
 
-void CPSGS_OSGResolveBase::ProcessReply(const CID2_Reply& reply)
+void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
 {
     CBioseqInfoRecord::TSeqIds seq_ids;
     if ( reply.GetReply().IsGet_seq_id() ) {
@@ -78,13 +76,11 @@ void CPSGS_OSGResolveBase::ProcessReply(const CID2_Reply& reply)
             if ( id->IsGeneral() ) {
                 const CDbtag& dbtag = id->GetGeneral();
                 const CObject_id& obj_id = dbtag.GetTag();
-                /*
                 if ( dbtag.GetDb() == kSpecialId_label ) {
-                    m_BioseqInfo.SetLabel(obj_id.GetStr());
-                    m_BioseqInfoFlags |= ;
+                    //m_BioseqInfo.SetLabel(obj_id.GetStr());
+                    //m_BioseqInfoFlags |= ;
                     continue;
                 }
-                */
                 if ( dbtag.GetDb() == kSpecialId_taxid ) {
                     m_BioseqInfo.SetTaxId(obj_id.GetId());
                     m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
@@ -126,7 +122,10 @@ void CPSGS_OSGResolveBase::ProcessReply(const CID2_Reply& reply)
         }
         if ( (req_id.GetSeq_id_type() & req_id.eSeq_id_type_all) == req_id.eSeq_id_type_all ) {
             m_BioseqInfo.SetSeqIds(move(seq_ids));
-            m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_SeqIds;
+            // all ids are requested, so we should get GI and acc.ver too if they exist
+            m_BioseqInfoFlags |= (SPSGS_ResolveRequest::fPSGS_SeqIds |
+                                  SPSGS_ResolveRequest::fPSGS_CanonicalId |
+                                  SPSGS_ResolveRequest::fPSGS_Gi);
         }
         else if ( req_id.GetSeq_id_type() == req_id.eSeq_id_type_any ) {
             // TODO?
@@ -136,17 +135,30 @@ void CPSGS_OSGResolveBase::ProcessReply(const CID2_Reply& reply)
         auto& reply_ids = reply.GetReply().GetGet_blob_id();
         if ( reply_ids.IsSetBlob_id() ) {
             const CID2_Blob_Id& blob_id = reply_ids.GetBlob_id();
-            m_BioseqInfo.SetSat(blob_id.GetSat());
-            m_BioseqInfo.SetSatKey(blob_id.GetSat_key());
+            m_BlobId = CPSGS_OSGGetBlobBase::GetPSGBlobId(blob_id);
             m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_BlobId;
             if ( blob_id.IsSetVersion() ) {
-                m_BioseqInfo.SetDateChanged(blob_id.GetVersion());
+                // ID2 version is minutes since UNIX epoch
+                // PSG date_changed is ms since UNIX epoch
+                m_BioseqInfo.SetDateChanged(blob_id.GetVersion()*60000);
                 m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_DateChanged;
             }
+            CID2_Reply_Get_Blob_Id::TBlob_state id2_state = 0;
             if ( reply_ids.IsSetBlob_state() ) {
-                m_BioseqInfo.SetState(reply_ids.GetBlob_state());
-                m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_State;
+                id2_state = reply_ids.GetBlob_state();
             }
+            int psg_state;
+            if ( id2_state == 0 ) {
+                psg_state = 10;
+            }
+            else if ( id2_state & 4 ) {
+                psg_state = 5;
+            }
+            else if ( id2_state & 8 ) {
+                psg_state = 0;
+            }
+            m_BioseqInfo.SetSeqState(psg_state);
+            m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_State;
         }
     }
     else {
@@ -187,7 +199,7 @@ void CPSGS_OSGResolveBase::SendBioseqInfo(EOutputFormat output_format)
 
     string data_to_send;
     if ( output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat ) {
-        data_to_send = ToJson(m_BioseqInfo, m_BioseqInfoFlags).Repr(CJsonNode::fStandardJson);
+        data_to_send = ToJson(m_BioseqInfo, m_BioseqInfoFlags, m_BlobId).Repr(CJsonNode::fStandardJson);
         if ( GetDebugLevel() >= eDebug_exchange ) {
             LOG_POST(GetDiagSeverity() << "OSG: "
                      "Sending reply "<<data_to_send);
