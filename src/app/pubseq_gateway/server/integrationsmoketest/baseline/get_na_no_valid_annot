@@ -1,8 +1,8 @@
 [
 {
-    "reply": "NotFound",
+    "status": "NotFound",
     "errors": [
-        "No processors found to serve the request"
+        "No matching processors found to serve the request"
     ]
 }
 ]

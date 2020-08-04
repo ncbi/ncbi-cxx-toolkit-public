@@ -1,8 +1,9 @@
 [
 {
-    "reply": "BlobData",
+    "reply": "Processor",
+    "status": "NotFound",
     "errors": [
-        "Unknown satellite number 999"
+        "LMDB cache/Cassandra get blob processor failed to map sat 999 to a Cassandra keyspace"
     ]
 }
 ]

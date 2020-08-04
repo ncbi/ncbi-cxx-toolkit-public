@@ -1,6 +1,7 @@
 [
 {
-    "reply": "Error",
+    "reply": "Processor",
+    "status": "Error",
     "errors": [
         "Invalid chunk requested. The number of available chunks: 96, requested number: 500"
     ]

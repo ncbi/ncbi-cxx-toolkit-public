@@ -1,8 +1,8 @@
 [
 {
-    "reply": "Error",
+    "status": "Error",
     "errors": [
-        "Malformed 'tse_id' parameter. Expected format 'sat.sat_key' where both 'sat' and 'sat_key' are integers."
+        "Invalid 'chunk' parameter. Expected > 0"
     ]
 }
 ]
