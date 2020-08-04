@@ -9,6 +9,8 @@
 APP = test_serial_io
 SRC = test_serial_io
 
+REQUIRES = MT
+
 LIB = xconnect xser xutil xncbi $(COMPRESS_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
