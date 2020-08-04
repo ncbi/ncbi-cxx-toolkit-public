@@ -95,7 +95,7 @@ static bool s_IsConnectionFailure(EError_val mlaErrorVal) {
 }
 
 
-CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts, bool ignoreErrors, IObjtoolsListener* pMessageListener)
+CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
 {
     CRef<CPub> result;
     CPubMedId  request(id);
@@ -114,23 +114,21 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
                 continue;
             }
 
-            if (!ignoreErrors) { // post an error message or throw an exception
-                CNcbiOstrstream oss;
-                oss << "Failed to retrieve publication for PMID " 
-                    << id 
-                    << ". ";
-                if (isConnectionError) {
-                    oss << count+1 << " attempts made. ";
-                }
-                oss << "CMLAClient : "
-                    << errorVal;
-                string msg = CNcbiOstrstreamToString(oss);
-                if (!pMessageListener) {
-                    NCBI_THROW(CException, eUnknown, msg);
-                }
-
-                pMessageListener->PutMessage(CObjEditMessage(msg, eDiag_Error));
+            CNcbiOstrstream oss;
+            oss << "Failed to retrieve publication for PMID " 
+                << id 
+                << ". ";
+            if (isConnectionError) {
+                oss << count+1 << " attempts made. ";
             }
+            oss << "CMLAClient : " 
+                << errorVal;
+            string msg = CNcbiOstrstreamToString(oss);
+            if (!pMessageListener) {
+                NCBI_THROW(CException, eUnknown, msg);
+            }
+
+            pMessageListener->PutMessage(CObjEditMessage(msg, eDiag_Error));
             break;
         }
     }
@@ -143,7 +141,7 @@ bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
     CMLAClient::TReply reply;
     auto new_pub = 
-        s_GetPubFrompmid(*m_mlaClient, id, m_MaxMlaAttempts, m_DisableErrorReporting, m_pMessageListener);
+        s_GetPubFrompmid(*m_mlaClient, id, m_MaxMlaAttempts, m_pMessageListener);
     if (!new_pub) {
         return false;
     }
@@ -166,13 +164,6 @@ void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
 {
     m_MaxMlaAttempts = maxAttempts;
 }
-
-
-void CRemoteUpdater::DisableErrorReporting(bool val) 
-{
-    m_DisableErrorReporting = val;
-}
-
 
 
 class CCachedTaxon3_impl

@@ -83,7 +83,7 @@
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <objtools/format/flat_file_generator.hpp>
-
+#include <objtools/logging/listener.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -450,8 +450,8 @@ int CTbl2AsnApp::Run(void)
     }
 
     m_reader.reset(new CMultiReader(m_context));
-    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger.GetNCPointerOrNull()));
-    m_context.m_remote_updater->DisableErrorReporting(); // RW-1130
+    unique_ptr<CObjtoolsListener> pDummyListener(new CObjtoolsListener()); // RW-1130
+    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(pDummyListener.get()));
 
     // excluded per RW-589
 #if 0

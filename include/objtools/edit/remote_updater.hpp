@@ -87,7 +87,6 @@ public:
    static void PostProcessPubs(CPubdesc& pubdesc);
 
    void SetMLAClient(CMLAClient& mlaClient);
-   void DisableErrorReporting(bool val=true);
    // Use either shared singleton or individual instances
    static CRemoteUpdater& GetInstance();
 
@@ -105,7 +104,6 @@ private:
    CMutex m_Mutex;
    DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
    int m_MaxMlaAttempts=3;
-   bool m_DisableErrorReporting;
 };
 
 END_SCOPE(edit)

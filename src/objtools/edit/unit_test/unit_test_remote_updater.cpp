@@ -54,9 +54,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/remote_updater.hpp>
+#include <objtools/logging/listener.hpp>
 #include <objects/mla/mla_client.hpp>
 #include <objects/seq/Seqdesc.hpp>
-
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -153,9 +153,12 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
                 CCheckMsg(expectedMsg));
     }
 
-
-    updater.DisableErrorReporting();
-    BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
+    {
+        CObjtoolsListener messageListener;
+        CRemoteUpdater updater(&messageListener);
+        updater.SetMLAClient(*pMLAClient);
+        BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
+    }
 }
 
 
