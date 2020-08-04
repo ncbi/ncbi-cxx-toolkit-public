@@ -283,7 +283,7 @@ private:
     void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId    m_BioId;
-    TIncludeInfo  m_IncludeInfo = 0;
+    TIncludeInfo  m_IncludeInfo = TIncludeInfo(0);
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
 };
 
@@ -560,6 +560,10 @@ public:
     /// Get coordinates of the blob that contains the specified ID2 split info.
     /// If the blob is not split, then return an empty blob id.
     CPSG_BlobId GetSplitInfoBlobId() const;
+
+
+    /// Check if client can detemine chunks' coordinates locally
+    bool CanGetChunkBlobId() const;
 
     /// Get coordinates of a chunk blob -- from the chunk's serial number.
     /// @throw  If the blob has not been splitted.

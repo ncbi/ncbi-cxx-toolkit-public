@@ -381,7 +381,7 @@ void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
     auto include_info = m_IncludeInfo;
     const auto max_bit = (numeric_limits<unsigned>::max() >> 1) + 1;
 
-    if (include_info & max_bit) {
+    if (include_info & CPSG_Request_Resolve::TIncludeInfo(max_bit)) {
         os << "&all_info=yes";
         value = "no";
         include_info = ~include_info;
@@ -600,14 +600,57 @@ string CPSG_BlobInfo::GetUsername() const
 
 struct SId2Info
 {
-    enum : size_t { eSat, eInfo, eNChunks, eSplitVer, eMinSize = eNChunks + 1 };
+    enum : size_t { eSat, eSatKey, eNChunks, eSplitVer, eMinSize = eNChunks + 1 };
 
     vector<CTempString> values;
-    int sat = 0;
 
     SId2Info(const CJsonNode& data, const CPSG_BlobId& id);
 
-    explicit operator bool() const { return !values.empty() && (sat != 0); }
+    explicit operator bool() const {
+        return values.size() > eSat && !values[eSat].empty();
+    }
+
+    string GetSplitInfoBlobId() const {
+        if ( !*this || values.size() <= eSatKey ) {
+            return string();
+        }
+        return values[eSat] + "." + values[eSatKey] + ".";
+    }
+
+    int GetSplitVersion() const {
+        if ( !*this || values.size() <= eSplitVer ) {
+            return 0;
+        }
+        
+        auto split_ver = values[eSplitVer];
+        return split_ver.empty() ? 0 : NStr::StringToInt(split_ver);
+    }
+
+    bool CanGetChunkBlobId() const {
+        return *this && values.size() > eNChunks && !values[eNChunks].empty();
+    }
+
+    string GetChunkBlobId(unsigned split_chunk_no) const {
+        if ( !CanGetChunkBlobId() ) {
+            return kEmptyStr;
+        }
+
+        if ( values[eNChunks].empty() ) {
+            return kEmptyStr;
+        }
+        else {
+            auto sat_key = NStr::StringToInt(values[eSatKey]);
+            if (sat_key <= 0) return kEmptyStr;
+
+            int index = static_cast<int>(split_chunk_no);
+            
+            auto nchunks = NStr::StringToInt(values[eNChunks]);
+            if (nchunks <= 0) return kEmptyStr;
+            if (nchunks < index) return kEmptyStr;
+
+            return values[eSat] + "." + to_string(sat_key + index - nchunks - 1);
+        }
+    }
 
 private:
     string m_Value;
@@ -627,55 +670,32 @@ SId2Info::SId2Info(const CJsonNode& data, const CPSG_BlobId& id)
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong id2_info format: " << m_Value <<
                 " for blob '" << id.Get() << '\'');
     }
-
-    auto sat_str = values[eSat];
-
-    if (!sat_str.empty()) {
-        sat = NStr::StringToInt(sat_str);
-    }
 }
 
 CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId() const
 {
     SId2Info id2_info(m_Data, m_Id);
+    return CPSG_BlobId(id2_info.GetSplitInfoBlobId());
+}
 
-    if (!id2_info) return kEmptyStr;
-
-    auto sat_key = id2_info.values[SId2Info::eInfo];
-    return CPSG_BlobId(id2_info.sat, NStr::StringToInt(sat_key));
+bool CPSG_BlobInfo::CanGetChunkBlobId() const
+{
+    SId2Info id2_info(m_Data, m_Id);
+    return id2_info.CanGetChunkBlobId();
 }
 
 CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
 {
     if (split_chunk_no == 0) return kEmptyStr;
 
-    int index = static_cast<int>(split_chunk_no);
-
     SId2Info id2_info(m_Data, m_Id);
-
-    if (!id2_info) return kEmptyStr;
-
-    auto info = NStr::StringToInt(id2_info.values[SId2Info::eInfo]);
-
-    if (info <= 0) return kEmptyStr;
-
-    auto nchunks = NStr::StringToInt(id2_info.values[SId2Info::eNChunks]);
-
-    if (nchunks <= 0) return kEmptyStr;
-    if (nchunks < index) return kEmptyStr;
-
-    return CPSG_BlobId(id2_info.sat, info + index - nchunks - 1);
+    return CPSG_BlobId(id2_info.GetChunkBlobId(split_chunk_no));
 }
 
 CPSG_BlobInfo::TSplitVersion CPSG_BlobInfo::GetSplitVersion() const
 {
     SId2Info id2_info(m_Data, m_Id);
-
-    if (!id2_info) return 0;
-    if (id2_info.values.size() <= SId2Info::eSplitVer) return 0;
-
-    auto split_ver = id2_info.values[SId2Info::eSplitVer];
-    return split_ver.empty() ? 0 : NStr::StringToInt(split_ver);
+    return id2_info.GetSplitVersion();
 }
 
 
