@@ -107,9 +107,6 @@ public:
         return false;
     }
     void PurgeCache(TCacheType            cache_type,
-        time_t                access_timeout,
-        ICache::EKeepVersions) override {}
-    void PurgeCache(TCacheType            cache_type,
         time_t                access_timeout = 0) override {}
     void CloseCache(void) override {}
 

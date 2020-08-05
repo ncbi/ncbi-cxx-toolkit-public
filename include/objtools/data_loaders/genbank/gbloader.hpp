@@ -321,12 +321,6 @@ public:
     typedef CReaderCacheManager::TCacheType TCacheType;
     virtual bool HaveCache(TCacheType cache_type = fCache_Any) = 0;
 
-    // This overload with EKeepVersions parameter (which is no-op)
-    // is deprecated and to be removed, please switch to use the other.
-    NCBI_DEPRECATED
-        virtual void PurgeCache(TCacheType            cache_type,
-            time_t                access_timeout,
-            ICache::EKeepVersions) = 0;
     virtual void PurgeCache(TCacheType            cache_type,
         time_t                access_timeout = 0) = 0;
     virtual void CloseCache(void) = 0;

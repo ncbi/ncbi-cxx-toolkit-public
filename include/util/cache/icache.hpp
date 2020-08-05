@@ -462,16 +462,6 @@ public:
                        const string&  subkey,
                        time_t         access_timeout) = 0;
 
-private:
-    /// @deprecated EKeepVersions arguments have been no-op in Purge() for long time and are now deprecated.
-    /// If you are using one of these methods, switch to use one the overloads above instead.
-    /// If you have implemented these, remove EKeepVersions (making them overrides for the overloads above).
-    /// The deprecated will be eventually purged (after all implementations have switched to the overloads above).
-    virtual void Purge(time_t, EKeepVersions) final {}
-    virtual void Purge(const string&, const string&, time_t, EKeepVersions) final {}
-
-public:
-
     virtual ~ICache() {}
 
     /// Key values to search for a cache with given params.
