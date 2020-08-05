@@ -5194,9 +5194,10 @@ NTNU-VM	s	Norwegian University of Science and Technology, Museum of Natural Hist
 NTOU	sc	Institute of Marine Biology, National Taiwan Ocean University			
 NTS	s	Nevada Operations Office, U.S. Department of Energy			
 NTSC	s	University of North Texas, Biological Sciences Department			
+NTUCC	c	Plant Pathology and Microbiology, National Taiwan University Culture Collection			
 NTUF	s	National Taiwan University, Forestry Department			
+NTUH	s	Herbarium of the Department of Plant Pathology and Microbiology, National Taiwan University			
 NTUM	s	National Taiwan University Museum			
-NTUMA	s	National Taiwan University			
 NU<THA>	c	Department of Microbiology, Faculty of Science			
 NU<ZAF>	s	University of Natal, School of Botany and Zoology			
 NUA	c	Department of Microbiology, National University of Athens			
