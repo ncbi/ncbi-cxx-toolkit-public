@@ -119,6 +119,11 @@ void CStackTrace::x_ExpandStackTrace(void) const
 }
 
 
+static const vector<string> s_StackFilters {
+    "ncbi::CStackTrace::", "ncbi::CStackTraceImpl::", "ncbi::CException::",
+    "backward::"
+};
+
 void CStackTrace::Write(CNcbiOstream& os) const
 {
     x_ExpandStackTrace();
@@ -129,7 +134,16 @@ void CStackTrace::Write(CNcbiOstream& os) const
     }
 
     ITERATE(TStack, it, m_Stack) {
-        os << m_Prefix << it->AsString() << endl;
+        string s = it->AsString();
+        bool skip = false;
+        for (auto filter : s_StackFilters) {
+            if (s.find(filter) != NPOS) {
+                skip = true;
+                break;
+            }
+        }
+        if (skip) continue;
+        os << m_Prefix << s << endl;
     }
 }
 
