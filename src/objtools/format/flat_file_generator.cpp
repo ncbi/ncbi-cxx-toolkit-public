@@ -747,7 +747,8 @@ void CFlatFileGenerator::Generate
                 if ( cfg.IsPolicyWeb() ) {
                     policy = CSeqEntryIndex::eWeb;
                 }
-                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
+                int gapDepth = cfg.GetGapDepth();
+                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags, gapDepth ));
                 m_Ctx->SetSeqEntryIndex(idx);
                 if (idx->IsIndexFailure()) {
                     m_Failed = true;

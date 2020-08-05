@@ -319,6 +319,8 @@ CFlatFileConfig::CFlatFileConfig(
     m_Format(format), m_Mode(mode), m_Style(style), m_Flags(flags), m_View(view), m_Policy(policy), m_Custom(custom)
 {
     m_RefSeqConventions = false;
+    m_FeatDepth = 0;
+    m_GapDepth = 0;
     SetGenbankBlocks(fGenbankBlocks_All);
     SetGenbankBlockCallback(NULL);
     SetCanceledCallback(NULL);
@@ -614,6 +616,9 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
 
          arg_desc->AddOptionalKey("depth", "Depth",
                                   "Exploration depth", CArgDescriptions::eInteger);
+
+         arg_desc->AddOptionalKey("gap-depth", "GapDepth",
+                                  "Gap exploration depth", CArgDescriptions::eInteger);
 
          arg_desc->AddOptionalKey("max_search_segments", "MaxSearchSegments",
                                   "Max number of empty segments to search", CArgDescriptions::eInteger);
@@ -942,6 +947,15 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     m_fGenbankBlocks = genbank_blocks;
     m_BasicCleanup = args["cleanup"];
     SetCustom(custom);
+
+    if( args["depth"] ) {
+        int featDepth = args["depth"].AsInteger();
+        SetFeatDepth(featDepth);
+    }
+    if( args["gap-depth"] ) {
+        int gapDepth = args["gap-depth"].AsInteger();
+        SetGapDepth(gapDepth);
+    }
 }
 
 #ifdef NEW_HTML_FMT

@@ -647,6 +647,12 @@ public:
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
 
+  const int GetFeatDepth(void) const { return m_FeatDepth; }
+  void SetFeatDepth(const int featDepth) { m_FeatDepth = featDepth; }
+
+  const int GetGapDepth(void) const { return m_GapDepth; }
+  void SetGapDepth(const int gapDepth) { m_GapDepth = gapDepth; }
+
 
     void SetGenbankBlocks(const TGenbankBlocks& genbank_blocks) 
     {
@@ -733,6 +739,8 @@ private:
     const ICanceled * m_pCanceledCallback; // instance does NOT own it
     bool        m_BasicCleanup;
     TCustom     m_Custom;
+    int         m_FeatDepth;
+    int         m_GapDepth;
 #ifdef NEW_HTML_FMT
     CRef<IHTMLFormatter> m_html_formatter;
 #endif
