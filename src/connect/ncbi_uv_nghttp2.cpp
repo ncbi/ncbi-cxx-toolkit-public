@@ -462,14 +462,15 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
     if (nghttp2_session_want_write(m_Session) == 0) {
         if (nghttp2_session_want_read(m_Session) == 0) {
             NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
-            return x_DelOnError(-1);
+            x_DelOnError(-1);
+            return eWantsClose;
         }
 
         NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write");
-        return 0;
+        return eDoesNotWantTo;
     }
 
-    ssize_t total = 0;
+    _DEBUG_ARG(ssize_t total = 0);
 
     for (;;) {
         const uint8_t* data;
@@ -477,7 +478,7 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 
         if (rv > 0) {
             buffer.insert(buffer.end(), data, data + rv);
-            total += rv;
+            _DEBUG_CODE(total += rv;);
 
         } else if (rv < 0) {
             NCBI_NGHTTP2_SESSION_TRACE(this << " send failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
@@ -485,7 +486,7 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 
         } else {
             NCBI_NGHTTP2_SESSION_TRACE(this << " sent: " << total);
-            return total;
+            return eSent;
         }
     }
 }
@@ -522,8 +523,11 @@ bool SUvNgHttp2_SessionBase::Send()
     if (send_rv < 0) {
         Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
 
-    } else if (send_rv > 0) {
+    } else if (send_rv == SNgHttp2_Session::eSent) {
         return Write();
+
+    } else if (send_rv == SNgHttp2_Session::eWantsClose) {
+        m_Tcp.Close();
     }
 
     return false;

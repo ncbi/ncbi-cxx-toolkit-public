@@ -348,6 +348,8 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
     int32_t Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd = nullptr);
     int Resume(int32_t stream_id);
 
+    // Send() returns either an nghttp2 error or one of the special values below
+    enum ESendResult : ssize_t { eSent, eDoesNotWantTo, eWantsClose };
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
