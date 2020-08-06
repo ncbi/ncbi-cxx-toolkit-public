@@ -748,12 +748,13 @@ void CFlatFileGenerator::Generate
                     policy = CSeqEntryIndex::eWeb;
                 }
                 int gapDepth = cfg.GetGapDepth();
-                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags, gapDepth ));
+                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags /* , gapDepth */ ));
                 m_Ctx->SetSeqEntryIndex(idx);
                 if (idx->IsIndexFailure()) {
                     m_Failed = true;
                     return;
                 }
+                idx->SetGapDepth(gapDepth);
             } catch(CException &) {
                 m_Failed = true;
                 return;

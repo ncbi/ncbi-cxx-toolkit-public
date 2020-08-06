@@ -171,6 +171,14 @@ public:
 
     FAddSnpFunc* GetSnpFunc(void);
 
+    void SetFeatDepth(int featDepth);
+
+    int GetFeatDepth(void);
+
+    void SetGapDepth(int gapDepth);
+
+    int GetGapDepth(void);
+
     // Check all Bioseqs for failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure(void);
 
@@ -259,6 +267,14 @@ public:
 
     FAddSnpFunc* GetSnpFunc(void);
 
+    void SetFeatDepth(int featDepth);
+
+    int GetFeatDepth(void);
+
+    void SetGapDepth(int gapDepth);
+
+    int GetGapDepth(void);
+
     // Check all Bioseqs for failure to fetch remote sequence components or remote feature annotation
     bool IsFetchFailure(void);
 
@@ -305,6 +321,9 @@ private:
     bool m_DistributedReferences;
 
     FAddSnpFunc* m_SnpFunc;
+
+    int m_FeatDepth;
+    int m_GapDepth;
 
     mutable CAtomicCounter m_Counter;
 

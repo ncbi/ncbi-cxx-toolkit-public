@@ -182,6 +182,30 @@ FAddSnpFunc* CSeqEntryIndex::GetSnpFunc(void)
     return m_Idx->GetSnpFunc();
 }
 
+void CSeqEntryIndex::SetFeatDepth(int featDepth)
+
+{
+    m_Idx->SetFeatDepth (featDepth);
+}
+
+int CSeqEntryIndex::GetFeatDepth(void)
+
+{
+    return m_Idx->GetFeatDepth();
+}
+
+void CSeqEntryIndex::SetGapDepth(int featDepth)
+
+{
+    m_Idx->SetGapDepth (featDepth);
+}
+
+int CSeqEntryIndex::GetGapDepth(void)
+
+{
+    return m_Idx->GetGapDepth();
+}
+
 bool CSeqEntryIndex::IsFetchFailure(void)
 
 {
@@ -216,6 +240,8 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
     m_IsSmallGenomeSet = false;
     m_DistributedReferences = false;
     m_SnpFunc = 0;
+    m_FeatDepth = 0;
+    m_GapDepth = 0;
     m_IndexFailure = false;
 
     try {
@@ -262,6 +288,8 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
     m_IsSmallGenomeSet = false;
     m_DistributedReferences = false;
     m_SnpFunc = 0;
+    m_FeatDepth = 0;
+    m_GapDepth = 0;
     m_IndexFailure = false;
 
     try {
@@ -393,11 +421,34 @@ void CSeqMasterIndex::SetSnpFunc (FAddSnpFunc* snp)
     m_SnpFunc = snp;
 }
 
-
 FAddSnpFunc* CSeqMasterIndex::GetSnpFunc (void)
 
 {
     return m_SnpFunc;
+}
+
+void CSeqMasterIndex::SetFeatDepth (int featDepth)
+
+{
+    m_FeatDepth = featDepth;
+}
+
+int CSeqMasterIndex::GetFeatDepth (void)
+
+{
+    return m_FeatDepth;
+}
+
+void CSeqMasterIndex::SetGapDepth (int gapDepth)
+
+{
+    m_GapDepth = gapDepth;
+}
+
+int CSeqMasterIndex::GetGapDepth (void)
+
+{
+    return m_GapDepth;
 }
 
 
@@ -590,6 +641,8 @@ void CSeqMasterIndex::x_Init (void)
     m_IsSmallGenomeSet = false;
     m_DistributedReferences = false;
     m_SnpFunc = 0;
+    m_FeatDepth = 0;
+    m_GapDepth = 0;
     m_IndexFailure = false;
 
     try {
@@ -1063,7 +1116,14 @@ void CBioseqIndex::x_InitGaps (void)
 
         SSeqMapSelector sel;
 
-        size_t resolveCount = m_Depth;
+        // size_t resolveCount = m_Depth;
+        size_t resolveCount = 0;
+
+        CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
+        auto idxl = idx.Lock();
+        if (idxl) {
+            resolveCount = idxl->GetGapDepth();
+        }
 
         sel.SetFlags(CSeqMap::fFindGap)
            .SetResolveCount(resolveCount);
