@@ -66,6 +66,7 @@ try_local() {
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
         test -d "$d/include/leveldb"       &&  : ${LEVELDB_PATH=$d}
         test -f "$d/include/elfutils/libdw.h"  &&  : ${LIBDW_PATH=$d}
+        test -d "$d/include/librdkafka"    &&  : ${LIBRDKAFKA_PATH=$d}
         test -f "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
         test -f "$d/include/unwind.h"      &&  : ${LIBUNWIND_PATH=$d}
         test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
@@ -222,6 +223,8 @@ esac
 : ${INFLUXDB_PATH=$NCBI/influxdb-cpp-0.0.20190416-31fe75d}
 
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
+
+: ${LIBRDKAFKA_PATH=$NCBI/librdkafka-1.5.0}
 
 : ${LIBSSH2_PATH=$NCBI/libssh2-1.7.0}
 
