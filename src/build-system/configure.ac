@@ -76,7 +76,7 @@ case "$with_3psw" in
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, aws-sdk, hiredis,
-                     apache-arrow, cppkafka],
+                     apache-arrow, librdkafka, cppkafka],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -586,6 +586,10 @@ AC_ARG_WITH(apache-arrow,
    [ --with-apache-arrow=DIR use Apache Arrow installation in DIR])
 AC_ARG_WITH(apache-arrow,
    [ --without-apache-arrow  do not use Apache Arrow])
+AC_ARG_WITH(librdkafka,
+   [ --with-librdkafka=DIR   use librdkafka installation in DIR])
+AC_ARG_WITH(librdkafka,
+   [ --without-librdkafka    do not use librdkafka])
 AC_ARG_WITH(cppkafka,
    [ --with-cppkafka=DIR     use cppkafka installation in DIR])
 AC_ARG_WITH(cppkafka,
@@ -657,7 +661,8 @@ gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
-libxlsxwriter protobuf grpc msgsl aws-sdk hiredis apache-arrow cppkafka \
+libxlsxwriter protobuf grpc msgsl aws-sdk hiredis \
+apache-arrow librdkafka cppkafka \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -8510,6 +8515,35 @@ else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
 
+case "$with_librdkafka" in
+   yes | no | '' ) ;;
+   *             ) LIBRDKAFKA_PATH=$with_librdkafka ;;
+esac
+if test -d "$LIBRDKAFKA_PATH"; then
+   NCBI_FIX_DIR(LIBRDKAFKA_PATH)
+   for d in "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         LIBRDKAFKA_PATH=$d
+         NCBI_FIX_DIR(LIBRDKAFKA_PATH)
+         break
+      fi
+   done
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(librdkafka, LIBRDKAFKA, rdkafka,
+  [AC_LANG_PROGRAM([[@%:@include <librdkafka/rdkafka.h>]],
+      [[rd_kafka_conf_t *conf = rd_kafka_conf_new();]])],
+  [-lrdkafka], [], [$LIBRDKAFKA_INCLUDE])
+if test "$with_librdkafka" != no -a \
+     -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/liblibrdkafka-static.a"; then
+   LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -llibrdkafka-static"
+else
+   LIBRDKAFKA_STATIC_LIBS=$LIBRDKAFKA_LIBS
+fi
+
 case "$with_cppkafka" in
    yes | no | '' ) ;;
    *             ) CPPKAFKA_PATH=$with_cppkafka ;;
@@ -8531,10 +8565,10 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
   [AC_LANG_PROGRAM([[@%:@include <cppkafka/configuration.h>]],
       [[cppkafka::Configuration cfg; cfg.set("foo", "bar");]])],
-  [-lrdkafka])
+  [$LIBRDKAFKA_LIBS])
 if test "$with_cppkafka" != no -a \
      -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
-   CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static -lrdkafka"
+   CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static $LIBRDKAFKA_STATIC_LIBS"
 else
    CPPKAFKA_STATIC_LIBS=$CPPKAFKA_LIBS
 fi

@@ -474,6 +474,9 @@
 /* Define to 1 if libprotobuf$PROTOBUF_SFX is available. */
 #undef HAVE_LIBPROTOBUF
 
+/* Define to 1 if librdkafka is available. */
+#undef HAVE_LIBRDKAFKA
+
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBRPCSVC
