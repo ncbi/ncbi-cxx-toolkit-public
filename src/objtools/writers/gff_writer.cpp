@@ -177,6 +177,10 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
         }
         else {
             const auto& cc = bsh.GetCompleteBioseq();
+            const auto& annots = cc->GetAnnot();
+            if (annots.empty()) {
+                return true;
+            }
             const auto& data = cc->GetAnnot().front();
             auto ah = m_pScope->GetObjectHandle(*data);
             return x_WriteSeqAnnotHandle(ah);
