@@ -177,6 +177,9 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
         }
         else {
             const auto& cc = bsh.GetCompleteBioseq();
+            if (!cc->IsSetAnnot()) {
+                return true;
+            }
             const auto& annots = cc->GetAnnot();
             if (annots.empty()) {
                 return true;
