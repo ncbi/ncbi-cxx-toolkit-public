@@ -551,11 +551,7 @@ int CTestWriter::GetTimeout() const
         ret *= 5;
     }
     else if (m_Case.m_Dataset == eData_Large) {
-#ifdef NCBI_OS_MSWIN
         ret *= 50;
-#else
-        ret *= 20;
-#endif
     }
     return ret;
 }
@@ -1061,7 +1057,7 @@ static void s_CheckStream(
             break;
         case eErr_UnexpectedMember:
         case eErr_UnexpectedChoice:
-            CHECK_THROW(test_case.m_Index, s_ReadObjects(writer, *TestObjects[test_case.m_Dataset], *in, test_case.m_ObjCount, got), CSerialException);
+            CHECK_THROW(test_case.m_Index, s_ReadObjects(writer, *TestObjects[test_case.m_Dataset], *in, test_case.m_ObjCount, got), CException);
             CHECK_EQUAL(test_case.m_Index, got, test_case.m_ObjCount - 1);
             break;
         case eErr_BadValue:

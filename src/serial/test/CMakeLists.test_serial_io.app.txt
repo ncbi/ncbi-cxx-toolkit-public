@@ -8,7 +8,7 @@ NCBI_begin_app(test_serial_io)
   NCBI_uses_toolkit_libraries(test_boost xser xcompress xconnect)
   NCBI_project_watchers(grichenk)
 
-  NCBI_set_test_timeout(600)
+  NCBI_set_test_timeout(2000)
   NCBI_add_test()
 NCBI_end_app()
 
