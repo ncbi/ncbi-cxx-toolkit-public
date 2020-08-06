@@ -151,7 +151,25 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc), 
                 CException, 
                 CCheckMsg(expectedMsg));
+
+        BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);
     }
+
+
+    { 
+        CRemoteUpdater updater(nullptr);
+        updater.SetMLAClient(*pMLAClient);
+        string expectedMsg = "Failed to retrieve publication for PMID 1234. "
+            "CMLAClient : not-found";
+        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc), 
+                CException, 
+                CCheckMsg(expectedMsg));
+
+        cout << "Exception thrown" << endl;
+
+        BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);
+    }
+
 
     {
         CObjtoolsListener messageListener;
