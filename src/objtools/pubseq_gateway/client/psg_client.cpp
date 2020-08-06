@@ -614,7 +614,12 @@ struct SId2Info
         if ( !*this || values.size() <= eSatKey ) {
             return string();
         }
-        return values[eSat] + "." + values[eSatKey] + ".";
+        if ( CanGetChunkBlobId() ) {
+            return values[eSat] + "." + values[eSatKey];
+        }
+        else {
+            return values[eSat] + "." + values[eSatKey] + ".";
+        }
     }
 
     int GetSplitVersion() const {
