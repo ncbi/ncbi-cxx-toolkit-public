@@ -56,7 +56,7 @@
 #include <objects/biblio/ArticleId.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <corelib/ncbi_url.hpp>
-//#include <gui/utils/fetch_url.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 
 #include <objtools/flatfile/index.h>
 #include <objtools/flatfile/xmlmisc.h>
@@ -191,6 +191,18 @@ static bool MULooksLikeISSN(CharPtr str)
 
 const unsigned int DEFAULT_HTTP_TIMEOUT = 30;
 
+static string fetch_url(const string& url) {
+    string s;
+    char buff[1024];
+    CConn_HttpStream http(url);
+    while (!http.fail()) {
+        http.read(buff, 1024);
+        s.append(buff, http.gcount());
+    }
+    return s;
+}
+
+
 /**********************************************************/
 static bool MUIsJournalIndexed(const Char* journal)
 {
@@ -227,15 +239,14 @@ static bool MUIsJournalIndexed(const Char* journal)
     ncbi::CDefaultUrlEncoder url_encoder;
     STimeout timeout = { DEFAULT_HTTP_TIMEOUT, 0 };
 
-    std::string base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils",
-                nlmcatalog_url = base_url + "/esearch.fcgi?db=nlmcatalog&retmax=200&term=" + url_encoder.EncodeFragment(title);
-#if 0 // RW-707
-    if(MULooksLikeISSN(title))
-        ncbi::CFetchURL::Fetch(nlmcatalog_url + "%5Bissn%5D", str, &timeout);
+    const std::string base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
+    const std::string nlmcatalog_url = base_url + "/esearch.fcgi?db=nlmcatalog&retmax=200&term=" + url_encoder.EncodeFragment(title);
+    str = fetch_url(nlmcatalog_url + "%5Bissn%5D");
 
+    if(MULooksLikeISSN(title))
+        str = fetch_url(nlmcatalog_url + "%5Bissn%5D");
     if (str.empty())
-        ncbi::CFetchURL::Fetch(nlmcatalog_url + "%5Bmulti%5D+AND+ncbijournals%5Bsb%5D", str, &timeout);
-#endif
+        str = fetch_url(nlmcatalog_url + "%5Bmulti%5D+AND+ncbijournals%5Bsb%5D");
     if (str.empty())
         return false;
 
@@ -261,9 +272,8 @@ static bool MUIsJournalIndexed(const Char* journal)
          * and in [jour] as microbiology reading, engl
          * microbiology reading, england
          */
-#if 0 // RW-707
-        ncbi::CFetchURL::Fetch(nlmcatalog_url + "%5Bjour%5D", str, &timeout);
-#endif
+        str = fetch_url(nlmcatalog_url + "%5Bjour%5D");
+
         if (str.empty())
             return false;
 
@@ -301,10 +311,7 @@ static bool MUIsJournalIndexed(const Char* journal)
     if(jids == NULL)
         return false;
 
-#if 0 // RW-707
-    std::string url = base_url + "/esummary.fcgi?&db=nlmcatalog&retmax=200&version=2.0&id=" + url_encoder.EncodeFragment(jids);
-    ncbi::CFetchURL::Fetch(url, str, &timeout);
-#endif
+    str = fetch_url(base_url + "/esummary.fcgi?&db=nlmcatalog&retmax=200&version=2.0&id=" + url_encoder.EncodeFragment(jids));
 
     MemFree(jids);
     if (str.empty())
