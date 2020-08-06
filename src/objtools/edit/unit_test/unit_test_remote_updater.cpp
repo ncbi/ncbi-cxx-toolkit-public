@@ -165,8 +165,6 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
                 CException, 
                 CCheckMsg(expectedMsg));
 
-        cout << "Exception thrown" << endl;
-
         BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);
     }
 
