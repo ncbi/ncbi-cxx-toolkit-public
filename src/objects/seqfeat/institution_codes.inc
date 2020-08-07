@@ -4157,6 +4157,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MDTN\ts\tMiddleton Botanical Society\t\t\t",
 "MDUG\ts\tUniversidad Guanajuato, Museo Alfredo Duges\t\t\t",
 "MDZAU\ts\tMuseum Deptartment of Zoology\t\t\t",
+"MEAN\tc\tMicoteca da Estacao Agronomica Nacional\t\t\t",
 "MECB\ts\tUniversidade Federal de Pelotas, Museu Entomologico Ceslau Biezanko\t\t\t",
 "MECG\ts\tMedical Entomology Collection Gallery\t\t\t",
 "MECN\ts\tMuseo Ecuadoriano de Ciencias Naturales\tDHMECN\t\t",

@@ -4124,6 +4124,7 @@ MDRG	s	Museum voor Dierkunde, Rijksuniversiteit
 MDTN	s	Middleton Botanical Society			
 MDUG	s	Universidad Guanajuato, Museo Alfredo Duges			
 MDZAU	s	Museum Deptartment of Zoology			
+MEAN	c	Micoteca da Estacao Agronomica Nacional			
 MECB	s	Universidade Federal de Pelotas, Museu Entomologico Ceslau Biezanko			
 MECG	s	Medical Entomology Collection Gallery			
 MECN	s	Museo Ecuadoriano de Ciencias Naturales	DHMECN		
