@@ -217,11 +217,12 @@ double NCBI_simple_atof(const char* s, char** t)
     x = strtol(s, &e, 10);
     if (*e == '.') {
         if (isdigit((unsigned char) e[1])) {
+            int error = errno;
             unsigned long y;
             double w;
             int p;
             s = ++e;
-            errno = 0/*maybe EINVAL here for ".NNN"*/;
+            errno = 0/*NB: maybe EINVAL for ".NNN"*/;
             y = strtoul(s, &e, 10);
             assert(e > s);
             p = (int)(e - s);
@@ -232,7 +233,7 @@ double NCBI_simple_atof(const char* s, char** t)
                     p -=         (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))-1;
                 } while (p >=    (int)(sizeof(x_pow10)/sizeof(x_pow10[0])));
                 if (errno == ERANGE)
-                    errno  = 0;
+                    errno  = error == EINVAL ? 0 : error;
                 w *= x_pow10[p];
             } else
                 w  = x_pow10[p];
