@@ -183,7 +183,7 @@ extern int/*bool*/ BASE64_Decode
             switch (k) {
             case 0:
                 dst[j++] = (unsigned char)((temp & 0xFF0000) >> 16);
-                /*FALLTHRU*/;
+                /*FALLTHRU*/
             case 4:
                 dst[j++] = (unsigned char)((temp & 0xFF00) >> 8);
                 /*FALLTHRU*/

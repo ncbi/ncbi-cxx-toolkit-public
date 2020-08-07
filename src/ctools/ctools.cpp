@@ -59,7 +59,7 @@ EDiagSev CTOOLS_CToCxxSeverity(int c_severity)
         cxx_severity = eDiag_Critical;
         break;
     case SEV_FATAL:
-        /*fallthru*/
+        /*FALLTHRU*/
     default:
         cxx_severity = eDiag_Fatal;
         break;
@@ -88,7 +88,7 @@ int CTOOLS_CxxToCSeverity(EDiagSev cxx_severity)
         c_severity = SEV_REJECT;
         break;
     case eDiag_Fatal:
-        /*fallthru*/
+        /*FALLTHRU*/
     default:
         c_severity = SEV_FATAL;
         break;

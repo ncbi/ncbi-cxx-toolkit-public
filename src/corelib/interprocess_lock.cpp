@@ -301,7 +301,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
                     // The lock is in abandoned state... Other thread/process
                     // owning it was terminated. We can reuse this mutex, but 
                     // it is better to wait until it will be released by OS.
-                    /* FALLTHRU */
+                    /*FALLTHRU*/
                 default:
                     ::CloseHandle(handle);
                     NCBI_THROW(CInterProcessLockException, eLockError,
