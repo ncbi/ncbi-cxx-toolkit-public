@@ -308,6 +308,7 @@ extern int/*bool*/ ConnNetInfo_Boolean(const char* str)
 
 static EURLScheme x_ParseScheme(const char* str, size_t len)
 {
+    assert(str  &&  (!str[len]  ||  str[len] == ':'));
     switch (len) {
     case 5:
         if (strncasecmp(str, "https", len) == 0)
@@ -897,14 +898,14 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         return 1/*success*/;
     }
 
-    port = -1L/*unassigned*/;
-
     /* "scheme://user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "//")) != 0) {
-        if (s > url) {
-            if (s[-1] != ':')
+        /* Authority portion present */
+        port = -1L/*unassigned*/;
+        if (s != url) {
+            if (*--s != ':')
                 return 0/*failure*/;
-            len = (size_t)(s - url) - 1;
+            len = (size_t)(s++ - url);
             if ((scheme = x_ParseScheme(url, len)) == eURL_Unspec)
                 return 0/*failure*/;
         } else
@@ -958,10 +959,31 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             }
         }
     } else {
-        scheme  = (EURLScheme) info->scheme;
-        user    = pass    = host    = 0;
-        userlen = passlen = hostlen = 0;
-        path    = url;
+        /* Authority portion not present */
+        user    = pass    = 0;
+        userlen = passlen = 0;
+        s = (const char*) strchr(url, ':');
+        if (s  &&
+            (scheme = x_ParseScheme(url, (size_t)(s - url))) != eURL_Unspec) {
+            url = ++s;
+            s = 0;
+        } else
+            scheme  = (EURLScheme) info->scheme;
+        /* Check for special case: host:port[/path[...]] (see CXX-11455) */
+        if (s  &&  s != url  &&  *++s != '0'
+            &&  (hostlen/*portlen*/ = strspn(s, "0123456789"))
+            &&  memchr("/?#", s[hostlen], 4)
+            &&  (errno = 0, (port = strtoul(s, &p, 10)) > 0)  &&  !errno
+            &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))) {
+            hostlen = (size_t)(--s - url);
+            host = url;
+            path = p;
+        } else {
+            port = -1L/*unassigned*/;
+            hostlen = 0;
+            host = 0;
+            path = url;
+        }
     }
 
     pathlen = (scheme == eURL_Https  ||  scheme == eURL_Http

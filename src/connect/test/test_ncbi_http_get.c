@@ -305,6 +305,7 @@ int main(int argc, char* argv[])
     THTTP_Flags   flags;
     NCBI_CRED     cred;
     CONN          conn;
+    const char*   url;
     FILE*         fp;
     time_t        t;
     size_t        n;
@@ -424,8 +425,12 @@ int main(int argc, char* argv[])
 #endif /*HAVE_LIBGNUTLS*/
     }
 
-    CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",
-                          &"S"[net_info->scheme != eURL_Https]));
+    url = ConnNetInfo_URL(net_info);
+    CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector: %s%s%s",
+                          &"S"[net_info->scheme != eURL_Https],
+                          &"<"[!!url], url ? url : "NULL", &">"[!!url]));
+    if (url)
+        free((void*) url);
     if (!(connector = HTTP_CreateConnector(net_info, 0, flags)))
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
     /* Could have destroyed net_info at this point here if we did not use the
