@@ -447,6 +447,9 @@ CIgBlast::Run()
         } else {
             blast.Reset(new CRemoteBlast(qf, m_Options, m_Subject));
         }
+        blast->Submit();
+        m_RID=blast->GetRID();
+        GetDiagContext().Extra().Print("RID", m_RID);
         result = blast->GetResultSet();
     }
     if (! skipped) {

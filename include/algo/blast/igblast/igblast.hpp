@@ -241,7 +241,7 @@ public:
          m_Options(options),
          m_IgOptions(ig_options),
          m_AnnotationInfo(ig_options),
-        m_Scope(scope) { }
+        m_Scope(scope) {m_RID= NcbiEmptyString; }
 
     /// Remote Igblast search API
     /// @param query_factory  Concatenated query sequences [in]
@@ -265,7 +265,7 @@ public:
          m_IgOptions(ig_options),
          m_AnnotationInfo(ig_options),
          m_EntrezQuery(entrez_query),
-         m_Scope(scope){ }
+         m_Scope(scope){ m_RID= NcbiEmptyString; }
 
     /// Destructor
     ~CIgBlast() {};
@@ -278,6 +278,9 @@ public:
         m_NumThreads = nthreads;
     }
 
+    string GetRid() {
+        return m_RID;
+    }
 private:
 
     bool m_IsLocal;
@@ -291,7 +294,8 @@ private:
     CIgAnnotationInfo m_AnnotationInfo;
     string m_EntrezQuery;
     CRef<CScope> m_Scope;
-
+    string m_RID; //remote rid
+ 
     /// Prohibit copy constructor
     CIgBlast(const CIgBlast& rhs);
 
