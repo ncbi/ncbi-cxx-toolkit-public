@@ -145,17 +145,18 @@ void CFeatureGenerator::CreateMicroIntrons(
     bool ignore_errors) 
 //  ============================================================================
 {
+    map<CSeq_feat_EditHandle, CRef<CSeq_feat>> changes;
+
     feature::CFeatTree feat_tree;
     scope.GetEditHandle(bsh);
-    //create feature tree from all features 
     {{
-         SAnnotSelector sel;
-         x_SetAnnotName(sel, annot_name);
-         sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
-         sel.IncludeFeatType(CSeqFeatData::e_Rna);
-         sel.SetResolveAll().SetAdaptiveDepth(true);
-         CFeat_CI feat_it(range ? CFeat_CI(bsh, *range, sel) : CFeat_CI(bsh, sel));
-         feat_tree.AddFeatures(feat_it);
+            SAnnotSelector sel;
+            x_SetAnnotName(sel, annot_name);
+            sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+            sel.IncludeFeatType(CSeqFeatData::e_Rna);
+            sel.SetResolveAll().SetAdaptiveDepth(true);
+            CFeat_CI feat_it(range ? CFeat_CI(bsh, *range, sel) : CFeat_CI(bsh, sel));
+            feat_tree.AddFeatures(feat_it);
     }}
 
     SAnnotSelector orig_sel;
@@ -180,27 +181,27 @@ void CFeatureGenerator::CreateMicroIntrons(
         if(!mrna_bsh) {
             if(ignore_errors) {
                 continue;
-            } else {
-                NCBI_THROW(CException, eUnknown, "Unable to get mRNA sequence.");
             }
+            NCBI_THROW(CAlgoFeatureGeneratorException, eMicroIntrons, 
+                "Unable to get mRNA sequence.");
         }
         CMappedFeat prod_cd_feat;
         for(CFeat_CI prod_feat_it(mrna_bsh, mrna_sel); prod_feat_it; ++prod_feat_it) {
             if(prod_cd_feat) {
                 if(ignore_errors) {
                     continue;
-                } else {
-                    NCBI_THROW(CException, eUnknown, "Multiple cdregion features found on mRNA.");
                 }
+                NCBI_THROW(CAlgoFeatureGeneratorException, eMicroIntrons, 
+                    "Multiple cdregion features found on mRNA.");
             }
             prod_cd_feat = *prod_feat_it;
         }
         if(!prod_cd_feat) {
             if(ignore_errors) {
                 continue;
-            } else {
-                NCBI_THROW(CException, eUnknown, "Unable to find cdregion on mRNA: " + mrna_feat.GetProductId().AsString());
-            }
+            } 
+            NCBI_THROW(CAlgoFeatureGeneratorException, eMicroIntrons, 
+                "Unable to find cdregion on mRNA: " + mrna_feat.GetProductId().AsString());
         }
         CRef<CSeq_loc> projected_mrna_loc = 
             CFeatureGenerator::s_ProjectRNA(
@@ -220,7 +221,6 @@ void CFeatureGenerator::CreateMicroIntrons(
             cur_feat.GetOriginalSeq_feat()->GetLocation(),
             *projected_cd_loc);
 
-        //this ensures we can edit the features
         scope.GetEditHandle(mrna_feat.GetAnnot());
         scope.GetEditHandle(cur_feat.GetAnnot());
 
@@ -228,13 +228,16 @@ void CFeatureGenerator::CreateMicroIntrons(
         new_mrna_feat->Assign(*mrna_feat.GetOriginalSeq_feat());
         new_mrna_feat->SetLocation(*projected_mrna_loc);
         CSeq_feat_EditHandle mrna_eh(mrna_feat);
-        mrna_eh.Replace(*new_mrna_feat);
+        changes[mrna_eh] = new_mrna_feat;
 
         CRef<CSeq_feat> new_cds_feat(new CSeq_feat);
         new_cds_feat->Assign(*cur_feat.GetOriginalSeq_feat());
         new_cds_feat->SetLocation(*projected_cd_loc);
         CSeq_feat_EditHandle cds_eh(cur_feat);
-        cds_eh.Replace(*new_cds_feat);
+        changes[cds_eh] = new_cds_feat;
+    }
+    for (auto mit = changes.begin(); mit != changes.end(); mit++) {
+        mit->first.Replace(*mit->second);
     }
 }
 END_NCBI_SCOPE

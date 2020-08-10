@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbiexpt.hpp>
 #include <util/range.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
@@ -49,6 +50,27 @@ BEGIN_SCOPE(objects)
     class CBioseq_Handle;
     class SAnnotSelector;
 END_SCOPE(objects)
+
+class CAlgoFeatureGeneratorException : public CException
+ {
+ public:
+     enum EErrCode {
+         eUnknown,
+         eMicroIntrons,
+     };
+     virtual const char* GetErrCodeString(void) const override {
+         switch ( GetErrCode() ) {
+         case eUnknown:
+             return "Unknown error";
+         case eMicroIntrons:
+             return "MicroIntron generation failure";
+         default:
+             return CException::GetErrCodeString();
+         }
+     }
+     NCBI_EXCEPTION_DEFAULT(CAlgoFeatureGeneratorException, CException);
+ };
+
 
 class NCBI_XALGOSEQ_EXPORT CFeatureGenerator
 {
