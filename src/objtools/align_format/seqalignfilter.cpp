@@ -35,6 +35,7 @@
 #include <objects/general/User_object.hpp>
 #include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align_format/seqalignfilter.hpp>
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -737,6 +738,8 @@ static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_se
     return sa_copy;
 }
 
+        
+
 CRef<CSeq_align_set> CSeqAlignFilter::FilterByTaxonomy(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
                                                         CRef<CSeqDB> &seqdb,
                                                         const set<TTaxId>& taxids)
@@ -756,7 +759,7 @@ CRef<CSeq_align_set> CSeqAlignFilter::FilterByTaxonomy(const CSeq_align_set& seq
         {
             success = false;
             int oid;
-            seqdb->SeqidToOid(*subjid, oid);            
+            seqdb->SeqidToOid(*subjid, oid);    
             CRef<CBlast_def_line_set> bdlSet = seqdb->GetHdr(oid);               
             filtered_aln = s_ModifySeqAlnWithFilteredSeqIDs(bdlSet, taxids, currAlign);                
             if(!filtered_aln.Empty()) { //found sequence with this oid oid_vec[i] in filtered seqdb
@@ -778,6 +781,102 @@ CRef<CSeq_align_set> CSeqAlignFilter::FilterByTaxonomy(const CSeq_align_set& seq
     return new_aln;
 }
 
+static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef <CScope> &scope,
+                                                         CSeq_id::EAccessionInfo accType,                                                         
+                                                         CRef<CSeq_align> &in_align)
+{
+    CRef<CSeq_align> sa_copy;
 
+    list<string> use_this_seq;
+    CAlignFormatUtil::GetUseThisSequence(*in_align,use_this_seq);  
+    bool modifyAlignment = false;
+    if(use_this_seq.size() > 0) {
+        modifyAlignment = CAlignFormatUtil::RemoveSeqsOfAccessionTypeFromSeqInUse(use_this_seq, accType);            
+    }
+    else { //go through blast deflines               
+        const CSeq_id &subjid = in_align->GetSeq_id(1);                 
+        const CBioseq_Handle& handle = scope->GetBioseqHandle(subjid);
+        CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
+        const list< CRef< CBlast_def_line > >& bdlSet = bdlRef->Get();  
+        ITERATE(list<CRef<CBlast_def_line> >, iter, bdlSet) {
+            string textSeqID;            
+            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
+            CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);                        
+            CSeq_id::EAccessionInfo accInfo = seqID->IdentifyAccession();                                    
+            if(accInfo != accType) {//not CSeq_id::eAcc_refseq_prot        
+                CAlignFormatUtil::GetTextSeqID(seqID, &textSeqID);                
+                use_this_seq.push_back(textSeqID);             
+            }
+            else {
+                modifyAlignment = true;
+            }            
+        }
+    }    
+    if(!modifyAlignment) {            
+        sa_copy = in_align;
+    }        
+    if(modifyAlignment && use_this_seq.size() > 0) { 
+        vector <string> useThisSeqs;    
+        CRef<CSeq_id> seqID (new CSeq_id(*(use_this_seq.begin())));        
+        sa_copy = s_UpdateSubjectInSeqalign(in_align,seqID);            
+        ITERATE(list<string>, iter_seq, use_this_seq){                        
+            if(seqID->IsGi()) {
+                useThisSeqs.push_back("gi:" + *iter_seq);
+            }
+            else {
+                useThisSeqs.push_back("seqid:" + *iter_seq);
+            }   
+            CRef<CUser_object> userObject(new CUser_object());
+	        userObject->SetType().SetStr("use_this_seqid");
+	        userObject->AddField("SEQIDS", useThisSeqs);
+            sa_copy->ResetExt();
+	        sa_copy->SetExt().push_back(userObject);      
+        }                    
+    }
+    return sa_copy;
+}            
+
+CRef<CSeq_align_set> CSeqAlignFilter::FilterByAccessionType(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
+                                                            CRef <CScope> &scope,
+                                                            vector <CSeq_id::EAccessionInfo> accTypes)                                                        
+{
+    CConstRef<CSeq_id> previous_id, subjid;    
+    bool success = false;
+    CRef<CSeq_id> newSubjectID;
+
+    CRef<CSeq_align_set> new_aln(new CSeq_align_set);
+
+    ITERATE(CSeq_align_set::Tdata, iter, seqalign.Get()){ 
+        CRef<CSeq_align> currAlign = *iter;
+        CRef<CSeq_align> filtered_aln;
+
+        subjid = &(currAlign->GetSeq_id(1));    
+        if(previous_id.Empty() || !subjid->Match(*previous_id))
+        {
+            success = false;
+            for (size_t i = 0; i < accTypes.size(); i++) {
+                if(!currAlign.Empty()) {
+                    filtered_aln = s_ModifySeqAlnWithFilteredSeqIDs(scope, accTypes[i], currAlign);                
+                    currAlign = filtered_aln;
+                }
+            }
+            if(!filtered_aln.Empty()) { 
+                newSubjectID.Reset(const_cast<CSeq_id*>(&filtered_aln->GetSeq_id(1)));                
+                success = true;
+            }                                
+        }
+        else {
+            if(success) {
+                filtered_aln = s_UpdateSubjectInSeqalign(currAlign,newSubjectID);
+            }            
+        }
+        previous_id = subjid;
+
+        if(success && !filtered_aln.Empty()) {                
+            new_aln->Set().push_back(filtered_aln);
+        }            
+    }    
+    return new_aln;
+}
 END_SCOPE(align_format)
 END_NCBI_SCOPE

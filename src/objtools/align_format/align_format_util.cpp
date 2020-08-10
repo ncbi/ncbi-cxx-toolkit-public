@@ -4520,6 +4520,26 @@ bool CAlignFormatUtil::MatchSeqInUseThisSeqList(list<string> &use_this_seq, stri
     return has_match;
 }
 
+bool CAlignFormatUtil::RemoveSeqsOfAccessionTypeFromSeqInUse(list<string> &use_this_seq, CSeq_id::EAccessionInfo accesionType)
+{
+    list<string> new_use_this_seq;
+    bool hasAccType = false;
+    bool isGI = false;
+
+    ITERATE(list<string>, iter_seq, use_this_seq) {       
+        string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGI); 
+        CSeq_id::EAccessionInfo useThisSeqAccType = CSeq_id::IdentifyAccession (useThisSeq);        
+        if(useThisSeqAccType != accesionType) {     
+            new_use_this_seq.push_back(useThisSeq);             
+        } 
+        else {
+            hasAccType = true;
+        }       
+    }    
+    use_this_seq = new_use_this_seq;
+    return hasAccType;
+}
+
 CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,
                                 list<string>& use_this_seq,
