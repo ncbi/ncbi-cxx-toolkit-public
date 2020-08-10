@@ -647,10 +647,10 @@ public:
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
 
-  const int GetFeatDepth(void) const { return m_FeatDepth; }
+  int GetFeatDepth(void) const { return m_FeatDepth; }
   void SetFeatDepth(const int featDepth) { m_FeatDepth = featDepth; }
 
-  const int GetGapDepth(void) const { return m_GapDepth; }
+  int GetGapDepth(void) const { return m_GapDepth; }
   void SetGapDepth(const int gapDepth) { m_GapDepth = gapDepth; }
 
 
