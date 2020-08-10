@@ -1157,6 +1157,16 @@ public:
     /// CRef<CSeq_align_set> - filtered seq align
     static CRef<objects::CSeq_align_set> FilterSeqalignBySeqList(objects::CSeq_align_set& source_aln,
                                                                vector <string> &seqList);
+
+    ///function to remove sequences of accesionType from use_this_seq list    
+    ///@param use_this_seq
+    /// list <string> of seqIDs
+    ///@param accesionType
+    /// CSeq_id::EAccessionInfo accession type to check    
+    ///@return
+    /// bool true if list changed
+    static bool RemoveSeqsOfAccessionTypeFromSeqInUse(list<string> &use_this_seq, objects::CSeq_id::EAccessionInfo accesionType);
+
     ///function for Limitting seqalign by hsps number
     ///(by default results are not cut off within the query)
     ///@param source_aln

@@ -170,8 +170,10 @@ public:
                                       vector<int>& oid_vec);
     CRef<CSeq_align_set> FilterByTaxonomy(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
                                           CRef<CSeqDB> &seqdb,
-                                          const set<TTaxId>& taxids);
-
+                                          const set<int>& taxids);
+    CRef<CSeq_align_set> FilterByAccessionType(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign                                                    
+                                               CRef <CScope> &scope,
+                                               vector <CSeq_id::EAccessionInfo> accTypes);
     //--- Auxiliary methods used for seqalign filtering ---//
 
     /// Load a SeqDB database with the given gi-list.
