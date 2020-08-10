@@ -77,7 +77,8 @@ public:
     //  ------------------------------------------------------------------------
     {
         // Create master index variable on stack, initialize with top-level Seq-entry
-        CSeqEntryIndex idx( m_topseh, (CSeqEntryIndex::EPolicy) m_policy, (CSeqEntryIndex::TFlags) m_flags, m_depth );
+        CSeqEntryIndex idx( m_topseh, (CSeqEntryIndex::EPolicy) m_policy, (CSeqEntryIndex::TFlags) m_flags );
+        idx.SetFeatDepth(m_depth);
 
 
         // IterateBioseqs visits each Bioseq in blob
