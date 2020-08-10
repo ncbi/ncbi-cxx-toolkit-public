@@ -54,60 +54,60 @@ BEGIN_SCOPE(objects)
 // CSeqEntryIndex
 
 // Constructors take top-level sequence object, create a CRef<CSeqMasterIndex>, and call its initializer
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(topseh, policy, flags, depth);
+    m_Idx->x_Initialize(topseh, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CBioseq_Handle& bsh, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq_Handle& bsh, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(bsh, policy, flags, depth);
+    m_Idx->x_Initialize(bsh, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(topsep, policy, flags, depth);
+    m_Idx->x_Initialize(topsep, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(seqset, policy, flags, depth);
+    m_Idx->x_Initialize(seqset, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CBioseq& bioseq, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(bioseq, policy, flags, depth);
+    m_Idx->x_Initialize(bioseq, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_submit& submit, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(submit, policy, flags, depth);
+    m_Idx->x_Initialize(submit, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(topsep, sblock, policy, flags, depth);
+    m_Idx->x_Initialize(topsep, sblock, policy, flags);
 }
 
-CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy, TFlags flags, int depth)
+CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy, TFlags flags)
 
 {
     m_Idx.Reset(new CSeqMasterIndex);
-    m_Idx->x_Initialize(topsep, descr, policy, flags, depth);
+    m_Idx->x_Initialize(topsep, descr, policy, flags);
 }
 
 // Get first Bioseq index
@@ -222,11 +222,10 @@ bool CSeqEntryIndex::IsIndexFailure(void)
 // CSeqMasterIndex
 
 // Initializers take top-level sequence object, create Seq-entry wrapper if necessary
-void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     m_Tseh = topseh.GetTopLevelEntry();
     CConstRef<CSeq_entry> tcsep = m_Tseh.GetCompleteSeq_entry();
@@ -270,11 +269,10 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
     }
 }
 
-void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     m_Tseh = bsh.GetTopLevelEntry();
     CConstRef<CSeq_entry> tcsep = m_Tseh.GetCompleteSeq_entry();
@@ -318,11 +316,10 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
     }
 }
 
-void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
@@ -330,11 +327,10 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSeqEntryIndex::EPolicy 
     x_Init();
 }
 
-void CSeqMasterIndex::x_Initialize (CBioseq_set& seqset, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CBioseq_set& seqset, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     CSeq_entry* parent = seqset.GetParentEntry();
     if (parent) {
@@ -350,11 +346,10 @@ void CSeqMasterIndex::x_Initialize (CBioseq_set& seqset, CSeqEntryIndex::EPolicy
     x_Init();
 }
 
-void CSeqMasterIndex::x_Initialize (CBioseq& bioseq, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CBioseq& bioseq, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     CSeq_entry* parent = bioseq.GetParentEntry();
     if (parent) {
@@ -370,11 +365,10 @@ void CSeqMasterIndex::x_Initialize (CBioseq& bioseq, CSeqEntryIndex::EPolicy pol
     x_Init();
 }
 
-void CSeqMasterIndex::x_Initialize (CSeq_submit& submit, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CSeq_submit& submit, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     _ASSERT(submit.CanGetData());
     _ASSERT(submit.CanGetSub());
@@ -389,11 +383,10 @@ void CSeqMasterIndex::x_Initialize (CSeq_submit& submit, CSeqEntryIndex::EPolicy
     x_Init();
 }
 
-void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSubmit_block &sblock, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSubmit_block &sblock, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
@@ -402,11 +395,10 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSubmit_block &sblock, C
     x_Init();
 }
 
-void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSeq_descr &descr, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+void CSeqMasterIndex::x_Initialize (CSeq_entry& topsep, CSeq_descr &descr, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags)
 {
     m_Policy = policy;
     m_Flags = flags;
-    m_Depth = depth;
 
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
@@ -526,7 +518,7 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bsp);
         if (bsh) {
             // create CBioseqIndex object for current Bioseq
-            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, *this, m_Policy, m_Flags, m_Depth));
+            CRef<CBioseqIndex> bsx(new CBioseqIndex(bsh, bsp, bsh, prnt, m_Tseh, m_Scope, *this, m_Policy, m_Flags));
 
             // record CBioseqIndex in vector for IterateBioseqs or GetBioseqIndex
             m_BsxList.push_back(bsx);
@@ -793,8 +785,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                             CRef<CScope> scope,
                             CSeqMasterIndex& idx,
                             CSeqEntryIndex::EPolicy policy,
-                            CSeqEntryIndex::TFlags flags,
-                            int depth)
+                            CSeqEntryIndex::TFlags flags)
     : m_Bsh(bsh),
       m_Bsp(bsp),
       m_OrigBsh(obsh),
@@ -803,8 +794,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
       m_Scope(scope),
       m_Idx(&idx),
       m_Policy(policy),
-      m_Flags(flags),
-      m_Depth(depth)
+      m_Flags(flags)
 {
     m_FetchFailure = false;
 
@@ -1116,7 +1106,6 @@ void CBioseqIndex::x_InitGaps (void)
 
         SSeqMapSelector sel;
 
-        // size_t resolveCount = m_Depth;
         size_t resolveCount = 0;
 
         CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
@@ -1830,7 +1819,7 @@ void CBioseqIndex::x_InitDescs (void)
     }
 }
 
-void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, CScope& scope)
+void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, bool onlyNear, CScope& scope)
 
 {
     bool snpOK = false;
@@ -1952,8 +1941,13 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
         sel.ExcludeNamedAnnotAccession("CDD");
     }
 
-    if (depth > -1) {
-        sel.SetResolveDepth(depth);
+    CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
+    auto idxl = idx.Lock();
+    if (idxl) {
+        int featDepth = idxl->GetFeatDepth();
+        if (featDepth > 0) {
+            sel.SetResolveDepth(featDepth);
+        }
     }
 
     // bit flags exclude specific features
@@ -2024,7 +2018,7 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
 
         SAnnotSelector sel;
 
-        x_DefaultSelector(sel, m_Policy, m_Flags, m_Depth, m_ForceOnlyNearFeats, *m_Scope);
+        x_DefaultSelector(sel, m_Policy, m_Flags, m_ForceOnlyNearFeats, *m_Scope);
 
         bool onlyGeneRNACDS = false;
         if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {

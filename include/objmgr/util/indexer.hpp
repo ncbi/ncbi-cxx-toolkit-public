@@ -118,21 +118,21 @@ public:
     // Constructors take the top-level sequence object
 
     // The primary constructor uses an existing CScope created by the application
-    CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CBioseq_Handle& bsh, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy = eAdaptive, TFlags flags = fDefault);
+    CSeqEntryIndex (CBioseq_Handle& bsh, EPolicy policy = eAdaptive, TFlags flags = fDefault);
 
     // Alternative constructors take an object and create a new local default CScope
-    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = eAdaptive, TFlags flags = fDefault);
+    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = eAdaptive, TFlags flags = fDefault);
+    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = eAdaptive, TFlags flags = fDefault);
+    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = eAdaptive, TFlags flags = fDefault);
 
     // Specialized constructors are for streaming through release files, one component at a time
 
     // Submit-block obtained from top of Seq-submit release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = eAdaptive, TFlags flags = fDefault);
     // Seq-descr chain obtained from top of Bioseq-set release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = eAdaptive, TFlags flags = fDefault);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -205,16 +205,16 @@ public:
 
 public:
     // Initializers take the top-level sequence object
-    void x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
-    void x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
+    void x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
+    void x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
 
-    void x_Initialize (CSeq_entry& topsep, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
-    void x_Initialize (CBioseq_set& seqset, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
-    void x_Initialize (CBioseq& bioseq, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
-    void x_Initialize (CSeq_submit& submit, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
+    void x_Initialize (CSeq_entry& topsep, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
+    void x_Initialize (CBioseq_set& seqset, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
+    void x_Initialize (CBioseq& bioseq, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
+    void x_Initialize (CSeq_submit& submit, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
 
-    void x_Initialize (CSeq_entry& topsep, CSubmit_block &sblock, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
-    void x_Initialize (CSeq_entry& topsep, CSeq_descr &descr, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
+    void x_Initialize (CSeq_entry& topsep, CSubmit_block &sblock, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
+    void x_Initialize (CSeq_entry& topsep, CSeq_descr &descr, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -301,7 +301,6 @@ private:
 
     CSeqEntryIndex::EPolicy m_Policy;
     CSeqEntryIndex::TFlags m_Flags;
-    int m_Depth;
 
     vector<CRef<CBioseqIndex>> m_BsxList;
 
@@ -403,8 +402,7 @@ public:
                   CRef<CScope> scope,
                   CSeqMasterIndex& idx,
                   CSeqEntryIndex::EPolicy policy,
-                  CSeqEntryIndex::TFlags flags,
-                  int depth);
+                  CSeqEntryIndex::TFlags flags);
 
     // Destructor
     ~CBioseqIndex (void);
@@ -598,7 +596,7 @@ private:
     void x_InitFeats (void);
     void x_InitFeats (CSeq_loc& slp);
 
-    void x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth, bool onlyNear, CScope& scope);
+    void x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, bool onlyNear, CScope& scope);
 
     // common implementation method
     void x_InitFeats (CSeq_loc* slpp);
@@ -641,7 +639,6 @@ private:
 
     CSeqEntryIndex::EPolicy m_Policy;
     CSeqEntryIndex::TFlags m_Flags;
-    int m_Depth;
 
     bool m_FetchFailure;
 
