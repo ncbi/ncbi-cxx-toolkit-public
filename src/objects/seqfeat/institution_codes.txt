@@ -1108,7 +1108,7 @@ CIBIO	s	Centro de Investigacao em Biodiversidade e Recursos Geneticos
 CIBM	s	Centro Invest. Biol. Noroeste			
 CIC	s	Albertson College of Idaho, Biology Department			
 CICC	c	China Center for Industrial Culture Collection			
-CICCM	c	Cawthron Institute Culture Collection of Micro-algae			
+CICCM	c	Cawthron Institute Culture Collection of Micro-algae	CAWD		
 CICESE	s	Centro de Investigacion Cientifica y de Educacion Superior de Ensenada			
 CICIM	c	Culture and Information Centre of Industrial Microorganisms of China's Univeristies			
 CICIMAR	s	Centro Interdisciplinario de Ciencias Marinas			
