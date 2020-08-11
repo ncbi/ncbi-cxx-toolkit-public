@@ -71,6 +71,10 @@ extern "C" {
 #  define HAVE_MADVISE 1
 #endif //NCBI_OS_UNIX
 
+#if defined(NCBI_OS_LINUX)
+#  include <sched.h>
+#endif
+
 #ifdef NCBI_OS_DARWIN
 extern "C" {
 #  include <mach/mach.h>
@@ -253,7 +257,7 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// SetHeapLimit
+// Memory limits
 //
 
 #ifdef USE_SETMEMLIMIT
@@ -287,10 +291,12 @@ bool SetMemoryLimit(size_t max_size,
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 #  if !defined(NCBI_OS_SOLARIS)
     if (setrlimit(RLIMIT_AS, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 #  endif //NCBI_OS_SOLARIS
@@ -320,6 +326,7 @@ bool SetMemoryLimitSoft(size_t max_size,
 
     rlimit rl;
     if (getrlimit(RLIMIT_DATA, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
     if ( max_size ) {
@@ -328,15 +335,18 @@ bool SetMemoryLimitSoft(size_t max_size,
         rl.rlim_cur = RLIM_INFINITY;
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 #  if !defined(NCBI_OS_SOLARIS)
     rlimit rlas;
     if (getrlimit(RLIMIT_AS, &rlas) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
     rl.rlim_max = rlas.rlim_max;
     if (setrlimit(RLIMIT_AS, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 #  endif //NCBI_OS_SOLARIS
@@ -366,6 +376,7 @@ bool SetMemoryLimitHard(size_t max_size,
     size_t cur_soft_limit = 0;
     rlimit rl;
     if (getrlimit(RLIMIT_DATA, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
     if ( max_size ) {
@@ -378,11 +389,13 @@ bool SetMemoryLimitHard(size_t max_size,
         rl.rlim_max = RLIM_INFINITY;
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 #  if !defined(NCBI_OS_SOLARIS)
     rlimit rlas;
     if (getrlimit(RLIMIT_AS, &rlas) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
     if ( max_size ) {
@@ -399,6 +412,7 @@ bool SetMemoryLimitHard(size_t max_size,
         rlas.rlim_max = RLIM_INFINITY;
     }
     if (setrlimit(RLIMIT_AS, &rlas) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 #  endif //NCBI_OS_SOLARIS
@@ -434,6 +448,7 @@ bool SetHeapLimit(size_t max_size,
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) {
+        CNcbiError::SetFromErrno();
         return false;
     }
     s_MemoryLimitSoft = max_size;
@@ -446,34 +461,88 @@ bool SetHeapLimit(size_t max_size,
 }
 
 
+size_t GetVirtualMemoryLimitSoft(void)
+{
+    // Query limits from kernel, s_MemoryLimit* values can not reflect real limits.
+    rlimit rl = {0,0};
+#  if !defined(NCBI_OS_SOLARIS)
+    if (getrlimit(RLIMIT_AS, &rl) != 0) {
+        CNcbiError::SetFromErrno();
+        return 0;
+    }
+    if (rl.rlim_cur == RLIM_INFINITY) {
+        return 0;
+    }
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return rl.rlim_cur;
+}
+
+
+size_t GetVirtualMemoryLimitHard(void)
+{
+    // Query limits from kernel, s_MemoryLimit* values can not reflect real limits.
+    rlimit rl = {0,0};
+#  if !defined(NCBI_OS_SOLARIS)
+    if (getrlimit(RLIMIT_AS, &rl) != 0) {
+        CNcbiError::SetFromErrno();
+        return 0;
+    }
+    if (rl.rlim_max == RLIM_INFINITY) {
+        return 0;
+    }
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return rl.rlim_max;
+}
+
+
 #else
 
 bool SetMemoryLimit(size_t max_size, 
                     TLimitsPrintHandler handler, 
                     TLimitsPrintParameter parameter)
 {
-  return false;
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return false;
 }
 
 bool SetMemoryLimitSoft(size_t max_size, 
                     TLimitsPrintHandler handler, 
                     TLimitsPrintParameter parameter)
 {
-  return false;
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return false;
 }
 
 bool SetMemoryLimitHard(size_t max_size, 
                     TLimitsPrintHandler handler, 
                     TLimitsPrintParameter parameter)
 {
-  return false;
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return false;
 }
 
 bool SetHeapLimit(size_t max_size, 
                   TLimitsPrintHandler handler, 
                   TLimitsPrintParameter parameter)
 {
-  return false;
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return false;
+}
+
+size_t GetVirtualMemoryLimitSoft(void)
+{
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return 0;
+}
+
+size_t GetVirtualMemoryLimitHard(void)
+{
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return 0;
 }
 
 #endif //USE_SETMEMLIMIT
@@ -618,6 +687,53 @@ unsigned int CSystemInfo::GetCpuCount(void)
         }
     }
     return cpu;
+}
+
+
+unsigned int CSystemInfo::GetCpuCountAllowed(void)
+{
+
+#if defined(NCBI_OS_MSWIN)
+
+    DWORD_PTR proc_mask = 0, sys_mask = 0;
+    if (!::GetProcessAffinityMask(::GetCurrentProcess(), &proc_mask, &sys_mask)) {
+        return 0;
+    }
+    unsigned int n = 0;  // number of bits set in proc_mask
+    for (; proc_mask; proc_mask >>= 1) {
+        n += proc_mask & 1;
+    }
+    return n;
+
+#elif defined(NCBI_OS_LINUX)
+  
+    unsigned int total_cpus = CSystemInfo::GetCpuCount();
+    if (total_cpus == 1) {
+        // GetCpuCount() returns 1 if unable to get real number
+        return 1;
+    }
+    // Standard type cpu_set_t can be limited if used directly,
+    // so use dynamic allocation approach
+    cpu_set_t* cpuset_ptr = CPU_ALLOC(total_cpus);
+    if (cpuset_ptr == NULL) {
+        return 0;
+    }
+    size_t cpuset_size = CPU_ALLOC_SIZE(total_cpus);
+    CPU_ZERO_S(cpuset_size, cpuset_ptr);
+   
+    if (sched_getaffinity(getpid(), cpuset_size, cpuset_ptr) != 0) {
+        CPU_FREE(cpuset_ptr);
+        return 0;
+    }
+    int n = CPU_COUNT_S(cpuset_size, cpuset_ptr);
+    CPU_FREE(cpuset_ptr);
+    return (n < 0) ? 0 : static_cast<unsigned int>(n);
+
+#endif //NCBI_OS_...
+
+    // TODO: add support for other UNIX versions where possible
+
+    return 0;
 }
 
 

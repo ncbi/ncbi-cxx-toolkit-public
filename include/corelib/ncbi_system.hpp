@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 enum ELimitsExitCode {
     eLEC_None,    ///< Normal exit.
     eLEC_Memory,  ///< Memory limit.
-    eLEC_Cpu      ///< CPU usage limit.
+    eLEC_Cpu      ///< CPU time usage limit.
 };
 
 /// Type of parameter for print handler.
@@ -166,7 +166,12 @@ extern bool SetMemoryLimit(size_t max_size,
                            TLimitsPrintParameter parameter = NULL);
 
 /// [UNIX only]  Set soft memory limit.
-/// @sa SetMemoryLimit
+/// @note
+///   The soft limit is the value that the kernel enforces for the corresponding resource. 
+///   An unprivileged process may only set its soft limit to a value in the range
+///   from 0 up to the hard limit, and (irreversibly) lower its hard limit.
+///   A privileged process may make arbitrary changes to either limit value. 
+/// @sa SetMemoryLimit, SetMemoryLimitHard
 NCBI_XNCBI_EXPORT
 extern bool SetMemoryLimitSoft(size_t max_size, 
                            TLimitsPrintHandler   handler   = NULL, 
@@ -174,18 +179,58 @@ extern bool SetMemoryLimitSoft(size_t max_size,
 
 /// [UNIX only]  Set hard memory limit.
 /// @note
+///   The hard limit acts as a ceiling for the soft limit: 
 ///   Current soft memory limit will be automatically decreased,
 ///   if it exceed new value for the hard memory limit.
 /// @note
 ///   Only privileged process can increase current hard level limit.
-/// @sa SetMemoryLimit
+/// @sa SetMemoryLimit, SetMemoryLimitSoft
 NCBI_XNCBI_EXPORT
 extern bool SetMemoryLimitHard(size_t max_size, 
                            TLimitsPrintHandler   handler   = NULL, 
                            TLimitsPrintParameter parameter = NULL);
 
 
-/// [UNIX only]  Set CPU usage limit.
+/// [UNIX only]  Get "soft" memory limit of the virtual memory (address space) in bytes for a current process.
+/// @return
+///   Returns "soft" value set by setrlimit(), SetMemoryLimit() or ulimit command
+///   line utility for virtual memory address space.
+///   0 - if an error occurs and CNcbiError is set, or the memory limit is set to "unlimited".
+/// @note 
+///   The implementation of malloc() can be different on many flavors of UNIX, and we
+///   usually don't know how exactly it is implemented on the current system. 
+///   Some systems use sbrk()-based implementation (heap), other use mmap() system call
+///   and virtual memory (address space) to allocate memory, some other use hybrid approach
+///   and may allocate memory in two different ways depending on requested memory size
+///   and certain parameters.
+///   Almost all modern Unix versions uses mmap()-based approach for all memory allocations
+///   or at least for big chunks of memory, so probably virtual memory limits is more
+///   important nowadays.
+/// @sa SetMemoryLimit, GetVirtualMemoryLimitHard
+NCBI_XNCBI_EXPORT
+extern size_t GetVirtualMemoryLimitSoft(void);
+
+/// [UNIX only]  Get "hard" memory limit of the virtual memory (address space) in bytes for a current process.
+/// @return
+///   Returns "hard" value set by setrlimit(), SetMemoryLimit() or ulimit command
+///   line utility for virtual memory address space.
+///   0 - if an error occurs and CNcbiError is set, or the memory limit is set to "unlimited".
+/// @note 
+///   The implementation of malloc() can be different on many flavors of UNIX, and we
+///   usually don't know how exactly it is implemented on the current system. 
+///   Some systems use sbrk()-based implementation (heap), other use mmap() system call
+///   and virtual memory (address space) to allocate memory, some other use hybrid approach
+///   and may allocate memory in two different ways depending on requested memory size
+///   and certain parameters.
+///   Almost all modern Unix versions uses mmap()-based approach for all memory allocations
+///   or at least for big chunks of memory, so probably virtual memory limits is more
+///   important nowadays.
+/// @sa SetMemoryLimit, GetVirtualMemoryLimitSoft
+NCBI_XNCBI_EXPORT
+extern size_t GetVirtualMemoryLimitHard(void);
+
+
+/// [UNIX only]  Set CPU time usage limit.
 ///
 /// Set the limit for the CPU time that can be consumed by current process.
 /// 
@@ -371,8 +416,12 @@ public:
     ///   Process owner user name, or empty string if it cannot be determined.
     static string GetUserName(void);
 
-    /// Return number of active CPUs (never less than 1).
+    /// Return number of active CPUs/cores (never less than 1).
     static unsigned int GetCpuCount(void);
+    
+    /// Return number of allowed to use CPUs/cores for the current thread.
+    /// Returns 0 if unable to get this information on the current OS, or error occurs.
+    static unsigned int GetCpuCountAllowed(void);
     
     /// Get system uptime in seconds.
     /// @return

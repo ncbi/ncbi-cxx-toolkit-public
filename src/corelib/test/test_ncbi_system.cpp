@@ -66,13 +66,19 @@ static void Test_General(void)
 
     LOG_POST("\nGeneral test");
 
+    size_t mem_limit_soft = GetVirtualMemoryLimitSoft();
+    size_t mem_limit_hard = GetVirtualMemoryLimitHard();
+
     cout << "\nSystem information:" << endl;
 
-    PRINT("Number of CPUs",                     CSystemInfo::GetCpuCount(),                true);
+    PRINT("Number of CPUs total",               CSystemInfo::GetCpuCount(),                true);
+    PRINT("Number of CPUs allowed to use",      CSystemInfo::GetCpuCountAllowed(),         true);
     PRINT("Total physical memory size (bytes)", CSystemInfo::GetTotalPhysicalMemorySize(), true);
     PRINT("Avail physical memory size (bytes)", CSystemInfo::GetAvailPhysicalMemorySize(), true);
+    PRINT("Virtual memory limit soft (bytes)",  ((mem_limit_soft > 0) ? std::to_string(mem_limit_soft): "unlimited"), true);
+    PRINT("Virtual memory limit hard (bytes)",  ((mem_limit_hard > 0) ? std::to_string(mem_limit_hard): "unlimited"), true);
     PRINT("Virtual memory page size (bytes)",   CSystemInfo::GetVirtualMemoryPageSize(),   true);
-
+     
     cout << "\nCurrent process information:" << endl;
 
     CProcess::SMemoryUsage mem_usage;
