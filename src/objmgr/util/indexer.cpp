@@ -1956,8 +1956,8 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     // pub features are used in the REFERENCES section
     sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub);
     // some feature types are always excluded (deprecated?)
-    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
-       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+    // sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
        .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
     // exclude other types based on user flags
     if ((flags & CSeqEntryIndex::fHideImpFeats) != 0) {
@@ -1987,10 +1987,6 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     }
 
     // additional common settings
-    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
-       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
-       .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
-
     sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
 
     // limit exploration of far deltas with no features to avoid timeout

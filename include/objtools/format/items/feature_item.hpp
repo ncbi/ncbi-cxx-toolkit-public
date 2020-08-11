@@ -240,6 +240,8 @@ protected:
     void x_AddQualsRegion( CBioseqContext& );
     void x_AddQualsProt( CBioseqContext&, bool );
     void x_AddQualsPsecStr( CBioseqContext& );
+    void x_AddQualsNonStd(CBioseqContext& ctx );
+
     void x_AddQualsHet( CBioseqContext& ctx );
     void x_AddQualsVariation( CBioseqContext& ctx );
 

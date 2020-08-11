@@ -398,6 +398,7 @@ public:
         eQual_mol_type,
         eQual_name,
         eQual_nomenclature,
+        eQual_non_std_residue,
         eQual_ncRNA_class,
         eQual_note,
         eQual_number,

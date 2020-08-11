@@ -169,7 +169,7 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Txinit, txinit, "TxInit", "promoter"),
     FEAT_INFO_PAIR(Num, num, "Num", "misc_feature"),
     FEAT_INFO_PAIR(Psec_str, psec_str, "SecStr", "SecStr"),
-    FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "misc_feature"),
+    FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "NonStdRes"),
     FEAT_INFO_PAIR(Het, het, "Het", "Het"),
     FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source"),
     FEAT_INFO_PAIR(Clone, clone, "CloneRef", "misc_feature"),
@@ -2646,8 +2646,30 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_non_std_residue, {
-//},
+{ eSubtype_non_std_residue, {
+           eQual_allele,
+           eQual_citation,
+           eQual_db_xref,
+           eQual_exception,
+           eQual_experiment,
+           eQual_function,
+           eQual_gene,
+           eQual_gene_synonym,
+           eQual_inference,
+           eQual_label,
+           eQual_locus_tag,
+           eQual_map,
+           eQual_non_std_residue,
+           eQual_note,
+           eQual_number,
+           eQual_old_locus_tag,
+           eQual_phenotype,
+           eQual_product,
+           eQual_pseudo,
+           eQual_pseudogene,
+           eQual_standard_name,
+           eQual_usedin,
+} },
 
 //sameasmisc_feature
 { eSubtype_het, {
@@ -3063,6 +3085,7 @@ MAKE_TWOWAY_CONST_MAP(sc_QualPairs, CSeqFeatData::EQualifier, ct::tagStrNocase,
     { CSeqFeatData::eQual_mol_type, "mol_type" },
     { CSeqFeatData::eQual_name, "name" },
     { CSeqFeatData::eQual_nomenclature, "nomenclature" },
+    { CSeqFeatData::eQual_non_std_residue, "non_std_residue" },
     { CSeqFeatData::eQual_ncRNA_class, "ncRNA_class" },
     { CSeqFeatData::eQual_note, "note" },
     { CSeqFeatData::eQual_number, "number" },
@@ -4428,6 +4451,7 @@ CSeqFeatData::EFeatureLocationAllowed CSeqFeatData::AllowedFeatureLocation(ESubt
         case eSubtype_propeptide_aa:
         case eSubtype_bond:
         case eSubtype_psec_str:
+        case eSubtype_non_std_residue:
             rval = eFeatureLocationAllowed_ProtOnly;
             break;
         case eSubtype_region:

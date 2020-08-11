@@ -489,7 +489,7 @@ static bool s_SkipFeature(const CMappedFeat& feat,
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();        
 
     if ( subtype == CSeqFeatData::eSubtype_pub              ||
-         subtype == CSeqFeatData::eSubtype_non_std_residue  ||
+      /* subtype == CSeqFeatData::eSubtype_non_std_residue  || */
          subtype == CSeqFeatData::eSubtype_biosrc           ||
          subtype == CSeqFeatData::eSubtype_rsite            ||
          subtype == CSeqFeatData::eSubtype_seq ) {
@@ -1817,6 +1817,9 @@ void CFeatureItem::x_AddQualsIdx(
     case CSeqFeatData::e_Psec_str:
         x_AddQualsPsecStr( ctx );
         break;
+    case CSeqFeatData::e_Non_std_residue:
+        x_AddQualsNonStd( ctx );
+        break;
     case CSeqFeatData::e_Het:
         x_AddQualsHet( ctx );
         break;
@@ -2016,6 +2019,9 @@ void CFeatureItem::x_AddQuals(
         break;    
     case CSeqFeatData::e_Psec_str:
         x_AddQualsPsecStr( ctx );
+        break;
+    case CSeqFeatData::e_Non_std_residue:
+        x_AddQualsNonStd( ctx );
         break;
     case CSeqFeatData::e_Het:
         x_AddQualsHet( ctx );
@@ -3264,6 +3270,20 @@ void CFeatureItem::x_AddQualsPsecStr(
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsNonStd(
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT( m_Feat.GetData().IsNon_std_residue() );
+
+    const CSeqFeatData& data = m_Feat.GetData();
+
+    CSeqFeatData_Base::TNon_std_residue n_s_res = data.GetNon_std_residue();
+
+    x_AddQual( eFQ_non_std_residue, new CFlatStringQVal( n_s_res ) );
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualsHet(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
@@ -4503,6 +4523,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(site_type);
     DO_QUAL(sec_str_type);
     DO_QUAL(heterogen);
+    DO_QUAL(non_std_residue);
 
     DO_QUAL(tag_peptide);
 
@@ -5186,6 +5207,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_mol_wt, CSeqFeatData::eQual_calculated_mol_wt },
     { eFQ_ncRNA_class, CSeqFeatData::eQual_ncRNA_class },
     { eFQ_nomenclature, CSeqFeatData::eQual_nomenclature },
+    { eFQ_non_std_residue, CSeqFeatData::eQual_non_std_residue },
     { eFQ_number, CSeqFeatData::eQual_number },
     { eFQ_old_locus_tag, CSeqFeatData::eQual_old_locus_tag },
     { eFQ_operon, CSeqFeatData::eQual_operon },
@@ -5310,6 +5332,8 @@ void CFeatureItem::x_AddFTableQuals(
         break;
     case CSeqFeatData::e_Psec_str:
         x_AddFTablePsecStrQuals(data.GetPsec_str());
+        break;
+    case CSeqFeatData::e_Non_std_residue:
         break;
     case CSeqFeatData::e_Het:
         x_AddFTablePsecStrQuals(data.GetHet());

@@ -114,6 +114,7 @@ GetStringOfFeatQual(EFeatureQualifier eFeatureQualifier)
         TYPICAL_FQ(mol_wt),
         TYPICAL_FQ(ncRNA_class),
         TYPICAL_FQ(nomenclature),
+        TYPICAL_FQ(non_std_residue),
         TYPICAL_FQ(number),
         TYPICAL_FQ(old_locus_tag),
         TYPICAL_FQ(operon),
