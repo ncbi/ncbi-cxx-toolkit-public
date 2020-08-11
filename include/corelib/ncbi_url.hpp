@@ -461,6 +461,8 @@ private:
     void x_SetArgs(const string& args, const IUrlEncoder& encoder);
     void x_SetFragment(const string& fragment, const IUrlEncoder& encoder);
 
+    bool x_IsHostPort(const string& scheme, string& unparsed, const IUrlEncoder& encoder);
+
     string  m_Scheme;
     bool    m_IsGeneric;  // generic schemes include '//' delimiter
     string  m_User;

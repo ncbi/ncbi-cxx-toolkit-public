@@ -366,6 +366,40 @@ CUrl& CUrl::operator=(const CUrl& url)
 }
 
 
+bool CUrl::x_IsHostPort(const string& scheme, string& unparsed, const IUrlEncoder& encoder)
+{
+    static set<string> s_StdSchemes{
+        "http", "https", "file", "ftp"
+    };
+
+    // Check for special case: host:port[/path[...]] (see CXX-11455)
+    if (scheme.empty()) return false;
+    string sch_lower = scheme;
+    NStr::ToLower(sch_lower);
+    if (s_StdSchemes.find(sch_lower) != s_StdSchemes.end()) return false;
+
+    SIZE_TYPE port_end = unparsed.find_first_of("/?#");
+    string port = unparsed.substr(0, port_end);
+
+    if (port.empty() ||
+        port[0] == '0' ||
+        port.size() > 5 ||
+        port.find_first_not_of("0123456789") != NPOS) return false;
+    int port_val = atoi(port.c_str());
+    if (port_val > 65535) return false;
+
+    x_SetHost(scheme, encoder);
+    x_SetPort(port, encoder);
+    if (port_end != NPOS) {
+        unparsed = unparsed.substr(port_end);
+    }
+    else {
+        unparsed.clear();
+    }
+    return true;
+}
+
+
 void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
 {
     m_Scheme.clear();
@@ -485,22 +519,7 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             string scheme = orig_url.substr(0, scheme_end);
             unparsed = orig_url.substr(scheme_end + 1);
 
-            // Check for special case: host:port[/path[...]] (see CXX-11455)
-            SIZE_TYPE port_end = unparsed.find_first_of("/?#");
-            string port = unparsed.substr(0, port_end);
-            if (!port.empty() && port.find_first_not_of("0123456789") == NPOS) {
-                x_SetHost(scheme, *encoder);
-                x_SetPort(port, *encoder);
-                if (port_end != NPOS) {
-                    unparsed = unparsed.substr(port_end);
-                }
-                else {
-                    unparsed.clear();
-                }
-                scheme.clear();
-            }
-
-            if (!scheme.empty()) {
+            if (!x_IsHostPort(scheme, unparsed, *encoder)) {
                 x_SetScheme(orig_url.substr(0, scheme_end), *encoder);
             }
         }

@@ -416,8 +416,8 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
     }
 
+    cout << "Testing: parse host:port/path" << endl;
     {
-        cout << "Testing: parse host:port" << endl;
         CUrl url(string(kHostShort) + ":" + kPort);
         BOOST_CHECK(url.GetScheme().empty());
         BOOST_CHECK(url.GetUser().empty());
@@ -427,7 +427,6 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK(url.GetPath().empty());
     }
     {
-        cout << "Testing: parse host.net:port" << endl;
         CUrl url(string(kHostFull) + ":" + kPort);
         BOOST_CHECK(url.GetScheme().empty());
         BOOST_CHECK(url.GetUser().empty());
@@ -437,7 +436,6 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK(url.GetPath().empty());
     }
     {
-        cout << "Testing: parse host:port/path" << endl;
         CUrl url(string(kHostShort) + ":" + kPort + kPathAbs);
         BOOST_CHECK(url.GetScheme().empty());
         BOOST_CHECK(url.GetUser().empty());
@@ -447,7 +445,6 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK_EQUAL(url.GetPath(), kPathAbs);
     }
     {
-        cout << "Testing: parse host.net:port/path" << endl;
         CUrl url(string(kHostFull) + ":" + kPort + kPathAbs);
         BOOST_CHECK(url.GetScheme().empty());
         BOOST_CHECK(url.GetUser().empty());
@@ -455,5 +452,59 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK_EQUAL(url.GetHost(), kHostFull);
         BOOST_CHECK_EQUAL(url.GetPort(), kPort);
         BOOST_CHECK_EQUAL(url.GetPath(), kPathAbs);
+    }
+    {
+        CUrl url("http:123");
+        BOOST_CHECK_EQUAL(url.GetScheme(), "http");
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.GetPort().empty());
+        BOOST_CHECK_EQUAL(url.GetPath(), "123");
+    }
+    {
+        CUrl url("https:123");
+        BOOST_CHECK_EQUAL(url.GetScheme(), "https");
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.GetPort().empty());
+        BOOST_CHECK_EQUAL(url.GetPath(), "123");
+    }
+    {
+        CUrl url("file:123");
+        BOOST_CHECK_EQUAL(url.GetScheme(), "file");
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.GetPort().empty());
+        BOOST_CHECK_EQUAL(url.GetPath(), "123");
+    }
+    {
+        CUrl url("ftp:123");
+        BOOST_CHECK_EQUAL(url.GetScheme(), "ftp");
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.GetPort().empty());
+        BOOST_CHECK_EQUAL(url.GetPath(), "123");
+    }
+    {
+        CUrl url(string(kScheme) + ":0123");
+        BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.GetPort().empty());
+        BOOST_CHECK_EQUAL(url.GetPath(), "0123");
+    }
+    {
+        CUrl url(string(kScheme) + ":76543");
+        BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
+        BOOST_CHECK(url.GetUser().empty());
+        BOOST_CHECK(url.GetPassword().empty());
+        BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.GetPort().empty());
+        BOOST_CHECK_EQUAL(url.GetPath(), "76543");
     }
 }
