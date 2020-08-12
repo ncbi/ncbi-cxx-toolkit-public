@@ -4877,7 +4877,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
         {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced,
                        "Featkey '-' is replaced by 'misc_feature'");
-            fbp->key = Nlm_StringSave("misc_feature");
+            fbp->key = StringSave("misc_feature");
         }
         else
             fbp->key = StringSave(std::string(ptr1, ptr2).c_str());

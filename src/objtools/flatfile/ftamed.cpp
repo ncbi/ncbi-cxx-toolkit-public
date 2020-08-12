@@ -203,6 +203,115 @@ static string fetch_url(const string& url) {
 }
 
 
+static char* StringNCpy_0(char* to, const char* from, size_t max)
+{
+    if (!to || !max) {
+        return to;
+    }
+    if (max > 0) {
+        to[0] = '\0';
+    }
+    if (from) {
+        StringNCat(to, from, max - 1);
+    }
+    return to;
+}
+
+
+static char* TrimSpacesAroundString(char* str)
+{
+    unsigned char ch;
+    char* dst;
+    char* ptr;
+
+    if (str != NULL && str[0] != '\0') {
+        dst = str;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0' && ch <= ' ') {
+            ptr++;
+            ch = *ptr;
+        }
+        while (ch != '\0') {
+            *dst = ch;
+            dst++;
+            ptr++;
+            ch = *ptr;
+        }
+        *dst = '\0';
+        dst = NULL;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0') {
+            if (ch > ' ') {
+                dst = NULL;
+            }
+            else if (dst == NULL) {
+                dst = ptr;
+            }
+            ptr++;
+            ch = *ptr;
+        }
+        if (dst != NULL) {
+            *dst = '\0';
+        }
+    }
+    return str;
+}
+
+
+static char* CompressSpaces(char* str)
+{
+    char ch;
+    char* dst;
+    char last;
+    char* ptr;
+
+    if (str != NULL && str[0] != '\0') {
+        dst = str;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0' && ch <= ' ') {
+            ptr++;
+            ch = *ptr;
+        }
+        while (ch != '\0') {
+            *dst = ch;
+            dst++;
+            ptr++;
+            last = ch;
+            ch = *ptr;
+            if (ch != '\0' && ch < ' ') {
+                *ptr = ' ';
+                ch = *ptr;
+            }
+            while (ch != '\0' && last <= ' ' && ch <= ' ') {
+                ptr++;
+                ch = *ptr;
+            }
+        }
+        *dst = '\0';
+        dst = NULL;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0') {
+            if (ch != ' ') {
+                dst = NULL;
+            }
+            else if (dst == NULL) {
+                dst = ptr;
+            }
+            ptr++;
+            ch = *ptr;
+        }
+        if (dst != NULL) {
+            *dst = '\0';
+        }
+    }
+    return str;
+}
+
+
 /**********************************************************/
 static bool MUIsJournalIndexed(const Char* journal)
 {

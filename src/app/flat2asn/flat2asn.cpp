@@ -37,7 +37,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include <objtools/flatfile/ftaerr.hpp>
 
 #include <serial/objostrasn.hpp>
 #include <objects/seqset/Bioseq_set.hpp>

@@ -2659,8 +2659,8 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, CharPtr location,
                 Char msga[5],
                      msgb[5];
 
-                StrNCpy(msga, sli.wgsacc, 4);
-                StrNCpy(msgb, p, 4);
+                StringNCpy(msga, sli.wgsacc, 4);
+                StringNCpy(msgb, p, 4);
                 msga[4] = msgb[4] = 0;
 
                 ErrPostEx(SEV_WARNING, ERR_SEQUENCE_MultipleWGSProjects,
@@ -2686,7 +2686,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, CharPtr location,
             if(p != NULL)
             {
                 Char msg[5];
-                StrNCpy(msg, p, 4);
+                StringNCpy(msg, p, 4);
                 msg[4] = 0;
 
                 ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSPrefixMismatch,
