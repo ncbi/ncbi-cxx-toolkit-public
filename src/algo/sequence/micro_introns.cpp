@@ -99,15 +99,9 @@ GetAlignmentForRna(
     }
     if(align_list.size() > 1) {
         if(!ignore_errors) {
-            NCBI_THROW(CException, eUnknown, "Multiple alignments found.");
+            NCBI_THROW(
+                CAlgoFeatureGeneratorException, eMicroIntrons, "Multiple alignments found.");
         }
-/*      for(auto align: align_list) {
-            static size_t n(0);
-            auto_ptr<CObjectOStream> dump(CObjectOStream::Open(eSerial_AsnText, NStr::NumericToString(n) + ".asn1"));
-            *dump << *align;
-            ++n;
-        }
-*/
     }
     return (align_list.size() > 0 ? align_list.front() : CConstRef<CSeq_align>());
 }
