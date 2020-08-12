@@ -37,7 +37,8 @@
 #ifndef FTACPP_HPP
 #define FTACPP_HPP
 
-#include <string.h>
+#include <cstring>
+#include <corelib/ncbistr.hpp>
 
 #include <objtools/flatfile/ftaerr.hpp>
 inline void* MemNew(size_t sz) { void* p = std::malloc(sz); std::memset(p, 0, sz); return p; }
