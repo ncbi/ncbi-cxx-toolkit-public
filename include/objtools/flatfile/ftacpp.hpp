@@ -37,6 +37,8 @@
 #ifndef FTACPP_HPP
 #define FTACPP_HPP
 
+#include <string.h>
+
 #include <objtools/flatfile/ftaerr.hpp>
 inline void* MemNew(size_t sz) { void* p = std::malloc(sz); std::memset(p, 0, sz); return p; }
 inline void* MemSet(void* p, int n, size_t sz) { return std::memset(p, n, sz); }
