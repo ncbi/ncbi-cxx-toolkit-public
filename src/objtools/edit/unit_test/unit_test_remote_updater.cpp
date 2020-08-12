@@ -69,6 +69,8 @@ template<EError_val MLAError_val>
 class CMLAClient_THROW : public CMLAClient
 {
 public:
+    virtual ~CMLAClient_THROW(){};
+
     using TReply = CMla_back;
     CRef<CPub> AskGetpubpmid
         (const CPubMedId& req, TReply* reply=0) override;

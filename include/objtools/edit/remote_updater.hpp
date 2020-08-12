@@ -64,7 +64,12 @@ public:
 
    using FLogger = function<void(const string&)>;
 
+   // With this constructor, an exception is thrown 
+   // if the updater cannot retrieve a publication for a PMID.
    CRemoteUpdater(bool enable_caching = true);
+   // With this constructor, failure to retrieve 
+   // a publication for a PMID is logged with the supplied message listener.
+   // If no message listener is supplied, an exception is thrown.
    CRemoteUpdater(IObjtoolsListener* pMessageListener);
    ~CRemoteUpdater();
 
