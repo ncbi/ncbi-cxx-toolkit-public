@@ -980,7 +980,7 @@ struct CAttributes
 
     void Shuffle()
     {
-        random_shuffle(data.begin(), data.end());
+        shuffle(data.begin(), data.end(), GetRandom::GetGenerator());
     }
 
     void Read(const SCtx& ctx, CNetStorageObject& object)
@@ -1567,27 +1567,7 @@ struct STestCase<TType, CCombinedNetStorage, TBackend> :
         Exists<TFound>(netstorage, locator, ctx);
         // Testing location for CXX-8221
         GetInfo<TFound>(object, source.Size(), ctx);
-
-        string new_locator = Relocate<TSuccess>(netstorage, locator, relocate_flags, ctx);
-
-        ctx("Old copy");
-        CNetStorageObject new_object(Open(netstorage, new_locator));
-
-        Read<TFail>(object, source, ctx);
-        Relocate<TFail>(netstorage, locator, relocate_flags, ctx);
-        Exists<TNotFound>(netstorage, locator, ctx);
-        Remove<TNotFound>(netstorage, locator, ctx);
-
-        ctx("Relocated object");
-        Read<TSuccess>(new_object, source, ctx);
-        Exists<TFound>(netstorage, new_locator, ctx);
-        Remove<TFound>(netstorage, new_locator, ctx);
-
-        ctx("Removed object");
-        Read<TFail>(new_object, source, ctx);
-        Relocate<TFail>(netstorage, new_locator, flags, ctx);
-        Exists<TNotFound>(netstorage, new_locator, ctx);
-        Remove<TNotFound>(netstorage, new_locator, ctx);
+        Remove<TFound>(netstorage, locator, ctx);
     }
 };
 
@@ -1645,26 +1625,7 @@ struct STestCase<TType, CCombinedNetStorageByKey, TBackend> :
         Exists<TFound>(netstorage, key, ctx);
         // Testing location for CXX-8221
         GetInfo<TFound>(object, source.Size(), ctx);
-
-        new_key = Relocate<TSuccess>(netstorage, key, relocate_flags, ctx);
-        new_object = Open(netstorage, new_key);
-
-        ctx("Old copy");
-        Read<TFail>(object, source, ctx);
-        Relocate<TFail>(netstorage, key, relocate_flags, ctx);
-        Exists<TNotFound>(netstorage, key, ctx);
-        Remove<TNotFound>(netstorage, key, ctx);
-
-        ctx("Relocated object");
-        Read<TSuccess>(new_object, source, ctx);
-        Exists<TFound>(netstorage, new_key, ctx);
-        Remove<TFound>(netstorage, new_key, ctx);
-
-        ctx("Removed object");
-        Read<TFail>(new_object, source, ctx);
-        Relocate<TFail>(netstorage, new_key, flags, ctx);
-        Exists<TNotFound>(netstorage, new_key, ctx);
-        Remove<TNotFound>(netstorage, new_key, ctx);
+        Remove<TFound>(netstorage, key, ctx);
     }
 };
 
