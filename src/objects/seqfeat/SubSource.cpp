@@ -97,7 +97,8 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
 
     if ( NStr::EqualNocase(name, "note") ||
          NStr::EqualNocase(name, "subsource-note") ||
-         NStr::EqualNocase(name, "subsrc-note")) {
+         NStr::EqualNocase(name, "subsrc-note") ||
+         NStr::EqualNocase(name, "note-subsource")) {
         return eSubtype_other;
     } else if (vocabulary == eVocabulary_insdc) {
         // consider a table if more special cases arise.
@@ -126,7 +127,8 @@ bool CSubSource::IsValidSubtypeName(const string& str,
 
     if ( NStr::EqualNocase(name, "note") ||
          NStr::EqualNocase(name, "subsource-note") ||
-         NStr::EqualNocase(name, "subsrc-note")) {
+         NStr::EqualNocase(name, "subsrc-note") ||
+         NStr::EqualNocase(name, "note-subsource")) {
          return true;
     }
     if (vocabulary == eVocabulary_insdc) {
