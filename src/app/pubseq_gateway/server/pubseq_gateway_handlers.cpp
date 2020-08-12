@@ -51,6 +51,7 @@ static string  kPsgProtocolParam = "psg_protocol";
 static string  kFmtParam = "fmt";
 static string  kBlobIdParam = "blob_id";
 static string  kLastModifiedParam = "last_modified";
+static string  kTSELastModifiedParam = "tse_last_modified";
 static string  kSeqIdParam = "seq_id";
 static string  kSeqIdTypeParam = "seq_id_type";
 static string  kTSEParam = "tse";
@@ -67,7 +68,7 @@ static string  kAlertParam = "alert";
 static string  kResetParam = "reset";
 static string  kTSEIdParam = "tse_id";
 static string  kChunkParam = "chunk";
-static string  kSplitVersionParam = "split_version";
+static string  kId2InfoParam = "id2_info";
 static string  kAccSubstitutionParam = "acc_substitution";
 static string  kTraceParam = "trace";
 static string  kMostRecentTimeParam = "most_recent_time";
@@ -303,8 +304,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                                 last_modified_param.m_Value);
             } catch (...) {
                 x_MalformedArguments(reply, context,
-                                     "Malformed 'last_modified' parameter. "
-                                     "Expected an integer");
+                                     "Malformed '" + kLastModifiedParam +
+                                     "' parameter. Expected an integer");
                 return 0;
             }
         }
@@ -331,7 +332,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
             if (blob_id.GetId().empty()) {
                 x_MalformedArguments(reply, context,
-                                     "The 'blob_id' parameter value has not been supplied");
+                                     "The '" + kBlobIdParam +
+                                     "' parameter value has not been supplied");
                 return 0;
             }
 
@@ -355,7 +357,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         }
 
         x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                "'blob_id' is not found.");
+                                "'" + kBlobIdParam + "' is not found.");
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a getblob request: " +
                           string(exc.what());
@@ -532,17 +534,36 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 
         // tse_id is in fact a blob_id...
         SRequestParameter   tse_id_param = x_GetParam(req, kTSEIdParam);
-        if (!tse_id_param.m_Found)
-        {
+        if (!tse_id_param.m_Found) {
             x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                    "'tse_id' is not found.");
+                                    "'" + kTSEIdParam + "' is not found.");
             return 0;
         }
 
-        SPSGS_BlobId        tse_id(tse_id_param.m_Value);
-        if (tse_id.GetId().empty()) {
+        string      tse_id(tse_id_param.m_Value);
+        if (tse_id.empty()) {
             x_MalformedArguments(reply, context,
-                                 "The 'tse_id' parameter value has not been supplied");
+                                 "The '" + kTSEIdParam + "' parameter value "
+                                 "has not been supplied");
+            return 0;
+        }
+
+        SRequestParameter   tse_last_modified_param = x_GetParam(req, kTSELastModifiedParam);
+        int64_t             tse_last_modified_value = INT64_MIN;
+        if (!tse_last_modified_param.m_Found) {
+            x_InsufficientArguments(reply, context, "Mandatory parameter "
+                                    "'" + kTSELastModifiedParam +
+                                    "' is not found.");
+            return 0;
+        }
+
+        try {
+            tse_last_modified_value = NStr::StringToLong(
+                                            tse_last_modified_param.m_Value);
+        } catch (...) {
+            x_MalformedArguments(reply, context,
+                                 "Malformed '" + kTSELastModifiedParam +
+                                 "' parameter. Expected an integer");
             return 0;
         }
 
@@ -551,40 +572,30 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         if (!chunk_param.m_Found)
         {
             x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                    "'chunk' is not found.");
+                                    "'" + kChunkParam + "' is not found.");
             return 0;
         }
 
         try {
             chunk_value = NStr::StringToLong(chunk_param.m_Value);
-            if (chunk_value <= 0) {
+            if (chunk_value < 0) {
                 x_MalformedArguments(reply, context,
-                                     "Invalid 'chunk' parameter. "
-                                     "Expected > 0");
+                                     "Invalid '" + kChunkParam +
+                                     "' parameter. Expected >= 0");
                 return 0;
             }
         } catch (...) {
             x_MalformedArguments(reply, context,
-                                 "Malformed 'chunk' parameter. "
+                                 "Malformed '" + kChunkParam + "' parameter. "
                                  "Expected an integer");
             return 0;
         }
 
-        SRequestParameter   split_version_param = x_GetParam(req, kSplitVersionParam);
-        int64_t             split_version_value = INT64_MIN;
-        if (!split_version_param.m_Found)
+        SRequestParameter   id2_info_param = x_GetParam(req, kId2InfoParam);
+        if (!id2_info_param.m_Found)
         {
-            x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                    "'split_version' is not found.");
-            return 0;
-        }
-
-        try {
-            split_version_value = NStr::StringToLong(split_version_param.m_Value);
-        } catch (...) {
-            x_MalformedArguments(reply, context,
-                                 "Malformed 'split_version' parameter. "
-                                 "Expected an integer");
+            x_InsufficientArguments(reply, context, "Mandatory parameter '" +
+                                    kId2InfoParam + "' is not found.");
             return 0;
         }
 
@@ -608,7 +619,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         m_RequestCounters.IncGetTSEChunk();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
-                        tse_id, chunk_value, split_version_value,
+                        tse_id, tse_last_modified_value,
+                        chunk_value, id2_info_param.m_Value,
                         use_cache, hops, trace, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
@@ -678,7 +690,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                 output_format == SPSGS_ResolveRequest::ePSGS_UnknownFormat) {
                 x_MalformedArguments(
                         reply, context,
-                        "Invalid 'fmt' parameter value. The 'get_na' "
+                        "Invalid '" + kFmtParam + "' parameter value. The 'get_na' "
                         "command supports 'json' and 'native' values");
                 return 0;
             }
@@ -1505,11 +1517,11 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     // Check the mandatory parameter presence
     SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
     if (!seq_id_param.m_Found) {
-        err_msg = "Missing the 'seq_id' parameter";
+        err_msg = "Missing the '" + kSeqIdParam + "' parameter";
         m_ErrorCounters.IncInsufficientArguments();
     }
     else if (seq_id_param.m_Value.empty()) {
-        err_msg = "Missing value of the 'seq_id' parameter";
+        err_msg = "Missing value of the '" + kSeqIdParam + "' parameter";
         m_ErrorCounters.IncMalformedArguments();
     }
 
@@ -1540,7 +1552,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         }
 
         if (seq_id_type < 0 || seq_id_type >= CSeq_id::e_MaxChoice) {
-            err_msg = "seq_id_type value must be >= 0 and less than " +
+            err_msg = kSeqIdTypeParam + " value must be >= 0 and less than " +
                       to_string(CSeq_id::e_MaxChoice);
             m_ErrorCounters.IncMalformedArguments();
             x_SendMessageAndCompletionChunks(reply, err_msg,

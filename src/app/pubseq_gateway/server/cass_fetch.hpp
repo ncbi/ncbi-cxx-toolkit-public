@@ -300,10 +300,11 @@ class CCassSplitHistoryFetch : public CCassFetch
 {
 public:
     CCassSplitHistoryFetch(const SPSGS_TSEChunkRequest &  chunk_request,
-                           const SCass_BlobId &  tse_id) :
+                           const SCass_BlobId &  tse_id,
+                           int64_t  split_version) :
         m_TSEId(tse_id),
         m_Chunk(chunk_request.m_Chunk),
-        m_SplitVersion(chunk_request.m_SplitVersion),
+        m_SplitVersion(split_version),
         m_UseCache(chunk_request.m_UseCache)
     {
         m_FetchType = ePSGS_SplitHistoryFetch;

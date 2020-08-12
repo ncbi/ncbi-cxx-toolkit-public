@@ -262,9 +262,10 @@ CJsonNode SPSGS_TSEChunkRequest::Serialize(void) const
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     json.SetString("name", GetName());
-    json.SetString("tse id", m_TSEId.GetId());
+    json.SetString("tse id", m_TSEId);
+    json.SetInteger("tse last modified", m_LastModified);
     json.SetInteger("chunk", m_Chunk);
-    json.SetInteger("split version", m_SplitVersion);
+    json.SetString("id2 info", m_Id2Info);
     json.SetBoolean("use cache", m_UseCache);
     json.SetBoolean("trace", m_Trace);
     return json;

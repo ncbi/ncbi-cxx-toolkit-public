@@ -244,6 +244,51 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
 }
 
 
+void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
+                                     const string &         processor_id,
+                                     const string &         blob_id,
+                                     const unsigned char *  chunk_data,
+                                     unsigned int           data_size,
+                                     int                    chunk_no,
+                                     const string &         id2_info,
+                                     const string &         tse_id,
+                                     int64_t                last_modified)
+{
+    ++m_TotalSentReplyChunks;
+
+    string  header = GetTSEBlobChunkHeader(
+                            item_id,
+                            processor_id,
+                            blob_id,
+                            data_size, chunk_no,
+                            id2_info, tse_id, last_modified);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(header.data()),
+                    header.size()));
+
+    if (data_size > 0 && chunk_data != nullptr)
+        m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
+}
+
+
+void CPSGS_Reply::PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
+                                     const string &  processor_id,
+                                     const unsigned char *  chunk_data,
+                                     unsigned int  data_size,
+                                     int  chunk_no,
+                                     const string &  id2_info,
+                                     const string &  tse_id,
+                                     int64_t  last_modified)
+{
+    fetch_details->IncrementTotalSentBlobChunks();
+    PrepareTSEBlobData(fetch_details->GetBlobChunkItemId(this),
+                       processor_id,
+                       fetch_details->GetBlobId().ToString(),
+                       chunk_data, data_size, chunk_no,
+                       id2_info, tse_id, last_modified);
+}
+
+
 void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
                                             const string &  processor_id,
                                             size_t  chunk_count)

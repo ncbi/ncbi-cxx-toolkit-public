@@ -77,17 +77,13 @@ echo "getblob 4.1..."
 for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=4.1" > ${outdir}/h2load.${i}.out &); done
 finilize "getblob-4-1"
 
-echo "get_tse_chunk 47.67890130-1563374207..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=47.67890130&chunk=4&split_version=1563374207" > ${outdir}/h2load.${i}.out &); done
-finilize "get_tse_chunk-47-67890130-1563374207"
+echo "get_tse_chunk 4.340865818..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=4.340865818&chunk=3&tse_last_modified=100&id2_info=25.116773935.5" > ${outdir}/h2load.${i}.out &); done
+finilize "get_tse_chunk-4-340865818"
 
-echo "get_tse_chunk 47.67890130-1..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=47.67890130&chunk=500&split_version=1" > ${outdir}/h2load.${i}.out &); done
-finilize "get_tse_chunk-47-67890130-1"
-
-echo "get_tse_chunk 4.340865818-1565299085..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=4.340865818&chunk=96&split_version=1565299085" > ${outdir}/h2load.${i}.out &); done
-finilize "get_tse_chunk-4-340865818-1565299085"
+echo "get_tse_chunk 4.340865818-too-big..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_tse_chunk?tse_id=4.340865818&chunk=96&tse_last_modified=100&id2_info=25.116773935.5" > ${outdir}/h2load.${i}.out &); done
+finilize "get_tse_chunk-4-340865818-too-big"
 
 echo "status..."
 for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/status" > ${outdir}/h2load.${i}.out &); done

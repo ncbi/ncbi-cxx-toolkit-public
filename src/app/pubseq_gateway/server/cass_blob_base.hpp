@@ -69,6 +69,7 @@ protected:
                         CCassBlobFetch *  fetch_details,
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
+    void SetFinished(CCassBlobFetch *  fetch_details);
 
 private:
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
@@ -122,9 +123,6 @@ private:
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details,
                         CBlobRecord const &  blob);
-
-private:
-    void x_SetFinished(CCassBlobFetch *  fetch_details);
 
 protected:
     // Used for TSE chunk request and for get blob by sat/sat key request

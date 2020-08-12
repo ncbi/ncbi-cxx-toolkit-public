@@ -130,7 +130,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
 {
     // Nothing else to be sent
     m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
-    x_SetFinished(fetch_details);
+    SetFinished(fetch_details);
 }
 
 
@@ -708,7 +708,7 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                         status, code, severity);
     }
 
-    x_SetFinished(fetch_details);
+    SetFinished(fetch_details);
 }
 
 
@@ -724,7 +724,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
     if (cancelled) {
         fetch_details->GetLoader()->Cancel();
-        x_SetFinished(fetch_details);
+        SetFinished(fetch_details);
         return;
     }
     if (m_Reply->IsFinished()) {
@@ -752,7 +752,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
         // End of the blob
         m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
-        x_SetFinished(fetch_details);
+        SetFinished(fetch_details);
 
         // Note: no need to set the blob completed in the exclude blob cache.
         // It will happen in Peek()
@@ -802,7 +802,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     }
 
     m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
-    x_SetFinished(fetch_details);
+    SetFinished(fetch_details);
 }
 
 
@@ -834,7 +834,7 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
 
 
 void
-CPSGS_CassBlobBase::x_SetFinished(CCassBlobFetch *  fetch_details)
+CPSGS_CassBlobBase::SetFinished(CCassBlobFetch *  fetch_details)
 {
     fetch_details->SetReadFinished();
     m_Reply->SignalProcessorFinished();

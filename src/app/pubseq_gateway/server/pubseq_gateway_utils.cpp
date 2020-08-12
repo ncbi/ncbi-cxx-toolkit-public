@@ -140,6 +140,9 @@ static string   s_NA = "na=";
 static string   s_Reason = "reason=";
 static string   s_NChunksOne = "n_chunks=1";
 static string   s_ProcessorId = "processor_id=";
+static string   s_Id2Info = "id2_info=";
+static string   s_TSEId = "tse_id=";
+static string   s_TSELastModified = "tse_last_modified=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -181,6 +184,9 @@ static string   s_AndReplyItem = "&" + s_ReplyItem;
 static string   s_ProcessorItem = s_ItemType + s_Processor;
 static string   s_AndProcessorItem = "&" + s_ProcessorItem;
 static string   s_AndProcessorId = "&" + s_ProcessorId;
+static string   s_AndId2Info = "&" + s_Id2Info;
+static string   s_AndTSEId = "&" + s_TSEId;
+static string   s_AndTSELastModified = "&" + s_TSELastModified;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_AndDataChunk = "&" + s_DataChunk;
@@ -344,8 +350,7 @@ string  GetBlobChunkHeader(size_t  item_id,
                            size_t  chunk_size,
                            size_t  chunk_number)
 {
-    // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37&flags=7F
-    // Note: flags are hexadecimal
+    // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
@@ -359,6 +364,39 @@ string  GetBlobChunkHeader(size_t  item_id,
                 .append(blob_id)
                 .append(s_AndBlobChunk)
                 .append(to_string(chunk_number))
+                .append(1, '\n');
+}
+
+
+string  GetTSEBlobChunkHeader(size_t  item_id,
+                              const string &  processor_id,
+                              const string &  blob_id,
+                              size_t  chunk_size,
+                              size_t  chunk_number,
+                              const string &  id2_info,
+                              const string &  tse_id,
+                              int64_t  last_modified)
+{
+    // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobItem)
+                .append(s_AndDataChunk)
+                .append(s_AndSize)
+                .append(to_string(chunk_size))
+                .append(s_AndBlobId)
+                .append(blob_id)
+                .append(s_AndBlobChunk)
+                .append(to_string(chunk_number))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndTSEId)
+                .append(tse_id)
+                .append(s_AndTSELastModified)
+                .append(to_string(last_modified))
                 .append(1, '\n');
 }
 

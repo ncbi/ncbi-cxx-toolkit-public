@@ -61,7 +61,6 @@ public:
         m_BlobPropsNotFoundError(0), m_LMDBError(0),
         m_CassQueryTimeoutError(0),
         m_InvalidId2InfoError(0),
-        m_SplitHistoryNotFoundError(0),
         m_MaxHopsExceededError(0)
     {}
 
@@ -98,9 +97,6 @@ public:
     void IncInvalidId2InfoError(void)
     { ++m_InvalidId2InfoError; }
 
-    void IncSplitHistoryNotFoundError(void)
-    { ++m_SplitHistoryNotFoundError; }
-
     void IncMaxHopsExceededError(void)
     { ++m_MaxHopsExceededError; }
 
@@ -118,7 +114,6 @@ private:
     atomic_uint_fast64_t        m_LMDBError;
     atomic_uint_fast64_t        m_CassQueryTimeoutError;
     atomic_uint_fast64_t        m_InvalidId2InfoError;
-    atomic_uint_fast64_t        m_SplitHistoryNotFoundError;
     atomic_uint_fast64_t        m_MaxHopsExceededError;
 };
 
@@ -130,8 +125,6 @@ public:
     CPubseqGatewayRequestCounters() :
         m_Admin(0), m_Resolve(0), m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0),
         m_TestIO(0), m_GetNA(0), m_GetTSEChunk(0),
-        m_TSEChunkSplitVersionCacheMatched(0),
-        m_TSEChunkSplitVersionCacheNotMatched(0),
         m_NotResolved(0)
     {}
 
@@ -156,12 +149,6 @@ public:
     void IncGetTSEChunk(void)
     { ++m_GetTSEChunk; }
 
-    void IncTSEChunkSplitVersionCacheMatched(void)
-    { ++m_TSEChunkSplitVersionCacheMatched; }
-
-    void IncTSEChunkSplitVersionCacheNotMatched(void)
-    { ++m_TSEChunkSplitVersionCacheNotMatched; }
-
     void IncNotResolved(void)
     { ++m_NotResolved; }
 
@@ -175,8 +162,6 @@ private:
     atomic_uint_fast64_t        m_TestIO;
     atomic_uint_fast64_t        m_GetNA;
     atomic_uint_fast64_t        m_GetTSEChunk;
-    atomic_uint_fast64_t        m_TSEChunkSplitVersionCacheMatched;
-    atomic_uint_fast64_t        m_TSEChunkSplitVersionCacheNotMatched;
 
     atomic_uint_fast64_t        m_NotResolved;
 };

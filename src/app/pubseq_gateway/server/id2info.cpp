@@ -39,7 +39,8 @@ USING_NCBI_SCOPE;
 #include "pubseq_gateway.hpp"
 
 
-CPSGId2Info::CPSGId2Info(const string &  id2_info) :
+CPSGId2Info::CPSGId2Info(const string &  id2_info,
+                         bool  count_errors) :
     m_Sat(0), m_Info(0), m_Chunks(0), m_SplitVersion(0)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
@@ -49,7 +50,8 @@ CPSGId2Info::CPSGId2Info(const string &  id2_info) :
     NStr::Split(id2_info, ".", parts);
 
     if (parts.size() < 3) {
-        app->GetErrorCounters().IncInvalidId2InfoError();
+        if (count_errors)
+            app->GetErrorCounters().IncInvalidId2InfoError();
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    "Invalid id2 info '" + id2_info +
                    "'. Expected 3 or more parts, found " +
@@ -64,7 +66,8 @@ CPSGId2Info::CPSGId2Info(const string &  id2_info) :
         if (parts.size() >= 4)
             m_SplitVersion = NStr::StringToInt(parts[3]);
     } catch (...) {
-        app->GetErrorCounters().IncInvalidId2InfoError();
+        if (count_errors)
+            app->GetErrorCounters().IncInvalidId2InfoError();
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    "Invalid id2 info '" + id2_info +
                    "'. Cannot convert parts into integers.");
@@ -94,7 +97,8 @@ CPSGId2Info::CPSGId2Info(const string &  id2_info) :
     }
 
     if (!validate_message.empty()) {
-        app->GetErrorCounters().IncInvalidId2InfoError();
+        if (count_errors)
+            app->GetErrorCounters().IncInvalidId2InfoError();
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    validate_message);
     }

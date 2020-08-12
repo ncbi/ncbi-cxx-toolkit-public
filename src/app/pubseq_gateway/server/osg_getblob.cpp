@@ -117,7 +117,7 @@ void CPSGS_OSGGetChunks::CreateRequests()
     auto& psg_req = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     auto& req = osg_req->SetRequest().SetGet_chunks();
     req.SetBlob_id(*GetOSGBlobId(psg_req.m_TSEId));
-    req.SetSplit_version(psg_req.m_SplitVersion);
+//    req.SetSplit_version(psg_req.m_SplitVersion);
     // TODO: multiple chunks in request
     CID2S_Chunk_Id chunk_id;
     chunk_id.Set(psg_req.m_Chunk);

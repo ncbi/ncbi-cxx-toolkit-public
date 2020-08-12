@@ -34,6 +34,7 @@
 
 #include "ipsgs_processor.hpp"
 #include "cass_blob_base.hpp"
+#include "id2info.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -60,7 +61,8 @@ public:
     CPSGS_TSEChunkProcessor(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply,
                             TProcessorPriority  priority,
-                            const SCass_BlobId &  blob_id);
+                            const SCass_BlobId &  blob_id,
+                            const CPSGId2Info &  id2_info);
     virtual ~CPSGS_TSEChunkProcessor();
 
 private:
@@ -73,26 +75,14 @@ private:
                         CBlobRecord const &  blob,
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
-    void OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_details,
-                           vector<SSplitHistoryRecord> && result);
-    void OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_details,
-                                CRequestStatus::ECode  status, int  code,
-                                EDiagSev  severity, const string &  message);
 
 private:
-    bool x_ParseTSEChunkId2Info(const string &  info,
-                                unique_ptr<CPSGId2Info> &  id2_info,
-                                const SCass_BlobId &  blob_id,
-                                bool  need_finish);
     void x_SendProcessorError(const string &  msg,
                               CRequestStatus::ECode  status,
                               int  code);
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
-                                  CPSGId2Info::TChunks  total_chunks,
-                                  bool  need_finish);
-    bool x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id, bool  need_finish);
-    void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
-                           CCassSplitHistoryFetch *  fetch_details);
+                                  CPSGId2Info::TChunks  total_chunks);
+    bool x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id);
 
 private:
     void x_Peek(bool  need_wait);
@@ -102,6 +92,7 @@ private:
 private:
     SPSGS_TSEChunkRequest *     m_TSEChunkRequest;
     bool                        m_Cancelled;
+    CPSGId2Info                 m_Id2Info;
 };
 
 #endif  // PSGS_TSECHUNKPROCESSOR__HPP

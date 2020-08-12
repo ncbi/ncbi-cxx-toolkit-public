@@ -121,6 +121,23 @@ public:
                          const unsigned char *  chunk_data,
                          unsigned int  data_size,
                          int  chunk_no);
+    void PrepareTSEBlobData(size_t                 item_id,
+                            const string &         processor_id,
+                            const string &         blob_id,
+                            const unsigned char *  chunk_data,
+                            unsigned int           data_size,
+                            int                    chunk_no,
+                            const string &         id2_info,
+                            const string &         tse_id,
+                            int64_t                last_modified);
+    void PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
+                            const string &  processor_id,
+                            const unsigned char *  chunk_data,
+                            unsigned int  data_size,
+                            int  chunk_no,
+                            const string &  id2_info,
+                            const string &  tse_id,
+                            int64_t  last_modified);
     void PrepareBlobPropCompletion(size_t  item_id,
                                    const string &  processor_id,
                                    size_t  chunk_count);

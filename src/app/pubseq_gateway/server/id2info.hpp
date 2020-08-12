@@ -47,7 +47,11 @@ class CPSGId2Info
         using TSplitVersion = int32_t;
 
     public:
-        CPSGId2Info(const string &  id2_info);
+        CPSGId2Info(const string &  id2_info,
+                    bool  count_errors = true);
+        CPSGId2Info() :
+            m_Sat(-1), m_Info(-1), m_Chunks(-1), m_SplitVersion(-1)
+        {}
 
     public:
         TSat GetSat(void) const

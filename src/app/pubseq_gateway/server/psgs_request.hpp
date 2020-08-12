@@ -531,28 +531,31 @@ private:
 
 struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
 {
-    SPSGS_BlobId                        m_TSEId;
+    string                              m_TSEId;
+    CBlobRecord::TTimestamp             m_LastModified;
     int64_t                             m_Chunk;
-    SSplitHistoryRecord::TSplitVersion  m_SplitVersion;
+    string                              m_Id2Info;
     EPSGS_CacheAndDbUse                 m_UseCache;
 
-    SPSGS_TSEChunkRequest(const SPSGS_BlobId &  tse_id,
+    SPSGS_TSEChunkRequest(string &  tse_id,
+                          CBlobRecord::TTimestamp  last_modified,
                           int64_t  chunk,
-                          SSplitHistoryRecord::TSplitVersion  split_version,
+                          const string &  id2_info,
                           EPSGS_CacheAndDbUse  use_cache,
                           int  hops,
                           EPSGS_Trace  trace,
                           const TPSGS_HighResolutionTimePoint &  start_timestamp) :
         SPSGS_RequestBase(hops, trace, start_timestamp),
         m_TSEId(tse_id),
+        m_LastModified(last_modified),
         m_Chunk(chunk),
-        m_SplitVersion(split_version),
+        m_Id2Info(id2_info),
         m_UseCache(use_cache)
     {}
 
     SPSGS_TSEChunkRequest() :
+        m_LastModified(INT64_MIN),
         m_Chunk(INT64_MIN),
-        m_SplitVersion(INT32_MIN),
         m_UseCache(ePSGS_UnknownUseCache)
     {}
 
