@@ -135,6 +135,8 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("check_non_empty_lookup",
                       "Check that lookup produce non-empty result");
+    arg_desc->AddFlag("check_empty_lookup",
+                      "Check that lookup produce empty result");
     arg_desc->AddOptionalKey("gi", "GI",
                              "lookup by GI",
                              CArgDescriptions::eIntId);
@@ -538,7 +540,7 @@ int CWGSTestApp::Run(void)
     if ( args["contig_version"] ) {
         contig_version = args["contig_version"].AsInteger();
     }
-    else if ( path.size() > 12 ) {
+    else if ( path.size() > 12 && path.find('/') == NPOS ) {
         SIZE_TYPE dot_pos = path.rfind('.');
         if ( dot_pos != NPOS &&
              (contig_version = NStr::StringToNonNegativeInt(path.substr(dot_pos+1))) >= 0 ) {
@@ -756,6 +758,7 @@ int CWGSTestApp::Run(void)
         }
     }
     bool check_non_empty_lookup = args["check_non_empty_lookup"];
+    bool check_empty_lookup = args["check_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = GI_FROM(TIntId, args["gi"].AsIntId());
         CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
@@ -780,6 +783,9 @@ int CWGSTestApp::Run(void)
         else if ( gi_it.GetSeqType() == gi_it.eNuc ) {
             out << "GI "<<gi<<" Nucleotide row: "<<gi_it.GetRowId()
                 << NcbiEndl;
+            if ( check_empty_lookup ) {
+                ++error_count;
+            }
             CWGSSeqIterator it(wgs_db, gi_it.GetRowId(), include_flags);
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
@@ -797,6 +803,9 @@ int CWGSTestApp::Run(void)
         }
         else {
             out << "GI "<<gi<<" Protein row: "<<gi_it.GetRowId() << NcbiEndl;
+            if ( check_empty_lookup ) {
+                ++error_count;
+            }
             CWGSProteinIterator it(wgs_db, gi_it.GetRowId());
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
@@ -829,6 +838,9 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
+            if ( check_empty_lookup ) {
+                ++error_count;
+            }
             CWGSSeqIterator it(wgs_db, row_id, include_flags);
             if ( !it ) {
                 out << "CONTIG: No such row: "<< row_id << NcbiEndl;
@@ -836,7 +848,12 @@ int CWGSTestApp::Run(void)
             }
             else {
                 out << "CONTIG["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << " name: " << it.GetContigName()
                     << NcbiEndl;
+                if ( !NStr::EqualNocase(it.GetContigName(), name) ) {
+                    out << "Name is different!" << NcbiEndl;
+                    ++error_count;
+                }
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
@@ -857,6 +874,9 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
+            if ( check_empty_lookup ) {
+                ++error_count;
+            }
             CWGSScaffoldIterator it(wgs_db, row_id);
             if ( !it ) {
                 out << "SCAFFOLD: No such row: "<< row_id << NcbiEndl;
@@ -864,7 +884,12 @@ int CWGSTestApp::Run(void)
             }
             else {
                 out << "SCAFFOLD["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << " name: " << it.GetScaffoldName()
                     << NcbiEndl;
+                if ( !NStr::EqualNocase(it.GetScaffoldName(), name) ) {
+                    out << "Name is different!" << NcbiEndl;
+                    ++error_count;
+                }
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
@@ -888,6 +913,9 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
+            if ( check_empty_lookup ) {
+                ++error_count;
+            }
             CWGSProteinIterator it(wgs_db, row_id);
             if ( !it ) {
                 out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
@@ -895,7 +923,12 @@ int CWGSTestApp::Run(void)
             }
             else {
                 out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << " name: " << it.GetProteinName()
                     << NcbiEndl;
+                if ( !NStr::EqualNocase(it.GetProteinName(), name) ) {
+                    out << "Name is different!" << NcbiEndl;
+                    ++error_count;
+                }
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
@@ -939,17 +972,19 @@ int CWGSTestApp::Run(void)
         CStopWatch sw(CStopWatch::eStart);
         CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
         if ( resolver ) {
-            for ( auto& name : accs ) {
-                CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(name);
+            for ( auto& acc_ver : accs ) {
+                string acc, ver;
+                NStr::SplitInTwo(acc_ver, ".", acc, ver);
+                CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(acc);
                 if ( random_count ) {
                     found_count += (prefixes.size()!=0);
                 }
                 else if ( prefixes.empty() ) {
-                    out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
+                    out << "No WGS accessions with protein acc "<<acc<<NcbiEndl;
                 }
                 else {
                     ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
-                        out << "Protein acc "<<name<<" is found in WGS " << *it << NcbiEndl;
+                        out << "Protein acc "<<acc<<" is found in WGS " << *it << NcbiEndl;
                     }
                 }
             }
@@ -959,9 +994,12 @@ int CWGSTestApp::Run(void)
             out << "Found valid WGS accessions: "<<found_count<<endl;
         }
         if ( !random_count ) {
-            for ( auto& name : accs ) {
-                uint64_t row_id = wgs_db.GetProtAccRowId(name);
-                out << "Protein acc "<<name<<" is in PROTEIN table row " << row_id
+            for ( auto& acc_ver : accs ) {
+                string acc, ver;
+                NStr::SplitInTwo(acc_ver, ".", acc, ver);
+                int version = ver.empty()? -1: NStr::StringToNumeric<int>(ver);
+                uint64_t row_id = wgs_db.GetProtAccRowId(acc, version);
+                out << "Protein acc "<<acc_ver<<" is in PROTEIN table row " << row_id
                     << NcbiEndl;
                 if ( !row_id ) {
                     if ( check_non_empty_lookup ) {
@@ -969,6 +1007,9 @@ int CWGSTestApp::Run(void)
                     }
                 }
                 else {
+                    if ( check_empty_lookup ) {
+                        ++error_count;
+                    }
                     CWGSProteinIterator it(wgs_db, row_id);
                     if ( !it ) {
                         out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
@@ -976,7 +1017,16 @@ int CWGSTestApp::Run(void)
                     }
                     else {
                         out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
+                            << " acc: " << it.GetAccession()<<"."<<it.GetAccVersion()
                             << NcbiEndl;
+                        if ( !NStr::EqualNocase(it.GetAccession(), acc) ) {
+                            out << "Accession is different!" << NcbiEndl;
+                            ++error_count;
+                        }
+                        if ( version != -1 && it.GetAccVersion() != version ) {
+                            out << "Version is different!" << NcbiEndl;
+                            ++error_count;
+                        }
                         if ( print_seq ) {
                             out << MSerial_AsnText << *it.GetBioseq();
                         }
