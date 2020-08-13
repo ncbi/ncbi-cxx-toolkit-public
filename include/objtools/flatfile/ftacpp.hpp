@@ -61,7 +61,7 @@ inline int StringNCmp(const char* s1, const char* s2, size_t n) { return std::st
 inline int StringICmp(const char* s1, const char* s2) { return NStr::CompareNocase(s1, s2); }
 inline int StringNICmp(const char* s1, const char* s2, size_t n) { const string S1(s1), S2(s2); return NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n)); }
 
-inline char* StringMove(char* d, const char* s) { return std::strcpy(d, s); }
+inline char* StringMove(char* d, const char* s) { return std::strcpy(d, s) + std::strlen(s); }
 
 inline bool StringHasNoText(const char* s) {
     if (s) while (*s) if ((unsigned char)(*s++) > ' ') return false;
