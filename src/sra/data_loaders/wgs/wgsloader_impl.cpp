@@ -441,12 +441,13 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
 
 
 CWGSFileInfo::SAccFileInfo
-CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
+CWGSDataLoader_Impl::GetFileInfoByProtAcc(const CTextseq_id& text_id)
 {
+    const string& acc = text_id.GetAccession();
     CWGSFileInfo::SAccFileInfo ret;
     if ( !m_FixedFiles.empty() ) {
         ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-            if ( it->second->FindProtAcc(ret, acc) ) {
+            if ( it->second->FindProtAcc(ret, text_id) ) {
                 if ( GetDebugLevel() >= 2 ) {
                     ERR_POST_X(7, "CWGSDataLoader: "
                                "Resolved prot acc "<<acc<<
@@ -468,7 +469,7 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
                 // replaced
                 continue;
             }
-            if ( it->second->FindProtAcc(ret, acc) ) {
+            if ( it->second->FindProtAcc(ret, text_id) ) {
                 if ( GetDebugLevel() >= 2 ) {
                     ERR_POST_X(9, "CWGSDataLoader: "
                                "Resolved prot acc "<<acc<<
@@ -487,7 +488,7 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
                            "Resolved prot acc "<<acc<<
                            " -> "<<file->GetWGSPrefix());
             }
-            if ( file->FindProtAcc(ret, acc) ) {
+            if ( file->FindProtAcc(ret, text_id) ) {
                 resolver.SetWGSPrefix(acc, prefixes, *it);
                 return ret;
             }
@@ -501,8 +502,9 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
 
 
 CWGSFileInfo::SAccFileInfo
-CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
+CWGSDataLoader_Impl::GetFileInfoByAcc(const CTextseq_id& text_id)
 {
+    const string& acc = text_id.GetAccession();
     CWGSFileInfo::SAccFileInfo ret;
     CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
     switch ( type & CSeq_id::eAcc_division_mask ) {
@@ -525,7 +527,7 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
 
     if ( (type & CSeq_id::fAcc_prot) && acc.size() <= kMaxWGSProteinAccLen ) {
         if ( m_ResolveProtAccs ) {
-            ret = GetFileInfoByProtAcc(acc);
+            ret = GetFileInfoByProtAcc(text_id);
         }
         return ret;
     }
@@ -577,8 +579,9 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
         SIZE_TYPE row_digits = acc.size() - row_pos;
         if ( info->m_WGSDb->GetIdRowDigits() == row_digits ) {
             ret.file = info;
-            if ( !ret.ValidateRowId() ) {
+            if ( !ret.ValidateAcc(text_id) ) {
                 ret.file = 0;
+                return ret;
             }
         }
     }
@@ -675,15 +678,10 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     }
     CWGSFileInfo::SAccFileInfo ret;
     if ( text_id->IsSetAccession() ) {
-        ret = GetFileInfoByAcc(text_id->GetAccession());
+        ret = GetFileInfoByAcc(*text_id);
     }
     if ( !ret ) {
         return ret;
-    }
-    if ( text_id->IsSetVersion() ) {
-        if ( !ret.SetVersion(text_id->GetVersion()) ) {
-            ret.file = null;
-        }
     }
     return ret;
 }
@@ -1126,47 +1124,90 @@ void CWGSFileInfo::x_InitMasterDescr(void)
 }
 
 
-bool CWGSFileInfo::SAccFileInfo::ValidateRowId(void)
+static bool s_ValidateAcc(const CConstRef<CSeq_id>& real_seq_id, const CTextseq_id& asked_text_id)
+{
+    if ( !real_seq_id ) {
+        return false;
+    }
+    if ( auto real_text_id = real_seq_id->GetTextseq_Id() ) {
+        if ( !NStr::EqualNocase(real_text_id->GetAccession(), asked_text_id.GetAccession()) ||
+             !real_text_id->IsSetVersion() ) {
+            return false;
+        }
+        
+        if ( asked_text_id.IsSetVersion() ) {
+            return real_text_id->GetVersion() == asked_text_id.GetVersion();
+        }
+        else {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CWGSFileInfo::SAccFileInfo::ValidateAcc(const CTextseq_id& text_id)
 {
     _ASSERT(version == -1);
     if ( row_id == 0 ) {
         return false;
     }
     if ( IsScaffold() ) {
-        return GetScaffoldIterator();
+        if ( auto iter = GetScaffoldIterator() ) {
+            return s_ValidateAcc(iter.GetAccSeq_id(), text_id);
+        }
     }
     else if ( IsProtein() ) {
-        return GetProteinIterator();
+        if ( auto iter = GetProteinIterator() ) {
+            return s_ValidateAcc(iter.GetAccSeq_id(), text_id);
+        }
     }
     else {
-        if ( CWGSSeqIterator iter = GetContigIterator() ) {
-            // contigs have versions
-            version = iter.GetLatestAccVersion();
-            return true;
+        if ( auto iter = GetContigIterator() ) {
+            if ( text_id.IsSetVersion() ) {
+                // select requested version
+                version = text_id.GetVersion();
+                if ( !iter.HasAccVersion(version) ) {
+                    return false;
+                }
+                iter.SelectAccVersion(version);
+            }
+            else {
+                // select latest version
+                version = iter.GetLatestAccVersion();
+            }
+            return s_ValidateAcc(iter.GetAccSeq_id(), text_id);
         }
-        return false;
     }
+    return false;
 }
 
 
-bool CWGSFileInfo::SAccFileInfo::SetVersion(int version)
+bool CWGSFileInfo::SAccFileInfo::ValidateGi(TGi gi)
 {
-    _ASSERT(version != -1);
+    _ASSERT(version == -1);
     if ( row_id == 0 ) {
         return false;
     }
-    if ( IsContig() ) {
-        CWGSSeqIterator iter = GetContigIterator();
-        if ( iter && iter.HasAccVersion(version) ) {
-            this->version = version;
-            return true;
-        }
+    if ( IsScaffold() ) {
+        // scaffolds cannot have GI
         return false;
     }
-    else {
-        // scaffolds and proteins can have only version 1
-        return version == 1;
+    else if ( IsProtein() ) {
+        if ( auto iter = GetProteinIterator() ) {
+            return iter.GetGi() == gi;
+        }
     }
+    else {
+        if ( auto iter = GetContigIterator() ) {
+            if ( iter.GetGi() == gi )  {
+                // select latest version
+                version = iter.GetLatestAccVersion();
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -1178,20 +1219,21 @@ bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
         info.row_id = it.GetRowId();
         info.seq_type = it.GetSeqType() == it.eProt? 'P': '\0';
         info.version = -1;
-        return info.ValidateRowId(); // will also set version
+        return info.ValidateGi(gi);
     }
     return false;
 }
 
 
-bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
+bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id) const
 {
-    if ( TVDBRowId row_id = m_WGSDb.GetProtAccRowId(acc) ) {
+    int ask_version = text_id.IsSetVersion()? text_id.GetVersion(): -1;
+    if ( TVDBRowId row_id = m_WGSDb.GetProtAccRowId(text_id.GetAccession(), ask_version) ) {
         info.file = this;
         info.row_id = row_id;
         info.seq_type = 'P';
         info.version = -1;
-        return info.ValidateRowId();
+        return info.ValidateAcc(text_id);
     }
     return false;
 }
@@ -1260,7 +1302,23 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
             }
         }
         if ( !entry && !split ) {
+            if ( GetDebugLevel() >= 2 ) {
+                ERR_POST_X(12, "CWGSDataLoader: blob "<<blob_id.ToString()<<
+                           " not loaded");
+            }
             state |= CBioseq_Handle::fState_no_data;
+        }
+        if ( entry ) {
+            if ( GetDebugLevel() >=8 ) {
+                ERR_POST_X(13, "CWGSDataLoader: blob "<<blob_id.ToString()<<
+                           " "<<MSerial_AsnText<<*entry);
+            }
+        }
+        if ( split ) {
+            if ( GetDebugLevel() >=8 ) {
+                ERR_POST_X(14, "CWGSDataLoader: blob "<<blob_id.ToString()<<
+                           " "<<MSerial_AsnText<<*split);
+            }
         }
         if ( state ) {
             load_lock->SetBlobState(state);
@@ -1282,6 +1340,11 @@ void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
     if ( blob_id.m_SeqType == '\0' ) {
         CWGSSeqIterator it = GetContigIterator(blob_id);
         CRef<CID2S_Chunk> chunk = it.GetChunk(chunk_info.GetChunkId());
+        if ( GetDebugLevel() >=8 ) {
+            ERR_POST_X(15, "CWGSDataLoader: chunk "<<blob_id.ToString()<<
+                       "."<<chunk_info.GetChunkId()<<
+                       " "<<MSerial_AsnText<<*chunk);
+        }
         CSplitParser::Load(chunk_info, *chunk);
         chunk_info.SetLoaded();
     }

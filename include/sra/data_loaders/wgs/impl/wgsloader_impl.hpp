@@ -86,9 +86,8 @@ public:
         SAccFileInfo GetRootFileInfo(void) const;
 
         // set version if necessary
-        bool ValidateRowId(void);
-        // reset version if necessary
-        bool SetVersion(int version);
+        bool ValidateAcc(const CTextseq_id& text_id);
+        bool ValidateGi(TGi gi);
 
         CConstRef<CWGSFileInfo> file;
         TVDBRowId row_id;
@@ -97,7 +96,7 @@ public:
     };
 
     bool FindGi(SAccFileInfo& info, TGi gi) const;
-    bool FindProtAcc(SAccFileInfo& info, const string& acc) const;
+    bool FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id) const;
 
     const CWGSDb& GetDb(void) const
         {
@@ -140,8 +139,8 @@ public:
     CConstRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
     typedef CWGSFileInfo::SAccFileInfo SAccFileInfo;
     SAccFileInfo GetFileInfoByGi(TGi gi);
-    SAccFileInfo GetFileInfoByProtAcc(const string& acc);
-    SAccFileInfo GetFileInfoByAcc(const string& acc);
+    SAccFileInfo GetFileInfoByProtAcc(const CTextseq_id& text_id);
+    SAccFileInfo GetFileInfoByAcc(const CTextseq_id& text_id);
     SAccFileInfo GetFileInfoByGeneral(const CDbtag& dbtag);
     SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
