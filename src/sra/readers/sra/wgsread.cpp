@@ -686,9 +686,9 @@ CWGSDb_Impl::SFeatTableCursor::SFeatTableCursor(const CVDBTable& table)
 }
 
 
-// SIdxTableCursor is helper accessor structure for optional GI_IDX table
-struct CWGSDb_Impl::SIdxTableCursor : public CObject {
-    explicit SIdxTableCursor(const CVDBTable& table);
+// SGiIdxTableCursor is helper accessor structure for optional GI_IDX table
+struct CWGSDb_Impl::SGiIdxTableCursor : public CObject {
+    explicit SGiIdxTableCursor(const CVDBTable& table);
 
     CVDBCursor m_Cursor;
 
@@ -697,10 +697,30 @@ struct CWGSDb_Impl::SIdxTableCursor : public CObject {
 };
 
 
-CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDBTable& table)
+CWGSDb_Impl::SGiIdxTableCursor::SGiIdxTableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(NUC_ROW_ID),
       INIT_OPTIONAL_VDB_COLUMN(PROT_ROW_ID)
+{
+}
+
+
+// SProtIdxTableCursor is helper accessor structure for optional PROT_IDX table
+struct CWGSDb_Impl::SProtIdxTableCursor : public CObject {
+    explicit SProtIdxTableCursor(const CVDBTable& table);
+
+    CVDBCursor m_Cursor;
+
+    typedef pair<TVDBRowId, TVDBRowId> row_range_t;
+    DECLARE_VDB_COLUMN_AS(row_range_t, NAME_ROW_RANGE);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, ROW_ID);
+};
+
+
+CWGSDb_Impl::SProtIdxTableCursor::SProtIdxTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN_BACKUP(NAME_ROW_RANGE, ACCESSION_ROW_RANGE),
+      INIT_VDB_COLUMN_BACKUP(ROW_ID, PROTEIN_ROW_ID)
 {
 }
 
@@ -819,12 +839,25 @@ CRef<CWGSDb_Impl::SFeatTableCursor> CWGSDb_Impl::Feat(TVDBRowId row)
 
 
 inline
-CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(TVDBRowId row)
+CRef<CWGSDb_Impl::SGiIdxTableCursor> CWGSDb_Impl::GiIdx(TVDBRowId row)
 {
-    CRef<SIdxTableCursor> curs = m_GiIdx.Get(row);
+    CRef<SGiIdxTableCursor> curs = m_GiIdx.Get(row);
     if ( !curs ) {
         if ( const CVDBTable& table = GiIdxTable() ) {
-            curs = new SIdxTableCursor(table);
+            curs = new SGiIdxTableCursor(table);
+        }
+    }
+    return curs;
+}
+
+
+inline
+CRef<CWGSDb_Impl::SProtIdxTableCursor> CWGSDb_Impl::ProtIdx(TVDBRowId row)
+{
+    CRef<SProtIdxTableCursor> curs = m_ProtIdx.Get(row);
+    if ( !curs ) {
+        if ( const CVDBTable& table = ProtIdxTable() ) {
+            curs = new SProtIdxTableCursor(table);
         }
     }
     return curs;
@@ -874,9 +907,16 @@ void CWGSDb_Impl::Put(CRef<SFeatTableCursor>& curs, TVDBRowId row)
 
 
 inline
-void CWGSDb_Impl::Put(CRef<SIdxTableCursor>& curs, TVDBRowId row)
+void CWGSDb_Impl::Put(CRef<SGiIdxTableCursor>& curs, TVDBRowId row)
 {
     m_GiIdx.Put(curs, row);
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SProtIdxTableCursor>& curs, TVDBRowId row)
+{
+    m_ProtIdx.Put(curs, row);
 }
 
 
@@ -1056,6 +1096,12 @@ void CWGSDb_Impl::OpenFeatTable(void)
 void CWGSDb_Impl::OpenGiIdxTable(void)
 {
     OpenTable(m_GiIdxTable, m_GiIdxTableIsOpened, "GI_IDX");
+}
+
+
+void CWGSDb_Impl::OpenProtIdxTable(void)
+{
+    OpenTable(m_ProtIdxTable, m_ProtIdxTableIsOpened, "PROT_ACC_IDX");
 }
 
 
@@ -1914,7 +1960,7 @@ static inline TGi s_ToGi(TVDBRowId gi, const char* method)
 pair<TGi, TGi> CWGSDb_Impl::GetNucGiRange(void)
 {
     pair<TGi, TGi> ret;
-    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+    if ( CRef<SGiIdxTableCursor> idx = GiIdx() ) {
         if ( idx->m_NUC_ROW_ID ) {
             TVDBRowIdRange row_range =
                 idx->m_NUC_ROW_ID.GetRowIdRange(idx->m_Cursor);
@@ -1934,7 +1980,7 @@ pair<TGi, TGi> CWGSDb_Impl::GetNucGiRange(void)
 pair<TGi, TGi> CWGSDb_Impl::GetProtGiRange(void)
 {
     pair<TGi, TGi> ret;
-    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+    if ( CRef<SGiIdxTableCursor> idx = GiIdx() ) {
         if ( idx->m_PROT_ROW_ID ) {
             TVDBRowIdRange row_range =
                 idx->m_PROT_ROW_ID.GetRowIdRange(idx->m_Cursor);
@@ -2087,7 +2133,7 @@ pair<TVDBRowId, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 {
     pair<TVDBRowId, bool> ret;
     TIntId row_id = GI_TO(TIntId, gi);
-    if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
+    if ( CRef<SGiIdxTableCursor> idx = GiIdx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
@@ -2112,7 +2158,7 @@ TVDBRowId CWGSDb_Impl::GetNucGiRowId(TGi gi)
 {
     TVDBRowId ret = 0;
     TIntId row_id = GI_TO(TIntId, gi);
-    if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
+    if ( CRef<SGiIdxTableCursor> idx = GiIdx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
@@ -2130,7 +2176,7 @@ TVDBRowId CWGSDb_Impl::GetProtGiRowId(TGi gi)
 {
     TVDBRowId ret = 0;
     TIntId row_id = GI_TO(TIntId, gi);
-    if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
+    if ( CRef<SGiIdxTableCursor> idx = GiIdx(row_id) ) {
         if ( idx->m_PROT_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
@@ -2183,35 +2229,68 @@ TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
         Put(seq);
     }
     const CVDBTableIndex& index = ContigNameIndex();
-    return Lookup(name, index, m_ContigNameIndexIsOpened == 1);
+    return Lookup(name, index, m_ContigNameIndexIsOpened == 2);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetScaffoldNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ScaffoldNameIndex();
-    return Lookup(name, index, m_ScaffoldNameIndexIsOpened == 1);
+    return Lookup(name, index, m_ScaffoldNameIndexIsOpened == 2);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetProteinNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ProteinNameIndex();
-    return Lookup(name, index, m_ProteinNameIndexIsOpened == 1);
+    return Lookup(name, index, m_ProteinNameIndexIsOpened == 2);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetProductNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ProductNameIndex();
-    return Lookup(name, index, m_ProductNameIndexIsOpened == 1);
+    return Lookup(name, index, m_ProductNameIndexIsOpened == 2);
 }
 
 
-TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc)
+TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc, int version)
 {
-    const CVDBTableIndex& index = ProtAccIndex();
-    return Lookup(acc, index, true);
+    TVDBRowId prot_row_id = 0;
+    if ( CRef<SProtIdxTableCursor> idx = ProtIdx() ) {
+        SProtIdxTableCursor::row_range_t range;
+        string tmp = acc;
+        const char* query_param_name;
+        if ( NStr::Equal(idx->m_ROW_ID.GetName(), "ROW_ID") ) {
+            query_param_name = "NAME_QUERY";
+        }
+        else {
+            query_param_name = "ACCESSION_QUERY";
+        }
+        idx->m_Cursor.SetParam(query_param_name, NStr::ToUpper(tmp));
+        CVDBValueFor<SProtIdxTableCursor::row_range_t> value =
+            idx->NAME_ROW_RANGE(0, CVDBValue::eMissing_Allow);
+        if ( !value.empty() ) {
+            range = *value;
+        }
+        if ( range.first && range.first <= range.second ) {
+            CVDBValueFor<TVDBRowId> prot_rows = idx->ROW_ID(range.first);
+            if ( !prot_rows.empty() ) {
+                if ( version > 0 ) {
+                    // check if version exists
+                    if ( unsigned(version) <= prot_rows.size() ) {
+                        prot_row_id = prot_rows[version-1];
+                    }
+                }
+                else if ( version == -1 ) {
+                    // last version
+                    prot_row_id = prot_rows[prot_rows.size()-1];
+                }
+            }
+        }
+        Put(idx);
+    }
+    return prot_row_id;
 }
 
 
@@ -2831,7 +2910,7 @@ CWGSSeqIterator::x_GetAccVersionSelector(int version) const
             NCBI_THROW_FMT(CSraException, eDataError,
                            "CWGSSeqIterator: "<<
                            GetDb().m_IdPrefixWithVersion<<"/"<<m_CurrId<<
-                           "version "<<version<<
+                           " version "<<version<<
                            " is out of VDB version range: "<<
                            oldest_version<<"-"<<latest_version);
         }
@@ -5502,7 +5581,7 @@ CWGSGiIterator::~CWGSGiIterator(void)
 void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
 {
     m_Db = wgs_db;
-    m_Cur = GetDb().Idx();
+    m_Cur = GetDb().GiIdx();
     if ( !m_Cur ) {
         m_Db.Reset();
         m_FirstBadGi = ZERO_GI;

@@ -336,8 +336,9 @@ public:
     TVDBRowId GetProteinNameRowId(const string& name);
     // get protein row_id (PROTEIN) for product name or 0 if there is none
     TVDBRowId GetProductNameRowId(const string& name);
-    // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
-    TVDBRowId GetProtAccRowId(const string& acc);
+    // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc.version
+    // if version == -1 return latest protein version
+    TVDBRowId GetProtAccRowId(const string& acc, int version = -1);
 
     typedef COpenRange<TIntId> TGiRange;
     typedef vector<TGiRange> TGiRanges;
@@ -414,8 +415,10 @@ protected:
     struct SProtTableCursor;
     // SFeatTableCursor is helper accessor structure for optional FEATURE table
     struct SFeatTableCursor;
-    // SIdsTableCursor is helper accessor structure for SEQUENCE table
-    struct SIdxTableCursor;
+    // SGiIdsTableCursor is helper accessor structure for GI_IDX table
+    struct SGiIdxTableCursor;
+    // SProtIdsTableCursor is helper accessor structure for PROT_ACC_IDX table
+    struct SProtIdxTableCursor;
 
     const CVDBTable& SeqTable(void) {
         return m_SeqTable;
@@ -443,6 +446,12 @@ protected:
             OpenGiIdxTable();
         }
         return m_GiIdxTable;
+    }
+    const CVDBTable& ProtIdxTable(void) {
+        if ( !m_ProtIdxTableIsOpened ) {
+            OpenProtIdxTable();
+        }
+        return m_ProtIdxTable;
     }
     const CVDBTableIndex& ProtAccIndex(void) {
         if ( !m_ProtAccIndexIsOpened ) {
@@ -482,7 +491,8 @@ protected:
     CRef<SProt0TableCursor> Prot0(TVDBRowId row = 0);
     CRef<SProtTableCursor> Prot(TVDBRowId row = 0);
     CRef<SFeatTableCursor> Feat(TVDBRowId row = 0);
-    CRef<SIdxTableCursor> Idx(TVDBRowId row = 0);
+    CRef<SGiIdxTableCursor> GiIdx(TVDBRowId row = 0);
+    CRef<SProtIdxTableCursor> ProtIdx(TVDBRowId row = 0);
     // return table accessor object for reuse
     void Put(CRef<SSeq0TableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SSeqTableCursor>& curs, TVDBRowId row = 0);
@@ -490,7 +500,8 @@ protected:
     void Put(CRef<SProt0TableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SProtTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SFeatTableCursor>& curs, TVDBRowId row = 0);
-    void Put(CRef<SIdxTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SGiIdxTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SProtIdxTableCursor>& curs, TVDBRowId row = 0);
 
     CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
                                            const SSeq0TableCursor& cur,
@@ -517,6 +528,7 @@ protected:
     void OpenProtTable(void);
     void OpenFeatTable(void);
     void OpenGiIdxTable(void);
+    void OpenProtIdxTable(void);
     void OpenProtAccIndex(void);
     void OpenContigNameIndex(void);
     void OpenScaffoldNameIndex(void);
@@ -549,6 +561,7 @@ private:
     volatile bool m_ProtTableIsOpened;
     volatile bool m_FeatTableIsOpened;
     volatile bool m_GiIdxTableIsOpened;
+    volatile bool m_ProtIdxTableIsOpened;
     volatile Int1 m_ProtAccIndexIsOpened;
     volatile Int1 m_ContigNameIndexIsOpened;
     volatile Int1 m_ScaffoldNameIndexIsOpened;
@@ -558,6 +571,7 @@ private:
     CVDBTable m_ProtTable;
     CVDBTable m_FeatTable;
     CVDBTable m_GiIdxTable;
+    CVDBTable m_ProtIdxTable;
 
     CVDBObjectCache<SSeq0TableCursor> m_Seq0;
     CVDBObjectCache<SSeqTableCursor> m_Seq;
@@ -565,7 +579,8 @@ private:
     CVDBObjectCache<SProt0TableCursor> m_Prot0;
     CVDBObjectCache<SProtTableCursor> m_Prot;
     CVDBObjectCache<SFeatTableCursor> m_Feat;
-    CVDBObjectCache<SIdxTableCursor> m_GiIdx;
+    CVDBObjectCache<SGiIdxTableCursor> m_GiIdx;
+    CVDBObjectCache<SProtIdxTableCursor> m_ProtIdx;
     CVDBTableIndex m_ProtAccIndex;
     CVDBTableIndex m_ContigNameIndex;
     CVDBTableIndex m_ScaffoldNameIndex;
@@ -701,9 +716,10 @@ public:
         return GetNCObject().GetProductNameRowId(name);
     }
 
-    // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
-    TVDBRowId GetProtAccRowId(const string& acc) const {
-        return GetNCObject().GetProtAccRowId(acc);
+    // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc.version
+    // if version == -1 return latest protein version
+    TVDBRowId GetProtAccRowId(const string& acc, int version = -1) const {
+        return GetNCObject().GetProtAccRowId(acc, version);
     }
 
     enum EDescrFilter {
@@ -1305,7 +1321,7 @@ protected:
     
 private:
     CWGSDb m_Db;
-    CRef<CWGSDb_Impl::SIdxTableCursor> m_Cur; // VDB GI index table accessor
+    CRef<CWGSDb_Impl::SGiIdxTableCursor> m_Cur; // VDB GI index table accessor
     TGi m_CurrGi, m_FirstBadGi;
     TVDBRowId m_CurrRowId;
     ESeqType m_CurrSeqType, m_FilterSeqType;
