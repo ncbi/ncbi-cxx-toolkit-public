@@ -5334,6 +5334,7 @@ void CFeatureItem::x_AddFTableQuals(
         x_AddFTablePsecStrQuals(data.GetPsec_str());
         break;
     case CSeqFeatData::e_Non_std_residue:
+        x_AddFTableNonStdQuals(data.GetNon_std_residue());
         break;
     case CSeqFeatData::e_Het:
         x_AddFTablePsecStrQuals(data.GetHet());
@@ -5835,6 +5836,16 @@ void CFeatureItem::x_AddFTablePsecStrQuals(
 {
     if ( !het.Get().empty() ) {
         x_AddFTableQual("heterogen", het.Get());
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddFTableNonStdQuals(
+    const CSeqFeatData::TNon_std_residue& res )
+//  ----------------------------------------------------------------------------
+{
+    if ( !res.empty() ) {
+        x_AddFTableQual("non_std_residue", res);
     }
 }
 
