@@ -279,6 +279,7 @@ protected:
     void x_AddFTableSiteQuals(const CSeqFeatData::TSite& site);
     void x_AddFTablePsecStrQuals(const CSeqFeatData::TPsec_str& psec_str);
     void x_AddFTablePsecStrQuals(const CSeqFeatData::THet& het);
+    void x_AddFTableNonStdQuals(const CSeqFeatData::TNon_std_residue& res);
     void x_AddFTableBiosrcQuals(const CBioSource& src);
     void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref);
     void x_AddFTableExtQuals(const CSeq_feat::TExt& ext);
