@@ -266,6 +266,7 @@ void CTbl2AsnApp::Init(void)
         ("j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)", 
          CArgDescriptions::eString);   // done
     arg_desc->AddOptionalKey("src-file", "InFile", "Single source qualifiers file. The qualifiers in this file override any conflicting qualifiers automically read from a .src file, which, in turn, take precedence over source qualifiers specified in a fasta defline", CArgDescriptions::eInputFile); //done
+    arg_desc->AddFlag("-accum-mods", "Accumulate non-conflicting modifier values from different sources. For example, with this option, a 'note' modifier specified on the command line no longer overwrites a 'note' modifier read from a .src file. Both notes will appear in the output ASN.1. If modifier values conflict, the rules of precedence specified above apply");
     arg_desc->AddOptionalKey
         ("y", "String", "Comment", CArgDescriptions::eString);             // done
     arg_desc->AddOptionalKey
@@ -419,6 +420,7 @@ int CTbl2AsnApp::Run(void)
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
     m_context.m_allow_accession = args["allow-acc"].AsBoolean();
     m_context.m_delay_genprodset = args["J"].AsBoolean();
+    m_context.m_accumulate_mods = args["accum-mods"].AsBoolean();
 
     if (args["c"])
     {
@@ -1288,17 +1290,36 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     string base;
     string ext;
     CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
-
     string name = dir + base;
+    
+    const auto& namedSrcFile = m_context.m_single_source_qual_file;
+    if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
+        if (!m_context.mp_named_src_map) {
+            m_context.mp_named_src_map.reset(new CMemorySrcFileMap(m_logger));
+        }
+        m_context.mp_named_src_map->MapFile(namedSrcFile, m_context.m_allow_accession);
+    }
+
+
+    unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap; 
+    const string defaultSrcFile = name + ".src";
+    if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
+        pDefaultSrcFileMap.reset(new CMemorySrcFileMap(m_logger));
+        pDefaultSrcFileMap->MapFile(defaultSrcFile, m_context.m_allow_accession);
+    }
+
+    auto modMergePolicy = 
+        m_context.m_accumulate_mods ?
+        CModHandler::eAppendPreserve :
+        CModHandler::ePreserve;
 
     g_ApplyMods(
-        m_context.mp_named_src_map,
-        m_context.m_single_source_qual_file,
-        name + ".src",
+        m_context.mp_named_src_map.get(),
+        pDefaultSrcFileMap.get(),
         m_context.mCommandLineMods,
         readModsFromTitle,
-        m_context.m_allow_accession,
         m_context.m_verbose,
+        modMergePolicy,
         m_logger,
         result);
 

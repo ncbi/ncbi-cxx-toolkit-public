@@ -595,6 +595,7 @@ class CApplyMods
 public:
     using TModList = CModHandler::TModList;
     using TMods = CModHandler::TMods;
+    using TMergePolicy = CModHandler::EHandleExisting;
 
     CApplyMods(const TMods& commandLineMods, 
                const string& m_CommandLineRemainder,
@@ -602,11 +603,20 @@ public:
                CMemorySrcFileMap* pDefaultSrcFileMap,
                ILineErrorListener* pMessageListener,
                bool readModsFromTitle,
-               bool isVerbose);
+               bool isVerbose,
+               TMergePolicy mergePolicy=CModHandler::ePreserve);
 
     void operator()(CBioseq& bioseq);
 
 private:
+    void x_GetModsFromFileMap(
+        CMemorySrcFileMap& fileMap,
+        const CBioseq& bioseq,
+        CModHandler::FReportError fReportError,
+        CModHandler& mod_handler,
+        string& remainder);
+
+
     TMods m_CommandLineMods;
     const string m_CommandLineRemainder;
 
@@ -616,6 +626,7 @@ private:
 
     bool m_ReadModsFromTitle = false;
     bool m_IsVerbose=false; // can set this in CMemorySrcFileMap
+    TMergePolicy m_MergePolicy;
 };
 
 
@@ -626,28 +637,29 @@ CApplyMods::CApplyMods(
         CMemorySrcFileMap* pDefaultSrcFileMap,
         ILineErrorListener* pMessageListener,
         bool readModsFromTitle,
-        bool isVerbose) : 
+        bool isVerbose,
+        TMergePolicy mergePolicy) : 
     m_CommandLineMods(commandLineMods), 
     m_CommandLineRemainder(commandLineRemainder),
     m_pNamedSrcFileMap(pNamedSrcFileMap),
     m_pDefaultSrcFileMap(pDefaultSrcFileMap),
     m_pMessageListener(pMessageListener),
     m_ReadModsFromTitle(readModsFromTitle),
-    m_IsVerbose(isVerbose)
+    m_IsVerbose(isVerbose),
+    m_MergePolicy(mergePolicy)
 {}
 
 
 
-static void s_GetModsFromFileMap(
+void CApplyMods::x_GetModsFromFileMap(
         CMemorySrcFileMap& fileMap,
         const CBioseq& bioseq,
-        bool isVerbose,
         CModHandler::FReportError fReportError,
         CModHandler& mod_handler,
         string& remainder)
 {
     CApplyMods::TModList mods;
-    if (!fileMap.GetMods(bioseq, mods, isVerbose)) {
+    if (!fileMap.GetMods(bioseq, mods, m_IsVerbose)) {
         return;
     }
         
@@ -655,7 +667,7 @@ static void s_GetModsFromFileMap(
     CApplyMods::TModList rejectedMods;
 
     mod_handler.AddMods(mods,
-            CModHandler::ePreserve,
+            m_MergePolicy,
             rejectedMods,
             fReportError);
     s_AppendMods(rejectedMods, remainder);
@@ -677,20 +689,18 @@ void CApplyMods::operator()(CBioseq& bioseq)
         };
  
     if (m_pNamedSrcFileMap && m_pNamedSrcFileMap->Mapped()) {
-        s_GetModsFromFileMap(
+        x_GetModsFromFileMap(
                 *m_pNamedSrcFileMap,
                 bioseq,
-                m_IsVerbose,
                 fReportError,
                 mod_handler,
                 remainder);
     }
 
     if (m_pDefaultSrcFileMap && m_pDefaultSrcFileMap->Mapped()) {
-        s_GetModsFromFileMap(
+        x_GetModsFromFileMap(
                 *m_pDefaultSrcFileMap,
                 bioseq,
-                m_IsVerbose,
                 fReportError,
                 mod_handler,
                 remainder);
@@ -718,7 +728,7 @@ void CApplyMods::operator()(CBioseq& bioseq)
                 CTitleParser::Apply(title, mods, titleRemainder);
                 title.clear(); 
                 mod_handler.AddMods(mods, 
-                    CModHandler::ePreserve, 
+                    m_MergePolicy, 
                     rejectedMods, 
                     fReportError);
                 s_AppendMods(rejectedMods, titleRemainder);
@@ -764,13 +774,12 @@ void CApplyMods::operator()(CBioseq& bioseq)
 
 
 void g_ApplyMods(
-    unique_ptr<CMemorySrcFileMap>& pNamedSrcFileMap,
-    const string& namedSrcFile,
-    const string& defaultSrcFile,
+    CMemorySrcFileMap* pNamedSrcFileMap,
+    CMemorySrcFileMap* pDefaultSrcFileMap,
     const string& commandLineStr,
     bool readModsFromTitle,
-    bool allowAcc,
     bool isVerbose,
+    CModHandler::EHandleExisting mergePolicy,
     ILineErrorListener* pEC,
     CSeq_entry& entry)
 {
@@ -801,26 +810,14 @@ void g_ApplyMods(
         commandLineMods = mod_handler.GetMods();
     }
 
-
-    if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
-        if (!pNamedSrcFileMap)
-            pNamedSrcFileMap.reset(new CMemorySrcFileMap(pEC));
-        pNamedSrcFileMap->MapFile(namedSrcFile, allowAcc);
-    }
-
-    unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap; 
-    if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
-        pDefaultSrcFileMap.reset(new CMemorySrcFileMap(pEC));
-        pDefaultSrcFileMap->MapFile(defaultSrcFile, allowAcc);
-    }
-
     CApplyMods applyMods(commandLineMods, 
                          commandLineRemainder,
-                         pNamedSrcFileMap.get(),
-                         pDefaultSrcFileMap.get(),
+                         pNamedSrcFileMap,
+                         pDefaultSrcFileMap,
                          pEC,
                          readModsFromTitle,
-                         isVerbose);
+                         isVerbose,
+                         mergePolicy);
 
     VisitAllBioseqs(entry, applyMods);
 
@@ -828,6 +825,7 @@ void g_ApplyMods(
         pDefaultSrcFileMap->ReportUnusedIds();
     }
 }
+
 
 END_NCBI_SCOPE
 

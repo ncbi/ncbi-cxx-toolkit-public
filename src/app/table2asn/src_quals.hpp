@@ -21,13 +21,12 @@ USING_SCOPE(objects);
 class CMemorySrcFileMap;
 
 void g_ApplyMods(
-    unique_ptr<CMemorySrcFileMap>& namedSrcFileMap,
-    const string& namedSrcFile,
-    const string& defaultSrcFile,
+    CMemorySrcFileMap* pNameSrcFileMap,
+    CMemorySrcFileMap* pDefaultSrcFileMap,
     const string& commandLineStr,
     bool readModsFromTitle,
-    bool allowAcc,
     bool isVerbose,
+    CModHandler::EHandleExisting mergePolicy,
     ILineErrorListener* pEC,
     CSeq_entry& entry);
 
