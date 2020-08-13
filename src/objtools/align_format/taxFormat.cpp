@@ -865,7 +865,7 @@ void CTaxFormat::x_InitTaxInfoMap(void)
 {
     int score, sum_n, num_ident;
     double bits, evalue;
-    list<string> use_this_seqid;
+    
     
     m_BlastResTaxInfo = new SBlastResTaxInfo;
     CConstRef<CSeq_id> previousId,subid;    
@@ -874,7 +874,8 @@ void CTaxFormat::x_InitTaxInfoMap(void)
         subid = &((*iter)->GetSeq_id(1));
 
         if(!previousId.Empty() && subid->Match(*previousId)) continue;        
-
+        
+        list<string> use_this_seqid;
         CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue,
                                        sum_n, num_ident, use_this_seqid);        
         try {
