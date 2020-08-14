@@ -781,20 +781,24 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
             align_range.SetTo(align_range.GetTo() + genomic_size);
         }
 
-        TSeqPos outside_point = (min(range.GetFrom(), align_range.GetFrom())+max(range.GetTo(), align_range.GetTo())-genomic_size)/2;
+        TSeqPos outside_point = min(range.GetFrom(), align_range.GetFrom());
         NON_CONST_ITERATE(CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
             CSpliced_exon& exon = **exon_it;
-            if (exon.GetGenomic_start() < outside_point)
+            if (exon.GetGenomic_start() < outside_point) {
                 exon.SetGenomic_start() += genomic_size;
-            if (exon.GetGenomic_end() < outside_point)
                 exon.SetGenomic_end() += genomic_size;
+            }
         }
     }
 
-    _ASSERT(range.GetFrom() <= range.GetTo());
-    _ASSERT(align_range.GetFrom() <= align_range.GetTo());
-    _ASSERT(!(range.GetTo() < align_range.GetFrom()));
-    _ASSERT(!(align_range.GetTo() < range.GetFrom()));
+    if (!(range.GetFrom() <= range.GetTo()) ||
+        !(align_range.GetFrom() <= align_range.GetTo())) {
+        NCBI_USER_THROW("no inverted range assertion failed");
+    }
+    if (range.GetTo() < align_range.GetFrom() ||
+        align_range.GetTo() < range.GetFrom()) {
+        NCBI_USER_THROW("alignmentrange and requested range don't overlap");
+    }
 
     vector<SExon> exons;
     GetExonStructure(spliced_seg, exons, m_scope);
