@@ -2255,7 +2255,7 @@ TVDBRowId CWGSDb_Impl::GetProductNameRowId(const string& name)
 }
 
 
-TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc, int version)
+TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc, int ask_version)
 {
     TVDBRowId prot_row_id = 0;
     if ( CRef<SProtIdxTableCursor> idx = ProtIdx() ) {
@@ -2277,13 +2277,24 @@ TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc, int version)
         if ( range.first && range.first <= range.second ) {
             CVDBValueFor<TVDBRowId> prot_rows = idx->ROW_ID(range.first);
             if ( !prot_rows.empty() ) {
-                if ( version > 0 ) {
+                if ( ask_version > 0 ) {
                     // check if version exists
-                    if ( unsigned(version) <= prot_rows.size() ) {
-                        prot_row_id = prot_rows[version-1];
+                    size_t version_index = size_t(prot_rows.size() == 1? 0: ask_version-1);
+                    if ( version_index < prot_rows.size() ) {
+                        // check if version mathces
+                        prot_row_id = prot_rows[version_index];
+                        if ( prot_row_id ) {
+                            CRef<SProt0TableCursor> prot = Prot0(prot_row_id);
+                            int actual_version = *prot->ACC_VERSION(prot_row_id);
+                            Put(prot, prot_row_id);
+                            if ( actual_version != ask_version ) {
+                                // version mismatch
+                                prot_row_id = 0;
+                            }
+                        }
                     }
                 }
-                else if ( version == -1 ) {
+                else if ( ask_version == -1 ) {
                     // last version
                     prot_row_id = prot_rows[prot_rows.size()-1];
                 }

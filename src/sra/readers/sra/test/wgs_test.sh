@@ -28,6 +28,13 @@ echo "Testing PROTEIN table in $PFILE"
 do_test -file "$PFILE" -limit_count 1 -check_empty_lookup -contig_name CTG92x -protein_name XFASADRAFT_1728x -protein_acc EAO13866x
 do_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name ctg92 -protein_name xFASADRAFT_1728 -protein_acc eao13869
 
+PFILE="BACI01"
+echo "Testing PROTEIN table in $PFILE"
+do_test -file "$PFILE" -limit_count 1 -check_empty_lookup -contig_name contig222 -protein_name H0262_000450 -protein_acc GAA10774.3
+do_test -file "$PFILE" -limit_count 1 -check_empty_lookup -contig_name contig333 -protein_name gaa107777 -protein_acc gaa10774.1
+do_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name conTig3 -protein_name gaA10776 -protein_acc gAA10774.2
+do_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name Contig4 -protein_name Gaa10775 -protein_acc Gaa10774
+
 PFILE="JACDXZ01"
 echo "Testing PROTEIN table in $PFILE"
 do_test -file "$PFILE" -limit_count 1 -check_empty_lookup -contig_name 111D_2_scaffold333 -protein_name H0262_000450 -protein_acc MBA2057862.3
