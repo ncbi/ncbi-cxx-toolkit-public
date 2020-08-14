@@ -2092,6 +2092,131 @@ BOOST_AUTO_TEST_CASE(FetchProt22b)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchProt22c)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "MBA2057862.3";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt23)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "GAA10774.1";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt23a)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "GAA10774";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+
+
+    {
+        CFeat_CI feat_it(bsh);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Prot);
+    }
+    {
+        CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
+        const CSeq_id* contig_id = feat_it->GetLocation().GetId();
+        BOOST_REQUIRE(contig_id);
+        BOOST_CHECK_EQUAL(contig_id->AsFastaString(), "gi|343765796");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt23b)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "GAA10774.2";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+
+
+    {
+        CFeat_CI feat_it(bsh);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Prot);
+    }
+    {
+        CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
+        const CSeq_id* contig_id = feat_it->GetLocation().GetId();
+        BOOST_REQUIRE(contig_id);
+        BOOST_CHECK_EQUAL(contig_id->AsFastaString(), "gi|343765796");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt23c)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "GAA10774.3";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
 static const bool s_MakeFasta = 0;
 
 
