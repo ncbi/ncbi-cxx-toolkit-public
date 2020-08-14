@@ -8535,11 +8535,10 @@ fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(librdkafka, LIBRDKAFKA, rdkafka,
   [AC_LANG_PROGRAM([[@%:@include <librdkafka/rdkafka.h>]],
-      [[rd_kafka_conf_t *conf = rd_kafka_conf_new();]])],
-  [-lrdkafka], [], [$LIBRDKAFKA_INCLUDE])
+      [[rd_kafka_conf_t *conf = rd_kafka_conf_new();]])])
 if test "$with_librdkafka" != no -a \
-     -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/liblibrdkafka-static.a"; then
-   LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -llibrdkafka-static"
+     -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/librdkafka-static.a"; then
+   LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -lrdkafka-static"
 else
    LIBRDKAFKA_STATIC_LIBS=$LIBRDKAFKA_LIBS
 fi
@@ -8565,7 +8564,7 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
   [AC_LANG_PROGRAM([[@%:@include <cppkafka/configuration.h>]],
       [[cppkafka::Configuration cfg; cfg.set("foo", "bar");]])],
-  [$LIBRDKAFKA_LIBS])
+  [$LIBRDKAFKA_LIBS], [], [$LIBRDKAFKA_INCLUDE])
 if test "$with_cppkafka" != no -a \
      -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
    CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static $LIBRDKAFKA_STATIC_LIBS"
@@ -9334,6 +9333,7 @@ AC_SUBST(MSGSL_INCLUDE)
 AC_SUBST(AWS_SDK_STATIC_LIBS)
 AC_SUBST(HIREDIS_STATIC_LIBS)
 AC_SUBST(APACHE_ARROW_STATIC_LIBS)
+AC_SUBST(LIBRDKAFKA_STATIC_LIBS)
 AC_SUBST(CPPKAFKA_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)

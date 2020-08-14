@@ -667,6 +667,7 @@ UNLESS_PUBSEQOS
 ncbi_xreader_pubseqos2
 ncbi_xreader_pubseqos
 CPPKAFKA_STATIC_LIBS
+LIBRDKAFKA_STATIC_LIBS
 APACHE_ARROW_STATIC_LIBS
 HIREDIS_STATIC_LIBS
 AWS_SDK_STATIC_LIBS
@@ -33492,10 +33493,10 @@ if test "$with_librdkafka" != "no"; then
     LIBRDKAFKA_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       LIBRDKAFKA_LIBS="$LIBRDKAFKA_LIBPATH -lrdkafka -lrdkafka"
+       LIBRDKAFKA_LIBS="$LIBRDKAFKA_LIBPATH -lrdkafka "
     else
        LIBRDKAFKA_INCLUDE=""
-       LIBRDKAFKA_LIBS="-lrdkafka -lrdkafka"
+       LIBRDKAFKA_LIBS="-lrdkafka "
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for librdkafka$in_path" >&5
@@ -33503,7 +33504,7 @@ $as_echo_n "checking for librdkafka$in_path... " >&6; }
 if ${ncbi_cv_lib_librdkafka+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  CPPFLAGS="$LIBRDKAFKA_INCLUDE $LIBRDKAFKA_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $LIBRDKAFKA_INCLUDE $orig_CPPFLAGS"
        LIBS="$LIBRDKAFKA_LIBS  $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -33538,7 +33539,7 @@ $as_echo "$ncbi_cv_lib_librdkafka" >&6; }
     LIBRDKAFKA_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}LIBRDKAFKA"; WithPackagesSep=" "
-    LIBRDKAFKA_INCLUDE="$LIBRDKAFKA_INCLUDE $LIBRDKAFKA_INCLUDE"
+    LIBRDKAFKA_INCLUDE=" $LIBRDKAFKA_INCLUDE"
 
 $as_echo "#define HAVE_LIBRDKAFKA 1" >>confdefs.h
 
@@ -33547,8 +33548,8 @@ $as_echo "#define HAVE_LIBRDKAFKA 1" >>confdefs.h
 
 
 if test "$with_librdkafka" != no -a \
-     -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/liblibrdkafka-static.a"; then
-   LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -llibrdkafka-static"
+     -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/librdkafka-static.a"; then
+   LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -lrdkafka-static"
 else
    LIBRDKAFKA_STATIC_LIBS=$LIBRDKAFKA_LIBS
 fi
@@ -33683,7 +33684,7 @@ $as_echo_n "checking for libcppkafka$in_path... " >&6; }
 if ${ncbi_cv_lib_cppkafka+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  CPPFLAGS=" $CPPKAFKA_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE $orig_CPPFLAGS"
        LIBS="$CPPKAFKA_LIBS  $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -33718,7 +33719,7 @@ $as_echo "$ncbi_cv_lib_cppkafka" >&6; }
     CPPKAFKA_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}CPPKAFKA"; WithPackagesSep=" "
-    CPPKAFKA_INCLUDE=" $CPPKAFKA_INCLUDE"
+    CPPKAFKA_INCLUDE="$LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE"
 
 $as_echo "#define HAVE_LIBCPPKAFKA 1" >>confdefs.h
 
@@ -34252,6 +34253,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
