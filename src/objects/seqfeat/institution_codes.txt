@@ -1391,6 +1391,7 @@ CSAEG	c	Culture Collection of Phytopathogenic Fungi  at the Colegio Superior Agr
 CSAT	s	Colegio de Postgraduados, Campus Tabasco			
 CSAU	s	National Agrarian University, Southern Branch "Crimean Agrotechnological University", Department of Botany, Plant Physiology and Genetics			
 CSB	s	St. John's University/College of Saint Benedict, Biology Department			
+CSBD	s	Centre for Study of Biological Diversity			
 CSC	s	Colegio del Sagrado Corazon			
 CSC-CLCH	c	Centro Substrati Cellulari, Cell Lines Collection and Hybridomas			
 CSCA	s	California State Collection of Arthropods			
@@ -4589,6 +4590,7 @@ MTUF	s	University Museum, Tokyo University of Fisheries
 MU<TUR>	c	Mugla Sitki Kocman University			
 MU<USA-OH>	s	Miami University, Botany Department, Willard Sherman Turrell Herbarium		http://herbarium.muohio.edu/herbariummu/	
 MU<USA-TX>	s	Midwestern University			
+MUA-AVP	s	Museo Universitario de la Universidad de Antioquia			
 MUACC	c	Murdoch University Algal Culture Collection			
 MUAF	c	Culture collection of Mendel University of Agriculture and Forestry in Brno			
 MUAP	s	Museo del Mar Universidad Arturo Prat			
@@ -4974,6 +4976,7 @@ NLSN	s	Notre Dame University, Biological Sciences Department
 NLU	s	University of Louisiana at Monroe, Museum of Natural History			
 NLUH	s	University of the Philippines College Baguio			
 NM	s	Northern Michigan University, Biology Department			
+NMA	s	National Museum Australia -			
 NMAC	s	Inner Mongolia Agricultural University, Department of Pratacultural Science			
 NMAG	s	Naturhistorisches Museum, Augsburg			
 NMB	c	Ningbo Marine Biotechnology			
@@ -7723,6 +7726,7 @@ WFIS	s	Wagner Free Institute of Science
 WFPL	c	Western Forest Products Laboratory			
 WFU	s	Wake Forest University, Biology Department			
 WFUVC	s	Wake Forest University, Vertebrate Collection			
+WFVZ	s	Western Foundation of Vertebrate Zoology			
 WGC	s	State University of West Georgia, Biology Department			
 WGCH	s	Wilton Garden Club			
 WGD	s	Washington Game Department			
