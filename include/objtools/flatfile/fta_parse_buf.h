@@ -37,8 +37,6 @@
 #define FTA_PARSE_BUF_H
 
 #include <list>
-
-#include <ctools/ctransition/ncbistd.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 // some forward declarations
@@ -47,7 +45,7 @@ typedef struct parser_vals Parser;
 
 typedef std::list<ncbi::CRef<ncbi::objects::CSeq_entry> > TEntryList;
 
-TEntryList& fta_parse_buf PROTO((Parser& pp, const char* buf));
-bool fta_set_format_source PROTO((Parser& pp, const std::string& format, const std::string& source));
+TEntryList& fta_parse_buf(Parser& pp, const char* buf);
+bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source);
 
 #endif // FTA_PARSE_BUF_H

@@ -68,7 +68,10 @@ inline bool StringHasNoText(const char* s) {
     return true;
 }
 
+inline bool StringDoesHaveText(const char* s) { return !StringHasNoText(s); }
 inline char* SkipSpaces(char* s) { while (*s && std::isspace(*s)) s++; return s; }
+
+char* TrimSpacesAroundString(char* str);
 
 #define IS_DIGIT(c)	('0'<=(c) && (c)<='9')
 #define IS_UPPER(c)	('A'<=(c) && (c)<='Z')
@@ -79,5 +82,18 @@ inline char* SkipSpaces(char* s) { while (*s && std::isspace(*s)) s++; return s;
 #define IS_WHITESP(c) (((c) == ' ') || ((c) == '\n') || ((c) == '\r') || ((c) == '\t'))
 #define IS_ALPHANUM(c) (IS_ALPHA(c) || IS_DIGIT(c))
 #define IS_PRINT(c)	(' '<=(c) && (c)<='~')
+
+#define UINT4_MAX 4294967295U
+#define INT4_MAX  2147483647
+#define INT2_MAX  32767
+#define INT2_MIN  (-32768)
+
+#ifndef MIN
+#define MIN(a,b)	((a)>(b)?(b):(a))
+#endif
+
+#ifndef MAX
+#define MAX(a,b)	((a)>=(b)?(a):(b))
+#endif
 
 #endif // FTACPP_HPP

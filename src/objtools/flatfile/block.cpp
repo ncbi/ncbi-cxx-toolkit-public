@@ -48,12 +48,12 @@
 #define THIS_FILE "block.cpp"
 
 typedef struct _qs_struct {
-    CharPtr                accession;
+    char*                accession;
     Int2                   version;
     size_t                 offset;
     size_t                 length;
-    struct _qs_struct PNTR next;
-} QSStruct, PNTR QSStructPtr;
+    struct _qs_struct* next;
+} QSStruct, *QSStructPtr;
 
 /**********************************************************
  *
@@ -237,13 +237,13 @@ static bool QSNoSequenceRecordErr(bool accver, QSStructPtr qssp)
 /**********************************************************/
 bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 {
-    IndexblkPtr PNTR ibpp;
-    QSStructPtr PNTR qsspp;
+    IndexblkPtr* ibpp;
+    QSStructPtr* qsspp;
     QSStructPtr      qssp;
     QSStructPtr      tqssp;
     QSStructPtr      tqsspprev;
-    CharPtr          p;
-    CharPtr          q;
+    char*          p;
+    char*          q;
     bool             ret;
     size_t           i;
     Int4             count;
@@ -302,7 +302,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         return false;
     }
 
-    qsspp = (QSStructPtr PNTR) MemNew(count * sizeof(QSStructPtr));
+    qsspp = (QSStructPtr*) MemNew(count * sizeof(QSStructPtr));
     tqssp = qssp;
     for(j = 0; j < count && tqssp != NULL; j++, tqssp = tqssp->next)
         qsspp[j] = tqssp;
@@ -335,7 +335,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         count++;
     }
 
-    ibpp = (IndexblkPtr PNTR) MemNew(pp->indx * sizeof(IndexblkPtr));
+    ibpp = (IndexblkPtr*) MemNew(pp->indx * sizeof(IndexblkPtr));
     for(j = 0; j < pp->indx && ibnp != NULL; j++, ibnp = ibnp->next)
         ibpp[j] = ibnp->ibp;
 

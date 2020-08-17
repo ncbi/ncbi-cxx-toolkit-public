@@ -99,7 +99,7 @@
  *  Returns:     TRUE upon success, otherwise FALSE
  *
  ***********************************************************/
-static bool QSbuf_ReadLine(CharPtr qs_buf, CharPtr dest_buf, Int2 max_len, Int4Ptr line)
+static bool QSbuf_ReadLine(char* qs_buf, char* dest_buf, Int2 max_len, int* line)
 {
     Int4 i;
 
@@ -174,9 +174,9 @@ static bool QSbuf_ReadLine(CharPtr qs_buf, CharPtr dest_buf, Int2 max_len, Int4P
  *                           enough to hold a typical title length
  *               def_len:    Int4Ptr for the sequence length parsed
  *                           from the defline
- *               def_max:    Uint1Ptr for the max score parsed from
+ *               def_max:    unsigned char* for the max score parsed from
  *                           the defline
- *               def_min:    Uint1Ptr for the min score parsed from
+ *               def_min:    unsigned char* for the min score parsed from
  *                           the defline
  *
  *  Note:        Parsing of the length, max, and min values
@@ -189,14 +189,14 @@ static bool QSbuf_ReadLine(CharPtr qs_buf, CharPtr dest_buf, Int2 max_len, Int4P
  *               <0 : defline cannot be parsed due to data error
  *
  ***********************************************************/
-static int QSbuf_ParseDefline(CharPtr qs_defline, CharPtr def_acc,
-                              CharPtr def_ver, CharPtr def_title,
-                              Uint4Ptr def_len, Uint1Ptr def_max,
-                              Uint1Ptr def_min)
+static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
+                              char* def_ver, char* def_title,
+                              unsigned int* def_len, unsigned char* def_max,
+                              unsigned char* def_min)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr r;
+    char* p;
+    char* q;
+    char* r;
     Int4    temp;                       /* used for checking the defline min
                                            and max scores;
                                            could exceed bounds of a Uint1
@@ -485,12 +485,12 @@ static int QSbuf_ParseDefline(CharPtr qs_defline, CharPtr def_acc,
 *		problem parsing the data in score_buf
 *
 *****************************************************************************/
-static Int4 QSbuf_ParseScores(CharPtr score_buf, Uint1Ptr scores,
-			      Int4 max_toks, Uint1Ptr max_score,
-			      Uint1Ptr min_score, bool allow_na)
+static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores,
+			      Int4 max_toks, unsigned char* max_score,
+			      unsigned char* min_score, bool allow_na)
 {
   Char ch;
-  CharPtr p, q;
+  char *p, *q;
   int val;
   Int4 num_toks = 0;
 
@@ -842,7 +842,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
  *
  *  Function:    QSbuf_To_Single_Qscore_SeqGraph
  *
- *  Description: Read a CharPtr buffer that contains basepair
+ *  Description: Read a char* buffer that contains basepair
  *               Quality Score data and convert it to an ASN.1
  *               Seq-Graph object. The buffer is assumed to
  *               start with a FASTA-like identifier, and be
@@ -904,21 +904,21 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
  *  Returns:     pointer to SeqGraph upon success, otherwise NULL
  *
  ***********************************************************/
-static void QSbuf_To_Single_Qscore_SeqGraph(CharPtr qs_buf,
+static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
                                             ncbi::objects::CBioseq& bioseq,
-                                            CharPtr def_acc,
-                                            CharPtr def_ver,
+                                            char* def_acc,
+                                            char* def_ver,
 						                    bool check_minmax,
 						                    bool allow_na,
                                             ncbi::objects::CSeq_annot::C_Data::TGraph& graphs)
 {
     Int4         qs_line = 0;           /* current line number within qs_buf */
-    CharPtr      my_buf = NULL;         /* copy of a line of data from
+    char*      my_buf = NULL;         /* copy of a line of data from
                                            qs_buf */
     int          def_stat;              /* return status from parsing of the
                                            'defline' in the quality score
                                            buffer */
-    CharPtr      def_title;             /* title parsed from the quality
+    char*      def_title;             /* title parsed from the quality
                                            score defline */
     Uint4        def_len;               /* sequence length parsed from the
                                            quality score defline */
@@ -967,7 +967,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(CharPtr qs_buf,
 
     /* allocate a buffer for reading qs_buf, one line at a time
      */
-    my_buf = (CharPtr) MemNew(QSBUF_MAXLINE);
+    my_buf = (char*) MemNew(QSBUF_MAXLINE);
     if(my_buf == NULL)
     {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc,
@@ -977,7 +977,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(CharPtr qs_buf,
 
     /* allocate a buffer for the 'title' read from the defline in qs_buf
      */
-    def_title = (CharPtr) MemNew(QSBUF_MAXTITLE);
+    def_title = (char*) MemNew(QSBUF_MAXTITLE);
     if(def_title == NULL)
     {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc,
@@ -1197,7 +1197,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(CharPtr qs_buf,
 
 /**********************************************************/
 // TODO: functionality in this file was never tested
-bool QscoreToSeqAnnot(CharPtr qscore, ncbi::objects::CBioseq& bioseq, CharPtr acc,
+bool QscoreToSeqAnnot(char* qscore, ncbi::objects::CBioseq& bioseq, char* acc,
                       Int2 ver, bool check_minmax, bool allow_na)
 {
     Char        charver[100];

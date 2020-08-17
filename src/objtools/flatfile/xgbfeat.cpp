@@ -8,19 +8,15 @@
 
 #include <ncbi_pch.hpp>
 
-#include <ctools/ctransition/ncbimem.hpp>
-#include <ctools/ctransition/ncbistr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
-#include <objtools/flatfile/ftaerr.hpp>
+#include <objtools/flatfile/ftacpp.hpp>
 #include <objtools/flatfile/xgbfeat.h>
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "xgbfeat.cpp"
-
-USING_SCOPE(ctransition);
 
 // This is the forward declaration for ValidAminoAcid(...). The main declaration located in
 // ../src/objtools/cleanup/cleanup_utils.hpp
@@ -76,7 +72,7 @@ static int CkQualPosaa(ncbi::objects::CGb_qual& cur, bool error_msgs);
 static int CkQualNote(ncbi::objects::CGb_qual& cur,
                bool error_msgs, bool perform_corrections);
 static int CkQualText(ncbi::objects::CGb_qual& cur,
-               bool PNTR has_embedded, bool from_note, bool error_msgs,
+               bool* has_embedded, bool from_note, bool error_msgs,
                bool perform_corrections);
 static int CkQualTokenType(ncbi::objects::CGb_qual& cur,
                     bool error_msgs, Uint1 type);
@@ -105,7 +101,7 @@ const Char* GBQual_names_split_ignore[ParFlat_SPLIT_IGNORE] = {
 *     qualifier (ignore case), qual; otherwise return (-1) 
 *                                                                   10-12-93
 *****************************************************************************/
-static Int2 GBQualSplit(const Char PNTR qual)
+static Int2 GBQualSplit(const Char* qual)
 {
    Int2  i;
 
@@ -656,9 +652,9 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
 *                                          -Karl 1/28/94
 ****************************************************************************/
 
-static int CkQualPosSeqaa(ncbi::objects::CGb_qual& cur, bool error_msgs, std::string& aa, const Char PNTR eptr)
+static int CkQualPosSeqaa(ncbi::objects::CGb_qual& cur, bool error_msgs, std::string& aa, const Char* eptr)
 {
-    const Char PNTR str;
+    const Char* str;
     int retval = GB_FEAT_ERR_NONE;
 
     ncbi::NStr::TruncateSpacesInPlace(aa, ncbi::NStr::eTrunc_End);
@@ -717,7 +713,7 @@ static int CkQualPosaa(ncbi::objects::CGb_qual& cur, bool error_msgs)
     const Char*  eptr;
     int retval = GB_FEAT_ERR_NONE;
 
-    const Char PNTR str = cur.GetVal().c_str();
+    const Char* str = cur.GetVal().c_str();
 
     if (StringNICmp(str, "(pos:", 5) == 0) {
         str += 5;
@@ -861,11 +857,11 @@ static bool ScanEmbedQual(const Char* value)
 *  all others no error, all other, if no qualifier, will add "" value                                                        
 ****************************************************************************/
 static int CkQualText(ncbi::objects::CGb_qual& cur,
-   bool PNTR has_embedded, bool from_note, bool error_msgs,
+   bool* has_embedded, bool from_note, bool error_msgs,
    bool perform_corrections)
 {
-    const Char PNTR bptr;
-    const Char PNTR eptr;
+    const Char* bptr;
+    const Char* eptr;
 
     int retval = GB_FEAT_ERR_NONE;
 
@@ -891,7 +887,7 @@ static int CkQualText(ncbi::objects::CGb_qual& cur,
         }
     }
 
-    const Char PNTR str = cur.GetVal().c_str();
+    const Char* str = cur.GetVal().c_str();
     while (*str != '\0' && (*str == ' ' || *str == '\"')){
         /* open double quote */
         str++;
@@ -969,8 +965,8 @@ static int CkQualSeqaa(ncbi::objects::CGb_qual& cur, bool error_msgs)
 {
     int retval = GB_FEAT_ERR_NONE;
 
-    const Char PNTR str = cur.GetVal().c_str();
-    const Char PNTR eptr = NULL;
+    const Char* str = cur.GetVal().c_str();
+    const Char* eptr = NULL;
 
     if (StringNICmp(str, "(seq:", 5) == 0) {
         str += 5;
@@ -1034,9 +1030,9 @@ static int CkQualSeqaa(ncbi::objects::CGb_qual& cur, bool error_msgs)
 *****************************************************************************/
 static int CkQualMatchToken(ncbi::objects::CGb_qual& cur, bool error_msgs, const Char* array_string[], Int2 totalstr)
 {
-   const Char PNTR bptr;
-   const Char PNTR eptr;
-   const Char PNTR str;
+   const Char* bptr;
+   const Char* eptr;
+   const Char* str;
 
    int retval = GB_FEAT_ERR_NONE;
 
@@ -1101,7 +1097,7 @@ static int CkQualMatchToken(ncbi::objects::CGb_qual& cur, bool error_msgs, const
 ****************************************************************************/
 static int CkQualEcnum(ncbi::objects::CGb_qual& cur, bool error_msgs, bool perform_corrections)
 {
-   const Char PNTR str;
+   const Char* str;
    int retval = GB_FEAT_ERR_NONE;
 		
 
@@ -1139,8 +1135,8 @@ static int CkQualEcnum(ncbi::objects::CGb_qual& cur, bool error_msgs, bool perfo
 static int CkQualSite(ncbi::objects::CGb_qual& cur, bool error_msgs)
 {
    int retval = GB_FEAT_ERR_NONE;
-   const Char PNTR bptr;
-   const Char PNTR str;
+   const Char* bptr;
+   const Char* str;
 
    bool ok = false;
    const Char* yes_or_no = "not \'YES\', \'NO\' or \'ABSENT\'";
@@ -1233,9 +1229,9 @@ static int CkQualSite(ncbi::objects::CGb_qual& cur, bool error_msgs)
 ***************************************************************************/
 static int CkQualTokenType(ncbi::objects::CGb_qual& cur, bool error_msgs, Uint1 type)
 {
-    const Char PNTR bptr;
-    const Char PNTR eptr;
-    const Char PNTR str;
+    const Char* bptr;
+    const Char* eptr;
+    const Char* str;
 
     bool token_there = false;
     int retval = GB_FEAT_ERR_NONE;

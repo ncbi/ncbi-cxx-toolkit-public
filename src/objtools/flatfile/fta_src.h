@@ -36,8 +36,8 @@
 #ifndef FTA_SRC_H
 #define FTA_SRC_H
 
-void ParseSourceFeat PROTO ((ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
-                                Int2 type, ncbi::objects::CBioseq& bioseq, TSeqFeatList& seq_feats));
-bool fta_if_special_org PROTO((const Char* name));
+void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
+                                Int2 type, ncbi::objects::CBioseq& bioseq, TSeqFeatList& seq_feats);
+bool fta_if_special_org(const char* name);
 
 #endif // FTA_SRC_H

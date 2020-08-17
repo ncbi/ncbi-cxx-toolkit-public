@@ -36,8 +36,6 @@
 #ifndef VALNODE_H
 #define VALNODE_H
 
-#include <ctools/ctransition/ncbistd.hpp>
-
 /*****************************************************************************
 *
 *   DataVal = a universal data type
@@ -46,44 +44,44 @@
 *****************************************************************************/
 
 typedef union dataval {
-    Nlm_VoidPtr ptrvalue;
-    Nlm_Int4 intvalue;
-    Nlm_FloatHi realvalue;
+    void* ptrvalue;
+    int intvalue;
+    double realvalue;
     bool        boolvalue;
-    Nlm_FnPtr	funcvalue;
-    Nlm_Int8    bigintvalue;
-}	DataVal, PNTR DataValPtr;
+    int	(*funcvalue)();
+    Int8    bigintvalue;
+}	DataVal, *DataValPtr;
 
 typedef struct valnode {
-    Nlm_Uint1 choice;          /* to pick a choice */
-    Nlm_Uint1 extended;        /* extra fields reserved to NCBI allocated in structure */
+    unsigned char choice;          /* to pick a choice */
+    unsigned char extended;        /* extra fields reserved to NCBI allocated in structure */
     DataVal data;              /* attached data */
     bool    fatal;
-    struct valnode PNTR next;  /* next in linked list */
-} ValNode, PNTR ValNodePtr;
+    struct valnode *next;  /* next in linked list */
+} ValNode, *ValNodePtr;
 
 typedef union _IntPnt_ {
-    Int4 intvalue;
-    Pointer ptrvalue;
+    int intvalue;
+    void* ptrvalue;
 } IntPnt;
 
 typedef struct _Choice_ {
-    Uint1 choice;
+    unsigned char choice;
     IntPnt value;
-} Choice, PNTR ChoicePtr;
+} Choice, *ChoicePtr;
 
 /* convenience structure for holding head and tail of ValNode list for efficient tail insertion */
 typedef struct valnodeblock {
     ValNodePtr  head;
     ValNodePtr  tail;
-} ValNodeBlock, PNTR ValNodeBlockPtr;
+} ValNodeBlock, *ValNodeBlockPtr;
 
 ValNodePtr ValNodeNew(ValNodePtr vnp);
 ValNodePtr ValNodeFree(ValNodePtr vnp);
 ValNodePtr ValNodeFreeData(ValNodePtr vnp);
-ValNodePtr ValNodeLink(ValNodePtr PNTR head, ValNodePtr newnode);
+ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode);
 
-ValNodePtr ValNodeCopyStrEx(ValNodePtr PNTR head, ValNodePtr PNTR tail, Nlm_Int2 choice, const char* str);
-Nlm_CharPtr ValNodeMergeStrsEx(ValNodePtr list, Nlm_CharPtr separator);
+ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str);
+char* ValNodeMergeStrsEx(ValNodePtr list, char* separator);
 
 #endif

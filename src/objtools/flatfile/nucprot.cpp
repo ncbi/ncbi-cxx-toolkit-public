@@ -148,7 +148,7 @@ static bool FindTheQual(const ncbi::objects::CSeq_feat& feat, const Char *qual_t
 
 /**********************************************************
 *
-*   static CharPtr CpTheQualValueNext(qlist, retq, qual):
+*   static char* CpTheQualValueNext(qlist, retq, qual):
 *
 *      Return qual's value if found the "qual" in the
 *   "qlist", and retq points to next available searching
@@ -156,7 +156,7 @@ static bool FindTheQual(const ncbi::objects::CSeq_feat& feat, const Char *qual_t
 *   to NULL.
 *
 **********************************************************/
-static CharPtr CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVector::iterator& end_qual,
+static char* CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVector::iterator& end_qual,
                                   const char *qual)
 {
     std::string qvalue;
@@ -171,7 +171,7 @@ static CharPtr CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVe
         break;
     }
 
-    CharPtr ret = NULL;
+    char* ret = NULL;
     if (!qvalue.empty())
         ret = StringSave(qvalue.c_str());
 
@@ -324,7 +324,7 @@ static bool check_short_CDS(ParserPtr pp, const ncbi::objects::CSeq_feat& feat, 
         return true;
 
     if (err_msg) {
-        CharPtr p = location_to_string(feat.GetLocation());
+        char* p = location_to_string(feat.GetLocation());
         ErrPostEx(SEV_WARNING, ERR_CDREGION_ShortProtein,
                   "Short CDS (< 6 aa) located in the middle of the sequence: %s",
                   (p == NULL) ? "" : p);
@@ -334,14 +334,14 @@ static bool check_short_CDS(ParserPtr pp, const ncbi::objects::CSeq_feat& feat, 
 }
 
 /**********************************************************/
-static void GetProtRefSeqId(ncbi::objects::CBioseq::TId& ids, InfoBioseqPtr ibp, Int4 PNTR num,
+static void GetProtRefSeqId(ncbi::objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* num,
                             ParserPtr pp, ncbi::objects::CSeq_feat& feat)
 {
     const char   *r;
 
-    CharPtr      protacc;
-    CharPtr      p;
-    CharPtr      q;
+    char*      protacc;
+    char*      p;
+    char*      q;
     ErrSev       sev;
     Uint1        cho;
     Uint1        ncho;
@@ -509,10 +509,10 @@ static void GetProtRefSeqId(ncbi::objects::CBioseq::TId& ids, InfoBioseqPtr ibp,
 }
 
 /**********************************************************/
-static CharPtr stripStr(CharPtr base, CharPtr str)
+static char* stripStr(char* base, char* str)
 {
-    CharPtr bptr;
-    CharPtr eptr;
+    char* bptr;
+    char* eptr;
 
     if (base == NULL || str == NULL)
         return(NULL);
@@ -538,8 +538,8 @@ static void StripCDSComment(ncbi::objects::CSeq_feat& feat)
         NULL
     };
     const char        **b;
-    CharPtr           pchComment;
-    CharPtr           comment;
+    char*           pchComment;
+    char*           comment;
 
     if (!feat.IsSetComment())
         return;
@@ -554,7 +554,7 @@ static void StripCDSComment(ncbi::objects::CSeq_feat& feat)
     MemFree(comment);
 
     for (b = strA; *b != NULL; b++) {
-        pchComment = stripStr(pchComment, (CharPtr)*b);
+        pchComment = stripStr(pchComment, (char*)*b);
     }
     comment = tata_save(pchComment);
     if (comment != NULL && *comment != '\0')
@@ -586,8 +586,8 @@ static void StripCDSComment(ncbi::objects::CSeq_feat& feat)
 static void GetProtRefAnnot(InfoBioseqPtr ibp, ncbi::objects::CSeq_feat& feat,
                             ncbi::objects::CBioseq& bioseq)
 {
-    CharPtr     qval;
-    CharPtr     prid;
+    char*     qval;
+    char*     prid;
     bool     partial5;
     bool     partial3;
 
@@ -686,8 +686,8 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, ncbi::objects::CSeq_feat& feat,
 /**********************************************************/
 static void GetProtRefDescr(ncbi::objects::CSeq_feat& feat, Uint1 method, const ncbi::objects::CBioseq& bioseq, TSeqdescList& descrs)
 {
-    CharPtr      p;
-    CharPtr      q;
+    char*      p;
+    char*      q;
     bool      partial5;
     bool      partial3;
     Int4         diff_lowest;
@@ -795,7 +795,7 @@ static void GetProtRefDescr(ncbi::objects::CSeq_feat& feat, Uint1 method, const 
             continue;
         }
 
-        q = (CharPtr)MemNew(StringLen(p) + val_str.size() + 3);
+        q = (char*)MemNew(StringLen(p) + val_str.size() + 3);
         StringCpy(q, p);
         StringCat(q, "; ");
         StringCat(q, val_str.c_str());
@@ -828,7 +828,7 @@ static void GetProtRefDescr(ncbi::objects::CSeq_feat& feat, Uint1 method, const 
     }
 
     if (StringLen(p) < 511 && !organism.empty() && StringStr(p, organism.c_str()) == NULL) {
-        q = (CharPtr)MemNew(StringLen(p) + organism.size() + 4);
+        q = (char*)MemNew(StringLen(p) + organism.size() + 4);
         StringCpy(q, p);
         StringCat(q, " [");
         StringCat(q, organism.c_str());
@@ -878,7 +878,7 @@ static void GetProtRefDescr(ncbi::objects::CSeq_feat& feat, Uint1 method, const 
 **********************************************************/
 static void QualsToSeqID(ncbi::objects::CSeq_feat& feat, Int2 source, TSeqIdList& ids)
 {
-    CharPtr   p;
+    char*   p;
 
     if (!feat.IsSetQual())
         return;
@@ -1115,10 +1115,10 @@ static void AddProtRefSeqEntry(ProtBlkPtr pbp, ncbi::objects::CBioseq& bioseq)
 }
 
 /**********************************************************/
-static CharPtr SimpleValuePos(CharPtr qval)
+static char* SimpleValuePos(char* qval)
 {
-    CharPtr bptr;
-    CharPtr eptr;
+    char* bptr;
+    char* eptr;
 
     bptr = StringStr(qval, "(pos:");
     if (bptr == NULL)
@@ -1148,7 +1148,7 @@ static CharPtr SimpleValuePos(CharPtr qval)
 *
 **********************************************************/
 static void GetCdRegionCB(InfoBioseqPtr ibp, ncbi::objects::CSeq_feat& feat,
-                          TCodeBreakList& code_breaks, Uint1Ptr dif, bool accver)
+                          TCodeBreakList& code_breaks, unsigned char* dif, bool accver)
 {
     Int4 feat_start = -1;
     Int4 feat_stop = -1;
@@ -1164,7 +1164,7 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, ncbi::objects::CSeq_feat& feat,
         TQualVector::iterator cur_qual = feat.SetQual().begin(),
             end_qual = feat.SetQual().end();
 
-        CharPtr qval = NULL;
+        char* qval = NULL;
         while ((qval = CpTheQualValueNext(cur_qual, end_qual, "transl_except")) != NULL) {
             ncbi::CRef<ncbi::objects::CCode_break> code_break(new ncbi::objects::CCode_break);
 
@@ -1172,7 +1172,7 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, ncbi::objects::CSeq_feat& feat,
 
             code_break->SetAa().SetNcbieaa(ncbieaa_val);
 
-            CharPtr pos = SimpleValuePos(qval);
+            char* pos = SimpleValuePos(qval);
 
             int num_errs = 0;
             bool locmap = false,
@@ -1241,7 +1241,7 @@ static void CkEndStop(const ncbi::objects::CSeq_feat& feat, Uint1 dif)
     Int4        len;
     Int4        r;
     Int4        frm;
-    CharPtr     p;
+    char*     p;
 
     len = ncbi::objects::sequence::GetLength(feat.GetLocation(), &GetScope());
     const ncbi::objects::CCdregion& cdregion = feat.GetData().GetCdregion();
@@ -1276,7 +1276,7 @@ static void check_end_internal(size_t protlen, const ncbi::objects::CSeq_feat& f
     size_t len = ncbi::objects::sequence::GetLength(feat.GetLocation(), &GetScope()) - frm + dif;
 
     if (protlen * 3 != len && (!feat.IsSetExcept() || feat.GetExcept() == false)) {
-        CharPtr p = location_to_string(feat.GetLocation());
+        char* p = location_to_string(feat.GetLocation());
         ErrPostEx(SEV_WARNING, ERR_CDREGION_LocationLength,
                   "Length of the CDS: %s (%ld) disagree with the length calculated from the protein: %ld",
                   (p == NULL) ? "" : p, len, protlen * 3);
@@ -1295,8 +1295,8 @@ static void check_end_internal(size_t protlen, const ncbi::objects::CSeq_feat& f
 static void ErrByteStorePtr(InfoBioseqPtr ibp, const ncbi::objects::CSeq_feat& feat,
                             const std::string& prot)
 {
-    CharPtr str;
-    CharPtr qval;
+    char* str;
+    char* qval;
 
     qval = CpTheQualValue(feat.GetQual(), "translation");
     if (qval == NULL)
@@ -1331,13 +1331,13 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const ncbi::objects::CSeq_feat& f
 **********************************************************/
 static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp,
                             std::string& prot, ncbi::objects::CSeq_feat& feat,
-                            CharPtr qval, bool intercodon,
-                            CharPtr gcode, Uint1 PNTR method)
+                            char* qval, bool intercodon,
+                            char* gcode, unsigned char* method)
 {
-    CharPtr      ptr;
+    char*      ptr;
     Char         msg2[1100];
     Char         aastr[100];
-    CharPtr      msg;
+    char*      msg;
     Int2         residue;
     Int4         num = 0;
     size_t       aa;
@@ -1472,7 +1472,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp,
 *      If bsp != translation's value return FALSE.
 *
 **********************************************************/
-static bool check_translation(std::string& prot, CharPtr qval)
+static bool check_translation(std::string& prot, char* qval)
 {
     size_t len = 0;
     size_t blen = prot.size();
@@ -1577,8 +1577,8 @@ static Int2 EndAdded(ncbi::objects::CSeq_feat& feat, GeneRefFeats& gene_refs)
 
     size_t       i;
 
-    CharPtr      transl;
-    CharPtr      name;
+    char*      transl;
+    char*      name;
 
     ncbi::objects::CCdregion& cdregion = feat.SetData().SetCdregion();
     len = ncbi::objects::sequence::GetLength(feat.GetLocation(), &GetScope());
@@ -1741,7 +1741,7 @@ static Int2 EndAdded(ncbi::objects::CSeq_feat& feat, GeneRefFeats& gene_refs)
 /**********************************************************/
 static void fta_check_codon_quals(ncbi::objects::CSeq_feat& feat)
 {
-    CharPtr   p;
+    char*   p;
 
     if (!feat.IsSetQual())
         return;
@@ -1782,11 +1782,11 @@ static void fta_check_codon_quals(ncbi::objects::CSeq_feat& feat)
 *
 **********************************************************/
 static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp,
-                              ncbi::objects::CSeq_feat& feat, Uint1 PNTR method,
+                              ncbi::objects::CSeq_feat& feat, unsigned char* method,
                               Uint1 dif, GeneRefFeats& gene_refs, std::string& seq_data)
 {
-    CharPtr      qval;
-    CharPtr      msg;
+    char*      qval;
+    char*      msg;
     bool         intercodon = false;
     bool         again = true;
 
@@ -2005,7 +2005,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp,
 }
 
 /**********************************************************/
-static void check_gen_code(CharPtr qval, ProtBlkPtr pbp, Uint1 taxserver)
+static void check_gen_code(char* qval, ProtBlkPtr pbp, Uint1 taxserver)
 {
     ErrSev     sev;
     Uint1      gcpvalue;
@@ -2057,7 +2057,7 @@ static bool CpGeneticCodePtr(ncbi::objects::CGenetic_code& code, const ncbi::obj
 /**********************************************************/
 static Int4 IfOnlyStopCodon(const ncbi::objects::CBioseq& bioseq, const ncbi::objects::CSeq_feat& feat, bool transl)
 {
-    CharPtr p;
+    char* p;
     Uint1   strand;
     Int4    len;
     Int4    i;
@@ -2117,7 +2117,7 @@ static bool fta_check_exception(ncbi::objects::CSeq_feat& feat, Int2 source)
 {
     const char **b;
     ErrSev     sev;
-    CharPtr    p;
+    char*    p;
 
     if (!feat.IsSetQual())
         return true;
@@ -2130,9 +2130,9 @@ static bool fta_check_exception(ncbi::objects::CSeq_feat& feat, Int2 source)
         }
 
         if ((*qual)->GetQual() == "ribosomal_slippage")
-            p = (CharPtr) "ribosomal slippage";
+            p = (char*) "ribosomal slippage";
         else if ((*qual)->GetQual() == "trans_splicing")
-            p = (CharPtr) "trans-splicing";
+            p = (char*) "trans-splicing";
         else
             p = NULL;
 
@@ -2207,13 +2207,13 @@ static bool fta_check_exception(ncbi::objects::CSeq_feat& feat, Int2 source)
 *
 **********************************************************/
 static Int2 CkCdRegion(ParserPtr pp, ncbi::objects::CSeq_feat& feat, ncbi::objects::CBioseq& bioseq,
-                       Int4 PNTR num, GeneRefFeats& gene_refs)
+                       int* num, GeneRefFeats& gene_refs)
 {
     ProtBlkPtr     pbp;
     const char     *r;
 
-    CharPtr        qval = NULL;
-    CharPtr        p;
+    char*        qval = NULL;
+    char*        p;
     bool        is_pseudo;
     bool        is_stop;
     bool        is_transl;
@@ -2503,7 +2503,7 @@ static Int2 CkCdRegion(ParserPtr pp, ncbi::objects::CSeq_feat& feat, ncbi::objec
 static void SrchCdRegion(ParserPtr pp, ncbi::objects::CBioseq& bioseq, ncbi::objects::CSeq_annot& annot,
                          GeneRefFeats& gene_refs)
 {
-    CharPtr    p;
+    char*    p;
     Int4       num = 0;
     Int2       i;
 

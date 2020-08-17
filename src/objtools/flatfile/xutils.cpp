@@ -31,8 +31,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <ctools/ctransition/ncbimem.hpp>
-
 #include <objects/general/Date_std.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -47,8 +45,7 @@
 #endif
 #define THIS_FILE "xutils.cpp"
 
-USING_SCOPE(ctransition);
-
+#include <objtools/flatfile/ftacpp.hpp>
 #include <objtools/flatfile/xgbparint.h>
 #include <objtools/flatfile/xutils.h>
 
@@ -62,7 +59,7 @@ USING_SCOPE(ctransition);
 *   returns FALSE.
 *
 **********************************************************/
-static bool LIBCALL XISAGappedSeqLoc(const ncbi::objects::CSeq_loc& loc)
+static bool XISAGappedSeqLoc(const ncbi::objects::CSeq_loc& loc)
 {
     const ncbi::objects::CSeq_id* id = loc.GetId();
     if (id == nullptr || !id->IsGeneral() || !id->GetGeneral().IsSetDb() || !id->GetGeneral().IsSetTag())

@@ -75,16 +75,16 @@
 #define THIS_FILE "ftamain.cpp"
 
 typedef struct ff_entries {
-    CharPtr                offset;
-    CharPtr                acc;
+    char*                offset;
+    char*                acc;
     Int2                   vernum;
-    struct ff_entries PNTR next;
-} FFEntries, PNTR FFEntriesPtr;
+    struct ff_entries* next;
+} FFEntries, *FFEntriesPtr;
 
 FFEntriesPtr ffep = NULL;
 
-extern bool    PrfAscii PROTO((ParserPtr pp));
-extern bool    XMLAscii PROTO((ParserPtr pp));
+extern bool    PrfAscii(ParserPtr pp);
+extern bool    XMLAscii(ParserPtr pp);
 
 extern void    fta_init_gbdataloader();
 
@@ -111,7 +111,7 @@ static void CkSegmentSet(ParserPtr pp)
     Int4    j;
     Int4    bindx;
     Int4    total;
-    CharPtr locus;
+    char* locus;
 
     bool flag;
     bool drop;
@@ -295,10 +295,10 @@ static void CheckDupEntries(ParserPtr pp)
     Int4             j;
     IndexblkPtr      first;
     IndexblkPtr      second;
-    IndexblkPtr PNTR tibp;
+    IndexblkPtr* tibp;
 
     i = pp->indx * sizeof(IndexblkPtr);
-    tibp = (IndexblkPtr PNTR) MemNew(i);
+    tibp = (IndexblkPtr*) MemNew(i);
     MemCpy(tibp, pp->entrylist, i);
 
     std::sort(tibp, tibp + pp->indx, (pp->accver ? CompareAccsV : CompareAccs));
@@ -729,7 +729,7 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
         pp.accpref = NULL;
     }
     else
-        pp.accpref = (CharPtr PNTR) GetAccArray(pp.source);
+        pp.accpref = (char**) GetAccArray(pp.source);
 
     pp.citat = (pp.source != ParFlat_SPROT);
 
@@ -741,7 +741,7 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 // Must be restored to test parsing from string buffer
 /**********************************************************/
 // TODO function is not used 
-void Flat2AsnCheck(CharPtr ffentry, CharPtr source, CharPtr format,
+void Flat2AsnCheck(char* ffentry, char* source, char* format,
                    bool accver, Int4 mode, Int4 limit)
 {
     ParserPtr pp;

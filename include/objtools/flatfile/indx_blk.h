@@ -39,46 +39,46 @@ typedef struct file_infomation_block {
     Char   str[256];                    /* the current string data */
     Int4   line;                        /* the current line number */
     size_t pos;                         /* the current file position */
-} FinfoBlk, PNTR FinfoBlkPtr;
+} FinfoBlk, *FinfoBlkPtr;
 
 typedef struct ind_blk_next {
     IndexblkPtr              ibp;
-    struct ind_blk_next PNTR next;
-} IndBlkNext, PNTR IndBlkNextPtr;
+    struct ind_blk_next *next;
+} IndBlkNext, *IndBlkNextPtr;
 
-ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate PROTO((CharPtr ptr, Int2 source));
+ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(char* ptr, Int2 source);
 
 /**********************************************************/
-bool        XReadFile PROTO((FILE PNTR fp, FinfoBlkPtr finfo));
-bool        XReadFileBuf PROTO((FileBufPtr fpbuf, FinfoBlkPtr finfo));
-bool        SkipTitle PROTO((FILE PNTR fp, FinfoBlkPtr finfo, const Char *str, Int2 len));
-bool        SkipTitleBuf PROTO((FileBufPtr fpbuf, FinfoBlkPtr finfo, const Char *str, Int2 len));
-bool        FindNextEntry PROTO((bool end_of_file, FILE PNTR ifp,
-                                FinfoBlkPtr finfo, const Char *str, Int2 len));
-bool        FindNextEntryBuf PROTO((bool end_of_file, FileBufPtr ifpbuf,
-                                   FinfoBlkPtr finfo, const Char *str, Int2 len));
-IndexblkPtr InitialEntry PROTO((ParserPtr pp, FinfoBlkPtr finfo));
-bool        GetAccession PROTO((ParserPtr pp, CharPtr str, IndexblkPtr entry, Int4 skip));
-void        CloseFiles PROTO((ParserPtr pp));
-void        MsgSkipTitleFail PROTO((const Char *flatfile, FinfoBlkPtr finfo));
-bool        FlatFileIndex PROTO((ParserPtr pp, void(*fun)(IndexblkPtr entry, CharPtr offset, Int4 len)));
-void        ResetParserStruct PROTO((ParserPtr pp));
-bool        QSIndex PROTO((ParserPtr pp, IndBlkNextPtr ibnp));
+bool        XReadFile(FILE* fp, FinfoBlkPtr finfo);
+bool        XReadFileBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo);
+bool        SkipTitle(FILE* fp, FinfoBlkPtr finfo, const Char *str, Int2 len);
+bool        SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const Char *str, Int2 len);
+bool        FindNextEntry(bool end_of_file, FILE* ifp,
+                                FinfoBlkPtr finfo, const Char *str, Int2 len);
+bool        FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf,
+                                   FinfoBlkPtr finfo, const Char *str, Int2 len);
+IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo);
+bool        GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip);
+void        CloseFiles(ParserPtr pp);
+void        MsgSkipTitleFail(const Char *flatfile, FinfoBlkPtr finfo);
+bool        FlatFileIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
+void        ResetParserStruct(ParserPtr pp);
+bool        QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
 
-bool  IsValidAccessPrefix PROTO((CharPtr acc, CharPtr* accpref));
+bool  IsValidAccessPrefix(char* acc, char** accpref);
 
-void  DelNoneDigitTail PROTO((CharPtr str));
-Int4  fta_if_wgs_acc PROTO((const Char* acc));
-Int2  CheckSTRAND PROTO((CharPtr str));
-Int2  CheckTPG PROTO((CharPtr str));
-Int2  CheckDIV PROTO((CharPtr str));
-Int4  IsNewAccessFormat PROTO((const Char* acnum));
-bool  IsSPROTAccession PROTO((const Char PNTR acc));
-Int2  XMLCheckSTRAND PROTO ((CharPtr str));
-Int2  XMLCheckTPG PROTO((CharPtr str)); 
-Int2  CheckNADDBJ PROTO((CharPtr str));
-Int2  CheckNA PROTO((CharPtr str));
+void  DelNoneDigitTail(char* str);
+Int4  fta_if_wgs_acc(const Char* acc);
+Int2  CheckSTRAND(char* str);
+Int2  CheckTPG(char* str);
+Int2  CheckDIV(char* str);
+Int4  IsNewAccessFormat(const char* acnum);
+bool  IsSPROTAccession(const char* acc);
+Int2  XMLCheckSTRAND(char* str);
+Int2  XMLCheckTPG(char* str);
+Int2  CheckNADDBJ(char* str);
+Int2  CheckNA(char* str);
 
-bool CkLocusLinePos PROTO((CharPtr offset, Int2 source, LocusContPtr lcp, bool is_mga));
+bool CkLocusLinePos(char* offset, Int2 source, LocusContPtr lcp, bool is_mga);
 
 #endif

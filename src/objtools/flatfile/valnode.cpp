@@ -35,17 +35,13 @@
 
 #include <ncbi_pch.hpp>
 
-#include <ctools/ctransition/ncbimem.hpp>
-#include <ctools/ctransition/ncbistr.hpp>
-
+#include <objtools/flatfile/ftacpp.hpp>
 #include <objtools/flatfile/valnode.h>
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "valnode.cpp"
-
-USING_SCOPE(ctransition);
 
 /*****************************************************************************
 *
@@ -57,7 +53,7 @@ ValNodePtr ValNodeNew(ValNodePtr vnp)
 {
     ValNodePtr newnode;
 
-    newnode = (ValNodePtr)Nlm_MemNew(sizeof(ValNode));
+    newnode = (ValNodePtr)MemNew(sizeof(ValNode));
     if (vnp != NULL)
     {
         while (vnp->next != NULL)
@@ -82,7 +78,7 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
     while (vnp != NULL)
     {
         next = vnp->next;
-        Nlm_MemFree(vnp);
+        MemFree(vnp);
         vnp = next;
     }
     return NULL;
@@ -102,9 +98,9 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
 
     while (vnp != NULL)
     {
-        Nlm_MemFree(vnp->data.ptrvalue);
+        MemFree(vnp->data.ptrvalue);
         next = vnp->next;
-        Nlm_MemFree(vnp);
+        MemFree(vnp);
         vnp = next;
     }
     return NULL;
@@ -118,7 +114,7 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
 *      ALWAYS returns pointer to START of chain
 *
 *****************************************************************************/
-ValNodePtr ValNodeLink(ValNodePtr PNTR head, ValNodePtr newnode)
+ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 {
     ValNodePtr vnp;
 
@@ -140,11 +136,12 @@ ValNodePtr ValNodeLink(ValNodePtr PNTR head, ValNodePtr newnode)
 }
 
 
-static ValNodePtr ValNodeCopyStrExEx(ValNodePtr PNTR head, ValNodePtr PNTR tail, Nlm_Int2 choice, const char* str, const char* pfx, const char* sfx)
+static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str, const char* pfx, const char* sfx)
 {
     size_t       len, pfx_len, sfx_len, str_len;
     ValNodePtr   newnode = NULL, vnp;
-    Nlm_CharPtr  ptr, tmp;
+    char*  ptr;
+    char*  tmp;
 
     if (str == NULL) return NULL;
 
@@ -174,43 +171,43 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr PNTR head, ValNodePtr PNTR tail,
         *tail = newnode;
     }
 
-    ptr = (Nlm_CharPtr)Nlm_MemNew(sizeof(Nlm_Char) * (len + 2));
+    ptr = (char*)MemNew(sizeof(char) * (len + 2));
     if (ptr == NULL) return NULL;
 
     tmp = ptr;
     if (pfx_len > 0) {
-        tmp = Nlm_StringMove(tmp, pfx);
+        tmp = StringMove(tmp, pfx);
     }
     if (str_len > 0) {
-        tmp = Nlm_StringMove(tmp, str);
+        tmp = StringMove(tmp, str);
     }
     if (sfx_len > 0) {
-        tmp = Nlm_StringMove(tmp, sfx);
+        tmp = StringMove(tmp, sfx);
     }
 
     if (newnode != NULL) {
-        newnode->choice = (Nlm_Uint1)choice;
+        newnode->choice = (unsigned char)choice;
         newnode->data.ptrvalue = ptr;
     }
 
     return newnode;
 }
 
-ValNodePtr ValNodeCopyStrEx(ValNodePtr PNTR head, ValNodePtr PNTR tail, Nlm_Int2 choice, const char* str)
+ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str)
 {
     return ValNodeCopyStrExEx(head, tail, choice, str, NULL, NULL);
 }
 
-static Nlm_CharPtr ValNodeMergeStrsExEx(ValNodePtr list, Nlm_CharPtr separator, Nlm_CharPtr pfx, Nlm_CharPtr sfx)
+static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, char* sfx)
 {
     size_t       len;
     size_t       lens;
     size_t       pfx_len;
-    Nlm_CharPtr  ptr;
-    Nlm_CharPtr  sep;
+    char*  ptr;
+    char*  sep;
     size_t       sfx_len;
-    Nlm_CharPtr  str;
-    Nlm_CharPtr  tmp;
+    char*  str;
+    char*  tmp;
     ValNodePtr   vnp;
 
     if (list == NULL) return NULL;
@@ -221,36 +218,36 @@ static Nlm_CharPtr ValNodeMergeStrsExEx(ValNodePtr list, Nlm_CharPtr separator, 
     lens = StringLen(separator);
 
     for (vnp = list, len = 0; vnp != NULL; vnp = vnp->next) {
-        str = (Nlm_CharPtr)vnp->data.ptrvalue;
-        len += Nlm_StringLen(str);
+        str = (char*)vnp->data.ptrvalue;
+        len += StringLen(str);
         len += lens;
     }
     if (len == 0) return NULL;
     len += pfx_len + sfx_len;
 
-    ptr = (Nlm_CharPtr)Nlm_MemNew(sizeof(Nlm_Char) * (len + 2));
+    ptr = (char*)MemNew(sizeof(char) * (len + 2));
     if (ptr == NULL) return NULL;
 
     tmp = ptr;
     if (pfx_len > 0) {
-        tmp = Nlm_StringMove(tmp, pfx);
+        tmp = StringMove(tmp, pfx);
     }
     sep = NULL;
     for (vnp = list; vnp != NULL; vnp = vnp->next) {
-        tmp = Nlm_StringMove(tmp, sep);
-        str = (Nlm_CharPtr)vnp->data.ptrvalue;
-        tmp = Nlm_StringMove(tmp, str);
+        tmp = StringMove(tmp, sep);
+        str = (char*)vnp->data.ptrvalue;
+        tmp = StringMove(tmp, str);
         sep = separator;
     }
     if (sfx_len > 0) {
-        tmp = Nlm_StringMove(tmp, sfx);
+        tmp = StringMove(tmp, sfx);
     }
 
     return ptr;
 }
 
 
-Nlm_CharPtr ValNodeMergeStrsEx(ValNodePtr list, Nlm_CharPtr separator)
+char* ValNodeMergeStrsEx(ValNodePtr list, char* separator)
 {
     return ValNodeMergeStrsExEx(list, separator, NULL, NULL);
 }

@@ -44,8 +44,8 @@
 
 typedef struct feature_block {
     Int4      num;
-    CharPtr   key;
-    CharPtr   location;
+    char*   key;
+    char*   location;
 
     TQualVector quals;
 
@@ -56,14 +56,14 @@ typedef struct feature_block {
     {
     }
 
-} FeatBlk, PNTR FeatBlkPtr;
+} FeatBlk, *FeatBlkPtr;
 
-void LoadFeat PROTO((ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq));
-int  ParseFeatureBlock PROTO((IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Int2 format));
+void LoadFeat(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq);
+int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Int2 format);
 
-void GetFlatBiomol PROTO((int& biomol, Uint1 tech, CharPtr molstr, ParserPtr pp, DataBlkPtr entry, const ncbi::objects::COrg_ref* org_ref));
+void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, DataBlkPtr entry, const ncbi::objects::COrg_ref* org_ref);
 
-bool GetSeqLocation(ncbi::objects::CSeq_feat& feat, CharPtr location, TSeqIdList& ids,
-                    bool PNTR hard_err, ParserPtr pp, CharPtr name);
+bool GetSeqLocation(ncbi::objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
+                    bool* hard_err, ParserPtr pp, char* name);
 
 #endif

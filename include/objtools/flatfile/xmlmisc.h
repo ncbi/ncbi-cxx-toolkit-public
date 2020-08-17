@@ -41,24 +41,24 @@
 /* Simple XML Parsing */
 
 typedef struct xmlobj {
-    Nlm_CharPtr    name;
-    Nlm_CharPtr    contents;
-    Nlm_Int2       level;
+    char*    name;
+    char*    contents;
+    short       level;
     struct xmlobj  *attributes;
     struct xmlobj  *children;
     struct xmlobj  *next;
     struct xmlobj  *parent;
     struct xmlobj  *successor;        /* linearizes a recursive exploration */
-} Nlm_XmlObj, PNTR Nlm_XmlObjPtr;
+} Nlm_XmlObj, *Nlm_XmlObjPtr;
 
 #define XmlObj Nlm_XmlObj
 #define XmlObjPtr Nlm_XmlObjPtr
 
-typedef void(*VisitXmlNodeFunc) (Nlm_XmlObjPtr xop, Nlm_XmlObjPtr parent, Nlm_Int2 level, Nlm_VoidPtr userdata);
+typedef void(*VisitXmlNodeFunc) (Nlm_XmlObjPtr xop, Nlm_XmlObjPtr parent, short level, void* userdata);
 
 Nlm_XmlObjPtr ParseXmlString(const Char* str);
 Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop);
-Nlm_Int4 VisitXmlNodes(Nlm_XmlObjPtr xop, Nlm_VoidPtr userdata, VisitXmlNodeFunc callback, Nlm_CharPtr nodeFilter,
-                       Nlm_CharPtr parentFilter, Nlm_CharPtr attrTagFilter, Nlm_CharPtr attrValFilter, Nlm_Int2 maxDepth);
+int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter,
+                       char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth);
 
 #endif

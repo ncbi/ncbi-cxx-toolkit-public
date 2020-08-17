@@ -37,15 +37,15 @@
 #ifndef _GBASCII_
 #define _GBASCII_
 
-bool GetGenBankInstContig PROTO((DataBlkPtr entry, ncbi::objects::CBioseq& bsp, ParserPtr pp));
+bool GetGenBankInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bsp, ParserPtr pp);
 
 /* routines for checking the feature location has join or order
 * among other segment
 */
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
-void CheckFeatSeqLoc PROTO((TEntryList& seq_entries));
+void CheckFeatSeqLoc(TEntryList& seq_entries);
 // LCOV_EXCL_STOP
-bool GenBankAscii PROTO((ParserPtr pp));
+bool GenBankAscii(ParserPtr pp);
 
 #endif

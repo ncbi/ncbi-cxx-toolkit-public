@@ -60,7 +60,7 @@
 #define OTHER_MEDIUM 255
 
 /**********************************************************/
-ValNodePtr get_tokens(CharPtr pt, const Char *delimeter)
+ValNodePtr get_tokens(char* pt, const Char *delimeter)
 {
     ValNodePtr token;
     ValNodePtr vnp;
@@ -113,7 +113,7 @@ ValNodePtr get_tokens(CharPtr pt, const Char *delimeter)
 }
 
 /**********************************************************/
-static bool AllUpperCase(CharPtr p)
+static bool AllUpperCase(char* p)
 {
     if (p == NULL)
         return false;
@@ -127,11 +127,11 @@ static bool AllUpperCase(CharPtr p)
 }
 
 /**********************************************************/
-static void SplitMlAuthorName(const Char* name, CharPtr last, CharPtr initials,
-                              CharPtr suffix)
+static void SplitMlAuthorName(const Char* name, char* last, char* initials,
+                              char* suffix)
 {
-    CharPtr p;
-    CharPtr p2;
+    char* p;
+    char* p2;
     Char    sbuf[20];
     Char    ibuf[20];
     Int2    i;
@@ -266,14 +266,14 @@ static void RemoveSpacesAndCommas(std::string& str)
 void get_auth_from_toks(ValNodePtr token, Uint1 format, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
 {
     ValNodePtr  vnp;
-    CharPtr     p;
+    char*     p;
 
     if (token == NULL)
         return;
 
     for (vnp = token; vnp != NULL; vnp = vnp->next)
     {
-        p = (CharPtr)vnp->data.ptrvalue;
+        p = (char*)vnp->data.ptrvalue;
         if (StringNCmp(p, "and ", 4) == 0)
             p += 4;
 
@@ -392,10 +392,10 @@ ncbi::CRef<ncbi::objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
  *                                              12-4-93
  *
  **********************************************************/
-void get_auth(CharPtr pt, Uint1 format, CharPtr jour, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
+void get_auth(char* pt, Uint1 format, char* jour, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
 {
     static const char *delimiter;
-    static CharPtr    eptr;
+    static char*    eptr;
     ValNodePtr        token;
 
     switch(format)
@@ -434,10 +434,10 @@ void get_auth(CharPtr pt, Uint1 format, CharPtr jour, ncbi::CRef<ncbi::objects::
 }
 
 /**********************************************************/
-void get_auth_consortium(CharPtr cons, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
+void get_auth_consortium(char* cons, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
 {
-    CharPtr    p;
-    CharPtr    q;
+    char*    p;
+    char*    q;
 
     if(cons == NULL || *cons == '\0')
         return;
@@ -470,13 +470,13 @@ void get_auth_consortium(CharPtr cons, ncbi::CRef<ncbi::objects::CAuth_list>& au
 }
 
 /**********************************************************/
-static Int4 check_mix_pages_range(CharPtr pages)
+static Int4 check_mix_pages_range(char* pages)
 {
-    CharPtr page1;
-    CharPtr page2;
-    CharPtr dash;
-    CharPtr p;
-    CharPtr q;
+    char* page1;
+    char* page2;
+    char* dash;
+    char* p;
+    char* q;
     Char    ch1;
     Char    ch2;
     Int4    i;
@@ -567,11 +567,11 @@ static Int4 check_mix_pages_range(CharPtr pages)
 }
 
 /**********************************************************/
-Int4 valid_pages_range(CharPtr pages, const Char* title, Int4 er, bool inpress)
+Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr s;
+    char* p;
+    char* q;
+    char* s;
     Int4    fps;
     Int4    lps;
     Int4    i;
@@ -580,7 +580,7 @@ Int4 valid_pages_range(CharPtr pages, const Char* title, Int4 er, bool inpress)
         return(-1);
 
     if(title == NULL)
-        title = (CharPtr) "";
+        title = (char*) "";
     while(*pages == ' ' || *pages == ';' || *pages == '\t' || *pages == ',')
         pages++;
     if(*pages == '\0')
@@ -719,14 +719,14 @@ ncbi::CRef<ncbi::objects::CDate> get_date(const Char* year)
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CCit_gen> get_error(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
+ncbi::CRef<ncbi::objects::CCit_gen> get_error(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
 {
     ncbi::CRef<ncbi::objects::CCit_gen> cit_gen(new ncbi::objects::CCit_gen);
 
-    CharPtr    s;
+    char*    s;
     bool       zero_year = false;
-    CharPtr    end_tit;
-    CharPtr    eptr;
+    char*    end_tit;
+    char*    eptr;
 
     size_t len = StringLen(bptr);
     eptr = bptr + len - 1;

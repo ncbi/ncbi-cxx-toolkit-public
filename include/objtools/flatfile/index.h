@@ -101,10 +101,10 @@
 #define ParFlat_COL_FEATKEY         5
 #define ParFlat_COL_FEATDAT         21
 
-const Char **GetAccArray PROTO((Int2 whose));
-Uint1        GetNucAccOwner PROTO((const Char PNTR acc, Int2Ptr source, bool is_tpa));
-Uint1        GetProtAccOwner PROTO((const Char* acc));
-void         FreeParser PROTO((ParserPtr pp));
-void         ind_subdbp PROTO((DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank));
+const Char **GetAccArray(Int2 whose);
+Uint1        GetNucAccOwner(const char* acc, short* source, bool is_tpa);
+Uint1        GetProtAccOwner(const char* acc);
+void         FreeParser(ParserPtr pp);
+void         ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank);
 
 #endif

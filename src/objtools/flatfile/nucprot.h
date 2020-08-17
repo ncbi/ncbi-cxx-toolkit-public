@@ -71,8 +71,8 @@ struct GeneRefFeats
     {}
 };
 
-void CheckDupDates PROTO((TEntryList& seq_entries));
-void ProcNucProt PROTO((ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs));
+void CheckDupDates(TEntryList& seq_entries);
+void ProcNucProt(ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs);
 void ExtractDescrs(TSeqdescList& descrs_from, TSeqdescList& descrs_to, ncbi::objects::CSeqdesc::E_Choice choice);
 
 #endif

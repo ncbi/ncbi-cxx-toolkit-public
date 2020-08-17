@@ -64,10 +64,10 @@ static Uint1 sp_err_field(const char *name)
 }
 
 /**********************************************************/
-static void SPGetVerNum(CharPtr str, IndexblkPtr ibp)
+static void SPGetVerNum(char* str, IndexblkPtr ibp)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     if(str == NULL || ibp == NULL)
         return;
@@ -95,7 +95,7 @@ static void SPGetVerNum(CharPtr str, IndexblkPtr ibp)
  *                                              3-26-93
  *
  **********************************************************/
-bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len))
+bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     TokenStatBlkPtr stoken;
     FinfoBlkPtr     finfo;
@@ -113,7 +113,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int
     Int4            indx = 0;
     IndBlkNextPtr   ibnp;
     IndBlkNextPtr   tibnp;
-    CharPtr         p;
+    char*         p;
 
     bool            reviewed;
 
@@ -281,7 +281,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int
 
     pp->indx = indx;
 
-    pp->entrylist = (IndexblkPtr PNTR) MemNew(indx * sizeof(IndexblkPtr));
+    pp->entrylist = (IndexblkPtr*) MemNew(indx* sizeof(IndexblkPtr));
     tibnp = ibnp->next;
     MemFree(ibnp);
     for(i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp)

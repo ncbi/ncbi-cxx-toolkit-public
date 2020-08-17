@@ -51,7 +51,7 @@ typedef struct sprot_feat_type {
     Int4       keyint;                  /* output keyname for SITES, BONDS */
     const char *keystring;              /* output keyname for REGIONS, IMPORTS,
                                            or description string from SITES */
-} SPFeatType, PNTR SPFeatTypePtr;
+} SPFeatType, *SPFeatTypePtr;
 
 /* Table of valid Comment topic (CC line), change
  * "comment-topic-key:" to "[comment-topic-key]"
@@ -69,6 +69,6 @@ typedef struct sprot_feat_type {
 /* "ALTERNATIVE SPLICING" changed to ALTERNATIVE PRODUCTS in 30.0 release
  */
 
-bool SprotAscii PROTO((ParserPtr pp));
+bool SprotAscii(ParserPtr pp);
 
 #endif

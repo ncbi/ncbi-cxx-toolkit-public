@@ -122,9 +122,9 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank)
 {
     DataBlkPtr subdbp;
     const char **ref_tag;
-    CharPtr    s;
-    CharPtr    ss;
-    CharPtr    sx;
+    char*    s;
+    char*    ss;
+    char*    sx;
     int        n_rest;
     size_t     i;
     int        j;

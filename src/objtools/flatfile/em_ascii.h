@@ -40,13 +40,13 @@
 
 typedef std::list<std::string> TStringList;
 
-ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock PROTO((ParserPtr pp, CharPtr entry, ncbi::objects::CMolInfo& mol_info,
-                                                       CharPtr PNTR gbdiv, ncbi::objects::CBioSource* bio_src,
-                                                       TStringList& dr_ena, TStringList& dr_biosample));
+ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, ncbi::objects::CMolInfo& mol_info,
+                                                       char** gbdiv, ncbi::objects::CBioSource* bio_src,
+                                                       TStringList& dr_ena, TStringList& dr_biosample);
 
-bool EmblAscii PROTO((ParserPtr pp));
-void fta_build_ena_user_object PROTO((ncbi::objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
+bool EmblAscii(ParserPtr pp);
+void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
                                 TStringList& dr_biosample,
-                                ncbi::CRef<ncbi::objects::CUser_object>& dbuop));
+                                ncbi::CRef<ncbi::objects::CUser_object>& dbuop);
 
 #endif // EM_ASCII_H

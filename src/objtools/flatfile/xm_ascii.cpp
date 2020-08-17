@@ -146,9 +146,9 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Int2 source)
 static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
                              ncbi::objects::CBioseq& bioseq, ParserPtr pp)
 {
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    p;
+    char*    q;
+    char*    r;
     bool    locmap;
     bool    sitemap;
     bool    allow_crossdb_featloc;
@@ -213,15 +213,15 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
 }
 
 /**********************************************************/
-bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, Uint1Ptr dnaconv,
+bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
                 ncbi::objects::CBioseq& bioseq)
 {
     IndexblkPtr ibp;
     XmlIndexPtr xip;
     Int2        topology;
     Int2        strand;
-    CharPtr     topstr;
-    CharPtr     strandstr;
+    char*     topstr;
+    char*     strandstr;
 
     ibp = pp->entrylist[pp->curindx];
     topstr = NULL;
@@ -266,18 +266,18 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, Uint1Ptr dnaconv,
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, CharPtr entry, ncbi::objects::CMolInfo& mol_info,
+static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, ncbi::objects::CMolInfo& mol_info,
                                                           ncbi::objects::CBioSource* bio_src)
 {
     ncbi::CRef<ncbi::objects::CGB_block> gbb(new ncbi::objects::CGB_block),
                                          ret;
 
     IndexblkPtr  ibp;
-    CharPtr      bptr;
-    CharPtr      str;
-    Char         msg[4];
-    CharPtr      kw;
-    CharPtr      kwp;
+    char*      bptr;
+    char*      str;
+    char         msg[4];
+    char*      kw;
+    char*      kwp;
     Int2         div;
     bool         if_cds;
 
@@ -296,9 +296,9 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, CharPtr 
 
     bool         cancelled;
     bool         drop;
-    CharPtr      tempdiv;
+    char*      tempdiv;
     Int2         thtg;
-    CharPtr      p;
+    char*      p;
     Int4         i;
 
     ibp = pp->entrylist[pp->curindx];
@@ -373,7 +373,7 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, CharPtr 
 
             /* preserve the division code for later use
              */
-            const Char PNTR p_div = gbb->GetDiv().c_str();
+            const char* p_div = gbb->GetDiv().c_str();
             StringCpy(ibp->division, p_div);
 
             if(ibp->psip.NotEmpty())
@@ -556,8 +556,8 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, CharPtr 
             {
                 drop = false;
                 Uint1 tech = mol_info.GetTech();
-                CharPtr div_to_check = StringSave(gbb->GetDiv().c_str()),
-                        p_div = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd,
+                char* div_to_check = StringSave(gbb->GetDiv().c_str());
+                char* p_div = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd,
                                           gss_kwd, if_cds, div_to_check, &tech,
                                           ibp->bases, pp->source, drop);
                 if (tech != 0)
@@ -733,8 +733,8 @@ static ncbi::CRef<ncbi::objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPt
 {
     IndexblkPtr ibp;
 
-    CharPtr     div;
-    CharPtr     molstr;
+    char*     div;
+    char*     molstr;
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -777,14 +777,14 @@ static ncbi::CRef<ncbi::objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPt
 }
 
 /**********************************************************/
-static void XMLFakeBioSources(XmlIndexPtr xip, CharPtr entry, ncbi::objects::CBioseq& bioseq,
+static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, ncbi::objects::CBioseq& bioseq,
                               Int2 source)
 {
-    CharPtr      organism = NULL;
-    CharPtr      taxonomy = NULL;
+    char*      organism = NULL;
+    char*      taxonomy = NULL;
 
-    CharPtr      p;
-    CharPtr      q;
+    char*      p;
+    char*      q;
 
     for(; xip != NULL; xip = xip->next)
     {
@@ -854,10 +854,10 @@ static void XMLFakeBioSources(XmlIndexPtr xip, CharPtr entry, ncbi::objects::CBi
 }
 
 /**********************************************************/
-static void XMLGetDescrComment(CharPtr offset)
+static void XMLGetDescrComment(char* offset)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     for(p = offset; *p == '\n' || *p == ' ';)
         p++;
@@ -933,13 +933,13 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     DataBlkPtr    dbp;
     DataBlkPtr    dbpnext;
 
-    CharPtr       crdate;
-    CharPtr       update;
-    CharPtr       offset;
-    CharPtr       str;
-    CharPtr       p;
-    CharPtr       q;
-    CharPtr       gbdiv;
+    char*       crdate;
+    char*       update;
+    char*       offset;
+    char*       str;
+    char*       p;
+    char*       q;
+    char*       gbdiv;
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -979,7 +979,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
             p = StringRChr(str, '.');
             if(p == NULL || p[1] != '\0')
             {
-                p = (CharPtr) MemNew(StringLen(str) + 2);
+                p = (char*) MemNew(StringLen(str) + 2);
                 StringCpy(p, str);
                 StringCat(p, ".");
                 MemFree(str);
@@ -1321,9 +1321,9 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 }
 
 /**********************************************************/
-static void XMLGetDivision(CharPtr entry, IndexblkPtr ibp)
+static void XMLGetDivision(char* entry, IndexblkPtr ibp)
 {
-    CharPtr div;
+    char* div;
 
     if(ibp == NULL || entry == NULL)
         return;
@@ -1346,11 +1346,11 @@ bool XMLAscii(ParserPtr pp)
     Int4        total = 0;
     Int4        total_long = 0;
     Int4        total_dropped = 0;
-    CharPtr     div;
-    CharPtr     entry;
+    char*     div;
+    char*     entry;
     EntryBlkPtr ebp;
 
-    Uint1Ptr    dnaconv;
+    unsigned char*    dnaconv;
 
     TEntryList seq_entries;
 

@@ -37,7 +37,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/flatfile/ftaerr.hpp>
+#include <objtools/flatfile/ftacpp.hpp>
 
 #include <serial/objostrasn.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -98,7 +98,7 @@ Int2      Qtag;
 Int2      ytag;
 
 /**********************************************************/
-static bool CheckArgs(Int2Ptr flag, Char ch)
+static bool CheckArgs(short* flag, Char ch)
 {
     size_t i = 0;
     size_t sz = all_args.size();
@@ -232,7 +232,7 @@ static bool OpenFiles(ParserPtr pp)
 {
     Char      str[1000];
 
-    FILE PNTR fd;
+    FILE* fd;
 
     Char      tfile[PATH_MAX];
     bool      delin;
@@ -331,7 +331,7 @@ static bool OpenFiles(ParserPtr pp)
 }
 
 /**********************************************************/
-static ParserPtr ParseArgs(CharPtr pgmname)
+static ParserPtr ParseArgs(char* pgmname)
 {
     ParserPtr pp = new Parser;
 
@@ -433,7 +433,7 @@ void CFlat2AsnApp::Init()
 
 int CFlat2AsnApp::Run()
 {
-    CharPtr   pgmname = (char *) "flat2asn Revision: 1.3 ";
+    char*   pgmname = (char *) "flat2asn Revision: 1.3 ";
     ParserPtr pp;
 
     ErrSetFatalLevel((ErrSev)(SEV_FATAL + 1)); /* don't die on me */

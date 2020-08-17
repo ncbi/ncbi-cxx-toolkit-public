@@ -113,12 +113,12 @@
 typedef struct _trna_aa {
     const char *name;
     Uint1      aa;
-} TrnaAa, PNTR TrnaAaPtr;
+} TrnaAa, *TrnaAaPtr;
 
 typedef struct _str_num {
     const char *str;
     Int4       num;
-} StrNum, PNTR StrNumPtr;
+} StrNum, *StrNumPtr;
 
 TrnaAa taa[] = {
     {"alanine",        'A'},
@@ -152,7 +152,7 @@ typedef struct _aa_codons {
     Uint1      intaa;
     Uint1      gencode;
     Int4       vals[8];
-} AaCodons, PNTR AaCodonsPtr;
+} AaCodons, *AaCodonsPtr;
 
 AaCodons aacodons[] = {
    {"Ala",    'A',  0, {52, 53, 54, 55, -1, -1, -1, -1}},  /* GCT, GCC, GCA, GCG */
@@ -592,9 +592,9 @@ static void FreeFeatBlk(DataBlkPtr dbp, Int2 format)
  *      Deletes blanks in the "str".
  *
  **********************************************************/
-static void DelCharBtwData(CharPtr value)
+static void DelCharBtwData(char* value)
 {
-    CharPtr p;
+    char* p;
 
     for(p = value; *p != '\0'; p++)
         if(*p != ' ')
@@ -613,12 +613,12 @@ static void DelCharBtwData(CharPtr value)
  *                                              ks 1/13/94
  *
  **********************************************************/
-static Int4 flat2asn_range_func(Pointer pp_ptr, const ncbi::objects::CSeq_id& id)
+static Int4 flat2asn_range_func(void* pp_ptr, const ncbi::objects::CSeq_id& id)
 {
     ParserPtr pp = reinterpret_cast<ParserPtr>(pp_ptr);
 
     int          use_indx = pp->curindx;
-    CharPtr      acnum;
+    char*      acnum;
 
     Int2         vernum;
 
@@ -695,7 +695,7 @@ static Int4 flat2asn_range_func(Pointer pp_ptr, const ncbi::objects::CSeq_id& id
                 "Feature location references an interval on another record : %s",
                 pp->buf);
             MemFree(pp->buf);
-            pp->buf = (CharPtr)MemNew(1);
+            pp->buf = (char*)MemNew(1);
             *pp->buf = '\0';
             return(-1);
         }
@@ -964,8 +964,8 @@ static void FilterDb_xref(ncbi::objects::CSeq_feat& feat, Int2 source)
  *                                              7-26-93
  *
  **********************************************************/
-bool GetSeqLocation(ncbi::objects::CSeq_feat& feat, CharPtr location, TSeqIdList& ids,
-                    bool PNTR hard_err, ParserPtr pp, CharPtr name)
+bool GetSeqLocation(ncbi::objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
+                    bool* hard_err, ParserPtr pp, char* name)
 {
     bool    sitesmap;
     bool    locmap = true;
@@ -1020,7 +1020,7 @@ bool GetSeqLocation(ncbi::objects::CSeq_feat& feat, CharPtr location, TSeqIdList
 
 /**********************************************************
  *
- *   static CharPtr CheckLocStr(str):
+ *   static char* CheckLocStr(str):
  *
  *      Nlm_gbparseint routine does not parse certain types
  *   of interval correctly, so this routine will save input
@@ -1031,11 +1031,11 @@ bool GetSeqLocation(ncbi::objects::CSeq_feat& feat, CharPtr location, TSeqIdList
  *                                              5-20-93
  *
  **********************************************************/
-static CharPtr CheckLocStr(const Char* str)
+static char* CheckLocStr(const Char* str)
 {
     const Char* ptr;
     const Char* eptr;
-    CharPtr location;
+    char* location;
 
     ptr = StringChr(str, ';');
     if(ptr != NULL)
@@ -1116,7 +1116,7 @@ static bool PackSeqPntCheckCpp(const ncbi::objects::CSeq_loc& loc)
 /**********************************************************/
 /* returns : 2 = Ok, 1 = mixed strands, 0 = error in location
  */
-static Uint1 FTASeqLocCheck(const ncbi::objects::CSeq_loc& locs, CharPtr accession)
+static Uint1 FTASeqLocCheck(const ncbi::objects::CSeq_loc& locs, char* accession)
 {
     Uint1        strand = 99;
     Uint1        retval = 2;
@@ -1200,7 +1200,7 @@ static Uint1 FTASeqLocCheck(const ncbi::objects::CSeq_loc& locs, CharPtr accessi
 }
 
 /**********************************************************/
-static void fta_strip_aa(CharPtr str)
+static void fta_strip_aa(char* str)
 {
     if(str == NULL || *str == '\0')
         return;
@@ -1226,9 +1226,9 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    location = NULL;
+    char*    p;
+    char*    q;
+    char*    location = NULL;
 
     bool    err = false;
     Uint1      i;
@@ -1278,7 +1278,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
                 p = StringChr(location, ';');
                 if(p != NULL)
                 {
-                    p = (CharPtr) MemNew(StringLen(location) + 7);
+                    p = (char*) MemNew(StringLen(location) + 7);
                     StringCpy(p, "join(");
                     StringCat(p, location);
                     StringCat(p, ")");
@@ -1305,7 +1305,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
                     p++;
                 if(StringChr(p, ',') != NULL)
                 {
-                    location = (CharPtr) MemNew(StringLen(p) + 7);
+                    location = (char*) MemNew(StringLen(p) + 7);
                     sprintf(location, "join(%s)", p);
                 }
                 else
@@ -1330,7 +1330,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
             MemFree(pp->buf);
         pp->buf = NULL;
 
-        GetSeqLocation(*feat, location, seqids, &err, pp, (CharPtr) "pub");
+        GetSeqLocation(*feat, location, seqids, &err, pp, (char*) "pub");
 
         if(err)
         {
@@ -1447,12 +1447,12 @@ static Char* location_to_string_or_unknown(const ncbi::objects::CSeq_loc& loc)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> GetTrnaAnticodon(const ncbi::objects::CSeq_feat& feat, CharPtr qval, const TSeqIdList& seqids,
+static ncbi::CRef<ncbi::objects::CSeq_loc> GetTrnaAnticodon(const ncbi::objects::CSeq_feat& feat, char* qval, const TSeqIdList& seqids,
                                                             bool accver)
 {
-    CharPtr    loc_str;
-    CharPtr    p;
-    CharPtr    q;
+    char*    loc_str;
+    char*    p;
+    char*    q;
     bool    fake1;
     bool    fake2;
     Int4       range;
@@ -1559,9 +1559,9 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetTrnaAnticodon(const ncbi::objects:
 /**********************************************************/
 static void fta_parse_rrna_feat(ncbi::objects::CSeq_feat& feat, ncbi::objects::CRNA_ref& rna_ref)
 {
-    CharPtr qval;
-    CharPtr p;
-    CharPtr q;
+    char* qval;
+    char* p;
+    char* q;
     Char    ch;
 
     qval = GetTheQualValue(feat.SetQual(), "product");
@@ -1617,7 +1617,7 @@ static void fta_parse_rrna_feat(ncbi::objects::CSeq_feat& feat, ncbi::objects::C
         p = StringIStr(p, "ribosomalrna");
         if(p == NULL)
             break;
-        q = (CharPtr) MemNew(StringLen(qval) + 2);
+        q = (char*) MemNew(StringLen(qval) + 2);
         p[9] = '\0';
         StringCpy(q, qval);
         StringCat(q, " RNA");
@@ -1632,7 +1632,7 @@ static void fta_parse_rrna_feat(ncbi::objects::CSeq_feat& feat, ncbi::objects::C
         p = StringIStr(qval, " rrna");
         if(p != NULL)
         {
-            q = (CharPtr) MemNew(StringLen(qval) + 10);
+            q = (char*) MemNew(StringLen(qval) + 10);
             *p = '\0';
             StringCpy(q, qval);
             StringCat(q, " ribosomal RNA");
@@ -1680,7 +1680,7 @@ static void fta_parse_rrna_feat(ncbi::objects::CSeq_feat& feat, ncbi::objects::C
             continue;
         }
         len = p - qval + 14;
-        q = (CharPtr) MemNew(StringLen(qval) + 5);
+        q = (char*) MemNew(StringLen(qval) + 5);
         p += 9;
         ch = *p;
         *p = '\0';
@@ -1735,7 +1735,7 @@ static Uint1 fta_get_aa_from_symbol(Char ch)
 }
 
 /**********************************************************/
-static Uint1 fta_get_aa_from_string(CharPtr str)
+static Uint1 fta_get_aa_from_string(char* str)
 {
     AaCodonsPtr acp;
     TrnaAaPtr   tap;
@@ -1767,20 +1767,20 @@ static int get_aa_from_trna(const ncbi::objects::CTrna_ext& trna)
 
 /**********************************************************/
 static ncbi::CRef<ncbi::objects::CTrna_ext> fta_get_trna_from_product(ncbi::objects::CSeq_feat& feat, const Char* product,
-                                                                      Uint1Ptr remove)
+                                                                      unsigned char* remove)
 {
     const char **b;
 
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    start;
-    CharPtr    end;
-    CharPtr    first;
-    CharPtr    second;
-    CharPtr    third;
-    CharPtr    fourth;
+    char*    p;
+    char*    q;
+    char*    start;
+    char*    end;
+    char*    first;
+    char*    second;
+    char*    third;
+    char*    fourth;
     bool       fmet;
-    CharPtr    prod;
+    char*    prod;
 
     if (remove != NULL)
         *remove = 0;
@@ -1955,11 +1955,11 @@ static ncbi::CRef<ncbi::objects::CTrna_ext> fta_get_trna_from_product(ncbi::obje
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CTrna_ext> fta_get_trna_from_comment(const Char* comment, Uint1Ptr remove)
+static ncbi::CRef<ncbi::objects::CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned char* remove)
 {
-    CharPtr comm;
-    CharPtr p;
-    CharPtr q;
+    char* comm;
+    char* p;
+    char* q;
 
     ncbi::CRef<ncbi::objects::CTrna_ext> ret(new ncbi::objects::CTrna_ext);
 
@@ -2032,8 +2032,8 @@ static int get_first_codon_from_trna(const ncbi::objects::CTrna_ext& trna)
 static void GetRnaRef(ncbi::objects::CSeq_feat& feat, ncbi::objects::CBioseq& bioseq,
                       Int2 source, bool accver)
 {
-    CharPtr    qval;
-    CharPtr    p;
+    char*    qval;
+    char*    p;
 
     Uint1      remove;
 
@@ -2446,7 +2446,7 @@ static void ConvertQualifierValue(ncbi::CRef<ncbi::objects::CGb_qual>& qual)
 /**********************************************************/
 static void fta_parse_rpt_units(FeatBlkPtr fbp)
 {
-    CharPtr   p;
+    char*   p;
 
     if(fbp == NULL || fbp->quals.empty())
         return;
@@ -2504,7 +2504,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
         return;
     }
 
-    p = (CharPtr) MemNew(len + count + 2);
+    p = (char*) MemNew(len + count + 2);
     StringCpy(p, "(");
     StringCat(p, (*first)->GetVal().c_str());
 
@@ -2689,7 +2689,7 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr
 {
     const char **b;
 
-    CharPtr loc = NULL;
+    char* loc = NULL;
 
     bool    locmap = false;
     bool    err = false;
@@ -2702,7 +2702,7 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr
         DelCharBtwData(loc);
         if(pp->buf != NULL)
             MemFree(pp->buf);
-        pp->buf = (CharPtr) MemNew(StringLen(fbp->key) + StringLen(loc) + 4);
+        pp->buf = (char*) MemNew(StringLen(fbp->key) + StringLen(loc) + 4);
         StringCpy(pp->buf, fbp->key);
         StringCat(pp->buf, " : ");
         StringCat(pp->buf, loc);
@@ -2920,10 +2920,10 @@ static bool fta_feats_same(FeatBlkPtr fbp1, FeatBlkPtr fbp2)
 }
 
 /**********************************************************/
-static bool fta_check_rpt_unit_span(const Char PNTR val, size_t length)
+static bool fta_check_rpt_unit_span(const char* val, size_t length)
 {
-    const Char PNTR p;
-    const Char PNTR q;
+    const char* p;
+    const char* q;
     Int4    i1;
     Int4    i2;
 
@@ -3070,7 +3070,7 @@ private:
     std::string qual_;
 };
 
-static void fta_check_multiple_locus_tag(DataBlkPtr dbp, Uint1Ptr drop)
+static void fta_check_multiple_locus_tag(DataBlkPtr dbp, unsigned char* drop)
 {
     FeatBlkPtr fbp;
     Char       ch;
@@ -3104,7 +3104,7 @@ static void fta_check_multiple_locus_tag(DataBlkPtr dbp, Uint1Ptr drop)
 }
 
 /**********************************************************/
-static void fta_check_old_locus_tags(DataBlkPtr dbp, Uint1Ptr drop)
+static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
 {
     Int4       i;
 
@@ -3275,8 +3275,8 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
 static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
 {
     FeatBlkPtr fbp;
-    CharPtr    p;
-    CharPtr    q;
+    char*    p;
+    char*    q;
     bool       badcom;
     Char       ch;
     Int4       com_count;
@@ -3359,10 +3359,10 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr dbp,
                                                 IndexblkPtr ibp)
 {
     FeatBlkPtr fbp;
-    CharPtr    location;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    location;
+    char*    p;
+    char*    q;
+    char*    r;
     Uint1      i;
 
     location = NULL;
@@ -3474,7 +3474,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
     FTAOperonPtr fop;
     FTAOperonPtr tfop;
 
-    CharPtr      p;
+    char*      p;
     bool         got;
     Int4         count;
 
@@ -3648,14 +3648,14 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
 
     NON_CONST_ITERATE(TQualVector, cur, fbp->quals)
     {
-        const Char PNTR cur_qual = (*cur)->IsSetQual() ? (*cur)->GetQual().c_str() : NULL;
-        const Char PNTR cur_val = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
+        const char* cur_qual = (*cur)->IsSetQual() ? (*cur)->GetQual().c_str() : NULL;
+        const char* cur_val = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
 
         TQualVector::iterator next = cur;
         for (++next; next != fbp->quals.end();)
         {
-            const Char PNTR next_qual = (*next)->IsSetQual() ? (*next)->GetQual().c_str() : NULL;
-            const Char PNTR next_val = (*next)->IsSetVal() ? (*next)->GetVal().c_str() : NULL;
+            const char* next_qual = (*next)->IsSetQual() ? (*next)->GetQual().c_str() : NULL;
+            const char* next_val = (*next)->IsSetVal() ? (*next)->GetVal().c_str() : NULL;
 
             if (!fta_strings_same(cur_qual, next_qual) || !fta_strings_same(cur_val, next_val))
             {
@@ -3700,9 +3700,9 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
     std::list<std::string> linkage_evidence_names;
 
     StrNumPtr          snp;
-    CharPtr            p;
-    CharPtr            q;
-    const Char PNTR    gap_type;
+    char*            p;
+    char*            q;
+    const char*    gap_type;
     bool               finished_gap;
     ErrSev             sev;
     Int4               estimated_length;
@@ -3805,7 +3805,7 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
                         estimated_length = -100;
                     else
                     {
-                        const Char PNTR cp = cur_val.c_str();
+                        const char* cp = cur_val.c_str();
                         for (; *cp >= '0' && *cp <= '9';)
                             ++cp;
                         if(*cp == '\0')
@@ -4123,7 +4123,7 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
 }
 
 /**********************************************************/
-static void XMLGetQuals(CharPtr entry, XmlIndexPtr xip, TQualVector& quals)
+static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
 {
     XmlIndexPtr xipqual;
 
@@ -4155,7 +4155,7 @@ static void XMLGetQuals(CharPtr entry, XmlIndexPtr xip, TQualVector& quals)
 }
 
 /**********************************************************/
-static DataBlkPtr XMLLoadFeatBlk(CharPtr entry, XmlIndexPtr xip)
+static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
 {
     XmlIndexPtr xipfeat;
     DataBlkPtr  headdbp;
@@ -4219,9 +4219,9 @@ static DataBlkPtr XMLLoadFeatBlk(CharPtr entry, XmlIndexPtr xip)
  **********************************************************/
 static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
 {
-    CharPtr   note;
-    CharPtr   p;
-    CharPtr   q;
+    char*   note;
+    char*   p;
+    char*   q;
 
     size_t size = 0;
 
@@ -4239,7 +4239,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
         size += 2;
         std::vector<Char> buf(cur_val.size() + 1);
 
-        const Char PNTR cp = cur_val.c_str();
+        const char* cp = cur_val.c_str();
         for(q = &buf[0]; *cp != '\0'; ++cp)
         {
             *q++ = *cp;
@@ -4265,7 +4265,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
     if(size == 0)
         return(fbp);
 
-    note = (CharPtr) MemNew(size);
+    note = (char*) MemNew(size);
     p = note;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();)
@@ -4295,7 +4295,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
                 *p++ = '~';
             }
 
-            for (const Char PNTR cq = cur_val.c_str(); *cq != '\0'; *p++ = *cq++)
+            for (const char* cq = cur_val.c_str(); *cq != '\0'; *p++ = *cq++)
                 if(*cq == '~')
                     *p++ = '~';
         }
@@ -4331,11 +4331,11 @@ static bool CheckLegalQual(const Char* val, Char ch, std::string* qual)
 }
 
 /**********************************************************/
-static void fta_set_merge_marks(CharPtr val, size_t quallen, size_t vallen)
+static void fta_set_merge_marks(char* val, size_t quallen, size_t vallen)
 {
-    CharPtr start;
-    CharPtr p;
-    CharPtr q;
+    char* start;
+    char* p;
+    char* q;
     bool    first;
 
     if(val == NULL || *val == '\0')
@@ -4383,9 +4383,9 @@ static void fta_set_merge_marks(CharPtr val, size_t quallen, size_t vallen)
 }
 
 /**********************************************************/
-static void fta_convert_to_lower_case(CharPtr str)
+static void fta_convert_to_lower_case(char* str)
 {
-    CharPtr p;
+    char* p;
 
     if (str == NULL || *str == '\0')
         return;
@@ -4399,7 +4399,7 @@ static void fta_convert_to_lower_case(CharPtr str)
 static void fta_process_con_slice(std::vector<char>& val_buf)
 {
     size_t i = 1;
-    CharPtr p = &val_buf[0];
+    char* p = &val_buf[0];
 
     for (; *p != '\0'; p++)
         if (*p == ',' && p[1] != ' ' && p[1] != '\0')
@@ -4408,7 +4408,7 @@ static void fta_process_con_slice(std::vector<char>& val_buf)
     if (i > 1)
     {
         vector<char> buf(i + val_buf.size());
-        CharPtr q = &buf[0];
+        char* q = &buf[0];
         for (p = &val_buf[0]; *p != '\0'; p++)
         {
             *q++ = *p;
@@ -4434,17 +4434,17 @@ static void fta_process_con_slice(std::vector<char>& val_buf)
  *                                              10-12-93
  *
  **********************************************************/
-static void ParseQualifiers(FeatBlkPtr fbp, CharPtr bptr, CharPtr eptr,
+static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
                             Int2 format)
 {
     const char **b;
 
-    CharPtr    ptr;
-    CharPtr    str;
-    CharPtr    qstr;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    ptr;
+    char*    str;
+    char*    qstr;
+    char*    p;
+    char*    q;
+    char*    r;
     Char       ch;
     Int4       vallen;
     Int4       count;
@@ -4454,7 +4454,7 @@ static void ParseQualifiers(FeatBlkPtr fbp, CharPtr bptr, CharPtr eptr,
 
     vallen = (format == ParFlat_EMBL) ? 59 : 58;
 
-    qstr = (CharPtr) MemNew(eptr - bptr + 2);
+    qstr = (char*) MemNew(eptr - bptr + 2);
     ch = *eptr;
     *eptr = '\0';
 
@@ -4708,7 +4708,7 @@ static void ParseQualifiers(FeatBlkPtr fbp, CharPtr bptr, CharPtr eptr,
         if (qual_new->IsSetVal())
         {
             const std::string& val_str = qual_new->GetVal();
-            const Char PNTR cp = val_str.c_str();
+            const char* cp = val_str.c_str();
             for(; *cp == '\"' || *cp == ' ' || *cp == '\t';)
                 ++cp;
             if(*cp == '\0')
@@ -4770,9 +4770,9 @@ static void ParseQualifiers(FeatBlkPtr fbp, CharPtr bptr, CharPtr eptr,
 }
 
 /**********************************************************/
-static void fta_check_satellite(CharPtr str, Uint1Ptr drop)
+static void fta_check_satellite(char* str, unsigned char* drop)
 {
-    CharPtr p;
+    char* p;
     Int2    i;
 
     if(str == NULL || *str == '\0')
@@ -4830,12 +4830,12 @@ static void fta_check_satellite(CharPtr str, Uint1Ptr drop)
 int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
                       Int2 source, Int2 format)
 {
-    CharPtr    bptr;
-    CharPtr    eptr;
-    CharPtr    ptr1;
-    CharPtr    ptr2;
-    CharPtr    p;
-    CharPtr    q;
+    char*    bptr;
+    char*    eptr;
+    char*    ptr1;
+    char*    ptr2;
+    char*    p;
+    char*    q;
     Char       loc[100];
     Char       ch;
 
@@ -5076,7 +5076,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
 static void XMLCheckQualifiers(FeatBlkPtr fbp)
 {
     const char **b;
-    CharPtr    p;
+    char*    p;
     Char       ch;
 
     if(fbp == NULL || fbp->quals.empty())
@@ -5195,7 +5195,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
 static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Int2 source)
 {
     FeatBlkPtr fbp;
-    CharPtr    p;
+    char*    p;
     Int4       num;
     int        retval = GB_FEAT_ERR_NONE;
     int        ret;
@@ -5330,7 +5330,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Int2 source)
 /**********************************************************/
 static bool fta_check_ncrna(const ncbi::objects::CSeq_feat& feat)
 {
-    CharPtr   p;
+    char*   p;
     Int4      count = 0;
 
     bool stop = false;
@@ -5393,7 +5393,7 @@ static bool fta_check_ncrna(const ncbi::objects::CSeq_feat& feat)
 }
 
 /**********************************************************/
-static void fta_check_artificial_location(ncbi::objects::CSeq_feat& feat, CharPtr key)
+static void fta_check_artificial_location(ncbi::objects::CSeq_feat& feat, char* key)
 {
     NON_CONST_ITERATE(ncbi::objects::CSeq_feat::TQual, qual, feat.SetQual())
     {
@@ -5536,7 +5536,7 @@ static bool SortFeaturesByOrder(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
 /**********************************************************/
 static DataBlkPtr fta_sort_features(DataBlkPtr dbp, bool order)
 {
-    DataBlkPtr PNTR temp;
+    DataBlkPtr* temp;
     DataBlkPtr      tdbp;
     Int4            total;
     Int4            i;
@@ -5544,7 +5544,7 @@ static DataBlkPtr fta_sort_features(DataBlkPtr dbp, bool order)
     for(total = 0, tdbp = dbp; tdbp != NULL; tdbp = tdbp->next)
         total++;
 
-    temp = (DataBlkPtr PNTR) MemNew(total * sizeof(DataBlkPtr));
+    temp = (DataBlkPtr*) MemNew(total * sizeof(DataBlkPtr));
 
     for(i = 0, tdbp = dbp; tdbp != NULL; tdbp = tdbp->next)
         temp[i++] = tdbp;
@@ -5580,11 +5580,11 @@ static void fta_convert_to_regulatory(FeatBlkPtr fbp, const char *rclass)
 }
 
 /**********************************************************/
-static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
+static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
 {
     FeatBlkPtr fbp;
     const char **b;
-    CharPtr    p;
+    char*    p;
     bool       got_note;
     bool       other_class;
     Int4       count;
@@ -5644,7 +5644,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
             {
                 ch = '\0';
                 if(fbp->location == NULL || *fbp->location == '\0')
-                    p = (CharPtr) "(empty)";
+                    p = (char*) "(empty)";
                 else
                 {
                     p = fbp->location;
@@ -5678,7 +5678,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
 
             ch = '\0';
             if(fbp->location == NULL || *fbp->location == '\0')
-                p = (CharPtr) "(empty)";
+                p = (char*) "(empty)";
             else
             {
                 p = fbp->location;
@@ -5700,7 +5700,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
         {
             ch = '\0';
             if(fbp->location == NULL || *fbp->location == '\0')
-                p = (CharPtr) "(empty)";
+                p = (char*) "(empty)";
             else
             {
                 p = fbp->location;
@@ -5721,7 +5721,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
         {
             ch = '\0';
             if(fbp->location == NULL || *fbp->location == '\0')
-                p = (CharPtr) "(empty)";
+                p = (char*) "(empty)";
             else
             {
                 p = fbp->location;
@@ -5743,7 +5743,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
         {
             ch = '\0';
             if(fbp->location == NULL || *fbp->location == '\0')
-                p = (CharPtr) "(empty)";
+                p = (char*) "(empty)";
             else
             {
                 p = fbp->location;
@@ -5765,12 +5765,12 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, Uint1Ptr drop)
 
 /**********************************************************/
 static void fta_create_wgs_dbtag(ncbi::objects::CBioseq &bioseq,
-                                 CharPtr submitter_seqid,
-                                 CharPtr prefix, Int4 seqtype)
+                                 char* submitter_seqid,
+                                 char* prefix, Int4 seqtype)
 {
-    CharPtr dbname;
+    char* dbname;
 
-    dbname = (CharPtr) MemNew(11);
+    dbname = (char*) MemNew(11);
     if(seqtype == 0 || seqtype == 1 || seqtype == 7)
         StringCpy(dbname, "WGS:");
     else if(seqtype == 4 || seqtype == 5 || seqtype == 8 || seqtype == 9)
@@ -5791,8 +5791,8 @@ static void fta_create_wgs_seqid(ncbi::objects::CBioseq &bioseq,
                                  IndexblkPtr ibp, Int2 source)
 {
     TokenBlkPtr tbp;
-    CharPtr     prefix;
-    CharPtr     p;
+    char*     prefix;
+    char*     p;
     Int4        seqtype;
     Int4        i;
 
@@ -6256,11 +6256,11 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
 }
 
 /**********************************************************/
-static Uint1 GetBiomolFromToks(CharPtr mRNA, CharPtr tRNA, CharPtr rRNA,
-                               CharPtr snRNA, CharPtr scRNA, CharPtr uRNA,
-                               CharPtr snoRNA)
+static Uint1 GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA,
+                               char* snRNA, char* scRNA, char* uRNA,
+                               char* snoRNA)
 {
-    CharPtr p = NULL;
+    char* p = NULL;
 
     if(mRNA != NULL)
         p = mRNA;
@@ -6291,11 +6291,11 @@ static Uint1 GetBiomolFromToks(CharPtr mRNA, CharPtr tRNA, CharPtr rRNA,
 }
 
 /**********************************************************/
-void GetFlatBiomol(int& biomol, Uint1 tech, CharPtr molstr, ParserPtr pp,
+void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                    DataBlkPtr entry, const ncbi::objects::COrg_ref* org_ref)
 {
     Int4        genomic;
-    CharPtr     offset;
+    char*     offset;
     Char        c;
     DataBlkPtr  dbp;
 
@@ -6305,15 +6305,15 @@ void GetFlatBiomol(int& biomol, Uint1 tech, CharPtr molstr, ParserPtr pp,
     IndexblkPtr ibp;
     const char  *p;
 
-    CharPtr     q;
-    CharPtr     r;
-    CharPtr     mRNA = NULL;
-    CharPtr     tRNA = NULL;
-    CharPtr     rRNA = NULL;
-    CharPtr     snRNA = NULL;
-    CharPtr     scRNA = NULL;
-    CharPtr     uRNA = NULL;
-    CharPtr     snoRNA = NULL;
+    char*     q;
+    char*     r;
+    char*     mRNA = NULL;
+    char*     tRNA = NULL;
+    char*     rRNA = NULL;
+    char*     snRNA = NULL;
+    char*     scRNA = NULL;
+    char*     uRNA = NULL;
+    char*     snoRNA = NULL;
     bool        stage;
     bool        techok;
     bool        same;
@@ -6366,10 +6366,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, CharPtr molstr, ParserPtr pp,
             c = *r;
             *r = '\0';
             if(q == r)
-                q = (CharPtr) "???";
+                q = (char*) "???";
         }
         else
-            q = (CharPtr) "???";
+            q = (char*) "???";
 
         same = true;
         if(StringCmp(ibp->moltype, "genomic DNA") == 0)

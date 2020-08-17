@@ -247,11 +247,11 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
 {
     TokenBlkPtr tbp;
     TokenBlkPtr tbpnext;
-    CharPtr     dash;
-    CharPtr     first;
-    CharPtr     last;
-    CharPtr     p;
-    CharPtr     q;
+    char*     dash;
+    char*     first;
+    char*     last;
+    char*     p;
+    char*     q;
     bool        bad;
     Int4        num1;
     Int4        num2;
@@ -390,7 +390,7 @@ static TokenBlkPtr TokenNodeNew(TokenBlkPtr tbp)
 }
 
 /**********************************************************/
-static void InsertTokenVal(TokenBlkPtr PNTR tbp, CharPtr str)
+static void InsertTokenVal(TokenBlkPtr* tbp, char* str)
 {
     TokenBlkPtr ltbp;
 
@@ -411,11 +411,11 @@ static void InsertTokenVal(TokenBlkPtr PNTR tbp, CharPtr str)
  *      Return a statistics of link list token.
  *
  **********************************************************/
-TokenStatBlkPtr TokenString(CharPtr str, Char delimiter)
+TokenStatBlkPtr TokenString(char* str, Char delimiter)
 {
-    CharPtr         bptr;
-    CharPtr         ptr;
-    CharPtr         curtoken;
+    char*         bptr;
+    char*         ptr;
+    char*         curtoken;
     Int2            num;
     TokenStatBlkPtr token;
     Char            ch;
@@ -460,12 +460,12 @@ TokenStatBlkPtr TokenString(CharPtr str, Char delimiter)
  *      Return a statistics of link list token.
  *
  **********************************************************/
-TokenStatBlkPtr TokenStringByDelimiter(CharPtr str, Char delimiter)
+TokenStatBlkPtr TokenStringByDelimiter(char* str, Char delimiter)
 {
-    CharPtr         bptr;
-    CharPtr         ptr;
-    CharPtr         curtoken;
-    CharPtr         s;
+    char*         bptr;
+    char*         ptr;
+    char*         curtoken;
+    char*         s;
     Int2            num;
     TokenStatBlkPtr token;
     Char            ch;
@@ -698,7 +698,7 @@ Char* StringIStr(const Char* where, const Char *what)
             break;
     }
     if(q != NULL && *q == '\0')
-        return const_cast<CharPtr>(where);
+        return const_cast<char*>(where);
     return(NULL);
 }
 
@@ -723,24 +723,24 @@ Int2 MatchArrayISubString(const Char **array, const Char* text)
 
 /**********************************************************
  *
- *   CharPtr GetBlkDataReplaceNewLine(bptr, eptr,
+ *   char* GetBlkDataReplaceNewLine(bptr, eptr,
  *                                    start_col_data):
  *
  *      Return a string which replace newline to blank
  *   and skip "XX" line data.
  *
  **********************************************************/
-CharPtr GetBlkDataReplaceNewLine(CharPtr bptr, CharPtr eptr,
+char* GetBlkDataReplaceNewLine(char* bptr, char* eptr,
                                  Int2 start_col_data)
 {
-    CharPtr ptr;
+    char* ptr;
 
     if(bptr + start_col_data >= eptr)
         return(NULL);
 
     size_t size = eptr - bptr;
-    CharPtr retstr = (CharPtr)MemNew(size + 1);
-    CharPtr str = retstr;
+    char* retstr = (char*)MemNew(size + 1);
+    char* str = retstr;
 
     while(bptr < eptr)
     {
@@ -815,7 +815,7 @@ void CleanTailNoneAlphaCharInString(std::string& str)
  *   '.', ':' characters.
  *
  **********************************************************/
-void CleanTailNoneAlphaChar(CharPtr str)
+void CleanTailNoneAlphaChar(char* str)
 {
     if(str == NULL || *str == '\0')
         return;
@@ -825,7 +825,7 @@ void CleanTailNoneAlphaChar(CharPtr str)
 }
 
 /**********************************************************/
-CharPtr PointToNextToken(CharPtr ptr)
+char* PointToNextToken(char* ptr)
 {
     if(ptr != NULL)
     {
@@ -839,18 +839,18 @@ CharPtr PointToNextToken(CharPtr ptr)
 
 /**********************************************************
  *
- *   CharPtr GetTheCurrentToken(ptr):
+ *   char* GetTheCurrentToken(ptr):
  *
  *      Return the current token (also CleanTailNoneAlphaChar)
  *   which ptr points to and ptr will points to next token
  *   after the routine return.
  *
  **********************************************************/
-CharPtr GetTheCurrentToken(CharPtr PNTR ptr)
+char* GetTheCurrentToken(char** ptr)
 {
-    CharPtr retptr;
-    CharPtr bptr;
-    CharPtr str;
+    char* retptr;
+    char* bptr;
+    char* str;
     Char    ch;
 
     bptr = retptr = *ptr;
@@ -875,14 +875,14 @@ CharPtr GetTheCurrentToken(CharPtr PNTR ptr)
 
 /**********************************************************
  *
- *   CharPtr SrchTheChar(bptr, eptr, letter):
+ *   char* SrchTheChar(bptr, eptr, letter):
  *
  *      Search The character letter.
  *      Return NULL if not found; otherwise, return
  *   a pointer points first occurrence The character.
  *
  **********************************************************/
-CharPtr SrchTheChar(CharPtr bptr, CharPtr eptr, Char letter)
+char* SrchTheChar(char* bptr, char* eptr, Char letter)
 {
     while(bptr < eptr && *bptr != letter)
         bptr++;
@@ -895,16 +895,16 @@ CharPtr SrchTheChar(CharPtr bptr, CharPtr eptr, Char letter)
 
 /**********************************************************
  *
- *   CharPtr SrchTheStr(bptr, eptr, leadstr):
+ *   char* SrchTheStr(bptr, eptr, leadstr):
  *
  *      Search The leading string.
  *      Return NULL if not found; otherwise, return
  *   a pointer points first occurrence The leading string.
  *
  **********************************************************/
-CharPtr SrchTheStr(CharPtr bptr, CharPtr eptr, const char *leadstr)
+char* SrchTheStr(char* bptr, char* eptr, const char *leadstr)
 {
-    CharPtr p;
+    char* p;
     Char    c;
 
     c = *eptr;
@@ -1067,7 +1067,7 @@ ncbi::CRef<ncbi::objects::CDate_std> get_full_date(const Char* s, bool is_ref, I
  *                                              3-25-93
  *
  **********************************************************/
-Int2 SrchKeyword(CharPtr ptr, KwordBlk kwl[])
+Int2 SrchKeyword(char* ptr, KwordBlk kwl[])
 {
     Int2 i;
 
@@ -1081,9 +1081,9 @@ Int2 SrchKeyword(CharPtr ptr, KwordBlk kwl[])
 }
 
 /**********************************************************/
-bool CheckLineType(CharPtr ptr, Int4 line, KwordBlk kwl[], bool after_origin)
+bool CheckLineType(char* ptr, Int4 line, KwordBlk kwl[], bool after_origin)
 {
-    CharPtr p;
+    char* p;
     Char    msg[51];
     Int2    i;
 
@@ -1116,13 +1116,13 @@ bool CheckLineType(CharPtr ptr, Int4 line, KwordBlk kwl[], bool after_origin)
 
 /**********************************************************
  *
- *   CharPtr SrchNodeType(entry, type, len):
+ *   char* SrchNodeType(entry, type, len):
  *
  *      Return a memory location of the node which has
  *   the "type".
  *
  **********************************************************/
-CharPtr SrchNodeType(DataBlkPtr entry, Int4 type, size_t PNTR len)
+char* SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len)
 {
     DataBlkPtr temp;
 
@@ -1161,7 +1161,7 @@ DataBlkPtr TrackNodeType(DataBlkPtr entry, Int2 type)
 /**********************************************************/
 bool fta_tpa_keywords_check(const TKeywordList& kwds)
 {
-    const Char PNTR b[4];
+    const char* b[4];
 
     bool kwd_tpa = false;
     bool kwd_party = false;
@@ -1184,7 +1184,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
         if(key->empty())
             continue;
 
-        const Char PNTR p = key->c_str();
+        const char* p = key->c_str();
         i = MatchArrayIString(ParFlat_TPA_kw_array, p);
         if(i == 0)
             kwd_tpa = true;
@@ -1345,7 +1345,7 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Int2 source)
 }
 
 /**********************************************************/
-bool fta_is_tpa_keyword(const Char PNTR str)
+bool fta_is_tpa_keyword(const char* str)
 {
     if(str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TPA_kw_array, str) < 0)
         return false;
@@ -1354,7 +1354,7 @@ bool fta_is_tpa_keyword(const Char PNTR str)
 }
 
 /**********************************************************/
-bool fta_is_tsa_keyword(CharPtr str)
+bool fta_is_tsa_keyword(char* str)
 {
     if(str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TSA_kw_array, str) < 0)
         return false;
@@ -1362,7 +1362,7 @@ bool fta_is_tsa_keyword(CharPtr str)
 }
 
 /**********************************************************/
-bool fta_is_tls_keyword(CharPtr str)
+bool fta_is_tls_keyword(char* str)
 {
     if(str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TLS_kw_array, str) < 0)
         return false;
@@ -1370,7 +1370,7 @@ bool fta_is_tls_keyword(CharPtr str)
 }
 
 /**********************************************************/
-void fta_keywords_check(const Char PNTR str, bool* estk, bool* stsk, bool* gssk,
+void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk,
                         bool* htck, bool* flik, bool* wgsk, bool* tpak,
                         bool* envk, bool* mgak, bool* tsak, bool* tlsk)
 {
@@ -1518,14 +1518,14 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry,
                                 bool &inferential, bool &experimental,
                                 bool &assembly)
 {
-    CharPtr line;
-    CharPtr p;
-    CharPtr q;
+    char* line;
+    char* p;
+    char* q;
 
     if(kwds == NULL || kwds->data.ptrvalue == NULL || len < 1)
         return;
 
-    line = (CharPtr) MemNew(len + 1);
+    line = (char*) MemNew(len + 1);
     line[0] = '\0';
     for(; kwds != NULL; kwds = kwds->next)
     {
@@ -1608,7 +1608,7 @@ void fta_operon_free(FTAOperonPtr fop)
 }
 
 /**********************************************************/
-ValNodePtr ConstructValNode(ValNodePtr head, Uint1 choice, Pointer data)
+ValNodePtr ConstructValNode(ValNodePtr head, Uint1 choice, void* data)
 {
     ValNodePtr res;
 
@@ -1666,7 +1666,7 @@ bool fta_check_mga_keywords(ncbi::objects::CMolInfo& mol_info, const TKeywordLis
 
     for (is_sage = false, is_cage = false; key_it != kwds.end(); ++key_it)
     {
-        const Char PNTR p = key_it->c_str();
+        const char* p = key_it->c_str();
 
         if (ncbi::NStr::EqualNocase(p, "5'-SAGE"))
             is_sage = true;
@@ -1689,10 +1689,10 @@ bool fta_check_mga_keywords(ncbi::objects::CMolInfo& mol_info, const TKeywordLis
 }
 
 /**********************************************************/
-void fta_StringCpy(CharPtr dst, CharPtr src)
+void fta_StringCpy(char* dst, char* src)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     for(q = dst, p = src; *p != '\0';)
         *q++ = *p++;
@@ -1791,7 +1791,7 @@ void RemoveHtgPhase(TKeywordList& keywords)
 {
     for (TKeywordList::iterator key = keywords.begin(); key != keywords.end();)
     {
-        const Char PNTR p = key->c_str();
+        const char* p = key->c_str();
         if (ncbi::NStr::EqualNocase(p, 0, 10, "HTGS_PHASE") &&
             (p[10] == '0' || p[10] == '1' || p[10] == '2' ||
             p[10] == '3') && p[11] == '\0')

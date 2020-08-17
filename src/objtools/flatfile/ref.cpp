@@ -149,7 +149,7 @@ static void normalize_comment(std::string& comment)
  *                                              01-4-94
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CDate> get_lanl_date(CharPtr s)
+static ncbi::CRef<ncbi::objects::CDate> get_lanl_date(char* s)
 {
     int            day = 0;
     int            month = 0;
@@ -192,16 +192,16 @@ static ncbi::CRef<ncbi::objects::CDate> get_lanl_date(CharPtr s)
 
 /**********************************************************
  *
- *   static CharPtr clean_up(str):
+ *   static char* clean_up(str):
  *
  *      Deletes front and tail double or single quotes
  *   if any.
  *
  **********************************************************/
-static CharPtr clean_up(CharPtr str)
+static char* clean_up(char* str)
 {
-    CharPtr newp;
-    CharPtr s;
+    char* newp;
+    char* s;
 
     if(str == NULL)
         return(NULL);
@@ -233,7 +233,7 @@ static CharPtr clean_up(CharPtr str)
 *                                              12-4-93
 *
 **********************************************************/
-static ncbi::CRef<ncbi::objects::CPub> get_num(CharPtr str)
+static ncbi::CRef<ncbi::objects::CPub> get_num(char* str)
 {
     int serial_num = ncbi::NStr::StringToInt(str, ncbi::NStr::fAllowTrailingSymbols);
 
@@ -252,9 +252,9 @@ static ncbi::CRef<ncbi::objects::CPub> get_num(CharPtr str)
  *                                              12-4-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CPub> get_muid(CharPtr str, Uint1 format)
+static ncbi::CRef<ncbi::objects::CPub> get_muid(char* str, Uint1 format)
 {
-    CharPtr p;
+    char* p;
     Int4    i;
 
     ncbi::CRef<ncbi::objects::CPub> muid;
@@ -285,11 +285,11 @@ static ncbi::CRef<ncbi::objects::CPub> get_muid(CharPtr str, Uint1 format)
 }
 
 /**********************************************************/
-static CharPtr get_embl_str_pub_id(CharPtr str, const Char *tag)
+static char* get_embl_str_pub_id(char* str, const Char *tag)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr ret;
+    char* p;
+    char* q;
+    char* ret;
     Char    ch;
 
     if(str == NULL || tag == NULL)
@@ -315,9 +315,9 @@ static CharPtr get_embl_str_pub_id(CharPtr str, const Char *tag)
 }
 
 /**********************************************************/
-static Int4 get_embl_pmid(CharPtr str)
+static Int4 get_embl_pmid(char* str)
 {
-    CharPtr p;
+    char* p;
     Int4    i;
 
     if(str == NULL)
@@ -336,18 +336,18 @@ static Int4 get_embl_pmid(CharPtr str)
 
 /**********************************************************
  *
- *   static CharPtr check_book_tit(title):
+ *   static char* check_book_tit(title):
  *
  *      Get volume from book title.
  *
  *                                              12-4-93
  *
  **********************************************************/
-static CharPtr check_book_tit(CharPtr title)
+static char* check_book_tit(char* title)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr r;
+    char* p;
+    char* q;
+    char* r;
 
     p = StringRStr(title, "Vol");
     if(p == NULL)
@@ -404,20 +404,20 @@ static CharPtr check_book_tit(CharPtr title)
  *                                              11-14-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_pat> get_pat(ParserPtr pp, CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title, CharPtr eptr)
+static ncbi::CRef<ncbi::objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title, char* eptr)
 {
     IndexblkPtr ibp;
 
     ncbi::CRef<ncbi::objects::CCit_pat> cit_pat;
 
-    CharPtr     country;
-    CharPtr     number;
-    CharPtr     type;
-    CharPtr     app;
-    CharPtr     s;
-    CharPtr     p;
-    CharPtr     q;
-    CharPtr     temp;
+    char*     country;
+    char*     number;
+    char*     type;
+    char*     app;
+    char*     s;
+    char*     p;
+    char*     q;
+    char*     temp;
 
     ErrSev      sev;
     Char        ch;
@@ -441,8 +441,8 @@ static ncbi::CRef<ncbi::objects::CCit_pat> get_pat(ParserPtr pp, CharPtr bptr, n
                    "Too many patent references for patent sequence; ignoring all but the first.");
     }
 
-    q = (pp->format == ParFlat_EMBL) ? (CharPtr) "Patent number" :
-                                       (CharPtr) "Patent:";
+    q = (pp->format == ParFlat_EMBL) ? (char*) "Patent number" :
+                                       (char*) "Patent:";
     size_t len = StringLen(q);
     if(StringNICmp(q, bptr, len) != 0)
     {
@@ -582,12 +582,12 @@ static ncbi::CRef<ncbi::objects::CCit_pat> get_pat(ParserPtr pp, CharPtr bptr, n
 }
 
 /**********************************************************/
-static void fta_get_part_sup(CharPtr parts, ncbi::objects::CImprint& imp)
+static void fta_get_part_sup(char* parts, ncbi::objects::CImprint& imp)
 {
-    CharPtr start;
-    CharPtr end;
-    CharPtr p;
-    CharPtr q;
+    char* start;
+    char* end;
+    char* p;
+    char* q;
     Char    ch;
     Int4    i;
     Int4    j;
@@ -638,11 +638,11 @@ static void fta_get_part_sup(CharPtr parts, ncbi::objects::CImprint& imp)
  *      Return a PARTS from medart2asn.c.
  *
  **********************************************************/
-static bool get_parts(CharPtr bptr, CharPtr eptr, ncbi::objects::CImprint& imp)
+static bool get_parts(char* bptr, char* eptr, ncbi::objects::CImprint& imp)
 {
-    CharPtr parts;
-    CharPtr p;
-    CharPtr q;
+    char* parts;
+    char* p;
+    char* q;
     Char    ch;
     Int4    bad;
 
@@ -750,21 +750,21 @@ static bool get_parts(CharPtr bptr, CharPtr eptr, ncbi::objects::CImprint& imp)
  *      Return a CitArt pointer for GENBANK or EMBL mode.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_art> get_art(ParserPtr pp, CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title,
+static ncbi::CRef<ncbi::objects::CCit_art> get_art(ParserPtr pp, char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title,
                          int pre, bool has_muid, bool* all_zeros, Int4 er)
 {
-    CharPtr      eptr;
-    CharPtr      end_tit;
-    CharPtr      s;
-    CharPtr      p;
-    CharPtr      ss;
-    CharPtr      end_volume;
-    CharPtr      end_pages;
-    CharPtr      buf;
-    CharPtr      tit = NULL;
-    CharPtr      volume = NULL;
-    CharPtr      pages = NULL;
-    CharPtr      year;
+    char*      eptr;
+    char*      end_tit;
+    char*      s;
+    char*      p;
+    char*      ss;
+    char*      end_volume;
+    char*      end_pages;
+    char*      buf;
+    char*      tit = NULL;
+    char*      volume = NULL;
+    char*      pages = NULL;
+    char*      year;
     Char         symbol;
 
     Int4         i;
@@ -797,7 +797,7 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_art(ParserPtr pp, CharPtr bptr, n
     end_volume = NULL;
 
     size_t len = StringLen(bptr);
-    buf = (CharPtr) MemNew(len + 1);
+    buf = (char*) MemNew(len + 1);
     StringCpy(buf, bptr);
     eptr = buf + len - 1;
     while(eptr > buf && (*eptr == ' ' || *eptr == '\t' || *eptr == '.'))
@@ -988,7 +988,7 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_art(ParserPtr pp, CharPtr bptr, n
 
     ncbi::CRef<ncbi::objects::CTitle::C_E> journal_title(new ncbi::objects::CTitle::C_E);
 
-    for (CharPtr aux = end_tit - 1; aux > tit && *aux != '.' && *aux != ')' && !isalnum(*aux); --aux)
+    for (char* aux = end_tit - 1; aux > tit && *aux != '.' && *aux != ')' && !isalnum(*aux); --aux)
         *aux = 0;
 
     journal_title->SetIso_jta(ncbi::NStr::Sanitize(tit));
@@ -1048,13 +1048,13 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_art(ParserPtr pp, CharPtr bptr, n
  *                                              11-14-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_gen> get_unpub(CharPtr bptr, CharPtr eptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
+static ncbi::CRef<ncbi::objects::CCit_gen> get_unpub(char* bptr, char* eptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
                                                      const Char* title)
 {
     ncbi::CRef<ncbi::objects::CCit_gen> cit_gen(new ncbi::objects::CCit_gen);
 
-    CharPtr   s;
-    CharPtr   str;
+    char*   s;
+    char*   str;
 
     if (bptr != NULL)
     {
@@ -1091,20 +1091,20 @@ static ncbi::CRef<ncbi::objects::CCit_gen> get_unpub(CharPtr bptr, CharPtr eptr,
  *                                              11-14-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_art> get_book(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title,
-                                                    int pre, Int2 format, CharPtr jour)
+static ncbi::CRef<ncbi::objects::CCit_art> get_book(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title,
+                                                    int pre, Int2 format, char* jour)
 {
-    CharPtr    s;
-    CharPtr    ss;
-    CharPtr    tit;
-    CharPtr    volume;
-    CharPtr    pages;
-    CharPtr    press;
+    char*    s;
+    char*    ss;
+    char*    tit;
+    char*    volume;
+    char*    pages;
+    char*    press;
 
     Uint1      ref_fmt;
     bool       IS_AUTH = false;
-    CharPtr    tbptr;
-    CharPtr    p;
+    char*    tbptr;
+    char*    p;
     Char       c;
     Int4       i;
 
@@ -1278,7 +1278,7 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_book(CharPtr bptr, ncbi::CRef<ncb
  *                                              11-14-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_let> get_thesis(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
+static ncbi::CRef<ncbi::objects::CCit_let> get_thesis(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
                                                       ncbi::CRef<ncbi::objects::CTitle::C_E>& title, int pre)
 {
     ncbi::CRef<ncbi::objects::CCit_let> cit_let(new ncbi::objects::CCit_let);
@@ -1290,7 +1290,7 @@ static ncbi::CRef<ncbi::objects::CCit_let> get_thesis(CharPtr bptr, ncbi::CRef<n
     if (pre > 0)
         book.SetImp().SetPrepub(static_cast<ncbi::objects::CImprint::EPrepub>(pre));
 
-    CharPtr s;
+    char* s;
     for (s = bptr; *s != '\0' && *s != '(';)
         s++;
 
@@ -1341,12 +1341,12 @@ static ncbi::CRef<ncbi::objects::CCit_let> get_thesis(CharPtr bptr, ncbi::CRef<n
  *                                              11-14-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_book> get_whole_book(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
+static ncbi::CRef<ncbi::objects::CCit_book> get_whole_book(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
                                  ncbi::CRef<ncbi::objects::CTitle::C_E>& title, int pre)
 {
     ncbi::CRef<ncbi::objects::CCit_book> cit_book;
 
-    CharPtr    s;
+    char*    s;
 
     for(bptr += 5; IS_WHITESP(*bptr) != 0;)
         bptr++;
@@ -1407,10 +1407,10 @@ static ncbi::CRef<ncbi::objects::CCit_book> get_whole_book(CharPtr bptr, ncbi::C
  *      Return a CitSub pointer.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_sub> get_sub(ParserPtr pp, CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
+static ncbi::CRef<ncbi::objects::CCit_sub> get_sub(ParserPtr pp, char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
 {
     const char  **b;
-    CharPtr     s;
+    char*     s;
     Int2        medium = OTHER_MEDIUM;
 
     ncbi::CRef<ncbi::objects::CCit_sub> ret;
@@ -1521,12 +1521,12 @@ static ncbi::CRef<ncbi::objects::CCit_sub> get_sub(ParserPtr pp, CharPtr bptr, n
  *     JOURNAL   Published in GSDB (11-OCT-1996)
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_sub> get_sub_gsdb(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
+static ncbi::CRef<ncbi::objects::CCit_sub> get_sub_gsdb(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
                               ncbi::CRef<ncbi::objects::CTitle::C_E>& title, ParserPtr pp)
 {
     ncbi::CRef<ncbi::objects::CCit_sub> cit_sub;
 
-    CharPtr   s;
+    char*   s;
 
     for(s = bptr; *s != '(' && *s != '\0';)
         s++;
@@ -1586,14 +1586,14 @@ static ncbi::CRef<ncbi::objects::CCit_sub> get_sub_gsdb(CharPtr bptr, ncbi::CRef
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_gen> fta_get_citgen(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
+static ncbi::CRef<ncbi::objects::CCit_gen> fta_get_citgen(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
                                                           ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
 {
     ncbi::CRef<ncbi::objects::CCit_gen> cit_gen;
 
-    CharPtr   p;
-    CharPtr   q;
-    CharPtr   r;
+    char*   p;
+    char*   q;
+    char*   r;
     Char      ch;
     Int2      year;
 
@@ -1648,13 +1648,13 @@ static ncbi::CRef<ncbi::objects::CCit_gen> fta_get_citgen(CharPtr bptr, ncbi::CR
  *      Return a ValNodePtr.
  *
  **********************************************************/
-ncbi::CRef<ncbi::objects::CPub> journal(ParserPtr pp, CharPtr bptr, CharPtr eptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
+ncbi::CRef<ncbi::objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
                                         ncbi::CRef<ncbi::objects::CTitle::C_E>& title, bool has_muid, ncbi::CRef<ncbi::objects::CCit_art>& cit_art, Int4 er)
 {
     int        pre = 0;
-    CharPtr    p;
-    CharPtr    nearend;
-    CharPtr    end;
+    char*    p;
+    char*    nearend;
+    char*    end;
     bool       all_zeros;
     int        retval = ParFlat_MISSING_JOURNAL;
 
@@ -1862,7 +1862,7 @@ ncbi::CRef<ncbi::objects::CPub> journal(ParserPtr pp, CharPtr bptr, CharPtr eptr
 }
 
 /**********************************************************/
-static CharPtr FindBackSemicolon(CharPtr pchStart, CharPtr pchCurrent)
+static char* FindBackSemicolon(char* pchStart, char* pchCurrent)
 {
     if(pchStart == NULL || pchCurrent == NULL || pchStart >= pchCurrent)
         return(NULL);
@@ -1880,7 +1880,7 @@ static CharPtr FindBackSemicolon(CharPtr pchStart, CharPtr pchCurrent)
 }
 
 /**********************************************************/
-static CharPtr FindSemicolon(CharPtr str)
+static char* FindSemicolon(char* str)
 {
     if(str == NULL || *str == '\0')
         return(NULL);
@@ -1894,12 +1894,12 @@ static CharPtr FindSemicolon(CharPtr str)
 }
 
 /**********************************************************/
-static CharPtr ExtractErratum(CharPtr comm)
+static char* ExtractErratum(char* comm)
 {
-    CharPtr start;
-    CharPtr pchNumber = NULL;
-    CharPtr end;
-    CharPtr p;
+    char* start;
+    char* pchNumber = NULL;
+    char* end;
+    char* p;
 
     if(comm == NULL)
         return(NULL);
@@ -1934,7 +1934,7 @@ static CharPtr ExtractErratum(CharPtr comm)
 }
 
 /**********************************************************/
-static void XMLGetXrefs(CharPtr entry, XmlIndexPtr xip, TQualVector& quals)
+static void XMLGetXrefs(char* entry, XmlIndexPtr xip, TQualVector& quals)
 {
     XmlIndexPtr xipqual;
 
@@ -1994,7 +1994,7 @@ static void fta_add_article_ids(ncbi::objects::CPub& pub, const std::string& doi
 Int4 fta_remark_is_er(const Char* str)
 {
     const char **b;
-    CharPtr    s;
+    char*    s;
     Int4       i;
 
     s = StringSave(str);
@@ -2014,11 +2014,11 @@ Int4 fta_remark_is_er(const Char* str)
 /**********************************************************/
 static ncbi::CRef<ncbi::objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool& rej)
 {
-    CharPtr           title;
+    char*           title;
 
-    CharPtr           p;
-    CharPtr           q;
-    CharPtr           r;
+    char*           p;
+    char*           q;
+    char*           r;
     bool              is_online;
     Int4              pmid;
     bool              retstat;
@@ -2079,7 +2079,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp,
             q = StringRChr(p, '.');
             if(q == NULL || q[1] != '\0')
             {
-                q = (CharPtr) MemNew(StringLen(p) + 2);
+                q = (char*) MemNew(StringLen(p) + 2);
                 StringCpy(q, p);
                 StringCat(q, ".");
                 MemFree(p);
@@ -2228,14 +2228,14 @@ static ncbi::CRef<ncbi::objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp,
 
 /**********************************************************/
 ncbi::CRef<ncbi::objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
-                                                   bool bParser, DataBlkPtr PNTR PNTR ppInd, bool& no_auth)
+                                                   bool bParser, DataBlkPtr** ppInd, bool& no_auth)
 {
     static DataBlkPtr ind[MAXKW+1];
 
     bool              has_muid;
-    CharPtr           p;
-    CharPtr           q;
-    CharPtr           r;
+    char*           p;
+    char*           q;
+    char*           r;
     bool              is_online;
     Int4              pmid;
     bool              retstat;
@@ -2417,12 +2417,12 @@ ncbi::CRef<ncbi::objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp,
 static ncbi::CRef<ncbi::objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool& no_auth)
 {
     static DataBlkPtr ind[MAXKW+1];
-    CharPtr           s;
+    char*           s;
 
-    CharPtr           title;
+    char*           title;
     bool              has_muid;
-    CharPtr           p;
-    CharPtr           q;
+    char*           p;
+    char*           q;
     Int4              pmid;
 
     bool              retstat;

@@ -105,10 +105,10 @@ static KwordBlk PubStatus[] = {
 };
 
 /**********************************************************/
-static CharPtr fta_strip_pub_comment(CharPtr comment, KwordBlkPtr kbp)
+static char* fta_strip_pub_comment(char* comment, KwordBlkPtr kbp)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     ShrinkSpaces(comment);
     for(; kbp->str != NULL; kbp++)
@@ -336,7 +336,7 @@ static void fta_fix_affil(TPubList &pub_list, Int2 source)
                             if((strlen(str) == 1 || strlen(str) == 2) &&
                                (str[1] == '.' || str[1] == '\0'))
                             {
-                                char *p = (CharPtr) MemNew(2);
+                                char *p = (char*) MemNew(2);
                                 p[0] = str[0];
                                 p[1] = '\0';
                                 namestd.SetFirst(p);
@@ -371,7 +371,7 @@ static void fta_fix_affil(TPubList &pub_list, Int2 source)
                                                 if((strlen(str) == 1 || strlen(str) == 2) &&
                                                    (str[1] == '.' || str[1] == '\0'))
                                                 {
-                                                    char *p = (CharPtr) MemNew(2);
+                                                    char *p = (char*) MemNew(2);
                                                     p[0] = str[0];
                                                     p[1] = '\0';
                                                     namestd1.SetFirst(p);
@@ -449,7 +449,7 @@ static void fta_strip_er_remarks(ncbi::objects::CPubdesc& pub_descr)
             status == 4 ||          /* ppublish */
             status == 10)           /* aheadofprint */
         {
-            CharPtr comment = StringSave(pub_descr.GetComment().c_str());
+            char* comment = StringSave(pub_descr.GetComment().c_str());
             comment = fta_strip_pub_comment(comment, PubStatus);
             if (comment != NULL && comment[0] != 0)
                 pub_descr.SetComment(comment);
@@ -592,7 +592,7 @@ void fta_entrez_fetch_disable(ParserPtr pp)
 void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag)
 {
     pp->fpo = (FindPubOptionPtr) MemNew(sizeof(FindPubOption));
-    MemSet((Pointer) pp->fpo, 0, sizeof(FindPubOption));
+    MemSet((void*) pp->fpo, 0, sizeof(FindPubOption));
 
     /* no lookup if there is muid in the pub of seqentry
      */
@@ -971,7 +971,7 @@ static void fix_synonyms(ncbi::objects::CTaxon1& taxon, ncbi::objects::COrg_ref&
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, Uint1Ptr drop, Int4 taxid, bool isoh)
+static ncbi::CRef<ncbi::objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int4 taxid, bool isoh)
 {
     ncbi::CConstRef<ncbi::objects::CTaxon2_data> taxdata;
 
@@ -1026,7 +1026,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, Uin
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, Uint1Ptr drop, bool isoh)
+ncbi::CRef<ncbi::objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh)
 {
     ncbi::CRef<ncbi::objects::COrg_ref> ret;
 
@@ -1056,7 +1056,7 @@ ncbi::CRef<ncbi::objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::COrg_ref> fta_replace_org(ParserPtr pp, Uint1Ptr drop, ncbi::objects::COrg_ref& org_ref,
+static ncbi::CRef<ncbi::objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, ncbi::objects::COrg_ref& org_ref,
                                                            const Char* pn, int merge, Int4 attempt)
 {
     IndexblkPtr ibp = pp->entrylist[pp->curindx];
@@ -1139,8 +1139,8 @@ static ncbi::CRef<ncbi::objects::COrg_ref> fta_replace_org(ParserPtr pp, Uint1Pt
 }
 
 /**********************************************************/
-void fta_fix_orgref(ParserPtr pp, ncbi::objects::COrg_ref& org_ref, Uint1Ptr drop,
-                    CharPtr organelle)
+void fta_fix_orgref(ParserPtr pp, ncbi::objects::COrg_ref& org_ref, unsigned char* drop,
+                    char* organelle)
 {
     Int4      attempt;
     int       merge;

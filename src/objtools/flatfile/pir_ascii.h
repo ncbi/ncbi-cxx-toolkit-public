@@ -66,11 +66,11 @@ typedef struct pir_feat_type {
     Uint1      choice;          /* SITES, REGIONS, BONDS */
     Int4       keyint;          /* output keyname for SITES, BONDS */
     const char *keystr;         /* output keyname for REGIONS */
-} PirFeatType, PNTR PirFeatTypePtr;
+} PirFeatType, *PirFeatTypePtr;
 
 #define MAXTAG 38
 
-bool PirAscii PROTO((ParserPtr pp));
+bool PirAscii(ParserPtr pp);
 
 #endif //PIR_ASCII_H
 // LCOV_EXCL_STOP

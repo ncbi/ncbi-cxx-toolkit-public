@@ -76,22 +76,22 @@ typedef std::set<std::string> TWormbaseSet;
 typedef std::set<std::string> TLocusTagSet;
 
 typedef struct _acc_min_max {
-    CharPtr                  acc;
+    char*                  acc;
     Int2                     ver;
     Int4                     min;
     Int4                     max;
-    struct _acc_min_max PNTR next;
-} AccMinMax, PNTR AccMinMaxPtr;
+    struct _acc_min_max* next;
+} AccMinMax, *AccMinMaxPtr;
 
 typedef struct _gene_locs {
-    CharPtr                gene;
-    CharPtr                locus;
+    char*                gene;
+    char*                locus;
     Int4                   strand;
     Int4                   verymin;
     Int4                   verymax;
     AccMinMaxPtr           ammp;
-    struct _gene_locs PNTR next;
-} GeneLocs, PNTR GeneLocsPtr;
+    struct _gene_locs* next;
+} GeneLocs, *GeneLocsPtr;
 
 typedef struct seqloc_infoblk {
     Int4     from;                      /* the lowest value in the entry */
@@ -111,10 +111,10 @@ typedef struct seqloc_infoblk {
         noleft(false),
         noright(false)
     {}
-} SeqlocInfoblk, PNTR SeqlocInfoblkPtr;
+} SeqlocInfoblk, *SeqlocInfoblkPtr;
 
 typedef struct _mix_loc {
-    CharPtr              acc;
+    char*              acc;
     Int4                 ver;
     Uint1                acc_cho;
     Int4                 min;
@@ -124,15 +124,15 @@ typedef struct _mix_loc {
     bool                 noright;
     Int4                 numloc;
     Int4                 numint;
-    struct _mix_loc PNTR next;
-} MixLoc, PNTR MixLocPtr;
+    struct _mix_loc* next;
+} MixLoc, *MixLocPtr;
 
 typedef struct gene_list {
-    CharPtr               locus;        /* the name of the gene,
+    char*               locus;        /* the name of the gene,
                                            copy the value */
-    CharPtr               locus_tag;
-    CharPtr               pseudogene;
-    CharPtr               maploc;       /* the map of the gene,
+    char*               locus_tag;
+    char*               pseudogene;
+    char*               maploc;       /* the map of the gene,
                                            copy the value */
 
     ncbi::CRef<ncbi::objects::CSeq_feat> feat;
@@ -154,11 +154,11 @@ typedef struct gene_list {
     bool                  genefeat;
     bool                  noleft;
     bool                  noright;
-    CharPtr               fname;
-    CharPtr               location;
+    char*               fname;
+    char*               location;
     bool                  todel;
     bool                  circular;
-    struct gene_list PNTR next;
+    struct gene_list* next;
 
     gene_list() :
         locus(NULL),
@@ -181,14 +181,14 @@ typedef struct gene_list {
         next(NULL)
     {}
 
-} GeneList, PNTR GeneListPtr;
+} GeneList, *GeneListPtr;
 
 typedef struct cdss_list {
     Int4                  from;
     Int4                  to;
     Int4                  segnum;
-    struct cdss_list PNTR next;
-} CdssList, PNTR CdssListPtr;
+    struct cdss_list* next;
+} CdssList, *CdssListPtr;
 
 typedef struct gene_node {
     bool        flag;                   /* TRUE, if a level has been found
@@ -227,7 +227,7 @@ typedef struct gene_node {
         simple_genes(false),
         got_misc(false)
     {}
-} GeneNode, PNTR GeneNodePtr;
+} GeneNode, *GeneNodePtr;
 
 /* The list of feature which are not allowed to have gene qual
  */
@@ -534,13 +534,13 @@ static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
     Int4             index;
     Int4             total;
     GeneListPtr      glp;
-    GeneListPtr PNTR temp;
+    GeneListPtr* temp;
 
     total = 0;
     for(glp = gnp->glp; glp != NULL; glp = glp->next)
         total++;
 
-    temp = (GeneListPtr PNTR) MemNew(total * sizeof(GeneListPtr));
+    temp = (GeneListPtr*) MemNew(total * sizeof(GeneListPtr));
 
     for(index = 0, glp = gnp->glp; glp != NULL; glp = glp->next)
         temp[index++] = glp;
@@ -557,7 +557,7 @@ static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
     glp = temp[total-1];
     glp->next = NULL;
 
-    temp = (GeneListPtr PNTR) MemFree(temp);
+    temp = (GeneListPtr*) MemFree(temp);
 
     return(gnp);
 }
@@ -820,7 +820,7 @@ static bool DoWeHaveCdssInBetween(GeneListPtr c, Int4 to, CdssListPtr clp)
 }
 
 /**********************************************************/
-static void AddGeneFeat(GeneListPtr glp, CharPtr maploc, TSeqFeatList& feats)
+static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
 {
     ncbi::CRef<ncbi::objects::CSeq_feat> feat(new ncbi::objects::CSeq_feat);
     ncbi::objects::CGene_ref& gene_ref = feat->SetData().SetGene();
@@ -1133,7 +1133,7 @@ static void fta_check_pseudogene(GeneListPtr tglp, GeneListPtr glp)
             tglp->pseudogene = StringSave(glp->pseudogene);
         else
         {
-            tglp->pseudogene = (CharPtr) MemNew(1);
+            tglp->pseudogene = (char*) MemNew(1);
             tglp->pseudogene[0] = '\0';
         }
     }
@@ -1143,7 +1143,7 @@ static void fta_check_pseudogene(GeneListPtr tglp, GeneListPtr glp)
             glp->pseudogene = StringSave(tglp->pseudogene);
         else
         {
-            glp->pseudogene = (CharPtr) MemNew(1);
+            glp->pseudogene = (char*) MemNew(1);
             glp->pseudogene[0] = '\0';
         }
     }
@@ -1826,7 +1826,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
     GeneListPtr cp;
 
     MixLocPtr   mlp;
-    CharPtr     maploc;
+    char*     maploc;
     Int4        j;
     Int2        level;
 
@@ -2075,7 +2075,7 @@ static ncbi::CRef<ncbi::objects::CSeq_id> CpSeqIdAcOnly(const ncbi::objects::CSe
 static bool WeDontNeedToJoinThis(const ncbi::objects::CSeqFeatData& data)
 {
     const Char **b;
-    Int2Ptr    i;
+    short*    i;
 
     if (data.IsRna())
     {
@@ -2116,7 +2116,7 @@ static bool WeDontNeedToJoinThis(const ncbi::objects::CSeqFeatData& data)
 }
 
 /**********************************************************/
-static void GetGeneSyns(const TQualVector& quals, CharPtr name, TSynSet& syns)
+static void GetGeneSyns(const TQualVector& quals, char* name, TSynSet& syns)
 {
     if(name == NULL)
         return;
@@ -2393,7 +2393,7 @@ static AccMinMaxPtr fta_get_acc_minmax_strand(const ncbi::objects::CSeq_loc* loc
 
 /**********************************************************/
 static void fta_append_feat_list(GeneNodePtr gnp, const ncbi::objects::CSeq_loc* location,
-                                 CharPtr gene, CharPtr locus_tag)
+                                 char* gene, char* locus_tag)
 {
     GeneLocsPtr gelop;
 
@@ -2426,13 +2426,13 @@ static GeneLocsPtr fta_sort_feat_list(GeneLocsPtr gelop)
     Int4             index;
     Int4             total;
     GeneLocsPtr      glp;
-    GeneLocsPtr PNTR temp;
+    GeneLocsPtr* temp;
 
     total = 0;
     for(glp = gelop; glp != NULL; glp = glp->next)
         total++;
 
-    temp = (GeneLocsPtr PNTR) MemNew(total * sizeof(GeneLocsPtr));
+    temp = (GeneLocsPtr*) MemNew(total * sizeof(GeneLocsPtr));
 
     for(index = 0, glp = gelop; glp != NULL; glp = glp->next)
         temp[index++] = glp;
@@ -2512,9 +2512,9 @@ static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNode
                      Int4 length, const ncbi::objects::CSeq_id& id)
 {
     GeneListPtr newglp;
-    CharPtr     pseudogene;
-    CharPtr     locus_tag;
-    CharPtr     gene;
+    char*     pseudogene;
+    char*     locus_tag;
+    char*     gene;
 
     if(gnp == NULL)
         return;
@@ -2718,7 +2718,7 @@ static void GeneCheckForStrands(GeneListPtr glp)
 }
 
 /**********************************************************/
-static bool fta_strings_i_same(CharPtr s1, CharPtr s2)
+static bool fta_strings_i_same(char* s1, char* s2)
 {
     if(s1 == NULL && s2 == NULL)
         return true;
@@ -2956,7 +2956,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
     GeneNodePtr  gnp;
     GeneListPtr  glp;
 
-    CharPtr      div;
+    char*      div;
 
     bool      resort;
 
@@ -3188,8 +3188,8 @@ static void FixAnnot(ncbi::objects::CBioseq::TAnnot& annots, const Char* acnum, 
                 }
             }
 
-            CharPtr gene = (*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "gene") : NULL;
-            CharPtr locus_tag = (*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "locus_tag") : NULL;
+            char* gene = (*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "gene") : NULL;
+            char* locus_tag = (*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "locus_tag") : NULL;
             if (gene == NULL && locus_tag == NULL)
             {
                 ++feat;

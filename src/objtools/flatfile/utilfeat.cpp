@@ -118,13 +118,13 @@ bool SeqLocHaveFuzz(const ncbi::objects::CSeq_loc& loc)
 
 /**********************************************************
  *
- *   CharPtr CpTheQualValue(qlist, qual):
+ *   char* CpTheQualValue(qlist, qual):
  *
  *      Return qual's value if found the "qual" in the
  *   "qlist"; otherwise, return NULL.
  *
  **********************************************************/
-CharPtr CpTheQualValue(const TQualVector& qlist, const Char *qual)
+char* CpTheQualValue(const TQualVector& qlist, const Char *qual)
 {
     std::string qvalue;
     ITERATE(TQualVector, cur, qlist)
@@ -144,7 +144,7 @@ CharPtr CpTheQualValue(const TQualVector& qlist, const Char *qual)
         break;
     }
 
-    CharPtr ret = NULL;
+    char* ret = NULL;
     if (!qvalue.empty())
         ret = StringSave(qvalue.c_str());
     return ret;
@@ -152,16 +152,16 @@ CharPtr CpTheQualValue(const TQualVector& qlist, const Char *qual)
 
 /**********************************************************
  *
- *   CharPtr GetTheQualValue(qlist, qual):
+ *   char* GetTheQualValue(qlist, qual):
  *
  *      Return qual's value if found the "qual" in the
  *   "qlist", and remove the "qual" from the qlist;
  *   otherwise, return NULL.
  *
  **********************************************************/
-CharPtr GetTheQualValue(TQualVector& qlist, const Char *qual)
+char* GetTheQualValue(TQualVector& qlist, const Char *qual)
 {
-    CharPtr   qvalue = NULL;
+    char*   qvalue = NULL;
 
     NON_CONST_ITERATE(TQualVector, cur, qlist)
     {
@@ -221,10 +221,10 @@ bool DeleteQual(TQualVector& qlist, const Char *qual)
  *   "ParFlat_AA_array".
  *
  **********************************************************/
-Uint1 GetQualValueAa(CharPtr qval, bool checkseq)
+Uint1 GetQualValueAa(char* qval, bool checkseq)
 {
-    CharPtr str;
-    CharPtr p;
+    char* str;
+    char* p;
     Uint1   aa;
     Char    ch;
 
@@ -376,8 +376,8 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
             break;
 
         ncbi::objects::CGB_block& gb_block = (*descr)->SetGenbank();
-        CharPtr p = StringSave(gb_block.GetSource().c_str()),
-                pper = NULL;
+        char* p = StringSave(gb_block.GetSource().c_str());
+        char* pper = 0;
 
         size_t len = StringLen(p);
         if (p[len - 1] == '.')
@@ -386,7 +386,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
             p[len - 1] = '\0';
         }
 
-        CharPtr q = StringChr(p, ' ');
+        char* q = StringChr(p, ' ');
         if (q != NULL)
             *q = '\0';
 
@@ -414,7 +414,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
                 q = StringChr(q, '(');
                 if (q == NULL)
                     break;
-                CharPtr s = q + 1;
+                char* s = q + 1;
                 if (StringNCmp(s, "acronym:", 8) == 0 ||
                     StringNCmp(s, "synonym:", 8) == 0)
                     s += 8;
@@ -427,7 +427,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
                         s++;
                 if (StringNICmp(s, name->c_str(), len) == 0 && s[len] == ')')
                 {
-                    CharPtr t = NULL;
+                    char* t = NULL;
                     for (t = s + len + 1; *t == ' ';)
                         t++;
                     if (*t != '\0')
@@ -446,7 +446,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
         if (pper != NULL)
         {
             MemFree(pper);
-            pper = (CharPtr)MemNew(StringLen(p) + 2);
+            pper = (char*)MemNew(StringLen(p) + 2);
             StringCpy(pper, p);
             StringCat(pper, ".");
         }

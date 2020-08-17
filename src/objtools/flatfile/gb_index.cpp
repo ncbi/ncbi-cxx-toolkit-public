@@ -82,11 +82,11 @@ KwordBlk gbkwl[] = {
  *                                      February 25 1993
  *
  **********************************************************/
-static bool DelSegnum(IndexblkPtr entry, CharPtr segnum, size_t len2)
+static bool DelSegnum(IndexblkPtr entry, char* segnum, size_t len2)
 {
-    CharPtr str;
-    CharPtr p;
-    CharPtr q;
+    char* str;
+    char* p;
+    char* q;
 
     if(segnum == NULL)
         return false;
@@ -133,7 +133,7 @@ static bool DelSegnum(IndexblkPtr entry, CharPtr segnum, size_t len2)
 }
 
 /**********************************************************/
-static void GetSegment(CharPtr str, IndexblkPtr entry)
+static void GetSegment(char* str, IndexblkPtr entry)
 {
     TokenStatBlkPtr stoken;
     TokenBlkPtr     ptr2;
@@ -168,7 +168,7 @@ static void GetSegment(CharPtr str, IndexblkPtr entry)
 // LCOV_EXCL_STOP
 
 /**********************************************************/
-static Uint1 gb_err_field(CharPtr str)
+static Uint1 gb_err_field(char* str)
 {
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
               "No %s data in GenBank format file, entry dropped", str);
@@ -176,13 +176,13 @@ static Uint1 gb_err_field(CharPtr str)
 }
 
 /**********************************************************/
-static void ParseGenBankVersion(IndexblkPtr entry, CharPtr line, CharPtr nid,
+static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
                                 Int2 source, bool ign_toks)
 {
-    Boolean gi;
-    CharPtr p;
-    CharPtr q;
-    CharPtr r;
+    bool gi;
+    char* p;
+    char* q;
+    char* r;
     Char    ch;
     Char    ch1;
 
@@ -275,11 +275,11 @@ static void ParseGenBankVersion(IndexblkPtr entry, CharPtr line, CharPtr nid,
 }
 
 /**********************************************************/
-static bool fta_check_mga_line(CharPtr line, IndexblkPtr ibp)
+static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr str;
+    char* p;
+    char* q;
+    char* str;
     Int4    from;
     Int4    to;
 
@@ -342,7 +342,7 @@ static bool fta_check_mga_line(CharPtr line, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len))
+bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     FinfoBlkPtr   finfo;
 
@@ -364,11 +364,11 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, I
     DataBlkPtr    data = NULL;
     IndBlkNextPtr ibnp;
     IndBlkNextPtr tibnp;
-    CharPtr       p;
-    CharPtr       q;
-    CharPtr       line_ver;
-    CharPtr       line_nid;
-    CharPtr       line_locus;
+    char*       p;
+    char*       q;
+    char*       line_ver;
+    char*       line_nid;
+    char*       line_locus;
     size_t        i;
     ValNodePtr    kwds;
     ValNodePtr    tkwds;
@@ -385,7 +385,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, I
                                 gbkwl[ParFlat_LOCUS].len);
     if(end_of_file)
     {
-        MsgSkipTitleFail((CharPtr) "GenBank", finfo);
+        MsgSkipTitleFail((char*) "GenBank", finfo);
         return false;
     }
 
@@ -494,7 +494,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, I
                             }
                         }
                         i = q - p;
-                        line_ver = (CharPtr) MemNew(i + 1);
+                        line_ver = (char*) MemNew(i + 1);
                         StringNCpy(line_ver, p, i);
                         line_ver[i] = '\0';
                         break;
@@ -509,7 +509,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, I
                                    *q != '\n';)
                             q++;
                         i = q - p;
-                        line_nid = (CharPtr) MemNew(i + 1);
+                        line_nid = (char*) MemNew(i + 1);
                         StringNCpy(line_nid, p, i);
                         line_nid[i] = '\0';
                         break;
@@ -730,28 +730,28 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, I
                     entry->drop = 1;
 
                 if(entry->is_mga && after_MGA == false)
-                    entry->drop = gb_err_field((CharPtr) "MGA");
+                    entry->drop = gb_err_field((char*) "MGA");
 
                 if(after_LOCUS == false)
-                    entry->drop = gb_err_field((CharPtr) "LOCUS");
+                    entry->drop = gb_err_field((char*) "LOCUS");
 
                 if(after_VERSION == false && pp->accver)
-                    entry->drop = gb_err_field((CharPtr) "VERSION");
+                    entry->drop = gb_err_field((char*) "VERSION");
 
                 if(after_DEFNTN == false)
-                    entry->drop = gb_err_field((CharPtr) "DEFINITION");
+                    entry->drop = gb_err_field((char*) "DEFINITION");
 
                 if(after_SOURCE == false)
-                    entry->drop = gb_err_field((CharPtr) "SOURCE");
+                    entry->drop = gb_err_field((char*) "SOURCE");
 
                 if(after_REFER == false && pp->source != ParFlat_FLYBASE &&
                    entry->is_wgs == false &&
                    (pp->source != ParFlat_REFSEQ ||
                     StringNCmp(entry->acnum, "NW_", 3) != 0))
-                    entry->drop = gb_err_field((CharPtr) "REFERENCE");
+                    entry->drop = gb_err_field((char*) "REFERENCE");
 
                 if(after_FEAT == false)
-                    entry->drop = gb_err_field((CharPtr) "FEATURES");
+                    entry->drop = gb_err_field((char*) "FEATURES");
 
                 if(entry->is_contig && entry->segnum != 0)
                 {
@@ -838,7 +838,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, I
     if(pp->qsfd != NULL && QSIndex(pp, ibnp->next) == false)
         return false;
 
-    pp->entrylist = (IndexblkPtr PNTR) MemNew(indx * sizeof(IndexblkPtr));
+    pp->entrylist = (IndexblkPtr*) MemNew(indx * sizeof(IndexblkPtr));
     tibnp = ibnp->next;
     MemFree(ibnp);
     for(int j = 0; j < indx && tibnp != NULL; j++, tibnp = ibnp)

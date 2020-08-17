@@ -13,13 +13,13 @@ typedef struct findpubstr {
     bool    merge_ids;                  /* If TRUE then merges Cit-art.ids from
                                            input Cit-sub and one gotten from
                                            med server. */
-} FindPubOption, PNTR FindPubOptionPtr;
+} FindPubOption, *FindPubOptionPtr;
 
-ncbi::CRef<ncbi::objects::CCit_art> FetchPubPmId PROTO((Int4 pmid));
+ncbi::CRef<ncbi::objects::CCit_art> FetchPubPmId(Int4 pmid);
 
-void FixPub PROTO((TPubList& pub_list, FindPubOptionPtr fpop));
-void FixPubEquiv PROTO((TPubList& pub_list, FindPubOptionPtr fpop));
-bool MedArchInit PROTO((void));
-void MedArchFini PROTO((void));
+void FixPub(TPubList& pub_list, FindPubOptionPtr fpop);
+void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop);
+bool MedArchInit(void);
+void MedArchFini(void);
 
 #endif // FTAMED_H

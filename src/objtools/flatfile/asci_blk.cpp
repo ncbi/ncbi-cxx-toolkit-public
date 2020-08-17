@@ -110,10 +110,10 @@ extern KwordBlk spkwl[];
 extern KwordBlk prfkwl[];
 
 /**********************************************************/
-void ShrinkSpaces(CharPtr line)
+void ShrinkSpaces(char* line)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
     bool got_nl;
 
     if (line == NULL || *line == '\0')
@@ -199,8 +199,8 @@ static DataBlkPtr DataBlkNew(DataBlkPtr dbp)
 *                                              3-18-93
 *
 **********************************************************/
-static void InsertDatablkVal(DataBlkPtr PNTR dbp, Int2 type,
-                                CharPtr offset, size_t len)
+static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type,
+                                char* offset, size_t len)
 {
     DataBlkPtr ldp;
 
@@ -216,7 +216,7 @@ static void InsertDatablkVal(DataBlkPtr PNTR dbp, Int2 type,
 
 /**********************************************************
 *
-*   CharPtr GetGenBankBlock(chain, ptr, retkw, eptr):
+*   char* GetGenBankBlock(chain, ptr, retkw, eptr):
 *
 *      Enters knowing current keyword.type and offset,
 *   finds the length of the current keyword block,
@@ -231,10 +231,10 @@ static void InsertDatablkVal(DataBlkPtr PNTR dbp, Int2 type,
 *                                              3-21-93
 *
 **********************************************************/
-CharPtr GetGenBankBlock(DataBlkPtr PNTR chain, CharPtr ptr, Int2 PNTR retkw,
-                        CharPtr eptr)
+char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
+                        char* eptr)
 {
-    CharPtr offset;
+    char* offset;
     Int2    curkw;
     Int2    nextkw;
     Int4    len;
@@ -275,10 +275,10 @@ CharPtr GetGenBankBlock(DataBlkPtr PNTR chain, CharPtr ptr, Int2 PNTR retkw,
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************/
-CharPtr GetPrfBlock(DataBlkPtr PNTR chain, CharPtr ptr, Int2 PNTR retkw,
-                    CharPtr eptr)
+char* GetPrfBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
+                    char* eptr)
 {
-    CharPtr offset;
+    char* offset;
     Int2    curkw;
     Int2    nextkw;
 
@@ -336,8 +336,8 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
     Char    str[100];
     Char    str1[100];
     Char    str2[100];
-    CharPtr bptr;
-    CharPtr eptr;
+    char* bptr;
+    char* eptr;
 
     bptr = dbp->offset;
     eptr = bptr + dbp->len;
@@ -374,9 +374,9 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
 **********************************************************/
 static void BuildFeatureBlock(DataBlkPtr dbp)
 {
-    CharPtr bptr;
-    CharPtr eptr;
-    CharPtr ptr;
+    char* bptr;
+    char* eptr;
+    char* ptr;
     bool skip;
 
     bptr = dbp->offset;
@@ -390,7 +390,7 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
 
     while (bptr < eptr)
     {
-        InsertDatablkVal((DataBlkPtr PNTR) &dbp->data, ParFlat_FEATBLOCK,
+        InsertDatablkVal((DataBlkPtr*) &dbp->data, ParFlat_FEATBLOCK,
                             bptr, eptr - bptr);
 
         do
@@ -411,7 +411,7 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
 static void fta_check_mult_ids(DataBlkPtr dbp, const char *mtag,
                                 const char *ptag)
 {
-    CharPtr p;
+    char* p;
     Char    ch;
     Int4    muids;
     Int4    pmids;
@@ -501,7 +501,7 @@ void GetGenBankSubBlock(DataBlkPtr entry, size_t bases)
 
 /**********************************************************
 *
-*   CharPtr GetEmblBlock(chain, ptr, retkw, format, eptr):
+*   char* GetEmblBlock(chain, ptr, retkw, format, eptr):
 *
 *      Enters knowing current keyword.type and offset,
 *   finds the length of the current keyword block, and
@@ -522,10 +522,10 @@ void GetGenBankSubBlock(DataBlkPtr entry, size_t bases)
 *                                              12-15-93
 *
 **********************************************************/
-CharPtr GetEmblBlock(DataBlkPtr PNTR chain, CharPtr ptr, Int2 PNTR retkw,
-                        Nlm_Int2 format, CharPtr eptr)
+char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
+                        short format, char* eptr)
 {
-    CharPtr offset;
+    char* offset;
     Int2    curkw;
     Int2    nextkw;
     bool seen_oc = false;
@@ -585,9 +585,9 @@ CharPtr GetEmblBlock(DataBlkPtr PNTR chain, CharPtr ptr, Int2 PNTR retkw,
 **********************************************************/
 static bool TrimEmblFeatBlk(DataBlkPtr dbp)
 {
-    CharPtr bptr;
-    CharPtr eptr;
-    CharPtr ptr;
+    char* bptr;
+    char* eptr;
+    char* ptr;
     bool flag = false;
 
     bptr = dbp->offset;
@@ -632,11 +632,11 @@ static bool TrimEmblFeatBlk(DataBlkPtr dbp)
 *                                              6-15-93
 *
 **********************************************************/
-static bool GetSubNodeType(const char *subkw, CharPtr PNTR retbptr,
-                                CharPtr eptr)
+static bool GetSubNodeType(const char *subkw, char** retbptr,
+                                char* eptr)
 {
-    CharPtr bptr;
-    CharPtr ptr;
+    char* bptr;
+    char* ptr;
 
     bptr = *retbptr;
     size_t sublen = StringLen(subkw);
@@ -674,10 +674,10 @@ static bool GetSubNodeType(const char *subkw, CharPtr PNTR retbptr,
 static void GetEmblRefType(size_t bases, Int2 source, DataBlkPtr dbp)
 {
     Char    str[100];
-    CharPtr ptr;
-    CharPtr bptr;
-    CharPtr eptr;
-    CharPtr sptr;
+    char* ptr;
+    char* bptr;
+    char* eptr;
+    char* sptr;
 
     bptr = dbp->offset;
     eptr = bptr + dbp->len;
@@ -815,15 +815,15 @@ void GetEmblSubBlock(size_t bases, Int2 source, DataBlkPtr entry)
 **********************************************************/
 void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw)
 {
-    CharPtr bptr;
-    CharPtr eptr;
+    char* bptr;
+    char* eptr;
 
     bptr = dbp->offset;
     eptr = bptr + dbp->len;
 
     if (GetSubNodeType(subkw, &bptr, eptr))
     {
-        InsertDatablkVal((DataBlkPtr PNTR) &dbp->data, subtype, bptr,
+        InsertDatablkVal((DataBlkPtr*) &dbp->data, subtype, bptr,
                             eptr - bptr);
     }
 }
@@ -843,8 +843,8 @@ void GetLenSubNode(DataBlkPtr dbp)
     DataBlkPtr curdbp;
     DataBlkPtr ndbp;
     DataBlkPtr ldbp;
-    CharPtr    offset;
-    CharPtr    s;
+    char*    offset;
+    char*    s;
     Int2       n;
     bool done = false;
 
@@ -902,7 +902,7 @@ void GetLenSubNode(DataBlkPtr dbp)
 *                                              9-16-93
 *
 **********************************************************/
-static Uint1 ValidSeqType(CharPtr accession, Uint1 type, bool is_nuc, bool is_tpa)
+static Uint1 ValidSeqType(char* accession, Uint1 type, bool is_nuc, bool is_tpa)
 {
     Uint1 cho;
 
@@ -942,7 +942,7 @@ static Uint1 ValidSeqType(CharPtr accession, Uint1 type, bool is_nuc, bool is_tp
 *                                              5-10-93
 *
 **********************************************************/
-ncbi::CRef<ncbi::objects::CSeq_id> MakeAccSeqId(CharPtr acc, Uint1 seqtype, bool accver,
+ncbi::CRef<ncbi::objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver,
                                                 Int2 vernum, bool is_nuc, bool is_tpa)
 {
     ncbi::CRef<ncbi::objects::CSeq_id> id;
@@ -973,7 +973,7 @@ ncbi::CRef<ncbi::objects::CSeq_id> MakeAccSeqId(CharPtr acc, Uint1 seqtype, bool
 *                                              5-13-93
 *
 **********************************************************/
-ncbi::CRef<ncbi::objects::CSeq_id> MakeLocusSeqId(CharPtr locus, Uint1 seqtype)
+ncbi::CRef<ncbi::objects::CSeq_id> MakeLocusSeqId(char* locus, Uint1 seqtype)
 {
     ncbi::CRef<ncbi::objects::CSeq_id> res;
     if (locus == NULL || *locus == '\0')
@@ -991,7 +991,7 @@ ncbi::CRef<ncbi::objects::CSeq_id> MakeLocusSeqId(CharPtr locus, Uint1 seqtype)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_id> MakeSegSetSeqId(CharPtr accession, CharPtr locus,
+static ncbi::CRef<ncbi::objects::CSeq_id> MakeSegSetSeqId(char* accession, char* locus,
                                                           Uint1 seqtype, bool is_tpa)
 {
     ncbi::CRef<ncbi::objects::CSeq_id> res;
@@ -1015,7 +1015,7 @@ static ncbi::CRef<ncbi::objects::CSeq_id> MakeSegSetSeqId(CharPtr accession, Cha
 
 /**********************************************************
 *
-*   CharPtr SrchNodeSubType(entry, type, subtype, len):
+*   char* SrchNodeSubType(entry, type, subtype, len):
 *
 *      Return a memory location of the node which has
 *   the "subtype".
@@ -1023,8 +1023,8 @@ static ncbi::CRef<ncbi::objects::CSeq_id> MakeSegSetSeqId(CharPtr accession, Cha
 *                                              4-7-93
 *
 **********************************************************/
-CharPtr SrchNodeSubType(DataBlkPtr entry, Int2 type, Int2 subtype,
-                        size_t PNTR len)
+char* SrchNodeSubType(DataBlkPtr entry, Int2 type, Int2 subtype,
+                        size_t* len)
 {
     DataBlkPtr mdbp;
     DataBlkPtr sdbp;
@@ -1063,8 +1063,8 @@ ncbi::CRef<ncbi::objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 {
     IndexblkPtr  ibp;
 
-    CharPtr      locus;
-    CharPtr      acc;
+    char*      locus;
+    char*      acc;
     Uint1        seqtype;
 
     ncbi::CRef<ncbi::objects::CBioseq> res(new ncbi::objects::CBioseq);
@@ -1114,7 +1114,7 @@ ncbi::CRef<ncbi::objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 
 /**********************************************************
 *
-*   CharPtr GetDescrComment(offset, len, col_data, is_htg):
+*   char* GetDescrComment(offset, len, col_data, is_htg):
 *
 *      Return a pointer to a string comment.
 *      Strip tailing or leading blanks, unless the
@@ -1134,18 +1134,18 @@ ncbi::CRef<ncbi::objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 *                                              4-28-93
 *
 **********************************************************/
-CharPtr GetDescrComment(CharPtr offset, size_t len, Int2 col_data,
+char* GetDescrComment(char* offset, size_t len, Int2 col_data,
                         bool is_htg, bool is_pat)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr r;
-    CharPtr str;
+    char* p;
+    char* q;
+    char* r;
+    char* str;
 
     bool within = false;
-    CharPtr bptr = offset;
-    CharPtr eptr = bptr + len;
-    CharPtr com = (CharPtr)MemNew(len + 1);
+    char* bptr = offset;
+    char* eptr = bptr + len;
+    char* com = (char*)MemNew(len + 1);
 
     for (str = com; bptr < eptr; bptr = p + 1)
     {
@@ -1263,7 +1263,7 @@ CharPtr GetDescrComment(CharPtr offset, size_t len, Int2 col_data,
 static void fta_fix_secondaries(TokenBlkPtr secs)
 {
     TokenBlkPtr tbp;
-    CharPtr     p;
+    char*     p;
 
     if (secs == NULL || secs->next == NULL || secs->str == NULL ||
         secs->next->str == NULL || fta_if_wgs_acc(secs->str) != 0 ||
@@ -1295,8 +1295,8 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
     Int4        pri_acc;
     Int4        sec_acc;
     const char  *text;
-    CharPtr     acc;
-    CharPtr     p;
+    char*     acc;
+    char*     p;
     size_t i = 0;
 
     bool        unusual_wgs;
@@ -1494,7 +1494,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
 /**********************************************************/
 static void fta_fix_tpa_keywords(TKeywordList& keywords)
 {
-    const Char PNTR p;
+    const char* p;
 
     NON_CONST_ITERATE(TKeywordList, key, keywords)
     {
@@ -1526,11 +1526,11 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
 }
 
 /**********************************************************/
-static CharPtr FixEMBLKeywords(CharPtr kwstr)
+static char* FixEMBLKeywords(char* kwstr)
 {
-    CharPtr retstr;
-    CharPtr p;
-    CharPtr q;
+    char* retstr;
+    char* p;
+    char* q;
 
     if(kwstr == NULL || *kwstr == '\0')
         return(kwstr);
@@ -1547,7 +1547,7 @@ static CharPtr FixEMBLKeywords(CharPtr kwstr)
             return(kwstr);
     }
 
-    retstr = (CharPtr) MemNew(StringLen(kwstr) + 2);
+    retstr = (char*) MemNew(StringLen(kwstr) + 2);
     p[3] = '\0';
     StringCpy(retstr, kwstr);
     StringCat(retstr, ";");
@@ -1574,9 +1574,9 @@ void GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data,
 {
     TokenStatBlkPtr tsbp;
     TokenBlkPtr     tbp;
-    CharPtr         kwstr;
-    CharPtr         bptr;
-    CharPtr         kw;
+    char*         kwstr;
+    char*         bptr;
+    char*         kw;
     size_t          len;
 
     keywords.clear();
@@ -1646,15 +1646,15 @@ void GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data,
 *                                              7-28-93
 *
 **********************************************************/
-Int4 ScanSequence(bool warn, CharPtr PNTR seqptr, std::vector<char>& bsp,
-                    Uint1Ptr conv, Char replacechar, Int4Ptr numns)
+Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
+                    unsigned char* conv, Char replacechar, int* numns)
 {
     Int2         blank;
     Int2         count;
     Uint1        residue;
-    CharPtr      ptr;
+    char*      ptr;
     static Uint1 buf[133];
-    Uint1 PNTR   bu;
+    unsigned char*   bu;
 
     blank = count = 0;
     ptr = *seqptr;
@@ -1709,13 +1709,13 @@ Int4 ScanSequence(bool warn, CharPtr PNTR seqptr, std::vector<char>& bsp,
 *
 **********************************************************/
 bool GetSeqData(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq,
-                    Int4 nodetype, Uint1Ptr seqconv, Uint1 seq_data_type)
+                    Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type)
 {
     //ByteStorePtr bp;
     IndexblkPtr  ibp;
-    CharPtr      seqptr;
-    CharPtr      endptr;
-    CharPtr      str;
+    char*      seqptr;
+    char*      endptr;
+    char*      str;
     Char         replacechar;
     size_t len = 0;
     Int4        numns;
@@ -1842,19 +1842,19 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq,
 
 /**********************************************************
 *
-*   Uint1Ptr GetDNAConv():
+*   unsigned char* GetDNAConv():
 *
 *      DNA conversion table array.
 *
 *                                              3-29-93
 *
 **********************************************************/
-Uint1Ptr GetDNAConv(void)
+unsigned char* GetDNAConv(void)
 {
-    Uint1Ptr        dnaconv;
+    unsigned char*        dnaconv;
 
-    dnaconv = (Uint1Ptr)MemNew((size_t)255);                  /* DNA */
-    MemSet((CharPtr)dnaconv, (Uint1)1, (size_t)255);         /* everything
+    dnaconv = (unsigned char*)MemNew((size_t)255);                  /* DNA */
+    MemSet((char*)dnaconv, (Uint1)1, (size_t)255);         /* everything
                                                                 an error */
     dnaconv[32] = 0;                    /* blank */
 
@@ -1870,19 +1870,19 @@ Uint1Ptr GetDNAConv(void)
 
 /**********************************************************
 *
-*   Uint1Ptr GetProteinConv():
+*   unsigned char* GetProteinConv():
 *
 *      Protein conversion table array.
 *
 *                                              3-29-93
 *
 **********************************************************/
-Uint1Ptr GetProteinConv(void)
+unsigned char* GetProteinConv(void)
 {
-    Uint1Ptr        protconv;
+    unsigned char*        protconv;
 
-    protconv = (Uint1Ptr)MemNew((size_t)255);                  /* proteins */
-    MemSet((CharPtr)protconv, (Uint1)1, (size_t)255);         /* everything
+    protconv = (unsigned char*)MemNew((size_t)255);                  /* proteins */
+    MemSet((char*)protconv, (Uint1)1, (size_t)255);         /* everything
                                                                 an error */
     protconv[32] = 0;                    /* blank */
 
@@ -2225,7 +2225,7 @@ static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
 
 /**********************************************************
 *
-*   static CharPtr GetBioseqSetDescrTitle(descr):
+*   static char* GetBioseqSetDescrTitle(descr):
 *
 *      Copy title from the first one, truncate before
 *   "complete cds" or "exon".
@@ -2233,12 +2233,12 @@ static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
 *                                              5-18-93
 *
 **********************************************************/
-static CharPtr GetBioseqSetDescrTitle(const ncbi::objects::CSeq_descr& descr)
+static char* GetBioseqSetDescrTitle(const ncbi::objects::CSeq_descr& descr)
 {
     const Char* title;
     const Char* ptr;
 
-    CharPtr str;
+    char* str;
 
     const ncbi::objects::CSeq_descr::Tdata& descr_list = descr.Get();
 
@@ -2294,7 +2294,7 @@ static void SrchSegDescr(TEntryList& entries, ncbi::objects::CSeq_descr& descr)
     ncbi::CRef<ncbi::objects::CSeq_entry>& entry = *entries.begin();
     ncbi::objects::CBioseq& bioseq = entry->SetSeq();
 
-    CharPtr title = GetBioseqSetDescrTitle(bioseq.GetDescr());
+    char* title = GetBioseqSetDescrTitle(bioseq.GetDescr());
     if (title != NULL)
     {
         ncbi::CRef<ncbi::objects::CSeqdesc> desc_new(new ncbi::objects::CSeqdesc);
@@ -2324,7 +2324,7 @@ static void SrchSegDescr(TEntryList& entries, ncbi::objects::CSeq_descr& descr)
 
 /**********************************************************/
 static void GetSegSetDblink(ncbi::objects::CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr headsep*/,
-                            Uint1Ptr drop)
+                            unsigned char* drop)
 {
     if (entries.empty())
         return;
@@ -2463,7 +2463,7 @@ static void GetSegSetDblink(ncbi::objects::CSeq_descr& descr, TEntryList& entrie
 *                                              1-20-16
 *
 **********************************************************/
-static void GetBioseqSetDescr(TEntryList& entries, ncbi::objects::CSeq_descr& descr, Uint1Ptr drop)
+static void GetBioseqSetDescr(TEntryList& entries, ncbi::objects::CSeq_descr& descr, unsigned char* drop)
 {
     SrchSegDescr(entries, descr);     /* get from ASN.1 tree */
     GetSegSetDblink(descr, entries, drop);
@@ -2549,11 +2549,11 @@ static Int4 SrchSegLength(const TEntryList& entries)
 **********************************************************/
 static ncbi::CRef<ncbi::objects::CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const ncbi::objects::CSeq_loc& slp)
 {
-    CharPtr     locusname;
+    char*     locusname;
     IndexblkPtr ibp;
 
     ibp = pp->entrylist[pp->curindx];
-    locusname = (CharPtr)MemNew(StringLen(ibp->blocusname) + 5);
+    locusname = (char*)MemNew(StringLen(ibp->blocusname) + 5);
     StringCpy(locusname, "SEG_");
     StringCat(locusname, ibp->blocusname);
 
@@ -2563,7 +2563,7 @@ static ncbi::CRef<ncbi::objects::CBioseq> GetBioseq(ParserPtr pp, const TEntryLi
 
     if (pp->seg_acc)
     {
-        locusname = (CharPtr)MemNew(StringLen(ibp->acnum) + 5);
+        locusname = (char*)MemNew(StringLen(ibp->acnum) + 5);
         StringCpy(locusname, "SEG_");
         StringCat(locusname, ibp->acnum);
 
@@ -2574,7 +2574,7 @@ static ncbi::CRef<ncbi::objects::CBioseq> GetBioseq(ParserPtr pp, const TEntryLi
     const ncbi::objects::CSeq_entry& first_entry = *(*(entries.begin()));
     const ncbi::objects::CBioseq& original = first_entry.GetSeq();
 
-    CharPtr title = GetBioseqSetDescrTitle(original.GetDescr());
+    char* title = GetBioseqSetDescrTitle(original.GetDescr());
 
     if (title != NULL)
     {
@@ -2710,7 +2710,7 @@ bool IsSegBioseq(const ncbi::objects::CSeq_id* id)
 
 /**********************************************************
 *
-*   CharPtr check_div(pat_acc, pat_ref, est_kwd, sts_kwd,
+*   char* check_div(pat_acc, pat_ref, est_kwd, sts_kwd,
 *                     gss_kwd, if_cds, div, tech, bases,
 *                     source, drop):
 *
@@ -2720,9 +2720,9 @@ bool IsSegBioseq(const ncbi::objects::CSeq_id* id)
 *                                              9-09-96
 *
 **********************************************************/
-CharPtr check_div(bool pat_acc, bool pat_ref, bool est_kwd,
+char* check_div(bool pat_acc, bool pat_ref, bool est_kwd,
                     bool sts_kwd, bool gss_kwd, bool if_cds,
-                    CharPtr div, Uint1Ptr tech, size_t bases, Int2 source,
+                    char* div, unsigned char* tech, size_t bases, Int2 source,
                     bool& drop)
 {
     if (div == NULL)
@@ -2946,10 +2946,10 @@ CharPtr check_div(bool pat_acc, bool pat_ref, bool est_kwd,
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CSeq_id> StrToSeqId(CharPtr pch, bool pid)
+ncbi::CRef<ncbi::objects::CSeq_id> StrToSeqId(char* pch, bool pid)
 {
     long        lID;
-    CharPtr     pchEnd;
+    char*     pchEnd;
 
     CRef<ncbi::objects::CSeq_id> id;
 
@@ -2987,7 +2987,7 @@ void AddNIDSeqId(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, In
                     Int2 source)
 {
     DataBlkPtr dbp;
-    CharPtr    offset;
+    char*    offset;
 
     dbp = TrackNodeType(entry, type);
     if (dbp == NULL)
@@ -3093,10 +3093,10 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
 {
     DataBlkPtr dbp;
     const char **b;
-    CharPtr    tmp;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    tmp;
+    char*    p;
+    char*    q;
+    char*    r;
     Char       c;
     Int2       count;
 
@@ -3147,7 +3147,7 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
     dbp = TrackNodeType(entry, ori);
     if (dbp == NULL || dbp->offset == NULL || dbp->len < 1)
         return;
-    r = (CharPtr)MemNew(dbp->len + 1);
+    r = (char*)MemNew(dbp->len + 1);
     if (r == NULL)
         return;
     StringNCpy(r, dbp->offset, dbp->len);
@@ -3172,13 +3172,13 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
 }
 
 /**********************************************************/
-void XMLDefVsHTGKeywords(Uint1 tech, CharPtr entry, XmlIndexPtr xip, bool cancelled)
+void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled)
 {
     const char **b;
-    CharPtr    tmp;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    tmp;
+    char*    p;
+    char*    q;
+    char*    r;
     Int2       count;
 
     if (entry == NULL || xip == NULL)
@@ -3238,7 +3238,7 @@ void XMLDefVsHTGKeywords(Uint1 tech, CharPtr entry, XmlIndexPtr xip, bool cancel
 }
 
 /**********************************************************/
-void CheckHTGDivision(CharPtr div, Uint1 tech)
+void CheckHTGDivision(char* div, Uint1 tech)
 {
     if (div != NULL && StringCmp(div, "HTG") == 0 && tech == ncbi::objects::CMolInfo::eTech_htgs_3)
     {
@@ -3658,7 +3658,7 @@ void fta_fix_orgref_div(const ncbi::objects::CBioseq::TAnnot& annots, ncbi::obje
 }
 
 /**********************************************************/
-bool XMLCheckCDS(CharPtr entry, XmlIndexPtr xip)
+bool XMLCheckCDS(char* entry, XmlIndexPtr xip)
 {
     XmlIndexPtr txip;
     XmlIndexPtr fxip;

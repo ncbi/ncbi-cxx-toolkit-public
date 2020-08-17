@@ -55,7 +55,7 @@ typedef struct _XmlKwordBlk {
     const char *str;
     Int4       order;
     Int4       tag;
-} XmlKwordBlk, PNTR XmlKwordBlkPtr;
+} XmlKwordBlk, *XmlKwordBlkPtr;
 
 XmlKwordBlk xmkwl[] = {
     {"<INSDSeq_locus>",                 1, INSDSEQ_LOCUS},
@@ -162,10 +162,10 @@ static XmlIndexPtr XMLIndexNew(void)
 }
 
 /**********************************************************/
-static void XMLRestoreSpecialCharacters(CharPtr buf)
+static void XMLRestoreSpecialCharacters(char* buf)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     for(p = buf, q = buf; *p != '\0';)
     {
@@ -201,14 +201,14 @@ static void XMLRestoreSpecialCharacters(CharPtr buf)
 }
 
 /**********************************************************/
-CharPtr XMLGetTagValue(CharPtr entry, XmlIndexPtr xip)
+char* XMLGetTagValue(char* entry, XmlIndexPtr xip)
 {
     if(entry == NULL || xip == NULL || xip->start == 0 || xip->end == 0 ||
        xip->start >= xip->end)
         return(NULL);
 
     size_t i = xip->end - xip->start;
-    CharPtr buf = (CharPtr)MemNew(i + 1);
+    char* buf = (char*)MemNew(i + 1);
     StringNCpy(buf, entry + xip->start, i);
     buf[i] = '\0';
 
@@ -217,7 +217,7 @@ CharPtr XMLGetTagValue(CharPtr entry, XmlIndexPtr xip)
 }
 
 /**********************************************************/
-CharPtr XMLFindTagValue(CharPtr entry, XmlIndexPtr xip, Int4 tag)
+char* XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag)
 {
     for(; xip != NULL; xip = xip->next)
         if(xip->tag == tag)
@@ -228,7 +228,7 @@ CharPtr XMLFindTagValue(CharPtr entry, XmlIndexPtr xip, Int4 tag)
 }
 
 /**********************************************************/
-static bool XMLDelSegnum(IndexblkPtr ibp, CharPtr segnum, size_t len2)
+static bool XMLDelSegnum(IndexblkPtr ibp, char* segnum, size_t len2)
 {
     if(segnum == NULL)
         return false;
@@ -239,7 +239,7 @@ static bool XMLDelSegnum(IndexblkPtr ibp, CharPtr segnum, size_t len2)
     /* check, is there enough digits to delete
      */
     size_t tlen = len1;
-    CharPtr str = ibp->blocusname;
+    char* str = ibp->blocusname;
     size_t i = StringLen(str) - 1;
     for(; tlen > 0 && str[i] >= '0' && str[i] <= '9'; i--)
         tlen--;
@@ -258,8 +258,8 @@ static bool XMLDelSegnum(IndexblkPtr ibp, CharPtr segnum, size_t len2)
             return false;
     }
 
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
     for (q = &str[i + 1], p = q; *p == '0';)
         p++;
 
@@ -277,13 +277,13 @@ static bool XMLDelSegnum(IndexblkPtr ibp, CharPtr segnum, size_t len2)
 }
 
 /**********************************************************/
-static void XMLGetSegment(CharPtr entry, IndexblkPtr ibp)
+static void XMLGetSegment(char* entry, IndexblkPtr ibp)
 {
     TokenStatBlkPtr stoken;
     XmlIndexPtr     xip;
-    CharPtr         buf;
-    CharPtr         segnum;
-    CharPtr         segtotal;
+    char*         buf;
+    char*         segnum;
+    char*         segtotal;
 
     if(entry == NULL || ibp == NULL || ibp->xip == NULL)
         return;
@@ -333,7 +333,7 @@ static void XMLPerformIndex(ParserPtr pp)
     IndBlkNextPtr  tibnp;
     XmlIndexPtr    xip;
     IndexblkPtr    ibp;
-    CharPtr        p;
+    char*        p;
     Char           s[60];
     Char           ch;
     size_t         count;
@@ -484,7 +484,7 @@ static void XMLPerformIndex(ParserPtr pp)
         }
     }
 
-    pp->entrylist = (IndexblkPtr PNTR) MemNew((pp->indx + 1) *
+    pp->entrylist = (IndexblkPtr*) MemNew((pp->indx + 1) *
                                               sizeof(IndexblkPtr));
     for(tibnp = ibnp, i = 0; tibnp != NULL; i++, tibnp = ibnp)
     {
@@ -496,10 +496,10 @@ static void XMLPerformIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-static void XMLParseVersion(IndexblkPtr ibp, CharPtr line)
+static void XMLParseVersion(IndexblkPtr ibp, char* line)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     if(line == NULL)
     {
@@ -561,11 +561,11 @@ static void XMLParseVersion(IndexblkPtr ibp, CharPtr line)
 }
 
 /**********************************************************/
-static void XMLInitialEntry(IndexblkPtr ibp, CharPtr entry, bool accver,
+static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver,
                             Int2 source)
 {
     XmlIndexPtr xip;
-    CharPtr     buf;
+    char*     buf;
 
     if(ibp == NULL || ibp->xip == NULL || entry == NULL)
         return;
@@ -717,7 +717,7 @@ static bool XMLTagCheck(XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 }
 
 /**********************************************************/
-static bool XMLSameTagsCheck(XmlIndexPtr xip, CharPtr name)
+static bool XMLSameTagsCheck(XmlIndexPtr xip, char* name)
 {
     bool ret = true;
 
@@ -742,14 +742,14 @@ static bool XMLSameTagsCheck(XmlIndexPtr xip, CharPtr name)
 }
 
 /**********************************************************/
-static XmlIndexPtr XMLIndexSameSubTags(CharPtr entry, XmlIndexPtr xip,
+static XmlIndexPtr XMLIndexSameSubTags(char* entry, XmlIndexPtr xip,
                                        Int4 tag)
 {
     XmlIndexPtr xipsub;
     XmlIndexPtr txipsub;
-    CharPtr     name;
-    CharPtr     c;
-    CharPtr     p;
+    char*     name;
+    char*     c;
+    char*     p;
     size_t      count;
     Char        s[60];
     Int4        line;
@@ -758,7 +758,7 @@ static XmlIndexPtr XMLIndexSameSubTags(CharPtr entry, XmlIndexPtr xip,
     if(entry == NULL || xip == NULL)
         return(NULL);
 
-    name = (CharPtr) XMLStringByTag(xmsubkwl, tag);
+    name = (char*) XMLStringByTag(xmsubkwl, tag);
     if(name == NULL)
         return(NULL);
 
@@ -834,12 +834,12 @@ static XmlIndexPtr XMLIndexSameSubTags(CharPtr entry, XmlIndexPtr xip,
 }
 
 /**********************************************************/
-static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, CharPtr entry)
+static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipsec;
-    CharPtr     buf;
-    CharPtr     p;
+    char*     buf;
+    char*     p;
 
     bool ret = true;
     size_t len = StringLen(ibp->acnum) + StringLen(XML_FAKE_ACC_TAG) + 1;
@@ -850,7 +850,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, CharPtr entry)
 
     if(xip == NULL)
     {
-        buf = (CharPtr) MemNew(len);
+        buf = (char*) MemNew(len);
         StringCpy(buf, XML_FAKE_ACC_TAG);
         StringCat(buf, ibp->acnum);
         ret = GetAccession(pp, buf, ibp, 2);
@@ -861,7 +861,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, CharPtr entry)
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDSECONDARY_ACCN);
     if(xip->subtags == NULL)
     {
-        p = (CharPtr) XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
+        p = (char*) XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
                   "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = 1;
@@ -871,7 +871,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, CharPtr entry)
     for(xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next)
         len += (xipsec->end - xipsec->start + 1);
 
-    buf = (CharPtr) MemNew(len);
+    buf = (char*) MemNew(len);
     StringCpy(buf, XML_FAKE_ACC_TAG);
     StringCat(buf, ibp->acnum);
     for(xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next)
@@ -889,13 +889,13 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, CharPtr entry)
 }
 
 /**********************************************************/
-static bool XMLKeywordsCheck(CharPtr entry, IndexblkPtr ibp, Int2 source)
+static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Int2 source)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipkwd;
     ValNodePtr  vnp;
-    CharPtr     buf;
-    CharPtr     p;
+    char*     buf;
+    char*     p;
 
     bool tpa_check = (source == ParFlat_EMBL);
 
@@ -911,7 +911,7 @@ static bool XMLKeywordsCheck(CharPtr entry, IndexblkPtr ibp, Int2 source)
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDKEYWORD);
     if(xip->subtags == NULL)
     {
-        p = (CharPtr) XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
+        p = (char*) XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
                   "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = 1;
@@ -922,7 +922,7 @@ static bool XMLKeywordsCheck(CharPtr entry, IndexblkPtr ibp, Int2 source)
     for(xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
         len += (xipkwd->end - xipkwd->start + 2);
 
-    buf = (CharPtr) MemNew(len);
+    buf = (char*) MemNew(len);
     *buf = '\0';
     for(xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
     {
@@ -1059,11 +1059,11 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-CharPtr XMLLoadEntry(ParserPtr pp, bool err)
+char* XMLLoadEntry(ParserPtr pp, bool err)
 {
     IndexblkPtr ibp;
-    CharPtr     entry;
-    CharPtr     p;
+    char*     entry;
+    char*     p;
     size_t      i;
     Int4        c;
 
@@ -1074,7 +1074,7 @@ CharPtr XMLLoadEntry(ParserPtr pp, bool err)
     if(ibp == NULL || ibp->len == 0)
         return(NULL);
 
-    entry = (CharPtr) MemNew(ibp->len + 1);
+    entry = (char*) MemNew(ibp->len + 1);
     fseek(pp->ifp, static_cast<long>(ibp->offset), 0);
     for(p = entry, i = 0; i < ibp->len; i++)
     {
@@ -1106,12 +1106,12 @@ CharPtr XMLLoadEntry(ParserPtr pp, bool err)
 }
 
 /**********************************************************/
-static bool XMLIndexSubTags(CharPtr entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
+static bool XMLIndexSubTags(char* entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 {
     XmlKwordBlkPtr txkbp;
     XmlIndexPtr    xipsub;
-    CharPtr        c;
-    CharPtr        p;
+    char*        c;
+    char*        p;
     Char           s[60];
     size_t         count;
     Int4           line;
@@ -1326,7 +1326,7 @@ static bool XMLCheckRequiredQualTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLIndexFeatures(CharPtr entry, XmlIndexPtr xip)
+static bool XMLIndexFeatures(char* entry, XmlIndexPtr xip)
 {
     XmlIndexPtr xipfeat;
     XmlIndexPtr xipsub;
@@ -1433,7 +1433,7 @@ static bool XMLCheckRequiredRefTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static Int2 XMLGetRefTypePos(CharPtr reftag, size_t bases)
+static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
 {
     Char str[100];
 
@@ -1450,9 +1450,9 @@ static Int2 XMLGetRefTypePos(CharPtr reftag, size_t bases)
 }
 
 /**********************************************************/
-static Int2 XMLGetRefType(CharPtr reftag, size_t bases)
+static Int2 XMLGetRefType(char* reftag, size_t bases)
 {
-    CharPtr p;
+    char* p;
     Char    str[100];
     Char    str1[100];
 
@@ -1510,13 +1510,13 @@ static bool XMLCheckRequiredXrefTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLIndexReferences(CharPtr entry, XmlIndexPtr xip, size_t bases)
+static bool XMLIndexReferences(char* entry, XmlIndexPtr xip, size_t bases)
 {
     XmlIndexPtr xipref;
     XmlIndexPtr txip;
     XmlIndexPtr xipsub;
-    CharPtr     reftagref;
-    CharPtr     reftagpos;
+    char*     reftagref;
+    char*     reftagpos;
 
     if(xip == NULL || entry == NULL)
         return true;
@@ -1607,9 +1607,9 @@ static bool XMLIndexReferences(CharPtr entry, XmlIndexPtr xip, size_t bases)
 /**********************************************************/
 bool XMLIndex(ParserPtr pp)
 {
-    IndexblkPtr PNTR ibpp;
+    IndexblkPtr* ibpp;
     IndexblkPtr      ibp;
-    CharPtr          entry;
+    char*          entry;
 
     XMLPerformIndex(pp);
     if(pp->indx == 0)
@@ -1688,7 +1688,7 @@ bool XMLIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-DataBlkPtr XMLBuildRefDataBlk(CharPtr entry, XmlIndexPtr xip, Int2 type)
+DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, Int2 type)
 {
     XmlIndexPtr txip;
     DataBlkPtr  dbp;
@@ -1718,17 +1718,17 @@ DataBlkPtr XMLBuildRefDataBlk(CharPtr entry, XmlIndexPtr xip, Int2 type)
         }
         tdbp->type = txip->type;
         tdbp->offset = entry;
-        tdbp->data = (Pointer) txip->subtags;
+        tdbp->data = (void*) txip->subtags;
         tdbp->next = NULL;
     }
     return(dbp);
 }
 
 /**********************************************************/
-void XMLGetKeywords(CharPtr entry, XmlIndexPtr xip, TKeywordList& keywords)
+void XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords)
 {
     XmlIndexPtr xipkwd;
-    CharPtr     p;
+    char*     p;
 
     keywords.clear();
     if(entry == NULL || xip == NULL)
@@ -1752,12 +1752,12 @@ void XMLGetKeywords(CharPtr entry, XmlIndexPtr xip, TKeywordList& keywords)
 }
 
 /**********************************************************/
-CharPtr XMLConcatSubTags(CharPtr entry, XmlIndexPtr xip, Int4 tag, Char sep)
+char* XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep)
 {
     XmlIndexPtr txip;
-    CharPtr     buf;
-    CharPtr     p;
-    CharPtr     q;
+    char*     buf;
+    char*     p;
+    char*     q;
     size_t      i;
 
     if(entry == NULL || xip == NULL)
@@ -1772,7 +1772,7 @@ CharPtr XMLConcatSubTags(CharPtr entry, XmlIndexPtr xip, Int4 tag, Char sep)
     for(i = 0, txip = xip->subtags; txip != NULL; txip = txip->next)
         i += (txip->end - txip->start + 2);
 
-    buf = (CharPtr) MemNew(i);
+    buf = (char*) MemNew(i);
     buf[0] = '\0';
     for(q = buf, txip = xip->subtags; txip != NULL; txip = txip->next)
     {

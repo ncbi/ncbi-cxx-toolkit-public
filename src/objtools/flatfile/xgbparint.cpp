@@ -31,9 +31,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <ctools/ctransition/ncbimem.hpp>
-#include <ctools/ctransition/ncbistr.hpp>
-
 #include <corelib/ncbimisc.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -41,7 +38,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <objtools/flatfile/ftaerr.hpp>
+#include <objtools/flatfile/ftacpp.hpp>
 #include <objtools/flatfile/xgbparint.h>
 #include <objtools/flatfile/valnode.h>
 
@@ -49,8 +46,6 @@
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "xgbparint.cpp"
-
-USING_SCOPE(ctransition);
 
 #define TAKE_FIRST 1
 #define TAKE_SECOND 2
@@ -91,10 +86,11 @@ const Char* unkseqlitdbtag = "UnkSeqLit";
 static void do_xgbparse_error (const Char* msg, const Char* details)
 {
     size_t len = StringLen(msg) +7;
-    CharPtr errmsg, temp;
+    char* errmsg;
+    char* temp;
 
     len += StringLen(details);
-    temp = errmsg = static_cast<CharPtr>(MemNew((size_t)len));
+    temp = errmsg = static_cast<char*>(MemNew((size_t)len));
     temp = StringMove(temp, msg);
     temp = StringMove(temp, " at ");
     temp = StringMove(temp, details);
@@ -107,7 +103,7 @@ static void do_xgbparse_error (const Char* msg, const Char* details)
 
 static X_gbparse_errfunc Err_func = do_xgbparse_error;
 static X_gbparse_rangefunc Range_func = NULL;
-static Pointer xgbparse_range_data = NULL;
+static void* xgbparse_range_data = NULL;
 
 /*----------- xinstall_gbparse_error_handler ()-------------*/
 
@@ -118,7 +114,7 @@ void xinstall_gbparse_error_handler(X_gbparse_errfunc new_func)
 
 /*----------- xinstall_gbparse_range_func ()-------------*/
 
-void xinstall_gbparse_range_func(Pointer data, X_gbparse_rangefunc new_func)
+void xinstall_gbparse_range_func(void* data, X_gbparse_rangefunc new_func)
 {
     Range_func = new_func;
     xgbparse_range_data = data;
@@ -126,9 +122,10 @@ void xinstall_gbparse_range_func(Pointer data, X_gbparse_rangefunc new_func)
 
 /*------ xgbparse_point ()----*/
 
-static CharPtr xgbparse_point(ValNodePtr head, ValNodePtr current)
+static char* xgbparse_point(ValNodePtr head, ValNodePtr current)
 {
-    CharPtr temp, retval = NULL;
+    char* temp;
+    char* retval = 0;
     size_t len = 0;
     ValNodePtr now;
 
@@ -154,7 +151,7 @@ static CharPtr xgbparse_point(ValNodePtr head, ValNodePtr current)
             break;
         case GBPARSE_INT_ACCESION:
         case GBPARSE_INT_NUMBER:
-            len += StringLen(static_cast<CharPtr>(now->data.ptrvalue));
+            len += StringLen(static_cast<char*>(now->data.ptrvalue));
             break;
         case GBPARSE_INT_ORDER:
         case GBPARSE_INT_GROUP:
@@ -168,7 +165,7 @@ static CharPtr xgbparse_point(ValNodePtr head, ValNodePtr current)
             len += 7;
             break;
         case GBPARSE_INT_STRING:
-            len += StringLen(static_cast<CharPtr>(now->data.ptrvalue)) + 1;
+            len += StringLen(static_cast<char*>(now->data.ptrvalue)) + 1;
             break;
         case GBPARSE_INT_UNKNOWN:
         default:
@@ -183,7 +180,7 @@ static CharPtr xgbparse_point(ValNodePtr head, ValNodePtr current)
 
 
     if (len > 0){
-        temp = retval = static_cast<CharPtr>(MemNew(len + 1));
+        temp = retval = static_cast<char*>(MemNew(len + 1));
         for (now = head; now; now = now->next){
             switch (now->choice){
             case GBPARSE_INT_JOIN:
@@ -207,7 +204,7 @@ static CharPtr xgbparse_point(ValNodePtr head, ValNodePtr current)
             case GBPARSE_INT_ACCESION:
             case GBPARSE_INT_NUMBER:
             case GBPARSE_INT_STRING:
-                temp = StringMove(temp, static_cast<CharPtr>(now->data.ptrvalue));
+                temp = StringMove(temp, static_cast<char*>(now->data.ptrvalue));
                 break;
             case GBPARSE_INT_GT:
                 temp = StringMove(temp, ">");
@@ -250,7 +247,7 @@ static CharPtr xgbparse_point(ValNodePtr head, ValNodePtr current)
 
 static void xgbparse_error(const Char* front, ValNodePtr head, ValNodePtr current)
 {
-    CharPtr details;
+    char* details;
 
     details = xgbparse_point (head, current);
     Err_func (front,details); 
@@ -354,9 +351,9 @@ static void xfind_one_of_num(ValNodePtr head_token)
 
 
 /**********************************************************/
-static size_t xgbparse_accprefix(CharPtr acc)
+static size_t xgbparse_accprefix(char* acc)
 {
-    CharPtr p;
+    char* p;
 
     if (acc == NULL || *acc == '\0')
         return(0);
@@ -401,9 +398,9 @@ static char Saved_ch;
 
 /*------------- xgbparselex_ver() -----------------------*/
 
-static int xgbparselex_ver(CharPtr linein, ValNodePtr PNTR lexed, bool accver)
+static int xgbparselex_ver(char* linein, ValNodePtr* lexed, bool accver)
 {
-    CharPtr current_col = 0, points_at_term_null, spare, line_use = NULL;
+    char* current_col = 0, *points_at_term_null, *spare, *line_use = 0;
     size_t dex = 0,
            retval = 0,
            len = 0;
@@ -420,7 +417,7 @@ static int xgbparselex_ver(CharPtr linein, ValNodePtr PNTR lexed, bool accver)
     if (*linein)
     {
         len = StringLen(linein);
-        line_use = static_cast<CharPtr>(MemNew(len + 1));
+        line_use = static_cast<char*>(MemNew(len + 1));
         StringCpy(line_use, linein);
         if (*lexed)
         {
@@ -468,7 +465,7 @@ static int xgbparselex_ver(CharPtr linein, ValNodePtr PNTR lexed, bool accver)
                     len = spare - current_col + 1;
                     current_token->data.ptrvalue =
                         MemNew(len + 2);
-                    StringNCpy(static_cast<CharPtr>(current_token->data.ptrvalue),
+                    StringNCpy(static_cast<char*>(current_token->data.ptrvalue),
                                current_col, len);
                     current_col += len;
                 }
@@ -484,7 +481,7 @@ static int xgbparselex_ver(CharPtr linein, ValNodePtr PNTR lexed, bool accver)
                     dex++;
                 }
                 current_token->data.ptrvalue = MemNew(dex + 1);
-                StringNCpy(static_cast<CharPtr>(current_token->data.ptrvalue), current_col, dex);
+                StringNCpy(static_cast<char*>(current_token->data.ptrvalue), current_col, dex);
                 current_col += dex - 1;
                 break;
                 /*------
@@ -560,7 +557,7 @@ static int xgbparselex_ver(CharPtr linein, ValNodePtr PNTR lexed, bool accver)
                 {
                     current_token->choice = GBPARSE_INT_GAP;
                     current_token->data.ptrvalue = MemNew(4);
-                    StringCpy(static_cast<CharPtr>(current_token->data.ptrvalue), "gap");
+                    StringCpy(static_cast<char*>(current_token->data.ptrvalue), "gap");
                     if (StringNICmp(current_col + 3, "(unk", 4) == 0)
                     {
                         current_token->choice = GBPARSE_INT_UNK_GAP;
@@ -779,7 +776,7 @@ static int xgbparselex_ver(CharPtr linein, ValNodePtr PNTR lexed, bool accver)
                     current_col--;
                 }
                 current_token->data.ptrvalue = MemNew(dex + 1);
-                StringNCpy(static_cast<CharPtr>(current_token->data.ptrvalue), current_col, dex);
+                StringNCpy(static_cast<char*>(current_token->data.ptrvalue), current_col, dex);
                 current_col += dex;
 
 
@@ -910,7 +907,7 @@ static void xgbgap(ValNodePtr& currentPt, ncbi::CRef<ncbi::objects::CSeq_loc>& l
         if (vnp_third == NULL || vnp_third->choice != GBPARSE_INT_RIGHT)
             return;
 
-        ncbi::CRef<ncbi::objects::CSeq_loc> new_loc = XGapToSeqLocEx(atoi((CharPtr)vnp_second->data.ptrvalue), unknown);
+        ncbi::CRef<ncbi::objects::CSeq_loc> new_loc = XGapToSeqLocEx(atoi((char*)vnp_second->data.ptrvalue), unknown);
         if (new_loc.Empty())
             return;
 
@@ -974,7 +971,7 @@ static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz,
 
         if (currentPt->choice == GBPARSE_INT_NUMBER)
         {
-            fuzz.SetRange().SetMin(atoi(static_cast<CharPtr>(currentPt->data.ptrvalue)) - 1);
+            fuzz.SetRange().SetMin(atoi(static_cast<char*>(currentPt->data.ptrvalue)) - 1);
             if (take_which == TAKE_FIRST)
             {
                 numPt = fuzz.GetRange().GetMin();
@@ -992,7 +989,7 @@ static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz,
             currentPt = currentPt->next;
             if (currentPt->choice == GBPARSE_INT_NUMBER)
             {
-                fuzz.SetRange().SetMax(atoi(static_cast<CharPtr>(currentPt->data.ptrvalue)) - 1);
+                fuzz.SetRange().SetMax(atoi(static_cast<char*>(currentPt->data.ptrvalue)) - 1);
                 if (take_which == TAKE_SECOND)
                 {
                     numPt = fuzz.GetRange().GetMax();
@@ -1030,7 +1027,7 @@ static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz,
         else{
             if (currentPt->choice == GBPARSE_INT_NUMBER)
             {
-                numPt = atoi(static_cast<CharPtr>(currentPt->data.ptrvalue)) - 1;
+                numPt = atoi(static_cast<char*>(currentPt->data.ptrvalue)) - 1;
                 currentPt = currentPt->next;
                 num_found = 1;
             }
@@ -1070,7 +1067,7 @@ static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz,
 
             if (one_of_ok && currentPt->choice == GBPARSE_INT_NUMBER)
             {
-                numPt = atoi(static_cast<CharPtr>(currentPt->data.ptrvalue)) - 1;
+                numPt = atoi(static_cast<char*>(currentPt->data.ptrvalue)) - 1;
                 currentPt = currentPt->next;
             }
             else
@@ -1131,7 +1128,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
     ncbi::CRef<ncbi::objects::CSeq_loc> ret(new ncbi::objects::CSeq_loc);
 
     bool took_choice = false;
-    CharPtr p;
+    char* p;
 
     ncbi::CRef<ncbi::objects::CSeq_id> new_id;
     ncbi::CRef<ncbi::objects::CInt_fuzz> new_fuzz;
@@ -1142,21 +1139,21 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
 
         if (accver == false)
         {
-            text_id->SetAccession(static_cast<CharPtr>(currentPt->data.ptrvalue));
+            text_id->SetAccession(static_cast<char*>(currentPt->data.ptrvalue));
         }
         else
         {
-            p = StringChr(static_cast<CharPtr>(currentPt->data.ptrvalue), '.');
+            p = StringChr(static_cast<char*>(currentPt->data.ptrvalue), '.');
             if (p == NULL)
             {
-                text_id->SetAccession(static_cast<CharPtr>(currentPt->data.ptrvalue));
+                text_id->SetAccession(static_cast<char*>(currentPt->data.ptrvalue));
                 xgbparse_error("Missing accession's version",
                                head_token, currentPt);
             }
             else
             {
                 *p = '\0';
-                text_id->SetAccession(static_cast<CharPtr>(currentPt->data.ptrvalue));
+                text_id->SetAccession(static_cast<char*>(currentPt->data.ptrvalue));
                 text_id->SetVersion(atoi(p + 1));
                 *p = '.';
             }
@@ -1764,7 +1761,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int&
 
 /*---------- xgbparseint_ver()-----*/
 
-ncbi::CRef<ncbi::objects::CSeq_loc> xgbparseint_ver(CharPtr raw_intervals, bool& keep_rawPt, bool& sitesPt, int& num_errsPt,
+ncbi::CRef<ncbi::objects::CSeq_loc> xgbparseint_ver(char* raw_intervals, bool& keep_rawPt, bool& sitesPt, int& num_errsPt,
                                                     const TSeqIdList& seq_ids, bool accver)
 {
     ncbi::CRef<ncbi::objects::CSeq_loc> ret;

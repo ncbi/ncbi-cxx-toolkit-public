@@ -77,21 +77,21 @@ typedef struct parser_ref_block {
                                            and Swiss-Prot */
     Int4        muid;                   /* RM for Swiss-Prot */
     Int4        pmid;
-    CharPtr     doi;
-    CharPtr     agricola;
+    char*     doi;
+    char*     agricola;
 
     ncbi::CRef<ncbi::objects::CAuth_list> authors;  /* a linklist of the author's name,
                                                        AUTHORS for GenBank, RA for Embl
                                                        and Swiss-Prot */
-    CharPtr     title;                  /* TITLE for GenBank */
+    char*     title;                  /* TITLE for GenBank */
     std::string journal;                /* JOURNAL for GenBank, RL for Embl
                                            and Swiss-Prot */
-    CharPtr     cit;                    /* for cit-gen in Swiss-Prot */
+    char*     cit;                    /* for cit-gen in Swiss-Prot */
     std::string vol;
     std::string pages;
-    CharPtr     year;
+    char*     year;
     std::string affil;
-    CharPtr     country;
+    char*     country;
     std::string comment;                /* STANDARD for GenBank, RP for
                                            Swiss-Prot, RC for Embl */
     Uint1       reftype;                /* 0 if ignore the reference,
@@ -113,7 +113,7 @@ typedef struct parser_ref_block {
         reftype(0)
     {}
 
-} ParRefBlk, PNTR ParRefBlkPtr;
+} ParRefBlk, *ParRefBlkPtr;
 
 const char *ParFlat_SPRefRcToken[] = {
     "MEDLINE", "PLASMID", "SPECIES", "STRAIN", "TISSUE", "TRANSPOSON", NULL
@@ -128,11 +128,11 @@ const char *ParFlat_SPRefRcToken[] = {
  *   like name.
  *
  **********************************************************/
-static bool NotName(CharPtr name)
+static bool NotName(char* name)
 {
     ValNodePtr vnp;
-    CharPtr    tmp;
-    CharPtr    s;
+    char*    tmp;
+    char*    s;
     Int4       i;
 
     if(name == NULL)
@@ -148,7 +148,7 @@ static bool NotName(CharPtr name)
     if(i > 3)
         return true;
 
-    s = (CharPtr) vnp->data.ptrvalue;
+    s = (char*) vnp->data.ptrvalue;
     if(StringLen(s) > 8)
         return true;
 
@@ -172,9 +172,9 @@ static bool NotName(CharPtr name)
  **********************************************************/
 static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
 {
-    CharPtr bptr;
-    CharPtr eptr;
-    CharPtr str;
+    char* bptr;
+    char* eptr;
+    char* str;
     Int4    num = 0;
 
     bptr = dbp->offset + col_data;
@@ -197,9 +197,9 @@ static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
  *   s.t.  RC   STRAIN=SPRAGUE-DAWLEY; TISSUE=LIVER; STRAIN=ISOLATE JAPAN;
  *
  **********************************************************/
-static void CkSPComTopics(ParserPtr pp, CharPtr str)
+static void CkSPComTopics(ParserPtr pp, char* str)
 {
-    CharPtr ptr1;
+    char* ptr1;
 
     for(ptr1 = str; *ptr1 != '\0';)
     {
@@ -220,17 +220,17 @@ static void CkSPComTopics(ParserPtr pp, CharPtr str)
 
 /**********************************************************
  *
- *   static CharPtr ParseYear(str):
+ *   static char* ParseYear(str):
  *
  *      Return first group of continuous 4 digits.
  *
  *                                              10-28-93
  *
  **********************************************************/
-static CharPtr ParseYear(CharPtr str)
+static char* ParseYear(char* str)
 {
     Int2    i;
-    CharPtr year;
+    char* year;
 
     while(*str != '\0' && IS_DIGIT(*str) == 0)
         str++;
@@ -238,7 +238,7 @@ static CharPtr ParseYear(CharPtr str)
     if(*str == '\0')
         return(NULL);
 
-    year = (CharPtr) MemNew(5);
+    year = (char*) MemNew(5);
     for(i = 0; i < 4 && *str != '\0' && IS_DIGIT(*str) != 0; str++, i++)
         year[i] = *str;
 
@@ -255,10 +255,10 @@ static CharPtr ParseYear(CharPtr str)
  *                                              10-28-93
  *
  **********************************************************/
-static bool ParseJourLine(ParserPtr pp, ParRefBlkPtr prbp, CharPtr str)
+static bool ParseJourLine(ParserPtr pp, ParRefBlkPtr prbp, char* str)
 {
-    CharPtr ptr1;
-    CharPtr ptr2;
+    char* ptr1;
+    char* ptr2;
 
     ptr1 = StringChr(str, ':');
     if(ptr1 == NULL)
@@ -309,11 +309,11 @@ static bool ParseJourLine(ParserPtr pp, ParRefBlkPtr prbp, CharPtr str)
  *                                              10-28-93
  *
  **********************************************************/
-static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, CharPtr str)
+static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
 {
-    CharPtr ptr1;
-    CharPtr ptr2;
-    CharPtr token;
+    char* ptr1;
+    char* ptr2;
+    char* token;
 
     if(StringNICmp("UNPUBLISHED", str, 11) == 0)
     {
@@ -394,10 +394,10 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, CharPtr str)
 }
 
 /**********************************************************/
-static void GetSprotIds(ParRefBlkPtr prbp, CharPtr str)
+static void GetSprotIds(ParRefBlkPtr prbp, char* str)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
     bool    dois;
     bool    muids;
     bool    pmids;
@@ -488,11 +488,11 @@ static void GetSprotIds(ParRefBlkPtr prbp, CharPtr str)
 static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 {
     DataBlkPtr   subdbp;
-    CharPtr      str;
-    CharPtr      bptr;
-    CharPtr      eptr;
-    CharPtr      s;
-    CharPtr      p;
+    char*      str;
+    char*      bptr;
+    char*      eptr;
+    char*      s;
+    char*      p;
 
     ParRefBlkPtr prbp = new ParRefBlk;
 
@@ -748,7 +748,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
     const Char*  vol;
     const Char*  page;
 
-    CharPtr      tit;
+    char*      tit;
 
     ValNodePtr   token;
     ValNodePtr   vnp;
@@ -786,25 +786,25 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
 
     for (vnp = token, here = token; vnp != NULL; vnp = vnp->next)
     {
-        if (NotName((CharPtr)vnp->data.ptrvalue))
+        if (NotName((char*)vnp->data.ptrvalue))
             here = vnp;
     }
 
     size_t len = 0;
     for(vnp = token; vnp != NULL; vnp = vnp->next)
     {
-        len += StringLen((CharPtr) vnp->data.ptrvalue) + 2;
+        len += StringLen((char*) vnp->data.ptrvalue) + 2;
         if(vnp == here)
             break;
     }
 
-    tit = (CharPtr) MemNew(len);
+    tit = (char*) MemNew(len);
     tit[0] = '\0';
     for(vnp = token; vnp != NULL; vnp = vnp->next)
     {
         if(vnp != token)
             StringCat(tit, ", ");
-        StringCat(tit, (CharPtr) vnp->data.ptrvalue);
+        StringCat(tit, (char*) vnp->data.ptrvalue);
         if(vnp == here)
             break;
     }
@@ -906,15 +906,15 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
  **********************************************************/
 static bool GetCitBook(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
 {
-    CharPtr      publisher;
-    CharPtr      year;
-    CharPtr      title;
-    CharPtr      pages;
-    CharPtr      volume;
+    char*      publisher;
+    char*      year;
+    char*      title;
+    char*      pages;
+    char*      volume;
 
-    CharPtr      ptr;
-    CharPtr      p;
-    CharPtr      q;
+    char*      ptr;
+    char*      p;
+    char*      q;
     Char         ch;
 
     if(prbp == NULL || prbp->journal == NULL)
@@ -1100,9 +1100,9 @@ static bool GetCitBook(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
  **********************************************************/
 static bool GetCitPatent(ParRefBlkPtr prbp, Int2 source, ncbi::objects::CCit_pat& pat)
 {
-    CharPtr    num;
-    CharPtr    p;
-    CharPtr    q;
+    char*    num;
+    char*    p;
+    char*    q;
     Char       ch;
     Char       country[3];
 

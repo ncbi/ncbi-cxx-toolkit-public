@@ -36,7 +36,7 @@
 #ifndef FTA_QSCORE_H
 #define FTA_QSCORE_H
 
-bool QscoreToSeqAnnot PROTO((CharPtr qscore, ncbi::objects::CBioseq& bioseq, CharPtr acc,
-                            Int2 ver, bool check_minmax, bool allow_na));
+bool QscoreToSeqAnnot(char* qscore, ncbi::objects::CBioseq& bioseq, char* acc,
+                            Int2 ver, bool check_minmax, bool allow_na);
 
 #endif // FTA_QSCORE

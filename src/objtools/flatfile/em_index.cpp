@@ -78,7 +78,7 @@ static void EmblSegment(ParserPtr pp)
     size_t      i = 0;
     int         j;
     IndexblkPtr ibp;
-    CharPtr     locus;
+    char*     locus;
 
     locus = StringSave(pp->entrylist[0]->locusname);
 
@@ -99,7 +99,7 @@ static void EmblSegment(ParserPtr pp)
 // LCOV_EXCL_STOP
 
 /**********************************************************/
-static Uint1 em_err_field(CharPtr str)
+static Uint1 em_err_field(char* str)
 {
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
               "No %s in Embl format file, entry dropped", str);
@@ -107,10 +107,10 @@ static Uint1 em_err_field(CharPtr str)
 }
 
 /**********************************************************/
-static void ParseEmblVersion(IndexblkPtr entry, CharPtr line)
+static void ParseEmblVersion(IndexblkPtr entry, char* line)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     p = StringRChr(line, '.');
     if(p == NULL)
@@ -149,11 +149,11 @@ static void ParseEmblVersion(IndexblkPtr entry, CharPtr line)
 }
 
 /**********************************************************/
-static CharPtr EmblGetNewIDVersion(CharPtr locus, CharPtr str)
+static char* EmblGetNewIDVersion(char* locus, char* str)
 {
-    CharPtr res;
-    CharPtr p;
-    CharPtr q;
+    char* res;
+    char* p;
+    char* q;
 
     if(locus == NULL || str == NULL)
         return(NULL);
@@ -171,7 +171,7 @@ static CharPtr EmblGetNewIDVersion(CharPtr locus, CharPtr str)
         return(NULL);
     *q = '\0';
 
-    res = (CharPtr) MemNew(StringLen(locus) + StringLen(p) + 2);
+    res = (char*) MemNew(StringLen(locus) + StringLen(p) + 2);
     StringCpy(res, locus);
     StringCat(res, ".");
     StringCat(res, p);
@@ -187,7 +187,7 @@ static CharPtr EmblGetNewIDVersion(CharPtr locus, CharPtr str)
  *                                              3-25-93
  *
  **********************************************************/
-bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len))
+bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     TokenStatBlkPtr stoken;
     FinfoBlkPtr     finfo;
@@ -211,9 +211,9 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4
     IndBlkNextPtr   tibnp;
     size_t          i;
     int             j;
-    CharPtr         line_sv;
-    CharPtr         p;
-    CharPtr         q;
+    char*         line_sv;
+    char*         p;
+    char*         q;
     ValNodePtr      kwds;
     ValNodePtr      tkwds;
 
@@ -227,7 +227,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4
                                 emblkwl[ParFlat_ID].len);
     if(end_of_file)
     {
-        MsgSkipTitleFail((CharPtr) "Embl", finfo);
+        MsgSkipTitleFail((char*) "Embl", finfo);
         return false;
     }
 
@@ -376,7 +376,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4
                                    *q != '\n';)
                             q++;
                         i = q - p;
-                        line_sv = (CharPtr) MemNew(i + 1);
+                        line_sv = (char*) MemNew(i + 1);
                         StringNCpy(line_sv, p, i);
                         line_sv[i] = '\0';
                     }
@@ -528,7 +528,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4
     if(pp->qsfd != NULL && QSIndex(pp, ibnp->next) == false)
         return false;
 
-    pp->entrylist = (IndexblkPtr PNTR) MemNew(indx * sizeof(IndexblkPtr));
+    pp->entrylist = (IndexblkPtr*) MemNew(indx * sizeof(IndexblkPtr));
     tibnp = ibnp->next;
     MemFree(ibnp);
     for(j = 0; j < indx && tibnp != NULL; j++, tibnp = ibnp)

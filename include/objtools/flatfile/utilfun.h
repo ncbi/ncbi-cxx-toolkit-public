@@ -49,115 +49,115 @@
 #include <objects/seqblock/GB_block.hpp>
 
 
-ncbi::CRef<ncbi::objects::CDate_std> get_full_date PROTO((const Char* s, bool is_ref, Int2 source));
+ncbi::CRef<ncbi::objects::CDate_std> get_full_date(const Char* s, bool is_ref, Int2 source);
 
 /**********************************************************/
 
 /* relative routines for tokenize string
     */
-TokenStatBlkPtr TokenString PROTO((CharPtr str, Char delimiter));
-TokenStatBlkPtr TokenStringByDelimiter PROTO((CharPtr str, Char delimiter));
-void            FreeTokenstatblk PROTO((TokenStatBlkPtr tsbp));
-void            FreeTokenblk PROTO((TokenBlkPtr tbp));
-bool            ParseAccessionRange PROTO((TokenStatBlkPtr tsbp, Int4 skip));
-void            UnwrapAccessionRange PROTO((const ncbi::objects::CGB_block::TExtra_accessions& extra_accs, ncbi::objects::CGB_block::TExtra_accessions& hist));
+TokenStatBlkPtr TokenString(char* str, Char delimiter);
+TokenStatBlkPtr TokenStringByDelimiter(char* str, Char delimiter);
+void            FreeTokenstatblk(TokenStatBlkPtr tsbp);
+void            FreeTokenblk(TokenBlkPtr tbp);
+bool            ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip);
+void            UnwrapAccessionRange(const ncbi::objects::CGB_block::TExtra_accessions& extra_accs, ncbi::objects::CGB_block::TExtra_accessions& hist);
 
 /* Return array position of the matched length of string in array_string.
     * Return -1 if no match.
     */
-Int2            fta_StringMatch PROTO((const Char **array, const Char* text));
+Int2            fta_StringMatch(const Char **array, const Char* text);
 
 /* Return array position of the matched length of string (ignored case)
     * in array_string.
     * Return -1 if no match.
     */
-Int2            StringMatchIcase PROTO((const Char **array, const Char* text));
+Int2            StringMatchIcase(const Char **array, const Char* text);
 
-CharPtr         StringIStr PROTO((const Char* where, const Char *what));
+char*         StringIStr(const Char* where, const Char *what);
 
 /* Return array position of the string in the array_string.
     * Return -1 if no match.
     */
-Int2            MatchArrayString PROTO((const Char **array, const Char *text));
-Int2            MatchArrayIString PROTO((const Char **array, const Char *text));
+Int2            MatchArrayString(const Char **array, const Char *text);
+Int2            MatchArrayIString(const Char **array, const Char *text);
 
 /* Return array position of the string in the array_string if any
     * array_string is in the substring of "text".
     * Return -1 if no match.
     */
-Int2            MatchArraySubString PROTO((const Char **array, const Char* text));
-Int2            MatchArrayISubString PROTO((const Char **array, const Char* text));
+Int2            MatchArraySubString(const Char **array, const Char* text);
+Int2            MatchArrayISubString(const Char **array, const Char* text);
 
 /* Return a string which replace newline to blank and skip "XX" line data.
     */
-CharPtr         GetBlkDataReplaceNewLine PROTO((CharPtr bptr, CharPtr eptr, Int2 col_data));
+char*         GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 col_data);
 
 /* Delete any tailing ' ', '\n', '\\', ',', ';', '~', '.', ':'
     * characters.
     */
-void            CleanTailNoneAlphaChar PROTO((CharPtr str));
-void            CleanTailNoneAlphaCharInString PROTO((std::string& str));
+void            CleanTailNoneAlphaChar(char* str);
+void            CleanTailNoneAlphaCharInString(std::string& str);
 
-CharPtr         PointToNextToken PROTO((CharPtr ptr));
+char*         PointToNextToken(char* ptr);
 
 /* Return the current token which ptr points to and ptr will points to
     * next token after the routine return.
     */
-CharPtr         GetTheCurrentToken PROTO((CharPtr PNTR ptr));
+char*         GetTheCurrentToken(char** ptr);
 
 /* Search The character letter.
     * Return NULL if not found; otherwise, return a pointer points first
     * occurrence The character.
     */
-CharPtr         SrchTheChar PROTO((CharPtr bptr, CharPtr eptr, Char letter));
+char*         SrchTheChar(char* bptr, char* eptr, Char letter);
 
 /* Search The string.
     * Return NULL if not found; otherwise, return a pointer points first
     * occurrence The string.
     */
-CharPtr         SrchTheStr PROTO((CharPtr bptr, CharPtr eptr, const char *str));
+char*         SrchTheStr(char* bptr, char* eptr, const char *str);
 
-void            CpSeqId PROTO((InfoBioseqPtr ibp, const ncbi::objects::CSeq_id& id));
+void            CpSeqId(InfoBioseqPtr ibp, const ncbi::objects::CSeq_id& id);
 
-void            InfoBioseqFree PROTO((InfoBioseqPtr ibp));
-Int2            SrchKeyword PROTO((CharPtr ptr, KwordBlk kwl[]));
-bool            CheckLineType PROTO((CharPtr ptr, Int4 line, KwordBlk kwl[], bool after_origin));
-CharPtr         SrchNodeType PROTO((DataBlkPtr entry, Int4 type, size_t PNTR len));
-DataBlkPtr      TrackNodeType PROTO((DataBlkPtr entry, Int2 type));
-void            fta_operon_free PROTO((FTAOperonPtr fop));
-ValNodePtr      ConstructValNode PROTO((ValNodePtr head, Uint1 choice, Pointer data));
-ValNodePtr      ConstructValNodeInt PROTO((ValNodePtr head, Uint1 choice, Int4 data));
-bool            fta_is_tpa_keyword PROTO((const Char PNTR str));
-bool            fta_tpa_keywords_check PROTO((const TKeywordList& kwds));
-bool            fta_is_tsa_keyword PROTO((CharPtr str));
-bool            fta_is_tls_keyword PROTO((CharPtr str));
-bool            fta_tsa_keywords_check PROTO((const TKeywordList& kwds, Int2 source));
-bool            fta_tls_keywords_check PROTO((const TKeywordList& kwds, Int2 source));
-bool            fta_check_mga_keywords PROTO((ncbi::objects::CMolInfo& mol_info, const TKeywordList& kwds));
-void            fta_StringCpy PROTO((CharPtr dst, CharPtr src));
+void            InfoBioseqFree(InfoBioseqPtr ibp);
+Int2            SrchKeyword(char* ptr, KwordBlk kwl[]);
+bool            CheckLineType(char* ptr, Int4 line, KwordBlk kwl[], bool after_origin);
+char*         SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len);
+DataBlkPtr      TrackNodeType(DataBlkPtr entry, Int2 type);
+void            fta_operon_free(FTAOperonPtr fop);
+ValNodePtr      ConstructValNode(ValNodePtr head, Uint1 choice, void* data);
+ValNodePtr      ConstructValNodeInt(ValNodePtr head, Uint1 choice, Int4 data);
+bool            fta_is_tpa_keyword(const char* str);
+bool            fta_tpa_keywords_check(const TKeywordList& kwds);
+bool            fta_is_tsa_keyword(char* str);
+bool            fta_is_tls_keyword(char* str);
+bool            fta_tsa_keywords_check(const TKeywordList& kwds, Int2 source);
+bool            fta_tls_keywords_check(const TKeywordList& kwds, Int2 source);
+bool            fta_check_mga_keywords(ncbi::objects::CMolInfo& mol_info, const TKeywordList& kwds);
+void            fta_StringCpy(char* dst, char* src);
 
-void            fta_keywords_check PROTO((const Char PNTR str, bool* estk, bool* stsk, bool* gssk,
+void            fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk,
     bool* htck, bool* flik, bool* wgsk, bool* tpak,
-    bool* envk, bool* mgak, bool* tsak, bool* tlsk));
+    bool* envk, bool* mgak, bool* tsak, bool* tlsk);
 
-void            fta_remove_keywords PROTO((Uint1 tech, TKeywordList& kwds));
-void            fta_remove_tpa_keywords PROTO((TKeywordList& kwds));
-void            fta_remove_tsa_keywords PROTO((TKeywordList& kwds, Int2 source));
-void            fta_remove_tls_keywords PROTO((TKeywordList& kwds, Int2 source));
-void            fta_remove_env_keywords PROTO((TKeywordList& kwds));
+void            fta_remove_keywords(Uint1 tech, TKeywordList& kwds);
+void            fta_remove_tpa_keywords(TKeywordList& kwds);
+void            fta_remove_tsa_keywords(TKeywordList& kwds, Int2 source);
+void            fta_remove_tls_keywords(TKeywordList& kwds, Int2 source);
+void            fta_remove_env_keywords(TKeywordList& kwds);
 
-bool            IsCancelled PROTO((const TKeywordList& keywords));
-bool            HasHtg PROTO((const TKeywordList& keywords));
-void            RemoveHtgPhase PROTO((TKeywordList& keywords));
-bool            HasHtc PROTO((const TKeywordList& keywords));
-bool            SetTextId PROTO((Uint1 seqtype, ncbi::objects::CSeq_id& seqId, ncbi::objects::CTextseq_id& textId));
+bool            IsCancelled(const TKeywordList& keywords);
+bool            HasHtg(const TKeywordList& keywords);
+void            RemoveHtgPhase(TKeywordList& keywords);
+bool            HasHtc(const TKeywordList& keywords);
+bool            SetTextId(Uint1 seqtype, ncbi::objects::CSeq_id& seqId, ncbi::objects::CTextseq_id& textId);
 
-void            check_est_sts_gss_tpa_kwds PROTO((ValNodePtr kwds, size_t len,
+void            check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len,
                                                   IndexblkPtr entry,
                                                   bool tpa_check,
                                                   bool &specialist_db,
                                                   bool &inferential,
                                                   bool &experimental,
-                                                  bool &assembly));
+                                                  bool &assembly);
 
 #endif

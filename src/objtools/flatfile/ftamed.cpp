@@ -142,14 +142,14 @@ void MedArchFini()
 
 /**********************************************************/
 static void MUGetStringCallback(XmlObjPtr xop, XmlObjPtr parent,
-                                Int2 level, Pointer userdata)
+                                Int2 level, void* userdata)
 {
-    CharPtr PNTR strp;
+    char** strp;
 
     if(xop == NULL || userdata == NULL)
         return;
 
-    strp = (CharPtr PNTR) userdata;
+    strp = (char**) userdata;
 
     if(StringHasNoText(xop->contents) == FALSE)
         *strp = StringSave(xop->contents);
@@ -157,7 +157,7 @@ static void MUGetStringCallback(XmlObjPtr xop, XmlObjPtr parent,
 
 /**********************************************************/
 static void MUGetStringSetCallback(XmlObjPtr xop, XmlObjPtr parent,
-                                   Int2 level, Pointer userdata)
+                                   Int2 level, void* userdata)
 {
     ValNodeBlockPtr vnbp;
 
@@ -170,7 +170,7 @@ static void MUGetStringSetCallback(XmlObjPtr xop, XmlObjPtr parent,
 }
 
 /**********************************************************/
-static bool MULooksLikeISSN(CharPtr str)
+static bool MULooksLikeISSN(char* str)
 {
     Char ch;
     Int2 i;
@@ -218,7 +218,7 @@ static char* StringNCpy_0(char* to, const char* from, size_t max)
 }
 
 
-static char* TrimSpacesAroundString(char* str)
+char* TrimSpacesAroundString(char* str)
 {
     unsigned char ch;
     char* dst;
@@ -317,10 +317,10 @@ static bool MUIsJournalIndexed(const Char* journal)
 {
     ValNodeBlock blk;
     XmlObjPtr    xop;
-    CharPtr      count = NULL;
-    CharPtr      jids = NULL;
-    CharPtr      ptr;
-    CharPtr      status = NULL;
+    char*      count = NULL;
+    char*      jids = NULL;
+    char*      ptr;
+    char*      status = NULL;
     bool         rsult = false;
     Char         ch;
     Char         title [512];
@@ -365,10 +365,10 @@ static bool MUIsJournalIndexed(const Char* journal)
 
     blk.head = NULL;
     blk.tail = NULL;
-    VisitXmlNodes(xop, (Pointer) &blk, MUGetStringSetCallback, (char *) "Id",
+    VisitXmlNodes(xop, (void*) &blk, MUGetStringSetCallback, (char *) "Id",
                   NULL, NULL, NULL, 0);
-    VisitXmlNodes(xop, (Pointer) &count, MUGetStringCallback, (char *) "Count",
-                  (char *) "eSearchResult", NULL, NULL, 0);
+    VisitXmlNodes(xop, (void*) &count, MUGetStringCallback, (char *) "Count",
+                  (char*) "eSearchResult", NULL, NULL, 0);
 
     xop = FreeXmlObject(xop);
 
@@ -392,9 +392,9 @@ static bool MUIsJournalIndexed(const Char* journal)
 
         blk.head = NULL;
         blk.tail = NULL;
-        VisitXmlNodes(xop, (Pointer) &blk, MUGetStringSetCallback,
+        VisitXmlNodes(xop, (void*) &blk, MUGetStringSetCallback,
                       (char *) "Id", NULL, NULL, NULL, 0);
-        VisitXmlNodes(xop, (Pointer) &count, MUGetStringCallback,
+        VisitXmlNodes(xop, (void*) &count, MUGetStringCallback,
                       (char *) "Count", (char *) "eSearchResult",
                       NULL, NULL, 0);
 
@@ -430,7 +430,7 @@ static bool MUIsJournalIndexed(const Char* journal)
     if(xop == NULL)
         return false;
 
-    VisitXmlNodes(xop, (Pointer) &status, MUGetStringCallback,
+    VisitXmlNodes(xop, (void*) &status, MUGetStringCallback,
                   (char *) "CurrentIndexingStatus", NULL, NULL, NULL, 0);
 
     xop = FreeXmlObject(xop);
@@ -743,7 +743,7 @@ static Char* cat_names(const ncbi::objects::CAuth_list_Base::C_Names::TStr& name
     if (names.empty())
         return NULL;
 
-    CharPtr buf = (char *)MemNew(len);
+    char* buf = (char *)MemNew(len);
     buf[0] = '\0';
 
     ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStr, cur, names)
@@ -759,8 +759,8 @@ static Char* cat_names(const ncbi::objects::CAuth_list_Base::C_Names::TStr& name
 /**********************************************************/
 static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& cit_tmp)
 {
-    CharPtr    oldbuf;
-    CharPtr    newbuf;
+    char*    oldbuf;
+    char*    newbuf;
     const Char* mu[10];
 
     Int2       num;

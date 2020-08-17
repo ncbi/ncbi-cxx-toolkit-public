@@ -60,7 +60,7 @@ public:
     void SetPub(const ncbi::objects::CPub* pub);
 };
 
-void ProcessCitations PROTO((TEntryList& seq_entries));
-void SetMinimumPub PROTO((const CPubInfo& pub_info, TPubList& pubs));
+void ProcessCitations(TEntryList& seq_entries);
+void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs);
 
 #endif //CITATION_H

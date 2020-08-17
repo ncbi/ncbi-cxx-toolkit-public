@@ -91,7 +91,7 @@
 #define THIS_FILE "gb_ascii.cpp"
 
 /**********************************************************/
-static CharPtr GBDivOffset(DataBlkPtr entry, Int4 div_shift)
+static char* GBDivOffset(DataBlkPtr entry, Int4 div_shift)
 {
     return(entry->offset + div_shift);
 }
@@ -155,9 +155,9 @@ bool GetGenBankInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bsp, ParserP
 {
     DataBlkPtr dbp;
 
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    p;
+    char*    q;
+    char*    r;
 
     bool    locmap;
     bool    sitemap;
@@ -174,7 +174,7 @@ bool GetGenBankInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bsp, ParserP
     if(i <= 0)
         return false;
 
-    p = (CharPtr) MemNew(i + 1);
+    p = (char*) MemNew(i + 1);
     StringNCpy(p, &dbp->offset[ParFlat_COL_DATA], i);
     p[i-1] = '\0';
     for(q = p, r = p; *q != '\0'; q++)
@@ -239,14 +239,14 @@ bool GetGenBankInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bsp, ParserP
  *                                              3-30-93
  *
  **********************************************************/
-static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, Uint1Ptr dnaconv)
+static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 {
     EntryBlkPtr  ebp;
     Int2         topology;
     Int2         strand;
-    CharPtr      bptr;
-    CharPtr      topstr;
-    CharPtr      strandstr;
+    char*      bptr;
+    char*      topstr;
+    char*      strandstr;
     LocusContPtr lcp;
     IndexblkPtr  ibp;
 
@@ -284,16 +284,16 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, Uint1Ptr dnaconv)
 }
 
 /**********************************************************/
-static CharPtr GBDateOffset(DataBlkPtr entry, Int4 shift_date)
+static char* GBDateOffset(DataBlkPtr entry, Int4 shift_date)
 {
     return(entry->offset + shift_date);
 }
 
 /**********************************************************/
-static CharPtr GetGenBankLineage(CharPtr start, CharPtr end)
+static char* GetGenBankLineage(char* start, char* end)
 {
-    CharPtr p;
-    CharPtr str;
+    char* p;
+    char* str;
 
     if(start >= end)
         return(NULL);
@@ -344,13 +344,13 @@ static ncbi::CRef<ncbi::objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr 
                                          ret;
 
     IndexblkPtr  ibp;
-    CharPtr      bptr;
-    CharPtr      eptr;
-    CharPtr      ptr;
-    CharPtr      str;
+    char*      bptr;
+    char*      eptr;
+    char*      ptr;
+    char*      str;
     Char         msg[4];
-    CharPtr      kw;
-    CharPtr      kwp;
+    char*      kw;
+    char*      kwp;
     size_t       len;
     Int2         div;
 
@@ -371,8 +371,8 @@ static ncbi::CRef<ncbi::objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr 
     bool         cancelled;
     bool         drop;
 
-    CharPtr      tempdiv;
-    CharPtr      p;
+    char*      tempdiv;
+    char*      p;
     Int4         i;
 
     ibp = pp->entrylist[pp->curindx];
@@ -478,7 +478,7 @@ static ncbi::CRef<ncbi::objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr 
 
             /* preserve the division code for later use
              */
-            const Char PNTR p_div = gbb->GetDiv().c_str();
+            const char* p_div = gbb->GetDiv().c_str();
             StringCpy(ibp->division, p_div);
 
             if(ibp->psip.NotEmpty())
@@ -672,8 +672,8 @@ static ncbi::CRef<ncbi::objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr 
             {
                 drop = false;
                 Uint1 tech = mol_info.GetTech();
-                CharPtr div_to_check = gbb->IsSetDiv() ? StringSave(gbb->GetDiv().c_str()) : StringSave(""),
-                        p_div = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd,
+                char* div_to_check = gbb->IsSetDiv() ? StringSave(gbb->GetDiv().c_str()) : StringSave("");
+                char* p_div = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd,
                                           gss_kwd, if_cds, div_to_check, &tech,
                                           ibp->bases, pp->source, drop);
                 if (tech != 0)
@@ -858,8 +858,8 @@ static ncbi::CRef<ncbi::objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataB
                                                              const ncbi::objects::COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
-    CharPtr     bptr;
-    CharPtr     molstr = NULL;
+    char*     bptr;
+    char*     molstr = NULL;
 
     ncbi::CRef<ncbi::objects::CMolInfo> mol_info(new ncbi::objects::CMolInfo);
 
@@ -914,9 +914,9 @@ static ncbi::CRef<ncbi::objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataB
 /**********************************************************/
 static void FakeGenBankBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
 {
-    CharPtr      bptr;
-    CharPtr      end;
-    CharPtr      ptr;
+    char*      bptr;
+    char*      end;
+    char*      ptr;
 
     Char         ch;
 
@@ -1003,11 +1003,11 @@ static void FakeGenBankBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bios
 }
 
 /**********************************************************/
-static void fta_get_user_field(CharPtr line, const Char *tag, ncbi::objects::CUser_object& user_obj)
+static void fta_get_user_field(char* line, const Char *tag, ncbi::objects::CUser_object& user_obj)
 {
-    CharPtr      p;
-    CharPtr      q;
-    CharPtr      res;
+    char*      p;
+    char*      q;
+    char*      res;
     Char         ch;
 
     p = StringStr(line, "USER        ");
@@ -1080,12 +1080,12 @@ static void fta_get_user_field(CharPtr line, const Char *tag, ncbi::objects::CUs
 }
 
 /**********************************************************/
-static void fta_get_str_user_field(CharPtr line, const Char *tag, ncbi::objects::CUser_object& user_obj)
+static void fta_get_str_user_field(char* line, const Char *tag, ncbi::objects::CUser_object& user_obj)
 {
-    CharPtr      p;
-    CharPtr      q;
-    CharPtr      r;
-    CharPtr      res;
+    char*      p;
+    char*      q;
+    char*      r;
+    char*      res;
     Char         ch;
 
     p = StringStr(line, "USER        ");
@@ -1097,7 +1097,7 @@ static void fta_get_str_user_field(CharPtr line, const Char *tag, ncbi::objects:
         *p = '\0';
     }
 
-    res = (CharPtr) MemNew(StringLen(line) + 1);
+    res = (char*) MemNew(StringLen(line) + 1);
     for(q = line; *q == ' ' || *q == '\n';)
         q++;
     for(r = res; *q != '\0';)
@@ -1134,9 +1134,9 @@ static void fta_get_str_user_field(CharPtr line, const Char *tag, ncbi::objects:
 /**********************************************************/
 static void fta_get_user_object(ncbi::objects::CSeq_entry& seq_entry, DataBlkPtr entry)
 {
-    CharPtr       p;
-    CharPtr       q;
-    CharPtr       r;
+    char*       p;
+    char*       q;
+    char*       r;
     Char          ch;
     size_t        l;
 
@@ -1186,11 +1186,11 @@ static void fta_get_user_object(ncbi::objects::CSeq_entry& seq_entry, DataBlkPtr
 }
 
 /**********************************************************/
-static void fta_get_mga_user_object(TSeqdescList& descrs, CharPtr offset,
+static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset,
                                     size_t len)
 {
-    CharPtr       str;
-    CharPtr       p;
+    char*       str;
+    char*       p;
 
     if(offset == NULL)
         return;
@@ -1241,10 +1241,10 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBios
 
     DataBlkPtr    dbp;
 
-    CharPtr       offset;
-    CharPtr       str;
-    CharPtr       p;
-    CharPtr       q;
+    char*       offset;
+    char*       str;
+    char*       p;
+    char*       q;
 
     bool          is_htg;
 
@@ -1567,7 +1567,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBios
 }
 
 /**********************************************************/
-static void GenBankGetDivision(CharPtr division, Int4 div, DataBlkPtr entry)
+static void GenBankGetDivision(char* division, Int4 div, DataBlkPtr entry)
 {
     StringNCpy(division, GBDivOffset(entry, div), 3);
     division[3] = '\0';
@@ -1592,15 +1592,15 @@ bool GenBankAscii(ParserPtr pp)
     Int4        total = 0;
     Int4        total_long = 0;
     Int4        total_dropped = 0;
-    CharPtr     ptr;
-    CharPtr     eptr;
-    CharPtr     div;
+    char*     ptr;
+    char*     eptr;
+    char*     div;
     DataBlkPtr  entry;
     EntryBlkPtr ebp;
 
-    Uint1Ptr    dnaconv;
-    Uint1Ptr    protconv;
-    Uint1Ptr    conv;
+    unsigned char*    dnaconv;
+    unsigned char*    protconv;
+    unsigned char*    conv;
 
     TEntryList seq_entries;
 

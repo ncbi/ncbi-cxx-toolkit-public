@@ -76,19 +76,19 @@ typedef std::list<ncbi::CRef<ncbi::objects::CDelta_seq> > TDeltaList;
 typedef struct file_buf {
     const char* start;
     const char* current;
-} FileBuf, PNTR FileBufPtr;
+} FileBuf, *FileBufPtr;
 
 typedef struct info_bioseq {
     TSeqIdList ids;                       /* for this Bioseq */
-    CharPtr  locus;
-    CharPtr  acnum;
+    char*  locus;
+    char*  acnum;
 
     info_bioseq() :
         locus(NULL),
         acnum(NULL)
     {}
 
-} InfoBioseq, PNTR InfoBioseqPtr;
+} InfoBioseq, *InfoBioseqPtr;
 
 typedef struct protein_block {
     ncbi::objects::CSeq_entry* biosep; /* for the toppest level of the BioseqSet */
@@ -113,7 +113,7 @@ typedef struct protein_block {
         orig_gcode(0)
     {}
 
-} ProtBlk, PNTR ProtBlkPtr;
+} ProtBlk, *ProtBlkPtr;
 
 typedef struct _locus_cont {
     Int4 bases;
@@ -123,7 +123,7 @@ typedef struct _locus_cont {
     Int4 topology;
     Int4 div;
     Int4 date;
-} LocusCont, PNTR LocusContPtr;
+} LocusCont, *LocusContPtr;
 
 typedef struct _gap_feats {
     Int4    from;
@@ -132,28 +132,28 @@ typedef struct _gap_feats {
     bool    leftNs;
     bool    rightNs;
     bool    assembly_gap;
-    CharPtr gap_type;
+    char* gap_type;
     Int4    asn_gap_type;
 
     ncbi::objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
 
-    struct _gap_feats PNTR next;
+    struct _gap_feats *next;
 
     _gap_feats();
 
-} GapFeats, PNTR GapFeatsPtr;
+} GapFeats, *GapFeatsPtr;
 
 typedef struct token_block {
-    CharPtr                 str;        /* the token string */
-    struct token_block PNTR next;       /* points to next token */
-} TokenBlk, PNTR TokenBlkPtr;
+    char*                 str;        /* the token string */
+    struct token_block *next;       /* points to next token */
+} TokenBlk, *TokenBlkPtr;
 
 typedef struct token_statistics_block {
     TokenBlkPtr list;                   /* a pointer points to the first
                                            token */
     Int2        num;                    /* total number of token in the
                                            chain list */
-} TokenStatBlk, PNTR TokenStatBlkPtr;
+} TokenStatBlk, *TokenStatBlkPtr;
 
 typedef struct _XmlIndex {
     Int4                  tag;
@@ -165,9 +165,9 @@ typedef struct _XmlIndex {
     Int4                  start_line;
     Int4                  end_line;
     Int2                  type;         /* Used for references */
-    struct _XmlIndex PNTR subtags;
-    struct _XmlIndex PNTR next;
-} XmlIndex, PNTR XmlIndexPtr;
+    struct _XmlIndex *subtags;
+    struct _XmlIndex *next;
+} XmlIndex, *XmlIndexPtr;
 
 typedef std::list<std::string> TKeywordList;
 
@@ -219,7 +219,7 @@ typedef struct indexblk_struct {
                                            "is_tpa" are TRUE */
     bool               tsa_allowed;
     LocusCont          lc;
-    CharPtr            moltype;         /* the value of /mol_type qual */
+    char*            moltype;         /* the value of /mol_type qual */
     GapFeatsPtr        gaps;
     TokenBlkPtr        secaccs;
     XmlIndexPtr        xip;
@@ -228,7 +228,7 @@ typedef struct indexblk_struct {
                                            feature has /environmental_sample
                                            qualifier */
     bool               is_prot;
-    CharPtr            organism;        /* The value of /organism qualifier */
+    char*            organism;        /* The value of /organism qualifier */
     Int4               taxid;           /* The value gotten from source feature
                                            /db_xref qualifier if any */
     bool               no_gc_warning;   /* If TRUE then suppress
@@ -254,12 +254,12 @@ typedef struct indexblk_struct {
                                            KEYWORDS line */
     bool               experimental;    /* TRUE for TPA:experimental in
                                            KEYWORDS line */
-    CharPtr            submitter_seqid;
+    char*            submitter_seqid;
     struct parser_vals *ppp;
 
     indexblk_struct();
 
-} Indexblk, PNTR IndexblkPtr;
+} Indexblk, *IndexblkPtr;
 
 typedef struct _fta_operon {
     const Char*             featname;   /* Do not free! Just a pointer. */
@@ -267,10 +267,10 @@ typedef struct _fta_operon {
 
     ncbi::CConstRef<ncbi::objects::CSeq_loc> location;   /* Do not free! Just a pointer. */
 
-    CharPtr                 strloc;     /* String value of location. */
+    char*                 strloc;     /* String value of location. */
     bool                    operon_feat;
     bool                    ret;
-    struct _fta_operon PNTR next;
+    struct _fta_operon *next;
 
     _fta_operon() :
         featname(nullptr),
@@ -281,48 +281,48 @@ typedef struct _fta_operon {
         next(nullptr)
     {}
 
-} FTAOperon, PNTR FTAOperonPtr;
+} FTAOperon, *FTAOperonPtr;
 
 typedef struct data_block {
     Int2                   type;        /* which keyword block or node type */
-    Pointer                data;        /* any pointer type points to
+    void*                data;        /* any pointer type points to
                                            information block */
-    CharPtr                offset;      /* points to beginning of the entry
+    char*                offset;      /* points to beginning of the entry
                                            in the memory */
     size_t                 len;         /* lenght of data in bytes */
-    CharPtr                qscore;      /* points to quality score buffer */
+    char*                qscore;      /* points to quality score buffer */
     Uint1                  drop;        /* 1 if drop this data block */
-    struct data_block PNTR next;
-} DataBlk, PNTR DataBlkPtr;
+    struct data_block *next;
+} DataBlk, *DataBlkPtr;
 
 typedef struct entry_block {
     DataBlkPtr              chain;      /* a header points to key-word
                                            block information */
     ncbi::CRef<ncbi::objects::CSeq_entry> seq_entry; /* points to sequence entry */
 
-    struct entry_block PNTR next;
+    struct entry_block *next;
 
     entry_block() :
         chain(NULL),
         next(NULL)
     {}
 
-} EntryBlk, PNTR EntryBlkPtr;
+} EntryBlk, *EntryBlkPtr;
 
 typedef struct keyword_block {
     const char *str;
     Int2       len;
-} KwordBlk, PNTR KwordBlkPtr;
+} KwordBlk, *KwordBlkPtr;
 
 /**************************************************************************/
 
-void FreeDatablk PROTO((DataBlkPtr dbp));
-void FreeEntry PROTO((DataBlkPtr entry));
-void FreeIndexblk PROTO((IndexblkPtr ibp));
-void GapFeatsFree PROTO((GapFeatsPtr gfp));
-void XMLIndexFree PROTO((XmlIndexPtr xip));
+void FreeDatablk(DataBlkPtr dbp);
+void FreeEntry(DataBlkPtr entry);
+void FreeIndexblk(IndexblkPtr ibp);
+void GapFeatsFree(GapFeatsPtr gfp);
+void XMLIndexFree(XmlIndexPtr xip);
 
-void FreeEntryBlk PROTO((EntryBlkPtr entry));
-EntryBlkPtr CreateEntryBlk PROTO(());
+void FreeEntryBlk(EntryBlkPtr entry);
+EntryBlkPtr CreateEntryBlk();
 
 #endif

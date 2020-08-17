@@ -48,10 +48,10 @@
 #define THIS_FILE "entry.cpp"
 
 /**********************************************************/
-static size_t FileReadBuf(CharPtr to, size_t len, FileBufPtr ffbuf)
+static size_t FileReadBuf(char* to, size_t len, FileBufPtr ffbuf)
 {
     const char* p = nullptr;
-    CharPtr q;
+    char* q;
     size_t   i;
 
     for(p = ffbuf->current, q = to, i = 0; i < len && *p != '\0'; i++)
@@ -78,8 +78,8 @@ static size_t FileReadBuf(CharPtr to, size_t len, FileBufPtr ffbuf)
 DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
     DataBlkPtr entry;
-    CharPtr    eptr;
-    CharPtr    q;
+    char*    eptr;
+    char*    q;
     size_t     i;
 
     if (pp->ifp == NULL)
@@ -99,7 +99,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     entry = (DataBlkPtr)MemNew(sizeof(DataBlk));
     entry->type = ParFlat_ENTRYNODE;
     entry->next = NULL;                 /* assume no segment at this time */
-    entry->offset = (CharPtr)MemNew(len + 1); /* plus 1 for null byte */
+    entry->offset = (char*)MemNew(len + 1); /* plus 1 for null byte */
 
     if (pp->ifp == NULL)
         entry->len = FileReadBuf(entry->offset, len, pp->ffbuf);
@@ -116,7 +116,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     eptr = entry->offset + entry->len;
     bool was = false;
-    CharPtr wasx = NULL;
+    char* wasx = NULL;
     for (q = entry->offset; q < eptr; q++)
     {
         if (*q != '\n')

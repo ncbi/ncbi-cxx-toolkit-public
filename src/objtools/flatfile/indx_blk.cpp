@@ -219,16 +219,16 @@ static const char *ValidMolTypes[] = {
 };
 
 // functions below are implemented in different source files
-bool EmblIndex PROTO((ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len)));
-bool GenBankIndex PROTO((ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len)));
-bool SprotIndex PROTO((ParserPtr pp, void(*fun)(IndexblkPtr entry, CharPtr offset, Int4 len)));
-bool PrfIndex PROTO((ParserPtr pp, void(*fun)(IndexblkPtr entry, CharPtr offset, Int4 len)));
-bool PirIndex PROTO((ParserPtr pp, void(*fun)(IndexblkPtr entry, CharPtr offset, Int4 len)));
-bool XMLIndex PROTO((ParserPtr pp));
+bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
+bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
+bool SprotIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
+bool PrfIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
+bool PirIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
+bool XMLIndex(ParserPtr pp);
 
 /**********************************************************
  *
- *   static CharPtr GetResidue(stoken):
+ *   static char* GetResidue(stoken):
  *
  *      Return a string pointer in the "stoken" which its
  *   next token string match any one string in the
@@ -238,7 +238,7 @@ bool XMLIndex PROTO((ParserPtr pp));
  *                                              3-25-93
  *
  **********************************************************/
-static CharPtr GetResidue(TokenStatBlkPtr stoken)
+static char* GetResidue(TokenStatBlkPtr stoken)
 {
     TokenBlkPtr  sptr;
     TokenBlkPtr  ptr;
@@ -268,7 +268,7 @@ static CharPtr GetResidue(TokenStatBlkPtr stoken)
  *                                              2-26-93
  *
  **********************************************************/
-bool XReadFile(FILE PNTR fp, FinfoBlkPtr finfo)
+bool XReadFile(FILE* fp, FinfoBlkPtr finfo)
 {
     bool end_of_file = false;
 
@@ -295,10 +295,10 @@ bool XReadFile(FILE PNTR fp, FinfoBlkPtr finfo)
 }
 
 /**********************************************************/
-static Int2 FileGetsBuf(CharPtr res, Int4 size, FileBufPtr fpbuf)
+static Int2 FileGetsBuf(char* res, Int4 size, FileBufPtr fpbuf)
 {
     const char* p = nullptr;
-    CharPtr q;
+    char* q;
     Int4    l;
     Int4    i;
 
@@ -350,7 +350,7 @@ bool XReadFileBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo)
  *                                              3-5-93
  *
  **********************************************************/
-bool SkipTitle(FILE PNTR fp, FinfoBlkPtr finfo, const char *str, Int2 len)
+bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const char *str, Int2 len)
 {
     bool end_of_file = XReadFile(fp, finfo);
     while(!end_of_file && StringNCmp(finfo->str, str, len) != 0)
@@ -377,9 +377,9 @@ bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const char *str, Int2 len
  *   reject if not.
  *
  **********************************************************/
-static bool CheckLocus(CharPtr locus, Int2 source)
+static bool CheckLocus(char* locus, Int2 source)
 {
-    CharPtr p = locus;
+    char* p = locus;
     if(StringNCmp(locus, "SEG_", 4) == 0 &&
        (source == ParFlat_NCBI || source == ParFlat_DDBJ))
         p += 4;
@@ -418,9 +418,9 @@ static bool CheckLocus(CharPtr locus, Int2 source)
  *      Example:  RL1_ECOLI   FER_HALHA
  *
  **********************************************************/
-static bool CheckLocusSP(CharPtr locus)
+static bool CheckLocusSP(char* locus)
 {
-    CharPtr p;
+    char* p;
     bool underscore = false;
     Int2    x;
     Int2    y;
@@ -457,7 +457,7 @@ static bool CheckLocusSP(CharPtr locus)
  *      Return FALSE if date != dd-mmm-yyyy format.
  *
  **********************************************************/
-static bool CkDateFormat(CharPtr date)
+static bool CkDateFormat(char* date)
 {
     if(date[2] == '-' && date[6] == '-' &&
        IS_DIGIT(date[0]) != 0 && IS_DIGIT(date[1]) != 0 &&
@@ -470,19 +470,19 @@ static bool CkDateFormat(CharPtr date)
 }
 
 /**********************************************************/
-Int2 CheckSTRAND(CharPtr str)
+Int2 CheckSTRAND(char* str)
 {
     return(fta_StringMatch(ParFlat_STRAND_array, str));
 }
 
 /**********************************************************/
-Int2 XMLCheckSTRAND(CharPtr str)
+Int2 XMLCheckSTRAND(char* str)
 {
     return(StringMatchIcase(XML_STRAND_array, str));
 }
 
 /**********************************************************/
-Int2 XMLCheckTPG(CharPtr str)
+Int2 XMLCheckTPG(char* str)
 {
     Int2 i;
 
@@ -493,35 +493,35 @@ Int2 XMLCheckTPG(CharPtr str)
 }
 
 /**********************************************************/
-Int2 CheckTPG(CharPtr str)
+Int2 CheckTPG(char* str)
 {
     return(StringMatchIcase(ParFlat_TPG_array, str));
 }
 
 /**********************************************************/
-Int2 CheckNADDBJ(CharPtr str)
+Int2 CheckNADDBJ(char* str)
 {
     return(fta_StringMatch(ParFlat_NA_array_DDBJ, str));
 }
 
 /**********************************************************/
-Int2 CheckNA(CharPtr str)
+Int2 CheckNA(char* str)
 {
     return(fta_StringMatch(ParFlat_NA_array, str));
 }
 
 /**********************************************************/
-Int2 CheckDIV(CharPtr str)
+Int2 CheckDIV(char* str)
 {
     return(fta_StringMatch(ParFlat_DIV_array, str));
 }
 
 /**********************************************************/
-bool CkLocusLinePos(CharPtr offset, Int2 source, LocusContPtr lcp, bool is_mga)
+bool CkLocusLinePos(char* offset, Int2 source, LocusContPtr lcp, bool is_mga)
 {
     Char    date[12];
     bool ret = true;
-    CharPtr p;
+    char* p;
     Int4    i;
 
     p = StringChr(offset, '\n');
@@ -618,7 +618,7 @@ bool CkLocusLinePos(CharPtr offset, Int2 source, LocusContPtr lcp, bool is_mga)
     *   or "NODATE"; otherwise, return Date-std pointer.
     *
     **********************************************************/
-ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(CharPtr ptr, Int2 source)
+ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(char* ptr, Int2 source)
 {
     Char date[12];
 
@@ -640,11 +640,11 @@ ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(CharPtr ptr, Int2 source)
 
 
 /**********************************************************/
-static bool fta_check_embl_moltype(CharPtr str)
+static bool fta_check_embl_moltype(char* str)
 {
     const char **b;
-    CharPtr    p;
-    CharPtr    q;
+    char*    p;
+    char*    q;
 
     p = StringChr(str, ';');
     p = StringChr(p + 1, ';');
@@ -749,9 +749,9 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
     Int2            j;
     TokenStatBlkPtr stoken;
     TokenBlkPtr     ptr;
-    CharPtr         bases;
+    char*         bases;
     IndexblkPtr     entry;
-    CharPtr         p;
+    char*         p;
 
     entry = new Indexblk;
 
@@ -929,9 +929,9 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
  *                                              3-25-93
  *
  **********************************************************/
-void DelNoneDigitTail(CharPtr str)
+void DelNoneDigitTail(char* str)
 {
-    CharPtr p;
+    char* p;
 
     if(str == NULL || *str == '\0')
         return;
@@ -1004,7 +1004,7 @@ Int4 IsNewAccessFormat(const Char* acnum)
 }
 
 /**********************************************************/
-bool IsValidAccessPrefix(CharPtr acc, CharPtr* accpref)
+bool IsValidAccessPrefix(char* acc, char** accpref)
 {
     Int4 i = IsNewAccessFormat(acc);
     if(i == 0 || accpref == NULL)
@@ -1013,7 +1013,7 @@ bool IsValidAccessPrefix(CharPtr acc, CharPtr* accpref)
     if(i > 2 && i < 9)
         return true;
 
-    CharPtr PNTR b = accpref;
+    char** b = accpref;
     for (; *b != NULL; b++)
     {
         if (StringNCmp(acc, *b, StringLen(*b)) == 0)
@@ -1024,9 +1024,9 @@ bool IsValidAccessPrefix(CharPtr acc, CharPtr* accpref)
 }
 
 /**********************************************************/
-static bool fta_if_master_wgs_accession(CharPtr acnum, Int4 accformat)
+static bool fta_if_master_wgs_accession(char* acnum, Int4 accformat)
 {
-    CharPtr p;
+    char* p;
 
     if(accformat == 3)
         p = acnum + 4;
@@ -1188,7 +1188,7 @@ Int4 fta_if_wgs_acc(const Char* acc)
 }
 
 /**********************************************************/
-bool IsSPROTAccession(const Char PNTR acc)
+bool IsSPROTAccession(const char* acc)
 {
     const char **b;
 
@@ -1249,7 +1249,7 @@ bool IsSPROTAccession(const Char PNTR acc)
  *
  **********************************************************/
 static bool CheckAccession(TokenStatBlkPtr stoken, Int2 source,
-                              CharPtr priacc, Int4 skip)
+                              char* priacc, Int4 skip)
 {
     TokenBlkPtr tbp;
     bool        badac;
@@ -1432,7 +1432,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken, Int2 source,
 }
 
 /**********************************************************/
-static bool IsPatentedAccPrefix(ParserPtr pp, CharPtr acc)
+static bool IsPatentedAccPrefix(ParserPtr pp, char* acc)
 {
     if(acc[2] == '\0')
     {
@@ -1490,7 +1490,7 @@ static bool IsPatentedAccPrefix(ParserPtr pp, CharPtr acc)
 }
 
 /**********************************************************/
-static bool IsTPAAccPrefix(ParserPtr pp, CharPtr acc)
+static bool IsTPAAccPrefix(ParserPtr pp, char* acc)
 {
     if(acc == NULL)
         return(false);
@@ -1520,7 +1520,7 @@ static bool IsTPAAccPrefix(ParserPtr pp, CharPtr acc)
 }
 
 /**********************************************************/
-static bool IsWGSAccPrefix(ParserPtr pp, CharPtr acc)
+static bool IsWGSAccPrefix(ParserPtr pp, char* acc)
 {
     if(acc == NULL || StringLen(acc) != 2)
         return(false);
@@ -1535,7 +1535,7 @@ static bool IsWGSAccPrefix(ParserPtr pp, CharPtr acc)
 }
 
 /**********************************************************/
-static void IsTSAAccPrefix(ParserPtr pp, CharPtr acc, IndexblkPtr ibp)
+static void IsTSAAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
 {
     if(acc == NULL || *acc == '\0')
         return;
@@ -1597,7 +1597,7 @@ static void IsTSAAccPrefix(ParserPtr pp, CharPtr acc, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-static void IsTLSAccPrefix(ParserPtr pp, CharPtr acc, IndexblkPtr ibp)
+static void IsTLSAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
 {
     if(acc == NULL || *acc == '\0' || StringLen(acc) != 4)
         return;
@@ -1620,12 +1620,12 @@ static void IsTLSAccPrefix(ParserPtr pp, CharPtr acc, IndexblkPtr ibp)
  *                                              3-4-93
  *
  **********************************************************/
-bool GetAccession(ParserPtr pp, CharPtr str, IndexblkPtr entry, Int4 skip)
+bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
 {
     Char            acc[200];
     Char            temp[400];
-    CharPtr         line;
-    CharPtr         p;
+    char*         line;
+    char*         p;
     TokenStatBlkPtr stoken;
     TokenBlkPtr     tbp;
     TokenBlkPtr     ttbp;
@@ -1914,7 +1914,7 @@ void MsgSkipTitleFail(const char *flatfile, FinfoBlkPtr finfo)
  *                                              10-6-93
  *
  **********************************************************/
-bool FindNextEntry(bool end_of_file, FILE PNTR ifp, FinfoBlkPtr finfo, const char *str, Int2 len)
+bool FindNextEntry(bool end_of_file, FILE* ifp, FinfoBlkPtr finfo, const char *str, Int2 len)
 {
     bool done = end_of_file;
     while (!done && StringNCmp(finfo->str, str, len) != 0)
@@ -1940,7 +1940,7 @@ bool FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf, FinfoBlkPtr finfo, co
  *                                              10-6-93
  *
  **********************************************************/
-bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len))
+bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     bool index;
 
@@ -1995,10 +1995,10 @@ const char **GetAccArray(Int2 whose)
 }
 
 /**********************************************************/
-Uint1 GetNucAccOwner(const Char PNTR acc, Int2Ptr source, bool is_tpa)
+Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
 {
     Char    p[4];
-    const Char PNTR q;
+    const char*q;
 
     if(source != NULL)
         *source = 0;

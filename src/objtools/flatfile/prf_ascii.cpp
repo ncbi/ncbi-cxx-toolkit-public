@@ -150,10 +150,10 @@ static ncbi::CRef<ncbi::objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
 {
     DataBlkPtr   dbp;
 
-    CharPtr      keywords;
-    CharPtr      p;
-    CharPtr      q;
-    CharPtr      r;
+    char*      keywords;
+    char*      p;
+    char*      q;
+    char*      r;
     Char         ch;
     size_t i;
 
@@ -247,7 +247,7 @@ static ncbi::CRef<ncbi::objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
 }
 
 /**********************************************************/
-static CharPtr PrfGetStringValue(DataBlkPtr entry, Int2 type)
+static char* PrfGetStringValue(DataBlkPtr entry, Int2 type)
 {
     DataBlkPtr dbp;
 
@@ -260,10 +260,10 @@ static CharPtr PrfGetStringValue(DataBlkPtr entry, Int2 type)
 }
 
 /**********************************************************/
-static CharPtr PrfGetSubStringValue(DataBlkPtr entry, Int2 type, Int2 subtype)
+static char* PrfGetSubStringValue(DataBlkPtr entry, Int2 type, Int2 subtype)
 {
     DataBlkPtr dbp;
-    CharPtr    res;
+    char*    res;
 
     dbp = TrackNodeType(entry, type);
     if(dbp == NULL || dbp->data == NULL)
@@ -289,9 +289,9 @@ static ncbi::CRef<ncbi::objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataB
     DataBlkPtr   dbp;
     const char   **b;
 
-    CharPtr      taxname;
-    CharPtr      lineage;
-    CharPtr      org_part;
+    char*      taxname;
+    char*      lineage;
+    char*      org_part;
     Int4         i;
     Int4         gen;
     Int4         count;
@@ -395,9 +395,9 @@ static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr en
 {
     DataBlkPtr  dbp;
 
-    CharPtr     title;
-    CharPtr     author;
-    CharPtr     jour;
+    char*     title;
+    char*     author;
+    char*     jour;
 
     ncbi::CRef<ncbi::objects::CPubdesc> ret;
 
@@ -496,12 +496,12 @@ static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr en
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, CharPtr comm)
+static ncbi::CRef<ncbi::objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, char* comm)
 {
     ncbi::CRef<ncbi::objects::CMolInfo> mol_info(new ncbi::objects::CMolInfo);
 
-    CharPtr    p;
-    CharPtr    q;
+    char*    p;
+    char*    q;
     bool       left;
     bool       right;
 
@@ -575,7 +575,7 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
 {
     DataBlkPtr   dbp;
 
-    CharPtr      comm;
+    char*      comm;
 
     comm = PrfGetStringValue(entry, ParFlatPRF_COMMENT);
     ncbi::CRef<ncbi::objects::CBioSource> bio_src = PrfGetBioSource(pp, entry);
@@ -649,10 +649,10 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> PrfGetFullSeqInt(ncbi::objects::CSeq_
 /**********************************************************/
 static bool PrfValidateEcNumber(std::string& ec_str)
 {
-    CharPtr temp;
-    CharPtr p;
-    CharPtr q;
-    CharPtr r;
+    char* temp;
+    char* p;
+    char* q;
+    char* r;
     bool    good;
     bool    lastdot;
     Char    ch;
@@ -764,10 +764,10 @@ static bool PrfValidateEcNumber(std::string& ec_str)
 }
 
 /**********************************************************/
-static void PrfParseEcNumber(CharPtr str, ncbi::objects::CProt_ref::TEc& ecs)
+static void PrfParseEcNumber(char* str, ncbi::objects::CProt_ref::TEc& ecs)
 {
-    CharPtr    p;
-    CharPtr    q;
+    char*    p;
+    char*    q;
 
     if(str == NULL || *str == '\0')
         return;
@@ -800,7 +800,7 @@ static void PrfParseEcNumber(CharPtr str, ncbi::objects::CProt_ref::TEc& ecs)
 /**********************************************************/
 static void PrfGetProtRefEc(DataBlkPtr entry, ncbi::objects::CProt_ref::TEc& ecs)
 {
-    CharPtr    p;
+    char*    p;
 
     p = PrfGetSubStringValue(entry, ParFlatPRF_NAME, ParFlatPRF_class);
     if (p == NULL)
@@ -815,7 +815,7 @@ static ncbi::CRef<ncbi::objects::CProt_ref> PrfGetProtRef(DataBlkPtr entry)
 {
     ncbi::CRef<ncbi::objects::CProt_ref> prot_ref(new ncbi::objects::CProt_ref);
 
-    CharPtr    p;
+    char*    p;
 
     p = PrfGetStringValue(entry, ParFlatPRF_NAME);
     if(p != NULL)
@@ -836,7 +836,7 @@ static ncbi::CRef<ncbi::objects::CGene_ref> PrfGetGeneRef(DataBlkPtr entry)
 {
     ncbi::CRef<ncbi::objects::CGene_ref> gene_ref;
 
-    CharPtr p = PrfGetSubStringValue(entry, ParFlatPRF_NAME, ParFlatPRF_gene_name);
+    char* p = PrfGetSubStringValue(entry, ParFlatPRF_NAME, ParFlatPRF_gene_name);
     if(p == NULL)
         return gene_ref;
 
@@ -891,7 +891,7 @@ static void PrfGetAnnot(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 /**********************************************************/
 static void PrfCreateDescrTitle(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry)
 {
-    CharPtr      p;
+    char*      p;
 
     p = PrfGetStringValue(entry, ParFlatPRF_NAME);
     if(p == NULL)
@@ -929,12 +929,12 @@ static void PrfCreateDescrTitle(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry, Uint1Ptr protconv,
+static ncbi::CRef<ncbi::objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv,
                                                              IndexblkPtr ibp)
 {
     Int2        curkw;
-    CharPtr     ptr;
-    CharPtr     eptr;
+    char*     ptr;
+    char*     eptr;
     EntryBlkPtr ebp;
 
     ebp = (EntryBlkPtr) entry->data;
@@ -979,7 +979,7 @@ static ncbi::CRef<ncbi::objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataB
 bool PrfAscii(ParserPtr pp)
 {
     DataBlkPtr  entry;
-    Uint1Ptr    protconv;
+    unsigned char*    protconv;
 
     Int4        total;
     Int4        i;

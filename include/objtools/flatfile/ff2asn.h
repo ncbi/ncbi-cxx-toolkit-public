@@ -36,9 +36,9 @@
 #ifndef _FF2ASN_
 #define _FF2ASN_
 
-ParserPtr   init_pp PROTO((ParserPtr pp));
+ParserPtr   init_pp(ParserPtr pp);
 
-void        fta_init_servers PROTO((ParserPtr pp));
-void        fta_fini_servers PROTO((ParserPtr pp));
+void        fta_init_servers(ParserPtr pp);
+void        fta_fini_servers(ParserPtr pp);
 
 #endif

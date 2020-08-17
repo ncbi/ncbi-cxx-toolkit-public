@@ -391,14 +391,14 @@ typedef struct _char_int_len {
     const char *str;
     Int4       num;
     Int4       len;
-} CharIntLen, PNTR CharIntLenPtr;
+} CharIntLen, *CharIntLenPtr;
 
 typedef struct _sprot_de_fields {
     Int4                         tag;
-    CharPtr                      start;
-    CharPtr                      end;
-    struct _sprot_de_fields PNTR next;
-} SPDEFields, PNTR SPDEFieldsPtr;
+    char*                      start;
+    char*                      end;
+    struct _sprot_de_fields* next;
+} SPDEFields, *SPDEFieldsPtr;
 
 typedef struct sprot_feat_input {
     std::string                  key;           /* column 6-13 */
@@ -406,19 +406,19 @@ typedef struct sprot_feat_input {
     std::string                  to;            /* column 22-27 */
     std::string                  descrip;       /* column 35-75, continue
                                                    line if a blank key */
-    struct sprot_feat_input PNTR next;          /* next FT */
+    struct sprot_feat_input* next;          /* next FT */
 
     sprot_feat_input() :
         next(NULL) {}
 
-} SPFeatInput, PNTR SPFeatInputPtr;
+} SPFeatInput, *SPFeatInputPtr;
 
 typedef struct sprot_feat_boolean {
     bool    initmet;
     bool    nonter;
     bool    noright;
     bool    noleft;
-} SPFeatBln, PNTR SPFeatBlnPtr;
+} SPFeatBln, *SPFeatBlnPtr;
 
 /* segment location, data from NON_CONS
  */
@@ -427,25 +427,25 @@ typedef struct sprot_seg_location {
                                                    segment */
     Int4                           len;         /* total length of the
                                                    segment */
-    struct sprot_seg_location PNTR next;
-} SPSegLoc, PNTR SPSegLocPtr;
+    struct sprot_seg_location* next;
+} SPSegLoc, *SPSegLocPtr;
 
 typedef struct set_of_syns {
-    CharPtr                 synname;
-    struct set_of_syns PNTR next;
-} SetOfSyns, PNTR SetOfSynsPtr;
+    char*                 synname;
+    struct set_of_syns* next;
+} SetOfSyns, *SetOfSynsPtr;
 
 typedef struct set_of_species {
-    CharPtr      fullname;
-    CharPtr      name;
+    char*      fullname;
+    char*      name;
     SetOfSynsPtr syn;
-} SetOfSpecies, PNTR SetOfSpeciesPtr;
+} SetOfSpecies, *SetOfSpeciesPtr;
 
 typedef struct _viral_host {
     Int4                    taxid;
-    CharPtr                 name;
-    struct _viral_host PNTR next;
-} ViralHost, PNTR ViralHostPtr;
+    char*                 name;
+    struct _viral_host* next;
+} ViralHost, *ViralHostPtr;
 
 CharIntLen spde_tags[] = {
     {"RecName:",    SPDE_RECNAME,     8},
@@ -569,7 +569,7 @@ const char *PE_values[] = {
 
 /**********************************************************
  *
- *   static CharPtr StringCombine(str1, str2, delim):
+ *   static char* StringCombine(str1, str2, delim):
  *
  *      Return a string which is combined str1 and str2,
  *   put blank between two strings if "blank" = TRUE;
@@ -594,7 +594,7 @@ static void StringCombine(std::string& dest, const std::string& to_add, const Ch
  *                                              10-1-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CDbtag> MakeStrDbtag(CharPtr dbname, CharPtr str)
+static ncbi::CRef<ncbi::objects::CDbtag> MakeStrDbtag(char* dbname, char* str)
 {
     ncbi::CRef<ncbi::objects::CDbtag> tag;
 
@@ -617,7 +617,7 @@ static ncbi::CRef<ncbi::objects::CDbtag> MakeStrDbtag(CharPtr dbname, CharPtr st
     *   a dd-mmm-yyyy format.
     *
     **********************************************************/
-static ncbi::CRef<ncbi::objects::CDate> MakeDatePtr(CharPtr str, Int2 source)
+static ncbi::CRef<ncbi::objects::CDate> MakeDatePtr(char* str, Int2 source)
 {
     static Char msg[11];
 
@@ -648,7 +648,7 @@ static ncbi::CRef<ncbi::objects::CDate> MakeDatePtr(CharPtr str, Int2 source)
 }
 
 /**********************************************************/
-static void fta_create_pdb_seq_id(ncbi::objects::CSP_block_Base::TSeqref& refs, CharPtr mol, Uint1 chain)
+static void fta_create_pdb_seq_id(ncbi::objects::CSP_block_Base::TSeqref& refs, char* mol, Uint1 chain)
 {
     if (mol == NULL)
         return;
@@ -667,12 +667,12 @@ static void fta_create_pdb_seq_id(ncbi::objects::CSP_block_Base::TSeqref& refs, 
 }
 
 /**********************************************************/
-static void MakeChainPDBSeqId(ncbi::objects::CSP_block_Base::TSeqref& refs, CharPtr mol, CharPtr chain)
+static void MakeChainPDBSeqId(ncbi::objects::CSP_block_Base::TSeqref& refs, char* mol, char* chain)
 {
-    CharPtr  fourth;
-    CharPtr  p;
-    CharPtr  q;
-    CharPtr  r;
+    char*  fourth;
+    char*  p;
+    char*  q;
+    char*  r;
 
     bool  bad;
     bool  got;
@@ -732,8 +732,8 @@ static void MakeChainPDBSeqId(ncbi::objects::CSP_block_Base::TSeqref& refs, Char
  *                                              10-1-93
  *
  **********************************************************/
-static void MakePDBSeqId(ncbi::objects::CSP_block_Base::TSeqref& refs, CharPtr mol, CharPtr rel, CharPtr chain,
-                         Uint1Ptr drop, Int2 source)
+static void MakePDBSeqId(ncbi::objects::CSP_block_Base::TSeqref& refs, char* mol, char* rel, char* chain,
+                         unsigned char* drop, Int2 source)
 {
     if (mol == NULL)
         return;
@@ -779,7 +779,7 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, ncbi::objects::CInt_fuzz
 static Uint1 GetSPGenome(DataBlkPtr dbp)
 {
     DataBlkPtr subdbp;
-    CharPtr    p;
+    char*    p;
     Int4       gmod;
 
     for(gmod = -1; dbp != NULL; dbp = dbp->next)
@@ -820,8 +820,8 @@ static Uint1 GetSPGenome(DataBlkPtr dbp)
 /**********************************************************/
 static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
 {
-    CharPtr eptr;
-    CharPtr offset;
+    char* eptr;
+    char* offset;
     size_t len = 0;
 
     offset = SrchNodeType(entry, ParFlatSP_ID, &len);
@@ -890,7 +890,7 @@ static void GetSprotSubBlock(ParserPtr pp, DataBlkPtr entry)
 
 /**********************************************************
  *
- *   static CharPtr GetSPDescrTitle(bptr, eptr, fragment)
+ *   static char* GetSPDescrTitle(bptr, eptr, fragment)
  *
  *      Return title string without "(EC ...)" and
  *   "(FRAGMENT)".
@@ -898,13 +898,13 @@ static void GetSprotSubBlock(ParserPtr pp, DataBlkPtr entry)
  *                                              10-8-93
  *
  **********************************************************/
-static CharPtr GetSPDescrTitle(CharPtr bptr, CharPtr eptr, bool* fragment)
+static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
 {
     const char *tag;
-    CharPtr    ptr;
-    CharPtr    str;
-    CharPtr    p;
-    CharPtr    q;
+    char*    ptr;
+    char*    str;
+    char*    p;
+    char*    q;
     Char       symb;
     Int4       shift;
     bool       ret;
@@ -1071,11 +1071,11 @@ static CharPtr GetSPDescrTitle(CharPtr bptr, CharPtr eptr, bool* fragment)
 }
 
 /**********************************************************/
-static CharPtr GetLineOSorOC(DataBlkPtr dbp, const char *pattern)
+static char* GetLineOSorOC(DataBlkPtr dbp, const char *pattern)
 {
-    CharPtr res;
-    CharPtr p;
-    CharPtr q;
+    char* res;
+    char* p;
+    char* q;
 
     size_t len = dbp->len;
     if(len == 0)
@@ -1083,7 +1083,7 @@ static CharPtr GetLineOSorOC(DataBlkPtr dbp, const char *pattern)
     for(size_t i = 0; i < dbp->len; i++)
         if(dbp->offset[i] == '\n')
             len -= 5;
-    res = (CharPtr) MemNew(len);
+    res = (char*) MemNew(len);
     p = res;
     for(q = dbp->offset; *q != '\0';)
     {
@@ -1109,15 +1109,15 @@ static CharPtr GetLineOSorOC(DataBlkPtr dbp, const char *pattern)
 }
 
 /**********************************************************/
-static SetOfSpeciesPtr GetSetOfSpecies(CharPtr line)
+static SetOfSpeciesPtr GetSetOfSpecies(char* line)
 {
     SetOfSpeciesPtr res;
     SetOfSynsPtr    ssp;
     SetOfSynsPtr    tssp;
-    CharPtr         p;
-    CharPtr         q;
-    CharPtr         r;
-    CharPtr         temp;
+    char*         p;
+    char*         q;
+    char*         r;
+    char*         temp;
     Int2            i;
 
     if(line == NULL || line[0] == '\0')
@@ -1235,8 +1235,8 @@ static ncbi::CRef<ncbi::objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
 
     const char   **b;
 
-    CharPtr      p;
-    CharPtr      q;
+    char*      p;
+    char*      q;
     Uint1        num;
     size_t       i;
 
@@ -1393,10 +1393,10 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
 {
     ViralHostPtr vhp;
     ViralHostPtr tvhp;
-    CharPtr      line;
-    CharPtr      p;
-    CharPtr      q;
-    CharPtr      r;
+    char*      line;
+    char*      p;
+    char*      q;
+    char*      r;
     Char         ch;
 
     for(; dbp != NULL; dbp = dbp->next)
@@ -1417,7 +1417,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     vhp->next = NULL;
     tvhp = vhp;
 
-    line = (CharPtr) MemNew(dbp->len + 2);
+    line = (char*) MemNew(dbp->len + 2);
     ch = dbp->offset[dbp->len-1];
     dbp->offset[dbp->len-1] = '\0';
     line[0] = '\n';
@@ -1518,9 +1518,9 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
 static Int4 GetTaxIdFrom_OX(DataBlkPtr dbp)
 {
     DataBlkPtr subdbp;
-    CharPtr    line;
-    CharPtr    p;
-    CharPtr    q;
+    char*    line;
+    char*    p;
+    char*    q;
     bool       got;
     Char       ch;
     Int4       taxid;
@@ -1601,8 +1601,8 @@ static ncbi::CRef<ncbi::objects::COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entr
 {
     SetOfSpeciesPtr sosp;
     DataBlkPtr      dbp;
-    CharPtr         line_OS;
-    CharPtr         line_OC;
+    char*         line_OS;
+    char*         line_OC;
 
     ncbi::CRef<ncbi::objects::COrg_ref> org_ref;
 
@@ -1649,10 +1649,10 @@ static void get_plasmid(DataBlkPtr entry, ncbi::objects::CSP_block::TPlasnm& pla
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
-    CharPtr    offset = NULL;
-    CharPtr    eptr = NULL;
-    CharPtr    str;
-    CharPtr    ptr;
+    char*    offset = NULL;
+    char*    eptr = NULL;
+    char*    str;
+    char*    ptr;
     Int4       gmod = -1;
     
     dbp = TrackNodeType(entry, ParFlatSP_OS);
@@ -1700,15 +1700,15 @@ static void get_plasmid(DataBlkPtr entry, ncbi::objects::CSP_block::TPlasnm& pla
 
 /**********************************************************
  *
- *   static CharPtr GetDRToken(ptr):
+ *   static char* GetDRToken(ptr):
  *
  *      From GetTheCurrentToken.
  *
  **********************************************************/
-static CharPtr GetDRToken(CharPtr PNTR ptr)
+static char* GetDRToken(char** ptr)
 {
-    CharPtr ret;
-    CharPtr p;
+    char* ret;
+    char* p;
 
     p = *ptr;
     if(p == NULL || *p == '\0')
@@ -1739,10 +1739,10 @@ static CharPtr GetDRToken(CharPtr PNTR ptr)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_id> AddPIDToSeqId(CharPtr str, CharPtr acc)
+static ncbi::CRef<ncbi::objects::CSeq_id> AddPIDToSeqId(char* str, char* acc)
 {
     long        lID;
-    CharPtr     end = NULL;
+    char*     end = NULL;
 
     ncbi::CRef<ncbi::objects::CSeq_id> sid;
 
@@ -1790,12 +1790,12 @@ static ncbi::CRef<ncbi::objects::CSeq_id> AddPIDToSeqId(CharPtr str, CharPtr acc
 }
 
 /**********************************************************/
-static bool AddToList(ValNodePtr PNTR head, CharPtr str)
+static bool AddToList(ValNodePtr* head, char* str)
 {
     ValNodePtr vnp;
-    CharPtr    data;
-    CharPtr    dot;
-    CharPtr    d;
+    char*    data;
+    char*    dot;
+    char*    d;
 
     if(str == NULL)
         return false;
@@ -1805,7 +1805,7 @@ static bool AddToList(ValNodePtr PNTR head, CharPtr str)
 
     dot = StringChr(str, '.');
     for(vnp = *head; vnp != NULL; vnp = vnp->next)
-        if(StringCmp((CharPtr) vnp->data.ptrvalue, str) == 0)
+        if(StringCmp((char*) vnp->data.ptrvalue, str) == 0)
             break;
     if(vnp != NULL)
         return false;
@@ -1815,7 +1815,7 @@ static bool AddToList(ValNodePtr PNTR head, CharPtr str)
         *dot = '\0';
         for(vnp = *head; vnp != NULL; vnp = vnp->next)
         {
-            data = (CharPtr) vnp->data.ptrvalue;
+            data = (char*) vnp->data.ptrvalue;
             d = StringChr(data, '.');
             if(d == NULL)
                 continue;
@@ -1897,16 +1897,16 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
 {
     ValNodePtr vnp;
     ValNodePtr vnpn;
-    CharPtr    n;
-    CharPtr    p;
-    CharPtr    q;
+    char*    n;
+    char*    p;
+    char*    q;
 
     if(embl_acc_list == NULL || embl_acc_list->next->next == NULL)
         return;
 
     for(vnp = embl_acc_list; vnp != NULL; vnp = vnp->next->next)
     {
-        p = (CharPtr) vnp->data.ptrvalue;
+        p = (char*) vnp->data.ptrvalue;
         q = StringChr(p, '.');
         if(q != NULL)
         {
@@ -1914,21 +1914,21 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
                 p++;
             if(*p != '\0')
                 q = NULL;
-            p = (CharPtr) vnp->data.ptrvalue;
+            p = (char*) vnp->data.ptrvalue;
         }
-        n = (CharPtr) vnp->next->data.ptrvalue;
+        n = (char*) vnp->next->data.ptrvalue;
         for(vnpn = vnp->next->next; vnpn != NULL; vnpn = vnpn->next->next)
         {
             if(vnp->next->choice != vnpn->next->choice &&
-               StringCmp(p, (CharPtr) vnpn->data.ptrvalue) == 0)
+               StringCmp(p, (char*) vnpn->data.ptrvalue) == 0)
             {
                 if(q != NULL)
                     *q = '\0';
                 if(GetProtAccOwner(p) > 0)
                     ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein,
                               "Protein accession \"%s\" associated with \"%s\" and \"%s\".",
-                              (CharPtr) vnpn->data.ptrvalue, n,
-                              (CharPtr) vnpn->next->data.ptrvalue);
+                              (char*) vnpn->data.ptrvalue, n,
+                              (char*) vnpn->next->data.ptrvalue);
                 if(q != NULL)
                     *q = '.';
             }
@@ -2005,7 +2005,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
  *      Also need to delete duplicated DR line.
  *
  **********************************************************/
-static void GetDRlineDataSP(DataBlkPtr entry, ncbi::objects::CSP_block& spb, Uint1Ptr drop,
+static void GetDRlineDataSP(DataBlkPtr entry, ncbi::objects::CSP_block& spb, unsigned char* drop,
                             Int2 source)
 {
     ValNodePtr   embl_vnp;
@@ -2016,16 +2016,16 @@ static void GetDRlineDataSP(DataBlkPtr entry, ncbi::objects::CSP_block& spb, Uin
     ValNodePtr   ens_gene_list = NULL;
     ValNodePtr   embl_acc_list = NULL;
     const char   **b;
-    CharPtr      offset;
-    CharPtr      token1;
-    CharPtr      token2;
-    CharPtr      token3;
-    CharPtr      token4;
-    CharPtr      token5;
-    CharPtr      str;
-    CharPtr      ptr;
-    CharPtr      p;
-    CharPtr      q;
+    char*      offset;
+    char*      token1;
+    char*      token2;
+    char*      token3;
+    char*      token4;
+    char*      token5;
+    char*      str;
+    char*      ptr;
+    char*      p;
+    char*      q;
     bool         pdbold;
     bool         pdbnew;
     bool         check_embl_prot;
@@ -2043,7 +2043,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, ncbi::objects::CSP_block& spb, Uin
 
     ch = offset[len];
     offset[len] = '\0';
-    str = (CharPtr) MemNew(len + 2);
+    str = (char*) MemNew(len + 2);
     StringCpy(str, "\n");
     StringCat(str, offset);
     offset[len] = ch;
@@ -2262,11 +2262,11 @@ static void GetDRlineDataSP(DataBlkPtr entry, ncbi::objects::CSP_block& spb, Uin
         else
         {
             if(StringICmp(token1, "GK") == 0)
-                token1 = (CharPtr) "Reactome";
+                token1 = (char*) "Reactome";
             else if(StringICmp(token1, "GENEW") == 0)
-                token1 = (CharPtr) "HGNC";
+                token1 = (char*) "HGNC";
             else if(StringICmp(token1, "GeneDB_Spombe") == 0)
-                token1 = (CharPtr) "PomBase";
+                token1 = (char*) "PomBase";
             else if(StringICmp(token1, "PomBase") == 0 &&
                     StringNICmp(token2, "PomBase:", 8) == 0)
                 token2 += 8;
@@ -2334,13 +2334,13 @@ static void GetDRlineDataSP(DataBlkPtr entry, ncbi::objects::CSP_block& spb, Uin
  **********************************************************/
 static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CDate& crdate,
                       ncbi::objects::CDate& sequpd, ncbi::objects::CDate& annotupd,
-                      Int2Ptr ver_num)
+                      short* ver_num)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
-    CharPtr    offset;
-    CharPtr    p;
-    CharPtr    q;
+    char*    offset;
+    char*    p;
+    char*    q;
     bool       new_style;
     bool       ret;
     Char       ch;
@@ -2389,12 +2389,12 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CDate& crda
     first = 0;
     second = 0;
     third = 0;
-    if(StringChr((CharPtr) vnp->data.ptrvalue, '(') == NULL)
+    if(StringChr((char*) vnp->data.ptrvalue, '(') == NULL)
     {
         new_style = true;
         for(tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
         {
-            offset = (CharPtr) tvnp->data.ptrvalue;
+            offset = (char*) tvnp->data.ptrvalue;
             offset += ParFlat_COL_DATA_SP;
             if(StringIStr(offset, "integrated into") != NULL)
             {
@@ -2435,7 +2435,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CDate& crda
         new_style = false;
         for(tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
         {
-            offset = (CharPtr) tvnp->data.ptrvalue;
+            offset = (char*) tvnp->data.ptrvalue;
             offset += ParFlat_COL_DATA_SP;
             if(StringIStr(offset, "Created") != NULL)
             {
@@ -2553,7 +2553,7 @@ static ncbi::CRef<ncbi::objects::CSP_block>
 
     ncbi::CRef<ncbi::objects::CSP_block> spb(new ncbi::objects::CSP_block);
 
-    CharPtr      bptr;
+    char*      bptr;
     bool         reviewed;
     bool         i;
     Int2         ver_num;
@@ -2638,17 +2638,17 @@ static ncbi::CRef<ncbi::objects::CSP_block>
  *                                              10-1-93
  *
  **********************************************************/
-static void ParseSpComment(ncbi::objects::CSeq_descr::Tdata& descrs, CharPtr line)
+static void ParseSpComment(ncbi::objects::CSeq_descr::Tdata& descrs, char* line)
 {
-    CharPtr com;
-    CharPtr p;
-    CharPtr q;
+    char* com;
+    char* p;
+    char* q;
     Int2    i;
 
     for(p = line; *p == ' ';)
         p++;
 
-    com = (CharPtr) MemNew(StringLen(p) + 2);
+    com = (char*) MemNew(StringLen(p) + 2);
     q = com;
     i = fta_StringMatch(ParFlat_SPComTopics, p);
     if(i >= 0)
@@ -2705,14 +2705,14 @@ static void ParseSpComment(ncbi::objects::CSeq_descr::Tdata& descrs, CharPtr lin
  *
  **********************************************************/
 static void GetSPDescrComment(DataBlkPtr entry, ncbi::objects::CSeq_descr::Tdata& descrs,
-                              CharPtr acc, Uint1 cla)
+                              char* acc, Uint1 cla)
 {
-    CharPtr offset;
-    CharPtr bptr;
-    CharPtr eptr;
-    CharPtr tmp;
-    CharPtr p;
-    CharPtr q;
+    char* offset;
+    char* bptr;
+    char* eptr;
+    char* tmp;
+    char* p;
+    char* q;
     Char    ch;
     Int2    count;
     Int4    i;
@@ -2818,10 +2818,10 @@ static void SPAppendPIRToHist(ncbi::objects::CBioseq& bioseq, const ncbi::object
 }
 
 /**********************************************************/
-static bool IfOHTaxIdMatchOHName(CharPtr orpname, CharPtr ohname)
+static bool IfOHTaxIdMatchOHName(char* orpname, char* ohname)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
     Char    chp;
     Char    chq;
 
@@ -2858,7 +2858,7 @@ static bool IfOHTaxIdMatchOHName(CharPtr orpname, CharPtr ohname)
 static void GetSprotDescr(ncbi::objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 {
     DataBlkPtr   dbp;
-    CharPtr      offset;
+    char*      offset;
     Uint1        gmod;
     bool         fragment = false;
     Int4         taxid;
@@ -2874,7 +2874,7 @@ static void GetSprotDescr(ncbi::objects::CBioseq& bioseq, ParserPtr pp, DataBlkP
     offset = SrchNodeType(entry, ParFlatSP_DE, &len);
     if (offset != NULL)
     {
-        CharPtr title = GetSPDescrTitle(offset, offset + len, &fragment);
+        char* title = GetSPDescrTitle(offset, offset + len, &fragment);
         if (title != NULL)
         {
             ncbi::CRef<ncbi::objects::CSeqdesc> desc_new(new ncbi::objects::CSeqdesc);
@@ -3114,7 +3114,7 @@ static void GetSprotDescr(ncbi::objects::CBioseq& bioseq, ParserPtr pp, DataBlkP
  *                                              10-8-93
  *
  **********************************************************/
-static void GetSPInst(ParserPtr pp, DataBlkPtr entry, Uint1Ptr protconv)
+static void GetSPInst(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 {
     EntryBlkPtr ebp;
 
@@ -3203,10 +3203,10 @@ static void fta_remove_dup_spfeats(SPFeatInputPtr spfip)
 /**********************************************************/
 static void SPPostProcVarSeq(std::string& varseq)
 {
-    CharPtr temp;
-    CharPtr end;
-    CharPtr p;
-    CharPtr q;
+    char* temp;
+    char* end;
+    char* p;
+    char* q;
 
     if (varseq.empty())
         return;
@@ -3306,19 +3306,19 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
     SPFeatInputPtr current;
     SPFeatInputPtr spfip;
     const char     *defdelim;
-    CharPtr        fromstart;
-    CharPtr        fromend;
-    CharPtr        bptr;
-    CharPtr        eptr;
-    CharPtr        ptr1;
-    CharPtr        offset;
-    CharPtr        endline;
-    CharPtr        str;
-    CharPtr        delim;
-    CharPtr        quotes;
-    CharPtr        location;
-    CharPtr        p;
-    CharPtr        q;
+    char*        fromstart;
+    char*        fromend;
+    char*        bptr;
+    char*        eptr;
+    char*        ptr1;
+    char*        offset;
+    char*        endline;
+    char*        str;
+    char*        delim;
+    char*        quotes;
+    char*        location;
+    char*        p;
+    char*        q;
     int            i;
     bool           badqual;
     bool           new_format;
@@ -3463,7 +3463,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             bptr++;
 
         str = endline;
-        delim = (CharPtr) defdelim;
+        delim = (char*) defdelim;
         if(str > bptr)
             if(*--str == '-' && str > bptr)
                 if(*--str != ' ')
@@ -3551,7 +3551,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                 *p = '\"';
 
             str = endline;
-            delim = (CharPtr) defdelim;
+            delim = (char*) defdelim;
             if(str > bptr)
                 if(*--str == '-' && str > bptr)
                     if(*--str != ' ')
@@ -3751,7 +3751,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInput
 
 /**********************************************************
  *
- *   static CharPtr DelTheStr(sourcesrt, targetstr):
+ *   static char* DelTheStr(sourcesrt, targetstr):
  *
  *      Return a string with deleted "targetstr".
  *   Also Free out "sourcestr".
@@ -3982,13 +3982,13 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip,
 }
 
 /**********************************************************/
-static void DelParenthesis(CharPtr str)
+static void DelParenthesis(char* str)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr pp;
-    CharPtr qq;
-    CharPtr r;
+    char* p;
+    char* q;
+    char* pp;
+    char* qq;
+    char* r;
     Int2    count;
     Int2    left;
     Int2    right;
@@ -4045,9 +4045,9 @@ static void DelParenthesis(CharPtr str)
  *                                              10-25-93
  *
  **********************************************************/
-static void CkGeneNameSP(CharPtr gname)
+static void CkGeneNameSP(char* gname)
 {
-    CharPtr p;
+    char* p;
 
     DelParenthesis(gname);
     for(p = gname; *p != '\0'; p++)
@@ -4069,12 +4069,12 @@ static void CkGeneNameSP(CharPtr gname)
  *                                              10-25-93
  *
  **********************************************************/
-static void ParseGeneNameSP(CharPtr str, ncbi::objects::CSeq_feat& feat)
+static void ParseGeneNameSP(char* str, ncbi::objects::CSeq_feat& feat)
 {
-    CharPtr    gname;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    gname;
+    char*    p;
+    char*    q;
+    char*    r;
 
     Int2       count;
 
@@ -4119,7 +4119,7 @@ static void ParseGeneNameSP(CharPtr str, ncbi::objects::CSeq_feat& feat)
 *                                              10-18-93
 *
 **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> GetSeqLocIntSP(size_t seqlen, CharPtr acnum, bool accver,
+static ncbi::CRef<ncbi::objects::CSeq_loc> GetSeqLocIntSP(size_t seqlen, char* acnum, bool accver,
                                                           Int2 vernum)
 {
     ncbi::CRef<ncbi::objects::CSeq_loc> loc(new ncbi::objects::CSeq_loc);
@@ -4142,13 +4142,13 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetSeqLocIntSP(size_t seqlen, CharPtr
  *                                              10-25-93
  *
  **********************************************************/
-static void GetOneGeneRef(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtable& feats, CharPtr bptr,
+static void GetOneGeneRef(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtable& feats, char* bptr,
                           size_t seqlen)
 {
     IndexblkPtr ibp;
 
-    CharPtr     str;
-    CharPtr     ptr;
+    char*     str;
+    char*     ptr;
 
     if(pp == NULL || pp->entrylist == NULL)
         return;
@@ -4172,8 +4172,8 @@ static void GetOneGeneRef(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtab
 }
 
 /**********************************************************/
-static void SPFreeGenRefTokens(CharPtr name, CharPtr syns,
-                               CharPtr ltags, CharPtr orfs)
+static void SPFreeGenRefTokens(char* name, char* syns,
+                               char* ltags, char* orfs)
 {
     if(name != NULL)
         MemFree(name);
@@ -4186,10 +4186,10 @@ static void SPFreeGenRefTokens(CharPtr name, CharPtr syns,
 }
 
 /**********************************************************/
-static void SPParseGeneRefTag(CharPtr str, ncbi::objects::CGene_ref& gene, bool set_locus_tag)
+static void SPParseGeneRefTag(char* str, ncbi::objects::CGene_ref& gene, bool set_locus_tag)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     if(str == NULL)
         return;
@@ -4215,8 +4215,8 @@ static void SPParseGeneRefTag(CharPtr str, ncbi::objects::CGene_ref& gene, bool 
 
 /**********************************************************/
 static void SPGetOneGeneRefNew(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtable& feats,
-                               size_t seqlen, CharPtr name, CharPtr syns,
-                               CharPtr ltags, CharPtr orfs)
+                               size_t seqlen, char* name, char* syns,
+                               char* ltags, char* orfs)
 {
     IndexblkPtr ibp;
 
@@ -4246,18 +4246,18 @@ static void SPGetOneGeneRefNew(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::
 
 /**********************************************************/
 static void SPGetGeneRefsNew(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtable& feats,
-                                   CharPtr bptr, size_t seqlen)
+                                   char* bptr, size_t seqlen)
 {
     IndexblkPtr ibp;
 
-    CharPtr     name;
-    CharPtr     syns;
-    CharPtr     ltags;
-    CharPtr     orfs;
-    CharPtr     str;
-    CharPtr     p;
-    CharPtr     q;
-    CharPtr     r;
+    char*     name;
+    char*     syns;
+    char*     ltags;
+    char*     orfs;
+    char*     str;
+    char*     p;
+    char*     q;
+    char*     r;
 
     if(pp == NULL || pp->entrylist == NULL || bptr == NULL)
         return;
@@ -4428,8 +4428,8 @@ static Int4 GetSeqLen(DataBlkPtr entry)
  **********************************************************/
 static void SPFeatGeneRef(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtable& feats, DataBlkPtr entry)
 {
-    CharPtr offset;
-    CharPtr str;
+    char* offset;
+    char* str;
 
     size_t len = 0;
     offset = SrchNodeType(entry, ParFlatSP_GN, &len);
@@ -4456,9 +4456,9 @@ static void SPFeatGeneRef(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtab
 /**********************************************************/
 static void SPValidateEcnum(std::string& ecnum)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr buf;
+    char* p;
+    char* q;
+    char* buf;
     Int4    count;
 
     buf = StringSave(ecnum.c_str());
@@ -4594,7 +4594,7 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, Uint1* drop, bool is_trembl)
 }
 
 /**********************************************************/
-static void SPParseDefinition(CharPtr str, const ncbi::objects::CBioseq::TId& ids, IndexblkPtr ibp,
+static void SPParseDefinition(char* str, const ncbi::objects::CBioseq::TId& ids, IndexblkPtr ibp,
                               ncbi::objects::CProt_ref& prot)
 {
     CharIntLenPtr cilp;
@@ -4602,9 +4602,9 @@ static void SPParseDefinition(CharPtr str, const ncbi::objects::CBioseq::TId& id
     SPDEFieldsPtr tsfp;
 
     bool          is_trembl;
-    CharPtr       p;
-    CharPtr       q;
-    CharPtr       r;
+    char*       p;
+    char*       q;
+    char*       r;
     Int4          count;
     Char          ch;
 
@@ -4701,10 +4701,10 @@ static void SPParseDefinition(CharPtr str, const ncbi::objects::CBioseq::TId& id
 /**********************************************************/
 static void SPGetPEValue(DataBlkPtr entry, ncbi::objects::CSeq_feat& feat)
 {
-    CharPtr   offset;
-    CharPtr   buf;
-    CharPtr   p;
-    CharPtr   q;
+    char*   offset;
+    char*   buf;
+    char*   p;
+    char*   q;
     Char      ch;
 
     size_t len = 0;
@@ -4765,15 +4765,15 @@ static void SPFeatProtRef(ParserPtr pp, ncbi::objects::CSeq_annot::C_Data::TFtab
 {
     IndexblkPtr ibp;
 
-    CharPtr     offset;
+    char*     offset;
 
-    CharPtr str;
+    char* str;
     std::string str1;
 
-    CharPtr     ptr;
-    CharPtr     bptr;
-    CharPtr     eptr;
-    CharPtr     s;
+    char*     ptr;
+    char*     bptr;
+    char*     eptr;
+    char*     s;
 
     const char  *tag;
     Char        symb;
@@ -4934,7 +4934,7 @@ static SPSegLocPtr GetSPSegLocInfo(ncbi::objects::CBioseq& bioseq, SPFeatInputPt
     SPSegLocPtr curspslp = NULL;
     SPSegLocPtr hspslp = NULL;
     SPSegLocPtr spslp;
-    CharPtr     p;
+    char*     p;
 
     if(spfip == NULL)
         return(NULL);
@@ -5005,7 +5005,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip,
                         ncbi::objects::CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
     SPFeatInputPtr temp;
-    CharPtr        p;
+    char*        p;
     Int2           count;
     Int4           from = 0;
     Int4           to;
@@ -5231,7 +5231,7 @@ static void SeqToDeltaSP(ncbi::objects::CBioseq& bioseq, SPSegLocPtr spslp)
  *                                              10-15-93
  *
  **********************************************************/
-static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, Uint1Ptr protconv)
+static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 {
     SPFeatInputPtr spfip;
     EntryBlkPtr    ebp;
@@ -5287,11 +5287,11 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, Uint1Ptr protconv)
 }
 
 /**********************************************************/
-static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, Uint1Ptr protconv)
+static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 {
     Int2        curkw;
-    CharPtr     ptr;
-    CharPtr     eptr;
+    char*     ptr;
+    char*     eptr;
     EntryBlkPtr ebp;
 
     ebp = (EntryBlkPtr) entry->data;
@@ -5340,7 +5340,7 @@ static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, Uint1Ptr protconv)
 bool SprotAscii(ParserPtr pp)
 {
     DataBlkPtr  entry;
-    Uint1Ptr    protconv;
+    unsigned char*    protconv;
 
     Int4        total;
     Int4        i;

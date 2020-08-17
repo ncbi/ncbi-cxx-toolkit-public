@@ -48,17 +48,17 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/general/Name_std.hpp>
 
-Int4         valid_pages_range PROTO((CharPtr pages, const Char* title, Int4 er, bool inpress));
-ValNodePtr   get_tokens PROTO((CharPtr str, const Char *delimeter));
+Int4         valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
+ValNodePtr   get_tokens(char* str, const Char *delimeter);
 
-void DealWithGenes PROTO((TEntryList& seq_entries, ParserPtr pp));
-void GetNameStdFromMl PROTO((ncbi::objects::CName_std& namestd, const Char* token));
+void DealWithGenes(TEntryList& seq_entries, ParserPtr pp);
+void GetNameStdFromMl(ncbi::objects::CName_std& namestd, const Char* token);
 
-ncbi::CRef<ncbi::objects::CCit_gen> get_error PROTO((CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title));
-ncbi::CRef<ncbi::objects::CDate> get_date PROTO((const Char* year));
-void get_auth_consortium PROTO((CharPtr cons, ncbi::CRef<ncbi::objects::CAuth_list>& auths));
-void get_auth PROTO((CharPtr pt, Uint1 format, CharPtr jour, ncbi::CRef<ncbi::objects::CAuth_list>& auths));
-void get_auth_from_toks PROTO((ValNodePtr tokens, Uint1 format, ncbi::CRef<ncbi::objects::CAuth_list>& auths));
-ncbi::CRef<ncbi::objects::CAuthor> get_std_auth PROTO((const Char* token, Uint1 format));
+ncbi::CRef<ncbi::objects::CCit_gen> get_error(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title);
+ncbi::CRef<ncbi::objects::CDate> get_date(const Char* year);
+void get_auth_consortium(char* cons, ncbi::CRef<ncbi::objects::CAuth_list>& auths);
+void get_auth(char* pt, Uint1 format, char* jour, ncbi::CRef<ncbi::objects::CAuth_list>& auths);
+void get_auth_from_toks(ValNodePtr tokens, Uint1 format, ncbi::CRef<ncbi::objects::CAuth_list>& auths);
+ncbi::CRef<ncbi::objects::CAuthor> get_std_auth(const Char* token, Uint1 format);
 
 #endif

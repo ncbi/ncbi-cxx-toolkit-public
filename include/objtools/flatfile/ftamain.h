@@ -47,7 +47,7 @@ namespace ncbi
 
 ncbi::objects::CScope& GetScope();
 
-Int2 fta_main PROTO((ParserPtr pp, bool already));
+Int2 fta_main(ParserPtr pp, bool already);
 
 bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool already);
 

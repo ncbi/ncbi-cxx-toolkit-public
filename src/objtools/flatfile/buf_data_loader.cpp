@@ -117,9 +117,9 @@ CDataLoader::TTSE_Lock CBuffer_DataLoader::GetBlobById(const TBlobId& blob_id)
     return lock;
 }
 
-static CharPtr get_sequence_text(ParserPtr parser, const string& accession, int version)
+static char* get_sequence_text(ParserPtr parser, const string& accession, int version)
 {
-    CharPtr ret = nullptr;
+    char* ret = nullptr;
     if (parser) {
         if (parser->accver == FALSE) {
             if (parser->ff_get_entry)
@@ -175,7 +175,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     if (i < pp->indx)
         return i;
 
-    IndexblkPtr PNTR temp = (IndexblkPtr PNTR) MemNew((pp->indx + 1) * sizeof(IndexblkPtr));
+    IndexblkPtr* temp = (IndexblkPtr*) MemNew((pp->indx + 1) * sizeof(IndexblkPtr));
     copy(pp->entrylist, pp->entrylist + pp->indx, temp);
     MemFree(pp->entrylist);
     pp->entrylist = temp;
@@ -186,9 +186,9 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     cur_block->ppp = pp;
 
     if (pp->format == ParFlat_GENBANK) {
-        CharPtr q = entry->offset;
+        char* q = entry->offset;
         if (q != NULL && entry->len != 0 && StringNCmp(q, "LOCUS ", 6) == 0) {
-            CharPtr p = StringChr(q, '\n');
+            char* p = StringChr(q, '\n');
             if (p != NULL)
                 *p = '\0';
             if (StringLen(q) > 78 && q[28] == ' ' && q[63] == ' ' &&
@@ -222,9 +222,9 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
 
 static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Int2 format)
 {
-    CharPtr div;
-    CharPtr eptr;
-    CharPtr offset;
+    char* div;
+    char* eptr;
+    char* offset;
 
     if (format != ParFlat_GENBANK && format != ParFlat_EMBL)
         return;
@@ -279,9 +279,9 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 {
     IndexblkPtr ibp;
     EntryBlkPtr ebp;
-    Uint1Ptr    molconv;
-    CharPtr     ptr;
-    CharPtr     eptr;
+    unsigned char*    molconv;
+    char*     ptr;
+    char*     eptr;
 
     ibp = pp->entrylist[pp->curindx];
     ebp = (EntryBlkPtr)entry->data;
@@ -363,7 +363,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
     return bioseq;
 }
 
-static DataBlkPtr make_entry(CharPtr entry_str)
+static DataBlkPtr make_entry(char* entry_str)
 {
     DataBlkPtr entry = (DataBlkPtr)MemNew(sizeof(DataBlk));
 
@@ -378,7 +378,7 @@ static DataBlkPtr make_entry(CharPtr entry_str)
     return entry;
 }
 
-static CRef<CBioseq> parse_entry(ParserPtr pp, CharPtr entry_str, const string& accession, int ver, const CSeq_id& id)
+static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& accession, int ver, const CSeq_id& id)
 {
     CRef<CBioseq> ret;
     DataBlkPtr entry = make_entry(entry_str);
@@ -411,7 +411,7 @@ void CBuffer_DataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lo
     int version = 0;
     if (get_accession_from_id(*idh.GetSeqId(), accession, version)) {
 
-        CharPtr entry_str = get_sequence_text(m_parser, accession, version);
+        char* entry_str = get_sequence_text(m_parser, accession, version);
 
         if (entry_str) {
 
@@ -450,7 +450,7 @@ END_NCBI_SCOPE
 
 size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
 {
-    CharPtr entry_str = ncbi::objects::get_sequence_text(pp, acc, vernum);
+    char* entry_str = ncbi::objects::get_sequence_text(pp, acc, vernum);
     if (entry_str == NULL)
         return -1;
 
@@ -463,8 +463,8 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     pp->curindx = ix;
 
     EntryBlkPtr ebp = (EntryBlkPtr)entry->data;
-    CharPtr ptr = entry->offset;    /* points to beginning of the memory line */
-    CharPtr eptr = ptr + entry->len;
+    char* ptr = entry->offset;    /* points to beginning of the memory line */
+    char* eptr = ptr + entry->len;
     Int2 curkw = ParFlat_ID;
     while (curkw != ParFlatEM_END) {
         /* ptr points to current keyword's memory line

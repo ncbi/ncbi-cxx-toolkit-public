@@ -84,23 +84,23 @@ typedef struct {
 #define BIOSOURCES_THRESHOLD                 20
 
 typedef struct _pcr_primers {
-    CharPtr                  fwd_name;
-    CharPtr                  fwd_seq;
-    CharPtr                  rev_name;
-    CharPtr                  rev_seq;
-    struct _pcr_primers PNTR next;
-} PcrPrimers, PNTR PcrPrimersPtr;
+    char*                  fwd_name;
+    char*                  fwd_seq;
+    char*                  rev_name;
+    char*                  rev_seq;
+    struct _pcr_primers* next;
+} PcrPrimers, *PcrPrimersPtr;
 
 typedef struct _source_feat_blk {
-    CharPtr                      name;
-    CharPtr                      strain;
-    CharPtr                      organelle;
-    CharPtr                      isolate;
-    CharPtr                      namstr;
-    CharPtr                      location;
-    CharPtr                      moltype;
-    CharPtr                      genomename;
-    CharPtr                      submitter_seqid;
+    char*                      name;
+    char*                      strain;
+    char*                      organelle;
+    char*                      isolate;
+    char*                      namstr;
+    char*                      location;
+    char*                      moltype;
+    char*                      genomename;
+    char*                      submitter_seqid;
 
     TQualVector quals;
     ncbi::CRef<ncbi::objects::CBioSource> bio_src;
@@ -114,7 +114,7 @@ typedef struct _source_feat_blk {
     bool                      useit;
 
     Uint1                        genome;
-    struct _source_feat_blk PNTR next;
+    struct _source_feat_blk* next;
 
     _source_feat_blk() :
         name(NULL),
@@ -136,15 +136,15 @@ typedef struct _source_feat_blk {
         next(NULL)
     {}
 
-} SourceFeatBlk, PNTR SourceFeatBlkPtr;
+} SourceFeatBlk, *SourceFeatBlkPtr;
 
 typedef struct _min_max {
-    CharPtr              orgname;       /* Do not free! It's just a pointer */
+    char*              orgname;       /* Do not free! It's just a pointer */
     Int4                 min;
     Int4                 max;
     bool                 skip;
-    struct _min_max PNTR next;
-} MinMax, PNTR MinMaxPtr;
+    struct _min_max* next;
+} MinMax, *MinMaxPtr;
 
 static const char *ObsoleteSourceDbxrefTag[] = {
     "IFO",
@@ -406,10 +406,10 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
 }
 
 /**********************************************************/
-static void RemoveStringSpaces(CharPtr line)
+static void RemoveStringSpaces(char* line)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     if(line == NULL || *line == '\0')
         return;
@@ -471,7 +471,7 @@ static void CheckForExemption(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void PopulateSubNames(CharPtr namstr, const Char *name,
+static void PopulateSubNames(char* namstr, const Char *name,
                              const Char* value, Uint1 subtype, TOrgModList& mods)
 {
     ncbi::CRef<ncbi::objects::COrgMod> mod(new ncbi::objects::COrgMod);
@@ -530,7 +530,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         i += (StringLen(variety) + StringLen("variety") + 5);
     if((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype != NULL)
         i += (StringLen(ecotype) + StringLen("ecotype") + 5);
-    sfbp->namstr = (CharPtr) MemNew(i);
+    sfbp->namstr = (char*) MemNew(i);
     StringCpy(sfbp->namstr, name);
     if(i == j)
         return;
@@ -578,9 +578,9 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
     const Char*    sub_species;
     const Char*    sub_strain;
     const Char*    variety;
-    CharPtr    genomename;
+    char*    genomename;
     const Char*    p;
-    CharPtr    q;
+    char*    q;
     bool       ret;
     Int4       i;
 
@@ -790,7 +790,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
 }
 
 /**********************************************************/
-static CharPtr CheckSourceFeatFocusAndTransposon(SourceFeatBlkPtr sfbp)
+static char* CheckSourceFeatFocusAndTransposon(SourceFeatBlkPtr sfbp)
 {
     for (; sfbp != NULL; sfbp = sfbp->next)
     {
@@ -804,7 +804,7 @@ static CharPtr CheckSourceFeatFocusAndTransposon(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static CharPtr CheckSourceFeatOrgs(SourceFeatBlkPtr sfbp, Int4Ptr status)
+static char* CheckSourceFeatOrgs(SourceFeatBlkPtr sfbp, int* status)
 {
     *status = 0;
     for(; sfbp != NULL; sfbp = sfbp->next)
@@ -825,8 +825,8 @@ static CharPtr CheckSourceFeatOrgs(SourceFeatBlkPtr sfbp, Int4Ptr status)
 static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
 {
     const char **b;
-    CharPtr    p;
-    CharPtr    q;
+    char*    p;
+    char*    q;
     Int4       count;
     bool    partial;
     bool    invalid;
@@ -911,11 +911,11 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static CharPtr CheckSourceFeatLocAccs(SourceFeatBlkPtr sfbp, CharPtr acc)
+static char* CheckSourceFeatLocAccs(SourceFeatBlkPtr sfbp, char* acc)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr r;
+    char* p;
+    char* q;
+    char* r;
     Int4    i;
 
     for(; sfbp != NULL; sfbp = sfbp->next)
@@ -1009,10 +1009,10 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp,
     SourceFeatBlkPtr tsfbp;
     MinMaxPtr        tmmp;
     MinMaxPtr        mmpnext;
-    CharPtr          p;
-    CharPtr          q;
-    CharPtr          r;
-    CharPtr          loc;
+    char*          p;
+    char*          q;
+    char*          r;
+    char*          loc;
     Int4             count;
     Int4             min;
     Int4             max;
@@ -1159,9 +1159,9 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp,
 }
 
 /**********************************************************/
-static CharPtr CheckWholeSourcesVersusFocused(SourceFeatBlkPtr sfbp)
+static char* CheckWholeSourcesVersusFocused(SourceFeatBlkPtr sfbp)
 {
-    CharPtr p = NULL;
+    char* p = NULL;
     bool whole = false;
 
     for(; sfbp != NULL; sfbp = sfbp->next)
@@ -1178,9 +1178,9 @@ static CharPtr CheckWholeSourcesVersusFocused(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, CharPtr div)
+static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
 {
-    CharPtr p;
+    char* p;
     bool got;
     bool ret;
     Int4    syntgndiv;
@@ -1232,7 +1232,7 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, CharPtr div)
 static Int4 CheckTransgenicSourceFeats(SourceFeatBlkPtr sfbp)
 {
     SourceFeatBlkPtr tsfbp;
-    CharPtr          taxname;
+    char*          taxname;
     bool             same;
     bool             tgfull;
 
@@ -1304,11 +1304,11 @@ static Int4 CheckTransgenicSourceFeats(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, Int4Ptr status)
+static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
 {
     SourceFeatBlkPtr tsfbp;
     const char       **b;
-    CharPtr          name;
+    char*          name;
     Char             pat[100];
     Int4             count;
     bool             same;
@@ -1394,10 +1394,10 @@ static bool IfSpecialFeat(MinMaxPtr mmp, size_t len)
 }
 
 /**********************************************************/
-static CharPtr CheckSourceOverlap(MinMaxPtr mmp, size_t len)
+static char* CheckSourceOverlap(MinMaxPtr mmp, size_t len)
 {
     MinMaxPtr tmmp;
-    CharPtr   res;
+    char*   res;
 
     for(; mmp != NULL; mmp = mmp->next)
     {
@@ -1418,14 +1418,14 @@ static CharPtr CheckSourceOverlap(MinMaxPtr mmp, size_t len)
     if(mmp == NULL)
         return(NULL);
 
-    res = (CharPtr) MemNew(1024);
+    res = (char*) MemNew(1024);
     sprintf(res, "\"%s\" at %d..%d vs \"%s\" at %d..%d", mmp->orgname,
             mmp->min, mmp->max, tmmp->orgname, tmmp->min, tmmp->max);
     return(res);
 }
 
 /**********************************************************/
-static CharPtr CheckForUnusualFullLengthOrgs(SourceFeatBlkPtr sfbp)
+static char* CheckForUnusualFullLengthOrgs(SourceFeatBlkPtr sfbp)
 {
     SourceFeatBlkPtr tsfbp;
     const char       **b;
@@ -1472,7 +1472,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
                                 Int4 use_what)
 {
     SourceFeatBlkPtr tsfbp;
-    CharPtr          namstr;
+    char*          namstr;
     const Char*      cultivar;
     const Char*      isolate;
     const Char*      serotype;
@@ -1923,7 +1923,7 @@ static void CheckQualsInSourceFeat(ncbi::objects::CBioSource& bio, TQualVector& 
 {
     const Char **b;
 
-    CharPtr    p;
+    char*    p;
 
     if (!bio.CanGetOrg())
         return;
@@ -2009,8 +2009,8 @@ static ncbi::CRef<ncbi::objects::CDbtag> GetSourceDbtag(ncbi::CRef<ncbi::objects
 {
     const char **b;
     const char *q;
-    CharPtr    line;
-    CharPtr    p;
+    char*    line;
+    char*    p;
 
     ncbi::CRef<ncbi::objects::CDbtag> tag;
 
@@ -2071,7 +2071,7 @@ static ncbi::CRef<ncbi::objects::CDbtag> GetSourceDbtag(ncbi::CRef<ncbi::objects
                   "/db_xref type \"%s\" is obsolete.", &val_buf[0]);
         if (StringICmp(&val_buf[0], "IFO") == 0)
         {
-            line = (CharPtr) MemNew(25 + StringLen(p + 1));
+            line = (char*) MemNew(25 + StringLen(p + 1));
             StringCpy(line, "NBRC:");
             StringCat(line, p + 1);
             qual->SetVal(line);
@@ -2140,10 +2140,10 @@ static ncbi::CRef<ncbi::objects::CDbtag> GetSourceDbtag(ncbi::CRef<ncbi::objects
 /**********************************************************/
 static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Int2 source, IndexblkPtr ibp, Uint1 taxserver)
 {
-    CharPtr      div;
-    CharPtr      tco;
-    CharPtr      p;
-    CharPtr      q;
+    char*      div;
+    char*      tco;
+    char*      p;
+    char*      q;
 
     Int4         newgen;
     Int4         oldgen;
@@ -2540,11 +2540,11 @@ static void PropogateSuppliedLineage(ncbi::objects::CBioseq& bioseq,
 }
 
 /**********************************************************/
-static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, CharPtr PNTR moltype)
+static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, char** moltype)
 {
     SourceFeatBlkPtr tsfbp;
-    CharPtr          name;
-    CharPtr          p;
+    char*          name;
+    char*          p;
     bool             ret;
     Char             ch;
 
@@ -2591,7 +2591,7 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Int2 source)
 {
     const char **b;
 
-    CharPtr    location;
+    char*    location;
     Int4       sources;
     Int4       envs;
     Char       ch;
@@ -2666,7 +2666,7 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Int2 source)
 }
 
 /**********************************************************/
-static CharPtr CheckPcrPrimersTag(CharPtr str)
+static char* CheckPcrPrimersTag(char* str)
 {
     if(StringNCmp(str, "fwd_name", 8) == 0 ||
        StringNCmp(str, "rev_name", 8) == 0)
@@ -2689,10 +2689,10 @@ static void PopulatePcrPrimers(ncbi::objects::CBioSource& bio, PcrPrimersPtr ppp
 {
     PcrPrimersPtr tppp;
 
-    CharPtr       str_fs;
-    CharPtr       str_rs;
-    CharPtr       str_fn;
-    CharPtr       str_rn;
+    char*       str_fs;
+    char*       str_rs;
+    char*       str_fn;
+    char*       str_rn;
     Int4          num_fn;
     Int4          num_rn;
 
@@ -2754,11 +2754,11 @@ static void PopulatePcrPrimers(ncbi::objects::CBioSource& bio, PcrPrimersPtr ppp
         }
     }
 
-    str_fs = (CharPtr) MemNew(len_fs);
-    str_rs = (CharPtr) MemNew(len_rs);
-    str_fn = (len_fn == 0) ? NULL : (CharPtr) MemNew(len_fn + count -
+    str_fs = (char*) MemNew(len_fs);
+    str_rs = (char*) MemNew(len_rs);
+    str_fn = (len_fn == 0) ? NULL : (char*) MemNew(len_fn + count -
                                                      num_fn + 2);
-    str_rn = (len_rn == 0) ? NULL : (CharPtr) MemNew(len_rn + count -
+    str_rn = (len_rn == 0) ? NULL : (char*) MemNew(len_rn + count -
                                                      num_rn + 2);
 
     for(tppp = ppp; tppp != NULL; tppp = tppp->next)
@@ -2846,10 +2846,10 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
     PcrPrimersPtr ppp;
     PcrPrimersPtr tppp;
 
-    CharPtr       p;
-    CharPtr       q;
-    CharPtr       r;
-    CharPtr       s;
+    char*       p;
+    char*       q;
+    char*       r;
+    char*       s;
     bool          comma;
     bool          bad_start;
     bool          empty;
@@ -2942,7 +2942,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             tppp->fwd_name = StringSave(q);
                         else
                         {
-                            s = (CharPtr) MemNew(StringLen(tppp->fwd_name) +
+                            s = (char*) MemNew(StringLen(tppp->fwd_name) +
                                                  StringLen(q) + 2);
                             StringCpy(s, tppp->fwd_name);
                             StringCat(s, ":");
@@ -2963,7 +2963,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             tppp->fwd_seq = StringSave(q);
                         else
                         {
-                            s = (CharPtr) MemNew(StringLen(tppp->fwd_seq) +
+                            s = (char*) MemNew(StringLen(tppp->fwd_seq) +
                                                  StringLen(q) + 2);
                             StringCpy(s, tppp->fwd_seq);
                             StringCat(s, ":");
@@ -2976,7 +2976,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                     tppp->fwd_name = StringSave(":");
                                 else
                                 {
-                                    s = (CharPtr) MemNew(StringLen(tppp->fwd_name) + 2);
+                                    s = (char*) MemNew(StringLen(tppp->fwd_name) + 2);
                                     StringCpy(s, tppp->fwd_name);
                                     StringCat(s, ":");
                                     MemFree(tppp->fwd_name);
@@ -2997,7 +2997,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             tppp->rev_name = StringSave(q);
                         else
                         {
-                            s = (CharPtr) MemNew(StringLen(tppp->rev_name) +
+                            s = (char*) MemNew(StringLen(tppp->rev_name) +
                                                  StringLen(q) + 2);
                             StringCpy(s, tppp->rev_name);
                             StringCat(s, ":");
@@ -3018,7 +3018,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             tppp->rev_seq = StringSave(q);
                         else
                         {
-                            s = (CharPtr) MemNew(StringLen(tppp->rev_seq) +
+                            s = (char*) MemNew(StringLen(tppp->rev_seq) +
                                                  StringLen(q) + 2);
                             StringCpy(s, tppp->rev_seq);
                             StringCat(s, ":");
@@ -3031,7 +3031,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                     tppp->rev_name = StringSave(":");
                                 else
                                 {
-                                    s = (CharPtr) MemNew(StringLen(tppp->rev_name) + 2);
+                                    s = (char*) MemNew(StringLen(tppp->rev_name) + 2);
                                     StringCpy(s, tppp->rev_name);
                                     StringCat(s, ":");
                                     MemFree(tppp->rev_name);
@@ -3141,9 +3141,9 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
     const char **b;
     const char *q;
 
-    CharPtr    p;
-    CharPtr    r;
-    CharPtr    val;
+    char*    p;
+    char*    r;
+    char*    val;
     Int4       year;
     Int4       month;
     Int4       day;
@@ -3199,7 +3199,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
                 {
                     for(q = val; *q == '0';)
                         q++;
-                    for(p = (CharPtr) q; *p != '\0'; p++)
+                    for(p = (char*) q; *p != '\0'; p++)
                         if(*p < '0' || *p > '9')
                             break;
                     if(*p != '\0')
@@ -3235,7 +3235,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
                     {
                         for(q = val + 4; *q == '0';)
                             q++;
-                        for(p = (CharPtr) q; *p != '\0'; p++)
+                        for(p = (char*) q; *p != '\0'; p++)
                             if(*p < '0' || *p > '9')
                                 break;
                         if(*p != '\0')
@@ -3294,7 +3294,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
                         {
                             for(q = val + 7; *q == '0';)
                                 q++;
-                            for(p = (CharPtr) q; *p != '\0'; p++)
+                            for(p = (char*) q; *p != '\0'; p++)
                                 if(*p < '0' || *p > '9')
                                     break;
                             if(*p != '\0')
@@ -3469,10 +3469,10 @@ static void CheckMetagenome(ncbi::objects::CBioSource& bio)
 }
 
 /**********************************************************/
-static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, CharPtr acc)
+static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 {
     SourceFeatBlkPtr tsfbp;
-    CharPtr          ssid;
+    char*          ssid;
     Int4             count_feat;
     Int4             count_qual;
 
@@ -3527,9 +3527,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
 
     MinMaxPtr        mmp;
     IndexblkPtr      ibp;
-    CharPtr          res;
-    CharPtr          acc;
-    CharPtr          p;
+    char*          res;
+    char*          acc;
+    char*          p;
     Int4             i;
     Int4             use_what = USE_ALL;
     bool             err;
@@ -3830,7 +3830,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
         pp->buf = NULL;
 
         GetSeqLocation(*feat, tsfbp->location, seqids, &err,
-                       pp, (CharPtr) "source");
+                       pp, (char*) "source");
 
         if(err)
         {

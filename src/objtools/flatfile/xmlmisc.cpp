@@ -34,17 +34,13 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <ctools/ctransition/ncbimem.hpp>
-#include <ctools/ctransition/ncbistr.hpp>
-
+#include <objtools/flatfile/ftacpp.hpp>
 #include <objtools/flatfile/xmlmisc.h>
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "xmlmisc.cpp"
-
-USING_SCOPE(ctransition);
 
 #define XML_START_TAG  1
 #define XML_END_TAG    2
@@ -56,8 +52,8 @@ USING_SCOPE(ctransition);
 typedef struct xmltable {
     const Char*  code;
     size_t       len;
-    Nlm_Char     letter;
-} Nlm_XmlTable, PNTR Nlm_XmlTablePtr;
+    char     letter;
+} Nlm_XmlTable, *Nlm_XmlTablePtr;
 
 static Nlm_XmlTable xmlcodes[] = {
     { "&amp;", 5, '&' },
@@ -68,11 +64,12 @@ static Nlm_XmlTable xmlcodes[] = {
     { NULL, 0, '\0' }
 };
 
-static Nlm_CharPtr DecodeXml(Nlm_CharPtr str)
+static char* DecodeXml(char* str)
 {
-    Nlm_Char         ch;
-    Nlm_CharPtr      dst, src;
-    Nlm_Int2         i;
+    char ch;
+    char* dst;
+    char* src;
+    short i;
     Nlm_XmlTablePtr  xtp;
 
     if (StringHasNoText(str)) return str;
@@ -112,10 +109,10 @@ static Nlm_CharPtr DecodeXml(Nlm_CharPtr str)
     return str;
 }
 
-static void TokenizeXmlLine(ValNodePtr PNTR headp, ValNodePtr PNTR tailp, Nlm_CharPtr str)
+static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
 {
-    Nlm_CharPtr     atr, fst, lst, nxt, ptr;
-    Nlm_Char        ch, cha, chf, chl, quo;
+    char     *atr, *fst, *lst, *nxt, *ptr;
+    char        ch, cha, chf, chl, quo;
 
     bool     doStart, doEnd;
 
@@ -263,7 +260,7 @@ static void TokenizeXmlLine(ValNodePtr PNTR headp, ValNodePtr PNTR tailp, Nlm_Ch
     }
 }
 
-static ValNodePtr TokenizeXmlString(Nlm_CharPtr str)
+static ValNodePtr TokenizeXmlString(char* str)
 {
     ValNodePtr  head = NULL, tail = NULL;
 
@@ -276,11 +273,11 @@ static ValNodePtr TokenizeXmlString(Nlm_CharPtr str)
 
 /* second pass - process ValNode chain into hierarchical structure */
 
-static Nlm_XmlObjPtr ProcessAttribute(Nlm_CharPtr str)
+static Nlm_XmlObjPtr ProcessAttribute(char* str)
 {
     Nlm_XmlObjPtr  attr = NULL;
-    Nlm_Char       ch, chf, chl, quo;
-    Nlm_CharPtr    eql, lst;
+    char    ch, chf, chl, quo;
+    char    *eql, *lst;
 
     if (StringHasNoText(str)) return NULL;
 
@@ -328,11 +325,11 @@ static Nlm_XmlObjPtr ProcessAttribute(Nlm_CharPtr str)
     return attr;
 }
 
-static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr PNTR curr, Nlm_XmlObjPtr parent, const Char* name)
+static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr* curr, Nlm_XmlObjPtr parent, const Char* name)
 {
     Nlm_XmlObjPtr  attr, child, lastattr = NULL, lastchild = NULL, xop = NULL;
-    Nlm_Uint1      choice;
-    Nlm_CharPtr    str;
+    unsigned char  choice;
+    char*    str;
     ValNodePtr     vnp;
 
     if (curr == NULL) return NULL;
@@ -346,7 +343,7 @@ static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr PNTR curr, Nlm_XmlObjPtr parent,
     while (*curr != NULL) {
 
         vnp = *curr;
-        str = (Nlm_CharPtr)vnp->data.ptrvalue;
+        str = (char*)vnp->data.ptrvalue;
         choice = vnp->choice;
 
         /* advance to next token */
@@ -404,7 +401,7 @@ static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr PNTR curr, Nlm_XmlObjPtr parent,
     return xop;
 }
 
-static Nlm_XmlObjPtr SetSuccessors(Nlm_XmlObjPtr xop, Nlm_XmlObjPtr prev, Nlm_Int2 level)
+static Nlm_XmlObjPtr SetSuccessors(Nlm_XmlObjPtr xop, Nlm_XmlObjPtr prev, short level)
 {
     Nlm_XmlObjPtr  tmp;
 
@@ -446,8 +443,8 @@ Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop)
 
     if (xop == NULL) return NULL;
 
-    Nlm_MemFree(xop->name);
-    Nlm_MemFree(xop->contents);
+    MemFree(xop->name);
+    MemFree(xop->contents);
 
     curr = xop->attributes;
     while (curr != NULL) {
@@ -465,7 +462,7 @@ Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop)
         curr = next;
     }
 
-    Nlm_MemFree(xop);
+    MemFree(xop);
 
     return NULL;
 }
@@ -474,14 +471,14 @@ Nlm_XmlObjPtr ParseXmlString(const Char* str)
 {
     ValNodePtr     head;
     Nlm_XmlObjPtr  root, xop;
-    Nlm_CharPtr    tmp;
+    char*    tmp;
 
     if (StringHasNoText(str)) return NULL;
     tmp = StringSave(str);
     if (tmp == NULL) return NULL;
 
     head = TokenizeXmlString(tmp);
-    Nlm_MemFree(tmp);
+    MemFree(tmp);
 
     if (head == NULL) return NULL;
 
@@ -496,22 +493,22 @@ Nlm_XmlObjPtr ParseXmlString(const Char* str)
     return xop;
 }
 
-static Nlm_Int4 VisitXmlNodeProc(
+static int VisitXmlNodeProc(
     Nlm_XmlObjPtr xop,
     Nlm_XmlObjPtr parent,
-    Nlm_Int2 level,
-    Nlm_VoidPtr userdata,
+    short level,
+    void* userdata,
     VisitXmlNodeFunc callback,
-    Nlm_CharPtr nodeFilter,
-    Nlm_CharPtr parentFilter,
-    Nlm_CharPtr attrTagFilter,
-    Nlm_CharPtr attrValFilter,
-    Nlm_Int2 maxDepth
+    char* nodeFilter,
+    char* parentFilter,
+    char* attrTagFilter,
+    char* attrValFilter,
+    short maxDepth
     )
 
 {
     Nlm_XmlObjPtr  attr, tmp;
-    Nlm_Int4       index = 0;
+    int       index = 0;
 
     bool okay;
 
@@ -575,10 +572,10 @@ static Nlm_Int4 VisitXmlNodeProc(
     return index;
 }
 
-Nlm_Int4 VisitXmlNodes(Nlm_XmlObjPtr xop, Nlm_VoidPtr userdata, VisitXmlNodeFunc callback, Nlm_CharPtr nodeFilter,
-                       Nlm_CharPtr parentFilter, Nlm_CharPtr attrTagFilter, Nlm_CharPtr attrValFilter, Nlm_Int2 maxDepth)
+int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter,
+                       char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth)
 {
-    Nlm_Int4  index = 0;
+    int  index = 0;
 
     if (xop == NULL) return index;
 

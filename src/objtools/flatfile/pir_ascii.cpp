@@ -281,7 +281,7 @@ DataBlkPtr sub_ind_SUMMARY[MAXTAG];
 DataBlkPtr sub_ind_SEQUENCE[MAXTAG];
 DataBlkPtr sub_ind_END[MAXTAG];
 
-DataBlkPtr PNTR sub_ind[] = {
+DataBlkPtr* sub_ind[] = {
     sub_ind_ENTRY,
     sub_ind_TITLE,
     sub_ind_ALTERNATE_NAMES,
@@ -307,7 +307,7 @@ DataBlkPtr PNTR sub_ind[] = {
 #define MAXMAX     70000
 
 static DataBlk         db[MAXDBP];
-static DataBlk PNTR    subdb[MAXDBP*MAXTAG];
+static DataBlk*    subdb[MAXDBP*MAXTAG];
 
 static int             i_dbp;
 static int             i_subdbp;
@@ -404,7 +404,7 @@ static const Char* strip_organelle(const Char* text)
 }
 
 /**********************************************************/
-static Uint1 GetPirGenome(DataBlkPtr PNTR PNTR sub_ind)
+static Uint1 GetPirGenome(DataBlkPtr** sub_ind)
 {
     DataBlkPtr dbp;
     Int4       gmod;
@@ -429,7 +429,7 @@ static Uint1 GetPirGenome(DataBlkPtr PNTR PNTR sub_ind)
 }
 
 /**********************************************************/
-static bool check_pir_entry(DataBlkPtr PNTR ind)
+static bool check_pir_entry(DataBlkPtr* ind)
 {
     if(ind[ParFlatPIR_ENTRY] == NULL)
         ErrPostEx(SEV_ERROR, ERR_ENTRY_NumKeywordBlk, "No ENTRY block found");
@@ -470,7 +470,7 @@ static bool check_pir_entry(DataBlkPtr PNTR ind)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_entry> create_entry(DataBlkPtr PNTR ind)
+static ncbi::CRef<ncbi::objects::CSeq_entry> create_entry(DataBlkPtr* ind)
 {
     /* create the entry framework
      */
@@ -501,15 +501,15 @@ static ncbi::CRef<ncbi::objects::CSeq_entry> create_entry(DataBlkPtr PNTR ind)
  *                                              6-9-93
  *
  **********************************************************/
-static bool get_seq_data(DataBlkPtr PNTR ind, DataBlkPtr PNTR PNTR sub_ind,
-                         ncbi::objects::CBioseq& bioseq, Uint1Ptr seqconv,
+static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
+                         ncbi::objects::CBioseq& bioseq, unsigned char* seqconv,
                          Uint1 seq_data_type)
 {
     Uint4        seqlen;
 
-    CharPtr      seqptr = NULL;
-    CharPtr      endptr;
-    CharPtr      bptr = NULL;
+    char*      seqptr = NULL;
+    char*      endptr;
+    char*      bptr = NULL;
     DataBlkPtr   dbp;
     Int4         i;
 
@@ -568,12 +568,12 @@ static bool get_seq_data(DataBlkPtr PNTR ind, DataBlkPtr PNTR PNTR sub_ind,
 }
 
 /**********************************************************/
-static CharPtr join_subind(DataBlkPtr ind, DataBlkPtr PNTR sub_ind)
+static char* join_subind(DataBlkPtr ind, DataBlkPtr* sub_ind)
 {
-    CharPtr str;
-    CharPtr add;
-    CharPtr tag;
-    CharPtr offset;
+    char* str;
+    char* add;
+    char* tag;
+    char* offset;
     Int2    l;
     Int2    type;
 
@@ -587,7 +587,7 @@ static CharPtr join_subind(DataBlkPtr ind, DataBlkPtr PNTR sub_ind)
         len += strlen(sub_tag[type][l]) + 1;
         len += strlen(sub_ind[l]->offset) + 1;
     }
-    str = (CharPtr) MemNew(len);
+    str = (char*) MemNew(len);
     add = tata_save(sub_ind[0]->offset);
     StringCpy(str, add);
     MemFree(add);
@@ -596,7 +596,7 @@ static CharPtr join_subind(DataBlkPtr ind, DataBlkPtr PNTR sub_ind)
         if(sub_ind[l] == NULL)
             continue;
 
-        tag = tata_save((CharPtr) sub_tag[type][l]);
+        tag = tata_save((char*) sub_tag[type][l]);
         StringCat(str, " ");
         StringCat(str, tag);
         MemFree(tag);
@@ -624,10 +624,10 @@ static CharPtr join_subind(DataBlkPtr ind, DataBlkPtr PNTR sub_ind)
  *                                              11-17-93
  *
  **********************************************************/
-static void split_str(TKeywordList& words, CharPtr instr)
+static void split_str(TKeywordList& words, char* instr)
 {
-    CharPtr ptr;
-    CharPtr ptr2;
+    char* ptr;
+    char* ptr2;
 
     if(instr == NULL)
         return;
@@ -658,15 +658,15 @@ static void split_str(TKeywordList& words, CharPtr instr)
 
 /**********************************************************
  *
- *   CharPtr GetPirSeqRaw(bptr, eptr):
+ *   char* GetPirSeqRaw(bptr, eptr):
  *
  *                                              11-12-93
  *
  **********************************************************/
-static CharPtr GetPirSeqRaw(CharPtr bptr, CharPtr eptr)
+static char* GetPirSeqRaw(char* bptr, char* eptr)
 {
-    CharPtr ptr;
-    CharPtr retstr = NULL;
+    char* ptr;
+    char* retstr = NULL;
     Int4    i;
 
     ptr = SrchTheChar(bptr, eptr, '\n');        /* sequence line */
@@ -680,7 +680,7 @@ static CharPtr GetPirSeqRaw(CharPtr bptr, CharPtr eptr)
         bptr++;
     
     size_t size = eptr - bptr;
-    retstr = (CharPtr) MemNew(size + 1);
+    retstr = (char*) MemNew(size + 1);
     i = 0;
 
     while(bptr < eptr)
@@ -704,12 +704,12 @@ static CharPtr GetPirSeqRaw(CharPtr bptr, CharPtr eptr)
  *                                              11-11-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr PNTR ind,
-                                                          DataBlkPtr PNTR PNTR sub_ind)
+static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
+                                                          DataBlkPtr** sub_ind)
 {
     DataBlkPtr  dbp;
-    CharPtr     ptr;
-    CharPtr     str;
+    char*     ptr;
+    char*     str;
 
     ncbi::CRef<ncbi::objects::CPIR_block> pir(new ncbi::objects::CPIR_block);
 
@@ -720,7 +720,7 @@ static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr PNTR ind,
         if(StringNCmp(ptr, "host", 4) == 0)
             ptr += 4;
 
-        CharPtr p = tata_save(ptr);
+        char* p = tata_save(ptr);
         pir->SetHost(p);
         MemFree(p);
     }
@@ -732,7 +732,7 @@ static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr PNTR ind,
 
     if (ind[ParFlatPIR_CONTAINS] != NULL)
     {
-        CharPtr p = tata_save(ind[ParFlatPIR_CONTAINS]->offset);
+        char* p = tata_save(ind[ParFlatPIR_CONTAINS]->offset);
         pir->SetIncludes(p);
         MemFree(p);
     }
@@ -742,7 +742,7 @@ static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr PNTR ind,
         dbp = sub_ind[ParFlatPIR_CLASSIFICATION][CLASS_superfamily];
         if (dbp != NULL)
         {
-            CharPtr p = tata_save(dbp->offset);
+            char* p = tata_save(dbp->offset);
             pir->SetSuperfamily(p);
             MemFree(p);
         }
@@ -791,7 +791,7 @@ static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr PNTR ind,
  *                                              8-12-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CDate_std> GetStdDate(CharPtr ptr, bool PNTR flag)
+static ncbi::CRef<ncbi::objects::CDate_std> GetStdDate(char* ptr, bool* flag)
 {
     Char    buf[10];
 
@@ -872,11 +872,11 @@ static bool CkStdMonth(const ncbi::objects::CDate_std& date)
  *   or #text_change.
  *
  **********************************************************/
-static void parse_pir_date(DataBlkPtr PNTR PNTR sub_ind,
-                           TSeqdescList& descrs, CharPtr date)
+static void parse_pir_date(DataBlkPtr** sub_ind,
+                           TSeqdescList& descrs, char* date)
 {
-    CharPtr    seqdate;
-    CharPtr    textdate;
+    char*    seqdate;
+    char*    textdate;
     bool       flag;
 
     DataBlkPtr dbp;
@@ -987,10 +987,10 @@ static void parse_pir_date(DataBlkPtr PNTR PNTR sub_ind,
 }
 
 /**********************************************************/
-static void DelQuotBtwData(CharPtr value)
+static void DelQuotBtwData(char* value)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     for(p = value, q = p; *p != '\0'; p++)
         if(*p != '"')
@@ -1000,7 +1000,7 @@ static void DelQuotBtwData(CharPtr value)
 
 /**********************************************************
  *
- *   CharPtr ReplaceNewlineToBlank(bptr, eptr):
+ *   char* ReplaceNewlineToBlank(bptr, eptr):
  *
  *      Return a string without newline characters and
  *   front blanks after newline character found.
@@ -1008,11 +1008,11 @@ static void DelQuotBtwData(CharPtr value)
  *                                              6-28-93
  *
  **********************************************************/
-static CharPtr ReplaceNewlineToBlank(CharPtr bptr, CharPtr eptr)
+static char* ReplaceNewlineToBlank(char* bptr, char* eptr)
 {
-    CharPtr p;
-    CharPtr q;
-    CharPtr line;
+    char* p;
+    char* q;
+    char* line;
     Char    ch;
 
     if(bptr == NULL || eptr == NULL || bptr >= eptr)
@@ -1047,17 +1047,17 @@ static CharPtr ReplaceNewlineToBlank(CharPtr bptr, CharPtr eptr)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr PNTR PNTR sub_ind,
+static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_ind,
                                                              ParserPtr pp)
 {
     std::string taxstr,
                 comstr;
 
-    CharPtr    ptr1;
-    CharPtr    ptr2;
+    char*    ptr1;
+    char*    ptr2;
 
     DataBlkPtr dbp;
-    CharPtr    p;
+    char*    p;
     Uint1      drop;
 
     ncbi::objects::COrg_ref::TSyn syns;
@@ -1189,7 +1189,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr PNTR PNT
  *                                              12-4-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CDate> get_pir_date(CharPtr s)
+static ncbi::CRef<ncbi::objects::CDate> get_pir_date(char* s)
 {
     static const char *months[12] = {"January", "February", "March",
                                      "April",   "May",      "June",
@@ -1252,14 +1252,14 @@ static ncbi::CRef<ncbi::objects::CDate> get_pir_date(CharPtr s)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
+static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
 {
-    CharPtr    s;
+    char*    s;
     const Char* str;
-    CharPtr    pages;
-    CharPtr    ed;
-    CharPtr    au;
-    CharPtr    eptr;
+    char*    pages;
+    char*    ed;
+    char*    au;
+    char*    eptr;
 
     if(StringNCmp(bptr, "in ", 3) == 0)
         bptr += 3;
@@ -1376,11 +1376,11 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(CharPtr bptr, ncbi::CRef
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
+static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
 {
     ncbi::CRef<ncbi::objects::CCit_sub> cit_sub;
-    CharPtr   s;
-    CharPtr   eptr;
+    char*   s;
+    char*   eptr;
 
     if(bptr == NULL)
         return cit_sub;
@@ -1430,7 +1430,7 @@ static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(CharPtr bptr, ncbi::CRef<
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_cit(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title, int muid)
+static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_cit(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title, int muid)
 {
     ncbi::CRef<ncbi::objects::CCit_gen> cit_gen(new ncbi::objects::CCit_gen);
 
@@ -1449,7 +1449,7 @@ static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_cit(CharPtr bptr, ncbi::CRef<
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_sub_gen(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
+static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_sub_gen(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
 {
     ncbi::CRef<ncbi::objects::CCit_gen> cit_gen;
 
@@ -1475,12 +1475,12 @@ static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_sub_gen(CharPtr bptr, ncbi::C
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(CharPtr bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
+static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
 {
-    CharPtr    s;
-    CharPtr    tit;
-    CharPtr    volume;
-    CharPtr    pages;
+    char*    s;
+    char*    tit;
+    char*    volume;
+    char*    pages;
 
     ncbi::CRef<ncbi::objects::CCit_art> cit_art;
 
@@ -1544,15 +1544,15 @@ static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(CharPtr bptr, ncbi::CRef<
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr PNTR sub_ind)
+static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
 {
     DataBlkPtr  dbp;
 
     Int4        muid = 0;
     Int4        pmid = 0;
 
-    CharPtr     bptr;
-    CharPtr     p;
+    char*     bptr;
+    char*     p;
     bool        badart;
 
     ncbi::CRef<ncbi::objects::CPubdesc> desc;
@@ -1750,15 +1750,15 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr PNTR sub_ind)
  *                                              11-11-93
  *
  **********************************************************/
-static void get_pir_descr(DataBlkPtr PNTR ind,
-                          DataBlkPtr PNTR PNTR sub_ind,
+static void get_pir_descr(DataBlkPtr* ind,
+                          DataBlkPtr** sub_ind,
                           ParserPtr pp,
                           TSeqdescList& descrs)
 {
     DataBlkPtr   dbp;
 
-    CharPtr      offset;
-    CharPtr      str;
+    char*      offset;
+    char*      str;
 
     ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
     descr->SetTitle("");
@@ -1766,7 +1766,7 @@ static void get_pir_descr(DataBlkPtr PNTR ind,
     if(ind[ParFlatPIR_TITLE] != NULL)
     {
         str = ind[ParFlatPIR_TITLE]->offset;
-        CharPtr p = tata_save(str);
+        char* p = tata_save(str);
         descr->SetTitle(p);
         MemFree(p);
     }
@@ -1775,7 +1775,7 @@ static void get_pir_descr(DataBlkPtr PNTR ind,
     for(dbp = ind[ParFlatPIR_COMMENT]; dbp != NULL; dbp = dbp->next)
     {
         offset = dbp->offset;
-        CharPtr p = tata_save(offset);
+        char* p = tata_save(offset);
 
         if (p && p[0])
         {
@@ -1789,7 +1789,7 @@ static void get_pir_descr(DataBlkPtr PNTR ind,
     for(dbp = ind[ParFlatPIR_COMPLEX]; dbp != NULL; dbp = dbp->next)
     {
         offset = dbp->offset;
-        CharPtr p = tata_save(offset);
+        char* p = tata_save(offset);
 
         if (p && p[0])
         {
@@ -1857,7 +1857,7 @@ static void get_pir_descr(DataBlkPtr PNTR ind,
     {
         for(dbp = ind[ParFlatPIR_REFERENCE]; dbp != NULL; dbp = dbp->next)
         {
-            ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr PNTR) dbp->data);
+            ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->data);
             if (pubdesc.NotEmpty())
             {
                 ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
@@ -1875,13 +1875,13 @@ static void get_pir_descr(DataBlkPtr PNTR ind,
  *      Modified from PirFeatProtRef().
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr PNTR ind, size_t length)
+static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t length)
 {
-    CharPtr    offset;
-    CharPtr    bptr;
-    CharPtr    eptr;
-    CharPtr    str;
-    CharPtr    str1;
+    char*    offset;
+    char*    bptr;
+    char*    eptr;
+    char*    str;
+    char*    str1;
 
     ncbi::CRef<ncbi::objects::CSeq_feat> feat;
     
@@ -1901,7 +1901,7 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr PNTR ind, si
             eptr++;
         *eptr = '\0';
 
-        CharPtr p = tata_save(bptr);
+        char* p = tata_save(bptr);
         prot_ref->SetEc().push_back(p);
         MemFree(p);
 
@@ -1914,7 +1914,7 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr PNTR ind, si
     if(bptr != NULL)
         *bptr = '\0';
 
-    CharPtr p = tata_save(str);
+    char* p = tata_save(str);
     prot_ref->SetName().push_back(p);
     MemFree(p);
 
@@ -1949,7 +1949,7 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr PNTR ind, si
 
 /**********************************************************
  *
- *   CharPtr PirStringCombine(str1, str2):
+ *   char* PirStringCombine(str1, str2):
  *
  *      Return a string which is combined str1 and str2,
  *   put blank between two strings; also memory free out
@@ -1958,16 +1958,16 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr PNTR ind, si
  *                                              10-18-93
  *
  **********************************************************/
-static CharPtr PirStringCombine(CharPtr str1, CharPtr str2)
+static char* PirStringCombine(char* str1, char* str2)
 {
-    CharPtr newstr;
+    char* newstr;
 
     if(str1 == NULL)
         return(str2);
     if(str2 == NULL)
         return(str1);
 
-    newstr = (CharPtr) MemNew(StringLen(str1) + StringLen(str2) + 2);
+    newstr = (char*) MemNew(StringLen(str1) + StringLen(str2) + 2);
     StringCpy(newstr, str1);
     StringCat(newstr, " ");
     StringCat(newstr, str2);
@@ -2115,12 +2115,12 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocPnt(const Char* str, ncbi
  *                                              11-16-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(CharPtr location, ncbi::objects::CSeq_id& seqid,
+static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(char* location, ncbi::objects::CSeq_id& seqid,
                                                              bool bond)
 {
     Int2      num;
-    CharPtr   ptr;
-    CharPtr   eptr;
+    char*   ptr;
+    char*   eptr;
 
     ncbi::CRef<ncbi::objects::CSeq_loc> ret;
 
@@ -2176,19 +2176,19 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(CharPtr location, n
  *                                              11-15-93
  *
  **********************************************************/
-static void pir_feat(DataBlkPtr PNTR ind, ncbi::objects::CSeq_annot::C_Data::TFtable& feats)
+static void pir_feat(DataBlkPtr* ind, ncbi::objects::CSeq_annot::C_Data::TFtable& feats)
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
 
     Int2       indx;
-    CharPtr    str;
-    CharPtr    ptr;
-    CharPtr    location;
-    CharPtr    comment;
-    CharPtr    ptr1;
-    CharPtr    str1;
-    CharPtr    p;
+    char*    str;
+    char*    ptr;
+    char*    location;
+    char*    comment;
+    char*    ptr1;
+    char*    str1;
+    char*    p;
 
     dbp = ind[ParFlatPIR_FEATURE];
     if(dbp == NULL)
@@ -2301,7 +2301,7 @@ static void pir_feat(DataBlkPtr PNTR ind, ncbi::objects::CSeq_annot::C_Data::TFt
                 *ptr = '\0';
             }
 
-            CharPtr p = tata_save(comment);
+            char* p = tata_save(comment);
             if (p != NULL && p[0] != 0)
                 feat->SetComment(p);
             MemFree(p);
@@ -2355,7 +2355,7 @@ static void seq_feat_equiv(ncbi::objects::CSeq_feat& feat, ncbi::objects::CSeq_a
  *      Modified from GetPirAnnot().
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_annot> get_pir_annot(DataBlkPtr PNTR ind, size_t length)
+static ncbi::CRef<ncbi::objects::CSeq_annot> get_pir_annot(DataBlkPtr* ind, size_t length)
 {
     ncbi::CRef<ncbi::objects::CSeq_annot> annot;
 
@@ -2390,8 +2390,8 @@ static ncbi::CRef<ncbi::objects::CSeq_annot> get_pir_annot(DataBlkPtr PNTR ind, 
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr PNTR ind,
-                                                     DataBlkPtr PNTR PNTR sub_ind, Uint1Ptr protconv)
+static ncbi::CRef<ncbi::objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr* ind,
+                                                     DataBlkPtr** sub_ind, unsigned char* protconv)
 {
     ncbi::CRef<ncbi::objects::CSeq_entry> ret;
     if(!check_pir_entry(ind))
@@ -2443,7 +2443,7 @@ static ncbi::CRef<ncbi::objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr PN
 }
 
 /**********************************************************/
-static DataBlkPtr PNTR SubdbpNew(int size)
+static DataBlkPtr* SubdbpNew(int size)
 {
     int i;
 
@@ -2486,7 +2486,7 @@ static DataBlkPtr tie_dbp(DataBlkPtr host, DataBlkPtr next)
 }
 
 /**********************************************************/
-static CharPtr save_flat_str(CharPtr str, CharPtr cur, CharPtr end)
+static char* save_flat_str(char* str, char* cur, char* end)
 {
     size_t l = StringLen(str);
     if(cur + l + 1 >= end)
@@ -2534,9 +2534,9 @@ static void featdbp(DataBlkPtr dbp)
     bool       is_fkey1;
     bool       is_fkey2;
     bool       is_fkey3;
-    CharPtr    bptr;
-    CharPtr    eptr;
-    CharPtr    ptr;
+    char*    bptr;
+    char*    eptr;
+    char*    ptr;
     DataBlkPtr subdbp;
 
     if(dbp == NULL)
@@ -2588,14 +2588,14 @@ static void subdbp_func(DataBlkPtr dbp)
 {
     DataBlkPtr      tmp;
     DataBlkPtr      subdbp;
-    DataBlkPtr PNTR si;
-    CharPtr         str;
+    DataBlkPtr* si;
+    char*         str;
     const char      **tags;
     int             type;
     int             i_tag;
     int             i;
-    CharPtr         s;
-    CharPtr         s0;
+    char*         s;
+    char*         s0;
 
     if(dbp == NULL)
         return;
@@ -2657,11 +2657,11 @@ static void subdbp_func(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static CharPtr fta_get_pir_line(CharPtr line, Int4 len, ParserPtr pp)
+static char* fta_get_pir_line(char* line, Int4 len, ParserPtr pp)
 {
     FileBufPtr fbp;
     const char* p = nullptr;
-    CharPtr    q;
+    char*    q;
     Int4       i;
 
     if(pp->ifp != NULL)
@@ -2690,23 +2690,23 @@ static CharPtr fta_get_pir_line(CharPtr line, Int4 len, ParserPtr pp)
 /**********************************************************/
 bool PirAscii(ParserPtr pp)
 {
-    CharPtr     beg_str;
-    CharPtr     offset;
+    char*     beg_str;
+    char*     offset;
     int         i;
     int         i_tag;
     int         end_of_file;
     DataBlkPtr  dbp;
     DataBlkPtr  ind[MAXTAG];
-    Uint1Ptr    protconv;
+    unsigned char*    protconv;
 
-    CharPtr     entry_str;
-    CharPtr     acc_str;
-    CharPtr     s;
-    CharPtr     ends;
+    char*     entry_str;
+    char*     acc_str;
+    char*     s;
+    char*     ends;
     Char        entry[MAXMAX];
     Char        flat_str[MAXSTR+1];
-    CharPtr     end_entry;
-    CharPtr     cur_entry;
+    char*     end_entry;
+    char*     cur_entry;
 
     if(pp->ifp != NULL)
         rewind(pp->ifp);
@@ -2716,7 +2716,7 @@ bool PirAscii(ParserPtr pp)
     protconv = GetProteinConv();        /* set up sequence alphabets
                                            in block.c */
 
-    beg_str = (CharPtr) dbp_tag[ParFlatPIR_ENTRY];
+    beg_str = (char*) dbp_tag[ParFlatPIR_ENTRY];
     while(fta_get_pir_line(flat_str, MAXSTR, pp) != NULL)
     {
         if(StringNCmp(flat_str, beg_str, StringLen(beg_str)) == 0)

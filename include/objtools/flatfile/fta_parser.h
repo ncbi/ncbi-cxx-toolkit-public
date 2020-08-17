@@ -37,7 +37,6 @@
 
 #include <list>
 
-#include <ctools/ctransition/ncbistd.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 // some forward declarations
@@ -57,14 +56,14 @@ typedef struct parser_vals {
     Int4             indx;              /* total number of records in the
                                            flat file, exclude BadLocusName
                                            entries */
-    IndexblkPtr PNTR entrylist;         /* a pointer points to the index
+    IndexblkPtr* entrylist;         /* a pointer points to the index
                                            block */
     Int4             curindx;           /* current index of the entrylist */
 
     /* all the files will be produced in the directory where the program was
      * executed except the input file which located in the argument path
      */
-    FILE PNTR        ifp;               /* a file pointer for input */
+    FILE*        ifp;               /* a file pointer for input */
     FileBufPtr       ffbuf;             /* a buffer pointer for input */
 
     std::string      outfile;
@@ -102,7 +101,7 @@ typedef struct parser_vals {
                                            protein sequence */
     Uint1            medserver;         /* == 1, if MedArchInit() call
                                            succeeded */
-    Pointer          fpo;               /* for medline uid lookup */
+    void*          fpo;               /* for medline uid lookup */
     bool             date;              /* if TRUE, replace update date
                                            from LOCUS */
     bool             no_date;           /* if TRUE, if no update and curr
@@ -121,7 +120,7 @@ typedef struct parser_vals {
                                            set Id */
     bool             convert;           /* convert to new asn.1 spec
                                            (ver. 4.0) */
-    CharPtr PNTR     accpref;           /* a list of allowable 2-letter
+    char**     accpref;           /* a list of allowable 2-letter
                                            prefixes in new format of accession
                                            numbers 2 letters + 6 digits */
     bool             accver;            /* ACCESSION.VERSION */
@@ -161,23 +160,23 @@ typedef struct parser_vals {
                                            Default is 0. */
     bool             allow_crossdb_featloc;
     bool             genenull;
-    const Char*      qsfile;            /* Do not free, just a pointer */
-    FILE PNTR        qsfd;
+    const char*      qsfile;            /* Do not free, just a pointer */
+    FILE*        qsfd;
     bool             qamode;
-    CharPtr          buf;               /* Temporary storage for
+    char*          buf;               /* Temporary storage for
                                            locations checks */
     Int4             output_format;     /* 0 = Bioseq-set, 1 = Seq-submit */
 
     // buffer based parsing
     bool             ffdb;              /* Use FlatFile database */
     bool             farseq;
-    VoidPtr          user_data;
-    CharPtr(*ff_get_entry)(const char* accession);
-    CharPtr(*ff_get_entry_v)(const char* accession, Int2 vernum);
-    CharPtr(*ff_get_qscore)(const char* accession, Int2 v);
-    CharPtr(*ff_get_qscore_pp)(const char* accession, Int2 v, struct parser_vals *pp);
-    CharPtr(*ff_get_entry_pp)(const char* accession, struct parser_vals *pp);
-    CharPtr(*ff_get_entry_v_pp)(const char* accession, Int2 vernum, struct parser_vals *pp);
+    void*          user_data;
+    char*(*ff_get_entry)(const char* accession);
+    char*(*ff_get_entry_v)(const char* accession, Int2 vernum);
+    char*(*ff_get_qscore)(const char* accession, Int2 v);
+    char*(*ff_get_qscore_pp)(const char* accession, Int2 v, struct parser_vals *pp);
+    char*(*ff_get_entry_pp)(const char* accession, struct parser_vals *pp);
+    char*(*ff_get_entry_v_pp)(const char* accession, Int2 vernum, struct parser_vals *pp);
 
 
     parser_vals() :
@@ -241,7 +240,7 @@ typedef struct parser_vals {
         ff_get_entry_pp(NULL),
         ff_get_entry_v_pp(NULL)
     {}
-} Parser, PNTR ParserPtr;
+} Parser, *ParserPtr;
 
 /**************************************************************************/
 void fta_init_pp(Parser& pp);

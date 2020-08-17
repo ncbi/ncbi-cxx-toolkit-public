@@ -96,25 +96,25 @@ typedef struct _seq_loc_ids {
     Int4      tpe;
     Int4      tpd;
     Int4      total;
-} SeqLocIds, PNTR SeqLocIdsPtr;
+} SeqLocIds, *SeqLocIdsPtr;
 
 typedef struct _fta_tpa_block {
     Int4                       from1;
     Int4                       to1;
-    CharPtr                    accession;
+    char*                    accession;
     Int4                       version;
     Int4                       from2;
     Int4                       to2;
     Uint1                      strand;
     Uint1                      sicho;   /* SeqId choice */
-    struct _fta_tpa_block PNTR next;
-} FTATpaBlock, PNTR FTATpaBlockPtr;
+    struct _fta_tpa_block* next;
+} FTATpaBlock, *FTATpaBlockPtr;
 
 typedef struct _fta_tpa_span {
     Int4                      from;
     Int4                      to;
-    struct _fta_tpa_span PNTR next;
-} FTATpaSpan, PNTR FTATpaSpanPtr;
+    struct _fta_tpa_span* next;
+} FTATpaSpan, *FTATpaSpanPtr;
 
 /**********************************************************/
 static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
@@ -132,16 +132,16 @@ static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
 
 /**********************************************************
  *
- *   CharPtr tata_save(str):
+ *   char* tata_save(str):
  *
  *      Deletes spaces from the begining and the end and
  *   returns Nlm_StringSave.
  *
  **********************************************************/
-CharPtr tata_save(CharPtr str)
+char* tata_save(char* str)
 {
-    CharPtr s;
-    CharPtr ss;
+    char* s;
+    char* ss;
 
     if(str == NULL)
         return(NULL);
@@ -250,7 +250,7 @@ bool check_cds(DataBlkPtr entry, Int2 format)
     DataBlkPtr temp;
     DataBlkPtr dbp;
     const char *str;
-    CharPtr    p;
+    char*    p;
     Char       ch;
     Int2       type;
 
@@ -329,7 +329,7 @@ static void CreateSeqGap(ncbi::objects::CSeq_literal& seq_lit, GapFeatsPtr gfp)
 }
 
 /**********************************************************/
-void AssemblyGapsToDelta(ncbi::objects::CBioseq& bioseq, GapFeatsPtr gfp, Uint1Ptr drop)
+void AssemblyGapsToDelta(ncbi::objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 {
     if (!bioseq.GetInst().IsSetExt() || !bioseq.GetInst().GetExt().IsDelta() ||
        gfp == NULL)
@@ -388,7 +388,7 @@ void AssemblyGapsToDelta(ncbi::objects::CBioseq& bioseq, GapFeatsPtr gfp, Uint1P
 }
 
 /**********************************************************/
-void GapsToDelta(ncbi::objects::CBioseq& bioseq, GapFeatsPtr gfp, Uint1Ptr drop)
+void GapsToDelta(ncbi::objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 {
     GapFeatsPtr  tgfp;
 
@@ -535,9 +535,9 @@ void GapsToDelta(ncbi::objects::CBioseq& bioseq, GapFeatsPtr gfp, Uint1Ptr drop)
 /**********************************************************/
 void SeqToDelta(ncbi::objects::CBioseq& bioseq, Int2 tech)
 {
-    CharPtr  p;
-    CharPtr  q;
-    CharPtr  r;
+    char*  p;
+    char*  q;
+    char*  r;
 
     Int4         i;
     Int4         j;
@@ -651,12 +651,12 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
 {
     std::string ppacc1;
     std::string ppacc2;
-    CharPtr     master;
-    CharPtr     range;
-    CharPtr     acc1;
-    CharPtr     acc2;
-    CharPtr     p;
-    CharPtr     q;
+    char*     master;
+    char*     range;
+    char*     acc1;
+    char*     acc2;
+    char*     p;
+    char*     q;
     Char        ch1;
     Char        ch2;
     Int4        i;
@@ -672,8 +672,8 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
     ppacc1 = *it;
     ++it;
     ppacc2 = *it;
-    acc1 = (CharPtr) ppacc1.c_str();
-    acc2 = (CharPtr) ppacc2.c_str();
+    acc1 = (char*) ppacc1.c_str();
+    acc2 = (char*) ppacc2.c_str();
 
 
     if(acc1 == NULL && acc2 == NULL)
@@ -743,12 +743,12 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
 
 /**********************************************************/
 void fta_add_hist(ParserPtr pp, ncbi::objects::CBioseq& bioseq, ncbi::objects::CGB_block::TExtra_accessions& extra_accs, Int4 source,
-                  Int4 acctype, bool pricon, CharPtr acc)
+                  Int4 acctype, bool pricon, char* acc)
 {
     IndexblkPtr  ibp;
 
-    CharPtr      p;
-    CharPtr      acctmp;
+    char*      p;
+    char*      acctmp;
     bool         good;
     Uint1        whose;
     Int4         pri_acc;
@@ -847,7 +847,7 @@ void fta_add_hist(ParserPtr pp, ncbi::objects::CBioseq& bioseq, ncbi::objects::C
 }
 
 /**********************************************************/
-bool fta_strings_same(const Char PNTR s1, const Char PNTR s2)
+bool fta_strings_same(const char* s1, const char* s2)
 {
     if(s1 == NULL && s2 == NULL)
         return true;
@@ -1117,19 +1117,19 @@ bool fta_number_is_huge(const Char* s)
 }
 
 /**********************************************************/
-bool fta_parse_tpa_tsa_block(ncbi::objects::CBioseq& bioseq, CharPtr offset, CharPtr acnum,
+bool fta_parse_tpa_tsa_block(ncbi::objects::CBioseq& bioseq, char* offset, char* acnum,
                              Int2 vernum, size_t len, Int2 col_data, bool tpa)
 {
     FTATpaBlockPtr ftbp;
     FTATpaBlockPtr tftbp;
     FTATpaBlockPtr ft;
 
-    CharPtr        buf;
-    CharPtr        p;
-    CharPtr        q;
-    CharPtr        r;
-    CharPtr        t;
-    CharPtr        bad_accession;
+    char*        buf;
+    char*        p;
+    char*        q;
+    char*        r;
+    char*        t;
+    char*        bad_accession;
     bool        bad_line;
     bool        bad_interval;
     Char           ch;
@@ -1153,7 +1153,7 @@ bool fta_parse_tpa_tsa_block(ncbi::objects::CBioseq& bioseq, CharPtr offset, Cha
         p = StringChr(offset, '\n');
         if(p == NULL)
             return false;
-        buf = (CharPtr) MemNew(StringLen(p) + 1);
+        buf = (char*) MemNew(StringLen(p) + 1);
         StringCpy(buf, p + 1);
         StringCat(buf, "\n");
     }
@@ -1490,14 +1490,14 @@ bool fta_parse_tpa_tsa_block(ncbi::objects::CBioseq& bioseq, CharPtr offset, Cha
 }
 
 /**********************************************************/
-CharPtr StringRStr(CharPtr where, const char *what)
+char* StringRStr(char* where, const char *what)
 {
     if(where == NULL || what == NULL || *where == '\0' || *what == '\0')
         return(NULL);
 
     size_t i = StringLen(what);
-    CharPtr res = nullptr;
-    for(CharPtr p = where; *p != '\0'; p++)
+    char* res = nullptr;
+    for(char* p = where; *p != '\0'; p++)
         if(StringNCmp(p, what, i) == 0)
             res = p;
 
@@ -1523,11 +1523,11 @@ ncbi::CRef<ncbi::objects::CSeq_loc> fta_get_seqloc_int_whole(ncbi::objects::CSeq
 }
 
 /**********************************************************/
-static void fta_validate_assembly(CharPtr name)
+static void fta_validate_assembly(char* name)
 {
     bool bad_format = false;
 
-    CharPtr p = name;
+    char* p = name;
     if(p == NULL || *p == '\0' || StringLen(p) < 7)
         bad_format = true;
     else if(p[0] != 'G' || p[1] != 'C' || (p[2] != 'F' && p[2] != 'A') ||
@@ -1557,9 +1557,9 @@ static void fta_validate_assembly(CharPtr name)
 }
 
 /**********************************************************/
-static bool fta_validate_bioproject(CharPtr name, Int2 source)
+static bool fta_validate_bioproject(char* name, Int2 source)
 {
-    CharPtr p;
+    char* p;
     bool bad_format = false;
 
     if(StringLen(name) < 6)
@@ -1598,13 +1598,13 @@ static bool fta_validate_bioproject(CharPtr name, Int2 source)
 }
 
 /**********************************************************/
-static ValNodePtr fta_tokenize_project(CharPtr str, Int2 source, bool newstyle)
+static ValNodePtr fta_tokenize_project(char* str, Int2 source, bool newstyle)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    p;
+    char*    q;
+    char*    r;
     bool    bad;
     Char       ch;
 
@@ -1689,8 +1689,8 @@ static ValNodePtr fta_tokenize_project(CharPtr str, Int2 source, bool newstyle)
 }
 
 /**********************************************************/
-void fta_get_project_user_object(TSeqdescList& descrs, CharPtr offset,
-                                 Int2 format, Uint1Ptr drop,
+void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
+                                 Int2 format, unsigned char* drop,
                                  Int2 source)
 {
     ValNodePtr    vnp;
@@ -1698,8 +1698,8 @@ void fta_get_project_user_object(TSeqdescList& descrs, CharPtr offset,
 
     const Char    *name;
 
-    CharPtr       str;
-    CharPtr       p;
+    char*       str;
+    char*       p;
     Char          ch;
     Int4          i;
 
@@ -1792,7 +1792,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, CharPtr offset,
         user_field->SetNum(i);
 
         for(tvnp = vnp, i = 0; tvnp != NULL; tvnp = tvnp->next)
-            user_field->SetData().SetStrs().push_back((CharPtr)tvnp->data.ptrvalue);
+            user_field->SetData().SetStrs().push_back((char*)tvnp->data.ptrvalue);
 
         user_obj_ptr->SetData().push_back(user_field);
     }
@@ -1811,7 +1811,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, CharPtr offset,
 
             ncbi::CRef<ncbi::objects::CUser_field> user_field(new ncbi::objects::CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
-            user_field->SetData().SetInt(atoi((CharPtr)tvnp->data.ptrvalue));
+            user_field->SetData().SetInt(atoi((char*)tvnp->data.ptrvalue));
             user_obj_ptr->SetData().push_back(user_field);
 
 
@@ -1884,7 +1884,7 @@ bool fta_if_valid_biosample(const Char* id, bool dblink)
 }
 
 /**********************************************************/
-static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
+static ValNodePtr fta_tokenize_dblink(char* str, Int2 source)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
@@ -1898,11 +1898,11 @@ static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
     bool    biosample;
     bool    bioproject;
 
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r = NULL;
-    CharPtr    t;
-    CharPtr    u;
+    char*    p;
+    char*    q;
+    char*    r = NULL;
+    char*    t;
+    char*    u;
     Char       ch;
 
     if(str == NULL || *str == '\0')
@@ -1967,7 +1967,7 @@ static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
                     assembly = (StringCmp(p, "Assembly:") == 0);
 
                     if(tvnp->data.ptrvalue != NULL &&
-                       StringChr((CharPtr) tvnp->data.ptrvalue, ':') != NULL)
+                       StringChr((char*) tvnp->data.ptrvalue, ':') != NULL)
                     {
                         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK,
                                   "Found DBLINK tag with no value: \"%s\". Entry dropped.",
@@ -1977,7 +1977,7 @@ static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
                     }
 
                     for(uvnp = vnp->next; uvnp != NULL; uvnp = uvnp->next)
-                        if(StringCmp((CharPtr) uvnp->data.ptrvalue, p) == 0)
+                        if(StringCmp((char*) uvnp->data.ptrvalue, p) == 0)
                     {
                         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK,
                                   "Multiple DBLINK tags found: \"%s\". Entry dropped.",
@@ -2032,12 +2032,12 @@ static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
             for(uvnp = tagvnp->next; uvnp != NULL; uvnp = uvnp->next)
             {
                 if(uvnp->data.ptrvalue == NULL ||
-                   StringCmp((CharPtr) uvnp->data.ptrvalue, q) != 0)
+                   StringCmp((char*) uvnp->data.ptrvalue, q) != 0)
                     continue;
 
                 ErrPostEx(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved,
                           "Duplicate identifier \"%s\" from \"%s\" link removed.",
-                          q, (CharPtr) tagvnp->data.ptrvalue);
+                          q, (char*) tagvnp->data.ptrvalue);
                 break;
             }
 
@@ -2068,7 +2068,7 @@ static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
     }
 
     if(!bad && tvnp->data.ptrvalue != NULL &&
-       StringChr((CharPtr) tvnp->data.ptrvalue, ':') != NULL)
+       StringChr((char*) tvnp->data.ptrvalue, ':') != NULL)
     {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK,
                   "Found DBLINK tag with no value: \"%s\". Entry dropped.",
@@ -2090,15 +2090,15 @@ static ValNodePtr fta_tokenize_dblink(CharPtr str, Int2 source)
 }
 
 /**********************************************************/
-void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
-                                size_t len, Int2 source, Uint1Ptr drop,
+void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
+                                size_t len, Int2 source, unsigned char* drop,
                                 ncbi::CRef<ncbi::objects::CUser_object>& dbuop)
 {
     ValNodePtr    vnp;
     ValNodePtr    tvnp;
     ValNodePtr    uvnp;
 
-    CharPtr       str;
+    char*       str;
     Int4          i;
 
     if(offset == NULL)
@@ -2120,12 +2120,12 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
 
     for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
     {
-        if(StringChr((CharPtr) tvnp->data.ptrvalue, ':') != NULL)
+        if(StringChr((char*) tvnp->data.ptrvalue, ':') != NULL)
         {
             if (user_obj.NotEmpty())
                 break;
 
-            if(StringCmp((CharPtr) tvnp->data.ptrvalue, "Project:") == 0)
+            if(StringCmp((char*) tvnp->data.ptrvalue, "Project:") == 0)
             {
                 user_obj.Reset(new ncbi::objects::CUser_object);
                 ncbi::objects::CObject_id& id = user_obj->SetType();
@@ -2138,7 +2138,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
         if (user_obj.Empty())
             continue;
 
-        str = (CharPtr) tvnp->data.ptrvalue;
+        str = (char*) tvnp->data.ptrvalue;
         if(str == NULL || *str == '\0')
             continue;
 
@@ -2156,7 +2156,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
         user_field.Reset(new ncbi::objects::CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
-        user_field->SetData().SetInt(atoi((CharPtr)tvnp->data.ptrvalue));
+        user_field->SetData().SetInt(atoi((char*)tvnp->data.ptrvalue));
         user_obj->SetData().push_back(user_field);
 
         user_field.Reset(new ncbi::objects::CUser_field);
@@ -2184,9 +2184,9 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
     bool inpr = false;
     for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
     {
-        if(StringChr((CharPtr) tvnp->data.ptrvalue, ':') != NULL)
+        if(StringChr((char*) tvnp->data.ptrvalue, ':') != NULL)
         {
-            if(StringCmp((CharPtr) tvnp->data.ptrvalue, "Project:") == 0)
+            if(StringCmp((char*) tvnp->data.ptrvalue, "Project:") == 0)
             {
                 inpr = true;
                 continue;
@@ -2201,12 +2201,12 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
             }
 
             for(i = 0, uvnp = tvnp->next; uvnp != NULL; uvnp = uvnp->next, i++)
-                if(StringChr((CharPtr) uvnp->data.ptrvalue, ':') != NULL)
+                if(StringChr((char*) uvnp->data.ptrvalue, ':') != NULL)
                     break;
 
             user_field.Reset(new ncbi::objects::CUser_field);
 
-            std::string lstr((CharPtr)tvnp->data.ptrvalue);
+            std::string lstr((char*)tvnp->data.ptrvalue);
             lstr = lstr.substr(0, lstr.size() - 1);
             user_field->SetLabel().SetStr(lstr);
             user_field->SetNum(i);
@@ -2218,7 +2218,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, CharPtr offset,
         }
         else if (!inpr && user_obj.NotEmpty())
         {
-            user_field->SetData().SetStrs().push_back((CharPtr)tvnp->data.ptrvalue);
+            user_field->SetData().SetStrs().push_back((char*)tvnp->data.ptrvalue);
         }
     }
 
@@ -2292,7 +2292,7 @@ Uint1 fta_check_con_for_wgs(ncbi::objects::CBioseq& bioseq)
 
 /**********************************************************/
 static void fta_fix_seq_id(ncbi::objects::CSeq_loc& loc, ncbi::objects::CSeq_id& id, IndexblkPtr ibp,
-                           CharPtr location, CharPtr name, SeqLocIdsPtr slip,
+                           char* location, char* name, SeqLocIdsPtr slip,
                            bool iscon, Int2 source)
 {
     Uint1        accowner;
@@ -2500,7 +2500,7 @@ static void fta_fix_seq_id(ncbi::objects::CSeq_loc& loc, ncbi::objects::CSeq_id&
 
 /**********************************************************/
 static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp,
-                                  CharPtr location, CharPtr name,
+                                  char* location, char* name,
                                   SeqLocIdsPtr slip, bool iscon, Int2 source)
 {
     NON_CONST_ITERATE(TSeqLocList, loc, locs)
@@ -2560,8 +2560,8 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp,
 }
 
 /**********************************************************/
-Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, CharPtr location,
-                        CharPtr name, bool iscon)
+Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location,
+                        char* name, bool iscon)
 {
     SeqLocIds   sli;
     const Char  *p = NULL;
@@ -2614,13 +2614,13 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, CharPtr location,
         if (!pp->allow_crossdb_featloc)
         {
             sev = SEV_REJECT;
-            p = (CharPtr) "Entry skipped.";
+            p = (char*) "Entry skipped.";
             ibp->drop = 1;
         }
         else
         {
             sev = SEV_WARNING;
-            p = (CharPtr) "";
+            p = (char*) "";
         }
         if(name == NULL)
         {
@@ -2710,14 +2710,14 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, CharPtr location,
 }
 
 /**********************************************************/
-static ValNodePtr fta_vnp_structured_comment(CharPtr buf)
+static ValNodePtr fta_vnp_structured_comment(char* buf)
 {
     ValNodePtr res;
     ValNodePtr vnp;
-    CharPtr    start;
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    start;
+    char*    p;
+    char*    q;
+    char*    r;
     bool       bad;
 
     if(buf == NULL || *buf == '\0')
@@ -2752,10 +2752,10 @@ static ValNodePtr fta_vnp_structured_comment(CharPtr buf)
             vnp->next = ValNodeNew(NULL);
             vnp = vnp->next;
             vnp->data.ptrvalue = StringSave(start);
-            for(r = (CharPtr) vnp->data.ptrvalue; *r != '\0'; r++)
+            for(r = (char*) vnp->data.ptrvalue; *r != '\0'; r++)
                 if(*r == '~')
                     *r = ' ';
-            ShrinkSpaces((CharPtr) vnp->data.ptrvalue);
+            ShrinkSpaces((char*) vnp->data.ptrvalue);
             break;
         }
 
@@ -2773,10 +2773,10 @@ static ValNodePtr fta_vnp_structured_comment(CharPtr buf)
         vnp = vnp->next;
         vnp->data.ptrvalue = StringSave(start);
         *r = '~';
-        for(p = (CharPtr) vnp->data.ptrvalue; *p != '\0'; p++)
+        for(p = (char*) vnp->data.ptrvalue; *p != '\0'; p++)
             if(*p == '~')
                 *p = ' ';
-        ShrinkSpaces((CharPtr) vnp->data.ptrvalue);
+        ShrinkSpaces((char*) vnp->data.ptrvalue);
 
         start = r;
     }
@@ -2793,13 +2793,13 @@ static ValNodePtr fta_vnp_structured_comment(CharPtr buf)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CUser_object> fta_build_structured_comment(CharPtr tag, CharPtr buf)
+static ncbi::CRef<ncbi::objects::CUser_object> fta_build_structured_comment(char* tag, char* buf)
 {
     ValNodePtr    vnp;
     ValNodePtr    tvnp;
 
-    CharPtr       p;
-    CharPtr       q;
+    char*       p;
+    char*       q;
 
     ncbi::CRef<ncbi::objects::CUser_object> obj;
 
@@ -2825,7 +2825,7 @@ static ncbi::CRef<ncbi::objects::CUser_object> fta_build_structured_comment(Char
 
     for(tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
     {
-        p = (CharPtr) tvnp->data.ptrvalue;
+        p = (char*) tvnp->data.ptrvalue;
         if(p == NULL || *p == '\0')
             continue;
 
@@ -2868,17 +2868,17 @@ static ncbi::CRef<ncbi::objects::CUser_object> fta_build_structured_comment(Char
 }
 
 /**********************************************************/
-void fta_parse_structured_comment(CharPtr str, bool& bad, TUserObjVector& objs)
+void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 {
     ValNodePtr    tagvnp;
     ValNodePtr    vnp;
 
-    CharPtr       start;
-    CharPtr       tag = NULL;
-    CharPtr       buf;
-    CharPtr       p;
-    CharPtr       q;
-    CharPtr       r;
+    char*       start;
+    char*       tag = NULL;
+    char*       buf;
+    char*       p;
+    char*       q;
+    char*       r;
 
     if(str == NULL || *str == '\0')
         return;
@@ -2940,7 +2940,7 @@ void fta_parse_structured_comment(CharPtr str, bool& bad, TUserObjVector& objs)
         {
             for(vnp = tagvnp; vnp != NULL; vnp = vnp->next)
             {
-                r = (CharPtr) vnp->data.ptrvalue;
+                r = (char*) vnp->data.ptrvalue;
                 if(StringCmp(r + 2, tag + 2) == 0)
                 {
                     if(*r != ' ')
@@ -3012,15 +3012,15 @@ void fta_parse_structured_comment(CharPtr str, bool& bad, TUserObjVector& objs)
 }
 
 /**********************************************************/
-CharPtr GetQSFromFile(FILE PNTR fd, IndexblkPtr ibp)
+char* GetQSFromFile(FILE* fd, IndexblkPtr ibp)
 {
-    CharPtr ret;
+    char* ret;
     Char    buf[1024];
 
     if(fd == NULL || ibp->qslength < 1)
         return(NULL);
 
-    ret = (CharPtr) MemNew(ibp->qslength + 10);
+    ret = (char*) MemNew(ibp->qslength + 10);
     ret[0] = '\0';
     fseek(fd, static_cast<long>(ibp->qsoffset), 0);
     while(fgets(buf, 1023, fd) != NULL)
@@ -3180,10 +3180,10 @@ void fta_create_far_fetch_policy_user_object(ncbi::objects::CBioseq& bsp, Int4 n
 }
 
 /**********************************************************/
-void StripECO(CharPtr str)
+void StripECO(char* str)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     if(str == NULL || *str == '\0')
         return;

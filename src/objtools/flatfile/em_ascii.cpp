@@ -261,8 +261,8 @@ static const char *ParFlat_DRname_array[] = {
 static void GetEmblDate(Int2 source, DataBlkPtr entry,
                         ncbi::CRef<ncbi::objects::CDate_std>& crdate, ncbi::CRef<ncbi::objects::CDate_std>& update)
 {
-    CharPtr offset;
-    CharPtr eptr;
+    char* offset;
+    char* eptr;
     size_t  len;
 
     crdate.Reset();
@@ -416,20 +416,20 @@ static void SetXrefObjId(ncbi::objects::CEMBL_xref& xref, const std::string& str
  *
  **********************************************************/
 static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
-                             CharPtr chentry, TStringList& dr_ena,
-                             TStringList& dr_biosample, Uint1Ptr drop,
+                             char* chentry, TStringList& dr_ena,
+                             TStringList& dr_biosample, unsigned char* drop,
                              ncbi::objects::CEMBL_block& embl)
 {
     const char    **b;
 
     const char    *drline;
 
-    CharPtr       bptr;
-    CharPtr       eptr;
-    CharPtr       ptr;
-    CharPtr       xref;
-    CharPtr       p;
-    CharPtr       q;
+    char*       bptr;
+    char*       eptr;
+    char*       ptr;
+    char*       xref;
+    char*       p;
+    char*       q;
 
     bool       valid_biosample;
     bool       many_biosample;
@@ -712,9 +712,9 @@ static void GetReleaseInfo(DataBlkPtr entry, bool accver)
 {
     EntryBlkPtr  ebp;
 
-    CharPtr      offset;
-    CharPtr      bptr;
-    CharPtr      eptr;
+    char*      offset;
+    char*      bptr;
+    char*      eptr;
 
     size_t       len;
 
@@ -752,16 +752,16 @@ static void GetReleaseInfo(DataBlkPtr entry, bool accver)
  **********************************************************/
 static ncbi::CRef<ncbi::objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
 {
-    CharPtr   bptr;
-    CharPtr   eptr;
-    CharPtr   ptr;
-    CharPtr   str;
-    CharPtr   taxname;
+    char*   bptr;
+    char*   eptr;
+    char*   ptr;
+    char*   str;
+    char*   taxname;
 
     bptr = dbp->offset;
     eptr = bptr + dbp->len;
 
-    taxname = str = (CharPtr) MemNew(dbp->len + 1);
+    taxname = str = (char*) MemNew(dbp->len + 1);
 
     /* get block of OS line data
      */
@@ -870,9 +870,9 @@ bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserP
 {
     DataBlkPtr dbp;
 
-    CharPtr    p;
-    CharPtr    q;
-    CharPtr    r;
+    char*    p;
+    char*    q;
+    char*    r;
     bool    locmap;
     bool    sitemap;
 
@@ -887,7 +887,7 @@ bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserP
     if(i <= 0)
         return false;
 
-    p = (CharPtr) MemNew(i + 1);
+    p = (char*) MemNew(i + 1);
     StringNCpy(p, &dbp->offset[ParFlat_COL_DATA_EMBL], i);
     p[i-1] = '\0';
     for(q = p; *q != '\0'; q++)
@@ -958,14 +958,14 @@ bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserP
  *   already allocated.
  *
  **********************************************************/
-static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, Uint1Ptr dnaconv)
+static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 {
     EntryBlkPtr ebp;
     IndexblkPtr ibp;
 
-    CharPtr     p;
-    CharPtr     q;
-    CharPtr     r;
+    char*     p;
+    char*     q;
+    char*     r;
 
     Int4        i;
     Int2        strand;
@@ -1065,16 +1065,16 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, Uint1Ptr dnaconv)
  *
  **********************************************************/
 static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
-    ParserPtr pp, DataBlkPtr entry, ncbi::objects::CMolInfo& mol_info, CharPtr PNTR gbdiv,
+    ParserPtr pp, DataBlkPtr entry, ncbi::objects::CMolInfo& mol_info, char** gbdiv,
     ncbi::objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
     ncbi::CRef<ncbi::objects::CEMBL_block> ret,
                                            embl(new ncbi::objects::CEMBL_block);
 
     IndexblkPtr  ibp;
-    CharPtr      bptr;
-    CharPtr      kw;
-    CharPtr      kwp;
+    char*      bptr;
+    char*      kw;
+    char*      kwp;
     Char         dataclass[4];
     Char         ch;
     Int2         div;
@@ -1097,9 +1097,9 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
 
     bool         cancelled;
     bool         drop;
-    CharPtr      tempdiv;
+    char*      tempdiv;
     Int2         thtg;
-    CharPtr      p;
+    char*      p;
     Int4         i;
 
     ibp = pp->entrylist[pp->curindx];
@@ -1147,7 +1147,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
             if(i < 0)
                 bptr = StringChr(bptr, ';');
             else if(i == 0)
-                bptr = (CharPtr) "CON";
+                bptr = (char*) "CON";
         }
     }
 
@@ -1162,7 +1162,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     }
     else
     {
-        bptr = (CharPtr) "   ";
+        bptr = (char*) "   ";
         dataclass[0] = '\0';
     }
 
@@ -1615,7 +1615,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
 
 /**********************************************************/
 static ncbi::CRef<ncbi::objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
-                                                           CharPtr gbdiv, ncbi::objects::CBioSource* bio_src)
+                                                           char* gbdiv, ncbi::objects::CBioSource* bio_src)
 {
     IndexblkPtr  ibp;
 
@@ -1677,10 +1677,10 @@ static ncbi::CRef<ncbi::objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkP
 {
     IndexblkPtr ibp;
 
-    CharPtr     bptr;
-    CharPtr     p;
-    CharPtr     q;
-    CharPtr     r;
+    char*     bptr;
+    char*     p;
+    char*     q;
+    char*     r;
     Int4        i;
 
     ibp = pp->entrylist[pp->curindx];
@@ -1916,12 +1916,12 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
     IndexblkPtr   ibp;
     DataBlkPtr    dbp;
 
-    CharPtr       offset;
-    CharPtr       str;
-    CharPtr       str1;
-    CharPtr       gbdiv;
-    CharPtr       p;
-    CharPtr       q;
+    char*       offset;
+    char*       str;
+    char*       str1;
+    char*       gbdiv;
+    char*       p;
+    char*       q;
 
     bool          is_htg = false;
 
@@ -1990,19 +1990,19 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
         if(StringNCmp(str, "TPA:", 4) == 0)
         {
             if(ibp->assembly != FALSE)
-                p = (CharPtr) "TPA_asm:";
+                p = (char*) "TPA_asm:";
             else if(ibp->specialist_db != FALSE)
-                p = (CharPtr) "TPA_specdb:";
+                p = (char*) "TPA_specdb:";
             else if(ibp->inferential != FALSE)
-                p = (CharPtr) "TPA_inf:";
+                p = (char*) "TPA_inf:";
             else if(ibp->experimental != FALSE)
-                p = (CharPtr) "TPA_exp:";
+                p = (char*) "TPA_exp:";
             else
                 p = NULL;
 
             if(p != NULL)
             {
-                str1 = (CharPtr) MemNew(StringLen(p) + StringLen(str));
+                str1 = (char*) MemNew(StringLen(p) + StringLen(str));
                 StringCpy(str1, p);
                 StringCat(str1, str + 4);
                 MemFree(str);
@@ -2312,8 +2312,8 @@ static void FakeEmblBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
     DataBlkPtr   dbp;
     DataBlkPtr   subdbp;
 
-    CharPtr      p;
-    CharPtr      q;
+    char*      p;
+    char*      q;
     Char         ch;
 
     dbp = TrackNodeType(entry, ParFlat_OS);
@@ -2415,8 +2415,8 @@ static void FakeEmblBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
 /**********************************************************/
 static void EmblGetDivision(IndexblkPtr ibp, DataBlkPtr entry)
 {
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
 
     p = StringChr(entry->offset, ';');
     if(p == NULL)
@@ -2437,7 +2437,7 @@ static void EmblGetDivision(IndexblkPtr ibp, DataBlkPtr entry)
 /**********************************************************/
 static void EmblGetDivisionNewID(IndexblkPtr ibp, DataBlkPtr entry)
 {
-    CharPtr p;
+    char* p;
     Int4    i;
 
     for(i = 0, p = entry->offset; *p != '\0' && i < 4; p++)
@@ -2456,10 +2456,10 @@ static void EmblGetDivisionNewID(IndexblkPtr ibp, DataBlkPtr entry)
                 p++;
     }
     else if(i == 0)
-        p = (CharPtr) "CON";
+        p = (char*) "CON";
 
     if(p == NULL)
-        p = (CharPtr) "   ";
+        p = (char*) "   ";
 
     StringNCpy(ibp->division, p, 3);
     ibp->division[3] = '\0';
@@ -2478,12 +2478,12 @@ bool EmblAscii(ParserPtr pp)
     Int4        i;
     Int4        imax;
     Int4        total = 0;
-    CharPtr     ptr;
-    CharPtr     eptr;
+    char*     ptr;
+    char*     eptr;
     DataBlkPtr  entry;
     EntryBlkPtr ebp;
 
-    Uint1Ptr    dnaconv;
+    unsigned char*    dnaconv;
 
     TEntryList seq_entries;
 
@@ -2833,25 +2833,25 @@ bool EmblAscii(ParserPtr pp)
 }
 
 /**********************************************************/
-CharPtr GetEmblDiv(Uint1 num)
+char* GetEmblDiv(Uint1 num)
 {
     if(num > 15)
         return(NULL);
-    return((CharPtr) ParFlat_Embl_DIV_array[num]);
+    return((char*) ParFlat_Embl_DIV_array[num]);
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, CharPtr entry, ncbi::objects::CMolInfo& mol_info,
-                                                       CharPtr PNTR gbdiv, ncbi::objects::CBioSource* bio_src,
+ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, ncbi::objects::CMolInfo& mol_info,
+                                                       char** gbdiv, ncbi::objects::CBioSource* bio_src,
                                                        TStringList& dr_ena, TStringList& dr_biosample)
 {
     ncbi::CRef<ncbi::objects::CEMBL_block> embl(new ncbi::objects::CEMBL_block),
                                            ret;
 
     IndexblkPtr  ibp;
-    CharPtr      bptr;
-    CharPtr      kw;
-    CharPtr      kwp;
+    char*      bptr;
+    char*      kw;
+    char*      kwp;
     Int2         div;
 
     bool         pat_ref = false;
@@ -2868,10 +2868,10 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, CharPtr ent
     bool         tls_kwd = false;
     bool         cancelled;
 
-    CharPtr      tempdiv;
+    char*      tempdiv;
     Int2         thtg;
-    CharPtr      p;
-    CharPtr      r;
+    char*      p;
+    char*      r;
     Int4         i;
     Char         dataclass[4];
 

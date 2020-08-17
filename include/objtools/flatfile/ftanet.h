@@ -36,15 +36,14 @@
 #ifndef FTANET_H
 #define FTANET_H
 
-ncbi::CRef<ncbi::objects::COrg_ref> fta_fix_orgref_byid PROTO((ParserPtr pp, Int4 taxid, Uint1Ptr drop, bool isoh));
+ncbi::CRef<ncbi::objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh);
 
-void fta_find_pub_explore PROTO((ParserPtr pp, TEntryList& seq_entries));
-void fta_entrez_fetch_enable PROTO((ParserPtr pp));
-void fta_entrez_fetch_disable PROTO((ParserPtr pp));
-void fta_fill_find_pub_option PROTO((ParserPtr pp, bool htag, bool rtag));
-Int4 fta_is_con_div PROTO((ParserPtr pp, const ncbi::objects::CSeq_id& id, const Char* acc));
-void fta_fix_orgref PROTO((ParserPtr pp, ncbi::objects::COrg_ref& org_ref, Uint1Ptr drop,
-                    CharPtr organelle));
-ncbi::CRef<ncbi::objects::CCit_art> fta_citart_by_pmid PROTO((Int4 pmid, bool& done));
+void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries);
+void fta_entrez_fetch_enable(ParserPtr pp);
+void fta_entrez_fetch_disable(ParserPtr pp);
+void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag);
+Int4 fta_is_con_div(ParserPtr pp, const ncbi::objects::CSeq_id& id, const Char* acc);
+void fta_fix_orgref(ParserPtr pp, ncbi::objects::COrg_ref& org_ref, unsigned char* drop, char* organelle);
+ncbi::CRef<ncbi::objects::CCit_art> fta_citart_by_pmid(Int4 pmid, bool& done);
 
 #endif // FTANET_H

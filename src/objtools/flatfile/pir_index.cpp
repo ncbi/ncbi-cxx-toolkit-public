@@ -71,12 +71,12 @@ static Uint1 pir_err_field(const char *name)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(CharPtr line)
+static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(char* line)
 {
     const char *mon[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL",
         "AUG", "SEP", "OCT", "NOV", "DEC", NULL };
     const char **b;
-    CharPtr    p;
+    char*    p;
     Int2       day;
     Int2       month;
     Int2       year;
@@ -118,12 +118,12 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(CharPtr line)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CDate_std> GetPirDate(CharPtr line)
+static ncbi::CRef<ncbi::objects::CDate_std> GetPirDate(char* line)
 {
     ncbi::CRef<ncbi::objects::CDate_std> first;
     ncbi::CRef<ncbi::objects::CDate_std> second;
-    CharPtr p;
-    CharPtr q;
+    char* p;
+    char* q;
     Char    ch;
 
     for (p = line; *p != '\0'; p++)
@@ -176,7 +176,7 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetPirDate(CharPtr line)
  *                                              12-JAN-2001
  *
  **********************************************************/
-bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len))
+bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     FinfoBlkPtr   finfo;
     bool          after_ORGANISM;
@@ -189,8 +189,8 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 
     Int4          indx = 0;
     IndBlkNextPtr ibnp;
     IndBlkNextPtr tibnp;
-    CharPtr       p;
-    CharPtr       q;
+    char*       p;
+    char*       q;
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
@@ -274,7 +274,7 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 
                         if(finfo->str[0] != ' ' && finfo->str[0] != '\t')
                             break;
 
-                        p = (CharPtr) MemNew(StringLen(finfo->str) +
+                        p = (char*) MemNew(StringLen(finfo->str) +
                                              StringLen(q) + 1);
                         StringCpy(p, q);
                         StringCat(p, finfo->str);
@@ -341,7 +341,7 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 
 
     pp->indx = indx;
 
-    pp->entrylist = (IndexblkPtr PNTR) MemNew(indx * sizeof(IndexblkPtr));
+    pp->entrylist = (IndexblkPtr*) MemNew(indx * sizeof(IndexblkPtr));
     tibnp = ibnp->next;
     MemFree(ibnp);
     for(i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp)

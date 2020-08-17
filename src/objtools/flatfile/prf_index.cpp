@@ -82,7 +82,7 @@ static Uint1 prf_err_order(const char *name1, const char *name2)
  *                                              3-26-93
  *
  **********************************************************/
-bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 len))
+bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     FinfoBlkPtr   finfo;
     Int4          got_NAME;
@@ -293,7 +293,7 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, CharPtr offset, Int4 
 
     pp->indx = indx;
 
-    pp->entrylist = (IndexblkPtr PNTR) MemNew(indx * sizeof(IndexblkPtr));
+    pp->entrylist = (IndexblkPtr*) MemNew(indx * sizeof(IndexblkPtr));
     tibnp = ibnp->next;
     MemFree(ibnp);
     for(i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp)
