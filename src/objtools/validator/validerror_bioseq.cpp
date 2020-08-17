@@ -4858,7 +4858,7 @@ bool CValidError_bioseq::x_ParentAndComponentLocationsDiffer(CBioseq_Handle bsh,
 // From VR-796:
 // If the lineage contains Metazoa, the topology is circular, and the 
 // location is mitochondrion, the sequence length should not be
-// greater than 20000bp.
+// greater than 65000bp.
 // This is erring on the side of caution as most Metazoan genomes are less than 17000 bp.
 size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& src, const CSeq_inst& inst)
 {
@@ -4867,14 +4867,7 @@ size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& sr
         src.IsSetOrg() && src.GetOrg().IsSetLineage() &&
         inst.IsSetLength() &&
         NStr::Find(src.GetOrg().GetLineage(), "Metazoa") != NPOS) {
-        const string& lineage = src.GetOrg().GetLineage();
-        if (NStr::Find(lineage, "Cnidaria") != NPOS ||
-            NStr::Find(lineage, "Mollusca") != NPOS ||
-            NStr::Find(lineage, "Placozoa") != NPOS) {
-            return 65000;
-        } else {
-            return 30000;
-        }
+        return 65000;
     }
     return 0;
 }
@@ -4915,7 +4908,7 @@ void CValidError_bioseq::CheckSourceDescriptor(
     size_t max_len = x_BadMetazoanMitochondrialLength(src, bsh.GetInst());
     if (max_len > 0 && bsh.GetInst().IsSetLength() && bsh.GetInst().GetLength() > max_len) {
         PostErr(eDiag_Error, eErr_SEQ_INST_MitoMetazoanTooLong,
-            "Mitochondrial Metazoan sequences should be less than 30000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)",
+            "Mitochondrial Metazoan sequences should be less than 65000 bp",
             *(bsh.GetBioseqCore()));
     }
 }
