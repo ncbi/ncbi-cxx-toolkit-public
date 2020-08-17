@@ -1334,6 +1334,8 @@ void CSerialIOTestApp::Init(void)
 
 int CSerialIOTestApp::Run(void)
 {
+    CONNECT_Init(&GetConfig());
+
     const CArgs& args = GetArgs();
 
     if (args["io"]) s_ParseValues(args["io"].AsString(), IOMethodNames, IOMethods);
