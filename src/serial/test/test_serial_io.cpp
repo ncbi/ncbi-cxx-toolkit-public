@@ -1288,6 +1288,8 @@ public:
 
 void CSerialIOTestApp::Init(void)
 {
+    CONNECT_Init(&GetConfig());
+
     auto_ptr<CArgDescriptions> descrs(new CArgDescriptions);
 
     descrs->AddOptionalKey("io", "IOMethods", "I/O methods", CArgDescriptions::eString);
@@ -1334,8 +1336,6 @@ void CSerialIOTestApp::Init(void)
 
 int CSerialIOTestApp::Run(void)
 {
-    CONNECT_Init(&GetConfig());
-
     const CArgs& args = GetArgs();
 
     if (args["io"]) s_ParseValues(args["io"].AsString(), IOMethodNames, IOMethods);
