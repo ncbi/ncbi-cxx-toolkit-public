@@ -96,4 +96,7 @@ char* TrimSpacesAroundString(char* str);
 #define MAX(a,b)	((a)>=(b)?(a):(b))
 #endif
 
+#define TRUE true
+#define FALSE false
+
 #endif // FTACPP_HPP
