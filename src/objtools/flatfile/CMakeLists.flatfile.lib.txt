@@ -49,7 +49,7 @@ NCBI_begin_lib(xflatfile)
     ftamed
   )
   NCBI_uses_toolkit_libraries(
-    xcleanup ctransition
+    xcleanup
 
     ncbi_xdbapi_ftds
     taxon1
