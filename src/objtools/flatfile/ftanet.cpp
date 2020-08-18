@@ -1235,11 +1235,7 @@ static ncbi::TGi fta_get_gi_for_seq_id(const ncbi::objects::CSeq_id& id)
     {
         if (ncbi::objects::sequence::GetGiForId(test_id, GetScope()) > ZERO_GI)
             break;
-#ifdef WIN32
-        Sleep(3000);
-#else
-        sleep(3);
-#endif
+        SleepSec(3);
     }
 
     if(i == 5)
