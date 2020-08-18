@@ -5971,7 +5971,8 @@ void CNewCleanup_imp::Except_textBC (
 )
 
 {
-    if (NStr::Find (except_text, "ribosome-slippage") == NPOS &&
+    if (NStr::Find (except_text, "ribosome slippage") == NPOS &&
+        NStr::Find (except_text, "ribosome-slippage") == NPOS &&
         NStr::Find (except_text, "ribosome_slippage") == NPOS &&
         NStr::Find (except_text, "ribosomal-slippage") == NPOS &&
         NStr::Find (except_text, "ribosomal_slippage") == NPOS &&
@@ -5994,7 +5995,7 @@ void CNewCleanup_imp::Except_textBC (
             ChangeMade (CCleanupChange::eTrimSpaces);
         }
         if (! text.empty()) {
-            if (text == "ribosome-slippage" || text == "ribosome_slippage" ||
+            if (text == "ribosome slippage" || text == "ribosome-slippage" || text == "ribosome_slippage" ||
                 text == "ribosomal-slippage" || text == "ribosomal_slippage") {
                 text = "ribosomal slippage";
                 ChangeMade (CCleanupChange::eChangeException);
