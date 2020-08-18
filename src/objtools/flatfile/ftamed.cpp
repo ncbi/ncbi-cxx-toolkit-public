@@ -151,7 +151,7 @@ static void MUGetStringCallback(XmlObjPtr xop, XmlObjPtr parent,
 
     strp = (char**) userdata;
 
-    if(StringHasNoText(xop->contents) == FALSE)
+    if (!StringHasNoText(xop->contents))
         *strp = StringSave(xop->contents);
 }
 
@@ -165,7 +165,7 @@ static void MUGetStringSetCallback(XmlObjPtr xop, XmlObjPtr parent,
         return;
 
     vnbp = (ValNodeBlockPtr) userdata;
-    if(StringHasNoText(xop->contents) == FALSE)
+    if (!StringHasNoText(xop->contents))
         ValNodeCopyStrEx(&(vnbp->head), &(vnbp->tail), 0, xop->contents);
 }
 
@@ -175,7 +175,7 @@ static bool MULooksLikeISSN(char* str)
     Char ch;
     Int2 i;
 
-    if(StringHasNoText(str) != FALSE || StringLen(str) != 9 || str[4] != '-')
+    if (StringHasNoText(str) || StringLen(str) != 9 || str[4] != '-')
         return false;
 
     for(i = 0; i < 9; i++)
@@ -325,7 +325,7 @@ static bool MUIsJournalIndexed(const Char* journal)
     Char         ch;
     Char         title [512];
 
-    if(StringHasNoText(journal) != FALSE)
+    if (StringHasNoText(journal))
         return false;
 
     StringNCpy_0(title, journal, sizeof(title));

@@ -1327,12 +1327,12 @@ static bool CheckAccession(TokenStatBlkPtr stoken, Int2 source,
         else if(accformat == 8)
         {
             if(len < 15 || len > 17)
-                badac = TRUE;
+                badac = true;
             else
             {
-                for(i = 6; i < len && badac == FALSE; i++)
+                for(i = 6; i < len && !badac; i++)
                     if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = TRUE;
+                        badac = true;
             }
         }
         else if(accformat == 4)

@@ -191,7 +191,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
 
     for(p = line; *p != '\0' && *p != ' ' && *p != '\t';)
         p++;
-    gi = (*p == '\0') ? FALSE : TRUE;
+    gi = (*p == '\0') ? false : true;
 
     ch1 = *p;
     *p = '\0';
@@ -253,7 +253,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
         return;
     }
 
-    if(gi == FALSE)
+    if(!gi)
         return;
 
     if(StringNCmp(p, "GI:", 3) != 0)

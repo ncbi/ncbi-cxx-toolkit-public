@@ -121,7 +121,7 @@ static char* get_sequence_text(ParserPtr parser, const string& accession, int ve
 {
     char* ret = nullptr;
     if (parser) {
-        if (parser->accver == FALSE) {
+        if (!parser->accver) {
             if (parser->ff_get_entry)
                 ret = (*parser->ff_get_entry)(accession.c_str());
             else if (parser->ff_get_entry_pp)
@@ -168,7 +168,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     int i = 0;
     for (; i < pp->indx; i++) {
         if (StringCmp(pp->entrylist[i]->acnum, acc) == 0 &&
-            (pp->accver == FALSE || pp->entrylist[i]->vernum == vernum))
+            (!pp->accver || pp->entrylist[i]->vernum == vernum))
             break;
     }
 
@@ -309,15 +309,15 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         }
         if (ptr < eptr) {
 
-            if (ibp->is_contig == FALSE) {
+            if (!ibp->is_contig) {
                 molconv = GetDNAConv();
                 res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv, eSeq_code_type_iupacna);
                 MemFree(molconv);
             }
             else {
-                pp->farseq = TRUE;
+                pp->farseq = true;
                 res = GetEmblInstContig(entry, *bioseq, pp);
-                pp->farseq = FALSE;
+                pp->farseq = false;
             }
         }
     }
@@ -331,15 +331,15 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         if (ptr < eptr) {
 
             res = false;
-            if (ibp->is_contig == FALSE) {
+            if (!ibp->is_contig) {
                 molconv = GetDNAConv();
                 res = GetSeqData(pp, entry, *bioseq, ParFlat_ORIGIN, molconv, eSeq_code_type_iupacna);
                 MemFree(molconv);
             }
             else {
-                pp->farseq = TRUE;
+                pp->farseq = true;
                 res = GetGenBankInstContig(entry, *bioseq, pp);
-                pp->farseq = FALSE;
+                pp->farseq = false;
             }
         }
     }

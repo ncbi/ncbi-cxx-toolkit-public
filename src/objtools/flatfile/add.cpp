@@ -265,7 +265,7 @@ bool check_cds(DataBlkPtr entry, Int2 format)
         str = "\n     CDS  ";
     }
     else
-        return(false);
+        return false;
 
     for(temp = TrackNodeType(entry, type); temp != NULL; temp = temp->next)
     {
@@ -289,8 +289,8 @@ bool check_cds(DataBlkPtr entry, Int2 format)
     }
 
     if(temp == NULL)
-        return(false);
-    return(true);
+        return false;
+    return true;
 }
 
 /**********************************************************/
@@ -662,10 +662,10 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
     Int4        i;
 
     if(extra_accs.empty())
-        return(false);
+        return false;
 
     if(extra_accs.size() != 2)
-        return(true);
+        return true;
 
     ncbi::objects::CGB_block::TExtra_accessions::const_iterator it = extra_accs.begin();
 
@@ -677,15 +677,15 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
 
 
     if(acc1 == NULL && acc2 == NULL)
-        return(FALSE);
+        return false;
     if(acc1 == NULL || acc2 == NULL)
-        return(TRUE);
+        return true;
 
     p = StringChr(acc1, '-');
     q = StringChr(acc2, '-');
 
     if((p == NULL && q == NULL) || (p != NULL && q != NULL))
-        return(TRUE);
+        return true;
 
     if(p == NULL)
     {
@@ -706,7 +706,7 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
             *p = '-';
         if(q != NULL)
             *q = '-';
-        return(true);
+        return true;
     }
 
     if(p != NULL)
@@ -737,8 +737,8 @@ static bool fta_ranges_to_hist(const ncbi::objects::CGB_block::TExtra_accessions
     *q = ch2;
 
     if(i == 0)
-        return(false);
-    return(true);
+        return false;
+    return true;
 }
 
 /**********************************************************/

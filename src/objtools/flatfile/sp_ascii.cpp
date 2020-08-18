@@ -3474,7 +3474,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
         for(bptr = endline; *bptr == ' ' || *bptr == '\n';)
             bptr++;
 
-        badqual = FALSE;
+        badqual = false;
         bptr += ParFlat_COL_DATA_SP;
         while(bptr < eptr && (*bptr == ' '))    /* continue description data */
         {
@@ -3512,7 +3512,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                     if(*p == '=' && p[1] == '\"')
                     {
                         *p = '\0';
-                        badqual = TRUE;
+                        badqual = true;
                         ErrPostEx(SEV_ERROR, ERR_FEATURE_InvalidQualifier,
                                   "Qualifier %s is invalid for the feature \"%s\" at \"%s..%s\".",
                                   bptr, temp->key.c_str(), temp->from.c_str(),
@@ -3562,7 +3562,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             bptr += ParFlat_COL_DATA_SP;
         }
 
-        if(badqual != FALSE)
+        if (badqual)
         {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped,
                       "Invalid qualifier(s) found within the feature \"%s\" at \"%s..%s\". Feature dropped.",
@@ -3650,7 +3650,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInput
     ptr = spfip->from.c_str();
     if(StringChr(ptr, '<') != NULL)
     {
-        fuzzfrom = TRUE;
+        fuzzfrom = true;
 
         while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
             ptr++;
@@ -3659,7 +3659,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInput
     else if(StringChr(ptr, '?') != NULL)
     {
         from = 0;
-        nofrom = TRUE;
+        nofrom = true;
     }
     else
     {
@@ -3672,7 +3672,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInput
     ptr = spfip->to.c_str();
     if(StringChr(ptr, '>') != NULL)
     {
-        fuzzto = TRUE;
+        fuzzto = true;
         while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
             ptr++;
         to = (Int4) atoi(ptr);
@@ -3680,7 +3680,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInput
     else if(StringChr(ptr, '?') != NULL)
     {
         to = static_cast<Int4>(ibp->bases);
-        noto = TRUE;
+        noto = true;
     }
     else
         to = (Int4) atoi(ptr);

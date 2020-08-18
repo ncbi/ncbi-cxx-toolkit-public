@@ -928,7 +928,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
-    good = FALSE;
+    good = false;
 
     pp.pbp = new ProtBlk;
     pp.pbp->ibp = new InfoBioseq;

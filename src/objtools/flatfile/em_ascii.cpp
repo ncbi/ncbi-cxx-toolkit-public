@@ -852,13 +852,13 @@ static void CheckEmblContigEverywhere(IndexblkPtr ibp, Int2 source)
             ibp->drop = 1;
         }
     }
-    else if(condiv && ibp->is_contig == false && ibp->origin == false)
+    else if(condiv && !ibp->is_contig && !ibp->origin)
     {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingContigFeature,
                   "No CONTIG data in GenBank format file, entry dropped.");
         ibp->drop = 1;
     }
-    else if(condiv && ibp->is_contig == false && ibp->origin != false)
+    else if(condiv && !ibp->is_contig && ibp->origin)
     {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ConDivLacksContig,
                   "Division is CON, but CONTIG data have not been found.");
@@ -1374,7 +1374,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
         if(i == 2 && ibp->htg > 0 && env_kwd)
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_HTGPlusENV,
                       "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
-        else if(i == 2 && wgs_kwd != FALSE && tpa_kwd != FALSE)
+        else if(i == 2 && wgs_kwd && tpa_kwd)
         {
         }
         else if(i != 2 || env_kwd == false ||
@@ -1989,13 +1989,13 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 
         if(StringNCmp(str, "TPA:", 4) == 0)
         {
-            if(ibp->assembly != FALSE)
+            if(ibp->assembly)
                 p = (char*) "TPA_asm:";
-            else if(ibp->specialist_db != FALSE)
+            else if(ibp->specialist_db)
                 p = (char*) "TPA_specdb:";
-            else if(ibp->inferential != FALSE)
+            else if(ibp->inferential)
                 p = (char*) "TPA_inf:";
-            else if(ibp->experimental != FALSE)
+            else if(ibp->experimental)
                 p = (char*) "TPA_exp:";
             else
                 p = NULL;

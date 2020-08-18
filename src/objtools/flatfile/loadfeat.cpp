@@ -657,7 +657,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const ncbi::objects::CSeq_id& id)
             /* entry is not present in this file use remote fetch function
             * use_indx = pp->curindx;
             */
-            size_t len = (pp->ffdb == FALSE) ? -1 : CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver);
+            size_t len = (!pp->ffdb) ? -1 : CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver);
             if (len != static_cast<size_t>(-1))
                 return static_cast<Int4>(len);
 
@@ -5018,7 +5018,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
                               "lacks required /%s qualifier : feature has been dropped.",
                               str);
-                    if(deb == FALSE)
+                    if(!deb)
                     {
                         dbp->drop = 1;
                         retval = GB_FEAT_ERR_DROP;
@@ -5276,7 +5276,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Int2 source)
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
                               "lacks required /%s qualifier : feature has been dropped.",
                               str);
-                    if(deb == FALSE)
+                    if(!deb)
                     {
                         dbp->drop = 1;
                         retval = GB_FEAT_ERR_DROP;
@@ -5942,8 +5942,7 @@ static void fta_create_wgs_seqid(ncbi::objects::CBioseq &bioseq,
         return;
     }
 
-    if((source == ParFlat_EMBL || source == ParFlat_DDBJ) &&
-       ibp->is_tsa != FALSE)
+    if((source == ParFlat_EMBL || source == ParFlat_DDBJ) && ibp->is_tsa)
     {
         ErrPostEx(SEV_ERROR, ERR_SOURCE_SubmitterSeqidIgnored,
                   "Submitter sequence identifiers for non-project-based TSA records are not supported. /submitter_seqid \"%s\" has been dropped.",
