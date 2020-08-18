@@ -268,8 +268,10 @@ static bool OpenFiles(ParserPtr pp)
     pp->ifp = fopen(infile.c_str(), "r");
 #endif
 
-    if(delin)
-        unlink(infile.c_str());
+    if (delin) {
+        CDirEntry de(infile);
+        de.Remove();
+    }
 
     if(pp->ifp == NULL)
     {
@@ -291,8 +293,10 @@ static bool OpenFiles(ParserPtr pp)
             fclose(pp->ifp);
             pp->ifp = NULL;
 
-            if(delout)
-                unlink(pp->outfile.c_str());
+            if (delout) {
+                CDirEntry de(pp->outfile);
+                de.Remove();
+            }
             return false;
         }
     }
@@ -312,8 +316,10 @@ static bool OpenFiles(ParserPtr pp)
             fclose(pp->qsfd);
             pp->qsfd = NULL;
         }
-        if(delout)
-            unlink(pp->outfile.c_str());
+        if (delout) {
+            CDirEntry de(pp->outfile);
+            de.Remove();
+        }
         return false;
     }
 
