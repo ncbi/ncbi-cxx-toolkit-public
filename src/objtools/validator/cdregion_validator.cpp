@@ -1309,8 +1309,14 @@ void CCdregionValidator::x_ValidateCDSPeptides()
         }
 
         if (pgene) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneOnNucPositionOfPeptide,
-                    "Peptide under CDS matches small Gene");
+
+            const CSeq_loc& gloc = pgene->GetLocation();
+
+            if (sequence::Compare(*nloc, gloc, nullptr /* scope */, sequence::fCompareOverlapping) == sequence::eSame) {
+
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneOnNucPositionOfPeptide,
+                        "Peptide under CDS matches small Gene");
+            }
         }
     }
     } catch (CException) {
