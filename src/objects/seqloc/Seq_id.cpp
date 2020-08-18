@@ -2285,8 +2285,10 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
         E_Choice     type = WhichInverseSeqId(fasta_pieces.front());
         ETypeVariant tv;
         if (type == e_not_set) {
-            // unknown database are reported as 'general'
-            type = e_General;
+            if (fasta_pieces.size() == 2) {
+                // unknown database are reported as 'general'
+                type = e_General;
+            }
             tv   = eTV_plain;
         } else {
             tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
@@ -2317,6 +2319,12 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
             } catch (std::exception& e) {
                 if ((flags & fParse_PartialOK) != 0) {
                     ERR_POST_X(7, Warning << e.what());
+                    do {
+                        auto l = fasta_pieces.front().size();
+                        if (l != 2  &&  l != 3) {
+                            fasta_pieces.pop_front();
+                        }
+                    } while ( !fasta_pieces.empty() );
                 } else {
                     throw;
                 }
