@@ -2323,6 +2323,8 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
                         auto l = fasta_pieces.front().size();
                         if (l != 2  &&  l != 3) {
                             fasta_pieces.pop_front();
+                        } else {
+                            break;
                         }
                     } while ( !fasta_pieces.empty() );
                 } else {
