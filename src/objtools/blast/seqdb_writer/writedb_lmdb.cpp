@@ -51,7 +51,8 @@ BEGIN_NCBI_SCOPE
 CWriteDB_LMDB::CWriteDB_LMDB(const string& dbname,  Uint8 map_size, Uint8 capacity): m_Db(dbname),
                              m_Env(CBlastLMDBManager::GetInstance().GetWriteEnv(dbname, map_size)),
                              m_ListCapacity(capacity),
-                             m_MaxEntryPerTxn(DEFAULT_MAX_ENTRY_PER_TXN)
+                             m_MaxEntryPerTxn(DEFAULT_MAX_ENTRY_PER_TXN),
+                             m_TotalIdsLength(0)
 {
 	m_list.reserve(m_ListCapacity);
 	char* max_entry_str = getenv("MAX_LMDB_TXN_ENTRY");
@@ -72,31 +73,22 @@ CWriteDB_LMDB::~CWriteDB_LMDB()
 
 void CWriteDB_LMDB::InsertVolumesInfo(const vector<string> & vol_names, const vector<blastdb::TOid> & vol_num_oids)
 {
+	x_IncreaseEnvMapSize(vol_names, vol_num_oids);
+
     lmdb::txn txn = lmdb::txn::begin(m_Env);
-    bool rc = false;
-	try {
     lmdb::dbi volinfo = lmdb::dbi::open(txn, blastdb::volinfo_str.c_str(), MDB_CREATE | MDB_INTEGERKEY);
     lmdb::dbi volname = lmdb::dbi::open(txn, blastdb::volname_str.c_str(), MDB_CREATE | MDB_INTEGERKEY);
 	for (unsigned int i =0; i < vol_names.size(); i++) {
 		const lmdb::val key{&i, sizeof(i)};
 		lmdb::val value{vol_names[i].c_str(), strlen(vol_names[i].c_str())};
-		rc =lmdb::dbi_put(txn, volname.handle(), key, value);
+		bool rc =lmdb::dbi_put(txn, volname.handle(), key, value);
+		if (!rc) {
+			NCBI_THROW( CSeqDBException, eArgErr, "VolNames error ");
+		}
 		rc = volinfo.put(txn, i, vol_num_oids[i]);
-	}
-	}
-	catch (lmdb::runtime_error & e){
-		if (e.code() == MDB_MAP_FULL) {
-			txn.abort();
-			x_IncreaseEnvMapSize();
-			InsertVolumesInfo(vol_names, vol_num_oids);
-			return;
+		if (!rc) {
+			NCBI_THROW( CSeqDBException, eArgErr, "VolInfo error ");
 		}
-		else {
-		NCBI_THROW( CSeqDBException, eArgErr, "VolInfo error ");
-		}
-	}
-	if (!rc) {
-		NCBI_THROW( CSeqDBException, eArgErr, "VolInfo error ");
 	}
 	txn.commit();
 }
@@ -203,44 +195,58 @@ void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOi
     return;
 }
 
-void CWriteDB_LMDB::x_IncreaseEnvMapSize()
+void CWriteDB_LMDB::x_IncreaseEnvMapSize(const vector<string> & vol_names, const vector<blastdb::TOid> & vol_num_oids)
 {
-	struct MDB_envinfo current_info;
-	mdb_env_info(m_Env.handle(), &current_info);
-	size_t newMapSize = current_info.me_mapsize * 2;
-	m_Env.set_mapsize(newMapSize);
-	LOG_POST(Info << "Increased lmdb mapsize to " << newMapSize);
+	// 2 meta pages
+	const size_t MIN_PAGES = 3;
+	const size_t BRANCH_PAGES = 2;
+	// Each entry has 8 byte overhead + size of (key + entry)
+	size_t vol_name_size = (vol_names.front().size() + 24)* vol_names.size();
+	size_t vol_info_size = 24* vol_names.size();
+
+	MDB_env *env = m_Env.handle();
+	MDB_stat stat;
+	MDB_envinfo info;
+	lmdb::env_stat(env, &stat);
+	lmdb::env_info(env, &info);
+	size_t page_size = stat.ms_psize;
+	// For each page 16 byte header
+	size_t page_max_size = page_size -16;
+	size_t last_page_num = info.me_last_pgno;
+	size_t max_num_pages = info.me_mapsize/page_size;
+	size_t leaf_pages_needed = vol_name_size/page_max_size + vol_info_size/page_max_size + 2;
+	size_t total_pages_needed = MIN_PAGES + BRANCH_PAGES + leaf_pages_needed;
+	if( (total_pages_needed + last_page_num) > max_num_pages ) {
+		size_t newMapSize = (total_pages_needed + last_page_num) * page_size;
+		m_Env.set_mapsize(newMapSize);
+		LOG_POST(Info << "Increased lmdb mapsize to " << newMapSize);
+	}
+
 }
 
-unsigned int CWriteDB_LMDB::x_TryCommit(unsigned int s)
+void CWriteDB_LMDB::x_IncreaseEnvMapSize()
 {
-	lmdb::txn txn = lmdb::txn::begin(m_Env);
-	lmdb::dbi dbi = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str(),
-			                        MDB_CREATE | MDB_DUPSORT | MDB_DUPFIXED);
-	unsigned int i = s;
-	unsigned int j= i+m_MaxEntryPerTxn;
-	if(j > m_list.size()) {
-		j = m_list.size();
+	size_t size = m_TotalIdsLength  + m_list.size() * 16;
+	size_t avg_id_length = m_TotalIdsLength/m_list.size();
+	MDB_env *env = m_Env.handle();
+	MDB_stat stat;
+	MDB_envinfo info;
+	lmdb::env_stat(env, &stat);
+	lmdb::env_info(env, &info);
+	size_t page_size = stat.ms_psize;
+	// 16 byte header for each page
+	size_t page_max_size = page_size -16;
+	size_t last_page_num = info.me_last_pgno;
+	size_t max_num_pages = info.me_mapsize/page_size;
+	size_t leaf_pages_needed = size/page_max_size + 1;
+	size_t dup_pages = (leaf_pages_needed > 200) ? 14: 7;
+	size_t branch_pages_needed = (avg_id_length + 16)* leaf_pages_needed/page_max_size + 1;
+	size_t total_pages_needed = leaf_pages_needed + branch_pages_needed + dup_pages;
+	if( (total_pages_needed + last_page_num) > max_num_pages) {
+		size_t newMapSize = (total_pages_needed + last_page_num) * page_size;
+		m_Env.set_mapsize(newMapSize);
+		LOG_POST(Info << "Increased lmdb mapsize to " << newMapSize);
 	}
-	for(; i < j; i++){
-		if( i > 0) {
-			if ((m_list[i-1].id == m_list[i].id) &&
-				(m_list[i-1].oid == m_list[i].oid)){
-				continue;
-			}
-		}
-		blastdb::TOid & oid = m_list[i].oid;
-		string & id = m_list[i].id;
-		//cerr << m_list[i].id << endl;
-		lmdb::val value{&oid, sizeof(oid)};
-		lmdb::val key{id.c_str(), strlen(id.c_str())};
-		bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
-		if (!rc) {
-	 		NCBI_THROW( CSeqDBException, eArgErr, "acc2oid error for id " + id);
-		}
-	}
-	txn.commit();
-	return j;
 }
 
 void CWriteDB_LMDB::x_Split(vector<SKeyValuePair>::iterator  b, vector<SKeyValuePair>::iterator e, const unsigned int min_chunk_size)
@@ -300,19 +306,37 @@ void CWriteDB_LMDB::x_CommitTransaction()
 #else
 	std::sort (m_list.begin(), m_list.end(), SKeyValuePair::cmp_key);
 #endif
+
+	x_IncreaseEnvMapSize();
+
     unsigned int j=0;
     while (j < m_list.size()){
-    	try {
-    		j = x_TryCommit(j);
+    	lmdb::txn txn = lmdb::txn::begin(m_Env);
+    	lmdb::dbi dbi = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str(),
+    			                        MDB_CREATE | MDB_DUPSORT | MDB_DUPFIXED);
+    	unsigned int i = j;
+    	j= i+m_MaxEntryPerTxn;
+    	if(j > m_list.size()) {
+    		j = m_list.size();
     	}
-    	catch(lmdb::runtime_error & e) {
-    		if (e.code() == MDB_MAP_FULL) {
-    			x_IncreaseEnvMapSize();
+    	for(; i < j; i++){
+    		if( i > 0) {
+    			if ((m_list[i-1].id == m_list[i].id) &&
+    				(m_list[i-1].oid == m_list[i].oid)){
+    				continue;
+    			}
     		}
-    		else {
-    			NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id ");
-    		}
-    	}
+    		blastdb::TOid & oid = m_list[i].oid;
+    		string & id = m_list[i].id;
+    		//cerr << m_list[i].id << endl;
+			lmdb::val value{&oid, sizeof(oid)};
+			lmdb::val key{id.c_str(), strlen(id.c_str())};
+			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
+			if (!rc) {
+		 		NCBI_THROW( CSeqDBException, eArgErr, "acc2oid error for id " + id);
+			}
+		}
+    	txn.commit();
     }
     return;
 }
@@ -369,6 +393,7 @@ void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
 			count++;
 			tmp_ids.clear();
 		}
+		m_TotalIdsLength +=m_list[i].id.size();
 		if(!m_list[i].saveToOidList) {
 			continue;
 		}
@@ -440,55 +465,57 @@ int CWriteDB_TaxID::InsertEntries(const set<TTaxId> & tax_ids, const blastdb::TO
 
 void CWriteDB_TaxID::x_IncreaseEnvMapSize()
 {
-	struct MDB_envinfo current_info;
-	mdb_env_info(m_Env.handle(), &current_info);
-	size_t newMapSize = current_info.me_mapsize * 2;
-	m_Env.set_mapsize(newMapSize);
-	LOG_POST(Info <<"Increased taxid mapsize to " << newMapSize);
+	const size_t MIN_PAGES = 4;
+	MDB_env *env = m_Env.handle();
+	MDB_stat stat;
+	MDB_envinfo info;
+	lmdb::env_stat(env, &stat);
+	lmdb::env_info(env, &info);
+	size_t size = m_TaxId2OffsetsList.size()*32;
+	size_t page_size = stat.ms_psize;
+	size_t page_max_size = stat.ms_psize - 16;
+	size_t last_page_num = info.me_last_pgno;
+	size_t max_num_pages = info.me_mapsize/page_size;
+	size_t leaf_pages_needed = size/page_max_size + 1;
+	size_t branch_pages_needed = 24 * leaf_pages_needed/page_max_size + 1;
+	size_t total_pages_needed = leaf_pages_needed + branch_pages_needed + MIN_PAGES;
+	if( (total_pages_needed + last_page_num) > max_num_pages) {
+		size_t newMapSize = (total_pages_needed + last_page_num) * page_size;
+		m_Env.set_mapsize(newMapSize);
+		LOG_POST(Info << "Increased lmdb mapsize to " << newMapSize);
+	}
 }
 
-unsigned int CWriteDB_TaxID::x_TryCommit(unsigned int s)
-{
-	lmdb::txn txn = lmdb::txn::begin(m_Env);
-   	lmdb::dbi dbi = lmdb::dbi::open(txn, blastdb::taxid2offset_str.c_str(),
-	    			                        MDB_CREATE | MDB_DUPSORT | MDB_DUPFIXED);
-   	unsigned int i = s;
-   	unsigned int j = i+m_MaxEntryPerTxn;
-   	if(j > m_TaxId2OffsetsList.size()) {
-   		j = m_TaxId2OffsetsList.size();
-   	}
-   	for(; i < j; i++){
-   		Uint8 & offset = m_TaxId2OffsetsList[i].value;
-        TTaxId & tax_id = m_TaxId2OffsetsList[i].tax_id;
-		lmdb::val value{&offset, sizeof(offset)};
-		lmdb::val key{&tax_id, sizeof(tax_id)};
-		bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
-		if (!rc) {
-	 		NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id " + NStr::NumericToString(tax_id));
-		}
-	}
-   	txn.commit();
-   	return j;
-}
 
 void CWriteDB_TaxID::x_CommitTransaction()
 {
 	_ASSERT(m_TaxId2OffsetsList.size());
     sort (m_TaxId2OffsetsList.begin(), m_TaxId2OffsetsList.end(), SKeyValuePair<Uint8>::cmp_key);
 
+    x_IncreaseEnvMapSize();
+
     unsigned int j=0;
     while (j < m_TaxId2OffsetsList.size()){
-    	try {
-    		j = x_TryCommit(j);
+    	lmdb::txn txn = lmdb::txn::begin(m_Env);
+    	lmdb::dbi dbi = lmdb::dbi::open(txn, blastdb::taxid2offset_str.c_str(),
+    			                        MDB_CREATE | MDB_DUPSORT | MDB_DUPFIXED);
+    	unsigned int i = j;
+    	j= i+m_MaxEntryPerTxn;
+    	if(j > m_TaxId2OffsetsList.size()) {
+    		j = m_TaxId2OffsetsList.size();
     	}
-    	catch(lmdb::runtime_error & e) {
-    		if (e.code() == MDB_MAP_FULL) {
-    			x_IncreaseEnvMapSize();
-    		}
-    		else {
-    			NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id ");
-    		}
-    	}
+    	for(; i < j; i++){
+    		Uint8 & offset = m_TaxId2OffsetsList[i].value;
+            TTaxId & tax_id = m_TaxId2OffsetsList[i].tax_id;
+    		//cerr << m_list[i].id << endl;
+			lmdb::val value{&offset, sizeof(offset)};
+			lmdb::val key{&tax_id, sizeof(tax_id)};
+			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
+			if (!rc) {
+		 		NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id " + NStr::NumericToString(tax_id));
+			}
+		}
+    	txn.commit();
     }
     return;
 }

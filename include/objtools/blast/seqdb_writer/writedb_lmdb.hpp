@@ -49,11 +49,8 @@ USING_SCOPE(objects);
 BEGIN_NCBI_SCOPE
 
 #ifdef NCBI_OS_MSWIN
-#define DEFAULT_LMDB_MAP_SIZE 500000000
-#define DEFAULT_TAXID_MAP_SIZE 500000000
-#elif defined (NCBI_OS_DARWIN)
-#define DEFAULT_LMDB_MAP_SIZE 500000000
-#define DEFAULT_TAXID_MAP_SIZE 500000000
+#define DEFAULT_LMDB_MAP_SIZE 500000
+#define DEFAULT_TAXID_MAP_SIZE 500000
 #else
 #define DEFAULT_LMDB_MAP_SIZE 300000000000
 #define DEFAULT_TAXID_MAP_SIZE 100000000000
@@ -104,12 +101,13 @@ private:
     void x_CreateOidToSeqidsLookupFile();
     void x_Resize();
     void x_IncreaseEnvMapSize();
-    unsigned int x_TryCommit(unsigned int s);
+    void x_IncreaseEnvMapSize(const vector<string> & vol_names, const vector<blastdb::TOid> & vol_num_oids);
 
     string m_Db;
     lmdb::env  &m_Env;
     Uint8 m_ListCapacity;
     unsigned int m_MaxEntryPerTxn;
+    size_t m_TotalIdsLength;
     struct SKeyValuePair {
     	string id;
     	blastdb::TOid oid;
@@ -163,7 +161,7 @@ private:
     void x_CreateTaxIdToOidsLookupFile();
     void x_Resize();
     void x_IncreaseEnvMapSize();
-    unsigned int x_TryCommit(unsigned int s);
+
 
     string m_Db;
     lmdb::env  &m_Env;
