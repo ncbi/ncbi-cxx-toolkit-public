@@ -144,6 +144,7 @@ static string s_GetGOText(
         }
     } else { 
         bool add_dash = false;
+        // RW-922 only make one link from GO:id - text.
         go_text.clear();
         if (go_id != NULL) {
             if( is_html ) {
