@@ -41,10 +41,30 @@ USING_SCOPE(blast);
 
 static const string kNcbiAppName="standalone-blast";
 
+void CBlastUsageReport::x_CheckRunEnv()
+{
+	char * blast_docker = getenv("BLAST_DOCKER");
+	if(blast_docker != NULL){
+		AddParam(eDocker, true);
+	}
+
+	char * blast_GCP = getenv("BLAST_GCP");
+	if(blast_GCP != NULL){
+		AddParam(eGCP, true);
+	}
+
+	char * blast_AWS = getenv("BLAST_AWS");
+	if(blast_AWS != NULL){
+		AddParam(eAWS, true);
+	}
+
+}
+
 CBlastUsageReport::CBlastUsageReport()
 {
 	x_CheckBlastUsageEnv();
 	AddParam(eApp, kNcbiAppName);
+	x_CheckRunEnv();
 }
 
 CBlastUsageReport::~CBlastUsageReport()
@@ -107,6 +127,9 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
 		case eSeqType:			retval.assign("seq_type"); break;
 		case eDBTest:			retval.assign("db_test"); break;
 		case eDBAliasMode:		retval.assign("db_alias_mode"); break;
+		case eDocker:			retval.assign("docker"); break;
+		case eGCP:				retval.assign("gcp"); break;
+		case eAWS:				retval.assign("aws"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();
@@ -146,9 +169,11 @@ void CBlastUsageReport::x_CheckBlastUsageEnv()
 		bool enable = NStr::StringToBool(blast_usage_env);
 		if (!enable) {
 			SetEnabled(false);
+			CUsageReportAPI::SetEnabled(false);
 			return ;
 		}
 	}
+	CUsageReportAPI::SetEnabled(true);
 	SetEnabled(true);
 }
 

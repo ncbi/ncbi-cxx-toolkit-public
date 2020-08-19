@@ -91,7 +91,10 @@ public:
 		eParseSeqIDs,
 		eSeqType,
 		eDBTest,
-		eDBAliasMode
+		eDBAliasMode,
+		eDocker,
+		eGCP,
+		eAWS
 	};
 
 	CBlastUsageReport();
@@ -105,6 +108,7 @@ public:
 private:
 	void x_CheckBlastUsageEnv();
 	string x_EUsageParmsToString(EUsageParams p);
+	void x_CheckRunEnv();
 	CUsageReportParameters m_Params;
 };
 
