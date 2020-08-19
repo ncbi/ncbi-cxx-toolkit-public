@@ -46,7 +46,7 @@ inline void* MemSet(void* p, int n, size_t sz) { return std::memset(p, n, sz); }
 inline void* MemCpy(void* p, void* q, size_t sz) { return std::memcpy(p, q, sz); }
 inline void* MemFree(void* p) { std::free(p); return 0; }
 
-inline size_t StringLen(const char* s) { return std::strlen(s); }
+inline size_t StringLen(const char* s) { return s ? std::strlen(s) : 0; }
 inline char* StringSave(const char* s) { if (!s) return 0; const size_t n = std::strlen(s) + 1; char* p = (char*)std::malloc(n); std::memcpy(p, s, n); return p; }
 inline char* StringStr(const char* s1, const char* s2) { return const_cast<char*>(std::strstr(s1, s2)); }
 inline char* StringCat(char* d, const char* s) { return std::strcat(d, s); }
@@ -61,7 +61,7 @@ inline int StringNCmp(const char* s1, const char* s2, size_t n) { return std::st
 inline int StringICmp(const char* s1, const char* s2) { return NStr::CompareNocase(s1, s2); }
 inline int StringNICmp(const char* s1, const char* s2, size_t n) { const string S1(s1), S2(s2); return NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n)); }
 
-inline char* StringMove(char* d, const char* s) { return std::strcpy(d, s) + std::strlen(s); }
+inline char* StringMove(char* d, const char* s) { return s && d ? std::strcpy(d, s) + std::strlen(s) : d; }
 
 inline bool StringHasNoText(const char* s) {
     if (s) while (*s) if ((unsigned char)(*s++) > ' ') return false;
