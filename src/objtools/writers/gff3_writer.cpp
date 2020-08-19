@@ -1317,10 +1317,27 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return false;
     }
 
-    if (!xWriteSequence(bsh)) {
-        return false;
+    CAnnot_CI aci(bsh, SAnnotSelector());
+    if (aci) {
+        if (!xWriteSequence(bsh)) {
+            return false;
+        }
     }
-
+    else {
+        const auto& cc = bsh.GetCompleteBioseq();
+        if (!cc->IsSetAnnot()) {
+            return true;
+        }
+        const auto& annots = cc->GetAnnot();
+        if (annots.empty()) {
+            return true;
+        }
+        const auto& data = cc->GetAnnot().front();
+        auto ah = m_pScope->GetObjectHandle(*data);
+        if (!x_WriteSeqAnnotHandle(ah)) {
+            return false;
+        }
+    }
     SAnnotSelector sel = SetAnnotSelector();
     const auto& display_range = GetRange();
     if ( m_SortAlignments ) {

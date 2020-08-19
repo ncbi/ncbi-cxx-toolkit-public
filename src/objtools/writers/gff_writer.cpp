@@ -171,23 +171,7 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
 
     if (seh.IsSeq()) {
         CBioseq_Handle bsh = seh.GetSeq();
-        CAnnot_CI aci(bsh, SAnnotSelector());
-        if (aci) {
-            return x_WriteBioseqHandle(bsh);
-        }
-        else {
-            const auto& cc = bsh.GetCompleteBioseq();
-            if (!cc->IsSetAnnot()) {
-                return true;
-            }
-            const auto& annots = cc->GetAnnot();
-            if (annots.empty()) {
-                return true;
-            }
-            const auto& data = cc->GetAnnot().front();
-            auto ah = m_pScope->GetObjectHandle(*data);
-            return x_WriteSeqAnnotHandle(ah);
-        }
+        return x_WriteBioseqHandle(bsh);
     }
     
     SAnnotSelector sel;
