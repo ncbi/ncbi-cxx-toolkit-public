@@ -256,7 +256,8 @@ extern "C" {
 NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
 NCBI_PARAM_DEF_EX(bool, Diag, Old_Post_Format, true, eParam_NoThread,
                   DIAG_OLD_POST_FORMAT);
-static CSafeStatic<NCBI_PARAM_TYPE(Diag, Old_Post_Format)> s_OldPostFormat;
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Old_Post_Format)> s_OldPostFormat(
+    CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 2));
 
 // Auto-print context properties on set/change.
 NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
