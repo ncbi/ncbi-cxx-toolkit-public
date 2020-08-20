@@ -3040,14 +3040,14 @@ CGapIndex::CGapIndex (TSeqPos start,
                       bool isUnknownLength,
                       bool isAssemblyGap,
                       CBioseqIndex& bsx)
-    : m_Start(start),
+    : m_Bsx(&bsx),
+      m_Start(start),
       m_End(end),
       m_Length(length),
       m_GapType(type),
       m_GapEvidence(evidence),
       m_IsUnknownLength(isUnknownLength),
-      m_IsAssemblyGap(isAssemblyGap),
-      m_Bsx(&bsx)
+      m_IsAssemblyGap(isAssemblyGap)
 {
 }
 
