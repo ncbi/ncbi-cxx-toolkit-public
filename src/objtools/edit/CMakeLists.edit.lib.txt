@@ -13,7 +13,7 @@ NCBI_begin_lib(xobjedit)
     external_annots feature_propagate text_object_description
     seq_edit
   )
-  NCBI_uses_toolkit_libraries(mlacli taxon3 valid xobjread xobjutil)
+  NCBI_uses_toolkit_libraries(mlacli taxon3 valid xobjread xobjutil xlogging)
   NCBI_project_watchers(bollin gotvyans foleyjp)
 NCBI_end_lib()
 
