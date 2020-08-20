@@ -2026,12 +2026,6 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
         CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
         CProt_ref::EProcessed processed;
 
-        // next gap
-        CGapIndex* sgx = NULL;
-        if (m_GapList.size() > 0) {
-            sgx = m_GapList[0];
-        }
-
         CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
         auto idxl = idx.Lock();
         if (idxl) {
