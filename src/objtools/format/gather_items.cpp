@@ -751,7 +751,7 @@ void CFlatGatherer::x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs
     if (! bsx) return;
 
     // gather references from descriptors
-    bsx->IterateDescriptors([this, &ctx, &scope, &refs, &idx, bsx](CDescriptorIndex& sdx) {
+    bsx->IterateDescriptors([this, &scope, &refs, &idx, bsx](CDescriptorIndex& sdx) {
         try {
             CSeqdesc::E_Choice chs = sdx.GetType();
             if (chs == CSeqdesc::e_Pub) {
@@ -3046,7 +3046,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
         s_SetGapIdxData (gap_data, gaps);
     }
 
-    bsx->IterateFeatures([this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
+    bsx->IterateFeatures([this, &ctx, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
                           gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
@@ -3519,8 +3519,8 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
     CSeq_loc slp;
     slp.Assign(loc);
-    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
-                          gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &loc_len, &item, &out, &slice_mapper,
+                          gaps, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
@@ -3898,6 +3898,7 @@ s_ContainsGaps( const CSeq_loc &loc )
     return false;
 }
 
+/*
 static bool s_NotForceNearFeats(CBioseqContext& ctx)
 {
     // asn2flat -id NW_003127872  -flags 2 -faster -custom 2048
@@ -3912,6 +3913,7 @@ static bool s_NotForceNearFeats(CBioseqContext& ctx)
 
     return true;
 }
+*/
 
 void CFlatGatherer::x_GatherFeaturesIdx(void) const
 {
