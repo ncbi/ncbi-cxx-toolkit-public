@@ -730,7 +730,7 @@ void CAsnvalApp::ProcessBSSReleaseFile
     try {
         *m_In >> *seqset;
     }
-    catch (const CException &e) {
+    catch (const CException&) {
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Bioseq-set, do not use -a t to process.");
         ++m_Reported;
     }
@@ -750,7 +750,7 @@ void CAsnvalApp::ProcessSSMReleaseFile
     try {
         *m_In >> *seqset;
     }
-    catch (const CException &e) {
+    catch (const CException&) {
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Seq-submit, do not use -a u to process.");
         ++m_Reported;
     }
