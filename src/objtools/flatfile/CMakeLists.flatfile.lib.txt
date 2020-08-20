@@ -50,7 +50,7 @@ NCBI_begin_lib(xflatfile)
   )
   NCBI_uses_toolkit_libraries(
     xcleanup
-
+    xlogging
     ncbi_xdbapi_ftds
     taxon1
 
