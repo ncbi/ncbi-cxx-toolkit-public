@@ -42,6 +42,12 @@ SRC     = \
 
 LIB     = xflatfile
 
+DLL_LIB = xlogging
+
 ASN_DEP = genome_collection mla submit taxon1
 
-WATCHERS = kachalos
+USES_LIBRARIES = xlogging
+
+WATCHERS = kachalos foleyjp
+
+
