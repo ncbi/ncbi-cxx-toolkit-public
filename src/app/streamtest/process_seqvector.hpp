@@ -202,13 +202,6 @@ public:
                     }
                 }
 
-
-                size_t total, resident, shared;
-                if ( m_debug && GetMemoryUsage ( &total, &resident, &shared) ) {
-                    *m_out << "Tot " << total << ", Res " << resident;
-                    *m_out << ", Shr " << shared << ", Sec " << m_timer.Restart() << " - ";
-                }
-
                 *m_out << endl;
             }
         }

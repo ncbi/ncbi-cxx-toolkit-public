@@ -301,11 +301,6 @@ public:
                 if (okay) {
                     const string& title = gen.GenerateDefline (bioseq, *m_scope, m_flags);
 
-                    size_t total, resident, shared;
-                    if ( m_debug && GetMemoryUsage ( &total, &resident, &shared) ) {
-                        *m_out << "Tot " << total << ", Res " << resident;
-                        *m_out << ", Shr " << shared << ", Sec " << m_timer.Restart() << " - ";
-                    }
                     *m_out << ">";
                     x_FastaSeqIdWrite (bioseq);
                     *m_out << " ";

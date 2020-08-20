@@ -80,7 +80,7 @@ public:
                         throw;
                     }
                 }
-                catch (const CException& e) {
+                catch (const CException&) {
                     break;
                 }
                 try {
@@ -93,7 +93,7 @@ public:
                 }
             }
         }
-        catch (const CException& e) {
+        catch (const CException&) {
         }
     };
 
