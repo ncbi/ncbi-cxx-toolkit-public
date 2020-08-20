@@ -1432,7 +1432,7 @@ static bool x_EndsWithStrain (
         return false;
     }
 
-    pos = NStr::FindNoCase (taxname, strain, 0, taxname.size() - 1, NStr::eLast);
+    pos = NStr::Find (taxname, strain, NStr::eNocase, NStr::eReverseSearch);
     if (pos == taxname.size() - strain.size()) {
         // check for space to avoid fortuitous match to end of taxname
         char ch = taxname[pos - 1];
@@ -2047,7 +2047,7 @@ static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
     int len = str.length();
     if (len < 5) return str;
     if (str [len - 1] != ']') return str;
-    SIZE_TYPE cp = NStr::Find(str, "[", 0, NPOS, NStr::eLast);
+    SIZE_TYPE cp = NStr::Find(str, "[", NStr::eNocase, NStr::eReverseSearch);
     if (cp == NPOS) return str;
     string suffix = str.substr(cp+1);
     if (NStr::StartsWith(suffix, "NAD")) return str;
@@ -2953,7 +2953,7 @@ static size_t s_TitleEndsInOrganism (
 
     idx = len1 - len2 - 3;
     if (len1 > len2 + 4 && title [idx] == ' ' && title [idx + 1] == '[' && title [len1 - 1] == ']') {
-        pos = NStr::FindNoCase(title, taxname, 0, NPOS, NStr::eLast);
+        pos = NStr::Find(title, taxname, NStr::eNocase, NStr::eReverseSearch);
         if (pos == idx + 2) {
             return pos - 1;
         }
@@ -3009,7 +3009,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
             tpos = s_TitleEndsInOrganism(m_MainTitle, binomial);
             if (tpos == NPOS) {
                 if (m_IsCrossKingdom) {
-                    pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
+                    pos = NStr::Find(m_MainTitle, "][", NStr::eNocase, NStr::eReverseSearch);
                     if (pos != NPOS) {
                         m_MainTitle.erase (pos + 1);
                         s_TrimMainTitle (m_MainTitle);
@@ -3162,7 +3162,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
             tpos = s_TitleEndsInOrganism(m_MainTitle, binomial);
             if (tpos == NPOS) {
                 if (m_IsCrossKingdom) {
-                    pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
+                    pos = NStr::Find(m_MainTitle, "][", NStr::eNocase, NStr::eReverseSearch);
                     if (pos != NPOS) {
                         m_MainTitle.erase (pos + 1);
                         s_TrimMainTitle (m_MainTitle);
@@ -3417,8 +3417,8 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
             if ( primers.CanGet() ) {
                 ITERATE( CBioSource_Base::TPcr_primers::Tdata, it, primers.Get() ) {
 
-                    bool has_fwd_seq = false;
-                    bool has_rev_seq = false;
+                    // bool has_fwd_seq = false;
+                    // bool has_rev_seq = false;
 
                     if( (*it)->IsSetForward() ) {
                         const CPCRReaction_Base::TForward &forward = (*it)->GetForward();
@@ -3432,7 +3432,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                                 // NStr::ToLower( fwd_seq );
                                 if( ! fwd_seq.empty() ) {
                                     joiner.Add("fwd-primer-seq", fwd_seq);
-                                    has_fwd_seq = true;
+                                    // has_fwd_seq = true;
                                 }
                             }
                         }
@@ -3449,7 +3449,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                                 // NStr::ToLower( rev_seq ); // do we need this? 
                                 if( ! rev_seq.empty() ) {
                                     joiner.Add("rev-primer-seq", rev_seq);
-                                    has_rev_seq = true;
+                                    // has_rev_seq = true;
                                 }
                             }
                         }
