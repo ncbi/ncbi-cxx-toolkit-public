@@ -6492,6 +6492,7 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
 }
 
 
+/*
 static bool s_IsExactAndNonExactMatchOnNoteQuals(CFlatFeature::TQuals& qvec, const string& str)
 {
     if (qvec.empty()) {
@@ -6517,6 +6518,7 @@ static bool s_IsExactAndNonExactMatchOnNoteQuals(CFlatFeature::TQuals& qvec, con
     if (has_exact == 1 && non_exact > 0) return true;
     return false;
 }
+*/
 
 
 
