@@ -115,8 +115,8 @@ CScope* scope)
     string farstr;
 
     if (!ignore_exceptions &&
-        feat.CanGetExcept() && feat.GetExcept() &&
-        feat.CanGetExcept_text()) {
+        feat.IsSetExcept() && feat.GetExcept() &&
+        feat.IsSetExcept_text()) {
         const string& except_text = feat.GetExcept_text();
         report_errors = ReportTranslationErrors(except_text);
         x_GetExceptionFlags(except_text,
@@ -871,7 +871,7 @@ bool CCDSTranslationProblems::x_Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc, CSc
               // it's ok, location endpoint is at the 3' end
           }
     } else {
-          if (end > 0) {
+          if (end > 0 && end < bsh.GetBioseqLength()) {
               CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
               if (vec.IsInGap(end - 1)) {
                   if (vec.IsInGap (end)) {
