@@ -170,11 +170,25 @@ void CBlastUsageReport::x_CheckBlastUsageEnv()
 		if (!enable) {
 			SetEnabled(false);
 			CUsageReportAPI::SetEnabled(false);
+			LOG_POST(Info <<"Phone home disabled");
+			return ;
+		}
+	}
+
+	CNcbiIstrstream empty_stream(kEmptyCStr);
+	CRef<CNcbiRegistry> registry(new CNcbiRegistry(empty_stream, IRegistry::fWithNcbirc));
+	if (registry->HasEntry("BLAST", "BLAST_USAGE_REPORT")) {
+		bool enable = NStr::StringToBool(registry->Get("BLAST", "BLAST_USAGE_REPORT"));
+		if (!enable) {
+			SetEnabled(false);
+			CUsageReportAPI::SetEnabled(false);
+			LOG_POST(Info <<"Phone home disabled by config setting");
 			return ;
 		}
 	}
 	CUsageReportAPI::SetEnabled(true);
 	SetEnabled(true);
+	LOG_POST(Info <<"Phone home enabled");
 }
 
 void CBlastUsageReport::AddParam(EUsageParams p, Int8 val)
