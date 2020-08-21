@@ -2084,6 +2084,104 @@ void CFeatTableEdit::xGenerate_mRNA_Product(CSeq_feat& cd_feature)
 #endif
 }
 
+//  ============================================================================
+string
+sGetFeatMapKey(const CObject_id& objectId)
+//  ============================================================================
+{
+    if (objectId.IsStr()) {
+        return objectId.GetStr();
+    }
+    return string("id:") + NStr::NumericToString(objectId.GetId());
+}
+
+//  ============================================================================
+void
+CFeatTableEdit::MergeFeatures(
+    const CSeq_annot::TData::TFtable& otherFeatures)
+//  ============================================================================
+{
+    FeatMap featMap;
+    
+    auto& thisFeatures = mAnnot.SetData().SetFtable();
+    for (auto pThisFeat: thisFeatures) {
+    //(assumption: only local IDs are at issue)
+        if (!pThisFeat->IsSetId()  ||  !pThisFeat->GetId().IsLocal()) {
+            continue;
+        }
+        const auto& this_oid = pThisFeat->GetId().GetLocal();
+        featMap[sGetFeatMapKey(this_oid)] = pThisFeat;
+    }
+    for (auto pOtherFeat: otherFeatures) {
+        if (!pOtherFeat->IsSetId()  ||  !pOtherFeat->GetId().IsLocal()) {
+            thisFeatures.push_back(pOtherFeat);
+            continue;
+        }
+        const auto& other_oid = pOtherFeat->GetId().GetLocal();
+        if (featMap.find(sGetFeatMapKey(other_oid)) == featMap.end()) {
+            thisFeatures.push_back(pOtherFeat);
+            continue;
+        }
+        xRenameFeatureId(other_oid, featMap);
+        thisFeatures.push_back(pOtherFeat);
+    }
+}
+
+//  ==============================================================================
+bool OjectIdsAreEqual (
+//  ==============================================================================
+    const CObject_id& lhs,
+    const CObject_id& rhs)
+{
+    if (lhs.Which() != rhs.Which()) {
+        return false;
+    }
+    if (lhs.IsStr()) {
+        return (lhs.GetStr() == rhs.GetStr());
+    }
+    return (lhs.GetId() == rhs.GetId());
+};
+
+//  =============================================================================
+void
+CFeatTableEdit::xRenameFeatureId(
+    const CObject_id& oldFeatId,
+    FeatMap& featMap)
+//  =============================================================================
+{
+    string oldFeatIdAsStr;
+    if (oldFeatId.IsStr()) {
+        oldFeatIdAsStr = oldFeatId.GetStr();
+    }
+    else {
+        oldFeatIdAsStr = NStr::NumericToString(oldFeatId.GetId());
+    }
+    
+    string newFeatIdAsStr = oldFeatIdAsStr + "x";
+    CRef<CObject_id> pNewFeatId(new CObject_id);
+    pNewFeatId->SetStr(oldFeatIdAsStr + "x");
+    while (featMap.find(sGetFeatMapKey(*pNewFeatId)) != featMap.end()) {
+        pNewFeatId->SetStr() += "x";
+    }
+
+    auto pBaseFeat = featMap[sGetFeatMapKey(oldFeatId)];
+    pBaseFeat->SetId().SetLocal(*pNewFeatId);
+    featMap.erase(sGetFeatMapKey(oldFeatId));
+    featMap[sGetFeatMapKey(*pNewFeatId)] = pBaseFeat;
+
+    for (auto it = featMap.begin(); it != featMap.end(); ++it) {
+        auto pFeat = it->second;
+        for (auto& pXref: pFeat->SetXref()) {
+            if (!pXref->IsSetId()  ||  !pXref->GetId().IsLocal()) {
+                continue;
+            }
+            if (OjectIdsAreEqual(pXref->GetId().GetLocal(), oldFeatId)) {
+                pXref->SetId().SetLocal(*pNewFeatId);
+            }
+        }
+    }
+}
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

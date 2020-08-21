@@ -1198,9 +1198,10 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 
                 if (existing.Empty())
                     bioseq.SetAnnot().push_back(annot_it);
-                else
-                    existing->SetData().SetFtable().insert(existing->SetData().SetFtable().end(),
-                        annot_it->SetData().SetFtable().begin(), annot_it->SetData().SetFtable().end());
+                else {
+                    objects::edit::CFeatTableEdit featEdit(*existing);
+                    featEdit.MergeFeatures(annot_it->SetData().SetFtable());
+                }
             }
 #ifdef _DEBUG
             else

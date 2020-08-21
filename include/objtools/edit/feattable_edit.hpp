@@ -77,6 +77,10 @@ public:
     void GenerateMissingParentFeaturesForEukaryote();
     void GenerateMissingParentFeaturesForProkaryote();
     void ProcessCodonRecognized();
+
+    void MergeFeatures(
+        const CSeq_annot::TData::TFtable& other);
+
     unsigned int PendingLocusTagNumber() const {
         return mLocusTagNumber;
     }
@@ -94,7 +98,6 @@ public:
 protected:
     void xGenerateLocusIdsUseExisting();
     void xGenerateLocusIdsRegenerate();
-
     string xNextFeatId();
     string xNextLocusTag();
     string xNextProteinId(
@@ -178,6 +181,10 @@ protected:
     void xGenerate_mRNA_Product(CSeq_feat& cd_feature);
     CConstRef<CSeq_feat> xGetLinkedFeature(const CSeq_feat& cd_feature, bool gene);
 
+    using FeatMap = map<string, CRef<CSeq_feat>>;
+    void xRenameFeatureId(
+        const CObject_id&, 
+        FeatMap&);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
