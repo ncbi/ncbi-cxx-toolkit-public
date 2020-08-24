@@ -940,6 +940,7 @@ bool CValidError_imp::IsHtg(void) const
 }
 
 
+/*
 static bool s_IsPDBInSep(const CSeq_entry& se, CScope& scope)
 {
     for (CBioseq_CI it(scope, se); it; ++it) {
@@ -951,6 +952,7 @@ static bool s_IsPDBInSep(const CSeq_entry& se, CScope& scope)
     }
     return false;
 }
+*/
 
 
 void CValidError_imp::ValidateAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx)

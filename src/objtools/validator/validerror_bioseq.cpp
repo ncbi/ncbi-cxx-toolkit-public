@@ -1524,7 +1524,7 @@ void CValidError_bioseq::ValidateBioseqContext(
             }
 
         }
-        catch (CException& e) {
+        catch (CException&) {
         }
     }
 }
@@ -7145,7 +7145,7 @@ void CValidError_bioseq::x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq,  int 
     CSeq_entry_Handle topseh = seq.GetTopLevelEntry();
     CSeqEntryIndex idx(topseh);
     CRef<CBioseqIndex> bsx = idx.GetBioseqIndex(seq);
-    bsx->IterateFeatures([this, &bsx, &lclcds, &lclcrgn, &lclvseg, &lcldseg, &lcljseg, &lclnone, &lclothr](CFeatureIndex& sfx) {
+    bsx->IterateFeatures([this, &lclcds, &lclcrgn, &lclvseg, &lcldseg, &lcljseg, &lclnone, &lclothr](CFeatureIndex& sfx) {
         CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
         if (sbt == CSeqFeatData::ESubtype::eSubtype_cdregion) {
             lclcds++;
