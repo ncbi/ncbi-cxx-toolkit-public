@@ -336,6 +336,7 @@ fi
 if test -z "\$NCBI_CHECK_TIMEOUT_MULT"; then
    NCBI_CHECK_TIMEOUT_MULT=1
 fi
+export NCBI_CHECK_TIMEOUT_DEFAULT=$NCBI_CHECK_TIMEOUT_DEFAULT
 
 # Path to test data, used by some scripts and applications
 if test -z "\$NCBI_TEST_DATA"; then
@@ -535,17 +536,27 @@ fi
 RunTest()
 {
     # Parameters
-    x_work_dir_tail="\$1"
-    x_work_dir="\$compile_dir/\$x_work_dir_tail"
-    x_test="\$2"
-    x_app="\$3"
-    x_run="\${4:-\$x_app}"
-    x_alias="\$5"
-    x_name="\${5:-\$x_run}"
-    x_ext="\$6"
-    x_timeout="\$7"
-    x_authors="\$8"
-    test -d \${x_work_dir} || mkdir -p \${x_work_dir}
+    IFS=';'; rargs=(\$1); unset IFS;
+    x_work_dir_tail=\${rargs[0]};
+    x_test=\${rargs[1]};
+    x_app=\${rargs[2]};
+    x_run=\${rargs[3]};
+    x_alias=\${rargs[4]};
+    x_name=\${rargs[4]};
+    x_files=\${rargs[5]};
+    x_timeout=\${rargs[6]};
+    x_requires=\${rargs[7]};
+    x_authors=\${rargs[8]};
+    x_resources=\${rargs[9]};
+    r_id=\$2
+
+    test -z "\$x_timeout"  &&  x_timeout=\$NCBI_CHECK_TIMEOUT_DEFAULT
+    x_work_dir="\$checkdir/\$x_work_dir_tail"
+    x_done="\$checkdir/~\$x_name"
+    x_wlog_dir="\$x_work_dir"
+    x_work_dir="\$x_work_dir/~\$x_name"
+    x_log="$x_tmp/\$\$.~\$x_name.out"
+    x_info="$x_tmp/\$\$.~\$x_name.info"
 
     if test -f "/etc/nologin"; then
         echo "Nologin detected, probably host going to reboot. Skipping test:" \$x_name
@@ -556,9 +567,46 @@ RunTest()
         test -z "\$x_authors"  &&  return 0
     fi
 
-    count_total=\`expr \$count_total + 1\`
-    x_log="$x_tmp/\$\$.out\$count_total"
+    touch "\${x_done}.in_progress"
+    if test -f "\${x_done}.done"; then 
+        rm -f "\${x_done}.done"
+    fi
+    test -d \${x_work_dir} || mkdir -p \${x_work_dir}
 
+    for x_req in \$x_requires; do
+      if test ! -f "\$x_conf_dir/status/\$x_req.enabled" ; then
+           x_test_out="\$x_wlog_dir/\$x_name.test_out\$x_ext"
+           echo NCBI_UNITTEST_SKIPPED > \$x_test_out
+           echo "t_cmd=\\"[\$r_id/\$x_TestsTotal \$x_work_dir_tail] \$x_name (unmet CHECK_REQUIRES=\$x_req)\\"" > \$x_info
+           echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
+           mv \$x_info "\${x_done}.done"
+           rm "\${x_done}.in_progress"
+           rm -rf "\${x_work_dir}"
+           return 0
+      fi
+    done
+
+    if test -n "\$x_files"; then
+        for i in \$x_files ; do
+            x_copy="\$root_dir/src/\$x_work_dir_tail/\$i"
+            if test -f "\$x_copy"  -o  -d "\$x_copy"; then
+                cp -rf "\$x_copy" "\$x_work_dir"
+                test -d "\$x_work_dir/\$i" &&  find "\$x_work_dir/\$i" -name .svn -print | xargs rm -rf
+            else
+                echo "[\$x_work_dir_tail] \$x_name: Warning:  The copied object \"\$x_copy\" should be a file or directory!"
+                continue
+            fi
+        done
+    fi
+
+    if test -n "\$x_resources"; then
+        for r in \$x_resources ; do
+            while ! mkdir "\$checkdir/~\$r.lock" 2>/dev/null
+            do
+	            sleep 1
+            done
+        done
+    fi
 
     # Run test under all specified check tools   
     for tool in \$NCBI_CHECK_TOOLS; do
@@ -573,17 +621,17 @@ RunTest()
                              * ) continue ;;
         esac
         
-        x_cmd="[\$x_work_dir_tail] \$x_name"
+        x_cmd="[\$r_id/\$x_TestsTotal \$x_work_dir_tail] \$x_name"
         if test \$tool_lo = "regular"; then
            #x_cmd="[\$x_work_dir_tail] \$x_name"
-           x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
-           x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
-           x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
+           x_test_out="\$x_wlog_dir/\$x_name.test_out\$x_ext"
+           x_test_rep="\$x_wlog_dir/\$x_name.test_rep\$x_ext"
+           x_boost_rep="\$x_wlog_dir/\$x_name.boost_rep\$x_ext"
         else
            #x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
-           x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext.\$tool_lo"
-           x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext.\$tool_lo"
-           x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext.\$tool_lo"
+           x_test_out="\$x_wlog_dir/\$x_name.test_out\$x_ext.\$tool_lo"
+           x_test_rep="\$x_wlog_dir/\$x_name.test_rep\$x_ext.\$tool_lo"
+           x_boost_rep="\$x_wlog_dir/\$x_name.boost_rep\$x_ext.\$tool_lo"
         fi
 
    
@@ -656,7 +704,6 @@ RunTest()
                 fi
 
                 # Write header to output file 
-                echo "\$x_test_out" >> \$res_journal
                 (
                     echo "======================================================================"
                     echo "\$x_name"
@@ -707,7 +754,7 @@ RunTest()
                 # Use separate shell to run test.
                 # This will allow to know execution time for applications with timeout.
                 # Also, process guard works better if used after "time -p".
-                launch_sh="/var/tmp/launch.\$\$.sh"
+                launch_sh="$x_tmp/launch.\$\$.~\$x_name.sh"
 cat > \$launch_sh <<EOF_launch
 #! /bin/sh
 exec time -p \$check_exec \`eval echo \$xx_run\`
@@ -792,45 +839,31 @@ EOF_launch
                     fi
                 fi
 
-                # Write result also on the screen and into the log
-                if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
-                    echo "DIS --  \$x_cmd"
-                    echo "DIS --  \$x_cmd" >> \$res_log
-                    count_absent=\`expr \$count_absent + 1\`
-                    \$is_automated && echo "DIS" >> "\$x_test_rep"
+                echo "t_cmd=\\"\$x_cmd\\"" > \$x_info
+                echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
+                echo "t_exec_time=\\"\$exec_time\\"" >> \$x_info
+                echo "t_result=\\"\$result\\"" >> \$x_info
 
-                elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
-                    echo "SKP --  \$x_cmd"
-                    echo "SKP --  \$x_cmd" >> \$res_log
-                    count_absent=\`expr \$count_absent + 1\`
-                    \$is_automated && echo "SKP" >> "\$x_test_rep"
-
-                elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
-                    echo "TO  --  \$x_cmd"
-                    echo "TO  --  \$x_cmd" >> \$res_log
-                    count_timeout=\`expr \$count_timeout + 1\`
-                    \$is_automated && echo "TO" >> "\$x_test_rep"
-
-                elif echo "\$exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
-                    echo "TO  --  \$x_cmd     (\$exec_time)"
-                    echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
-                    count_timeout=\`expr \$count_timeout + 1\`
-                    \$is_automated && echo "TO" >> "\$x_test_rep"
-
-                elif test \$result -eq 0; then
-                    echo "OK  --  \$x_cmd     (\$exec_time)"
-                    echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-                    count_ok=\`expr \$count_ok + 1\`
-                    \$is_automated && echo "OK" >> "\$x_test_rep"
-
-                else
-                    echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-                    echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-                    count_err=\`expr \$count_err + 1\`
-                    \$is_automated && echo "ERR" >> "\$x_test_rep"
-                fi
-
+                # Write results
                 if \$is_automated; then
+                    if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
+                        echo "DIS" >> "\$x_test_rep"
+
+                    elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
+                        echo "SKP" >> "\$x_test_rep"
+
+                    elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
+                        echo "TO" >> "\$x_test_rep"
+
+                    elif echo "\$exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
+                        echo "TO" >> "\$x_test_rep"
+
+                    elif test \$result -eq 0; then
+                        echo "OK" >> "\$x_test_rep"
+
+                    else
+                        echo "ERR" >> "\$x_test_rep"
+                    fi
                     echo "\$start_time" >> "\$x_test_rep"
                     echo "\$result"     >> "\$x_test_rep"
                     echo "\$exec_time"  >> "\$x_test_rep"
@@ -841,10 +874,8 @@ EOF_launch
 
             else  # Run test if it exist
                 if \$is_run; then
-                    echo "ABS --  \$x_cmd"
-                    echo "ABS --  \$x_cmd" >> \$res_log
-                    count_absent=\`expr \$count_absent + 1\`
-
+                    echo "t_cmd=\\"\$x_cmd\\"" > \$x_info
+                    echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
                     if \$is_automated; then
                         echo "ABS"         >> "\$x_test_rep"
                         echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
@@ -856,10 +887,8 @@ EOF_launch
         else  # Check existence of the test's application directory
             if \$is_run; then
                 # Test application is absent
-                echo "ABS -- \$x_work_dir - \$x_test"
-                echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
-                count_absent=\`expr \$count_absent + 1\`
-
+                echo "t_cmd=\\"\$x_cmd\\"" > \$x_info
+                echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
                 if \$is_automated; then
                     echo "ABS"         >> "\$x_test_rep"
                     echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
@@ -872,6 +901,10 @@ EOF_launch
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
+            while ! mkdir "\$checkdir/~test_stat_load.lock" 2>/dev/null
+            do
+	            sleep 1
+            done
            if test -n "\$saved_phid";  then
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
@@ -884,20 +917,41 @@ EOF_launch
               * )
                 test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
             esac
-           echo >> "\${checkdir}/test_stat_load.log" 2>&1
+            echo >> "\${checkdir}/test_stat_load.log" 2>&1
+            rm -rf "\$checkdir/~test_stat_load.lock"
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
             rm -f \$saved_phid* > /dev/null 2>&1
         fi
         
     done  # Run test under all specified check tools   
+
+    if test -n "\$x_resources"; then
+        rev_resources=""
+        for r in \$x_resources ; do
+            rev_resources="\$r \${rev_resources}"
+        done
+        for r in \$rev_resources ; do
+            rm -rf "\$checkdir/~\$r.lock"
+        done
+    fi
+    if test -f \$x_info; then 
+        mv \$x_info "\${x_done}.done"
+    else
+        touch "\${x_done}.done"
+    fi
+    rm "\${x_done}.in_progress"
+    rm -rf "\${x_work_dir}" 2>/dev/null
+    if test \$? -ne 0;  then
+        sleep 1
+        rm -rf "\${x_work_dir}" 2>/dev/null
+    fi
 }
 
 MailToAuthors()
 {
    # The limit on the sending email size in Kbytes
    mail_limit=1024
-   tmp="./check_mailtoauthors.tmp.\$\$"
 
    test -z "\$sendmail"  &&  return 0
    test -z "\$1"  &&  return 0
@@ -906,6 +960,7 @@ MailToAuthors()
        x_authors="\$x_authors \$author\$domain"
    done
    x_logfile="\$2"
+   tmp="./check_mailtoauthors.tmp.\$\$.\`basename \$x_logfile\`"
    
    echo '-----------------------'
    echo "Send results of the test \$x_app to \$x_authors"
@@ -932,103 +987,125 @@ MailToAuthors()
    rm -f \$tmp > /dev/null
 }
 
-EOF
-
-#//////////////////////////////////////////////////////////////////////////
-
-
-# Read list with tests
-x_tests=`cat "$x_list" | sed -e 's/ /%gj_s4%/g'`
-x_test_prev=""
-
-# For all tests
-for x_row in $x_tests; do
-   # Get one row from list
-   x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g'`
-
-   # Split it to parts
-   x_src_dir="$x_root_dir/src/`echo \"$x_row\" | sed -e 's/~.*$//'`"
-   x_test=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_name=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
-   x_authors=`echo "$x_row" | sed -e 's/.*~//'`
-
-   # Default timeout
-   test -z "$x_timeout"  &&  x_timeout=$NCBI_CHECK_TIMEOUT_DEFAULT
-
-   # Application base build directory
-   x_work_dir_tail="`echo \"$x_row\" | sed -e 's/~.*$//'`"
-   x_work_dir="$x_compile_dir/$x_work_dir_tail"
-
-   # Check application requirements ($CHECK_REQUIRES)
-   for x_req in $x_requires; do
-      if test ! -f "$x_conf_dir/status/$x_req.enabled" ; then
-         echo "SKIP -- $x_work_dir_tail/$x_app (unmet CHECK_REQUIRES)"
-         continue 2
-      fi
-   done
-
-   # Copy specified files to the build directory
-
-   if test "$x_import_prj" = "no"; then
-      # Automatically copy .ini file if exists
-      x_copy="$x_src_dir/$x_app.ini"
-      if test -f $x_copy; then
-         test -d "$x_work_dir" || mkdir -p "$x_work_dir"
-         cp -pf "$x_copy" "$x_work_dir"
-      fi
-      # Copy specified CHECK_COPY files/dirs
-      if test ! -z "$x_files"; then
-         test -d "$x_work_dir" || mkdir -p "$x_work_dir"
-         for i in $x_files ; do
-            x_copy="$x_src_dir/$i"
-            if test -f "$x_copy"  -o  -d "$x_copy"; then
-               cp -prf "$x_copy" "$x_work_dir"
-               test -d "$x_work_dir/$i" &&  find "$x_work_dir/$i" -name .svn -print | xargs rm -rf
-            else
-               echo "Warning:  The copied object \"$x_copy\" should be a file or directory!"
-               continue 1
+ProcessDone()
+{
+    p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
+    p_done=\`echo \$p_done | wc -w\`
+    if test \${p_done} -gt 0; then
+        for p_file in \`ls \${checkdir}/*.done\`; do
+            source \$p_file
+            if test ! -e "\$t_test_out"; then
+                echo "ABS --  \$t_cmd"
+                echo "ABS --  \$t_cmd" >> \$res_log
+                count_absent=\`expr \$count_absent + 1\`
+                continue
             fi
-         done
-      fi
-   fi
+            echo "\$t_test_out" >> \$res_journal
+            count_total=\`expr \$count_total + 1\`
+            # Write result on the screen
+            if grep NCBI_UNITTEST_DISABLED \$t_test_out >/dev/null; then
+                echo "DIS --  \$t_cmd"
+                echo "DIS --  \$t_cmd" >> \$res_log
+                count_absent=\`expr \$count_absent + 1\`
 
-   # Generate extension for tests output file
-   if test "$x_test" != "$x_test_prev"; then 
-      x_cnt=1
-      x_test_ext=""
-   else
-      x_cnt=`expr $x_cnt + 1`
-      x_test_ext="$x_cnt"
-   fi
-   x_test_prev="$x_test"
+            elif grep NCBI_UNITTEST_SKIPPED \$t_test_out >/dev/null; then
+                echo "SKP --  \$t_cmd"
+                echo "SKP --  \$t_cmd" >> \$res_log
+                count_absent=\`expr \$count_absent + 1\`
+
+            elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$t_test_out >/dev/null; then
+                echo "TO  --  \$t_cmd"
+                echo "TO  --  \$t_cmd" >> \$res_log
+                count_timeout=\`expr \$count_timeout + 1\`
+
+            elif echo "\$t_exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$t_test_out >/dev/null; then
+                echo "TO  --  \$t_cmd     (\$t_exec_time)"
+                echo "TO  --  \$t_cmd     (\$t_exec_time)" >> \$res_log
+                count_timeout=\`expr \$count_timeout + 1\`
+
+            elif test \$t_result -eq 0; then
+                echo "OK  --  \$t_cmd     (\$t_exec_time)"
+                echo "OK  --  \$t_cmd     (\$t_exec_time)" >> \$res_log
+                count_ok=\`expr \$count_ok + 1\`
+
+            else
+                echo "ERR [\$t_result] --  \$t_cmd     (\$t_exec_time)"
+                echo "ERR [\$t_result] --  \$t_cmd     (\$t_exec_time)" >> \$res_log
+                count_err=\`expr \$count_err + 1\`
+            fi
+            rm -f \$p_file
+        done
+        return 1
+    fi
+    return 0
+}
+
+AddJob()
+{
+    a_pid="\$1"
+    a_name="\$2"
+    a_id="\$3"
+    ProcessDone
+
+    if test "\${a_pid}" -gt 0; then
+#        echo "Start \$a_id: \${a_name}"
+        if test -n "\$CTEST_PARALLEL_LEVEL"; then
+            a_maxjob=\$CTEST_PARALLEL_LEVEL
+        elif test -n "\$NUMBER_OF_PROCESSORS"; then
+            a_maxjob=\$NUMBER_OF_PROCESSORS
+        else
+            a_maxjob=4
+        fi
+    else
+        a_maxjob=0
+    fi
+
+    a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
+    a_run=\`echo \$a_run | wc -w\`
+    if test \$a_run -lt \$a_maxjob; then
+        return
+    fi
+
+    sleep 1
+    while test \$a_run -ge \$a_maxjob; do
+        if ProcessDone; then
+            sleep 1
+        fi
+        a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
+        a_run=\`echo \$a_run | wc -w\`
+        if test \${a_run} -le 0; then
+            break
+        fi
+    done
+    if test \${a_maxjob} -le 0; then
+        ProcessDone
+    fi
+}
 
 #//////////////////////////////////////////////////////////////////////////
 
-   # Write test commands for current test into a shell script file
-   cat >> $x_out <<EOF
-######################################################################
-RunTest "$x_work_dir_tail" \\
-        "$x_test" \\
-        "$x_app" \\
-        "$x_cmd" \\
-        "$x_name" \\
-        "$x_test_ext" \\
-        "$x_timeout" \\
-        "$x_authors"
-EOF
+# Run tests
+rm -rf "\$checkdir/~*" 2>/dev/null
+locks=\`ls -d \${checkdir}/~*.lock 2>/dev/null | wc -w\`
+if test \$locks -ne 0; then
+  echo "ERROR: there are locks in \${checkdir}" 1>&2
+  exit 1
+fi
+x_test=""
+x_TestsTotal=\`cat "\$res_list" | wc -l\`
+x_i=0
+while read x_row; do
+    x_row=\`echo "\$x_row" | sed -e 's/ ____ /;/g' | sed -e 's/ ____/;/g' | sed -e 's/ ;/;/g'\`
+    IFS=';'; arrIN=(\$x_row); unset IFS;
+    x_name=\${arrIN[4]};
+    x_i=\`expr \$x_i + 1\`
 
-#//////////////////////////////////////////////////////////////////////////
+    RunTest "\$x_row" "\$x_i" &
+    AddJob "\$!" "\$x_name" "\$x_i"
+done < "\$res_list"
 
-done # for x_row in x_tests
-
-
-# Write ending code into the script 
-cat >> $x_out <<EOF
+# Wait for all them to finish
+AddJob "0" "" "" ""
 
 if \$is_run; then
    # Write result of the tests execution
