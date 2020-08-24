@@ -46,7 +46,7 @@ trap "rm -f $tmp $timestamp_file" 0 1 2 15
 # Reinforce timeout
 # Note, we cannot set it to $timeout for MT-test, because
 # CPU time count for each thread and sum.
-ulimit -t `expr $timeout \* 3` > /dev/null 2>&1
+ulimit -t `expr $timeout \* 3` > /dev/null 2>&1 || true
 
 # Use different kill on Unix and Cygwin
 case `uname -s` in
@@ -71,9 +71,11 @@ if [ "X$1" = "X-stdin" ]; then
 fi
 
 exe="$1"
-echo $exe | grep '\.sh' > /dev/null 2>&1 
-if test $? -eq 0;  then
-   echo "Error: Using CHECK_EXEC macro to run shell scripts is prohibited!"
+#fext=${exe##*.}
+#if test $fext = "sh";  then
+fext=`file $exe | grep script || true`
+if test -n "$fext";  then
+   echo "Error: Using CHECK_EXEC macro to run shell scripts ($exe) is prohibited!"
    exit 1
 fi
 
