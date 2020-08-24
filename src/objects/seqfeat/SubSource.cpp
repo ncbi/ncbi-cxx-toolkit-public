@@ -2638,11 +2638,12 @@ bool CSubSource::IsEndogenousVirusNameValid(const string& value)
 //   7.	Spaces and other printable characters are permitted
 //   8.	Must not contain the word "plasmid" (ignoring case)
 //   9.	Must not contain the word "chromosome" (ignoring case)
-//   10.	Must not contain the phrase "linkage group" (ignoring case)
-//   11.	Must not contain the series of letters "chr" (ignoring case)
-//   12.	Must not contain the taxname (ignoring case)
-//   14.  Must not contain the genus (ignoring case)
+//   10. Must not contain the phrase "linkage group" (ignoring case)
+//   11. Must not contain the series of letters "chr" (ignoring case)
+//   12. Must not contain the taxname (ignoring case)
+//   14. Must not contain the genus (ignoring case)
 //   15. Must not contain the species (ignoring case)
+//       except allow the species to match the value after an initial 'p' (e.g., JX416328)
 //   16. Must not contain the series of letters "chrm" (ignoring case)
 //   17. Must not contain the series of letters "chrom" (ignoring case)
 //   18. Must not contain the phrase "linkage-group" (ignoring case)
@@ -2669,13 +2670,18 @@ bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const strin
         }
         size_t pos = NStr::Find(taxname, " ");
         if (pos != NPOS) {
-            if (NStr::FindNoCase(value, taxname.substr(0, pos)) != NPOS) {
+            string genus = taxname.substr(0, pos);
+            if (NStr::FindNoCase(value, genus) != NPOS) {
                 // B.14
                 return false;
             }
-            if (NStr::FindNoCase(value, taxname.substr(pos + 1)) != NPOS) {
-                // B.15
-                return false;
+            string species = taxname.substr(pos + 1);
+            pos = NStr::FindNoCase(value, species);
+            if (pos != NPOS) {
+                if (pos != 1 || value[0] != 'p') {
+                    // B.15
+                    return false;
+                }
             }
         }
     }
