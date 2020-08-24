@@ -343,9 +343,11 @@ void CFlatFileGenerator::Generate
     // bool nearFeatsSuppress = false;
 
     bool isNc = false;
+    /*
     bool isNgNtNwNz = false;
     bool isGED = false;
     bool isTPA = false;
+    */
 
     bool hasLocalFeat = false;
     bool forceOnlyNear = false;
@@ -361,12 +363,12 @@ void CFlatFileGenerator::Generate
                 case CSeq_id::e_Genbank:
                 case CSeq_id::e_Embl:
                 case CSeq_id::e_Ddbj:
-                    isGED = true;
+                    // isGED = true;
                     break;
                 case CSeq_id::e_Tpg:
                 case CSeq_id::e_Tpe:
                 case CSeq_id::e_Tpd:
-                    isTPA = true;
+                    // isTPA = true;
                     break;
                 case CSeq_id::e_Other:
                     {
@@ -376,7 +378,7 @@ void CFlatFileGenerator::Generate
                             if (acc == "NC_") {
                                 isNc = true;
                             } else if (acc == "NG_" || acc == "NT_" || acc == "NW_" || acc == "NZ_") {
-                                isNgNtNwNz = true;
+                                // isNgNtNwNz = true;
                             }
                         }
                     }
