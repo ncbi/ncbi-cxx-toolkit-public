@@ -1913,7 +1913,7 @@ s_FormatRegularSequencePiece
                 fill(line, line+kLineBufferSize, ' ');
 
                 // add the span stuff
-                TSeqPos length_of_span_before_base_count = 0;
+                length_of_span_before_base_count = 0;
                 if( bHtml ) {
                     string kSpan = " <span class=\"ff_line\" id=\"";
                     kSpan += accn;
