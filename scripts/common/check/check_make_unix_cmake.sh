@@ -574,7 +574,20 @@ RunTest()
     test -d \${x_work_dir} || mkdir -p \${x_work_dir}
 
     for x_req in \$x_requires; do
-      if test ! -f "\$x_conf_dir/status/\$x_req.enabled" ; then
+      t_sub=\${x_req::1}
+      t_res="yes"
+      if test \$t_sub = "-"; then
+          t_sub=\${x_req:1}
+          if test -f "\$x_conf_dir/status/\$t_sub.enabled" ; then
+            t_res="no"
+          fi
+      else
+          t_sub=\${x_req}
+          if test ! -f "\$x_conf_dir/status/\$t_sub.enabled" ; then
+            t_res="no"
+          fi
+      fi
+      if test "\$t_res" = "no"; then
            x_test_out="\$x_wlog_dir/\$x_name.test_out\$x_ext"
            echo NCBI_UNITTEST_SKIPPED > \$x_test_out
            echo "t_cmd=\\"[\$r_id/\$x_TestsTotal \$x_work_dir_tail] \$x_name (unmet CHECK_REQUIRES=\$x_req)\\"" > \$x_info
