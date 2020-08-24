@@ -247,7 +247,9 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
                     TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
                     cds_info.AddPStop(pstop, CCDSInfo::eUnknown);
                     if(hole_len%3 != 0) {
-                        align.FrameShifts().push_back(CInDelInfo((align.Exons()[i-1].GetTo()+align.Exons()[i].GetFrom())/2, hole_len%3, CInDelInfo::eIns));
+                        Int8 p = align.Exons()[i-1].GetTo();
+                        p = (p+align.Exons()[i].GetFrom())/2;
+                        align.FrameShifts().push_back(CInDelInfo(p, hole_len%3, CInDelInfo::eIns));
                     }
 
                     CGeneModel a(align.Strand());

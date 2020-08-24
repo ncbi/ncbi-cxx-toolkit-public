@@ -188,15 +188,15 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 {
     TGeneModelList aligns(il, ir);
 
-    TSignedSeqPos left = llimit;
+    Int8 left = llimit;
     bool leftwall = leftmostwall;
     bool leftanchor = leftmostanchor;
 
-    TSignedSeqPos right = llimit+window;
+    Int8 right = llimit+window;
     bool rightwall = false;
     bool rightanchor = false;
 
-    TSignedSeqPos prev_bad_right = rlimit+1;
+    Int8 prev_bad_right = rlimit+1;
     bool do_it_again = false;
         
     m_gnomon->ResetRange(left, right);
