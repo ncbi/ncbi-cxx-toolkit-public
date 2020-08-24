@@ -1081,7 +1081,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
         }
 
         if (hops < 0) {
-            err_msg = "Invalid 'hops' value " + to_string(hops) +
+            err_msg = "Invalid '" + kHopsParam + "' value " + to_string(hops) +
                       ". It must be > 0.";
             m_ErrorCounters.IncMalformedArguments();
             x_SendMessageAndCompletionChunks(reply, err_msg,
@@ -1093,7 +1093,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
         }
 
         if (hops > m_MaxHops) {
-            err_msg = "The 'hops' value " + to_string(hops) +
+            err_msg = "The '" + kHopsParam + "' value " + to_string(hops) +
                       " exceeds the server configured value " +
                       to_string(m_MaxHops) + ".";
             m_ErrorCounters.IncMaxHopsExceededError();
@@ -1141,7 +1141,7 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
     try {
         converted = NStr::StringToInt(param_value);
     } catch (...) {
-        err_msg = "Error converting " + param_name + " parameter "
+        err_msg = "Error converting '" + param_name + "' parameter "
                   "to integer (received value: '" + string(param_value) + "')";
         return false;
     }
@@ -1214,8 +1214,8 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
 
     auto    errors = m_CassMapping[vacant_index].validate(m_RootKeyspace);
     if (m_SatNames.empty())
-        errors.push_back("No sat to keyspace resolutions found in the " +
-                         m_RootKeyspace + " keyspace.");
+        errors.push_back("No sat to keyspace resolutions found in the '" +
+                         m_RootKeyspace + "' keyspace.");
 
     if (errors.empty()) {
         m_MappingIndex = vacant_index;

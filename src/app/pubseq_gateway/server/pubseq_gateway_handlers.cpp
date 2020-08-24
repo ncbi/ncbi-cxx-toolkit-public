@@ -691,7 +691,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                 x_MalformedArguments(
                         reply, context,
                         "Invalid '" + kFmtParam + "' parameter value. The 'get_na' "
-                        "command supports 'json' and 'native' values");
+                        "request supports 'json' and 'native' values");
                 return 0;
             }
         }
@@ -1454,8 +1454,8 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
         if (data_size_param.m_Found) {
             data_size = NStr::StringToLong(data_size_param.m_Value);
             if (data_size < 0 || data_size > kMaxTestIOSize) {
-                err_msg = "Invalid range of the " + kDataSizeParam +
-                          " parameter. Accepted values are 0..." +
+                err_msg = "Invalid range of the '" + kDataSizeParam +
+                          "' parameter. Accepted values are 0..." +
                           to_string(kMaxTestIOSize);
                 http_reply->SetContentType(ePSGS_PlainTextMime);
                 http_reply->Send400(err_msg.c_str());
@@ -1467,7 +1467,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                 return 0;
             }
         } else {
-            err_msg = "The " + kDataSizeParam + " must be provided";
+            err_msg = "The '" + kDataSizeParam + "' must be provided";
             http_reply->SetContentType(ePSGS_PlainTextMime);
             http_reply->Send400(err_msg.c_str());
             if (need_log) {
@@ -1552,7 +1552,8 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         }
 
         if (seq_id_type < 0 || seq_id_type >= CSeq_id::e_MaxChoice) {
-            err_msg = kSeqIdTypeParam + " value must be >= 0 and less than " +
+            err_msg = "The '" + kSeqIdTypeParam +
+                      "' value must be >= 0 and less than " +
                       to_string(CSeq_id::e_MaxChoice);
             m_ErrorCounters.IncMalformedArguments();
             x_SendMessageAndCompletionChunks(reply, err_msg,

@@ -678,21 +678,29 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
             m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
         }
 
-        // The handler deals with both kind of blob requests:
-        // - by sat/sat_key
-        // - by seq_id/seq_id_type
-        // So get the reference to the blob base request
-        auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+        // This code is reused by 3 requests:
+        // - get blob by sat/sat_key
+        // - get blob by seq_id/seq_id_type
+        // - get tse chunk
+        // the get tse chunk request does not deal with excluded blobs cache
+        auto    request_type = m_Request->GetRequestType();
+        if (request_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest ||
+            request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
+            // So get the reference to the blob base request for
+            // - get blob by sat/sat_key
+            // - get blob by seq_id/seq_id_type
+            auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
 
-        if (fetch_details->GetBlobId() == m_BlobId) {
-            if (blob_request.m_ExcludeBlobCacheAdded &&
-                ! blob_request.m_ClientId.empty()) {
-                app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
-                                                   m_BlobId.m_Sat,
-                                                   m_BlobId.m_SatKey);
+            if (fetch_details->GetBlobId() == m_BlobId) {
+                if (blob_request.m_ExcludeBlobCacheAdded &&
+                    ! blob_request.m_ClientId.empty()) {
+                    app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
+                                                       m_BlobId.m_Sat,
+                                                       m_BlobId.m_SatKey);
 
-                // To prevent any updates
-                blob_request.m_ExcludeBlobCacheAdded = false;
+                    // To prevent any updates
+                    blob_request.m_ExcludeBlobCacheAdded = false;
+                }
             }
         }
 
@@ -786,18 +794,23 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
     }
 
-    // The handler deals with both kind of blob requests:
-    // - by sat/sat_key
-    // - by seq_id/seq_id_type
-    // So get the reference to the blob base request
-    auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+    // The handler deals with three kind of requests requests:
+    // - get blob by sat/sat_key
+    // - get blob by seq_id/seq_id_type
+    // - get tse chunk
+    // get tse chunk request does not deal with exclude blob cache
+    auto    request_type = m_Request->GetRequestType();
+    if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest ||
+        request_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
+        auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
 
-    if (blob_id == m_BlobId) {
-        if (blob_request.m_ExcludeBlobCacheAdded && !blob_request.m_ClientId.empty()) {
-            app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
-                                               m_BlobId.m_Sat,
-                                               m_BlobId.m_SatKey);
-            blob_request.m_ExcludeBlobCacheAdded = false;
+        if (blob_id == m_BlobId) {
+            if (blob_request.m_ExcludeBlobCacheAdded && !blob_request.m_ClientId.empty()) {
+                app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
+                                                   m_BlobId.m_Sat,
+                                                   m_BlobId.m_SatKey);
+                blob_request.m_ExcludeBlobCacheAdded = false;
+            }
         }
     }
 
