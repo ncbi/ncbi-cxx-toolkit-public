@@ -148,8 +148,12 @@ CBlastInput::GetNextSeqBatch(CScope& scope)
             if (e.GetErrCode() == CObjReaderParseException::eEOF) {
                 break;
             }
-            throw;
+            throw; 
         }
+        catch (const exception&) {
+            continue; //SB-2307. ignore well formed, not found accession
+        }
+
         CConstRef<CSeq_loc> loc = q->GetQuerySeqLoc();
 
         if (loc->IsInt()) {
