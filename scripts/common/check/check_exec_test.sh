@@ -71,10 +71,10 @@ if [ "X$1" = "X-stdin" ]; then
 fi
 
 exe="$1"
-#fext=${exe##*.}
-#if test $fext = "sh";  then
-fext=`file $exe | grep script || true`
-if test -n "$fext";  then
+fext=${exe##*.}
+if test $fext = "sh";  then
+#fext=`file $exe | grep script || true`
+#if test -n "$fext";  then
    echo "Error: Using CHECK_EXEC macro to run shell scripts ($exe) is prohibited!"
    exit 1
 fi
