@@ -559,7 +559,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
                 if (start > 0) {
                     TSeqPos extend_len = 0;
                     if (IsExtendableLeft(start, bioseq, &(context.GetScope()), extend_len, feat.GetLocation().GetStrand()) == eExtensibe_fixable) {
-                        cout << "extend start: " << extend_len << "\n";
+                        //cout << "extend start: " << extend_len << "\n";
                         add_this = extend_len > 0 && extend_len <= 3;
                     }
                 }
@@ -569,7 +569,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
                 if (stop < bioseq.GetLength() - 1) {
                     TSeqPos extend_len = 0;
                     if (IsExtendableRight(stop, bioseq, &(context.GetScope()), extend_len, feat.GetLocation().GetStrand()) == eExtensibe_fixable) {
-                        cout << "extend end: " << extend_len << "\n";
+                        //cout << "extend end: " << extend_len << "\n";
                         add_this = extend_len > 0 && extend_len <= 3;
                     }
                 }
