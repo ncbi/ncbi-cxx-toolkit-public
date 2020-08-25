@@ -278,9 +278,10 @@ CBedReader::SetAutoSql(
 {
     CNcbiIfstream istr;
     try {
+        auto origExceptions = istr.exceptions();
         istr.exceptions(std::istream::failbit);
         istr.open(fileName);
-        istr.exceptions(0);
+        istr.exceptions(origExceptions);
     }
     catch (CException& e) {
         cerr << e.GetMsg() << endl;
