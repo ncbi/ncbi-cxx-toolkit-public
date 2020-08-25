@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/bed_autosql.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -124,6 +125,7 @@ public:
     enum EBedFlags {
         fThreeFeatFormat = 1<<8,
         fDirectedFeatureModel = 1<<9,
+        fAutoSql = 1<<10,
     };
     typedef int TFlags;
 
@@ -144,6 +146,14 @@ public:
         ILineReader&,
         CRawBedTrack&,
         ILineErrorListener* =0 );
+
+    virtual bool
+    SetAutoSql(
+        const string&);
+
+    virtual bool
+    SetAutoSql(
+        CNcbiIstream&);
 
 protected:
     virtual CRef<CSeq_annot> xCreateSeqAnnot();
@@ -370,6 +380,8 @@ protected:
     unsigned int m_CurBatchSize;
     const unsigned int m_MaxBatchSize;
     unique_ptr<CLinePreBuffer> mLinePreBuffer;
+
+    CBedAutoSql mAutoSql;
 };
 
 END_SCOPE(objects)

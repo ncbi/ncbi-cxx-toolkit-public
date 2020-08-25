@@ -259,15 +259,43 @@ CBedReader::~CBedReader()
 {
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
     ILineReader& lineReader,
     ILineErrorListener* pEC ) 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 {
     m_CurrentFeatureCount = 0;
     return CReaderBase::ReadSeqAnnot(lineReader, pEC);
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::SetAutoSql(
+    const string& fileName)
+//  ----------------------------------------------------------------------------
+{
+    CNcbiIfstream istr;
+    try {
+        istr.exceptions(std::istream::failbit);
+        istr.open(fileName);
+        istr.exceptions(0);
+    }
+    catch (CException& e) {
+        cerr << e.GetMsg() << endl;
+        return false;
+    }
+    return SetAutoSql(istr);
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::SetAutoSql(
+    CNcbiIstream& istr)
+//  ----------------------------------------------------------------------------
+{
+   return  mAutoSql.LoadCustomDefinitions(istr);
 }
 
 //  ----------------------------------------------------------------------------

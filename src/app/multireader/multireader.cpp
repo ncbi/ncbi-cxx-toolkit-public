@@ -538,6 +538,12 @@ void CMultiReaderApp::Init(void)
         CArgDescriptions::eString,
         "" );
                 
+    arg_desc->AddOptionalKey(
+        "autosql",
+        "FILENAME",
+        "BED autosql definition file",
+        CArgDescriptions::eString);
+        
     //
     //  wiggle reader specific arguments:
     //
@@ -942,6 +948,9 @@ void CMultiReaderApp::xProcessBed(
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    if (args["autosql"]) {
+        reader.SetAutoSql(args["autosql"].AsString());
+    }
     if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
