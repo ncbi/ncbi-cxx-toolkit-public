@@ -1061,7 +1061,7 @@ AddJob()
     ProcessDone
 
     if test "\${a_pid}" -gt 0; then
-#        echo "Start \$a_id: \${a_name}"
+        echo "Start \$a_id: \${a_name}"
         if test -n "\$CTEST_PARALLEL_LEVEL"; then
             a_maxjob=\$CTEST_PARALLEL_LEVEL
         elif test -n "\$NUMBER_OF_PROCESSORS"; then
