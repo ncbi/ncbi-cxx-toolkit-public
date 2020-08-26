@@ -1003,7 +1003,7 @@ MailToAuthors()
 ProcessDone()
 {
     p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
-    p_done=\`echo \$p_done | wc -w\`
+    p_done=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
     if test \${p_done} -gt 0; then
         for p_file in \`ls \${checkdir}/*.done\`; do
             source \$p_file
@@ -1074,7 +1074,7 @@ AddJob()
     fi
 
     a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
-    a_run=\`echo \$a_run | wc -w\`
+    a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
     if test \$a_run -lt \$a_maxjob; then
         return
     fi
@@ -1085,7 +1085,7 @@ AddJob()
             sleep 1
         fi
         a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
-        a_run=\`echo \$a_run | wc -w\`
+        a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
         if test \${a_run} -le 0; then
             break
         fi
@@ -1099,13 +1099,13 @@ AddJob()
 
 # Run tests
 rm -rf "\$checkdir/~*" 2>/dev/null
-locks=\`ls -d \${checkdir}/~*.lock 2>/dev/null | wc -w\`
+locks=\`ls -d \${checkdir}/~*.lock 2>/dev/null | wc -w | sed -e 's/ //g'\`
 if test \$locks -ne 0; then
   echo "ERROR: there are locks in \${checkdir}" 1>&2
   exit 1
 fi
 x_test=""
-x_TestsTotal=\`cat "\$res_list" | wc -l\`
+x_TestsTotal=\`cat "\$res_list" | wc -l | sed -e 's/ //g'\`
 x_i=0
 while read x_row; do
     x_row=\`echo "\$x_row" | sed -e 's/ ____ /;/g' | sed -e 's/ ____/;/g' | sed -e 's/ ;/;/g'\`
