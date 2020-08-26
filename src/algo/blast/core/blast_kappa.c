@@ -3494,10 +3494,12 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     if (seqSrc) {
                         continue;
                     }
+                    if(actual_num_threads > 1) {
 #pragma omp critical(intrpt)
-                    interrupt = TRUE;
+                    	interrupt = TRUE;
 #pragma omp flush(interrupt)
-                    continue;
+                    	continue;
+                    }
                 }
 
                 if (BlastCompo_EarlyTermination(
@@ -3509,10 +3511,12 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     if (seqSrc) {
                         continue;
                     }
+                    if(actual_num_threads > 1) {
 #pragma omp critical(intrpt)
-                    interrupt = TRUE;
+                    	interrupt = TRUE;
 #pragma omp flush(interrupt)
-                    continue;
+                    	continue;
+                    }
                 }
 
                 query_index = localMatch->query_index;
@@ -3730,7 +3734,8 @@ match_loop_cleanup:
                 }
                 s_MatchingSequenceRelease(&matchingSeq);
                 BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
-                if (*pStatusCode != 0 || !seqSrc) {
+                if ((actual_num_threads > 1) &&
+                	(*pStatusCode != 0 || !seqSrc)) {
 #pragma omp critical(intrpt)
                     interrupt = TRUE;
 #pragma omp flush(interrupt)

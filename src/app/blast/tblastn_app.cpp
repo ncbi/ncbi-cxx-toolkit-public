@@ -268,8 +268,9 @@ int CTblastnApp::Run(void)
         if (m_CmdLineArgs->ProduceDebugOutput()) {
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
-
-        LogQueryInfo(m_UsageReport, *input);
+        if (input) {
+        	LogQueryInfo(m_UsageReport, *input);
+        }
         formatter.LogBlastSearchInfo(m_UsageReport);
     } CATCH_ALL(status)
     if(!bah.GetMessages().empty()) {
