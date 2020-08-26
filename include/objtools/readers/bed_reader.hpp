@@ -190,6 +190,11 @@ protected:
         CSeq_annot&,
         ILineErrorListener*);
 
+    bool xParseFeatureAutoSql(
+        const vector<string>&,
+        CSeq_annot&,
+        ILineErrorListener*);
+
     bool xParseFeatureUserFormat(
         const vector<string>&,
         CSeq_annot&,

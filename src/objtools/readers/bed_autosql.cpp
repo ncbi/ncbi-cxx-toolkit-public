@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
@@ -40,7 +42,43 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ============================================================================
-CBedAutoSql::CBedAutoSql()
+bool
+SAutoSqlKnownFields::SetLocation(
+    const vector<string>& fields,
+    int bedFlags,
+    CSeq_feat& feat) const
+//  ============================================================================
+{
+    _ASSERT(Validate());
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[mColChrom], bedFlags, false);
+
+    auto& location = feat.SetLocation().SetInt();
+    location.SetId(*pId);
+    location.SetFrom(NStr::StringToUInt(fields[mColSeqStart]));
+    location.SetTo(NStr::StringToUInt(fields[mColSeqStop])-1);
+    bool onNegativeStrand = (mColStrand != -1  &&  fields[mColStrand][0] == '-');
+    location.SetStrand(onNegativeStrand? eNa_strand_minus : eNa_strand_plus);
+
+    return true;
+}
+
+//  ============================================================================
+bool
+SAutoSqlKnownFields::SetTitle(
+    const vector<string>& fields,
+    int bedFlags,
+    CSeq_feat& feat) const
+//  ============================================================================
+{
+    if (mColChrom == -1) {
+        return true;
+    }
+    feat.SetTitle(fields[mColChrom]);
+    return true;
+}
+//  ============================================================================
+CBedAutoSql::CBedAutoSql(int bedFlags):
+    mBedFlags(bedFlags)
 //  ============================================================================
 {
 }
@@ -62,13 +100,33 @@ CBedAutoSql::Dump(
     for (auto item: mParameters) {
         ostr << "    \"" << item.first << "\" = \"" << item.second << "\"\n";
     }
+    if (mWellKnownFields.ContainsInfo()) {
+        ostr << "  Well known fields:\n";
+        if (mWellKnownFields.mColChrom != -1) {
+            ostr << "    colChrom=\"" << mWellKnownFields.mColChrom << "\"\n";
+        }
+        if (mWellKnownFields.mColSeqStart != -1) {
+            ostr << "    colSeqStart=\"" << mWellKnownFields.mColSeqStart << "\"\n";
+        }
+        if (mWellKnownFields.mColSeqStop != -1) {
+            ostr << "    colSeqStop=\"" << mWellKnownFields.mColSeqStop << "\"\n";
+        }
+        if (mWellKnownFields.mColStrand != -1) {
+            ostr << "    colStrand=\"" << mWellKnownFields.mColStrand << "\"\n";
+        }
+        if (mWellKnownFields.mColName != -1) {
+            ostr << "    colName=\"" << mWellKnownFields.mColName << "\"\n";
+        }
+        if (mWellKnownFields.mColScore != -1) {
+            ostr << "    colScore=\"" << mWellKnownFields.mColScore << "\"\n";
+        }
+    }
     ostr << "  Columns:\n";
-    for (size_t i=0; i < ColumnCount(); ++i) {
-        const auto& colInfo = GetColumnInfo(i);
-            ostr << i << ":  name=\"" << colInfo.mName << "\"   format=\"" <<
-                colInfo.mFormat << "\"  description=\"" << colInfo.mDescription <<
-                "\"\n";
-    
+    for (auto colInfo: mCustomFields) {
+        ostr << "    column=\"" << colInfo.mColIndex << "\"" 
+             << "    name=\"" << colInfo.mName << "\""
+             << "    format=\"" << colInfo.mFormat << "\""
+             << "    description=\"" << colInfo.mDescription << "\"\n";
     }
 }
 
@@ -82,26 +140,80 @@ CBedAutoSql::LoadStandardDefinitions()
 
 //  ============================================================================
 bool
+CBedAutoSql::xParseAutoSqlColumnDef(
+    const string& line,
+    string& format,
+    string& name,
+    string& description)
+//  ============================================================================
+{
+    string tail;
+    NStr::SplitInTwo(line, " \t", format, tail, NStr::fSplit_MergeDelimiters);
+    NStr::SplitInTwo(tail, " \t", name, description, NStr::fSplit_MergeDelimiters);
+    name = NStr::Replace(name, ";", "");
+    description = NStr::Replace(description, "\"", "");
+    return true;
+}
+
+//  ============================================================================
+bool
+CBedAutoSql::xStoreAsLocationInfo(
+    size_t colIndex,
+    const string& colName,
+    const string& colFormat)
+//  ============================================================================
+{
+    if (colName == "chrom"  &&  colFormat == "string") {
+        mWellKnownFields.mColChrom = colIndex;
+        return true;
+    }
+    if (colName == "chromStart"  &&  colFormat == "uint") {
+        mWellKnownFields.mColSeqStart = colIndex;
+        return true;
+    }
+    if (colName == "chromEnd"  &&  colFormat == "uint") {
+        mWellKnownFields.mColSeqStop = colIndex;
+        return true;
+    }
+    if (colName == "strand"  &&  colFormat == "char[1]") {
+        mWellKnownFields.mColStrand = colIndex;
+        return true;
+    }
+    if (colName == "name"  &&  colFormat == "string") {
+        mWellKnownFields.mColName = colIndex;
+        return true;
+    }
+    if (colName == "score"  &&  colFormat == "uint") {
+        mWellKnownFields.mColScore = colIndex;
+        return true;
+    }
+    return false;
+}
+
+//  ============================================================================
+bool
 CBedAutoSql::LoadCustomDefinitions(
     CNcbiIstream& istr)
 //  =============================================================================
 {
     bool readingTable = false;
+    size_t autoSqlColCounter(0);
+
     while (!istr.eof()) {
         string line = xReadLine(istr);
-        cout << "**> " << line << endl;
         if (readingTable) {
             if (line == ")") {
                 readingTable = false;
                 continue;
             }
-            string format, tail;
-            NStr::SplitInTwo(line, " \t", format, tail, NStr::fSplit_MergeDelimiters);
-            string name, description;
-            NStr::SplitInTwo(tail, " \t", name, description, NStr::fSplit_MergeDelimiters);
-            name = NStr::Replace(name, ";", "");
-            description = NStr::Replace(description, "\"", "");
-            mColumnInfo.push_back(SAutoSqlColumnInfo(format, name, description));
+            string format, name, description;
+            xParseAutoSqlColumnDef(line, format, name, description);
+            if (!xStoreAsLocationInfo(autoSqlColCounter, name, format)) {
+                mCustomFields.push_back(
+                    SAutoSqlColumnInfo(
+                        autoSqlColCounter, format, name, description));
+            }
+            ++autoSqlColCounter;
         }
         else {
             if (line == "(") {
@@ -113,11 +225,16 @@ CBedAutoSql::LoadCustomDefinitions(
             }
             string key, value;
             NStr::SplitInTwo(line, ":", key, value, NStr::fSplit_MergeDelimiters);
-            mParameters[NStr::TruncateSpaces(key)] = NStr::TruncateSpaces(value);
+            key = NStr::TruncateSpaces(key);
+            value = NStr::TruncateSpaces(value);
+            if (key == "fieldcount") {
+                mColumnCount = NStr::StringToUInt(value);
+            }
+            mParameters[key] = value;
         }
     }
-    //Dump(cerr);
-    return false;
+    Dump(cerr);
+    return Validate();
 }
 
 //  =============================================================================
@@ -125,16 +242,7 @@ size_t
 CBedAutoSql::ColumnCount() const
 //  =============================================================================
 {
-    return mColumnInfo.size();
-}
-
-//  ==============================================================================
-const SAutoSqlColumnInfo&
-CBedAutoSql::GetColumnInfo(
-     size_t index) const
-//  ===============================================================================
-{
-    return mColumnInfo[index];
+    return mColumnCount;
 }
 
 //  ===============================================================================
@@ -151,5 +259,40 @@ CBedAutoSql::xReadLine(
     return line;
 }
 
+//  ===============================================================================
+void
+CBedAutoSql::mParseString(
+    const string& rawValue,
+    CUser_field& targetField)
+//  ===============================================================================
+{
+}
+
+//  ===============================================================================
+bool
+CBedAutoSql::ReadSeqFeat(
+    const vector<string>& fields,
+    CSeq_feat& feat)
+//  ===============================================================================
+{
+    bool success = 
+        mWellKnownFields.SetLocation(fields, mBedFlags, feat)  &&
+        mWellKnownFields.SetTitle(fields, mBedFlags, feat);
+    if (!success) {
+        return false;
+    }
+    feat.SetData().SetRegion("bed autosql");
+    return true;
+}
+
+//  ===============================================================================
+bool
+CBedAutoSql::Validate() const
+//  ===============================================================================
+{
+    // check internal consistency
+    return true;
+}
+    
 END_SCOPE(objects)
 END_NCBI_SCOPE

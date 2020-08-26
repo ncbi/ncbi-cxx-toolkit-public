@@ -31,21 +31,67 @@
  * Authors: Frank Ludwig
  *
  */
+
 #include <corelib/ncbistd.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/readers/aln_error_reporter.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ============================================================================
+struct SAutoSqlKnownFields
+//  ============================================================================
+{
+    size_t mColChrom;
+    size_t mColSeqStart;
+    size_t mColSeqStop;
+    size_t mColStrand;
+    size_t mColName;
+    size_t mColScore;
+
+    SAutoSqlKnownFields():
+        mColChrom(-1), mColSeqStart(-1), mColSeqStop(-1), mColStrand(-1),
+        mColName(-1), mColScore(-1)
+    {};
+
+    bool ContainsInfo() const 
+    {
+        return (mColChrom + mColSeqStart + mColSeqStop + mColStrand + 
+            mColName + mColScore != -6);
+    }
+
+    bool Validate() const
+    {
+        return (mColChrom != -1  &&  mColSeqStart != -1  &&  mColSeqStop != -1);
+    }
+
+    bool
+    SetLocation(
+        const vector<string>& fields,
+        int bedFlags,
+        CSeq_feat&) const;
+
+    bool
+    SetTitle(
+        const vector<string>& fields,
+        int bedFlags,
+        CSeq_feat&) const;
+};
+
+//  ============================================================================
 struct SAutoSqlColumnInfo
 //  ============================================================================
 {
+    size_t mColIndex;
     string mFormat;
     string mName;
     string mDescription;
 
-    SAutoSqlColumnInfo(string format, string name, string description):
+    SAutoSqlColumnInfo(
+            size_t colIndex, string format, string name, string description):
+        mColIndex(colIndex),
         mFormat(format),
         mName(name),
         mDescription(description)
@@ -57,7 +103,10 @@ class CBedAutoSql
 //  ============================================================================
 {
 public:
-    CBedAutoSql();
+    using ValueParser = void (*)(const string&, CUser_object&);
+
+public:
+    CBedAutoSql(int);
     ~CBedAutoSql();
 
     bool LoadStandardDefinitions();
@@ -65,23 +114,48 @@ public:
     bool LoadCustomDefinitions(
         CNcbiIstream&); 
 
+    bool Validate() const;
+
     size_t
     ColumnCount() const;
 
-    const SAutoSqlColumnInfo&
-    GetColumnInfo(
-        size_t) const;
+    bool
+    ReadSeqFeat(
+        const vector<string>& fields,
+        CSeq_feat& feat);
 
     void
     Dump(
         ostream&);
 
 protected:
+    int mBedFlags;
     map<string, string> mParameters;
-    vector<SAutoSqlColumnInfo> mColumnInfo;
+    SAutoSqlKnownFields mWellKnownFields;
+    vector<SAutoSqlColumnInfo> mCustomFields;
+    size_t mColumnCount;
+    
     string
     xReadLine(
         CNcbiIstream&);
+
+    static void
+    mParseString(
+        const string&,
+        CUser_field&);
+
+    bool
+    xStoreAsLocationInfo(
+        size_t colIndex,
+        const string&,
+        const string&);
+
+    static bool
+    xParseAutoSqlColumnDef(
+        const string&,
+        string&,
+        string&,
+        string&);
 };
 
 END_SCOPE(objects)

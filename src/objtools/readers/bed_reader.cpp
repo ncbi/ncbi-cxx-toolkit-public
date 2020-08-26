@@ -249,7 +249,8 @@ CBedReader::CBedReader(
     m_usescore(false),
     m_CurBatchSize(0),
     m_MaxBatchSize(10000),
-    mLinePreBuffer(nullptr)
+    mLinePreBuffer(nullptr),
+    mAutoSql(flags)
 {
 }
 
@@ -287,6 +288,7 @@ CBedReader::SetAutoSql(
         cerr << e.GetMsg() << endl;
         return false;
     }
+    m_iFlags |= CBedReader::fAutoSql;
     return SetAutoSql(istr);
 }
 
@@ -668,6 +670,9 @@ bool CBedReader::xParseFeature(
     else if (m_iFlags & CBedReader::fDirectedFeatureModel) {
         return xParseFeatureGeneModelFormat(fields, annot, pEC);
     }
+    else if (m_iFlags & CBedReader::fAutoSql) {
+        return xParseFeatureAutoSql(fields, annot, pEC);
+    }
     else {
         return xParseFeatureUserFormat(fields, annot, pEC);
     }
@@ -877,6 +882,24 @@ bool CBedReader::xParseFeatureUserFormat(
     m_currentId = fields[0];
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xParseFeatureAutoSql(
+    const vector<string>& fields,
+    CSeq_annot& annot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pFeat(new CSeq_feat);;
+    if (!mAutoSql.ReadSeqFeat(fields, *pFeat)) {
+        return false;
+    }
+    CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
+    ftable.push_back(pFeat);
+    m_currentId = fields[0];
+    return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureDisplayData(

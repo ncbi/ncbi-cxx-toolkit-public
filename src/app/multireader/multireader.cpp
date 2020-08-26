@@ -949,7 +949,9 @@ void CMultiReaderApp::xProcessBed(
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     if (args["autosql"]) {
-        reader.SetAutoSql(args["autosql"].AsString());
+        if (!reader.SetAutoSql(args["autosql"].AsString())) {
+            return;
+        }
     }
     if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
