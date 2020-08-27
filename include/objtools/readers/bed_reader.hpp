@@ -39,12 +39,12 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/bed_autosql.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CLinePreBuffer;
+class CBedAutoSql;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CRawBedRecord
@@ -386,7 +386,7 @@ protected:
     const unsigned int m_MaxBatchSize;
     unique_ptr<CLinePreBuffer> mLinePreBuffer;
 
-    CBedAutoSql mAutoSql;
+    unique_ptr<CBedAutoSql> mpAutoSql;
 };
 
 END_SCOPE(objects)

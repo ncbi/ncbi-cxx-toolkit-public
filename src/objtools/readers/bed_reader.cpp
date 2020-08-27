@@ -44,6 +44,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/bed_reader.hpp>
+#include "bed_autosql.hpp"
 #include "reader_message_handler.hpp"
 
 #include <algorithm>
@@ -250,7 +251,7 @@ CBedReader::CBedReader(
     m_CurBatchSize(0),
     m_MaxBatchSize(10000),
     mLinePreBuffer(nullptr),
-    mAutoSql(flags)
+    mpAutoSql(new CBedAutoSql(flags))
 {
 }
 
@@ -298,7 +299,7 @@ CBedReader::SetAutoSql(
     CNcbiIstream& istr)
 //  ----------------------------------------------------------------------------
 {
-   return  mAutoSql.LoadCustomDefinitions(istr);
+   return  mpAutoSql->Load(istr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -891,7 +892,7 @@ bool CBedReader::xParseFeatureAutoSql(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pFeat(new CSeq_feat);;
-    if (!mAutoSql.ReadSeqFeat(fields, *pFeat)) {
+    if (!mpAutoSql->ReadSeqFeat(fields, *pFeat)) {
         return false;
     }
     CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
