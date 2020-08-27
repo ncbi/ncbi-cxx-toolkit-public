@@ -3308,14 +3308,6 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
     while ( !m_reader->AtEOF() ) {
 
-        // since reader's UngetLine doesn't actually push back
-        // into the reader's underlying stream, we try to
-        // be careful to detect the most common case of
-        // "there's another feature next"
-        if( m_reader->PeekChar() == '>' ) {
-            break;
-        }
-
         CTempString line = *++(*m_reader);
 
         if( m_reader->GetLineNumber() % 10000 == 0 &&
@@ -3475,6 +3467,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     {
         x_CreateGenesFromCDSs(sap, choiceToFeatMap, flags);
     }
+
 
     return sap;
 }
