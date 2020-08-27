@@ -1003,14 +1003,15 @@ MailToAuthors()
 ProcessDone()
 {
     p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
-    p_done=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
-    if test \${p_done} -gt 0; then
-        for p_file in \`ls \${checkdir}/*.done\`; do
+    p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
+    if test \${p_count} -gt 0; then
+        for p_file in \$p_done; do
             source \$p_file
             if test ! -e "\$t_test_out"; then
                 echo "ABS --  \$t_cmd"
                 echo "ABS --  \$t_cmd" >> \$res_log
                 count_absent=\`expr \$count_absent + 1\`
+                rm -f \$p_file
                 continue
             fi
             echo "\$t_test_out" >> \$res_journal
