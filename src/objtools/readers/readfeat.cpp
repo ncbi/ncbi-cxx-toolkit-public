@@ -3467,12 +3467,12 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     {
         x_CreateGenesFromCDSs(sap, choiceToFeatMap, flags);
     }
-
+/*
     if (sap->GetData().GetFtable().empty()) { 
         // An empty feature table implies bad input
         x_ProcessMsg(ILineError::eProblem_GeneralParsingError, eDiag_Error);
     }
-
+*/
     return sap;
 }
 
