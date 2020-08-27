@@ -37,6 +37,8 @@
 
 #include <misc/eutils_client/eutils_client.hpp>
 
+#include <common/test_assert.h>
+
 
 USING_NCBI_SCOPE;
 
