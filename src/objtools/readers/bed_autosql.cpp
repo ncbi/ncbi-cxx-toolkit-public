@@ -35,7 +35,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objtools/readers/read_util.hpp>
-#include <objtools/readers/reader_error_codes.hpp>
+#include <objtools/readers/reader_message.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_error_codes.hpp>
 #include "bed_autosql.hpp"
@@ -44,195 +44,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
-
-//  ============================================================================
-bool
-CAutoSqlKnownFields::SetLocation(
-    const vector<string>& fields,
-    int bedFlags,
-    CSeq_feat& feat) const
-//  ============================================================================
-{
-    _ASSERT(Validate());
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[mColChrom], bedFlags, false);
-
-    auto& location = feat.SetLocation().SetInt();
-    location.SetId(*pId);
-    location.SetFrom(NStr::StringToUInt(fields[mColSeqStart]));
-    location.SetTo(NStr::StringToUInt(fields[mColSeqStop])-1);
-    bool onNegativeStrand = (mColStrand != -1  &&  fields[mColStrand][0] == '-');
-    location.SetStrand(onNegativeStrand? eNa_strand_minus : eNa_strand_plus);
-
-    return true;
-}
-
-//  ============================================================================
-bool
-CAutoSqlKnownFields::SetTitle(
-    const vector<string>& fields,
-    int bedFlags,
-    CSeq_feat& feat) const
-//  ============================================================================
-{
-    if (mColChrom == -1) {
-        return true;
-    }
-    feat.SetTitle(fields[mColChrom]);
-    return true;
-}
-
-//  ============================================================================
-void
-CAutoSqlCustomFields::Append(
-    const SAutoSqlColumnInfo& columnInfo)
-//  ============================================================================
-{
-    mFields.push_back(columnInfo);
-}
-
-//  ============================================================================
-void
-CAutoSqlCustomFields::Dump(
-    ostream& ostr)
-//  ============================================================================
-{
-    ostr << "  Custom Fields:\n";
-    for (auto colInfo: mFields) {
-        ostr << "    column=\"" << colInfo.mColIndex << "\"" 
-             << "    name=\"" << colInfo.mName << "\""
-             << "    format=\"" << colInfo.mFormat << "\""
-             << "    description=\"" << colInfo.mDescription << "\"\n";
-    }
-}
-
-//  ============================================================================
-bool
-CAutoSqlCustomFields::SetUserObject(
-    const vector<string>& fields,
-    int bedFlags,
-    CSeq_feat& feat) const
-//  ============================================================================
-{
-    CRef<CUser_object> pAutoSqlCustomData(new CUser_object);
-    pAutoSqlCustomData->SetType().SetStr( "AutoSqlCustomData" );
-
-    CRef<CUser_field> pDummy(new CUser_field);
-    for (const auto& fieldInfo: mFields) {
-        if (! fieldInfo.SetUserField(fields, bedFlags, *pAutoSqlCustomData)) {
-            return false;
-        }
-    }
-
-    feat.SetData().SetUser(*pAutoSqlCustomData);
-    return true;
-}
-
-//  ============================================================================
-SAutoSqlColumnInfo::SAutoSqlColumnInfo(
-    size_t colIndex, string format, string name, string description):
-    mColIndex(colIndex),
-    mFormat(format),
-    mName(name),
-    mDescription(description)
-{
-    if (NStr::EndsWith(format, "]")) {
-        auto openBracket = format.find('[');
-        if (openBracket != string::npos) {
-            mFormat = format.substr(0, openBracket + 1) + "]";
-        }
-    }
-}
-
-//  ============================================================================
-bool SAutoSqlColumnInfo::AddInt(
-    const string& key,
-    const string& value,
-    int bedFlags,
-    CUser_object& uo)
-//  ============================================================================
-{
-    uo.AddField(key, NStr::StringToNonNegativeInt(value));
-    return true;
-}
-
-
-//  ============================================================================
-bool SAutoSqlColumnInfo::AddIntArray(
-    const string& key,
-    const string& value,
-    int bedFlags,
-    CUser_object& uo)
-//  ============================================================================
-{
-    vector<string> intStrs;
-    NStr::Split(value, ",", intStrs);
-    vector<int> realInts;
-    std::transform(
-        intStrs.begin(), intStrs.end(), 
-        std::back_inserter(realInts), 
-        [] (const string& str) -> int { return NStr::StringToInt(str);} );
-    uo.AddField(key, realInts);
-    return true;
-}
-
-
-
-//  ============================================================================
-bool SAutoSqlColumnInfo::AddString(
-    const string& key,
-    const string& value,
-    int bedFlags,
-    CUser_object& uo)
-//  ============================================================================
-{
-    uo.AddField(key, value);
-    return true;
-}
-
-
-//  ============================================================================
-bool SAutoSqlColumnInfo::AddUint(
-    const string& key,
-    const string& value,
-    int bedFlags,
-    CUser_object& uo)
-//  ============================================================================
-{
-    uo.AddField(key, NStr::StringToNonNegativeInt(value));
-    return true;
-}
-
-
-SAutoSqlColumnInfo::FormatHandlers  SAutoSqlColumnInfo::mFormatHandlers = {
-    {"int", SAutoSqlColumnInfo::AddInt},
-    {"int[]", SAutoSqlColumnInfo::AddIntArray},
-    {"string", SAutoSqlColumnInfo::AddString},
-    {"uint", SAutoSqlColumnInfo::AddUint},
-    {"uint[]", SAutoSqlColumnInfo::AddIntArray},
-};
-
-//  ============================================================================
-bool
-SAutoSqlColumnInfo::SetUserField(
-    const vector<string>& fields,
-    int bedFlags,
-    CUser_object& uo) const
-//  ============================================================================
-{
-    string valueStr = fields[mColIndex];
-    if (NStr::EndsWith(mFormat, "[]")) {
-        // deal with trailing comma in list
-        NStr::TrimSuffixInPlace(valueStr, ",");
-    }
-
-    auto handlerIt = mFormatHandlers.find(mFormat);
-    if (handlerIt != mFormatHandlers.end()) {
-        return handlerIt->second(mName, valueStr, bedFlags, uo);
-    }
-    cerr << "Unknown format specifier \"" << mFormat << "\".";
-    cerr << "Treating as string.\n";
-    return AddString(mName, valueStr, bedFlags, uo);
-}
 
 //  ============================================================================
 CBedAutoSql::CBedAutoSql(int bedFlags):
@@ -258,27 +69,7 @@ CBedAutoSql::Dump(
     for (auto item: mParameters) {
         ostr << "    \"" << item.first << "\" = \"" << item.second << "\"\n";
     }
-    if (mWellKnownFields.ContainsInfo()) {
-        ostr << "  Well known fields:\n";
-        if (mWellKnownFields.mColChrom != -1) {
-            ostr << "    colChrom=\"" << mWellKnownFields.mColChrom << "\"\n";
-        }
-        if (mWellKnownFields.mColSeqStart != -1) {
-            ostr << "    colSeqStart=\"" << mWellKnownFields.mColSeqStart << "\"\n";
-        }
-        if (mWellKnownFields.mColSeqStop != -1) {
-            ostr << "    colSeqStop=\"" << mWellKnownFields.mColSeqStop << "\"\n";
-        }
-        if (mWellKnownFields.mColStrand != -1) {
-            ostr << "    colStrand=\"" << mWellKnownFields.mColStrand << "\"\n";
-        }
-        if (mWellKnownFields.mColName != -1) {
-            ostr << "    colName=\"" << mWellKnownFields.mColName << "\"\n";
-        }
-        if (mWellKnownFields.mColScore != -1) {
-            ostr << "    colScore=\"" << mWellKnownFields.mColScore << "\"\n";
-        }
-    }
+    mWellKnownFields.Dump(ostr);
     mCustomFields.Dump(ostr);
 }
 
@@ -301,43 +92,9 @@ CBedAutoSql::xParseAutoSqlColumnDef(
 
 //  ============================================================================
 bool
-CBedAutoSql::xStoreAsLocationInfo(
-    size_t colIndex,
-    const string& colName,
-    const string& colFormat)
-//  ============================================================================
-{
-    if (colName == "chrom"  &&  colFormat == "string") {
-        mWellKnownFields.mColChrom = colIndex;
-        return true;
-    }
-    if (colName == "chromStart"  &&  colFormat == "uint") {
-        mWellKnownFields.mColSeqStart = colIndex;
-        return true;
-    }
-    if (colName == "chromEnd"  &&  colFormat == "uint") {
-        mWellKnownFields.mColSeqStop = colIndex;
-        return true;
-    }
-    if (colName == "strand"  &&  colFormat == "char[1]") {
-        mWellKnownFields.mColStrand = colIndex;
-        return true;
-    }
-    if (colName == "name"  &&  colFormat == "string") {
-        mWellKnownFields.mColName = colIndex;
-        return true;
-    }
-    if (colName == "score"  &&  colFormat == "uint") {
-        mWellKnownFields.mColScore = colIndex;
-        return true;
-    }
-    return false;
-}
-
-//  ============================================================================
-bool
 CBedAutoSql::Load(
-    CNcbiIstream& istr)
+    CNcbiIstream& istr,
+    CReaderMessageHandler& messageHandler)
 //  =============================================================================
 {
     bool readingTable = false;
@@ -352,9 +109,9 @@ CBedAutoSql::Load(
             }
             string format, name, description;
             xParseAutoSqlColumnDef(line, format, name, description);
-            if (!xStoreAsLocationInfo(autoSqlColCounter, name, format)) {
+            if (!mWellKnownFields.ProcessTableRow(autoSqlColCounter, name, format)) {
                 mCustomFields.Append(
-                    SAutoSqlColumnInfo(
+                    CAutoSqlCustomField(
                         autoSqlColCounter, format, name, description));
             }
             ++autoSqlColCounter;
@@ -377,8 +134,8 @@ CBedAutoSql::Load(
             mParameters[key] = value;
         }
     }
-    Dump(cerr);
-    return Validate();
+    //Dump(cerr);
+    return Validate(messageHandler);
 }
 
 //  =============================================================================
@@ -407,13 +164,14 @@ CBedAutoSql::xReadLine(
 bool
 CBedAutoSql::ReadSeqFeat(
     const vector<string>& fields,
-    CSeq_feat& feat)
+    CSeq_feat& feat,
+    CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
 {
     bool success = 
-        mWellKnownFields.SetLocation(fields, mBedFlags, feat)  &&
-        mWellKnownFields.SetTitle(fields, mBedFlags, feat)  &&
-        mCustomFields.SetUserObject(fields, mBedFlags, feat);
+        mWellKnownFields.SetLocation(fields, mBedFlags, feat, messageHandler)  &&
+        mWellKnownFields.SetTitle(fields, mBedFlags, feat, messageHandler)  &&
+        mCustomFields.SetUserObject(fields, mBedFlags, feat, messageHandler);
     if (!success) {
         return false;
     }
@@ -422,9 +180,18 @@ CBedAutoSql::ReadSeqFeat(
 
 //  ===============================================================================
 bool
-CBedAutoSql::Validate() const
+CBedAutoSql::Validate(
+    CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
 {
+    return mWellKnownFields.Validate(messageHandler)  &&  
+        mCustomFields.Validate(messageHandler);
+    CReaderMessage testMessage(
+        eDiag_Info,
+        0,
+        "BED AutoSql: Table validated.");
+    messageHandler.Report(testMessage);
+
     // check internal consistency
     return true;
 }

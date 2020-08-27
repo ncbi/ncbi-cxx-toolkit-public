@@ -1,5 +1,5 @@
-#ifndef _BED_SUTOSQL_HPP_
-#define _BED_AUTOSQL_HPP_
+#ifndef _BED_SUTOSQL_STANDARD_HPP_
+#define _BED_AUTOSQL_STANDARD_HPP_
 
 /*
  * $Id$
@@ -33,72 +33,62 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/general/User_field.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include "reader_message_handler.hpp"
-#include "bed_autosql_standard.hpp"
-#include "bed_autosql_custom.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ============================================================================
-class CBedAutoSql
+struct CAutoSqlStandardFields
 //  ============================================================================
 {
 public:
-    using ValueParser = void (*)(const string&, CUser_object&);
+    CAutoSqlStandardFields();
 
-public:
-    CBedAutoSql(int);
-    ~CBedAutoSql();
+    bool
+    SetLocation(
+        const vector<string>& fields,
+        int bedFlags,
+        CSeq_feat&,
+        CReaderMessageHandler&) const;
 
-    bool Load(
-        CNcbiIstream&,
-        CReaderMessageHandler&); 
+    bool
+    SetTitle(
+        const vector<string>& fields,
+        int bedFlags,
+        CSeq_feat&,
+        CReaderMessageHandler&) const;
+
+    void
+    Dump(
+        ostream&) const;
+
+    bool
+    ProcessTableRow(
+        size_t,
+        const string&,
+        const string&);
 
     bool Validate(
         CReaderMessageHandler&) const;
 
-    size_t
-    ColumnCount() const;
+private:
+    size_t mColChrom;
+    size_t mColSeqStart;
+    size_t mColSeqStop;
+    size_t mColStrand;
+    size_t mColName;
+    size_t mColScore;
 
-    bool
-    ReadSeqFeat(
-        const vector<string>& fields,
-        CSeq_feat& feat,
-        CReaderMessageHandler&) const;
-
-
-    void
-    Dump(
-        ostream&);
-
-protected:
-    int mBedFlags;
-    map<string, string> mParameters;
-    CAutoSqlStandardFields mWellKnownFields;
-    CAutoSqlCustomFields mCustomFields;
-    size_t mColumnCount;
-    
-    string
-    xReadLine(
-        CNcbiIstream&);
-
-    static void
-    mParseString(
-        const string&,
-        CUser_field&);
-
-    static bool
-    xParseAutoSqlColumnDef(
-        const string&,
-        string&,
-        string&,
-        string&);
+    bool ContainsInfo() const 
+    {
+        return (mColChrom + mColSeqStart + mColSeqStop + mColStrand + 
+            mColName + mColScore != -6);
+    }
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // _BED_AUTOSQL_HPP_
+#endif // _BED_AUTOSQL_STANDARD_HPP_

@@ -1,5 +1,5 @@
-#ifndef _BED_SUTOSQL_HPP_
-#define _BED_AUTOSQL_HPP_
+#ifndef _BED_SUTOSQL_CUSTOM_HPP_
+#define _BED_AUTOSQL_CUSTOM_HPP_
 
 /*
  * $Id$
@@ -36,69 +36,80 @@
 #include <objects/general/User_field.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include "reader_message_handler.hpp"
-#include "bed_autosql_standard.hpp"
-#include "bed_autosql_custom.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ============================================================================
-class CBedAutoSql
+class CAutoSqlCustomField
 //  ============================================================================
 {
 public:
-    using ValueParser = void (*)(const string&, CUser_object&);
-
-public:
-    CBedAutoSql(int);
-    ~CBedAutoSql();
-
-    bool Load(
-        CNcbiIstream&,
-        CReaderMessageHandler&); 
-
-    bool Validate(
-        CReaderMessageHandler&) const;
-
-    size_t
-    ColumnCount() const;
+    CAutoSqlCustomField(
+            size_t colIndex, string format, string name, string description);
 
     bool
-    ReadSeqFeat(
+    SetUserField(
         const vector<string>& fields,
-        CSeq_feat& feat,
-        CReaderMessageHandler&) const;
-
+        int bedFlags,
+        CUser_object&) const;
 
     void
     Dump(
         ostream&);
 
-protected:
-    int mBedFlags;
-    map<string, string> mParameters;
-    CAutoSqlStandardFields mWellKnownFields;
-    CAutoSqlCustomFields mCustomFields;
-    size_t mColumnCount;
-    
-    string
-    xReadLine(
-        CNcbiIstream&);
+private:
+    size_t mColIndex;
+    string mFormat;
+    string mName;
+    string mDescription;
 
-    static void
-    mParseString(
-        const string&,
-        CUser_field&);
+    using FormatHandler = bool (*)(const string&, const string&, int, CUser_object&);
+    using FormatHandlers =  map<string, FormatHandler>;
+    static FormatHandlers mFormatHandlers;
 
     static bool
-    xParseAutoSqlColumnDef(
-        const string&,
-        string&,
-        string&,
-        string&);
+    AddInt(const string&, const string&, int, CUser_object&);
+
+    static bool
+    AddIntArray(const string&, const string&, int, CUser_object&);
+
+    static bool
+    AddString(const string&, const string&, int, CUser_object&);
+
+    static bool
+    AddUint(const string&, const string&, int, CUser_object&);
 };
+
+//  ============================================================================
+class CAutoSqlCustomFields
+//  ============================================================================
+{
+public:
+    void
+    Append(
+        const CAutoSqlCustomField&);
+
+    void
+    Dump(
+        ostream&);
+
+    bool
+    SetUserObject(
+        const vector<string>& fields,
+        int bedFlags,
+        CSeq_feat&,
+        CReaderMessageHandler&) const;
+
+    bool Validate(
+        CReaderMessageHandler&) const;
+
+private:
+    vector<CAutoSqlCustomField> mFields;
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // _BED_AUTOSQL_HPP_
+#endif // _BED_AUTOSQL_CUSTOM_HPP_

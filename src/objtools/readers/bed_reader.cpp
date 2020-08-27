@@ -299,7 +299,7 @@ CBedReader::SetAutoSql(
     CNcbiIstream& istr)
 //  ----------------------------------------------------------------------------
 {
-   return  mpAutoSql->Load(istr);
+   return  mpAutoSql->Load(istr, *m_pMessageHandler);
 }
 
 //  ----------------------------------------------------------------------------
@@ -892,7 +892,7 @@ bool CBedReader::xParseFeatureAutoSql(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pFeat(new CSeq_feat);;
-    if (!mpAutoSql->ReadSeqFeat(fields, *pFeat)) {
+    if (!mpAutoSql->ReadSeqFeat(fields, *pFeat, *m_pMessageHandler)) {
         return false;
     }
     CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();

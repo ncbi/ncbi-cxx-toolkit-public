@@ -21,7 +21,7 @@ SRC = reader_message reader_listener reader_message_handler \
       gvf_reader \
       vcf_reader \
       psl_reader psl_data \
-	  bed_reader bed_autosql \
+	  bed_reader bed_autosql bed_autosql_standard bed_autosql_custom \
       best_feat_finder source_mod_parser fasta_exception agp_converter \
       ucscregion_reader struct_cmt_reader \
       mod_reader mod_error descr_mod_apply feature_mod_apply mod_to_enum \

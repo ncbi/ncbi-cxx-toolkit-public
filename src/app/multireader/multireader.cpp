@@ -110,6 +110,7 @@ class TestCanceler: public ICanceled
 //  ============================================================================
 class CMultiReaderMessageListener:
     public CReaderListener
+//  ============================================================================
 {
 public:
     bool PutMessage(
@@ -947,7 +948,7 @@ void CMultiReaderApp::xProcessBed(
 //  ----------------------------------------------------------------------------
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
-    CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle, &newStyleMessageListener);
     if (args["autosql"]) {
         if (!reader.SetAutoSql(args["autosql"].AsString())) {
             return;
