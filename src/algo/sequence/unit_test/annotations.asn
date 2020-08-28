@@ -1793,6 +1793,7 @@ Seq-annot ::= {
         locus "dnm2b",
         desc "dynamin 2b",
         syn {
+          "dnm",
           "dnm2",
           "dnm2l",
           "zgc:77233"
@@ -6296,6 +6297,10 @@ Seq-annot ::= {
         {
           db "GeneID",
           tag id 404089
+        },
+        {
+          db "VGNC",
+          tag str "VGNC:27410"
         }
       }
     },
@@ -6375,6 +6380,10 @@ Seq-annot ::= {
         {
           db "GeneID",
           tag id 403826
+        },
+        {
+          db "VGNC",
+          tag str "VGNC:39471"
         }
       }
     },
@@ -7132,10 +7141,6 @@ Seq-annot ::= {
       },
       dbxref {
         {
-          db "GeneID",
-          tag id 406947
-        },
-        {
           db "miRBase",
           tag str "MIMAT0000646"
         }
@@ -7159,10 +7164,6 @@ Seq-annot ::= {
         }
       },
       dbxref {
-        {
-          db "GeneID",
-          tag id 406947
-        },
         {
           db "miRBase",
           tag str "MIMAT0004658"
@@ -7272,7 +7273,7 @@ Seq-annot ::= {
 Seq-annot ::= {
   data ftable {
     {
-      id local id 73063,
+      id local id 75431,
       data gene {
         locus "snoRNA:CG32479-a",
         syn {
@@ -7295,11 +7296,15 @@ Seq-annot ::= {
         {
           qual "cyt_map",
           val "61D4-61D4"
+        },
+        {
+          qual "gen_map",
+          val "3-0.5 cM"
         }
       },
       xref {
         {
-          id local id 73064
+          id local id 75432
         }
       },
       dbxref {
@@ -7344,7 +7349,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 73063
+          id local id 75431
         }
       },
       dbxref {
@@ -7363,7 +7368,7 @@ Seq-annot ::= {
 Seq-annot ::= {
   data ftable {
     {
-      id local id 48499,
+      id local id 24349,
       data gene {
         locus "mir-2279",
         desc "mir-2279 stem loop",
@@ -7385,15 +7390,21 @@ Seq-annot ::= {
           version 1
         }
       },
+      qual {
+        {
+          qual "gen_map",
+          val "2-55 cM"
+        }
+      },
       xref {
         {
-          id local id 48500
+          id local id 24350
         },
         {
-          id local id 48501
+          id local id 24351
         },
         {
-          id local id 48502
+          id local id 24352
         }
       },
       dbxref {
@@ -7438,13 +7449,13 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 48499
+          id local id 24349
         },
         {
-          id local id 48501
+          id local id 24351
         },
         {
-          id local id 48502
+          id local id 24352
         }
       },
       dbxref {
@@ -7484,10 +7495,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 48499
+          id local id 24349
         },
         {
-          id local id 48500
+          id local id 24350
         }
       },
       dbxref {
@@ -7531,10 +7542,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 48499
+          id local id 24349
         },
         {
-          id local id 48500
+          id local id 24350
         }
       },
       dbxref {
@@ -10287,7 +10298,7 @@ Seq-annot ::= {
       data rna {
         type mRNA,
         ext name "olfactory receptor family 4 subfamily C member 45
- (gene/pseudogene)"
+ (gene/pseudogene), transcript variant 1"
       },
       except TRUE,
       comment "The RefSeq transcript has 1 substitution compared to this
@@ -10509,7 +10520,7 @@ Seq-annot ::= {
         {
           data prot {
             name {
-              "hypothetical protein"
+              "DIP1984 family protein"
             }
           }
         }
