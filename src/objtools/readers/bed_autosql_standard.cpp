@@ -47,9 +47,8 @@ BEGIN_SCOPE(objects);
 CAutoSqlStandardFields::CAutoSqlStandardFields():
 //  ============================================================================
     mColChrom(-1), mColSeqStart(-1), mColSeqStop(-1), mColStrand(-1),
-    mColName(-1), mColScore(-1)
+    mColName(-1), mColScore(-1), mNumFields(0)
 {};
-
 
 //  ============================================================================
 bool
@@ -59,6 +58,7 @@ CAutoSqlStandardFields::ProcessTableRow(
     const string& colFormat)
 //  ============================================================================
 {
+    ++mNumFields;
     if (colName == "chrom"  &&  colFormat == "string") {
         mColChrom = colIndex;
         return true;
@@ -83,6 +83,7 @@ CAutoSqlStandardFields::ProcessTableRow(
         mColScore = colIndex;
         return true;
     }
+    --mNumFields;
     return false;
 }
 
@@ -129,7 +130,16 @@ CAutoSqlStandardFields::Validate(
     CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
-    return (mColChrom != -1  &&  mColSeqStart != -1  &&  mColSeqStop != -1);
+    //at issue: do we have enough information to make a Seq-loc
+    if (mColChrom == -1  ||  mColSeqStart == -1  ||  mColSeqStop == -1) {
+        CReaderMessage fatal(
+            EDiagSev::eDiag_Fatal, 
+            0, 
+            "AutoSql: Table does not contain enough information to set a feature location.");
+        messageHandler.Report(fatal);
+        return false;
+    }
+    return true;
 }
 
 //  ============================================================================

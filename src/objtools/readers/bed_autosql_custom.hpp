@@ -58,15 +58,19 @@ public:
     Dump(
         ostream&);
 
-private:
-    size_t mColIndex;
-    string mFormat;
-    string mName;
-    string mDescription;
+    bool Validate(
+        CReaderMessageHandler&) const;
 
+private:
     using FormatHandler = bool (*)(const string&, const string&, int, CUser_object&);
     using FormatHandlers =  map<string, FormatHandler>;
     static FormatHandlers mFormatHandlers;
+
+    size_t mColIndex;
+    string mFormat;
+    FormatHandler mHandler;
+    string mName;
+    string mDescription;
 
     static bool
     AddInt(const string&, const string&, int, CUser_object&);
@@ -103,6 +107,8 @@ public:
 
     bool Validate(
         CReaderMessageHandler&) const;
+
+    bool NumFields() const { return mFields.size(); };
 
 private:
     vector<CAutoSqlCustomField> mFields;

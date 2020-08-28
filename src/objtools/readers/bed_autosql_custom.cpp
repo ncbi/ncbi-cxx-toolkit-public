@@ -55,7 +55,6 @@ CAutoSqlCustomField::FormatHandlers  CAutoSqlCustomField::mFormatHandlers = {
     {"uint[]", CAutoSqlCustomField::AddIntArray},
 };
 
-
 //  ============================================================================
 void
 CAutoSqlCustomField::Dump(
@@ -67,7 +66,6 @@ CAutoSqlCustomField::Dump(
             << "    format=\"" << mFormat << "\""
             << "    description=\"" << mDescription << "\"\n";
 }
-
 
 //  ============================================================================
 CAutoSqlCustomField::CAutoSqlCustomField(
@@ -84,6 +82,13 @@ CAutoSqlCustomField::CAutoSqlCustomField(
             mFormat = format.substr(0, openBracket + 1) + "]";
         }
     }
+    auto handlerIt = mFormatHandlers.find(mFormat);
+    if (handlerIt != mFormatHandlers.end()) {
+        mHandler = handlerIt->second;
+    }
+    else {
+        mHandler = CAutoSqlCustomField::AddString;
+    } 
 }
 
 //  ============================================================================
@@ -97,7 +102,6 @@ bool CAutoSqlCustomField::AddInt(
     uo.AddField(key, NStr::StringToNonNegativeInt(value));
     return true;
 }
-
 
 //  ============================================================================
 bool CAutoSqlCustomField::AddIntArray(
@@ -118,8 +122,6 @@ bool CAutoSqlCustomField::AddIntArray(
     return true;
 }
 
-
-
 //  ============================================================================
 bool CAutoSqlCustomField::AddString(
     const string& key,
@@ -132,7 +134,6 @@ bool CAutoSqlCustomField::AddString(
     return true;
 }
 
-
 //  ============================================================================
 bool CAutoSqlCustomField::AddUint(
     const string& key,
@@ -144,7 +145,6 @@ bool CAutoSqlCustomField::AddUint(
     uo.AddField(key, NStr::StringToNonNegativeInt(value));
     return true;
 }
-
 
 //  ============================================================================
 bool
@@ -159,14 +159,25 @@ CAutoSqlCustomField::SetUserField(
         // deal with trailing comma in list
         NStr::TrimSuffixInPlace(valueStr, ",");
     }
+    return mHandler(mName, valueStr, bedFlags, uo);
+}
 
-    auto handlerIt = mFormatHandlers.find(mFormat);
-    if (handlerIt != mFormatHandlers.end()) {
-        return handlerIt->second(mName, valueStr, bedFlags, uo);
+//  ============================================================================
+bool
+CAutoSqlCustomField::Validate(
+    CReaderMessageHandler& messageHandler) const
+//  ============================================================================
+{
+    if (mFormatHandlers.find(mFormat) == mFormatHandlers.end()) {
+        CReaderMessage warning(
+            EDiagSev::eDiag_Warning,
+            static_cast<int>(mColIndex),
+            string("AutoSql: Format \"") + mFormat +
+                "\" for \"" + mName +
+                "\" not recognized, processing as string");
+        messageHandler.Report(warning);
     }
-    cerr << "Unknown format specifier \"" << mFormat << "\".";
-    cerr << "Treating as string.\n";
-    return AddString(mName, valueStr, bedFlags, uo);
+    return true;
 }
 
 //  ============================================================================
@@ -216,9 +227,14 @@ CAutoSqlCustomFields::SetUserObject(
 //  ============================================================================
 bool
 CAutoSqlCustomFields::Validate(
-    CReaderMessageHandler&) const
+    CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
+    for (const auto& field: mFields) {
+        if (!field.Validate(messageHandler)) {
+            return false;
+        }
+    }
     return true;
 }
 

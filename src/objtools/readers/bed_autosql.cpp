@@ -184,16 +184,18 @@ CBedAutoSql::Validate(
     CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
 {
-    return mWellKnownFields.Validate(messageHandler)  &&  
-        mCustomFields.Validate(messageHandler);
-    CReaderMessage testMessage(
-        eDiag_Info,
-        0,
-        "BED AutoSql: Table validated.");
-    messageHandler.Report(testMessage);
-
-    // check internal consistency
-    return true;
+    if ( mWellKnownFields.Validate(messageHandler)  &&  
+            mCustomFields.Validate(messageHandler)) {
+        return false;
+    }
+    if (ColumnCount() != mWellKnownFields.NumFields() + mCustomFields.NumFields()) {
+        CReaderMessage fatal(
+            EDiagSev::eDiag_Fatal,
+            0,
+            "AutoSql: The declared column count differs from the actual column count");
+        messageHandler.Report(fatal);
+    }
+    return false;
 }
     
 END_SCOPE(objects)

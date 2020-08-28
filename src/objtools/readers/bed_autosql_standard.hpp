@@ -73,6 +73,9 @@ public:
     bool Validate(
         CReaderMessageHandler&) const;
 
+    size_t
+    NumFields() const { return mNumFields; };
+
 private:
     size_t mColChrom;
     size_t mColSeqStart;
@@ -80,6 +83,7 @@ private:
     size_t mColStrand;
     size_t mColName;
     size_t mColScore;
+    size_t mNumFields;
 
     bool ContainsInfo() const 
     {
