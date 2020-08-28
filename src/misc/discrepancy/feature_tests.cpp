@@ -377,10 +377,17 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
         extend_len = 0;
         return eExtensibe_abut;
     }
-    if (rval == eExtensibe_fixable && strand != eNa_strand_minus) {
+    if (rval == eExtensibe_fixable) {
         svec.GetSeqData(left - extend_len, left - extend_len + 3, codon);
-        if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
-            rval = eExtensibe_none;
+        if (strand == eNa_strand_minus) {
+            if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
+                rval = eExtensibe_none;
+            }
+        }
+        else {
+            if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
+                rval = eExtensibe_none;
+            }
         }
     }
     return rval;
@@ -438,10 +445,17 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
         extend_len = 0;
         return eExtensibe_abut;
     }
-    if (rval == eExtensibe_fixable && strand == eNa_strand_minus) {
+    if (rval == eExtensibe_fixable) {
         svec.GetSeqData(right + extend_len - 3, right + extend_len, codon);
-        if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
-            rval = eExtensibe_none;
+        if (strand == eNa_strand_minus) {
+            if (codon == "CTA" || codon == "TTA" || codon == "TCA") { // reverse TAG / TAA / TGA
+                rval = eExtensibe_none;
+            }
+        }
+        else {
+            if (codon == "TAG" || codon == "TAA" || codon == "TGA") {
+                rval = eExtensibe_none;
+            }
         }
     }
     return rval;
