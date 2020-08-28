@@ -566,11 +566,6 @@ RunTest()
         # Authors are not defined for this test
         test -z "\$x_authors"  &&  return 0
     fi
-
-    touch "\${x_done}.in_progress"
-    if test -f "\${x_done}.done"; then 
-        rm -f "\${x_done}.done"
-    fi
     test -d \${x_work_dir} || mkdir -p \${x_work_dir}
 
     for x_req in \$x_requires; do
@@ -593,11 +588,32 @@ RunTest()
            echo "t_cmd=\\"[\$r_id/\$x_TestsTotal \$x_work_dir_tail] \$x_name (unmet CHECK_REQUIRES=\$x_req)\\"" > \$x_info
            echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
            mv \$x_info "\${x_done}.done"
-           rm "\${x_done}.in_progress"
+#           rm "\${x_done}.in_progress"
            rm -rf "\${x_work_dir}"
            return 0
       fi
     done
+
+    if test -n "\$x_resources"; then
+        for r in \$x_resources ; do
+            while ! mkdir "\$checkdir/~\$r.lock" 2>/dev/null
+            do
+	            sleep 1
+            done
+            if test \$r = "SERIAL"; then
+                r_count=\`ls \${checkdir}/*.in_progress 2>/dev/null | wc -w | sed -e 's/ //g'\`
+                while test \$r_count -gt 0; do
+                    sleep 1
+                    r_count=\`ls \${checkdir}/*.in_progress 2>/dev/null | wc -w | sed -e 's/ //g'\`
+                done
+            fi
+        done
+    fi
+
+    touch "\${x_done}.in_progress"
+    if test -f "\${x_done}.done"; then 
+        rm -f "\${x_done}.done"
+    fi
 
     if test -n "\$x_files"; then
         for i in \$x_files ; do
@@ -609,15 +625,6 @@ RunTest()
                 echo "[\$x_work_dir_tail] \$x_name: Warning:  The copied object \"\$x_copy\" should be a file or directory!"
                 continue
             fi
-        done
-    fi
-
-    if test -n "\$x_resources"; then
-        for r in \$x_resources ; do
-            while ! mkdir "\$checkdir/~\$r.lock" 2>/dev/null
-            do
-	            sleep 1
-            done
         done
     fi
 
@@ -1073,6 +1080,10 @@ AddJob()
     else
         a_maxjob=0
     fi
+    while test -e "\$checkdir/~SERIAL.lock"; do
+        ProcessDone
+        sleep 1
+    done
 
     a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
     a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
