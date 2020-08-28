@@ -1011,7 +1011,7 @@ ProcessDone()
 {
     p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
     p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
-    if test \${p_count} -gt 0; then
+    while test "\${p_count}" -gt 0; do
         for p_file in \$p_done; do
             source \$p_file
             if test ! -e "\$t_test_out"; then
@@ -1056,8 +1056,9 @@ ProcessDone()
             fi
             rm -f \$p_file
         done
-        return 1
-    fi
+        p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
+        p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
+    done
     return 0
 }
 
@@ -1069,7 +1070,7 @@ AddJob()
     ProcessDone
 
     if test "\${a_pid}" -gt 0; then
-        echo "Start \$a_id: \${a_name}"
+        echo "Start \$a_id: \${a_name} (\$a_pid)"
         if test -n "\$CTEST_PARALLEL_LEVEL"; then
             a_maxjob=\$CTEST_PARALLEL_LEVEL
         elif test -n "\$NUMBER_OF_PROCESSORS"; then
@@ -1087,22 +1088,22 @@ AddJob()
 
     a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
     a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
-    if test \$a_run -lt \$a_maxjob; then
+    if test "\$a_run" -lt "\$a_maxjob"; then
         return
     fi
 
     sleep 1
-    while test \$a_run -ge \$a_maxjob; do
+    while test "\$a_run" -ge "\$a_maxjob"; do
         if ProcessDone; then
             sleep 1
         fi
         a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
         a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
-        if test \${a_run} -le 0; then
+        if test "\${a_run}" -le 0; then
             break
         fi
     done
-    if test \${a_maxjob} -le 0; then
+    if test "\${a_maxjob}" -le 0; then
         ProcessDone
     fi
 }
