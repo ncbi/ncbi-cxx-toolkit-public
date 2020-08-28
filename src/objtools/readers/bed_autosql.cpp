@@ -128,7 +128,7 @@ CBedAutoSql::Load(
             NStr::SplitInTwo(line, ":", key, value, NStr::fSplit_MergeDelimiters);
             key = NStr::TruncateSpaces(key);
             value = NStr::TruncateSpaces(value);
-            if (key == "fieldcount") {
+            if (key == "fieldCount") {
                 mColumnCount = NStr::StringToUInt(value);
             }
             mParameters[key] = value;
@@ -168,6 +168,10 @@ CBedAutoSql::ReadSeqFeat(
     CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
 {
+    //rules:
+    // true: useful data was generated, even if incomplete
+    // false: any data will be flawed, don't use
+    // exception: something so bad we can't deal with it on this level.
     bool success = 
         mWellKnownFields.SetLocation(fields, mBedFlags, feat, messageHandler)  &&
         mWellKnownFields.SetTitle(fields, mBedFlags, feat, messageHandler)  &&
@@ -184,8 +188,8 @@ CBedAutoSql::Validate(
     CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
 {
-    if ( mWellKnownFields.Validate(messageHandler)  &&  
-            mCustomFields.Validate(messageHandler)) {
+    if ( !mWellKnownFields.Validate(messageHandler)  ||  
+            !mCustomFields.Validate(messageHandler)) {
         return false;
     }
     if (ColumnCount() != mWellKnownFields.NumFields() + mCustomFields.NumFields()) {
@@ -194,8 +198,9 @@ CBedAutoSql::Validate(
             0,
             "AutoSql: The declared column count differs from the actual column count");
         messageHandler.Report(fatal);
+        return false;
     }
-    return false;
+    return true;
 }
     
 END_SCOPE(objects)

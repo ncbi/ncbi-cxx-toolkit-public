@@ -108,7 +108,7 @@ public:
     bool Validate(
         CReaderMessageHandler&) const;
 
-    bool NumFields() const { return mFields.size(); };
+    size_t NumFields() const { return mFields.size(); };
 
 private:
     vector<CAutoSqlCustomField> mFields;
