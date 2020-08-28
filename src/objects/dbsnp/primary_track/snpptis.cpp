@@ -35,6 +35,7 @@
 #ifdef HAVE_LIBGRPC
 # include <objects/dbsnp/primary_track/impl/snpptis_impl.hpp>
 # include <corelib/ncbi_param.hpp>
+# include <corelib/ncbi_system.hpp>
 #endif
 
 BEGIN_NCBI_NAMESPACE;
@@ -51,6 +52,30 @@ CSnpPtisClient::~CSnpPtisClient()
 }
 
 
+#ifdef HAVE_LIBGRPC
+const char* const kSection = "ID2SNP";
+const char* const kParam_PTISName = "PTIS_NAME";
+const char* const kParam_Retry = "RETRY";
+const char* const kParam_Timeout    = "TIMEOUT";
+const char* const kParam_TimeoutMul = "TIMEOUT_MULTIPLIER";
+const char* const kParam_TimeoutInc = "TIMEOUT_INCREMENT";
+const char* const kParam_TimeoutMax = "TIMEOUT_MAX";
+const char* const kParam_WaitTime    = "WAIT_TIME";
+const char* const kParam_WaitTimeMul = "WAIT_TIME_MULTIPLIER";
+const char* const kParam_WaitTimeInc = "WAIT_TIME_INCREMENT";
+const char* const kParam_WaitTimeMax = "WAIT_TIME_MAX";
+const int kDefault_Retry = 5;
+const float kDefault_Timeout    = 1;
+const float kDefault_TimeoutMul = 1.5;
+const float kDefault_TimeoutInc = 0;
+const float kDefault_TimeoutMax = 10;
+const float kDefault_WaitTime    = 0.5;
+const float kDefault_WaitTimeMul = 1.2;
+const float kDefault_WaitTimeInc = 0.2;
+const float kDefault_WaitTimeMax = 5;
+#endif
+
+
 bool CSnpPtisClient::IsEnabled()
 {
 #ifdef HAVE_LIBGRPC
@@ -59,7 +84,7 @@ bool CSnpPtisClient::IsEnabled()
     }
     // check if there's valid address
     CParamBase::EParamSource source;
-    auto addr = g_NCBI_GRPC_GetAddress("ID2SNP", "PTIS_NAME", nullptr, &source);
+    auto addr = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName, nullptr, &source);
 #ifndef NCBI_OS_LINUX
     if ( source == CParamBase::eSource_Default ) {
         // default grpc link to linkerd daemon works on Linux only
@@ -109,9 +134,20 @@ string CSnpPtisClient::GetPrimarySnpTrackForId(const CSeq_id& id)
 #ifdef HAVE_LIBGRPC
 CSnpPtisClient_Impl::CSnpPtisClient_Impl()
 {
-    channel = grpc::CreateChannel(g_NCBI_GRPC_GetAddress("ID2SNP", "PTIS_NAME"),
-                                  grpc::InsecureChannelCredentials());
-
+    grpc::ChannelArguments args;
+    string address = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName);
+    //LOG_POST(Trace<<"CSnpPtisClient: connecting to "<<address);
+    channel = grpc::CreateCustomChannel(address, grpc::InsecureChannelCredentials(), args);
+    max_retries = g_GetConfigInt(kSection, kParam_Retry, nullptr, kDefault_Retry);
+    timeout     = g_GetConfigDouble(kSection, kParam_Timeout   , nullptr, kDefault_Timeout   );
+    timeout_mul = g_GetConfigDouble(kSection, kParam_TimeoutMul, nullptr, kDefault_TimeoutMul);
+    timeout_inc = g_GetConfigDouble(kSection, kParam_TimeoutInc, nullptr, kDefault_TimeoutInc);
+    timeout_max = g_GetConfigDouble(kSection, kParam_TimeoutMax, nullptr, kDefault_TimeoutMax);
+    wait_time     = g_GetConfigDouble(kSection, kParam_WaitTime   , nullptr, kDefault_WaitTime   );
+    wait_time_mul = g_GetConfigDouble(kSection, kParam_WaitTimeMul, nullptr, kDefault_WaitTimeMul);
+    wait_time_inc = g_GetConfigDouble(kSection, kParam_WaitTimeInc, nullptr, kDefault_WaitTimeInc);
+    wait_time_max = g_GetConfigDouble(kSection, kParam_WaitTimeMax, nullptr, kDefault_WaitTimeMax);
+    
     stub = ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
 }
 
@@ -138,22 +174,36 @@ string CSnpPtisClient_Impl::GetPrimarySnpTrackForAccVer(const string& acc_ver)
 
 string CSnpPtisClient_Impl::x_GetPrimarySnpTrack(const TRequest& request)
 {
-    CGRPCClientContext context;
+    int cur_retry = 0;
+    float cur_timeout = timeout;
+    float cur_wait_time = wait_time;
+    for ( ;; ) {
+        CGRPCClientContext context;
+        std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::microseconds(Int8(cur_timeout*1e6));
+        context.set_deadline(deadline);
     
-    ncbi::grpcapi::dbsnp::primary_track::PrimaryTrackReply reply;
-
-    auto status = stub->ForSeqId(&context, request, &reply);
-    
-    if ( !status.ok() ) {
+        ncbi::grpcapi::dbsnp::primary_track::PrimaryTrackReply reply;
+        
+        auto status = stub->ForSeqId(&context, request, &reply);
+        
+        if ( status.ok() ) {
+            return reply.na_track_acc_with_filter();
+        }
+        
         if ( status.error_code() == grpc::StatusCode::NOT_FOUND ) {
             return string();
         }
-        NCBI_THROW(CException, eUnknown, status.error_message());
+        if ( ++cur_retry >= max_retries ) {
+            NCBI_THROW(CException, eUnknown, status.error_message());
+        }
+        LOG_POST(Trace<<
+                 "CSnpPtisClient: failed : "<<status.error_message()<<". "
+                 "Waiting "<<cur_wait_time<<" seconds before retry...");
+        SleepMicroSec(Int8(cur_wait_time*1e6));
+        cur_timeout = min(cur_timeout*timeout_mul + timeout_inc, timeout_max);
+        cur_wait_time = min(cur_wait_time*wait_time_mul + wait_time_inc, wait_time_max);
     }
-
-    // cout << reply.na_track_acc_with_filter() << "\t" << reply.tms_track_id() << endl;
-
-    return reply.na_track_acc_with_filter();
 }
 #endif
 

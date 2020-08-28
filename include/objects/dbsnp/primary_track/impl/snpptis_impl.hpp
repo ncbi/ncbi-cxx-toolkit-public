@@ -58,7 +58,16 @@ private:
     typedef ncbi::grpcapi::dbsnp::primary_track::SeqIdRequestStringAccverUnion TRequest;
 
     string x_GetPrimarySnpTrack(const TRequest& request);
-    
+
+    int max_retries;
+    float timeout;
+    float timeout_mul;
+    float timeout_inc;
+    float timeout_max;
+    float wait_time;
+    float wait_time_mul;
+    float wait_time_inc;
+    float wait_time_max;
     shared_ptr<grpc::Channel> channel;
     unique_ptr<ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::Stub> stub;
 };
