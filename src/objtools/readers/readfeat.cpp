@@ -3351,17 +3351,6 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
             }
 
         } else if (x_ParseFeatureTableLine (line, loc_info, feat, qual, qual_value, offset)) {
-      //  } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-       //                                     &ispoint, &isminus, feat, qual, qual_value, offset)) {
-/*
-            SFeatLocInfo loc_info;
-            loc_info.start_pos = start;
-            loc_info.stop_pos = stop;
-            loc_info.is_5p_partial = partial5;
-            loc_info.is_3p_partial = partial3;
-            loc_info.is_point = ispoint;
-            loc_info.is_minus_strand = isminus;
-            */
             // process line in feature table
 
             replace( qual_value.begin(), qual_value.end(), '\"', '\'' );
@@ -3392,9 +3381,6 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                     
                     // and add first interval
                     x_AddIntervalToFeature (curr_feat_name, sfp, loc_info);
-
-                  //  x_AddIntervalToFeature (curr_feat_name, sfp,
-                   //     start, stop, partial5, partial3, ispoint, isminus);
 
                     ignore_until_next_feature_key = false;
 
@@ -3467,12 +3453,12 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     {
         x_CreateGenesFromCDSs(sap, choiceToFeatMap, flags);
     }
-/*
-    if (sap->GetData().GetFtable().empty()) { 
+    if (!in_seqid.empty() && 
+        !ignore_until_next_feature_key && 
+        sap->GetData().GetFtable().empty()) { 
         // An empty feature table implies bad input
         x_ProcessMsg(ILineError::eProblem_GeneralParsingError, eDiag_Error);
     }
-*/
     return sap;
 }
 
