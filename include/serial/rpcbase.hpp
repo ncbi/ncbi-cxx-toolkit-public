@@ -62,12 +62,21 @@ class CRPCClient : public    CObject,
                    protected CConnIniter
 {
 public:
-    CRPCClient(const string&     service     = kEmptyStr,
-               ESerialDataFormat format      = eSerial_AsnBinary,
-               unsigned int      retry_limit = 3)
-        : CRPCClient_Base(service, format, retry_limit),
+    CRPCClient(const string& service = kEmptyStr)
+        : CRPCClient_Base(service, eSerial_AsnBinary),
           m_Timeout(kDefaultTimeout)
         {}
+    CRPCClient(const string&     service,
+        ESerialDataFormat        format)
+        : CRPCClient_Base(service, format),
+        m_Timeout(kDefaultTimeout)
+    {}
+    CRPCClient(const string& service,
+        ESerialDataFormat    format,
+        unsigned int         retry_limit)
+        : CRPCClient_Base(service, format, retry_limit),
+        m_Timeout(kDefaultTimeout)
+    {}
     virtual ~CRPCClient(void)
     {
         if ( !sx_IsSpecial(m_Timeout) ) {

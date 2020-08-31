@@ -37,10 +37,79 @@
 BEGIN_NCBI_SCOPE
 
 
+static string s_GetConfigString(const string& service,
+                                const string& variable)
+{
+    if (service.empty() || variable.empty()) return kEmptyStr;
+
+    string env_var = service + "__RPC_CLIENT__" + variable;
+    NStr::ToUpper(env_var);
+    const TXChar* str = NcbiSys_getenv(_T_XCSTRING(env_var.c_str()));
+
+    if (str && *str) {
+        return _T_CSTRING(str);
+    }
+
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+    if (app  &&  app->HasLoadedConfig()) {
+        return app->GetConfig().Get(service + ".rpc_client", variable);
+    }
+    return kEmptyStr;
+}
+
+
+/*
+[<service_name>.rpc_client]
+max_retries = 1
+retry_delay = 0.2
+*/
+
+static unsigned int s_GetRetryLimit(const string& service)
+{
+    string str = s_GetConfigString(service, "max_retries");
+    if (!str.empty()) {
+        try {
+            unsigned int ret = NStr::StringToNumeric<unsigned int>(str);
+            return ret;
+        }
+        catch (...) {}
+    }
+    return 3;
+}
+
+
+static CTimeSpan s_GetRetryDelay(const string& service)
+{
+    CTimeSpan ret;
+    string str = s_GetConfigString(service, "retry_delay");
+    if (!str.empty()) {
+        try {
+            double sec = NStr::StringToNumeric<double>(str);
+            return CTimeSpan(sec);
+        }
+        catch (...) {}
+    }
+    return ret;
+}
+
+
 CRPCClient_Base::CRPCClient_Base(const string&     service,
-                                 ESerialDataFormat format,
-                                 unsigned int      retry_limit)
+                                 ESerialDataFormat format)
     : m_Format(format),
+      m_RetryDelay(s_GetRetryDelay(service)),
+      m_RetryCount(0),
+      m_RecursionCount(0),
+      m_Service(service),
+      m_RetryLimit(s_GetRetryLimit(service))
+{
+}
+
+
+CRPCClient_Base::CRPCClient_Base(const string&     service,
+    ESerialDataFormat format,
+    unsigned int      retry_limit)
+    : m_Format(format),
+      m_RetryDelay(s_GetRetryDelay(service)),
       m_RetryCount(0),
       m_RecursionCount(0),
       m_Service(service),

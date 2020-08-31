@@ -55,8 +55,10 @@ class NCBI_XSERIAL_EXPORT CRPCClient_Base
 {
 public:
     CRPCClient_Base(const string&     service,
-                    ESerialDataFormat format,
-                    unsigned int      retry_limit);
+                    ESerialDataFormat format);
+    CRPCClient_Base(const string&     service,
+        ESerialDataFormat format,
+        unsigned int      retry_limit);
     virtual ~CRPCClient_Base(void);
 
     void Connect(void);
@@ -75,9 +77,18 @@ public:
     ESerialDataFormat GetFormat(void) const            { return m_Format; }
                  void SetFormat(ESerialDataFormat fmt) { m_Format = fmt; }
 
+    /// Get number of retries. If not set explicitly through SetRetryLimit or constructor argument,
+    /// the following values are used:
+    /// - <upcase_service_name>__RPC_CLIENT__MAX_RETRIES environment varialbe
+    /// - [service_name.rpc_client] section, max_retries value in the INI file
+    /// - 3 (global default)
     unsigned int GetRetryLimit(void) const     { return m_RetryLimit; }
             void SetRetryLimit(unsigned int n) { m_RetryLimit = n; }
 
+    /// Get retry delay. If not set explicitly through SetRetryDelay, the following values are used:
+    /// - <upcase_service_name>__RPC_CLIENT__RETRY_DELAY environment varialbe
+    /// - [service_name.rpc_client] section, retry_delay value in the INI file
+    /// - 0 (global default)
     const CTimeSpan GetRetryDelay(void) const          { return m_RetryDelay; }
     void            SetRetryDelay(const CTimeSpan& ts) { m_RetryDelay = ts; }
 
