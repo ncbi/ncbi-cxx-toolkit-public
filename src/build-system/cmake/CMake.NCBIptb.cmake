@@ -557,7 +557,6 @@ macro(NCBI_define_test_resource _name _amount)
         message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}: Test resource ${_name} already defined")
     endif()
     set(NCBITEST_RESOURCE_${_name}_AMOUNT ${_amount})
-    set_property(GLOBAL PROPERTY NCBITEST_RESOURCE_${_name}_COUNT 0)
 endmacro()
 
 ##############################################################################
