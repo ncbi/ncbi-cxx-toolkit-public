@@ -182,6 +182,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "dbProbe", CDbtag::eDbtagType_dbProbe },
     { "dbSNP", CDbtag::eDbtagType_dbSNP },
     { "dbSTS", CDbtag::eDbtagType_dbSTS },
+    { "dbVar", CDbtag::eDbtagType_dbVar },
     { "dictyBase", CDbtag::eDbtagType_dictyBase },
     { "miRBase", CDbtag::eDbtagType_miRBase },
     { "niaEST", CDbtag::eDbtagType_niaEST }, 
@@ -722,6 +723,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016  
     { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
+    { CDbtag::eDbtagType_dbVar, "https://www.ncbi.nlm.nih.gov/dbvar/variants/" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
