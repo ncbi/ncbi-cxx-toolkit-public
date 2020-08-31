@@ -72,7 +72,9 @@ static unsigned int s_GetRetryLimit(const string& service)
             unsigned int ret = NStr::StringToNumeric<unsigned int>(str);
             return ret;
         }
-        catch (...) {}
+        catch (...) {
+            ERR_POST(Warning << "Bad " << service << "/max_retries value: " << str);
+        }
     }
     return 3;
 }
@@ -87,7 +89,9 @@ static CTimeSpan s_GetRetryDelay(const string& service)
             double sec = NStr::StringToNumeric<double>(str);
             return CTimeSpan(sec);
         }
-        catch (...) {}
+        catch (...) {
+            ERR_POST(Warning << "Bad " << service << "/retry_delay value: " << str);
+        }
     }
     return ret;
 }
