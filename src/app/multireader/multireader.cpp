@@ -1141,18 +1141,19 @@ void CMultiReaderApp::xProcess5ColFeatTable(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
+    if (!istr) {
+        return;
+    }
     CFeature_table_reader reader;
     CRef<ILineReader> pLineReader = ILineReader::New(istr);
-    while(istr) {
+    while(!pLineReader->AtEOF()) {
         CRef<CSeq_annot> pSeqAnnot =
             reader.ReadSeqAnnot(*pLineReader, m_pErrors.get());
-        if( ! pSeqAnnot || ! pSeqAnnot->IsFtable() || 
-            pSeqAnnot->GetData().GetFtable().empty() ) 
-        {
-            // empty annot
-            break;
+        if( pSeqAnnot && 
+            pSeqAnnot->IsFtable() &&
+            !pSeqAnnot->GetData().GetFtable().empty()) {
+            xWriteObject(args, *pSeqAnnot, ostr);
         }
-        xWriteObject(args, *pSeqAnnot, ostr);
     }
 }
 
