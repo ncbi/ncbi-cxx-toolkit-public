@@ -12,6 +12,8 @@
 1.1.4.n	With a disulfide as acceptor
 1.1.5.-	With a quinone or similar compound as acceptor
 1.1.5.n	With a quinone or similar compound as acceptor
+1.1.7.-	With an iron-sulfur protein as acceptor
+1.1.7.n	With an iron-sulfur protein as acceptor
 1.1.9.-	With a copper protein as acceptor
 1.1.9.n	With a copper protein as acceptor
 1.1.98.-	With other, known, acceptors
@@ -730,6 +732,8 @@
 6.2.n.n	Forming carbon-sulfur bonds
 6.2.1.-	Acid--thiol ligases
 6.2.1.n	Acid--thiol ligases
+6.2.2.-	Amide--thiol ligases
+6.2.2.n	Amide--thiol ligases
 6.3.-.-	Forming carbon-nitrogen bonds
 6.3.n.n	Forming carbon-nitrogen bonds
 6.3.1.-	Acid--ammonia (or amine) ligases (amide synthases)
