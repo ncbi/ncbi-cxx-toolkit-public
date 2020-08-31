@@ -2145,3 +2145,26 @@ BOOST_AUTO_TEST_CASE(TestSimpleTableFilter)
                       feat.GetNamedQual("product"));
 }
 
+
+static const char* sc_Table22 = "\
+>Feature MN517919\n\
+>3137\t2563\tgene\n\
+\t\tgene\trrn23\n\
+\t\tstandard_name\trrn23 gene\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestRW1172) 
+{
+    TErrList expected_errors {
+        ILineError::eProblem_BadFeatureInterval,
+        ILineError::eProblem_FeatureBadStartAndOrStop,
+        ILineError::eProblem_FeatureBadStartAndOrStop,
+        ILineError::eProblem_QualifierWithoutFeature,
+        ILineError::eProblem_QualifierWithoutFeature
+    };
+
+    auto pSeqAnnot = s_ReadOneTableFromString(
+            sc_Table22, expected_errors);
+
+    const auto& ftable = pSeqAnnot->GetData().GetFtable();
+}
