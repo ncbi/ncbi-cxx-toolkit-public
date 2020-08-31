@@ -1011,6 +1011,10 @@ ProcessDone()
 {
     p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
     p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
+    if test "\${p_count}" -ne "\${p_count}"; then
+      echo "error:  p_done = \$p_done, p_count = \$p_count"
+      p_count=0
+    fi
     while test "\${p_count}" -gt 0; do
         for p_file in \$p_done; do
             source \$p_file
@@ -1058,6 +1062,10 @@ ProcessDone()
         done
         p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
         p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
+        if test "\${p_count}" -ne "\${p_count}"; then
+          echo "error:  p_done = \$p_done, p_count = \$p_count"
+          p_count=0
+        fi
     done
     return 0
 }
@@ -1088,6 +1096,11 @@ AddJob()
 
     a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
     a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
+    if test "\${a_run}" -ne "\${a_run}"; then
+        echo "error:  a_run = \$a_run"
+        ProcessDone
+        a_run=0
+    fi
     if test "\$a_run" -lt "\$a_maxjob"; then
         return
     fi
@@ -1099,6 +1112,9 @@ AddJob()
         fi
         a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
         a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
+        if test "\${a_run}" -ne "\${a_run}"; then
+            break
+        fi
         if test "\${a_run}" -le 0; then
             break
         fi
