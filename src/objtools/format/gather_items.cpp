@@ -751,7 +751,7 @@ void CFlatGatherer::x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs
     if (! bsx) return;
 
     // gather references from descriptors
-    bsx->IterateDescriptors([this, &scope, &refs, &idx, bsx](CDescriptorIndex& sdx) {
+    bsx->IterateDescriptors([this, &refs, &idx, bsx](CDescriptorIndex& sdx) {
         try {
             CSeqdesc::E_Choice chs = sdx.GetType();
             if (chs == CSeqdesc::e_Pub) {
@@ -1247,8 +1247,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
     string genome_build_number =
         CGenomeAnnotComment::GetGenomeBuildNumber(ctx.GetHandle());
     bool has_ref_track_status = s_HasRefTrackStatus(ctx.GetHandle());
-    CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
-        CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
+    // CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ? CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
 
     ITERATE( CBioseq::TId, id_iter, ctx.GetBioseqIds() ) {
         const CSeq_id& id = **id_iter;
@@ -2038,7 +2037,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
 {
     CBioseqContext& ctx = *m_Current;
-    CScope* scope = &ctx.GetScope();
+    // CScope* scope = &ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
 
     x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
@@ -3007,7 +3006,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
  SAnnotSelector& sel,
  CBioseqContext& ctx) const
 {
-    CScope& scope = ctx.GetScope();
+    // CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
 
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
@@ -3046,7 +3045,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
         s_SetGapIdxData (gap_data, gaps);
     }
 
-    bsx->IterateFeatures([this, &ctx, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
+    bsx->IterateFeatures([this, &ctx, &prev_feat, &loc_len, &item, &out, &slice_mapper,
                           gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
@@ -3492,10 +3491,10 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     CRef<CSeq_loc_Mapper> slice_mapper = s_MakeSliceMapper(loc, ctx);
 
     // Gaps of length zero are only shown for SwissProt Genpept records
-    const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
+    // const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
 
     // cache to avoid repeated calculations
-    const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
+    // const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
 
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
@@ -3519,8 +3518,8 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
     CSeq_loc slp;
     slp.Assign(loc);
-    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &loc_len, &item, &out, &slice_mapper,
-                          gaps, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &item, &out, &slice_mapper,
+                          gaps, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
