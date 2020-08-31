@@ -16,6 +16,7 @@
 
 
 set(NCBI_REQUIRE_MSWin_FOUND YES)
+list(APPEND NCBI_ALL_REQUIRES MSWin)
 #to debug
 #set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################

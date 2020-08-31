@@ -15,8 +15,10 @@
 ##  HAVE_XXX
 
 set(NCBI_REQUIRE_unix_FOUND YES)
+list(APPEND NCBI_ALL_REQUIRES unix)
 if(NOT APPLE)
     set(NCBI_REQUIRE_Linux_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES Linux)
 endif()
 option(USE_LOCAL_BZLIB "Use a local copy of libbz2")
 option(USE_LOCAL_PCRE "Use a local copy of libpcre")
