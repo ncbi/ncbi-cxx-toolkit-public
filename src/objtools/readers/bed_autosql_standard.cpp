@@ -100,11 +100,53 @@ CAutoSqlStandardFields::SetLocation(
 
     auto& location = feat.SetLocation().SetInt();
     location.SetId(*pId);
-    location.SetFrom(NStr::StringToUInt(fields[mColSeqStart]));
-    location.SetTo(NStr::StringToUInt(fields[mColSeqStop])-1);
-    bool onNegativeStrand = (mColStrand != -1  &&  fields[mColStrand][0] == '-');
-    location.SetStrand(onNegativeStrand? eNa_strand_minus : eNa_strand_plus);
+    try {
+        location.SetFrom(NStr::StringToUInt(fields[mColSeqStart]));
+    }
+    catch (CStringException&) {
+        CReaderMessage error(
+            eDiag_Error,
+            0,
+            "BED: Invalid data for column \"chromStart\". Feature omitted");
+        messageHandler.Report(error);
+        return false;
+    }
 
+    try {
+        location.SetTo(NStr::StringToUInt(fields[mColSeqStop])-1);
+    }
+    catch (CStringException&) {
+        CReaderMessage error(
+            eDiag_Error,
+            0,
+            "BED: Invalid data for column \"chromEnd\". Feature omitted");
+        messageHandler.Report(error);
+        return false;
+    }
+
+    if (mColStrand == -1) {
+        return true;
+    }
+    
+    CReaderMessage warning(
+        eDiag_Warning,
+        0,
+        "BED: Invalid data for column \"strand\". Defaulting to \"+\"");
+
+    location.SetStrand(eNa_strand_plus);
+    auto strandStr = fields[mColStrand];
+    if (strandStr.size() != 1) {
+        messageHandler.Report(warning);
+    }
+    else {
+        auto strandChar = strandStr[0];
+        if (string("+-.").find(strandChar) == string::npos) {
+            messageHandler.Report(warning);
+        }
+        else if (strandChar == '-') {
+           location.SetStrand(eNa_strand_minus);
+        }
+    }
     return true;
 }
 

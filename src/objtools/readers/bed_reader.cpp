@@ -432,6 +432,11 @@ bool CBedReader::xDetermineLikelyColumnCount(
     ILineErrorListener* pEc)
 //  ----------------------------------------------------------------------------
 {
+    if (this->m_iFlags & fAutoSql) {
+        mValidColumnCount = mRealColumnCount = mpAutoSql->ColumnCount();;
+        return true;
+    }
+
     using LineIt = CLinePreBuffer::LinePreIt;
     int bufferLineNumber = 0;
     CReaderMessage fatalColumns(

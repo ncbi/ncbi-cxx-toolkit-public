@@ -52,7 +52,8 @@ public:
     SetUserField(
         const vector<string>& fields,
         int bedFlags,
-        CUser_object&) const;
+        CUser_object&,
+        CReaderMessageHandler&) const;
 
     void
     Dump(
@@ -62,7 +63,8 @@ public:
         CReaderMessageHandler&) const;
 
 private:
-    using FormatHandler = bool (*)(const string&, const string&, int, CUser_object&);
+    using FormatHandler = 
+        bool (*)(const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
     using FormatHandlers =  map<string, FormatHandler>;
     static FormatHandlers mFormatHandlers;
 
@@ -73,16 +75,21 @@ private:
     string mDescription;
 
     static bool
-    AddInt(const string&, const string&, int, CUser_object&);
-
+    AddInt(
+        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
     static bool
-    AddIntArray(const string&, const string&, int, CUser_object&);
-
+    AddIntArray(
+        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
     static bool
-    AddString(const string&, const string&, int, CUser_object&);
-
+    AddString(
+        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
     static bool
-    AddUint(const string&, const string&, int, CUser_object&);
+    AddUint(
+        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+    static bool
+    AddUintArray(
+        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+
 };
 
 //  ============================================================================

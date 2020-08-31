@@ -96,10 +96,23 @@ bool CAutoSqlCustomField::AddInt(
     const string& key,
     const string& value,
     int bedFlags,
-    CUser_object& uo)
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
-    uo.AddField(key, NStr::StringToNonNegativeInt(value));
+    int intVal = 0;
+    try {
+        intVal = NStr::StringToInt(value);
+    }
+    catch (CStringException&) {
+        CReaderMessage warning(
+            eDiag_Warning,
+            0,
+            string("BED: Unable to convert \"") + key + "\" value \"" + value + 
+                "\" to int. Defaulting to 0");
+        messageHandler.Report(warning);
+    }
+    uo.AddField(key, intVal);
     return true;
 }
 
@@ -108,16 +121,28 @@ bool CAutoSqlCustomField::AddIntArray(
     const string& key,
     const string& value,
     int bedFlags,
-    CUser_object& uo)
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
     vector<string> intStrs;
     NStr::Split(value, ",", intStrs);
     vector<int> realInts;
-    std::transform(
-        intStrs.begin(), intStrs.end(), 
-        std::back_inserter(realInts), 
-        [] (const string& str) -> int { return NStr::StringToInt(str);} );
+    try {
+        std::transform(
+            intStrs.begin(), intStrs.end(), 
+            std::back_inserter(realInts), 
+            [] (const string& str) -> int { return NStr::StringToInt(str);} );
+    }
+    catch(CStringException&) {
+        CReaderMessage warning(
+            eDiag_Warning,
+            0,
+            string("BED: Unable to convert \"") + key + "\" value \"" + value + 
+                "\" to int list. Defaulting to empty list");
+        messageHandler.Report(warning);
+        realInts.clear();
+    }
     uo.AddField(key, realInts);
     return true;
 }
@@ -127,7 +152,8 @@ bool CAutoSqlCustomField::AddString(
     const string& key,
     const string& value,
     int bedFlags,
-    CUser_object& uo)
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
     uo.AddField(key, value);
@@ -139,11 +165,23 @@ bool CAutoSqlCustomField::AddUint(
     const string& key,
     const string& value,
     int bedFlags,
-    CUser_object& uo)
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
-    uo.AddField(key, NStr::StringToNonNegativeInt(value));
-    return true;
+    return AddInt(key, value, bedFlags, uo, messageHandler);
+}
+
+//  ============================================================================
+bool CAutoSqlCustomField::AddUintArray(
+    const string& key,
+    const string& value,
+    int bedFlags,
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler)
+//  ============================================================================
+{
+    return AddIntArray(key, value, bedFlags, uo, messageHandler);
 }
 
 //  ============================================================================
@@ -151,7 +189,8 @@ bool
 CAutoSqlCustomField::SetUserField(
     const vector<string>& fields,
     int bedFlags,
-    CUser_object& uo) const
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
     string valueStr = fields[mColIndex];
@@ -159,7 +198,12 @@ CAutoSqlCustomField::SetUserField(
         // deal with trailing comma in list
         NStr::TrimSuffixInPlace(valueStr, ",");
     }
-    return mHandler(mName, valueStr, bedFlags, uo);
+
+    //note:
+    // we need some extra policy decisions on error handling in custom field.
+    // until then: avoid throwing at all costs,
+    // return false like never.
+    return mHandler(mName, valueStr, bedFlags, uo, messageHandler);
 }
 
 //  ============================================================================
@@ -207,7 +251,7 @@ CAutoSqlCustomFields::SetUserObject(
     const vector<string>& fields,
     int bedFlags,
     CSeq_feat& feat,
-    CReaderMessageHandler&) const
+    CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
     CRef<CUser_object> pAutoSqlCustomData(new CUser_object);
@@ -215,7 +259,8 @@ CAutoSqlCustomFields::SetUserObject(
 
     CRef<CUser_field> pDummy(new CUser_field);
     for (const auto& fieldInfo: mFields) {
-        if (! fieldInfo.SetUserField(fields, bedFlags, *pAutoSqlCustomData)) {
+        if (! fieldInfo.SetUserField(
+                fields, bedFlags, *pAutoSqlCustomData, messageHandler)) {
             return false;
         }
     }
