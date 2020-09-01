@@ -7652,11 +7652,16 @@ fi
 
 ## FreeType and FTGL
 if test "$with_freetype" != "no" ; then
-   : ${FREETYPE_BINPATH=$FREETYPE_PATH/bin}
-   AC_PATH_PROG(freetype_config, freetype-config, [],
-                [$FREETYPE_BINPATH:$PATH])
+   ft2pc="env PKG_CONFIG_PATH=$FREETYPE_PATH/lib/pkgconfig pkg-config freetype2"
+   if $ft2pc --exists >/dev/null 2>&1; then
+      freetype_config=$ft2pc
+      FREETYPE_PATH=`$ft2pc --variable=exec_prefix`
+   else
+      : ${FREETYPE_BINPATH=$FREETYPE_PATH/bin}
+      AC_PATH_PROG(freetype_config, freetype-config, [],
+                   [$FREETYPE_BINPATH:$PATH])
+   fi
    if test -n "$freetype_config" ; then
-      : ${FREETYPE_BINPATH=`dirname $freetype_config`}
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
       NCBI_RPATHIFY_OUTPUT_COND(FREETYPE_LIBS, $freetype_config --libs,
          [$no_usr_lib])
