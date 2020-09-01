@@ -205,12 +205,16 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
         }
         string strHeader = uo.GetType().GetStr();
         if ( NStr::EqualNocase(strHeader, "GenomeProjectsDB")) {
-            genome_projects_user_obje = &uo;
-			x_SetObject(*desc);
-		} else if( NStr::EqualNocase( strHeader, "DBLink" ) ) {
-            dblink_user_obj = &uo;
-			x_SetObject(*desc);
-		}
+            if (! genome_projects_user_obje) {
+                genome_projects_user_obje = &uo;
+                x_SetObject(*desc);
+            }
+        } else if( NStr::EqualNocase( strHeader, "DBLink" ) ) {
+            if (! dblink_user_obj) {
+                dblink_user_obj = &uo;
+                x_SetObject(*desc);
+            }
+        }
     }
 
     // process GenomeProjectsDB
