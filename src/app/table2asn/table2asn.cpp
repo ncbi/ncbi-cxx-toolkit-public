@@ -92,6 +92,12 @@ using namespace objects;
 
 #define USE_SCOPE
 
+namespace {
+    class CMissingInputException : exception 
+    {
+    };
+};
+
 class CTable2AsnLogger: public CMessageListenerLenient
 {
 public:
@@ -839,6 +845,10 @@ int CTbl2AsnApp::Run(void)
         }
         m_validator->ReportDiscrepancies();
     }
+    catch (const CMissingInputException&) 
+    {
+        // Error message has already been logged
+    }
     catch (const CBadResiduesException& e)
     {
         int line = 0;
@@ -1065,6 +1075,14 @@ void CTbl2AsnApp::ProcessOneEntry(
 	}
 }
 
+
+static void s_ReportMissingFile(const string& filename, IObjtoolsListener& listener)
+{
+    listener.PutMessage(
+        CObjtoolsMessage("Missing input file. '" + filename + "' does not exist.", eDiag_Fatal));
+    throw CMissingInputException();
+}
+
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 {
     if (m_context.m_split_log_files)
@@ -1073,11 +1091,9 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
     CFile file(m_context.m_current_file);
     if (!file.Exists())
     {
-        m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                "File " + m_context.m_current_file + " does not exists")));
-            return;
-        }
+        s_ReportMissingFile(m_context.m_current_file, *m_logger);
+        throw CMissingInputException();
+    }
 
     CFile log_name;
     if (!IsDryRun() && m_context.m_split_log_files)
@@ -1293,7 +1309,10 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     string name = dir + base;
     
     const auto& namedSrcFile = m_context.m_single_source_qual_file;
-    if (!NStr::IsBlank(namedSrcFile) && CFile(namedSrcFile).Exists()) {
+    if (!NStr::IsBlank(namedSrcFile)) {
+        if (!CFile(namedSrcFile).Exists()) {
+            s_ReportMissingFile(namedSrcFile, *m_logger);
+        }
         if (!m_context.mp_named_src_map) {
             m_context.mp_named_src_map.reset(new CMemorySrcFileMap(m_logger));
         }
