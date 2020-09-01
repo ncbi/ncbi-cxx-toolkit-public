@@ -992,6 +992,9 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
     Boolean jumper = (ext_options->ePrelimGapExt == eJumperWithTraceback);
     Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
 
+    if(phi_lookup) {
+    	offset_array_size = PHI_MAX_HIT;
+    }
     ASSERT(seq_src);
 
     *aux_struct_ptr = aux_struct = (BlastCoreAuxStruct*)
