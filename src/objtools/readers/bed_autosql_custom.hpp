@@ -75,6 +75,9 @@ private:
     string mDescription;
 
     static bool
+    AddDouble(
+        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+    static bool
     AddInt(
         const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
     static bool

@@ -48,6 +48,7 @@ BEGIN_SCOPE(objects);
 //  ============================================================================
 CAutoSqlCustomField::FormatHandlers  CAutoSqlCustomField::mFormatHandlers = {
 //  ============================================================================
+    {"double", CAutoSqlCustomField::AddDouble},
     {"int", CAutoSqlCustomField::AddInt},
     {"int[]", CAutoSqlCustomField::AddIntArray},
     {"lstring", CAutoSqlCustomField::AddString},
@@ -91,6 +92,32 @@ CAutoSqlCustomField::CAutoSqlCustomField(
         mHandler = CAutoSqlCustomField::AddString;
     } 
 }
+
+//  ============================================================================
+bool CAutoSqlCustomField::AddDouble(
+    const string& key,
+    const string& value,
+    int bedFlags,
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler)
+//  ============================================================================
+{
+    double floatVal = 0;
+    try {
+        floatVal = NStr::StringToDouble(value);
+    }
+    catch (CStringException&) {
+        CReaderMessage warning(
+            eDiag_Warning,
+            0,
+            string("BED: Unable to convert \"") + key + "\" value \"" + value + 
+                "\" to float. Defaulting to 0.0");
+        messageHandler.Report(warning);
+    }
+    uo.AddField(key, floatVal);
+    return true;
+}
+
 
 //  ============================================================================
 bool CAutoSqlCustomField::AddInt(
