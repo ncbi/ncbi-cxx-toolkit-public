@@ -58,22 +58,16 @@ static string s_GetConfigString(const string& service,
 }
 
 
-/*
-[<service_name>.rpc_client]
-max_retries = 1
-retry_delay = 0.2
-*/
-
-static unsigned int s_GetRetryLimit(const string& service)
+static unsigned int s_GetTryLimit(const string& service)
 {
-    string str = s_GetConfigString(service, "max_retries");
+    string str = s_GetConfigString(service, "max_try");
     if (!str.empty()) {
         try {
             unsigned int ret = NStr::StringToNumeric<unsigned int>(str);
-            return ret;
+            return ret > 0 ? ret : 3;
         }
         catch (...) {
-            ERR_POST(Warning << "Bad " << service << "/max_retries value: " << str);
+            ERR_POST(Warning << "Bad " << service << "/max_try value: " << str);
         }
     }
     return 3;
@@ -101,23 +95,23 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
                                  ESerialDataFormat format)
     : m_Format(format),
       m_RetryDelay(s_GetRetryDelay(service)),
-      m_RetryCount(0),
+      m_TryCount(0),
       m_RecursionCount(0),
       m_Service(service),
-      m_RetryLimit(s_GetRetryLimit(service))
+      m_TryLimit(s_GetTryLimit(service))
 {
 }
 
 
 CRPCClient_Base::CRPCClient_Base(const string&     service,
     ESerialDataFormat format,
-    unsigned int      retry_limit)
+    unsigned int      try_limit)
     : m_Format(format),
       m_RetryDelay(s_GetRetryDelay(service)),
-      m_RetryCount(0),
+      m_TryCount(0),
       m_RecursionCount(0),
       m_Service(service),
-      m_RetryLimit(retry_limit)
+      m_TryLimit(try_limit > 0 ? try_limit : 3)
 {
 }
 
@@ -224,7 +218,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 {
     CMutexGuard LOCK(m_Mutex);
     if (m_RecursionCount == 0) {
-        m_RetryCount = 0;
+        m_TryCount = 0;
     }
     // Recursion counter needs to be decremented on both success and failure.
     CCounterGuard recursion_guard(&m_RecursionCount);
@@ -235,7 +229,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 
     // Reset headers from previous requests if any.
     m_RetryCtx.Reset();
-    double max_span = m_RetryDelay.GetAsDouble()*m_RetryLimit;
+    double max_span = m_RetryDelay.GetAsDouble()*m_TryLimit;
     double span = max_span;
     bool limit_by_time = !m_RetryDelay.IsEmpty();
     // Retry context can be either the default one (m_RetryCtx), or provided
@@ -304,12 +298,12 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 
         // If using time limit, allow to make more than m_RetryLimit attempts
         // if the server has set shorter delay.
-        if ((!limit_by_time  &&  ++m_RetryCount >= m_RetryLimit)  ||
-            !x_ShouldRetry(m_RetryCount)) {
+        if ((!limit_by_time  &&  ++m_TryCount >= m_TryLimit)  ||
+            !x_ShouldRetry(m_TryCount)) {
             NCBI_THROW(CRPCClientException, eFailed,
                        "Failed to receive reply after "
-                       + NStr::NumericToString(m_RetryCount)
-                       + (m_RetryCount == 1 ? " try " : " tries ")
+                       + NStr::NumericToString(m_TryCount)
+                       + (m_TryCount == 1 ? " try " : " tries ")
                        + request_name );
         }
         if ( m_RetryCtx.IsSetStop() ) {
@@ -343,7 +337,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
     m_RetryCtx.Reset();
     // If there were any retries, force disconnect to prevent using old
     // retry url, args etc. with the next request.
-    if ( m_RetryCount > 0  &&  m_RecursionCount <= 1 ) {
+    if ( m_TryCount > 0  &&  m_RecursionCount <= 1 ) {
         Disconnect();
     }
 }

@@ -58,7 +58,7 @@ public:
                     ESerialDataFormat format);
     CRPCClient_Base(const string&     service,
         ESerialDataFormat format,
-        unsigned int      retry_limit);
+        unsigned int      try_limit);
     virtual ~CRPCClient_Base(void);
 
     void Connect(void);
@@ -77,13 +77,19 @@ public:
     ESerialDataFormat GetFormat(void) const            { return m_Format; }
                  void SetFormat(ESerialDataFormat fmt) { m_Format = fmt; }
 
-    /// Get number of retries. If not set explicitly through SetRetryLimit or constructor argument,
-    /// the following values are used:
-    /// - <upcase_service_name>__RPC_CLIENT__MAX_RETRIES environment varialbe
-    /// - [service_name.rpc_client] section, max_retries value in the INI file
+    /// Get number of request attempts. If not set explicitly through SetTryLimit
+    /// or constructor argument, the following values are used:
+    /// - <upcase_service_name>__RPC_CLIENT__MAX_TRY environment varialbe
+    /// - [service_name.rpc_client] section, max_try value in the INI file
     /// - 3 (global default)
-    unsigned int GetRetryLimit(void) const     { return m_RetryLimit; }
-            void SetRetryLimit(unsigned int n) { m_RetryLimit = n; }
+    unsigned int GetTryLimit(void) const     { return m_TryLimit; }
+            void SetTryLimit(unsigned int n) { m_TryLimit = n > 0 ? n : 3; }
+    /// @deprecated Use GetTryLimit()
+    NCBI_DEPRECATED
+    unsigned int GetRetryLimit(void) const { return GetTryLimit(); }
+    /// @deprecated Use SetTryLimit()
+    NCBI_DEPRECATED
+    void SetRetryLimit(unsigned int n) { SetTryLimit(n); }
 
     /// Get retry delay. If not set explicitly through SetRetryDelay, the following values are used:
     /// - <upcase_service_name>__RPC_CLIENT__RETRY_DELAY environment varialbe
@@ -122,7 +128,7 @@ private:
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     CTimeSpan                m_RetryDelay;
-    unsigned int             m_RetryCount;
+    unsigned int             m_TryCount;
     int                      m_RecursionCount;
 
 protected:
@@ -132,7 +138,7 @@ protected:
     unique_ptr<CObjectIStream> m_In;
     unique_ptr<CObjectOStream> m_Out;
     string                   m_Affinity;
-    unsigned int             m_RetryLimit;
+    unsigned int             m_TryLimit;
     CHttpRetryContext        m_RetryCtx;
     CConstIRef<ICanceled>    m_Canceler;
 
@@ -140,7 +146,7 @@ protected:
     // true.  May reset the connection (or do anything else, really),
     // but note that Ask() will always automatically reconnect if the
     // stream is explicitly bad.  (Ask() also takes care of enforcing
-    // m_RetryLimit.)
+    // m_TryLimit.)
     virtual bool x_ShouldRetry(unsigned int tries);
 
     // Calculate effective retry delay. Returns value from CRetryContext

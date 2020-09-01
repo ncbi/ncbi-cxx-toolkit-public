@@ -73,8 +73,8 @@ public:
     {}
     CRPCClient(const string& service,
         ESerialDataFormat    format,
-        unsigned int         retry_limit)
-        : CRPCClient_Base(service, format, retry_limit),
+        unsigned int         try_limit)
+        : CRPCClient_Base(service, format, try_limit),
         m_Timeout(kDefaultTimeout)
     {}
     virtual ~CRPCClient(void)
