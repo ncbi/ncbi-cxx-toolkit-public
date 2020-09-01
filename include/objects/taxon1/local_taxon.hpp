@@ -71,6 +71,8 @@ public:
     { return GetAncestorByRank(taxid, "species"); }
     TTaxid GetGenus(TTaxid taxid)
     { return GetAncestorByRank(taxid, "genus"); }
+    TTaxid GetOrder(TTaxid taxid)
+    { return GetAncestorByRank(taxid, "order"); }
 
     TLineage GetLineage(TTaxid taxid);
     TTaxid Join(TTaxid taxid1, TTaxid taxid2);
