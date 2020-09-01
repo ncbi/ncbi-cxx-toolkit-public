@@ -1079,7 +1079,9 @@ AddJob()
 
     if test "\${a_pid}" -gt 0; then
         echo "Start \$a_id: \${a_name} (\$a_pid)"
-        if test -n "\$CTEST_PARALLEL_LEVEL"; then
+        if test -n "\$NTEST_PARALLEL_LEVEL"; then
+            a_maxjob=\$NTEST_PARALLEL_LEVEL
+        elif test -n "\$CTEST_PARALLEL_LEVEL"; then
             a_maxjob=\$CTEST_PARALLEL_LEVEL
         elif test -n "\$NUMBER_OF_PROCESSORS"; then
             a_maxjob=\$NUMBER_OF_PROCESSORS
