@@ -47,7 +47,8 @@ BEGIN_SCOPE(objects);
 
 //  ============================================================================
 CBedAutoSql::CBedAutoSql(int bedFlags):
-    mBedFlags(bedFlags)
+    mBedFlags(bedFlags),
+    mColumnCount(0)
 //  ============================================================================
 {
 }
@@ -134,6 +135,9 @@ CBedAutoSql::Load(
             mParameters[key] = value;
         }
     }
+    if (mColumnCount == 0) {
+        mColumnCount = mWellKnownFields.NumFields() + mCustomFields.NumFields();
+    }
     //Dump(cerr);
     return Validate(messageHandler);
 }
@@ -192,9 +196,9 @@ CBedAutoSql::Validate(
             !mCustomFields.Validate(messageHandler)) {
         return false;
     }
-    if (ColumnCount() != mWellKnownFields.NumFields() + mCustomFields.NumFields()) {
+    if (mColumnCount != mWellKnownFields.NumFields() + mCustomFields.NumFields()) {
         CReaderMessage fatal(
-            EDiagSev::eDiag_Fatal,
+            EDiagSev::eDiag_Error,
             0,
             "AutoSql: The declared column count differs from the actual column count");
         messageHandler.Report(fatal);

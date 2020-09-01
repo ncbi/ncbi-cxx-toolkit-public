@@ -175,7 +175,7 @@ CAutoSqlStandardFields::Validate(
     //at issue: do we have enough information to make a Seq-loc
     if (mColChrom == -1  ||  mColSeqStart == -1  ||  mColSeqStop == -1) {
         CReaderMessage fatal(
-            EDiagSev::eDiag_Fatal, 
+            EDiagSev::eDiag_Error, 
             0, 
             "AutoSql: Table does not contain enough information to set a feature location.");
         messageHandler.Report(fatal);

@@ -50,6 +50,7 @@ CAutoSqlCustomField::FormatHandlers  CAutoSqlCustomField::mFormatHandlers = {
 //  ============================================================================
     {"int", CAutoSqlCustomField::AddInt},
     {"int[]", CAutoSqlCustomField::AddIntArray},
+    {"lstring", CAutoSqlCustomField::AddString},
     {"string", CAutoSqlCustomField::AddString},
     {"uint", CAutoSqlCustomField::AddUint},
     {"uint[]", CAutoSqlCustomField::AddIntArray},
