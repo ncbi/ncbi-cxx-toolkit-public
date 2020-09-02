@@ -51,6 +51,7 @@ public:
     bool
     SetUserField(
         const vector<string>& fields,
+        unsigned int,
         int bedFlags,
         CUser_object&,
         CReaderMessageHandler&) const;
@@ -64,7 +65,7 @@ public:
 
 private:
     using FormatHandler = 
-        bool (*)(const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        bool (*)(const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     using FormatHandlers =  map<string, FormatHandler>;
     static FormatHandlers mFormatHandlers;
 
@@ -76,22 +77,22 @@ private:
 
     static bool
     AddDouble(
-        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     static bool
     AddInt(
-        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     static bool
     AddIntArray(
-        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     static bool
     AddString(
-        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     static bool
     AddUint(
-        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     static bool
     AddUintArray(
-        const string&, const string&, int, CUser_object&, CReaderMessageHandler&);
+        const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
 
 };
 
@@ -111,6 +112,7 @@ public:
     bool
     SetUserObject(
         const vector<string>& fields,
+        unsigned int,
         int bedFlags,
         CSeq_feat&,
         CReaderMessageHandler&) const;

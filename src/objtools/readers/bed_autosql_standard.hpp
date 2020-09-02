@@ -49,6 +49,7 @@ public:
     bool
     SetLocation(
         const vector<string>& fields,
+        unsigned int,
         int bedFlags,
         CSeq_feat&,
         CReaderMessageHandler&) const;
@@ -56,6 +57,7 @@ public:
     bool
     SetTitle(
         const vector<string>& fields,
+        unsigned int,
         int bedFlags,
         CSeq_feat&,
         CReaderMessageHandler&) const;

@@ -181,17 +181,19 @@ protected:
         const string&);
   
     bool xParseFeature(
-        const string&,
+        const SReaderLine&,
         CSeq_annot&,
         ILineErrorListener*);
       
     bool xParseFeature(
         const vector<string>&,
+        unsigned int lineNo,
         CSeq_annot&,
         ILineErrorListener*);
 
     bool xParseFeatureAutoSql(
         const vector<string>&,
+        unsigned int,
         CSeq_annot&,
         ILineErrorListener*);
 

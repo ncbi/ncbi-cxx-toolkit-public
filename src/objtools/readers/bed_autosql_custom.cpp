@@ -97,6 +97,7 @@ CAutoSqlCustomField::CAutoSqlCustomField(
 bool CAutoSqlCustomField::AddDouble(
     const string& key,
     const string& value,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler)
@@ -109,7 +110,7 @@ bool CAutoSqlCustomField::AddDouble(
     catch (CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
-            0,
+            lineNo,
             string("BED: Unable to convert \"") + key + "\" value \"" + value + 
                 "\" to float. Defaulting to 0.0");
         messageHandler.Report(warning);
@@ -123,6 +124,7 @@ bool CAutoSqlCustomField::AddDouble(
 bool CAutoSqlCustomField::AddInt(
     const string& key,
     const string& value,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler)
@@ -135,7 +137,7 @@ bool CAutoSqlCustomField::AddInt(
     catch (CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
-            0,
+            lineNo,
             string("BED: Unable to convert \"") + key + "\" value \"" + value + 
                 "\" to int. Defaulting to 0");
         messageHandler.Report(warning);
@@ -148,6 +150,7 @@ bool CAutoSqlCustomField::AddInt(
 bool CAutoSqlCustomField::AddIntArray(
     const string& key,
     const string& value,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler)
@@ -165,7 +168,7 @@ bool CAutoSqlCustomField::AddIntArray(
     catch(CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
-            0,
+            lineNo,
             string("BED: Unable to convert \"") + key + "\" value \"" + value + 
                 "\" to int list. Defaulting to empty list");
         messageHandler.Report(warning);
@@ -179,6 +182,7 @@ bool CAutoSqlCustomField::AddIntArray(
 bool CAutoSqlCustomField::AddString(
     const string& key,
     const string& value,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler)
@@ -192,30 +196,33 @@ bool CAutoSqlCustomField::AddString(
 bool CAutoSqlCustomField::AddUint(
     const string& key,
     const string& value,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
-    return AddInt(key, value, bedFlags, uo, messageHandler);
+    return AddInt(key, value, lineNo, bedFlags, uo, messageHandler);
 }
 
 //  ============================================================================
 bool CAutoSqlCustomField::AddUintArray(
     const string& key,
     const string& value,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
-    return AddIntArray(key, value, bedFlags, uo, messageHandler);
+    return AddIntArray(key, value, lineNo, bedFlags, uo, messageHandler);
 }
 
 //  ============================================================================
 bool
 CAutoSqlCustomField::SetUserField(
     const vector<string>& fields,
+    unsigned int lineNo,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler) const
@@ -231,7 +238,7 @@ CAutoSqlCustomField::SetUserField(
     // we need some extra policy decisions on error handling in custom field.
     // until then: avoid throwing at all costs,
     // return false like never.
-    return mHandler(mName, valueStr, bedFlags, uo, messageHandler);
+    return mHandler(mName, valueStr, lineNo, bedFlags, uo, messageHandler);
 }
 
 //  ============================================================================
@@ -277,6 +284,7 @@ CAutoSqlCustomFields::Dump(
 bool
 CAutoSqlCustomFields::SetUserObject(
     const vector<string>& fields,
+    unsigned int lineNo,
     int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
@@ -288,7 +296,7 @@ CAutoSqlCustomFields::SetUserObject(
     CRef<CUser_field> pDummy(new CUser_field);
     for (const auto& fieldInfo: mFields) {
         if (! fieldInfo.SetUserField(
-                fields, bedFlags, *pAutoSqlCustomData, messageHandler)) {
+                fields, lineNo, bedFlags, *pAutoSqlCustomData, messageHandler)) {
             return false;
         }
     }

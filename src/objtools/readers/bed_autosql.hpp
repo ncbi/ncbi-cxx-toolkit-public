@@ -1,4 +1,4 @@
-#ifndef _BED_SUTOSQL_HPP_
+#ifndef _BED_AUTOSQL_HPP_
 #define _BED_AUTOSQL_HPP_
 
 /*
@@ -66,6 +66,7 @@ public:
     bool
     ReadSeqFeat(
         const vector<string>& fields,
+        unsigned int,
         CSeq_feat& feat,
         CReaderMessageHandler&) const;
 

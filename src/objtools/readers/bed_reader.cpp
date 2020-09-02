@@ -366,7 +366,7 @@ CBedReader::xProcessData(
         if (xParseBrowserLine(line, annot)) {
             return;
         }
-        xParseFeature(line, annot, nullptr);
+        xParseFeature(lineData, annot, nullptr);
     }
 }
 
@@ -635,17 +635,18 @@ CBedReader::xParseTrackLine(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xParseFeature(
-    const string& line,
+    const SReaderLine& lineData,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    const string& line = lineData.mData;
     //  parse
     vector<string> fields;
     xSplitColumns(line, fields);
     xCleanColumnValues(fields);
     xAddDefaultColumns(fields);
-    if (xParseFeature(fields, annot, pEC)) {
+    if (xParseFeature(fields, lineData.mLine, annot, pEC)) {
         ++m_CurrentFeatureCount;
         return true;
     }
@@ -655,6 +656,7 @@ CBedReader::xParseFeature(
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeature(
     const vector<string>& fields,
+    unsigned int lineNo,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -677,7 +679,7 @@ bool CBedReader::xParseFeature(
         return xParseFeatureGeneModelFormat(fields, annot, pEC);
     }
     else if (m_iFlags & CBedReader::fAutoSql) {
-        return xParseFeatureAutoSql(fields, annot, pEC);
+        return xParseFeatureAutoSql(fields, lineNo, annot, pEC);
     }
     else {
         return xParseFeatureUserFormat(fields, annot, pEC);
@@ -892,12 +894,13 @@ bool CBedReader::xParseFeatureUserFormat(
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeatureAutoSql(
     const vector<string>& fields,
+    unsigned int lineNo,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pFeat(new CSeq_feat);;
-    if (!mpAutoSql->ReadSeqFeat(fields, *pFeat, *m_pMessageHandler)) {
+    if (!mpAutoSql->ReadSeqFeat(fields, lineNo, *pFeat, *m_pMessageHandler)) {
         return false;
     }
     CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();

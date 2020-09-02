@@ -91,6 +91,7 @@ CAutoSqlStandardFields::ProcessTableRow(
 bool
 CAutoSqlStandardFields::SetLocation(
     const vector<string>& fields,
+    unsigned int lineNo,
     int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
@@ -106,7 +107,7 @@ CAutoSqlStandardFields::SetLocation(
     catch (CStringException&) {
         CReaderMessage error(
             eDiag_Error,
-            0,
+            lineNo,
             "BED: Invalid data for column \"chromStart\". Feature omitted");
         messageHandler.Report(error);
         return false;
@@ -118,7 +119,7 @@ CAutoSqlStandardFields::SetLocation(
     catch (CStringException&) {
         CReaderMessage error(
             eDiag_Error,
-            0,
+            lineNo,
             "BED: Invalid data for column \"chromEnd\". Feature omitted");
         messageHandler.Report(error);
         return false;
@@ -130,7 +131,7 @@ CAutoSqlStandardFields::SetLocation(
     
     CReaderMessage warning(
         eDiag_Warning,
-        0,
+        lineNo,
         "BED: Invalid data for column \"strand\". Defaulting to \"+\"");
 
     location.SetStrand(eNa_strand_plus);
@@ -154,6 +155,7 @@ CAutoSqlStandardFields::SetLocation(
 bool
 CAutoSqlStandardFields::SetTitle(
     const vector<string>& fields,
+    unsigned int lineNo,
     int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
