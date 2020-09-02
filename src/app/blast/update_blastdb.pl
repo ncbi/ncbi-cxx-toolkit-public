@@ -411,6 +411,11 @@ download_file:
 sub _decompress_impl($)
 {
     my $file = shift;
+    if ($^O eq "cygwin") {
+	local $ENV{PATH} = "/bin:/usr/bin";
+	my $cmd = "tar -zxf $file 2>/dev/null";
+	return 1 unless (system($cmd));
+    }
     unless ($^O =~ /win/i) {
         local $ENV{PATH} = "/bin:/usr/bin";
         my $cmd = "gzip -cd $file 2>/dev/null | tar xf - 2>/dev/null";
