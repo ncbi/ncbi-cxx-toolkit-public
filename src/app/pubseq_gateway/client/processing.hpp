@@ -239,6 +239,9 @@ private:
     static string GetAccSubstitution(const CArgs& input) { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
     static string GetAccSubstitution(const CJson_ConstObject& input) { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
 
+    static ESwitch GetAutoBlobSkipping(const CArgs& input) { return eDefault; }
+    static ESwitch GetAutoBlobSkipping(const CJson_ConstObject& input) { return !input.has("auto_blob_skipping") ? eDefault : input["auto_blob_skipping"].GetValue().GetBool() ? eOn : eOff; }
+
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
 
@@ -333,6 +336,12 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
     IncludeData(request, specified);
     ExcludeTSEs(request, input);
     SetAccSubstitution(request, input);
+    const auto auto_blob_skipping = GetAutoBlobSkipping(input);
+
+    if (auto_blob_skipping != eDefault) {
+        request->SetAutoBlobSkipping(auto_blob_skipping == eOn);
+    }
+
     return request;
 }
 

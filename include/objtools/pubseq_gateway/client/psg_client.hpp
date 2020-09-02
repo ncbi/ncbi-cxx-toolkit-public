@@ -223,6 +223,9 @@ public:
     /// Set substitution policy for version-less primary seq-ids
     void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
 
+    /// Enable/disable auto blob skipping on server for this request
+    void SetAutoBlobSkipping(bool auto_blob_skipping) { m_AutoBlobSkipping = auto_blob_skipping ? eOn : eOff; }
+
 private:
     string x_GetType() const override { return "biodata"; }
     string x_GetId() const override { return GetBioId().Get(); }
@@ -232,6 +235,7 @@ private:
     EIncludeData  m_IncludeData = EIncludeData::eDefault;
     TExcludeTSEs  m_ExcludeTSEs;
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
+    ESwitch m_AutoBlobSkipping = ESwitch::eDefault;
 };
 
 

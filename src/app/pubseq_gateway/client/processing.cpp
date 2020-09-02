@@ -1657,6 +1657,7 @@ CJson_Document CProcessing::RequestSchema()
                         "include_data": { "$ref": "#include_data" },
                         "exclude_blobs": { "$ref": "#exclude_blobs" },
                         "acc_substitution": { "$ref": "#acc_substitution" },
+                        "auto_blob_skipping": { "type": "boolean" },
                         "context": { "$ref": "#context" }
                     },
                     "required": [ "bio_id" ]

@@ -339,6 +339,18 @@ const char* s_GetAccSubstitution(EPSG_AccSubstitution acc_substitution)
 }
 
 
+const char* s_GetAutoBlobSkipping(ESwitch value)
+{
+    switch (value) {
+        case eDefault: break;
+        case eOn:      return "&auto_blob_skipping=yes";
+        case eOff:     return "&auto_blob_skipping=no";
+    }
+
+    return "";
+}
+
+
 struct CPSG_Request::x_GetBioIdParams
 {
     const string& id;
@@ -371,6 +383,7 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
     }
 
     os << s_GetAccSubstitution(m_AccSubstitution);
+    os << s_GetAutoBlobSkipping(m_AutoBlobSkipping);
 }
 
 void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
