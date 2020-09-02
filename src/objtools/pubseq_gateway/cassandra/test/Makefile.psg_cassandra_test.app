@@ -1,7 +1,7 @@
 APP = psg_cassandra_test
 SRC = psg_cassandra_test unit/blob_record unit/cluster_meta unit/fullscan_plan \
     unit/fullscan_runner unit/cassandra_query unit/nannot_fetch unit/fetch_split_history \
-    unit/cassandra_connection unit/bioseq_info_task unit/psg_api
+    unit/cassandra_connection unit/bioseq_info_task unit/psg_api unit/load_blob_task
 
 WATCHERS=saprykin
 REQUIRES = CASSANDRA MT Linux GCC

@@ -220,13 +220,9 @@ void CCassBlobTaskLoadBlob::Wait1()
 
             case eWaitingForPropsFetch: {
                 auto& it = m_QueryArr[0];
-                if (!CheckReady(it)) {
-                    break;
-                }
-
-                if (!it.query->IsEOF()) {
-                    async_rslt_t wr = it.query->NextRow();
-                    if (wr == ar_dataready) {
+                if (CheckReady(it)) {
+                    it.query->NextRow();
+                    if (!it.query->IsEOF()) {
                         UpdateLastActivity();
                         (*m_Blob)
                             .SetModified(it.query->FieldGetInt64Value(0))
@@ -244,15 +240,12 @@ void CCassBlobTaskLoadBlob::Wait1()
                         m_RemainingSize = m_Blob->GetSize();
                         m_PropsFound = true;
                         it.query->Close();
-                    } else if (wr == ar_wait) {
-                        break;
                     }
+                    CloseAll();
+                    m_QueryArr.clear();
+                    m_State = eFinishedPropsFetch;
+                    b_need_repeat = true;
                 }
-
-                CloseAll();
-                m_QueryArr.clear();
-                m_State = eFinishedPropsFetch;
-                b_need_repeat = true;
             }
             break;
 
@@ -385,56 +378,39 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
     auto n_chunks = m_Blob->GetNChunks();
     for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries > 0; ++chunk_no) {
         if (!m_ProcessedChunks[chunk_no]) {
-            if (m_State == eDone || m_State == eError || m_Cancelled)
+            if (m_State == eDone || m_State == eError || m_Cancelled) {
                 break;
+            }
             auto& it = m_QueryArr[chunk_no];
             if (it.query) {
-                bool ready = CheckReady(it);
-                if (ready) {
-                    if (!it.query->IsEOF()) {
-                        async_rslt_t wr = it.query->NextRow();
-                        if (wr == ar_dataready) {
-                            UpdateLastActivity();
-                            const unsigned char * rawdata = nullptr;
-                            int64_t len = it.query->FieldGetBlobRaw(0, &rawdata);
-                            m_RemainingSize -= len;
-                            if (m_RemainingSize < 0) {
-                                char msg[1024];
-                                msg[0] = '\0';
-                                snprintf(msg, sizeof(msg),
-                                     "Failed to fetch blob chunk (key=%s.%d, chunk=%d) size %ld "
-                                     "is too large", m_Keyspace.c_str(), m_Key, chunk_no, len);
-                                Error(CRequestStatus::e502_BadGateway,
-                                      CCassandraException::eInconsistentData,
-                                      eDiag_Error, msg);
-                                return;
-                            }
-                            m_ProcessedChunks[chunk_no] = true;
-                            m_ChunkCallback(*m_Blob, rawdata, len, chunk_no);
-                            it.query->Close();
-                            it.query = nullptr;
-                            --m_ActiveQueries;
-                            need_repeat = true;
-                        } else if (wr == ar_wait) {
-                            continue;
-                        } else {
-                            char msg[1024];
-                            snprintf(msg, sizeof(msg),
-                                 "Unexpected state (%d) (key=%s.%d, chunk=%d)", static_cast<int>(wr), m_Keyspace.c_str(), m_Key, chunk_no);
-                            Error(CRequestStatus::e502_BadGateway,
-                                  CCassandraException::eInconsistentData,
-                                  eDiag_Error, msg);
-                            return;
-                        }
-                    }
-                    else {
+                if (CheckReady(it)) {
+                    it.query->NextRow();
+                    if (it.query->IsEOF()) {
                         char msg[1024];
                         snprintf(msg, sizeof(msg),
-                             "Missed chunk (key=%s.%d, chunk=%d)", m_Keyspace.c_str(), m_Key, chunk_no);
-                        Error(CRequestStatus::e502_BadGateway,
-                              CCassandraException::eInconsistentData,
-                              eDiag_Error, msg);
+                             "Failed to fetch blob chunk (key=%s.%d, chunk=%d)", m_Keyspace.c_str(), m_Key, chunk_no);
+                        Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
                         return;
+                    } else {
+                        UpdateLastActivity();
+                        const unsigned char * rawdata = nullptr;
+                        int64_t len = it.query->FieldGetBlobRaw(0, &rawdata);
+                        m_RemainingSize -= len;
+                        if (m_RemainingSize < 0) {
+                            char msg[1024];
+                            msg[0] = '\0';
+                            snprintf(msg, sizeof(msg),
+                                 "Failed to fetch blob chunk (key=%s.%d, chunk=%d) size %ld "
+                                 "is too large", m_Keyspace.c_str(), m_Key, chunk_no, len);
+                            Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
+                            return;
+                        }
+                        m_ProcessedChunks[chunk_no] = true;
+                        m_ChunkCallback(*m_Blob, rawdata, len, chunk_no);
+                        it.query->Close();
+                        it.query = nullptr;
+                        --m_ActiveQueries;
+                        need_repeat = true;
                     }
                 }
             }
