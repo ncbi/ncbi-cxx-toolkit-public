@@ -1089,6 +1089,7 @@ AddJob()
             a_maxjob=4
         fi
     else
+        sleep 2
         a_maxjob=0
     fi
     while test -e "\$checkdir/~SERIAL.lock"; do
@@ -1104,6 +1105,7 @@ AddJob()
         a_run=0
     fi
     if test "\$a_run" -lt "\$a_maxjob"; then
+        sleep 1
         return
     fi
 
