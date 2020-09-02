@@ -217,7 +217,8 @@ void CPSGS_GetProcessor::x_GetBlob(void)
 
 
     if (m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_NoneTSE &&
-        m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_SlimTSE) {
+        m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_SlimTSE &&
+        m_BlobRequest->m_AutoBlobSkipping) {
         if (!m_BlobRequest->m_ClientId.empty()) {
             // Adding to exclude blob cache is unconditional however skipping
             // is only for the blobs identified by seq_id/seq_id_type
@@ -291,7 +292,8 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                                                                 2);
 
             if (m_BlobRequest->m_ExcludeBlobCacheAdded &&
-                !m_BlobRequest->m_ClientId.empty()) {
+                !m_BlobRequest->m_ClientId.empty() &&
+                m_BlobRequest->m_AutoBlobSkipping) {
                 app->GetExcludeBlobCache()->Remove(
                         m_BlobRequest->m_ClientId,
                         m_BlobId.m_Sat,
@@ -440,7 +442,8 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 
         if (blob_request.m_ExcludeBlobCacheAdded &&
             ! blob_request.m_ExcludeBlobCacheCompleted &&
-            ! blob_request.m_ClientId.empty()) {
+            ! blob_request.m_ClientId.empty() &&
+            m_BlobRequest->m_AutoBlobSkipping) {
             auto *  app = CPubseqGatewayApp::GetInstance();
             app->GetExcludeBlobCache()->SetCompleted(
                                             blob_request.m_ClientId,

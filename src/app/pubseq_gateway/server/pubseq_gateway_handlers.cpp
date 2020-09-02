@@ -70,6 +70,7 @@ static string  kTSEIdParam = "tse_id";
 static string  kChunkParam = "chunk";
 static string  kId2InfoParam = "id2_info";
 static string  kAccSubstitutionParam = "acc_substitution";
+static string  kAutoBlobSkippingParam = "auto_blob_skipping";
 static string  kTraceParam = "trace";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
@@ -229,12 +230,30 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             return 0;
         }
 
+        bool                auto_blob_skipping = true;  // default
+        SRequestParameter   auto_blob_skipping_param = x_GetParam(req, kAutoBlobSkippingParam);
+        if (auto_blob_skipping_param.m_Found) {
+            if (!x_IsBoolParamValid(kAutoBlobSkippingParam,
+                                    auto_blob_skipping_param.m_Value,
+                                    err_msg)) {
+                m_ErrorCounters.IncMalformedArguments();
+                x_SendMessageAndCompletionChunks(reply, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 ePSGS_MalformedParameter,
+                                                 eDiag_Error);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+            auto_blob_skipping = auto_blob_skipping_param.m_Value == "yes";
+        }
+
         m_RequestCounters.IncGetBlobBySeqId();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_BlobBySeqIdRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, exclude_blobs,
                         tse_option, use_cache, subst_option,
+                        auto_blob_skipping,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         hops, trace, now));

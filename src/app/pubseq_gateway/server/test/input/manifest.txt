@@ -231,3 +231,6 @@ pdb_4_5                                 | -url "ID/resolve?seq_id=1VU9_AA&fmt=js
 pdb_4_6                                 | -url "ID/resolve?seq_id=1vu9_aa&fmt=json&all_info=yes&acc_substitution=never"                | CXX-11133 4+6                                             | resolve
 hops_negative                           | -url "ID/resolve?hops=-1&seq_id=164040&seq_id_type=3&fmt=json&all_info=yes"                  | Negative hops                                             | resolve
 hops_huge                               | -url "ID/resolve?hops=500&seq_id=164040&seq_id_type=3&fmt=json&all_info=yes"                 | Hops is too big                                           | resolve
+get_wrong_auto_blob_skipping            | -url "ID/get?seq_id=AC052670&auto_blob_skipping=invalid"                                     | Invalid auto_blob_skipping                                | get
+get_auto_blob_skipping_no1              | -url "ID/get?seq_id=AC052670&client_id=999&auto_blob_skipping=no"                            | Auto blob skipping == no first time                       | get
+get_auto_blob_skipping_no2              | -url "ID/get?seq_id=AC052670&client_id=999&auto_blob_skipping=no"                            | Auto blob skipping == no second time                      | get

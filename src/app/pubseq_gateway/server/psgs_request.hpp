@@ -379,6 +379,7 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     int                             m_SeqIdType;
     vector<string>                  m_ExcludeBlobs;
     EPSGS_AccSubstitutioOption      m_AccSubstOption;
+    bool                            m_AutoBlobSkipping;
 
     SPSGS_BlobBySeqIdRequest(const string &  seq_id,
                              int  seq_id_type,
@@ -386,6 +387,7 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              EPSGS_TSEOption  tse_option,
                              EPSGS_CacheAndDbUse  use_cache,
                              EPSGS_AccSubstitutioOption  subst_option,
+                             bool  auto_blob_skipping,
                              const string &  client_id,
                              int  hops,
                              EPSGS_Trace  trace,
@@ -394,12 +396,14 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(move(exclude_blobs)),
-        m_AccSubstOption(subst_option)
+        m_AccSubstOption(subst_option),
+        m_AutoBlobSkipping(auto_blob_skipping)
     {}
 
     SPSGS_BlobBySeqIdRequest() :
         m_SeqIdType(-1),
-        m_AccSubstOption(ePSGS_UnknownAccSubstitution)
+        m_AccSubstOption(ePSGS_UnknownAccSubstitution),
+        m_AutoBlobSkipping(true)
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
