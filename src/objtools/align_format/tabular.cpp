@@ -2263,6 +2263,11 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         int off = annot->m_FrameInfo[1];
         int len = annot->m_FrameInfo[2] - off;
         string seq_trans;
+        
+        if (annot->m_FrameInfo[0] >= 0) {
+            m_VFrameShift = (annot->m_FrameInfo[1] - annot->m_FrameInfo[0])%3 == 0 ? "No" : "Yes";
+        }
+
         if ( len % 3 == 0) {
             string seq_data(m_Query, off, len);
             CSeqTranslator::Translate(seq_data, seq_trans, 
@@ -2275,7 +2280,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         } else  {
             SetFrame("OF");
         }
-   
+
     } else {
         SetFrame("N/A");
     }
@@ -2288,7 +2293,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         CSeqTranslator::Translate(seq_data, seq_trans, 
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         if (seq_trans.find('*') != string::npos) {
-            m_OtherInfo.push_back("Yes");
+            m_OtherInfo.push_back("Yes");  //index 0
         } else {
             m_OtherInfo.push_back("No");
         }
@@ -2304,9 +2309,9 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         CSeqTranslator::Translate(seq_data, seq_trans, 
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         if (seq_trans.find('*') == string::npos) {
-            m_OtherInfo.push_back("No");
+            m_OtherInfo.push_back("No");  //index 1
             if (m_FrameInfo == "IF" && m_OtherInfo[0] == "No") {
-                m_OtherInfo.push_back("Yes");
+                m_OtherInfo.push_back("Yes");  //index 2
             } else {
                 m_OtherInfo.push_back("No");
             }
@@ -2331,17 +2336,21 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
        
         if (seq_trans.find('*') == string::npos) {
-            m_OtherInfo.push_back("No");
+            m_OtherInfo.push_back("No");  //index 3
             if (m_FrameInfo == "IF" || m_FrameInfo == "IP") {
-                m_OtherInfo.push_back("Yes");
+                if (m_VFrameShift == "No") {
+                    m_OtherInfo.push_back("Yes"); //index 4
+                } else {
+                    m_OtherInfo.push_back("No"); //index 4
+                }
             } else if (m_FrameInfo == "OF"){
-                m_OtherInfo.push_back("No");
+                m_OtherInfo.push_back("No"); //index 4
             } else {
-               m_OtherInfo.push_back("N/A"); 
+               m_OtherInfo.push_back("N/A"); //index 4
             }
         } else {
-            m_OtherInfo.push_back("Yes");
-            m_OtherInfo.push_back("No");
+            m_OtherInfo.push_back("Yes");//index 3
+            m_OtherInfo.push_back("No");//index 4
         }
         
     } else {
@@ -2507,7 +2516,7 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
         m_Ostream << "Top J gene match, Chain type, stop codon, ";
-        m_Ostream << "V-J frame, Productive, Strand).  "; 
+        m_Ostream << "V-J frame, Productive, Strand, V Frame shift).  "; 
         m_Ostream <<"Multiple equivalent top matches, if present, are separated by a comma." << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
@@ -2520,7 +2529,8 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         else if (m_FrameInfo == "IP") m_Ostream << "In-frame";
         else m_Ostream << "N/A";
         m_Ostream << m_FieldDelimiter << m_OtherInfo[4];
-        m_Ostream << m_FieldDelimiter << ((m_IsMinusStrand) ? '-' : '+' ) << endl << endl;
+        m_Ostream << m_FieldDelimiter << ((m_IsMinusStrand) ? '-' : '+' );
+        m_Ostream << m_FieldDelimiter << m_VFrameShift << endl << endl;
         x_PrintIgGenes(false, header);
     }
 
@@ -2578,7 +2588,8 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
                   << "<td>stop codon</td>"
                   << "<td>V-J frame</td>"
                   << "<td>Productive</td>"
-                  << "<td>Strand</td></tr>\n";
+                  << "<td>Strand</td>"
+                  << "<td>V frame shift</td>/tr>\n";
 
         m_Ostream << "<tr><td>"  << m_VGene.sid;
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
@@ -2597,7 +2608,8 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
             m_Ostream << "In-frame";
         } 
         m_Ostream << "</td><td>" << (m_OtherInfo[4]!="N/A" ? m_OtherInfo[4] : "");
-        m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+') 
+        m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+');
+        m_Ostream << "</td><td>" << m_VFrameShift
                   << "</td></tr></table>\n";
         x_PrintIgGenes(true, "");
     }
@@ -2643,6 +2655,7 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     }
     m_IgDomains.clear();
     m_FrameInfo = "N/A";
+    m_VFrameShift = "N/A";
     m_ChainType = "N/A";
     m_IsMinusStrand = false;
     m_VGene.Reset();

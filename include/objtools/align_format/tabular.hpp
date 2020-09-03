@@ -704,7 +704,8 @@ private:
     string m_Query;
     bool m_IsNucl;
     bool m_IsMinusStrand;
-    string m_FrameInfo;                                                           
+    string m_FrameInfo; 
+    string m_VFrameShift; 
     string m_ChainType;
     string m_MasterChainTypeToShow;
     SIgGene m_VGene;
