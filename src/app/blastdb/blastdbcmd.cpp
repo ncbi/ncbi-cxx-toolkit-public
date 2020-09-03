@@ -377,7 +377,14 @@ CBlastDBCmdApp::x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt)
     		ids[i] = s_PreProcessAccessionsForDBv5(ids[i]);
     	}
     }
+    try {
     m_BlastDb->AccessionsToOids(ids, oids);
+    }
+    catch (CSeqDBException & e) {
+    	if (e.GetMsg().find("DB contains no accession info") == NPOS){
+    		NCBI_RETHROW_SAME(e, e.GetMsg());
+    	}
+    }
     for(unsigned i=0; i < ids.size(); i++) {
     	if(oids[i] == kSeqDBEntryNotFound) {
     		TGi num_id = NStr::StringToNumeric<TGi>(ids[i], NStr::fConvErr_NoThrow);
