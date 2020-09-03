@@ -81,7 +81,7 @@ static CTimeSpan s_GetRetryDelay(const string& service)
     if (!str.empty()) {
         try {
             double sec = NStr::StringToNumeric<double>(str);
-            return CTimeSpan(sec);
+            return CTimeSpan(sec > 0 ? sec : 0);
         }
         catch (...) {
             ERR_POST(Warning << "Bad " << service << "/retry_delay value: " << str);
