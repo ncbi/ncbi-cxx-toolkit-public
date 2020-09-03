@@ -220,6 +220,85 @@ bool CAutoSqlCustomField::AddUintArray(
 
 //  ============================================================================
 bool
+CAutoSqlCustomField::xHandleSpecialCases(
+    const CBedColumnData& columnData,
+    int bedFlags,
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler) const
+//  ============================================================================
+{
+    return xHandleSpecialCaseRgb(columnData, bedFlags, uo, messageHandler);
+}
+
+//  ============================================================================
+bool
+CAutoSqlCustomField::xHandleSpecialCaseRgb(
+    const CBedColumnData& columnData,
+    int bedFlags,
+    CUser_object& uo,
+    CReaderMessageHandler& messageHandler) const
+//  ============================================================================
+{
+    //if it's column 9 or the key and format suggests it's an RGB value then accept
+    // (r,g,b) or #RRGGBB and convert to int.
+    //
+    if (mFormat != "int"  &&  mFormat != "uint") {
+        return false;
+    }
+
+    vector<string> knownRgbKeys = {"itemrgb", "color", "colour"};
+    string lowerName(mName);
+    NStr::ToLower(lowerName);
+    bool isRgbKey = (find(knownRgbKeys.begin(), knownRgbKeys.end(), lowerName) !=
+        knownRgbKeys.end());
+    if (mColIndex != 8  &&  !isRgbKey) {
+        return false;
+    }
+    string valueStr = columnData[mColIndex];
+
+    if (NStr::StartsWith(valueStr, "#")) {
+        int intVal = 0;
+        try {
+            intVal = NStr::StringToInt(valueStr.substr(1), 0, 16);
+        }
+        catch (CStringException&) {
+            CReaderMessage warning(
+                eDiag_Warning,
+                columnData.LineNo(),
+                string("BED: Unable to convert \"") + mName + "\" value \"" + 
+                    valueStr +  "\" to int. Defaulting to 0");
+            messageHandler.Report(warning);
+        }
+        uo.AddField(mName, intVal);
+        return true;
+    }
+
+    vector<string> rgb;
+    NStr::Split(valueStr, ",", rgb);
+    int rgbInt(0);
+    if (rgb.size() == 3) {
+        try {
+            rgbInt = 256*256*NStr::StringToInt(rgb[0]) + 
+                256*NStr::StringToInt(rgb[1]) + NStr::StringToInt(rgb[2]);
+        }
+        catch (CStringException&) {
+            CReaderMessage warning(
+                eDiag_Warning,
+                columnData.LineNo(),
+                string("BED: Unable to convert \"") + mName + "\" value \"" + 
+                    valueStr +  "\" to int. Defaulting to 0");
+            messageHandler.Report(warning);
+        }
+        uo.AddField(mName, rgbInt);
+        return true;
+    }
+    // no special case after all, use regular processing
+    return false;
+}
+
+
+//  ============================================================================
+bool
 CAutoSqlCustomField::SetUserField(
     const CBedColumnData& columnData,
     int bedFlags,
@@ -227,6 +306,9 @@ CAutoSqlCustomField::SetUserField(
     CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
+    if (xHandleSpecialCases(columnData, bedFlags, uo, messageHandler)) {
+        return true;
+    }
     string valueStr = columnData[mColIndex];
     if (NStr::EndsWith(mFormat, "[]")) {
         // deal with trailing comma in list

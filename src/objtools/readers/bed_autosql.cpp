@@ -86,6 +86,7 @@ CBedAutoSql::xParseAutoSqlColumnDef(
     string tail;
     NStr::SplitInTwo(line, " \t", format, tail, NStr::fSplit_MergeDelimiters);
     NStr::SplitInTwo(tail, " \t", name, description, NStr::fSplit_MergeDelimiters);
+    NStr::ToLower(format);
     name = NStr::Replace(name, ";", "");
     description = NStr::Replace(description, "\"", "");
     return true;

@@ -70,7 +70,6 @@ public:
         CSeq_feat& feat,
         CReaderMessageHandler&) const;
 
-
     void
     Dump(
         ostream&);

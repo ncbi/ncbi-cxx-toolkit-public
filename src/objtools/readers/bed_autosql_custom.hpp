@@ -64,6 +64,20 @@ public:
         CReaderMessageHandler&) const;
 
 private:
+    bool
+    xHandleSpecialCases(
+        const CBedColumnData&,
+        int bedFlags,
+        CUser_object&,
+        CReaderMessageHandler&) const;
+
+    bool
+    xHandleSpecialCaseRgb(
+        const CBedColumnData&,
+        int bedFlags,
+        CUser_object&,
+        CReaderMessageHandler&) const;
+
     using FormatHandler = 
         bool (*)(const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     using FormatHandlers =  map<string, FormatHandler>;
