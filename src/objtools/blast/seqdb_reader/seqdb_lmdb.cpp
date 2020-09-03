@@ -173,6 +173,7 @@ CBlastLMDBManager::CBlastEnv* CBlastLMDBManager::GetBlastEnv(const string & fnam
 		if((*itr)->GetFilename() == fname)  {
 			(*itr)->AddReference();
             if ( opened && !*opened ) {
+            	(*itr)->AddReference();
                 *opened = true;
             }
 			return (*itr);
