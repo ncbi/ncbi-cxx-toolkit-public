@@ -90,36 +90,35 @@ CAutoSqlStandardFields::ProcessTableRow(
 //  ============================================================================
 bool
 CAutoSqlStandardFields::SetLocation(
-    const vector<string>& fields,
-    unsigned int lineNo,
+    const CBedColumnData& columnData,
     int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[mColChrom], bedFlags, false);
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(columnData[mColChrom], bedFlags, false);
 
     auto& location = feat.SetLocation().SetInt();
     location.SetId(*pId);
     try {
-        location.SetFrom(NStr::StringToUInt(fields[mColSeqStart]));
+        location.SetFrom(NStr::StringToUInt(columnData[mColSeqStart]));
     }
     catch (CStringException&) {
         CReaderMessage error(
             eDiag_Error,
-            lineNo,
+            columnData.LineNo(),
             "BED: Invalid data for column \"chromStart\". Feature omitted");
         messageHandler.Report(error);
         return false;
     }
 
     try {
-        location.SetTo(NStr::StringToUInt(fields[mColSeqStop])-1);
+        location.SetTo(NStr::StringToUInt(columnData[mColSeqStop])-1);
     }
     catch (CStringException&) {
         CReaderMessage error(
             eDiag_Error,
-            lineNo,
+            columnData.LineNo(),
             "BED: Invalid data for column \"chromEnd\". Feature omitted");
         messageHandler.Report(error);
         return false;
@@ -131,11 +130,11 @@ CAutoSqlStandardFields::SetLocation(
     
     CReaderMessage warning(
         eDiag_Warning,
-        lineNo,
+        columnData.LineNo(),
         "BED: Invalid data for column \"strand\". Defaulting to \"+\"");
 
     location.SetStrand(eNa_strand_plus);
-    auto strandStr = fields[mColStrand];
+    auto strandStr = columnData[mColStrand];
     if (strandStr.size() != 1) {
         messageHandler.Report(warning);
     }
@@ -154,8 +153,7 @@ CAutoSqlStandardFields::SetLocation(
 //  ============================================================================
 bool
 CAutoSqlStandardFields::SetTitle(
-    const vector<string>& fields,
-    unsigned int lineNo,
+    const CBedColumnData& columnData,
     int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
@@ -164,7 +162,7 @@ CAutoSqlStandardFields::SetTitle(
     if (mColChrom == -1) {
         return true;
     }
-    feat.SetTitle(fields[mColChrom]);
+    feat.SetTitle(columnData[mColChrom]);
     return true;
 }
 

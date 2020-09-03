@@ -36,6 +36,7 @@
 #include <objects/general/User_field.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include "reader_message_handler.hpp"
+#include "bed_column_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -50,8 +51,7 @@ public:
 
     bool
     SetUserField(
-        const vector<string>& fields,
-        unsigned int,
+        const CBedColumnData&,
         int bedFlags,
         CUser_object&,
         CReaderMessageHandler&) const;
@@ -111,8 +111,7 @@ public:
 
     bool
     SetUserObject(
-        const vector<string>& fields,
-        unsigned int,
+        const CBedColumnData&,
         int bedFlags,
         CSeq_feat&,
         CReaderMessageHandler&) const;

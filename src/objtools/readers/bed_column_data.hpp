@@ -1,6 +1,5 @@
-#ifndef _BED_AUTOSQL_HPP_
-#define _BED_AUTOSQL_HPP_
-
+#ifndef _BED_COLUMN_DATA_HPP_
+#define _BED_COLUMN_DATA_HPP_
 /*
  * $Id$
  *
@@ -33,73 +32,46 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include "reader_message_handler.hpp"
-#include "bed_autosql_standard.hpp"
-#include "bed_autosql_custom.hpp"
+#include <objtools/readers/bed_reader.hpp>
 #include "bed_column_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ============================================================================
-class CBedAutoSql
+class CBedColumnData
 //  ============================================================================
 {
-public:
-    using ValueParser = void (*)(const string&, CUser_object&);
 
 public:
-    CBedAutoSql(int);
-    ~CBedAutoSql();
+    CBedColumnData(
+        const CReaderBase::TReaderLine&,
+        int flags =0);
 
-    bool Load(
-        CNcbiIstream&,
-        CReaderMessageHandler&); 
+    const string&
+    operator[](
+        size_t) const;
 
-    bool Validate(
-        CReaderMessageHandler&) const;
+    unsigned int
+    LineNo() const { return mLineNo; };
 
-    size_t
-    ColumnCount() const;
-
-    bool
-    ReadSeqFeat(
-        const CBedColumnData&,
-        CSeq_feat& feat,
-        CReaderMessageHandler&) const;
-
-
-    void
-    Dump(
-        ostream&);
+    size_t 
+    ColumnCount() const { return mData.size(); };
 
 protected:
-    int mBedFlags;
-    map<string, string> mParameters;
-    CAutoSqlStandardFields mWellKnownFields;
-    CAutoSqlCustomFields mCustomFields;
-    size_t mColumnCount;
-    
-    string
-    xReadLine(
-        CNcbiIstream&);
+    void xSplitColumns(
+        const string&);
+    void xCleanColumnValues();
+    void xAddDefaultColumns();
 
-    static void
-    mParseString(
-        const string&,
-        CUser_field&);
+    vector<string> mData;
+    unsigned int mLineNo;
 
-    static bool
-    xParseAutoSqlColumnDef(
-        const string&,
-        string&,
-        string&,
-        string&);
+    string mColumnSeparator;
+    NStr::TSplitFlags mColumnSplitFlags;
 };
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // _BED_AUTOSQL_HPP_
+#endif // _BED_COLUMN_DATA_HPP_

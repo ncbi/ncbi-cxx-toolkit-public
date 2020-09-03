@@ -63,7 +63,7 @@ class NCBI_XOBJREAD_EXPORT CReaderBase
 {
 public:
     using TReaderLine = struct SReaderLine {
-        //TReaderLine(int line, string data): mLine(line), mData(data) {};
+        SReaderLine(unsigned int line, string data): mLine(line), mData(data) {};
         unsigned int mLine;
         string mData;
     };

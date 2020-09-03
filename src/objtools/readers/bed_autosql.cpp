@@ -167,8 +167,7 @@ CBedAutoSql::xReadLine(
 //  ===============================================================================
 bool
 CBedAutoSql::ReadSeqFeat(
-    const vector<string>& fields,
-    unsigned int lineNo,
+    const CBedColumnData& columnData,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
@@ -179,11 +178,11 @@ CBedAutoSql::ReadSeqFeat(
     // exception: something so bad we can't deal with it on this level.
     bool success = 
         mWellKnownFields.SetLocation(
-            fields, lineNo, mBedFlags, feat, messageHandler)  &&
+            columnData, mBedFlags, feat, messageHandler)  &&
         mWellKnownFields.SetTitle(
-            fields, lineNo, mBedFlags, feat, messageHandler)  &&
+            columnData, mBedFlags, feat, messageHandler)  &&
         mCustomFields.SetUserObject(
-            fields, lineNo, mBedFlags, feat, messageHandler);
+            columnData, mBedFlags, feat, messageHandler);
     if (!success) {
         return false;
     }

@@ -39,12 +39,12 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CLinePreBuffer;
 class CBedAutoSql;
+class CBedColumnData;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CRawBedRecord
@@ -126,6 +126,7 @@ public:
         fThreeFeatFormat = 1<<8,
         fDirectedFeatureModel = 1<<9,
         fAutoSql = 1<<10,
+        fAddDefaultColumns = 1<<11,
     };
     typedef int TFlags;
 
@@ -170,13 +171,6 @@ protected:
         CLinePreBuffer&,
         ILineErrorListener*);
 
-    virtual bool xSplitColumns(
-        const string&,
-        vector<string>&);
-
-    virtual bool xAddDefaultColumns(
-        vector<string>&);
-
     virtual bool xParseTrackLine(
         const string&);
   
@@ -185,136 +179,129 @@ protected:
         CSeq_annot&,
         ILineErrorListener*);
       
-    bool xParseFeature(
-        const vector<string>&,
-        unsigned int lineNo,
-        CSeq_annot&,
-        ILineErrorListener*);
-
     bool xParseFeatureAutoSql(
-        const vector<string>&,
-        unsigned int,
+        const CBedColumnData&,
         CSeq_annot&,
         ILineErrorListener*);
 
     bool xParseFeatureUserFormat(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         ILineErrorListener*);
 
     bool xParseFeatureThreeFeatFormat(
-        const vector<string>&,
+        const CBedColumnData&,
+        CSeq_annot&,
+        ILineErrorListener*);
+
+    bool xParseFeatureGeneModelFormat(
+        const CBedColumnData&,
         CSeq_annot&,
         ILineErrorListener*);
 
     bool xAppendFeatureChrom(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     bool xAppendFeatureThick(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     bool xAppendFeatureBlock(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
-    bool xParseFeatureGeneModelFormat(
-        const vector<string>&,
-        CSeq_annot&,
-        ILineErrorListener*);
-
     CRef<CSeq_feat> xAppendFeatureGene(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     CRef<CSeq_feat> xAppendFeatureRna(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     CRef<CSeq_feat> xAppendFeatureCds(
-        const vector<string>&,
+        const CBedColumnData&,
         CSeq_annot&,
         unsigned int,
         ILineErrorListener*);
 
     void xSetFeatureLocation(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
         
     void xSetFeatureLocationChrom(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
     void xSetFeatureLocationGene(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
         
     void xSetFeatureLocationThick(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
     void xSetFeatureLocationCds(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
         
     void xSetFeatureLocationBlock(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
     void xSetFeatureLocationRna(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
         
     void xSetFeatureIdsChrom(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         unsigned int);
     void xSetFeatureIdsGene(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         unsigned int);
         
     void xSetFeatureIdsThick(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         unsigned int);
     void xSetFeatureIdsCds(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         unsigned int);
         
     void xSetFeatureIdsBlock(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         unsigned int);
     void xSetFeatureIdsRna(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         unsigned int);
         
     void xSetFeatureBedData(
         CRef<CSeq_feat>&,
-        const vector<string>&,
+        const CBedColumnData&,
         ILineErrorListener*);
         
     void xSetFeatureTitle(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
         
     void xSetFeatureScore(
         CRef<CUser_object>,
-        const vector<string>&);
+        const CBedColumnData&);
     void xSetFeatureColor(
         CRef<CUser_object>,
-        const vector<string>&,
+        const CBedColumnData&,
         ILineErrorListener*);
 
     void xSetFeatureColorFromItemRgb(
@@ -333,26 +320,26 @@ protected:
         CRef<CUser_object>);
 
     bool xContainsThickFeature(
-        const vector<string>&) const;
+        const CBedColumnData&) const;
 
     bool xContainsBlockFeature(
-        const vector<string>&) const;
+        const CBedColumnData&) const;
 
     bool xContainsRnaFeature(
-        const vector<string>&) const;
+        const CBedColumnData&) const;
 
     bool xContainsCdsFeature(
-        const vector<string>&) const;
+        const CBedColumnData&) const;
 
     ENa_strand xGetStrand(
-        const vector<string>&) const;
+        const CBedColumnData&) const;
 
     virtual void xAssignBedColumnCount(
         CSeq_annot&);
                     
     void xSetFeatureDisplayData(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const CBedColumnData&);
 
     virtual void xPostProcessAnnot(
         CSeq_annot&);

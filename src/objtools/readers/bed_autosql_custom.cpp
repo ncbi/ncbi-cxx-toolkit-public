@@ -221,14 +221,13 @@ bool CAutoSqlCustomField::AddUintArray(
 //  ============================================================================
 bool
 CAutoSqlCustomField::SetUserField(
-    const vector<string>& fields,
-    unsigned int lineNo,
+    const CBedColumnData& columnData,
     int bedFlags,
     CUser_object& uo,
     CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
-    string valueStr = fields[mColIndex];
+    string valueStr = columnData[mColIndex];
     if (NStr::EndsWith(mFormat, "[]")) {
         // deal with trailing comma in list
         NStr::TrimSuffixInPlace(valueStr, ",");
@@ -238,7 +237,8 @@ CAutoSqlCustomField::SetUserField(
     // we need some extra policy decisions on error handling in custom field.
     // until then: avoid throwing at all costs,
     // return false like never.
-    return mHandler(mName, valueStr, lineNo, bedFlags, uo, messageHandler);
+    return mHandler(
+        mName, valueStr, columnData.LineNo(), bedFlags, uo, messageHandler);
 }
 
 //  ============================================================================
@@ -283,8 +283,7 @@ CAutoSqlCustomFields::Dump(
 //  ============================================================================
 bool
 CAutoSqlCustomFields::SetUserObject(
-    const vector<string>& fields,
-    unsigned int lineNo,
+    const CBedColumnData& columnData,
     int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
@@ -296,7 +295,7 @@ CAutoSqlCustomFields::SetUserObject(
     CRef<CUser_field> pDummy(new CUser_field);
     for (const auto& fieldInfo: mFields) {
         if (! fieldInfo.SetUserField(
-                fields, lineNo, bedFlags, *pAutoSqlCustomData, messageHandler)) {
+                columnData, bedFlags, *pAutoSqlCustomData, messageHandler)) {
             return false;
         }
     }

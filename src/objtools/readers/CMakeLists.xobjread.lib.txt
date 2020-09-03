@@ -11,7 +11,7 @@ NCBI_begin_lib(xobjread)
       aln_scanner_sequin aln_scanner_fastagap aln_scanner_multalign
     aln_reader aln_errors aln_error_reporter aln_formatguess aln_util 
     aln_formats alnread
-    bed_reader bed_autosql bed_autosql_standard bed_autosql_custom
+    bed_reader bed_autosql bed_autosql_standard bed_autosql_custom bed_column_data
     cigar fasta
     fasta_aln_builder fasta_reader_utils getfeature gff_reader track_data reader_data
     microarray_reader phrap reader_base readfeat rm_reader

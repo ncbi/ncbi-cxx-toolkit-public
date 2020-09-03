@@ -46,6 +46,7 @@
 #include <objtools/readers/bed_reader.hpp>
 #include "bed_autosql.hpp"
 #include "reader_message_handler.hpp"
+#include "bed_column_data.hpp"
 
 #include <algorithm>
 #include <deque>
@@ -367,63 +368,8 @@ CBedReader::xProcessData(
             return;
         }
         xParseFeature(lineData, annot, nullptr);
+        ++m_CurrentFeatureCount;
     }
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedReader::xAddDefaultColumns(
-    vector<string>& columns)
-//  ----------------------------------------------------------------------------
-{
-    if (mValidColumnCount > 4  &&  columns[4].empty()  &&  m_usescore) {
-        columns[4] = "0";
-    }
-    if (mValidColumnCount > 5  &&  columns[5].empty()) {
-        columns[5] = ".";
-    }
-    if (mValidColumnCount > 6  &&  columns[6].empty()) {
-        columns[6] = columns[1];
-    }
-    if (mValidColumnCount > 7  &&  columns[7].empty()) {
-    columns[7] = columns[2];
-    }
-
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedReader::xSplitColumns(
-    const string& line,
-    vector<string>& columns)
-//  ----------------------------------------------------------------------------
-{
-    bool splitSuccessful = false;
-    if (mColumnSeparator.empty()) {
-        columns.clear();
-        mColumnSeparator = "\t";
-        NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
-        if (columns.size() > 2) {
-            splitSuccessful = true;
-        }
-        else {
-            mColumnSeparator = " \t";
-            mColumnSplitFlags = NStr::fSplit_MergeDelimiters;
-        }
-    }
-    if (!splitSuccessful) {
-        columns.clear();
-        NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
-        if (columns.size() > 2) {
-            splitSuccessful = true;
-        }
-    }
-    if (!splitSuccessful) {
-        return false;
-    }
-    for (auto& column: columns) {
-        NStr::TruncateSpacesInPlace(column);
-    }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -468,18 +414,11 @@ bool CBedReader::xDetermineLikelyColumnCount(
             continue;
         }
 
-        vector<string> columns;
-        if (!xSplitColumns(line, columns)) {
-            fatalColumns.SetLineNumber(bufferLineNumber);
-            throw(fatalColumns);
-        }
-        xCleanColumnValues(columns);
-
-
+        CBedColumnData columnData(SReaderLine(bufferLineNumber, line));
         if (realColumnCount == 0 ) {
-            realColumnCount = columns.size();
+            realColumnCount = columnData.ColumnCount();
         }
-        if (realColumnCount != columns.size()) {
+        if (realColumnCount !=  columnData.ColumnCount()) {
             fatalColumns.SetLineNumber(bufferLineNumber);
             throw(fatalColumns);
         }
@@ -492,8 +431,8 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         unsigned long chromStart = 0, chromEnd = 0;
         try {
-            chromStart = NStr::StringToULong(columns[1]);
-            chromEnd = NStr::StringToULong(columns[2]);
+            chromStart = NStr::StringToULong(columnData[1]);
+            chromEnd = NStr::StringToULong(columnData[2]);
         }
         catch (CException&) {
             fatalChroms.SetLineNumber(bufferLineNumber);
@@ -501,7 +440,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         if (validColumnCount >= 7) {
             try {
-                auto thickStart = NStr::StringToULong(columns[6]);
+                auto thickStart = NStr::StringToULong(columnData[6]);
                 if (thickStart < chromStart  ||  chromEnd < thickStart) {
                     validColumnCount = 6;
                 }
@@ -512,7 +451,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         if (validColumnCount >= 8) {
             try {
-                auto thickEnd = NStr::StringToULong(columns[7]);
+                auto thickEnd = NStr::StringToULong(columnData[7]);
                 if (thickEnd < chromStart  ||  chromEnd < thickEnd) {
                     validColumnCount = 6;
                 }
@@ -526,7 +465,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
         if (validColumnCount >= 10) {
             try {
                 blockCount = NStr::StringToInt(
-                    columns[9], NStr::fDS_ProhibitFractions);
+                    columnData[9], NStr::fDS_ProhibitFractions);
                 if (blockCount < 1) {
                     validColumnCount = 9;
                 }
@@ -537,7 +476,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         if (validColumnCount >= 11) {
             vector<string> blockSizes;
-            auto col10 = columns[10];
+            auto col10 = columnData[10];
             if (NStr::EndsWith(col10, ",")) {
                 col10 = col10.substr(0, col10.size()-1);
             }
@@ -558,7 +497,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         if (validColumnCount >= 12) {
             vector<string> blockStarts;
-            auto col11 = columns[11];
+            auto col11 = columnData[11];
             if (NStr::EndsWith(col11, ",")) {
                 col11 = col11.substr(0, col11.size()-1);
             }
@@ -640,31 +579,8 @@ CBedReader::xParseFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    const string& line = lineData.mData;
-    //  parse
-    vector<string> fields;
-    xSplitColumns(line, fields);
-    xCleanColumnValues(fields);
-    xAddDefaultColumns(fields);
-    if (xParseFeature(fields, lineData.mLine, annot, pEC)) {
-        ++m_CurrentFeatureCount;
-        return true;
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedReader::xParseFeature(
-    const vector<string>& fields,
-    unsigned int lineNo,
-    CSeq_annot& annot,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    static int count = 0;
-    count++;
-
-    if (fields.size()!= mRealColumnCount) {
+    CBedColumnData columnData(lineData);
+    if (columnData.ColumnCount()!= mRealColumnCount) {
         CReaderMessage error(
             eDiag_Error,
             m_uLineNumber,
@@ -673,37 +589,38 @@ bool CBedReader::xParseFeature(
     }
 
     if (m_iFlags & CBedReader::fThreeFeatFormat) {
-        return xParseFeatureThreeFeatFormat(fields, annot, pEC);
+        return xParseFeatureThreeFeatFormat(columnData, annot, pEC);
     }
     else if (m_iFlags & CBedReader::fDirectedFeatureModel) {
-        return xParseFeatureGeneModelFormat(fields, annot, pEC);
+        return xParseFeatureGeneModelFormat(columnData, annot, pEC);
     }
     else if (m_iFlags & CBedReader::fAutoSql) {
-        return xParseFeatureAutoSql(fields, lineNo, annot, pEC);
+        return xParseFeatureAutoSql(columnData, annot, pEC);
     }
     else {
-        return xParseFeatureUserFormat(fields, annot, pEC);
+        return xParseFeatureUserFormat(columnData, annot, pEC);
     }
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeatureThreeFeatFormat(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
      unsigned int baseId = 3*m_CurrentFeatureCount;
 
-    if (!xAppendFeatureChrom(fields, annot, baseId, pEC)) {
+    if (!xAppendFeatureChrom(columnData, annot, baseId, pEC)) {
         return false;
     }
-    if (xContainsThickFeature(fields)  &&  
-            !xAppendFeatureThick(fields, annot, baseId, pEC)) {
+    if (xContainsThickFeature(columnData)  &&  
+            !xAppendFeatureThick(columnData, annot, baseId, pEC)) {
         return false;
     }
-    if (xContainsBlockFeature(fields)  &&
-            !xAppendFeatureBlock(fields, annot, baseId, pEC)) {
+    if (xContainsBlockFeature(columnData)  &&
+            !xAppendFeatureBlock(columnData, annot, baseId, pEC)) {
         return false;
     }
     return true;
@@ -711,29 +628,29 @@ bool CBedReader::xParseFeatureThreeFeatFormat(
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeatureGeneModelFormat(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     unsigned int baseId = 3*m_CurrentFeatureCount;
 
-    CRef<CSeq_feat> pGene = xAppendFeatureGene(fields, annot, baseId, pEC);
+    CRef<CSeq_feat> pGene = xAppendFeatureGene(columnData, annot, baseId, pEC);
     if (!pGene) {
         return false;
     }
 
     CRef<CSeq_feat> pRna;
-    if (xContainsRnaFeature(fields)) {//blocks
-        pRna = xAppendFeatureRna(fields, annot, baseId, pEC);
+    if (xContainsRnaFeature(columnData)) {//blocks
+        pRna = xAppendFeatureRna(columnData, annot, baseId, pEC);
         if (!pRna) {
             return false;
         }
     }
 
     CRef<CSeq_feat> pCds;
-    if (xContainsCdsFeature(fields)) {//thick
-        pCds = xAppendFeatureCds(fields, annot, baseId, pEC);
+    if (xContainsCdsFeature(columnData)) {//thick
+        pCds = xAppendFeatureCds(columnData, annot, baseId, pEC);
         if (!pCds) {
             return false;
         }
@@ -749,7 +666,7 @@ bool CBedReader::xParseFeatureGeneModelFormat(
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xAppendFeatureChrom(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     unsigned int baseId,
     ILineErrorListener* pEC)
@@ -759,18 +676,18 @@ bool CBedReader::xAppendFeatureChrom(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
 
-    xSetFeatureLocationChrom(feature, fields);
-    xSetFeatureIdsChrom(feature, fields, baseId);
-    xSetFeatureBedData(feature, fields, pEC);
+    xSetFeatureLocationChrom(feature, columnData);
+    xSetFeatureIdsChrom(feature, columnData, baseId);
+    xSetFeatureBedData(feature, columnData, pEC);
 
     ftable.push_back(feature);
-    m_currentId = fields[0];
+    m_currentId = columnData[0];
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CBedReader::xAppendFeatureGene(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     unsigned int baseId,
     ILineErrorListener* pEC)
@@ -780,18 +697,18 @@ CRef<CSeq_feat> CBedReader::xAppendFeatureGene(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
 
-    xSetFeatureLocationGene(feature, fields);
-    xSetFeatureIdsGene(feature, fields, baseId);
-    xSetFeatureBedData(feature, fields, pEC);
+    xSetFeatureLocationGene(feature, columnData);
+    xSetFeatureIdsGene(feature, columnData, baseId);
+    xSetFeatureBedData(feature, columnData, pEC);
 
     ftable.push_back(feature);
-    m_currentId = fields[0];
+    m_currentId = columnData[0];
     return feature;
 }
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xAppendFeatureThick(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     unsigned int baseId,
     ILineErrorListener* pEC)
@@ -801,9 +718,9 @@ bool CBedReader::xAppendFeatureThick(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
 
-    xSetFeatureLocationThick(feature, fields);
-    xSetFeatureIdsThick(feature, fields, baseId);
-    xSetFeatureBedData(feature, fields, pEC);
+    xSetFeatureLocationThick(feature, columnData);
+    xSetFeatureIdsThick(feature, columnData, baseId);
+    xSetFeatureBedData(feature, columnData, pEC);
 
     ftable.push_back(feature);
     return true;
@@ -811,7 +728,7 @@ bool CBedReader::xAppendFeatureThick(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CBedReader::xAppendFeatureCds(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     unsigned int baseId,
     ILineErrorListener* pEC)
@@ -821,9 +738,9 @@ CRef<CSeq_feat> CBedReader::xAppendFeatureCds(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
 
-    xSetFeatureLocationCds(feature, fields);
-    xSetFeatureIdsCds(feature, fields, baseId);
-    xSetFeatureBedData(feature, fields, pEC);
+    xSetFeatureLocationCds(feature, columnData);
+    xSetFeatureIdsCds(feature, columnData, baseId);
+    xSetFeatureBedData(feature, columnData, pEC);
 
     ftable.push_back(feature);
     return feature;
@@ -831,7 +748,7 @@ CRef<CSeq_feat> CBedReader::xAppendFeatureCds(
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xAppendFeatureBlock(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     unsigned int baseId,
     ILineErrorListener* pEC)
@@ -841,9 +758,9 @@ bool CBedReader::xAppendFeatureBlock(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
 
-    xSetFeatureLocationBlock(feature, fields);
-    xSetFeatureIdsBlock(feature, fields, baseId);
-    xSetFeatureBedData(feature, fields, pEC);
+    xSetFeatureLocationBlock(feature, columnData);
+    xSetFeatureIdsBlock(feature, columnData, baseId);
+    xSetFeatureBedData(feature, columnData, pEC);
 
     ftable.push_back(feature);
     return true;
@@ -851,7 +768,7 @@ bool CBedReader::xAppendFeatureBlock(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CBedReader::xAppendFeatureRna(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     unsigned int baseId,
     ILineErrorListener* pEC)
@@ -861,9 +778,9 @@ CRef<CSeq_feat> CBedReader::xAppendFeatureRna(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
 
-    xSetFeatureLocationRna(feature, fields);
-    xSetFeatureIdsRna(feature, fields, baseId);
-    xSetFeatureBedData(feature, fields, pEC);
+    xSetFeatureLocationRna(feature, columnData);
+    xSetFeatureIdsRna(feature, columnData, baseId);
+    xSetFeatureBedData(feature, columnData, pEC);
 
     ftable.push_back(feature);
     return feature;
@@ -872,7 +789,7 @@ CRef<CSeq_feat> CBedReader::xAppendFeatureRna(
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeatureUserFormat(
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -882,30 +799,29 @@ bool CBedReader::xParseFeatureUserFormat(
     CRef<CSeq_feat> feature;
     feature.Reset( new CSeq_feat );
 
-    xSetFeatureTitle(feature, fields);
-    xSetFeatureLocation(feature, fields);
-    xSetFeatureDisplayData(feature, fields);
+    xSetFeatureTitle(feature, columnData);
+    xSetFeatureLocation(feature, columnData);
+    xSetFeatureDisplayData(feature, columnData);
 
     ftable.push_back( feature );
-    m_currentId = fields[0];
+    m_currentId = columnData[0];
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeatureAutoSql(
-    const vector<string>& fields,
-    unsigned int lineNo,
+    const CBedColumnData& columnData,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pFeat(new CSeq_feat);;
-    if (!mpAutoSql->ReadSeqFeat(fields, lineNo, *pFeat, *m_pMessageHandler)) {
+    if (!mpAutoSql->ReadSeqFeat(columnData, *pFeat, *m_pMessageHandler)) {
         return false;
     }
     CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
     ftable.push_back(pFeat);
-    m_currentId = fields[0];
+    m_currentId = columnData[0];
     return true;
 }
 
@@ -913,13 +829,13 @@ bool CBedReader::xParseFeatureAutoSql(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureDisplayData(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields )
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
     CRef<CUser_object> display_data( new CUser_object );
     display_data->SetType().SetStr( "Display Data" );
     if (mValidColumnCount >= 4) {
-        display_data->AddField( "name", fields[3] );
+        display_data->AddField( "name", columnData[3] );
     }
     else {
         display_data->AddField( "name", string("") );
@@ -930,41 +846,41 @@ void CBedReader::xSetFeatureDisplayData(
         if ( !m_usescore ) {
             display_data->AddField( 
                 "score",
-                NStr::StringToInt(fields[4],
+                NStr::StringToInt(columnData[4],
                     NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols) );
         }
         else {
             display_data->AddField( 
                 "greylevel",
-                NStr::StringToInt(fields[4], 
+                NStr::StringToInt(columnData[4], 
                     NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols) );
         }
     }
     if (mValidColumnCount >= 7) {
         display_data->AddField( 
             "thickStart",
-            NStr::StringToInt(fields[6], NStr::fDS_ProhibitFractions) );
+            NStr::StringToInt(columnData[6], NStr::fDS_ProhibitFractions) );
     }
     if (mValidColumnCount >= 8) {
         display_data->AddField( 
             "thickEnd",
-            NStr::StringToInt(fields[7], NStr::fDS_ProhibitFractions) - 1 );
+            NStr::StringToInt(columnData[7], NStr::fDS_ProhibitFractions) - 1 );
     }
     if (mValidColumnCount >= 9) {
         display_data->AddField( 
             "itemRGB",
-            fields[8]);
+            columnData[8]);
     }
     if (mValidColumnCount >= 10) {
         display_data->AddField( 
             "blockCount",
-            NStr::StringToInt(fields[9], NStr::fDS_ProhibitFractions) );
+            NStr::StringToInt(columnData[9], NStr::fDS_ProhibitFractions) );
     }
     if (mValidColumnCount >= 11) {
-        display_data->AddField( "blockSizes", fields[10] );
+        display_data->AddField( "blockSizes", columnData[10] );
     }
     if (mValidColumnCount >= 12) {
-        display_data->AddField( "blockStarts", fields[11] );
+        display_data->AddField( "blockStarts", columnData[11] );
     }
     feature->SetData().SetUser( *display_data );
 }
@@ -972,10 +888,10 @@ void CBedReader::xSetFeatureDisplayData(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocationChrom(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields)
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
-    xSetFeatureLocation(feature, fields);
+    xSetFeatureLocation(feature, columnData);
 
     CRef<CUser_object> pBed(new CUser_object());
     pBed->SetType().SetStr("BED");
@@ -987,10 +903,10 @@ void CBedReader::xSetFeatureLocationChrom(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocationGene(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields)
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
-    xSetFeatureLocation(feature, fields);
+    xSetFeatureLocation(feature, columnData);
 
     CRef<CUser_object> pBed(new CUser_object());
     pBed->SetType().SetStr("BED");
@@ -1002,7 +918,7 @@ void CBedReader::xSetFeatureLocationGene(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocationThick(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields)
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> location(new CSeq_loc);
@@ -1011,7 +927,7 @@ void CBedReader::xSetFeatureLocationThick(
 
     //already established: We got at least three columns
     try {
-        from = NStr::StringToInt(fields[6]);
+        from = NStr::StringToInt(columnData[6]);
     }
     catch (std::exception&) {
         CReaderMessage error(
@@ -1021,7 +937,7 @@ void CBedReader::xSetFeatureLocationThick(
         throw error;
     }
     try {
-        to = NStr::StringToInt(fields[7]) - 1;
+        to = NStr::StringToInt(columnData[7]) - 1;
     }
     catch (std::exception&) {
         CReaderMessage error(
@@ -1046,9 +962,9 @@ void CBedReader::xSetFeatureLocationThick(
     }
 
     if (!location->IsNull()) {
-        location->SetStrand(xGetStrand(fields));
+        location->SetStrand(xGetStrand(columnData));
     }
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(columnData[0], m_iFlags, false);
     location->SetId(*id);
     feature->SetLocation(*location);
 
@@ -1062,7 +978,7 @@ void CBedReader::xSetFeatureLocationThick(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocationCds(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields)
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> location(new CSeq_loc);
@@ -1071,7 +987,7 @@ void CBedReader::xSetFeatureLocationCds(
 
     //already established: We got at least three columns
     try {
-        from = NStr::StringToInt(fields[6]);
+        from = NStr::StringToInt(columnData[6]);
     }
     catch (std::exception&) {
         CReaderMessage error(
@@ -1081,7 +997,7 @@ void CBedReader::xSetFeatureLocationCds(
         throw error;
     }
     try {
-        to = NStr::StringToInt(fields[7]) - 1;
+        to = NStr::StringToInt(columnData[7]) - 1;
     }
     catch (std::exception&) {
         CReaderMessage error(
@@ -1106,9 +1022,9 @@ void CBedReader::xSetFeatureLocationCds(
     }
 
     if (!location->IsNull()) {
-        location->SetStrand(xGetStrand(fields));
+        location->SetStrand(xGetStrand(columnData));
     }
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(columnData[0], m_iFlags, false);
     location->SetId(*id);
     feature->SetLocation(*location);
 
@@ -1121,15 +1037,16 @@ void CBedReader::xSetFeatureLocationCds(
 
 //  ----------------------------------------------------------------------------
 ENa_strand CBedReader::xGetStrand(
-    const vector<string>& fields) const
+    const CBedColumnData& columnData) const
 //  ----------------------------------------------------------------------------
 {
     size_t strand_field = 5;
-    if (fields.size() == 5  &&  (fields[4] == "-"  ||  fields[4] == "+")) {
+    if (columnData.ColumnCount() == 5  &&  
+            (columnData[4] == "-"  ||  columnData[4] == "+")) {
         strand_field = 4;
     }
-    if (strand_field < fields.size()) {
-        string strand = fields[strand_field];
+    if (strand_field < columnData.ColumnCount()) {
+        string strand = columnData[strand_field];
         if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
             CReaderMessage error(
                 eDiag_Error,
@@ -1138,30 +1055,30 @@ ENa_strand CBedReader::xGetStrand(
             throw error;
         }
     }
-    return (fields[strand_field] == "-" ? eNa_strand_minus : eNa_strand_plus);
+    return (columnData[strand_field] == "-" ? eNa_strand_minus : eNa_strand_plus);
 }
 
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocationBlock(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields)
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
     //already established: there are sufficient columns to do this
-    size_t blockCount = NStr::StringToUInt(fields[9]);
+    size_t blockCount = NStr::StringToUInt(columnData[9]);
     vector<size_t> blockSizes;
     vector<size_t> blockStarts;
     {{
         blockSizes.reserve(blockCount);
         vector<string> vals; 
-        NStr::Split(fields[10], ",", vals);
+        NStr::Split(columnData[10], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Bad value count in \"blockSizes\".");
             throw error;
         }
@@ -1173,7 +1090,7 @@ void CBedReader::xSetFeatureLocationBlock(
         catch (std::exception&) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Malformed \"blockSizes\" column.");
             throw error;
         }
@@ -1181,15 +1098,15 @@ void CBedReader::xSetFeatureLocationBlock(
     {{
         blockStarts.reserve(blockCount);
         vector<string> vals; 
-        size_t baseStart = NStr::StringToUInt(fields[1]);
-        NStr::Split(fields[11], ",", vals);
+        size_t baseStart = NStr::StringToUInt(columnData[1]);
+        NStr::Split(columnData[11], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Bad value count in \"blockStarts\".");
             throw error;
         }
@@ -1201,7 +1118,7 @@ void CBedReader::xSetFeatureLocationBlock(
         catch (std::exception&) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Malformed \"blockStarts\" column.");
             throw error;
         }
@@ -1209,10 +1126,10 @@ void CBedReader::xSetFeatureLocationBlock(
 
     CPacked_seqint& location = feature->SetLocation().SetPacked_int();
     
-    ENa_strand strand = xGetStrand(fields);
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
+    ENa_strand strand = xGetStrand(columnData);
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(columnData[0], m_iFlags, false);
 
-    bool negative = fields[5] == "-";
+    bool negative = columnData[5] == "-";
 
     CPacked_seqint::Tdata& blocks = location.Set();
 
@@ -1239,24 +1156,24 @@ void CBedReader::xSetFeatureLocationBlock(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocationRna(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields)
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
     //already established: there are sufficient columns to do this
-    size_t blockCount = NStr::StringToUInt(fields[9]);
+    size_t blockCount = NStr::StringToUInt(columnData[9]);
     vector<size_t> blockSizes;
     vector<size_t> blockStarts;
     {{
         blockSizes.reserve(blockCount);
         vector<string> vals; 
-        NStr::Split(fields[10], ",", vals);
+        NStr::Split(columnData[10], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Bad value count in \"blockSizes\".");
             throw error;
         }
@@ -1268,7 +1185,7 @@ void CBedReader::xSetFeatureLocationRna(
         catch (std::exception&) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Malformed \"blockSizes\" column.");
             throw error;
         }
@@ -1276,15 +1193,15 @@ void CBedReader::xSetFeatureLocationRna(
     {{
         blockStarts.reserve(blockCount);
         vector<string> vals; 
-        size_t baseStart = NStr::StringToUInt(fields[1]);
-        NStr::Split(fields[11], ",", vals);
+        size_t baseStart = NStr::StringToUInt(columnData[1]);
+        NStr::Split(columnData[11], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Bad value count in \"blockStarts\".");
             throw error;
         }
@@ -1296,7 +1213,7 @@ void CBedReader::xSetFeatureLocationRna(
         catch (std::exception&) {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Malformed \"blockStarts\" column.");
             throw error;
         }
@@ -1304,10 +1221,10 @@ void CBedReader::xSetFeatureLocationRna(
 
     CPacked_seqint& location = feature->SetLocation().SetPacked_int();
     
-    ENa_strand strand = xGetStrand(fields);
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
+    ENa_strand strand = xGetStrand(columnData);
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(columnData[0], m_iFlags, false);
 
-    bool negative = fields[5] == "-";
+    bool negative = columnData[5] == "-";
 
     CPacked_seqint::Tdata& blocks = location.Set();
 
@@ -1334,14 +1251,14 @@ void CBedReader::xSetFeatureLocationRna(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureIdsChrom(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     unsigned int baseId)
 //  ----------------------------------------------------------------------------
 {
     baseId++; //0-based to 1-based
     feature->SetId().SetLocal().SetId(baseId);
 
-    if (xContainsThickFeature(fields)) {
+    if (xContainsThickFeature(columnData)) {
         CRef<CFeat_id> pIdThick(new CFeat_id);
         pIdThick->SetLocal().SetId(baseId+1);
         CRef<CSeqFeatXref> pXrefThick(new CSeqFeatXref);
@@ -1349,7 +1266,7 @@ void CBedReader::xSetFeatureIdsChrom(
         feature->SetXref().push_back(pXrefThick);
     }
     
-    if (xContainsBlockFeature(fields)) {
+    if (xContainsBlockFeature(columnData)) {
         CRef<CFeat_id> pIdBlock(new CFeat_id);
         pIdBlock->SetLocal().SetId(baseId+2);
         CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
@@ -1361,7 +1278,7 @@ void CBedReader::xSetFeatureIdsChrom(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureIdsGene(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     unsigned int baseId)
 //  ----------------------------------------------------------------------------
 {
@@ -1372,7 +1289,7 @@ void CBedReader::xSetFeatureIdsGene(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureIdsThick(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     unsigned int baseId)
 //  ----------------------------------------------------------------------------
 {
@@ -1385,7 +1302,7 @@ void CBedReader::xSetFeatureIdsThick(
     pXrefChrom->SetId(*pIdChrom);  
     feature->SetXref().push_back(pXrefChrom);
 
-    if (xContainsBlockFeature(fields)) {
+    if (xContainsBlockFeature(columnData)) {
         CRef<CFeat_id> pIdBlock(new CFeat_id);
         pIdBlock->SetLocal().SetId(baseId+2);
         CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
@@ -1397,14 +1314,14 @@ void CBedReader::xSetFeatureIdsThick(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureIdsCds(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
-    unsigned int baseId)
+    const CBedColumnData& columnData,
+   unsigned int baseId)
 //  ----------------------------------------------------------------------------
 {
     baseId++; //0-based to 1-based
     feature->SetId().SetLocal().SetId(baseId+1);
 
-    if (xContainsBlockFeature(fields)) {
+    if (xContainsBlockFeature(columnData)) {
         CRef<CFeat_id> pIdBlock(new CFeat_id);
         pIdBlock->SetLocal().SetId(baseId+2);
         CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
@@ -1423,7 +1340,7 @@ void CBedReader::xSetFeatureIdsCds(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureIdsBlock(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     unsigned int baseId)
 //  ----------------------------------------------------------------------------
 {
@@ -1436,7 +1353,7 @@ void CBedReader::xSetFeatureIdsBlock(
     pXrefChrom->SetId(*pIdChrom);  
     feature->SetXref().push_back(pXrefChrom);
 
-    if (xContainsThickFeature(fields)) {
+    if (xContainsThickFeature(columnData)) {
         CRef<CFeat_id> pIdThick(new CFeat_id);
         pIdThick->SetLocal().SetId(baseId+1);
         CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
@@ -1448,7 +1365,7 @@ void CBedReader::xSetFeatureIdsBlock(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureIdsRna(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     unsigned int baseId)
 //  ----------------------------------------------------------------------------
 {
@@ -1465,11 +1382,12 @@ void CBedReader::xSetFeatureIdsRna(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureTitle(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields )
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
-    if (fields.size() >= 4  &&  !fields[3].empty()  &&  fields[3] != ".") {
-        feature->SetTitle(fields[0]);
+    if (columnData.ColumnCount() >= 4  &&  
+            !columnData[3].empty()  &&  columnData[3] != ".") {
+        feature->SetTitle(columnData[0]);
     }
     else {
         feature->SetTitle(string("line_") + NStr::IntToString(m_uLineNumber));
@@ -1480,26 +1398,26 @@ void CBedReader::xSetFeatureTitle(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureScore(
     CRef<CUser_object> pDisplayData,
-    const vector<string>& fields )
+    const CBedColumnData& columnData)
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage error(
         eDiag_Error,
-        m_uLineNumber,
+        columnData.LineNo(),
         "Invalid data line: Bad \"score\" value.");
 
     string trackUseScore = m_pTrackDefaults->ValueOf("useScore");
-    if (fields.size() < 5  || trackUseScore == "1") {
+    if (columnData.ColumnCount() < 5  || trackUseScore == "1") {
         //record does not carry score information
         return;
     }
 
-    int int_score = NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow );
+    int int_score = NStr::StringToInt(columnData[4], NStr::fConvErr_NoThrow );
     double d_score = 0;
 
-    if (int_score == 0 && fields[4].compare("0") != 0) {
+    if (int_score == 0 && columnData[4].compare("0") != 0) {
         try {
-            d_score = NStr::StringToDouble(fields[4]);
+            d_score = NStr::StringToDouble(columnData[4]);
         }
         catch(std::exception&) {
             throw error;
@@ -1521,14 +1439,14 @@ void CBedReader::xSetFeatureScore(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureColor(
     CRef<CUser_object> pDisplayData,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     //1: if track line itemRgb is set, try that first:
     string trackItemRgb = m_pTrackDefaults->ValueOf("itemRgb");
-    if (trackItemRgb == "On"  &&  fields.size() >= 9) {
-        string featItemRgb = fields[8];
+    if (trackItemRgb == "On"  &&  columnData.ColumnCount() >= 9) {
+        string featItemRgb = columnData[8];
         if (featItemRgb != ".") {
             xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb, pEC);
             return;
@@ -1537,8 +1455,8 @@ void CBedReader::xSetFeatureColor(
 
     //2: if track useScore is set, try that next:
     string trackUseScore = m_pTrackDefaults->ValueOf("useScore");
-    if (trackUseScore == "1"  && fields.size() >= 5) {
-        string featScore = fields[4];
+    if (trackUseScore == "1"  && columnData.ColumnCount() >= 5) {
+        string featScore = columnData[4];
         if (featScore != ".") {    
             xSetFeatureColorFromScore(pDisplayData, featScore);
             return; 
@@ -1547,15 +1465,15 @@ void CBedReader::xSetFeatureColor(
 
     //3: if track colorByStrand is set, try that next:
     string trackColorByStrand = m_pTrackDefaults->ValueOf("colorByStrand");
-    if (!trackColorByStrand.empty()  && fields.size() >= 6) {
+    if (!trackColorByStrand.empty()  && columnData.ColumnCount() >= 6) {
         ENa_strand strand = 
-            (fields[5] == "-") ? eNa_strand_minus : eNa_strand_plus;
+            (columnData[5] == "-") ? eNa_strand_minus : eNa_strand_plus;
         xSetFeatureColorByStrand(pDisplayData, trackColorByStrand, strand, pEC);
         return;
     }
     //4: if none of the track color attributes are set, attempt feature itemRgb:
-    if (fields.size() >= 9) {
-        string featItemRgb = fields[8];
+    if (columnData.ColumnCount() >= 9) {
+        string featItemRgb = columnData[8];
         if (featItemRgb != ".") {
             xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb, pEC);
             return;
@@ -1714,16 +1632,16 @@ void CBedReader::xSetFeatureColorFromItemRgb(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureBedData(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields,
+    const CBedColumnData& columnData,
     ILineErrorListener* pEc )
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData& data = feature->SetData();
-    if (fields.size() >= 4  &&  fields[3] != ".") {
-        data.SetRegion() = fields[3];
+    if (columnData.ColumnCount() >= 4  &&  columnData[3] != ".") {
+        data.SetRegion() = columnData[3];
     }
     else {
-        data.SetRegion() = fields[0];
+        data.SetRegion() = columnData[0];
     }
     
     CRef<CUser_object> pDisplayData(new CUser_object());
@@ -1732,14 +1650,14 @@ void CBedReader::xSetFeatureBedData(
     pDisplayData->SetType().SetStr("DisplaySettings");
     exts.push_front(pDisplayData);
 
-    xSetFeatureScore(pDisplayData, fields);
-    xSetFeatureColor(pDisplayData, fields, pEc);
+    xSetFeatureScore(pDisplayData, columnData);
+    xSetFeatureColor(pDisplayData, columnData, pEc);
 }
 
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureLocation(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields )
+    const CBedColumnData& columnData )
 //  ----------------------------------------------------------------------------
 {
     //
@@ -1756,22 +1674,22 @@ void CBedReader::xSetFeatureLocation(
 
     //already established: We got at least three columns
     try {
-        from = NStr::StringToInt(fields[1]);
+        from = NStr::StringToInt(columnData[1]);
     }
     catch(std::exception&) {
         CReaderMessage error(
             eDiag_Error,
-            m_uLineNumber,
+            columnData.LineNo(),
             "Invalid data line: Bad \"SeqStart\" value.");
         throw error;
     }
     try {
-        to = NStr::StringToInt(fields[2]) - 1;
+        to = NStr::StringToInt(columnData[2]) - 1;
     }
     catch(std::exception&) {
         CReaderMessage error(
             eDiag_Error,
-            m_uLineNumber,
+            columnData.LineNo(),
             "Invalid data line: Bad \"SeqStop\" value.");
         throw error;
     }
@@ -1785,29 +1703,30 @@ void CBedReader::xSetFeatureLocation(
     else {
         CReaderMessage error(
             eDiag_Error,
-            m_uLineNumber,
+            columnData.LineNo(),
             "Invalid data line: \"SeqStop\" less than \"SeqStart\".");
         throw error;
     }
 
     size_t strand_field = 5;
-    if (fields.size() == 5  &&  (fields[4] == "-"  ||  fields[4] == "+")) {
+    if (columnData.ColumnCount() == 5  &&  
+            (columnData[4] == "-"  ||  columnData[4] == "+")) {
         strand_field = 4;
     }
-    if (strand_field < fields.size()) {
-        string strand = fields[strand_field];
+    if (strand_field < columnData.ColumnCount()) {
+        string strand = columnData[strand_field];
         if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
             CReaderMessage error(
                 eDiag_Error,
-                m_uLineNumber,
+                columnData.LineNo(),
                 "Invalid data line: Invalid strand character.");
             throw error;
         }
-        location->SetStrand(( fields[strand_field] == "+" ) ?
+        location->SetStrand(( columnData[strand_field] == "+" ) ?
                            eNa_strand_plus : eNa_strand_minus );
     }
     
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(columnData[0], m_iFlags, false);
     location->SetId(*id);
     feature->SetLocation(*location);
 }
@@ -1934,23 +1853,23 @@ CBedReader::xReadBedRecordRaw(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xContainsThickFeature(
-    const vector<string>& fields) const
+    const CBedColumnData& columnData) const
 //  ----------------------------------------------------------------------------
 {
-    if (fields.size() < 8  ||  mValidColumnCount < 8) {
+    if (columnData.ColumnCount() < 8  ||  mValidColumnCount < 8) {
         return false;
     }
 
     int start = -1, from = -1, to = -1;
     try {
-        start = NStr::StringToInt(fields[1]);
-        from = NStr::StringToInt(fields[6]);
-        to = NStr::StringToInt(fields[7]);
+        start = NStr::StringToInt(columnData[1]);
+        from = NStr::StringToInt(columnData[6]);
+        to = NStr::StringToInt(columnData[7]);
     }
     catch (std::exception&) {
         CReaderMessage error(
             eDiag_Error,
-            m_uLineNumber,
+            columnData.LineNo(),
             "Invalid data line: Bad \"Start/ThickStart/ThickStop\" values.");
         throw error;
     }
@@ -1964,23 +1883,23 @@ CBedReader::xContainsThickFeature(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xContainsRnaFeature(
-    const vector<string>& fields) const
+    const CBedColumnData& columnData) const
 //  ----------------------------------------------------------------------------
 {
-    if (fields.size() < 12  ||  mValidColumnCount < 12) {
+    if (columnData.ColumnCount() < 12  ||  mValidColumnCount < 12) {
         return false;
     }
 
     int start = -1, from = -1, to = -1;
     try {
-        start = NStr::StringToInt(fields[1]);
-        from = NStr::StringToInt(fields[6]);
-        to = NStr::StringToInt(fields[7]);
+        start = NStr::StringToInt(columnData[1]);
+        from = NStr::StringToInt(columnData[6]);
+        to = NStr::StringToInt(columnData[7]);
     }
     catch (std::exception&) {
         CReaderMessage error(
             eDiag_Error,
-            m_uLineNumber,
+            columnData.LineNo(),
             "Invalid data line: Bad \"Start/ThickStart/ThickStop\" values.");
         throw error;
     }
@@ -1994,20 +1913,20 @@ CBedReader::xContainsRnaFeature(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xContainsBlockFeature(
-    const vector<string>& fields) const
+    const CBedColumnData& columnData) const
 //  ----------------------------------------------------------------------------
 {
-    return (fields.size() >= 12  &&  mValidColumnCount >= 12);
+    return (columnData.ColumnCount() >= 12  &&  mValidColumnCount >= 12);
 }
 
 
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xContainsCdsFeature(
-    const vector<string>& fields) const
+    const CBedColumnData& columnData) const
 //  ----------------------------------------------------------------------------
 {
-    return (fields.size() >= 8  &&  mValidColumnCount >= 8);
+    return (columnData.ColumnCount() >= 8  &&  mValidColumnCount >= 8);
 }
 
 
