@@ -1943,7 +1943,7 @@ EXR	s	University of Exeter, Biological Sciences Department
 F	s	Field Museum of Natural History, Botany Department	FMNH:F		
 FAA	s	Universidad Nacional del Centro de la Provincia de Buenos Aires			
 FABR	s	Harmas de J. H. Fabre			
-FACHB	c	Freshwater Algae Culture Collection			
+FACHB	c	Freshwater Algae Culture Collection	CHAB<China> 		
 FACS	s	Fujian Agricultural College			
 FAK	s	Department of Fisheries, Faculty of Agriculture			
 FAKOU	s	Faculty of Agriculture, Kochi Univerisity			

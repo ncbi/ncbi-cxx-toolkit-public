@@ -1976,7 +1976,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "F\ts\tField Museum of Natural History, Botany Department\tFMNH:F\t\t",
 "FAA\ts\tUniversidad Nacional del Centro de la Provincia de Buenos Aires\t\t\t",
 "FABR\ts\tHarmas de J. H. Fabre\t\t\t",
-"FACHB\tc\tFreshwater Algae Culture Collection\t\t\t",
+"FACHB\tc\tFreshwater Algae Culture Collection\tCHAB<China> \t\t",
 "FACS\ts\tFujian Agricultural College\t\t\t",
 "FAK\ts\tDepartment of Fisheries, Faculty of Agriculture\t\t\t",
 "FAKOU\ts\tFaculty of Agriculture, Kochi Univerisity\t\t\t",
