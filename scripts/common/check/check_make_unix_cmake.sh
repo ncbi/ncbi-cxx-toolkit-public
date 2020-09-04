@@ -560,11 +560,15 @@ RunTest()
 
     if test -f "/etc/nologin"; then
         echo "Nologin detected, probably host going to reboot. Skipping test:" \$x_name
+        touch "\$checkdir/~RUN_CHECKS.next"
         return 0
     fi
     if \$is_report_err; then
         # Authors are not defined for this test
-        test -z "\$x_authors"  &&  return 0
+        if test -z "\$x_authors"; then
+            touch "\$checkdir/~RUN_CHECKS.next"
+            return 0
+        fi
     fi
     test -d \${x_work_dir} || mkdir -p \${x_work_dir}
 
@@ -573,12 +577,12 @@ RunTest()
       t_res="yes"
       if test \$t_sub = "-"; then
           t_sub=\${x_req:1}
-          if test -f "\$x_conf_dir/status/\$t_sub.enabled" ; then
+          if test -f "\$conf_dir/status/\$t_sub.enabled" ; then
             t_res="no"
           fi
       else
           t_sub=\${x_req}
-          if test ! -f "\$x_conf_dir/status/\$t_sub.enabled" ; then
+          if test ! -f "\$conf_dir/status/\$t_sub.enabled" ; then
             t_res="no"
           fi
       fi
@@ -588,7 +592,7 @@ RunTest()
            echo "t_cmd=\\"[\$r_id/\$x_TestsTotal \$x_work_dir_tail] \$x_name (unmet CHECK_REQUIRES=\$x_req)\\"" > \$x_info
            echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
            mv \$x_info "\${x_done}.done"
-#           rm "\${x_done}.in_progress"
+           touch "\$checkdir/~RUN_CHECKS.next"
            rm -rf "\${x_work_dir}"
            return 0
       fi
@@ -596,11 +600,11 @@ RunTest()
 
     if test -n "\$x_resources"; then
         for r in \$x_resources ; do
-            while ! mkdir "\$checkdir/~\$r.lock" 2>/dev/null
-            do
-	            sleep 1
-            done
             if test \$r = "SERIAL"; then
+                while ! mkdir "\$checkdir/~\$r.lock" 2>/dev/null
+                do
+	                sleep 1
+                done
                 r_count=\`ls \${checkdir}/*.in_progress 2>/dev/null | wc -w | sed -e 's/ //g'\`
                 while test \$r_count -gt 0; do
                     sleep 1
@@ -613,6 +617,18 @@ RunTest()
     touch "\${x_done}.in_progress"
     if test -f "\${x_done}.done"; then 
         rm -f "\${x_done}.done"
+    fi
+    touch "\$checkdir/~RUN_CHECKS.next"
+
+    if test -n "\$x_resources"; then
+        for r in \$x_resources ; do
+            if test \$r != "SERIAL"; then
+                while ! mkdir "\$checkdir/~\$r.lock" 2>/dev/null
+                do
+	                sleep 1
+                done
+            fi
+        done
     fi
 
     if test -n "\$x_files"; then
@@ -1078,7 +1094,23 @@ AddJob()
     ProcessDone
 
     if test "\${a_pid}" -gt 0; then
-        echo "Start \$a_id: \${a_name} (\$a_pid)"
+        echo "        Start \$a_id: \${a_name} (\$a_pid)"
+        while test ! -e "\$checkdir/~RUN_CHECKS.next"; do
+            if test -e "\$checkdir/~SERIAL.lock"; then
+                ProcessDone
+                sleep 2
+            else
+                sleep .1
+            fi
+        done
+        rm "\$checkdir/~RUN_CHECKS.next"
+    fi
+    while test -e "\$checkdir/~SERIAL.lock"; do
+        ProcessDone
+        sleep 2
+    done
+
+    if test "\${a_pid}" -gt 0; then
         if test -n "\$NTEST_PARALLEL_LEVEL"; then
             a_maxjob=\$NTEST_PARALLEL_LEVEL
         elif test -n "\$CTEST_PARALLEL_LEVEL"; then
@@ -1089,27 +1121,17 @@ AddJob()
             a_maxjob=4
         fi
     else
-        sleep 2
         a_maxjob=0
     fi
-    while test -e "\$checkdir/~SERIAL.lock"; do
-        ProcessDone
-        sleep 1
-    done
 
     a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
     a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
     if test "\${a_run}" -ne "\${a_run}"; then
-        echo "error:  a_run = \$a_run"
+echo "error:  1 a_run = \$a_run"
         ProcessDone
         a_run=0
     fi
-    if test "\$a_run" -lt "\$a_maxjob"; then
-        sleep 1
-        return
-    fi
 
-    sleep 1
     while test "\$a_run" -ge "\$a_maxjob"; do
         if ProcessDone; then
             sleep 1
@@ -1117,6 +1139,7 @@ AddJob()
         a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
         a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
         if test "\${a_run}" -ne "\${a_run}"; then
+echo "error:  2 a_run = \$a_run"
             break
         fi
         if test "\${a_run}" -le 0; then
