@@ -2068,6 +2068,10 @@ bool CGff3Writer::xAssignFeatureAttributeName(
                 return true;
             }
             return true;
+
+        case CSeqFeatData::eSubtype_region:
+            record.SetAttribute("Name", mf.GetData().GetRegion());
+            return true;
     }
 
     if (record.GetAttributes("transcript_id", value)) {

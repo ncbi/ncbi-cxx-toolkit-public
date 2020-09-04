@@ -875,7 +875,7 @@ bool CSoMap::xMapRegion(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
-    so_type = "region";
+    so_type = "biological_region";
     return true;
 }
 
