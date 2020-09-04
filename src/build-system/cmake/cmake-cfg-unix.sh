@@ -15,6 +15,12 @@ extension="cmake_configure_ext.sh"
 host_os=`uname`
 if test -z "${CMAKE_CMD}" -a $host_os = "Darwin"; then
   CMAKE_CMD=/Applications/CMake.app/Contents/bin/cmake
+  if test ! -x $CMAKE_CMD; then
+    CMAKE_CMD=/sw/bin/cmake
+    if test ! -x $CMAKE_CMD; then
+      CMAKE_CMD=""
+    fi
+  fi
 fi
 if [ -z "${CMAKE_CMD}" ]; then
   CMAKE_CMD=`which cmake 2>/dev/null`
