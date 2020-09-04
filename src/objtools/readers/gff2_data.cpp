@@ -651,10 +651,12 @@ bool CGff2Record::xMigrateAttributes(
 
     it = attrs_left.find("Name");
     if (it != attrs_left.end()) {
-        if (0 == NStr::CompareNocase(Type(), "cds")) {
-            attrs_left.erase(it);
-        }
-        if (0 == NStr::CompareNocase(Type(), "mRNA")) {
+        auto soType = Type();
+        NStr::ToLower(soType);
+        string gbKey;
+        GetAttribute("gbkey", gbKey);
+        if (soType == "cds"  ||  soType == "mrna"  ||  soType == "biological_region"  ||
+                (soType == "region"  &&  gbKey != "Src")) {
             attrs_left.erase(it);
         }
     }
@@ -1149,7 +1151,9 @@ bool CGff2Record::xInitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
-    if (Type() == "region") {
+    auto recognizedType = Type();
+
+    if (recognizedType == "region"  ||  recognizedType == "biological_region") {
         string gbkey;
         if (GetAttribute("gbkey", gbkey)) {
             if (gbkey == "Src") {
@@ -1157,12 +1161,13 @@ bool CGff2Record::xInitFeatureData(
                 return true;
             }
             // regardless of gbkey (rw-1062)
-            pFeature->SetData().SetRegion();
+            string name = "";
+            GetAttribute("Name", name);
+            pFeature->SetData().SetRegion(name);
             return true;
         }
     }
 
-    auto recognizedType = Type();
     if (recognizedType == "start_codon"  || recognizedType == "stop_codon") {
         recognizedType = "cds";
     }
