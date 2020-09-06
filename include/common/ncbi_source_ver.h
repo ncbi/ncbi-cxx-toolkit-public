@@ -28,7 +28,7 @@
 #include <common/ncbi_build_info.h>
 
 /* #undef NCBI_PRODUCTION_VER */
-#define NCBI_DEVELOPMENT_VER 20200905
+#define NCBI_DEVELOPMENT_VER 20200906
 
 #if defined(NCBI_PRODUCTION_VER)
 #  define NCBI_SRCTREE_VER_PROXY  NCBI_PRODUCTION_VER
