@@ -1823,6 +1823,28 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int  oid) const
     return seqids;
 }
 
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int  oid, CObjectIStreamAsnBinary *inpstr ) const
+{
+    list< CRef< CSeq_id > > seqids;
+
+    CRef<CBlast_def_line_set> defline_set =
+        x_GetFilteredHeader(oid, NULL, inpstr);
+
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+            if (! (*defline)->CanGetSeqid()) {
+                continue;
+            }
+
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*defline)->GetSeqid()) {
+                seqids.push_back(*seqid);
+            }
+        }
+    }
+
+    return seqids;
+}
+
 TGi CSeqDBVol::GetSeqGI(int              oid,
                         CSeqDBLockHold & locked) const
 {
@@ -2004,6 +2026,117 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 }
 
 CRef<CBlast_def_line_set>
+CSeqDBVol::x_GetFilteredHeader(int                    oid,
+                               bool                 * changed,
+			       CObjectIStreamAsnBinary  *inpstr ) const
+{
+    typedef list< CRef<CBlast_def_line> > TBDLL;
+    typedef TBDLL::iterator               TBDLLIter;
+
+    //m_Atlas.Lock(locked);
+
+    const bool useCache = (CThread::GetSelf() == 0 ? true : false);
+    TDeflineCacheItem & cached = m_DeflineCache.Lookup(oid);
+
+    if (useCache && cached.first.NotEmpty()) {
+        if (changed) {
+            *changed = cached.second;
+        }
+
+        return cached.first;
+    }
+
+    bool asn_changed = false;
+
+    CRef<CBlast_def_line_set> BDLS =
+        x_GetHdrAsn1(oid, true, & asn_changed, inpstr);
+
+    bool id_filter = x_HaveIdFilter();
+
+    if (id_filter || m_MemBit) {
+        // Create the memberships mask (should this be fixed to allow
+        // membership bits greater than 32?)
+
+        TBDLL & dl = BDLS->Set();
+
+        for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
+            const CBlast_def_line & defline = **iter;
+
+            bool have_memb = true;
+
+            if (m_MemBit) {
+                have_memb =
+                    defline.CanGetMemberships() &&
+                    defline.IsSetMemberships() &&
+                    (! defline.GetMemberships().empty());
+
+                if (have_memb) {
+                    int bits = defline.GetMemberships().front();
+                    int memb_mask = 0x1 << (m_MemBit-1);
+
+                    if ((bits & memb_mask) == 0) {
+                        have_memb = false;
+                    }
+                }
+            }
+
+            // Here we must pass both the user-gi and volume-gi test,
+            // for each defline, but not necessarily for each Seq-id.
+            if (have_memb) {
+            	if (id_filter && defline.CanGetSeqid()) {
+            		have_memb = false;
+            		bool have_user = false, have_volume = false;
+            		ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
+            			x_FilterHasId(**seqid, have_user, have_volume);
+            			if (have_user && have_volume) break;
+            		}
+            		have_memb = have_user && have_volume;
+            	}
+
+            	if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetNumTaxIds() > 0)) {
+               		have_memb = s_IncludeDefline_Taxid(defline, m_UserGiList->GetTaxIdsList());
+            	}
+
+            	if (!have_memb && !m_VolumeGiLists.empty()) {
+               		NON_CONST_ITERATE(TGiLists, vtaxid, m_VolumeGiLists) {
+               			if( (*vtaxid)->GetNumTaxIds() > 0) {
+               				have_memb = s_IncludeDefline_Taxid(defline, (*vtaxid)->GetTaxIdsList());
+               				if(have_memb){
+               					break;
+               				}
+               			}
+               		}
+            	}
+
+            	if(have_memb && (!m_NegativeList.Empty()) && (m_NegativeList->GetNumTaxIds() > 0)) {
+               		have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
+            	}
+            }
+
+            if (! have_memb) {
+                TBDLLIter eraseme = iter++;
+                dl.erase(eraseme);
+                asn_changed = true;
+            } else {
+                iter++;
+            }
+        }
+    }
+
+    if (useCache)
+    {
+    	if (asn_changed) {
+       	 cached.first = BDLS;
+       	 cached.second = asn_changed;
+    	} else {
+       	 cached.first = BDLS;
+       	 cached.second = asn_changed;
+    	}
+    }
+
+    return BDLS;
+}
+CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetHdrAsn1(int              oid,
                         bool             adjust_oids,
                         bool           * changed) const
@@ -2023,6 +2156,59 @@ CSeqDBVol::x_GetHdrAsn1(int              oid,
     bdls.Reset(new objects::CBlast_def_line_set);
 
     inpstr >> *bdls;
+
+    if (adjust_oids && bdls.NotEmpty() && m_VolStart) {
+        NON_CONST_ITERATE(list< CRef<CBlast_def_line> >, dl, bdls->Set()) {
+            if (! (**dl).CanGetSeqid()) {
+                continue;
+            }
+
+            NON_CONST_ITERATE(list< CRef<CSeq_id> >, id, (*dl)->SetSeqid()) {
+                CSeq_id & seqid = **id;
+
+                if (seqid.Which() == CSeq_id::e_General) {
+                    CDbtag & dbt = seqid.SetGeneral();
+
+                    if (dbt.GetDb() == "BL_ORD_ID") {
+                        int vol_oid = dbt.GetTag().GetId();
+                        dbt.SetTag().SetId(m_VolStart + vol_oid);
+                        if (changed) {
+                            *changed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return bdls;
+}
+
+CRef<CBlast_def_line_set>
+CSeqDBVol::x_GetHdrAsn1(int              oid,
+                        bool             adjust_oids,
+                        bool           * changed,
+			CObjectIStreamAsnBinary *inpstr ) const
+{
+    CRef<CBlast_def_line_set> bdls;
+
+    CTempString raw_data = x_GetHdrAsn1Binary(oid);
+
+    if (! raw_data.size()) {
+        return bdls;
+    }
+
+    /*
+     * FixNonPrint(how);
+     * ResetThisState();
+     * OpenFromBuffer(buffer, size);
+     */
+    inpstr->Close(); // insted of ResetThisState
+    inpstr->OpenFromBuffer( raw_data.data(), raw_data.size());
+
+    bdls.Reset(new objects::CBlast_def_line_set);
+
+    (*inpstr)  >> *bdls; // NEW METHOD
 
     if (adjust_oids && bdls.NotEmpty() && m_VolStart) {
         NON_CONST_ITERATE(list< CRef<CBlast_def_line> >, dl, bdls->Set()) {

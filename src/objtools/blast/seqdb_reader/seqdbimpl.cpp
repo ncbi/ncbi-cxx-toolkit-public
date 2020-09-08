@@ -36,6 +36,8 @@
 #include <sstream>
 #include <algorithm>
 #include <serial/enumvalues.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objistrasnb.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 
 BEGIN_NCBI_SCOPE
@@ -146,6 +148,8 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 
     SetIterationRange(oid_begin, oid_end);
 
+    reusable_inpstr =  new CObjectIStreamAsnBinary ; 
+
     CHECK_MARKER();
 }
 
@@ -170,6 +174,7 @@ CSeqDBImpl::CSeqDBImpl(bool use_atlas_lock)
 {
     INIT_CLASS_MARK();
 
+    reusable_inpstr =  new CObjectIStreamAsnBinary ; 
     CHECK_MARKER();
 }
 
@@ -197,7 +202,13 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 CSeqDBImpl::~CSeqDBImpl()
 {
     CHECK_MARKER();
-
+    if( reusable_inpstr ) {
+	delete reusable_inpstr;
+	reusable_inpstr = NULL;
+    }
+    else {
+        cerr << "\n(=)\n";
+    }
     SetNumberOfThreads(0);
 
     CSeqDBLockHold locked(m_Atlas);
@@ -837,7 +848,10 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     }
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqIDs(vol_oid);
+	if( ! reusable_inpstr   ) {
+           reusable_inpstr =  new CObjectIStreamAsnBinary ; 
+	}
+        return vol->GetSeqIDs(vol_oid, reusable_inpstr);
     }
 
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);

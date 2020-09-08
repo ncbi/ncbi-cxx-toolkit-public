@@ -1407,6 +1407,8 @@ private:
 
     /// Initialize Id Set
     void x_InitIdSet();
+
+    CObjectIStreamAsnBinary  *reusable_inpstr; 
 };
 
 END_NCBI_SCOPE

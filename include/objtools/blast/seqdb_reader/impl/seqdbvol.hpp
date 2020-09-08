@@ -411,6 +411,8 @@ public:
     /// @return
     ///   The list of Seq-id objects for this sequences.
     list< CRef<CSeq_id> > GetSeqIDs(int  oid) const;
+    // same as above version with cached CObjectIStreamAsnBinary
+    list< CRef<CSeq_id> > GetSeqIDs(int  oid, CObjectIStreamAsnBinary  *inpstr) const;
 
     /// Get the GI of a sequence
     /// This method returns the gi of the sequence
@@ -1030,6 +1032,11 @@ private:
                  bool             adjust_oids,
                  bool           * changed) const;
 
+    CRef<CBlast_def_line_set>
+    x_GetHdrAsn1(int              oid,
+                 bool             adjust_oids,
+                 bool           * changed,
+		 CObjectIStreamAsnBinary  *inpstr) const;
     /// Get sequence header binary data.
     ///
     /// This method returns the sequence header information as a
@@ -1080,6 +1087,11 @@ private:
     CRef<CBlast_def_line_set>
     x_GetFilteredHeader(int                    oid,
                         bool                 * changed) const;
+
+    CRef<CBlast_def_line_set>
+    x_GetFilteredHeader(int                    oid,
+                        bool                 * changed,
+			CObjectIStreamAsnBinary *inpstr ) const;
 
     /// Get sequence header information structures.
     ///
