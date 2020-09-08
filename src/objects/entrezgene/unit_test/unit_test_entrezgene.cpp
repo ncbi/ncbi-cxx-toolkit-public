@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(s_TestDescription)
 
     // Data comes from prot desc
     s_GetObject("4514", eg_obj);
-    BOOST_CHECK_EQUAL(eg_obj.GetDescription(), "cytochrome c oxidase III");
+    BOOST_CHECK_EQUAL(eg_obj.GetDescription(), "cytochrome c oxidase subunit III");
 
     // Data comes from prot name
     s_GetObject("4508", eg_obj);
