@@ -751,7 +751,7 @@ void CFlatGatherer::x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs
     if (! bsx) return;
 
     // gather references from descriptors
-    bsx->IterateDescriptors([this, &refs, &idx, bsx](CDescriptorIndex& sdx) {
+    bsx->IterateDescriptors([this, &refs, bsx](CDescriptorIndex& sdx) {
         try {
             CSeqdesc::E_Choice chs = sdx.GetType();
             if (chs == CSeqdesc::e_Pub) {
