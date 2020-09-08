@@ -132,6 +132,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
     netstorage_object.Close();
 
+    if (!total_bytes_written) s_WriteHeader(request, reply);
     LOG_POST(Info << "retrieved data: " << total_bytes_written << " bytes");
 
     return 0;
