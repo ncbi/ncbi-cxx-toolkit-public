@@ -6259,7 +6259,7 @@ void TestConsultRequired(const string& taxname)
 BOOST_AUTO_TEST_CASE(Test_VR_857)
 {
     TestConsultRequired("Corynebacterium urogenitalia");
-    TestConsultRequired("Erythrobacter marisflavi");
+    // TestConsultRequired("Erythrobacter marisflavi");
 }
 
 
