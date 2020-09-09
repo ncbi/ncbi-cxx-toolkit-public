@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_usage_report.hpp>
+#include <corelib/ncbifile.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -40,6 +41,7 @@ USING_SCOPE(blast);
 #endif
 
 static const string kNcbiAppName="standalone-blast";
+static const string kIdFile="/sys/class/dmi/id/product_name";
 
 void CBlastUsageReport::x_CheckRunEnv()
 {
@@ -48,16 +50,19 @@ void CBlastUsageReport::x_CheckRunEnv()
 		AddParam(eDocker, true);
 	}
 
-	char * blast_GCP = getenv("BLAST_GCP");
-	if(blast_GCP != NULL){
-		AddParam(eGCP, true);
+	CFile id_file(kIdFile);
+	if(id_file.Exists()){
+		CNcbiIfstream s(id_file.GetPath().c_str(), IOS_BASE::in);
+		string line;
+		NcbiGetlineEOL(s, line);
+		NStr::ToUpper(line);
+		if (line.find("GOOGLE") != NPOS) {
+			AddParam(eGCP, true);
+		}
+		else if (line.find("AMAZON")!= NPOS){
+			AddParam(eAWS, true);
+		}
 	}
-
-	char * blast_AWS = getenv("BLAST_AWS");
-	if(blast_AWS != NULL){
-		AddParam(eAWS, true);
-	}
-
 }
 
 CBlastUsageReport::CBlastUsageReport()
