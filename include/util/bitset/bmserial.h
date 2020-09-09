@@ -110,13 +110,14 @@ public:
     // --------------------------------------------------------------------
     /**
         Set compression level. Higher compression takes more time to process.
-        @param clevel - compression level (0-5)
+        @param clevel - compression level (0-6)
         0 - take as is
         1, 2 - apply light weight RLE/GAP encodings, limited depth hierarchical
                compression, intervals encoding
         3 - variant of 2 with different cut-offs
         4 - delta transforms plus Elias Gamma encoding where possible legacy)
-        5 - Binary Interpolative Coding (Moffat, et al)
+        5 - Binary Interpolative Coding (BIC) - light settings
+        6 - Binary Interpolative Coding (BIC) - harder settings
 
         @sa get_compression_level
     */
@@ -190,7 +191,16 @@ public:
     */
     const size_type* get_compression_stat() const BMNOEXCEPT
                                     { return compression_stat_; }
-    
+
+    /**
+        Enable/disable statistics reset on each serilaization
+     */
+    void allow_stat_reset(bool allow) BMNOEXCEPT
+        { allow_stat_reset_ = allow; }
+
+    /// Reset all accumulated compression statistics
+    void reset_compression_stats() BMNOEXCEPT;
+
     /**
         Set GAP length serialization (serializes GAP levels of the original vector)
                 
@@ -339,9 +349,6 @@ protected:
     /// Determine best representation for a bit-block (level 5)
     unsigned char find_bit_best_encoding_l5(const bm::word_t* block) BMNOEXCEPT;
 
-    /// Reset all accumulated compression statistics
-    void reset_compression_stats() BMNOEXCEPT;
-    
     void reset_models() BMNOEXCEPT { mod_size_ = 0; }
     void add_model(unsigned char mod, unsigned score) BMNOEXCEPT;
 protected:
@@ -406,6 +413,7 @@ private:
     
     allocator_type  alloc_;
     size_type*      compression_stat_;
+    bool            allow_stat_reset_ = true; ///< controls zeroing of telemetry
     bool            gap_serial_;
     bool            byte_order_serial_;
 
@@ -1169,7 +1177,7 @@ serializer<BV>::~serializer()
     if (compression_stat_)
         alloc_.free_bit_block((bm::word_t*)compression_stat_);
     if (xor_block_)
-        alloc_.free_bit_block(xor_block_);
+        alloc_.free_bit_block(xor_block_, 2);
 }
 
 
@@ -1234,7 +1242,7 @@ void serializer<BV>::set_ref_vectors(const bv_ref_vector_type* ref_vect)
     ref_vect_ = ref_vect;
     xor_scan_.set_ref_vector(ref_vect);
     if (!xor_block_)
-        xor_block_ = alloc_.alloc_bit_block();
+        xor_block_ = alloc_.alloc_bit_block(2);
 }
 
 template<class BV>
@@ -2441,8 +2449,9 @@ serializer<BV>::serialize(const BV& bv,
                           unsigned char* buf, size_t buf_size)
 {
     BM_ASSERT(temp_block_);
-    
-    reset_compression_stats();
+
+    if (allow_stat_reset_)
+        reset_compression_stats();
     const blocks_manager_type& bman = bv.get_blocks_manager();
 
     bm::encoder enc(buf, buf_size);  // create the encoder
@@ -2585,56 +2594,49 @@ serializer<BV>::serialize(const BV& bv,
         //
         if (BM_IS_GAP(blk))
         {
+            
             if (ref_vect_) // XOR filter
             {
-                bool found = xor_scan_.search_best_xor_gap(blk,
-                                                           ref_idx_+1, ref_vect_->size(),
+                bm::gap_word_t* tmp_buf = (bm::gap_word_t*)xor_block_;
+                bool found = xor_scan_.search_best_xor_gap(tmp_buf, blk,
+                                                           ref_idx_+1,
+                                                           ref_vect_->size(),
                                                            i0, j0);
                 if (found)
                 {
                     const bm::gap_word_t* gap_block = BMGAP_PTR(blk);
-                    unsigned glen = bm::gap_length(gap_block)-1;
+                    //unsigned glen = bm::gap_length(gap_block)-1;
 
                     const bm::gap_word_t* gap_xor_block =
                         (const bm::gap_word_t*) xor_scan_.get_found_block();
                     size_type ridx = xor_scan_.found_ridx();
-                    size_type plain_idx = xor_scan_.get_ref_vector().get_row_idx(ridx);
+                    size_type plain_idx =
+                        xor_scan_.get_ref_vector().get_row_idx(ridx);
 
-                    bm::gap_word_t* tmp_buf = (bm::gap_word_t*)xor_block_;
 
                     unsigned res_len;
-                    bm::gap_operation_xor(gap_block, gap_xor_block, tmp_buf, res_len);
+                    bm::gap_operation_xor(gap_block, gap_xor_block,
+                                          tmp_buf, res_len);
 
-                    BM_ASSERT(res_len <= glen);
+
+                    BM_ASSERT(res_len < unsigned(bm::gap_length(gap_block)-1)
+                    || bm::gap_bit_count_unr(tmp_buf) < bm::gap_bit_count_unr(gap_block));
+
                     BM_ASSERT(1+res_len == bm::gap_length(tmp_buf));
-                    unsigned delta = glen - res_len;
-                    if (delta > 2)
+                    //unsigned delta = glen - res_len;
+                    //if (delta > 2)
                     {
-                        if (plain_idx < 256)
-                        {
-                            enc.put_8(bm::set_block_xor_gap_ref8);
-                            enc.put_8((unsigned char) plain_idx);
-                        }
-                        else
-                        {
-                            if (plain_idx < 65536)
-                            {
-                                enc.put_8(bm::set_block_xor_gap_ref16);
-                                enc.put_16((unsigned short) plain_idx);
-                            }
-                            else
-                            {
-                                enc.put_8(bm::set_block_xor_gap_ref32);
-                                enc.put_32(unsigned(plain_idx));
-                            }
-                        }
+                        enc.put_8_16_32(unsigned(plain_idx),
+                                        bm::set_block_xor_gap_ref8,
+                                        bm::set_block_xor_gap_ref16,
+                                        bm::set_block_xor_gap_ref32);
                         encode_gap_block(tmp_buf, enc);
-
                         compression_stat_[bm::set_block_xor_gap_ref32]++;
                         continue;
                     }
                 }
-            }
+            } 
+            
 
             encode_gap_block(BMGAP_PTR(blk), enc);
         }
@@ -2666,31 +2668,17 @@ serializer<BV>::serialize(const BV& bv,
                         BM_ASSERT(d64);
                         size_type plain_idx = xor_scan_.get_ref_vector().get_row_idx(ridx);
 
-                        if (plain_idx < 256)
-                        {
-                            enc.put_8(bm::set_block_xor_ref8);
-                            enc.put_8((unsigned char) plain_idx);
-                        }
-                        else
-                        {
-                            if (plain_idx < 65536)
-                            {
-                                enc.put_8(bm::set_block_xor_ref16);
-                                enc.put_16((unsigned short) plain_idx);
-                            }
-                            else
-                            {
-                                enc.put_8(bm::set_block_xor_ref32);
-                                enc.put_32(unsigned(plain_idx));
-                            }
-                        }
+                        enc.put_8_16_32(unsigned(plain_idx),
+                                        bm::set_block_xor_ref8,
+                                        bm::set_block_xor_ref16,
+                                        bm::set_block_xor_ref32);
                         enc.put_64(d64); // xor digest
                         compression_stat_[bm::set_block_xor_ref32]++;
                         blk = xor_block_; // substitute block with XOR product
                     }
                 } // if xor found
-
-            }
+            } 
+            
 
             // ----------------------------------------------
             // BIT BLOCK serialization
@@ -2848,7 +2836,7 @@ size_t serialize(const BV& bv,
     else
         bv_serial.gap_length_serialization(true);
 
-    return bv_serial.serialize(bv, buf, 0);
+    return (size_t) bv_serial.serialize(bv, buf, 0);
 }
 
 /*!
@@ -3538,7 +3526,7 @@ deserializer<BV, DEC>::~deserializer()
 {
      alloc_.free_bit_block(temp_block_);
      if (xor_block_)
-        alloc_.free_bit_block(xor_block_);
+        alloc_.free_bit_block(xor_block_, 2);
     BM_ASSERT(!or_block_);
 }
 
@@ -3547,7 +3535,7 @@ void deserializer<BV, DEC>::set_ref_vectors(const bv_ref_vector_type* ref_vect)
 {
     ref_vect_ = ref_vect;
     if (ref_vect_ && !xor_block_)
-        xor_block_ = alloc_.alloc_bit_block();
+        xor_block_ = alloc_.alloc_bit_block(2);
 }
 
 template<class BV, class DEC>
@@ -3611,7 +3599,8 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
             blk = bman.set_block(nb, (bm::word_t*)BMPTR_SETBIT0(gap_blk));
             BM_ASSERT(blk == 0);
             
-            dec.get_16(gap_blk + 1, len - 1);
+            if (len > 1)
+                dec.get_16(gap_blk + 1, len - 1);
             gap_blk[len] = bm::gap_max_bits - 1;
         }
         else // target block exists
@@ -4214,7 +4203,8 @@ size_t deserializer<BV, DEC>::deserialize(bvector_type&        bv,
                     goto throw_err;
                 }
                 const bvector_type* ref_bv = ref_vect_->get_bv(idx);
-                BM_ASSERT(ref_bv);
+                BM_ASSERT(ref_bv); // some incorrect work with the ref.vector
+                BM_ASSERT(ref_bv != &bv);
                 const blocks_manager_type& ref_bman = ref_bv->get_blocks_manager();
                 const bm::word_t* ref_blk = ref_bman.get_block_ptr(i0, j0);
                 if (ref_blk)
@@ -4327,9 +4317,10 @@ void deserializer<BV, DEC>::xor_decode(size_type x_ref_idx, bm::id64_t x_ref_d64
     unsigned i0, j0;
 
     const bvector_type* ref_bv = ref_vect_->get_bv(x_ref_idx);
-    BM_ASSERT(ref_bv);
     const blocks_manager_type& ref_bman = ref_bv->get_blocks_manager();
-    BM_ASSERT(&ref_bman != &bman);
+    BM_ASSERT(ref_bv);
+    BM_ASSERT(&ref_bman != &bman); // some incorrect work with the ref.vector
+
     bm::get_block_coord(nb, i0, j0);
 
     const bm::word_t* ref_blk = ref_bman.get_block_ptr(i0, j0);
@@ -4338,10 +4329,25 @@ void deserializer<BV, DEC>::xor_decode(size_type x_ref_idx, bm::id64_t x_ref_d64
         BM_ASSERT(!or_block_);
         return;
     }
+    bm::word_t* blk = bman.get_block_ptr(i0, j0);
 
     if (BM_IS_GAP(ref_blk))
     {
         bm::gap_word_t* gap_block = BMGAP_PTR(ref_blk);
+        if (BM_IS_GAP(blk) && (!x_ref_d64) && !or_block_) // two GAPs no digest
+        {
+            bm::gap_word_t* tmp_buf = (bm::gap_word_t*)xor_block_;
+            const bm::gap_word_t* res;
+            unsigned res_len;
+            res = bm::gap_operation_xor(BMGAP_PTR(blk),
+                                        gap_block,
+                                        tmp_buf,
+                                        res_len);
+            BM_ASSERT(res == tmp_buf);
+            bman.assign_gap_check(i0, j0, res, ++res_len, blk, tmp_buf);
+            return;
+        }
+
         bm::gap_convert_to_bitset(xor_block_, gap_block);
         ref_blk = xor_block_;
     }
@@ -4351,7 +4357,7 @@ void deserializer<BV, DEC>::xor_decode(size_type x_ref_idx, bm::id64_t x_ref_d64
             ref_blk = FULL_BLOCK_REAL_ADDR;
     }
 
-    bm::word_t* blk = bman.deoptimize_block(nb);
+    blk = bman.deoptimize_block(nb);
     if (!blk)
     {
         blk = bman.check_allocate_block(nb, 0);
@@ -4366,8 +4372,8 @@ void deserializer<BV, DEC>::xor_decode(size_type x_ref_idx, bm::id64_t x_ref_d64
         bm::bit_block_or(blk, or_block_);
         alloc_.free_bit_block(or_block_);
         or_block_ = 0;
-        bman.optimize_bit_block(i0, j0);
     }
+    bman.optimize_bit_block(i0, j0);
 }
 
 
@@ -7010,10 +7016,8 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
 
 
 
-
 } // namespace bm
 
-#include "bmundef.h"
 
 #ifdef _MSC_VER
 #pragma warning( pop )

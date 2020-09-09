@@ -1230,7 +1230,7 @@ public:
        \param free_mem if "true" (default) bvector frees the memory,
        otherwise sets blocks to 0.
     */
-    void clear(bool free_mem = false) { blockman_.set_all_zero(free_mem); }
+    void clear(bool free_mem = true) { blockman_.set_all_zero(free_mem); }
 
     /*!
        \brief Clears every bit in the bitvector.
@@ -1285,7 +1285,7 @@ public:
     //@{
 
     /*!
-       \brief population cout (count of ON bits)
+       \brief population count (count of ON bits)
        \sa count_range
        \return Total number of bits ON
     */
@@ -2748,6 +2748,7 @@ bvector<Alloc>::count_range(size_type left, size_type right) const BMNOEXCEPT
         if ((nbit_left == 0) && (r == (bm::bits_in_block-1))) // whole block
         {
             func(block);
+            cnt += func.count();
         }
         else
         {
@@ -2764,11 +2765,8 @@ bvector<Alloc>::count_range(size_type left, size_type right) const BMNOEXCEPT
         }
     }
 
-    cnt += func.count();
     if (nblock_left == nblock_right)  // in one block
-    {
         return cnt;
-    }
 
     // process all full mid-blocks
     {
@@ -6322,13 +6320,14 @@ void bvector<Alloc>::combine_operation_block_and(
         // GAP & BIT
         //
         bm::word_t* new_blk = blockman_.get_allocator().alloc_bit_block();
-        bm::bit_block_copy(new_blk, arg_blk);
-        bm::id64_t digest = bm::calc_block_digest0(new_blk);
+        bm::bit_block_copy(new_blk, arg_blk); // TODO: copy+digest in one pass
+        bm::id64_t d0 = bm::calc_block_digest0(new_blk);
+
+        bm::gap_and_to_bitset(new_blk, gap_blk, d0);
         
-        bm::gap_and_to_bitset(new_blk, gap_blk, digest);
-        
-        digest = bm::update_block_digest0(new_blk, digest);
-        if (!digest)
+        bm::id64_t d0_1 = bm::update_block_digest0(new_blk, d0);
+        BM_ASSERT(bm::word_bitcount64(d0_1) <= bm::word_bitcount64(d0));
+        if (!d0_1)
         {
             BM_ASSERT(bm::bit_is_all_zero(new_blk));
             blockman_.get_allocator().free_bit_block(new_blk);
@@ -7213,14 +7212,27 @@ bool
 bvector<Alloc>::enumerator::decode_bit_group(block_descr_type* bdescr,
                                              size_type& rank) BMNOEXCEPT
 {
-    const word_t* block_end = this->block_ + bm::set_block_size;
+    const word_t* BMRESTRICT block_end = this->block_ + bm::set_block_size;
     for (; bdescr->bit_.ptr < block_end;)
     {
-        const bm::id64_t* w64_p = (bm::id64_t*)bdescr->bit_.ptr;
-        BM_ASSERT(bm::set_bitscan_wave_size == 4); // TODO: better handle this
+        unsigned cnt;
+        #if defined(BMAVX512OPT) || defined(BMAVX2OPT) || defined(BM64OPT) || defined(BM64_SSE4)
+        {
+            const bm::id64_t* w64_p = (bm::id64_t*)bdescr->bit_.ptr;
+            BM_ASSERT(bm::set_bitscan_wave_size == 4);
+            cnt  = bm::word_bitcount64(w64_p[0]);
+            cnt += bm::word_bitcount64(w64_p[1]);
+        }
+        #else
+            const bm::word_t* BMRESTRICT w = bdescr->bit_.ptr;
+            unsigned c1= bm::word_bitcount(w[0]);
+            unsigned c2 = bm::word_bitcount(w[1]);
+            cnt = c1 + c2;
+            c1= bm::word_bitcount(w[2]);
+            c2 = bm::word_bitcount(w[3]);
+            cnt += c1 + c2;
+        #endif
 
-        unsigned cnt = bm::word_bitcount64(w64_p[0]);
-        cnt += bm::word_bitcount64(w64_p[1]);
         if (rank > cnt)
         {
             rank -= cnt;
@@ -7239,6 +7251,7 @@ bvector<Alloc>::enumerator::decode_bit_group(block_descr_type* bdescr,
     } // for
     return false;
 }
+
 
 //---------------------------------------------------------------------
 
@@ -7358,7 +7371,6 @@ bool bvector<Alloc>::enumerator::search_in_blocks() BMNOEXCEPT
 
 } // namespace
 
-#include "bmundef.h"
 
 #ifdef _MSC_VER
 #pragma warning( pop )

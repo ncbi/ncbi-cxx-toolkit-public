@@ -395,7 +395,7 @@ public:
     {
         if (this != &sv)
         {
-            clear();
+            clear_all(true);
             swap(sv);
         }
         return *this;
@@ -478,7 +478,7 @@ public:
         \param idx - element index
         \param set_null - if true the value receives NULL (unassigned) value
     */
-    void clear(size_type idx, bool set_null = false);
+    void clear(size_type idx, bool set_null/* = false*/);
 
     ///@}
 
@@ -620,7 +620,10 @@ public:
     ///@{
 
     /*! \brief resize to zero, free memory */
-    void clear() BMNOEXCEPT;
+    void clear_all(bool free_mem) BMNOEXCEPT;
+
+    /*! \brief resize to zero, free memory */
+    void clear() BMNOEXCEPT { clear_all(true); }
 
     /*!
         \brief clear range (assign bit 0 for all plains)
@@ -652,6 +655,13 @@ public:
         \param sz - new size
     */
     void resize(size_type sz) { parent_type::resize(sz); }
+
+    /**
+        \brief recalculate size to exclude tail NULL elements
+        After this call size() will return the true size of the vector
+     */
+    void sync_size() BMNOEXCEPT;
+
     ///@}
         
     // ------------------------------------------------------------
@@ -1075,6 +1085,18 @@ void sparse_vector<Val, BV>::import(const value_type* arr,
 //---------------------------------------------------------------------
 
 template<class Val, class BV>
+void sparse_vector<Val, BV>::sync_size() BMNOEXCEPT
+{
+    const bvector_type* bv_null = this->get_null_bvector();
+    if (!bv_null)
+        return;
+    bool found = bv_null->find_reverse(this->size_);
+    this->size_ += found;
+}
+
+//---------------------------------------------------------------------
+
+template<class Val, class BV>
 void sparse_vector<Val, BV>::import_back(const value_type* arr,
                                          size_type         arr_size,
                                          bool              set_not_null)
@@ -1489,7 +1511,7 @@ void sparse_vector<Val, BV>::clear(size_type idx, bool set_null)
     if (idx >= size())
         this->size_ = idx+1;
 
-    set_value(idx, (value_type)0);
+    set_value(idx, value_type(0));
     if (set_null)
     {
         bvector_type* bv_null = this->get_null_bvect();
@@ -1688,7 +1710,7 @@ void sparse_vector<Val, BV>::inc_no_null(size_type idx)
     }
 }
 
-//---------------------------------------------------------------------
+//------------------------------------ ---------------------------------
 
 template<class Val, class BV>
 void sparse_vector<Val, BV>::inc_no_null(size_type idx, value_type v)
@@ -1700,9 +1722,9 @@ void sparse_vector<Val, BV>::inc_no_null(size_type idx, value_type v)
 //---------------------------------------------------------------------
 
 template<class Val, class BV>
-void sparse_vector<Val, BV>::clear() BMNOEXCEPT
+void sparse_vector<Val, BV>::clear_all(bool free_mem) BMNOEXCEPT
 {
-    parent_type::clear();
+    parent_type::clear_all(free_mem);
 }
 
 //---------------------------------------------------------------------
@@ -2212,7 +2234,6 @@ void sparse_vector<Val, BV>::back_insert_iterator::flush()
 
 } // namespace bm
 
-#include "bmundef.h"
 
 
 #endif

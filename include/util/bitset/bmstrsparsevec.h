@@ -101,6 +101,11 @@ public:
         
         operator const value_type*() const BMNOEXCEPT
         {
+            return get();
+        }
+
+        const value_type* get() const BMNOEXCEPT
+        {
             str_sv_.get(idx_, buf_, MAX_STR_SIZE);
             return &(buf_[0]);
         }
@@ -118,6 +123,7 @@ public:
          Reference class to access elements via common [] operator
          @ingroup sv
     */
+
     class reference
     {
     public:
@@ -125,8 +131,13 @@ public:
                   size_type idx) BMNOEXCEPT
         : str_sv_(str_sv), idx_(idx)
         {}
-        
+
         operator const value_type*() const BMNOEXCEPT
+        {
+            return get();
+        }
+
+        const value_type* get() const BMNOEXCEPT
         {
             str_sv_.get(idx_, buf_, MAX_STR_SIZE);
             return &(buf_[0]);
@@ -152,7 +163,7 @@ public:
         size_type                                      idx_;
         mutable CharType                               buf_[MAX_STR_SIZE];
     };
-    
+
     /**
         Const iterator to do quick traverse of the sparse vector.
      
@@ -420,12 +431,12 @@ public:
     /*! @name String element access */
     ///@{
 
+    /** \brief Operator to get read access to an element  */
+    const const_reference operator[](size_type idx) const
+                                { return const_reference(*this, idx); }
+
     /** \brief Operator to get write access to an element  */
     reference operator[](size_type idx) { return reference(*this, idx); }
-
-    /** \brief Operator to get read access to an element  */
-    const_reference operator[](size_type idx) const
-                                    { return const_reference(*this, idx); }
 
     /*!
         \brief set specified element with bounds checking and automatic resize
@@ -608,7 +619,10 @@ public:
     ///@{
 
     /*! \brief resize to zero, free memory */
-    void clear() BMNOEXCEPT;
+    void clear_all(bool free_mem) BMNOEXCEPT;
+
+    /*! \brief resize to zero, free memory */
+    void clear() BMNOEXCEPT { clear_all(true); }
 
     /*!
         \brief clear range (assign bit 0 for all plains)
@@ -662,6 +676,13 @@ public:
         \return current string length maximum
     */
     size_type effective_vector_max() const { return effective_max_str(); }
+
+    /**
+        \brief recalculate size to exclude tail NULL elements
+        After this call size() will return the true size of the vector
+     */
+    void sync_size() BMNOEXCEPT;
+
     ///@}
 
 
@@ -737,20 +758,28 @@ public:
     ///@}
 
     // ------------------------------------------------------------
-    /*! @name remapping, succinct utilities
-        Remapping implements reduction of dit-depth thus improves
-        search performance. Remapping limits farther modifications
-        of sparse vector.
+    /*! @name Char remapping, succinct utilities
+
+        Remapping runs character usage analysis (frequency analysis)
+        based on that implements reduction of dit-depth thus improves
+        search performance and memory usage (both RAM and serialized).
+
+        Remapping limits farther modifications of sparse vector.
+        (Use remapped vector as read-only).
     */
+
     ///@{
     
     /**
-        Get remapping status (true|false)
+        Get character remapping status (true|false)
     */
     bool is_remap() const BMNOEXCEPT { return remap_flags_ != 0; }
     
     /**
         Build remapping profile and load content from another sparse vector
+        Remapped vector likely saves memory (both RAM and disk) but
+        should not be modified (should be read-only).
+
         \param str_sv - source sparse vector (assumed it is not remapped)
     */
     void remap_from(const str_sparse_vector& str_sv);
@@ -1604,7 +1633,7 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_from(const str_sparse_vecto
         *this = str_sv;
         return;
     }
-    this->clear();
+    this->clear_all(true);
     if (str_sv.empty()) // no content to remap
     {
         return;
@@ -1682,7 +1711,7 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::copy_range(
 {
     if (left > right)
         bm::xor_swap(left, right);
-    this->clear();
+    this->clear_all(true);
 
     remap_flags_ = sv.remap_flags_;
     remap_matrix1_ = sv.remap_matrix1_;
@@ -1707,9 +1736,9 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::begin() const BMNOEXCEPT
 //---------------------------------------------------------------------
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
-void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::clear() BMNOEXCEPT
+void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::clear_all(bool free_mem) BMNOEXCEPT
 {
-    parent_type::clear();
+    parent_type::clear_all(free_mem);
 }
 
 //---------------------------------------------------------------------
@@ -1985,6 +2014,17 @@ const str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::value
 
 //---------------------------------------------------------------------
 
+template<class CharType, class BV, unsigned MAX_STR_SIZE>
+void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::sync_size() BMNOEXCEPT
+{
+    const bvector_type* bv_null = this->get_null_bvector();
+    if (!bv_null)
+        return;
+    bool found = bv_null->find_reverse(this->size_);
+    this->size_ += found;
+}
+
+//---------------------------------------------------------------------
 
 } // namespace
 

@@ -145,7 +145,7 @@ void generate_bvector(bvect& bv, unsigned vector_max = 40000000, bool optimize =
 
 
 static
-void SimpleFillSets(test_bitset& bset, 
+void SimpleFillSets(test_bitset* bset, 
                        bvect& bv,
                        unsigned min, 
                        unsigned max,
@@ -154,7 +154,8 @@ void SimpleFillSets(test_bitset& bset,
 {
     for (unsigned i = min; i < max; i+=fill_factor)
     {
-        bset[i] = set_flag;
+        if (bset)
+            (*bset)[i] = set_flag;
         bv[i] = set_flag;
     } // for i
 }
@@ -332,15 +333,21 @@ void BitCountTest()
     unsigned value = 0;
 
     FillSetsIntervals(bset, *bv, 0, BSIZE, 10);
+    {
+        auto c0 = bset->count();
+        auto c1 = bv->count();
+        assert(c0 == c1);
+    }
 
     //if (!platform_test)
     {
-    TimeTaker tt("BitCount. Random bitvector", REPEATS*20);
-    for (unsigned i = 0; i < REPEATS*20; ++i)
-    {    
-        value+=bv->count();
+        TimeTaker tt("BitCount. Random bitvector", REPEATS*10);
+        for (unsigned i = 0; i < REPEATS*10; ++i)
+        {
+            value+=bv->count();
+        }
     }
-    }
+
 
     volatile unsigned* p = &value;
     unsigned c1;
@@ -367,96 +374,153 @@ void BitCountTest()
 }
 
 static
+void CheckBitList(const unsigned* bl1, unsigned bl1_cnt,
+                  const unsigned* bl2, unsigned bl2_cnt)
+{
+    assert(bl1_cnt == bl2_cnt);
+    for (unsigned i = 0; i < bl1_cnt; ++i)
+    {
+        assert(bl1[i] == bl2[i]);
+        if (bl1[i] != bl2[i])
+        {
+            cerr << "BitList check failed!" << endl;
+            exit(1);
+        }
+    }
+}
+
+static
 void BitForEachTest()
 {
     // setup the test data
     //
+    unsigned value_to = 65536 * 64;
     size_t value = 0;
-    unsigned* test_arr = new unsigned[65536];
-    for (unsigned j = 0; j < 65536; ++j)
+    unsigned* test_arr = new unsigned[value_to];
     {
-        test_arr[j] = j * j;
+        unsigned j=0;
+        for (; j < value_to/3; ++j) // sparse
+        {
+            test_arr[j] = (1u << 25) | (1u << 7) | 2u | 4u;
+            test_arr[++j] = 0;
+        }
+        for (; j < 2 * (value_to/3) ; ++j) // medium
+            test_arr[j] = j;
+
+        for (; j < value_to ; ++j) // dense
+            test_arr[j] = ~0u & ~((7u << 25) | (19u << 7) | 2u | 4u);
     }
 
-    if (platform_test)
+    // quick test
     {
-    unsigned bit_list[32];
-    TimeTaker tt("BitList algorithm. Conventional (AND based check)", REPEATS*10);
-    
-
-    for (unsigned i = 0; i < REPEATS*10; ++i)
-    {    
-        for (unsigned j = 0; j < 65536; ++j)
+        unsigned bit_list0[32];
+        unsigned bit_list1[32];
+        unsigned bit_list2[32];
+        for (unsigned j = 0; j < value_to; ++j)
         {
-            bm::bit_list(i*test_arr[j], bit_list);
+            auto c0 = bm::bitscan_nibble(test_arr[j], bit_list0);
+            auto c1 = bm::bitscan_popcnt(test_arr[j], bit_list1);
+            auto c2 = bm::bitscan_bsf(test_arr[j], bit_list2);
+            CheckBitList(bit_list0, c0, bit_list1, c1);
+            CheckBitList(bit_list0, c0, bit_list2, c2);
         }
     }
-    }
 
-    // disabled (very slow)
-    #if 0
+    bm::id64_t sum1(0);
     if (platform_test)
     {
         unsigned bit_list[32];
-        TimeTaker tt("BitList4 algorithm(sub-octet+switch)", REPEATS*20);
+        TimeTaker tt("BitScan-nibble (switch based)", REPEATS);
 
-        for (unsigned i = 0; i < REPEATS*100; ++i)
+        for (unsigned i = 0; i < REPEATS; ++i)
         {
-            for (unsigned j = 0; j < 65536; ++j)
+            for (unsigned j = 0; j < value_to; ++j)
             {
-                bm::bit_list_4(i*test_arr[j], bit_list);
+                sum1 += bm::bitscan_nibble(test_arr[j], bit_list);
             }
         }
     }
+    #ifdef __GNUC__
+    bm::id64_t sum2(0);
+    if (platform_test)
+    {
+        unsigned bit_list[32];
+        TimeTaker tt("BitScan-nibble (GCC goto)", REPEATS);
+
+        for (unsigned i = 0; i < REPEATS; ++i)
+        {
+            for (unsigned j = 0; j < value_to; ++j)
+            {
+                sum2 += bm::bitscan_nibble_gcc(test_arr[j], bit_list);
+            }
+        }
+    }
+    assert(sum1 == sum2);
     #endif
 
+    bm::id64_t sum3(0);
     {
         unsigned bit_list[32];
-        TimeTaker tt("BitScan on bitcount algorithm", REPEATS * 20);
-
-        for (unsigned i = 0; i < REPEATS * 100; ++i)
+        TimeTaker tt("BitScan-POPCNT ", REPEATS);
+        for (unsigned i = 0; i < REPEATS; ++i)
         {
-            for (unsigned j = 0; j < 65536; ++j)
+            for (unsigned j = 0; j < value_to; j+=2)
             {
-                bm::bitscan_popcnt(i*test_arr[j], bit_list);
+                sum3 += bm::bitscan_popcnt(test_arr[j], bit_list);
+                sum3 += bm::bitscan_popcnt(test_arr[j+1], bit_list);
             }
         }
     }
-
-
+    assert(sum1 == sum3);
+    sum3 = 0;
     {
         unsigned bit_list[64];
-        TimeTaker tt("BitScan on bitcount (block)", REPEATS * 20);
-        for (unsigned i = 0; i < REPEATS * 20; ++i)
+        TimeTaker tt("BitScan-POPCNT-64 ", REPEATS);
+        for (unsigned i = 0; i < REPEATS; ++i)
         {
-            for (unsigned j = 0; j < 65536; ++j)
+            for (unsigned j = 0; j < value_to; j+=2)
             {
-                unsigned cnt = bm::bitscan_popcnt(test_arr[j], bit_list);
-                for (unsigned k =  0; j < cnt; j++)
-                {
-                    value += bit_list[k];
-                }
+                bm::id64_t w0 = test_arr[j];
+                bm::id64_t w1 = test_arr[j+1];
+                bm::id64_t w = w0 | (w1 << 32);
+                sum3 += bm::bitscan_popcnt64(w, bit_list);
             }
         }
     }
+    assert(sum1 == sum3);
+
+
+    bm::id64_t sum4(0);
+    {
+        unsigned bit_list[32];
+        TimeTaker tt("BitScan-BSF ", REPEATS);
+        for (unsigned i = 0; i < REPEATS; ++i)
+        {
+            for (unsigned j = 0; j < value_to; j+=2)
+            {
+                sum4 += bm::bitscan_bsf(test_arr[j], bit_list);
+                sum4 += bm::bitscan_bsf(test_arr[j+1], bit_list);
+            }
+        }
+    }
+    assert(sum1 == sum4);
+    sum4 = 0;
 
     {
-        unsigned char bit_list[64];
-        TimeTaker tt("BitScan on bitcount64 (block)", REPEATS * 20);
-        for (unsigned i = 0; i < REPEATS * 20; ++i)
+        unsigned bit_list[32];
+        TimeTaker tt("BitScan-BSF-64 ", REPEATS);
+        for (unsigned i = 0; i < REPEATS; ++i)
         {
-            for (unsigned j = 0; j < 65536/2; j+=2)
+            for (unsigned j = 0; j < value_to; j+=2)
             {
-                unsigned cnt = bm::bitscan_wave(test_arr + j, bit_list);
-
-                for (unsigned k =  0; j < cnt; j++)
-                {
-                    value += bit_list[k];
-                }
+                bm::id64_t w0 = test_arr[j];
+                bm::id64_t w1 = test_arr[j+1];
+                bm::id64_t w = w0 | (w1 << 32);
+                sum4 += bm::bitscan_bsf64(w, bit_list);
             }
         }
     }
-
+    assert(sum1 == sum4);
 
     char buf[256];
     sprintf(buf, "%i", (int)value); // to fool some smart compilers like ICC
@@ -527,7 +591,7 @@ void WordSelectTest()
     }
 
     {
-        TimeTaker tt("select64 bitscan", 1);
+        TimeTaker tt("select64 bitscan_popcnt", 1);
         for (unsigned i = 0; i < vect_v.size(); ++i)
         {
             bm::id64_t w64 = vect_v[i];
@@ -536,7 +600,7 @@ void WordSelectTest()
             {
                 for (unsigned j = 1; j <= bc; ++j)
                 {
-                    unsigned idx = bm::word_select64_bitscan(w64, j);
+                    unsigned idx = bm::word_select64_bitscan_popcnt(w64, j);
                     vect_r2[i] = idx;
                 }
             }
@@ -671,7 +735,7 @@ void BitCountSparseTest()
     size_t value = 0, c1;
     volatile size_t* p = &value;
 
-    SimpleFillSets(*bset, *bv, 0, BSIZE, 130);
+    SimpleFillSets(bset, *bv, 0, BSIZE, 130);
     
     {
         TimeTaker tt("BitCount: Sparse bitset ", REPEATS*10);
@@ -734,28 +798,32 @@ void BitTestSparseTest()
 
     const unsigned repeats = REPEATS * 300000;
 
-    size_t value = 0, c1;
-    volatile size_t* p = &value;
+    size_t value = 0;
 
-    SimpleFillSets(*bset0, *bv0, 0, BSIZE, 9530);
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 1000);
-    SimpleFillSets(*bset2, *bv2, 0, BSIZE, 120);
+    SimpleFillSets(bset0.get(), *bv0, 0, BSIZE, 9530);
+    SimpleFillSets(bset1.get(), *bv1, 0, BSIZE, 1000);
+    SimpleFillSets(bset2.get(), *bv2, 0, BSIZE, 120);
 
+    std::vector<unsigned> idx;
+    idx.resize(repeats);
+    for (unsigned i = 0; i < repeats; ++i)
+    {
+        idx.push_back(unsigned(rand_dis(gen)));
+    }
 
     {
-        TimeTaker tt("BitTest: bitset ", repeats);
+        TimeTaker tt("BitTest: bvector<>::test() (BIT) ", repeats);
         for (unsigned i = 0; i < repeats; ++i)
         {
-            unsigned idx = unsigned(rand_dis(gen));
-            value += bv0->test(idx);
-            value += bv1->test(idx);
-            value += bv2->test(idx);
+            unsigned id = idx[i];
+            value += bv0->test(id);
+            value += bv1->test(id);
+            value += bv2->test(id);
         }
     }
 
 
-    c1 = *p;
-    value = c1 = 0;
+    size_t value2 = 0;
 
     BM_DECLARE_TEMP_BLOCK(tb)
     bv0->optimize(tb);
@@ -763,15 +831,16 @@ void BitTestSparseTest()
     bv2->optimize(tb);
 
     {
-        TimeTaker tt("BitTest: Sparse bitset (GAP) ", repeats);
+        TimeTaker tt("BitTest: bvector<>::test() (GAP) ", repeats);
         for (unsigned i = 0; i < repeats; ++i)
         {
-            unsigned idx = unsigned(rand_dis(gen));
-            value += bv0->test(idx);
-            value += bv1->test(idx);
-            value += bv2->test(idx);
+            unsigned id = idx[i];
+            value2 += bv0->test(id);
+            value2 += bv1->test(id);
+            value2 += bv2->test(id);
         }
     }
+    assert(value == value2);
 
 }
 
@@ -787,22 +856,28 @@ void EnumeratorGoToTest()
 
     const unsigned repeats = REPEATS * 300000;
 
-    size_t value = 0, c1;
-    volatile size_t* p = &value;
+    bm::id64_t value = 0;
 
-    SimpleFillSets(*bset0, *bv0, 0, BSIZE, 512);
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 256);
-    SimpleFillSets(*bset2, *bv2, 0, BSIZE, 120);
+    SimpleFillSets(bset0.get(), *bv0, 0, BSIZE, 512);
+    SimpleFillSets(bset1.get(), *bv1, 0, BSIZE, 256);
+    SimpleFillSets(bset2.get(), *bv2, 0, BSIZE, 120);
+
+    std::vector<unsigned> idx;
+    idx.resize(repeats);
+    for (unsigned i = 0; i < repeats; ++i)
+    {
+        idx.push_back(unsigned(rand_dis(gen)));
+    }
 
 
     {
-        TimeTaker tt("Enumerator at bit pos:  ", repeats);
+        TimeTaker tt("Enumerator at BIT pos:  ", repeats);
         for (unsigned i = 0; i < repeats; ++i)
         {
-            unsigned idx = unsigned(rand_dis(gen));
-            bvect::enumerator en0 = bv0->get_enumerator(idx);
-            bvect::enumerator en1 = bv1->get_enumerator(idx);
-            bvect::enumerator en2 = bv2->get_enumerator(idx);
+            unsigned id = idx[i];
+            bvect::enumerator en0 = bv0->get_enumerator(id);
+            bvect::enumerator en1 = bv1->get_enumerator(id);
+            bvect::enumerator en2 = bv2->get_enumerator(id);
 
             value += *en0;
             value += *en1;
@@ -810,8 +885,7 @@ void EnumeratorGoToTest()
         }
     }
 
-    c1 = *p;
-    value = c1 = 0;
+    bm::id64_t value2 = 0;
 
     BM_DECLARE_TEMP_BLOCK(tb)
     bv0->optimize(tb);
@@ -819,20 +893,20 @@ void EnumeratorGoToTest()
     bv2->optimize(tb);
 
     {
-        TimeTaker tt("Enumerator at gap pos: ", repeats);
+        TimeTaker tt("Enumerator at GAP pos: ", repeats);
         for (unsigned i = 0; i < repeats; ++i)
         {
-            unsigned idx = unsigned(rand_dis(gen));
-            bvect::enumerator en0 = bv0->get_enumerator(idx);
-            bvect::enumerator en1 = bv1->get_enumerator(idx);
-            bvect::enumerator en2 = bv2->get_enumerator(idx);
+            unsigned id = idx[i];
+            bvect::enumerator en0 = bv0->get_enumerator(id);
+            bvect::enumerator en1 = bv1->get_enumerator(id);
+            bvect::enumerator en2 = bv2->get_enumerator(id);
 
-            value += *en0;
-            value += *en1;
-            value += *en2;
+            value2 += *en0;
+            value2 += *en1;
+            value2 += *en2;
         }
     }
-
+    assert(value == value2);
 }
 
 
@@ -845,8 +919,8 @@ void BitCompareTest()
     test_bitset*  bset = new test_bitset();
     int value = 0;
 
-    SimpleFillSets(*bset, *bv1, 0, BSIZE, 10);
-    SimpleFillSets(*bset, *bv2, 0, BSIZE, 10);
+    SimpleFillSets(bset, *bv1, 0, BSIZE, 10);
+    SimpleFillSets(bset, *bv2, 0, BSIZE, 10);
 
     {
     TimeTaker tt("BitCompare: Random bitvector", REPEATS*10);
@@ -929,12 +1003,15 @@ void BitCompareTest()
     sprintf(buf, "%p", p);
 }
 
+unsigned long long g_acc = 0;
 extern "C" {
     static
     int bit_visitor_func(void* handle_ptr, bm::id_t bit_idx)
     {
-        std::vector<bm::id_t>* vp = (std::vector<bm::id_t>*)handle_ptr;
-        vp->push_back(bit_idx);
+        std::vector<bvect::size_type>* vp = (std::vector<bm::id_t>*)handle_ptr;
+        (void)vp;
+        //vp->push_back(bit_idx);
+        g_acc += bit_idx;
         return 0;
     }
 } // extern C
@@ -952,9 +1029,9 @@ void FindTest()
     bv_empty[100000000] = true;
     bv_empty[100000000] = false;
     
-    SimpleFillSets(*bset, bv1, 0, BSIZE/2, 3);
-    SimpleFillSets(*bset, bv1, 0, BSIZE/2, 4);
-    SimpleFillSets(*bset, bv1, 0, BSIZE/2, 5);
+    SimpleFillSets(bset, bv1, 0, BSIZE/2, 3);
+    SimpleFillSets(bset, bv1, 0, BSIZE/2, 4);
+    SimpleFillSets(bset, bv1, 0, BSIZE/2, 5);
     
     FillSetsIntervals(bset, bv2, 0, BSIZE/2, 8);
     FillSetsIntervals(bset, bv3, 0, BSIZE/2, 12);
@@ -1029,26 +1106,27 @@ static
 void EnumeratorTest()
 {
     bvect                 bv1, bv2, bv3, bv4;
-    std::vector<bm::id_t> v1,  v2,  v3,  v4;
+    std::vector<bvect::size_type> v1,  v2,  v3,  v4;
     
-    test_bitset*  bset = new test_bitset();
+    {
+        test_bitset*  bset = 0;// new test_bitset();
 
-    SimpleFillSets(*bset, bv1, 0, BSIZE/2, 3);
-    SimpleFillSets(*bset, bv1, 0, BSIZE/2, 4);
-    SimpleFillSets(*bset, bv1, 0, BSIZE/2, 5);
+        SimpleFillSets(bset, bv1, 0, BSIZE / 2, 3);
+        SimpleFillSets(bset, bv1, 0, BSIZE / 2, 4);
+        SimpleFillSets(bset, bv1, 0, BSIZE / 2, 5);
+
+        //delete bset;
+    }
     
-    FillSetsIntervals(bset, bv2, 0, BSIZE/2, 8);
-    FillSetsIntervals(bset, bv3, 0, BSIZE/2, 12);
-    FillSetsIntervals(bset, bv4, 0, BSIZE/2, 120);
+    FillSetsIntervals(nullptr, bv2, 0, BSIZE/2, 8);
+    FillSetsIntervals(nullptr, bv3, 0, BSIZE/2, 12);
+    FillSetsIntervals(nullptr, bv4, 0, BSIZE/2, 120);
     
-    v1.reserve(bv1.count());
-    v2.reserve(bv2.count());
-    v3.reserve(bv3.count());
-    v4.reserve(bv4.count());
 
     unsigned i;
 
     {
+        unsigned long long acc = 0;
         TimeTaker tt("bvector<>::enumerator", REPEATS/10);
         for (i = 0; i < REPEATS/10; ++i)
         {
@@ -1056,34 +1134,34 @@ void EnumeratorTest()
                 bvect::enumerator en = bv1.first();
                 for (;en.valid();++en)
                 {
-                    v1.push_back(*en);
+                    auto v = *en;
+                    acc += v;
                 }
             }
             {
                 bvect::enumerator en = bv2.first();
                 for (;en.valid();++en)
                 {
-                    v2.push_back(*en);
+                    auto v = *en;
+                    acc ^= v;
                 }
             }
             {
                 bvect::enumerator en = bv3.first();
                 for (;en.valid();++en)
                 {
-                    v3.push_back(*en);
+                    auto v = *en;
+                    acc += v;
                 }
             }
             {
                 bvect::enumerator en = bv4.first();
                 for (;en.valid();++en)
                 {
-                    v4.push_back(*en);
+                    auto v = *en;
+                    acc ^= v;
                 }
             }
-            v1.resize(0);
-            v2.resize(0);
-            v3.resize(0);
-            v4.resize(0);
 
         } // for REPEATS
     }
@@ -1092,6 +1170,8 @@ void EnumeratorTest()
 
     // -----------------------------------------------
     {
+        unsigned long long acc = 0;
+
         TimeTaker tt("bvector<>::get_next()", REPEATS/10);
         for (i = 0; i < REPEATS/10; ++i)
         {
@@ -1101,16 +1181,18 @@ void EnumeratorTest()
                 do
                 {
                     v = bv1.get_next(v);
-                    v1.push_back(v);
+                    acc += v;
+                    //v1.push_back(v);
                 } while(v);
             }
+
             if (bv2.any())
             {
                 unsigned v = bv2.get_first();
                 do
                 {
                     v = bv2.get_next(v);
-                    v2.push_back(v);
+                    acc ^= v;
                 } while(v);
             }
             if (bv3.any())
@@ -1119,7 +1201,7 @@ void EnumeratorTest()
                 do
                 {
                     v = bv3.get_next(v);
-                    v3.push_back(v);
+                    acc += v;
                 } while(v);
             }
             if (bv4.any())
@@ -1128,14 +1210,9 @@ void EnumeratorTest()
                 do
                 {
                     v = bv4.get_next(v);
-                    v4.push_back(v);
+                    acc ^= v;
                 } while(v);
             }
-            v1.resize(0);
-            v2.resize(0);
-            v3.resize(0);
-            v4.resize(0);
-
         } // for REPEATS
     }
 
@@ -1151,18 +1228,11 @@ void EnumeratorTest()
             bm::visit_each_bit(bv3, (void*)&v3, bit_visitor_func);
             bm::visit_each_bit(bv4, (void*)&v4, bit_visitor_func);
 
-            v1.resize(0);
-            v2.resize(0);
-            v3.resize(0);
-            v4.resize(0);
         } // for REPEATS
 
     }
     
     // -----------------------------------------------
-
-
-    delete bset;
 
 
 }
@@ -1174,7 +1244,7 @@ void EnumeratorTestGAP()
     test_bitset*  bset = new test_bitset();
     unsigned i;
 
-    SimpleFillSets(*bset, *bv, 0, BSIZE, 2500);
+    SimpleFillSets(bset, *bv, 0, BSIZE, 2500);
     bv->count();
 
     for (unsigned k = 0; k < 2; ++k)
@@ -1279,18 +1349,18 @@ void SerializationTest()
     delete [] buf; buf = 0;
         
     bvect*  bv = new bvect();
-    test_bitset*  bset = new test_bitset();
+    //test_bitset*  bset = new test_bitset();
     unsigned value = 0;
 
-    SimpleFillSets(*bset, *bv, 0, BSIZE, 4);
+    SimpleFillSets(nullptr, *bv, 0, BSIZE, 4);
     
     cnt = bv->count();
     bv->calc_stat(&st);
     buf = new unsigned char[st.max_serialize_mem];
     
     {
-    TimeTaker tt("Large bvector serialization", REPEATS*4);
-    for (unsigned i = 0; i < REPEATS*4; ++i)
+    TimeTaker tt("Large bvector serialization", REPEATS/3);
+    for (unsigned i = 0; i < REPEATS/3; ++i)
     {
         len += bm::serialize(*bv, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
         id_size += cnt * (unsigned)sizeof(unsigned);
@@ -1303,10 +1373,8 @@ void SerializationTest()
     /*
     cout << cbuf << " " << id_size << " " << len << " " << value << endl;
     */
-    
-    
+        
     delete bv;
-    delete bset;
     delete [] buf;
 }
 
@@ -1318,7 +1386,7 @@ void InvertTest()
     unsigned i;
     //unsigned value = 0;
 
-    SimpleFillSets(*bset, *bv, 0, BSIZE, 2500);
+    SimpleFillSets(bset, *bv, 0, BSIZE, 2500);
     {
     TimeTaker tt("Invert bvector", REPEATS*4);
     for (i = 0; i < REPEATS*4; ++i)
@@ -1384,8 +1452,8 @@ void AndTest()
     unsigned i;
     //unsigned value = 0;
 
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 100);
-    SimpleFillSets(*bset1, *bv2, 0, BSIZE, 100);
+    SimpleFillSets(bset1, *bv1, 0, BSIZE, 100);
+    SimpleFillSets(bset1, *bv2, 0, BSIZE, 100);
     {
     TimeTaker tt("AND bvector test", REPEATS*4);
     for (i = 0; i < REPEATS*4; ++i)
@@ -1420,8 +1488,8 @@ void XorTest()
     unsigned i;
     //unsigned value = 0;
 
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 100);
-    SimpleFillSets(*bset1, *bv2, 0, BSIZE, 100);
+    SimpleFillSets(bset1, *bv1, 0, BSIZE, 100);
+    SimpleFillSets(bset1, *bv2, 0, BSIZE, 100);
     {
         TimeTaker tt("XOR bvector test", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
@@ -1510,8 +1578,8 @@ void XorCountTest()
     test_bitset*  bset2 = new test_bitset();
     unsigned i;
 
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 400);
-    SimpleFillSets(*bset2, *bv2, 0, BSIZE, 500);
+    SimpleFillSets(bset1, *bv1, 0, BSIZE, 400);
+    SimpleFillSets(bset2, *bv2, 0, BSIZE, 500);
 
     unsigned count1 = 0;
     unsigned count2 = 0;
@@ -1651,8 +1719,8 @@ void AndCountTest()
     test_bitset*  bset2 = new test_bitset();
     unsigned i;
 
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 400);
-    SimpleFillSets(*bset2, *bv2, 0, BSIZE, 500);
+    SimpleFillSets(bset1, *bv1, 0, BSIZE, 400);
+    SimpleFillSets(bset2, *bv2, 0, BSIZE, 500);
 
     unsigned count1 = 0;
     unsigned count2 = 0;
@@ -1793,8 +1861,8 @@ void TI_MetricTest()
     test_bitset*  bset2 = new test_bitset();
     unsigned i;
 
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 500);
-    SimpleFillSets(*bset2, *bv2, 0, BSIZE, 250);
+    SimpleFillSets(bset1, *bv1, 0, BSIZE, 500);
+    SimpleFillSets(bset2, *bv2, 0, BSIZE, 250);
 
     unsigned count1 = 0;
     unsigned count2 = 0;
@@ -2279,66 +2347,63 @@ void SparseVectorAccessTest()
 {
     std::vector<unsigned> target, target1, target2;
     svect   sv1;
-    svect   sv2;
-    svect   sv3;
 
     FillSparseIntervals(sv1);
     BM_DECLARE_TEMP_BLOCK(tb)
     sv1.optimize(tb);
-    target.resize(150000000);
-    target1.resize(150000000);
-    target2.resize(150000000);
 
     {
-        TimeTaker tt("sparse_vector random element assignment test", REPEATS/10 );
-        for (unsigned i = 0; i < REPEATS/10; ++i)
+        svect sv2, sv3;
         {
-            for (unsigned j = 256000; j < 19000000/2; ++j)
+            TimeTaker tt("sparse_vector random element assignment test", REPEATS / 10);
+            for (unsigned i = 0; i < REPEATS / 10; ++i)
             {
-                sv2.set(j, 0xFFF);
-            }
-        }
-    }
-
-    {
-        TimeTaker tt("sparse_vector back_inserter test", REPEATS/10 );
-        for (unsigned i = 0; i < REPEATS/10; ++i)
-        {
-            {
-                sv3.resize(256000);
-                svect::back_insert_iterator bi(sv3.get_back_inserter());
-                for (unsigned j = 256000; j < 19000000/2; ++j)
+                for (unsigned j = 256000; j < 19000000 / 2; ++j)
                 {
-                    *bi = 0xFFF;
+                    sv2.set(j, 0xF8A);
                 }
             }
         }
-    }
 
-    // check just in case
-    //
-    if (!sv2.equal(sv3))
-    {
-        std::cerr << "Error! sparse_vector back_insert mismatch."
-                  << std::endl;
-        std::cerr << "sv2.size()=" << sv2.size() << std::endl;
-        std::cerr << "sv3.size()=" << sv3.size() << std::endl;
-        
-        for (unsigned i = 0; i < sv2.size(); ++i)
         {
-            unsigned v2 = sv2[i];
-            unsigned v3 = sv3[i];
-            if (v2 != v3)
+            TimeTaker tt("sparse_vector back_inserter test", REPEATS / 10);
+            for (unsigned i = 0; i < REPEATS / 10; ++i)
             {
-                std::cerr << "mismatch at: " << i
-                << " v2=" << v2 << " v3=" << v3
-                << std::endl;
-                exit(1);
+                {
+                    sv3.resize(256000);
+                    svect::back_insert_iterator bi(sv3.get_back_inserter());
+                    for (unsigned j = 256000; j < 19000000 / 2; ++j)
+                    {
+                        *bi = 0xF8A;
+                    }
+                }
             }
         }
-        exit(1);
-    }
 
+        // check 
+        //
+        if (!sv2.equal(sv3))
+        {
+            std::cerr << "Error! sparse_vector back_insert mismatch."
+                << std::endl;
+            std::cerr << "sv2.size()=" << sv2.size() << std::endl;
+            std::cerr << "sv3.size()=" << sv3.size() << std::endl;
+
+            for (unsigned i = 0; i < sv2.size(); ++i)
+            {
+                unsigned v2 = sv2[i];
+                unsigned v3 = sv3[i];
+                if (v2 != v3)
+                {
+                    std::cerr << "mismatch at: " << i
+                        << " v2=" << v2 << " v3=" << v3
+                        << std::endl;
+                    exit(1);
+                }
+            }
+            exit(1);
+        }
+    }
 
     unsigned long long cnt = 0;
     
@@ -2349,29 +2414,37 @@ void SparseVectorAccessTest()
     {
         idx.push_back(j);
     }
-    std::vector<unsigned> target_v;
-    target_v.resize(idx.size());
-    std::vector<unsigned> target_v2;
-    target_v2.resize(idx.size());
 
+    bm::id64_t sum1 = 0;
     {
         TimeTaker tt("sparse_vector random element access test", REPEATS/10 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
-            unsigned k = 0;
             for (unsigned j = gather_from; j < gather_to; ++j)
-            {
-                target_v[k++] = sv1[j];
-            }
+                sum1 += sv1[j];
         }
     }
 
+    std::vector<unsigned> target_v;
+    target_v.resize(idx.size());
     {
-        TimeTaker tt("sparse_vectot<>::gather() ", REPEATS/5 );
+        TimeTaker tt("sparse_vectot<>::gather() UNSORTED ", REPEATS/5 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
         }
+    }
+    bm::id64_t sum2 = 0;
+    for (size_t i = 0; i < idx.size(); ++i)
+    {
+        sum2 += target_v[i];
+        auto idx_v = idx[i];
+        auto v = sv1[idx_v];
+        assert(v == target_v[i]);
+    }
+    if (sum1 != sum2)
+    {
+        cout << "\r";
     }
 
     {
@@ -2379,20 +2452,14 @@ void SparseVectorAccessTest()
         auto from = gather_from;
         for (unsigned i = 0; i < REPEATS / 10; ++i)
         {
-            auto dsize = sv1.decode(target_v2.data(), gather_from, (unsigned)idx.size(), (i == 0));
+            auto dsize = sv1.decode(target_v.data(), gather_from, (unsigned)idx.size(), (i == 0));
             from += (dsize % 123);
         }
     }
+    target_v.resize(0);
+    target_v.shrink_to_fit();
 
-    {
-        if (target_v != target_v2)
-        {
-            std::cerr << "gather-decode check failed" << endl;
-            exit(1);
-        }
-    }
-
-
+/*
     {
         TimeTaker tt("sparse_vector const_iterator test", REPEATS );
         for (unsigned i = 0; i < REPEATS/10; ++i)
@@ -2407,9 +2474,9 @@ void SparseVectorAccessTest()
             }
         }
     }
-
+    */
 /*
-    // check just in case
+    // check 
     //
     size_t sz = min(target1.size(), target2.size());
     for (unsigned j = 0; j < sz; ++j)
@@ -2876,41 +2943,33 @@ void Set2SetTransformTest()
     bvect bv_sample;
     bvect bv_non_sample;
 
-
     {
-    bm::sparse_vector_scanner<svect> scanner;
-    scanner.find_nonzero(sv, bv_values);
-    scanner.find_zero(sv, bv_non_values);
+        bm::sparse_vector_scanner<svect> scanner;
+        scanner.find_nonzero(sv, bv_values);
+        scanner.find_zero(sv, bv_non_values);
     
-    unsigned non_v_count = bv_non_values.count() / 20;
-    if (non_v_count > 3000000)
-        non_v_count = 3000000;
+        unsigned non_v_count = bv_non_values.count() / 20;
+        if (non_v_count > 3000000)
+            non_v_count = 3000000;
 
-    if (non_v_count)
-    {
-        bm::random_subset<bvect> rand_sampler;
-        rand_sampler.sample(bv_sample, bv_values, 6000000);
-        rand_sampler.sample(bv_non_sample, bv_non_values, non_v_count);
-        //cout << "zero mix = " << bv_non_sample.count() << endl;
-        bv_sample |= bv_non_sample; // add some missing values
-    }
+        if (non_v_count)
+        {
+            bm::random_subset<bvect> rand_sampler;
+            rand_sampler.sample(bv_sample, bv_values, 6000000);
+            rand_sampler.sample(bv_non_sample, bv_non_values, non_v_count);
+            //cout << "zero mix = " << bv_non_sample.count() << endl;
+            bv_sample |= bv_non_sample; // add some missing values
+        }
     }
     
-    //cout << bv_sample.count() << endl;
-    //cout << sv.size() << endl;
-
     bm::set2set_11_transform<svect> set2set;
-
     int cnt = 0;
-
     {
-    TimeTaker tt("set2set_11_transform::run()", REPEATS/10);
-
+        TimeTaker tt("set2set_11_transform::run()", REPEATS/10);
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             bvect bv_out;
             set2set.run(bv_sample, sv, bv_out);
-
             cnt += bv_out.any();
         }
     }
@@ -2928,10 +2987,8 @@ void Set2SetTransformTest()
         }
     }
     */
-
     char buf[256];
     sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
-
 }
 
 static
@@ -2975,7 +3032,6 @@ void RangeCopyTest()
             bv_cp &= bv;
         } // for
     }
-
 }
 
 /// Reference (naive) interval detector based on population counting 
@@ -3244,9 +3300,9 @@ void IntervalsTest()
 
         bvect::size_type cnt_c = bv.count();
         {
-            TimeTaker tt(msg8, REPEATS * 1);
+            TimeTaker tt(msg8, REPEATS * 10);
    
-            for (unsigned i = 0; i < REPEATS; ++i)
+            for (unsigned i = 0; i < REPEATS * 10; ++i)
             {
                 bvect::size_type cnt = 0;
                 bm::interval_enumerator<bvect> ien(bv);
@@ -3268,9 +3324,9 @@ void IntervalsTest()
         }
         {
             bvect::size_type sum = 0;
-            TimeTaker tt(msg9, REPEATS * 1);
+            TimeTaker tt(msg9, REPEATS/4);
 
-            for (unsigned i = 0; i < REPEATS; ++i)
+            for (unsigned i = 0; i < REPEATS/4; ++i)
             {
                 bvect::size_type cnt = 0;
                 bvect::enumerator en = bv.get_enumerator(0);
@@ -3459,7 +3515,7 @@ void SparseVectorScannerTest()
     bvect bv_null;
     sparse_vector_u32 sv(bm::use_null);
     
-    generate_scanner_test_set(vect, bv_null, sv, BSIZE);
+    generate_scanner_test_set(vect, bv_null, sv, BSIZE/4);
 
     // generate a search vector for benchmarking
     std::vector<unsigned> search_vect;
@@ -3491,6 +3547,8 @@ void SparseVectorScannerTest()
             vector_search(vect, bv_null, vs, bv_res1);
         } // for
     }
+    vect.resize(0);
+    vect.shrink_to_fit();
 
     {
     TimeTaker tt("horizontal sparse vector scanner find_eq()", search_repeats);
@@ -3539,7 +3597,13 @@ void SparseVectorSerializationTest()
     sparse_vector_u32 sv2(bm::use_null);
     sparse_vector_u32 sv3(bm::use_null);
 
-    generate_serialization_test_set(sv1, BSIZE);
+    unsigned sv_size = BSIZE;
+    if (bm::conditional<sizeof(void*) == 4>::test())
+    {
+        sv_size = sv_size / 2;
+    }
+
+    generate_serialization_test_set(sv1, sv_size);
 
     bm::sparse_vector_serial_layout<sparse_vector_u32> sv_lay;
 
@@ -3620,7 +3684,12 @@ void SparseVectorRangeDeserializationTest()
     sparse_vector_u32 sv1(bm::use_null);
     sparse_vector_u32 sv2(bm::use_null);
 
-    generate_scanner_test_set(vect, bv_null, sv1, BSIZE);
+    unsigned sv_size = BSIZE;
+    if (bm::conditional<sizeof(void*) == 4>::test())
+    {
+        sv_size = sv_size / 2;
+    }
+    generate_scanner_test_set(vect, bv_null, sv1, sv_size);
 
     bm::sparse_vector_deserializer<sparse_vector_u32> sv_deserial;
     bm::sparse_vector_serializer<sparse_vector_u32> sv_serializer;
@@ -3638,16 +3707,16 @@ void SparseVectorRangeDeserializationTest()
         for (unsigned i = 0; i < 15; ++i)
         {
             sv_deserial.deserialize(sv2, buf, 0, 65536 * 2);
-            sv_deserial.deserialize(sv2, buf, BSIZE / 4, BSIZE / 2);
-            sv_deserial.deserialize(sv2, buf, BSIZE / 2, (65536 * 2) + (BSIZE / 2));
+            sv_deserial.deserialize(sv2, buf, sv_size / 4, sv_size / 2);
+            sv_deserial.deserialize(sv2, buf, sv_size / 2, (65536 * 2) + (sv_size / 2));
         }
     }
 
     assert(sv1.size() == sv2.size());
     // validation
     {
-        sparse_vector_u32::size_type to = (65536 * 2) + (BSIZE / 2);
-        for (sparse_vector_u32::size_type from = BSIZE / 2; from <= to; ++from)
+        sparse_vector_u32::size_type to = (65536 * 2) + (sv_size / 2);
+        for (sparse_vector_u32::size_type from = sv_size / 2; from <= to; ++from)
         {
             auto v1 = sv1[from];
             auto v2 = sv2[from];
@@ -3672,16 +3741,16 @@ void SparseVectorRangeDeserializationTest()
         for (unsigned i = 0; i < 15; ++i)
         {
             sv_deserial.deserialize_range(sv2, buf, 0, 65536 * 2);
-            sv_deserial.deserialize_range(sv2, buf, BSIZE / 4, BSIZE / 2);
-            sv_deserial.deserialize_range(sv2, buf, BSIZE / 2, (65536 * 2) + (BSIZE / 2));
+            sv_deserial.deserialize_range(sv2, buf, sv_size / 4, sv_size / 2);
+            sv_deserial.deserialize_range(sv2, buf, sv_size / 2, (65536 * 2) + (sv_size / 2));
         }
     }
 
     // validation
     //
     {
-        sparse_vector_u32::size_type to = (65536 * 2) + (BSIZE / 2);
-        for (sparse_vector_u32::size_type from = BSIZE / 2; from <= to; ++from)
+        sparse_vector_u32::size_type to = (65536 * 2) + (sv_size / 2);
+        for (sparse_vector_u32::size_type from = sv_size / 2; from <= to; ++from)
         {
             auto v1 = sv1[from];
             auto v2 = sv2[from];
@@ -3728,8 +3797,12 @@ void GenerateTestStrCollection(std::vector<string>& str_coll, unsigned max_coll)
 static
 void StrSparseVectorTest()
 {
-    const unsigned max_coll = 20000000;
-    
+    unsigned max_coll = 20000000;
+    if (bm::conditional<sizeof(void*) == 4>::test())
+    {
+        max_coll = max_coll / 2;
+    }
+
    std::vector<string> str_coll;
    str_svect_type str_sv;
 
@@ -3908,82 +3981,103 @@ void InterpolativeCodingTest()
 
 int main(void)
 {
+    cout << bm::_copyright<true>::_p << endl;
 //    ptest();
 
     TimeTaker tt("TOTAL", 1);
+    try
+    {
+        cout << endl;
 
-    MemCpyTest();
+        MemCpyTest();
 
-    BitCountTest();
+        BitCountTest();
 
-    BitCountSparseTest();
+        BitCountSparseTest();
 
-    BitForEachTest();
+        BitForEachTest();
 
-    WordSelectTest();
+        WordSelectTest();
+        cout << endl;
 
-    BitTestSparseTest();
+        BitTestSparseTest();
+        BitCompareTest();
+        cout << endl;
 
-    BitCompareTest();
+        OptimizeTest();
+        cout << endl;
 
-    OptimizeTest();
+        FindTest();
+        cout << endl;
 
-    FindTest();
+        BitBlockRotateTest();
 
-    BitBlockRotateTest();
+        BitBlockShiftTest();
+        cout << endl;
 
-    BitBlockShiftTest();
+        InterpolativeCodingTest();
+        cout << endl;
 
-    InterpolativeCodingTest();
+        EnumeratorTest();
+        EnumeratorTestGAP();
+        EnumeratorGoToTest();
+        cout << endl;
 
-    EnumeratorTest();
+        BvectorShiftTest();
+        cout << endl;
 
-    EnumeratorTestGAP();
+        RangeCopyTest();
+        cout << endl;
 
-    EnumeratorGoToTest();
+        IntervalsTest();
+        cout << endl;
 
-    BvectorShiftTest();
+        AggregatorTest();
+        cout << endl;
 
-    RangeCopyTest();
+        OrTest();
+        AndTest();
+        XorTest();
+        SubTest();
+        cout << endl;
 
-    IntervalsTest();
+        InvertTest();
+        cout << endl;
 
-    AggregatorTest();
+        Set2SetTransformTest();
+        cout << endl;
 
-    OrTest();
+        XorCountTest();
+        AndCountTest();
+        TI_MetricTest();
+        cout << endl;
 
-    AndTest();
-    XorTest();
+        SerializationTest();
+        cout << endl;
 
-    SubTest();
+        SparseVectorAccessTest();
+        cout << endl;
 
-    InvertTest();  
+        SparseVectorScannerTest();
+        cout << endl;
 
-    XorCountTest();
-    AndCountTest();
+        SparseVectorSerializationTest();
+        SparseVectorRangeDeserializationTest();
+        cout << endl;
 
-    TI_MetricTest();
+        RSC_SparseVectorFillTest();
+        RSC_SparseVectorAccesTest();
+        RankCompressionTest();
+        cout << endl;
 
-    SerializationTest();
-
-    SparseVectorAccessTest();
-
-    SparseVectorScannerTest();
-
-    SparseVectorSerializationTest();
-
-    SparseVectorRangeDeserializationTest();
-
-    RSC_SparseVectorFillTest();
-
-    RSC_SparseVectorAccesTest();
-
-    RankCompressionTest();
-
-    Set2SetTransformTest();
-
-    StrSparseVectorTest();
-
+        StrSparseVectorTest();
+        cout << endl;
+    }
+    catch (std::exception& ex)
+    {
+        cerr << ex.what() << endl;
+        exit(1);
+    }
     return 0;
 }
 

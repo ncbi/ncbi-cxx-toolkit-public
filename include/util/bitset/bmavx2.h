@@ -240,7 +240,7 @@ bm::id_t avx2_bit_block_count(const bm::word_t* const block,
     {
         bm::id64_t t = bm::bmi_blsi_u64(digest); // d & -d;
 
-        unsigned wave = _mm_popcnt_u64(t - 1);
+        unsigned wave = (unsigned)_mm_popcnt_u64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
 
         const __m256i* BMRESTRICT wave_src = (__m256i*)&block[off];
@@ -1795,21 +1795,26 @@ unsigned avx2_bit_block_calc_change(const __m256i* BMRESTRICT block,
     @ingroup AVX2
 */
 inline
-unsigned avx2_bit_block_calc_xor_change(const __m256i* BMRESTRICT block,
+void avx2_bit_block_calc_xor_change(const __m256i* BMRESTRICT block,
                                     const __m256i* BMRESTRICT xor_block,
-                                    unsigned size)
+                                    unsigned size,
+                                    unsigned* BMRESTRICT gcount,
+                                    unsigned* BMRESTRICT bcount)
 {
     BM_AVX2_POPCNT_PROLOG;
 
-    const __m256i* block_end =
+    const __m256i* BMRESTRICT block_end =
         (const __m256i*)((bm::word_t*)(block) + size);
 
     __m256i m1COshft, m2COshft;
     __m256i mCOidx = _mm256_set_epi32(6, 5, 4, 3, 2, 1, 0, 0);
+
     __m256i cntAcc = _mm256_setzero_si256();
+    __m256i cntAcc2 = _mm256_setzero_si256();
 
     unsigned w0 = *((bm::word_t*)(block));
-    unsigned count = 1;
+    unsigned bit_count = 0;
+    unsigned gap_count = 1;
 
     bm::id64_t BM_ALIGN32 cnt_v[4] BM_ALIGN32ATTR;
 
@@ -1824,6 +1829,12 @@ unsigned avx2_bit_block_calc_xor_change(const __m256i* BMRESTRICT block,
         m1A = _mm256_xor_si256 (m1A, m1B);
         m2A = _mm256_xor_si256 (m2A, m2B);
 
+        {
+            BM_AVX2_BIT_COUNT(bc, m1A)
+            cntAcc2 = _mm256_add_epi64(cntAcc2, bc);
+            BM_AVX2_BIT_COUNT(bc, m2A)
+            cntAcc2 = _mm256_add_epi64(cntAcc2, bc);
+        }
 
         __m256i m1CO = _mm256_srli_epi32(m1A, 31);
         __m256i m2CO = _mm256_srli_epi32(m2A, 31);
@@ -1862,10 +1873,14 @@ unsigned avx2_bit_block_calc_xor_change(const __m256i* BMRESTRICT block,
 
     // horizontal count sum
     _mm256_store_si256 ((__m256i*)cnt_v, cntAcc);
-    count += (unsigned)(cnt_v[0] + cnt_v[1] + cnt_v[2] + cnt_v[3]);
+    gap_count += (unsigned)(cnt_v[0] + cnt_v[1] + cnt_v[2] + cnt_v[3]);
+    gap_count -= (w0 & 1u); // correct initial carry-in error
 
-    count -= (w0 & 1u); // correct initial carry-in error
-    return count;
+    _mm256_store_si256 ((__m256i*)cnt_v, cntAcc2);
+    bit_count += (unsigned)(cnt_v[0] + cnt_v[1] + cnt_v[2] + cnt_v[3]);
+
+    *gcount = gap_count;
+    *bcount = bit_count;
 }
 
 
@@ -1903,11 +1918,11 @@ void avx2_bit_block_calc_change_bc(const __m256i* BMRESTRICT block,
         {
             bm::id64_t* b64 = (bm::id64_t*)block;
 
-            bit_count += _mm_popcnt_u64(b64[0]) + _mm_popcnt_u64(b64[1]);
-            bit_count += _mm_popcnt_u64(b64[2]) + _mm_popcnt_u64(b64[3]);
+            bit_count += (unsigned) (_mm_popcnt_u64(b64[0]) + _mm_popcnt_u64(b64[1]));
+            bit_count += (unsigned)(_mm_popcnt_u64(b64[2]) + _mm_popcnt_u64(b64[3]));
        
-            bit_count += _mm_popcnt_u64(b64[4]) + _mm_popcnt_u64(b64[5]);
-            bit_count += _mm_popcnt_u64(b64[6]) + _mm_popcnt_u64(b64[7]);
+            bit_count += (unsigned)(_mm_popcnt_u64(b64[4]) + _mm_popcnt_u64(b64[5]));
+            bit_count += (unsigned)(_mm_popcnt_u64(b64[6]) + _mm_popcnt_u64(b64[7]));
         }
         
         __m256i m1CO = _mm256_srli_epi32(m1A, 31);
@@ -2877,7 +2892,7 @@ unsigned avx2_bit_to_gap(gap_word_t* BMRESTRICT dest,
                 bool cmp = (bool(bitval) != bool(val));
                 unsigned mask = ~(cmp - 1u);
                 *pcurr = mask & (gap_word_t)(bit_idx-cmp);
-                bitval ^= cmp;
+                bitval ^= unsigned(cmp);
                 unsigned long long pcu = reinterpret_cast<unsigned long long>(pcurr);
                 pcu += mask & sizeof(gap_word_t);
                 pcurr = reinterpret_cast<gap_word_t*>(pcu);
@@ -2913,7 +2928,7 @@ unsigned avx2_bit_to_gap(gap_word_t* BMRESTRICT dest,
                 {
                     tz = ~(cmp - 1u); // generate 0xFFFF or 0x0000 mask
                     *pcurr = tz & (gap_word_t)(bit_idx-cmp);
-                    bitval ^= cmp;
+                    bitval ^= unsigned(cmp);
                     bit_idx += tz & (vCAP - bits_consumed);
                     unsigned long long pcu = reinterpret_cast<unsigned long long>(pcurr);
                     pcu += tz & sizeof(gap_word_t);
@@ -3101,8 +3116,8 @@ void avx2_bit_block_xor(bm::word_t*  target_block,
 #define VECT_BLOCK_CHANGE(block, size) \
     avx2_bit_block_calc_change((__m256i*)block, size)
 
-#define VECT_BLOCK_XOR_CHANGE(block, xor_block, size) \
-    avx2_bit_block_calc_xor_change((__m256i*)block, (__m256i*)xor_block, size)
+#define VECT_BLOCK_XOR_CHANGE(block, xor_block, size, gc, bc) \
+    avx2_bit_block_calc_xor_change((__m256i*)block, (__m256i*)xor_block, size, gc, bc)
 
 #define VECT_BLOCK_CHANGE_BC(block, gc, bc) \
     avx2_bit_block_calc_change_bc((__m256i*)block, gc, bc)

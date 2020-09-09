@@ -83,7 +83,7 @@ static inline size_t sx_CalcBlockBitCount(const char* block, size_t size)
 {
     const bm::word_t* word_block = reinterpret_cast<const bm::word_t*>(block);
     const bm::word_t* word_block_end = word_block + size/sizeof(bm::word_t);
-    size_t ret = bm::bit_block_calc_count(word_block, word_block_end);
+    size_t ret = bm::bit_count_min_unroll(word_block, word_block_end);
 
     const char* tail_ptr = reinterpret_cast<const char*>(word_block_end);
     const char* block_end = block + size;

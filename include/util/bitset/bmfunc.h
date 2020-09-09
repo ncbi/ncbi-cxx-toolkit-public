@@ -252,7 +252,11 @@ unsigned word_bitcount64(bm::id64_t x) BMNOEXCEPT
 #endif
 }
 
-inline 
+/*!
+    Parallel popcount on 4 64-bit words
+    @ingroup bitfunc
+*/
+inline
 unsigned bitcount64_4way(bm::id64_t x, bm::id64_t y, 
                          bm::id64_t u, bm::id64_t v) BMNOEXCEPT
 {
@@ -380,6 +384,167 @@ void bit_for_each(T w, F& func)
         
     } // for
 }
+
+/**
+    portable, switch based bitscan
+    @internal
+   @ingroup bitfunc
+ */
+inline
+unsigned bitscan_nibble(unsigned w, unsigned* bits) BMNOEXCEPT
+{
+    unsigned cnt = 0;
+    for (unsigned sub_octet = 0; w; w >>= 4, sub_octet+=4)
+    {
+        switch (w & 15) // 1111
+        {
+        //case 0: // 0000
+        //    break;
+        case 1: // 0001
+            bits[cnt++] = 0 + sub_octet;
+            break;
+        case 2: // 0010
+            bits[cnt++] = 1 + sub_octet;
+            break;
+        case 3:    // 0011
+            bits[cnt]   = 0 + sub_octet;
+            bits[cnt+1] = 1 + sub_octet;
+            cnt += 2;
+            break;
+        case 4: // 0100
+            bits[cnt++] = 2 + sub_octet;
+            break;
+        case 5: // 0101
+            bits[cnt+0] = 0 + sub_octet;
+            bits[cnt+1] = 2 + sub_octet;
+            cnt += 2;
+            break;
+        case 6: // 0110
+            bits[cnt+0] = 1 + sub_octet;
+            bits[cnt+1] = 2 + sub_octet;
+            cnt += 2;
+            break;
+        case 7: // 0111
+            bits[cnt+0] = 0 + sub_octet;
+            bits[cnt+1] = 1 + sub_octet;
+            bits[cnt+2] = 2 + sub_octet;
+            cnt += 3;
+            break;
+        case 8: // 1000
+            bits[cnt++] = 3 + sub_octet;
+            break;
+        case 9: // 1001
+            bits[cnt+0] = 0 + sub_octet;
+            bits[cnt+1] = 3 + sub_octet;
+            cnt += 2;
+            break;
+        case 10: // 1010
+            bits[cnt+0] = 1 + sub_octet;
+            bits[cnt+1] = 3 + sub_octet;
+            cnt += 2;
+            break;
+        case 11: // 1011
+            bits[cnt+0] = 0 + sub_octet;
+            bits[cnt+1] = 1 + sub_octet;
+            bits[cnt+2] = 3 + sub_octet;
+            cnt += 3;
+            break;
+        case 12: // 1100
+            bits[cnt+0] = 2 + sub_octet;
+            bits[cnt+1] = 3 + sub_octet;
+            cnt += 2;
+            break;
+        case 13: // 1101
+            bits[cnt+0] = 0 + sub_octet;
+            bits[cnt+1] = 2 + sub_octet;
+            bits[cnt+2] = 3 + sub_octet;
+            cnt += 3;
+            break;
+        case 14: // 1110
+            bits[cnt+0] = 1 + sub_octet;
+            bits[cnt+1] = 2 + sub_octet;
+            bits[cnt+2] = 3 + sub_octet;
+            cnt += 3;
+            break;
+        case 15: // 1111
+            bits[cnt+0] = 0 + sub_octet;
+            bits[cnt+1] = 1 + sub_octet;
+            bits[cnt+2] = 2 + sub_octet;
+            bits[cnt+3] = 3 + sub_octet;
+            cnt += 4;
+            break;
+        default:
+            break;
+        }
+    } // for
+    return cnt;
+}
+
+#ifdef __GNUC__
+/**
+    bitscan based on computed goto (GCC/clang)
+    @internal
+    @ingroup bitfunc
+ */
+inline
+unsigned bitscan_nibble_gcc(unsigned w, unsigned* bits) BMNOEXCEPT
+{
+    static void* d_table[] = { &&l0,
+        &&l1, &&l3_1, &&l3, &&l7_1, &&l5, &&l7_0, &&l7, &&l15_1,
+        &&l9, &&l11_0, &&l11, &&l15_0, &&l13, &&l14, &&l15 };
+    unsigned cnt = 0;
+
+    for (unsigned sub_octet = 0; w; w >>= 4, sub_octet+=4)
+    {
+        goto *d_table[w & 15];
+        l1: // 0001
+            bits[cnt++] = sub_octet;
+            continue;
+        l3: // 0011
+            bits[cnt++] = sub_octet;
+            l3_1:
+            bits[cnt++] = 1 + sub_octet;
+            continue;
+        l5: // 0101
+            bits[cnt++] = sub_octet;
+            goto l7_1;
+        l7: // 0111
+            bits[cnt++] = sub_octet;
+            l7_0:
+            bits[cnt++] = 1 + sub_octet;
+            l7_1:
+            bits[cnt++] = 2 + sub_octet;
+            continue;
+        l9: // 1001
+            bits[cnt++] = sub_octet;
+            goto l15_1;
+            continue;
+        l11: // 1011
+            bits[cnt++] = sub_octet;
+            l11_0:
+            bits[cnt++] = 1 + sub_octet;
+            bits[cnt++] = 3 + sub_octet;
+            continue;
+        l13: // 1101
+            bits[cnt++] = sub_octet;
+            goto l15_0;
+        l14: // 1110
+            bits[cnt++] = 1 + sub_octet;
+            goto l15_0;
+        l15: // 1111
+            bits[cnt++] = 0 + sub_octet;
+            bits[cnt++] = 1 + sub_octet;
+            l15_0:
+            bits[cnt++] = 2 + sub_octet;
+            l15_1:
+            bits[cnt++] = 3 + sub_octet;
+        l0:
+            continue;
+    } // for
+    return cnt;
+}
+
+#endif
 
 /*! @brief Adaptor to copy 1 bits to array
     @internal
@@ -530,6 +695,61 @@ unsigned short bitscan_popcnt64(bm::id64_t w, B* bits) BMNOEXCEPT
 }
 
 /*!
+    \brief Unpacks word into list of ON bits (BSF/__builtin_ctz)
+    \param w - value
+    \param bits - pointer on the result array
+    \return number of bits in the list
+
+    @ingroup bitfunc
+    @internal
+*/
+template<typename B>
+unsigned short bitscan_bsf(unsigned w, B* bits) BMNOEXCEPT
+{
+    unsigned short pos = 0;
+    while (w)
+    {
+        bits[pos++] = count_trailing_zeros_u32(w);
+        w &= w - 1;
+    }
+    return pos;
+}
+
+template<typename B, typename OT>
+unsigned short bitscan_bsf(unsigned w, B* bits, OT offs) BMNOEXCEPT
+{
+    unsigned short pos = 0;
+    while (w)
+    {
+        bits[pos++] = (B) (bm::count_trailing_zeros_u32(w) + offs);
+        w &= w - 1;
+    }
+    return pos;
+}
+
+/*!
+    \brief Unpacks word into list of ON bits (BSF/__builtin_ctz)
+    \param w - value
+    \param bits - pointer on the result array
+    \return number of bits in the list
+
+    @ingroup bitfunc
+    @internal
+*/
+template<typename B>
+unsigned short bitscan_bsf64(bm::id64_t w, B* bits) BMNOEXCEPT
+{
+    unsigned short pos = 0;
+    while (w)
+    {
+        bits[pos++] = bm::count_trailing_zeros_u64(w);
+        w &= w - 1;
+    }
+    return pos;
+}
+
+
+/*!
   \brief Unpacks 64-bit word into list of ON bit indexes using popcnt method
   \param w - value
   \param bits - pointer on the result array
@@ -551,7 +771,10 @@ bitscan_popcnt64(bm::id64_t w, B* bits, unsigned short offs) BMNOEXCEPT
     return pos;
 }
 
-
+/**
+    Templated Bitscan with dynamic dispatch for best type
+    @ingroup bitfunc
+ */
 template<typename V, typename B>
 unsigned short bitscan(V w, B* bits) BMNOEXCEPT
 {
@@ -596,7 +819,7 @@ unsigned word_select64_linear(bm::id64_t w, unsigned rank) BMNOEXCEPT
     \return selected value (inxed of bit set)
 */
 inline
-unsigned word_select64_bitscan(bm::id64_t w, unsigned rank) BMNOEXCEPT
+unsigned word_select64_bitscan_popcnt(bm::id64_t w, unsigned rank) BMNOEXCEPT
 {
     BM_ASSERT(w);
     BM_ASSERT(rank);
@@ -631,7 +854,7 @@ unsigned word_select64(bm::id64_t w, unsigned rank) BMNOEXCEPT
     #if defined(BMI1_SELECT64)
         return BMI2_SELECT64(w, rank);
     #else
-        return bm::word_select64_bitscan(w, rank);
+        return bm::word_select64_bitscan_popcnt(w, rank);
     #endif
 #endif
 }
@@ -655,6 +878,19 @@ bm::id64_t widx_to_digest_mask(unsigned w_idx) BMNOEXCEPT
     return mask << (w_idx / bm::set_block_digest_wave_size);
 }
 
+/** digest mask control generation (for debug and test only)
+    @internal
+ */
+inline
+bm::id64_t dm_control(unsigned from, unsigned to) BMNOEXCEPT
+{
+    bm::id64_t m = 0;
+    for (unsigned i = from; i <= to; ++i)
+        m |= (1ull << (i / 1024));
+    return m;
+}
+
+
 /**
    \brief Compute digest mask for [from..to] positions
     \param from - range from (in bit-block coordinates)
@@ -667,12 +903,18 @@ BMFORCEINLINE
 bm::id64_t digest_mask(unsigned from, unsigned to) BMNOEXCEPT
 {
     BM_ASSERT(from <= to);
+    BM_ASSERT(to < bm::gap_max_bits);
     
     bm::id64_t digest_from = from >> bm::set_block_digest_pos_shift;
     bm::id64_t digest_to = to >> bm::set_block_digest_pos_shift;;
-    const bm::id64_t maskFF(~0ull);
-    return ((maskFF) >> (63 - (digest_to - digest_from))) << digest_from;
+    bm::id64_t mask(~0ull);
+    mask = (mask >> (63 - (digest_to - digest_from))) << digest_from;
+
+    //BM_ASSERT(mask == bm::dm_control(from, to));
+
+    return mask;
 }
+
 
 /*!
     \brief check if all digest bits for the range [from..to] are 0
@@ -2459,6 +2701,7 @@ void gap_buff_op(T*         BMRESTRICT dest,
 
    @ingroup gapfunc
 */
+/*
 template<typename T, class F>
 bool gap_buff_dry_op(const T*   BMRESTRICT vect1,
                      const T*   BMRESTRICT vect2,
@@ -2471,7 +2714,7 @@ bool gap_buff_dry_op(const T*   BMRESTRICT vect1,
     T bitval1 = (T)((*cur1++ & 1));
     T bitval2 = (T)((*cur2++ & 1));
 
-    T bitval = (T) F::op(bitval1, bitval2);
+    T bitval = (T)F::op(bitval1, bitval2);
     T bitval_prev = bitval;
 
     unsigned len = 1;
@@ -2515,7 +2758,7 @@ bool gap_buff_dry_op(const T*   BMRESTRICT vect1,
     dlen = len;
     return true;
 }
-
+*/
 
 /*!
    \brief Abstract distance test operation for GAP buffers. 
@@ -3374,7 +3617,7 @@ void gap_sub_to_bitset(unsigned* BMRESTRICT dest,
     const T* pend = pcurr + (*pcurr >> 3);
     if (*pcurr & 1)  // Starts with 1
     {
-        bool all_zero = bm::check_zero_digest(digest0, 0, pcurr[1]+1);
+        bool all_zero = bm::check_zero_digest(digest0, 0, pcurr[1]);
         if (!all_zero)
             bm::sub_bit_block(dest, 0, pcurr[1] + 1); // (not AND) - SUB [0] gaps
         pcurr += 3;
@@ -3548,7 +3791,7 @@ void gap_and_to_bitset(unsigned* BMRESTRICT dest,
     const T* pend = pcurr + (*pcurr >> 3);
     if (!(*pcurr & 1) )  // Starts with 0
     {
-        bool all_zero = bm::check_zero_digest(digest0, 0, pcurr[1]+1);
+        bool all_zero = bm::check_zero_digest(digest0, 0, pcurr[1]);
         if (!all_zero)
             bm::sub_bit_block(dest, 0, pcurr[1] + 1); // (not AND) - SUB [0] gaps
         pcurr += 3;
@@ -4386,6 +4629,56 @@ D gap_convert_to_arr(D* BMRESTRICT       dest,
 }
 
 
+/*!
+    @brief Bitcount for bit block without agressive unrolling
+    @ingroup bitfunc
+*/
+BMFORCEINLINE
+unsigned bit_count_min_unroll(const bm::word_t* BMRESTRICT block,
+                              const bm::word_t* BMRESTRICT block_end) BMNOEXCEPT
+{
+    unsigned count = 0;
+#ifdef BM64OPT
+    do
+    {
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u =
+                        (const bm::bit_block_t::bunion_t*)(block);
+
+        bm::id64_t x = src_u->w64[0]; bm::id64_t y = src_u->w64[1];
+        bm::id64_t u = src_u->w64[2]; bm::id64_t v = src_u->w64[3];
+
+        #if defined(BM_USE_GCC_BUILD)
+           count += unsigned(__builtin_popcountll(x) + __builtin_popcountll(y)
+                           + __builtin_popcountll(u) + __builtin_popcountll(v));
+        #else
+            // 64-bit optimized algorithm. No sparse vect opt
+            // instead it uses 4-way parallel pipelined version
+            if (x | y | u | v)
+            {
+                unsigned c = bitcount64_4way(x, y, u, v);
+                BM_ASSERT(c);
+                count += c;
+            }
+        #endif
+        block += 8;
+    } while (block < block_end);
+#else
+    do
+    {
+        unsigned c1= bm::word_bitcount(*block);
+        unsigned c2 = bm::word_bitcount(block[1]);        
+        count += c1 + c2;        
+        c1= bm::word_bitcount(block[2]);
+        c2 = bm::word_bitcount(block[3]);        
+        count += c1 + c2;                
+        block+=4;
+    } while (block < block_end);
+    
+#endif
+    return count;
+}
+
+
 
 /*! 
     @brief Bitcount for bit block
@@ -4399,55 +4692,11 @@ inline
 bm::id_t bit_block_count(const bm::word_t* block) BMNOEXCEPT
 {
     const bm::word_t* block_end = block + bm::set_block_size;
-    bm::id_t count = 0;
-
-#ifdef BMVECTOPT 
-    count = VECT_BITCOUNT(block, block_end);
-#else  
-#ifdef BM64OPT
-    // 64-bit optimized algorithm. No sparse vect opt.
-    // instead it uses 4-way parallel pipelined version
-
-    const bm::id64_t* b1 = (bm::id64_t*) block;
-    const bm::id64_t* b2 = (bm::id64_t*) block_end;
-    do 
-    {
-        bm::id64_t x = b1[0];
-        bm::id64_t y = b1[1];
-        bm::id64_t u = b1[2];
-        bm::id64_t v = b1[3];
-
-        if (x | y | u | v)
-        {
-            unsigned c = bitcount64_4way(x, y, u, v);
-            BM_ASSERT(c);
-            count += c;
-        }
-        b1 += 4;
-    } while (b1 < b2);
+#ifdef BMVECTOPT
+    return VECT_BITCOUNT(block, block_end);
 #else
-    // For 32 bit code the fastest method is
-    // to use bitcount table for each byte in the block.
-    // As optimization for sparse bitsets used bits accumulator
-    // to collect ON bits using bitwise OR. 
-    bm::word_t  acc = *block++;
-    do
-    {
-        bm::word_t in = *block++;
-        bm::word_t acc_prev = acc;
-        acc |= in;
-        if (acc_prev &= in)  // accumulator miss: counting bits
-        {
-            BM_INCWORD_BITCOUNT(count, acc);
-            acc = acc_prev;
-        }
-    } while (block < block_end);
-
-    BM_INCWORD_BITCOUNT(count, acc); // count-in remaining accumulator 
-
+    return bm::bit_count_min_unroll(block, block_end);
 #endif
-#endif	
-    return count;
 }
 
 /*!
@@ -4493,39 +4742,6 @@ bm::id_t bit_block_count(const bm::word_t* const block,
 }
 
 
-
-/*!
-    @brief Bitcount for bit string
-
-    Added for back-compatibility purposes, not block aligned,
-    not SIMD accelerated
-
-    @ingroup bitfunc
-*/
-inline
-bm::id_t bit_block_calc_count(const bm::word_t* block,
-                              const bm::word_t* block_end) BMNOEXCEPT
-{
-    bm::id_t count = 0;
-    bm::word_t  acc = *block++;
-    do
-    {
-        bm::word_t in = *block++;
-        bm::word_t acc_prev = acc;
-        acc |= in;
-        if (acc_prev &= in)  // accumulator miss: counting bits
-        {
-            BM_INCWORD_BITCOUNT(count, acc);
-            acc = acc_prev;
-        }
-    } while (block < block_end);
-
-    BM_INCWORD_BITCOUNT(count, acc); // count-in remaining accumulator
-    return count;
-}
-
-
-
 /*!
     Function calculates number of times when bit value changed 
     (1-0 or 0-1).
@@ -4566,7 +4782,7 @@ unsigned bit_block_change32(const bm::word_t* block, unsigned size) BMNOEXCEPT
     BM_INCWORD_BITCOUNT(gap_count, w);
     gap_count -= (w_prev = (w0 >> w_shift)); // negative value correction
 
-    const bm::word_t* block_end = block + size; // bm::set_block_size;
+    const bm::word_t* block_end = block + size; 
     for (++block; block < block_end; ++block)
     {
         w = w0 = *block;
@@ -4611,6 +4827,7 @@ void bit_block_change_bc(const bm::word_t* BMRESTRICT block,
     #ifdef VECT_BLOCK_CHANGE_BC
         VECT_BLOCK_CHANGE_BC(block, gc, bc);
     #else
+        // TODO: one pass algo
         *gc = bm::bit_block_change32(block, bm::set_block_size);
         *bc = bm::bit_block_count(block);
     #endif
@@ -5812,6 +6029,7 @@ gap_word_t* gap_operation_xor(const gap_word_t*  BMRESTRICT vect1,
 /*! Light weight gap_operation_xor for len prediction
    @ingroup gapfunc
 */
+/*
 inline
 bool gap_operation_dry_xor(const gap_word_t*  BMRESTRICT vect1,
                            const gap_word_t*  BMRESTRICT vect2,
@@ -5821,7 +6039,7 @@ bool gap_operation_dry_xor(const gap_word_t*  BMRESTRICT vect1,
     return
     bm::gap_buff_dry_op<bm::gap_word_t, bm::xor_func>(vect1, vect2, dsize, limit);
 }
-
+*/
 
 /*!
    \brief GAP XOR operation test.
@@ -7801,12 +8019,14 @@ SIZE_TYPE bit_find_rank(const bm::word_t* const block,
         }
         else // target word
         {
-            unsigned idx = bm::word_select64(w, unsigned(rank));
+            unsigned idx = bm::word_select64(w, unsigned(rank)); // TODO: use 32-bit select
             nbit_pos = pos + idx;
             return 0;
         }
     }
-    
+
+    // TODO: improve 64-bit detection for systems with 32-bit mem
+    // and 64-bit ALU (like WebASM)
     if (bm::conditional<sizeof(void*) == 8>::test()) // 64-bit fast scan
     {
         for (; nword < bm::set_block_size-1; nword+=2)
@@ -7833,7 +8053,7 @@ SIZE_TYPE bit_find_rank(const bm::word_t* const block,
             rank -= bc; pos += 32u;
             continue;
         }
-        unsigned idx = bm::word_select64(w, unsigned(rank));
+        unsigned idx = bm::word_select64(w, unsigned(rank)); // TODO: use 32-bit select
         nbit_pos = pos + idx;
         return 0;
     } // for nword
@@ -8534,27 +8754,33 @@ bitscan_wave(const bm::word_t* BMRESTRICT w_ptr,
     bm::word_t w0, w1;
     unsigned int cnt0;
 
-    w0 = w_ptr[0];
-    w1 = w_ptr[1];
-    
-#if defined(BMAVX512OPT) || defined(BMAVX2OPT) || defined(BMSSE42OPT)
+    w0 = w_ptr[0]; w1 = w_ptr[1];
+
+#if defined(BMAVX512OPT) || defined(BMAVX2OPT) || defined(BM64OPT) || defined(BM64_SSE4)
     // combine into 64-bit word and scan (when HW popcnt64 is available)
     bm::id64_t w = (bm::id64_t(w1) << 32) | w0;
     cnt0 = bm::bitscan_popcnt64(w, bits);
 
-    w0 = w_ptr[2];
-    w1 = w_ptr[3];
+    w0 = w_ptr[2]; w1 = w_ptr[3];
     w = (bm::id64_t(w1) << 32) | w0;
     cnt0 += bm::bitscan_popcnt64(w, bits + cnt0, 64);
 #else
-    // decode wave as two 32-bit bitscan decodes
-    cnt0 = bm::bitscan_popcnt(w0, bits);
-    cnt0 += bm::bitscan_popcnt(w1, bits + cnt0, 32);
+    #if (defined(__arm__) || defined(__aarch64__))
+        cnt0 = bm::bitscan_bsf(w0, bits, (unsigned short)0);
+        cnt0 += bm::bitscan_bsf(w1, bits + cnt0, (unsigned short)32);
 
-    w0 = w_ptr[2];
-    w1 = w_ptr[3];
-    cnt0 += bm::bitscan_popcnt(w0, bits + cnt0, 64);
-    cnt0 += bm::bitscan_popcnt(w1, bits + cnt0, 64+32);
+        w0 = w_ptr[2]; w1 = w_ptr[3];
+        cnt0 += bm::bitscan_bsf(w0, bits + cnt0, (unsigned short)64);
+        cnt0 += bm::bitscan_bsf(w1, bits + cnt0, (unsigned short)(64+32));        
+    #else    
+        // decode wave as two 32-bit bitscan decodes
+        cnt0 = bm::bitscan_popcnt(w0, bits);
+        cnt0 += bm::bitscan_popcnt(w1, bits + cnt0, 32);
+
+        w0 = w_ptr[2]; w1 = w_ptr[3];
+        cnt0 += bm::bitscan_popcnt(w0, bits + cnt0, 64);
+        cnt0 += bm::bitscan_popcnt(w1, bits + cnt0, 64+32);    
+    #endif
 #endif
     return static_cast<unsigned short>(cnt0);
 }

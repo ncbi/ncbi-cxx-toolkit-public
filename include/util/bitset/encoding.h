@@ -60,6 +60,9 @@ public:
     void put_32(const bm::word_t* w, unsigned count) BMNOEXCEPT;
     void put_48(bm::id64_t w) BMNOEXCEPT;
     void put_64(bm::id64_t w) BMNOEXCEPT;
+
+    void put_8_16_32(unsigned w,
+     unsigned char c8, unsigned char c16, unsigned char c32) BMNOEXCEPT;
     void put_prefixed_array_32(unsigned char c, 
                                const bm::word_t* w, unsigned count) BMNOEXCEPT;
     void put_prefixed_array_16(unsigned char c, 
@@ -450,6 +453,7 @@ BMFORCEINLINE void encoder::put_16(bm::short_t s) BMNOEXCEPT
 */
 inline void encoder::put_16(const bm::short_t* s, unsigned count) BMNOEXCEPT
 {
+    BM_ASSERT(count);
 #if (BM_UNALIGNED_ACCESS_OK == 1)
     ::memcpy(buf_, s, sizeof(bm::short_t)*count);
     buf_ += sizeof(bm::short_t) * count;
@@ -469,6 +473,35 @@ inline void encoder::put_16(const bm::short_t* s, unsigned count) BMNOEXCEPT
     
     buf_ = (unsigned char*)buf;
 #endif
+}
+
+/*!
+    \brief but gat plus value based on its VBR evaluation
+*/
+inline
+void encoder::put_8_16_32(unsigned w,
+                          unsigned char c8,
+                          unsigned char c16,
+                          unsigned char c32) BMNOEXCEPT
+{
+    if (w < 256)
+    {
+        put_8(c8);
+        put_8((unsigned char)w);
+    }
+    else
+    {
+        if (w < 65536)
+        {
+            put_8(c16);
+            put_16((unsigned short) w);
+        }
+        else
+        {
+            put_8(c32);
+            put_32(w);
+        }
+    }
 }
 
 /*!
@@ -845,6 +878,7 @@ void decoder::get_32_AND(bm::word_t* w, unsigned count) BMNOEXCEPT
 */
 inline void decoder::get_16(bm::short_t* s, unsigned count) BMNOEXCEPT
 {
+    BM_ASSERT(count);
     if (!s) 
     {
         seek(int(count * sizeof(bm::short_t)));

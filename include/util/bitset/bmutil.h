@@ -98,7 +98,7 @@ namespace bm
     Get minimum of 2 values
 */
 template<typename T>
-T min_value(T v1, T v2) BMNOEXCEPT
+BMFORCEINLINE T min_value(T v1, T v2) BMNOEXCEPT
 {
     return v1 < v2 ? v1 : v2;
 }
@@ -121,7 +121,7 @@ template <> struct conditional<false>
     Fast loop-less function to find LOG2
 */
 template<typename T>
-T ilog2(T x) BMNOEXCEPT
+BMFORCEINLINE T ilog2(T x) BMNOEXCEPT
 {
     unsigned int l = 0;
     
@@ -134,7 +134,8 @@ T ilog2(T x) BMNOEXCEPT
 }
 
 template<>
-inline bm::gap_word_t ilog2(gap_word_t x) BMNOEXCEPT
+BMFORCEINLINE
+bm::gap_word_t ilog2(gap_word_t x) BMNOEXCEPT
 {
     unsigned int l = 0;
     if (x >= 1<<8)  { x = (bm::gap_word_t)(x >> 8); l |= 8; }
@@ -166,7 +167,8 @@ private:
     @ingroup bitfunc
     @internal
 */
-inline unsigned count_leading_zeros(unsigned x) BMNOEXCEPT
+BMFORCEINLINE
+unsigned count_leading_zeros(unsigned x) BMNOEXCEPT
 {
     unsigned n =
         (x >= (1U << 16)) ?
@@ -181,7 +183,7 @@ inline unsigned count_leading_zeros(unsigned x) BMNOEXCEPT
     @ingroup bitfunc
     @internal
 */
-inline
+BMFORCEINLINE
 unsigned count_trailing_zeros(unsigned v) BMNOEXCEPT
 {
     // (v & -v) isolates the last set bit
@@ -192,7 +194,7 @@ unsigned count_trailing_zeros(unsigned v) BMNOEXCEPT
     Lookup table based integer LOG2
 */
 template<typename T>
-T ilog2_LUT(T x) BMNOEXCEPT
+BMFORCEINLINE T ilog2_LUT(T x) BMNOEXCEPT
 {
     unsigned l = 0;
     if (x & 0xffff0000) 
@@ -204,22 +206,21 @@ T ilog2_LUT(T x) BMNOEXCEPT
     {
         l += 8; x >>= 8;
     }
-    return l + T(first_bit_table<true>::_idx[x]);
+    return l + T(bm::first_bit_table<true>::_idx[x]);
 }
 
 /**
     Lookup table based short integer LOG2
 */
 template<>
-inline bm::gap_word_t ilog2_LUT<bm::gap_word_t>(bm::gap_word_t x) BMNOEXCEPT
+BMFORCEINLINE bm::gap_word_t ilog2_LUT<bm::gap_word_t>(bm::gap_word_t x) BMNOEXCEPT
 {
-    bm::gap_word_t l = 0;
-    if (x & 0xff00) 
+    if (x & 0xff00)
     {
-        l = bm::gap_word_t( + 8u);
         x = bm::gap_word_t(x >> 8u);
+        return bm::gap_word_t(8u + bm::first_bit_table<true>::_idx[x]);
     }
-    return bm::gap_word_t(l + bm::gap_word_t(first_bit_table<true>::_idx[x]));
+    return bm::gap_word_t(bm::first_bit_table<true>::_idx[x]);
 }
 
 
@@ -291,38 +292,38 @@ unsigned int bsf_asm32(unsigned int value) BMNOEXCEPT
 // http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.37.8562
 //
 template<typename T>
-T bit_scan_fwd(T v) BMNOEXCEPT
+BMFORCEINLINE T bit_scan_fwd(T v) BMNOEXCEPT
 {
     return
         DeBruijn_bit_position<true>::_multiply[(((v & -v) * 0x077CB531U)) >> 27];
 }
 
-inline
-unsigned bit_scan_reverse32(unsigned value) BMNOEXCEPT
+BMFORCEINLINE
+unsigned bit_scan_reverse32(unsigned w) BMNOEXCEPT
 {
-    BM_ASSERT(value);
-#if defined(BM_USE_GCC_BUILD)
-    return (unsigned) (31 - __builtin_clz(value));
+    BM_ASSERT(w);
+#if defined(BM_USE_GCC_BUILD) || (defined(__GNUG__) && (defined(__arm__) || defined(__aarch64__)))
+    return (unsigned) (31 - __builtin_clz(w));
 #else
 # if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
-    return bm::bsr_asm32(value);
+    return bm::bsr_asm32(w);
 # else
-    return bm::ilog2_LUT<unsigned int>(value);
+    return bm::ilog2_LUT<unsigned int>(w);
 # endif
 #endif
 }
 
-inline
-unsigned bit_scan_forward32(unsigned value) BMNOEXCEPT
+BMFORCEINLINE
+unsigned bit_scan_forward32(unsigned w) BMNOEXCEPT
 {
-    BM_ASSERT(value);
-#if defined(BM_USE_GCC_BUILD)
-    return (unsigned) __builtin_ctz(value);
+    BM_ASSERT(w);
+#if defined(BM_USE_GCC_BUILD) || (defined(__GNUG__) && (defined(__arm__) || defined(__aarch64__)))
+    return (unsigned) __builtin_ctz(w);
 #else
 # if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
-    return bm::bsf_asm32(value);
+    return bm::bsf_asm32(w);
 # else
-        return bit_scan_fwd(value);
+        return bit_scan_fwd(w);
 # endif
 #endif
 }
@@ -348,6 +349,23 @@ unsigned long long bmi_blsi_u64(unsigned long long w)
 #endif
 }
 
+/// 32-bit bit-scan reverse
+inline
+unsigned count_leading_zeros_u32(unsigned w) BMNOEXCEPT
+{
+    BM_ASSERT(w);
+#if defined(BMAVX2OPT) || defined (BMAVX512OPT)
+    return (unsigned)_lzcnt_u32(w);
+#else
+    #if defined(BM_USE_GCC_BUILD) || defined(__GNUG__)
+        return (unsigned) __builtin_clz(w);
+    #else
+        return bm::count_leading_zeros(w); // portable
+    #endif
+#endif
+}
+
+
 /// 64-bit bit-scan reverse
 inline
 unsigned count_leading_zeros_u64(bm::id64_t w) BMNOEXCEPT
@@ -356,7 +374,7 @@ unsigned count_leading_zeros_u64(bm::id64_t w) BMNOEXCEPT
 #if defined(BMAVX2OPT) || defined (BMAVX512OPT)
     return (unsigned)_lzcnt_u64(w);
 #else
-    #if defined(BM_USE_GCC_BUILD)
+    #if defined(BM_USE_GCC_BUILD) || (defined(__GNUG__) && (defined(__arm__) || defined(__aarch64__)))
         return (unsigned) __builtin_clzll(w);
     #else
         unsigned z;
@@ -376,6 +394,24 @@ unsigned count_leading_zeros_u64(bm::id64_t w) BMNOEXCEPT
 #endif
 }
 
+/// 32-bit bit-scan fwd
+inline
+unsigned count_trailing_zeros_u32(unsigned w) BMNOEXCEPT
+{
+    BM_ASSERT(w);
+
+#if defined(BMAVX2OPT) || defined (BMAVX512OPT)
+    return (unsigned)_tzcnt_u32(w);
+#else
+    #if defined(BM_USE_GCC_BUILD) || (defined(__GNUG__) && (defined(__arm__) || defined(__aarch64__)))
+        return (unsigned) __builtin_ctz(w);
+    #else
+        return bm::bit_scan_forward32(w);
+    #endif
+#endif
+}
+
+
 /// 64-bit bit-scan fwd
 inline
 unsigned count_trailing_zeros_u64(bm::id64_t w) BMNOEXCEPT
@@ -385,7 +421,7 @@ unsigned count_trailing_zeros_u64(bm::id64_t w) BMNOEXCEPT
 #if defined(BMAVX2OPT) || defined (BMAVX512OPT)
     return (unsigned)_tzcnt_u64(w);
 #else
-    #if defined(BM_USE_GCC_BUILD)
+    #if defined(BM_USE_GCC_BUILD) || (defined(__GNUG__) && (defined(__arm__) || defined(__aarch64__)))
         return (unsigned) __builtin_ctzll(w);
     #else
         unsigned z;
@@ -418,7 +454,7 @@ unsigned bit_scan_reverse(T value) BMNOEXCEPT
 
     if (bm::conditional<sizeof(T)==8>::test())
     {
-    #if defined(BM_USE_GCC_BUILD)
+    #if defined(BM_USE_GCC_BUILD) || (defined(__GNUG__) && (defined(__arm__) || defined(__aarch64__)))
         return (unsigned) (63 - __builtin_clzll(value));
     #else
         bm::id64_t v8 = value;

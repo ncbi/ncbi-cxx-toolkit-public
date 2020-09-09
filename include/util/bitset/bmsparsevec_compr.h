@@ -346,7 +346,7 @@ public:
     {
         if (this != &csv)
         {
-            clear();
+            clear_all(true);
             sv_.swap(csv.sv_);
             size_ = csv.size_; max_id_ = csv.max_id_; in_sync_ = csv.in_sync_;
             if (in_sync_)
@@ -372,6 +372,12 @@ public:
         \return true if empty
     */
     bool empty() const { return sv_.empty(); }
+
+    /**
+        \brief recalculate size to exclude tail NULL elements
+        After this call size() will return the true size of the vector
+     */
+    void sync_size() BMNOEXCEPT;
     
     ///@}
 
@@ -598,9 +604,15 @@ public:
         statistics* stat = 0);
     
     /*! \brief resize to zero, free memory
+        @param free_mem - free bit vector planes if true
     */
-    void clear() BMNOEXCEPT;
-    
+    void clear_all(bool free_mem) BMNOEXCEPT;
+
+    /*! \brief resize to zero, free memory
+        @param free_mem - free bit vector planes if true
+    */
+    void clear() BMNOEXCEPT { clear_all(true); }
+
     /*!
         @brief Calculates memory statistics.
 
@@ -614,6 +626,7 @@ public:
     */
     void calc_stat(
            struct rsc_sparse_vector<Val, SV>::statistics* st) const BMNOEXCEPT;
+
 
     ///@}
 
@@ -648,7 +661,7 @@ public:
     /*! @name Fast access structues sync                         */
     //@{
     /*!
-        \brief Re-calculate prefix sum table used for rank search
+        \brief Re-calculate rank-select index for faster access to vector
         \param force - force recalculation even if it is already recalculated
     */
     void sync(bool force);
@@ -741,7 +754,10 @@ protected:
     bool resolve_range(size_type from, size_type to, 
                        size_type* idx_from, size_type* idx_to) const BMNOEXCEPT;
     
-    void resize_internal(size_type sz) { sv_.resize_internal(sz); }
+    void resize_internal(size_type sz) 
+    { 
+        sv_.resize_internal(sz); 
+    }
     size_type size_internal() const BMNOEXCEPT { return sv_.size(); }
 
     bool is_remap() const BMNOEXCEPT { return false; }
@@ -1060,7 +1076,7 @@ void rsc_sparse_vector<Val, SV>::load_from(
     }
     else
     {
-        sv_.clear();
+        sv_.clear_all(true);
         *bv_null = *bv_null_src;
         
         bm::rank_compressor<bvector_type> rank_compr; // re-used for plains
@@ -1087,7 +1103,7 @@ void rsc_sparse_vector<Val, SV>::load_from(
 template<class Val, class SV>
 void rsc_sparse_vector<Val, SV>::load_to(sparse_vector_type& sv) const
 {
-    sv.clear();
+    sv.clear_all(true);
     
     const bvector_type* bv_null_src = this->get_null_bvector();
     if (!bv_null_src)
@@ -1125,19 +1141,37 @@ void rsc_sparse_vector<Val, SV>::sync(bool force)
     const bvector_type* bv_null = sv_.get_null_bvector();
     BM_ASSERT(bv_null);
     bv_null->build_rs_index(bv_blocks_ptr_); // compute popcount prefix list
-    
+ 
+    if (force)
+    {
+        sync_size();
+        /*
+        size_type sz = sv_.size();
+        if (sz)
+        {
+            size_ = sz;
+            max_id_ = (sz - 1);
+        }
+        else
+            max_id_ = size_ = 0;
+        */
+    }
+    in_sync_ = true;
+}
+
+//---------------------------------------------------------------------
+
+template<class Val, class SV>
+void rsc_sparse_vector<Val, SV>::sync_size() BMNOEXCEPT
+{
+    const bvector_type* bv_null = sv_.get_null_bvector();
+    BM_ASSERT(bv_null);
     // sync the max-id
     bool found = bv_null->find_reverse(max_id_);
     if (!found)
-    {
-        BM_ASSERT(!bv_null->any());
         max_id_ = size_ = 0;
-    }
     else
-    {
         size_ = max_id_ + 1;
-    }
-    in_sync_ = true;
 }
 
 //---------------------------------------------------------------------
@@ -1253,9 +1287,9 @@ void rsc_sparse_vector<Val, SV>::optimize(bm::word_t*  temp_block,
 //---------------------------------------------------------------------
 
 template<class Val, class SV>
-void rsc_sparse_vector<Val, SV>::clear() BMNOEXCEPT
+void rsc_sparse_vector<Val, SV>::clear_all(bool free_mem) BMNOEXCEPT
 {
-    sv_.clear();
+    sv_.clear_all(free_mem);
     in_sync_ = false;  max_id_ = size_ = 0;
 }
 
@@ -1332,14 +1366,16 @@ rsc_sparse_vector<Val, SV>::decode(value_type* arr,
 
     BM_ASSERT(rank == bv_null->count_range(0, idx_from) - bv_null->test(idx_from));
 
+    size_type i = 0;
+
     bvector_enumerator_type en_i = bv_null->get_enumerator(idx_from);
-    BM_ASSERT(en_i.valid());
+    if (!en_i.valid())
+        return i;
 
     if (zero_mem)
         ::memset(arr, 0, sizeof(value_type)*size);
 
     sparse_vector_const_iterator it = sv_.get_const_iterator(rank);
-    size_type i = 0;
     if (it.valid())
     {
         do
@@ -1463,7 +1499,7 @@ void rsc_sparse_vector<Val, SV>::copy_range(
     bool range_valid = csv.resolve_range(left, right, &sv_left, &sv_right);
     if (!range_valid)
     {
-        sv_.clear(); sv_.resize(size_);
+        sv_.clear_all(true); sv_.resize(size_);
         bvector_type* bv_null = sv_.get_null_bvect();
         bv_null->copy_range(*arg_bv_null, 0, right);
         return;
@@ -1699,7 +1735,6 @@ bool rsc_sparse_vector<Val, SV>::const_iterator::is_null() const BMNOEXCEPT
 
 } // namespace bm
 
-#include "bmundef.h"
 
 
 #endif
