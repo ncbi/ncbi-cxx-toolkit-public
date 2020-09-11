@@ -788,10 +788,6 @@ intvarutil needs xid_mapper
 ipg_assembly_index needs $(LMDB_LIB)
 ipg_assembly_index needs xncbi
 ipg_assembly_index needs3party $(LMDB_LIBS)
-ipg_storage needs $(SEQ_LIBS)
-ipg_storage needs psg_cassandra
-ipg_storage needs psg_diag
-ipg_storage needs pub
 jiracli needs jirasvc
 jiracli needs xconnect
 jirasvc needs xser
@@ -1102,6 +1098,7 @@ pathogen_connection needs gpipe_dateutil
 pathogen_connection needs taxon1
 pathogen_ctl needs $(GPIPE_COMMON_LIBS)
 pathogen_ctl needs bag_access
+pathogen_ctl needs gpinit_access
 pathogen_ctl needs gpipe_kmer
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
@@ -1400,15 +1397,8 @@ validation_details needs xobjwrite
 validation_results needs $(SEQ_LIBS)
 validation_results needs pub
 validation_results needs xmlwrapp
-var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
-variation_lib needs annotationproto
-variation_lib needs intvarutil
-variation_lib needs ncbi_xloader_blastdb
-variation_lib needs objannotation
-variation_lib needs refseq_aln_source
-variation_lib needs variation_utils
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
