@@ -788,6 +788,10 @@ intvarutil needs xid_mapper
 ipg_assembly_index needs $(LMDB_LIB)
 ipg_assembly_index needs xncbi
 ipg_assembly_index needs3party $(LMDB_LIBS)
+ipg_storage needs $(SEQ_LIBS)
+ipg_storage needs psg_cassandra
+ipg_storage needs psg_diag
+ipg_storage needs pub
 jiracli needs jirasvc
 jiracli needs xconnect
 jirasvc needs xser
