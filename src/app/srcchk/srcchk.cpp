@@ -63,6 +63,8 @@ private:
         const CArgs&);
     bool xTryProcessIdFile(
         const CArgs&);
+    bool xTryProcessSeqEntry(
+        const CArgs&);
     bool xGetDesiredFields(
         const CArgs&,
         vector<string>&);
@@ -93,6 +95,9 @@ void CSrcChkApp::Init()
     {{
         arg_desc->AddOptionalKey("i", "IDsFile", 
             "IDs file name. Defaults to stdin", 
+            CArgDescriptions::eInputFile );
+        arg_desc->AddOptionalKey("seq-entry", "SeqEntryFile", 
+            "File containing Seq-entry in ASN.1 format", 
             CArgDescriptions::eInputFile );
     }}
 
@@ -132,14 +137,15 @@ int CSrcChkApp::Run()
 
     m_pErrors = new CMessageListenerStrict;
     m_pWriter.Reset(xInitWriter(args));
-    if (xTryProcessIdFile(args)) {
-        return 0;
+    bool processed = xTryProcessSeqEntry(args);
+    if (!processed) {
+        processed = xTryProcessIdFile(args);
     }
     size_t errorCount = m_pErrors->Count();
     for (size_t pos=0; pos < errorCount; ++pos) {
         xDumpError(m_pErrors->GetError(pos), cerr);
     }
-    return 1;
+    return (errorCount ? 1 : 0);
 }
 
 //  -----------------------------------------------------------------------------
@@ -208,6 +214,57 @@ bool CSrcChkApp::xTryProcessIdFile(
     }
     return true;
 }    
+
+//  -----------------------------------------------------------------------------
+bool CSrcChkApp::xTryProcessSeqEntry(
+    const CArgs& args)
+//  -----------------------------------------------------------------------------
+{
+    if (!args["seq-entry"]) {
+        return false;
+    }
+    CNcbiOstream* pOs = xInitOutputStream(args);
+    if (0 == pOs) {
+        string error_msg = args["o"] ? 
+            "Unable to open output file \"" + args["o"].AsString() + "\"." :
+            "Unable to write to stdout.";
+        CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, error_msg);
+        m_pErrors->PutError(*pE);
+        delete pE;
+        return false;
+    }        
+
+    CSrcWriter::FIELDS desiredFields;
+    if (!xGetDesiredFields(args, desiredFields)) {
+        return false;
+    }
+
+    const char* infile = args["seq-entry"].AsString().c_str();
+    CNcbiIstream* pInputStream = new CNcbiIfstream(infile, ios::binary);
+    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, *pInputStream, eTakeOwnership);
+    if (!pI) {
+        string msg("Unable to open Seq-entry file \"" + args["seq-entry"].AsString() + "\".");
+        CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, msg);
+        m_pErrors->PutError(*pE);
+        delete pE;
+        return false;
+    }
+
+    CRef<CSeq_entry> pSe(new CSeq_entry);
+    try {
+        pI->Read(ObjectInfo(*pSe));
+    }
+    catch (CException&) {
+        string msg("Unable to process Seq-entry file \"" + args["seq-entry"].AsString() + "\".");
+        CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, msg);
+        m_pErrors->PutError(*pE);
+        delete pE;
+        return true; //!!!
+    }
+
+    m_pWriter->WriteSeqEntry(*pSe, *m_pScope, *pOs);
+    return true; //!!! 
+} 
 
 //  -----------------------------------------------------------------------------
 bool CSrcChkApp::xGetDesiredFields(
