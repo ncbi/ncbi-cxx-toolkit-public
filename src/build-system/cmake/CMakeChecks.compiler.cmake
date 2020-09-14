@@ -17,16 +17,19 @@ endif()
 
 # ---------------------------------------------------------------------------
 # compilation features
+set(NCBI_PTBCFG_INSTALL_SUFFIX "")
 if(ChaosMonkey IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_MONKEY)
 endif()
 
 if(Int8GI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_INT8_GI)
+    set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}Int8GI")
 endif()
 
 if(StrictGI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_STRICT_GI)
+    set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}StrictGI")
 endif()
 
 if("$ENV{DEBUG_TRACE_FATAL_SIGNALS}" OR BackwardSig IN_LIST NCBI_PTBCFG_PROJECT_FEATURES )
@@ -35,6 +38,7 @@ endif()
 
 if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(CMAKE_DEBUG_SYMBOLS ON)
+    set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}Symbols")
 endif()
 
 # see also
@@ -267,6 +271,7 @@ set(NCBI_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}")
 
 if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-D_GLIBCXX_DEBUG)
+    set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}MaxDebug")
 endif()
 
 message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
