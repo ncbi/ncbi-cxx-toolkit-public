@@ -65,7 +65,7 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, libunwind,
-                     z, bz2, lzo, pcre, mbedtls,
+                     z, bz2, lzo, zstd, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
@@ -284,6 +284,10 @@ AC_ARG_WITH(lzo,
    [ --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)])
 AC_ARG_WITH(lzo,
    [ --without-lzo           do not use LZO])
+AC_ARG_WITH(zstd,
+   [ --with-zstd=DIR         use Zstandard installation in DIR])
+AC_ARG_WITH(zstd,
+   [ --without-zstd          do not use Zstandard])
 AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre,
@@ -651,7 +655,8 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb ngs libunwind libdw \
 backward-cpp backward-cpp-sig \
-z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
+z bz2 lzo zstd pcre mbedtls \
+gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -717,7 +722,7 @@ for x_arg in "$@" ; do
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-ngs=* \
       | --with-libunwind=* | --with-libdw=* | --with-backward-cpp=* \
-      | --with-z=* | --with-bz2=* | --with-lzo=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-zstd=* \
       | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
@@ -4530,6 +4535,13 @@ if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
               -o -f "$LZO_PATH/lib/liblzo2-static.a" \); then
    LZO_LIBS="$LZO_LIBPATH -llzo2-static"
 fi
+
+if test -d "$ZSTD_PATH"; then
+   NCBI_FIX_DIR(ZSTD_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(zstd,
+ [AC_LANG_PROGRAM([@%:@include <zstd.h>],
+      [[ZSTD_CCtx* cctx = ZSTD_createCCtx();]])])
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`

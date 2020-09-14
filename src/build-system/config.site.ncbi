@@ -97,6 +97,7 @@ try_local() {
         test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
         test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
         test -d "$d/include/zorba"         &&  : ${ZORBA_PATH=$d}
+        test -f "$d/include/zstd.h"        &&  : ${ZSTD_PATH=$d}
     done
 }
 

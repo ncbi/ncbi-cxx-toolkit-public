@@ -1070,6 +1070,8 @@ MBEDTLS_LIBS
 MBEDTLS_INCLUDE
 PCRE_LIBS
 PCRE_INCLUDE
+ZSTD_LIBS
+ZSTD_INCLUDE
 LZO_LIBS
 LZO_INCLUDE
 BZ2_LIBS
@@ -1252,6 +1254,7 @@ with_backward_cpp_sig
 with_z
 with_bz2
 with_lzo
+with_zstd
 with_pcre
 with_mbedtls
 with_gmp
@@ -1901,7 +1904,8 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb ngs libunwind libdw \
 backward-cpp backward-cpp-sig \
-z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
+z bz2 lzo zstd pcre mbedtls \
+gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -1965,7 +1969,7 @@ for x_arg in "$@" ; do
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-ngs=* \
       | --with-libunwind=* | --with-libdw=* | --with-backward-cpp=* \
-      | --with-z=* | --with-bz2=* | --with-lzo=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-zstd=* \
       | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
@@ -2195,6 +2199,8 @@ Optional Packages:
  --without-bz2           use internal copy of bzlib
  --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)
  --without-lzo           do not use LZO
+ --with-zstd=DIR         use Zstandard installation in DIR
+ --without-zstd          do not use Zstandard
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
  --with-mbedtls(=DIR)    use external mbedTLS installation (in DIR)
@@ -3609,6 +3615,11 @@ case "$with_3psw" in
          else
             with_lzo=no
          fi
+        if test "${with_zstd-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-zstd but --without-3psw"
+         else
+            with_zstd=no
+         fi
         if test "${with_pcre-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-pcre but --without-3psw"
          else
@@ -4832,6 +4843,18 @@ fi
 # Check whether --with-lzo was given.
 if test "${with_lzo+set}" = set; then :
   withval=$with_lzo;
+fi
+
+
+# Check whether --with-zstd was given.
+if test "${with_zstd+set}" = set; then :
+  withval=$with_zstd;
+fi
+
+
+# Check whether --with-zstd was given.
+if test "${with_zstd+set}" = set; then :
+  withval=$with_zstd;
 fi
 
 
@@ -17612,6 +17635,152 @@ if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
               -o -f "$LZO_PATH/lib/liblzo2-static.a" \); then
    LZO_LIBS="$LZO_LIBPATH -llzo2-static"
 fi
+
+if test -d "$ZSTD_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $ZSTD_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ZSTD_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ZSTD_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ZSTD_PATH" in
+               /*) ;;
+               * ) ZSTD_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ZSTD_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+if test "$with_zstd" != "no"; then
+    case "$ZSTD_PATH:$with_zstd" in
+       *:yes | *: | $with_zstd* ) ;;
+       * ) ZSTD_PATH=$with_zstd ;;
+    esac
+    if test "$ZSTD_PATH" != /usr -a -d "$ZSTD_PATH"; then
+       in_path=" in $ZSTD_PATH"
+       if test -z "$ZSTD_INCLUDE" -a -d "$ZSTD_PATH/include"; then
+          ZSTD_INCLUDE="-I$ZSTD_PATH/include"
+       fi
+       if test -n "$ZSTD_LIBPATH"; then
+          :
+       elif test -d "$ZSTD_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $ZSTD_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ZSTD_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $ZSTD_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ZSTD_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$ZSTD_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $ZSTD_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ZSTD_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $ZSTD_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ZSTD_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       ZSTD_LIBS="$ZSTD_LIBPATH -lzstd "
+    else
+       ZSTD_INCLUDE=""
+       ZSTD_LIBS="-lzstd "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libzstd$in_path" >&5
+$as_echo_n "checking for libzstd$in_path... " >&6; }
+if ${ncbi_cv_lib_zstd+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $ZSTD_INCLUDE $orig_CPPFLAGS"
+       LIBS="$ZSTD_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <zstd.h>
+int
+main ()
+{
+ZSTD_CCtx* cctx = ZSTD_createCCtx();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_zstd=yes
+else
+  ncbi_cv_lib_zstd=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_zstd" >&5
+$as_echo "$ncbi_cv_lib_zstd" >&6; }
+    if test "$ncbi_cv_lib_zstd" = "no"; then
+       if test "${with_zstd:=no}" != no; then
+       as_fn_error $? "--with-zstd explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_zstd" = "no"; then
+    ZSTD_PATH="No_ZSTD"
+    ZSTD_INCLUDE=
+    ZSTD_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}ZSTD"; WithPackagesSep=" "
+    ZSTD_INCLUDE=" $ZSTD_INCLUDE"
+
+$as_echo "#define HAVE_LIBZSTD 1" >>confdefs.h
+
+ fi
+
+
+
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
@@ -34164,7 +34333,7 @@ for x in ChaosMonkey Int8GI StrictGI PSGLoader GCC KCC ICC AppleClang LLVMClang 
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
