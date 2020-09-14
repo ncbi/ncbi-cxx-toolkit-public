@@ -3335,19 +3335,132 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 if (orgname.IsSetMod()) {
                     ITERATE(COrgName::TMod, mod_iter, orgname.GetMod()) {
                         const COrgMod & mod = **mod_iter;
-                        if (mod.IsSetSubtype()) {
+                        if (mod.IsSetSubtype() && mod.IsSetSubname()) {
+                            const string& subname = mod.GetSubname();
                             switch (mod.GetSubtype()) {
                             case COrgMod::eSubtype_strain:
-                                if (mod.IsSetSubname()) {
-                                    if (strain_seen) {
-                                        ERR_POST_X(9, Warning << __FUNCTION__ << ": "
-                                            << "key 'strain' would appear multiple times, but only using the first.");
-                                    }
-                                    else {
-                                        strain_seen = true;
-                                        joiner.Add("strain", mod.GetSubname());
-                                    }
+                                if (strain_seen) {
+                                    ERR_POST_X(9, Warning << __FUNCTION__ << ": "
+                                        << "key 'strain' would appear multiple times, but only using the first.");
                                 }
+                                else {
+                                    strain_seen = true;
+                                    joiner.Add("strain", subname);
+                                }
+                                break;
+                            case COrgMod::eSubtype_substrain:
+                                joiner.Add("substrain", subname);
+                                break;
+                            case COrgMod::eSubtype_type:
+                                joiner.Add("type", subname);
+                                break;
+                            case COrgMod::eSubtype_subtype:
+                                joiner.Add("subtype", subname);
+                                break;
+                            case COrgMod::eSubtype_variety:
+                                joiner.Add("variety", subname);
+                                break;
+                            case COrgMod::eSubtype_serotype:
+                                joiner.Add("serotype", subname);
+                                break;
+                            case COrgMod::eSubtype_serogroup:
+                                joiner.Add("serogroup", subname);
+                                break;
+                            case COrgMod::eSubtype_serovar:
+                                joiner.Add("serovar", subname);
+                                break;
+                            case COrgMod::eSubtype_cultivar:
+                                joiner.Add("cultivar", subname);
+                                break;
+                            case COrgMod::eSubtype_pathovar:
+                                joiner.Add("pathovar", subname);
+                                break;
+                            case COrgMod::eSubtype_chemovar:
+                                joiner.Add("chemovar", subname);
+                                break;
+                            case COrgMod::eSubtype_biovar:
+                                joiner.Add("biovar", subname);
+                                break;
+                            case COrgMod::eSubtype_biotype:
+                                joiner.Add("biotype", subname);
+                                break;
+                            case COrgMod::eSubtype_group:
+                                joiner.Add("group", subname);
+                                break;
+                            case COrgMod::eSubtype_subgroup:
+                                joiner.Add("subgroup", subname);
+                                break;
+                            case COrgMod::eSubtype_isolate:
+                                joiner.Add("isolate", subname);
+                                break;
+                            case COrgMod::eSubtype_common:
+                                joiner.Add("common", subname);
+                                break;
+                            case COrgMod::eSubtype_acronym:
+                                joiner.Add("acronym", subname);
+                                break;
+                            case COrgMod::eSubtype_dosage: 
+                                joiner.Add("dosage", subname);
+                                break;
+                            case COrgMod::eSubtype_nat_host: 
+                                joiner.Add("nat_host", subname);
+                                break;
+                            case COrgMod::eSubtype_sub_species:
+                                joiner.Add("sub_species", subname);
+                                break;
+                            case COrgMod::eSubtype_specimen_voucher:
+                                joiner.Add("specimen_voucher", subname);
+                                break;
+                            case COrgMod::eSubtype_authority:
+                                joiner.Add("authority", subname);
+                                break;
+                            case COrgMod::eSubtype_forma:
+                                joiner.Add("forma", subname);
+                                break;
+                            case COrgMod::eSubtype_forma_specialis:
+                                joiner.Add("forma_specialis", subname);
+                                break;
+                            case COrgMod::eSubtype_ecotype:
+                                joiner.Add("ecotype", subname);
+                                break;
+                            case COrgMod::eSubtype_synonym:
+                                joiner.Add("synonym", subname);
+                                break;
+                            case COrgMod::eSubtype_anamorph:
+                                joiner.Add("anamorph", subname);
+                                break;
+                            case COrgMod::eSubtype_teleomorph:
+                                joiner.Add("teleomorph", subname);
+                                break;
+                            case COrgMod::eSubtype_breed:
+                                joiner.Add("breed", subname);
+                                break;
+                            case COrgMod::eSubtype_gb_acronym: 
+                                joiner.Add("gb_acronym", subname);
+                                break;
+                            case COrgMod::eSubtype_gb_anamorph: 
+                                joiner.Add("gb_anamorph", subname);
+                                break;
+                            case COrgMod::eSubtype_gb_synonym: 
+                                joiner.Add("gb_synonym", subname);
+                                break;
+                            case COrgMod::eSubtype_culture_collection:
+                                joiner.Add("culture_collection", subname);
+                                break;
+                            case COrgMod::eSubtype_bio_material:
+                                joiner.Add("bio_material", subname);
+                                break;
+                            case COrgMod::eSubtype_metagenome_source:
+                                joiner.Add("metagenome_source", subname);
+                                break;
+                            case COrgMod::eSubtype_type_material:
+                                joiner.Add("type_material", subname);
+                                break;
+                            case COrgMod::eSubtype_nomenclature: 
+                                joiner.Add("nomenclature", subname);
+                                break;
+                            case COrgMod::eSubtype_other: 
+                                joiner.Add("note", subname);
                                 break;
                             default:
                                 // ignore; do nothing
@@ -3408,6 +3521,145 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                             }
                         }
                         break;
+                    }
+                }
+            }
+        }
+        if ( bios && bios->IsSetSubtype() ) {
+            ITERATE ( CBioSource::TSubtype, sub_iter, bios->GetSubtype() ) {
+                const CSubSource& sub = **sub_iter;
+                if (sub.IsSetSubtype()) {
+                    if (sub.IsSetName()) {
+                        const string& subname = sub.GetName();
+                        switch (sub.GetSubtype()) {
+                        case CSubSource::eSubtype_chromosome:
+                            joiner.Add("chromosome", subname);
+                            break;
+                        case CSubSource::eSubtype_map:
+                            joiner.Add("map", subname);
+                            break;
+                        case CSubSource::eSubtype_clone:
+                            joiner.Add("clone", subname);
+                            break;
+                        case CSubSource::eSubtype_subclone:
+                            joiner.Add("subclone", subname);
+                            break;
+                        case CSubSource::eSubtype_haplotype:
+                            joiner.Add("haplotype", subname);
+                            break;
+                        case CSubSource::eSubtype_genotype:
+                            joiner.Add("genotype", subname);
+                            break;
+                        case CSubSource::eSubtype_sex:
+                            joiner.Add("sex", subname);
+                            break;
+                        case CSubSource::eSubtype_cell_line:
+                            joiner.Add("cell_line", subname);
+                            break;
+                        case CSubSource::eSubtype_cell_type:
+                            joiner.Add("cell_type", subname);
+                            break;
+                        case CSubSource::eSubtype_tissue_type:
+                            joiner.Add("tissue_type", subname);
+                            break;
+                        case CSubSource::eSubtype_clone_lib:
+                            joiner.Add("clone_lib", subname);
+                            break;
+                        case CSubSource::eSubtype_dev_stage:
+                            joiner.Add("dev_stage", subname);
+                            break;
+                        case CSubSource::eSubtype_frequency:
+                            joiner.Add("frequency", subname);
+                            break;
+                        case CSubSource::eSubtype_lab_host:
+                            joiner.Add("lab_host", subname);
+                            break;
+                        case CSubSource::eSubtype_pop_variant:
+                            joiner.Add("pop_variant", subname);
+                            break;
+                        case CSubSource::eSubtype_tissue_lib:
+                            joiner.Add("tissue_lib", subname);
+                            break;
+                        case CSubSource::eSubtype_plasmid_name:
+                            joiner.Add("plasmid_name", subname);
+                            break;
+                        case CSubSource::eSubtype_transposon_name:
+                            joiner.Add("transposon_name", subname);
+                            break;
+                        case CSubSource::eSubtype_insertion_seq_name:
+                            joiner.Add("insertion_seq_name", subname);
+                            break;
+                        case CSubSource::eSubtype_plastid_name:
+                            joiner.Add("plastid_name", subname);
+                            break;
+                        case CSubSource::eSubtype_country:
+                            joiner.Add("country", subname);
+                            break;
+                        case CSubSource::eSubtype_segment:
+                            joiner.Add("segment", subname);
+                            break;
+                        case CSubSource::eSubtype_endogenous_virus_name:
+                            joiner.Add("endogenous_virus_name", subname);
+                            break;
+                        case CSubSource::eSubtype_isolation_source:
+                            joiner.Add("isolation_source", subname);
+                            break;
+                        case CSubSource::eSubtype_lat_lon:
+                            joiner.Add("lat_lon", subname);
+                            break;
+                        case CSubSource::eSubtype_collection_date:
+                            joiner.Add("collection_date", subname);
+                            break;
+                        case CSubSource::eSubtype_collected_by:
+                            joiner.Add("collected_by", subname);
+                            break;
+                        case CSubSource::eSubtype_identified_by:
+                            joiner.Add("identified_by", subname);
+                            break;
+                        case CSubSource::eSubtype_metagenomic:
+                            joiner.Add("metagenomic", subname);
+                            break;
+                        case CSubSource::eSubtype_mating_type:
+                            joiner.Add("mating_type", subname);
+                            break;
+                        case CSubSource::eSubtype_linkage_group:
+                            joiner.Add("linkage_group", subname);
+                            break;
+                        case CSubSource::eSubtype_haplogroup:
+                            joiner.Add("haplogroup", subname);
+                            break;
+                        case CSubSource::eSubtype_whole_replicon:
+                            joiner.Add("whole_replicon", subname);
+                            break;
+                        case CSubSource::eSubtype_phenotype:
+                            joiner.Add("phenotype", subname);
+                            break;
+                        case CSubSource::eSubtype_altitude:
+                            joiner.Add("altitude", subname);
+                            break;
+                        case CSubSource::eSubtype_other:
+                            joiner.Add("note", subname);
+                            break;
+                        default:
+                            break;
+                        }
+                    } else {
+                        switch (sub.GetSubtype()) {
+                        case CSubSource::eSubtype_germline:
+                            joiner.Add("germline", "true");
+                            break;
+                        case CSubSource::eSubtype_rearranged:
+                            joiner.Add("rearranged", "true");
+                            break;
+                        case CSubSource::eSubtype_transgenic:
+                            joiner.Add("transgenic", "true");
+                            break;
+                        case CSubSource::eSubtype_environmental_sample:
+                            joiner.Add("environmental_sample", "true");
+                            break;
+                        default:
+                            break;
+                        }
                     }
                 }
             }
