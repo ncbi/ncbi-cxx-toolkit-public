@@ -103,18 +103,21 @@ Seq-entry ::= set {
               cit "Unpublished",
               authors {
                 names std {
-                          {
-                            name
-                              name {
-                                last "Tang" ,
-                                first "Kai" ,
-                                initials "K." } } ,
-                          {
-                            name
-                              name {
-                                last "Feng" ,
-                                first "Fuying" ,
-                                initials "F." } } }
+                  {
+                    name name {
+                      last "Tang",
+                      first "Kai",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Feng",
+                      first "Fuying",
+                      initials "F."
+                    }
+                  }
+                }
               },
               title "Photosynthetic bacterium"
             }
@@ -183,18 +186,21 @@ GCAGCGATACTGACGTGCAAATCGTTCGTCTGACTTGGGTATAGGGGCGAAAGACTAATCGAACCGTCTAG"
               cit "Unpublished",
               authors {
                 names std {
-                          {
-                            name
-                              name {
-                                last "Tang" ,
-                                first "Kai" ,
-                                initials "K." } } ,
-                          {
-                            name
-                              name {
-                                last "Feng" ,
-                                first "Fuying" ,
-                                initials "F." } } }
+                  {
+                    name name {
+                      last "Tang",
+                      first "Kai",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Feng",
+                      first "Fuying",
+                      initials "F."
+                    }
+                  }
+                }
               },
               title "Photosynthetic bacterium"
             }
@@ -207,17 +213,11 @@ GCAGCGATACTGACGTGCAAATCGTTCGTCTGACTTGGGTATAGGGGCGAAAGACTAATCGAACCGTCTAG"
         }
       },
       inst {
-        repr delta,
+        repr raw,
         mol dna,
         length 256,
-        ext delta {
-          literal {
-            length 256,
-            seq-data ncbi2na '765849976EB9A4AB5A9186A9DD15DD69965F52687EE56B5B
-678A19F7121C43D2986AB6563FD0AEA7BD5AF6765BC72A835DB0BF7FD759F3E339F01D26AE9565
-E1'H
-          }
-        }
+        seq-data ncbi2na '765849976EB9A4AB5A9186A9DD15DD69965F52687EE56B5B678A
+19F7121C43D2986AB6563FD0AEA7BD5AF6765BC72A835DB0BF7FD759F3E339F01D26AE9565E1'H
       }
     },
     seq {

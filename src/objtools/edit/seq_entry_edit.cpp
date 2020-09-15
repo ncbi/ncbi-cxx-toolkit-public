@@ -2424,23 +2424,15 @@ void TrimSeqData(CBioseq_Handle bsh,
 
     // Create a new Delta-ext
     CAutoInitRef<CDelta_ext> pDeltaExt;
-    auto it_last_data = pDeltaExt->Set().begin();
     CSeqMap_CI seqmap_ci = complete_bsh.GetSeqMap().ResolvedRangeIterator(&complete_bsh.GetScope(),
         left_pos,
         1 + (right_pos - left_pos));
-    CSeq_inst_Base::TLength new_length = 1 + (right_pos - left_pos);
 
     // exclude leading and trailing gaps, but take all gaps between data elements
     // so figure out new boundaries - first and last data elements
     CSeqMap_CI seqmap_ci_first, seqmap_ci_last;
     for (; seqmap_ci; ++seqmap_ci) {
-        switch (seqmap_ci.GetType()) {
-        case CSeqMap::eSeqGap:
-        {
-            new_length -= seqmap_ci.GetLength();
-        }
-        break;
-        case CSeqMap::eSeqData:
+        if (CSeqMap::eSeqData == seqmap_ci.GetType())
         {
             if (! seqmap_ci_first)
             {   // empty, initialize first time
@@ -2451,16 +2443,15 @@ void TrimSeqData(CBioseq_Handle bsh,
                 seqmap_ci_last = seqmap_ci;
             }
         }
-        break;
-        }
     }
 
+    CSeq_inst_Base::TLength new_length = 0;
     for (seqmap_ci = seqmap_ci_first; seqmap_ci && seqmap_ci != seqmap_ci_last; ++seqmap_ci) {
         switch (seqmap_ci.GetType()) {
         case CSeqMap::eSeqGap:
         {
             // Sequence gaps
-            const TSeqPos uGapLength = seqmap_ci.GetLength();
+            const CSeq_inst_Base::TLength uGapLength = seqmap_ci.GetLength();
             const bool bIsLengthKnown = !seqmap_ci.IsUnknownLength();
             CConstRef<CSeq_literal> pOriginalGapSeqLiteral =
                 seqmap_ci.GetRefGapLiteral();
@@ -2475,6 +2466,7 @@ void TrimSeqData(CBioseq_Handle bsh,
             pNewGapLiteral->SetLength(uGapLength);
             pDeltaSeq->SetLiteral(*pNewGapLiteral);
             pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
+            new_length += uGapLength;
         }
         break;
         case CSeqMap::eSeqData:
@@ -2491,7 +2483,7 @@ void TrimSeqData(CBioseq_Handle bsh,
             pDeltaSeq->SetLiteral().SetLength(seqmap_ci.GetLength());
             pDeltaSeq->SetLiteral().SetSeq_data(*pSeqData);
             pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
-            it_last_data = pDeltaExt->Set().back();
+            new_length += seqmap_ci.GetLength();
         }
         break;
         }
