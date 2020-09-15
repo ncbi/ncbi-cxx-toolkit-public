@@ -54,6 +54,7 @@
 #include <objtools/writers/src_writer.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -276,6 +277,7 @@ void CSrcWriter::xInit()
         sFieldnameToColname["id"] = "id";
         sFieldnameToColname["gi"] = "gi";
         sFieldnameToColname["localid"] = "localid";
+        sFieldnameToColname["bankitid"] = "bankitid";
         sFieldnameToColname["definition"] = "definition";
         sFieldnameToColname["def"] = "definition";
         sFieldnameToColname["defline"] = "definition";
@@ -361,6 +363,7 @@ CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames(const FIELDS& defaultFields
     lexicalFields.push_back("subsource-note");
     lexicalFields.push_back("division");
     lexicalFields.push_back("definition");
+    lexicalFields.push_back("bankitid");
 
     NAMELIST nameList = xGetOrgModSubtypeNames();
     for(NAMELIST::const_iterator cit=nameList.begin();
@@ -542,6 +545,7 @@ bool CSrcWriter::xGather(
     // with the same ID
     bool wantGi = ( find(desiredFields.begin(), desiredFields.end(), "gi") != desiredFields.end() ); 
     bool wantLocalId = ( find(desiredFields.begin(), desiredFields.end(), "localid") != desiredFields.end() );
+    bool wantBankitId = ( find(desiredFields.begin(), desiredFields.end(), "bankitid") != desiredFields.end() );
     bool wantDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
 
 
@@ -552,6 +556,7 @@ bool CSrcWriter::xGather(
     if (!xGatherId(bsh) || 
         (wantGi && !xGatherGi(bsh)) ||
         (wantLocalId && !xGatherLocalId(bsh)) ||
+        (wantBankitId && !xGatherBankitId(bsh)) ||
         (wantDef && !xGatherDefline(bsh))) {
         return false; // Not sure if this is the correct logic. 
                       // If any of the accession, GI, Local ID or definition are invalid/not found, 
@@ -565,7 +570,7 @@ bool CSrcWriter::xGather(
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
-            if (*cit == "id" || *cit == "gi" || *cit == "definition" || *cit == "localid") {
+            if (*cit == "id" || *cit == "gi" || *cit == "definition" || *cit == "localid" || *cit == "bankitid") {
                 continue;
             }
             if (!xHandleSourceField(src, *cit)) {
@@ -700,6 +705,46 @@ bool CSrcWriter::xGatherLocalId(
 
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, local_id);
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CSrcWriter::xGatherBankitId(
+        CBioseq_Handle bsh,
+        ILineErrorListener*)
+//  ----------------------------------------------------------------------------
+{
+    if (!bsh) {
+        return true;
+    }
+
+    static const string colName = "bankitid";
+    static const string displayName = colName;
+    static const string defaultValue = "";
+    
+    stringstream bankitIdOstr;
+    ITERATE( CBioseq_Handle::TId, it, bsh.GetId() ) {
+        const auto& pId = it->GetSeqId();
+        if (!pId  ||  !pId->IsGeneral()) {
+            continue;
+        }
+        const auto& general = pId->GetGeneral();
+        if (!general.IsSetDb()  ||  general.GetDb() != "BankIt") {
+            continue;
+        }
+        if (!general.IsSetTag()) {
+            continue; // not enough to work with
+        }
+        bankitIdOstr << "BankIt";
+        general.GetTag().AsString(bankitIdOstr);
+        break;
+    }
+    string bankitId = bankitIdOstr.str();
+    if (!bankitId.empty()) {
+        xPrepareTableColumn(colName, displayName, defaultValue);
+        xAppendColumnValue(colName, bankitId);
+    }
     return true;
 }
 

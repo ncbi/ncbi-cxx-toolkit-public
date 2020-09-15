@@ -136,6 +136,7 @@ protected:
     virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =0); 
     virtual bool xGatherGi(CBioseq_Handle, ILineErrorListener* =0);
     virtual bool xGatherLocalId(CBioseq_Handle, ILineErrorListener* = 0);
+    virtual bool xGatherBankitId(CBioseq_Handle, ILineErrorListener* = 0);
     virtual bool xGatherDefline(CBioseq_Handle, ILineErrorListener* =0);
     virtual bool xTryDefaultId(const string& id, ILineErrorListener* =0);
     virtual bool xHandleSourceField(const CBioSource&, const string&, ILineErrorListener* =0);
