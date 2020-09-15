@@ -480,6 +480,7 @@ unsigned bitscan_nibble(unsigned w, unsigned* bits) BMNOEXCEPT
     return cnt;
 }
 
+#ifdef BM_NONSTANDARD_EXTENTIONS
 #ifdef __GNUC__
 /**
     bitscan based on computed goto (GCC/clang)
@@ -544,6 +545,7 @@ unsigned bitscan_nibble_gcc(unsigned w, unsigned* bits) BMNOEXCEPT
     return cnt;
 }
 
+#endif
 #endif
 
 /*! @brief Adaptor to copy 1 bits to array
