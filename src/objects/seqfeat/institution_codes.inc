@@ -1662,6 +1662,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DKG\ts\tJuniper Hall Field Centre\t\t\t",
 "DLF\ts\tStetson University, Biology Department\t\t\t",
 "DLU\ts\tDa Lat University\t\t\t",
+"DLUCC\tc\tDali University Culture Collection\t\t\t",
 "DLY\ts\tDudley and Midland Geological and Scientific Society and Field Club\t\t\t",
 "DM<NZ>\ts\tDominion Museum\t\t\t",
 "DM<USA-UT>\ts\tThe Dinosaur Museum\t\t\t",

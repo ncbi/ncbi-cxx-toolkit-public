@@ -1629,6 +1629,7 @@ DIX	s	Dixie College, Natural History Museum
 DKG	s	Juniper Hall Field Centre			
 DLF	s	Stetson University, Biology Department			
 DLU	s	Da Lat University			
+DLUCC	c	Dali University Culture Collection			
 DLY	s	Dudley and Midland Geological and Scientific Society and Field Club			
 DM<NZ>	s	Dominion Museum			
 DM<USA-UT>	s	The Dinosaur Museum			
