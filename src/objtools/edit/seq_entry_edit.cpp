@@ -2424,10 +2424,38 @@ void TrimSeqData(CBioseq_Handle bsh,
 
     // Create a new Delta-ext
     CAutoInitRef<CDelta_ext> pDeltaExt;
+    auto it_last_data = pDeltaExt->Set().begin();
     CSeqMap_CI seqmap_ci = complete_bsh.GetSeqMap().ResolvedRangeIterator(&complete_bsh.GetScope(),
         left_pos,
         1 + (right_pos - left_pos));
+    CSeq_inst_Base::TLength new_length = 1 + (right_pos - left_pos);
+
+    // exclude leading and trailing gaps, but take all gaps between data elements
+    // so figure out new boundaries - first and last data elements
+    CSeqMap_CI seqmap_ci_first, seqmap_ci_last;
     for (; seqmap_ci; ++seqmap_ci) {
+        switch (seqmap_ci.GetType()) {
+        case CSeqMap::eSeqGap:
+        {
+            new_length -= seqmap_ci.GetLength();
+        }
+        break;
+        case CSeqMap::eSeqData:
+        {
+            if (! seqmap_ci_first)
+            {   // empty, initialize first time
+                seqmap_ci_first = seqmap_ci;
+            }
+            else
+            {   // update last on every data element
+                seqmap_ci_last = seqmap_ci;
+            }
+        }
+        break;
+        }
+    }
+
+    for (seqmap_ci = seqmap_ci_first; seqmap_ci && seqmap_ci != seqmap_ci_last; ++seqmap_ci) {
         switch (seqmap_ci.GetType()) {
         case CSeqMap::eSeqGap:
         {
@@ -2463,6 +2491,7 @@ void TrimSeqData(CBioseq_Handle bsh,
             pDeltaSeq->SetLiteral().SetLength(seqmap_ci.GetLength());
             pDeltaSeq->SetLiteral().SetSeq_data(*pSeqData);
             pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
+            it_last_data = pDeltaExt->Set().back();
         }
         break;
         }
@@ -2473,7 +2502,7 @@ void TrimSeqData(CBioseq_Handle bsh,
     // Update sequence repr, length and data
     inst->ResetExt();
     inst->ResetSeq_data();
-    inst->SetLength(1 + (right_pos - left_pos));
+    inst->SetLength(new_length);
     if (pDeltaExt->Set().size() == 1) {
         // Repr raw
         inst->SetRepr(CSeq_inst::eRepr_raw);

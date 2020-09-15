@@ -1375,7 +1375,18 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
 
 				BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation(bsh, cuts, edit::eTrimToClosestEnd));
 			}
-		}
+
+            // Seq1 is found in test6 input
+            if (s_FindLocalId(bsh, "scaffold281")) {
+                // Cut 1st data element of sequence but leave gap
+                // function should remove gap as well
+                edit::TRange cut1(0, 275);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+        }
 
         // Are the changes what we expect?
         BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(

@@ -1,0 +1,380 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    comment "Bacteria and source DNA available from Tangkai.",
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Assembly-Data-START##"
+        },
+        {
+          label str "Assembly Method",
+          data str "SOAPdenovo v. V2.04"
+        },
+        {
+          label str "Genome Coverage",
+          data str "376.69x"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Illumina HiSeq"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SeriousSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 8
+        },
+        {
+          label str "month",
+          data int 10
+        },
+        {
+          label str "day",
+          data int 31
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    },
+    update-date std {
+      year 2016,
+      month 10,
+      day 31
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "scaffold273"
+      },
+      descr {
+        source {
+          org {
+            taxname "Rhodocista",
+            db {
+              {
+                db "taxon",
+                tag id 34023
+              }
+            },
+            orgname {
+              name partial {
+                {
+                  fixed-level other,
+                  level "genus",
+                  name "Rhodocista"
+                }
+              },
+              mod {
+                {
+                  subtype strain,
+                  subname "MIMtkB3"
+                }
+              },
+              lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhodospirillales; Rhodospirillaceae",
+              gcode 11,
+              div "BCT"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                          {
+                            name
+                              name {
+                                last "Tang" ,
+                                first "Kai" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Feng" ,
+                                first "Fuying" ,
+                                initials "F." } } }
+              },
+              title "Photosynthetic bacterium"
+            }
+          }
+        },
+        create-date std {
+          year 2016,
+          month 10,
+          day 31
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 513,
+        seq-data iupacna "CGCCTCGGTCGGATGCGGAACGGCTTTTCGCCGGTCTGCCGATCGACTCGGG
+GCGCGGACCGTTGCGGGCCGCGGCGGCGGCCTAAGCCCGGGCGGTTGTTCCCGCCCGTGGATGCGTCGTCGCCACGGC
+TGAGGGATCCAGCGCGCGCCTCCGGGCAGGCGCTTCGGCGCCCAGCGCGCTCCGGGCAACGGCCAGCGGGCGCCCCAT
+TCGGCCCGTCTTGAAACACGGACCAAGGAGTCTGACATGTGTGCGAGTCAACGGGCGCGGAAACCCGTAAGGCGCAAG
+GAAGCTGACTCGGGCGGGATGCCCTTCGGGGGTTGCACCGCCGACCGACCTAGATCTTCTGAGAAGGGTTCGAGTGTG
+AGCATGCCTGTCGGGACCCGAAAGATGGTGAACTATGCCTGAGCGGGGCGAAGCCAGAGGAAACTCTGGTGGAGGCCC
+GCAGCGATACTGACGTGCAAATCGTTCGTCTGACTTGGGTATAGGGGCGAAAGACTAATCGAACCGTCTAG"
+      }
+    },
+    seq {
+      id {
+        local str "scaffold281"
+      },
+      descr {
+        source {
+          org {
+            taxname "Rhodocista",
+            db {
+              {
+                db "taxon",
+                tag id 34023
+              }
+            },
+            orgname {
+              name partial {
+                {
+                  fixed-level other,
+                  level "genus",
+                  name "Rhodocista"
+                }
+              },
+              mod {
+                {
+                  subtype strain,
+                  subname "MIMtkB3"
+                }
+              },
+              lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhodospirillales; Rhodospirillaceae",
+              gcode 11,
+              div "BCT"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                          {
+                            name
+                              name {
+                                last "Tang" ,
+                                first "Kai" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Feng" ,
+                                first "Fuying" ,
+                                initials "F." } } }
+              },
+              title "Photosynthetic bacterium"
+            }
+          }
+        },
+        create-date std {
+          year 2016,
+          month 10,
+          day 31
+        }
+      },
+      inst {
+        repr delta,
+        mol dna,
+        length 256,
+        ext delta {
+          literal {
+            length 256,
+            seq-data ncbi2na '765849976EB9A4AB5A9186A9DD15DD69965F52687EE56B5B
+678A19F7121C43D2986AB6563FD0AEA7BD5AF6765BC72A835DB0BF7FD759F3E339F01D26AE9565
+E1'H
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "scaffold339"
+      },
+      descr {
+        source {
+          org {
+            taxname "Rhodocista",
+            db {
+              {
+                db "taxon",
+                tag id 34023
+              }
+            },
+            orgname {
+              name partial {
+                {
+                  fixed-level other,
+                  level "genus",
+                  name "Rhodocista"
+                }
+              },
+              mod {
+                {
+                  subtype strain,
+                  subname "MIMtkB3"
+                }
+              },
+              lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhodospirillales; Rhodospirillaceae",
+              gcode 11,
+              div "BCT"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                          {
+                            name
+                              name {
+                                last "Tang" ,
+                                first "Kai" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Feng" ,
+                                first "Fuying" ,
+                                initials "F." } } }
+              },
+              title "Photosynthetic bacterium"
+            }
+          }
+        },
+        create-date std {
+          year 2016,
+          month 10,
+          day 31
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 333,
+        seq-data iupacna "GAGTTGTTACACACTCCTTAGCGGATTTCGACTTCCATGACCACCGTCCTGC
+TGTCTTAATCGACCAACACCCTTTGTGGGTTCTGGGTTAGCGCGCAGTTGGGCACCGTAACCCGGCTTCCGGTTCATC
+CCGCATCGCCAGTTCTGCTTACCAAAAATGGCCCACTTGGAGCTCTCGATTCCGTGGCGCGGCTCAATTGAGCAGCCG
+CGCCGTCCTACCTATTTAAAGTTTGAGAATAGGTCGAGGGCGTTGCGCCCCCGATGCCTCTCGTCATTGCTTTACCCG
+ATAGAACTCGCCCGCGGGCTCCAGCTATCCTGAGGGAAACTTCGGAG"
+      }
+    },
+    seq {
+      id {
+        local str "scaffold344"
+      },
+      descr {
+        source {
+          org {
+            taxname "Rhodocista",
+            db {
+              {
+                db "taxon",
+                tag id 34023
+              }
+            },
+            orgname {
+              name partial {
+                {
+                  fixed-level other,
+                  level "genus",
+                  name "Rhodocista"
+                }
+              },
+              mod {
+                {
+                  subtype strain,
+                  subname "MIMtkB3"
+                }
+              },
+              lineage "Bacteria; Proteobacteria; Alphaproteobacteria;
+ Rhodospirillales; Rhodospirillaceae",
+              gcode 11,
+              div "BCT"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                          {
+                            name
+                              name {
+                                last "Tang" ,
+                                first "Kai" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Feng" ,
+                                first "Fuying" ,
+                                initials "F." } } }
+              },
+              title "Photosynthetic bacterium"
+            }
+          }
+        },
+        create-date std {
+          year 2016,
+          month 10,
+          day 31
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 306,
+        seq-data iupacna "TGCATTTTTACCCTATCTGGGAAGCAGCATCCGTTGATGAATGGTTATACAA
+CGGTGGTCCTTATGAGCTAATTGTTCTACACTTTTTACTTGGTGTAGCTTGTTACATGGGTCGTGAGTGGGAACTTAG
+TTTCCGTCTGGGTATGCGTCCTTGGATTGCTGTTGCATATTCAGCTCCTGTTGCAGCAGCTACTGCAGTTTTCTTGAT
+CTACCCTATCGGTCAAGGAAGTTTTTCTGATGGTATGCCTCTAGGAATATCTGGTACTTTCAACTTTATGATTGTATT
+CCAGGCTGAGCACAACATCC"
+      }
+    }
+  }
+}
