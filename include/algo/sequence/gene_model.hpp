@@ -106,6 +106,7 @@ public:
         fGenerateStableLocalIds = 0x200,  // reproducible ids
         fPropagateNcrnaFeats = 0x400,
         fTrustProteinSeq     = 0x800,
+        fDropManeMarkup      = 0x1000,
         fDeNovoProducts      = 0x4000,
         fAddTranslatedCDSAssembly = 0x8000, // add translated_cds_bioseq->SetInst().SetHist().SetAssembly().push_back(align)
 

@@ -3863,13 +3863,23 @@ x_AddSelectMarkup(const CSeq_align &align,
     e_MatchType match_found = eNone;
     string ensembl_match_rna, ensembl_match_cds;
     vector<string> keywords;
+    bool drop = false;
     vector<CSeqdesc::E_Choice> desc_types = {CSeqdesc::e_User,
                                              CSeqdesc::e_Genbank};
     for (CSeqdesc_CI desc(rna_handle, desc_types); desc; ++desc) {
         if (desc->IsGenbank() && desc->GetGenbank().IsSetKeywords()) {
-            keywords.insert(keywords.end(),
-                            desc->GetGenbank().GetKeywords().begin(),
-                            desc->GetGenbank().GetKeywords().end());
+            for (const string &keyword : desc->GetGenbank().GetKeywords()) {
+                if (m_flags & fDropManeMarkup &&
+                    (keyword == "MANE Select" || keyword == "MANE Plus"))
+                {
+                    drop = true;
+                    if (keyword == "MANE Select") {
+                        keywords.push_back("RefSeq Select");
+                    }
+                } else {
+                    keywords.push_back(keyword);
+                }
+            }
         } else if (desc->IsUser() &&
                    desc->GetUser().HasField("MANE Ensembl match"))
         {
@@ -3901,7 +3911,7 @@ x_AddSelectMarkup(const CSeq_align &align,
         }
     }
 
-    if (match_found == eExact && !ensembl_match_rna.empty()) {
+    if (match_found == eExact && !drop && !ensembl_match_rna.empty()) {
         CRef<CDbtag> rna_ensembl_ref(new CDbtag);
         rna_ensembl_ref->SetDb("Ensembl");
         rna_ensembl_ref->SetTag().SetStr(ensembl_match_rna);
