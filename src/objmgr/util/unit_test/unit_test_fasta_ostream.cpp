@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
          static const char* sc_Expected = 
-">lcl|test-seq [organism=\"Sarcophilus='harrisii\"] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
+">lcl|test-seq [organism=\"Sarcophilus='harrisii\"] [pathovar=fake data] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
         os.flush();
         string s = string(CNcbiOstrstreamToString(os));
         static const char* sc_Expected = 
-            ">lcl|test-seq [topology=circular] [organism=\"Sarcophilus='harrisii\"] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
+            ">lcl|test-seq [topology=circular] [organism=\"Sarcophilus='harrisii\"] [pathovar=fake data] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
             "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
             "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
             "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
