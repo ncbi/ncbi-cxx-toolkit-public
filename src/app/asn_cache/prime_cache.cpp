@@ -236,6 +236,8 @@ private: // data
     bool m_ExtractDelta;
     unsigned m_MaxDeltaLevel;
     set<CSeq_id_Handle> m_CachedIds;
+    set<CSeq_id_Handle> m_PreviousExecutionIds;
+    set<string> m_PreviousExecutionRuns;
 };
 
 template <typename T, typename Consumer>
@@ -387,6 +389,8 @@ void CPrimeCacheApplication::Init(void)
     arg_desc->SetDependency("delta-level",
                             CArgDescriptions::eRequires, "extract-delta");
 
+    arg_desc->AddFlag("resume", "Resume interrupted previous execution");
+
     // Setup arg.descriptions for this application
     arg_desc->SetCurrentGroup("Default application arguments");
     SetupArgDescriptions(arg_desc.release());
@@ -484,6 +488,14 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         }
 
         CRef<CSeq_entry> entry = reader.ReadOneSeq(&messageListener);
+        // extract canonical ID
+        CSeq_id_Handle idh = sequence::GetId(entry->GetSeq(), m_id_type);
+        if (m_PreviousExecutionIds.count(idh)) {
+            // This is a resumption of a previous task, and we already
+            // cached this sequence
+            continue;
+        }
+
         entry->SetSeq().SetInst().SetMol(m_InstMol);
         auto& descs  = entry->SetSeq().SetDescr().Set();
         bool molinfo_found=false;
@@ -579,14 +591,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         entry->Parentize();
         x_ExtractAndIndex(*entry, timestamp, chunk_id, offset, size);
 
-        // extract canonical IDs
-        // note that we do this in a private scope and use no data loaders
-        CScope scope(*om);
-        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
-        for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
-            CSeq_id_Handle idh = sequence::GetId(*bioseq_it, m_id_type);
-            ostr_seqids << idh << '\n';
-        }
+        ostr_seqids << idh << endl;
 
         ++count;
         if (count % 100000 == 0) {
@@ -610,7 +615,8 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
     string acc;
     while (NcbiGetlineEOL(istr, acc)) {
         NStr::TruncateSpacesInPlace(acc);
-        if (acc.empty()  ||  acc[0] == '#') {
+        if (acc.empty()  ||  acc[0] == '#' || m_PreviousExecutionRuns.count(acc))
+        {
             continue;
         }
 
@@ -620,6 +626,12 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
 
         for ( ;  iter;  ++iter) {
             CRef<CBioseq> bs = iter.GetShortBioseq();
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*bs->GetFirstId());
+            if (m_PreviousExecutionIds.count(idh)) {
+                // This is a resumption of a previous task, and we already
+                // cached this read
+                continue;
+            }
             CRef<CSeq_entry> entry(new CSeq_entry);
             entry->SetSeq(*bs);
             entry->SetSeq().SetInst().SetMol(m_InstMol);
@@ -652,7 +664,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
 
             entry->Parentize();
             x_ExtractAndIndex(*entry, timestamp, chunk_id, offset, size);
-            ostr_seqids << bs->GetFirstId()->AsFastaString() << '\n';
+            ostr_seqids << idh << endl;
 
             // extract canonical IDs
             // note that we do this without the object manager, for performance
@@ -662,7 +674,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
                 LOG_POST(Error << "  processed " << count << " reads...");
             }
         }
-
+        ostr_seqids << "#Completed run " << acc << endl;
     }
 
     LOG_POST(Error << "done, dumped " << count << " items");
@@ -975,6 +987,11 @@ int CPrimeCacheApplication::Run(void)
         NCBI_THROW(CException, eUnknown,
                    "metadata parameters only allowed with fasta or SRA input");
     }
+    if (args["resume"] && ifmt != "fasta" && ifmt != "csra")
+    {
+        NCBI_THROW(CException, eUnknown,
+                   "Resume only supported with fasta or SRA input");
+    }
 
     if (args["taxid"]) {
         CLocalTaxon taxon(args);
@@ -1062,7 +1079,25 @@ int CPrimeCacheApplication::Run(void)
          m_SeqIdIndex.Open(NASNCacheFileName::GetBDBIndex(outpath, CAsnIndex::e_seq_id), CBDB_RawFile::eReadWriteCreate);
      }}
 
-    CNcbiOstream& ostr = args["oseq-ids"].AsOutputFile();
+    if (args["resume"]) {
+        CFile output_file(args["oseq-ids"].AsString());
+        if (!output_file.Exists()) {
+            NCBI_THROW(CException, eUnknown,
+                       "Can't resums; " + output_file.GetPath() + " not found");
+        }
+        CNcbiIfstream istr(output_file.GetPath());
+        string line;
+        while (NcbiGetlineEOL(istr, line)) {
+            if (!line.empty() && line[0] != '#') {
+                m_PreviousExecutionIds.insert(CSeq_id_Handle::GetHandle(line));
+            } else if (NStr::StartsWith(line, "#Completed run ")) {
+                m_PreviousExecutionRuns.insert(line.substr(15));
+            }
+        }
+    }
+
+    CNcbiOstream& ostr = args["oseq-ids"].AsOutputFile(
+                             args["resume"] ? CArgValue::fAppend : 0);
     ostr << "#" << args["seq-id-type"].AsString() << "-id" << endl;
     m_id_type = args["seq-id-type"].AsString() == "canonical"
               ? sequence::eGetId_Canonical : sequence::eGetId_Best;
