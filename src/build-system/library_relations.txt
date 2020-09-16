@@ -1401,8 +1401,15 @@ validation_details needs xobjwrite
 validation_results needs $(SEQ_LIBS)
 validation_results needs pub
 validation_results needs xmlwrapp
+var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
+variation_lib needs annotationproto
+variation_lib needs intvarutil
+variation_lib needs ncbi_xloader_blastdb
+variation_lib needs objannotation
+variation_lib needs refseq_aln_source
+variation_lib needs variation_utils
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
