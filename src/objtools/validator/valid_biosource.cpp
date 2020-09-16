@@ -1417,7 +1417,13 @@ const CSeq_entry *ctx)
             if (s_HasMetagenomeSource(orgref)) {
                 // suppress OrganismIsUndefinedSpecies message
             } else if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
-                NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
+                NStr::EndsWith(taxname, " sp", NStr::eNocase) ||
+                NStr::EndsWith(taxname, " (in: Fungi)", NStr::eNocase) ||
+                NStr::EndsWith(taxname, " (in: Bacteria)", NStr::eNocase) ||
+                NStr::EndsWith(taxname, " bacterium", NStr::eNocase) ||
+                NStr::EndsWith(taxname, " archaeon", NStr::eNocase) ||
+                NStr::EqualNocase(taxname, "bacterium") ||
+                NStr::EqualNocase(taxname, "archaeon")) &&
                 !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
                 !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase) &&
                 !NStr::StartsWith(taxname, "symbiont ", NStr::eNocase) &&
