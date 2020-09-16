@@ -38,17 +38,20 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 #include <objtools/flatfile/sprot.h>
-#include <objtools/flatfile/entry.h>
 
+#include "ftaerr.hpp"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
+#include "entry.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "sp_index.cpp"
+
+BEGIN_NCBI_SCOPE
 
 KwordBlk spkwl[] = {
     {"ID", 2}, {"AC", 2}, {"DT", 2}, {"DE", 2}, {"GN", 2}, {"OS", 2},
@@ -294,3 +297,5 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     return end_of_file;
 }
+
+END_NCBI_SCOPE

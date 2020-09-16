@@ -36,9 +36,13 @@
 #ifndef _FF2ASN_
 #define _FF2ASN_
 
+BEGIN_NCBI_SCOPE
+
 ParserPtr   init_pp(ParserPtr pp);
 
 void        fta_init_servers(ParserPtr pp);
 void        fta_fini_servers(ParserPtr pp);
+
+END_NCBI_SCOPE
 
 #endif

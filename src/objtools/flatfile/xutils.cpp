@@ -46,8 +46,11 @@
 #define THIS_FILE "xutils.cpp"
 
 #include <objtools/flatfile/ftacpp.hpp>
-#include <objtools/flatfile/xgbparint.h>
-#include <objtools/flatfile/xutils.h>
+#include "ftaerr.hpp"
+#include "xgbparint.h"
+#include "xutils.h"
+
+BEGIN_NCBI_SCOPE
 
 /**********************************************************
 *
@@ -59,9 +62,9 @@
 *   returns FALSE.
 *
 **********************************************************/
-static bool XISAGappedSeqLoc(const ncbi::objects::CSeq_loc& loc)
+static bool XISAGappedSeqLoc(const objects::CSeq_loc& loc)
 {
-    const ncbi::objects::CSeq_id* id = loc.GetId();
+    const objects::CSeq_id* id = loc.GetId();
     if (id == nullptr || !id->IsGeneral() || !id->GetGeneral().IsSetDb() || !id->GetGeneral().IsSetTag())
         return false;
 
@@ -88,16 +91,16 @@ void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 {
     ITERATE(TSeqLocList, loc, locs)
     {
-        ncbi::CRef<ncbi::objects::CDelta_seq> delta(new ncbi::objects::CDelta_seq);
+        CRef<objects::CDelta_seq> delta(new objects::CDelta_seq);
         if (XISAGappedSeqLoc(*(*loc)))
         {
-            const ncbi::objects::CSeq_interval& interval = (*loc)->GetInt();
+            const objects::CSeq_interval& interval = (*loc)->GetInt();
             delta->SetLiteral().SetLength(interval.GetTo() - interval.GetFrom() + 1);
 
-            const ncbi::objects::CSeq_id* id = (*loc)->GetId();
+            const objects::CSeq_id* id = (*loc)->GetId();
             if (id != nullptr)
             {
-                const ncbi::objects::CDbtag& tag = id->GetGeneral();
+                const objects::CDbtag& tag = id->GetGeneral();
                 if (tag.GetDb() == unkseqlitdbtag)
                     delta->SetLiteral().SetFuzz().SetLim();
             }
@@ -110,7 +113,7 @@ void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 }
 
 /**********************************************************/
-int XDateCheck(const ncbi::objects::CDate_std& date)
+int XDateCheck(const objects::CDate_std& date)
 {
     Int2 	day, month, year, last;
     static Uint1 days[12] = { 31, 28, 31, 30, 31,
@@ -146,3 +149,5 @@ int XDateCheck(const ncbi::objects::CDate_std& date)
 
     return 0;
 }
+
+END_NCBI_SCOPE

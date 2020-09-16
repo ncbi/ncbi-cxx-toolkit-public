@@ -36,12 +36,14 @@
 #ifndef _ASCIIBLOCK_
 #define _ASCIIBLOCK_
 
-#include <objtools/flatfile/ftablock.h>
+#include "ftablock.h"
 
-ncbi::CRef<ncbi::objects::CSeq_id> StrToSeqId(char* pch, bool pid);
-ncbi::CRef<ncbi::objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa);
-ncbi::CRef<ncbi::objects::CSeq_id> MakeLocusSeqId(char* locus, Uint1 seqtype);
-ncbi::CRef<ncbi::objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc);
+BEGIN_NCBI_SCOPE
+
+CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid);
+CRef<objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa);
+CRef<objects::CSeq_id> MakeLocusSeqId(char* locus, Uint1 seqtype);
+CRef<objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc);
 
 void StripSerialNumbers(TEntryList& seq_entries);
 void PackEntries(TEntryList& seq_entries);
@@ -62,29 +64,29 @@ char*     GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, 
 void        GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessionList& accessions);
 void        GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data, TKeywordList& keywords);
 
-bool GetSeqData(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& cpp_bsp,
+bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& cpp_bsp,
                       Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type);
     
 unsigned char*    GetDNAConv(void);
 unsigned char*    GetProteinConv(void);
-void   GetSeqExt(ParserPtr pp, ncbi::objects::CSeq_loc& seq_loc);
+void   GetSeqExt(ParserPtr pp, objects::CSeq_loc& seq_loc);
 
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
-                       const ncbi::objects::CSeq_loc& seqloc);
+                       const objects::CSeq_loc& seqloc);
 // LCOV_EXCL_STOP
 
-bool        IsSegBioseq(const ncbi::objects::CSeq_id* id);
+bool        IsSegBioseq(const objects::CSeq_id* id);
 char*     check_div(bool pat_acc, bool pat_ref, bool est_kwd,
                             bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases,
                             Int2 source, bool& drop);
 void        EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
-void        AddNIDSeqId(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata, Int2 source);
+void        AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata, Int2 source);
 void        DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori, bool cancelled);
 void        XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled);
 void        CheckHTGDivision(char* div, Uint1 tech);
-void        fta_sort_biosource(ncbi::objects::CBioSource& bio);
+void        fta_sort_biosource(objects::CBioSource& bio);
 bool        fta_EntryCheckGBBlock(TEntryList& seq_entries);
 void        ShrinkSpaces(char* line);
 void        fta_sort_descr(TEntryList& seq_entries);
@@ -92,11 +94,13 @@ void        fta_sort_seqfeat_cit(TEntryList& seq_entries);
 bool        XMLCheckCDS(char* entry, XmlIndexPtr xip);
 void        fta_set_strandedness(TEntryList& seq_entries);
 
-bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserPtr pp);
+bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp);
 
-void        fta_fix_orgref_div(const ncbi::objects::CBioseq::TAnnot& annots, ncbi::objects::COrg_ref& org_ref, ncbi::objects::CGB_block& gbb);
+void        fta_fix_orgref_div(const objects::CBioseq::TAnnot& annots, objects::COrg_ref& org_ref, objects::CGB_block& gbb);
 
 char*     GetEmblDiv(Uint1 num);
-const ncbi::objects::CSeq_descr& GetDescrPointer(const ncbi::objects::CSeq_entry& entry);
+const objects::CSeq_descr& GetDescrPointer(const objects::CSeq_entry& entry);
+
+END_NCBI_SCOPE
 
 #endif

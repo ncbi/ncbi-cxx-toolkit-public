@@ -59,18 +59,20 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/xmlmisc.h>
 
-#include <objtools/flatfile/utilref.h>
-#include <objtools/flatfile/ref.h>
-#include <objtools/flatfile/asci_blk.h>
-
+#include "ftaerr.hpp"
+#include "asci_blk.h"
+#include "utilref.h"
 #include "ftamed.h"
+#include "xmlmisc.h"
+#include "ref.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "ftamed.cpp"
+
+BEGIN_NCBI_SCOPE
 
 // error definitions from C-toolkit (mdrcherr.h)
 #define ERR_REFERENCE  1,0
@@ -98,7 +100,7 @@
 
 
 using namespace ncbi;
-using namespace ncbi::objects;
+using namespace objects;
 
 static char *this_module = (char *) "medarch";
 #ifdef THIS_MODULE
@@ -344,8 +346,8 @@ static bool MUIsJournalIndexed(const Char* journal)
 
     std::string str;
 
-    // TODO: Probably 'ncbi::CFetchURL::Fetch' should be changed by higher level procedures (CHydraSearch ?)
-    ncbi::CDefaultUrlEncoder url_encoder;
+    // TODO: Probably 'CFetchURL::Fetch' should be changed by higher level procedures (CHydraSearch ?)
+    CDefaultUrlEncoder url_encoder;
     STimeout timeout = { DEFAULT_HTTP_TIMEOUT, 0 };
 
     const std::string base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
@@ -444,7 +446,7 @@ static bool MUIsJournalIndexed(const Char* journal)
 }
 
 /**********************************************************/
-static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool auth, TEntrezId muid)
+static void print_pub(const objects::CCit_art& cit_art, bool found, bool auth, TEntrezId muid)
 {
     const Char*    s_title = NULL;
 
@@ -471,13 +473,13 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
              */
             if (cit_art.GetAuthors().GetNames().IsStd())
             {
-                const ncbi::objects::CAuthor& first_author = *(*cit_art.GetAuthors().GetNames().GetStd().begin());
+                const objects::CAuthor& first_author = *(*cit_art.GetAuthors().GetNames().GetStd().begin());
 
                 if (first_author.IsSetName())
                 {
                     if (first_author.GetName().IsName())
                     {
-                        const ncbi::objects::CName_std& namestd = first_author.GetName().GetName();
+                        const objects::CName_std& namestd = first_author.GetName().GetName();
                         if (namestd.IsSetLast())
                             last = namestd.GetLast().c_str();
                         if (namestd.IsSetInitials())
@@ -495,14 +497,14 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
         }
     }
 
-    const ncbi::objects::CImprint* imprint = nullptr;
-    const ncbi::objects::CTitle* title = nullptr;
+    const objects::CImprint* imprint = nullptr;
+    const objects::CTitle* title = nullptr;
 
     if (cit_art.IsSetFrom())
     {
         if (cit_art.GetFrom().IsJournal())
         {
-            const ncbi::objects::CCit_jour& journal = cit_art.GetFrom().GetJournal();
+            const objects::CCit_jour& journal = cit_art.GetFrom().GetJournal();
 
             if (journal.IsSetTitle())
                 title = &journal.GetTitle();
@@ -512,7 +514,7 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
         }
         else if (cit_art.GetFrom().IsBook())
         {
-            const ncbi::objects::CCit_book& book = cit_art.GetFrom().GetBook();
+            const objects::CCit_book& book = cit_art.GetFrom().GetBook();
 
             if (book.IsSetTitle())
                 title = &book.GetTitle();
@@ -524,7 +526,7 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
 
     if (title != nullptr && title->IsSet() && !title->Get().empty())
     {
-        const ncbi::objects::CTitle::C_E& first_title = *title->Get().front();
+        const objects::CTitle::C_E& first_title = *title->Get().front();
         const std::string& title_str = title->GetTitle(first_title.Which());
 
         if (!title_str.empty())
@@ -543,7 +545,7 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
         if (imprint->IsSetDate())
             year = imprint->GetDate().GetStd().GetYear();
 
-        in_press = imprint->IsSetPrepub() && imprint->GetPrepub() == ncbi::objects::CImprint::ePrepub_in_press;
+        in_press = imprint->IsSetPrepub() && imprint->GetPrepub() == objects::CImprint::ePrepub_in_press;
     }
 
     if(page == NULL)
@@ -561,7 +563,7 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
 
     if (in_press)
     {
-        int cur_year = ncbi::objects::CDate_std(ncbi::CTime(ncbi::CTime::eCurrent)).GetYear();
+        int cur_year = objects::CDate_std(CTime(CTime::eCurrent)).GetYear();
 
         if (year != 0 && cur_year - year > 2)
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_OldInPress,
@@ -628,7 +630,7 @@ static void print_pub(const ncbi::objects::CCit_art& cit_art, bool found, bool a
 }
 
 /**********************************************************/
-static bool ten_authors_compare(ncbi::objects::CCit_art& cit_old, ncbi::objects::CCit_art& cit_new)
+static bool ten_authors_compare(objects::CCit_art& cit_old, objects::CCit_art& cit_new)
 {
     const Char* namesnew[10];
     Int4       numold;
@@ -646,15 +648,15 @@ static bool ten_authors_compare(ncbi::objects::CCit_art& cit_old, ncbi::objects:
         cit_old.GetAuthors().GetNames().IsStd())
         return true;
 
-    const ncbi::objects::CAuth_list::C_Names& old_names = cit_old.GetAuthors().GetNames();
-    const ncbi::objects::CAuth_list::C_Names& new_names = cit_new.GetAuthors().GetNames();
+    const objects::CAuth_list::C_Names& old_names = cit_old.GetAuthors().GetNames();
+    const objects::CAuth_list::C_Names& new_names = cit_new.GetAuthors().GetNames();
 
     for(i = 0; i < 10; i++)
         namesnew[i] = NULL;
 
     numnew = 0;
 
-    ITERATE(ncbi::objects::CAuth_list::C_Names::TStr, name, old_names.GetStr())
+    ITERATE(objects::CAuth_list::C_Names::TStr, name, old_names.GetStr())
     {
         if (!name->empty())
             numnew++;
@@ -662,7 +664,7 @@ static bool ten_authors_compare(ncbi::objects::CCit_art& cit_old, ncbi::objects:
 
     numold = 0;
 
-    ITERATE(ncbi::objects::CAuth_list::C_Names::TStr, name, new_names.GetStr())
+    ITERATE(objects::CAuth_list::C_Names::TStr, name, new_names.GetStr())
     {
         if (!name->empty())
             namesnew[numold++] = name->c_str();
@@ -670,7 +672,7 @@ static bool ten_authors_compare(ncbi::objects::CCit_art& cit_old, ncbi::objects:
 
     match = 0;
 
-    ITERATE(ncbi::objects::CAuth_list::C_Names::TStr, name, old_names.GetStr())
+    ITERATE(objects::CAuth_list::C_Names::TStr, name, old_names.GetStr())
     {
         if (name->empty())
             continue;
@@ -698,13 +700,13 @@ static bool ten_authors_compare(ncbi::objects::CCit_art& cit_old, ncbi::objects:
 }
 
 /**********************************************************/
-static Int2 extract_names(const ncbi::objects::CAuth_list_Base::C_Names::TStd& names, ncbi::objects::CAuth_list_Base::C_Names::TStr& extracted, size_t& len)
+static Int2 extract_names(const objects::CAuth_list_Base::C_Names::TStd& names, objects::CAuth_list_Base::C_Names::TStr& extracted, size_t& len)
 {
     len = 1;
     Int2 num = 0;
-    ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStd, name, names)
+    ITERATE(objects::CAuth_list_Base::C_Names::TStd, name, names)
     {
-        const ncbi::objects::CAuthor& auth = *(*name);
+        const objects::CAuthor& auth = *(*name);
         if (auth.IsSetName() && auth.GetName().IsName())
             num++;
         else if (auth.IsSetName() && auth.GetName().IsConsortium())
@@ -719,7 +721,7 @@ static Int2 extract_names(const ncbi::objects::CAuth_list_Base::C_Names::TStd& n
             }
 
             bool inserted = false;
-            NON_CONST_ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStr, cur, extracted)
+            NON_CONST_ITERATE(objects::CAuth_list_Base::C_Names::TStr, cur, extracted)
             {
                 if (StringICmp(cur_consortium.c_str(), cur->c_str()) <= 0)
                 {
@@ -738,7 +740,7 @@ static Int2 extract_names(const ncbi::objects::CAuth_list_Base::C_Names::TStd& n
 }
 
 /**********************************************************/
-static Char* cat_names(const ncbi::objects::CAuth_list_Base::C_Names::TStr& names, size_t len)
+static Char* cat_names(const objects::CAuth_list_Base::C_Names::TStr& names, size_t len)
 {
     if (names.empty())
         return NULL;
@@ -746,7 +748,7 @@ static Char* cat_names(const ncbi::objects::CAuth_list_Base::C_Names::TStr& name
     char* buf = (char *)MemNew(len);
     buf[0] = '\0';
 
-    ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStr, cur, names)
+    ITERATE(objects::CAuth_list_Base::C_Names::TStr, cur, names)
     {
         if (buf[0] != '\0')
             StringCat(buf, "; ");
@@ -757,7 +759,7 @@ static Char* cat_names(const ncbi::objects::CAuth_list_Base::C_Names::TStr& name
 }
 
 /**********************************************************/
-static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& cit_tmp)
+static bool ten_authors(objects::CCit_art& cit, objects::CCit_art& cit_tmp)
 {
     char*    oldbuf;
     char*    newbuf;
@@ -800,13 +802,13 @@ static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& c
 
     oldbuf = NULL;
 
-    ncbi::objects::CAuth_list_Base::C_Names::TStr oldcon;
+    objects::CAuth_list_Base::C_Names::TStr oldcon;
 
     size_t oldlen = 0;
     num = extract_names(cit.GetAuthors().GetNames().GetStd(), oldcon, oldlen);
     oldbuf = cat_names(oldcon, oldlen);
 
-    ncbi::objects::CAuth_list_Base::C_Names::TStr newcon;
+    objects::CAuth_list_Base::C_Names::TStr newcon;
 
     size_t newlen = 0;
     numtmp = extract_names(cit_tmp.GetAuthors().GetNames().GetStd(), newcon, newlen);
@@ -820,9 +822,9 @@ static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& c
                       "Publication as returned by MedArch lacks consortium authors of the original publication: \"%s\".",
                       oldbuf);
 
-            ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStr, cur, oldcon)
+            ITERATE(objects::CAuth_list_Base::C_Names::TStr, cur, oldcon)
             {
-                ncbi::CRef<ncbi::objects::CAuthor> auth(new ncbi::objects::CAuthor);
+                CRef<objects::CAuthor> auth(new objects::CAuthor);
                 auth->SetName().SetConsortium(*cur);
 
                 cit_tmp.SetAuthors().SetNames().SetStd().push_front(auth);
@@ -852,9 +854,9 @@ static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& c
         MemFree(newbuf);
 
     numnew = 0;
-    ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStd, name, cit_tmp.GetAuthors().GetNames().GetStd())
+    ITERATE(objects::CAuth_list_Base::C_Names::TStd, name, cit_tmp.GetAuthors().GetNames().GetStd())
     {
-        const ncbi::objects::CAuthor& auth = *(*name);
+        const objects::CAuthor& auth = *(*name);
         if (!auth.IsSetName() || !auth.GetName().IsName())
             continue;
 
@@ -867,9 +869,9 @@ static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& c
     }
 
     match = 0;
-    ITERATE(ncbi::objects::CAuth_list_Base::C_Names::TStd, name, cit.GetAuthors().GetNames().GetStd())
+    ITERATE(objects::CAuth_list_Base::C_Names::TStd, name, cit.GetAuthors().GetNames().GetStd())
     {
-        const ncbi::objects::CAuthor& auth = *(*name);
+        const objects::CAuthor& auth = *(*name);
         if (!auth.IsSetName() || !auth.GetName().IsName())
             continue;
 
@@ -900,14 +902,14 @@ static bool ten_authors(ncbi::objects::CCit_art& cit, ncbi::objects::CCit_art& c
 }
 
 /**********************************************************/
-static void MergeNonPubmedPubIds(ncbi::objects::CCit_art& cit_new, ncbi::objects::CCit_art& cit_old)
+static void MergeNonPubmedPubIds(objects::CCit_art& cit_new, objects::CCit_art& cit_old)
 {
     if (!cit_old.IsSetIds())
         return;
 
-    ncbi::objects::CArticleIdSet& old_ids = cit_old.SetIds();
+    objects::CArticleIdSet& old_ids = cit_old.SetIds();
 
-    for (ncbi::objects::CArticleIdSet::Tdata::iterator cur = old_ids.Set().begin(); cur != old_ids.Set().end(); )
+    for (objects::CArticleIdSet::Tdata::iterator cur = old_ids.Set().begin(); cur != old_ids.Set().end(); )
     {
         if (!(*cur)->IsDoi() && !(*cur)->IsOther())
         {
@@ -918,7 +920,7 @@ static void MergeNonPubmedPubIds(ncbi::objects::CCit_art& cit_new, ncbi::objects
         bool found = false;
         if (cit_new.IsSetIds())
         {
-            ITERATE(ncbi::objects::CArticleIdSet::Tdata, new_id, cit_new.GetIds().Get())
+            ITERATE(objects::CArticleIdSet::Tdata, new_id, cit_new.GetIds().Get())
             {
                 if ((*new_id)->Which() != (*cur)->Which())
                     continue;
@@ -954,19 +956,19 @@ static void MergeNonPubmedPubIds(ncbi::objects::CCit_art& cit_new, ncbi::objects
  *       converts a MEDLINE citation to ISO/GenBank style
  *
  **********************************************************/
-static void MedlineToISO(ncbi::objects::CCit_art& cit_art)
+static void MedlineToISO(objects::CCit_art& cit_art)
 {
     bool     is_iso;
 
-    ncbi::objects::CAuth_list& auths = cit_art.SetAuthors();
+    objects::CAuth_list& auths = cit_art.SetAuthors();
     if (auths.IsSetNames())
     {
         if (auths.GetNames().IsMl())            /* ml style names */
         {
-            ncbi::objects::CAuth_list::C_Names& old_names = auths.SetNames();
-            ncbi::CRef<ncbi::objects::CAuth_list::C_Names> new_names(new ncbi::objects::CAuth_list::C_Names);
+            objects::CAuth_list::C_Names& old_names = auths.SetNames();
+            CRef<objects::CAuth_list::C_Names> new_names(new objects::CAuth_list::C_Names);
 
-            ITERATE(ncbi::objects::CAuth_list::C_Names::TMl, name, old_names.GetMl())
+            ITERATE(objects::CAuth_list::C_Names::TMl, name, old_names.GetMl())
             {
                 CRef<CAuthor> author = get_std_auth(name->c_str(), ML_REF);
                 if (author.Empty())
@@ -980,7 +982,7 @@ static void MedlineToISO(ncbi::objects::CCit_art& cit_art)
         }
         else if (auths.GetNames().IsStd())       /* std style names */
         {
-            NON_CONST_ITERATE(ncbi::objects::CAuth_list::C_Names::TStd, auth, auths.SetNames().SetStd())
+            NON_CONST_ITERATE(objects::CAuth_list::C_Names::TStd, auth, auths.SetNames().SetStd())
             {
                 if (!(*auth)->IsSetName() || !(*auth)->GetName().IsMl())
                     continue;
@@ -996,13 +998,13 @@ static void MedlineToISO(ncbi::objects::CCit_art& cit_art)
 
     /* from a journal - get iso_jta
      */
-    ncbi::objects::CCit_jour& journal = cit_art.SetFrom().SetJournal();
+    objects::CCit_jour& journal = cit_art.SetFrom().SetJournal();
 
     is_iso = false;
 
     if (journal.IsSetTitle())
     {
-        ITERATE(ncbi::objects::CTitle::Tdata, title, journal.GetTitle().Get())
+        ITERATE(objects::CTitle::Tdata, title, journal.GetTitle().Get())
         {
             if ((*title)->IsIso_jta())      /* have it */
             {
@@ -1016,7 +1018,7 @@ static void MedlineToISO(ncbi::objects::CCit_art& cit_art)
     {
         if (journal.IsSetTitle())
         {
-            ncbi::objects::CTitle::C_E& first_title = *(*journal.SetTitle().Set().begin());
+            objects::CTitle::C_E& first_title = *(*journal.SetTitle().Set().begin());
             
             const std::string& title_str = journal.GetTitle().GetTitle(first_title.Which());
 
@@ -1078,27 +1080,27 @@ static void MedlineToISO(ncbi::objects::CCit_art& cit_art)
  *      deletes original medline entry
  *
  **********************************************************/
-static void SplitMedlineEntry(ncbi::objects::CPub_equiv::Tdata& medlines)
+static void SplitMedlineEntry(objects::CPub_equiv::Tdata& medlines)
 {
     if (medlines.size() != 1)
         return;
 
-    ncbi::objects::CPub& pub = *medlines.front();
-    ncbi::objects::CMedline_entry& medline = pub.SetMedline();
+    objects::CPub& pub = *medlines.front();
+    objects::CMedline_entry& medline = pub.SetMedline();
     if (!medline.IsSetCit() && medline.IsSetPmid() && medline.GetPmid() < ZERO_ENTREZ_ID)
         return;
 
-    ncbi::CRef<ncbi::objects::CPub> pmid;
+    CRef<objects::CPub> pmid;
     if (medline.GetPmid() > ZERO_ENTREZ_ID)
     {
-        pmid.Reset(new ncbi::objects::CPub);
+        pmid.Reset(new objects::CPub);
         pmid->SetPmid(medline.GetPmid());
     }
 
-    ncbi::CRef<ncbi::objects::CPub> cit_art;
+    CRef<objects::CPub> cit_art;
     if (medline.IsSetCit())
     {
-        cit_art.Reset(new ncbi::objects::CPub);
+        cit_art.Reset(new objects::CPub);
         cit_art->SetArticle(medline.SetCit());
         MedlineToISO(cit_art->SetArticle());
     }
@@ -1113,13 +1115,13 @@ static void SplitMedlineEntry(ncbi::objects::CPub_equiv::Tdata& medlines)
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CCit_art> FetchPubPmId(Int4 pmid)
+CRef<objects::CCit_art> FetchPubPmId(Int4 pmid)
 {
-    ncbi::CRef<ncbi::objects::CCit_art> cit_art;
+    CRef<objects::CCit_art> cit_art;
     if (pmid < 0)
         return cit_art;
 
-    ncbi::CRef<ncbi::objects::CPub> pub;
+    CRef<objects::CPub> pub;
     try
     {
         pub = mlaclient.AskGetpubpmid(CPubMedId(ENTREZ_ID_FROM(Int4, pmid)));
@@ -1132,7 +1134,7 @@ ncbi::CRef<ncbi::objects::CCit_art> FetchPubPmId(Int4 pmid)
     if (pub.Empty() || !pub->IsArticle())
         return cit_art;
 
-    cit_art.Reset(new ncbi::objects::CCit_art);
+    cit_art.Reset(new objects::CCit_art);
     cit_art->Assign(pub->GetArticle());
     MedlineToISO(*cit_art);
 
@@ -1150,18 +1152,18 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
     TEntrezId       pmid;
 
     pub_list.resize(1);
-    ncbi::objects::CPub& first_pub = *(*pub_list.begin());
+    objects::CPub& first_pub = *(*pub_list.begin());
 
     switch (first_pub.Which())
     {
-        case ncbi::objects::CPub::e_Medline :               /* medline, just split to pubequiv */
+        case objects::CPub::e_Medline :               /* medline, just split to pubequiv */
             pub_list.resize(1);
             SplitMedlineEntry(pub_list);
             break;
 
-        case ncbi::objects::CPub::e_Article:
+        case objects::CPub::e_Article:
             {
-            ncbi::objects::CCit_art& cit_art = first_pub.SetArticle();
+            objects::CCit_art& cit_art = first_pub.SetArticle();
             if (cit_art.IsSetFrom() && cit_art.GetFrom().IsBook())
                 return;
 
@@ -1186,7 +1188,7 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
                 if (fpop->replace_cit)
                 {
                     fpop->fetches_attempted++;
-                    ncbi::CRef<ncbi::objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(int, pmid));
+                    CRef<objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(int, pmid));
 
                     if (new_cit_art.NotEmpty())
                     {
@@ -1199,11 +1201,11 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
 
                             first_pub.Reset();
 
-                            ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+                            CRef<objects::CPub> pub(new objects::CPub);
                             pub->SetArticle(*new_cit_art);
                             first_pub.SetEquiv().Set().push_back(pub);
 
-                            pub.Reset(new ncbi::objects::CPub);
+                            pub.Reset(new objects::CPub);
                             pub->SetPmid().Set(pmid);
                             first_pub.SetEquiv().Set().push_back(pub);
                         }
@@ -1222,7 +1224,7 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
             }
             }
             break;
-        case ncbi::objects::CPub::e_Equiv:
+        case objects::CPub::e_Equiv:
             FixPubEquiv(pub_list, fpop);
             break;
         default:
@@ -1231,33 +1233,33 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
 }
 
 /**********************************************************/
-static bool if_inpress_set(const ncbi::objects::CCit_art& cit_art)
+static bool if_inpress_set(const objects::CCit_art& cit_art)
 {
     if (!cit_art.IsSetFrom())
         return false;
 
     if (cit_art.GetFrom().IsJournal())
     {
-        const ncbi::objects::CCit_jour& journal = cit_art.GetFrom().GetJournal();
-        if (journal.IsSetImp() && journal.GetImp().IsSetPrepub() && journal.GetImp().GetPrepub() == ncbi::objects::CImprint::ePrepub_in_press)
+        const objects::CCit_jour& journal = cit_art.GetFrom().GetJournal();
+        if (journal.IsSetImp() && journal.GetImp().IsSetPrepub() && journal.GetImp().GetPrepub() == objects::CImprint::ePrepub_in_press)
             return true;
     }
     else if (cit_art.GetFrom().IsBook() || cit_art.GetFrom().IsProc())
     {
-        const ncbi::objects::CCit_book& book = cit_art.GetFrom().GetBook();
-        if (book.IsSetImp() && book.GetImp().IsSetPrepub() && book.GetImp().GetPrepub() == ncbi::objects::CImprint::ePrepub_in_press)
+        const objects::CCit_book& book = cit_art.GetFrom().GetBook();
+        if (book.IsSetImp() && book.GetImp().IsSetPrepub() && book.GetImp().GetPrepub() == objects::CImprint::ePrepub_in_press)
             return true;
     }
     return false;
 }
 
 /**********************************************************/
-static bool is_in_press(const ncbi::objects::CCit_art& cit_art)
+static bool is_in_press(const objects::CCit_art& cit_art)
 {
     if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal() || !cit_art.GetFrom().GetJournal().IsSetTitle())
         return true;
 
-    const ncbi::objects::CCit_jour& journal = cit_art.GetFrom().GetJournal();
+    const objects::CCit_jour& journal = cit_art.GetFrom().GetJournal();
     if (!journal.IsSetImp())
         return true;
 
@@ -1268,7 +1270,7 @@ static bool is_in_press(const ncbi::objects::CCit_art& cit_art)
 }
 
 /**********************************************************/
-static void PropagateInPress(bool inpress, ncbi::objects::CCit_art& cit_art)
+static void PropagateInPress(bool inpress, objects::CCit_art& cit_art)
 {
     if (!inpress)
         return;
@@ -1279,17 +1281,17 @@ static void PropagateInPress(bool inpress, ncbi::objects::CCit_art& cit_art)
     if (cit_art.GetFrom().IsJournal())
     {
         if (cit_art.GetFrom().GetJournal().IsSetImp())
-            cit_art.SetFrom().SetJournal().SetImp().SetPrepub(ncbi::objects::CImprint::ePrepub_in_press);
+            cit_art.SetFrom().SetJournal().SetImp().SetPrepub(objects::CImprint::ePrepub_in_press);
     }
     else if (cit_art.GetFrom().IsBook() || cit_art.GetFrom().IsProc())
     {
         if (cit_art.GetFrom().GetBook().IsSetImp())
-            cit_art.SetFrom().SetBook().SetImp().SetPrepub(ncbi::objects::CImprint::ePrepub_in_press);
+            cit_art.SetFrom().SetBook().SetImp().SetPrepub(objects::CImprint::ePrepub_in_press);
     }
 }
 
 /**********************************************************/
-static void FixPubEquivAppendPmid(Int4 muid, ncbi::objects::CPub_equiv::Tdata& pmids)
+static void FixPubEquivAppendPmid(Int4 muid, objects::CPub_equiv::Tdata& pmids)
 {
     TEntrezId oldpmid;
     TEntrezId newpmid;
@@ -1315,7 +1317,7 @@ static void FixPubEquivAppendPmid(Int4 muid, ncbi::objects::CPub_equiv::Tdata& p
 
     if (pmids.empty())
     {
-        ncbi::CRef<ncbi::objects::CPub> pmid_pub(new ncbi::objects::CPub);
+        CRef<objects::CPub> pmid_pub(new objects::CPub);
         pmids.push_back(pmid_pub);
     }
 
@@ -1330,13 +1332,13 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
     TEntrezId  pmid = ZERO_ENTREZ_ID;
     TEntrezId  oldpmid = ZERO_ENTREZ_ID;
 
-    ncbi::objects::CPub_equiv::Tdata muids,
+    objects::CPub_equiv::Tdata muids,
                                      pmids,
                                      medlines,
                                      others,
                                      cit_arts;
 
-    NON_CONST_ITERATE(ncbi::objects::CPub_equiv::Tdata, pub, pub_list)
+    NON_CONST_ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
     {
         if ((*pub)->IsMuid())
             muids.push_back(*pub);
@@ -1390,7 +1392,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
                                        the first */
         {
             oldpmid = (*pmids.begin())->GetPmid();
-            ITERATE(ncbi::objects::CPub_equiv::Tdata, pub, pmids)
+            ITERATE(objects::CPub_equiv::Tdata, pub, pmids)
             {
                 if ((*pub)->GetPmid() != oldpmid)
                 {
@@ -1409,7 +1411,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
                                     the first */
         {
             oldmuid = (*muids.begin())->GetMuid();
-            ITERATE(ncbi::objects::CPub_equiv::Tdata, pub, muids)
+            ITERATE(objects::CPub_equiv::Tdata, pub, muids)
             {
                 if ((*pub)->GetMuid() != oldmuid)
                 {
@@ -1431,11 +1433,11 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
             cit_arts.resize(1);
         }
 
-        ncbi::objects::CCit_art* cit_art = &cit_arts.front()->SetArticle();
+        objects::CCit_art* cit_art = &cit_arts.front()->SetArticle();
         inpress = if_inpress_set(*cit_art);
         fpop->lookups_attempted++;
 
-        ncbi::CRef<ncbi::objects::CPub> new_pub(new ncbi::objects::CPub);
+        CRef<objects::CPub> new_pub(new objects::CPub);
         new_pub->SetArticle(*cit_art);
 
         pmid = ZERO_ENTREZ_ID;
@@ -1461,7 +1463,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
             {
                 fpop->fetches_attempted++;
 
-                ncbi::CRef<ncbi::objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(Int4, pmid));
+                CRef<objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(Int4, pmid));
 
                 if (new_cit_art.NotEmpty())
                 {
@@ -1471,14 +1473,14 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
                     {
                         if (pmids.empty())
                         {
-                            ncbi::CRef<ncbi::objects::CPub> pmid_pub(new ncbi::objects::CPub);
+                            CRef<objects::CPub> pmid_pub(new objects::CPub);
                             pmids.push_back(pmid_pub);
                         }
 
                         (*pmids.begin())->SetPmid().Set(pmid);
                         pub_list.splice(pub_list.end(), pmids);
                         
-                        ncbi::CRef<ncbi::objects::CPub> cit_pub(new ncbi::objects::CPub);
+                        CRef<objects::CPub> cit_pub(new objects::CPub);
                         cit_pub->SetArticle(*new_cit_art);
                         pub_list.push_back(cit_pub);
 
@@ -1505,7 +1507,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
 
                     if (pmids.empty())
                     {
-                        ncbi::CRef<ncbi::objects::CPub> pmid_pub(new ncbi::objects::CPub);
+                        CRef<objects::CPub> pmid_pub(new objects::CPub);
                         pmids.push_back(pmid_pub);
                     }
 
@@ -1521,7 +1523,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
             {
                 if (pmids.empty())
                 {
-                    ncbi::CRef<ncbi::objects::CPub> pmid_pub(new ncbi::objects::CPub);
+                    CRef<objects::CPub> pmid_pub(new objects::CPub);
                     pmids.push_back(pmid_pub);
                 }
 
@@ -1552,7 +1554,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
     {
         fpop->fetches_attempted++;
 
-        ncbi::CRef<ncbi::objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(int, oldpmid));
+        CRef<objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(int, oldpmid));
 
         if (new_cit_art.NotEmpty())
         {
@@ -1560,7 +1562,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
             if (fpop->replace_cit)
             {
                 MedlineToISO(*new_cit_art);
-                ncbi::CRef<ncbi::objects::CPub> cit_pub(new ncbi::objects::CPub);
+                CRef<objects::CPub> cit_pub(new objects::CPub);
                 cit_pub->SetArticle(*new_cit_art);
                 pub_list.push_back(cit_pub);
             }
@@ -1581,3 +1583,5 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
         pub_list.splice(pub_list.end(), pmids);
     }
 }
+
+END_NCBI_SCOPE

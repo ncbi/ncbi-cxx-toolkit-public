@@ -1,6 +1,8 @@
 #ifndef FTAMED_H
 #define FTAMED_H
 
+BEGIN_NCBI_SCOPE
+
 typedef struct findpubstr {
     bool    always_look;                /* if TRUE, look up even if muid in
                                            Pub-equiv */
@@ -15,11 +17,13 @@ typedef struct findpubstr {
                                            med server. */
 } FindPubOption, *FindPubOptionPtr;
 
-ncbi::CRef<ncbi::objects::CCit_art> FetchPubPmId(Int4 pmid);
+CRef<objects::CCit_art> FetchPubPmId(Int4 pmid);
 
 void FixPub(TPubList& pub_list, FindPubOptionPtr fpop);
 void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop);
 bool MedArchInit(void);
 void MedArchFini(void);
+
+END_NCBI_SCOPE
 
 #endif // FTAMED_H

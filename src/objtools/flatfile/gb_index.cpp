@@ -38,17 +38,20 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 #include <objtools/flatfile/genbank.h>
-#include <objtools/flatfile/entry.h>
 
+#include "ftaerr.hpp"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
+#include "entry.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "gb_index.cpp"
+
+BEGIN_NCBI_SCOPE
 
 KwordBlk gbkwl[] = {
     {"LOCUS", 5},     {"DEFINITION", 10}, {"ACCESSION", 9}, {"NID", 3},
@@ -852,3 +855,5 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
     return(end_of_file);
 }
+
+END_NCBI_SCOPE

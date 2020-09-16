@@ -35,7 +35,8 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/flatfile/ftacpp.hpp>
-#include <objtools/flatfile/xmlmisc.h>
+#include "ftaerr.hpp"
+#include "xmlmisc.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -48,6 +49,8 @@
 #define XML_CONTENT    4
 
 /* function to decode ampersand-protected symbols */
+
+BEGIN_NCBI_SCOPE
 
 typedef struct xmltable {
     const Char*  code;
@@ -588,3 +591,5 @@ int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, 
 
     return index;
 }
+
+END_NCBI_SCOPE

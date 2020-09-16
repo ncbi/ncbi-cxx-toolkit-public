@@ -43,13 +43,14 @@
 
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
 
-#include <objtools/flatfile/asci_blk.h>
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/utilref.h>
 
+#include "ftaerr.hpp"
+#include "asci_blk.h"
+#include "utilref.h"
 #include "add.h"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -58,6 +59,8 @@
 
 #define MAX_PAGE     50
 #define OTHER_MEDIUM 255
+
+BEGIN_NCBI_SCOPE
 
 /**********************************************************/
 ValNodePtr get_tokens(char* pt, const Char *delimeter)
@@ -234,7 +237,7 @@ static void SplitMlAuthorName(const Char* name, char* last, char* initials,
 }
 
 /**********************************************************/
-void GetNameStdFromMl(ncbi::objects::CName_std& namestd, const Char* token)
+void GetNameStdFromMl(objects::CName_std& namestd, const Char* token)
 {
     Char last[80];
     Char initials[20];
@@ -263,7 +266,7 @@ static void RemoveSpacesAndCommas(std::string& str)
 }
 
 /**********************************************************/
-void get_auth_from_toks(ValNodePtr token, Uint1 format, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
+void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<objects::CAuth_list>& auths)
 {
     ValNodePtr  vnp;
     char*     p;
@@ -277,7 +280,7 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, ncbi::CRef<ncbi::objects
         if (StringNCmp(p, "and ", 4) == 0)
             p += 4;
 
-        ncbi::CRef<ncbi::objects::CAuthor> author = get_std_auth(p, format);
+        CRef<objects::CAuthor> author = get_std_auth(p, format);
 
         if (author.Empty())
         {
@@ -298,25 +301,25 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, ncbi::CRef<ncbi::objects
         }
 
         if (auths.Empty())
-            auths.Reset(new ncbi::objects::CAuth_list);
+            auths.Reset(new objects::CAuth_list);
         auths->SetNames().SetStd().push_back(author);
     }
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
+CRef<objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
 {
     const Char* auth;
     const Char* eptr;
 
-    ncbi::CRef<ncbi::objects::CAuthor> author;
+    CRef<objects::CAuthor> author;
 
     if (token == NULL || *token == '\0')
         return author;
 
-    author = new ncbi::objects::CAuthor;
-    ncbi::objects::CPerson_id& person_id = author->SetName();
-    ncbi::objects::CName_std& namestd = person_id.SetName();
+    author = new objects::CAuthor;
+    objects::CPerson_id& person_id = author->SetName();
+    objects::CName_std& namestd = person_id.SetName();
 
     for (eptr = token + StringLen(token) - 1; eptr > token && *eptr == ' ';)
         eptr--;
@@ -392,7 +395,7 @@ ncbi::CRef<ncbi::objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
  *                                              12-4-93
  *
  **********************************************************/
-void get_auth(char* pt, Uint1 format, char* jour, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
+void get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& auths)
 {
     static const char *delimiter;
     static char*    eptr;
@@ -434,7 +437,7 @@ void get_auth(char* pt, Uint1 format, char* jour, ncbi::CRef<ncbi::objects::CAut
 }
 
 /**********************************************************/
-void get_auth_consortium(char* cons, ncbi::CRef<ncbi::objects::CAuth_list>& auths)
+void get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths)
 {
     char*    p;
     char*    q;
@@ -448,11 +451,11 @@ void get_auth_consortium(char* cons, ncbi::CRef<ncbi::objects::CAuth_list>& auth
         if(p != NULL)
             *p = '\0';
 
-        ncbi::CRef<ncbi::objects::CAuthor> author(new ncbi::objects::CAuthor);
+        CRef<objects::CAuthor> author(new objects::CAuthor);
         author->SetName().SetConsortium(q);
 
         if (auths.Empty())
-            auths.Reset(new ncbi::objects::CAuth_list);
+            auths.Reset(new objects::CAuth_list);
         auths->SetNames().SetStd().push_front(author);
 
         if(p == NULL)
@@ -461,7 +464,7 @@ void get_auth_consortium(char* cons, ncbi::CRef<ncbi::objects::CAuth_list>& auth
         for(*p++ = ';'; *p == ';' || *p == ' ';)
             p++;
 
-        if (ncbi::NStr::EqualNocase(p, 0, 4, "and "))
+        if (NStr::EqualNocase(p, 0, 4, "and "))
         {
             for (p += 4; *p == ' ';)
                 p++;
@@ -669,9 +672,9 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
  *      Gets only year and return NCBI_DatePtr.
  *
  **********************************************************/
-ncbi::CRef<ncbi::objects::CDate> get_date(const Char* year)
+CRef<objects::CDate> get_date(const Char* year)
 {
-    ncbi::CRef<ncbi::objects::CDate> ret;
+    CRef<objects::CDate> ret;
 
     if(year == NULL || *year == '\0')
     {
@@ -693,7 +696,7 @@ ncbi::CRef<ncbi::objects::CDate> get_date(const Char* year)
     time(&now);
     struct tm *tm = localtime(&now);
 
-    Int4 i = ncbi::NStr::StringToInt(year_str, ncbi::NStr::fAllowTrailingSymbols);
+    Int4 i = NStr::StringToInt(year_str, NStr::fAllowTrailingSymbols);
 
     if (i < 1900)
     {
@@ -712,16 +715,16 @@ ncbi::CRef<ncbi::objects::CDate> get_date(const Char* year)
                   "Reference's year is too far in future: \"%s\"", year_str.c_str());
     }
 
-    ret.Reset(new ncbi::objects::CDate);
+    ret.Reset(new objects::CDate);
     ret->SetStd().SetYear(i);
 
     return ret;
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CCit_gen> get_error(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
+CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title)
 {
-    ncbi::CRef<ncbi::objects::CCit_gen> cit_gen(new ncbi::objects::CCit_gen);
+    CRef<objects::CCit_gen> cit_gen(new objects::CCit_gen);
 
     char*    s;
     bool       zero_year = false;
@@ -748,18 +751,18 @@ ncbi::CRef<ncbi::objects::CCit_gen> get_error(char* bptr, ncbi::CRef<ncbi::objec
 
     if(zero_year)
     {
-        ncbi::CRef<ncbi::objects::CTitle::C_E> journal_title(new ncbi::objects::CTitle::C_E);
+        CRef<objects::CTitle::C_E> journal_title(new objects::CTitle::C_E);
         if(StringNCmp(bptr, "(re)", 4) == 0)
-            journal_title->SetName(ncbi::NStr::Sanitize(bptr));
+            journal_title->SetName(NStr::Sanitize(bptr));
         else
-            journal_title->SetIso_jta(ncbi::NStr::Sanitize(bptr));
+            journal_title->SetIso_jta(NStr::Sanitize(bptr));
 
         cit_gen->SetJournal().Set().push_back(journal_title);
         cit_gen->SetCit("In press");
     }
     else if(bptr != NULL)
     {
-        cit_gen->SetCit(ncbi::NStr::Sanitize(bptr));
+        cit_gen->SetCit(NStr::Sanitize(bptr));
     }
 
     if (auth_list.NotEmpty())
@@ -770,3 +773,5 @@ ncbi::CRef<ncbi::objects::CCit_gen> get_error(char* bptr, ncbi::CRef<ncbi::objec
 
     return cit_gen;
 }
+
+END_NCBI_SCOPE

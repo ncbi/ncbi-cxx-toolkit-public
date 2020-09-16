@@ -48,12 +48,14 @@
 #include <objtools/flatfile/sprot.h>
 #include <objtools/flatfile/genbank.h>
 #include <objtools/flatfile/fta_parser.h>
-#include <objtools/flatfile/ftablock.h>
-#include <objtools/flatfile/asci_blk.h>
 #include <objtools/flatfile/ftamain.h>
 #include <objtools/flatfile/flat2err.h>
 
+#include "utilfun.h"
+#include "ftaerr.hpp"
+#include "ftablock.h"
 #include "gb_ascii.h"
+#include "asci_blk.h"
 #include "buf_data_loader.h"
 
 #ifdef THIS_FILE
@@ -64,7 +66,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CBuffer_DataLoader::CBuffer_DataLoader(const string&, parser_vals* parser) :
+CBuffer_DataLoader::CBuffer_DataLoader(const string&, Parser* parser) :
     m_parser(parser)
 {}
 
@@ -428,7 +430,7 @@ void CBuffer_DataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lo
     }
 }
 
-const string& CBuffer_DataLoader::GetLoaderNameFromArgs(parser_vals* )
+const string& CBuffer_DataLoader::GetLoaderNameFromArgs(Parser* )
 {
     static const string name("FF2ASN_BUF_BASED_LOADER");
     return name;
@@ -436,7 +438,7 @@ const string& CBuffer_DataLoader::GetLoaderNameFromArgs(parser_vals* )
 
 CBuffer_DataLoader::TRegisterLoaderInfo CBuffer_DataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    parser_vals* params,
+    Parser* params,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
@@ -446,19 +448,18 @@ CBuffer_DataLoader::TRegisterLoaderInfo CBuffer_DataLoader::RegisterInObjectMana
 }
 
 END_SCOPE(objects)
-END_NCBI_SCOPE
 
 size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
 {
-    char* entry_str = ncbi::objects::get_sequence_text(pp, acc, vernum);
+    char* entry_str = objects::get_sequence_text(pp, acc, vernum);
     if (entry_str == NULL)
         return -1;
 
-    DataBlkPtr entry = ncbi::objects::make_entry(entry_str);
+    DataBlkPtr entry = objects::make_entry(entry_str);
     if (entry == NULL)
         return -1;
 
-    int ix = ncbi::objects::add_entry(pp, acc, vernum, entry),
+    int ix = objects::add_entry(pp, acc, vernum, entry),
         old_indx = pp->curindx;
     pp->curindx = ix;
 
@@ -481,10 +482,11 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     }
 
     if (pp->entrylist[ix]->bases == 0) {
-        ncbi::objects::AddToIndexBlk(entry, pp->entrylist[ix], pp->format);
+        objects::AddToIndexBlk(entry, pp->entrylist[ix], pp->format);
     }
 
     FreeEntry(entry);
     pp->curindx = old_indx;
     return pp->entrylist[ix]->bases;
 }
+END_NCBI_SCOPE

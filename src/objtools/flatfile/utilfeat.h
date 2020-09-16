@@ -39,17 +39,21 @@
 
 #include "loadfeat.h"
 
-bool SeqLocHaveFuzz(const ncbi::objects::CSeq_loc& loc);
+BEGIN_NCBI_SCOPE
+
+bool SeqLocHaveFuzz(const objects::CSeq_loc& loc);
 
 char* CpTheQualValue(const TQualVector& qlist, const char *qual);
 char* GetTheQualValue(TQualVector& qlist, const char *qual);
 bool    DeleteQual(TQualVector& qlist, const char *qual);
 
 Uint1   GetQualValueAa(char* qval, bool checkseq);
-bool    GetGenomeInfo(ncbi::objects::CBioSource& bsp, const char* bptr);
+bool    GetGenomeInfo(objects::CBioSource& bsp, const char* bptr);
 void    MaybeCutGbblockSource(TEntryList& seq_entries);
 
 void MakeLocStrCompatible(std::string& str);
-char* location_to_string(const ncbi::objects::CSeq_loc& loc);
+char* location_to_string(const objects::CSeq_loc& loc);
+
+END_NCBI_SCOPE
 
 #endif

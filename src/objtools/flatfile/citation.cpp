@@ -48,11 +48,12 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
-#include <objtools/flatfile/ftablock.h>
 
 #include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/ftamain.h>
 
+#include "utilfun.h"
+#include "ftaerr.hpp"
 #include "loadfeat.h"
 #include "citation.h"
 
@@ -60,6 +61,9 @@
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "citation.cpp"
+
+
+BEGIN_NCBI_SCOPE
 
 /////////////////////
 // class CPubInfo
@@ -70,7 +74,7 @@ CPubInfo::CPubInfo() :
     pub_(nullptr)
 {}
 
-const ncbi::objects::CPub_equiv* CPubInfo::GetPubEquiv() const
+const objects::CPub_equiv* CPubInfo::GetPubEquiv() const
 {
     if (pub_equiv_)
         return pub_equiv_;
@@ -81,12 +85,12 @@ const ncbi::objects::CPub_equiv* CPubInfo::GetPubEquiv() const
     return nullptr;
 };
 
-void CPubInfo::SetBioseq(const ncbi::objects::CBioseq* bioseq)
+void CPubInfo::SetBioseq(const objects::CBioseq* bioseq)
 {
     bioseq_ = bioseq;
 }
 
-void CPubInfo::SetPubEquiv(const ncbi::objects::CPub_equiv* pub_equiv)
+void CPubInfo::SetPubEquiv(const objects::CPub_equiv* pub_equiv)
 {
     pub_ = nullptr;
     pub_equiv_ = pub_equiv;
@@ -105,7 +109,7 @@ void CPubInfo::SetPubEquiv(const ncbi::objects::CPub_equiv* pub_equiv)
     }
 }
 
-void CPubInfo::SetPub(const ncbi::objects::CPub* pub)
+void CPubInfo::SetPub(const objects::CPub* pub)
 {
     pub_equiv_ = nullptr;
     pub_ = pub;
@@ -129,7 +133,7 @@ void CPubInfo::SetPub(const ncbi::objects::CPub* pub)
     }
 }
 
-static void FindCitInDescr(std::vector<CPubInfo>& pubs, const TSeqdescList& descrs, const ncbi::objects::CBioseq* bioseq)
+static void FindCitInDescr(std::vector<CPubInfo>& pubs, const TSeqdescList& descrs, const objects::CBioseq* bioseq)
 {
     ITERATE(TSeqdescList, descr, descrs)
     {
@@ -144,25 +148,25 @@ static void FindCitInDescr(std::vector<CPubInfo>& pubs, const TSeqdescList& desc
     }
 }
 
-static void FindCitInFeats(std::vector<CPubInfo>& pubs, const ncbi::objects::CBioseq::TAnnot& annots)
+static void FindCitInFeats(std::vector<CPubInfo>& pubs, const objects::CBioseq::TAnnot& annots)
 {
-    ITERATE(ncbi::objects::CBioseq::TAnnot, annot, annots)
+    ITERATE(objects::CBioseq::TAnnot, annot, annots)
     {
         if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())              /* feature table */
             continue;
 
 
-        ITERATE(ncbi::objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
+        ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
         {
             if ((*feat)->IsSetData())
             {
-                const ncbi::objects::CSeq_id* id = nullptr;
+                const objects::CSeq_id* id = nullptr;
                 if ((*feat)->IsSetLocation())
                     id = (*feat)->GetLocation().GetId();
 
                 CPubInfo pub_info;
                 if (id) {
-                    ncbi::objects::CBioseq_Handle bioseq_handle = GetScope().GetBioseqHandle(*id);
+                    objects::CBioseq_Handle bioseq_handle = GetScope().GetBioseqHandle(*id);
                     if (bioseq_handle)
                         pub_info.SetBioseq(GetScope().GetBioseqHandle(*id).GetBioseqCore());
                     else
@@ -176,7 +180,7 @@ static void FindCitInFeats(std::vector<CPubInfo>& pubs, const ncbi::objects::CBi
                 }
                 else if ((*feat)->GetData().IsImp() && (*feat)->IsSetCit())
                 {
-                    const ncbi::objects::CPub_set& pub_set = (*feat)->GetCit();
+                    const objects::CPub_set& pub_set = (*feat)->GetCit();
 
                     ITERATE(TPubList, pub, pub_set.GetPub())
                     {
@@ -189,7 +193,7 @@ static void FindCitInFeats(std::vector<CPubInfo>& pubs, const ncbi::objects::CBi
     }
 }
 
-static int GetCitSerialFromQual(const ncbi::objects::CGb_qual& qual)
+static int GetCitSerialFromQual(const objects::CGb_qual& qual)
 {
     const Char* p = qual.GetVal().c_str();
     while (*p && !IS_DIGIT(*p))
@@ -203,10 +207,10 @@ static int GetCitSerialFromQual(const ncbi::objects::CGb_qual& qual)
 
 void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
 {
-    const ncbi::objects::CPub_equiv* pub_equiv = pub_info.GetPubEquiv();
-    const ncbi::objects::CPub* pub = nullptr;
+    const objects::CPub_equiv* pub_equiv = pub_info.GetPubEquiv();
+    const objects::CPub* pub = nullptr;
 
-    ncbi::CRef<ncbi::objects::CPub> new_pub;
+    CRef<objects::CPub> new_pub;
     if (pub_equiv)
     {
         ITERATE(TPubList, cur_pub, pub_equiv->Get())
@@ -215,19 +219,19 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
             {
                 if (new_pub.Empty())
                 {
-                    new_pub.Reset(new ncbi::objects::CPub);
+                    new_pub.Reset(new objects::CPub);
                     new_pub->Assign(*(*cur_pub));
                 }
                 else
                 {
-                    ncbi::CRef<ncbi::objects::CPub_equiv> new_pub_equiv(new ncbi::objects::CPub_equiv);
+                    CRef<objects::CPub_equiv> new_pub_equiv(new objects::CPub_equiv);
                     new_pub_equiv->Set().push_back(new_pub);
 
-                    new_pub.Reset(new ncbi::objects::CPub);
+                    new_pub.Reset(new objects::CPub);
                     new_pub->Assign(*(*cur_pub));
                     new_pub_equiv->Set().push_back(new_pub);
 
-                    new_pub.Reset(new ncbi::objects::CPub);
+                    new_pub.Reset(new objects::CPub);
                     new_pub->SetEquiv(*new_pub_equiv);
 
                     pubs.push_back(new_pub);
@@ -265,34 +269,34 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
 
     if (pub->IsMuid() || pub->IsPmid())
     {
-        new_pub.Reset(new ncbi::objects::CPub);
+        new_pub.Reset(new objects::CPub);
         new_pub->Assign(*pub);
         pubs.push_back(new_pub);
         return;
     }
 
     std::string label;
-    if (!pub->GetLabel(&label, ncbi::objects::CPub::fLabel_Unique))
+    if (!pub->GetLabel(&label, objects::CPub::fLabel_Unique))
     {
-        new_pub.Reset(new ncbi::objects::CPub);
+        new_pub.Reset(new objects::CPub);
         new_pub->Assign(*pub);
         pubs.push_back(new_pub);
         return;
     }
 
-    new_pub.Reset(new ncbi::objects::CPub);
+    new_pub.Reset(new objects::CPub);
     new_pub->SetGen().SetCit(label);
     pubs.push_back(new_pub);
 }
 
-static void ProcessCit(const std::vector<CPubInfo>& pubs, ncbi::objects::CBioseq::TAnnot& annots, const ncbi::objects::CBioseq* bioseq)
+static void ProcessCit(const std::vector<CPubInfo>& pubs, objects::CBioseq::TAnnot& annots, const objects::CBioseq* bioseq)
 {
-    NON_CONST_ITERATE(ncbi::objects::CBioseq::TAnnot, annot, annots)
+    NON_CONST_ITERATE(objects::CBioseq::TAnnot, annot, annots)
     {
         if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())
             continue;
 
-        NON_CONST_ITERATE(ncbi::objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
+        NON_CONST_ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
         {
             if ((*feat)->IsSetQual())
             {
@@ -343,7 +347,7 @@ void ProcessCitations(TEntryList& seq_entries)
 
     ITERATE(TEntryList, entry, seq_entries)
     {
-        for (ncbi::CTypeConstIterator<ncbi::objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
+        for (CTypeConstIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
             if (bio_set->IsSetDescr())
                 FindCitInDescr(pubs, bio_set->GetDescr(), nullptr);
@@ -352,7 +356,7 @@ void ProcessCitations(TEntryList& seq_entries)
                 FindCitInFeats(pubs, bio_set->GetAnnot());
         }
 
-        for (ncbi::CTypeConstIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeConstIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             if (bioseq->IsSetDescr())
                 FindCitInDescr(pubs, bioseq->GetDescr(), &(*bioseq));
@@ -364,16 +368,18 @@ void ProcessCitations(TEntryList& seq_entries)
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
+        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
             if (bio_set->IsSetAnnot())
                 ProcessCit(pubs, bio_set->SetAnnot(), nullptr);
         }
 
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             if (bioseq->IsSetAnnot())
                 ProcessCit(pubs, bioseq->SetAnnot(), &(*bioseq));
         }
     }
 }
+
+END_NCBI_SCOPE

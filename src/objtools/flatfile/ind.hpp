@@ -1,4 +1,4 @@
-/* utilref.h
+/* index.h
  *
  * ===========================================================================
  *
@@ -24,41 +24,23 @@
  *
  * ===========================================================================
  *
- * File Name:  utilref.h
+ * File Name:  index.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
  * -----------------
+ *      Main parser defines.
+ *
  */
 
-#ifndef _UTILREF_
-#define _UTILREF_
+#ifndef _IND_HPP_
+#define _IND_HPP_
 
-#define GB_REF   0
-#define EMBL_REF 1
-#define SP_REF   2
-#define PIR_REF  3
-#define PDB_REF  4
-#define ML_REF   5
+#include "ftablock.h"
 
-#include <objtools/flatfile/asci_blk.h>
-
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Author.hpp>
-#include <objects/general/Name_std.hpp>
-
-Int4         valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
-ValNodePtr   get_tokens(char* str, const Char *delimeter);
-
-void DealWithGenes(TEntryList& seq_entries, ParserPtr pp);
-void GetNameStdFromMl(ncbi::objects::CName_std& namestd, const Char* token);
-
-ncbi::CRef<ncbi::objects::CCit_gen> get_error(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title);
-ncbi::CRef<ncbi::objects::CDate> get_date(const Char* year);
-void get_auth_consortium(char* cons, ncbi::CRef<ncbi::objects::CAuth_list>& auths);
-void get_auth(char* pt, Uint1 format, char* jour, ncbi::CRef<ncbi::objects::CAuth_list>& auths);
-void get_auth_from_toks(ValNodePtr tokens, Uint1 format, ncbi::CRef<ncbi::objects::CAuth_list>& auths);
-ncbi::CRef<ncbi::objects::CAuthor> get_std_auth(const Char* token, Uint1 format);
+BEGIN_NCBI_SCOPE
+void         ind_subdbp(DataBlk* dbp, DataBlk* ind[], int maxkw, int bank);
+END_NCBI_SCOPE
 
 #endif

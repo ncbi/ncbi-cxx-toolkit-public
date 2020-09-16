@@ -60,6 +60,8 @@
 #define Seq_descr_GIBB_mod_sts          21
 #define Seq_descr_GIBB_mod_gss          22
 
+BEGIN_NCBI_SCOPE
+
 struct GeneRefFeats
 {
     bool valid;
@@ -73,6 +75,7 @@ struct GeneRefFeats
 
 void CheckDupDates(TEntryList& seq_entries);
 void ProcNucProt(ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs);
-void ExtractDescrs(TSeqdescList& descrs_from, TSeqdescList& descrs_to, ncbi::objects::CSeqdesc::E_Choice choice);
+void ExtractDescrs(TSeqdescList& descrs_from, TSeqdescList& descrs_to, objects::CSeqdesc::E_Choice choice);
 
+END_NCBI_SCOPE
 #endif

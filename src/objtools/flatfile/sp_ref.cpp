@@ -55,22 +55,23 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Cit_let.hpp>
-
-#include <objtools/flatfile/ftablock.h>
-#include <objtools/flatfile/utilfun.h>
 #include <objtools/flatfile/sprot.h>
-
-#include <objtools/flatfile/asci_blk.h>
-#include <objtools/flatfile/utilref.h>
-#include <objtools/flatfile/ref.h>
 #include <objtools/flatfile/flatdefn.h>
 
+#include "ftaerr.hpp"
+#include "ftablock.h"
+#include "asci_blk.h"
+#include "utilref.h"
 #include "add.h"
+#include "utilfun.h"
+#include "ref.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "sp_ref.cpp"
+
+BEGIN_NCBI_SCOPE
 
 typedef struct parser_ref_block {
     Int4        refnum;                 /* REFERENCE for GenBank, RN for Embl
@@ -80,7 +81,7 @@ typedef struct parser_ref_block {
     char*     doi;
     char*     agricola;
 
-    ncbi::CRef<ncbi::objects::CAuth_list> authors;  /* a linklist of the author's name,
+    CRef<objects::CAuth_list> authors;  /* a linklist of the author's name,
                                                        AUTHORS for GenBank, RA for Embl
                                                        and Swiss-Prot */
     char*     title;                  /* TITLE for GenBank */
@@ -184,7 +185,7 @@ static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
     for(str = bptr; IS_DIGIT(*str) != 0 && str < eptr;)
         str++;
 
-    num = ncbi::NStr::StringToInt(std::string(bptr, str), ncbi::NStr::fAllowTrailingSymbols);
+    num = NStr::StringToInt(std::string(bptr, str), NStr::fAllowTrailingSymbols);
     return(num);
 }
 
@@ -271,7 +272,7 @@ static bool ParseJourLine(ParserPtr pp, ParRefBlkPtr prbp, char* str)
         return false;
 
     prbp->journal.assign(str, ptr2);
-    prbp->journal = ncbi::NStr::TruncateSpaces(prbp->journal, ncbi::NStr::eTrunc_End);
+    prbp->journal = NStr::TruncateSpaces(prbp->journal, NStr::eTrunc_End);
 
     ptr2++;
     prbp->vol.assign(ptr2, ptr1);
@@ -529,7 +530,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
                 CkSPComTopics(pp, str);
                 if (!prbp->comment.empty())
                     prbp->comment += ";~";
-                prbp->comment += ncbi::NStr::Sanitize(str);
+                prbp->comment += NStr::Sanitize(str);
                 break;
             case ParFlatSP_RM:
                 break;                  /* old format for muid */
@@ -586,9 +587,9 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CDate> get_s_date(const Char* str, bool string)
+static CRef<objects::CDate> get_s_date(const Char* str, bool string)
 {
-    ncbi::CRef<ncbi::objects::CDate> ret;
+    CRef<objects::CDate> ret;
 
     const Char* s;
     Int2              year;
@@ -602,7 +603,7 @@ static ncbi::CRef<ncbi::objects::CDate> get_s_date(const Char* str, bool string)
     if(*s == '\0')
         return ret;
 
-    ret.Reset(new ncbi::objects::CDate);
+    ret.Reset(new objects::CDate);
     if (string)
         ret->SetStr(std::string(str, s));
     else
@@ -626,10 +627,10 @@ static ncbi::CRef<ncbi::objects::CDate> get_s_date(const Char* str, bool string)
 
         ret->SetStd().SetMonth(month);
 
-        year = ncbi::NStr::StringToInt(str + 4, ncbi::NStr::fAllowTrailingSymbols);
+        year = NStr::StringToInt(str + 4, NStr::fAllowTrailingSymbols);
 
-        ncbi::CTime time(ncbi::CTime::eCurrent);
-        ncbi::objects::CDate_std now(time);
+        CTime time(CTime::eCurrent);
+        objects::CDate_std now(time);
 
         int cur_year = now.GetYear();
 
@@ -646,12 +647,12 @@ static ncbi::CRef<ncbi::objects::CDate> get_s_date(const Char* str, bool string)
 }
 
 /**********************************************************/
-static void SetCitTitle(ncbi::objects::CTitle& title, const Char* title_str)
+static void SetCitTitle(objects::CTitle& title, const Char* title_str)
 {
     if (title_str == NULL)
         return;
 
-    ncbi::CRef<ncbi::objects::CTitle::C_E> new_title(new ncbi::objects::CTitle::C_E);
+    CRef<objects::CTitle::C_E> new_title(new objects::CTitle::C_E);
     new_title->SetName(title_str);
     title.Set().push_back(new_title);
 }
@@ -663,17 +664,17 @@ static void SetCitTitle(ncbi::objects::CTitle& title, const Char* title_str)
  *      For swiss-prot only.
  *
  **********************************************************/
-static bool GetImprintPtr(ParRefBlkPtr prbp, ncbi::objects::CImprint& imp)
+static bool GetImprintPtr(ParRefBlkPtr prbp, objects::CImprint& imp)
 {
     if (prbp->year == NULL)
         return false;
 
-    imp.SetDate().SetStd().SetYear(ncbi::NStr::StringToInt(prbp->year, ncbi::NStr::fAllowTrailingSymbols));
+    imp.SetDate().SetStd().SetYear(NStr::StringToInt(prbp->year, NStr::fAllowTrailingSymbols));
 
     if (!prbp->vol.empty())
     {
         if (prbp->vol[0] == '0')
-            imp.SetPrepub(ncbi::objects::CImprint::ePrepub_in_press);
+            imp.SetPrepub(objects::CImprint::ePrepub_in_press);
         else
             imp.SetVolume(prbp->vol);
     }
@@ -681,7 +682,7 @@ static bool GetImprintPtr(ParRefBlkPtr prbp, ncbi::objects::CImprint& imp)
     if (!prbp->pages.empty())
     {
         if (prbp->pages[0] == '0')
-            imp.SetPrepub(ncbi::objects::CImprint::ePrepub_in_press);
+            imp.SetPrepub(objects::CImprint::ePrepub_in_press);
         else
             imp.SetPages(prbp->pages);
     }
@@ -695,20 +696,20 @@ static bool GetImprintPtr(ParRefBlkPtr prbp, ncbi::objects::CImprint& imp)
  *      Only for swiss-prot.
  *
  **********************************************************/
-static bool GetCitSubmit(ParRefBlkPtr prbp, ncbi::objects::CCit_sub& sub)
+static bool GetCitSubmit(ParRefBlkPtr prbp, objects::CCit_sub& sub)
 {
     const Char* bptr;
     const Char* s;
 
     while (!prbp->journal.empty() && prbp->journal.back() == '.')
-        ncbi::NStr::TrimSuffixInPlace(prbp->journal, ".");
+        NStr::TrimSuffixInPlace(prbp->journal, ".");
 
     bptr = prbp->journal.c_str();
     for(s = bptr; *s != '(' &&  *s != '\0';)
         s++;
 
-    ncbi::CRef<ncbi::objects::CDate> date;
-    if (ncbi::NStr::Equal(s + 1, 0, 3, "XXX"))
+    CRef<objects::CDate> date;
+    if (NStr::Equal(s + 1, 0, 3, "XXX"))
     {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "%s", s);
         date = get_s_date(s + 1, true);
@@ -735,14 +736,14 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, ncbi::objects::CCit_sub& sub)
 
 #endif
 
-    sub.SetImp().SetPub().SetStr(ncbi::NStr::Sanitize(s + 1));
-    sub.SetMedium(ncbi::objects::CCit_sub::eMedium_other);
+    sub.SetImp().SetPub().SetStr(NStr::Sanitize(s + 1));
+    sub.SetMedium(objects::CCit_sub::eMedium_other);
 
     return true;
 }
 
 /**********************************************************/
-static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
+static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
 {
     const Char*  s;
     const Char*  vol;
@@ -759,11 +760,11 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
 
     std::string bptr = prbp->journal;
 
-    SIZE_TYPE ed_pos = ncbi::NStr::FindNoCase(bptr, "ED.");
+    SIZE_TYPE ed_pos = NStr::FindNoCase(bptr, "ED.");
     if (ed_pos == NPOS)
-        ed_pos = ncbi::NStr::FindNoCase(bptr, "EDS.");
+        ed_pos = NStr::FindNoCase(bptr, "EDS.");
     if (ed_pos == NPOS)
-        ed_pos = ncbi::NStr::FindNoCase(bptr, "EDS,");
+        ed_pos = NStr::FindNoCase(bptr, "EDS,");
 
     if (ed_pos == NPOS)                     /* no authors found */
         return false;
@@ -809,7 +810,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
             break;
     }
     
-    ncbi::CRef<ncbi::objects::CAuth_list> authors;
+    CRef<objects::CAuth_list> authors;
     get_auth_from_toks(here->next, SP_REF, authors);
     if (authors.Empty() || tit == NULL)
     {
@@ -817,7 +818,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
         return false;
     }
 
-    ncbi::objects::CCit_book& book = article.SetFrom().SetBook();
+    objects::CCit_book& book = article.SetFrom().SetBook();
 
     SetCitTitle(book.SetTitle(), tit);
     book.SetAuthors(*authors);
@@ -852,7 +853,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
     for (; IS_DIGIT(*year) != 0;)
         year--;
 
-    ncbi::CRef<ncbi::objects::CDate> date = get_date(year + 1);
+    CRef<objects::CDate> date = get_date(year + 1);
     if (date.NotEmpty())
         book.SetImp().SetDate(*date);
     if(*year == '(')
@@ -872,11 +873,11 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
             p--;
         if(p != year)
             p++;
-        std::string affil = ncbi::NStr::Sanitize(std::string(temp2, p));
+        std::string affil = NStr::Sanitize(std::string(temp2, p));
         book.SetImp().SetPub().SetStr(affil);
     }
 
-    SIZE_TYPE vol_pos = ncbi::NStr::Find(bptr, "VOL.", ncbi::NStr::eNocase);
+    SIZE_TYPE vol_pos = NStr::Find(bptr, "VOL.", NStr::eNocase);
     if (vol_pos != NPOS)
     {
         vol = bptr.c_str() + 4;
@@ -904,7 +905,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitBook(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
+static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
 {
     char*      publisher;
     char*      year;
@@ -923,13 +924,13 @@ static bool GetCitBook(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
     std::vector<Char> bptr(prbp->journal.begin(), prbp->journal.end());
     bptr.push_back(0);
 
-    SIZE_TYPE eds_pos = ncbi::NStr::Find(&bptr[0], "(EDS.)", ncbi::NStr::eNocase);
+    SIZE_TYPE eds_pos = NStr::Find(&bptr[0], "(EDS.)", NStr::eNocase);
     if (eds_pos == NPOS)
         return GetCitBookOld(prbp, article);
 
     ptr = &bptr[0] + eds_pos;
     *ptr = '\0';
-    ncbi::CRef<ncbi::objects::CAuth_list> auth;
+    CRef<objects::CAuth_list> auth;
     get_auth(&bptr[0], SP_REF, NULL, auth);
     *ptr = '(';
     if(auth.Empty())
@@ -1067,14 +1068,14 @@ static bool GetCitBook(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
     year = StringSave(q);
     *p = ch;
     
-    ncbi::objects::CCit_book& book = article.SetFrom().SetBook();
-    ncbi::objects::CImprint& imp = book.SetImp();
+    objects::CCit_book& book = article.SetFrom().SetBook();
+    objects::CImprint& imp = book.SetImp();
 
     imp.SetPub().SetStr(publisher);
     if(volume != NULL)
         imp.SetVolume(volume);
     imp.SetPages(pages);
-    imp.SetDate().SetStd().SetYear(ncbi::NStr::StringToInt(year, ncbi::NStr::fAllowTrailingSymbols));
+    imp.SetDate().SetStd().SetYear(NStr::StringToInt(year, NStr::fAllowTrailingSymbols));
     MemFree(year);
 
     SetCitTitle(book.SetTitle(), title);
@@ -1098,7 +1099,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitPatent(ParRefBlkPtr prbp, Int2 source, ncbi::objects::CCit_pat& pat)
+static bool GetCitPatent(ParRefBlkPtr prbp, Int2 source, objects::CCit_pat& pat)
 {
     char*    num;
     char*    p;
@@ -1155,7 +1156,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Int2 source, ncbi::objects::CCit_pat
         return(false);
     }
 
-    ncbi::CRef<ncbi::objects::CDate_std> std_date = get_full_date(q, true, source);
+    CRef<objects::CDate_std> std_date = get_full_date(q, true, source);
     if(!std_date || std_date.Empty())
     {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent,
@@ -1192,7 +1193,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Int2 source, ncbi::objects::CCit_pat
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitGen(ParRefBlkPtr prbp, ncbi::objects::CCit_gen& cit_gen)
+static bool GetCitGen(ParRefBlkPtr prbp, objects::CCit_gen& cit_gen)
 {
     bool is_set = false;
     if (!prbp->journal.empty())
@@ -1231,9 +1232,9 @@ static bool GetCitGen(ParRefBlkPtr prbp, ncbi::objects::CCit_gen& cit_gen)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitLetThesis(ParRefBlkPtr prbp, ncbi::objects::CCit_let& cit_let)
+static bool GetCitLetThesis(ParRefBlkPtr prbp, objects::CCit_let& cit_let)
 {
-    ncbi::objects::CCit_book& book = cit_let.SetCit();
+    objects::CCit_book& book = cit_let.SetCit();
 
     if (prbp->title != NULL)
         SetCitTitle(book.SetTitle(), prbp->title);
@@ -1244,7 +1245,7 @@ static bool GetCitLetThesis(ParRefBlkPtr prbp, ncbi::objects::CCit_let& cit_let)
     if (prbp->authors.NotEmpty())
         book.SetAuthors(*prbp->authors);
 
-    cit_let.SetType(ncbi::objects::CCit_let::eType_thesis);
+    cit_let.SetType(objects::CCit_let::eType_thesis);
 
     return true;
 }
@@ -1259,7 +1260,7 @@ static bool GetCitLetThesis(ParRefBlkPtr prbp, ncbi::objects::CCit_let& cit_let)
  *                                              10-29-93
  *
  **********************************************************/
-static bool GetCitArticle(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
+static bool GetCitArticle(ParRefBlkPtr prbp, objects::CCit_art& article)
 {
     if (prbp->title != NULL && prbp->title[0] != '\0')
         SetCitTitle(article.SetTitle(), prbp->title);
@@ -1267,20 +1268,20 @@ static bool GetCitArticle(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
     if (prbp->authors.NotEmpty())
         article.SetAuthors(*prbp->authors);
 
-    ncbi::objects::CCit_jour& journal = article.SetFrom().SetJournal();
+    objects::CCit_jour& journal = article.SetFrom().SetJournal();
     if (!GetImprintPtr(prbp, journal.SetImp()))
         journal.ResetImp();
 
     if (!prbp->journal.empty())
     {
-        ncbi::CRef<ncbi::objects::CTitle::C_E> title(new ncbi::objects::CTitle::C_E);
+        CRef<objects::CTitle::C_E> title(new objects::CTitle::C_E);
         title->SetJta(prbp->journal);
         journal.SetTitle().Set().push_back(title);
     }
 
     if(prbp->agricola != NULL)
     {
-        ncbi::CRef<ncbi::objects::CArticleId> id(new ncbi::objects::CArticleId);
+        CRef<objects::CArticleId> id(new objects::CArticleId);
 
         id->SetOther().SetDb("AGRICOLA");
         id->SetOther().SetTag().SetStr(prbp->agricola);
@@ -1290,7 +1291,7 @@ static bool GetCitArticle(ParRefBlkPtr prbp, ncbi::objects::CCit_art& article)
 
     if(prbp->doi != NULL)
     {
-        ncbi::CRef<ncbi::objects::CArticleId> id(new ncbi::objects::CArticleId);
+        CRef<objects::CArticleId> id(new objects::CArticleId);
         id->SetDoi().Set(prbp->doi);
 
         article.SetIds().Set().push_back(id);
@@ -1323,7 +1324,7 @@ static void FreeParRefBlkPtr(ParRefBlkPtr prbp)
 }
 
 /**********************************************************/
-static void DisrootImprint(ncbi::objects::CCit_sub& sub)
+static void DisrootImprint(objects::CCit_sub& sub)
 {
     if (!sub.IsSetImp())
         return;
@@ -1347,39 +1348,39 @@ static void DisrootImprint(ncbi::objects::CCit_sub& sub)
  *      Assume prbp only contains one reference data.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Int2 source)
+static CRef<objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Int2 source)
 {
-    ncbi::CRef<ncbi::objects::CPubdesc> ret;
+    CRef<objects::CPubdesc> ret;
 
     const Char *msg;
 
     if(prbp == NULL)
         return ret;
 
-    ret.Reset(new ncbi::objects::CPubdesc);
+    ret.Reset(new objects::CPubdesc);
     if(prbp->refnum > 0)
     {
-        ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+        CRef<objects::CPub> pub(new objects::CPub);
         pub->SetGen().SetSerial_number(prbp->refnum);
         ret->SetPub().Set().push_back(pub);
     }
 
     if(prbp->muid > 0)
     {
-        ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+        CRef<objects::CPub> pub(new objects::CPub);
         pub->SetMuid(ENTREZ_ID_FROM(int, prbp->muid));
         ret->SetPub().Set().push_back(pub);
     }
 
     if(prbp->pmid > 0)
     {
-        ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+        CRef<objects::CPub> pub(new objects::CPub);
         pub->SetPmid().Set(ENTREZ_ID_FROM(int, prbp->pmid));
         ret->SetPub().Set().push_back(pub);
     }
 
     msg = NULL;
-    ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+    CRef<objects::CPub> pub(new objects::CPub);
     bool is_set = false;
 
     if (prbp->reftype == ParFlat_ReftypeNoParse)
@@ -1444,15 +1445,17 @@ static ncbi::CRef<ncbi::objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Int2 sou
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
+CRef<objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 {
     ParRefBlkPtr prbp = SprotRefString(pp, dbp, col_data);
 
     if(prbp->title == NULL)
         prbp->title = StringSave("");
 
-    ncbi::CRef<ncbi::objects::CPubdesc> desc = GetPubRef(prbp, pp->source);;
+    CRef<objects::CPubdesc> desc = GetPubRef(prbp, pp->source);;
     FreeParRefBlkPtr(prbp);
 
     return desc;
 }
+
+END_NCBI_SCOPE

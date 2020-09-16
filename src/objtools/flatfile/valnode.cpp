@@ -36,13 +36,16 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/flatfile/ftacpp.hpp>
-#include <objtools/flatfile/valnode.h>
+#include "ftaerr.hpp"
+#include "valnode.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "valnode.cpp"
 
+
+BEGIN_NCBI_SCOPE
 /*****************************************************************************
 *
 *   ValNodeNew(vnp)
@@ -251,3 +254,5 @@ char* ValNodeMergeStrsEx(ValNodePtr list, char* separator)
 {
     return ValNodeMergeStrsExEx(list, separator, NULL, NULL);
 }
+
+END_NCBI_SCOPE

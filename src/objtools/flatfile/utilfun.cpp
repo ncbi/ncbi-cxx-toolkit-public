@@ -38,19 +38,33 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <corelib/ncbistr.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <corelib/tempstr.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
 
+#include "ftaerr.hpp"
 #include "indx_def.h"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "utilfun.cpp"
+
+BEGIN_NCBI_SCOPE;
+
+USING_SCOPE(objects);
+
+CScope& GetScope()
+{
+    static CScope scope(*CObjectManager::GetInstance());
+    return scope;
+}
+
 
 static const char *ParFlat_EST_kw_array[] = {
     "EST",
@@ -174,14 +188,14 @@ static std::string FTAitoa(Int4 m)
 }
 
 /**********************************************************/
-void UnwrapAccessionRange(const ncbi::objects::CGB_block::TExtra_accessions& extra_accs, ncbi::objects::CGB_block::TExtra_accessions& hist)
+void UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist)
 {
     Int4       num1;
     Int4       num2;
 
-    ncbi::objects::CGB_block::TExtra_accessions ret;
+    objects::CGB_block::TExtra_accessions ret;
 
-    ITERATE(ncbi::objects::CGB_block::TExtra_accessions, acc, extra_accs)
+    ITERATE(objects::CGB_block::TExtra_accessions, acc, extra_accs)
     {
         std::string str = *acc;
         if (str.empty())
@@ -545,7 +559,7 @@ Int2 fta_StringMatch(const Char **array, const Char* text)
 
     for (i = 0; *array != NULL; i++, array++)
     {
-        if (ncbi::NStr::EqualCase(text, 0, StringLen(*array), *array))
+        if (NStr::EqualCase(text, 0, StringLen(*array), *array))
             break;
     }
 
@@ -578,7 +592,7 @@ Int2 StringMatchIcase(const Char **array, const Char* text)
         if (text[0] != 0 && *array[0] == 0)
             continue;
 
-        if (ncbi::NStr::EqualNocase(text, 0, StringLen(*array), *array))
+        if (NStr::EqualNocase(text, 0, StringLen(*array), *array))
             break;
     }
 
@@ -605,7 +619,7 @@ Int2 MatchArrayString(const char **array, const char *text)
 
     for (i = 0; *array != NULL; i++, array++)
     {
-        if (ncbi::NStr::Equal(*array, text))
+        if (NStr::Equal(*array, text))
             break;
     }
 
@@ -629,7 +643,7 @@ Int2 MatchArrayIString(const Char **array, const Char *text)
         if (text[0] != 0 && *array[0] == 0)
             continue;
 
-        if (ncbi::NStr::EqualNocase(*array, text))
+        if (NStr::EqualNocase(*array, text))
             break;
     }
 
@@ -656,7 +670,7 @@ Int2 MatchArraySubString(const Char **array, const Char* text)
 
     for (i = 0; *array != NULL; i++, array++)
     {
-        if (ncbi::NStr::Find(text, *array) != NPOS)
+        if (NStr::Find(text, *array) != NPOS)
             break;
     }
 
@@ -712,7 +726,7 @@ Int2 MatchArrayISubString(const Char **array, const Char* text)
 
     for (i = 0; *array != NULL; i++, array++)
     {
-        if (ncbi::NStr::FindNoCase(text, *array) != NPOS)
+        if (NStr::FindNoCase(text, *array) != NPOS)
             break;
     }
 
@@ -744,7 +758,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr,
 
     while(bptr < eptr)
     {
-        if (ncbi::NStr::Equal(bptr, 0, 2, "XX"))      /* skip XX line data */
+        if (NStr::Equal(bptr, 0, 2, "XX"))      /* skip XX line data */
         {
             ptr = SrchTheChar(bptr, eptr, '\n');
             bptr = ptr + 1;
@@ -769,7 +783,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr,
         bptr++;
     }
 
-    std::string tstr = ncbi::NStr::TruncateSpaces(std::string(retstr), ncbi::NStr::eTrunc_End);
+    std::string tstr = NStr::TruncateSpaces(std::string(retstr), NStr::eTrunc_End);
     MemFree(retstr);
     retstr = StringSave(tstr.c_str());
 
@@ -915,20 +929,20 @@ char* SrchTheStr(char* bptr, char* eptr, const char *leadstr)
 }
 
 /**********************************************************/
-void CpSeqId(InfoBioseqPtr ibp, const ncbi::objects::CSeq_id& id)
+void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
 {
-    const ncbi::objects::CTextseq_id* text_id = id.GetTextseq_Id();
+    const objects::CTextseq_id* text_id = id.GetTextseq_Id();
     if (text_id != nullptr)
     {
         if (text_id->IsSetName())
             ibp->locus = StringSave(text_id->GetName().c_str());
 
-        ncbi::CRef<ncbi::objects::CSeq_id> new_id(new ncbi::objects::CSeq_id);
+        CRef<objects::CSeq_id> new_id(new objects::CSeq_id);
         if (text_id->IsSetAccession())
         {
             ibp->acnum = StringSave(text_id->GetAccession().c_str());
 
-            ncbi::CRef<ncbi::objects::CTextseq_id> new_text_id(new ncbi::objects::CTextseq_id);
+            CRef<objects::CTextseq_id> new_text_id(new objects::CTextseq_id);
             new_text_id->SetAccession(text_id->GetAccession());
             if (text_id->IsSetVersion())
                 new_text_id->SetVersion(text_id->GetVersion());
@@ -965,12 +979,12 @@ void InfoBioseqFree(InfoBioseqPtr ibp)
 
 /**********************************************************
     *
-    *   ncbi::CRef<ncbi::objects::CDate_std> get_full_date(s, is_ref, source):
+    *   CRef<objects::CDate_std> get_full_date(s, is_ref, source):
     *
-    *      Get year, month, day and return ncbi::CRef<ncbi::objects::CDate_std>.
+    *      Get year, month, day and return CRef<objects::CDate_std>.
     *
     **********************************************************/
-ncbi::CRef<ncbi::objects::CDate_std> get_full_date(const Char* s, bool is_ref, Int2 source)
+CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Int2 source)
 {
     static const char *months[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
         "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
@@ -982,7 +996,7 @@ ncbi::CRef<ncbi::objects::CDate_std> get_full_date(const Char* s, bool is_ref, I
     Char           msg[11];
     const Char*        p;
 
-    ncbi::CRef<ncbi::objects::CDate_std> date;
+    CRef<objects::CDate_std> date;
 
     if (s == NULL || *s == '\0')
         return date;
@@ -1016,15 +1030,15 @@ ncbi::CRef<ncbi::objects::CDate_std> get_full_date(const Char* s, bool is_ref, I
     }
     p = s + 4;
 
-    date = new ncbi::objects::CDate_std;
+    date = new objects::CDate_std;
     year = atoi(p);
     if ((StringNCmp(p, "19", 2) == 0 || StringNCmp(p, "20", 2) == 0 ||
          StringNCmp(p, "20", 2) == 0) &&
         p[2] >= '0' && p[2] <= '9' && p[3] >= '0' && p[3] <= '9')
     {
-        ncbi::CTime cur_time(ncbi::CTime::eCurrent);
-        ncbi::objects::CDate_std cur(cur_time);
-        ncbi::objects::CDate_std::TYear cur_year = cur.GetYear();
+        CTime cur_time(CTime::eCurrent);
+        objects::CDate_std cur(cur_time);
+        objects::CDate_std::TYear cur_year = cur.GetYear();
 
         if (year < 1900 || year > cur_year)
         {
@@ -1198,7 +1212,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
             kwd_asm = true;
         else if(i == 7)
             kwd_spedb = true;
-        else if (ncbi::NStr::EqualNocase(p, 0, 3, "TPA"))
+        else if (NStr::EqualNocase(p, 0, 3, "TPA"))
         {
             if(p[3] == ':')
             {
@@ -1285,7 +1299,7 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Int2 source)
         else if(i == 1)
             kwd_assembly = true;
         else if(source == ParFlat_EMBL &&
-                ncbi::NStr::EqualNocase(*key, "Transcript Shotgun Assembly"))
+                NStr::EqualNocase(*key, "Transcript Shotgun Assembly"))
             kwd_assembly = true;
     }
 
@@ -1325,7 +1339,7 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Int2 source)
         else if(i == 1)
             kwd_study = true;
         else if(source == ParFlat_EMBL &&
-                ncbi::NStr::EqualNocase(*key, "Targeted Locus Study"))
+                NStr::EqualNocase(*key, "Targeted Locus Study"))
             kwd_study = true;
     }
 
@@ -1416,17 +1430,17 @@ void fta_remove_keywords(Uint1 tech, TKeywordList& kwds)
     if(kwds.empty())
         return;
 
-    if (tech == ncbi::objects::CMolInfo::eTech_est)
+    if (tech == objects::CMolInfo::eTech_est)
         b = ParFlat_EST_kw_array;
-    else if (tech == ncbi::objects::CMolInfo::eTech_sts)
+    else if (tech == objects::CMolInfo::eTech_sts)
         b = ParFlat_STS_kw_array;
-    else if (tech == ncbi::objects::CMolInfo::eTech_survey)
+    else if (tech == objects::CMolInfo::eTech_survey)
         b = ParFlat_GSS_kw_array;
-    else if (tech == ncbi::objects::CMolInfo::eTech_htc)
+    else if (tech == objects::CMolInfo::eTech_htc)
         b = ParFlat_HTC_kw_array;
-    else if (tech == ncbi::objects::CMolInfo::eTech_fli_cdna)
+    else if (tech == objects::CMolInfo::eTech_fli_cdna)
         b = ParFlat_FLI_kw_array;
-    else if (tech == ncbi::objects::CMolInfo::eTech_wgs)
+    else if (tech == objects::CMolInfo::eTech_wgs)
         b = ParFlat_WGS_kw_array;
     else
         return;
@@ -1468,7 +1482,7 @@ void fta_remove_tsa_keywords(TKeywordList& kwds, Int2 source)
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();)
     {
         if (key->empty() || MatchArrayIString(ParFlat_TSA_kw_array, key->c_str()) != -1 ||
-            (source == ParFlat_EMBL && ncbi::NStr::EqualNocase(*key, "Transcript Shotgun Assembly")))
+            (source == ParFlat_EMBL && NStr::EqualNocase(*key, "Transcript Shotgun Assembly")))
         {
             key = kwds.erase(key);
         }
@@ -1486,7 +1500,7 @@ void fta_remove_tls_keywords(TKeywordList& kwds, Int2 source)
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();)
     {
         if (key->empty() || MatchArrayIString(ParFlat_TLS_kw_array, key->c_str()) != -1 ||
-            (source == ParFlat_EMBL && ncbi::NStr::EqualNocase(*key, "Targeted Locus Study")))
+            (source == ParFlat_EMBL && NStr::EqualNocase(*key, "Targeted Locus Study")))
         {
             key = kwds.erase(key);
         }
@@ -1578,16 +1592,16 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry,
                            &entry->HTC, NULL, NULL,
                            (tpa_check ? &entry->is_tpa : NULL),
                            NULL, NULL, NULL, NULL);
-        if(ncbi::NStr::EqualNocase(p, "TPA:specialist_db") ||
-           ncbi::NStr::EqualNocase(p, "TPA:assembly"))
+        if(NStr::EqualNocase(p, "TPA:specialist_db") ||
+           NStr::EqualNocase(p, "TPA:assembly"))
         {
             specialist_db = true;
-            if(ncbi::NStr::EqualNocase(p, "TPA:assembly"))
+            if(NStr::EqualNocase(p, "TPA:assembly"))
                 assembly = true;
         }
-        else if(ncbi::NStr::EqualNocase(p, "TPA:inferential"))
+        else if(NStr::EqualNocase(p, "TPA:inferential"))
             inferential = true;
-        else if(ncbi::NStr::EqualNocase(p, "TPA:experimental"))
+        else if(NStr::EqualNocase(p, "TPA:experimental"))
             experimental = true;
     }
     MemFree(line);
@@ -1632,7 +1646,7 @@ ValNodePtr ConstructValNodeInt(ValNodePtr head, Uint1 choice, Int4 data)
 }
 
 /**********************************************************/
-bool fta_check_mga_keywords(ncbi::objects::CMolInfo& mol_info, const TKeywordList& kwds)
+bool fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds)
 {
     bool is_cage;
     bool is_sage;
@@ -1640,7 +1654,7 @@ bool fta_check_mga_keywords(ncbi::objects::CMolInfo& mol_info, const TKeywordLis
     TKeywordList::const_iterator key_it = kwds.end();
 
     bool got = false;
-    if (!kwds.empty() && ncbi::NStr::EqualNocase(kwds.front(), "MGA"))
+    if (!kwds.empty() && NStr::EqualNocase(kwds.front(), "MGA"))
     {
         ITERATE(TKeywordList, key, kwds)
         {
@@ -1668,9 +1682,9 @@ bool fta_check_mga_keywords(ncbi::objects::CMolInfo& mol_info, const TKeywordLis
     {
         const char* p = key_it->c_str();
 
-        if (ncbi::NStr::EqualNocase(p, "5'-SAGE"))
+        if (NStr::EqualNocase(p, "5'-SAGE"))
             is_sage = true;
-        else if (ncbi::NStr::EqualNocase(p, "CAGE (Cap Analysis Gene Expression)"))
+        else if (NStr::EqualNocase(p, "CAGE (Cap Analysis Gene Expression)"))
             is_cage = true;
     }
 
@@ -1700,54 +1714,54 @@ void fta_StringCpy(char* dst, char* src)
 }
 
 /**********************************************************/
-bool SetTextId(Uint1 seqtype, ncbi::objects::CSeq_id& seqId, ncbi::objects::CTextseq_id& textId)
+bool SetTextId(Uint1 seqtype, objects::CSeq_id& seqId, objects::CTextseq_id& textId)
 {
     bool wasSet = true;
 
     switch (seqtype)
     {
-    case ncbi::objects::CSeq_id::e_Genbank:
+    case objects::CSeq_id::e_Genbank:
         seqId.SetGenbank(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Embl:
+    case objects::CSeq_id::e_Embl:
         seqId.SetEmbl(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Pir:
+    case objects::CSeq_id::e_Pir:
         seqId.SetPir(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Swissprot:
+    case objects::CSeq_id::e_Swissprot:
         seqId.SetSwissprot(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Other:
+    case objects::CSeq_id::e_Other:
         seqId.SetOther(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Ddbj:
+    case objects::CSeq_id::e_Ddbj:
         seqId.SetDdbj(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Prf:
+    case objects::CSeq_id::e_Prf:
         seqId.SetPrf(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Pdb:
+    case objects::CSeq_id::e_Pdb:
     {
         // TODO: test this branch
-        ncbi::objects::CPDB_seq_id pdbId;
+        objects::CPDB_seq_id pdbId;
         pdbId.SetChain_id(0);
         seqId.SetPdb(pdbId);
     }
     break;
-    case ncbi::objects::CSeq_id::e_Tpg:
+    case objects::CSeq_id::e_Tpg:
         seqId.SetTpg(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Tpe:
+    case objects::CSeq_id::e_Tpe:
         seqId.SetTpe(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Tpd:
+    case objects::CSeq_id::e_Tpd:
         seqId.SetTpd(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Gpipe:
+    case objects::CSeq_id::e_Gpipe:
         seqId.SetGpipe(textId);
         break;
-    case ncbi::objects::CSeq_id::e_Named_annot_track:
+    case objects::CSeq_id::e_Named_annot_track:
         seqId.SetNamed_annot_track(textId);
         break;
 
@@ -1763,7 +1777,7 @@ bool IsCancelled(const TKeywordList& keywords)
 {
     ITERATE(TKeywordList, key, keywords)
     {
-        if (ncbi::NStr::EqualNocase(*key, "HTGS_CANCELLED"))
+        if (NStr::EqualNocase(*key, "HTGS_CANCELLED"))
             return true;
     }
 
@@ -1792,7 +1806,7 @@ void RemoveHtgPhase(TKeywordList& keywords)
     for (TKeywordList::iterator key = keywords.begin(); key != keywords.end();)
     {
         const char* p = key->c_str();
-        if (ncbi::NStr::EqualNocase(p, 0, 10, "HTGS_PHASE") &&
+        if (NStr::EqualNocase(p, 0, 10, "HTGS_PHASE") &&
             (p[10] == '0' || p[10] == '1' || p[10] == '2' ||
             p[10] == '3') && p[11] == '\0')
         {
@@ -1808,7 +1822,7 @@ bool HasHtc(const TKeywordList& keywords)
 {
     ITERATE(TKeywordList, key, keywords)
     {
-        if (ncbi::NStr::EqualNocase(*key, "HTC"))
+        if (NStr::EqualNocase(*key, "HTC"))
         {
             return true;
         }
@@ -1816,3 +1830,5 @@ bool HasHtc(const TKeywordList& keywords)
 
     return false;
 }
+
+END_NCBI_SCOPE

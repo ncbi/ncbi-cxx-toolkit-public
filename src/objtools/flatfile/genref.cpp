@@ -38,12 +38,11 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
 
-#include <objtools/flatfile/asci_blk.h>
 #include <objtools/flatfile/ftamain.h>
 #include <objtools/flatfile/flatdefn.h>
 
+#include "ftaerr.hpp"
 #include "utilfeat.h"
 #include "add.h"
 #include "nucprot.h"
@@ -59,14 +58,19 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 
+#include "asci_blk.h"
+#include "utilfun.h"
+
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "genref.cpp"
 
+BEGIN_NCBI_SCOPE
+
 struct SeqLocInfo
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc;
+    CRef<objects::CSeq_loc> loc;
     Uint1 strand;
 };
 
@@ -135,13 +139,13 @@ typedef struct gene_list {
     char*               maploc;       /* the map of the gene,
                                            copy the value */
 
-    ncbi::CRef<ncbi::objects::CSeq_feat> feat;
+    CRef<objects::CSeq_feat> feat;
 
     SeqlocInfoblkPtr      slibp;        /* the location, points to the value */
     Int4                  segnum;       /* segment number */
     Uint1                 leave;        /* TRUE for aka tRNAs */
 
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc;
+    CRef<objects::CSeq_loc> loc;
 
     MixLocPtr             mlp;
 
@@ -195,8 +199,8 @@ typedef struct gene_node {
                                            to put GeneRefPtr */
     bool        seg;                    /* TRUE, if this is a segment set
                                            entries */
-    ncbi::objects::CBioseq* bioseq;
-    ncbi::objects::CBioseq_set* bioseq_set;
+    objects::CBioseq* bioseq;
+    objects::CBioseq_set* bioseq_set;
 
     GeneListPtr glp;                    /* a list of gene infomation for
                                            the entries */
@@ -251,17 +255,17 @@ Int2 leave_rna_feat[] = {
 };
 
 /**********************************************************/
-static void GetLocationStr(const ncbi::objects::CSeq_loc& loc, std::string& str)
+static void GetLocationStr(const objects::CSeq_loc& loc, std::string& str)
 {
     loc.GetLabel(&str);
     MakeLocStrCompatible(str);
 }
 
 /**********************************************************/
-static bool fta_seqid_same(const ncbi::objects::CSeq_id& sid, const Char* acnum, const ncbi::objects::CSeq_id* id)
+static bool fta_seqid_same(const objects::CSeq_id& sid, const Char* acnum, const objects::CSeq_id* id)
 {
     if (id != NULL)
-        return sid.Compare(*id) == ncbi::objects::CSeq_id::e_YES;
+        return sid.Compare(*id) == objects::CSeq_id::e_YES;
 
     if(acnum == NULL)
         return true;
@@ -272,7 +276,7 @@ static bool fta_seqid_same(const ncbi::objects::CSeq_id& sid, const Char* acnum,
         !sid.IsTpe() && !sid.IsGpipe())
         return false;
 
-    const ncbi::objects::CTextseq_id* text_id = sid.GetTextseq_Id();
+    const objects::CTextseq_id* text_id = sid.GetTextseq_Id();
     if (text_id == NULL || !text_id->IsSetAccession() ||
         text_id->GetAccession() != acnum)
         return false;
@@ -281,13 +285,13 @@ static bool fta_seqid_same(const ncbi::objects::CSeq_id& sid, const Char* acnum,
 }
 
 /**********************************************************/
-static void fta_seqloc_del_far(ncbi::objects::CSeq_loc& locs, const Char* acnum, const ncbi::objects::CSeq_id* id)
+static void fta_seqloc_del_far(objects::CSeq_loc& locs, const Char* acnum, const objects::CSeq_id* id)
 {
-    std::vector<ncbi::CConstRef<ncbi::objects::CSeq_loc> > to_remove;
+    std::vector<CConstRef<objects::CSeq_loc> > to_remove;
 
-    for (ncbi::objects::CSeq_loc_CI ci(locs, ncbi::objects::CSeq_loc_CI::eEmpty_Allow); ci != locs.end(); ++ci)
+    for (objects::CSeq_loc_CI ci(locs, objects::CSeq_loc_CI::eEmpty_Allow); ci != locs.end(); ++ci)
     {
-        ncbi::CConstRef<ncbi::objects::CSeq_loc> cur_loc = ci.GetRangeAsSeq_loc();
+        CConstRef<objects::CSeq_loc> cur_loc = ci.GetRangeAsSeq_loc();
         if (cur_loc->IsWhole())
         {
             if (fta_seqid_same(*cur_loc->GetId(), acnum, id))
@@ -318,10 +322,10 @@ static void fta_seqloc_del_far(ncbi::objects::CSeq_loc& locs, const Char* acnum,
         to_remove.push_back(cur_loc);
     }
 
-    for (std::vector<ncbi::CConstRef<ncbi::objects::CSeq_loc> >::const_iterator it = to_remove.begin(); it != to_remove.end(); ++it)
+    for (std::vector<CConstRef<objects::CSeq_loc> >::const_iterator it = to_remove.begin(); it != to_remove.end(); ++it)
         locs.Assign(*locs.Subtract(*(*it), 0, nullptr, nullptr));
 
-    for (ncbi::CTypeIterator<ncbi::objects::CSeq_bond> bond(locs); bond; ++bond)
+    for (CTypeIterator<objects::CSeq_bond> bond(locs); bond; ++bond)
     {
         if (bond->IsSetB() && !fta_seqid_same(bond->GetB().GetId(), acnum, id))
             bond->ResetB();
@@ -330,9 +334,9 @@ static void fta_seqloc_del_far(ncbi::objects::CSeq_loc& locs, const Char* acnum,
 
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> fta_seqloc_local(const ncbi::objects::CSeq_loc& orig, const Char* acnum)
+static CRef<objects::CSeq_loc> fta_seqloc_local(const objects::CSeq_loc& orig, const Char* acnum)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret(new ncbi::objects::CSeq_loc);
+    CRef<objects::CSeq_loc> ret(new objects::CSeq_loc);
     ret->Assign(orig);
 
     if(acnum != NULL && *acnum != '\0' && *acnum != ' ')
@@ -378,7 +382,7 @@ static Int4 fta_cmp_locus_tags(const Char* lt1, const Char* lt2)
 }
 
 /**********************************************************/
-static Int4 fta_cmp_gene_refs(const ncbi::objects::CGene_ref& grp1, const ncbi::objects::CGene_ref& grp2)
+static Int4 fta_cmp_gene_refs(const objects::CGene_ref& grp1, const objects::CGene_ref& grp2)
 {
     Int4 res = 0;
 
@@ -670,8 +674,8 @@ static void GeneLocsFree(GeneLocsPtr gelop)
  *      value within one feature key
  *
  **********************************************************/
-static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const ncbi::objects::CSeq_loc* origslp, Int4 length,
-                                             const ncbi::objects::CSeq_id& orig_id)
+static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const objects::CSeq_loc* origslp, Int4 length,
+                                             const objects::CSeq_id& orig_id)
 {
     SeqlocInfoblkPtr slibp = NULL;
 
@@ -685,17 +689,17 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const ncbi::objects::CSeq_loc* orig
 
     if (origslp != nullptr)
     {
-        for (ncbi::objects::CSeq_loc_CI loc(*origslp); loc; ++loc)
+        for (objects::CSeq_loc_CI loc(*origslp); loc; ++loc)
         {
             noleft = false;
             noright = false;
 
-            ncbi::CConstRef<ncbi::objects::CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
-            const ncbi::objects::CSeq_id* id = nullptr;
+            CConstRef<objects::CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
+            const objects::CSeq_id* id = nullptr;
 
             if (cur_loc->IsInt())
             {
-                const ncbi::objects::CSeq_interval& interval = cur_loc->GetInt();
+                const objects::CSeq_interval& interval = cur_loc->GetInt();
                 id = &interval.GetId();
 
                 from = interval.GetFrom();
@@ -703,15 +707,15 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const ncbi::objects::CSeq_loc* orig
                 strand = interval.IsSetStrand() ? interval.GetStrand() : 0;
 
                 if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() &&
-                    interval.GetFuzz_from().GetLim() == ncbi::objects::CInt_fuzz::eLim_lt)
+                    interval.GetFuzz_from().GetLim() == objects::CInt_fuzz::eLim_lt)
                     noleft = true;
                 if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim() &&
-                    interval.GetFuzz_to().GetLim() == ncbi::objects::CInt_fuzz::eLim_gt)
+                    interval.GetFuzz_to().GetLim() == objects::CInt_fuzz::eLim_gt)
                     noright = true;
             }
             else if (cur_loc->IsPnt())
             {
-                const ncbi::objects::CSeq_point& point = cur_loc->GetPnt();
+                const objects::CSeq_point& point = cur_loc->GetPnt();
                 id = &point.GetId();
                 from = point.GetPoint();
                 to = from;
@@ -719,9 +723,9 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const ncbi::objects::CSeq_loc* orig
 
                 if (point.IsSetFuzz() && point.GetFuzz().IsLim())
                 {
-                    if (point.GetFuzz().GetLim() == ncbi::objects::CInt_fuzz::eLim_gt)
+                    if (point.GetFuzz().GetLim() == objects::CInt_fuzz::eLim_gt)
                         noright = true;
-                    else if (point.GetFuzz().GetLim() == ncbi::objects::CInt_fuzz::eLim_lt)
+                    else if (point.GetFuzz().GetLim() == objects::CInt_fuzz::eLim_lt)
                         noleft = true;
                 }
             }
@@ -730,7 +734,7 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const ncbi::objects::CSeq_loc* orig
 
             /* get low and high only for locations from the same entry
                 */
-            if (from < 0 || to < 0 || id == nullptr || orig_id.Compare(*id) == ncbi::objects::CSeq_id::e_NO)
+            if (from < 0 || to < 0 || id == nullptr || orig_id.Compare(*id) == objects::CSeq_id::e_NO)
                 continue;
 
             if (slibp == NULL)
@@ -744,7 +748,7 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const ncbi::objects::CSeq_loc* orig
                 {
                     slibp->strand = strand;
 
-                    ncbi::CRef<ncbi::objects::CSeq_id> sid(new ncbi::objects::CSeq_id);
+                    CRef<objects::CSeq_id> sid(new objects::CSeq_id);
                     sid->Assign(*id);
                     slibp->ids.push_back(sid);
                     slibp->length = length;     /* total bsp of the entry */
@@ -822,8 +826,8 @@ static bool DoWeHaveCdssInBetween(GeneListPtr c, Int4 to, CdssListPtr clp)
 /**********************************************************/
 static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
 {
-    ncbi::CRef<ncbi::objects::CSeq_feat> feat(new ncbi::objects::CSeq_feat);
-    ncbi::objects::CGene_ref& gene_ref = feat->SetData().SetGene();
+    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+    objects::CGene_ref& gene_ref = feat->SetData().SetGene();
 
     if(glp->locus != NULL)
         gene_ref.SetLocus(glp->locus);
@@ -849,7 +853,7 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
 
     if(glp->pseudogene != NULL && glp->pseudogene[0] != '\0')
     {
-        ncbi::CRef<ncbi::objects::CGb_qual> qual(new ncbi::objects::CGb_qual);
+        CRef<objects::CGb_qual> qual(new objects::CGb_qual);
         qual->SetQual("pseudogene");
         qual->SetVal(glp->pseudogene);
 
@@ -870,7 +874,7 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
             if (it->empty())
                 continue;
 
-            ncbi::CRef<ncbi::objects::CDbtag> tag(new ncbi::objects::CDbtag);
+            CRef<objects::CDbtag> tag(new objects::CDbtag);
 
             tag->SetDb("WormBase");
             tag->SetTag().SetStr(*it);
@@ -892,7 +896,7 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
             if (it->empty())
                 continue;
 
-            ncbi::CRef<ncbi::objects::CGb_qual> qual(new ncbi::objects::CGb_qual);
+            CRef<objects::CGb_qual> qual(new objects::CGb_qual);
             qual->SetQual("old_locus_tag");
             qual->SetVal(*it);
 
@@ -1326,7 +1330,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 
     if (c->feat.Empty() || !c->feat->IsSetLocation())
     {
-        const ncbi::objects::CTextseq_id* text_id = nullptr;
+        const objects::CTextseq_id* text_id = nullptr;
         Uint1 choice = 0;
         ITERATE(TSeqIdList, cur_id, c->slibp->ids)
         {
@@ -1368,17 +1372,17 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 
     mlp = NULL;
     Int4 i = 1;
-    const ncbi::objects::CSeq_loc& locs = c->feat->GetLocation();
-    ITERATE(ncbi::objects::CSeq_loc, loc, locs)
+    const objects::CSeq_loc& locs = c->feat->GetLocation();
+    ITERATE(objects::CSeq_loc, loc, locs)
     {
         noleft = false;
         noright = false;
-        const ncbi::objects::CSeq_id* id = nullptr;
+        const objects::CSeq_id* id = nullptr;
 
-        ncbi::CConstRef<ncbi::objects::CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
+        CConstRef<objects::CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
         if (cur_loc->IsInt())
         {
-            const ncbi::objects::CSeq_interval& interval = cur_loc->GetInt();
+            const objects::CSeq_interval& interval = cur_loc->GetInt();
             if (interval.IsSetId())
                 id = &interval.GetId();
 
@@ -1386,15 +1390,15 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             to = interval.IsSetTo() ? interval.GetTo() : 0;
             strand = cur_loc->IsSetStrand() ? cur_loc->GetStrand() : 0;
 
-            if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() && interval.GetFuzz_from().GetLim() == ncbi::objects::CInt_fuzz::eLim_lt)
+            if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() && interval.GetFuzz_from().GetLim() == objects::CInt_fuzz::eLim_lt)
                 noleft = true;
 
-            if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim() && interval.GetFuzz_to().GetLim() == ncbi::objects::CInt_fuzz::eLim_gt)
+            if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim() && interval.GetFuzz_to().GetLim() == objects::CInt_fuzz::eLim_gt)
                 noright = true;
         }
         else if (cur_loc->IsPnt())
         {
-            const ncbi::objects::CSeq_point& point = cur_loc->GetPnt();
+            const objects::CSeq_point& point = cur_loc->GetPnt();
             if (point.IsSetId())
                 id = &point.GetId();
 
@@ -1404,9 +1408,9 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 
             if (point.IsSetFuzz() && point.GetFuzz().IsLim())
             {
-                if (point.GetFuzz().GetLim() == ncbi::objects::CInt_fuzz::eLim_gt)
+                if (point.GetFuzz().GetLim() == objects::CInt_fuzz::eLim_gt)
                     noright = true;
-                else if (point.GetFuzz().GetLim() == ncbi::objects::CInt_fuzz::eLim_lt)
+                else if (point.GetFuzz().GetLim() == objects::CInt_fuzz::eLim_lt)
                     noleft = true;
             }
         }
@@ -1416,7 +1420,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
         if (from < 0 || to < 0)
             continue;
 
-        const ncbi::objects::CTextseq_id* text_id = nullptr;
+        const objects::CTextseq_id* text_id = nullptr;
         if (id != nullptr)
             text_id = id->GetTextseq_Id();
 
@@ -1487,9 +1491,9 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 }
 
 /**********************************************************/
-static void fta_make_seq_id(MixLocPtr mlp, ncbi::objects::CSeq_id& id)
+static void fta_make_seq_id(MixLocPtr mlp, objects::CSeq_id& id)
 {
-    ncbi::CRef<ncbi::objects::CTextseq_id> text_id(new ncbi::objects::CTextseq_id);
+    CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
     text_id->SetAccession(mlp->acc);
 
     if (mlp->ver != INT2_MIN)
@@ -1499,10 +1503,10 @@ static void fta_make_seq_id(MixLocPtr mlp, ncbi::objects::CSeq_id& id)
 }
 
 /**********************************************************/
-static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, ncbi::objects::CSeq_interval& interval)
+static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, objects::CSeq_interval& interval)
 {
     if (mlp->strand != 0)
-        interval.SetStrand(static_cast<ncbi::objects::CSeq_point::TStrand>(mlp->strand));
+        interval.SetStrand(static_cast<objects::CSeq_point::TStrand>(mlp->strand));
 
     interval.SetFrom(mlp->min);
     interval.SetTo(mlp->max);
@@ -1511,35 +1515,35 @@ static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, ncbi::obj
 
     if(mlp->noleft || noleft)
     {
-        interval.SetFuzz_from().SetLim(ncbi::objects::CInt_fuzz::eLim_lt);
+        interval.SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_lt);
     }
 
     if(mlp->noright || noright)
     {
-        interval.SetFuzz_to().SetLim(ncbi::objects::CInt_fuzz::eLim_gt);
+        interval.SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_gt);
     }
 }
 
 /**********************************************************/
-static void fta_make_seq_pnt(MixLocPtr mlp, bool noleft, bool noright, ncbi::objects::CSeq_point& point)
+static void fta_make_seq_pnt(MixLocPtr mlp, bool noleft, bool noright, objects::CSeq_point& point)
 {
     if (mlp->strand != 0)
-        point.SetStrand(static_cast<ncbi::objects::CSeq_point::TStrand>(mlp->strand));
+        point.SetStrand(static_cast<objects::CSeq_point::TStrand>(mlp->strand));
     point.SetPoint(mlp->min);
 
     fta_make_seq_id(mlp, point.SetId());
 
     if(mlp->noleft || mlp->noright || noleft || noright)
     {
-        ncbi::objects::CInt_fuzz::TLim lim = (mlp->noleft == false && noleft == false) ? ncbi::objects::CInt_fuzz::eLim_gt : ncbi::objects::CInt_fuzz::eLim_lt;
+        objects::CInt_fuzz::TLim lim = (mlp->noleft == false && noleft == false) ? objects::CInt_fuzz::eLim_gt : objects::CInt_fuzz::eLim_lt;
         point.SetFuzz().SetLim(lim);
     }
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> MakeCLoc(MixLocPtr mlp, bool noleft, bool noright)
+static CRef<objects::CSeq_loc> MakeCLoc(MixLocPtr mlp, bool noleft, bool noright)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret(new ncbi::objects::CSeq_loc);
+    CRef<objects::CSeq_loc> ret(new objects::CSeq_loc);
 
     if (mlp->next == NULL)
     {
@@ -1550,12 +1554,12 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> MakeCLoc(MixLocPtr mlp, bool noleft, 
         return ret;
     }
 
-    ncbi::CRef<ncbi::objects::CSeq_loc> cur;
-    ncbi::objects::CSeq_loc_mix& mix = ret->SetMix();
+    CRef<objects::CSeq_loc> cur;
+    objects::CSeq_loc_mix& mix = ret->SetMix();
 
     for(; mlp != NULL; mlp = mlp->next)
     {
-        cur.Reset(new ncbi::objects::CSeq_loc);
+        cur.Reset(new objects::CSeq_loc);
 
         if (mlp->min == mlp->max)
         {
@@ -1959,7 +1963,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
         if(c->loc.Empty())
             continue;
 
-        const ncbi::objects::CSeq_loc& loc = *c->loc;
+        const objects::CSeq_loc& loc = *c->loc;
         for(cn = gnp->glp; cn != NULL; cn = cn->next)
         {
             if (cn->loc.Empty() || &loc == cn->loc || cn->segnum != c->segnum ||
@@ -1967,8 +1971,8 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
                fta_cmp_locusyn(cn, c) != 0)
                 continue;
 
-            ncbi::objects::sequence::ECompare cmp_res = ncbi::objects::sequence::Compare(loc, *cn->loc, nullptr, ncbi::objects::sequence::fCompareOverlapping);
-            if (cmp_res != ncbi::objects::sequence::eContains && cmp_res != ncbi::objects::sequence::eSame)
+            objects::sequence::ECompare cmp_res = objects::sequence::Compare(loc, *cn->loc, nullptr, objects::sequence::fCompareOverlapping);
+            if (cmp_res != objects::sequence::eContains && cmp_res != objects::sequence::eSame)
                 continue;
 
             if(cn->leave == 1 || c->leave == 0)
@@ -2041,9 +2045,9 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_id> CpSeqIdAcOnly(const ncbi::objects::CSeq_id* id, bool accver)
+static CRef<objects::CSeq_id> CpSeqIdAcOnly(const objects::CSeq_id* id, bool accver)
 {
-    ncbi::CRef<ncbi::objects::CSeq_id> new_id;
+    CRef<objects::CSeq_id> new_id;
 
     if (id == nullptr)
     {
@@ -2052,10 +2056,10 @@ static ncbi::CRef<ncbi::objects::CSeq_id> CpSeqIdAcOnly(const ncbi::objects::CSe
         return new_id;
     }
 
-    new_id.Reset(new ncbi::objects::CSeq_id);
+    new_id.Reset(new objects::CSeq_id);
     
-    ncbi::CRef<ncbi::objects::CTextseq_id> text_id(new ncbi::objects::CTextseq_id);
-    const ncbi::objects::CTextseq_id* old_text_id = id->GetTextseq_Id();
+    CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
+    const objects::CTextseq_id* old_text_id = id->GetTextseq_Id();
 
     if (old_text_id != nullptr)
     {
@@ -2072,14 +2076,14 @@ static ncbi::CRef<ncbi::objects::CSeq_id> CpSeqIdAcOnly(const ncbi::objects::CSe
 }
 
 /**********************************************************/
-static bool WeDontNeedToJoinThis(const ncbi::objects::CSeqFeatData& data)
+static bool WeDontNeedToJoinThis(const objects::CSeqFeatData& data)
 {
     const Char **b;
     short*    i;
 
     if (data.IsRna())
     {
-        const ncbi::objects::CRNA_ref& rna_ref = data.GetRna();
+        const objects::CRNA_ref& rna_ref = data.GetRna();
 
         i = NULL;
         if (rna_ref.IsSetType())
@@ -2094,7 +2098,7 @@ static bool WeDontNeedToJoinThis(const ncbi::objects::CSeqFeatData& data)
         if(i != NULL && *i != -1)
             return true;
 
-        if (rna_ref.GetType() == ncbi::objects::CRNA_ref::eType_other && rna_ref.IsSetExt() && rna_ref.GetExt().IsName() &&
+        if (rna_ref.GetType() == objects::CRNA_ref::eType_other && rna_ref.IsSetExt() && rna_ref.GetExt().IsName() &&
             rna_ref.GetExt().GetName() == "ncRNA")
             return true;
     }
@@ -2143,7 +2147,7 @@ static void GetGeneSyns(const TQualVector& quals, char* name, TSynSet& syns)
 }
 
 /**********************************************************/
-static bool fta_rnas_cds_feat(const ncbi::objects::CSeq_feat& feat)
+static bool fta_rnas_cds_feat(const objects::CSeq_feat& feat)
 {
     if (!feat.IsSetData())
         return false;
@@ -2166,7 +2170,7 @@ static bool fta_rnas_cds_feat(const ncbi::objects::CSeq_feat& feat)
     if (!feat.GetData().IsRna())
         return false;
 
-    const ncbi::objects::CRNA_ref& rna_ref = feat.GetData().GetRna();
+    const objects::CRNA_ref& rna_ref = feat.GetData().GetRna();
     if (rna_ref.IsSetType() && rna_ref.GetType() > 1 && rna_ref.GetType() < 5)   /* mRNA, tRNA or rRNA */
         return true;
 
@@ -2174,7 +2178,7 @@ static bool fta_rnas_cds_feat(const ncbi::objects::CSeq_feat& feat)
 }
 
 /**********************************************************/
-static bool IfCDSGeneFeat(const ncbi::objects::CSeq_feat& feat, Uint1 choice, const char *key)
+static bool IfCDSGeneFeat(const objects::CSeq_feat& feat, Uint1 choice, const char *key)
 {
     if (feat.IsSetData() && feat.GetData().Which() == choice)
         return true;
@@ -2189,7 +2193,7 @@ static bool IfCDSGeneFeat(const ncbi::objects::CSeq_feat& feat, Uint1 choice, co
 }
 
 /**********************************************************/
-static bool GetFeatNameAndLoc(GeneListPtr glp, const ncbi::objects::CSeq_feat& feat, GeneNodePtr gnp)
+static bool GetFeatNameAndLoc(GeneListPtr glp, const objects::CSeq_feat& feat, GeneNodePtr gnp)
 {
     const char *p;
 
@@ -2210,7 +2214,7 @@ static bool GetFeatNameAndLoc(GeneListPtr glp, const ncbi::objects::CSeq_feat& f
             p = "source";
         else if (feat.GetData().IsRna())
         {
-            const ncbi::objects::CRNA_ref& rna_ref = feat.GetData().GetRna();
+            const objects::CRNA_ref& rna_ref = feat.GetData().GetRna();
 
             if (rna_ref.IsSetType())
             {
@@ -2286,7 +2290,7 @@ static bool GetFeatNameAndLoc(GeneListPtr glp, const ncbi::objects::CSeq_feat& f
 }
 
 /**********************************************************/
-static AccMinMaxPtr fta_get_acc_minmax_strand(const ncbi::objects::CSeq_loc* location,
+static AccMinMaxPtr fta_get_acc_minmax_strand(const objects::CSeq_loc* location,
                                               GeneLocsPtr gelop)
 {
     AccMinMaxPtr ammp;
@@ -2303,13 +2307,13 @@ static AccMinMaxPtr fta_get_acc_minmax_strand(const ncbi::objects::CSeq_loc* loc
 
     if (location != nullptr)
     {
-        for (ncbi::objects::CSeq_loc_CI loc(*location); loc; ++loc)
+        for (objects::CSeq_loc_CI loc(*location); loc; ++loc)
         {
-            ncbi::CConstRef<ncbi::objects::CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
-            const ncbi::objects::CSeq_id* id = nullptr;
+            CConstRef<objects::CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
+            const objects::CSeq_id* id = nullptr;
             if (cur_loc->IsInt())
             {
-                const ncbi::objects::CSeq_interval& interval = cur_loc->GetInt();
+                const objects::CSeq_interval& interval = cur_loc->GetInt();
                 id = &interval.GetId();
                 from = interval.GetFrom();
                 to = interval.GetTo();
@@ -2322,7 +2326,7 @@ static AccMinMaxPtr fta_get_acc_minmax_strand(const ncbi::objects::CSeq_loc* loc
             }
             else if (cur_loc->IsPnt())
             {
-                const ncbi::objects::CSeq_point& point = cur_loc->GetPnt();
+                const objects::CSeq_point& point = cur_loc->GetPnt();
                 id = &point.GetId();
                 from = point.GetPoint();
                 to = from;
@@ -2340,7 +2344,7 @@ static AccMinMaxPtr fta_get_acc_minmax_strand(const ncbi::objects::CSeq_loc* loc
             ver = 0;
             if (id != nullptr)
             {
-                const ncbi::objects::CTextseq_id* text_id = id->GetTextseq_Id();
+                const objects::CTextseq_id* text_id = id->GetTextseq_Id();
                 if (text_id != nullptr && text_id->IsSetAccession())
                 {
                     acc = text_id->GetAccession().c_str();
@@ -2392,7 +2396,7 @@ static AccMinMaxPtr fta_get_acc_minmax_strand(const ncbi::objects::CSeq_loc* loc
 }
 
 /**********************************************************/
-static void fta_append_feat_list(GeneNodePtr gnp, const ncbi::objects::CSeq_loc* location,
+static void fta_append_feat_list(GeneNodePtr gnp, const objects::CSeq_loc* location,
                                  char* gene, char* locus_tag)
 {
     GeneLocsPtr gelop;
@@ -2452,13 +2456,13 @@ static GeneLocsPtr fta_sort_feat_list(GeneLocsPtr gelop)
 }
 
 /**********************************************************/
-static void fta_collect_wormbases(GeneListPtr glp, ncbi::objects::CSeq_feat& feat)
+static void fta_collect_wormbases(GeneListPtr glp, objects::CSeq_feat& feat)
 {
     if(glp == NULL || !feat.IsSetDbxref())
         return;
 
-    ncbi::objects::CSeq_feat::TDbxref dbxrefs;
-    for (ncbi::objects::CSeq_feat::TDbxref::iterator dbxref = feat.SetDbxref().begin(); dbxref != feat.SetDbxref().end(); ++dbxref)
+    objects::CSeq_feat::TDbxref dbxrefs;
+    for (objects::CSeq_feat::TDbxref::iterator dbxref = feat.SetDbxref().begin(); dbxref != feat.SetDbxref().end(); ++dbxref)
     {
         if (!(*dbxref)->IsSetTag() || !(*dbxref)->IsSetDb() ||
             (*dbxref)->GetDb() != "WormBase" ||
@@ -2478,7 +2482,7 @@ static void fta_collect_wormbases(GeneListPtr glp, ncbi::objects::CSeq_feat& fea
 }
 
 /**********************************************************/
-static void fta_collect_olts(GeneListPtr glp, ncbi::objects::CSeq_feat& feat)
+static void fta_collect_olts(GeneListPtr glp, objects::CSeq_feat& feat)
 {
     if(glp == NULL || !feat.IsSetQual())
         return;
@@ -2508,8 +2512,8 @@ static void fta_collect_olts(GeneListPtr glp, ncbi::objects::CSeq_feat& feat)
  *   -- add new gene qual information into "glp"
  *
  **********************************************************/
-static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp,
-                     Int4 length, const ncbi::objects::CSeq_id& id)
+static void SrchGene(objects::CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp,
+                     Int4 length, const objects::CSeq_id& id)
 {
     GeneListPtr newglp;
     char*     pseudogene;
@@ -2519,12 +2523,12 @@ static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNode
     if(gnp == NULL)
         return;
 
-    NON_CONST_ITERATE(ncbi::objects::CSeq_annot::C_Data::TFtable, feat, feats)
+    NON_CONST_ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, feats)
     {
         gene = CpTheQualValue((*feat)->GetQual(), "gene");
         locus_tag = CpTheQualValue((*feat)->GetQual(), "locus_tag");
 
-        const ncbi::objects::CSeq_loc* cur_loc = (*feat)->IsSetLocation() ? &(*feat)->GetLocation() : nullptr;
+        const objects::CSeq_loc* cur_loc = (*feat)->IsSetLocation() ? &(*feat)->GetLocation() : nullptr;
         if (gene == NULL && locus_tag == NULL)
         {
             if (GetFeatNameAndLoc(NULL, *(*feat), gnp))
@@ -2545,7 +2549,7 @@ static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNode
         newglp->feat.Reset();
         if (gnp->simple_genes == false && cur_loc != nullptr && cur_loc->IsMix())
         {
-            newglp->feat.Reset(new ncbi::objects::CSeq_feat);
+            newglp->feat.Reset(new objects::CSeq_feat);
             newglp->feat->Assign(*(*feat));
         }
 
@@ -2563,7 +2567,7 @@ static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNode
            WeDontNeedToJoinThis((*feat)->GetData()))
             newglp->leave = 1;
 
-        newglp->genefeat = IfCDSGeneFeat(*(*feat), ncbi::objects::CSeqFeatData::e_Gene, "gene");
+        newglp->genefeat = IfCDSGeneFeat(*(*feat), objects::CSeqFeatData::e_Gene, "gene");
 
         newglp->maploc = ((*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "map") : NULL);
         newglp->segnum = gnp->segindex;
@@ -2573,12 +2577,12 @@ static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNode
         newglp->loc.Reset();
         if (cur_loc != nullptr)
         {
-            newglp->loc.Reset(new ncbi::objects::CSeq_loc);
+            newglp->loc.Reset(new objects::CSeq_loc);
             newglp->loc->Assign(*cur_loc);
         }
 
         newglp->todel = false;
-        if (IfCDSGeneFeat(*(*feat), ncbi::objects::CSeqFeatData::e_Cdregion, "CDS") == false && newglp->genefeat == false)
+        if (IfCDSGeneFeat(*(*feat), objects::CSeqFeatData::e_Cdregion, "CDS") == false && newglp->genefeat == false)
             newglp->pseudo = false;
         else
             newglp->pseudo = (*feat)->IsSetPseudo() ? (*feat)->GetPseudo() : false;
@@ -2605,18 +2609,18 @@ static void SrchGene(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, GeneNode
 }
 
 /**********************************************************/
-static CdssListPtr SrchCdss(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp,
-                            Int4 segnum, const ncbi::objects::CSeq_id& id)
+static CdssListPtr SrchCdss(objects::CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp,
+                            Int4 segnum, const objects::CSeq_id& id)
 {
     CdssListPtr      newclp;
     SeqlocInfoblkPtr slip;
 
-    ITERATE(ncbi::objects::CSeq_annot::C_Data::TFtable, feat, feats)
+    ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, feats)
     {
-        if (IfCDSGeneFeat(*(*feat), ncbi::objects::CSeqFeatData::e_Cdregion, "CDS") == false)
+        if (IfCDSGeneFeat(*(*feat), objects::CSeqFeatData::e_Cdregion, "CDS") == false)
             continue;
 
-        const ncbi::objects::CSeq_loc* cur_loc = (*feat)->IsSetLocation() ? &(*feat)->GetLocation() : nullptr;
+        const objects::CSeq_loc* cur_loc = (*feat)->IsSetLocation() ? &(*feat)->GetLocation() : nullptr;
 
         slip = GetLowHighFromSeqLoc(cur_loc, -99, id);
         if(slip == NULL)
@@ -2642,27 +2646,27 @@ static CdssListPtr SrchCdss(ncbi::objects::CSeq_annot::C_Data::TFtable& feats, C
  *         set entry.
  *
  **********************************************************/
-static void FindGene(ncbi::objects::CBioseq& bioseq, GeneNodePtr gene_node)
+static void FindGene(objects::CBioseq& bioseq, GeneNodePtr gene_node)
 {
-    const ncbi::objects::CSeq_id* first_id = nullptr;
+    const objects::CSeq_id* first_id = nullptr;
     if (!bioseq.GetId().empty())
         first_id = *bioseq.GetId().begin();
 
     if (IsSegBioseq(first_id))
         return;                         /* process this bioseq */
 
-    if (bioseq.GetInst().GetTopology() == ncbi::objects::CSeq_inst::eTopology_circular)
+    if (bioseq.GetInst().GetTopology() == objects::CSeq_inst::eTopology_circular)
         gene_node->circular = true;
 
     if (!bioseq.IsSetAnnot())
         return;
 
-    NON_CONST_ITERATE(ncbi::objects::CBioseq::TAnnot, annot, bioseq.SetAnnot())
+    NON_CONST_ITERATE(objects::CBioseq::TAnnot, annot, bioseq.SetAnnot())
     {
         if (!(*annot)->IsFtable())
             continue;
 
-        ncbi::CRef<ncbi::objects::CSeq_id> id = CpSeqIdAcOnly(first_id, gene_node->accver);
+        CRef<objects::CSeq_id> id = CpSeqIdAcOnly(first_id, gene_node->accver);
 
         ++(gene_node->segindex);              /* > 1, if segment set */
 
@@ -2863,8 +2867,8 @@ static void RemoveUnneededMiscFeats(GeneNodePtr gnp)
                 continue;
             }
 
-            ncbi::objects::sequence::ECompare cmp_res = ncbi::objects::sequence::Compare(*glp->loc, *tglp->loc, nullptr, ncbi::objects::sequence::fCompareOverlapping);
-            if (cmp_res != ncbi::objects::sequence::eContained)
+            objects::sequence::ECompare cmp_res = objects::sequence::Compare(*glp->loc, *tglp->loc, nullptr, objects::sequence::fCompareOverlapping);
+            if (cmp_res != objects::sequence::eContained)
                 continue;
 
             glp->todel = true;
@@ -2900,7 +2904,7 @@ static bool GeneLocusCheck(const TSeqFeatList& feats, bool diff_lt)
 
     ITERATE(TSeqFeatList, feat, feats)
     {
-        const ncbi::objects::CGene_ref& gene_ref1 = (*feat)->GetData().GetGene();
+        const objects::CGene_ref& gene_ref1 = (*feat)->GetData().GetGene();
         if (!gene_ref1.IsSetLocus() || !gene_ref1.IsSetLocus_tag())
             continue;
 
@@ -2908,7 +2912,7 @@ static bool GeneLocusCheck(const TSeqFeatList& feats, bool diff_lt)
                                      feat_cur = feat;
         for (++feat_next; feat_next != feats.end(); ++feat_next, ++feat_cur)
         {
-            const ncbi::objects::CGene_ref& gene_ref2 = (*feat_next)->GetData().GetGene();
+            const objects::CGene_ref& gene_ref2 = (*feat_next)->GetData().GetGene();
 
             if (!gene_ref2.IsSetLocus() || !gene_ref2.IsSetLocus_tag())
                 continue;
@@ -2982,14 +2986,14 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             FindGene(*bioseq, gnp);
         }
 
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
+        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
-            if (bio_set->GetClass() == ncbi::objects::CBioseq_set::eClass_parts)           /* parts, the place to put GeneRefPtr */
+            if (bio_set->GetClass() == objects::CBioseq_set::eClass_parts)           /* parts, the place to put GeneRefPtr */
             {
                 gnp->bioseq_set = &(*bio_set);
                 gnp->flag = true;
@@ -3050,7 +3054,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
 
         if (!gnp->feats.empty())
         {
-            ncbi::objects::CBioseq::TAnnot* annots = nullptr;
+            objects::CBioseq::TAnnot* annots = nullptr;
             if (gnp->seg)
             {
                 annots = &gnp->bioseq_set->SetAnnot();
@@ -3060,7 +3064,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
                 annots = &gnp->bioseq->SetAnnot();
             }
 
-            NON_CONST_ITERATE(ncbi::objects::CBioseq::TAnnot, cur_annot, *annots)
+            NON_CONST_ITERATE(objects::CBioseq::TAnnot, cur_annot, *annots)
             {
                 if (!(*cur_annot)->IsFtable())
                     continue;
@@ -3077,7 +3081,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
 
             if (annots->empty())
             {
-                ncbi::CRef<ncbi::objects::CSeq_annot> annot(new ncbi::objects::CSeq_annot);
+                CRef<objects::CSeq_annot> annot(new objects::CSeq_annot);
                 annot->SetData().SetFtable().assign(gnp->feats.begin(), gnp->feats.end());
 
                 if (gnp->seg)
@@ -3113,29 +3117,29 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
  *   other gene and asn2ff cannot find it.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs,
-                                                                ncbi::objects::CSeq_feat& feat, ncbi::objects::CGene_ref& gerep)
+static CRef<objects::CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs,
+                                                                objects::CSeq_feat& feat, objects::CGene_ref& gerep)
 {
     Int4           count = 0;
-    Uint1          strand = feat.GetLocation().IsSetStrand() ? feat.GetLocation().GetStrand() : ncbi::objects::eNa_strand_unknown;
+    Uint1          strand = feat.GetLocation().IsSetStrand() ? feat.GetLocation().GetStrand() : objects::eNa_strand_unknown;
 
-    if(strand == ncbi::objects::eNa_strand_other)
-        strand = ncbi::objects::eNa_strand_unknown;
+    if(strand == objects::eNa_strand_other)
+        strand = objects::eNa_strand_unknown;
 
-    ncbi::CConstRef<ncbi::objects::CGene_ref> gene_ref;
+    CConstRef<objects::CGene_ref> gene_ref;
 
     TSeqLocInfoList::const_iterator cur_loc = llocs.begin();
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc = fta_seqloc_local(feat.GetLocation(), acnum);
+    CRef<objects::CSeq_loc> loc = fta_seqloc_local(feat.GetLocation(), acnum);
 
     bool stopped = false;
     if (gene_refs.valid)
     {
         for (TSeqFeatList::iterator cur_feat = gene_refs.first; cur_feat != gene_refs.last; ++cur_feat)
         {
-            ncbi::objects::sequence::ECompare cmp_res = ncbi::objects::sequence::Compare(*loc, *cur_loc->loc, nullptr, ncbi::objects::sequence::fCompareOverlapping);
+            objects::sequence::ECompare cmp_res = objects::sequence::Compare(*loc, *cur_loc->loc, nullptr, objects::sequence::fCompareOverlapping);
 
             if (strand != cur_loc->strand ||
-                (cmp_res != ncbi::objects::sequence::eContained && cmp_res != ncbi::objects::sequence::eSame))
+                (cmp_res != objects::sequence::eContained && cmp_res != objects::sequence::eSame))
             {
                 ++cur_loc;
                 continue;                   /* f location is within sfp one */
@@ -3154,20 +3158,20 @@ static ncbi::CRef<ncbi::objects::CSeqFeatXref> GetXrpForOverlap(const Char* acnu
         }
     }
 
-    ncbi::CRef<ncbi::objects::CSeqFeatXref> xref;
+    CRef<objects::CSeqFeatXref> xref;
 
     if (count == 0 || (!stopped && gene_ref.NotEmpty() && fta_cmp_gene_refs(*gene_ref, gerep) == 0))
         return xref;
 
-    xref.Reset(new ncbi::objects::CSeqFeatXref);
+    xref.Reset(new objects::CSeqFeatXref);
     xref->SetData().SetGene(gerep);
 
     return xref;
 }
 
-static void FixAnnot(ncbi::objects::CBioseq::TAnnot& annots, const Char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs)
+static void FixAnnot(objects::CBioseq::TAnnot& annots, const Char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs)
 {
-    for (ncbi::objects::CBioseq::TAnnot::iterator annot = annots.begin(); annot != annots.end(); )
+    for (objects::CBioseq::TAnnot::iterator annot = annots.begin(); annot != annots.end(); )
     {
         if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())
         {
@@ -3175,12 +3179,12 @@ static void FixAnnot(ncbi::objects::CBioseq::TAnnot& annots, const Char* acnum, 
             continue;
         }
 
-        ncbi::objects::CSeq_annot::C_Data::TFtable& feat_table = (*annot)->SetData().SetFtable();
+        objects::CSeq_annot::C_Data::TFtable& feat_table = (*annot)->SetData().SetFtable();
         for (TSeqFeatList::iterator feat = feat_table.begin(); feat != feat_table.end();)
         {
             if ((*feat)->IsSetData() && (*feat)->GetData().IsImp())
             {
-                const ncbi::objects::CImp_feat& imp = (*feat)->GetData().GetImp();
+                const objects::CImp_feat& imp = (*feat)->GetData().GetImp();
                 if (imp.GetKey() == "gene")
                 {
                     feat = feat_table.erase(feat);
@@ -3196,7 +3200,7 @@ static void FixAnnot(ncbi::objects::CBioseq::TAnnot& annots, const Char* acnum, 
                 continue;
             }
 
-            ncbi::CRef<ncbi::objects::CGene_ref> gene_ref(new ncbi::objects::CGene_ref);
+            CRef<objects::CGene_ref> gene_ref(new objects::CGene_ref);
             if (gene)
                 gene_ref->SetLocus(gene);
             if (locus_tag)
@@ -3207,7 +3211,7 @@ static void FixAnnot(ncbi::objects::CBioseq::TAnnot& annots, const Char* acnum, 
             if (!syns.empty())
                 gene_ref->SetSyn().assign(syns.begin(), syns.end());
 
-            ncbi::CRef<ncbi::objects::CSeqFeatXref> xref = GetXrpForOverlap(acnum, gene_refs, llocs, *(*feat), *gene_ref);
+            CRef<objects::CSeqFeatXref> xref = GetXrpForOverlap(acnum, gene_refs, llocs, *(*feat), *gene_ref);
             if (xref.NotEmpty())
                 (*feat)->SetXref().push_back(xref);
 
@@ -3245,10 +3249,10 @@ static void GeneQuals(TEntryList& seq_entries, const Char* acnum, GeneRefFeats& 
         for (TSeqFeatList::iterator feat = gene_refs.first; feat != gene_refs.last; ++feat)
         {
             SeqLocInfo info;
-            info.strand = (*feat)->GetLocation().IsSetStrand() ? (*feat)->GetLocation().GetStrand() : ncbi::objects::eNa_strand_unknown;
+            info.strand = (*feat)->GetLocation().IsSetStrand() ? (*feat)->GetLocation().GetStrand() : objects::eNa_strand_unknown;
 
-            if (info.strand == ncbi::objects::eNa_strand_other)
-                info.strand = ncbi::objects::eNa_strand_unknown;
+            if (info.strand == objects::eNa_strand_other)
+                info.strand = objects::eNa_strand_unknown;
 
             info.loc = fta_seqloc_local((*feat)->GetLocation(), acnum);
             llocs.push_back(info);
@@ -3257,13 +3261,13 @@ static void GeneQuals(TEntryList& seq_entries, const Char* acnum, GeneRefFeats& 
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
+        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
             if (bio_set->IsSetAnnot())
                 FixAnnot(bio_set->SetAnnot(), acnum, gene_refs, llocs);
         }
 
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             if (bioseq->IsSetAnnot())
                 FixAnnot(bioseq->SetAnnot(), acnum, gene_refs, llocs);
@@ -3272,16 +3276,16 @@ static void GeneQuals(TEntryList& seq_entries, const Char* acnum, GeneRefFeats& 
 }
 
 /**********************************************************/
-static void fta_collect_genes(const ncbi::objects::CBioseq& bioseq, std::set<std::string>& genes)
+static void fta_collect_genes(const objects::CBioseq& bioseq, std::set<std::string>& genes)
 {
-    ITERATE(ncbi::objects::CBioseq::TAnnot, annot, bioseq.GetAnnot())
+    ITERATE(objects::CBioseq::TAnnot, annot, bioseq.GetAnnot())
     {
         if (!(*annot)->IsFtable())
             continue;
 
-        ITERATE(ncbi::objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
+        ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
         {
-            ITERATE(ncbi::objects::CSeq_feat::TQual, qual, (*feat)->GetQual())
+            ITERATE(objects::CSeq_feat::TQual, qual, (*feat)->GetQual())
             {
                 if (!(*qual)->IsSetQual() || (*qual)->GetQual() != "gene" ||
                     !(*qual)->IsSetVal() || (*qual)->GetVal().empty())
@@ -3294,23 +3298,23 @@ static void fta_collect_genes(const ncbi::objects::CBioseq& bioseq, std::set<std
 }
 
 /**********************************************************/
-static void fta_fix_labels(ncbi::objects::CBioseq& bioseq, const std::set<std::string>& genes)
+static void fta_fix_labels(objects::CBioseq& bioseq, const std::set<std::string>& genes)
 {
     if (!bioseq.IsSetAnnot())
         return;
 
-    NON_CONST_ITERATE(ncbi::objects::CBioseq::TAnnot, annot, bioseq.SetAnnot())
+    NON_CONST_ITERATE(objects::CBioseq::TAnnot, annot, bioseq.SetAnnot())
     {
         if (!(*annot)->IsFtable())
             continue;
 
-        NON_CONST_ITERATE(ncbi::objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
+        NON_CONST_ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
         {
 
             if (!(*feat)->IsSetQual())
                 continue;
 
-            NON_CONST_ITERATE(ncbi::objects::CSeq_feat::TQual, qual, (*feat)->SetQual())
+            NON_CONST_ITERATE(objects::CSeq_feat::TQual, qual, (*feat)->SetQual())
             {
                 if (!(*qual)->IsSetQual() || (*qual)->GetQual() != "label" ||
                     !(*qual)->IsSetVal() || (*qual)->GetVal().empty())
@@ -3320,7 +3324,7 @@ static void fta_fix_labels(ncbi::objects::CBioseq& bioseq, const std::set<std::s
                 std::set<std::string>::const_iterator ci = genes.lower_bound(cur_val);
                 if (*ci == cur_val)
                 {
-                    ncbi::CRef<ncbi::objects::CGb_qual> new_qual(new ncbi::objects::CGb_qual);
+                    CRef<objects::CGb_qual> new_qual(new objects::CGb_qual);
                     new_qual->SetQual("gene");
                     new_qual->SetVal(cur_val);
                     
@@ -3339,7 +3343,7 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
         std::set<std::string> genes;
         ITERATE(TEntryList, entry, seq_entries)
         {
-            for (ncbi::objects::CBioseq_CI bioseq(GetScope(), *(*entry)); bioseq; ++bioseq)
+            for (objects::CBioseq_CI bioseq(GetScope(), *(*entry)); bioseq; ++bioseq)
             {
                 fta_collect_genes(*bioseq->GetCompleteBioseq(), genes);
             }
@@ -3349,7 +3353,7 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
         {
             NON_CONST_ITERATE(TEntryList, entry, seq_entries)
             {
-                for (ncbi::CTypeIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+                for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
                 {
                     fta_fix_labels(*bioseq, genes);
                 }
@@ -3369,20 +3373,20 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
         {
             if ((*feat)->IsSetLocation())
             {
-                int partial = ncbi::objects::sequence::SeqLocPartialCheck((*feat)->GetLocation(), &GetScope());
-                if (partial & ncbi::objects::sequence::eSeqlocPartial_Start ||
-                    partial & ncbi::objects::sequence::eSeqlocPartial_Stop) // not internal
+                int partial = objects::sequence::SeqLocPartialCheck((*feat)->GetLocation(), &GetScope());
+                if (partial & objects::sequence::eSeqlocPartial_Start ||
+                    partial & objects::sequence::eSeqlocPartial_Stop) // not internal
                     (*feat)->SetPartial(true);
 
                 if (!pp->genenull || !(*feat)->GetLocation().IsMix())
                     continue;
 
-                ncbi::objects::CSeq_loc_mix& mix_loc = (*feat)->SetLocation().SetMix();
+                objects::CSeq_loc_mix& mix_loc = (*feat)->SetLocation().SetMix();
 
-                ncbi::CRef<ncbi::objects::CSeq_loc> null_loc(new ncbi::objects::CSeq_loc);
+                CRef<objects::CSeq_loc> null_loc(new objects::CSeq_loc);
                 null_loc->SetNull();
 
-                ncbi::objects::CSeq_loc_mix::Tdata::iterator it_loc = mix_loc.Set().begin();
+                objects::CSeq_loc_mix::Tdata::iterator it_loc = mix_loc.Set().begin();
                 ++it_loc;
                 for (; it_loc != mix_loc.Set().end(); ++it_loc)
                 {
@@ -3400,3 +3404,5 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
     if (!seq_entries.empty())
         GeneQuals(seq_entries, pp->entrylist[pp->curindx]->acnum, gene_refs);
 }
+
+END_NCBI_SCOPE

@@ -63,22 +63,17 @@
 
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/fta_xml.h>
-#include <objtools/flatfile/entry.h>
 #include <objtools/flatfile/embl.h>
-#include <objtools/flatfile/indx_blk.h>
 
-#include <objtools/flatfile/utilref.h>
-#include <objtools/flatfile/ref.h>
-#include <objtools/flatfile/asci_blk.h>
 #include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/ftamain.h>
 
-#include <objtools/flatfile/xgbparint.h>
-#include <objtools/flatfile/xutils.h>
-
+#include "ftaerr.hpp"
+#include "indx_blk.h"
+#include "asci_blk.h"
+#include "utilfun.h"
+#include "utilref.h"
 #include "em_ascii.h"
 #include "add.h"
 #include "utilfeat.h"
@@ -87,11 +82,19 @@
 #include "fta_qscore.h"
 #include "citation.h"
 #include "fcleanup.h"
+#include "entry.h"
+#include "ref.h"
+#include "xgbparint.h"
+#include "xutils.h"
+#include "fta_xml.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "em_ascii.cpp"
+
+
+BEGIN_NCBI_SCOPE
 
 /* For new stile of ID line in EMBL data check the "data class"
  * field first to figure out division code
@@ -259,7 +262,7 @@ static const char *ParFlat_DRname_array[] = {
  *
  **********************************************************/
 static void GetEmblDate(Int2 source, DataBlkPtr entry,
-                        ncbi::CRef<ncbi::objects::CDate_std>& crdate, ncbi::CRef<ncbi::objects::CDate_std>& update)
+                        CRef<objects::CDate_std>& crdate, CRef<objects::CDate_std>& update)
 {
     char* offset;
     char* eptr;
@@ -289,7 +292,7 @@ static void GetEmblDate(Int2 source, DataBlkPtr entry,
     }
     if (update.Empty())
     {
-        update.Reset(new ncbi::objects::CDate_std);
+        update.Reset(new objects::CDate_std);
         update->SetDay(crdate->GetDay());
         update->SetMonth(crdate->GetMonth());
         update->SetYear(crdate->GetYear());
@@ -378,15 +381,15 @@ static bool OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
  *      A ValNode which points to a ObjectId.
  *
  **********************************************************/
-static void SetXrefObjId(ncbi::objects::CEMBL_xref& xref, const std::string& str)
+static void SetXrefObjId(objects::CEMBL_xref& xref, const std::string& str)
 {
     if (str.empty())
         return;
 
-    ncbi::objects::CEMBL_xref::TId& ids = xref.SetId();
+    objects::CEMBL_xref::TId& ids = xref.SetId();
 
     bool found = false;
-    ITERATE(ncbi::objects::CEMBL_xref::TId, id, ids)
+    ITERATE(objects::CEMBL_xref::TId, id, ids)
     {
         if ((*id)->IsStr() && (*id)->GetStr() == str)
         {
@@ -398,7 +401,7 @@ static void SetXrefObjId(ncbi::objects::CEMBL_xref& xref, const std::string& str
     if (found)
         return;
 
-    ncbi::CRef<ncbi::objects::CObject_id> obj_id(new ncbi::objects::CObject_id);
+    CRef<objects::CObject_id> obj_id(new objects::CObject_id);
     obj_id->SetStr(str);
 
     ids.push_back(obj_id);
@@ -418,7 +421,7 @@ static void SetXrefObjId(ncbi::objects::CEMBL_xref& xref, const std::string& str
 static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
                              char* chentry, TStringList& dr_ena,
                              TStringList& dr_biosample, unsigned char* drop,
-                             ncbi::objects::CEMBL_block& embl)
+                             objects::CEMBL_block& embl)
 {
     const char    **b;
 
@@ -438,7 +441,7 @@ static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
     Int2          col_data;
     Int2          code;
 
-    ncbi::objects::CEMBL_block::TXref new_xrefs;
+    objects::CEMBL_block::TXref new_xrefs;
 
     if(xip == NULL)
     {
@@ -470,11 +473,11 @@ static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
             ptr = SrchTheChar(bptr, eptr, ';');
             name.assign(bptr, ptr);
 
-            if (ncbi::NStr::EqualNocase(name, "MD5"))
+            if (NStr::EqualNocase(name, "MD5"))
             {
                 while(ptr < eptr)
                 {
-                    if (ncbi::NStr::Equal(ptr, 0, 2, "DR"))
+                    if (NStr::Equal(ptr, 0, 2, "DR"))
                         break;
 
                     ptr = SrchTheChar(ptr, eptr, '\n');
@@ -486,7 +489,7 @@ static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
 
             for (b = ParFlat_DRname_array; *b != NULL; b++)
             {
-                if (ncbi::NStr::EqualNocase(name, *b))
+                if (NStr::EqualNocase(name, *b))
                     break;
             }
 
@@ -494,11 +497,11 @@ static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
                 ErrPostEx(SEV_WARNING, ERR_DRXREF_UnknownDBname,
                           "Encountered a new/unknown database name in DR line: \"%s\".",
                           name.c_str());
-            else if (ncbi::NStr::EqualNocase(*b, "UNIPROT/SWISS-PROT"))
+            else if (NStr::EqualNocase(*b, "UNIPROT/SWISS-PROT"))
             {
                 name = "UniProtKB/Swiss-Prot";
             }
-            else if (ncbi::NStr::EqualNocase(*b, "UNIPROT/TREMBL"))
+            else if (NStr::EqualNocase(*b, "UNIPROT/TREMBL"))
             {
                 name = "UniProtKB/TrEMBL";
             }
@@ -629,10 +632,10 @@ static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
         }
         else
         {
-            ncbi::CRef<ncbi::objects::CEMBL_xref> new_xref(new ncbi::objects::CEMBL_xref);
+            CRef<objects::CEMBL_xref> new_xref(new objects::CEMBL_xref);
 
             if (code != -1)
-                new_xref->SetDbname().SetCode(static_cast<ncbi::objects::CEMBL_dbname::ECode>(code));
+                new_xref->SetDbname().SetCode(static_cast<objects::CEMBL_dbname::ECode>(code));
             else
                 new_xref->SetDbname().SetName(name);
 
@@ -670,35 +673,35 @@ static void GetEmblBlockXref(DataBlkPtr entry, XmlIndexPtr xip,
         embl.SetXref().swap(new_xrefs);
 }
 
-static ncbi::objects::CTextseq_id& SetTextIdRef(ncbi::objects::CSeq_id& id)
+static objects::CTextseq_id& SetTextIdRef(objects::CSeq_id& id)
 {
-    static ncbi::objects::CTextseq_id noTextId;
+    static objects::CTextseq_id noTextId;
 
     switch (id.Which())
     {
-    case ncbi::objects::CSeq_id::e_Genbank:
+    case objects::CSeq_id::e_Genbank:
         return id.SetGenbank();
-    case ncbi::objects::CSeq_id::e_Embl:
+    case objects::CSeq_id::e_Embl:
         return id.SetEmbl();
-    case ncbi::objects::CSeq_id::e_Pir:
+    case objects::CSeq_id::e_Pir:
         return id.SetPir();
-    case ncbi::objects::CSeq_id::e_Swissprot:
+    case objects::CSeq_id::e_Swissprot:
         return id.SetSwissprot();
-    case ncbi::objects::CSeq_id::e_Other:
+    case objects::CSeq_id::e_Other:
         return id.SetOther();
-    case ncbi::objects::CSeq_id::e_Ddbj:
+    case objects::CSeq_id::e_Ddbj:
         return id.SetDdbj();
-    case ncbi::objects::CSeq_id::e_Prf:
+    case objects::CSeq_id::e_Prf:
         return id.SetPrf();
-    case ncbi::objects::CSeq_id::e_Tpg:
+    case objects::CSeq_id::e_Tpg:
         return id.SetTpg();
-    case ncbi::objects::CSeq_id::e_Tpe:
+    case objects::CSeq_id::e_Tpe:
         return id.SetTpe();
-    case ncbi::objects::CSeq_id::e_Tpd:
+    case objects::CSeq_id::e_Tpd:
         return id.SetTpd();
-    case ncbi::objects::CSeq_id::e_Gpipe:
+    case objects::CSeq_id::e_Gpipe:
         return id.SetGpipe();
-    case ncbi::objects::CSeq_id::e_Named_annot_track:
+    case objects::CSeq_id::e_Named_annot_track:
         return id.SetNamed_annot_track();
     default:
         ; // do nothing
@@ -722,8 +725,8 @@ static void GetReleaseInfo(DataBlkPtr entry, bool accver)
         return;
 
     ebp = (EntryBlkPtr) entry->data;
-    ncbi::objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
-    ncbi::objects::CTextseq_id& id = SetTextIdRef(*(*(bioseq.SetId().begin())));
+    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    objects::CTextseq_id& id = SetTextIdRef(*(*(bioseq.SetId().begin())));
 
     offset = SrchNodeType(entry, ParFlat_DT, &len);
     if(offset == NULL)
@@ -740,7 +743,7 @@ static void GetReleaseInfo(DataBlkPtr entry, bool accver)
 
     bptr = PointToNextToken(bptr);      /* bptr points to next token */
 
-    id.SetVersion(ncbi::NStr::StringToInt(bptr, ncbi::NStr::fAllowTrailingSymbols));
+    id.SetVersion(NStr::StringToInt(bptr, NStr::fAllowTrailingSymbols));
 }
 
 /**********************************************************
@@ -750,7 +753,7 @@ static void GetReleaseInfo(DataBlkPtr entry, bool accver)
  *      >= 1 OS per entry.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
+static CRef<objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
 {
     char*   bptr;
     char*   eptr;
@@ -782,14 +785,14 @@ static ncbi::CRef<ncbi::objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
         bptr = ptr + 1;
     }
 
-    ncbi::CRef<ncbi::objects::COrg_ref> org_ref;
+    CRef<objects::COrg_ref> org_ref;
     if(taxname[0] == '\0')
     {
         MemFree(taxname);
         return org_ref;
     }
 
-    org_ref.Reset(new ncbi::objects::COrg_ref);
+    org_ref.Reset(new objects::COrg_ref);
     org_ref->SetTaxname(taxname);
 
     ptr = StringChr(taxname, '(');
@@ -866,7 +869,7 @@ static void CheckEmblContigEverywhere(IndexblkPtr ibp, Int2 source)
 }
 
 /**********************************************************/
-bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserPtr pp)
+bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp)
 {
     DataBlkPtr dbp;
 
@@ -925,7 +928,7 @@ bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserP
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
+    CRef<objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.NotEmpty() && loc->IsMix())
     {
@@ -941,7 +944,7 @@ bool GetEmblInstContig(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq, ParserP
         pp->allow_crossdb_featloc = allow_crossdb_featloc;
 
         XGappedSeqLocsToDeltaSeqs(loc->GetMix(), bioseq.SetInst().SetExt().SetDelta().Set());
-        bioseq.SetInst().SetRepr(ncbi::objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
     }
     else
         bioseq.SetInst().ResetExt();
@@ -972,10 +975,10 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 
     ebp = (EntryBlkPtr) entry->data;
 
-    ncbi::objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
-    ncbi::objects::CSeq_inst& inst = bioseq.SetInst();
-    inst.SetRepr(ncbi::objects::CSeq_inst::eRepr_raw);
+    objects::CSeq_inst& inst = bioseq.SetInst();
+    inst.SetRepr(objects::CSeq_inst::eRepr_raw);
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -991,7 +994,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
      */
     if(StringNICmp(p, "circular", 8) == 0)
     {
-        inst.SetTopology(ncbi::objects::CSeq_inst::eTopology_circular);
+        inst.SetTopology(objects::CSeq_inst::eTopology_circular);
         p = PointToNextToken(p);
     }
     else if (ibp->embl_new_ID)
@@ -1013,7 +1016,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
         q--;
     }
 
-    if (ibp->embl_new_ID == false && inst.GetTopology() != ncbi::objects::CSeq_inst::eTopology_circular &&
+    if (ibp->embl_new_ID == false && inst.GetTopology() != objects::CSeq_inst::eTopology_circular &&
        StringStr(p, "DNA") == NULL && StringStr(p, "RNA") == NULL &&
        (pp->source != ParFlat_EMBL || (StringStr(p, "xxx") == NULL &&
         StringStr(p, "XXX") == NULL)))
@@ -1031,13 +1034,13 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
          */
         strand = CheckSTRAND(p);
         if (strand > 0)
-            inst.SetStrand(static_cast<ncbi::objects::CSeq_inst::EStrand>(strand));
+            inst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
     }
 
     if(r != NULL)
         *r = ';';
 
-    if (!GetSeqData(pp, entry, bioseq, ParFlat_SQ, dnaconv, ncbi::objects::eSeq_code_type_iupacna))
+    if (!GetSeqData(pp, entry, bioseq, ParFlat_SQ, dnaconv, objects::eSeq_code_type_iupacna))
         return false;
 
     if(ibp->is_contig && !GetEmblInstContig(entry, bioseq, pp))
@@ -1048,7 +1051,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 
 /**********************************************************
  *
- *   static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(pp, entry, mfp,
+ *   static CRef<objects::CEMBL_block> GetDescrEmblBlock(pp, entry, mfp,
  *                                         gbdiv, biosp,
  *                                         dr_ena, dr_biosample):
  *
@@ -1064,12 +1067,12 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
  *      DR line for xref.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
-    ParserPtr pp, DataBlkPtr entry, ncbi::objects::CMolInfo& mol_info, char** gbdiv,
-    ncbi::objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+static CRef<objects::CEMBL_block> GetDescrEmblBlock(
+    ParserPtr pp, DataBlkPtr entry, objects::CMolInfo& mol_info, char** gbdiv,
+    objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
-    ncbi::CRef<ncbi::objects::CEMBL_block> ret,
-                                           embl(new ncbi::objects::CEMBL_block);
+    CRef<objects::CEMBL_block> ret,
+                                           embl(new objects::CEMBL_block);
 
     IndexblkPtr  ibp;
     char*      bptr;
@@ -1112,20 +1115,20 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     {
         if (StringNICmp(bptr, "standard", 8) == 0)
         {
-            ;// embl->SetClass(ncbi::objects::CEMBL_block::eClass_standard);
+            ;// embl->SetClass(objects::CEMBL_block::eClass_standard);
         }
         else if (StringNICmp(bptr, "unannotated", 11) == 0)
         {
-            embl->SetClass(ncbi::objects::CEMBL_block::eClass_unannotated);
+            embl->SetClass(objects::CEMBL_block::eClass_unannotated);
         }
         else if (StringNICmp(bptr, "unreviewed", 10) == 0 ||
                  StringNICmp(bptr, "preliminary", 11) == 0)
         {
-            embl->SetClass(ncbi::objects::CEMBL_block::eClass_other);
+            embl->SetClass(objects::CEMBL_block::eClass_other);
         }
         else
         {
-            embl->SetClass(ncbi::objects::CEMBL_block::eClass_not_set);
+            embl->SetClass(objects::CEMBL_block::eClass_not_set);
         }
 
         bptr = StringChr(bptr, ';');
@@ -1237,7 +1240,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     *gbdiv = StringSave(ParFlat_GBDIV_array[thtg]);
 
     if (div <= 15)
-        embl->SetDiv(static_cast<ncbi::objects::CEMBL_block_Base::TDiv>(div));
+        embl->SetDiv(static_cast<objects::CEMBL_block_Base::TDiv>(div));
 
     p = *gbdiv;
     if(ibp->is_tpa &&
@@ -1276,8 +1279,8 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     fta_check_htg_kwds(embl->SetKeywords(), pp->entrylist[pp->curindx], mol_info);
 
     DefVsHTGKeywords(mol_info.GetTech(), entry, ParFlat_DE, ParFlat_SQ, cancelled);
-    if ((mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htgs_1 ||
-        mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
+    if ((mol_info.GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == objects::CMolInfo::eTech_htgs_1 ||
+        mol_info.GetTech() == objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
     {
         MemFree(*gbdiv);
         *gbdiv = NULL;
@@ -1397,8 +1400,8 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     }
 
     thtg = mol_info.GetTech();
-    if (thtg == ncbi::objects::CMolInfo::eTech_htgs_0 || thtg == ncbi::objects::CMolInfo::eTech_htgs_1 ||
-        thtg == ncbi::objects::CMolInfo::eTech_htgs_2 || thtg == ncbi::objects::CMolInfo::eTech_htgs_3)
+    if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
+        thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
     {
         RemoveHtgPhase(embl->SetKeywords());
     }
@@ -1504,7 +1507,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     }
 
     if (fli_kwd)
-        mol_info.SetTech(ncbi::objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -1513,22 +1516,22 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
         if(StringCmp(*gbdiv, "EST") == 0)
         {
             ibp->EST = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_est);
+            mol_info.SetTech(objects::CMolInfo::eTech_est);
         }
         else if(StringCmp(*gbdiv, "STS") == 0)
         {
             ibp->STS = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(objects::CMolInfo::eTech_sts);
         }
         else if(StringCmp(*gbdiv, "GSS") == 0)
         {
             ibp->GSS = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(objects::CMolInfo::eTech_survey);
         }
         else if(StringCmp(*gbdiv, "HTC") == 0)
         {
             ibp->HTC = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(objects::CMolInfo::eTech_htc);
             MemFree(*gbdiv);
             *gbdiv = NULL;
         }
@@ -1541,13 +1544,13 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -1565,9 +1568,9 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
 
     if (bio_src != NULL && bio_src->IsSetSubtype())
     {
-        ITERATE(ncbi::objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+        ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
         {
-            if ((*subtype)->GetSubtype() == ncbi::objects::CSubSource::eSubtype_environmental_sample)
+            if ((*subtype)->GetSubtype() == objects::CSubSource::eSubtype_environmental_sample)
             {
                 fta_remove_env_keywords(embl->SetKeywords());
                 break;
@@ -1576,7 +1579,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
     }
 
 
-    ncbi::CRef<ncbi::objects::CDate_std> std_creation_date,
+    CRef<objects::CDate_std> std_creation_date,
                                          std_update_date;
 
     GetEmblDate(pp->source, entry, std_creation_date, std_update_date);
@@ -1596,7 +1599,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
             StringNCmp(ibp->acnum, "CU", 2) == 0))
         {
             bool found = false;
-            ITERATE(ncbi::objects::CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
+            ITERATE(objects::CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
             {
                 if (fta_if_wgs_acc(acc->c_str()) == 0 &&
                     ((*acc)[0] == 'C' || (*acc)[0] == 'U'))
@@ -1606,7 +1609,7 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
                 }
             }
             if (found)
-                mol_info.SetTech(ncbi::objects::CMolInfo::eTech_wgs);
+                mol_info.SetTech(objects::CMolInfo::eTech_wgs);
         }
     }
 
@@ -1614,12 +1617,12 @@ static ncbi::CRef<ncbi::objects::CEMBL_block> GetDescrEmblBlock(
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
-                                                           char* gbdiv, ncbi::objects::CBioSource* bio_src)
+static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
+                                                           char* gbdiv, objects::CBioSource* bio_src)
 {
     IndexblkPtr  ibp;
 
-    ncbi::CRef<ncbi::objects::CGB_block> gbb(new ncbi::objects::CGB_block);
+    CRef<objects::CGB_block> gbb(new objects::CGB_block);
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -1642,7 +1645,7 @@ static ncbi::CRef<ncbi::objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlk
            bio_src != NULL && bio_src->IsSetSubtype())
         {
             bool not_found = true;
-            ITERATE(ncbi::objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+            ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
             {
                 if ((*subtype)->GetSubtype() == 27)
                 {
@@ -1672,8 +1675,8 @@ static ncbi::CRef<ncbi::objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlk
  *   OG line.
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkPtr entry,
-                                                          const ncbi::objects::COrg_ref* org_ref)
+static CRef<objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkPtr entry,
+                                                          const objects::COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
 
@@ -1716,23 +1719,23 @@ static ncbi::CRef<ncbi::objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkP
     else
         p = bptr;
 
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info(new ncbi::objects::CMolInfo);
+    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
 
     if(StringNCmp(p, "EST", 3) == 0)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_est);
+        mol_info->SetTech(objects::CMolInfo::eTech_est);
     else if(ibp->is_wgs)
     {
         if(ibp->is_tsa)
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_tsa);
+            mol_info->SetTech(objects::CMolInfo::eTech_tsa);
         else if(ibp->is_tls)
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_targeted);
+            mol_info->SetTech(objects::CMolInfo::eTech_targeted);
         else
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_wgs);
+            mol_info->SetTech(objects::CMolInfo::eTech_wgs);
     }
     else if(ibp->is_tsa)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_tsa);
+        mol_info->SetTech(objects::CMolInfo::eTech_tsa);
     else if(ibp->is_tls)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_targeted);
+        mol_info->SetTech(objects::CMolInfo::eTech_targeted);
 
     if(i == 0 && CheckSTRAND(bptr) >= 0)
         bptr = bptr + 3;
@@ -1748,15 +1751,15 @@ static ncbi::CRef<ncbi::objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkP
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CUser_field> fta_create_user_field(const char *tag, TStringList& lst)
+static CRef<objects::CUser_field> fta_create_user_field(const char *tag, TStringList& lst)
 {
-    ncbi::CRef<ncbi::objects::CUser_field> field;
+    CRef<objects::CUser_field> field;
     if (tag == NULL || lst.empty())
         return field;
 
-    field.Reset(new ncbi::objects::CUser_field);
+    field.Reset(new objects::CUser_field);
     field->SetLabel().SetStr(tag);
-    field->SetNum(static_cast<ncbi::objects::CUser_field::TNum>(lst.size()));
+    field->SetNum(static_cast<objects::CUser_field::TNum>(lst.size()));
 
     ITERATE(TStringList, item, lst)
     {
@@ -1767,23 +1770,23 @@ static ncbi::CRef<ncbi::objects::CUser_field> fta_create_user_field(const char *
 }
 
 /**********************************************************/
-void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
+void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
                                TStringList& dr_biosample,
-                               ncbi::CRef<ncbi::objects::CUser_object>& dbuop)
+                               CRef<objects::CUser_object>& dbuop)
 {
     bool got = false;
 
     if(dr_ena.empty() && dr_biosample.empty())
         return;
 
-    ncbi::objects::CUser_object* user_obj_ptr = nullptr;
+    objects::CUser_object* user_obj_ptr = nullptr;
 
-    NON_CONST_ITERATE(ncbi::objects::CSeq_descr::Tdata, descr, descrs)
+    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, descrs)
     {
         if (!(*descr)->IsUser() || !(*descr)->GetUser().IsSetType())
             continue;
 
-        const ncbi::objects::CObject_id& obj_id = (*descr)->GetUser().GetType();
+        const objects::CObject_id& obj_id = (*descr)->GetUser().GetType();
 
         if (obj_id.IsStr() && obj_id.GetStr() == "DBLink")
         {
@@ -1793,11 +1796,11 @@ void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TString
         }
     }
 
-    ncbi::CRef<ncbi::objects::CUser_field> field_bs;
+    CRef<objects::CUser_field> field_bs;
     if (!dr_biosample.empty())
         field_bs = fta_create_user_field("BioSample", dr_biosample);
 
-    ncbi::CRef<ncbi::objects::CUser_field> field_ena;
+    CRef<objects::CUser_field> field_ena;
     if (!dr_ena.empty())
     {
         field_ena = fta_create_user_field("Sequence Read Archive", dr_ena);
@@ -1806,11 +1809,11 @@ void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TString
     if (field_bs.Empty() && field_ena.Empty())
         return;
 
-    ncbi::CRef<ncbi::objects::CUser_object> user_obj;
+    CRef<objects::CUser_object> user_obj;
 
     if (!got)
     {
-        user_obj.Reset(new ncbi::objects::CUser_object);
+        user_obj.Reset(new objects::CUser_object);
         user_obj->SetType().SetStr("DBLink");
 
         user_obj_ptr = user_obj.GetPointer();
@@ -1823,7 +1826,7 @@ void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TString
 
     if (!got)
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetUser(*user_obj);
         descrs.push_back(descr);
     }
@@ -1832,27 +1835,27 @@ void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TString
         dbuop = user_obj;
     else
     {
-        dbuop.Reset(new ncbi::objects::CUser_object);
+        dbuop.Reset(new objects::CUser_object);
         dbuop->Assign(*user_obj_ptr);
     }
 }
 
 /**********************************************************/
-static void fta_create_imgt_misc_feat(ncbi::objects::CBioseq& bioseq, ncbi::objects::CEMBL_block& embl_block,
+static void fta_create_imgt_misc_feat(objects::CBioseq& bioseq, objects::CEMBL_block& embl_block,
                                       IndexblkPtr ibp)
 {
     if (!embl_block.IsSetXref())
         return;
 
-    ncbi::objects::CSeq_feat::TDbxref xrefs;
-    ITERATE(ncbi::objects::CEMBL_block::TXref, xref, embl_block.GetXref())
+    objects::CSeq_feat::TDbxref xrefs;
+    ITERATE(objects::CEMBL_block::TXref, xref, embl_block.GetXref())
     {
         if (!(*xref)->IsSetDbname() || !(*xref)->GetDbname().IsName() ||
             StringNCmp((*xref)->GetDbname().GetName().c_str(), "IMGT/", 5) != 0)
             continue;
 
         bool empty = true;
-        ITERATE(ncbi::objects::CEMBL_xref::TId, id, (*xref)->GetId())
+        ITERATE(objects::CEMBL_xref::TId, id, (*xref)->GetId())
         {
             if ((*id)->IsStr() && !(*id)->GetStr().empty())
             {
@@ -1864,13 +1867,13 @@ static void fta_create_imgt_misc_feat(ncbi::objects::CBioseq& bioseq, ncbi::obje
         if (empty)
             continue;
 
-        ncbi::CRef<ncbi::objects::CDbtag> tag(new ncbi::objects::CDbtag);
+        CRef<objects::CDbtag> tag(new objects::CDbtag);
         tag->SetDb((*xref)->GetDbname().GetName());
 
         std::string& id_str = tag->SetTag().SetStr();
 
         bool need_delimiter = false;
-        ITERATE(ncbi::objects::CEMBL_xref::TId, id, (*xref)->GetId())
+        ITERATE(objects::CEMBL_xref::TId, id, (*xref)->GetId())
         {
             if ((*id)->IsStr() && !(*id)->GetStr().empty())
             {
@@ -1889,29 +1892,29 @@ static void fta_create_imgt_misc_feat(ncbi::objects::CBioseq& bioseq, ncbi::obje
     if (xrefs.empty())
         return;
 
-    ncbi::CRef<ncbi::objects::CSeq_feat> feat(new ncbi::objects::CSeq_feat);
-    ncbi::objects::CImp_feat& imp = feat->SetData().SetImp();
+    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+    objects::CImp_feat& imp = feat->SetData().SetImp();
     imp.SetKey("misc_feature");
     feat->SetDbxref().swap(xrefs);
     feat->SetLocation(*fta_get_seqloc_int_whole(*(*bioseq.SetId().begin()), ibp->bases));
 
-    ncbi::objects::CBioseq::TAnnot& annot = bioseq.SetAnnot();
+    objects::CBioseq::TAnnot& annot = bioseq.SetAnnot();
     if (annot.empty() || !(*annot.begin())->IsFtable())
     {
-        ncbi::CRef<ncbi::objects::CSeq_annot> new_annot(new ncbi::objects::CSeq_annot);
+        CRef<objects::CSeq_annot> new_annot(new objects::CSeq_annot);
         new_annot->SetData().SetFtable().push_back(feat);
 
         annot.push_back(new_annot);
     }
     else
     {
-        ncbi::objects::CSeq_annot& old_annot = *(*annot.begin());
+        objects::CSeq_annot& old_annot = *(*annot.begin());
         old_annot.SetData().SetFtable().push_front(feat);
     }
 }
 
 /**********************************************************/
-static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
+static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
 {
     IndexblkPtr   ibp;
     DataBlkPtr    dbp;
@@ -2010,7 +2013,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
             }
         }
 
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetTitle(str);
         bioseq.SetDescr().Set().push_back(descr);
 
@@ -2061,10 +2064,10 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
         if(dbp->type != ParFlat_REF_END)
             continue;
 
-        ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
+        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -2076,10 +2079,10 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
         if(dbp->type != ParFlat_REF_NO_TARGET)
             continue;
 
-        ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
+        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -2087,10 +2090,10 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 
     /* OS data ==> descr_org
      */
-    ncbi::objects::CBioSource* bio_src = nullptr;
-    ncbi::objects::COrg_ref* org_ref = nullptr;
+    objects::CBioSource* bio_src = nullptr;
+    objects::COrg_ref* org_ref = nullptr;
 
-    NON_CONST_ITERATE(ncbi::objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
+    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
     {
         if ((*descr)->IsSource())
         {
@@ -2103,14 +2106,14 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 
     /* MolInfo, 3rd or 4th token in the ID line
      */
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info = GetEmblMolInfo(pp, entry, org_ref);
+    CRef<objects::CMolInfo> mol_info = GetEmblMolInfo(pp, entry, org_ref);
 
     gbdiv = NULL;
 
     TStringList dr_ena,
                 dr_biosample;
 
-    ncbi::CRef<ncbi::objects::CEMBL_block> embl_block =
+    CRef<objects::CEMBL_block> embl_block =
         GetDescrEmblBlock(pp, entry, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
 
     if (pp->source == ParFlat_EMBL && embl_block.NotEmpty())
@@ -2128,12 +2131,12 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 
     if (mol_info->IsSetBiomol() || mol_info->IsSetTech())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetMolinfo(*mol_info);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (mol_info->IsSetTech() && (mol_info->GetTech() == ncbi::objects::CMolInfo::eTech_htgs_0 || mol_info->GetTech() == ncbi::objects::CMolInfo::eTech_htgs_1 ||
-            mol_info->GetTech() == ncbi::objects::CMolInfo::eTech_htgs_2))
+        if (mol_info->IsSetTech() && (mol_info->GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info->GetTech() == objects::CMolInfo::eTech_htgs_1 ||
+            mol_info->GetTech() == objects::CMolInfo::eTech_htgs_2))
             is_htg = true;
     }
     else
@@ -2141,7 +2144,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
         mol_info.Reset();
     }
 
-    ncbi::CRef<ncbi::objects::CUser_object> dbuop;
+    CRef<objects::CUser_object> dbuop;
     if (!dr_ena.empty() || !dr_biosample.empty())
         fta_build_ena_user_object(bioseq.SetDescr().Set(), dr_ena, dr_biosample, dbuop);
 
@@ -2152,22 +2155,22 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
     }
 
     if(StringNICmp(ibp->division, "CON", 3) == 0)
-        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), ParFlat_EMBL, ncbi::objects::CSeq_id::e_Embl,
+        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), ParFlat_EMBL, objects::CSeq_id::e_Embl,
                      true, ibp->acnum);
     else
-        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), ParFlat_EMBL, ncbi::objects::CSeq_id::e_Embl,
+        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), ParFlat_EMBL, objects::CSeq_id::e_Embl,
                      false, ibp->acnum);
 
     if (embl_block->GetExtra_acc().empty())
         embl_block->ResetExtra_acc();
 
-    ncbi::CRef<ncbi::objects::CGB_block> gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src);      /* GB-block */
+    CRef<objects::CGB_block> gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src);      /* GB-block */
     if(gbdiv != NULL)
         MemFree(gbdiv);
 
     if(pp->source != ParFlat_NCBI)
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetEmbl(*embl_block);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -2210,7 +2213,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
         if(pp->taxserver == 1 && gbb->IsSetDiv())
             fta_fix_orgref_div(bioseq.GetAnnot(), *org_ref, *gbb);
 
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetGenbank(*gbb);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -2238,7 +2241,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 
             NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
             {
-                ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
                 descr->SetUser(*(*user_obj));
                 bioseq.SetDescr().Set().push_back(descr);
             }
@@ -2263,7 +2266,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 
             if (str[0] != 0)
             {
-                ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
                 descr->SetComment(str);
                 bioseq.SetDescr().Set().push_back(descr);
             }
@@ -2277,23 +2280,23 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
     /* DT data ==> create-date, update-date
      */
 
-    ncbi::CRef<ncbi::objects::CDate_std> std_creation_date,
+    CRef<objects::CDate_std> std_creation_date,
                                          std_update_date;
     GetEmblDate(pp->source, entry, std_creation_date, std_update_date);
     if (std_creation_date.NotEmpty())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetCreate_date().SetStd(*std_creation_date);
         bioseq.SetDescr().Set().push_back(descr);
     }
 
     if(std_update_date.NotEmpty())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetUpdate_date().SetStd(*std_update_date);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (std_creation_date.NotEmpty() && std_creation_date->Compare(*std_update_date) == ncbi::objects::CDate::eCompare_after)
+        if (std_creation_date.NotEmpty() && std_creation_date->Compare(*std_update_date) == objects::CDate::eCompare_after)
         {
             std::string crdate_str,
                         update_str;
@@ -2307,7 +2310,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq&
 }
 
 /**********************************************************/
-static void FakeEmblBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
+static void FakeEmblBioSources(DataBlkPtr entry, objects::CBioseq& bioseq)
 {
     DataBlkPtr   dbp;
     DataBlkPtr   subdbp;
@@ -2329,11 +2332,11 @@ static void FakeEmblBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
         if(dbp->type != ParFlat_OS)
             continue;
 
-        ncbi::CRef<ncbi::objects::COrg_ref> org_ref = GetEmblOrgRef(dbp);
+        CRef<objects::COrg_ref> org_ref = GetEmblOrgRef(dbp);
         if (org_ref.Empty())
             continue;
 
-        ncbi::CRef<ncbi::objects::CBioSource> bio_src(new ncbi::objects::CBioSource);
+        CRef<objects::CBioSource> bio_src(new objects::CBioSource);
         bio_src->SetOrg(*org_ref);
 
         std::string& taxname_str = org_ref->SetTaxname();
@@ -2406,7 +2409,7 @@ static void FakeEmblBioSources(DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
             MemFree(q);
         }
 
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetSource(*bio_src);
         bioseq.SetDescr().Set().push_front(descr);
     }
@@ -2487,7 +2490,7 @@ bool EmblAscii(ParserPtr pp)
 
     TEntryList seq_entries;
 
-    ncbi::objects::CSeq_loc locs;
+    objects::CSeq_loc locs;
 
     bool     reject_set;
     bool     seq_long = false;
@@ -2563,11 +2566,11 @@ bool EmblAscii(ParserPtr pp)
             }
             GetEmblSubBlock(ibp->bases, pp->source, entry);
 
-            ncbi::CRef<ncbi::objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
+            CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
             AddNIDSeqId(*bioseq, entry, ParFlat_NI, ParFlat_COL_DATA_EMBL,
                         pp->source);
 
-            ebp->seq_entry.Reset(new ncbi::objects::CSeq_entry);
+            ebp->seq_entry.Reset(new objects::CSeq_entry);
             ebp->seq_entry->SetSeq(*bioseq);
             GetScope().AddBioseq(*bioseq);
 
@@ -2626,7 +2629,7 @@ bool EmblAscii(ParserPtr pp)
 
             if (bioseq->GetInst().IsNa())
             {
-                if (bioseq->GetInst().GetRepr() == ncbi::objects::CSeq_inst::eRepr_raw)
+                if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
                 {
                     if(ibp->gaps != NULL)
                         GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
@@ -2679,7 +2682,7 @@ bool EmblAscii(ParserPtr pp)
              */
             if (ibp->psip.NotEmpty())
             {
-                ncbi::CRef<ncbi::objects::CSeq_id> id(new ncbi::objects::CSeq_id);
+                CRef<objects::CSeq_id> id(new objects::CSeq_id);
                 id->SetPatent(*ibp->psip);
                 bioseq->SetId().push_back(id);
                 ibp->psip.Reset();
@@ -2841,11 +2844,11 @@ char* GetEmblDiv(Uint1 num)
 }
 
 /**********************************************************/
-ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, ncbi::objects::CMolInfo& mol_info,
-                                                       char** gbdiv, ncbi::objects::CBioSource* bio_src,
+CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::CMolInfo& mol_info,
+                                                       char** gbdiv, objects::CBioSource* bio_src,
                                                        TStringList& dr_ena, TStringList& dr_biosample)
 {
-    ncbi::CRef<ncbi::objects::CEMBL_block> embl(new ncbi::objects::CEMBL_block),
+    CRef<objects::CEMBL_block> embl(new objects::CEMBL_block),
                                            ret;
 
     IndexblkPtr  ibp;
@@ -2941,7 +2944,7 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
     *gbdiv = StringSave(ParFlat_GBDIV_array[thtg]);
 
     if (div <= 15)
-        embl->SetDiv(static_cast<ncbi::objects::CEMBL_block_Base::TDiv>(div));
+        embl->SetDiv(static_cast<objects::CEMBL_block_Base::TDiv>(div));
 
     p = *gbdiv;
     if(ibp->is_tpa &&
@@ -2978,8 +2981,8 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
     fta_check_htg_kwds(embl->SetKeywords(), ibp, mol_info);
 
     XMLDefVsHTGKeywords(mol_info.GetTech(), entry, ibp->xip, cancelled);
-    if ((mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htgs_1 ||
-        mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
+    if ((mol_info.GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == objects::CMolInfo::eTech_htgs_1 ||
+        mol_info.GetTech() == objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
     {
         MemFree(*gbdiv);
         *gbdiv = NULL;
@@ -3099,8 +3102,8 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
     }
 
     thtg = mol_info.GetTech();
-    if (thtg == ncbi::objects::CMolInfo::eTech_htgs_0 || thtg == ncbi::objects::CMolInfo::eTech_htgs_1 ||
-        thtg == ncbi::objects::CMolInfo::eTech_htgs_2 || thtg == ncbi::objects::CMolInfo::eTech_htgs_3)
+    if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
+        thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
     {
         RemoveHtgPhase(embl->SetKeywords());
     }
@@ -3194,7 +3197,7 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
     }
 
     if (fli_kwd)
-        mol_info.SetTech(ncbi::objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -3203,22 +3206,22 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
         if(StringCmp(*gbdiv, "EST") == 0)
         {
             ibp->EST = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_est);
+            mol_info.SetTech(objects::CMolInfo::eTech_est);
         }
         else if(StringCmp(*gbdiv, "STS") == 0)
         {
             ibp->STS = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(objects::CMolInfo::eTech_sts);
         }
         else if(StringCmp(*gbdiv, "GSS") == 0)
         {
             ibp->GSS = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(objects::CMolInfo::eTech_survey);
         }
         else if(StringCmp(*gbdiv, "HTC") == 0)
         {
             ibp->HTC = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(objects::CMolInfo::eTech_htc);
             MemFree(*gbdiv);
             *gbdiv = NULL;
         }
@@ -3231,13 +3234,13 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -3258,7 +3261,7 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
 
 
     p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE);
-    ncbi::CRef<ncbi::objects::CDate_std> std_creation_date,
+    CRef<objects::CDate_std> std_creation_date,
                                          std_update_date;
     if (p != NULL)
     {
@@ -3284,7 +3287,7 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
         if (StringLen(ibp->acnum) == 8 && StringNCmp(ibp->acnum, "CT", 2) == 0)
         {
             bool found = false;
-            ITERATE(ncbi::objects::CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
+            ITERATE(objects::CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
             {
                 if (fta_if_wgs_acc(acc->c_str()) == 0 &&
                    ((*acc)[0] == 'C' || (*acc)[0] == 'U'))
@@ -3294,9 +3297,11 @@ ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry
                 }
             }
             if (found)
-                mol_info.SetTech(ncbi::objects::CMolInfo::eTech_wgs);
+                mol_info.SetTech(objects::CMolInfo::eTech_wgs);
         }
     }
 
     return embl;
 }
+
+END_NCBI_SCOPE

@@ -36,8 +36,12 @@
 #ifndef FCLEANUP_H
 #define FCLEANUP_H
 
-#include <objtools/flatfile/ftablock.h>
+#include "ftablock.h"
+
+BEGIN_NCBI_SCOPE
 
 void FinalCleanup(TEntryList& seq_entries);
+
+END_NCBI_SCOPE
 
 #endif // FCLEANUP_H

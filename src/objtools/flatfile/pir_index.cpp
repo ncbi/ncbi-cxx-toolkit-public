@@ -40,17 +40,21 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 #include <objtools/flatfile/pir_index.h>
-#include <objtools/flatfile/entry.h>
 
+#include "ftaerr.hpp"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
+#include "entry.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "pir_index.cpp"
+
+BEGIN_NCBI_SCOPE
+
 
 KwordBlk pirkwl[] = {
     {"ENTRY", 5},           {"TITLE", 5},           {"ALTERNATE_NAMES", 15},
@@ -71,7 +75,7 @@ static Uint1 pir_err_field(const char *name)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(char* line)
+static CRef<objects::CDate_std> GetDatePtr(char* line)
 {
     const char *mon[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL",
         "AUG", "SEP", "OCT", "NOV", "DEC", NULL };
@@ -86,7 +90,7 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(char* line)
         p[0] < '0' || p[0] > '3' || p[1] < '0' || p[1] > '9' ||
         p[7] < '1' || p[7] > '2' || p[8] < '0' || p[8] > '9' ||
         p[9] < '0' || p[9] > '9' || p[10] < '0' || p[10] > '9')
-        return ncbi::CRef<ncbi::objects::CDate_std>();
+        return CRef<objects::CDate_std>();
 
     line[6] = '\0';
 
@@ -96,7 +100,7 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(char* line)
 
     line[6] = '-';
     if (*b == NULL)
-        return ncbi::CRef<ncbi::objects::CDate_std>();
+        return CRef<objects::CDate_std>();
 
     year = atoi(&p[7]);
 
@@ -107,9 +111,9 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(char* line)
     line[2] = '-';
 
     if (day < 1 || day > 31)
-        return ncbi::CRef<ncbi::objects::CDate_std>();
+        return CRef<objects::CDate_std>();
 
-    ncbi::CRef<ncbi::objects::CDate_std> res(new ncbi::objects::CDate_std);
+    CRef<objects::CDate_std> res(new objects::CDate_std);
     res->SetYear(year);
     res->SetMonth(month);
     res->SetDay(day);
@@ -118,10 +122,10 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetDatePtr(char* line)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CDate_std> GetPirDate(char* line)
+static CRef<objects::CDate_std> GetPirDate(char* line)
 {
-    ncbi::CRef<ncbi::objects::CDate_std> first;
-    ncbi::CRef<ncbi::objects::CDate_std> second;
+    CRef<objects::CDate_std> first;
+    CRef<objects::CDate_std> second;
     char* p;
     char* q;
     Char    ch;
@@ -161,7 +165,7 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetPirDate(char* line)
     if (second.Empty())
         return(first);
 
-    if (second->Compare(*first) == ncbi::objects::CDate::eCompare_before)
+    if (second->Compare(*first) == objects::CDate::eCompare_before)
     {
         return(second);
     }
@@ -354,4 +358,6 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
 
     return(end_of_file);
 }
+
+END_NCBI_SCOPE
 // LCOV_EXCL_STOP

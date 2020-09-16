@@ -38,10 +38,10 @@
 
 #include <objmgr/data_loader.hpp>
 
-struct parser_vals; 
-size_t CheckOutsideEntry(parser_vals* pp, const char* acc, Int2 vernum);
-
 BEGIN_NCBI_SCOPE
+struct Parser;
+size_t CheckOutsideEntry(Parser* pp, const char* acc, Int2 vernum);
+
 BEGIN_SCOPE(objects)
 
 //////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ class CBuffer_DataLoader : public CDataLoader
 {
 public:
 
-    CBuffer_DataLoader(const string& name, parser_vals* parser);
+    CBuffer_DataLoader(const string& name, Parser* parser);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     virtual bool CanGetBlobById() const;
@@ -64,18 +64,18 @@ public:
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
 
     typedef SRegisterLoaderInfo<CBuffer_DataLoader> TRegisterLoaderInfo;
-    static TRegisterLoaderInfo RegisterInObjectManager(CObjectManager& om, parser_vals* params, CObjectManager::EIsDefault is_default, CObjectManager::TPriority priority);
+    static TRegisterLoaderInfo RegisterInObjectManager(CObjectManager& om, Parser* params, CObjectManager::EIsDefault is_default, CObjectManager::TPriority priority);
 
 protected:
 
 private:
     void x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lock);
 
-    parser_vals* m_parser;
+    Parser* m_parser;
 
-    static const string& GetLoaderNameFromArgs(parser_vals*);
-    typedef CParamLoaderMaker<CBuffer_DataLoader, parser_vals*> TLoaderMaker;
-    friend class CParamLoaderMaker<CBuffer_DataLoader, parser_vals*>;
+    static const string& GetLoaderNameFromArgs(Parser*);
+    typedef CParamLoaderMaker<CBuffer_DataLoader, Parser*> TLoaderMaker;
+    friend class CParamLoaderMaker<CBuffer_DataLoader, Parser*>;
 };
 
 

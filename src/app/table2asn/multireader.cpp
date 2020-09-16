@@ -80,12 +80,12 @@
 #include <objtools/edit/feattable_edit.hpp>
 
 //#include <objtools/flatfile/ftacpp.hpp>
-#include <objtools/flatfile/index.h>
+//#include <objtools/flatfile/index.h>
 //#include <objtools/flatfile/fta_parse_buf.h>
 //#include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/fta_parser.h>
 #include <objtools/flatfile/ftamain.h>
-#include <objtools/flatfile/ftablock.h>
+//#include <objtools/flatfile/ftablock.h>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -1274,8 +1274,8 @@ CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat form
 #endif
     pp->output_format = FTA_OUTPUT_BIOSEQSET;
 
-    CRef<ncbi::CSerialObject> obj;
-    parse_flatfile(obj, pp.release(), false);
+    CFlatFileParser ffparser(m_context.m_logger);
+    auto obj = ffparser.Parse(pp.get(), false);
     if (obj.NotEmpty())
     {
         //cerr << MSerial_AsnText << *obj;

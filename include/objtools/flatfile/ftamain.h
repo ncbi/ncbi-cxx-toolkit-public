@@ -36,19 +36,33 @@
 #ifndef FTAMAIN_H
 #define FTAMAIN_H
 
+#include <objtools/flatfile/index.h>
+
+
 namespace ncbi
 {
     namespace objects
     {
-        class CScope;
+        class IObjtoolsListener;
     };
     class CSerialObject;
 }
 
-ncbi::objects::CScope& GetScope();
 
-Int2 fta_main(ParserPtr pp, bool already);
+BEGIN_NCBI_SCOPE
 
-bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool already);
+NCBI_DEPRECATED Int2 fta_main(ParserPtr pp, bool already);
+
+
+class NCBI_XFLATFILE_EXPORT CFlatFileParser 
+{
+public:
+    CFlatFileParser(objects::IObjtoolsListener* pMessageListener);
+    virtual ~CFlatFileParser(void);
+    CRef<CSerialObject> Parse(Parser* pParser, bool already);
+};
+
+
+END_NCBI_SCOPE
 
 #endif // FTAMAIN_H

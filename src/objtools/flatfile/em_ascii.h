@@ -38,15 +38,18 @@
 
 #include <objects/seq/Seq_descr.hpp>
 
+BEGIN_NCBI_SCOPE
+
 typedef std::list<std::string> TStringList;
 
-ncbi::CRef<ncbi::objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, ncbi::objects::CMolInfo& mol_info,
-                                                       char** gbdiv, ncbi::objects::CBioSource* bio_src,
+CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::CMolInfo& mol_info,
+                                                       char** gbdiv, objects::CBioSource* bio_src,
                                                        TStringList& dr_ena, TStringList& dr_biosample);
 
 bool EmblAscii(ParserPtr pp);
-void fta_build_ena_user_object(ncbi::objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
+void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
                                 TStringList& dr_biosample,
-                                ncbi::CRef<ncbi::objects::CUser_object>& dbuop);
+                                CRef<objects::CUser_object>& dbuop);
 
+END_NCBI_SCOPE
 #endif // EM_ASCII_H

@@ -35,9 +35,12 @@
 
 #ifndef FTA_SRC_H
 #define FTA_SRC_H
+BEGIN_NCBI_SCOPE
 
 void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
-                                Int2 type, ncbi::objects::CBioseq& bioseq, TSeqFeatList& seq_feats);
+                                Int2 type, objects::CBioseq& bioseq, TSeqFeatList& seq_feats);
 bool fta_if_special_org(const char* name);
+
+END_NCBI_SCOPE
 
 #endif // FTA_SRC_H

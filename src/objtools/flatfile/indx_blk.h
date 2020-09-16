@@ -35,6 +35,10 @@
 #ifndef _INDEXBLOCK_
 #define _INDEXBLOCK_
 
+#include "ftablock.h"
+
+BEGIN_NCBI_SCOPE
+
 typedef struct file_infomation_block {
     Char   str[256];                    /* the current string data */
     Int4   line;                        /* the current line number */
@@ -46,7 +50,7 @@ typedef struct ind_blk_next {
     struct ind_blk_next *next;
 } IndBlkNext, *IndBlkNextPtr;
 
-ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(char* ptr, Int2 source);
+CRef<objects::CDate_std> GetUpdateDate(char* ptr, Int2 source);
 
 /**********************************************************/
 bool        XReadFile(FILE* fp, FinfoBlkPtr finfo);
@@ -80,5 +84,11 @@ Int2  CheckNADDBJ(char* str);
 Int2  CheckNA(char* str);
 
 bool CkLocusLinePos(char* offset, Int2 source, LocusContPtr lcp, bool is_mga);
+
+const Char **GetAccArray(Int2 whose);
+Uint1        GetNucAccOwner(const char* acc, short* source, bool is_tpa);
+Uint1        GetProtAccOwner(const char* acc);
+//void    FreeParser(ParserPtr pp);
+END_NCBI_SCOPE
 
 #endif

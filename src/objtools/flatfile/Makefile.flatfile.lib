@@ -23,6 +23,7 @@ SRC     = \
     fta_qscore \
     fta_src \
     ftamain \
+    fta_parser \
     gb_ascii \
     genref \
     ind \
@@ -38,7 +39,10 @@ SRC     = \
     xm_ascii \
     buf_data_loader  \
     ftanet \
-    ftamed
+    ftamed \
+    flatfile_message \
+    flatfile_message_reporter
+
 
 LIB     = xflatfile
 

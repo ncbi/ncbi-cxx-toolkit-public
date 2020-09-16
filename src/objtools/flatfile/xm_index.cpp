@@ -36,13 +36,13 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/flatfile/ftacpp.hpp>
-
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
-#include <objtools/flatfile/fta_xml.h>
 
+#include "ftaerr.hpp"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
+#include "fta_xml.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -50,6 +50,8 @@
 #define THIS_FILE "xm_index.cpp"
 
 #define XML_FAKE_ACC_TAG "AC   "
+
+BEGIN_NCBI_SCOPE
 
 typedef struct _XmlKwordBlk {
     const char *str;
@@ -1790,3 +1792,5 @@ char* XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep)
     XMLRestoreSpecialCharacters(buf);
     return(buf);
 }
+
+END_NCBI_SCOPE

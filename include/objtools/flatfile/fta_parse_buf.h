@@ -38,14 +38,18 @@
 
 #include <list>
 #include <objects/seqset/Seq_entry.hpp>
-
+BEGIN_NCBI_SCOPE
 // some forward declarations
-struct parser_vals;
-typedef struct parser_vals Parser;
+//struct parser_vals;
+//typedef struct parser_vals Parser;
 
-typedef std::list<ncbi::CRef<ncbi::objects::CSeq_entry> > TEntryList;
+struct Parser;
+
+typedef std::list<CRef<objects::CSeq_entry>> TEntryList;
 
 TEntryList& fta_parse_buf(Parser& pp, const char* buf);
 bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source);
+
+END_NCBI_SCOPE
 
 #endif // FTA_PARSE_BUF_H

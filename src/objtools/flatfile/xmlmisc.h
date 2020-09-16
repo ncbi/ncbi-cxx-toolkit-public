@@ -1,4 +1,4 @@
-/* sp_ascii.h
+/* xmlmisc.h
  *
  * ===========================================================================
  *
@@ -24,53 +24,44 @@
  *
  * ===========================================================================
  *
- * File Name:  sp_ascii.h
+ * File Name:  xmlmisc.h
  *
- * Author: Karl Sirotkin, Hsiu-Chuan Chen
+ * Author: Alexey Dobronadezhdin
  *
  * File Description:
  * -----------------
- *      Build SWISS-PROT format entry block.
- *
+ *      XML functionality from C-toolkit.
  */
 
-#ifndef _SPASCII_
-#define _SPASCII_
+#ifndef XMLMISC_H
+#define XMLMISC_H
 
-#define ParFlatSPSites       1
-#define ParFlatSPBonds       2
-#define ParFlatSPRegions     3
-#define ParFlatSPImports     4
-#define ParFlatSPInitMet     5
-#define ParFlatSPNonTer      6
-#define ParFlatSPNonCons     7
+#include "valnode.h" 
+/* Simple XML Parsing */
 
-typedef struct sprot_feat_type {
-    const char *inkey;                  /* input key string */
-    Uint1      type;                    /* SITES, REGIONS, BONDS, IMPORTS */
-    Int4       keyint;                  /* output keyname for SITES, BONDS */
-    const char *keystring;              /* output keyname for REGIONS, IMPORTS,
-                                           or description string from SITES */
-} SPFeatType, *SPFeatTypePtr;
-
-/* Table of valid Comment topic (CC line), change
- * "comment-topic-key:" to "[comment-topic-key]"
- *
- *  CC   -!- SUBCELLULAR LOCATION: POSSIBLY ASSOCIATED WITH, AND ANCHORED TO,
- *  CC       THE CYTOPLASMIC SIDE OF THE MEMBRANE.
- */
-
-/* "POLYMORPHISM" added in 29.0 release  June 1994
- */
-
-/* "DOMAIN" added in 30.0 release
- */
-
-/* "ALTERNATIVE SPLICING" changed to ALTERNATIVE PRODUCTS in 30.0 release
- */
 BEGIN_NCBI_SCOPE
 
-bool SprotAscii(ParserPtr pp);
+typedef struct xmlobj {
+    char*    name;
+    char*    contents;
+    short       level;
+    struct xmlobj  *attributes;
+    struct xmlobj  *children;
+    struct xmlobj  *next;
+    struct xmlobj  *parent;
+    struct xmlobj  *successor;        /* linearizes a recursive exploration */
+} Nlm_XmlObj, *Nlm_XmlObjPtr;
+
+#define XmlObj Nlm_XmlObj
+#define XmlObjPtr Nlm_XmlObjPtr
+
+typedef void(*VisitXmlNodeFunc) (Nlm_XmlObjPtr xop, Nlm_XmlObjPtr parent, short level, void* userdata);
+
+Nlm_XmlObjPtr ParseXmlString(const Char* str);
+Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop);
+int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter,
+                       char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth);
 
 END_NCBI_SCOPE
+
 #endif

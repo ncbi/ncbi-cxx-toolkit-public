@@ -36,31 +36,35 @@
 #ifndef CITATION_H
 #define CITATION_H
 
-#include <objtools/flatfile/ftablock.h>
+#include "ftablock.h"
+
+BEGIN_NCBI_SCOPE
 
 class CPubInfo
 {
     int cit_num_;
-    const ncbi::objects::CBioseq* bioseq_;
-    const ncbi::objects::CPub_equiv* pub_equiv_;
-    const ncbi::objects::CPub* pub_;
+    const objects::CBioseq* bioseq_;
+    const objects::CPub_equiv* pub_equiv_;
+    const objects::CPub* pub_;
 
 public:
     CPubInfo();
 
     int GetSerial() const { return cit_num_; }
-    const ncbi::objects::CBioseq* GetBioseq() const { return bioseq_; }
+    const objects::CBioseq* GetBioseq() const { return bioseq_; }
 
-    const ncbi::objects::CPub_equiv* GetPubEquiv() const;
-    const ncbi::objects::CPub* GetPub() const { return pub_; }
+    const objects::CPub_equiv* GetPubEquiv() const;
+    const objects::CPub* GetPub() const { return pub_; }
 
-    void SetBioseq(const ncbi::objects::CBioseq* bioseq);
-    void SetPubEquiv(const ncbi::objects::CPub_equiv* pub_equiv);
+    void SetBioseq(const objects::CBioseq* bioseq);
+    void SetPubEquiv(const objects::CPub_equiv* pub_equiv);
 
-    void SetPub(const ncbi::objects::CPub* pub);
+    void SetPub(const objects::CPub* pub);
 };
 
 void ProcessCitations(TEntryList& seq_entries);
 void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs);
+
+END_NCBI_SCOPE
 
 #endif //CITATION_H

@@ -35,6 +35,8 @@
 #ifndef _FTA_XML_
 #define _FTA_XML_
 
+#include "ftablock.h"
+
 #define INSDSEQ_START                "<INSDSeq>"
 #define INSDSEQ_END                  "</INSDSeq>"
 
@@ -103,11 +105,15 @@
 
 #define XML_FEATURES                 1
 
+BEGIN_NCBI_SCOPE
+
 char*    XMLLoadEntry(ParserPtr pp, bool err);
 char*    XMLGetTagValue(char* entry, XmlIndexPtr xip);
 char*    XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag);
 DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, Int2 type);
 char*    XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep);
 void       XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords);
+
+END_NCBI_SCOPE
 
 #endif

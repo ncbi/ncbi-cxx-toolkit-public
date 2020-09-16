@@ -39,8 +39,10 @@
 #include <objects/general/Object_id.hpp>
 
 #include <objtools/flatfile/ftacpp.hpp>
-#include <objtools/flatfile/xgbparint.h>
-#include <objtools/flatfile/valnode.h>
+
+#include "ftaerr.hpp"
+#include "valnode.h"
+#include "xgbparint.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -75,6 +77,8 @@
 
 #define ERR_NCBIGBPARSE_LEX 1
 #define ERR_NCBIGBPARSE_INT 2
+
+BEGIN_NCBI_SCOPE
 
 const Char* seqlitdbtag = "SeqLit";
 const Char* unkseqlitdbtag = "UnkSeqLit";
@@ -255,13 +259,13 @@ static void xgbparse_error(const Char* front, ValNodePtr head, ValNodePtr curren
 }
 
 /*------------------ xgbcheck_range()-------------*/
-static void xgbcheck_range(ncbi::TSeqPos num, const ncbi::objects::CSeq_id& id, bool& keep_rawPt, int& num_errsPt, ValNodePtr head, ValNodePtr current)
+static void xgbcheck_range(TSeqPos num, const objects::CSeq_id& id, bool& keep_rawPt, int& num_errsPt, ValNodePtr head, ValNodePtr current)
 {
-    ncbi::TSeqPos len;
+    TSeqPos len;
     if (Range_func != NULL)
     {
         len = (*Range_func)(xgbparse_range_data, id);
-        if (len != static_cast<ncbi::TSeqPos>(-1))
+        if (len != static_cast<TSeqPos>(-1))
         {
             if (num >= len)
             {
@@ -850,31 +854,31 @@ static void xgbparse_better_be_done(int& num_errsPt, ValNodePtr current_token, V
 
 /**********************************************************
 *
-*   ncbi::CRef<ncbi::objects::CSeq_loc> XGapToSeqLocEx(range, unknown):
+*   CRef<objects::CSeq_loc> XGapToSeqLocEx(range, unknown):
 *
 *      Gets the size of gap and constructs SeqLoc block with
 *   $(seqlitdbtag) value as Dbtag.db and Dbtag.tag.id = 0.
 *
 **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
+static CRef<objects::CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret;
+    CRef<objects::CSeq_loc> ret;
 
     if (range < 0)
         return ret;
 
-    ret.Reset(new ncbi::objects::CSeq_loc);
+    ret.Reset(new objects::CSeq_loc);
     if (range == 0)
     {
         ret->SetNull();
         return ret;
     }
 
-    ncbi::objects::CSeq_interval& interval = ret->SetInt();
+    objects::CSeq_interval& interval = ret->SetInt();
     interval.SetFrom(0);
     interval.SetTo(range - 1);
 
-    ncbi::objects::CSeq_id& id = interval.SetId();
+    objects::CSeq_id& id = interval.SetId();
     id.SetGeneral().SetDb(unknown ? unkseqlitdbtag : seqlitdbtag);
     id.SetGeneral().SetTag().SetId(0);
 
@@ -882,7 +886,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> XGapToSeqLocEx(Int4 range, bool unkno
 }
 
 /**********************************************************/
-static void xgbgap(ValNodePtr& currentPt, ncbi::CRef<ncbi::objects::CSeq_loc>& loc, bool unknown)
+static void xgbgap(ValNodePtr& currentPt, CRef<objects::CSeq_loc>& loc, bool unknown)
 {
     ValNodePtr vnp_first;
     ValNodePtr vnp_second;
@@ -907,7 +911,7 @@ static void xgbgap(ValNodePtr& currentPt, ncbi::CRef<ncbi::objects::CSeq_loc>& l
         if (vnp_third == NULL || vnp_third->choice != GBPARSE_INT_RIGHT)
             return;
 
-        ncbi::CRef<ncbi::objects::CSeq_loc> new_loc = XGapToSeqLocEx(atoi((char*)vnp_second->data.ptrvalue), unknown);
+        CRef<objects::CSeq_loc> new_loc = XGapToSeqLocEx(atoi((char*)vnp_second->data.ptrvalue), unknown);
         if (new_loc.Empty())
             return;
 
@@ -922,9 +926,9 @@ static void xgbgap(ValNodePtr& currentPt, ncbi::CRef<ncbi::objects::CSeq_loc>& l
 
 /*------------------- xgbpintpnt()-----------*/
 
-static void xgbpintpnt(ncbi::objects::CSeq_loc& loc)
+static void xgbpintpnt(objects::CSeq_loc& loc)
 {
-    ncbi::CRef<ncbi::objects::CSeq_point> point(new ncbi::objects::CSeq_point);
+    CRef<objects::CSeq_point> point(new objects::CSeq_point);
 
     point->SetPoint(loc.GetInt().GetFrom());
 
@@ -939,7 +943,7 @@ static void xgbpintpnt(ncbi::objects::CSeq_loc& loc)
 
 /*----- xgbload_number() -----*/
 
-static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz, bool& keep_rawPt, ValNodePtr& currentPt, ValNodePtr head_token, int& num_errPt, int take_which)
+static void xgbload_number(TSeqPos& numPt, objects::CInt_fuzz& fuzz, bool& keep_rawPt, ValNodePtr& currentPt, ValNodePtr head_token, int& num_errPt, int take_which)
 {
     int num_found = 0;
     int fuzz_err = 0;
@@ -957,9 +961,9 @@ static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz,
              currentPt->choice == GBPARSE_INT_LT)
     {
         if (currentPt->choice == GBPARSE_INT_GT)
-            fuzz.SetLim(ncbi::objects::CInt_fuzz::eLim_gt);
+            fuzz.SetLim(objects::CInt_fuzz::eLim_gt);
         else
-            fuzz.SetLim(ncbi::objects::CInt_fuzz::eLim_lt);
+            fuzz.SetLim(objects::CInt_fuzz::eLim_lt);
 
         currentPt = currentPt->next;
     }
@@ -1121,21 +1125,21 @@ static void xgbload_number(ncbi::TSeqPos& numPt, ncbi::objects::CInt_fuzz& fuzz,
 
 /*--------------- xgbint_ver ()--------------------*/
 /* sometimes returns points */
-static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodePtr& currentPt,
+static CRef<objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodePtr& currentPt,
                                                       ValNodePtr head_token, int& num_errPt, const TSeqIdList& seq_ids,
                                                       bool accver)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret(new ncbi::objects::CSeq_loc);
+    CRef<objects::CSeq_loc> ret(new objects::CSeq_loc);
 
     bool took_choice = false;
     char* p;
 
-    ncbi::CRef<ncbi::objects::CSeq_id> new_id;
-    ncbi::CRef<ncbi::objects::CInt_fuzz> new_fuzz;
+    CRef<objects::CSeq_id> new_id;
+    CRef<objects::CInt_fuzz> new_fuzz;
 
     if (currentPt->choice == GBPARSE_INT_ACCESION)
     {
-        ncbi::CRef<ncbi::objects::CTextseq_id> text_id(new ncbi::objects::CTextseq_id);
+        CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
 
         if (accver == false)
         {
@@ -1159,10 +1163,10 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
             }
         }
 
-        new_id.Reset(new ncbi::objects::CSeq_id);
+        new_id.Reset(new objects::CSeq_id);
         if (!seq_ids.empty())
         {
-            const ncbi::objects::CSeq_id& first_id = *(*seq_ids.begin());
+            const objects::CSeq_id& first_id = *(*seq_ids.begin());
             if (first_id.IsEmbl())
             {
                 new_id->SetEmbl(*text_id);
@@ -1197,8 +1201,8 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
 
     if (currentPt->choice == GBPARSE_INT_LT)
     {
-        new_fuzz.Reset(new ncbi::objects::CInt_fuzz);
-        new_fuzz->SetLim(ncbi::objects::CInt_fuzz::eLim_lt);
+        new_fuzz.Reset(new objects::CInt_fuzz);
+        new_fuzz->SetLim(objects::CInt_fuzz::eLim_lt);
 
         currentPt = currentPt->next;
         if (!currentPt)
@@ -1255,7 +1259,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
                            keep_rawPt, currentPt, head_token,
                            num_errPt, TAKE_FIRST);
 
-            if (ret->GetInt().GetFuzz_from().Which() == ncbi::objects::CInt_fuzz::e_not_set)
+            if (ret->GetInt().GetFuzz_from().Which() == objects::CInt_fuzz::e_not_set)
                 ret->SetInt().ResetFuzz_from();
 
             xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, num_errPt, head_token, currentPt);
@@ -1300,8 +1304,8 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
                             goto FATAL;
                         }
 
-                        ret->SetInt().SetFuzz_from().SetLim(ncbi::objects::CInt_fuzz::eLim_tl);
-                        ret->SetInt().SetFuzz_to().SetLim(ncbi::objects::CInt_fuzz::eLim_tl);
+                        ret->SetInt().SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_tl);
+                        ret->SetInt().SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_tl);
                         in_caret = true;
                         /*---no break on purpose ---*/
 
@@ -1336,7 +1340,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
                         xgbload_number(ret->SetInt().SetTo(), ret->SetInt().SetFuzz_to(),
                                        keep_rawPt, currentPt, head_token,
                                        num_errPt, TAKE_SECOND);
-                        if (ret->GetInt().GetFuzz_to().Which() == ncbi::objects::CInt_fuzz::e_not_set)
+                        if (ret->GetInt().GetFuzz_to().Which() == objects::CInt_fuzz::e_not_set)
                             ret->SetInt().ResetFuzz_to();
 
                         xgbcheck_range(ret->GetInt().GetTo(), *new_id, keep_rawPt, num_errPt, head_token, currentPt);
@@ -1347,10 +1351,10 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodeP
                         *-------*/
                         if (in_caret)
                         {
-                            ncbi::TSeqPos to = ret->GetInt().GetTo();
+                            TSeqPos to = ret->GetInt().GetTo();
 
                             xgbpintpnt(*ret);
-                            ncbi::objects::CSeq_point& point = ret->SetPnt();
+                            objects::CSeq_point& point = ret->SetPnt();
                             if (point.GetPoint() + 1 == to)
                             {
                                 point.SetPoint(to); /* was essentailly correct */
@@ -1406,12 +1410,12 @@ FATAL:
 
 /*---------- xgbloc_ver()-----*/
 
-static ncbi::CRef<ncbi::objects::CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
+static CRef<objects::CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                                       bool& sitesPt, ValNodePtr& currentPt,
                                                       ValNodePtr head_token, int& num_errPt,
                                                       const TSeqIdList& seq_ids, bool accver)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> retval;
+    CRef<objects::CSeq_loc> retval;
 
     bool add_nulls = false;
     ValNodePtr current_token = currentPt;
@@ -1461,7 +1465,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& par
                                             head_token, num_errPt, seq_ids, accver);
 
                         if (retval.NotEmpty())
-                            retval = ncbi::objects::sequence::SeqLocRevCmpl(*retval, nullptr);
+                            retval = objects::sequence::SeqLocRevCmpl(*retval, nullptr);
 
                         did_complement = true;
                         if (currentPt){
@@ -1490,21 +1494,21 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& par
             break;
             /* REAL LOCS */
         case GBPARSE_INT_JOIN:
-            retval.Reset(new ncbi::objects::CSeq_loc);
+            retval.Reset(new objects::CSeq_loc);
             retval->SetMix();
             break;
         case  GBPARSE_INT_ORDER:
-            retval.Reset(new ncbi::objects::CSeq_loc);
+            retval.Reset(new objects::CSeq_loc);
             retval->SetMix();
             add_nulls = true;
             break;
         case  GBPARSE_INT_GROUP:
-            retval.Reset(new ncbi::objects::CSeq_loc);
+            retval.Reset(new objects::CSeq_loc);
             retval->SetMix();
             keep_rawPt = true;
             break;
         case  GBPARSE_INT_ONE_OF:
-            retval.Reset(new ncbi::objects::CSeq_loc);
+            retval.Reset(new objects::CSeq_loc);
             retval->SetEquiv();
             break;
 
@@ -1632,7 +1636,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& par
                                     if (!currentPt)
                                         break;
 
-                                    ncbi::CRef<ncbi::objects::CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt,
+                                    CRef<objects::CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt,
                                                                                               currentPt, head_token, num_errPt,
                                                                                               seq_ids, accver);
 
@@ -1652,7 +1656,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& par
                                         currentPt = currentPt->next;
                                         if (add_nulls)
                                         {
-                                            ncbi::CRef<ncbi::objects::CSeq_loc> null_loc(new ncbi::objects::CSeq_loc);
+                                            CRef<objects::CSeq_loc> null_loc(new objects::CSeq_loc);
                                             null_loc->SetNull();
 
                                             if (retval->IsMix())
@@ -1716,12 +1720,12 @@ FATAL:
 
 /*-------- xgbreplace_ver() --------*/
 
-static ncbi::CRef<ncbi::objects::CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
+static CRef<objects::CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
                                                           bool& sitesPt, ValNodePtr& currentPt,
                                                           ValNodePtr head_token, int& num_errPt,
                                                           const TSeqIdList& seq_ids, bool accver)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret;
+    CRef<objects::CSeq_loc> ret;
 
     keep_rawPt = true;
     currentPt = currentPt->next;
@@ -1761,10 +1765,10 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int&
 
 /*---------- xgbparseint_ver()-----*/
 
-ncbi::CRef<ncbi::objects::CSeq_loc> xgbparseint_ver(char* raw_intervals, bool& keep_rawPt, bool& sitesPt, int& num_errsPt,
+CRef<objects::CSeq_loc> xgbparseint_ver(char* raw_intervals, bool& keep_rawPt, bool& sitesPt, int& num_errsPt,
                                                     const TSeqIdList& seq_ids, bool accver)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret;
+    CRef<objects::CSeq_loc> ret;
 
     int paren_count = 0;
     bool go_again = false;
@@ -1868,3 +1872,5 @@ ncbi::CRef<ncbi::objects::CSeq_loc> xgbparseint_ver(char* raw_intervals, bool& k
 
     return ret;
 }
+
+END_NCBI_SCOPE

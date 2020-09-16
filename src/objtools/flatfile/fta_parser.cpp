@@ -1,6 +1,4 @@
-/* loadfeat.h
- *
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -24,49 +22,29 @@
  *
  * ===========================================================================
  *
- * File Name:  loadfeat.h
+ * File Name:  fta_parser.cpp
  *
- * Author: Karl Sirotkin, Hsiu-Chuan Chen
+ * Author: 
  *
  * File Description:
  * -----------------
+ *      Main routines for parsing flat files to ASN.1 file format.
+ * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
  *
  */
+#include <ncbi_pch.hpp>
 
-#ifndef _LOADFEAT_
-#define _LOADFEAT_
+#include <objtools/flatfile/fta_parser.h>
 
-#include <objects/seqfeat/Seq_feat.hpp>
-
-#include "xgbfeat.h"
-#include "asci_blk.h"
+#include "indx_blk.h"
 
 BEGIN_NCBI_SCOPE
 
-typedef struct feature_block {
-    Int4      num;
-    char*   key;
-    char*   location;
-
-    TQualVector quals;
-
-    feature_block() :
-        num(0),
-        key(NULL),
-        location(NULL)
-    {
+Parser::~Parser() {
+    ResetParserStruct(this);
+    if (fpo) {
+        free(fpo);
     }
-
-} FeatBlk, *FeatBlkPtr;
-
-void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq);
-int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Int2 format);
-
-void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, DataBlkPtr entry, const objects::COrg_ref* org_ref);
-
-bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
-                    bool* hard_err, ParserPtr pp, char* name);
+}
 
 END_NCBI_SCOPE
-
-#endif

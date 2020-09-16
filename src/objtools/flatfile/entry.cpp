@@ -37,15 +37,18 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/entry.h>
 
+#include "ftaerr.hpp"
 #include "indx_err.h"
+#include "utilfun.h"
+#include "entry.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "entry.cpp"
+
+BEGIN_NCBI_SCOPE
 
 /**********************************************************/
 static size_t FileReadBuf(char* to, size_t len, FileBufPtr ffbuf)
@@ -207,3 +210,5 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     return(entry);
 }
+
+END_NCBI_SCOPE

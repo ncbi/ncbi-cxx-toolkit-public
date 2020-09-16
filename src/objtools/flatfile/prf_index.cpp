@@ -41,17 +41,20 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 #include <objtools/flatfile/prf_index.h>
-#include <objtools/flatfile/entry.h>
 
+#include "ftaerr.hpp"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
+#include "entry.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "prf_index.cpp"
+
+BEGIN_NCBI_SCOPE
 
 KwordBlk prfkwl[] = {
     {">ref;", 5},   {"NAME", 4},    {"SOURCE", 6},   {"JOURNAL", 7},
@@ -306,4 +309,6 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
 
     return(end_of_file);
 }
+
+END_NCBI_SCOPE
 // LCOV_EXCL_STOP

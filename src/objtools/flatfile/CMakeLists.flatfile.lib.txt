@@ -30,6 +30,7 @@ NCBI_begin_lib(xflatfile)
     fta_qscore
     fta_src
     ftamain
+    fta_parser
     gb_ascii
     genref
     ind
@@ -47,6 +48,8 @@ NCBI_begin_lib(xflatfile)
 
     ftanet
     ftamed
+    flatfile_message
+    flatfile_message_reporter
   )
   NCBI_uses_toolkit_libraries(
     xcleanup

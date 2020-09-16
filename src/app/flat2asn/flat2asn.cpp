@@ -42,185 +42,93 @@
 #include <serial/objostrasn.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objtools/logging/listener.hpp>
 #include <objtools/flatfile/index.h>
-
 #include <objtools/flatfile/ftamain.h>
 #include <objtools/flatfile/fta_parse_buf.h>
 #include <objtools/flatfile/ftanet.h>
+#include <objtools/logging/listener.hpp>
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "flat2asn.cpp"
 
-std::vector<ncbi::CRef<ncbi::CArgValue> > all_args;
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
-/* Letters in use: "abcdefghij lm o qrstuvw yz  CDEFG I  L NO Q S UV XY "
- * Letters free  : "          k  n p       x  AB     H JK M  P R T  W  Z"
- */
-
-Int2      atag;
-Int2      ctag;
-Int2      Dtag;
-Int2      ftag;
-Int2      stag;
-Int2      Stag;
-Int2      Ltag;
-Int2      Ntag;
-Int2      utag;
-Int2      Otag;
-Int2      btag;
-Int2      htag;
-Int2      rtag;
-Int2      vtag;
-Int2      Etag;
-Int2      ttag;
-Int2      ztag;
-Int2      Itag;
-Int2      Vtag;
-Int2      Ftag;
-Int2      jtag;
-Int2      mtag;
-Int2      Ytag;
-Int2      wtag;
-Int2      Xtag;
-Int2      etag;
-Int2      gtag;
-Int2      itag;
-Int2      otag;
-Int2      ltag;
-Int2      Gtag;
-Int2      Ctag;
-Int2      dtag;
-Int2      Utag;
-Int2      qtag;
-Int2      Qtag;
-Int2      ytag;
+using TConfig = Parser;
 
 /**********************************************************/
-static bool CheckArgs(short* flag, Char ch)
-{
-    size_t i = 0;
-    size_t sz = all_args.size();
-
-    for (; i < sz; ++i)
-    {
-        if (all_args[i]->GetName()[0] == ch)
-            break;
-    }
-
-    if (i < sz)
-    {
-        *flag = static_cast<Int2>(i);
-        return true;
-    }
-
-    ErrPostEx(SEV_FATAL, ERR_ZERO, "Program error looking for arg \"%c\"", ch);
-    return false;
-}
-
-/**********************************************************/
-static bool SetArgTag(void)
-{
-    if(CheckArgs(&atag, 'a') == false || CheckArgs(&ctag, 'c') == false ||
-       CheckArgs(&ftag, 'f') == false || CheckArgs(&stag, 's') == false ||
-       CheckArgs(&Dtag, 'D') == false || CheckArgs(&utag, 'u') == false ||
-       CheckArgs(&htag, 'h') == false || CheckArgs(&rtag, 'r') == false ||
-       CheckArgs(&ttag, 't') == false || CheckArgs(&Otag, 'O') == false ||
-       CheckArgs(&ztag, 'z') == false || CheckArgs(&btag, 'b') == false ||
-       CheckArgs(&vtag, 'v') == false || CheckArgs(&Etag, 'E') == false ||
-       CheckArgs(&Ltag, 'L') == false || CheckArgs(&Ntag, 'N') == false ||
-       CheckArgs(&Stag, 'S') == false || CheckArgs(&Itag, 'I') == false ||
-       CheckArgs(&Vtag, 'V') == false || CheckArgs(&Ftag, 'F') == false ||
-       CheckArgs(&jtag, 'j') == false || CheckArgs(&mtag, 'm') == false ||
-       CheckArgs(&Ytag, 'Y') == false || CheckArgs(&wtag, 'w') == false ||
-       CheckArgs(&Xtag, 'X') == false || CheckArgs(&etag, 'e') == false ||
-       CheckArgs(&gtag, 'g') == false || CheckArgs(&itag, 'i') == false ||
-       CheckArgs(&otag, 'o') == false || CheckArgs(&ltag, 'l') == false ||
-       CheckArgs(&Gtag, 'G') == false || CheckArgs(&Ctag, 'C') == false ||
-       CheckArgs(&dtag, 'd') == false || CheckArgs(&Utag, 'U') == false ||
-       CheckArgs(&qtag, 'q') == false || CheckArgs(&Qtag, 'Q') == false ||
-       CheckArgs(&ytag, 'y') == false)
-        return false;
-    return true;
-}
-
-/**********************************************************/
-static bool TransArgs(ParserPtr pp)
+static bool InitConfig(const CArgs& args, Parser& config)
 {
     bool retval = true;
 
     /* Ignore multiple tokens in DDBJ's VERSION line
      */
-    pp->ign_toks = all_args[ctag]->AsBoolean();
+    config.ign_toks = args["c"].AsBoolean();
 
     /* Do not reject records if protein Seq-ids are from sources
      * that differ from that of the "-s" argument
      */
-    pp->ign_prot_src = all_args[jtag]->AsBoolean();
+    config.ign_prot_src = args["j"].AsBoolean();
 
-    if (all_args[mtag]->AsInteger() == 1)
-        pp->mode = FTA_HTGS_MODE;
-    else if (all_args[mtag]->AsInteger() == 2)
-        pp->mode = FTA_HTGSCON_MODE;
+    if (args["m"].AsInteger() == 1)
+        config.mode = FTA_HTGS_MODE;
+    else if (args["m"].AsInteger() == 2)
+        config.mode = FTA_HTGSCON_MODE;
     else
-        pp->mode = FTA_RELEASE_MODE;
+        config.mode = FTA_RELEASE_MODE;
 
     /* replace update by currdate
      */
-    pp->date = all_args[Ltag]->AsBoolean();
+    config.date = args["L"].AsBoolean();
 
-    pp->allow_uwsec = all_args[wtag]->AsBoolean();
-    pp->convert = true;
-    pp->seg_acc = all_args[Itag]->AsBoolean();
-    pp->no_date = all_args[Ntag]->AsBoolean();
-    pp->diff_lt = all_args[Ytag]->AsBoolean();
-    pp->xml_comp = all_args[Xtag]->AsBoolean();
-    pp->sp_dt_seq_ver = all_args[etag]->AsBoolean();
-    pp->simple_genes = all_args[Gtag]->AsBoolean();
+    config.allow_uwsec = args["w"].AsBoolean();
+    config.convert = true;
+    config.seg_acc = args["I"].AsBoolean();
+    config.no_date = args["N"].AsBoolean();
+    config.diff_lt = args["Y"].AsBoolean();
+    config.xml_comp = args["X"].AsBoolean();
+    config.sp_dt_seq_ver = args["e"].AsBoolean();
+    config.simple_genes = args["G"].AsBoolean();
 
     /* do not sort
      */
-    pp->sort = !all_args[Stag]->AsBoolean();
+    config.sort = !args["S"].AsBoolean();
 
-    pp->debug = all_args[Dtag]->AsBoolean();
-    pp->segment = all_args[Etag]->AsBoolean();
-    pp->accver = all_args[Vtag]->AsBoolean();
-    pp->histacc = !all_args[Ftag]->AsBoolean();
+    config.debug = args["D"].AsBoolean();
+    config.segment = args["E"].AsBoolean();
+    config.accver = args["V"].AsBoolean();
+    config.histacc = !args["F"].AsBoolean();
 
-    pp->transl = all_args[ttag]->AsBoolean();
-    pp->entrez_fetch = all_args[ztag]->AsBoolean() ? 1 : 0;
-    pp->taxserver = all_args[Otag]->AsBoolean() ? 0 : 1;
-    pp->medserver = all_args[utag]->AsBoolean() ? 0 : 1;
-    pp->ign_bad_qs = false;
-    pp->cleanup = all_args[Ctag]->AsInteger();
-    pp->allow_crossdb_featloc = all_args[dtag]->AsBoolean();
-    pp->genenull = all_args[Utag]->AsBoolean();
-    pp->qsfile = all_args[qtag]->AsString().c_str();
-    if (*pp->qsfile == 0)
-        pp->qsfile = NULL;
+    config.transl = args["t"].AsBoolean();
+    config.entrez_fetch = args["z"].AsBoolean() ? 1 : 0;
+    config.taxserver = args["O"].AsBoolean() ? 0 : 1;
+    config.medserver = args["u"].AsBoolean() ? 0 : 1;
+    config.ign_bad_qs = false;
+    config.cleanup = args["C"].AsInteger();
+    config.allow_crossdb_featloc = args["d"].AsBoolean();
+    config.genenull = args["U"].AsBoolean();
+    config.qsfile = args["q"].AsString().c_str();
+    if (*config.qsfile == 0)
+        config.qsfile = NULL;
 
-    pp->qamode = all_args[Qtag]->AsBoolean();
+    config.qamode = args["Q"].AsBoolean();
 
-    if (all_args[ytag]->AsString() == "Bioseq-set")
-        pp->output_format = FTA_OUTPUT_BIOSEQSET;
-    else if (all_args[ytag]->AsString() == "Seq-submit")
-        pp->output_format = FTA_OUTPUT_SEQSUBMIT;
-    else
-    {
-        ErrPostEx(SEV_FATAL, ERR_ZERO,
-                  "Sorry, the format of output file is not supported. Available are \"Bioseq-set\" and \"Seq-submit\".");
-        retval = false;
-    }
+    if (args["y"].AsString() == "Bioseq-set")
+        config.output_format = FTA_OUTPUT_BIOSEQSET;
+    else if (args["y"].AsString() == "Seq-submit")
+        config.output_format = FTA_OUTPUT_SEQSUBMIT;
 
-    fta_fill_find_pub_option(pp, all_args[htag]->AsBoolean(), all_args[rtag]->AsBoolean());
+    fta_fill_find_pub_option(&config, args["h"].AsBoolean(), args["h"].AsBoolean());
 
-    std::string format = all_args[ftag]->AsString(),
-                source = all_args[stag]->AsString();
+    std::string format = args["f"].AsString(),
+                source = args["s"].AsString();
 
-    pp->all = all_args[atag]->AsBoolean() ? ParFlat_ALL : 0;
+    config.all = args["a"].AsBoolean() ? ParFlat_ALL : 0;
 
-    if (!fta_set_format_source(*pp, format, source)) {
+   if (!fta_set_format_source(config, format, source)) {
         retval = false;
     }
 
@@ -228,7 +136,7 @@ static bool TransArgs(ParserPtr pp)
 }
 
 /**********************************************************/
-static bool OpenFiles(ParserPtr pp)
+static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener)
 {
     Char      str[1000];
 
@@ -241,7 +149,7 @@ static bool OpenFiles(ParserPtr pp)
     delin = false;
     delout = true;
 
-    std::string infile = all_args[itag]->AsString();
+    std::string infile = args["i"].AsString();
     if (infile == "stdin")
     {
         delin = true;
@@ -255,17 +163,16 @@ static bool OpenFiles(ParserPtr pp)
         infile = tfile;
     }
 
-    pp->outfile = all_args[otag]->AsString();
+    config.outfile = args["o"].AsString();
 
-    if (pp->outfile == "stdout")
+    if (config.outfile == "stdout")
         delout = false;
 
-    std::string logfile = all_args[ltag]->AsString();
 
 #ifdef WIN32
-    pp->ifp = fopen(infile.c_str(), "rb");
+    config.ifp = fopen(infile.c_str(), "rb");
 #else
-    pp->ifp = fopen(infile.c_str(), "r");
+    config.ifp = fopen(infile.c_str(), "r");
 #endif
 
     if (delin) {
@@ -273,101 +180,59 @@ static bool OpenFiles(ParserPtr pp)
         de.Remove();
     }
 
-    if(pp->ifp == NULL)
+    if(!config.ifp)
     {
-        ErrPostEx(SEV_FATAL, ERR_ZERO,
-                  "Open input flatfile %s failed.", infile.c_str());
+        listener.PutMessage(
+                CObjtoolsMessage("Failed to open input flatfile " + infile, eDiag_Fatal));
         return false;
     }
 
-    if(all_args[btag]->AsBoolean())
-        pp->output_binary = true;
+    if(args["b"].AsBoolean())
+        config.output_binary = true;
 
-    if(pp->qsfile != NULL)
+    if(config.qsfile != NULL)
     {
-        pp->qsfd = fopen(pp->qsfile, "rb");
-        if(pp->qsfd == NULL)
+        config.qsfd = fopen(config.qsfile, "rb");
+        if(config.qsfd == NULL)
         {
-            ErrPostEx(SEV_FATAL, ERR_ZERO,
-                      "Open Quality Scores file %s failed.", pp->qsfile);
-            fclose(pp->ifp);
-            pp->ifp = NULL;
+            listener.PutMessage(
+                   CObjtoolsMessage("Failed to open Quality Scores file " + string(config.qsfile), eDiag_Fatal)); 
+
+            fclose(config.ifp);
+            config.ifp = NULL;
 
             if (delout) {
-                CDirEntry de(pp->outfile);
+                CDirEntry de(config.outfile);
                 de.Remove();
             }
             return false;
         }
     }
 
-    if (logfile.empty())
-        return true;
-
-    if (!ErrSetLog(logfile.c_str()))
-    {
-        ErrPostEx(SEV_FATAL, ERR_ZERO, "Open logfile %s failed.",
-                  logfile.c_str());
-        fclose(pp->ifp);
-
-        pp->ifp = NULL;
-        if(pp->qsfd != NULL)
-        {
-            fclose(pp->qsfd);
-            pp->qsfd = NULL;
-        }
-        if (delout) {
-            CDirEntry de(pp->outfile);
-            de.Remove();
-        }
-        return false;
-    }
-
-    if (logfile == "stderr")
-        ErrSetMessageLevel(SEV_MAX);
-    else
-        ErrSetMessageLevel(SEV_WARNING);
-
-    ErrSetOptFlags(EO_SHOW_CODES);
-    ErrSetOptFlags(EO_LOG_USRFILE);
-    ErrSetOptFlags(all_args[vtag]->AsBoolean() ? EO_MSG_MSGTEXT : 0);
-    ErrSetOptFlags(EO_LOG_FILELINE);
-
     return true;
 }
 
 /**********************************************************/
-static ParserPtr ParseArgs(char* pgmname)
+static unique_ptr<TConfig> ParseArgs(const CArgs& args, char* pgmname, IObjtoolsListener& listener)
 {
-    ParserPtr pp = new Parser;
+    
+    unique_ptr<Parser> pConfig(new TConfig());
 
     /* As of June, 2004 sequence length limitation removed
      */
-    pp->limit = 0;
+    pConfig->limit = 0;
 
-    if (!SetArgTag() || !TransArgs(pp))
+    if (!InitConfig(args, *pConfig))
     {
-        delete pp;
-        return(NULL);
+        return nullptr;
     }
 
-    if(!OpenFiles(pp))
+    if(!OpenFiles(args, *pConfig, listener))
     {
-        delete pp;
-        return(NULL);
+        return nullptr;
     }
 
-    if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
-        ;
-    else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
-        ;
-    else
-    {
-        delete pp;
-        return(NULL);
-    }
-
-    return(pp);
+    return pConfig;
 }
 
 class CFlat2AsnApp : public ncbi::CNcbiApplication
@@ -375,6 +240,9 @@ class CFlat2AsnApp : public ncbi::CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+
+private:
+    
 };
 
 void CFlat2AsnApp::Init()
@@ -385,7 +253,7 @@ void CFlat2AsnApp::Init()
     arg_descrs->AddDefaultKey("i", "InputFlatfile", "Input flatfile to parse", ncbi::CArgDescriptions::eString, "stdin");
     arg_descrs->AddDefaultKey("o", "OutputAsnFile", "Output ASN.1 file", ncbi::CArgDescriptions::eString, "stdout");
 
-    arg_descrs->AddDefaultKey("l", "LogFile", "Log file", ncbi::CArgDescriptions::eString, "");
+    arg_descrs->AddOptionalKey("l", "LogFile", "Log file", ncbi::CArgDescriptions::eOutputFile);
 
     arg_descrs->AddDefaultKey("a", "ParseRegardlessAccessionPrefix", "Parse all flatfile entries, regardless of accession prefix letter", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("D", "DebugMode", "Debug mode, output everything possible", ncbi::CArgDescriptions::eBoolean, "F");
@@ -433,30 +301,70 @@ void CFlat2AsnApp::Init()
     arg_descrs->AddDefaultKey("q", "QualityScoresFilename", "Quality Scores filename", ncbi::CArgDescriptions::eString, "");
     arg_descrs->AddDefaultKey("Q", "QAMode", "QA mode: does not populate top level create-date and\n      NcbiCleanup user-object", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("y", "OutputFormat", "Output format. Possible values: \"Bioseq-set\" and \"Seq-submit\"", ncbi::CArgDescriptions::eString, "Bioseq-set");
+    arg_descrs->SetConstraint("y", 
+            &(*new  CArgAllow_Strings,
+                "Bioseq-set", "Seq-submit"));
 
     SetupArgDescriptions(arg_descrs.release());
 }
 
+
+class CFlat2AsnListener : public CObjtoolsListener
+{
+public:
+    virtual ~CFlat2AsnListener() {}
+
+    bool PutMessage(const IObjtoolsMessage& msg) override {
+        if (msg.GetSeverity() >= eDiag_Warning) {
+            return CObjtoolsListener::PutMessage(msg);
+        }
+        return false;
+    }
+/*
+   void Dump(CNcbiOstream& ostr) const override {
+        cout << "Dumping messages" << endl;
+        cout << "# messages : " << m_Messages.size() << endl;
+        for (auto& pMessage : m_Messages) {
+            if (pMessage) {
+                pMessage->Dump(ostr);
+            }
+
+        }
+   }
+  */ 
+
+};
+
+
 int CFlat2AsnApp::Run()
 {
     char*   pgmname = (char *) "flat2asn Revision: 1.3 ";
-    ParserPtr pp;
+    const auto& args = GetArgs();
 
-    ErrSetFatalLevel((ErrSev)(SEV_FATAL + 1)); /* don't die on me */
-    ErrSetOptFlags(EO_MSG_CODES);
-    ErrSetMessageLevel(SEV_WARNING);
+    CFlat2AsnListener messageListener;
+    CNcbiOstream* pLogStream = args["l"] ? 
+        &args["l"].AsOutputFile() :
+        &NcbiCerr;
 
-    all_args = GetArgs().GetAll();
-    pp = ParseArgs(pgmname);
-    if (pp == NULL)
+
+    auto pConfig = ParseArgs(args, pgmname, messageListener);
+    if (!pConfig)
     {
-        FtaErrFini();
-        return(1);
+        return 1;
     }
 
-    Int2 ret = fta_main(pp, false);
-    FtaErrFini();
-    return ret;
+    CFlatFileParser ffparser(&messageListener);
+    auto pSerialObject = ffparser.Parse(pConfig.get(), false);
+
+
+    if (messageListener.Count() > 0) {
+        messageListener.Dump(*pLogStream);
+    }
+    if (pSerialObject) {
+        return 0;
+    }
+
+    return 1;
 }
 
 int main(int argc, const char* argv[])

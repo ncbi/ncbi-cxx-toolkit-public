@@ -39,12 +39,15 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
+#include "ind.hpp"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "ind.cpp"
+
+BEGIN_NCBI_SCOPE
 
 static const char *ref_tag_gb[] = {
     "LOCUS",                            /*  0 */
@@ -189,3 +192,5 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank)
         }
     }
 }
+
+END_NCBI_SCOPE

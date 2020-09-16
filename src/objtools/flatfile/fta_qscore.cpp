@@ -51,14 +51,18 @@
 #include <objects/seq/Annot_descr.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
 
 #include <objtools/flatfile/flatdefn.h>
+
+#include "ftaerr.hpp"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "fta_qscore.cpp"
+
+BEGIN_NCBI_SCOPE
 
 /* Defines
  */
@@ -639,8 +643,8 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores,
  *
  ***********************************************************/
 
-static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data::TGraph& graphs,
-                                              ncbi::objects::CBioseq& bioseq)
+static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGraph& graphs,
+                                              objects::CBioseq& bioseq)
 {
     bool         is_gap = false;        /* set to TRUE if the Seq-literal
                                            represents a gap, rather than
@@ -660,11 +664,11 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
                                            a gap; scores *should* be zero
                                            within gaps */
 
-    if (bioseq.GetInst().GetRepr() != ncbi::objects::CSeq_inst::eRepr_delta ||
+    if (bioseq.GetInst().GetRepr() != objects::CSeq_inst::eRepr_delta ||
         !bioseq.GetInst().IsSetExt())
         return;
 
-    ncbi::objects::CSeq_graph& big_graph = *(*graphs.begin());
+    objects::CSeq_graph& big_graph = *(*graphs.begin());
     if (!big_graph.GetGraph().IsByte())
     {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_NonByteGraph,
@@ -688,8 +692,8 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
     nonzero_gap = 0;
     curr_pos = 0;
 
-    ncbi::objects::CSeq_annot::C_Data::TGraph new_graphs;
-    ITERATE(ncbi::objects::CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get())
+    objects::CSeq_annot::C_Data::TGraph new_graphs;
+    ITERATE(objects::CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get())
     {
         is_gap = false;
         last_pos = curr_pos;
@@ -712,7 +716,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
             break;
         }
 
-        const ncbi::objects::CSeq_literal& literal = (*delta)->GetLiteral();
+        const objects::CSeq_literal& literal = (*delta)->GetLiteral();
 
         if (!literal.IsSetLength() || literal.GetLength() < 1)
         {
@@ -780,14 +784,14 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
         /* allocate a SeqGraph and a ByteStore
          */
 
-        ncbi::CRef<ncbi::objects::CSeq_graph> graph(new ncbi::objects::CSeq_graph);
-        ncbi::objects::CSeq_interval& interval = graph->SetLoc().SetInt();
+        CRef<objects::CSeq_graph> graph(new objects::CSeq_graph);
+        objects::CSeq_interval& interval = graph->SetLoc().SetInt();
 
         interval.SetId(*(*bioseq.SetId().begin()));
 
         /* Write the scores from big_bs to the new ByteStore
          */
-        graph->SetNumval(static_cast<ncbi::TSeqPos>(new_scores.size()));
+        graph->SetNumval(static_cast<TSeqPos>(new_scores.size()));
         graph->SetGraph().SetByte().SetValues().swap(new_scores);
 
         /* there is no "compression" for the Seq-graph; there's supposed to
@@ -905,12 +909,12 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(ncbi::objects::CSeq_annot::C_Data:
  *
  ***********************************************************/
 static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
-                                            ncbi::objects::CBioseq& bioseq,
+                                            objects::CBioseq& bioseq,
                                             char* def_acc,
                                             char* def_ver,
 						                    bool check_minmax,
 						                    bool allow_na,
-                                            ncbi::objects::CSeq_annot::C_Data::TGraph& graphs)
+                                            objects::CSeq_annot::C_Data::TGraph& graphs)
 {
     Int4         qs_line = 0;           /* current line number within qs_buf */
     char*      my_buf = NULL;         /* copy of a line of data from
@@ -985,7 +989,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
         return;
     }
 
-    ncbi::CRef<ncbi::objects::CSeq_graph> graph;
+    CRef<objects::CSeq_graph> graph;
     std::vector<Char> scores_str;
 
     while (*qs_buf != '\0')
@@ -1072,7 +1076,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
 
             /* allocate a SeqGraph and a ByteStore
              */
-            graph.Reset(new ncbi::objects::CSeq_graph);
+            graph.Reset(new objects::CSeq_graph);
             graph->SetTitle(def_title);
         }
         else
@@ -1155,11 +1159,11 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
     /* get a Seq-interval for the SeqGraph, and duplicate the Seq-id
      * of the Bioseq for use in the Seq-interval
      */
-    ncbi::objects::CSeq_loc& loc = graph->SetLoc();
+    objects::CSeq_loc& loc = graph->SetLoc();
 
     /* otherwise, you can now put all the pieces of the Seq-graph together
      */
-    graph->SetNumval(static_cast<ncbi::TSeqPos>(scores_str.size()));
+    graph->SetNumval(static_cast<TSeqPos>(scores_str.size()));
 
     /* there is no "compression" for the Seq-graph; there's supposed to
      * be a score for every base in the sequence to which the quality
@@ -1183,7 +1187,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
     /* feature location for the Seq-graph runs from 0
      * to the sequence length - 1
      */
-    ncbi::objects::CSeq_interval& interval = loc.SetInt();
+    objects::CSeq_interval& interval = loc.SetInt();
     interval.SetFrom(0);
     interval.SetTo(bioseq.GetLength() - 1);
 
@@ -1197,7 +1201,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
 
 /**********************************************************/
 // TODO: functionality in this file was never tested
-bool QscoreToSeqAnnot(char* qscore, ncbi::objects::CBioseq& bioseq, char* acc,
+bool QscoreToSeqAnnot(char* qscore, objects::CBioseq& bioseq, char* acc,
                       Int2 ver, bool check_minmax, bool allow_na)
 {
     Char        charver[100];
@@ -1207,12 +1211,12 @@ bool QscoreToSeqAnnot(char* qscore, ncbi::objects::CBioseq& bioseq, char* acc,
 
     sprintf(charver, "%d", (int) ver);
 
-    ncbi::objects::CSeq_annot::C_Data::TGraph graphs;
+    objects::CSeq_annot::C_Data::TGraph graphs;
     QSbuf_To_Single_Qscore_SeqGraph(qscore, bioseq, acc, charver, check_minmax, allow_na, graphs);
     if (graphs.empty())
         return false;
 
-    if (bioseq.GetInst().GetRepr() == ncbi::objects::CSeq_inst::eRepr_delta)
+    if (bioseq.GetInst().GetRepr() == objects::CSeq_inst::eRepr_delta)
     {
         Split_Qscore_SeqGraph_By_DeltaSeq(graphs, bioseq);
     }
@@ -1220,7 +1224,7 @@ bool QscoreToSeqAnnot(char* qscore, ncbi::objects::CBioseq& bioseq, char* acc,
     if (graphs.empty())
         return false;
 
-    ncbi::CRef<ncbi::objects::CSeq_annot> annot(new ncbi::objects::CSeq_annot);
+    CRef<objects::CSeq_annot> annot(new objects::CSeq_annot);
     annot->SetData().SetGraph().swap(graphs);
     annot->SetNameDesc("Graphs");
 
@@ -1228,3 +1232,5 @@ bool QscoreToSeqAnnot(char* qscore, ncbi::objects::CBioseq& bioseq, char* acc,
 
     return true;
 }
+
+END_NCBI_SCOPE

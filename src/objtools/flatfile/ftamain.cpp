@@ -38,8 +38,7 @@
 
 #include <objtools/flatfile/ftacpp.hpp>
 
-#include <objmgr/scope.hpp>
-#include <objmgr/object_manager.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
@@ -47,19 +46,20 @@
 #include <objects/biblio/Auth_list.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 #include <objtools/flatfile/sprot.h>
 #include <objtools/flatfile/embl.h>
 #include <objtools/flatfile/genbank.h>
-#include <objtools/flatfile/entry.h>
 
-#include <objtools/flatfile/asci_blk.h>
 #include <objtools/flatfile/ff2asn.h>
 #include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/ftamain.h>
 #include <objtools/flatfile/flatdefn.h>
 
+
+#include "flatfile_message_reporter.hpp"
+#include "ftaerr.hpp"
+#include "indx_blk.h"
+#include "asci_blk.h"
 #include "add.h"
 #include "loadfeat.h"
 #include "gb_ascii.h"
@@ -68,11 +68,21 @@
 #include "em_ascii.h"
 #include "utilfeat.h"
 #include "buf_data_loader.h"
+#include "utilfun.h"
+#include "entry.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "ftamain.cpp"
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
+extern bool    PrfAscii(ParserPtr pp);
+extern bool    XMLAscii(ParserPtr pp);
+extern void    fta_init_gbdataloader();
+
 
 typedef struct ff_entries {
     char*                offset;
@@ -82,11 +92,6 @@ typedef struct ff_entries {
 } FFEntries, *FFEntriesPtr;
 
 FFEntriesPtr ffep = NULL;
-
-extern bool    PrfAscii(ParserPtr pp);
-extern bool    XMLAscii(ParserPtr pp);
-
-extern void    fta_init_gbdataloader();
 
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
@@ -319,8 +324,8 @@ static void CheckDupEntries(ParserPtr pp)
             if(pp->accver && first->vernum != second->vernum)
                 break;
 
-            ncbi::objects::CDate::ECompare dtm = first->date->Compare(*second->date);
-            if (dtm == ncbi::objects::CDate::eCompare_before)
+            objects::CDate::ECompare dtm = first->date->Compare(*second->date);
+            if (dtm == objects::CDate::eCompare_before)
             {
                 /* 2 after 1 take 2 remove 1
                  */
@@ -329,7 +334,7 @@ static void CheckDupEntries(ParserPtr pp)
                           "%s (%s) skipped in favor of another entry with a later update date",
                           first->acnum, first->locusname);
             }
-            else if (dtm == ncbi::objects::CDate::eCompare_same)
+            else if (dtm == objects::CDate::eCompare_same)
             {
                 if(first->offset > second->offset)
                 {
@@ -360,14 +365,14 @@ static void CheckDupEntries(ParserPtr pp)
     MemFree(tibp);
 }
 
-static ncbi::CRef<ncbi::CSerialObject> MakeBioseqSet(ParserPtr pp)
+static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 {
-    ncbi::CRef<ncbi::objects::CBioseq_set> bio_set(new ncbi::objects::CBioseq_set);
+    CRef<objects::CBioseq_set> bio_set(new objects::CBioseq_set);
 
     if (pp->source == ParFlat_PIR)
-        bio_set->SetClass(ncbi::objects::CBioseq_set::eClass_pir);
+        bio_set->SetClass(objects::CBioseq_set::eClass_pir);
     else
-        bio_set->SetClass(ncbi::objects::CBioseq_set::eClass_genbank);
+        bio_set->SetClass(objects::CBioseq_set::eClass_genbank);
 
     if(pp->release_str != NULL)
         bio_set->SetRelease(pp->release_str);
@@ -376,16 +381,16 @@ static ncbi::CRef<ncbi::CSerialObject> MakeBioseqSet(ParserPtr pp)
 
     if (!pp->qamode)
     {
-        bio_set->SetDate().SetToTime(ncbi::CTime(ncbi::CTime::eCurrent), ncbi::objects::CDate::ePrecision_day);
+        bio_set->SetDate().SetToTime(CTime(CTime::eCurrent), objects::CDate::ePrecision_day);
     }
 
     return bio_set;
 }
 
-static ncbi::CRef<ncbi::CSerialObject> MakeSeqSubmit(ParserPtr pp)
+static CRef<CSerialObject> MakeSeqSubmit(ParserPtr pp)
 {
-    ncbi::CRef<ncbi::objects::CSeq_submit> seq_submit(new ncbi::objects::CSeq_submit);
-    ncbi::objects::CSubmit_block& submit_blk = seq_submit->SetSub();
+    CRef<objects::CSeq_submit> seq_submit(new objects::CSeq_submit);
+    objects::CSubmit_block& submit_blk = seq_submit->SetSub();
 
     submit_blk.SetCit().SetAuthors().SetNames().SetStr().push_back(pp->authors_str);
 
@@ -478,11 +483,11 @@ static void GetAuthorsStr(ParserPtr pp)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::CSerialObject> CloseAll(ParserPtr pp)
+static CRef<CSerialObject> CloseAll(ParserPtr pp)
 {
     CloseFiles(pp);
 
-    ncbi::CRef<ncbi::CSerialObject> ret;
+    CRef<CSerialObject> ret;
 
     if (!pp->entries.empty())
     {
@@ -497,7 +502,7 @@ static ncbi::CRef<ncbi::CSerialObject> CloseAll(ParserPtr pp)
 
         if (!pp->outfile.empty())
         {
-            ncbi::CNcbiOfstream ostr(pp->outfile.c_str());
+            CNcbiOfstream ostr(pp->outfile.c_str());
 
             if (pp->output_binary)
                 ostr << MSerial_AsnBinary << *ret;
@@ -505,25 +510,22 @@ static ncbi::CRef<ncbi::CSerialObject> CloseAll(ParserPtr pp)
                 ostr << MSerial_AsnText << *ret;
         }
     }
-
-    FreeParser(pp);
     return ret;
 }
 
-/**********************************************************/
+/*
 Int2 fta_main(ParserPtr pp, bool already)
 {
-    ncbi::CRef<ncbi::CSerialObject> ret;
+    CRef<CSerialObject> ret;
 
-    auto good = parse_flatfile(ret, pp, already);    
+    auto good = sParseFlatfile(ret, pp, already);    
 
     return((good == false) ? 1 : 0);
 }
+*/
 
-bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool already)
+static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
 {
-    ErrClear();
-
     if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
         SetReleaseStr(pp);
     else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
@@ -582,7 +584,6 @@ bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool alr
     }
 
     CkSegmentSet(pp);           /* check for missing entries in segment set */
-    ErrClear();
 
     CheckDupEntries(pp);
 
@@ -630,70 +631,81 @@ bool parse_flatfile(ncbi::CRef<ncbi::CSerialObject>& ret, ParserPtr pp, bool alr
     return good;
 }
 
+
+/**********************************************************/
+Int2 fta_main(ParserPtr pp, bool already)
+{
+    CRef<CSerialObject> ret;
+
+    auto good = sParseFlatfile(ret, pp, already);    
+
+    return((good == false) ? 1 : 0);
+}
+
 /**********************************************************/
 static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 {
-    if (ncbi::NStr::EqualNocase(source, "PIR"))
+    if (NStr::EqualNocase(source, "PIR"))
     {
         pp.acprefix = ParFlat_PIR_AC;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Pir;
+        pp.seqtype = objects::CSeq_id::e_Pir;
         pp.source = ParFlat_PIR;
     }
-    else if (ncbi::NStr::EqualNocase(source, "PRF"))
+    else if (NStr::EqualNocase(source, "PRF"))
     {
         pp.acprefix = ParFlat_PRF_AC;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Prf;
+        pp.seqtype = objects::CSeq_id::e_Prf;
         pp.source = ParFlat_PRF;
     }
-    else if (ncbi::NStr::EqualNocase(source, "SPROT"))
+    else if (NStr::EqualNocase(source, "SPROT"))
     {
         pp.acprefix = ParFlat_SPROT_AC;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Swissprot;
+        pp.seqtype = objects::CSeq_id::e_Swissprot;
         pp.source = ParFlat_SPROT;
     }
-    else if (ncbi::NStr::EqualNocase(source, "LANL"))
+    else if (NStr::EqualNocase(source, "LANL"))
     {
         pp.acprefix = ParFlat_LANL_AC;         /* lanl or genbank */
-        pp.seqtype = ncbi::objects::CSeq_id::e_Genbank;
+        pp.seqtype = objects::CSeq_id::e_Genbank;
         pp.source = ParFlat_LANL;
     }
-    else if (ncbi::NStr::EqualNocase(source, "EMBL"))
+    else if (NStr::EqualNocase(source, "EMBL"))
     {
         pp.acprefix = ParFlat_EMBL_AC;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Embl;
+        pp.seqtype = objects::CSeq_id::e_Embl;
         pp.source = ParFlat_EMBL;
     }
-    else if (ncbi::NStr::EqualNocase(source, "DDBJ"))
+    else if (NStr::EqualNocase(source, "DDBJ"))
     {
         pp.acprefix = ParFlat_DDBJ_AC;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Ddbj;
+        pp.seqtype = objects::CSeq_id::e_Ddbj;
         pp.source = ParFlat_DDBJ;
     }
-    else if (ncbi::NStr::EqualNocase(source, "FLYBASE"))
+    else if (NStr::EqualNocase(source, "FLYBASE"))
     {
         pp.source = ParFlat_FLYBASE;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Genbank;
+        pp.seqtype = objects::CSeq_id::e_Genbank;
         pp.acprefix = NULL;
         if(pp.format != ParFlat_GENBANK)
         {
-            ErrPostEx(SEV_FATAL, ERR_ZERO,
+            ErrPostEx(SEV_FATAL, 0, 0,
                       "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
     }
-    else if (ncbi::NStr::EqualNocase(source, "REFSEQ"))
+    else if (NStr::EqualNocase(source, "REFSEQ"))
     {
         pp.source = ParFlat_REFSEQ;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Other;
+        pp.seqtype = objects::CSeq_id::e_Other;
         pp.acprefix = NULL;
         if(pp.format != ParFlat_GENBANK)
         {
-            ErrPostEx(SEV_FATAL, ERR_ZERO,
+            ErrPostEx(SEV_FATAL, 0, 0,
                       "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
     }
-    else if (ncbi::NStr::EqualNocase(source, "NCBI"))
+    else if (NStr::EqualNocase(source, "NCBI"))
     {
         /* for NCBI, the legal formats are embl and genbank, and
          * filenames, etc. need to be set accordingly. For example,
@@ -703,19 +715,19 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
         if(pp.format != ParFlat_EMBL && pp.format != ParFlat_GENBANK &&
            pp.format != ParFlat_XML)
         {
-            ErrPostEx(SEV_FATAL, ERR_ZERO,
+            ErrPostEx(SEV_FATAL, 0, 0,
                       "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
             return false;
         }
 
         pp.acprefix = ParFlat_NCBI_AC;
-        pp.seqtype = ncbi::objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
+        pp.seqtype = objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
                                                                GenBank SEQIDS - Karl */
         pp.source = ParFlat_NCBI;
     }
     else
     {
-        ErrPostEx(SEV_FATAL, ERR_ZERO,
+        ErrPostEx(SEV_FATAL, 0, 0,
                   "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ", source.c_str());
         return false;
     }
@@ -747,17 +759,17 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format,
     ParserPtr pp;
     Int2      form;
 
-    if (ncbi::NStr::EqualNocase(format, "embl"))
+    if (NStr::EqualNocase(format, "embl"))
         form = ParFlat_EMBL;
-    else if (ncbi::NStr::EqualNocase(format, "genbank"))
+    else if (NStr::EqualNocase(format, "genbank"))
         form = ParFlat_GENBANK;
-    else if (ncbi::NStr::EqualNocase(format, "sprot"))
+    else if (NStr::EqualNocase(format, "sprot"))
         form = ParFlat_SPROT;
-    else if (ncbi::NStr::EqualNocase(format, "xml"))
+    else if (NStr::EqualNocase(format, "xml"))
         form = ParFlat_XML;
     else
     {
-        ErrPostEx(SEV_ERROR, ERR_ZERO, "Unknown format of flat entry");
+        ErrPostEx(SEV_ERROR, 0, 0, "Unknown format of flat entry");
         return;
     }
 
@@ -796,15 +808,15 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format,
 }
 // LCOV_EXCL_STOP
 
-ncbi::objects::CScope& GetScope()
+/*
+objects::CScope& GetScope()
 {
-    static ncbi::objects::CScope scope(*ncbi::objects::CObjectManager::GetInstance());
+    static objects::CScope scope(*objects::CObjectManager::GetInstance());
 
     return scope;
 }
 
 // CErrorMgr class implements RAII paradigm
-/*
 class CErrorMgr
 {
 public:
@@ -817,6 +829,30 @@ public:
     }
 };
 */
+
+CFlatFileParser::CFlatFileParser(IObjtoolsListener* pMessageListener)
+{
+    FtaErrInit();
+    CFlatFileMessageReporter::GetInstance().SetListener(pMessageListener);
+}
+
+
+CFlatFileParser::~CFlatFileParser()
+{
+    FtaErrFini();
+}
+
+
+CRef<CSerialObject> CFlatFileParser::Parse(Parser* pp, bool already)
+{
+    CRef<CSerialObject> pResult;
+    if (sParseFlatfile(pResult, pp, already)) {
+        return pResult;
+    }
+
+   return CRef<CSerialObject>();
+}
+
 
 TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 {
@@ -833,7 +869,6 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 //    CErrorMgr err_mgr;
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
-    ErrClear();
 
     pp.ffbuf = (FileBufPtr)MemNew(sizeof(FileBuf));
     pp.ffbuf->start = buf;
@@ -854,8 +889,8 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     fta_init_servers(&pp);
 
-    CRef<ncbi::objects::CObjectManager> obj_mgr = ncbi::objects::CObjectManager::GetInstance();
-    ncbi::objects::CBuffer_DataLoader::RegisterInObjectManager(*obj_mgr, &pp, ncbi::objects::CObjectManager::eDefault, ncbi::objects::CObjectManager::kPriority_Default);
+    CRef<objects::CObjectManager> obj_mgr = objects::CObjectManager::GetInstance();
+    objects::CBuffer_DataLoader::RegisterInObjectManager(*obj_mgr, &pp, objects::CObjectManager::eDefault, objects::CObjectManager::kPriority_Default);
 
     GetScope().AddDefaults();
 
@@ -913,7 +948,6 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     }
 
     CkSegmentSet(&pp);           /* check for missing entries in segment set */
-    ErrClear();
     CheckDupEntries(&pp);
 
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup,
@@ -983,7 +1017,7 @@ bool fta_set_format_source(Parser& pp, const std::string& format, const std::str
     else if (format == "xml")
         pp.format = ParFlat_XML;
     else {
-        ErrPostEx(SEV_FATAL, ERR_ZERO,
+        ErrPostEx(SEV_FATAL, 0, 0,
                   "Sorry, the format is not available yet ==> available format embl, genbank, pir, prf, sprot, xml.");
         return false;
     }
@@ -1046,3 +1080,5 @@ void fta_init_pp(Parser& pp)
 	pp.qsfd = nullptr;
 	pp.qamode = false;
 }
+
+END_NCBI_SCOPE

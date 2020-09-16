@@ -57,20 +57,15 @@
 
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/fta_xml.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 
-#include <objtools/flatfile/asci_blk.h>
-#include <objtools/flatfile/ref.h>
-#include <objtools/flatfile/utilref.h>
 #include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/ftamain.h>
 #include <objtools/flatfile/flatdefn.h>
 
-#include <objtools/flatfile/xgbparint.h>
-#include <objtools/flatfile/xutils.h>
-
+#include "ftaerr.hpp"
+#include "indx_blk.h"
+#include "asci_blk.h"
+#include "utilref.h"
 #include "utilfeat.h"
 #include "loadfeat.h"
 #include "add.h"
@@ -80,11 +75,18 @@
 #include "em_ascii.h"
 #include "citation.h"
 #include "fcleanup.h"
+#include "utilfun.h"
+#include "ref.h"
+#include "xgbparint.h"
+#include "xutils.h"
+#include "fta_xml.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "xm_ascii.cpp"
+
+BEGIN_NCBI_SCOPE
 
 /**********************************************************/
 static void XMLCheckContigEverywhere(IndexblkPtr ibp, Int2 source)
@@ -144,7 +146,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Int2 source)
 
 /**********************************************************/
 static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
-                             ncbi::objects::CBioseq& bioseq, ParserPtr pp)
+                             objects::CBioseq& bioseq, ParserPtr pp)
 {
     char*    p;
     char*    q;
@@ -180,7 +182,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
+    CRef<objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.Empty())
     {
@@ -202,7 +204,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
     if (loc->IsMix())
     {
         XGappedSeqLocsToDeltaSeqs(loc->GetMix(), bioseq.SetInst().SetExt().SetDelta().Set());
-        bioseq.SetInst().SetRepr(ncbi::objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
     }
     else
         bioseq.SetInst().ResetExt();
@@ -214,7 +216,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
 
 /**********************************************************/
 bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
-                ncbi::objects::CBioseq& bioseq)
+                objects::CBioseq& bioseq)
 {
     IndexblkPtr ibp;
     XmlIndexPtr xip;
@@ -238,25 +240,25 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
     if(strandstr == NULL)
         strandstr = StringSave("   ");
 
-    ncbi::objects::CSeq_inst& inst = bioseq.SetInst();
-    inst.SetRepr(ncbi::objects::CSeq_inst::eRepr_raw);
+    objects::CSeq_inst& inst = bioseq.SetInst();
+    inst.SetRepr(objects::CSeq_inst::eRepr_raw);
 
     /* get linear, circular, tandem topology, blank is linear which = 1
      */
     topology = XMLCheckTPG(topstr);
     if(topology > 1)
-        inst.SetTopology(static_cast<ncbi::objects::CSeq_inst::ETopology>(topology));
+        inst.SetTopology(static_cast<objects::CSeq_inst::ETopology>(topology));
 
     strand = XMLCheckSTRAND(strandstr);
     if (strand > 0)
-        inst.SetStrand(static_cast<ncbi::objects::CSeq_inst::EStrand>(strand));
+        inst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
 
     if(topstr != NULL)
         MemFree(topstr);
     if(strandstr != NULL)
         MemFree(strandstr);
 
-    if (!GetSeqData(pp, dbp, bioseq, 0, dnaconv, ncbi::objects::eSeq_code_type_iupacna))
+    if (!GetSeqData(pp, dbp, bioseq, 0, dnaconv, objects::eSeq_code_type_iupacna))
         return false;
 
     if(ibp->is_contig && !XMLGetInstContig(ibp->xip, dbp, bioseq, pp))
@@ -266,10 +268,10 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, ncbi::objects::CMolInfo& mol_info,
-                                                          ncbi::objects::CBioSource* bio_src)
+static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects::CMolInfo& mol_info,
+                                                          objects::CBioSource* bio_src)
 {
-    ncbi::CRef<ncbi::objects::CGB_block> gbb(new ncbi::objects::CGB_block),
+    CRef<objects::CGB_block> gbb(new objects::CGB_block),
                                          ret;
 
     IndexblkPtr  ibp;
@@ -526,8 +528,8 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
             }
 
             thtg = mol_info.GetTech();
-            if (thtg == ncbi::objects::CMolInfo::eTech_htgs_0 || thtg == ncbi::objects::CMolInfo::eTech_htgs_1 ||
-                thtg == ncbi::objects::CMolInfo::eTech_htgs_2 || thtg == ncbi::objects::CMolInfo::eTech_htgs_3)
+            if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
+                thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
             {
                 RemoveHtgPhase(gbb->SetKeywords());
             }
@@ -600,7 +602,7 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
         {
             ErrPostStr(SEV_INFO, ERR_DIVISION_MappedtoEST,
                        "Leading T in accession number.");
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_est);
+            mol_info.SetTech(objects::CMolInfo::eTech_est);
 
             gbb->SetDiv("");
         }
@@ -650,7 +652,7 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
     }
 
     if (fli_kwd)
-        mol_info.SetTech(ncbi::objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -659,25 +661,25 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
         if (gbb->GetDiv() == "EST")
         {
             ibp->EST = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_est);
+            mol_info.SetTech(objects::CMolInfo::eTech_est);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "STS")
         {
             ibp->STS = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(objects::CMolInfo::eTech_sts);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "GSS")
         {
             ibp->GSS = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(objects::CMolInfo::eTech_survey);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "HTC")
         {
             ibp->HTC = true;
-            mol_info.SetTech(ncbi::objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(objects::CMolInfo::eTech_htc);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "SYN" && bio_src != NULL && bio_src->IsSetOrigin() &&
@@ -688,13 +690,13 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == ncbi::objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -712,7 +714,7 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
 
     if (bio_src != NULL && bio_src->IsSetSubtype())
     {
-        ITERATE(ncbi::objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+        ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
         {
             if ((*subtype)->GetSubtype() == 27)
             {
@@ -728,8 +730,8 @@ static ncbi::CRef<ncbi::objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* en
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
-                                                         ncbi::objects::COrg_ref* org_ref)
+static CRef<objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
+                                                         objects::COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
 
@@ -738,32 +740,32 @@ static ncbi::CRef<ncbi::objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPt
 
     ibp = pp->entrylist[pp->curindx];
 
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info(new ncbi::objects::CMolInfo);
+    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
 
     molstr = XMLFindTagValue(entry->offset, ibp->xip, INSDSEQ_MOLTYPE);
     div = XMLFindTagValue(entry->offset, ibp->xip, INSDSEQ_DIVISION);
 
     if(StringNCmp(div, "EST", 3) == 0)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_est);
+        mol_info->SetTech(objects::CMolInfo::eTech_est);
     else if(StringNCmp(div, "STS", 3) == 0)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_sts);
+        mol_info->SetTech(objects::CMolInfo::eTech_sts);
     else if(StringNCmp(div, "GSS", 3) == 0)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_survey);
+        mol_info->SetTech(objects::CMolInfo::eTech_survey);
     else if(StringNCmp(div, "HTG", 3) == 0)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_htgs_1);
+        mol_info->SetTech(objects::CMolInfo::eTech_htgs_1);
     else if(ibp->is_wgs)
     {
         if(ibp->is_tsa)
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_tsa);
+            mol_info->SetTech(objects::CMolInfo::eTech_tsa);
         else if(ibp->is_tls)
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_targeted);
+            mol_info->SetTech(objects::CMolInfo::eTech_targeted);
         else
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_wgs);
+            mol_info->SetTech(objects::CMolInfo::eTech_wgs);
     }
     else if(ibp->is_tsa)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_tsa);
+        mol_info->SetTech(objects::CMolInfo::eTech_tsa);
     else if(ibp->is_tls)
-        mol_info->SetTech(ncbi::objects::CMolInfo::eTech_targeted);
+        mol_info->SetTech(objects::CMolInfo::eTech_targeted);
 
     MemFree(div);
     GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, entry, org_ref);
@@ -777,7 +779,7 @@ static ncbi::CRef<ncbi::objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPt
 }
 
 /**********************************************************/
-static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, ncbi::objects::CBioseq& bioseq,
+static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bioseq,
                               Int2 source)
 {
     char*      organism = NULL;
@@ -803,7 +805,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, ncbi::objects::CBios
         return;
     }
 
-    ncbi::CRef<ncbi::objects::CBioSource> bio_src(new ncbi::objects::CBioSource);
+    CRef<objects::CBioSource> bio_src(new objects::CBioSource);
 
     p = organism;
     if (GetGenomeInfo(*bio_src, p) && bio_src->GetGenome() != 9)      /* ! Plasmid */
@@ -814,7 +816,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, ncbi::objects::CBios
             p++;
     }
 
-    ncbi::objects::COrg_ref& org_ref = bio_src->SetOrg();
+    objects::COrg_ref& org_ref = bio_src->SetOrg();
 
     if(source == ParFlat_EMBL)
     {
@@ -848,7 +850,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, ncbi::objects::CBios
         org_ref.SetOrgname().SetLineage(taxonomy);
     }
 
-    ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
     descr->SetSource(*bio_src);
     bioseq.SetDescr().Set().push_back(descr);
 }
@@ -926,7 +928,7 @@ static void XMLGetDescrComment(char* offset)
 }
 
 /**********************************************************/
-static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
+static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
 {
     IndexblkPtr   ibp;
 
@@ -943,12 +945,12 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 
     ibp = pp->entrylist[pp->curindx];
 
-    ncbi::objects::CBioSource* bio_src = nullptr;
-    ncbi::objects::COrg_ref* org_ref = nullptr;
+    objects::CBioSource* bio_src = nullptr;
+    objects::COrg_ref* org_ref = nullptr;
 
     /* ORGANISM
      */
-    NON_CONST_ITERATE(ncbi::objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
+    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
     {
         if ((*descr)->IsSource())
         {
@@ -961,7 +963,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 
     /* MolInfo from LOCUS line
      */
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info = XMLGetMolInfo(pp, entry, org_ref);
+    CRef<objects::CMolInfo> mol_info = XMLGetMolInfo(pp, entry, org_ref);
 
     /* DEFINITION data ==> descr_title
      */
@@ -992,7 +994,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
         MemFree(str);
         str = NULL;
 
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetTitle(title);
         bioseq.SetDescr().Set().push_back(descr);
 
@@ -1058,10 +1060,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     {
         dbpnext = dbp->next;
 
-        ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
+        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1074,10 +1076,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     {
         dbpnext = dbp->next;
 
-        ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
+        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1090,21 +1092,21 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     TStringList dr_ena,
                 dr_biosample;
 
-    ncbi::CRef<ncbi::objects::CEMBL_block> embl;
-    ncbi::CRef<ncbi::objects::CGB_block> gbb;
+    CRef<objects::CEMBL_block> embl;
+    CRef<objects::CGB_block> gbb;
 
     if (pp->source == ParFlat_EMBL)
         embl = XMLGetEMBLBlock(pp, entry->offset, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
     else
         gbb = XMLGetGBBlock(pp, entry->offset, *mol_info, bio_src);
 
-    ncbi::CRef<ncbi::objects::CUser_object> dbuop;
+    CRef<objects::CUser_object> dbuop;
     if (!dr_ena.empty() || !dr_biosample.empty())
         fta_build_ena_user_object(bioseq.SetDescr().Set(), dr_ena, dr_biosample, dbuop);
 
     if (mol_info->IsSetBiomol() || mol_info->IsSetTech())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetMolinfo(*mol_info);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1127,10 +1129,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     {
         if(StringNICmp(ibp->division, "CON", 3) == 0)
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), ParFlat_EMBL,
-                         ncbi::objects::CSeq_id::e_Embl, true, ibp->acnum);
+                         objects::CSeq_id::e_Embl, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), ParFlat_EMBL,
-                         ncbi::objects::CSeq_id::e_Embl, false, ibp->acnum);
+                         objects::CSeq_id::e_Embl, false, ibp->acnum);
 
         if (embl->GetExtra_acc().empty())
             embl->ResetExtra_acc();
@@ -1139,24 +1141,24 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     {
         if(StringNICmp(ibp->division, "CON", 3) == 0)
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), ParFlat_DDBJ,
-                         ncbi::objects::CSeq_id::e_Ddbj, true, ibp->acnum);
+                         objects::CSeq_id::e_Ddbj, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), ParFlat_DDBJ,
-                         ncbi::objects::CSeq_id::e_Ddbj, false, ibp->acnum);
+                         objects::CSeq_id::e_Ddbj, false, ibp->acnum);
     }
 
     if(pp->source == ParFlat_EMBL)
     {
         if (gbdiv != NULL)
         {
-            gbb.Reset(new ncbi::objects::CGB_block);
+            gbb.Reset(new objects::CGB_block);
             gbb->SetDiv(gbdiv);
 
             MemFree(gbdiv);
             gbdiv = NULL;
         }
 
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetEmbl(*embl);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1200,7 +1202,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
         if(pp->taxserver == 1 && gbb->IsSetDiv())
             fta_fix_orgref_div(bioseq.SetAnnot(), *org_ref, *gbb);
 
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetGenbank(*gbb);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1224,7 +1226,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 
         NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetUser(*(*user_obj));
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1250,7 +1252,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 
         if (offset[0] != 0)
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetComment(offset);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1262,18 +1264,18 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     if(pp->no_date)            /* -N in command line means no date */
         return;
 
-    ncbi::CRef<ncbi::objects::CDate_std> std_upd_date,
+    CRef<objects::CDate_std> std_upd_date,
                                          std_cre_date;
 
     if(pp->date)               /* -L in command line means replace
                                            date */
     {
-        ncbi::CTime cur_time(ncbi::CTime::eCurrent);
+        CTime cur_time(CTime::eCurrent);
 
-        std_upd_date.Reset(new ncbi::objects::CDate_std);
+        std_upd_date.Reset(new objects::CDate_std);
         std_upd_date->SetToTime(cur_time);
 
-        std_cre_date.Reset(new ncbi::objects::CDate_std);
+        std_cre_date.Reset(new objects::CDate_std);
         std_cre_date->SetToTime(cur_time);
 
         update = NULL;
@@ -1292,11 +1294,11 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 
     if (std_upd_date.NotEmpty())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetUpdate_date().SetStd(*std_upd_date);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (std_cre_date.NotEmpty() && std_cre_date->Compare(*std_upd_date) == ncbi::objects::CDate::eCompare_after)
+        if (std_cre_date.NotEmpty() && std_cre_date->Compare(*std_upd_date) == objects::CDate::eCompare_after)
         {
             ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate,
                       "Update-date \"%s\" precedes create-date \"%s\".",
@@ -1308,7 +1310,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
     {
         if(pp->xml_comp == false || pp->source == ParFlat_EMBL)
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetCreate_date().SetStd(*std_cre_date);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1354,7 +1356,7 @@ bool XMLAscii(ParserPtr pp)
 
     TEntryList seq_entries;
 
-    ncbi::objects::CSeq_loc locs;
+    objects::CSeq_loc locs;
 
     bool        seq_long = false;
     IndexblkPtr ibp;
@@ -1413,8 +1415,8 @@ bool XMLAscii(ParserPtr pp)
 
         ebp = CreateEntryBlk();
 
-        ncbi::CRef<ncbi::objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-        ebp->seq_entry.Reset(new ncbi::objects::CSeq_entry);
+        CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
+        ebp->seq_entry.Reset(new objects::CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
@@ -1475,7 +1477,7 @@ bool XMLAscii(ParserPtr pp)
 
         if (bioseq->GetInst().IsNa())
         {
-            if (bioseq->GetInst().GetRepr() == ncbi::objects::CSeq_inst::eRepr_raw)
+            if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
             {
                 if(ibp->gaps != NULL)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
@@ -1548,7 +1550,7 @@ bool XMLAscii(ParserPtr pp)
 
         if (ibp->psip.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CSeq_id> id(new ncbi::objects::CSeq_id);
+            CRef<objects::CSeq_id> id(new objects::CSeq_id);
             id->SetPatent(*ibp->psip);
             bioseq->SetId().push_back(id);
             ibp->psip.Reset();
@@ -1858,3 +1860,5 @@ bool XMLAscii(ParserPtr pp)
 
     return true;
 }
+
+END_NCBI_SCOPE

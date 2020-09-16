@@ -7,12 +7,14 @@
 #define _GBFEAT_
 
 #include <objects/seqfeat/Gb_qual.hpp>
+BEGIN_NCBI_SCOPE
 
-typedef std::vector<ncbi::CRef<ncbi::objects::CGb_qual> > TQualVector; 
+typedef std::vector<CRef<objects::CGb_qual> > TQualVector; 
 
-int XGBFeatKeyQualValid(ncbi::objects::CSeqFeatData::ESubtype subtype, TQualVector& quals, bool error_msgs, bool perform_corrections);
+int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& quals, bool error_msgs, bool perform_corrections);
 
 /*   --  GB_ERR returns values */
+END_NCBI_SCOPE
 
 #define GB_FEAT_ERR_NONE 0
 #define GB_FEAT_ERR_SILENT 1

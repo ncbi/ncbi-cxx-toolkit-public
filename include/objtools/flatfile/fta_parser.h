@@ -39,6 +39,15 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
+#define FTA_OUTPUT_BIOSEQSET 0
+#define FTA_OUTPUT_SEQSUBMIT 1
+
+#define FTA_RELEASE_MODE     0
+#define FTA_HTGS_MODE        1
+#define FTA_HTGSCON_MODE     2
+
+BEGIN_NCBI_SCOPE
+
 // some forward declarations
 struct file_buf;
 struct indexblk_struct;
@@ -50,9 +59,10 @@ typedef struct indexblk_struct* IndexblkPtr;
 typedef struct protein_block* ProtBlkPtr;
 typedef struct _fta_operon* FTAOperonPtr;
 
-typedef std::list<ncbi::CRef<ncbi::objects::CSeq_entry> > TEntryList;
+typedef std::list<CRef<objects::CSeq_entry> > TEntryList;
 
-typedef struct parser_vals {
+//typedef struct parser_vals {
+struct NCBI_XFLATFILE_EXPORT Parser {
     Int4             indx;              /* total number of records in the
                                            flat file, exclude BadLocusName
                                            entries */
@@ -174,12 +184,12 @@ typedef struct parser_vals {
     char*(*ff_get_entry)(const char* accession);
     char*(*ff_get_entry_v)(const char* accession, Int2 vernum);
     char*(*ff_get_qscore)(const char* accession, Int2 v);
-    char*(*ff_get_qscore_pp)(const char* accession, Int2 v, struct parser_vals *pp);
-    char*(*ff_get_entry_pp)(const char* accession, struct parser_vals *pp);
-    char*(*ff_get_entry_v_pp)(const char* accession, Int2 vernum, struct parser_vals *pp);
+    char*(*ff_get_qscore_pp)(const char* accession, Int2 v, Parser *pp);
+    char*(*ff_get_entry_pp)(const char* accession, Parser *pp);
+    char*(*ff_get_entry_v_pp)(const char* accession, Int2 vernum, Parser *pp);
 
 
-    parser_vals() :
+    Parser() :
         indx(0),
         entrylist(NULL),
         curindx(0),
@@ -240,9 +250,15 @@ typedef struct parser_vals {
         ff_get_entry_pp(NULL),
         ff_get_entry_v_pp(NULL)
     {}
-} Parser, *ParserPtr;
+
+    virtual ~Parser();
+};
+
+using ParserPtr = Parser*;
 
 /**************************************************************************/
 void fta_init_pp(Parser& pp);
+
+END_NCBI_SCOPE
 
 #endif

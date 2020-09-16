@@ -38,15 +38,19 @@
 #include <objtools/flatfile/ftacpp.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
 
+#include "ftaerr.hpp"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "indx_blk.cpp"
+
+
+BEGIN_NCBI_SCOPE
 
 static const char *XML_STRAND_array[] = {
     "   ", "single", "double", "mixed", NULL
@@ -612,28 +616,28 @@ bool CkLocusLinePos(char* offset, Int2 source, LocusContPtr lcp, bool is_mga)
 
 /**********************************************************
     *
-    *   ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(ptr, source):
+    *   CRef<objects::CDate_std> GetUpdateDate(ptr, source):
     *
     *      Return NULL if ptr does not have dd-mmm-yyyy format
     *   or "NODATE"; otherwise, return Date-std pointer.
     *
     **********************************************************/
-ncbi::CRef<ncbi::objects::CDate_std> GetUpdateDate(char* ptr, Int2 source)
+CRef<objects::CDate_std> GetUpdateDate(char* ptr, Int2 source)
 {
     Char date[12];
 
     if (StringNCmp(ptr, "NODATE", 6) == 0)
-        return ncbi::CRef<ncbi::objects::CDate_std>(new ncbi::objects::CDate_std(ncbi::CTime(ncbi::CTime::eCurrent)));
+        return CRef<objects::CDate_std>(new objects::CDate_std(CTime(CTime::eCurrent)));
 
     if (ptr[11] != '\0' && ptr[11] != '\n' && ptr[11] != ' ' &&
         (source != ParFlat_SPROT || ptr[11] != ','))
-        return ncbi::CRef<ncbi::objects::CDate_std>();
+        return CRef<objects::CDate_std>();
 
     MemCpy(date, ptr, 11);
     date[11] = '\0';
 
     if (!CkDateFormat(date))
-        return ncbi::CRef<ncbi::objects::CDate_std>();
+        return CRef<objects::CDate_std>();
 
     return get_full_date(ptr, false, source);
 }
@@ -1859,6 +1863,7 @@ void ResetParserStruct(ParserPtr pp)
  *                                              3-5-93
  *
  **********************************************************/
+/*
 void FreeParser(ParserPtr pp)
 {
     if(pp == NULL)
@@ -1870,6 +1875,7 @@ void FreeParser(ParserPtr pp)
         MemFree(pp->fpo);
     delete pp;
 }
+*/
 
 /**********************************************************
  *
@@ -2004,7 +2010,7 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         *source = 0;
 
     if(acc == NULL)
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
 
     size_t len = StringLen(acc);
 
@@ -2026,13 +2032,13 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
             {
                 if(source != NULL)
                     *source = ParFlat_REFSEQ;
-                return(ncbi::objects::CSeq_id::e_Other);
+                return(objects::CSeq_id::e_Other);
             }
         }
     }
 
     if(len != 6 && (len < 8 || len > 17))
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
 
     if(len == 11)
     {
@@ -2046,10 +2052,10 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
             {
                 if(source != NULL)
                     *source = ParFlat_REFSEQ;
-                return ncbi::objects::CSeq_id::e_Other;
+                return objects::CSeq_id::e_Other;
             }
         }
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
     }
 
     if(len == 6)
@@ -2057,35 +2063,35 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         if(acc[0] < 'A' || acc[0] > 'Z' || acc[1] < '0' || acc[1] > '9' ||
            acc[2] < '0' || acc[2] > '9' || acc[3] < '0' || acc[3] > '9' ||
            acc[4] < '0' || acc[4] > '9' || acc[5] < '0' || acc[5] > '9')
-           return ncbi::objects::CSeq_id::e_not_set;
+           return objects::CSeq_id::e_not_set;
 
         if(StringChr(ParFlat_NCBI_AC, acc[0]) != NULL)
         {
             if(source != NULL)
                 *source = ParFlat_NCBI;
-            return ncbi::objects::CSeq_id::e_Genbank;
+            return objects::CSeq_id::e_Genbank;
         }
         if(StringChr(ParFlat_LANL_AC, acc[0]) != NULL)
         {
             if(source != NULL)
                 *source = ParFlat_LANL;
-            return ncbi::objects::CSeq_id::e_Genbank;
+            return objects::CSeq_id::e_Genbank;
         }
         if(StringChr(ParFlat_DDBJ_AC, acc[0]) != NULL)
         {
             if(source != NULL)
                 *source = ParFlat_DDBJ;
-            return ncbi::objects::CSeq_id::e_Ddbj;
+            return objects::CSeq_id::e_Ddbj;
         }
         if(StringChr(ParFlat_EMBL_AC, acc[0]) != NULL)
         {
             if(source != NULL)
                 *source = ParFlat_EMBL;
             if (!is_tpa)
-                return ncbi::objects::CSeq_id::e_Embl;
-            return ncbi::objects::CSeq_id::e_Tpe;
+                return objects::CSeq_id::e_Embl;
+            return objects::CSeq_id::e_Tpe;
         }
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
     }
 
     if(len > 11 && len < 16 && acc[2] != '_')
@@ -2097,7 +2103,7 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         {
             if(source != NULL)
                 *source = ParFlat_DDBJ;
-            return(ncbi::objects::CSeq_id::e_Ddbj);
+            return(objects::CSeq_id::e_Ddbj);
         }
 
         if(((acc[0] < 'A' || acc[0] > 'S') &&
@@ -2111,20 +2117,20 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
            acc[10] < '0' || acc[10] > '9' || acc[11] < '0' || acc[11] > '9')
         {
             if(len != 15)
-                return ncbi::objects::CSeq_id::e_not_set;
+                return objects::CSeq_id::e_not_set;
         }
 
         if(len == 12 && acc[6] == 'S')
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
         if(len == 15 && acc[6] != 'S' && acc[5] >= '0' && acc[5] <= '9')
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
 
         if(len > 12 && (acc[12] < '0' || acc[12] > '9'))
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
         if (len > 13 && (acc[13] < '0' || acc[13] > '9'))
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
         if (len > 14 && (acc[14] < '0' || acc[14] > '9'))
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
 
         if(acc[0] == 'A' || acc[0] == 'D' || acc[0] == 'G' ||
            (acc[0] > 'I' && acc[0] < 'O') || (acc[0] > 'O' && acc[0] < 'T') ||
@@ -2133,16 +2139,16 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
             if(source != NULL)
                 *source = ParFlat_NCBI;
             if(acc[0] == 'D')
-                return ncbi::objects::CSeq_id::e_Tpg;
-            return ncbi::objects::CSeq_id::e_Genbank;
+                return objects::CSeq_id::e_Tpg;
+            return objects::CSeq_id::e_Genbank;
         }
         if(acc[0] == 'B' || acc[0] == 'E' || acc[0] == 'I' || acc[0] == 'T')
         {
             if(source != NULL)
                 *source = ParFlat_DDBJ;
             if(acc[0] == 'E')
-                return ncbi::objects::CSeq_id::e_Tpd;
-            return ncbi::objects::CSeq_id::e_Ddbj;
+                return objects::CSeq_id::e_Tpd;
+            return objects::CSeq_id::e_Ddbj;
         }
         if(acc[0] == 'C' || acc[0] == 'F' || acc[0] == 'O' || acc[0] == 'H' ||
            acc[0] == 'U')
@@ -2150,11 +2156,11 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
             if(source != NULL)
                 *source = ParFlat_EMBL;
             if (!is_tpa)
-                return ncbi::objects::CSeq_id::e_Embl;
-            return ncbi::objects::CSeq_id::e_Tpe;
+                return objects::CSeq_id::e_Embl;
+            return objects::CSeq_id::e_Tpe;
         }
         if(len != 15)
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
     }
 
     if(len > 14 && len < 18)
@@ -2170,16 +2176,16 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
                acc[10] < '0' || acc[10] > '9' || acc[11] < '0' ||
                acc[11] > '9' || acc[12] < '0' || acc[12] > '9' ||
                acc[13] < '0' || acc[13] > '9' || acc[14] < '0' || acc[14] > '9')
-               return ncbi::objects::CSeq_id::e_not_set;
+               return objects::CSeq_id::e_not_set;
 
             if(len > 15 && (acc[15] < '0' || acc[15] > '9'))
-                return ncbi::objects::CSeq_id::e_not_set;
+                return objects::CSeq_id::e_not_set;
             if(len > 16 && (acc[16] < '0' || acc[16] > '9'))
-                return ncbi::objects::CSeq_id::e_not_set;
+                return objects::CSeq_id::e_not_set;
 
             if(source != NULL)
                 *source = ParFlat_REFSEQ;
-            return ncbi::objects::CSeq_id::e_Other;
+            return objects::CSeq_id::e_Other;
         }
         if((acc[0] != 'A' && acc[0] != 'B' && acc[0] != 'C') ||
            acc[1] < 'A' || acc[1] > 'Z' || acc[2] < 'A' || acc[2] > 'Z' ||
@@ -2189,39 +2195,39 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
            acc[9] < '0' || acc[9] > '9' || acc[10] < '0' || acc[10] > '9' ||
            acc[11] < '0' || acc[11] > '9' || acc[12] < '0' || acc[12] > '9' ||
            acc[13] < '0' || acc[13] > '9' || acc[14] < '0' || acc[14] > '9')
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
 
         if(len > 15 && (acc[15] < '0' || acc[15] > '9'))
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
         if(len > 16 && (acc[16] < '0' || acc[16] > '9'))
-            return ncbi::objects::CSeq_id::e_not_set;
+            return objects::CSeq_id::e_not_set;
 
         if(acc[0] == 'A')
         {
             if(source != NULL)
                 *source = ParFlat_NCBI;
-            return ncbi::objects::CSeq_id::e_Genbank;
+            return objects::CSeq_id::e_Genbank;
         }
         if(acc[0] == 'B')
         {
             if(source != NULL)
                 *source = ParFlat_DDBJ;
-            return ncbi::objects::CSeq_id::e_Ddbj;
+            return objects::CSeq_id::e_Ddbj;
         }
         if(acc[0] == 'C')
         {
             if(source != NULL)
                 *source = ParFlat_EMBL;
-            return ncbi::objects::CSeq_id::e_Embl;
+            return objects::CSeq_id::e_Embl;
         }
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
     }
 
     q = acc + ((len == 8 || len == 10) ? 2 : 3);
     if(q[0] < '0' || q[0] > '9' || q[1] < '0' || q[1] > '9' ||
        q[2] < '0' || q[2] > '9' || q[3] < '0' || q[3] > '9' ||
        q[4] < '0' || q[4] > '9' || q[5] < '0' || q[5] > '9')
-       return ncbi::objects::CSeq_id::e_not_set;
+       return objects::CSeq_id::e_not_set;
 
     if(len == 9)
     {
@@ -2233,13 +2239,13 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         {
             if(source != NULL)
                 *source = ParFlat_REFSEQ;
-            return ncbi::objects::CSeq_id::e_Other;
+            return objects::CSeq_id::e_Other;
         }
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
     }
 
     if(acc[0] < 'A' || acc[0] > 'Z' || acc[1] < 'A' || acc[1] > 'Z')
-        return ncbi::objects::CSeq_id::e_not_set;
+        return objects::CSeq_id::e_not_set;
 
     p[0] = acc[0];
     p[1] = acc[1];
@@ -2249,33 +2255,33 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         if(source != NULL)
             *source = ParFlat_NCBI;
         if(MatchArrayString(ncbi_tpa_accpref, p) > -1)
-            return ncbi::objects::CSeq_id::e_Tpg;
-        return ncbi::objects::CSeq_id::e_Genbank;
+            return objects::CSeq_id::e_Tpg;
+        return objects::CSeq_id::e_Genbank;
     }
     if(MatchArrayString(lanl_accpref, p) > -1)
     {
         if(source != NULL)
             *source = ParFlat_LANL;
-        return ncbi::objects::CSeq_id::e_Genbank;
+        return objects::CSeq_id::e_Genbank;
     }
     if(MatchArrayString(ddbj_accpref, p) > -1)
     {
         if(source != NULL)
             *source = ParFlat_DDBJ;
         if(MatchArrayString(ddbj_tpa_accpref, p) > -1)
-            return ncbi::objects::CSeq_id::e_Tpd;
-        return ncbi::objects::CSeq_id::e_Ddbj;
+            return objects::CSeq_id::e_Tpd;
+        return objects::CSeq_id::e_Ddbj;
     }
     if(MatchArrayString(embl_accpref, p) > -1)
     {
         if(source != NULL)
             *source = ParFlat_EMBL;
         if (!is_tpa)
-            return ncbi::objects::CSeq_id::e_Embl;
-        return ncbi::objects::CSeq_id::e_Tpe;
+            return objects::CSeq_id::e_Embl;
+        return objects::CSeq_id::e_Tpe;
     }
 
-    return ncbi::objects::CSeq_id::e_not_set;
+    return objects::CSeq_id::e_not_set;
 }
 
 /**********************************************************/
@@ -2299,7 +2305,7 @@ Uint1 GetProtAccOwner(const Char* acc)
             for(q = &acc[3]; *q >= '0' && *q <= '9';)
                 q++;
             if(*q == '\0')
-                return ncbi::objects::CSeq_id::e_Other;
+                return objects::CSeq_id::e_Other;
         }
         return(0);
     }
@@ -2319,16 +2325,18 @@ Uint1 GetProtAccOwner(const Char* acc)
     }
 
     if(acc[0] == 'D' || acc[0] == 'H')
-        return ncbi::objects::CSeq_id::e_Tpg;
+        return objects::CSeq_id::e_Tpg;
     if(acc[0] == 'F' || acc[0] == 'I')
-        return ncbi::objects::CSeq_id::e_Tpd;
+        return objects::CSeq_id::e_Tpd;
     if(acc[0] == 'A' || acc[0] == 'E' || acc[0] == 'J' || acc[0] == 'K' ||
        (acc[0] > 'L' && acc[0] < 'S') || acc[0] == 'T' || acc[0] == 'U')
-       return ncbi::objects::CSeq_id::e_Genbank;
+       return objects::CSeq_id::e_Genbank;
     if(acc[0] == 'B' || acc[0] == 'G' || acc[0] == 'L')
-        return ncbi::objects::CSeq_id::e_Ddbj;
+        return objects::CSeq_id::e_Ddbj;
     if(acc[0] == 'C' || acc[0] == 'S' || acc[0] == 'V')
-        return ncbi::objects::CSeq_id::e_Embl;
+        return objects::CSeq_id::e_Embl;
 
     return(0);
 }
+
+END_NCBI_SCOPE

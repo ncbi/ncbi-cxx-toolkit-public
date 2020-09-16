@@ -58,22 +58,25 @@
 
 #include <objtools/flatfile/index.h>
 #include <objtools/flatfile/prf_index.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/entry.h>
 
-#include <objtools/flatfile/asci_blk.h>
-#include <objtools/flatfile/ref.h>
-#include <objtools/flatfile/utilref.h>
 #include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/ftamain.h>
 
+#include "ftaerr.hpp"
+#include "asci_blk.h"
+#include "utilref.h"
 #include "add.h"
+#include "utilfun.h"
+#include "entry.h"
+#include "ref.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "prf_ascii.cpp"
+
+BEGIN_NCBI_SCOPE
 
 static const char *prf_genomes[] = {
     "chloroplast",                      /* 0 -> 2 */
@@ -128,16 +131,16 @@ static void GetPrfSubBlock(ParserPtr pp, DataBlkPtr entry)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CBioseq> PrfCreateBioseq(IndexblkPtr ibp)
+static CRef<objects::CBioseq> PrfCreateBioseq(IndexblkPtr ibp)
 {
-    ncbi::CRef<ncbi::objects::CBioseq> bioseq(new ncbi::objects::CBioseq);
+    CRef<objects::CBioseq> bioseq(new objects::CBioseq);
 
-    bioseq->SetInst().SetRepr(ncbi::objects::CSeq_inst::eRepr_raw);
-    bioseq->SetInst().SetMol(ncbi::objects::CSeq_inst::eMol_aa);
-    bioseq->SetInst().SetTopology(ncbi::objects::CSeq_inst::eTopology_linear);
+    bioseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    bioseq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    bioseq->SetInst().SetTopology(objects::CSeq_inst::eTopology_linear);
 
-    ncbi::CRef<ncbi::objects::CSeq_id> id(new ncbi::objects::CSeq_id);
-    ncbi::objects::CTextseq_id& text_id = id->SetPrf();
+    CRef<objects::CSeq_id> id(new objects::CSeq_id);
+    objects::CTextseq_id& text_id = id->SetPrf();
     text_id.SetName(ibp->acnum);
 
     bioseq->SetId().push_back(id);
@@ -146,7 +149,7 @@ static ncbi::CRef<ncbi::objects::CBioseq> PrfCreateBioseq(IndexblkPtr ibp)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
+static CRef<objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
 {
     DataBlkPtr   dbp;
 
@@ -157,7 +160,7 @@ static ncbi::CRef<ncbi::objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
     Char         ch;
     size_t i;
 
-    ncbi::CRef<ncbi::objects::CPRF_block> prf_block;
+    CRef<objects::CPRF_block> prf_block;
     TKeywordList kwds;
 
     dbp = TrackNodeType(entry, ParFlatPRF_KEYWORD);
@@ -200,7 +203,7 @@ static ncbi::CRef<ncbi::objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
 
         if (!kwds.empty())
         {
-            prf_block.Reset(new ncbi::objects::CPRF_block);
+            prf_block.Reset(new objects::CPRF_block);
             prf_block->SetKeywords().swap(kwds);
         }
     }
@@ -210,9 +213,9 @@ static ncbi::CRef<ncbi::objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
         return prf_block;
 
     if (prf_block.Empty())
-        prf_block.Reset(new ncbi::objects::CPRF_block);
+        prf_block.Reset(new objects::CPRF_block);
 
-    ncbi::objects::CPRF_ExtraSrc& extra_src = prf_block->SetExtra_src();
+    objects::CPRF_ExtraSrc& extra_src = prf_block->SetExtra_src();
 
     for(dbp = (DataBlkPtr) dbp->data; dbp != NULL; dbp = dbp->next)
     {
@@ -282,9 +285,9 @@ static char* PrfGetSubStringValue(DataBlkPtr entry, Int2 type, Int2 subtype)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataBlkPtr entry)
+static CRef<objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataBlkPtr entry)
 {
-    ncbi::CRef<ncbi::objects::CBioSource> bio_src;
+    CRef<objects::CBioSource> bio_src;
 
     DataBlkPtr   dbp;
     const char   **b;
@@ -370,9 +373,9 @@ static ncbi::CRef<ncbi::objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataB
     if(org_part != NULL)
         MemFree(org_part);
 
-    bio_src.Reset(new ncbi::objects::CBioSource);
+    bio_src.Reset(new objects::CBioSource);
 
-    ncbi::objects::COrg_ref& org_ref = bio_src->SetOrg();
+    objects::COrg_ref& org_ref = bio_src->SetOrg();
     org_ref.SetTaxname(taxname);
     MemFree(taxname);
 
@@ -391,7 +394,7 @@ static ncbi::CRef<ncbi::objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataB
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr entry)
+static CRef<objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr entry)
 {
     DataBlkPtr  dbp;
 
@@ -399,7 +402,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr en
     char*     author;
     char*     jour;
 
-    ncbi::CRef<ncbi::objects::CPubdesc> ret;
+    CRef<objects::CPubdesc> ret;
 
     if(entry == NULL || entry->offset == NULL ||
        entry->len <= ParFlat_COL_DATA_PRF)
@@ -423,8 +426,8 @@ static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr en
 
     title = NULL;
     author = NULL;
-    ncbi::CRef<ncbi::objects::CTitle::C_E> title_art(new ncbi::objects::CTitle::C_E);
-    ncbi::CRef<ncbi::objects::CAuth_list> auth_list;
+    CRef<objects::CTitle::C_E> title_art(new objects::CTitle::C_E);
+    CRef<objects::CAuth_list> auth_list;
 
     for(dbp = (DataBlkPtr) entry->data; dbp != NULL; dbp = dbp->next)
     {
@@ -480,8 +483,8 @@ static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr en
 
     MemFree(author);
 
-    ncbi::CRef<ncbi::objects::CCit_art> empty_cit_art;
-    ncbi::CRef<ncbi::objects::CPub> pub_ref = journal(pp, jour, jour + StringLen(jour), auth_list, title_art, false, empty_cit_art, 0);
+    CRef<objects::CCit_art> empty_cit_art;
+    CRef<objects::CPub> pub_ref = journal(pp, jour, jour + StringLen(jour), auth_list, title_art, false, empty_cit_art, 0);
     if (pub_ref.Empty())
     {
         MemFree(jour);
@@ -489,32 +492,32 @@ static ncbi::CRef<ncbi::objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr en
     }
     MemFree(jour);
 
-    ret.Reset(new ncbi::objects::CPubdesc);
+    ret.Reset(new objects::CPubdesc);
     ret->SetPub().Set().push_back(pub_ref);
 
     return ret;
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, char* comm)
+static CRef<objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, char* comm)
 {
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info(new ncbi::objects::CMolInfo);
+    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
 
     char*    p;
     char*    q;
     bool       left;
     bool       right;
 
-    mol_info->SetBiomol(ncbi::objects::CMolInfo::eBiomol_peptide);
-    mol_info->SetCompleteness(ncbi::objects::CMolInfo::eCompleteness_complete);
+    mol_info->SetBiomol(objects::CMolInfo::eBiomol_peptide);
+    mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_complete);
 
     p = PrfGetSubStringValue(entry, ParFlatPRF_NAME, ParFlatPRF_determine);
     if(p != NULL)
     {
         if(StringICmp(p, "protein") == 0)
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_seq_pept);
+            mol_info->SetTech(objects::CMolInfo::eTech_seq_pept);
         else if(StringICmp(p, "gene") == 0 || StringICmp(p, "mRNA") == 0)
-            mol_info->SetTech(ncbi::objects::CMolInfo::eTech_concept_trans);
+            mol_info->SetTech(objects::CMolInfo::eTech_concept_trans);
         else
             ErrPostEx(SEV_ERROR, ERR_FORMAT_UnknownDetermineField,
                       "The \"determine\" subfield of NAME contains a value other than protein, mRNA or gene.");
@@ -561,11 +564,11 @@ static ncbi::CRef<ncbi::objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, char*
         *comm = '\0';
 
     if(left && right)
-        mol_info->SetCompleteness(ncbi::objects::CMolInfo::eCompleteness_no_ends);
+        mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_no_ends);
     else if(left)
-        mol_info->SetCompleteness(ncbi::objects::CMolInfo::eCompleteness_no_left);
+        mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_no_left);
     else if(right)
-        mol_info->SetCompleteness(ncbi::objects::CMolInfo::eCompleteness_no_right);
+        mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_no_right);
 
     return mol_info;
 }
@@ -578,8 +581,8 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
     char*      comm;
 
     comm = PrfGetStringValue(entry, ParFlatPRF_COMMENT);
-    ncbi::CRef<ncbi::objects::CBioSource> bio_src = PrfGetBioSource(pp, entry);
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info = PrfGetMolInfo(entry, comm);
+    CRef<objects::CBioSource> bio_src = PrfGetBioSource(pp, entry);
+    CRef<objects::CMolInfo> mol_info = PrfGetMolInfo(entry, comm);
 
     if(comm != NULL && *comm == '\0')
     {
@@ -589,7 +592,7 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
 
     if (comm != NULL)
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetComment(comm);
         descrs.push_back(descr);
     }
@@ -597,14 +600,14 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
 
     if (bio_src.NotEmpty())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetSource(*bio_src);
         descrs.push_back(descr);
     }
 
     if (mol_info.NotEmpty())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetMolinfo(*mol_info);
         descrs.push_back(descr);
     }
@@ -615,29 +618,29 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
         if(dbp->type != ParFlatPRF_JOURNAL)
             continue;
 
-        ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = PrfGetPub(pp, dbp);
+        CRef<objects::CPubdesc> pubdesc = PrfGetPub(pp, dbp);
         if (pubdesc.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetPub(*pubdesc);
             descrs.push_back(descr);
         }
     }
 
-    ncbi::CRef<ncbi::objects::CPRF_block> prf = PrfGetPrfBlock(entry);
+    CRef<objects::CPRF_block> prf = PrfGetPrfBlock(entry);
     if (prf.NotEmpty())
     {
-        ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetPrf(*prf);
         descrs.push_back(descr);
     }
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> PrfGetFullSeqInt(ncbi::objects::CSeq_id& id, Int4 len)
+static CRef<objects::CSeq_loc> PrfGetFullSeqInt(objects::CSeq_id& id, Int4 len)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc(new ncbi::objects::CSeq_loc);
-    ncbi::objects::CSeq_interval& interval = loc->SetInt();
+    CRef<objects::CSeq_loc> loc(new objects::CSeq_loc);
+    objects::CSeq_interval& interval = loc->SetInt();
 
     interval.SetFrom(0);
     interval.SetTo(len - 1);
@@ -764,7 +767,7 @@ static bool PrfValidateEcNumber(std::string& ec_str)
 }
 
 /**********************************************************/
-static void PrfParseEcNumber(char* str, ncbi::objects::CProt_ref::TEc& ecs)
+static void PrfParseEcNumber(char* str, objects::CProt_ref::TEc& ecs)
 {
     char*    p;
     char*    q;
@@ -785,7 +788,7 @@ static void PrfParseEcNumber(char* str, ncbi::objects::CProt_ref::TEc& ecs)
     if(*q != '\0')
         ecs.push_back(q);
 
-    for (ncbi::objects::CProt_ref::TEc::iterator it = ecs.begin(); it != ecs.end(); )
+    for (objects::CProt_ref::TEc::iterator it = ecs.begin(); it != ecs.end(); )
     {
         if (PrfValidateEcNumber(*it))
         {
@@ -798,7 +801,7 @@ static void PrfParseEcNumber(char* str, ncbi::objects::CProt_ref::TEc& ecs)
 }
 
 /**********************************************************/
-static void PrfGetProtRefEc(DataBlkPtr entry, ncbi::objects::CProt_ref::TEc& ecs)
+static void PrfGetProtRefEc(DataBlkPtr entry, objects::CProt_ref::TEc& ecs)
 {
     char*    p;
 
@@ -811,9 +814,9 @@ static void PrfGetProtRefEc(DataBlkPtr entry, ncbi::objects::CProt_ref::TEc& ecs
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CProt_ref> PrfGetProtRef(DataBlkPtr entry)
+static CRef<objects::CProt_ref> PrfGetProtRef(DataBlkPtr entry)
 {
-    ncbi::CRef<ncbi::objects::CProt_ref> prot_ref(new ncbi::objects::CProt_ref);
+    CRef<objects::CProt_ref> prot_ref(new objects::CProt_ref);
 
     char*    p;
 
@@ -832,37 +835,37 @@ static ncbi::CRef<ncbi::objects::CProt_ref> PrfGetProtRef(DataBlkPtr entry)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CGene_ref> PrfGetGeneRef(DataBlkPtr entry)
+static CRef<objects::CGene_ref> PrfGetGeneRef(DataBlkPtr entry)
 {
-    ncbi::CRef<ncbi::objects::CGene_ref> gene_ref;
+    CRef<objects::CGene_ref> gene_ref;
 
     char* p = PrfGetSubStringValue(entry, ParFlatPRF_NAME, ParFlatPRF_gene_name);
     if(p == NULL)
         return gene_ref;
 
-    gene_ref.Reset(new ncbi::objects::CGene_ref);
+    gene_ref.Reset(new objects::CGene_ref);
     gene_ref->SetLocus(p);
 
     return gene_ref;
 }
 
 /**********************************************************/
-static void PrfGetAnnot(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& bioseq)
+static void PrfGetAnnot(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc = PrfGetFullSeqInt(*(*bioseq.SetId().begin()), bioseq.GetLength());
+    CRef<objects::CSeq_loc> loc = PrfGetFullSeqInt(*(*bioseq.SetId().begin()), bioseq.GetLength());
     if (loc.Empty())
         return;
 
-    ncbi::CRef<ncbi::objects::CProt_ref> prot_ref = PrfGetProtRef(entry);
-    ncbi::CRef<ncbi::objects::CGene_ref> gene_ref = PrfGetGeneRef(entry);
+    CRef<objects::CProt_ref> prot_ref = PrfGetProtRef(entry);
+    CRef<objects::CGene_ref> gene_ref = PrfGetGeneRef(entry);
     
     if (prot_ref.Empty() && gene_ref.Empty())
         return;
 
-    ncbi::CRef<ncbi::objects::CSeq_annot> annot(new ncbi::objects::CSeq_annot);
-    ncbi::objects::CSeq_annot::C_Data::TFtable& feats = annot->SetData().SetFtable();
+    CRef<objects::CSeq_annot> annot(new objects::CSeq_annot);
+    objects::CSeq_annot::C_Data::TFtable& feats = annot->SetData().SetFtable();
 
-    ncbi::CRef<ncbi::objects::CSeq_feat> feat(new ncbi::objects::CSeq_feat);
+    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
     feat->SetLocation(*loc);
 
     if (prot_ref.NotEmpty())
@@ -872,7 +875,7 @@ static void PrfGetAnnot(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 
         if (gene_ref.NotEmpty())
         {
-            feat.Reset(new ncbi::objects::CSeq_feat);
+            feat.Reset(new objects::CSeq_feat);
             feat->SetLocation(*loc);
             feat->SetData().SetGene(*gene_ref);
 
@@ -889,7 +892,7 @@ static void PrfGetAnnot(ParserPtr pp, DataBlkPtr entry, ncbi::objects::CBioseq& 
 }
 
 /**********************************************************/
-static void PrfCreateDescrTitle(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry)
+static void PrfCreateDescrTitle(objects::CBioseq& bioseq, DataBlkPtr entry)
 {
     char*      p;
 
@@ -898,12 +901,12 @@ static void PrfCreateDescrTitle(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry
         return;
 
     std::string taxname;
-    ITERATE(ncbi::objects::CSeq_descr::Tdata, desc, bioseq.GetDescr().Get())
+    ITERATE(objects::CSeq_descr::Tdata, desc, bioseq.GetDescr().Get())
     {
         if (!(*desc)->IsSource())
             continue;
 
-        const ncbi::objects::CBioSource& bio_src = (*desc)->GetSource();
+        const objects::CBioSource& bio_src = (*desc)->GetSource();
         if (bio_src.IsSetOrg())
         {
             taxname = bio_src.GetOrg().IsSetTaxname() ? bio_src.GetOrg().GetTaxname() : "";
@@ -923,13 +926,13 @@ static void PrfCreateDescrTitle(ncbi::objects::CBioseq& bioseq, DataBlkPtr entry
     }
     MemFree(p);
 
-    ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
     descr->SetTitle(defline);
     bioseq.SetDescr().Set().push_back(descr);
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv,
+static CRef<objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv,
                                                              IndexblkPtr ibp)
 {
     Int2        curkw;
@@ -947,13 +950,13 @@ static ncbi::CRef<ncbi::objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataB
     }
     GetPrfSubBlock(pp, entry);
 
-    ncbi::CRef<ncbi::objects::CBioseq> bioseq = PrfCreateBioseq(ibp);
+    CRef<objects::CBioseq> bioseq = PrfCreateBioseq(ibp);
     GetScope().AddBioseq(*bioseq);
 
-    ncbi::CRef<ncbi::objects::CSeq_entry> seq_entry(new ncbi::objects::CSeq_entry);
+    CRef<objects::CSeq_entry> seq_entry(new objects::CSeq_entry);
     seq_entry->SetSeq(*bioseq);
 
-    GetSeqData(pp, entry, *bioseq, ParFlatPRF_SEQUENCE, protconv, ncbi::objects::CSeq_data::e_Iupacaa);
+    GetSeqData(pp, entry, *bioseq, ParFlatPRF_SEQUENCE, protconv, objects::CSeq_data::e_Iupacaa);
 
     PrfGetDescr(pp, entry, bioseq->SetDescr().Set());
     PrfGetAnnot(pp, entry, *bioseq);
@@ -1004,7 +1007,7 @@ bool PrfAscii(ParserPtr pp)
                 return false;
             }
 
-            ncbi::CRef<ncbi::objects::CSeq_entry> cur_entry = PrfPrepareEntry(pp, entry, protconv, ibp);
+            CRef<objects::CSeq_entry> cur_entry = PrfPrepareEntry(pp, entry, protconv, ibp);
             if (ibp->drop != 1 && cur_entry.NotEmpty())
             {
                 pp->entries.push_back(cur_entry);
@@ -1035,4 +1038,6 @@ bool PrfAscii(ParserPtr pp)
     MemFree(protconv);
     return true;
 }
+
+END_NCBI_SCOPE
 // LCOV_EXCL_STOP

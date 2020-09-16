@@ -92,15 +92,18 @@
 #define ParFlat_ReftypePatent         6
 #define ParFlat_ReftypeUnpub          7
 
-ncbi::CRef<ncbi::objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list,
-                                        ncbi::CRef<ncbi::objects::CTitle::C_E>& title, bool has_muid, ncbi::CRef<ncbi::objects::CCit_art>& cit_art, Int4 er);
+BEGIN_NCBI_SCOPE
+
+CRef<objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list,
+                                        CRef<objects::CTitle::C_E>& title, bool has_muid, CRef<objects::CCit_art>& cit_art, Int4 er);
                                         
 Int4 fta_remark_is_er(const char* str);
 
-ncbi::CRef<ncbi::objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data);
-ncbi::CRef<ncbi::objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
+CRef<objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data);
+CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
                                                         bool bParser, DataBlkPtr** ppInd, bool& no_auth);
 
-ncbi::CRef<ncbi::objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data);
+CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data);
 
+END_NCBI_SCOPE
 #endif

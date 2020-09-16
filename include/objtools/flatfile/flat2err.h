@@ -68,7 +68,6 @@
 #define ERR_FORMAT_SwissProtHasSubName                 1,33
 #define ERR_FORMAT_MissingFullRecName                  1,34
 #define ERR_FORMAT_IncorrectDBLINK                     1,35
-#define ERR_FORMAT_SequenceDataWithAssemblyGap         1,36
 #define ERR_FORMAT_AssemblyGapWithoutContig            1,37
 #define ERR_FORMAT_ContigVersusAssemblyGapMissmatch    1,38
 #define ERR_FORMAT_WrongBioProjectPrefix               1,39

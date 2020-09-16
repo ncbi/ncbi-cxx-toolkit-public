@@ -1,11 +1,13 @@
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftaerr.hpp>
 #include <string.h>
 #include <time.h>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+
+#include "flatfile_message_reporter.hpp"
+#include "ftaerr.hpp"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -13,6 +15,10 @@
 #define THIS_FILE "ftaerr.cpp"
 
 #define MESSAGE_DIR "/am/ncbiapdata/errmsg"
+
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 typedef struct fta_err_context {
     const char *module;
@@ -43,7 +49,8 @@ typedef struct bsv_msg_mod_files {
     struct bsv_msg_mod_files *next;
 } FtaMsgModFiles;
 
-typedef struct bsv_msg_post {
+//typedef struct bsv_msg_post {
+struct FtaMsgPost {
     FILE               *lfd;            /* Opened logfile */
     char               *logfile;        /* Logfile full name */
     std::string         appname;
@@ -64,13 +71,13 @@ typedef struct bsv_msg_post {
                                            severity lower than msglevel */
     FtaMsgModFiles     *bmmf;
 
-    bsv_msg_post() :
+    FtaMsgPost() :
         lfd(NULL),
         logfile(NULL),
         prefix_accession(NULL),
         prefix_locus(NULL),
         prefix_feature(NULL),
-        to_stderr(false),
+        to_stderr(true),
         show_msg_codeline(false),
         show_log_codeline(false),
         show_msg_codes(false),
@@ -81,7 +88,25 @@ typedef struct bsv_msg_post {
         bmmf(NULL)
     {}
 
-} FtaMsgPost;
+    virtual ~FtaMsgPost() {
+        if (lfd) {
+            fclose(lfd);
+        }
+        if (logfile) {
+            free(logfile);
+        }
+        if (prefix_locus) {
+            free(prefix_locus);
+        }
+        if (prefix_accession) {
+            free(prefix_accession);
+        }
+        if (prefix_feature) {
+            free(prefix_feature);    
+        }
+    };
+};
+//} FtaMsgPost;
 
 typedef struct fta_post_info {
     const char *module;
@@ -100,7 +125,7 @@ const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 FtaPostInfo fpi;
-FtaMsgPost  *bmp = NULL;
+thread_local unique_ptr<FtaMsgPost>  bmp;
 FtaErrCode  fec;
 
 /**********************************************************/
@@ -173,7 +198,7 @@ static void FtaErrGetMsgCodes(const char *module, int code, int subcode,
     if(got_mod)
         return;
 
-    string curdir = ncbi::CDir::GetCwd();
+    string curdir = CDir::GetCwd();
 
     buf = (char *) malloc(curdir.size() + strlen(module) + 6);
     sprintf(buf, "%s/%s.msg", curdir.c_str(), module);
@@ -414,13 +439,8 @@ void FtaErrInit()
     if(bmp)
         return;
 
-    bmp = new FtaMsgPost;
-
-    bmp->to_stderr = true;
-    bmp->show_msg_codeline = false;
-    bmp->show_log_codeline = false;
-
-    bmp->appname = ncbi::CNcbiApplication::GetAppName();
+    bmp.reset(new FtaMsgPost());
+    bmp->appname = CNcbiApplication::GetAppName();
 
     fec.module = NULL;
     fec.fname = NULL;
@@ -431,23 +451,11 @@ void FtaErrInit()
 /**********************************************************/
 void FtaErrFini(void)
 {
-    if(!bmp)
-        return;
-
-    if(bmp->lfd)
-        fclose(bmp->lfd);
-    if(bmp->logfile)
-        free(bmp->logfile);
-    if(bmp->prefix_locus)
-        free(bmp->prefix_locus);
-    if(bmp->prefix_accession)
-        free(bmp->prefix_accession);
-    if(bmp->prefix_feature)
-        free(bmp->prefix_feature);
-
-    delete bmp;
-    bmp = NULL;
+    if (bmp) {
+        bmp.reset();
+    }
 }
+
 
 /**********************************************************/
 void FtaInstallPrefix(int prefix, const char *name, const char *location)
@@ -708,11 +716,10 @@ static void FtaErrHandler(void)
 /**********************************************************/
 void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
 {
-    va_list args;
-    char    buffer[1024];
 
     if(!bmp)
         FtaErrInit();
+
 
     if(fec.fname == NULL || fec.line < 0)
     {
@@ -722,6 +729,8 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
         return;
     }
 
+    va_list args;
+    char    buffer[1024];
     va_start(args, fmt);
     vsnprintf(buffer, 1024, fmt, args);
     va_end(args);
@@ -753,12 +762,36 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
     fpi.severity = (char *) FtaIntSevToStrSev(fpi.sevcode);
 
     if(bmp->appname.empty())
-        bmp->appname = ncbi::CNcbiApplication::GetAppName();
-
+        bmp->appname = CNcbiApplication::GetAppName();
+/*
     if(bmp->hook_only)
         FtaErrHandler();
     else
         FtaPostMessage();
+*/
+    // Use a message listenr to log message
+    string seqId = bmp->prefix_accession ?
+        bmp->prefix_accession :
+        "";
+
+    string locus = bmp->prefix_locus ?
+        bmp->prefix_locus :
+        "";
+
+    string featId = bmp->prefix_feature ?
+        bmp->prefix_feature :
+        "";
+
+    static const map<ErrSev, EDiagSev> sSeverityMap
+       =  {{SEV_NONE , eDiag_Trace},
+          {SEV_INFO , eDiag_Info},
+          {SEV_WARNING , eDiag_Warning},
+          {SEV_ERROR , eDiag_Error},
+          {SEV_REJECT , eDiag_Critical},
+          {SEV_FATAL , eDiag_Fatal}}; 
+
+    CFlatFileMessageReporter::GetInstance()
+        .Report(sSeverityMap.at(sev), lev1, lev2, buffer, seqId, locus, featId);
 }
 
 /**********************************************************/
@@ -768,9 +801,5 @@ void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char *str)
 }
 
 /**********************************************************/
-void FtaErrSetHandler(void)
-{
-    if(!bmp)
-        FtaErrInit();
-    bmp->hook_only = true;
-}
+
+END_NCBI_SCOPE

@@ -157,6 +157,7 @@
 #  define NCBI_VARIATION_UTILS_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORTS
+#  define NCBI_XFLATFILE_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJIMPORT_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
@@ -1259,6 +1260,7 @@
 #  define NCBI_XLOADER_WGS_EXPORT NCBI_DLL_IMPORT
 #endif
 
+
 /* Export specifier for library ncbi_xloader_vdbgraph
  */
 #ifdef NCBI_XLOADER_VDBGRAPH_EXPORTS
@@ -1290,6 +1292,15 @@
 #else
 #  define NCBI_XOBJEDIT_EXPORT NCBI_DLL_IMPORT
 #endif
+
+/* Export specifier for library xflatfile
+ */
+#ifdef NCBI_XFLATFILE_EXPORTS
+# define NCBI_XFLATFILE_EXPORT NCBI_DLL_EXPORT
+#else 
+# define NCBI_XFLATFILE_EXPORT NCBI_DLL_IMPORT
+#endif
+
 
 /* Export specifier for library xobjmanip
  */

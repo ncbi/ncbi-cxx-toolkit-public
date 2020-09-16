@@ -44,13 +44,14 @@
 #include <objects/seqfeat/SubSource.hpp>
 
 #include <objtools/flatfile/index.h>
-#include <objtools/flatfile/utilfun.h>
 
-#include <objtools/flatfile/asci_blk.h>
 #include <objtools/flatfile/flatdefn.h>
 
+#include "ftaerr.hpp"
+#include "asci_blk.h"
 #include "add.h"
 #include "utilfeat.h"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -66,7 +67,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 char ValidAminoAcid(const string &abbrev);
 END_SCOPE(objects)
-END_NCBI_SCOPE
 
 
 const char *ParFlat_GImod[] = {
@@ -101,7 +101,7 @@ const char *valid_organelle[] = {
 };
 
 /**********************************************************/
-bool SeqLocHaveFuzz(const ncbi::objects::CSeq_loc& loc)
+bool SeqLocHaveFuzz(const objects::CSeq_loc& loc)
 {
     bool flag;
 
@@ -140,7 +140,7 @@ char* CpTheQualValue(const TQualVector& qlist, const Char *qual)
             break;
         }
 
-        qvalue = ncbi::NStr::Sanitize(val);
+        qvalue = NStr::Sanitize(val);
         break;
     }
 
@@ -243,14 +243,14 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
                   qval);
     ch = *p;
     *p = '\0';
-    aa = ncbi::objects::ValidAminoAcid(str);
+    aa = objects::ValidAminoAcid(str);
     *p = ch;
 
     return(aa);
 }
 
 /**********************************************************/
-bool GetGenomeInfo(ncbi::objects::CBioSource& bsp, const Char* bptr)
+bool GetGenomeInfo(objects::CBioSource& bsp, const Char* bptr)
 {
     Int4 i = StringMatchIcase(ParFlat_GImod, bptr);
     if(i == -1)
@@ -289,12 +289,12 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::stri
             !(*descr)->GetSource().GetOrg().IsSetTaxname())
             continue;
 
-        const ncbi::objects::COrg_ref& org_ref = (*descr)->GetSource().GetOrg();
+        const objects::COrg_ref& org_ref = (*descr)->GetSource().GetOrg();
         names[0] = org_ref.GetTaxname();
 
         if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod())
         {
-            ITERATE(ncbi::objects::COrgName::TMod, mod, org_ref.GetOrgname().GetMod())
+            ITERATE(objects::COrgName::TMod, mod, org_ref.GetOrgname().GetMod())
             {
                 if (!(*mod)->IsSetSubname() || !(*mod)->IsSetSubtype())
                     continue;
@@ -316,7 +316,7 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::stri
 
         if ((*descr)->GetSource().IsSetSubtype())
         {
-            ITERATE(ncbi::objects::CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype())
+            ITERATE(objects::CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype())
             {
                 /* subtype = "other"
                 */
@@ -350,13 +350,13 @@ static void GetTaxnameName(TEntryList& seq_entries, std::vector<std::string>& na
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
+        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
             if (bio_set->IsSetDescr())
                 GetTaxnameNameFromDescrs(bio_set->SetDescr().Set(), names);
         }
 
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             if (bioseq->IsSetDescr())
                 GetTaxnameNameFromDescrs(bioseq->SetDescr().Set(), names);
@@ -375,7 +375,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
         if (!(*descr)->GetGenbank().IsSetSource())
             break;
 
-        ncbi::objects::CGB_block& gb_block = (*descr)->SetGenbank();
+        objects::CGB_block& gb_block = (*descr)->SetGenbank();
         char* p = StringSave(gb_block.GetSource().c_str());
         char* pper = 0;
 
@@ -475,7 +475,7 @@ static void CheckDelGbblockSource(TEntryList& seq_entries, std::vector<std::stri
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (ncbi::CTypeIterator<ncbi::objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             if (bioseq->IsSetDescr())
                 CheckDelGbblockSourceFromDescrs(bioseq->SetDescr().Set(), names);
@@ -523,7 +523,7 @@ void MakeLocStrCompatible(std::string& str)
 }
 
 /**********************************************************/
-Char* location_to_string(const ncbi::objects::CSeq_loc& loc)
+Char* location_to_string(const objects::CSeq_loc& loc)
 {
     std::string loc_str;
     loc.GetLabel(&loc_str);
@@ -536,3 +536,5 @@ Char* location_to_string(const ncbi::objects::CSeq_loc& loc)
 
     return ret;
 }
+
+END_NCBI_SCOPE

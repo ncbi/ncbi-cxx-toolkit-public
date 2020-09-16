@@ -37,15 +37,17 @@
 
 #include <objtools/flatfile/ftacpp.hpp>
 
-#include <objtools/flatfile/ftablock.h>
-#include <objtools/flatfile/utilfun.h>
-#include <objtools/flatfile/indx_blk.h>
+#include "ftaerr.hpp"
+#include "ftablock.h"
+#include "indx_blk.h"
 #include "indx_def.h"
+#include "utilfun.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "block.cpp"
+BEGIN_NCBI_SCOPE
 
 typedef struct _qs_struct {
     char*                accession;
@@ -396,3 +398,5 @@ _gap_feats::_gap_feats() :
     next(NULL)
 {
 }
+
+END_NCBI_SCOPE

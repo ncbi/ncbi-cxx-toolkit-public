@@ -40,7 +40,10 @@
 #include <cstring>
 #include <corelib/ncbistr.hpp>
 
-#include <objtools/flatfile/ftaerr.hpp>
+//#include <objtools/flatfile/ftaerr.hpp>
+
+BEGIN_NCBI_SCOPE
+
 inline void* MemNew(size_t sz) { void* p = std::malloc(sz); std::memset(p, 0, sz); return p; }
 inline void* MemSet(void* p, int n, size_t sz) { return std::memset(p, n, sz); }
 inline void* MemCpy(void* p, void* q, size_t sz) { return std::memcpy(p, q, sz); }
@@ -72,6 +75,7 @@ inline bool StringDoesHaveText(const char* s) { return !StringHasNoText(s); }
 inline char* SkipSpaces(char* s) { while (*s && std::isspace(*s)) s++; return s; }
 
 char* TrimSpacesAroundString(char* str);
+END_NCBI_SCOPE
 
 #define IS_DIGIT(c)	('0'<=(c) && (c)<='9')
 #define IS_UPPER(c)	('A'<=(c) && (c)<='Z')

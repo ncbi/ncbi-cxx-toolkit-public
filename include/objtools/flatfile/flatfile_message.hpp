@@ -1,4 +1,6 @@
-/* sp_ascii.h
+#ifndef _FLATFILE_MESSAGE_HPP_
+#define _FLATFILE_MESSAGE_HPP_
+/*
  *
  * ===========================================================================
  *
@@ -24,53 +26,65 @@
  *
  * ===========================================================================
  *
- * File Name:  sp_ascii.h
- *
- * Author: Karl Sirotkin, Hsiu-Chuan Chen
+ * Author: Justin Foley
  *
  * File Description:
  * -----------------
- *      Build SWISS-PROT format entry block.
- *
  */
 
-#ifndef _SPASCII_
-#define _SPASCII_
+#include <corelib/ncbistd.hpp>
+#include <objtools/logging/message.hpp>
 
-#define ParFlatSPSites       1
-#define ParFlatSPBonds       2
-#define ParFlatSPRegions     3
-#define ParFlatSPImports     4
-#define ParFlatSPInitMet     5
-#define ParFlatSPNonTer      6
-#define ParFlatSPNonCons     7
-
-typedef struct sprot_feat_type {
-    const char *inkey;                  /* input key string */
-    Uint1      type;                    /* SITES, REGIONS, BONDS, IMPORTS */
-    Int4       keyint;                  /* output keyname for SITES, BONDS */
-    const char *keystring;              /* output keyname for REGIONS, IMPORTS,
-                                           or description string from SITES */
-} SPFeatType, *SPFeatTypePtr;
-
-/* Table of valid Comment topic (CC line), change
- * "comment-topic-key:" to "[comment-topic-key]"
- *
- *  CC   -!- SUBCELLULAR LOCATION: POSSIBLY ASSOCIATED WITH, AND ANCHORED TO,
- *  CC       THE CYTOPLASMIC SIDE OF THE MEMBRANE.
- */
-
-/* "POLYMORPHISM" added in 29.0 release  June 1994
- */
-
-/* "DOMAIN" added in 30.0 release
- */
-
-/* "ALTERNATIVE SPLICING" changed to ALTERNATIVE PRODUCTS in 30.0 release
- */
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects);
 
-bool SprotAscii(ParserPtr pp);
 
+class CFlatFileMessage : public CObjtoolsMessage
+{
+public:
+    CFlatFileMessage(EDiagSev severity, 
+                    int code, 
+                    int subcode,
+                    const string& text,
+                    string seqId="",
+                    string locus="",
+                    string feature="",
+                    int lineNum=-1);
+
+    virtual ~CFlatFileMessage();
+
+    CFlatFileMessage *Clone(void) const;
+
+    void Dump(CNcbiOstream& out) const override;
+
+    void DumpAsXML(CNcbiOstream& out) const override;
+
+    void Write(CNcbiOstream& out) const override;
+
+    void WriteAsXML(CNcbiOstream& out) const override;
+    
+    int GetCode(void) const override;
+
+    int GetSubCode(void) const override;
+
+    const string& GetSeqId(void) const;
+
+    const string& GetLocus(void) const;
+
+    const string& GetFeature(void) const;
+
+    int GetLineNum(void) const;
+private:
+    int m_Code;
+    int m_Subcode;
+    string m_SeqId;
+    string m_Locus;
+    string m_Feature;
+    int m_LineNum;
+};
+
+END_SCOPE(objects);
 END_NCBI_SCOPE
+
+
 #endif

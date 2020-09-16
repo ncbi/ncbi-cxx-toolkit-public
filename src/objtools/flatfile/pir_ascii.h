@@ -60,6 +60,7 @@
 #define REFERENCE_cross_references 10
 
 #define CLASS_superfamily          1
+BEGIN_NCBI_SCOPE
 
 typedef struct pir_feat_type {
     Int4       inlen;           /* string length of the input key string */
@@ -72,5 +73,6 @@ typedef struct pir_feat_type {
 
 bool PirAscii(ParserPtr pp);
 
+END_NCBI_SCOPE
 #endif //PIR_ASCII_H
 // LCOV_EXCL_STOP

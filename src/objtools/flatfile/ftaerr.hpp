@@ -55,6 +55,7 @@ USING_NCBI_SCOPE;
 #define EO_PROMPT_ABORT  0x04000000L
 #define EO_BEEP          0x08000000L
 */
+BEGIN_NCBI_SCOPE
 
 enum ErrSev {
     SEV_NONE = 0,
@@ -70,9 +71,9 @@ void   FtaErrInit(void);
 void   FtaErrFini(void);
 
 void   ErrSetOptFlags(int flags);
-void   ErrSetFatalLevel(ErrSev sev);
+NCBI_DEPRECATED void   ErrSetFatalLevel(ErrSev sev);
 bool   ErrSetLog(const char *logfile);
-void   ErrClear(void);
+NCBI_DEPRECATED void   ErrClear(void);
 void   ErrLogPrintStr(const char *str);
 ErrSev ErrSetLogLevel(ErrSev sev);
 ErrSev ErrSetMessageLevel(ErrSev sev);
@@ -82,7 +83,6 @@ int    Nlm_ErrSetContext(const char *module, const char *fname, int line);
 
 void   FtaInstallPrefix(int prefix, const char *name, const char *location);
 void   FtaDeletePrefix(int prefix);
-void   FtaErrSetHandler(void);
 
 /*
 #define ErrPostEx(sev, err_code, ...)                            \
@@ -95,5 +95,7 @@ void   FtaErrSetHandler(void);
                   Nlm_ErrPostEx)
 
 #define ErrPostStr       ErrPostEx
+
+END_NCBI_SCOPE
 
 #endif //FTAERR_HPP

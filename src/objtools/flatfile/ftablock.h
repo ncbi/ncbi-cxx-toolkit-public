@@ -47,31 +47,30 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/seq/Delta_seq.hpp>
 
-#include <objtools/flatfile/valnode.h>
 #include <objtools/flatfile/fta_parser.h>
+#include "valnode.h" 
 
-typedef std::list<ncbi::CRef<ncbi::objects::CSeq_feat> > TSeqFeatList;
+BEGIN_NCBI_SCOPE
+
+typedef std::list<CRef<objects::CSeq_feat> > TSeqFeatList;
 typedef std::list<std::string> TAccessionList;
-typedef std::list<ncbi::CRef<ncbi::objects::CSeq_id> > TSeqIdList;
-typedef std::list<ncbi::CRef<ncbi::objects::COrgMod> > TOrgModList;
-typedef std::vector<ncbi::CRef<ncbi::objects::CGb_qual> > TGbQualVector;
-typedef std::list<ncbi::CRef<ncbi::objects::CSeqdesc> > TSeqdescList;
-typedef std::vector<ncbi::CRef<ncbi::objects::CUser_object> > TUserObjVector;
-typedef std::list<ncbi::CRef<ncbi::objects::CPub> > TPubList;
-typedef std::list<ncbi::CRef<ncbi::objects::CSeq_loc> > TSeqLocList;
-typedef std::list<ncbi::CRef<ncbi::objects::CDelta_seq> > TDeltaList;
+typedef std::list<CRef<objects::CSeq_id> > TSeqIdList;
+typedef std::list<CRef<objects::COrgMod> > TOrgModList;
+typedef std::vector<CRef<objects::CGb_qual> > TGbQualVector;
+typedef std::list<CRef<objects::CSeqdesc> > TSeqdescList;
+typedef std::vector<CRef<objects::CUser_object> > TUserObjVector;
+typedef std::list<CRef<objects::CPub> > TPubList;
+typedef std::list<CRef<objects::CSeq_loc> > TSeqLocList;
+typedef std::list<CRef<objects::CDelta_seq> > TDeltaList;
 
-
-#define ERR_ZERO             0,0
 
 #define ParFlat_ENTRYNODE    500
 
-#define FTA_OUTPUT_BIOSEQSET 0
-#define FTA_OUTPUT_SEQSUBMIT 1
-
+/*
 #define FTA_RELEASE_MODE     0
 #define FTA_HTGS_MODE        1
 #define FTA_HTGSCON_MODE     2
+*/
 
 typedef struct file_buf {
     const char* start;
@@ -91,7 +90,7 @@ typedef struct info_bioseq {
 } InfoBioseq, *InfoBioseqPtr;
 
 typedef struct protein_block {
-    ncbi::objects::CSeq_entry* biosep; /* for the toppest level of the BioseqSet */
+    objects::CSeq_entry* biosep; /* for the toppest level of the BioseqSet */
 
     bool           segset;      /* TRUE if a BioseqSet SeqEntry */
 
@@ -100,7 +99,7 @@ typedef struct protein_block {
 
     TSeqFeatList   feats;       /* a CodeRegionPtr list to link the BioseqSet
                                    with class = nuc-prot */
-    ncbi::objects::CGenetic_code::C_E gcode;         /* for this Bioseq */
+    objects::CGenetic_code::C_E gcode;         /* for this Bioseq */
     InfoBioseqPtr  ibp;
     Uint1          genome;
     Int4           orig_gcode;
@@ -135,7 +134,7 @@ typedef struct _gap_feats {
     char* gap_type;
     Int4    asn_gap_type;
 
-    ncbi::objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
+    objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
 
     struct _gap_feats *next;
 
@@ -193,10 +192,10 @@ typedef struct indexblk_struct {
     size_t             len;             /* total length (or sizes in bytes)
                                            of the entry */
 
-    ncbi::CRef<ncbi::objects::CDate_std> date; /* the record's entry-date or last
+    CRef<objects::CDate_std> date; /* the record's entry-date or last
                                                   update's date */
 
-    ncbi::CRef<ncbi::objects::CPatent_seq_id> psip; /* patent reference */
+    CRef<objects::CPatent_seq_id> psip; /* patent reference */
 
     bool               EST;             /* special EST entries */
     bool               STS;             /* special STS entries */
@@ -255,7 +254,7 @@ typedef struct indexblk_struct {
     bool               experimental;    /* TRUE for TPA:experimental in
                                            KEYWORDS line */
     char*            submitter_seqid;
-    struct parser_vals *ppp;
+    Parser *ppp;
 
     indexblk_struct();
 
@@ -265,7 +264,7 @@ typedef struct _fta_operon {
     const Char*             featname;   /* Do not free! Just a pointer. */
     const Char*             operon;     /* Do not free! Just a pointer. */
 
-    ncbi::CConstRef<ncbi::objects::CSeq_loc> location;   /* Do not free! Just a pointer. */
+    CConstRef<objects::CSeq_loc> location;   /* Do not free! Just a pointer. */
 
     char*                 strloc;     /* String value of location. */
     bool                    operon_feat;
@@ -298,7 +297,7 @@ typedef struct data_block {
 typedef struct entry_block {
     DataBlkPtr              chain;      /* a header points to key-word
                                            block information */
-    ncbi::CRef<ncbi::objects::CSeq_entry> seq_entry; /* points to sequence entry */
+    CRef<objects::CSeq_entry> seq_entry; /* points to sequence entry */
 
     struct entry_block *next;
 
@@ -324,5 +323,7 @@ void XMLIndexFree(XmlIndexPtr xip);
 
 void FreeEntryBlk(EntryBlkPtr entry);
 EntryBlkPtr CreateEntryBlk();
+
+END_NCBI_SCOPE
 
 #endif

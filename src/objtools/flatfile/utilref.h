@@ -1,4 +1,4 @@
-/* xmlmisc.h
+/* utilref.h
  *
  * ===========================================================================
  *
@@ -24,41 +24,45 @@
  *
  * ===========================================================================
  *
- * File Name:  xmlmisc.h
+ * File Name:  utilref.h
  *
- * Author: Alexey Dobronadezhdin
+ * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
  * -----------------
- *      XML functionality from C-toolkit.
  */
 
-#ifndef XMLMISC_H
-#define XMLMISC_H
+#ifndef _UTILREF_
+#define _UTILREF_
 
-#include <objtools/flatfile/valnode.h>
+#define GB_REF   0
+#define EMBL_REF 1
+#define SP_REF   2
+#define PIR_REF  3
+#define PDB_REF  4
+#define ML_REF   5
 
-/* Simple XML Parsing */
+//#include <objtools/flatfile/asci_blk.h>
 
-typedef struct xmlobj {
-    char*    name;
-    char*    contents;
-    short       level;
-    struct xmlobj  *attributes;
-    struct xmlobj  *children;
-    struct xmlobj  *next;
-    struct xmlobj  *parent;
-    struct xmlobj  *successor;        /* linearizes a recursive exploration */
-} Nlm_XmlObj, *Nlm_XmlObjPtr;
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/general/Name_std.hpp>
 
-#define XmlObj Nlm_XmlObj
-#define XmlObjPtr Nlm_XmlObjPtr
+BEGIN_NCBI_SCOPE
 
-typedef void(*VisitXmlNodeFunc) (Nlm_XmlObjPtr xop, Nlm_XmlObjPtr parent, short level, void* userdata);
+Int4         valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
+ValNodePtr   get_tokens(char* str, const Char *delimeter);
 
-Nlm_XmlObjPtr ParseXmlString(const Char* str);
-Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop);
-int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter,
-                       char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth);
+void DealWithGenes(TEntryList& seq_entries, ParserPtr pp);
+void GetNameStdFromMl(objects::CName_std& namestd, const Char* token);
+
+CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title);
+CRef<objects::CDate> get_date(const Char* year);
+void get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
+void get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& auths);
+void get_auth_from_toks(ValNodePtr tokens, Uint1 format, CRef<objects::CAuth_list>& auths);
+CRef<objects::CAuthor> get_std_auth(const Char* token, Uint1 format);
+
+END_NCBI_SCOPE
 
 #endif

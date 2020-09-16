@@ -62,23 +62,26 @@
 
 #include <objtools/flatfile/index.h>
 #include <objtools/flatfile/pir_index.h>
-#include <objtools/flatfile/utilfun.h>
 
-#include <objtools/flatfile/asci_blk.h>
-#include <objtools/flatfile/utilref.h>
 #include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/ftamain.h>
 
-#include <objtools/flatfile/xutils.h>
-
+#include "ftaerr.hpp"
+#include "asci_blk.h"
+#include "utilref.h"
 #include "add.h"
 #include "pir_ascii.h"
+#include "utilfun.h"
+#include "xutils.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
 #endif
 #define THIS_FILE "pir_ascii.cpp"
+
+
+BEGIN_NCBI_SCOPE
 
 const char *dbp_tag[] = {
     "ENTRY",
@@ -349,20 +352,20 @@ const char *PirFeatInput[] = {
  * above one
  */
 PirFeatType PirFeat[] = {
-    { 12, ncbi::objects::CSeqFeatData::e_Site, 1, NULL },
-    { 13, ncbi::objects::CSeqFeatData::e_Site, 2, NULL },
-    { 14, ncbi::objects::CSeqFeatData::e_Site, 3, NULL },
-    { 16, ncbi::objects::CSeqFeatData::e_Site, 4, NULL },
-    { 14, ncbi::objects::CSeqFeatData::e_Site, 5, NULL },
-    { 16, ncbi::objects::CSeqFeatData::e_Bond, 1, NULL },
-    { 17, ncbi::objects::CSeqFeatData::e_Bond, 2, NULL },
-    { 12, ncbi::objects::CSeqFeatData::e_Bond, 3, NULL },
-    { 7, ncbi::objects::CSeqFeatData::e_Region, -1, "domain" },
-    { 12, ncbi::objects::CSeqFeatData::e_Region, -1, "duplication" },
-    { 8, ncbi::objects::CSeqFeatData::e_Region, -1, "peptide" },
-    { 8, ncbi::objects::CSeqFeatData::e_Region, -1, "protein" },
-    { 7, ncbi::objects::CSeqFeatData::e_Region, -1, "region" },
-    { 8, ncbi::objects::CSeqFeatData::e_Region, -1, "product" }
+    { 12, objects::CSeqFeatData::e_Site, 1, NULL },
+    { 13, objects::CSeqFeatData::e_Site, 2, NULL },
+    { 14, objects::CSeqFeatData::e_Site, 3, NULL },
+    { 16, objects::CSeqFeatData::e_Site, 4, NULL },
+    { 14, objects::CSeqFeatData::e_Site, 5, NULL },
+    { 16, objects::CSeqFeatData::e_Bond, 1, NULL },
+    { 17, objects::CSeqFeatData::e_Bond, 2, NULL },
+    { 12, objects::CSeqFeatData::e_Bond, 3, NULL },
+    { 7, objects::CSeqFeatData::e_Region, -1, "domain" },
+    { 12, objects::CSeqFeatData::e_Region, -1, "duplication" },
+    { 8, objects::CSeqFeatData::e_Region, -1, "peptide" },
+    { 8, objects::CSeqFeatData::e_Region, -1, "protein" },
+    { 7, objects::CSeqFeatData::e_Region, -1, "region" },
+    { 8, objects::CSeqFeatData::e_Region, -1, "product" }
 };
 
 static const char *month_name[] = {
@@ -470,20 +473,20 @@ static bool check_pir_entry(DataBlkPtr* ind)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_entry> create_entry(DataBlkPtr* ind)
+static CRef<objects::CSeq_entry> create_entry(DataBlkPtr* ind)
 {
     /* create the entry framework
      */
-    ncbi::CRef<ncbi::objects::CBioseq> bioseq(new ncbi::objects::CBioseq);
+    CRef<objects::CBioseq> bioseq(new objects::CBioseq);
 
-    bioseq->SetInst().SetRepr(ncbi::objects::CSeq_inst::eRepr_raw);
-    bioseq->SetInst().SetMol(ncbi::objects::CSeq_inst::eMol_aa);
+    bioseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    bioseq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
 
-    ncbi::CRef<ncbi::objects::CSeq_id> id(MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->offset, ncbi::objects::CSeq_id::e_Pir));
+    CRef<objects::CSeq_id> id(MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->offset, objects::CSeq_id::e_Pir));
     if (id.NotEmpty())
         bioseq->SetId().push_back(id);
 
-    ncbi::CRef<ncbi::objects::CSeq_entry> entry(new ncbi::objects::CSeq_entry);
+    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry);
     entry->SetSeq(*bioseq);
 
     GetScope().AddBioseq(*bioseq);
@@ -502,7 +505,7 @@ static ncbi::CRef<ncbi::objects::CSeq_entry> create_entry(DataBlkPtr* ind)
  *
  **********************************************************/
 static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
-                         ncbi::objects::CBioseq& bioseq, unsigned char* seqconv,
+                         objects::CBioseq& bioseq, unsigned char* seqconv,
                          Uint1 seq_data_type)
 {
     Uint4        seqlen;
@@ -563,7 +566,7 @@ static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
                   (long int)seqlen, (long int)bioseq.GetInst().GetLength());
     }
 
-    bioseq.SetInst().SetSeq_data().Assign(ncbi::objects::CSeq_data(buf, static_cast<ncbi::objects::CSeq_data::E_Choice>(seq_data_type)));
+    bioseq.SetInst().SetSeq_data().Assign(objects::CSeq_data(buf, static_cast<objects::CSeq_data::E_Choice>(seq_data_type)));
     return true;
 }
 
@@ -648,7 +651,7 @@ static void split_str(TKeywordList& words, char* instr)
         }
         else
         {
-            str = ncbi::NStr::Sanitize(ptr);
+            str = NStr::Sanitize(ptr);
             *ptr = '\0';
         }
 
@@ -704,14 +707,14 @@ static char* GetPirSeqRaw(char* bptr, char* eptr)
  *                                              11-11-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
+static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
                                                           DataBlkPtr** sub_ind)
 {
     DataBlkPtr  dbp;
     char*     ptr;
     char*     str;
 
-    ncbi::CRef<ncbi::objects::CPIR_block> pir(new ncbi::objects::CPIR_block);
+    CRef<objects::CPIR_block> pir(new objects::CPIR_block);
 
     dbp = sub_ind[ParFlatPIR_ORGANISM][ORGANISM_note];
     if(dbp != NULL)
@@ -782,7 +785,7 @@ static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
 
 /**********************************************************
  *
- *   ncbi::CRef<ncbi::objects::CDate_std> GetStdDate(ptr, flag):
+ *   CRef<objects::CDate_std> GetStdDate(ptr, flag):
  *
  *      Return Date-std pointer.
  *      *flag = FALSE if there is a bad date format.
@@ -791,11 +794,11 @@ static ncbi::CRef<ncbi::objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
  *                                              8-12-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CDate_std> GetStdDate(char* ptr, bool* flag)
+static CRef<objects::CDate_std> GetStdDate(char* ptr, bool* flag)
 {
     Char    buf[10];
 
-    ncbi::CRef<ncbi::objects::CDate_std> date(new ncbi::objects::CDate_std);
+    CRef<objects::CDate_std> date(new objects::CDate_std);
     
     StringNCpy(buf, ptr, 2);
     buf[2] = '\0';
@@ -821,8 +824,8 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetStdDate(char* ptr, bool* flag)
     }
     else
     {
-        ncbi::CTime time(ncbi::CTime::eCurrent);
-        ncbi::objects::CDate_std now(time);
+        CTime time(CTime::eCurrent);
+        objects::CDate_std now(time);
 
         int cur_year = now.GetYear();
 
@@ -841,7 +844,7 @@ static ncbi::CRef<ncbi::objects::CDate_std> GetStdDate(char* ptr, bool* flag)
 }
 
 /**********************************************************/
-static bool CkStdMonth(const ncbi::objects::CDate_std& date)
+static bool CkStdMonth(const objects::CDate_std& date)
 {
     Uint1        day;
     Uint1        month;
@@ -886,7 +889,7 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
     if(date == NULL)
         return;
 
-    ncbi::CRef<ncbi::objects::CDate_std> cdate,
+    CRef<objects::CDate_std> cdate,
                                          sdate,
                                          tdate;
             
@@ -951,7 +954,7 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
             else
             // both dates are present
             {
-                if (sdate->Compare(*tdate) == ncbi::objects::CDate::eCompare_after)
+                if (sdate->Compare(*tdate) == objects::CDate::eCompare_after)
                     cdate = sdate;
                 else
                     cdate = tdate;
@@ -960,13 +963,13 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
     }
 
 
-    ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
     descr->SetCreate_date().SetStd(*cdate);
     descrs.push_back(descr);
 
     if (sdate.NotEmpty() || tdate.NotEmpty())
     {
-        descr.Reset(new ncbi::objects::CSeqdesc);
+        descr.Reset(new objects::CSeqdesc);
         
 
         if (sdate.Empty())
@@ -976,7 +979,7 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
         else
         // both dates are present
         {
-            if (sdate->Compare(*tdate) == ncbi::objects::CDate::eCompare_after)
+            if (sdate->Compare(*tdate) == objects::CDate::eCompare_after)
                 descr->SetUpdate_date().SetStd(*sdate);
             else
                 descr->SetUpdate_date().SetStd(*tdate);
@@ -1047,7 +1050,7 @@ static char* ReplaceNewlineToBlank(char* bptr, char* eptr)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_ind,
+static CRef<objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_ind,
                                                              ParserPtr pp)
 {
     std::string taxstr,
@@ -1060,7 +1063,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_in
     char*    p;
     Uint1      drop;
 
-    ncbi::objects::COrg_ref::TSyn syns;
+    objects::COrg_ref::TSyn syns;
 
     dbp = sub_ind[ParFlatPIR_ORGANISM][ORGANISM_formal_name];
     if(dbp != NULL)
@@ -1094,9 +1097,9 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_in
         }
         else
         {
-            text = ncbi::NStr::Sanitize(ptr1);
+            text = NStr::Sanitize(ptr1);
         }
-        taxstr = ncbi::NStr::Sanitize(strip_organelle(text.c_str()));
+        taxstr = NStr::Sanitize(strip_organelle(text.c_str()));
         if(p != NULL)
         {
             MemFree(p);
@@ -1132,7 +1135,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_in
         }
         else
         {
-            comstr = ncbi::NStr::Sanitize(ptr1);
+            comstr = NStr::Sanitize(ptr1);
         }
         if(p != NULL)
         {
@@ -1154,7 +1157,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_in
         }
     }
 
-    ncbi::CRef<ncbi::objects::COrg_ref> org_ref;
+    CRef<objects::COrg_ref> org_ref;
     if (taxstr.empty() && comstr.empty() && syns.empty())
     {
         ErrPostEx(SEV_ERROR, ERR_ORGANISM_NoOrganism,
@@ -1162,7 +1165,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_in
         return org_ref;
     }
 
-    org_ref.Reset(new ncbi::objects::COrg_ref);
+    org_ref.Reset(new objects::COrg_ref);
 
     if(taxstr.empty())
         org_ref->SetTaxname(comstr);
@@ -1189,7 +1192,7 @@ static ncbi::CRef<ncbi::objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_in
  *                                              12-4-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CDate> get_pir_date(char* s)
+static CRef<objects::CDate> get_pir_date(char* s)
 {
     static const char *months[12] = {"January", "February", "March",
                                      "April",   "May",      "June",
@@ -1213,8 +1216,8 @@ static ncbi::CRef<ncbi::objects::CDate> get_pir_date(char* s)
         }
     }
 
-    ncbi::CRef<ncbi::objects::CDate> date(new ncbi::objects::CDate);
-    ncbi::CTime time(ncbi::CTime::eCurrent);
+    CRef<objects::CDate> date(new objects::CDate);
+    CTime time(CTime::eCurrent);
     date->SetStd().SetToTime(time);
 
     if(year < 1900 || year > date->GetStd().GetYear() + 1)
@@ -1252,7 +1255,7 @@ static ncbi::CRef<ncbi::objects::CDate> get_pir_date(char* s)
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
+static CRef<objects::CCit_art> get_pir_book(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title)
 {
     char*    s;
     const Char* str;
@@ -1267,13 +1270,13 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<n
     for(au = bptr; *au != ',';)
         au++;
 
-    ncbi::CRef<ncbi::objects::CTitle::C_E> book_title(new ncbi::objects::CTitle::C_E);
+    CRef<objects::CTitle::C_E> book_title(new objects::CTitle::C_E);
     book_title->SetName(std::string(bptr, au));
 
     eptr = bptr + StringLen(bptr) - 1;
 
-    ncbi::CRef<ncbi::objects::CCit_art> cit_art(new ncbi::objects::CCit_art);
-    ncbi::objects::CCit_book& cit_book = cit_art->SetFrom().SetBook();
+    CRef<objects::CCit_art> cit_art(new objects::CCit_art);
+    objects::CCit_book& cit_book = cit_art->SetFrom().SetBook();
 
     if((ed = StringStr(bptr, "ed.,")) != NULL ||
        (ed = StringStr(bptr, "eds.,")) != NULL)
@@ -1285,7 +1288,7 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<n
         {
             fta_StringCpy(s + 1, s + 2);
         }
-        ncbi::CRef<ncbi::objects::CAuth_list> book_auth_list;
+        CRef<objects::CAuth_list> book_auth_list;
         get_auth(au, PIR_REF, NULL, book_auth_list);
         if (book_auth_list.NotEmpty())
             cit_book.SetAuthors(*book_auth_list);
@@ -1340,13 +1343,13 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<n
     *s++ = '\0';
     str = s;
 
-    ncbi::objects::CImprint& imp = cit_book.SetImp();
+    objects::CImprint& imp = cit_book.SetImp();
     if(pages != NULL)
     {
         str = (book_title.Empty()) ? " " : book_title->GetName().c_str();
 
         if(valid_pages_range(pages, str, 0, false) > 0)
-            imp.SetPages(ncbi::NStr::Sanitize(pages));
+            imp.SetPages(NStr::Sanitize(pages));
     }
 
     for(s = eptr; isdigit((int) *s) != 0;)
@@ -1359,12 +1362,12 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<n
         return cit_art;
     }
 
-    ncbi::CRef<ncbi::objects::CDate> date = get_date(s + 1);
+    CRef<objects::CDate> date = get_date(s + 1);
     imp.SetDate(*date);
 
     *s = '\0';
 
-    imp.SetPub().SetStr(ncbi::NStr::Sanitize(str));
+    imp.SetPub().SetStr(NStr::Sanitize(str));
 
     if (auth_list.NotEmpty() && auth_list->IsSetNames())
         cit_art->SetAuthors(*auth_list);
@@ -1376,9 +1379,9 @@ static ncbi::CRef<ncbi::objects::CCit_art> get_pir_book(char* bptr, ncbi::CRef<n
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
+static CRef<objects::CCit_sub> get_pir_sub(char* bptr, CRef<objects::CAuth_list>& auth_list)
 {
-    ncbi::CRef<ncbi::objects::CCit_sub> cit_sub;
+    CRef<objects::CCit_sub> cit_sub;
     char*   s;
     char*   eptr;
 
@@ -1392,7 +1395,7 @@ static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(char* bptr, ncbi::CRef<nc
         return cit_sub;
     }
 
-    ncbi::CRef<ncbi::objects::CDate> date;
+    CRef<objects::CDate> date;
     eptr = bptr + StringLen(bptr) - 1;
     for(s = bptr; *s != ',' && *s != '\0';)
         s++;
@@ -1411,7 +1414,7 @@ static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(char* bptr, ncbi::CRef<nc
         return cit_sub;
     }
 
-    cit_sub.Reset(new ncbi::objects::CCit_sub);
+    cit_sub.Reset(new objects::CCit_sub);
 
     cit_sub->SetDate(*date);
     if (!auth_list->IsSetAffil())
@@ -1424,15 +1427,15 @@ static ncbi::CRef<ncbi::objects::CCit_sub> get_pir_sub(char* bptr, ncbi::CRef<nc
     }
 
     cit_sub->SetAuthors(*auth_list);
-    cit_sub->SetMedium(ncbi::objects::CCit_sub::eMedium_other);
+    cit_sub->SetMedium(objects::CCit_sub::eMedium_other);
 
     return(cit_sub);
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_cit(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title, int muid)
+static CRef<objects::CCit_gen> get_pir_cit(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title, int muid)
 {
-    ncbi::CRef<ncbi::objects::CCit_gen> cit_gen(new ncbi::objects::CCit_gen);
+    CRef<objects::CCit_gen> cit_gen(new objects::CCit_gen);
 
     cit_gen->SetCit(bptr);
 
@@ -1449,9 +1452,9 @@ static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_cit(char* bptr, ncbi::CRef<nc
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_sub_gen(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list)
+static CRef<objects::CCit_gen> get_pir_sub_gen(char* bptr, CRef<objects::CAuth_list>& auth_list)
 {
-    ncbi::CRef<ncbi::objects::CCit_gen> cit_gen;
+    CRef<objects::CCit_gen> cit_gen;
 
     if(bptr == NULL)
     {
@@ -1467,28 +1470,28 @@ static ncbi::CRef<ncbi::objects::CCit_gen> get_pir_sub_gen(char* bptr, ncbi::CRe
         return cit_gen;
     }
 
-    cit_gen.Reset(new ncbi::objects::CCit_gen);
-    cit_gen->SetCit(ncbi::NStr::Sanitize(bptr));
+    cit_gen.Reset(new objects::CCit_gen);
+    cit_gen->SetCit(NStr::Sanitize(bptr));
     cit_gen->SetAuthors(*auth_list);
 
     return cit_gen;
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(char* bptr, ncbi::CRef<ncbi::objects::CAuth_list>& auth_list, ncbi::CRef<ncbi::objects::CTitle::C_E>& title)
+static CRef<objects::CCit_art> pir_journal(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title)
 {
     char*    s;
     char*    tit;
     char*    volume;
     char*    pages;
 
-    ncbi::CRef<ncbi::objects::CCit_art> cit_art;
+    CRef<objects::CCit_art> cit_art;
 
     s = bptr;
     for(tit = s; isdigit((int) *s) == 0 && *s != '\0';)
         s++;
 
-    ncbi::CRef<ncbi::objects::CDate> date = get_date(s);
+    CRef<objects::CDate> date = get_date(s);
 
     if(*s == '\0' || date.Empty())
     {
@@ -1501,25 +1504,25 @@ static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(char* bptr, ncbi::CRef<nc
 
     /* Create Asn.1 structure for an article
      */
-    cit_art.Reset(new ncbi::objects::CCit_art);
+    cit_art.Reset(new objects::CCit_art);
 
     if (title.NotEmpty())
         cit_art->SetTitle().Set().push_back(title);
 
     /* Create Asn.1 structure for a journal
      */
-    ncbi::objects::CCit_jour& journal = cit_art->SetFrom().SetJournal();
+    objects::CCit_jour& journal = cit_art->SetFrom().SetJournal();
 
     if (tit)
     {
-        ncbi::CRef<ncbi::objects::CTitle::C_E> journal_title(new ncbi::objects::CTitle::C_E);
-        journal_title->SetIso_jta(ncbi::NStr::Sanitize(tit));
+        CRef<objects::CTitle::C_E> journal_title(new objects::CTitle::C_E);
+        journal_title->SetIso_jta(NStr::Sanitize(tit));
         journal.SetTitle().Set().push_back(journal_title);
     }
 
     /* Imprint
      */
-    ncbi::objects::CImprint& imp = journal.SetImp();
+    objects::CImprint& imp = journal.SetImp();
     imp.SetDate(*date);
 
     for(s++; *s != ')' && *s != '\0';)
@@ -1536,7 +1539,7 @@ static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(char* bptr, ncbi::CRef<nc
         imp.SetPages(pages);
     }
     else
-        imp.SetPrepub(ncbi::objects::CImprint::ePrepub_in_press);
+        imp.SetPrepub(objects::CImprint::ePrepub_in_press);
 
     if (auth_list.NotEmpty())
         cit_art->SetAuthors(*auth_list);
@@ -1544,7 +1547,7 @@ static ncbi::CRef<ncbi::objects::CCit_art> pir_journal(char* bptr, ncbi::CRef<nc
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
+static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
 {
     DataBlkPtr  dbp;
 
@@ -1555,7 +1558,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     char*     p;
     bool        badart;
 
-    ncbi::CRef<ncbi::objects::CPubdesc> desc;
+    CRef<objects::CPubdesc> desc;
     if(((sub_ind[REFERENCE_journal] != NULL) +
         (sub_ind[REFERENCE_citation] != NULL) +
         (sub_ind[REFERENCE_book] != NULL) +
@@ -1566,9 +1569,9 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
         return desc;
     }
 
-    desc.Reset(new ncbi::objects::CPubdesc);
+    desc.Reset(new objects::CPubdesc);
 
-    ncbi::CRef<ncbi::objects::CAuth_list> auth_list;
+    CRef<objects::CAuth_list> auth_list;
     dbp = sub_ind[REFERENCE_authors];
     if(dbp != NULL)
     {
@@ -1583,7 +1586,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
             MemFree(bptr);
     }
 
-    ncbi::CRef<ncbi::objects::CTitle::C_E> title_art;
+    CRef<objects::CTitle::C_E> title_art;
     dbp = sub_ind[REFERENCE_title];
     if(dbp != NULL)
     {
@@ -1592,14 +1595,14 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
         {
             if (bptr[0])
             {
-                title_art.Reset(new ncbi::objects::CTitle::C_E);
-                title_art->SetName(ncbi::NStr::Sanitize(bptr));
+                title_art.Reset(new objects::CTitle::C_E);
+                title_art->SetName(NStr::Sanitize(bptr));
             }
             MemFree(bptr);
         }
     }
 
-    ncbi::CRef<ncbi::objects::CPub> pub_ref(new ncbi::objects::CPub);
+    CRef<objects::CPub> pub_ref(new objects::CPub);
 
     badart = false;
     dbp = sub_ind[REFERENCE_journal];
@@ -1607,7 +1610,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     {
         bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
 
-        ncbi::CRef<ncbi::objects::CCit_art> cit_art = pir_journal(bptr, auth_list, title_art);
+        CRef<objects::CCit_art> cit_art = pir_journal(bptr, auth_list, title_art);
 
         if (cit_art.Empty())
         {
@@ -1623,7 +1626,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     else if((dbp = sub_ind[REFERENCE_citation]) != NULL)
     {
         bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
-        ncbi::CRef<ncbi::objects::CCit_gen> cit_gen = get_pir_cit(bptr, auth_list, title_art, muid);
+        CRef<objects::CCit_gen> cit_gen = get_pir_cit(bptr, auth_list, title_art, muid);
 
         if (cit_gen.NotEmpty())
             pub_ref->SetGen(*cit_gen);
@@ -1635,7 +1638,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     {
         bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
 
-        ncbi::CRef<ncbi::objects::CCit_art> cit_art = get_pir_book(bptr, auth_list, title_art);
+        CRef<objects::CCit_art> cit_art = get_pir_book(bptr, auth_list, title_art);
 
         if (cit_art.Empty())
         {
@@ -1652,7 +1655,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     {
         bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
 
-        ncbi::CRef<ncbi::objects::CCit_sub> cit_sub = get_pir_sub(bptr, auth_list);
+        CRef<objects::CCit_sub> cit_sub = get_pir_sub(bptr, auth_list);
 
         if (cit_sub.Empty())
             pub_ref->SetGen(*get_pir_sub_gen(bptr, auth_list));
@@ -1676,7 +1679,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     {
         bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
 
-        desc->SetComment(ncbi::NStr::Sanitize(bptr));
+        desc->SetComment(NStr::Sanitize(bptr));
 
         if(bptr != NULL)
             MemFree(bptr);
@@ -1689,7 +1692,7 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
 
         if (desc->IsSetComment())
             desc->SetComment() += ";~";
-        desc->SetComment() += ncbi::NStr::Sanitize(bptr);
+        desc->SetComment() += NStr::Sanitize(bptr);
 
         if(bptr != NULL)
             MemFree(bptr);
@@ -1723,14 +1726,14 @@ static ncbi::CRef<ncbi::objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
 
             if(muid > 0)
             {
-                ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+                CRef<objects::CPub> pub(new objects::CPub);
                 pub->SetMuid(ENTREZ_ID_FROM(int, muid));
                 desc->SetPub().Set().push_back(pub);
             }
 
             if(pmid > 0)
             {
-                ncbi::CRef<ncbi::objects::CPub> pub(new ncbi::objects::CPub);
+                CRef<objects::CPub> pub(new objects::CPub);
                 pub->SetPmid().Set(ENTREZ_ID_FROM(int, pmid));
                 desc->SetPub().Set().push_back(pub);
             }
@@ -1760,7 +1763,7 @@ static void get_pir_descr(DataBlkPtr* ind,
     char*      offset;
     char*      str;
 
-    ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
     descr->SetTitle("");
 
     if(ind[ParFlatPIR_TITLE] != NULL)
@@ -1779,7 +1782,7 @@ static void get_pir_descr(DataBlkPtr* ind,
 
         if (p && p[0])
         {
-            descr.Reset(new ncbi::objects::CSeqdesc);
+            descr.Reset(new objects::CSeqdesc);
             descr->SetComment(p);
             descrs.push_back(descr);
         }
@@ -1793,7 +1796,7 @@ static void get_pir_descr(DataBlkPtr* ind,
 
         if (p && p[0])
         {
-            descr.Reset(new ncbi::objects::CSeqdesc);
+            descr.Reset(new objects::CSeqdesc);
             descr->SetComment(p);
             descrs.push_back(descr);
         }
@@ -1802,9 +1805,9 @@ static void get_pir_descr(DataBlkPtr* ind,
 
     /* pir-block
      */
-    ncbi::CRef<ncbi::objects::CPIR_block> pir = get_pirblock(ind, sub_ind);
+    CRef<objects::CPIR_block> pir = get_pirblock(ind, sub_ind);
 
-    descr.Reset(new ncbi::objects::CSeqdesc);
+    descr.Reset(new objects::CSeqdesc);
     descr->SetPir(*pir);
     descrs.push_back(descr);
 
@@ -1818,17 +1821,17 @@ static void get_pir_descr(DataBlkPtr* ind,
     if(ind[ParFlatPIR_ORGANISM] != NULL)
     {
         offset = ind[ParFlatPIR_ORGANISM]->offset;
-        ncbi::CRef<ncbi::objects::COrg_ref> org_ref = parse_pir_org_ref(sub_ind, pp);
+        CRef<objects::COrg_ref> org_ref = parse_pir_org_ref(sub_ind, pp);
         if (org_ref.NotEmpty())
         {
-            ncbi::CRef<ncbi::objects::CBioSource> bio_src(new ncbi::objects::CBioSource);
+            CRef<objects::CBioSource> bio_src(new objects::CBioSource);
             bio_src->SetOrg(*org_ref);
 
             int genome = GetPirGenome(sub_ind);
-            if (genome != ncbi::objects::CBioSource::eGenome_unknown)
+            if (genome != objects::CBioSource::eGenome_unknown)
                 bio_src->SetGenome(genome);
 
-            descr.Reset(new ncbi::objects::CSeqdesc);
+            descr.Reset(new objects::CSeqdesc);
             descr->SetSource(*bio_src);
             descrs.push_back(descr);
         }
@@ -1846,10 +1849,10 @@ static void get_pir_descr(DataBlkPtr* ind,
 
     /* GIBB_mol will go to MolInfo
      */
-    ncbi::CRef<ncbi::objects::CMolInfo> mol_info(new ncbi::objects::CMolInfo);
-    mol_info->SetBiomol(ncbi::objects::CMolInfo::eBiomol_peptide);
+    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
+    mol_info->SetBiomol(objects::CMolInfo::eBiomol_peptide);
 
-    descr.Reset(new ncbi::objects::CSeqdesc);
+    descr.Reset(new objects::CSeqdesc);
     descr->SetMolinfo(*mol_info);
     descrs.push_back(descr);
 
@@ -1857,10 +1860,10 @@ static void get_pir_descr(DataBlkPtr* ind,
     {
         for(dbp = ind[ParFlatPIR_REFERENCE]; dbp != NULL; dbp = dbp->next)
         {
-            ncbi::CRef<ncbi::objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->data);
+            CRef<objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->data);
             if (pubdesc.NotEmpty())
             {
-                ncbi::CRef<ncbi::objects::CSeqdesc> descr(new ncbi::objects::CSeqdesc);
+                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
                 descr->SetPub(*pubdesc);
                 descrs.push_back(descr);
             }
@@ -1875,7 +1878,7 @@ static void get_pir_descr(DataBlkPtr* ind,
  *      Modified from PirFeatProtRef().
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t length)
+static CRef<objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t length)
 {
     char*    offset;
     char*    bptr;
@@ -1883,14 +1886,14 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t
     char*    str;
     char*    str1;
 
-    ncbi::CRef<ncbi::objects::CSeq_feat> feat;
+    CRef<objects::CSeq_feat> feat;
     
     if (ind[ParFlatPIR_TITLE] == NULL)
         return feat;
 
     offset = ind[ParFlatPIR_TITLE]->offset;
 
-    ncbi::CRef<ncbi::objects::CProt_ref> prot_ref(new ncbi::objects::CProt_ref);
+    CRef<objects::CProt_ref> prot_ref(new objects::CProt_ref);
 
     str1 = StringStr(offset, "(EC");
     if(str1 != NULL)
@@ -1924,7 +1927,7 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t
         str = ReplaceNewlineToBlank(offset, offset +
                                     ind[ParFlatPIR_ALTERNATE_NAMES]->len);
 
-        ncbi::objects::CProt_ref::TName names;
+        objects::CProt_ref::TName names;
         split_str(names, str);
         MemFree(str);
 
@@ -1934,11 +1937,11 @@ static ncbi::CRef<ncbi::objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t
     if(ind[ParFlatPIR_ENTRY] != NULL)
         bptr = ind[ParFlatPIR_ENTRY]->offset;
 
-    feat.Reset(new ncbi::objects::CSeq_feat);
+    feat.Reset(new objects::CSeq_feat);
     feat->SetData().SetProt(*prot_ref);
 
-    ncbi::CRef<ncbi::objects::CSeq_id> id(MakeLocusSeqId(bptr, ncbi::objects::CSeq_id::e_Pir));
-    ncbi::CRef<ncbi::objects::CSeq_loc> locs = fta_get_seqloc_int_whole(*id, length);
+    CRef<objects::CSeq_id> id(MakeLocusSeqId(bptr, objects::CSeq_id::e_Pir));
+    CRef<objects::CSeq_loc> locs = fta_get_seqloc_int_whole(*id, length);
 
     if (locs.NotEmpty())
         feat->SetLocation(*locs);
@@ -1983,13 +1986,13 @@ static char* PirStringCombine(char* str1, char* str2)
  *                                              11-16-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocInt(const Char* str, ncbi::objects::CSeq_id& seqid)
+static CRef<objects::CSeq_loc> GetPirSeqLocInt(const Char* str, objects::CSeq_id& seqid)
 {
     const Char* ptr;
     Int4      from;
     Int4      to;
 
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc;
+    CRef<objects::CSeq_loc> loc;
     if(str == NULL)
         return loc;
 
@@ -1999,16 +2002,16 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocInt(const Char* str, ncbi
     if(ptr == str)
         return loc;
 
-    from = ncbi::NStr::StringToInt(str, ncbi::NStr::fAllowTrailingSymbols);
+    from = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
 
     while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
         ptr++;
 
-    to = ncbi::NStr::StringToInt(ptr, ncbi::NStr::fAllowTrailingSymbols);
+    to = NStr::StringToInt(ptr, NStr::fAllowTrailingSymbols);
 
 
-    loc.Reset(new ncbi::objects::CSeq_loc);
-    ncbi::objects::CSeq_interval& interval = loc->SetInt();
+    loc.Reset(new objects::CSeq_loc);
+    objects::CSeq_interval& interval = loc->SetInt();
 
     interval.SetFrom((from > 0) ? (from - 1) : 0);
     interval.SetTo((to > 0) ? (to - 1) : 0);
@@ -2024,17 +2027,17 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocInt(const Char* str, ncbi
  *                                              11-16-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_point> GetPirSeqLocPntPtr(const Char* str, ncbi::objects::CSeq_id& seqid)
+static CRef<objects::CSeq_point> GetPirSeqLocPntPtr(const Char* str, objects::CSeq_id& seqid)
 {
-    ncbi::CRef<ncbi::objects::CSeq_point> ret;
+    CRef<objects::CSeq_point> ret;
 
     Int4      point;
 
     if(str == NULL)
         return ret;
 
-    ret.Reset(new ncbi::objects::CSeq_point);
-    point = ncbi::NStr::StringToInt(str, ncbi::NStr::fAllowTrailingSymbols);
+    ret.Reset(new objects::CSeq_point);
+    point = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
 
     ret->SetPoint((point > 0) ? (point - 1) : 0);
     ret->SetId(seqid);
@@ -2049,17 +2052,17 @@ static ncbi::CRef<ncbi::objects::CSeq_point> GetPirSeqLocPntPtr(const Char* str,
  *                                              11-16-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocBond(const Char* str, ncbi::objects::CSeq_id& seqid)
+static CRef<objects::CSeq_loc> GetPirSeqLocBond(const Char* str, objects::CSeq_id& seqid)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> loc;
+    CRef<objects::CSeq_loc> loc;
 
     const Char* ptr;
 
     if(str == NULL)
         return loc;
 
-    loc.Reset(new ncbi::objects::CSeq_loc);
-    ncbi::objects::CSeq_bond& bond = loc->SetBond();
+    loc.Reset(new objects::CSeq_loc);
+    objects::CSeq_bond& bond = loc->SetBond();
 
     if(StringChr(str, '-') != NULL)
     {
@@ -2086,13 +2089,13 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocBond(const Char* str, ncb
  *                                              11-16-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocPnt(const Char* str, ncbi::objects::CSeq_id& seqid)
+static CRef<objects::CSeq_loc> GetPirSeqLocPnt(const Char* str, objects::CSeq_id& seqid)
 {
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret;
+    CRef<objects::CSeq_loc> ret;
     if(str == NULL)
         return ret;
 
-    ret.Reset(new ncbi::objects::CSeq_loc);
+    ret.Reset(new objects::CSeq_loc);
     ret->SetPnt(*GetPirSeqLocPntPtr(str, seqid));
 
     return ret;
@@ -2115,19 +2118,19 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> GetPirSeqLocPnt(const Char* str, ncbi
  *                                              11-16-93
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(char* location, ncbi::objects::CSeq_id& seqid,
+static CRef<objects::CSeq_loc> getPirSeqLocation(char* location, objects::CSeq_id& seqid,
                                                              bool bond)
 {
     Int2      num;
     char*   ptr;
     char*   eptr;
 
-    ncbi::CRef<ncbi::objects::CSeq_loc> ret;
+    CRef<objects::CSeq_loc> ret;
 
     if (location == NULL)
         return ret;
 
-    ncbi::objects::CSeq_loc::TEquiv::Tdata locs;
+    objects::CSeq_loc::TEquiv::Tdata locs;
     
     for(ptr = location, num = 0; *ptr != '\0'; ptr = eptr)
     {
@@ -2138,7 +2141,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(char* location, ncb
         
         std::string str(ptr, eptr);
 
-        ncbi::CRef<ncbi::objects::CSeq_loc> loc;
+        CRef<objects::CSeq_loc> loc;
         if(bond)
         {
             loc = GetPirSeqLocBond(str.c_str(), seqid);
@@ -2159,7 +2162,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(char* location, ncb
         num++;
     }
 
-    ret.Reset(new ncbi::objects::CSeq_loc);
+    ret.Reset(new objects::CSeq_loc);
 
     if(num > 1)
         ret->SetEquiv().Set().swap(locs);
@@ -2176,7 +2179,7 @@ static ncbi::CRef<ncbi::objects::CSeq_loc> getPirSeqLocation(char* location, ncb
  *                                              11-15-93
  *
  **********************************************************/
-static void pir_feat(DataBlkPtr* ind, ncbi::objects::CSeq_annot::C_Data::TFtable& feats)
+static void pir_feat(DataBlkPtr* ind, objects::CSeq_annot::C_Data::TFtable& feats)
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
@@ -2194,10 +2197,10 @@ static void pir_feat(DataBlkPtr* ind, ncbi::objects::CSeq_annot::C_Data::TFtable
     if(dbp == NULL)
         return;
 
-    ncbi::CRef<ncbi::objects::CSeq_id> seqid;
+    CRef<objects::CSeq_id> seqid;
     if (ind[ParFlatPIR_ENTRY] != NULL)
     {
-        seqid = MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->offset, ncbi::objects::CSeq_id::e_Pir);
+        seqid = MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->offset, objects::CSeq_id::e_Pir);
     }
 
     for(subdbp = (DataBlkPtr) dbp->data; subdbp != NULL; subdbp = subdbp->next)
@@ -2222,21 +2225,21 @@ static void pir_feat(DataBlkPtr* ind, ncbi::objects::CSeq_annot::C_Data::TFtable
         }
 
 
-        ncbi::CRef<ncbi::objects::CSeq_feat> feat(new ncbi::objects::CSeq_feat);
+        CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
 
-        ncbi::CRef<ncbi::objects::CSeq_loc> loc;
+        CRef<objects::CSeq_loc> loc;
         switch(PirFeat[indx].choice)
         {
-        case ncbi::objects::CSeqFeatData::e_Region:
+        case objects::CSeqFeatData::e_Region:
                 feat->SetData().SetRegion(PirFeat[indx].keystr);
                 loc = getPirSeqLocation(location, *seqid, false);
                 break;
-        case ncbi::objects::CSeqFeatData::e_Site:
-                feat->SetData().SetSite(static_cast<ncbi::objects::CSeqFeatData::TSite>(PirFeat[indx].keyint));
+        case objects::CSeqFeatData::e_Site:
+                feat->SetData().SetSite(static_cast<objects::CSeqFeatData::TSite>(PirFeat[indx].keyint));
                 loc = getPirSeqLocation(location, *seqid, false);
                 break;
-        case ncbi::objects::CSeqFeatData::e_Bond:
-                feat->SetData().SetBond(static_cast<ncbi::objects::CSeqFeatData::EBond>(PirFeat[indx].keyint));
+        case objects::CSeqFeatData::e_Bond:
+                feat->SetData().SetBond(static_cast<objects::CSeqFeatData::EBond>(PirFeat[indx].keyint));
                 loc = getPirSeqLocation(location, *seqid, true);
                 break;
             default:
@@ -2295,9 +2298,9 @@ static void pir_feat(DataBlkPtr* ind, ncbi::objects::CSeq_annot::C_Data::TFtable
             {
                 ptr1 = StringStr(ptr, "experimental");
                 if(ptr1 != NULL)
-                    feat->SetExp_ev(ncbi::objects::CSeq_feat::eExp_ev_experimental);
+                    feat->SetExp_ev(objects::CSeq_feat::eExp_ev_experimental);
                 else if((ptr1 = StringStr(ptr, "predicted")) != NULL)
-                    feat->SetExp_ev(ncbi::objects::CSeq_feat::eExp_ev_not_experimental);
+                    feat->SetExp_ev(objects::CSeq_feat::eExp_ev_not_experimental);
                 *ptr = '\0';
             }
 
@@ -2327,7 +2330,7 @@ static void pir_feat(DataBlkPtr* ind, ncbi::objects::CSeq_annot::C_Data::TFtable
  *                                              01-12-94
  *
  **********************************************************/
-static void seq_feat_equiv(ncbi::objects::CSeq_feat& feat, ncbi::objects::CSeq_annot::C_Data::TFtable& feats)
+static void seq_feat_equiv(objects::CSeq_feat& feat, objects::CSeq_annot::C_Data::TFtable& feats)
 {
     if (!feat.IsSetLocation() || !feat.GetLocation().IsEquiv())
         return;
@@ -2335,13 +2338,13 @@ static void seq_feat_equiv(ncbi::objects::CSeq_feat& feat, ncbi::objects::CSeq_a
     /* first SeqLoc in Equiv
      */
 
-    ncbi::objects::CSeq_feat feat_copy;
+    objects::CSeq_feat feat_copy;
     feat_copy.Assign(feat);
     feat_copy.ResetLocation();
 
-    NON_CONST_ITERATE(ncbi::objects::CSeq_loc::TEquiv::Tdata, loc, feat.SetLocation().SetEquiv().Set())
+    NON_CONST_ITERATE(objects::CSeq_loc::TEquiv::Tdata, loc, feat.SetLocation().SetEquiv().Set())
     {
-        ncbi::CRef<ncbi::objects::CSeq_feat> new_feat(new ncbi::objects::CSeq_feat);
+        CRef<objects::CSeq_feat> new_feat(new objects::CSeq_feat);
         new_feat->Assign(feat_copy);
         new_feat->SetLocation(*(*loc));
         feats.push_back(new_feat);
@@ -2355,20 +2358,20 @@ static void seq_feat_equiv(ncbi::objects::CSeq_feat& feat, ncbi::objects::CSeq_a
  *      Modified from GetPirAnnot().
  *
  **********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_annot> get_pir_annot(DataBlkPtr* ind, size_t length)
+static CRef<objects::CSeq_annot> get_pir_annot(DataBlkPtr* ind, size_t length)
 {
-    ncbi::CRef<ncbi::objects::CSeq_annot> annot;
+    CRef<objects::CSeq_annot> annot;
 
-    ncbi::objects::CSeq_annot::C_Data::TFtable feats;
+    objects::CSeq_annot::C_Data::TFtable feats;
 
-    ncbi::CRef<ncbi::objects::CSeq_feat> feat(pir_prot_ref(ind, length));    /* TITLE & ALTERNATE-NAME line */
+    CRef<objects::CSeq_feat> feat(pir_prot_ref(ind, length));    /* TITLE & ALTERNATE-NAME line */
     if (feat.NotEmpty())
         feats.push_back(feat);
 
     pir_feat(ind, feats);
-    for (ncbi::objects::CSeq_annot::C_Data::TFtable::iterator feat = feats.begin(); feat != feats.end(); )
+    for (objects::CSeq_annot::C_Data::TFtable::iterator feat = feats.begin(); feat != feats.end(); )
     {
-        ncbi::objects::CSeq_annot::C_Data::TFtable new_feats;
+        objects::CSeq_annot::C_Data::TFtable new_feats;
         seq_feat_equiv(*(*feat), new_feats);
 
         if (!new_feats.empty())
@@ -2383,24 +2386,24 @@ static ncbi::CRef<ncbi::objects::CSeq_annot> get_pir_annot(DataBlkPtr* ind, size
     if (feats.empty())
         return annot;
 
-    annot.Reset(new ncbi::objects::CSeq_annot);
+    annot.Reset(new objects::CSeq_annot);
     annot->SetData().SetFtable().swap(feats);
 
     return annot;
 }
 
 /**********************************************************/
-static ncbi::CRef<ncbi::objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr* ind,
+static CRef<objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr* ind,
                                                      DataBlkPtr** sub_ind, unsigned char* protconv)
 {
-    ncbi::CRef<ncbi::objects::CSeq_entry> ret;
+    CRef<objects::CSeq_entry> ret;
     if(!check_pir_entry(ind))
         return ret;
 
-    ncbi::CRef<ncbi::objects::CSeq_entry> entry = create_entry(ind);
-    ncbi::objects::CBioseq& bioseq = entry->SetSeq();
+    CRef<objects::CSeq_entry> entry = create_entry(ind);
+    objects::CBioseq& bioseq = entry->SetSeq();
 
-    if (!get_seq_data(ind, sub_ind, bioseq, protconv, ncbi::objects::CSeq_data::e_Iupacaa))
+    if (!get_seq_data(ind, sub_ind, bioseq, protconv, objects::CSeq_data::e_Iupacaa))
         return ret;
 
     TSeqdescList descrs;
@@ -2424,7 +2427,7 @@ static ncbi::CRef<ncbi::objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr* i
         return ret;
     }
 
-    ncbi::CRef<ncbi::objects::CSeq_annot> annot = get_pir_annot(ind, bioseq.GetLength());
+    CRef<objects::CSeq_annot> annot = get_pir_annot(ind, bioseq.GetLength());
     if (annot.NotEmpty())
         bioseq.SetAnnot().push_back(annot);
 
@@ -2794,7 +2797,7 @@ bool PirAscii(ParserPtr pp)
             offset++;
         } while(end_of_file == 0 && i_tag != ParFlatPIR_ENTRY);
 
-        ncbi::CRef<ncbi::objects::CSeq_entry> cur_entry = ind2asn(pp, ind, sub_ind, protconv);
+        CRef<objects::CSeq_entry> cur_entry = ind2asn(pp, ind, sub_ind, protconv);
         if (cur_entry.Empty())
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
@@ -2816,4 +2819,6 @@ bool PirAscii(ParserPtr pp)
     MemFree(protconv);
     return true;
 }
+
+END_NCBI_SCOPE
 // LCOV_EXCL_STOP

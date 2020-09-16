@@ -37,7 +37,7 @@
 #ifndef _INDEX_
 #define _INDEX_
 
-#include <objtools/flatfile/ftablock.h>
+#include <objtools/flatfile/fta_parser.h>
 
 /* flat file format & source
  */
@@ -100,11 +100,5 @@
 
 #define ParFlat_COL_FEATKEY         5
 #define ParFlat_COL_FEATDAT         21
-
-const Char **GetAccArray(Int2 whose);
-Uint1        GetNucAccOwner(const char* acc, short* source, bool is_tpa);
-Uint1        GetProtAccOwner(const char* acc);
-void         FreeParser(ParserPtr pp);
-void         ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank);
 
 #endif
