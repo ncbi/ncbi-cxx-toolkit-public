@@ -40,6 +40,9 @@
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include "blast_app_util.hpp"
 
 
@@ -251,6 +254,78 @@ s_ConvertSubjects2TSeqLocVector(CRef<CRemoteBlast> remote_blast)
     return retval;
 }
 
+bool
+s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
+                  CRef<blast::CBlastOptionsHandle> opts_hndl,
+                  CRef<blast::CLocalDbAdapter>& db_adapter,
+                  CRef<objects::CScope>& scope)
+{
+	bool isRemote = false;
+    db_adapter.Reset();
+
+    _ASSERT(db_args.NotEmpty());
+    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
+
+    if (scope.Empty()) {
+	   scope.Reset(new CScope(*CObjectManager::GetInstance()));
+    }
+
+    CRef<IQueryFactory> subjects;
+    if ( (subjects = db_args->GetSubjects(scope)) ) {
+        _ASSERT(search_db.Empty());
+        char* bl2seq_legacy = getenv("BL2SEQ_LEGACY");
+        if (bl2seq_legacy) {
+        	db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, false));
+        }
+        else {
+            db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, true));
+        }
+    } else {
+        _ASSERT(search_db.NotEmpty());
+        try {
+            // Try to open the BLAST database even for remote searches, as if
+            // it is available locally, it will be better to fetch the
+            // sequence data for formatting from this (local) source
+            CRef<CSeqDB> seqdb = search_db->GetSeqDb();
+            db_adapter.Reset(new CLocalDbAdapter(*search_db));
+            scope->AddDataLoader(RegisterOMDataLoader(seqdb), CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+            LOG_POST(Info <<"Add local loader " << search_db->GetDatabaseName());
+        } catch (const CSeqDBException&) {
+           	SetDiagPostLevel(eDiag_Critical);
+            string remote_loader = kEmptyStr;
+            try {
+            db_adapter.Reset(new CLocalDbAdapter(*search_db));
+            remote_loader = CRemoteBlastDbDataLoader::RegisterInObjectManager
+                                    (*( CObjectManager::GetInstance()),
+                                    search_db->GetDatabaseName(),
+                                    search_db->IsProtein()  ? CBlastDbDataLoader::eProtein : CBlastDbDataLoader::eNucleotide,
+                                    true, CObjectManager::eDefault, CBlastDatabaseArgs::kSubjectsDataLoaderPriority)
+                                    .GetLoader()->GetName();
+            scope->AddDataLoader(remote_loader, CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+            SetDiagPostLevel(eDiag_Warning);
+            isRemote = true;
+            LOG_POST(Info <<"Remote " << search_db->GetDatabaseName());
+            }
+            catch (CException & e) {
+            	SetDiagPostLevel(eDiag_Warning);
+            	NCBI_THROW(CException, eUnknown, "Fail to initialize local or remote DB" );
+            }
+        }
+    }
+    try {
+    	const int kGenbankLoaderPriority = 99;
+        CRef<CReader> reader(new CId2Reader);
+        reader->SetPreopenConnection(false);
+        string genbank_loader = CGBDataLoader::RegisterInObjectManager
+            (*( CObjectManager::GetInstance()), reader,CObjectManager::eNonDefault).GetLoader()->GetName();
+        scope->AddDataLoader(genbank_loader, kGenbankLoaderPriority);
+    } catch (const CException& e) {
+    	LOG_POST(Info << "Failed to add genbank dataloader");
+    	// It's ok not to have genbank loader
+    }
+    return isRemote;
+}
+
 int CBlastFormatterApp::PrintFormattedOutput(void)
 {
     int retval = 0;
@@ -320,7 +395,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     }
 
     CRef<CLocalDbAdapter> db_adapter;
-    InitializeSubject(db_args, opts_handle, true, db_adapter, scope);
+    bool isRemoteLoader = s_InitializeSubject(db_args, opts_handle, db_adapter, scope);
 
     const string kTask = m_RmtBlast->GetTask();
 
@@ -337,7 +412,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            opts.GetQueryGeneticCode(),
                            opts.GetDbGeneticCode(),
                            opts.GetSumStatisticsMode(),
-                           !kRid.empty(),
+                           (!kRid.empty() || isRemoteLoader),
                            filtering_algorithm,
                            fmt_args.GetCustomOutputFormatSpec(),
                            kTask == "megablast",
@@ -410,7 +485,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                 else {
     		    scope->AddScope(*(queries->GetScope(0)));
                 }
-    		InitializeSubject(db_args, opts_handle, true, db_adapter, scope);
+    		    s_InitializeSubject(db_args, opts_handle, db_adapter, scope);
 	}
     }
     formatter.PrintEpilog(opts);
