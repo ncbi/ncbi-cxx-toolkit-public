@@ -3,9 +3,8 @@
 DLL = ncbi_seqext
 
 HOSTED_LIBS    = xalnmgr   \
-                 xflatfile \
-                 xlogging  \
                  xobjmgr   \
+                 xlogging  \
                  xobjread  \
                  xobjreadex\
                  xobjwrite \
@@ -37,3 +36,4 @@ HOSTED_LIBS    = xalnmgr   \
 DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
 
 CPPFLAGS = -DNCBI_SEQEXT_EXPORTS
+

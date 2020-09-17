@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 NCBI_DEPRECATED Int2 fta_main(ParserPtr pp, bool already);
 
 
-class NCBI_XFLATFILE_EXPORT CFlatFileParser 
+class CFlatFileParser 
 {
 public:
     CFlatFileParser(objects::IObjtoolsListener* pMessageListener);

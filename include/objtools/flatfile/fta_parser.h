@@ -62,7 +62,7 @@ typedef struct _fta_operon* FTAOperonPtr;
 typedef std::list<CRef<objects::CSeq_entry> > TEntryList;
 
 //typedef struct parser_vals {
-struct NCBI_XFLATFILE_EXPORT Parser {
+struct Parser {
     Int4             indx;              /* total number of records in the
                                            flat file, exclude BadLocusName
                                            entries */
