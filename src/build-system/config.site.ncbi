@@ -8,6 +8,9 @@
 ncbi_platform=`COMMON_DetectPlatform`
 
 case "$ncbi_platform" in
+    Linux64 )
+        ncbi_cv_prog_cxx_stdlib_libcxx=no
+        ;;
     *MAC )
         test() {
             case "$#:$1:$2" in
