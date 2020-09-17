@@ -5,6 +5,7 @@
 NCBI_begin_lib(ncbi_seqext SHARED)
   NCBI_hosts_projects(
     objtools/alnmgr/alnmgr
+    objtools/flatfile/flatfile
     objmgr/objmgr
     objtools/readers/xobjread
     objtools/readers/xobjreadex
