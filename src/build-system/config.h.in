@@ -1036,6 +1036,9 @@
 /* Define to 1 if stdio supports locking. */
 #undef NCBI_HAVE_STDIO_LOCKED
 
+/* Define to 1 to use a simple 32-bit type for GI numbers. */
+#undef NCBI_INT4_GI
+
 /* Define to 1 to use a simple 64-bit type for GI numbers. */
 #undef NCBI_INT8_GI
 

@@ -2145,7 +2145,7 @@ Optional Packages:
  --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH
  --with-lfs              enable large file support to the extent possible
  --with-limited-linker   don't attempt to build especially large projects
- --with-experimental=... enable named experimental feature(s): Int8GI,StrictGI,PSGLoader
+ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader
  --with-skew-guard       catch incomplete rebuilds
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
@@ -6115,6 +6115,8 @@ USER_LDFLAGS=$LDFLAGS
 with_experimental="$with_experimental PSGLoader"
 
 if test -n "$with_experimental"; then
+   want_gi32=no
+   want_gi64=no
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
          ChaosMonkey )
@@ -6125,10 +6127,18 @@ $as_echo "#define NCBI_MONKEY 1" >>confdefs.h
             ;;
          Int8GI )
 
+$as_echo "#define NCBI_INT4_GI 1" >>confdefs.h
+
+                      WithFeatures="$WithFeatures${WithFeaturesSep}Int4GI"; WithFeaturesSep=" "
+            want_gi32=yes
+            ;;
+         Int8GI )
+
 $as_echo "#define NCBI_INT8_GI 1" >>confdefs.h
 
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
+            want_gi64=yes
             ;;
          StrictGI )
 
@@ -6137,6 +6147,7 @@ $as_echo "#define NCBI_STRICT_GI 1" >>confdefs.h
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
                       WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
+            want_gi64=yes
             ;;
          PSGLoader )
 
@@ -6149,6 +6160,9 @@ $as_echo "#define HAVE_PSG_LOADER 1" >>confdefs.h
             ;;
       esac
    done
+   if "$want_gi32:$want_gi64" = "yes:yes"; then
+      as_fn_error $? "Incompatible experiemental features Int8GI (and/or StrictGI) and Int4GI." "$LINENO" 5
+   fi
 fi
 
 #### Always define this
@@ -34324,7 +34338,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in ChaosMonkey Int8GI StrictGI PSGLoader GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
+for x in ChaosMonkey Int4GI Int8GI StrictGI PSGLoader GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

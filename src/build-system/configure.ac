@@ -171,7 +171,7 @@ AC_ARG_WITH(lfs,
 AC_ARG_WITH(limited-linker,
    [ --with-limited-linker   don't attempt to build especially large projects])
 AC_ARG_WITH(experimental,
-   [ --with-experimental=... enable named experimental feature(s): Int8GI,StrictGI,PSGLoader])
+   [ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader])
 AC_ARG_WITH(skew-guard,
    [ --with-skew-guard       catch incomplete rebuilds])
 
@@ -930,6 +930,8 @@ USER_LDFLAGS=$LDFLAGS
 with_experimental="$with_experimental PSGLoader"
 
 if test -n "$with_experimental"; then
+   want_gi32=no
+   want_gi64=no
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
          ChaosMonkey )
@@ -938,10 +940,17 @@ if test -n "$with_experimental"; then
             NCBI_FEATURE(ChaosMonkey)
             ;;
          Int8GI )
+            AC_DEFINE(NCBI_INT4_GI, 1,
+               [Define to 1 to use a simple 32-bit type for GI numbers.])
+            NCBI_FEATURE(Int4GI)
+            want_gi32=yes
+            ;;
+         Int8GI )
             AC_DEFINE(NCBI_INT8_GI, 1,
                [Define to 1 to use a simple 64-bit type for GI numbers.])
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
+            want_gi64=yes
             ;;
          StrictGI )
             AC_DEFINE(NCBI_STRICT_GI, 1,
@@ -949,6 +958,7 @@ if test -n "$with_experimental"; then
             NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             NCBI_FEATURE(StrictGI)
+            want_gi64=yes
             ;;
          PSGLoader )
             AC_DEFINE(HAVE_PSG_LOADER, 1,
@@ -960,6 +970,9 @@ if test -n "$with_experimental"; then
             ;;
       esac
    done
+   if "$want_gi32:$want_gi64" = "yes:yes"; then
+      AC_MSG_ERROR([Incompatible experiemental features Int8GI (and/or StrictGI) and Int4GI.])
+   fi
 fi
 
 #### Always define this
