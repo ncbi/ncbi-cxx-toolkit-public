@@ -795,7 +795,7 @@ void CGenbankFormatter::x_FormatOrganismLine(list<string>& l, const CSourceItem&
 string s_GetLinkCambiaPatentLens( const CReferenceItem& ref, bool bHtml )
 {
     const string strBaseUrlCambiaPatentLensHead(
-        "https://www.lens.org/lens/search?q=" );
+        "https://www.lens.org/lens/search/patent/list?q=" );
 
     if ( ! ref.IsSetPatent() ) {
         return "";
@@ -814,6 +814,7 @@ string s_GetLinkCambiaPatentLens( const CReferenceItem& ref, bool bHtml )
         strPatString += "<a href=\"";
         strPatString += strBaseUrlCambiaPatentLensHead;
         strPatString += pat.GetCountry();
+        strPatString += "%20";
         strPatString += pat.GetNumber();
         strPatString += "\">";
         strPatString += pat.GetNumber();
