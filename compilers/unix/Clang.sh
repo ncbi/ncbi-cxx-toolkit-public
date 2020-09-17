@@ -17,7 +17,7 @@ Usage() {
 }
 
 case "$1" in
-  [1-9].*)
+  [1-9].* | [1-9][0-9].* )
      # Look for the specified version in various reasonable places
      # (tuned for NCBI's installations).
      if /usr/local/llvm/$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
