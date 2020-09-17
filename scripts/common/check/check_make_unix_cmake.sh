@@ -677,7 +677,11 @@ RunTest()
            echo "\$x_run" >> "\$x_test_rep"
            echo "\$x_alias" >> "\$x_test_rep"
            NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
-           export NCBI_BOOST_REPORT_FILE
+           if $cygwin; then
+               export NCBI_BOOST_REPORT_FILE="\$(cygpath -w "\$x_boost_rep")"
+           else
+               export NCBI_BOOST_REPORT_FILE
+           fi
         fi
 
         # Check existence of the test's application directory
