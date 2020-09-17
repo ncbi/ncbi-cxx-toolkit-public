@@ -1317,7 +1317,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return false;
     }
 
-    CAnnot_CI aci(bsh, SAnnotSelector());
+    CAnnot_CI aci(bsh, SetAnnotSelector());
     if (aci) {
         if (!xWriteSequence(bsh)) {
             return false;
