@@ -809,6 +809,11 @@ int CNcbiApplicationAPI::AppMain
                     continue;
                 }
                 m_LogFile = argv[i];
+            } else if (NStr::StartsWith(argv[i], s_ArgLogFile)) {
+                const char *a = argv[i] + strlen(s_ArgLogFile);
+                if (*a == '=') {
+                    m_LogFile = ++a;
+                }
             }
         }
     }
@@ -897,6 +902,14 @@ int CNcbiApplicationAPI::AppMain
                 v[real_arg_index++] = argv[i - 1];
                 v[real_arg_index++] = argv[i];
                 conf = argv[i];
+
+            }
+            else if (NStr::StartsWith(argv[i], s_ArgCfgFile)) {
+                v[real_arg_index++] = argv[i];
+                const char* a = argv[i] + strlen(s_ArgCfgFile);
+                if (*a == '=') {
+                    conf = ++a;
+                }
 
                 // Version
             } else if ( NStr::strcmp(argv[i], s_ArgVersion) == 0 ) {
