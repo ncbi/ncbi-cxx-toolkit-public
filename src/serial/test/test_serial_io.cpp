@@ -50,7 +50,11 @@
 #include <list>
 #include <vector>
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Test ASN serialization stream I/O
