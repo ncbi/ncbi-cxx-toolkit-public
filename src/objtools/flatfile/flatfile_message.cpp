@@ -37,20 +37,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 CFlatFileMessage::CFlatFileMessage(
+        const string& module,
         EDiagSev severity,
         int code,
         int subcode, 
         const string& text,
-        string seqId,
-        string locus,
-        string feature,
         int lineNum)
     : CObjtoolsMessage(text, severity),
+      m_Module(module),
       m_Code(code),
       m_Subcode(subcode),
-      m_SeqId(seqId),
-      m_Locus(locus),
-      m_Feature(feature),
       m_LineNum(lineNum)
 {
 }
@@ -62,13 +58,11 @@ CFlatFileMessage::~CFlatFileMessage(){}
 CFlatFileMessage* CFlatFileMessage::Clone() const
 {
     return new CFlatFileMessage(
+            m_Module,
             m_Severity,
             m_Code,
             m_Subcode,
             m_Text,
-            m_SeqId,
-            m_Locus,
-            m_Feature,
             m_LineNum);
 }
 
@@ -80,36 +74,11 @@ void CFlatFileMessage::Write(CNcbiOstream& out) const {
 
 void CFlatFileMessage::Dump(CNcbiOstream& out) const {
 
-    out << "                " <<  
-        CNcbiDiag::SeverityName(GetSeverity())
-        << ":\n"; 
-    out << "Problem:        " <<  
-        GetText() << "\n";
-
-    if (GetCode()) {
-        out << "Code:           " << GetCode();
-        if (GetSubCode()) {
-            out << "." << GetSubCode();
-        }
-        out << "\n";
+    out << CNcbiDiag::SeverityName(GetSeverity()) << ": ";
+    if (!m_Module.empty()) {
+        out << m_Module << " ";
     }
-    
-    const auto& seqid = GetSeqId();
-    if (!seqid.empty()) {
-        out << "SeqId:          " << seqid << "\n";
-    }
-
-    const auto& locus = GetLocus();
-    if (!locus.empty()) {
-        out << "Locus:          " << locus << "\n";
-    }
-
-    const auto& feature = GetFeature();
-    if (!feature.empty()) {
-        out << "Feature:        " << feature << "\n";
-    }
-
-    out << "\n";
+    out << GetText() << "\n";
 }
 
 
@@ -121,6 +90,11 @@ void CFlatFileMessage::WriteAsXML(CNcbiOstream& out) const {
 void CFlatFileMessage::DumpAsXML(CNcbiOstream& out) const {}
 
 
+const string& CFlatFileMessage::GetModule() const {
+    return m_Module;
+}
+
+
 int CFlatFileMessage::GetCode() const { 
     return m_Code;
 }
@@ -128,19 +102,6 @@ int CFlatFileMessage::GetCode() const {
 
 int CFlatFileMessage::GetSubCode() const {
     return m_Subcode;
-}
-
-
-const string& CFlatFileMessage::GetSeqId() const {
-    return m_SeqId;
-}
-
-const string& CFlatFileMessage::GetLocus() const {
-    return m_Locus;
-}
-
-const string& CFlatFileMessage::GetFeature() const {
-    return m_Feature;
 }
 
 

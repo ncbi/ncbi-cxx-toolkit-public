@@ -45,13 +45,12 @@ class CFlatFileMessageReporter {
 public:
     static CFlatFileMessageReporter& GetInstance();
     void SetListener(IObjtoolsListener* pMessageListener);
-    void Report(EDiagSev severity,
+    void Report(
+        const string& module,    
+        EDiagSev severity,
         int code, 
         int subcode, 
         const string& text,
-        string seqId="",
-        string locus="",
-        string featId="",
         int lineNum=-1);
 
 private:

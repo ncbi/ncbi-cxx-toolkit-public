@@ -148,9 +148,9 @@ static int FtaStrSevToIntSev(char *strsevcode)
 }
 
 /**********************************************************/
-static void FtaErrGetMsgCodes(const char *module, int code, int subcode,
-                              char **strcode, char **strsubcode,
-                              int *sevcode)
+void FtaErrGetMsgCodes(const char *module, int code, int subcode,
+                       char **strcode, char **strsubcode,
+                       int *sevcode)
 {
     FtaMsgModTagCtx *bmctxp;
     FtaMsgModFiles  *bmmfp;
@@ -769,18 +769,28 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
     else
         FtaPostMessage();
 */
-    // Use a message listenr to log message
-    string seqId = bmp->prefix_accession ?
-        bmp->prefix_accession :
-        "";
+    stringstream textStream;
+    if (fpi.strcode) {
+        textStream << "[" << fpi.strcode; 
+        if (fpi.strsubcode) {
+            textStream << "." << fpi.strsubcode;
+        }
+        textStream << "] ";
+    }
 
-    string locus = bmp->prefix_locus ?
-        bmp->prefix_locus :
-        "";
-
-    string featId = bmp->prefix_feature ?
-        bmp->prefix_feature :
-        "";
+    if (bmp->show_log_codeline) {
+        textStream << "{" << fpi.fname << ", line " << fpi.line;
+    }
+    if (bmp->prefix_locus) {
+        textStream << bmp->prefix_locus << ": ";
+    }
+    if (bmp->prefix_accession) {
+        textStream << bmp->prefix_accession << ": ";
+    }
+    if (bmp->prefix_feature) {
+        textStream << bmp->prefix_feature << " ";
+    }
+    textStream << fpi.buffer;
 
     static const map<ErrSev, EDiagSev> sSeverityMap
        =  {{SEV_NONE , eDiag_Trace},
@@ -791,7 +801,9 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
           {SEV_FATAL , eDiag_Fatal}}; 
 
     CFlatFileMessageReporter::GetInstance()
-        .Report(sSeverityMap.at(sev), lev1, lev2, buffer, seqId, locus, featId);
+        .Report(fpi.module, 
+                sSeverityMap.at(static_cast<ErrSev>(fpi.sevcode)), 
+                lev1, lev2, textStream.str());
 }
 
 /**********************************************************/

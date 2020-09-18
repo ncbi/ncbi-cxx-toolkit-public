@@ -39,17 +39,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 
-class CFlatFileMessage : public CObjtoolsMessage
+class CFlatFileMessage : public CObjtoolsMessage 
 {
 public:
-    CFlatFileMessage(EDiagSev severity, 
-                    int code, 
-                    int subcode,
-                    const string& text,
-                    string seqId="",
-                    string locus="",
-                    string feature="",
-                    int lineNum=-1);
+    CFlatFileMessage(const string& module,
+                     EDiagSev severity, 
+                     int code,
+                     int subcode,
+                     const string& text,
+                     int lineNum=-1);
 
     virtual ~CFlatFileMessage();
 
@@ -63,23 +61,18 @@ public:
 
     void WriteAsXML(CNcbiOstream& out) const override;
     
+    const string& GetModule() const;
+
     int GetCode(void) const override;
 
     int GetSubCode(void) const override;
 
-    const string& GetSeqId(void) const;
+    int GetLineNum(void) const;   
 
-    const string& GetLocus(void) const;
-
-    const string& GetFeature(void) const;
-
-    int GetLineNum(void) const;
 private:
+    string m_Module;
     int m_Code;
     int m_Subcode;
-    string m_SeqId;
-    string m_Locus;
-    string m_Feature;
     int m_LineNum;
 };
 

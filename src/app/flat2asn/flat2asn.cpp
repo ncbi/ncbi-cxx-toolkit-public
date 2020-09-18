@@ -312,6 +312,7 @@ void CFlat2AsnApp::Init()
 class CFlat2AsnListener : public CObjtoolsListener
 {
 public:
+    CFlat2AsnListener(const string& prefix="") : m_Prefix(prefix) {}
     virtual ~CFlat2AsnListener() {}
 
     bool PutMessage(const IObjtoolsMessage& msg) override {
@@ -320,19 +321,20 @@ public:
         }
         return false;
     }
-/*
-   void Dump(CNcbiOstream& ostr) const override {
-        cout << "Dumping messages" << endl;
-        cout << "# messages : " << m_Messages.size() << endl;
-        for (auto& pMessage : m_Messages) {
-            if (pMessage) {
+
+    void Dump(CNcbiOstream& ostr) const override {
+        if (m_Prefix.empty()) {
+            CObjtoolsListener::Dump(ostr);
+        }
+        else {
+            for (const auto& pMessage : m_Messages) {
+                ostr << m_Prefix << " ";
                 pMessage->Dump(ostr);
             }
-
         }
-   }
-  */ 
-
+    }
+private:
+    string m_Prefix;
 };
 
 
@@ -341,11 +343,11 @@ int CFlat2AsnApp::Run()
     char*   pgmname = (char *) "flat2asn Revision: 1.3 ";
     const auto& args = GetArgs();
 
-    CFlat2AsnListener messageListener;
     CNcbiOstream* pLogStream = args["l"] ? 
         &args["l"].AsOutputFile() :
         &NcbiCerr;
 
+    CFlat2AsnListener messageListener(args["l"] ? "" : "[flat2asn]");
 
     auto pConfig = ParseArgs(args, pgmname, messageListener);
     if (!pConfig)
@@ -360,6 +362,7 @@ int CFlat2AsnApp::Run()
     if (messageListener.Count() > 0) {
         messageListener.Dump(*pLogStream);
     }
+
     if (pSerialObject) {
         return 0;
     }

@@ -56,13 +56,11 @@ void CFlatFileMessageReporter::SetListener(IObjtoolsListener* pMessageListener)
 
 
 void CFlatFileMessageReporter::Report(
+        const string& module,
         EDiagSev severity,
         int code,
         int subcode,
         const string& text,
-        string seqId,
-        string locus,
-        string featId,
         int lineNum)
 {
     if (!m_pMessageListener) {
@@ -71,13 +69,11 @@ void CFlatFileMessageReporter::Report(
     }
     auto pMessage = 
         make_unique<CFlatFileMessage>(
+                module,
                 severity,
                 code,
                 subcode,
-                text,
-                seqId,
-                locus,
-                featId);
+                text);
 
     m_pMessageListener->PutMessage(*pMessage);
 }
