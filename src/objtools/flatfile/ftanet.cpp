@@ -516,13 +516,21 @@ void fta_init_servers(ParserPtr pp)
     }
 }
 
-// RW-707
+/**********************************************************/
+void fta_fini_servers(ParserPtr pp)
+{
+    if (pp->medserver == 1)
+        MedArchFini();
+    /*    if(pp->taxserver == 1)
+            tax1_fini();*/
+}
+
+#if 0 // RW-707
 //std::shared_ptr<CPubseqAccess> s_pubseq;
 
 /**********************************************************/
 static Uint1 fta_init_pubseq(void)
 {
-#if 0 // RW-707
     // C Toolkit's accpubseq.h library gets username/password from
     // the environment.
     // We are now using C++ Toolkit's cpubseq.hpp library which require
@@ -548,7 +556,6 @@ static Uint1 fta_init_pubseq(void)
     if (s_pubseq == nullptr || !s_pubseq->CheckConnection())
         return(2);
     return(1);
-#endif
     return 2;
 }
 
@@ -574,22 +581,12 @@ void fta_entrez_fetch_enable(ParserPtr pp)
 }
 
 /**********************************************************/
-void fta_fini_servers(ParserPtr pp)
-{
-    if(pp->medserver == 1)
-        MedArchFini();
-/*    if(pp->taxserver == 1)
-        tax1_fini();*/
-}
-
-/**********************************************************/
 void fta_entrez_fetch_disable(ParserPtr pp)
 {
-#if 0 // RW-707
     if(pp->entrez_fetch == 1)
         s_pubseq.reset();
-#endif
 }
+#endif
 
 /**********************************************************/
 void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag)
@@ -1260,8 +1257,8 @@ Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc)
 {
     if(pp->entrez_fetch == 0)
         return(-1);
-    if(pp->entrez_fetch == 2)
-        pp->entrez_fetch = fta_init_pubseq();
+    //if (pp->entrez_fetch == 2)
+    //    pp->entrez_fetch = fta_init_pubseq();
     if(pp->entrez_fetch == 2)
     {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,

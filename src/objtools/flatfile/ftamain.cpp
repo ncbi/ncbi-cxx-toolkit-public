@@ -574,7 +574,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
 
-    fta_entrez_fetch_enable(pp);
+    //fta_entrez_fetch_enable(pp);
 
     /* CompareData: group all the segments data together
      */
@@ -623,7 +623,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
 
     GetScope().ResetHistory();
 
-    fta_entrez_fetch_disable(pp);
+    //fta_entrez_fetch_disable(pp);
 
     ret = CloseAll(pp);
 
@@ -917,7 +917,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
 
-    fta_entrez_fetch_enable(&pp);
+    //fta_entrez_fetch_enable(&pp);
 
     /*if (pp->ffdb == 0)
         fetchname = "index";
@@ -986,7 +986,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     //? SeqMgrFreeCache();
     //? FreeFFEntries();
 
-    fta_entrez_fetch_disable(&pp);
+    //fta_entrez_fetch_disable(&pp);
     fta_fini_servers(&pp);
 
     return pp.entries;
