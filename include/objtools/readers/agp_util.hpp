@@ -227,7 +227,8 @@ public:
     static bool GapValidAtObjectEnd(EGap gap_type)
     {
         return gap_type==eGapCentromere || gap_type==eGapTelomere ||
-               gap_type==eGapShort_arm  || gap_type==eGapHeterochromatin;
+               gap_type==eGapShort_arm  || gap_type==eGapHeterochromatin ||
+               gap_type==eGapContamination;
     }
 
 
