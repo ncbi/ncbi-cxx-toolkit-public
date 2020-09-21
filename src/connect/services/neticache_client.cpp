@@ -163,7 +163,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
         size_t* blob_size_ptr,
         int* version,
         ICache::EBlobVersionValidity* validity,
-        unsigned max_age, unsigned* actual_age);
+        unsigned max_age, unsigned* actual_age,
+        const CNamedParameterList* optional = NULL);
 
     IReader* GetReadStreamPart(const string& key,
         int version, const string& subkey,
@@ -688,6 +689,15 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
 
 IReader* CNetICacheClient::GetReadStream(const string& key,
         const string& subkey, int* version,
+        size_t* blob_size_ptr, const CNamedParameterList* optional)
+{
+    ICache::EBlobVersionValidity not_used;
+    return m_Impl->ReadCurrentBlobNotOlderThan(key, subkey, blob_size_ptr,
+            version, &not_used, 0, NULL, optional);
+}
+
+IReader* CNetICacheClient::GetReadStream(const string& key,
+        const string& subkey, int* version,
         ICache::EBlobVersionValidity* validity)
 {
     return m_Impl->ReadCurrentBlobNotOlderThan(key, subkey, NULL,
@@ -699,22 +709,20 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
         size_t* blob_size_ptr,
         int* version,
         ICache::EBlobVersionValidity* validity,
-        unsigned max_age, unsigned* actual_age)
+        unsigned max_age, unsigned* actual_age,
+        const CNamedParameterList* optional)
 {
     try {
         string blob_id(s_KeySubkeyToBlobID(key, subkey));
+        CNetCacheAPIParameters parameters(&m_DefaultParameters);
 
-        string cmd;
+        parameters.LoadNamedParameters(optional);
 
-        if (max_age == 0)
-            cmd = MakeStdCmd("READLAST", blob_id, &m_DefaultParameters);
-        else {
-            CNetCacheAPIParameters parameters(&m_DefaultParameters);
-
+        if (max_age != 0) {
             parameters.SetMaxBlobAge(max_age);
-
-            cmd = MakeStdCmd("READLAST", blob_id, &parameters);
         }
+
+        string cmd = MakeStdCmd("READLAST", blob_id, &parameters);
 
         CNetServer::SExecResult exec_result(ChooseServerAndExec(cmd,
                 key, false, &m_DefaultParameters));
