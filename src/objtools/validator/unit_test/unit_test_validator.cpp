@@ -5183,7 +5183,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
     // back to error if no taxon but refseq
     unit_test_util::SetTaxon (entry, 0);
     expected_errors[0]->SetSeverity(eDiag_Error);
-    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Warning, "NoTaxonID",
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "NoTaxonID",
         "BioSource is missing taxon ID"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
