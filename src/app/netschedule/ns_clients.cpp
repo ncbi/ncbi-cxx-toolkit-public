@@ -659,6 +659,7 @@ void CNSClient::Touch(const CNSClientId &  client_id)
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
     m_Addr = client_id.GetAddress();
+    m_ProgName = client_id.GetProgramName();
 
     EClaimedClientType      claimed_client_type = client_id.GetType();
     if (claimed_client_type == eClaimedReset) {
