@@ -41,7 +41,7 @@
 #include <cgi/cgi_exception.hpp>
 
 #include <connect/services/netcache_api_expt.hpp>
-#include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/reader_writer.hpp>
@@ -77,7 +77,7 @@ void CNetCacheBlobFetchApp::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
-    m_NetStorage = CNetStorage(GetConfig().GetString(CONFIG_SECTION,
+    m_NetStorage = CCombinedNetStorage(GetConfig().GetString(CONFIG_SECTION,
             "netstorage", kEmptyStr));
 }
 

@@ -4,7 +4,7 @@
 
 NCBI_begin_app(ncfetch.cgi)
   NCBI_sources(ncfetch)
-  NCBI_uses_toolkit_libraries(xcgi xconnserv)
+  NCBI_uses_toolkit_libraries(xcgi netstorage)
   NCBI_project_watchers(sadyrovr)
   NCBI_project_tags(grid)
 NCBI_end_app()
