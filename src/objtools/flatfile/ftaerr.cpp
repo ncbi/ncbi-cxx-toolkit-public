@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <time.h>
+#include <sstream>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
