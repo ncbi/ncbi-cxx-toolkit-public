@@ -1034,10 +1034,16 @@ bool CAgpReader::ProcessThisRow()
                 }
             }
             else if(prev_row->is_gap && !m_at_beg) {
-                if( prev_row->gap_type == this_row->gap_type &&
-                    prev_row->linkage  == this_row->linkage
-                  )  m_AgpErr->Msg( CAgpErr::E_SameConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-                else m_AgpErr->Msg( CAgpErr::W_ConseqGaps    , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+                const auto prevGapType = prev_row->gap_type;
+                const auto currentGapType = this_row->gap_type;
+                if( prevGapType == currentGapType &&
+                    prev_row->linkage  == this_row->linkage ) { 
+                    m_AgpErr->Msg( CAgpErr::E_SameConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+                }
+                else if (currentGapType == CAgpRow::eGapContamination ||
+                         prevGapType == CAgpRow::eGapContamination) {
+                    m_AgpErr->Msg( CAgpErr::W_ConseqGaps    , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+                }
             }
         }
         if(!m_new_obj) {
