@@ -1466,8 +1466,12 @@ const CSeq_entry *ctx)
         has_taxon = true;
     }
 
-    if (IsRequireTaxonID() && IsIndexerVersion() && !has_taxon) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
+    EDiagSev sev = eDiag_Warning;
+    if (! IsLocalGeneralOnly()) {
+        sev = eDiag_Error;
+    }
+    if (IsRequireTaxonID() && /* IsIndexerVersion() && */ !has_taxon) {
+        PostObjErr(sev, eErr_SEQ_DESCR_NoTaxonID,
                    "BioSource is missing taxon ID", obj, ctx);
     }
 
