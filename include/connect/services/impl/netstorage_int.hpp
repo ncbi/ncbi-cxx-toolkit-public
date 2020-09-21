@@ -36,6 +36,8 @@
 #include <connect/services/compound_id.hpp>
 #include <connect/services/netservice_api.hpp>
 
+#include <corelib/ncbimisc.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /// @internal
@@ -61,6 +63,8 @@ typedef CNetStorageFlagsSubset<fNST_AnyAttr> TNetStorageAttrFlags;
 class NCBI_XCONNECT_EXPORT CNetStorageObjectLoc
 {
 public:
+    using TVersion = CNullable<int>;
+
     enum EFileTrackSite {
         eFileTrack_ProdSite = 0,
         eFileTrack_DevSite,
@@ -77,7 +81,9 @@ public:
             TNetStorageAttrFlags flags,
             const string& app_domain,
             const string& unique_key,
-            EFileTrackSite ft_site);
+            EFileTrackSite ft_site,
+            const TVersion& version = 0,
+            const string& subkey = kEmptyStr);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc);
 
@@ -105,6 +111,9 @@ public:
 
     // This contains both of the above
     string GetUniqueKey() const {return m_UniqueKey;}
+
+    const TVersion& GetVersion() const { return m_Version; }
+    const string& GetSubKey() const { return m_SubKey; }
 
     void SetLocation(const string& nc_service_name);
 
@@ -136,6 +145,8 @@ private:
         fLF_Cacheable           = (1 << 5),
         fLF_DevEnv              = (1 << 6),
         fLF_QAEnv               = (1 << 7),
+        fLF_HasVersion          = (1 << 8),
+        fLF_HasSubKey           = (1 << 9),
 
         eLF_AttrFlags = (
                 fLF_NoMetaData |
@@ -183,6 +194,9 @@ private:
     string m_ShortUniqueKey;
     // The same as above plus app domain
     string m_UniqueKey;
+
+    TVersion m_Version = 0;
+    string m_SubKey;
 
     string m_NCServiceName;
 

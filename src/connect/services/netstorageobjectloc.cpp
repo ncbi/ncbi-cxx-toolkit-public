@@ -74,12 +74,18 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         TNetStorageAttrFlags flags,
         const string& app_domain,
         const string& unique_key,
-        EFileTrackSite ft_site) :
+        EFileTrackSite ft_site,
+        const TVersion& version,
+        const string& subkey) :
     m_CompoundIDPool(cid_pool),
-    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey),
+    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey |
+            (version == TVersion(0) ? 0 : fLF_HasVersion) |
+            (subkey.empty() ? 0 : fLF_HasSubKey)),
     m_AppDomain(app_domain),
     m_ShortUniqueKey(unique_key),
     m_UniqueKey(MakeUniqueKey()),
+    m_Version(version),
+    m_SubKey(subkey),
     m_Dirty(true)
 {
 }
@@ -178,6 +184,22 @@ void CNetStorageObjectLoc::Parse(CCompoundID cid, bool service_name_only)
         // Get the unique object key.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_ShortUniqueKey = field.GetString();
+
+        if (m_LocatorFlags & fLF_HasVersion) {
+            // null is stored as 0 (0 is not stored as it's the default)
+            VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+            auto version = static_cast<int>(field.GetInteger());
+            m_Version = version ? TVersion(version) : TVersion(null);
+        } else {
+            m_Version = 0;
+        }
+
+        if (m_LocatorFlags & fLF_HasSubKey) {
+            VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+            m_SubKey = field.GetString();
+        } else {
+            m_SubKey.clear();
+        }
     } else {
         // Get object creation timestamp.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
@@ -282,10 +304,19 @@ void CNetStorageObjectLoc::x_Pack() const
     cid.AppendString(m_AppDomain);
 
     // Save object identification
-    if (m_LocatorFlags & fLF_HasUserKey)
+    if (m_LocatorFlags & fLF_HasUserKey) {
         // Save the unique object key.
         cid.AppendString(m_ShortUniqueKey);
-    else {
+
+        if (m_LocatorFlags & fLF_HasVersion) {
+            // null is stored as 0 (0 is not stored as it's the default)
+            cid.AppendInteger(m_Version.IsNull() ? 0 : m_Version.GetValue());
+        }
+
+        if (m_LocatorFlags & fLF_HasSubKey) {
+            cid.AppendString(m_SubKey);
+        }
+    } else {
         // Save object creation timestamp.
         cid.AppendTimestamp(m_Timestamp);
         // Save the random ID.

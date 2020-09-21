@@ -333,10 +333,21 @@ INetStorageObjectState* CNetCache::StartRead(void* buf, size_t count,
 
     try {
         size_t blob_size;
-        CRONetCache::TReaderPtr reader(m_Client.GetReadStream(
-                    object_loc.GetShortUniqueKey(), 0, kEmptyStr, &blob_size,
+        CRONetCache::TReaderPtr reader;
+        const auto& key = object_loc.GetShortUniqueKey();
+        const auto& version = object_loc.GetVersion();
+        const auto& subkey = object_loc.GetSubKey();
+
+        if (version.IsNull()) {
+            int not_used;
+            reader.reset(m_Client.GetReadStream(key, subkey, &not_used, &blob_size,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                     nc_cache_name = object_loc.GetAppDomain())));
+        } else {
+            reader.reset(m_Client.GetReadStream(key, version, subkey, &blob_size,
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_cache_name = object_loc.GetAppDomain())));
+        }
 
         if (!reader.get()) {
             return NULL;
