@@ -125,9 +125,9 @@ struct SContext : CObject
         return CNetStorageObjectLoc(compound_id_pool, flags, app_domain, random.GetRandUint8(), filetrack_api.config.site);
     }
 
-    CNetStorageObjectLoc Create(const string& key, TNetStorageFlags flags)
+    CNetStorageObjectLoc Create(const string& key, TNetStorageFlags flags, const CNetStorageObjectLoc::TVersion& version = 0, const string& subkey = kEmptyStr)
     {
-        return CNetStorageObjectLoc(compound_id_pool, flags, app_domain, key, filetrack_api.config.site);
+        return CNetStorageObjectLoc(compound_id_pool, flags, app_domain, key, filetrack_api.config.site, version, subkey);
     }
 
 private:

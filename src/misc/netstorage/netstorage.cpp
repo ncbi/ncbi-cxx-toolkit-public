@@ -125,6 +125,8 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     bool Exists(const string& db_loc, const string& client_loc);
     CJsonNode ReportConfig() const;
 
+    CNetStorageObjectLoc CreateLoc(const string& key, const CNetStorageObjectLoc::TVersion& version, const string& subkey);
+
 private:
     CRef<SContext> m_Context;
 };
@@ -241,6 +243,13 @@ CJsonNode SDirectNetStorageImpl::ReportConfig() const
     if (m_Context->filetrack_api) result.SetByKey("filetrack", empty);
 
     return result;
+}
+
+
+CNetStorageObjectLoc SDirectNetStorageImpl::CreateLoc(const string& key,
+        const CNetStorageObjectLoc::TVersion& version, const string& subkey)
+{
+    return m_Context->Create(key, fNST_NetCache, version, subkey);
 }
 
 
@@ -411,6 +420,20 @@ CCombinedNetStorageByKey::CCombinedNetStorageByKey(const string& init_string,
     CNetStorageByKey(
             SCombinedNetStorage::CreateByKeyImpl(init_string, default_flags))
 {
+}
+
+
+CNetStorageObjectLoc g_CreateNetStorageObjectLoc(CNetStorage& netstorage, const string& key,
+        const CNetStorageObjectLoc::TVersion& version, const string& subkey)
+{
+    auto base = static_cast<SNetStorageImpl*>(netstorage);
+    auto derived = dynamic_cast<SDirectNetStorageImpl*>(base);
+
+    if (!derived) {
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, "API was not configured to support ICache blobs.");
+    }
+
+    return derived->CreateLoc(key, version, subkey);
 }
 
 

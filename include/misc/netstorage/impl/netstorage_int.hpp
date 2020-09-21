@@ -88,6 +88,10 @@ public:
     bool Exists(const string& db_loc, const string& key, TNetStorageFlags flags);
 };
 
+/// @internal
+CNetStorageObjectLoc g_CreateNetStorageObjectLoc(CNetStorage& netstorage, const string& key,
+        const CNetStorageObjectLoc::TVersion& version, const string& subkey);
+
 END_NCBI_SCOPE
 
 #endif
