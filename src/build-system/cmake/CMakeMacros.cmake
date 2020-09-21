@@ -134,7 +134,7 @@ function( CheckVersionControl generated)
     foreach (f IN LISTS ARGV)
         set(retcode)
         execute_process(
-            COMMAND /usr/bin/svn info "${f}"
+            COMMAND ${Subversion_SVN_EXECUTABLE} info "${f}"
             RESULT_VARIABLE retcode
             OUTPUT_VARIABLE _foo_output
             ERROR_VARIABLE _foo_error
