@@ -949,10 +949,17 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 ///
 /// Use this typedef rather than its expansion, which may change.
 
+//#define NCBI_INT4_GI
 //#define NCBI_STRICT_GI
-//#define NCBI_INT8_GI
 //#define NCBI_STRICT_ENTREZ_ID
 //#define NCBI_STRICT_TAX_ID
+
+#ifdef NCBI_INT4_GI
+#undef NCBI_INT8_GI
+#undef NCBI_STRICT_GI
+#else
+#define NCBI_INT8_GI
+#endif
 
 // Temporary fix: disable strict TEntrezId
 #ifdef NCBI_STRICT_ENTREZ_ID
