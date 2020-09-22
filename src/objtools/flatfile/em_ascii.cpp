@@ -36,7 +36,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/GB_block.hpp>

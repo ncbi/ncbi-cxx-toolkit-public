@@ -45,7 +45,7 @@
 #endif
 #define THIS_FILE "xutils.cpp"
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 #include "ftaerr.hpp"
 #include "xgbparint.h"
 #include "xutils.h"

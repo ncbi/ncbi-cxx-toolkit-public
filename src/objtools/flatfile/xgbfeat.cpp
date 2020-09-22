@@ -10,7 +10,7 @@
 
 #include <objects/seqfeat/SeqFeatData.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include "ftaerr.hpp"
 #include "xgbfeat.h"

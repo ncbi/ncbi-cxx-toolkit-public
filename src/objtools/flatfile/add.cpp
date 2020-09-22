@@ -35,7 +35,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/general/User_object.hpp>

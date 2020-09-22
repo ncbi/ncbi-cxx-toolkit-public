@@ -35,7 +35,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/general/Person_id.hpp>
 #include <objects/biblio/Auth_list.hpp>

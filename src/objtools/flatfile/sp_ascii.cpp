@@ -37,7 +37,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqblock/SP_block.hpp>
 #include <objects/seq/Seq_descr.hpp>

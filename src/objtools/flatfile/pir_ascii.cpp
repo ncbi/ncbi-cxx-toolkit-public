@@ -37,7 +37,7 @@
 // Excluded per Mark's request on 12/14/2016
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seq/Seq_inst.hpp>
 #include <objmgr/scope.hpp>

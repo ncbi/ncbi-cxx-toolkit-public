@@ -92,12 +92,5 @@ END_NCBI_SCOPE
 #define INT2_MAX  32767
 #define INT2_MIN  (-32768)
 
-#ifndef MIN
-#define MIN(a,b)	((a)>(b)?(b):(a))
-#endif
-
-#ifndef MAX
-#define MAX(a,b)	((a)>=(b)?(a):(b))
-#endif
 
 #endif // FTACPP_HPP

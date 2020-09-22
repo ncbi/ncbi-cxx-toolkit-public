@@ -111,7 +111,7 @@ struct Parser {
                                            protein sequence */
     Uint1            medserver;         /* == 1, if MedArchInit() call
                                            succeeded */
-    void*          fpo;               /* for medline uid lookup */
+    void*            fpo;               /* for medline uid lookup */
     bool             date;              /* if TRUE, replace update date
                                            from LOCUS */
     bool             no_date;           /* if TRUE, if no update and curr

@@ -34,7 +34,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objmgr/scope.hpp>
 #include <objmgr/seqdesc_ci.hpp>

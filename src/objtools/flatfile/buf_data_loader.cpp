@@ -35,7 +35,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>

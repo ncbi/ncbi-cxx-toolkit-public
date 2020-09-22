@@ -37,7 +37,7 @@
 
 #include <set>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>

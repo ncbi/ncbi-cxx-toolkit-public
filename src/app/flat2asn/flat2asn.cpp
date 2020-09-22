@@ -37,13 +37,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
-
 #include <serial/objostrasn.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objtools/logging/listener.hpp>
-#include <objtools/flatfile/index.h>
+//#include <objtools/flatfile/index.h>
 #include <objtools/flatfile/ftamain.h>
 #include <objtools/flatfile/fta_parse_buf.h>
 #include <objtools/flatfile/ftanet.h>

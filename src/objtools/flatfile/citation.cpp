@@ -36,7 +36,7 @@
 */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objmgr/scope.hpp>
 #include <objects/biblio/Cit_gen.hpp>

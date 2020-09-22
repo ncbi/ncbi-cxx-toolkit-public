@@ -36,7 +36,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seq/Seq_annot.hpp>

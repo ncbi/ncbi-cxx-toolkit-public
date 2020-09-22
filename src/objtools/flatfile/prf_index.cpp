@@ -38,7 +38,7 @@
 // Excluded per Mark's request on 12/14/2016
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objtools/flatfile/index.h>
 #include <objtools/flatfile/prf_index.h>

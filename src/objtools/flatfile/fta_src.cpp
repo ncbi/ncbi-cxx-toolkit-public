@@ -34,7 +34,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seq/Seq_annot.hpp>

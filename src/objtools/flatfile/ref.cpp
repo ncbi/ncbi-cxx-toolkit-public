@@ -34,7 +34,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/biblio/Id_pat_.hpp>

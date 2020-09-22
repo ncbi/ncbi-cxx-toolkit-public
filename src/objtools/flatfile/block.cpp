@@ -35,7 +35,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include "ftaerr.hpp"
 #include "ftablock.h"

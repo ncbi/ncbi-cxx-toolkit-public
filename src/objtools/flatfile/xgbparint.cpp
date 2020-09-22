@@ -37,9 +37,7 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-
-#include <objtools/flatfile/ftacpp.hpp>
-
+#include "ftacpp.hpp"
 #include "ftaerr.hpp"
 #include "valnode.h"
 #include "xgbparint.h"

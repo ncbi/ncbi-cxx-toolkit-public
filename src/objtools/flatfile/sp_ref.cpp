@@ -36,7 +36,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/biblio/Auth_list.hpp>

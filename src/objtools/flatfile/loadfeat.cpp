@@ -37,7 +37,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>

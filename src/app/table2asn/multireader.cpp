@@ -79,13 +79,8 @@
 
 #include <objtools/edit/feattable_edit.hpp>
 
-//#include <objtools/flatfile/ftacpp.hpp>
-//#include <objtools/flatfile/index.h>
-//#include <objtools/flatfile/fta_parse_buf.h>
-//#include <objtools/flatfile/ftanet.h>
 #include <objtools/flatfile/fta_parser.h>
 #include <objtools/flatfile/ftamain.h>
-//#include <objtools/flatfile/ftablock.h>
 
 #include <common/test_assert.h>  /* This header must go last */
 

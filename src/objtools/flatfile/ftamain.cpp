@@ -36,7 +36,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/ftacpp.hpp>
+#include "ftacpp.hpp"
 
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
