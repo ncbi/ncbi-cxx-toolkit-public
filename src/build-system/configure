@@ -6125,7 +6125,7 @@ $as_echo "#define NCBI_MONKEY 1" >>confdefs.h
 
                       WithFeatures="$WithFeatures${WithFeaturesSep}ChaosMonkey"; WithFeaturesSep=" "
             ;;
-         Int8GI )
+         Int4GI )
 
 $as_echo "#define NCBI_INT4_GI 1" >>confdefs.h
 

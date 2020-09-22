@@ -939,7 +939,7 @@ if test -n "$with_experimental"; then
                [Define to 1 to enable "ChaosMonkey" failure testing.])
             NCBI_FEATURE(ChaosMonkey)
             ;;
-         Int8GI )
+         Int4GI )
             AC_DEFINE(NCBI_INT4_GI, 1,
                [Define to 1 to use a simple 32-bit type for GI numbers.])
             NCBI_FEATURE(Int4GI)
