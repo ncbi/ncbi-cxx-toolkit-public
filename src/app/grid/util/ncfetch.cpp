@@ -116,19 +116,17 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         NCBI_THROW(CArgException, eNoArg, "CGI entry 'key' is missing");
     }
 
-    string version_str = request.GetEntry("version", &is_found);
-    CNetStorageObjectLoc::TVersion version;
-
-    if (!is_found) {
-        version = 0;
-    } else if (!version_str.empty()) {
-        version = NStr::StringToNumeric<int>(version_str);
-    }
-
     string subkey = request.GetEntry("subkey", &is_found);
 
     // Try to read an ICache blob only if a subkey is provided
     if (is_found) {
+        string version_str = request.GetEntry("version");
+        CNetStorageObjectLoc::TVersion version;
+
+        if (!version_str.empty()) {
+            version = NStr::StringToNumeric<int>(version_str);
+        }
+
         key = g_CreateNetStorageObjectLoc(m_NetStorage, key, version, subkey).GetLocator();
     }
 
