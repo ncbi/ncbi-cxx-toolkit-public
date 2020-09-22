@@ -1925,6 +1925,12 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             m_AirrData["vj_in_frame"] = "T";
         }
         
+        if (m_VFrameShift == "Yes") {
+            m_AirrData["v_frameshift"] = "T";
+        } else if (m_VFrameShift == "No") {
+            m_AirrData["v_frameshift"] = "F";
+        } 
+
         if (m_OtherInfo[3] == "Yes") {
             m_AirrData["stop_codon"] = "T";
         } else if (m_OtherInfo[3] == "No") {
@@ -2285,45 +2291,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         SetFrame("N/A");
     }
 
-    if (annot->m_FrameInfo[0] >= 0) {
-        int off = annot->m_FrameInfo[0];
-        int len = (annot->m_GeneInfo[1] - off)/3*3;
-        string seq_data(m_Query, off, len);
-        string seq_trans;
-        CSeqTranslator::Translate(seq_data, seq_trans, 
-                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        if (seq_trans.find('*') != string::npos) {
-            m_OtherInfo.push_back("Yes");  //index 0
-        } else {
-            m_OtherInfo.push_back("No");
-        }
-    } else {
-        m_OtherInfo.push_back("N/A");
-    }
-
-    if (annot->m_FrameInfo[2] >=0) {
-        int off = annot->m_FrameInfo[2];
-        int len = (annot->m_GeneInfo[5] - off)/3*3;
-        string seq_data(m_Query, off, len);
-        string seq_trans;
-        CSeqTranslator::Translate(seq_data, seq_trans, 
-                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        if (seq_trans.find('*') == string::npos) {
-            m_OtherInfo.push_back("No");  //index 1
-            if (m_FrameInfo == "IF" && m_OtherInfo[0] == "No") {
-                m_OtherInfo.push_back("Yes");  //index 2
-            } else {
-                m_OtherInfo.push_back("No");
-            }
-        } else {
-            m_OtherInfo.push_back("Yes");
-            m_OtherInfo.push_back("No");
-        }
-    } else {
-        m_OtherInfo.push_back("N/A");
-        m_OtherInfo.push_back("N/A");
-    }
-
+ 
     //stop codon anywhere between start of V and end of J
     //This checks for stop codon between start of top matched V and and end of top matched J only 
     if (annot->m_FrameInfo[0] >= 0) {
@@ -2336,26 +2304,26 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
        
         if (seq_trans.find('*') == string::npos) {
-            m_OtherInfo.push_back("No");  //index 3
+            m_OtherInfo[3] = "No";  //index 3
             if (m_FrameInfo == "IF" || m_FrameInfo == "IP") {
                 if (m_VFrameShift == "No") {
-                    m_OtherInfo.push_back("Yes"); //index 4
+                    m_OtherInfo[4] = "Yes"; //index 4,productive or not
                 } else {
-                    m_OtherInfo.push_back("No"); //index 4
+                    m_OtherInfo[4] = "No"; //index 4
                 }
             } else if (m_FrameInfo == "OF"){
-                m_OtherInfo.push_back("No"); //index 4
+                m_OtherInfo[4] = "No"; //index 4
             } else {
-               m_OtherInfo.push_back("N/A"); //index 4
+               m_OtherInfo[4] = "N/A"; //index 4
             }
         } else {
-            m_OtherInfo.push_back("Yes");//index 3
-            m_OtherInfo.push_back("No");//index 4
+            m_OtherInfo[3] = "Yes"; //index 3
+            m_OtherInfo[4] = "No"; //index 4
         }
         
     } else {
-        m_OtherInfo.push_back("N/A");
-        m_OtherInfo.push_back("N/A");
+        m_OtherInfo[3] = "N/A";
+        m_OtherInfo[4] = "N/A";
     }
     
   
@@ -2589,7 +2557,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
                   << "<td>V-J frame</td>"
                   << "<td>Productive</td>"
                   << "<td>Strand</td>"
-                  << "<td>V frame shift</td>/tr>\n";
+                  << "<td>V frame shift</td></tr>\n";
 
         m_Ostream << "<tr><td>"  << m_VGene.sid;
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
@@ -2661,7 +2629,9 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_VGene.Reset();
     m_DGene.Reset();
     m_JGene.Reset();
-    m_OtherInfo.clear();
+    for (int i = 0; i < num_otherinfo; i ++) {
+        m_OtherInfo[i] = "N/A";
+    }
     m_Cdr3Start = -1;
     m_Cdr3End =  -1;
     m_Fwr4Start = -1;

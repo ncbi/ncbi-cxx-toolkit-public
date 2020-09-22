@@ -712,10 +712,12 @@ private:
     SIgGene m_DGene;
     SIgGene m_JGene;
     vector<SIgDomain *> m_IgDomains; 
+
+    //index 0-2, not currently being used
     // index 4, productive/non-productive
     // index 3, stop codon or not
-
-    vector<string> m_OtherInfo;
+    static const int num_otherinfo = 5; 
+    string m_OtherInfo[num_otherinfo];
     int m_Cdr3Start;
     int m_Cdr3End;
     int m_Fwr4Start;

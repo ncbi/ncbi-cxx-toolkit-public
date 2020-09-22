@@ -312,6 +312,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("locus");
         l_ig_opts->m_AirrField.push_back("stop_codon");
         l_ig_opts->m_AirrField.push_back("vj_in_frame");
+        l_ig_opts->m_AirrField.push_back("v_frameshift");
         l_ig_opts->m_AirrField.push_back("productive");
         l_ig_opts->m_AirrField.push_back("rev_comp");
         l_ig_opts->m_AirrField.push_back("complete_vdj");
