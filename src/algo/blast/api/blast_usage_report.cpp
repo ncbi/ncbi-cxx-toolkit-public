@@ -41,7 +41,7 @@ USING_SCOPE(blast);
 #endif
 
 static const string kNcbiAppName="standalone-blast";
-static const string kIdFile="/sys/class/dmi/id/product_name";
+static const string kIdFile="/sys/class/dmi/id/sys_vendor";
 
 void CBlastUsageReport::x_CheckRunEnv()
 {
