@@ -141,8 +141,9 @@ if [ ! -z "${NAME}" ]; then
         error_exit "esummary error" $?
     fi
         
+    sed -i 's/,\|{/\n/g' $TMP 
     grep 'uid\|rank\|division\|scientificname\|commonname' $TMP | \
-    grep -v "uids\|genbankdivision" | tr -d '"\|,' | tr -s ' ' | \
+    grep -v "uids\|genbankdivision" | tr  '"\|,'  " " | tr -s ' ' | \
     sed 's/uid/\nTaxid/g;s/name/ name/g' > $OUTPUT
 
     echo -e "\n$NUM_RESULTS matche(s) found.\n" >> $OUTPUT
