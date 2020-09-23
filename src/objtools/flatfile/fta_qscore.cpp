@@ -53,6 +53,8 @@
 #include <objtools/flatfile/index.h>
 
 #include <objtools/flatfile/flatdefn.h>
+#include <algorithm>
+
 
 #include "ftaerr.hpp"
 #include "utilfun.h"
@@ -590,8 +592,8 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores,
 	*scores = (Uint1) val;
 	scores++;
 
-	*max_score = MAX (*max_score, (Uint1) val);
-	*min_score = MIN (*min_score, (Uint1) val);
+	*max_score = max(*max_score, (Uint1) val);
+	*min_score = min(*min_score, (Uint1) val);
       }
       else {
 	/* fprintf(stderr,"error: sscan failure : score_buf score >%s< is probably not numeric\n", p); */
