@@ -51,15 +51,24 @@ USING_SCOPE(objects);
 
 static void s_GetObject(const string& gene_id, CEntrezgene& eg_obj)
 {
-    SleepMilliSec(333); // per e-utils guidelines
     CRef<CEUtils_ConnContext> ctx(new CEUtils_ConnContext);
     CEFetch_Request req(ctx);
     req.SetDatabase("gene");
     req.GetId().AddId(gene_id);
     string eg_str;
-    req.Read(&eg_str);
-    CNcbiIstrstream istr(eg_str.c_str(), eg_str.size());
-    istr >> MSerial_AsnText >> eg_obj;
+    // A very limited and simple retry.
+    try {
+        SleepMilliSec(333); // per e-utils guidelines
+        req.Read(&eg_str);
+        CNcbiIstrstream istr(eg_str.c_str(), eg_str.size());
+        istr >> MSerial_AsnText >> eg_obj;
+    } catch(...) {
+        // simple retry, only retry once
+        SleepMilliSec(5000); // maybe enough time, maybe not
+        req.Read(&eg_str);
+        CNcbiIstrstream istr(eg_str.c_str(), eg_str.size());
+        istr >> MSerial_AsnText >> eg_obj;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(s_TestDescription)
