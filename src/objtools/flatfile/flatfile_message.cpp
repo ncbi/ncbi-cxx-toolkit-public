@@ -74,7 +74,15 @@ void CFlatFileMessage::Write(CNcbiOstream& out) const {
 
 void CFlatFileMessage::Dump(CNcbiOstream& out) const {
 
-    out << CNcbiDiag::SeverityName(GetSeverity()) << ": ";
+    const auto severity = GetSeverity();
+    if (severity == eDiag_Critical) {
+        out << "REJECT: ";
+    }
+    else {
+        string sevName = CNcbiDiag::SeverityName(severity);
+        out << NStr::ToUpper(sevName) << ": ";
+    }
+
     if (!m_Module.empty()) {
         out << m_Module << " ";
     }
