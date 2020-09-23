@@ -1,8 +1,8 @@
 #gtf-version 2.2
 AB019592.1	DDBJ	gene	1	227	.	+	.	gene_id "IgH"; transcript_id ""; gbkey "Gene"; gene "IgH"; gene_biotype "protein_coding"; partial "true"; 
-AB019592.1	DDBJ	CDS	1	224	.	+	0	gene_id "IgH"; transcript_id "unknown_transcript_1"; db_xref "IMGT/LIGM:AB019592"; gbkey "CDS"; gene "IgH"; partial "true"; product "immunoglobulin heavy chain"; protein_id "BAA35003.1"; 
-AB019592.1	DDBJ	start_codon	1	3	.	+	0	gene_id "IgH"; transcript_id "unknown_transcript_1"; db_xref "IMGT/LIGM:AB019592"; gbkey "CDS"; gene "IgH"; partial "true"; product "immunoglobulin heavy chain"; protein_id "BAA35003.1"; 
-AB019592.1	DDBJ	stop_codon	225	227	.	+	0	gene_id "IgH"; transcript_id "unknown_transcript_1"; db_xref "IMGT/LIGM:AB019592"; gbkey "CDS"; gene "IgH"; partial "true"; product "immunoglobulin heavy chain"; protein_id "BAA35003.1"; 
+AB019592.1	DDBJ	CDS	1	224	.	+	0	gene_id "IgH"; transcript_id "unassigned_transcript_1"; db_xref "IMGT/LIGM:AB019592"; gbkey "CDS"; gene "IgH"; partial "true"; product "immunoglobulin heavy chain"; protein_id "BAA35003.1"; 
+AB019592.1	DDBJ	start_codon	1	3	.	+	0	gene_id "IgH"; transcript_id "unassigned_transcript_1"; db_xref "IMGT/LIGM:AB019592"; gbkey "CDS"; gene "IgH"; partial "true"; product "immunoglobulin heavy chain"; protein_id "BAA35003.1"; 
+AB019592.1	DDBJ	stop_codon	225	227	.	+	0	gene_id "IgH"; transcript_id "unassigned_transcript_1"; db_xref "IMGT/LIGM:AB019592"; gbkey "CDS"; gene "IgH"; partial "true"; product "immunoglobulin heavy chain"; protein_id "BAA35003.1"; 
 AB019592.1	DDBJ	exon	186	204	.	+	.	gene_id "IgH"; transcript_id "IgH"; gbkey "D_segment"; gene "IgH"; note "D21/9"; exon_number "1"; 
 AB019592.1	DDBJ	exon	1	171	.	+	.	gene_id "IgH"; transcript_id "IgH_1"; gbkey "V_segment"; gene "IgH"; note "DP58"; exon_number "1"; 
 ###

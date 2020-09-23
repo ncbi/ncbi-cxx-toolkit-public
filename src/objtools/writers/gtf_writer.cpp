@@ -63,6 +63,32 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//  ============================================================================
+class CGtfIdGenerator
+//  ============================================================================
+{
+public:
+    static void Reset()
+    {
+        mLastSuffixes.clear();
+    }
+    static string NextId(
+        const string prefix)
+    {
+        auto mapIt = mLastSuffixes.find(prefix);
+        if (mapIt != mLastSuffixes.end()) {
+            ++mapIt->second;
+            return prefix + "_" + NStr::NumericToString(mapIt->second);
+        }
+        mLastSuffixes[prefix] = 1;
+        return prefix + "_1";
+    }
+    
+private:
+    static map<string, int> mLastSuffixes;
+};
+map<string, int> CGtfIdGenerator::mLastSuffixes;
+
 //  ----------------------------------------------------------------------------
 CConstRef<CUser_object> sGetUserObjectByType(
     const CUser_object& uo,
@@ -118,6 +144,7 @@ CGtfWriter::CGtfWriter(
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags )
 {
+    CGtfIdGenerator::Reset(); //may be flag dependent some day
 };
 
 //  ----------------------------------------------------------------------------
@@ -127,6 +154,7 @@ CGtfWriter::CGtfWriter(
 //  ----------------------------------------------------------------------------
     CGff2Writer( ostr, uFlags )
 {
+    CGtfIdGenerator::Reset(); //may be flag dependent some day
 };
 
 //  ----------------------------------------------------------------------------
@@ -629,7 +657,7 @@ string CGtfWriter::xGenericGeneId(
 //  ----------------------------------------------------------------------------
 {
     static unsigned int uId = 1;
-    string strGeneId = string( "unknown_gene_" ) + 
+    string strGeneId = string( "unassigned_gene_" ) + 
         NStr::UIntToString(uId);
     if (mf.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_gene) {
         uId++;
@@ -642,13 +670,7 @@ string CGtfWriter::xGenericTranscriptId(
     const CMappedFeat& mf)
     //  ----------------------------------------------------------------------------
 {
-    static unsigned int uId = 1;
-    string strTranscriptId = string("unknown_transcript_") + 
-        NStr::UIntToString(uId);
-    if (mf.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_mRNA) {
-        uId++;
-    }
-    return strTranscriptId;
+    return CGtfIdGenerator::NextId("unassigned_transcript");
 }
 
 //  ----------------------------------------------------------------------------
