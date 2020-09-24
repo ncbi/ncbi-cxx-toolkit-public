@@ -64,7 +64,8 @@ class CRequestContext_PassThrough;
 class NCBI_XNCBI_EXPORT CSharedHitId
 {
 public:
-    explicit CSharedHitId(const string& hit) : m_HitId(hit), m_SubHitId(0) {}
+    explicit CSharedHitId(const string& hit)
+        : m_HitId(hit), m_SubHitId(0), m_AppState(GetDiagContext().GetAppState()) {}
     CSharedHitId(void) : m_SubHitId(0) {}
     ~CSharedHitId(void) {}
 
@@ -90,6 +91,7 @@ public:
         m_SharedSubHitId.Reset();
         m_SubHitId = 0;
         m_HitId = hit_id;
+        m_AppState = GetDiagContext().GetAppState();
     }
 
     typedef unsigned int TSubHitId;
@@ -106,12 +108,21 @@ public:
         return IsShared() ? (TSubHitId)m_SharedSubHitId->GetData().Add(1) : ++m_SubHitId;
     }
 
+    /// Check if this hit ID was set at request level.
+    bool IsRequestLevel(void) const
+    {
+        return m_AppState == eDiagAppState_RequestBegin ||
+            m_AppState == eDiagAppState_Request ||
+            m_AppState == eDiagAppState_RequestEnd;
+    }
+
 private:
     typedef CObjectFor<CAtomicCounter> TSharedCounter;
 
     string m_HitId;
     TSubHitId m_SubHitId;
     mutable CRef<TSharedCounter> m_SharedSubHitId;
+    EDiagAppState m_AppState;
 };
 
 
@@ -678,7 +689,7 @@ bool CRequestContext::IsSetHitID(EHitIDSource src) const
         return true;
     }
     if ((src & eHitID_Request)  &&  x_IsSetProp(eProp_HitID)) {
-        return true;
+        return m_HitID.IsRequestLevel();
     }
     if ((src & eHitID_Default) && GetDiagContext().x_IsSetDefaultHitID()) {
         return true;
