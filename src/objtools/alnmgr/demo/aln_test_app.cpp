@@ -154,7 +154,7 @@ void CAlnTestApp::LoadInputAlns(const string& file_name, const string& asn_type)
 
     CAlnAsnReader reader(&GetScope());
     reader.Read(in.get(),
-        bind1st(mem_fun(&CAlnTestApp::InsertAln), this),
+        bind(mem_fn(&CAlnTestApp::InsertAln), this, std::placeholders::_1),
         asn_type);
 }
 
@@ -233,7 +233,8 @@ void DumpSparseAln(const CSparseAln& sparse_aln)
         << sparse_aln.GetAlnRange().GetTo() << endl;
     for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim(); ++row) {
         cout << "  Row " << row << ": "
-             << sparse_aln.GetSeqId(row).AsFastaString() << endl;
+             << sparse_aln.GetSeqId(row).AsFastaString()
+             << " w=" << sparse_aln.GetBaseWidth(row) << endl;
         CSparseAln::TRange rg = sparse_aln.GetSeqRange(row);
         CSparseAln::TRange native_rg = sparse_aln.AlnRangeToNativeSeqRange(row, rg);
         CSparseAln::TFrames frames = sparse_aln.AlnRangeToNativeFrames(row, rg);
@@ -254,10 +255,13 @@ void DumpSparseAln(const CSparseAln& sparse_aln)
             try {
                 string sequence;
                 sparse_aln.GetAlnSeqString(row, sequence, sparse_aln.GetSeqAlnRange(row));
-                cout << "    Aln: " << sequence << endl;
+                size_t aln_len = sequence.size();
+                cout << "    AlnSeqString: " << sequence << endl;
                 sequence.clear();
                 sparse_aln.GetSeqString(row, sequence, sparse_aln.GetSeqRange(row), false);
-                cout << "    Seq: " << sequence << endl;
+                size_t seq_len = sequence.size();
+                cout << "    SeqString:    " << sequence << endl;
+                cout << "    AlnSeqLen = " << aln_len << ", SeqLen = " << seq_len << endl;
             } catch (...) {
                 // if sequence is not in scope,
                 // the above is impossible
@@ -296,28 +300,30 @@ void DumpSparseAln(const CSparseAln& sparse_aln)
                         aln_total.append(aln_gap);
                         seq_total.append(seq_gap);
                         seq_total.append(seq_data);
+
+                        if (aln_data.size() + aln_gap.size() != seq_data.size() + seq_gap.size()) {
+                            cout << "!";
+                        }
+                        else {
+                            cout << " ";
+                        }
+                        cout << "       SeqLen (aln/seq): " << aln_data.size() + aln_gap.size() <<
+                            " / " << seq_gap.size() + seq_data.size() << endl;
+                        cout << "        Aln: " << aln_data + aln_gap << endl;
+                        cout << "        Seq: " << seq_gap + seq_data << endl;
                     }
                 }
                 catch (...) {}
                 ++sparse_ci;
             }
             if (!aln_total.empty()  ||  !seq_total.empty()) {
-                cout << "    Aligned:" << endl;
-                cout << "       " << aln_total << endl;
-                cout << "       " << seq_total << endl;
+                cout << "    Total aligned sequence (aln/seq):" << endl;
+                cout << "      " << aln_total << endl;
+                cout << "      " << seq_total << endl;
             }
             else {
                 cout << "    [No sequence data]" << endl;
             }
-        }
-
-        cout << "    Segments:" << endl;
-        // Row segments
-        sparse_ci = CSparse_CI(sparse_aln, row, IAlnSegmentIterator::eAllSegments);
-
-        while (sparse_ci) {
-            cout << "     " << *sparse_ci << endl;
-            ++sparse_ci;
         }
     }
     cout << endl;
@@ -508,6 +514,10 @@ int CAlnTestApp::Run(void)
     }
 
     TAlnSeqIdIRef anchor_id = ArgToSeq_id(args["anchor_id"]);
+    if (!anchor_id) {
+        if (anchor_row_idx < 0) anchor_row_idx = 0;
+        anchor_id = aln_stats.GetAnchorIdVec()[anchor_row_idx];
+    }
     if ( anchor_id ) {
         merge_options.SetAnchorId(anchor_id);
     }
@@ -532,6 +542,7 @@ int CAlnTestApp::Run(void)
 
     CSparseAln sparse_aln(built_aln, GetScope());
     DumpSparseAln(sparse_aln);
+
     TestSparseIterator(sparse_aln);
 
     for (int i = 0; i < sparse_aln.GetDim(); ++i) {
