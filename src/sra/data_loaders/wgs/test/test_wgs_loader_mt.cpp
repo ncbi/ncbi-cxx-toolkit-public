@@ -1,0 +1,208 @@
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Eugene Vasilchenko
+*
+* File Description:
+*   Unit tests for WGS data loader
+*
+* ===========================================================================
+*/
+#define NCBI_TEST_APPLICATION
+#include <ncbi_pch.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+#include <sra/readers/sra/wgsread.hpp>
+#include <sra/readers/ncbi_traces_path.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/align_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objects/general/general__.hpp>
+#include <objects/seqalign/seqalign__.hpp>
+#include <objects/seq/seq__.hpp>
+#include <objects/seqset/seqset__.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <objtools/readers/idmapper.hpp>
+#include <serial/iterator.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <util/random_gen.hpp>
+#include <thread>
+
+#include <corelib/test_boost.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+enum EMasterDescrType
+{
+    eWithoutMasterDescr,
+    eWithMasterDescr
+};
+
+static EMasterDescrType s_master_descr_type = eWithoutMasterDescr;
+
+void sx_InitGBLoader(CObjectManager& om)
+{
+    CGBDataLoader* gbloader = dynamic_cast<CGBDataLoader*>
+        (CGBDataLoader::RegisterInObjectManager(om, "id1", om.eNonDefault).GetLoader());
+    _ASSERT(gbloader);
+    gbloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
+}
+
+CRef<CObjectManager> sx_GetEmptyOM(void)
+{
+    SetDiagPostLevel(eDiag_Info);
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames names;
+    om->GetRegisteredNames(names);
+    ITERATE ( CObjectManager::TRegisteredNames, it, names ) {
+        om->RevokeDataLoader(*it);
+    }
+    return om;
+}
+
+CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type)
+{
+    CRef<CObjectManager> om = sx_GetEmptyOM();
+    s_master_descr_type = master_descr_type;
+    CWGSDataLoader* wgsloader = dynamic_cast<CWGSDataLoader*>
+        (CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault).GetLoader());
+    wgsloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
+    if ( master_descr_type == eWithMasterDescr ) {
+        sx_InitGBLoader(*om);
+    }
+    return om;
+}
+
+
+DEFINE_STATIC_FAST_MUTEX(s_BoostMutex);
+#define BOOST_REQUIRE_MT(s) \
+    do{CFastMutexGuard guard(s_BoostMutex);BOOST_REQUIRE(s);}while(0)
+#define BOOST_REQUIRE_EQUAL_MT(a,b) \
+    do{CFastMutexGuard guard(s_BoostMutex);BOOST_REQUIRE_EQUAL(a,b);}while(0)
+#define BOOST_CHECK_MT(s) \
+    do{CFastMutexGuard guard(s_BoostMutex);BOOST_CHECK(s);}while(0)
+#define BOOST_CHECK_EQUAL_MT(a,b) \
+    do{CFastMutexGuard guard(s_BoostMutex);BOOST_CHECK_EQUAL(a,b);}while(0)
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
+{
+    LOG_POST("Checking WGS master sequence descriptors");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRandom r(1);
+    const size_t NQ = 12;
+    const size_t NS = 20;
+    const char* accs[] = {
+        "BART01",
+        "BARU01",
+        "BARG01",
+        "BASA01",
+        "BARW01",
+        "BASC01",
+        "BARV01",
+        "BASE01",
+        "BASF01",
+        "BASG01",
+        "BASJ01",
+        "BASL01",
+        "BASN01",
+        "BASR01",
+        "BASS01",
+    };
+    vector<vector<string>> ids(NQ);
+    for ( size_t k = 0; k < NQ; ++k ) {
+        for ( size_t i = 0; i < NS; ++i ) {
+            char id[99];
+            sprintf(id, "%s%06d.1", accs[r.GetRandIndex(ArraySize(accs))], int(r.GetRand(1, 100)));
+            ids[k].push_back(id);
+        }
+    }
+    vector<thread> tt(NQ);
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i] =
+            thread([&](const vector<string>& ids)
+                   {
+                       CScope scope(*CObjectManager::GetInstance());
+                       scope.AddDefaults();
+                       for ( auto& id : ids ) {
+                           try {
+                               CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+                               BOOST_REQUIRE_MT(bh);
+                               int desc_mask = 0;
+                               map<string, int> user_count;
+                               int comment_count = 0;
+                               int pub_count = 0;
+                               for ( CSeqdesc_CI it(bh); it; ++it ) {
+                                   desc_mask |= 1<<it->Which();
+                                   switch ( it->Which() ) {
+                                   case CSeqdesc::e_Comment:
+                                       ++comment_count;
+                                       break;
+                                   case CSeqdesc::e_Pub:
+                                       ++pub_count;
+                                       break;
+                                   case CSeqdesc::e_User:
+                                       ++user_count[it->GetUser().GetType().GetStr()];
+                                       break;
+                                   default:
+                                       break;
+                                   }
+                               }
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Title));
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Source));
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Molinfo));
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Pub));
+                               BOOST_CHECK_MT(pub_count == 2 || pub_count == 3);
+                               //BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Genbank));
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Create_date));
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_Update_date));
+                               BOOST_CHECK_MT(desc_mask & (1<<CSeqdesc::e_User));
+                               BOOST_CHECK_EQUAL_MT(user_count.size(), 2u);
+                               BOOST_CHECK_EQUAL_MT(user_count["StructuredComment"], 1);
+                               BOOST_CHECK_EQUAL_MT(user_count["DBLink"], 1);
+                           }
+                           catch (...) {
+                               ERR_POST("Failed id: "<<id);
+                               throw;
+                           }
+                       }
+                   }, ids[i]);
+    }
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i].join();
+    }
+}
+
+
+NCBITEST_INIT_TREE()
+{
+}

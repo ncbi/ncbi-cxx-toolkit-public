@@ -53,8 +53,12 @@ class CWGSResolver;
 class CWGSFileInfo : public CObject
 {
 public:
-    CWGSFileInfo(CWGSDataLoader_Impl& impl,
+    CWGSFileInfo();
+    CWGSFileInfo(const CWGSDataLoader_Impl& impl,
                  CTempString prefix);
+
+    void Open(const CWGSDataLoader_Impl& impl,
+              CTempString prefix);
     
     CTempString GetWGSPrefix(void) const
         {
@@ -89,14 +93,14 @@ public:
         bool ValidateAcc(const CTextseq_id& text_id);
         bool ValidateGi(TGi gi);
 
-        CConstRef<CWGSFileInfo> file;
+        CRef<CWGSFileInfo> file;
         TVDBRowId row_id;
         char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
         int version;
     };
 
-    bool FindGi(SAccFileInfo& info, TGi gi) const;
-    bool FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id) const;
+    bool FindGi(SAccFileInfo& info, TGi gi);
+    bool FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id);
 
     const CWGSDb& GetDb(void) const
         {
@@ -119,12 +123,13 @@ public:
 protected:
     friend class CWGSDataLoader_Impl;
 
-    void x_Initialize(CWGSDataLoader_Impl& impl,
+    void x_Initialize(const CWGSDataLoader_Impl& impl,
                       CTempString prefix);
     void x_InitMasterDescr(void);
 
     string m_WGSPrefix;
     CWGSDb m_WGSDb;
+    CMutex m_Mutex;
 };
 
 
@@ -134,9 +139,9 @@ public:
     explicit CWGSDataLoader_Impl(const CWGSDataLoader::SLoaderParams& params);
     ~CWGSDataLoader_Impl(void);
 
-    CConstRef<CWGSFileInfo> GetWGSFile(const string& acc);
+    CRef<CWGSFileInfo> GetWGSFile(const string& acc);
 
-    CConstRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
+    CRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
     typedef CWGSFileInfo::SAccFileInfo SAccFileInfo;
     SAccFileInfo GetFileInfoByGi(TGi gi);
     SAccFileInfo GetFileInfoByProtAcc(const CTextseq_id& text_id);
@@ -186,8 +191,8 @@ private:
     // second: SRA accession or wgs file path
 
     // WGS files by accession
-    typedef map<string, CConstRef<CWGSFileInfo> > TFixedFiles;
-    typedef limited_size_map<string, CConstRef<CWGSFileInfo> > TFoundFiles;
+    typedef map<string, CRef<CWGSFileInfo> > TFixedFiles;
+    typedef limited_size_map<string, CRef<CWGSFileInfo> > TFoundFiles;
 
     // mutex guarding input into the map
     CMutex  m_Mutex;

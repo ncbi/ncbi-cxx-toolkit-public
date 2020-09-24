@@ -329,7 +329,7 @@ CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
 }
 
 
-CConstRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
 {
     if ( !m_FixedFiles.empty() ) {
         // no dynamic WGS accessions
@@ -339,33 +339,36 @@ CConstRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
         }
         return null;
     }
-    CConstRef<CWGSFileInfo> info;
-    CMutexGuard guard(m_Mutex);
+    CRef<CWGSFileInfo> info;
+    //CMutexGuard guard2(m_Mutex);
     {{
-        TFoundFiles::iterator it = m_FoundFiles.find(prefix);
-        if ( it != m_FoundFiles.end() ) {
+        // lookup in cache
+        CMutexGuard guard(m_Mutex);
+        auto& slot = m_FoundFiles[prefix];
+        if ( slot ) {
             // use cached info
-            info = it->second;
+            info = slot;
         }
         else {
             // create new info
-            try {
-                info = new CWGSFileInfo(*this, prefix);
-                m_FoundFiles[prefix] = info;
-            }
-            catch ( CSraException& exc ) {
-                if ( exc.GetErrCode() == exc.eNotFoundDb ||
-                     exc.GetErrCode() == exc.eProtectedDb ) {
-                    // no such WGS table
-                    return null;
-                }
-                else {
-                    // problem in VDB or WGS reader
-                    throw;
-                }
-            }
+            slot = info = new CWGSFileInfo();
         }
     }}
+    // make sure the file is opened
+    try {
+        info->Open(*this, prefix);
+    }
+    catch ( CSraException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFoundDb ||
+             exc.GetErrCode() == exc.eProtectedDb ) {
+            // no such WGS table
+            return null;
+        }
+        else {
+            // problem in VDB or WGS reader
+            throw;
+        }
+    }
     if ( info->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
         // replaced
         if ( GetDebugLevel() >= 2 ) {
@@ -385,10 +388,10 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
 {
     CWGSFileInfo::SAccFileInfo ret;
     if ( !m_FixedFiles.empty() ) {
-        ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-            if ( it->second->FindGi(ret, gi) ) {
+        for ( auto& slot : m_FixedFiles ) {
+            if ( slot.second->FindGi(ret, gi) ) {
                 if ( GetDebugLevel() >= 2 ) {
-                    ERR_POST_X(3, "CWGSDataLoader: "
+                    LOG_POST_X(3, Info<<"CWGSDataLoader: "
                                "Resolved gi "<<gi<<
                                " -> "<<ret.file->GetWGSPrefix());
                 }
@@ -401,16 +404,17 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
         }
         return ret;
     }
-    {
+    if ( 0 ) {
         CMutexGuard guard(m_Mutex);
-        ITERATE ( TFoundFiles, it, m_FoundFiles ) {
-            if ( it->second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
+        for ( auto& slot : m_FoundFiles ) {
+            slot.second->Open(*this, slot.first);
+            if ( slot.second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
                 // replaced
                 continue;
             }
-            if ( it->second->FindGi(ret, gi) ) {
+            if ( slot.second->FindGi(ret, gi) ) {
                 if ( GetDebugLevel() >= 2 ) {
-                    ERR_POST_X(5, "CWGSDataLoader: "
+                    LOG_POST_X(5, Info<<"CWGSDataLoader: "
                                "Resolved gi "<<gi<<
                                " -> "<<ret.file->GetWGSPrefix());
                 }
@@ -421,9 +425,9 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
     CWGSResolver& resolver = GetResolver();
     CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
     ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
-        if ( CConstRef<CWGSFileInfo> file = GetWGSFile(*it) ) {
+        if ( CRef<CWGSFileInfo> file = GetWGSFile(*it) ) {
             if ( GetDebugLevel() >= 2 ) {
-                ERR_POST_X(6, "CWGSDataLoader: "
+                LOG_POST_X(6, Info<<"CWGSDataLoader: "
                            "Resolved gi "<<gi<<
                            " -> "<<file->GetWGSPrefix());
             }
@@ -446,10 +450,10 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const CTextseq_id& text_id)
     const string& acc = text_id.GetAccession();
     CWGSFileInfo::SAccFileInfo ret;
     if ( !m_FixedFiles.empty() ) {
-        ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-            if ( it->second->FindProtAcc(ret, text_id) ) {
+        for ( auto& slot : m_FixedFiles ) {
+            if ( slot.second->FindProtAcc(ret, text_id) ) {
                 if ( GetDebugLevel() >= 2 ) {
-                    ERR_POST_X(7, "CWGSDataLoader: "
+                    LOG_POST_X(7, Info<<"CWGSDataLoader: "
                                "Resolved prot acc "<<acc<<
                                " -> "<<ret.file->GetWGSPrefix());
                 }
@@ -462,16 +466,17 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const CTextseq_id& text_id)
         }
         return ret;
     }
-    {
+    if ( 0 ) {
         CMutexGuard guard(m_Mutex);
-        ITERATE ( TFoundFiles, it, m_FoundFiles ) {
-            if ( it->second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
+        for ( auto& slot : m_FoundFiles ) {
+            slot.second->Open(*this, slot.first);
+            if ( slot.second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
                 // replaced
                 continue;
             }
-            if ( it->second->FindProtAcc(ret, text_id) ) {
+            if ( slot.second->FindProtAcc(ret, text_id) ) {
                 if ( GetDebugLevel() >= 2 ) {
-                    ERR_POST_X(9, "CWGSDataLoader: "
+                    LOG_POST_X(9, Info<<"CWGSDataLoader: "
                                "Resolved prot acc "<<acc<<
                                " -> "<<ret.file->GetWGSPrefix());
                 }
@@ -482,9 +487,9 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const CTextseq_id& text_id)
     CWGSResolver& resolver = GetResolver();
     CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(acc);
     ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
-        if ( CConstRef<CWGSFileInfo> file = GetWGSFile(*it) ) {
+        if ( CRef<CWGSFileInfo> file = GetWGSFile(*it) ) {
             if ( GetDebugLevel() >= 2 ) {
-                ERR_POST_X(10, "CWGSDataLoader: "
+                LOG_POST_X(10, Info<<"CWGSDataLoader: "
                            "Resolved prot acc "<<acc<<
                            " -> "<<file->GetWGSPrefix());
             }
@@ -575,7 +580,7 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const CTextseq_id& text_id)
         return ret;
     }
     NStr::ToUpper(prefix);
-    if ( CConstRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
+    if ( CRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
         SIZE_TYPE row_digits = acc.size() - row_pos;
         if ( info->m_WGSDb->GetIdRowDigits() == row_digits ) {
             ret.file = info;
@@ -615,7 +620,7 @@ CWGSDataLoader_Impl::GetFileInfoByGeneral(const CDbtag& dbtag)
     if ( isalpha(wgs_acc.back()&0xff) ) {
         wgs_acc += "01"; // add default version digits
     }
-    CConstRef<CWGSFileInfo> info = GetWGSFile(wgs_acc);
+    CRef<CWGSFileInfo> info = GetWGSFile(wgs_acc);
     if ( !info ) {
         return ret;
     }
@@ -687,8 +692,7 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
 }
 
 
-CConstRef<CWGSFileInfo>
-CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
 {
     return GetWGSFile(blob_id.m_WGSPrefix);
 }
@@ -1048,9 +1052,28 @@ CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
+CWGSFileInfo::CWGSFileInfo()
+{
+}
+
+
+CWGSFileInfo::CWGSFileInfo(const CWGSDataLoader_Impl& impl,
                            CTempString prefix)
 {
+    Open(impl, prefix);
+}
+
+
+void CWGSFileInfo::Open(const CWGSDataLoader_Impl& impl,
+                        CTempString prefix)
+{
+    if ( m_WGSDb ) {
+        return;
+    }
+    CMutexGuard guard(m_Mutex);
+    if ( m_WGSDb ) {
+        return;
+    }
     try {
         x_Initialize(impl, prefix);
     }
@@ -1075,13 +1098,14 @@ CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
 }
 
 
-void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
+void CWGSFileInfo::x_Initialize(const CWGSDataLoader_Impl& impl,
                                 CTempString prefix)
 {
-    m_WGSDb = CWGSDb(impl.m_Mgr, prefix, impl.m_WGSVolPath);
+    auto mgr = impl.m_Mgr;
+    m_WGSDb = CWGSDb(mgr, prefix, impl.m_WGSVolPath);
     m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
     if ( GetDebugLevel() >= 1 ) {
-        ERR_POST_X(2, "CWGSDataLoader: "
+        LOG_POST_X(2, Info<<"CWGSDataLoader: "
                    "Opened WGS DB "<<prefix<<" -> "<<
                    GetWGSPrefix()<<" "<<m_WGSDb.GetWGSPath());
     }
@@ -1211,7 +1235,7 @@ bool CWGSFileInfo::SAccFileInfo::ValidateGi(TGi gi)
 }
 
 
-bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
+bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi)
 {
     CWGSGiIterator it(m_WGSDb, gi);
     if ( it ) {
@@ -1225,7 +1249,7 @@ bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
 }
 
 
-bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id) const
+bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id)
 {
     int ask_version = text_id.IsSetVersion()? text_id.GetVersion(): -1;
     if ( TVDBRowId row_id = m_WGSDb.GetProtAccRowId(text_id.GetAccession(), ask_version) ) {
@@ -1310,13 +1334,13 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         }
         if ( entry ) {
             if ( GetDebugLevel() >=8 ) {
-                ERR_POST_X(13, "CWGSDataLoader: blob "<<blob_id.ToString()<<
+                LOG_POST_X(13, Info<<"CWGSDataLoader: blob "<<blob_id.ToString()<<
                            " "<<MSerial_AsnText<<*entry);
             }
         }
         if ( split ) {
             if ( GetDebugLevel() >=8 ) {
-                ERR_POST_X(14, "CWGSDataLoader: blob "<<blob_id.ToString()<<
+                LOG_POST_X(14, Info<<"CWGSDataLoader: blob "<<blob_id.ToString()<<
                            " "<<MSerial_AsnText<<*split);
             }
         }
@@ -1341,7 +1365,7 @@ void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
         CWGSSeqIterator it = GetContigIterator(blob_id);
         CRef<CID2S_Chunk> chunk = it.GetChunk(chunk_info.GetChunkId());
         if ( GetDebugLevel() >=8 ) {
-            ERR_POST_X(15, "CWGSDataLoader: chunk "<<blob_id.ToString()<<
+            LOG_POST_X(15, Info<<"CWGSDataLoader: chunk "<<blob_id.ToString()<<
                        "."<<chunk_info.GetChunkId()<<
                        " "<<MSerial_AsnText<<*chunk);
         }

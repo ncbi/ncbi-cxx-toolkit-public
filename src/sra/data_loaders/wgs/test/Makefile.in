@@ -1,6 +1,6 @@
 # $Id$
 
-EXPENDABLE_APP_PROJ = test_wgs_loader
+EXPENDABLE_APP_PROJ = test_wgs_loader test_wgs_loader_mt
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
