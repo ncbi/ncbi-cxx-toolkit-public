@@ -697,6 +697,9 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
             break;
         case CSeq_feat::TData::eSubtype_cdregion:
             mrnaFeat = feature::GetBestMrnaForCds(mf, &fc.FeatTree());
+            if (!mrnaFeat) {
+                mrnaFeat = feature::GetParentFeature(mf);
+            }
             break;
         case CSeq_feat::TData::eSubtype_gene:
             return true;
@@ -727,18 +730,6 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     }
     if (rnaId.empty()) {
         rnaId = mf.GetNamedQual("orig_transcript_id");
-    }
-    if (rnaId.empty()) {
-        CMappedFeat geneFeat = feature::GetBestGeneForFeat(mf, &fc.FeatTree());
-        if (geneFeat) {
-            const CGene_ref& geneRef = geneFeat.GetData().GetGene();
-            if (geneRef.IsSetLocus_tag()) {
-                rnaId = geneRef.GetLocus_tag();
-            }
-            else if (geneRef.IsSetLocus()) {
-                rnaId = geneRef.GetLocus();
-            }
-        }
     }
 
     if (rnaId.empty()) {
