@@ -6160,8 +6160,8 @@ $as_echo "#define HAVE_PSG_LOADER 1" >>confdefs.h
             ;;
       esac
    done
-   if "$want_gi32:$want_gi64" = "yes:yes"; then
-      as_fn_error $? "Incompatible experiemental features Int8GI (and/or StrictGI) and Int4GI." "$LINENO" 5
+   if test "$want_gi32:$want_gi64" = "yes:yes"; then
+      as_fn_error $? "Incompatible experimental features Int8GI (and/or StrictGI) and Int4GI." "$LINENO" 5
    fi
 fi
 

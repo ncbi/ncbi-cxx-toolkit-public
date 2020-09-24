@@ -970,8 +970,8 @@ if test -n "$with_experimental"; then
             ;;
       esac
    done
-   if "$want_gi32:$want_gi64" = "yes:yes"; then
-      AC_MSG_ERROR([Incompatible experiemental features Int8GI (and/or StrictGI) and Int4GI.])
+   if test "$want_gi32:$want_gi64" = "yes:yes"; then
+      AC_MSG_ERROR([Incompatible experimental features Int8GI (and/or StrictGI) and Int4GI.])
    fi
 fi
 
