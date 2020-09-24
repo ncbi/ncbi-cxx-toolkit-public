@@ -690,7 +690,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
                     break;
                 case CPub::e_Muid:
                     {
-                        const TEntrezId muid = pub.GetMuid();
+                        pub.GetMuid();
                         // RW-1040: removed mlaClient.AskUidtopmid and AskGetpubpmid
                     }
                     break;
