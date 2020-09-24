@@ -241,8 +241,8 @@ private:
     static bool x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const string& value, const string& taxname);
 
     // validation data read from external files
-    static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
-    static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
+    static unique_ptr<CLatLonCountryMap> m_LatLonCountryMap;
+    static unique_ptr<CLatLonCountryMap> m_LatLonWaterMap;
 
 };
 

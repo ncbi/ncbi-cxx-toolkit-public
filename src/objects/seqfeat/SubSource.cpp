@@ -51,8 +51,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-auto_ptr<CLatLonCountryMap> CSubSource::m_LatLonCountryMap;
-auto_ptr<CLatLonCountryMap> CSubSource::m_LatLonWaterMap;
+unique_ptr<CLatLonCountryMap> CSubSource::m_LatLonCountryMap;
+unique_ptr<CLatLonCountryMap> CSubSource::m_LatLonWaterMap;
 
 
 // destructor
