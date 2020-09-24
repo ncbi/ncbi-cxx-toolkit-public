@@ -318,6 +318,7 @@ public:
     static Int8 UpdateUID(void) { return 0; }
     static string GetStringUID(Int8) { return string(); }
     static EDiagAppState GetGlobalAppState(void) { return eDiagAppState_AppRun; }
+    static EDiagAppState GetAppState(void) { return eDiagAppState_Request; }
 
     CDiagContext& Extra(void) {
         return *this;
