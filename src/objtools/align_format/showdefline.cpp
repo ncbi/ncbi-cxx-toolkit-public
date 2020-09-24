@@ -1776,6 +1776,24 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
     }
+    SSeqDBTaxInfo taxInfo;
+    string taxid;
+    if(sdl->taxid > 0) {        
+        taxid = NStr::IntToString(sdl->taxid);
+        try{
+            CSeqDB::GetTaxInfo(sdl->taxid, taxInfo);         
+        } catch (const CException&){
+            taxInfo.common_name = "Unknown";
+            taxInfo.scientific_name  = "Unknown";
+            taxInfo.blast_name  = "Unknown";
+        }        
+    }    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"blast_name",taxInfo.blast_name);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",taxid);            
+    int len = sequence::GetLength(*sdl->id, m_ScopeRef);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
     //Setup applog info structure
     if(m_AppLogInfo && (m_AppLogInfo->currInd < m_AppLogInfo->topMatchesNum)) {
         m_AppLogInfo->deflIdVec.push_back(deflId);
