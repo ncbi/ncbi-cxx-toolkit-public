@@ -11,7 +11,7 @@
 
 ##############################################################################
 # Testing
-set(NCBITEST_DRIVER "${NCBI_TREE_CMAKECFG}/TestDriver.cmake")
+set(NCBITEST_DRIVER "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake")
 NCBI_define_test_resource(ServiceMapper 8)
 enable_testing()
 
@@ -104,8 +104,13 @@ function(NCBI_internal_add_cmake_test _test)
         if(EXISTS ${NCBI_CURRENT_SOURCE_DIR}/${NCBITEST_${_test}_CMD})
             set(NCBITEST_${_test}_ASSETS   ${NCBITEST_${_test}_ASSETS}   ${NCBITEST_${_test}_CMD})
         endif()
+    elseif($ENV{NCBI_AUTOMATED_BUILD})
+        if(NCBI_REQUIRE_CygwinTest_FOUND AND WIN32)
+            set(_extra ${_extra} -DNCBITEST_CYGWIN=${NCBI_CygwinTest_PATH})
+        endif()
     endif()
-    set(_assets ${NCBITEST__ASSETS} ${NCBITEST_${_test}_ASSETS})
+    set(_assets  ${NCBITEST__ASSETS} ${NCBITEST_${_test}_ASSETS})
+    set(_watcher ${NCBI__WATCHER}    ${NCBI_${NCBI_PROJECT}_WATCHER})
     if (DEFINED NCBITEST_${_test}_TIMEOUT)
         set(_timeout ${NCBITEST_${_test}_TIMEOUT})
     elseif(DEFINED NCBITEST__TIMEOUT)
@@ -114,7 +119,8 @@ function(NCBI_internal_add_cmake_test _test)
         set(_timeout 1800)
     endif()
     string(REPLACE ";" " " _args    "${NCBITEST_${_test}_ARG}")
-    string(REPLACE ";" " " _assets   "${_assets}")
+    string(REPLACE ";" " " _assets  "${_assets}")
+    string(REPLACE ";" " " _watcher "${_watcher}")
 
     NCBI_internal_process_cmake_test_requires(${_test})
     if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
@@ -125,11 +131,6 @@ function(NCBI_internal_add_cmake_test _test)
     endif()
 
     file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    if (WIN32 OR XCODE)
-        set(_outdir ../${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_xoutdir})
-    else()
-        set(_outdir ../${NCBI_DIRNAME_TESTING}/${_xoutdir})
-    endif()
 
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
@@ -137,12 +138,17 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_COMMAND=${NCBITEST_${_test}_CMD}
         -DNCBITEST_ARGS=${_args}
         -DNCBITEST_TIMEOUT=${_timeout}
-        -DNCBITEST_BINDIR=../${NCBI_DIRNAME_RUNTIME}
-        -DNCBITEST_SOURCEDIR=../../${NCBI_DIRNAME_SRC}/${_xoutdir}
-        -DNCBITEST_OUTDIR=${_outdir}
         -DNCBITEST_ASSETS=${_assets}
+        -DNCBITEST_XOUTDIR=${_xoutdir}
+        -DNCBITEST_WATCHER=${_watcher}
+        -DNCBITEST_SIGNATURE=${NCBITEST_SIGNATURE}
+        -DNCBITEST_BINDIR=../${NCBI_DIRNAME_RUNTIME}
+        -DNCBITEST_LIBDIR=../${NCBI_DIRNAME_ARCHIVE}
+        -DNCBITEST_OUTDIR=../${NCBI_DIRNAME_TESTING}
+        -DNCBITEST_SOURCEDIR=../../${NCBI_DIRNAME_SRC}
+        -DNCBITEST_SCRIPTDIR=../../${NCBI_DIRNAME_COMMON_SCRIPTS}/check
         ${_extra}
-        -P "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake"
+        -P ${NCBITEST_DRIVER}
         WORKING_DIRECTORY .
     )
 
