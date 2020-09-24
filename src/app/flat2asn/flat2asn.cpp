@@ -344,7 +344,7 @@ int CFlat2AsnApp::Run()
         &args["l"].AsOutputFile() :
         &NcbiCerr;
 
-    CFlat2AsnListener messageListener(args["l"] ? "" : "[flat2asn]");
+    CFlat2AsnListener messageListener(args["l"] ? "" : "[" + CNcbiApplication::GetAppName() + "]");
 
     auto pConfig = ParseArgs(args, pgmname, messageListener);
     if (!pConfig)
