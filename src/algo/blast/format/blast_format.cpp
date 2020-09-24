@@ -2463,7 +2463,13 @@ void CBlastFormat::LogBlastSearchInfo(CBlastUsageReport & report)
 			}
 		}
 		else {
-			report.AddParam(CBlastUsageReport::eDBName, m_DbName);
+			string dir = kEmptyStr;
+			CFile::SplitPath(m_DbName, &dir);
+			string db_name = m_DbName;
+			if (dir != kEmptyStr) {
+				db_name = m_DbName.substr(dir.length());
+			}
+			report.AddParam(CBlastUsageReport::eDBName, db_name);
 			report.AddParam(CBlastUsageReport::eDBLength, GetDbTotalLength());
 			report.AddParam(CBlastUsageReport::eDBNumSeqs, num_seqs);
 			report.AddParam(CBlastUsageReport::eDBDate, m_DbInfo[0].date);
