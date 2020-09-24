@@ -96,19 +96,44 @@ void CSrcChkApp::Init()
         arg_desc->AddOptionalKey("i", "IDsFile", 
             "IDs file name. Defaults to stdin", 
             CArgDescriptions::eInputFile );
+
         arg_desc->AddOptionalKey("seq-entry", "SeqEntryFile", 
             "File containing Seq-entry in ASN.1 format", 
             CArgDescriptions::eInputFile );
+
+        arg_desc->SetDependency("seq-entry",
+                CArgDescriptions::eExcludes,
+                "i");
     }}
 
     // parameters
     {{
         arg_desc->AddOptionalKey("f", "FieldsList",
             "List of fields", CArgDescriptions::eString );
+
+        arg_desc->SetDependency("f",
+                CArgDescriptions::eExcludes,
+                "F");
+
+        arg_desc->SetDependency("f",
+                CArgDescriptions::eExcludes,
+                "all-fields");
+
         arg_desc->AddOptionalKey("F", "FieldsFile",
             "File of fields", CArgDescriptions::eInputFile );
+
+        arg_desc->SetDependency("F",
+                CArgDescriptions::eExcludes,
+                "all-fields");
+
         arg_desc->AddFlag("all-fields", "List all fields");
     }}
+
+    {{
+        arg_desc->AddFlag("list-supported-fields", 
+                "List in alphabetical order the fields that srcchk can display; ignore other arguments");
+    }}
+
     // output
     {{ 
         arg_desc->AddOptionalKey("o", "OutputFile", 
@@ -120,6 +145,8 @@ void CSrcChkApp::Init()
         arg_desc->AddDefaultKey("delim", "Delimiter",
             "Column value delimiter", CArgDescriptions::eString, "\t");
     }}
+
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -128,6 +155,15 @@ int CSrcChkApp::Run()
 //  ----------------------------------------------------------------------------
 {
     const CArgs& args = GetArgs();
+
+    if (args["list-supported-fields"]) {
+        vector<string> sortedFields = CSrcWriter::sAllSrcCheckFields;
+        sort(begin(sortedFields), end(sortedFields));
+        for (const auto& field : sortedFields) {
+            cout << field << "\n";
+        }        
+        return 0; 
+    }
 
 	CONNECT_Init(&GetConfig());
     m_pObjMngr = CObjectManager::GetInstance();
