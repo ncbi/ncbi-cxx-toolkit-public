@@ -69,7 +69,7 @@
  *       BUF_StripToPattern()
  *
  *     4.Perform URL encoding/decoding of data:
- *       URL_Encode()
+ *       URL_Encode[Ex]()
  *       URL_Decode[Ex]()
  *
  *     5.Compose or parse NCBI-specific Content-Type's:
@@ -817,12 +817,29 @@ extern NCBI_XCONNECT_EXPORT EIO_Status BUF_StripToPattern
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  */
 extern NCBI_XCONNECT_EXPORT void URL_Encode
-(const void* src_buf,    /* [in]     non-NULL */
- size_t      src_size,   /* [in]              */
- size_t*     src_read,   /* [out]    non-NULL */
- void*       dst_buf,    /* [in/out] non-NULL */
- size_t      dst_size,   /* [in]              */
- size_t*     dst_written /* [out]    non-NULL */
+(const void* src_buf,      /* [in]     non-NULL  */
+ size_t      src_size,     /* [in]               */
+ size_t*     src_read,     /* [out]    non-NULL  */
+ void*       dst_buf,      /* [in/out] non-NULL  */
+ size_t      dst_size,     /* [in]               */
+ size_t*     dst_written   /* [out]    non-NULL  */
+ );
+
+
+/* Act just like URL_Encode (see above) but caller can allow the specified
+ * non-standard URL symbols in the input buffer to be encoded "as is".
+ * The extra allowed symbols are passed in a '\0'-terminated string
+ * "allow_symbols" (it can be NULL or empty -- then this will be an exact
+ * equivalent of URL_Encode).
+ */
+extern NCBI_XCONNECT_EXPORT void URL_EncodeEx
+(const void* src_buf,      /* [in]     non-NULL  */
+ size_t      src_size,     /* [in]               */
+ size_t*     src_read,     /* [out]    non-NULL  */
+ void*       dst_buf,      /* [in/out] non-NULL  */
+ size_t      dst_size,     /* [in]               */
+ size_t*     dst_written,  /* [out]    non-NULL  */
+ const char* allow_symbols /* [in]     '\0'-term */
  );
 
 
@@ -838,12 +855,12 @@ extern NCBI_XCONNECT_EXPORT void URL_Encode
  *        "read" it.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_Decode
-(const void* src_buf,    /* [in]     non-NULL */
- size_t      src_size,   /* [in]              */
- size_t*     src_read,   /* [out]    non-NULL */
- void*       dst_buf,    /* [in/out] non-NULL */
- size_t      dst_size,   /* [in]              */
- size_t*     dst_written /* [out]    non-NULL */
+(const void* src_buf,      /* [in]     non-NULL  */
+ size_t      src_size,     /* [in]               */
+ size_t*     src_read,     /* [out]    non-NULL  */
+ void*       dst_buf,      /* [in/out] non-NULL  */
+ size_t      dst_size,     /* [in]               */
+ size_t*     dst_written   /* [out]    non-NULL  */
  );
 
 
