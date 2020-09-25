@@ -135,6 +135,8 @@ public:
     void ToJSON(CJsonNode& root) const;
     CJsonNode ToJSON() const;
 
+    static EFileTrackSite ParseFileTrackSite(const string& ft_site_name);
+
 private:
     enum ELocatorFlags {
         fLF_NetStorageService   = (1 << 0),

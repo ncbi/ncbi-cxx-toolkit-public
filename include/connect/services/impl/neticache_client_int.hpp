@@ -53,6 +53,15 @@ struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
         return *this;
     }
 
+    using CNetICacheClient::GetReadStream;
+
+    IReader* GetReadStream(
+        const string& key,
+        const string& subkey,
+        int* version,
+        size_t* blob_size_ptr,
+        const CNamedParameterList* optional = NULL);
+
     void ProlongBlobLifetime(const string&, const CTimeout&,
             const CNamedParameterList* optional = NULL);
 

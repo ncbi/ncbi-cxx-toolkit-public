@@ -546,28 +546,4 @@ SFileTrackConfig::SSite::operator TValue()
     return value;
 }
 
-void SFileTrackConfig::SSite::operator=(const string& ft_site_name)
-{
-    map<CTempString, TValue, PNocase> p =
-    {
-        { "production",  TValue::eFileTrack_ProdSite },
-        { "prod",        TValue::eFileTrack_ProdSite },
-        { "submit",      TValue::eFileTrack_ProdSite },
-        { "development", TValue::eFileTrack_DevSite  },
-        { "dev",         TValue::eFileTrack_DevSite  },
-        { "dsubmit",     TValue::eFileTrack_DevSite  },
-        { "qa",          TValue::eFileTrack_QASite   },
-        { "qsubmit",     TValue::eFileTrack_QASite   },
-    };
-
-    auto i = p.find(ft_site_name);
-
-    if (i != p.end()) {
-        value = i->second;
-    } else {
-        NCBI_THROW_FMT(CArgException, eInvalidArg,
-                "unrecognized FileTrack site '" << ft_site_name << '\'');
-    }
-}
-
 END_NCBI_SCOPE

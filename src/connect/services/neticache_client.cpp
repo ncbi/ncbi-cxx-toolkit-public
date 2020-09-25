@@ -687,7 +687,7 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
             nc_caching_mode = CNetCacheAPI::eCaching_AppDefault);
 }
 
-IReader* CNetICacheClient::GetReadStream(const string& key,
+IReader* CNetICacheClientExt::GetReadStream(const string& key,
         const string& subkey, int* version,
         size_t* blob_size_ptr, const CNamedParameterList* optional)
 {

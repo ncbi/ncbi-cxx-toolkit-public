@@ -446,4 +446,27 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     }
 }
 
+CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::ParseFileTrackSite(const string& ft_site_name)
+{
+    static map<CTempString, EFileTrackSite, PNocase> p =
+    {
+        { "production",  eFileTrack_ProdSite },
+        { "prod",        eFileTrack_ProdSite },
+        { "submit",      eFileTrack_ProdSite },
+        { "development", eFileTrack_DevSite  },
+        { "dev",         eFileTrack_DevSite  },
+        { "dsubmit",     eFileTrack_DevSite  },
+        { "qa",          eFileTrack_QASite   },
+        { "qsubmit",     eFileTrack_QASite   },
+    };
+
+    auto i = p.find(ft_site_name);
+
+    if (i == p.end()) {
+        NCBI_THROW_FMT(CArgException, eInvalidArg, "unrecognized FileTrack site '" << ft_site_name << '\'');
+    }
+
+    return i->second;
+}
+
 END_NCBI_SCOPE

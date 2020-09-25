@@ -66,7 +66,7 @@ struct SFileTrackConfig
         using TValue = CNetStorageObjectLoc::EFileTrackSite;
         SSite();
         operator TValue();
-        void operator=(const string&);
+        void operator=(const string& name) { value = CNetStorageObjectLoc::ParseFileTrackSite(name); }
 
     private:
         atomic<TValue> value;

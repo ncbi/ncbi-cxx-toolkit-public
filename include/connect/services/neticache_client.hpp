@@ -204,17 +204,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// of the returned implementation is not blocking. The caller
     /// must provide a reading completion loop for the Read() call.
     /// @see CNetCacheAPI::GetReader() for an example.
-    IReader* GetReadStream(
-        const string& key,
-        const string& subkey,
-        int* version,
-        size_t* blob_size_ptr,
-        const CNamedParameterList* optional = NULL);
-
-    /// Read a lengthy blob via the IReader interface. The Read() method
-    /// of the returned implementation is not blocking. The caller
-    /// must provide a reading completion loop for the Read() call.
-    /// @see CNetCacheAPI::GetReader() for an example.
     virtual IReader* GetReadStream(
         const string& key,
         const string& subkey,
