@@ -75,7 +75,7 @@ public:
         fOS         = 1 << 3,   ///< OS name ("os")
         fHost       = 1 << 4,   ///< Host name ("host")
         //
-        fDefault    = fAppName | fAppVersion | fOS | fHost
+        fDefault    = fAppName | fAppVersion | fOS
     };
     typedef int TWhat;  ///< Binary OR of "EWhat"
 };
