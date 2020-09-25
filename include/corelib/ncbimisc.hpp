@@ -954,24 +954,26 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 //#define NCBI_STRICT_ENTREZ_ID
 //#define NCBI_STRICT_TAX_ID
 
-#ifdef NCBI_INT4_GI
-#undef NCBI_INT8_GI
-#undef NCBI_STRICT_GI
-#else
-#define NCBI_INT8_GI
+
+#if defined(NCBI_INT4_GI)
+#  ifdef NCBI_INT8_GI
+#    error "Both NCBI_INT4_GI and NCBI_INT8_GI must not be defined!"
+#  endif 
+#  ifdef NCBI_STRICT_GI
+#    error "Both NCBI_INT4_GI and NCBI_STRICT_GI must not be defined!"
+#  endif
+#elif !defined(NCBI_INT8_GI)
+#  define NCBI_INT8_GI
 #endif
 
 // Temporary fix: disable strict TEntrezId
 #ifdef NCBI_STRICT_ENTREZ_ID
-#undef NCBI_STRICT_ENTREZ_ID
+#  undef NCBI_STRICT_ENTREZ_ID
 #endif
 
-#ifdef NCBI_STRICT_GI
-// Strict mode can be enabled only for Int8 GIs.
-# define NCBI_INT8_GI
-#else
-# undef NCBI_STRICT_ENTREZ_ID
-# undef NCBI_STRICT_TAX_ID
+#ifndef NCBI_STRICT_GI
+#  undef NCBI_STRICT_ENTREZ_ID
+#  undef NCBI_STRICT_TAX_ID
 #endif
 
 #ifdef NCBI_INT8_GI
