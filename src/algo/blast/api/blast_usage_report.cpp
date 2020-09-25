@@ -63,6 +63,17 @@ void CBlastUsageReport::x_CheckRunEnv()
 			AddParam(eAWS, true);
 		}
 	}
+
+	char* elb_job_id = getenv("BLAST_ELB_JOB_ID");
+	if(elb_job_id != NULL){
+		string j_id(elb_job_id);
+		AddParam(eELBJobId, j_id);
+	}
+	char* elb_batch_num = getenv("BLAST_ELB_BATCH_NUM");
+	if(elb_batch_num != NULL){
+		int bn = NStr::StringToInt(CTempString(elb_batch_num), NStr::fConvErr_NoThrow);
+		AddParam(eELBBatchNum, bn);
+	}
 }
 
 CBlastUsageReport::CBlastUsageReport()
@@ -135,6 +146,8 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
 		case eDocker:			retval.assign("docker"); break;
 		case eGCP:				retval.assign("gcp"); break;
 		case eAWS:				retval.assign("aws"); break;
+		case eELBJobId:			retval.assign("elb_job_id"); break;
+		case eELBBatchNum:		retval.assign("elb_batch_num"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();

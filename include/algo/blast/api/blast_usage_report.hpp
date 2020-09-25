@@ -94,7 +94,9 @@ public:
 		eDBAliasMode,
 		eDocker,
 		eGCP,
-		eAWS
+		eAWS,
+		eELBJobId,
+		eELBBatchNum
 	};
 
 	CBlastUsageReport();
