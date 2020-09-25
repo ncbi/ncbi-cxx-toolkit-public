@@ -130,6 +130,10 @@ class CBlobStatusHistoryRecord {
         return m_Flags & static_cast<TBlobStatusFlagsBase>(flag);
     }
 
+    TBlobStatusFlagsBase GetFlags() const {
+        return m_Flags;
+    }
+
     string ToString() const {
         stringstream ss;
         ss << "SatKey: " << m_SatKey << endl
