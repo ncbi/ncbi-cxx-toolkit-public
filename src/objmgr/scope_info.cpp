@@ -633,6 +633,7 @@ void CDataSource_ScopeInfo::ResetDS(void)
     }
     m_TSE_InfoMap.clear();
     m_TSE_BySeqId.clear();
+    m_ReplacedTSEs.clear();
     {{
         TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_LockSetMutex);
         m_TSE_LockSet.clear();
