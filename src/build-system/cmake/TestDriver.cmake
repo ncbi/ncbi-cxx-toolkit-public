@@ -208,7 +208,7 @@ else()
     else()
         set(_name "Unknown")
     endif()
-endif
+endif()
     string(APPEND _info "${NCBITEST_SIGNATURE} ${_name}\n")
     string(APPEND _info "${NCBITEST_XOUTDIR}\n")
     string(APPEND _info "${_test_cmd} ${_test_args}\n")
