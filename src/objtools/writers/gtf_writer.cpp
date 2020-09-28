@@ -228,10 +228,12 @@ bool CGtfWriter::xWriteFeature(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    switch(mf.GetFeatSubtype()) {
+    auto subtype = mf.GetFeatSubtype();
+    const auto& feat = mf.GetMappedFeature();
+    switch(subtype) {
         default:
             if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                return xWriteFeatureMrna(context, mf);
+                return xWriteFeatureTranscript(context, mf);
             }
             // GTF is not interested --- ignore
             return true;
@@ -239,7 +241,7 @@ bool CGtfWriter::xWriteFeature(
         case CSeqFeatData::eSubtype_D_segment:
         case CSeqFeatData::eSubtype_J_segment:
         case CSeqFeatData::eSubtype_V_segment:
-            return xWriteFeatureMrna(context, mf);
+            return xWriteFeatureTranscript(context, mf);
         case CSeqFeatData::eSubtype_gene: 
             return xWriteFeatureGene(context, mf);
         case CSeqFeatData::eSubtype_cdregion:
@@ -268,7 +270,25 @@ bool CGtfWriter::xWriteFeatureGene(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteFeatureMrna(
+bool CGtfWriter::xWriteFeatureTranscript(
+    CGffFeatureContext& context,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CGtfRecord> pTranscript( new CGtfRecord( context ) );
+    if (!xAssignFeature(*pTranscript, context, mf)) {
+        return false;
+    }
+    pTranscript->SetType("transcript");
+    pTranscript->AddAttribute(
+        "transcript_biotype", CSeqFeatData::SubtypeValueToName(
+            mf.GetFeatSubtype()));
+    xWriteRecord(pTranscript);
+    return xWriteFeatureExons(context, mf);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xWriteFeatureExons(
     CGffFeatureContext& context,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------

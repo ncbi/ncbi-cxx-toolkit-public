@@ -125,7 +125,10 @@ protected:
     virtual bool xWriteFeatureGene(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool xWriteFeatureMrna(
+    virtual bool xWriteFeatureTranscript(
+        CGffFeatureContext&,
+        const CMappedFeat& );
+    virtual bool xWriteFeatureExons(
         CGffFeatureContext&,
         const CMappedFeat& );
     virtual bool xWriteFeatureCds(

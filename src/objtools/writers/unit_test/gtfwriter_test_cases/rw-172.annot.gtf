@@ -1,5 +1,6 @@
 #gtf-version 2.2
 HSSS1	.	gene	14068	28534	.	-	.	gene_id "Tmx1"; transcript_id ""; Name "Tmx1"; db_xref "GeneID:72736"; db_xref "MGI:MGI:1919986"; description "trtp1"; gbkey "Gene"; gene "Tmx1"; gene_biotype "protein_coding"; gene_synonym "2810425A04Rik"; gene_synonym "AI465319"; gene_synonym "Txndc1"; 
+HSSS1	.	transcript	14068	28534	.	-	.	gene_id "Tmx1"; transcript_id "gi|33859721"; db_xref "GeneID:72736"; db_xref "Genbank:NM_028339.1"; db_xref "MGI:MGI:1919986"; gbkey "mRNA"; gene "Tmx1"; product "trtp1"; transcript_biotype "mRNA"; 
 HSSS1	.	exon	28368	28534	.	-	.	gene_id "Tmx1"; transcript_id "gi|33859721"; db_xref "GeneID:72736"; db_xref "Genbank:NM_028339.1"; db_xref "MGI:MGI:1919986"; gbkey "mRNA"; gene "Tmx1"; product "trtp1"; exon_number "1"; 
 HSSS1	.	exon	25562	25677	.	-	.	gene_id "Tmx1"; transcript_id "gi|33859721"; db_xref "GeneID:72736"; db_xref "Genbank:NM_028339.1"; db_xref "MGI:MGI:1919986"; gbkey "mRNA"; gene "Tmx1"; product "trtp1"; exon_number "2"; 
 HSSS1	.	exon	25063	25108	.	-	.	gene_id "Tmx1"; transcript_id "gi|33859721"; db_xref "GeneID:72736"; db_xref "Genbank:NM_028339.1"; db_xref "MGI:MGI:1919986"; gbkey "mRNA"; gene "Tmx1"; product "trtp1"; exon_number "3"; 
