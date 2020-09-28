@@ -885,7 +885,7 @@ CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
 CBPF	s	Conservatoire Botanique Pierre Fabre			
-CBS	sc	Westerdijk Fungal Biodiversity Institute		http://www.wi.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+	
+CBS	sc	Westerdijk Fungal Biodiversity Institute		https://wi.knaw.nl/page/fungal_display/name/CBS	
 CBSIZA	s	Caspian Biological Station Institute of Zoology			
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences			
 CBU<CAN>	s	Cape Breton University			
@@ -1972,7 +1972,7 @@ FCDA	s	Fresno County Department of Agriculture
 FCL<POL>	c	Fungal Culture Collection of Lublin (at Biochemistry Dept., UMCS)			
 FCLR	s	Fundacion Cientifica Los Roques			
 FCM	s	Facultad de Ciencias Marinas			
-FCME	s	Universidad Nacional Autonoma de Mexico, Ciudad Universitaria, Departamento de Biologia			
+FCME	scb	Universidad Nacional Autonoma de Mexico, Ciudad Universitaria, Departamento de Biologia			
 FCMM	s	Universidad Nacional Autonoma de Mexico, Facultad de Ciencias			
 FCNI	s	Forest Commission of N.S.W.			
 FCO	s	Universidad de Oviedo, Departamento de Biologia de Organismos y Sistemas			
@@ -3676,6 +3676,7 @@ LDSN	s	Leeds Naturalists' Club
 LDSP	s	Leeds Philosophical and Literary Society Museum			
 LE<BRA>	c	Servico de Microbiologia e Imunologia			
 LE<RUS>	s	V. L. Komarov Botanical Institute			
+LE<RUS>:BIN	c	V. L. Komarov Botanical Institute, Komarov Botanical Institute Basidiomycetes	
 LEA	s	University of Lethbridge, Biological Sciences Department			
 LEB<ESP>	s	Universidad de Leon, Departamento de Biologia, Botanica			
 LEB<LVA>	s	Entomological Society of Latvia			
