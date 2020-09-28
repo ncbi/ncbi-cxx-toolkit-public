@@ -2317,6 +2317,9 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
                 ids.push_back(id);
                 ++count;
             } catch (std::exception& e) {
+                if (fasta_pieces.empty()) {
+                    throw;
+                }
                 if ((flags & fParse_PartialOK) != 0) {
                     ERR_POST_X(7, Warning << e.what());
                     do {
