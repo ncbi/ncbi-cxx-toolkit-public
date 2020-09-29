@@ -1029,65 +1029,64 @@ MailToAuthors()
 
 ProcessDone()
 {
-    p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
-    p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
-    if test "\${p_count}" -ne "\${p_count}"; then
-      echo "error:  p_done = \$p_done, p_count = \$p_count"
-      p_count=0
-    fi
-    while test "\${p_count}" -gt 0; do
-        for p_file in \$p_done; do
-            source \$p_file
-            if test ! -e "\$t_test_out"; then
-                echo "ABS --  \$t_cmd"
-                echo "ABS --  \$t_cmd" >> \$res_log
-                count_absent=\`expr \$count_absent + 1\`
-                rm -f \$p_file
-                continue
-            fi
-            echo "\$t_test_out" >> \$res_journal
-            count_total=\`expr \$count_total + 1\`
-            # Write result on the screen
-            if grep NCBI_UNITTEST_DISABLED \$t_test_out >/dev/null; then
-                echo "DIS --  \$t_cmd"
-                echo "DIS --  \$t_cmd" >> \$res_log
-                count_absent=\`expr \$count_absent + 1\`
-
-            elif grep NCBI_UNITTEST_SKIPPED \$t_test_out >/dev/null; then
-                echo "SKP --  \$t_cmd"
-                echo "SKP --  \$t_cmd" >> \$res_log
-                count_absent=\`expr \$count_absent + 1\`
-
-            elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$t_test_out >/dev/null; then
-                echo "TO  --  \$t_cmd"
-                echo "TO  --  \$t_cmd" >> \$res_log
-                count_timeout=\`expr \$count_timeout + 1\`
-
-            elif echo "\$t_exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$t_test_out >/dev/null; then
-                echo "TO  --  \$t_cmd     (\$t_exec_time)"
-                echo "TO  --  \$t_cmd     (\$t_exec_time)" >> \$res_log
-                count_timeout=\`expr \$count_timeout + 1\`
-
-            elif test \$t_result -eq 0; then
-                echo "OK  --  \$t_cmd     (\$t_exec_time)"
-                echo "OK  --  \$t_cmd     (\$t_exec_time)" >> \$res_log
-                count_ok=\`expr \$count_ok + 1\`
-
-            else
-                echo "ERR [\$t_result] --  \$t_cmd     (\$t_exec_time)"
-                echo "ERR [\$t_result] --  \$t_cmd     (\$t_exec_time)" >> \$res_log
-                count_err=\`expr \$count_err + 1\`
-            fi
-            rm -f \$p_file
-        done
+    while test ! -e "\$checkdir/~DONE"; do
+        sleep 2
+        p_done=\`ls \${checkdir}/*.started 2>/dev/null\`
+        if test -n "\$p_done"; then
+            for p_file in \$p_done; do
+                cat \$p_file
+                rm \$p_file
+            done
+        fi
         p_done=\`ls \${checkdir}/*.done 2>/dev/null\`
-        p_count=\`echo \$p_done | wc -w | sed -e 's/ //g'\`
-        if test "\${p_count}" -ne "\${p_count}"; then
-          echo "error:  p_done = \$p_done, p_count = \$p_count"
-          p_count=0
+        if test -n "\$p_done"; then
+            for p_file in \$p_done; do
+                source \$p_file
+                if test ! -e "\$t_test_out"; then
+                    echo "ABS --  \$t_cmd"
+                    echo "ABS --  \$t_cmd" >> \$res_log
+                    count_absent=\`expr \$count_absent + 1\`
+                    rm -f \$p_file
+                    continue
+                fi
+                echo "\$t_test_out" >> \$res_journal
+                count_total=\`expr \$count_total + 1\`
+                # Write result on the screen
+                if grep NCBI_UNITTEST_DISABLED \$t_test_out >/dev/null; then
+                    echo "DIS --  \$t_cmd"
+                    echo "DIS --  \$t_cmd" >> \$res_log
+                    count_absent=\`expr \$count_absent + 1\`
+
+                elif grep NCBI_UNITTEST_SKIPPED \$t_test_out >/dev/null; then
+                    echo "SKP --  \$t_cmd"
+                    echo "SKP --  \$t_cmd" >> \$res_log
+                    count_absent=\`expr \$count_absent + 1\`
+
+                elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$t_test_out >/dev/null; then
+                    echo "TO  --  \$t_cmd"
+                    echo "TO  --  \$t_cmd" >> \$res_log
+                    count_timeout=\`expr \$count_timeout + 1\`
+
+                elif echo "\$t_exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$t_test_out >/dev/null; then
+                    echo "TO  --  \$t_cmd     (\$t_exec_time)"
+                    echo "TO  --  \$t_cmd     (\$t_exec_time)" >> \$res_log
+                    count_timeout=\`expr \$count_timeout + 1\`
+
+                elif test \$t_result -eq 0; then
+                    echo "OK  --  \$t_cmd     (\$t_exec_time)"
+                    echo "OK  --  \$t_cmd     (\$t_exec_time)" >> \$res_log
+                    count_ok=\`expr \$count_ok + 1\`
+
+                else
+                    echo "ERR [\$t_result] --  \$t_cmd     (\$t_exec_time)"
+                    echo "ERR [\$t_result] --  \$t_cmd     (\$t_exec_time)" >> \$res_log
+                    count_err=\`expr \$count_err + 1\`
+                fi
+                rm -f \$p_file
+            done
         fi
     done
-    return 0
+    rm "\$checkdir/~DONE"
 }
 
 AddJob()
@@ -1095,13 +1094,11 @@ AddJob()
     a_pid="\$1"
     a_name="\$2"
     a_id="\$3"
-    ProcessDone
 
     if test "\${a_pid}" -gt 0; then
-        echo "        Start \$a_id: \${a_name} (\$a_pid)"
+        echo "        Start \$a_id: \${a_name} (\$a_pid)" > "\$checkdir/~\$a_name.started"
         while test ! -e "\$checkdir/~RUN_CHECKS.next"; do
             if test -e "\$checkdir/~SERIAL.lock"; then
-                ProcessDone
                 sleep 2
             else
                 sleep .1
@@ -1110,7 +1107,6 @@ AddJob()
         rm "\$checkdir/~RUN_CHECKS.next"
     fi
     while test -e "\$checkdir/~SERIAL.lock"; do
-        ProcessDone
         sleep 2
     done
 
@@ -1132,14 +1128,11 @@ AddJob()
     a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
     if test "\${a_run}" -ne "\${a_run}"; then
 echo "error:  1 a_run = \$a_run"
-        ProcessDone
         a_run=0
     fi
 
     while test "\$a_run" -ge "\$a_maxjob"; do
-        if ProcessDone; then
-            sleep 1
-        fi
+        sleep 1
         a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
         a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
         if test "\${a_run}" -ne "\${a_run}"; then
@@ -1151,13 +1144,29 @@ echo "error:  2 a_run = \$a_run"
         fi
     done
     if test "\${a_maxjob}" -le 0; then
-        ProcessDone
+        touch "\$checkdir/~DONE"
     fi
 }
 
 #//////////////////////////////////////////////////////////////////////////
-
 # Run tests
+
+RunJobs()
+{
+    res_list=$1
+    x_i=0
+    while read x_row; do
+        x_row=\`echo "\$x_row" | sed -e 's/ ____ /;/g' | sed -e 's/ ____/;/g' | sed -e 's/ ;/;/g'\`
+        IFS=';'; arrIN=(\$x_row); unset IFS;
+        x_name=\${arrIN[4]};
+        x_i=\`expr \$x_i + 1\`
+
+        RunTest "\$x_row" "\$x_i" &
+        AddJob "\$!" "\$x_name" "\$x_i"
+    done < "\$res_list"
+    AddJob "0" "" "" ""
+}
+
 rm -rf "\$checkdir/~*" 2>/dev/null
 locks=\`ls -d \${checkdir}/~*.lock 2>/dev/null | wc -w | sed -e 's/ //g'\`
 if test \$locks -ne 0; then
@@ -1166,19 +1175,12 @@ if test \$locks -ne 0; then
 fi
 x_test=""
 x_TestsTotal=\`cat "\$res_list" | wc -l | sed -e 's/ //g'\`
-x_i=0
-while read x_row; do
-    x_row=\`echo "\$x_row" | sed -e 's/ ____ /;/g' | sed -e 's/ ____/;/g' | sed -e 's/ ;/;/g'\`
-    IFS=';'; arrIN=(\$x_row); unset IFS;
-    x_name=\${arrIN[4]};
-    x_i=\`expr \$x_i + 1\`
-
-    RunTest "\$x_row" "\$x_i" &
-    AddJob "\$!" "\$x_name" "\$x_i"
-done < "\$res_list"
-
-# Wait for all them to finish
-AddJob "0" "" "" ""
+x_START=\$SECONDS
+RunJobs "\$res_list" &
+ProcessDone
+x_DURATION=\`expr \$SECONDS - \$x_START\`
+echo
+echo "Total Test time (real) = \${x_DURATION} sec"
 
 if \$is_run; then
    # Write result of the tests execution
