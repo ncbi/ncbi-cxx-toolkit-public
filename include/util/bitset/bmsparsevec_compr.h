@@ -765,6 +765,14 @@ protected:
     const unsigned char* get_remap_buffer() const BMNOEXCEPT { return 0; }
     unsigned char* init_remap_buffer() BMNOEXCEPT { return 0; }
     void set_remap() BMNOEXCEPT { }
+
+    /// unused remap matrix type for compatibility with the sparse serializer
+    typedef
+    bm::heap_matrix<unsigned char, 1, 1,
+                    typename bvector_type::allocator_type> remap_matrix_type;
+
+    const remap_matrix_type* get_remap_matrix() const { return 0; }
+    remap_matrix_type* get_remap_matrix() { return 0; }
     
     void push_back_no_check(size_type idx, value_type v);
 
@@ -780,6 +788,7 @@ protected:
     template<class SVect> friend class sparse_vector_scanner;
     template<class SVect> friend class sparse_vector_serializer;
     template<class SVect> friend class sparse_vector_deserializer;
+
 
 private:
     sparse_vector_type            sv_;       ///< transpose-sparse vector for "dense" packing
@@ -1145,16 +1154,6 @@ void rsc_sparse_vector<Val, SV>::sync(bool force)
     if (force)
     {
         sync_size();
-        /*
-        size_type sz = sv_.size();
-        if (sz)
-        {
-            size_ = sz;
-            max_id_ = (sz - 1);
-        }
-        else
-            max_id_ = size_ = 0;
-        */
     }
     in_sync_ = true;
 }

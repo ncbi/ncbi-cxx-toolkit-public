@@ -60,6 +60,7 @@ public:
     typedef bvector_type*                            bvector_type_ptr;
     typedef const bvector_type*                      bvector_type_const_ptr;
     typedef CharType                                 value_type;
+    typedef CharType*                                value_type_prt;
     typedef typename bvector_type::size_type         size_type;
     typedef typename BV::allocator_type              allocator_type;
     typedef typename bvector_type::allocation_policy allocation_policy_type;
@@ -76,13 +77,28 @@ public:
     {
         sv_octet_plains = MAX_STR_SIZE
     };
-    
+
+    /**
+        Matrix of character remappings
+        @internal
+     */
     typedef
     bm::heap_matrix<unsigned char,
-                    MAX_STR_SIZE, // ROWS
-                    256,          // COLS
+                    MAX_STR_SIZE, /* ROWS */
+                    256,          /* COLS = number of chars in the ASCII set */
                     typename bvector_type::allocator_type>
-                                    plain_octet_matrix_type;
+                                                    plane_octet_matrix_type;
+    typedef plane_octet_matrix_type remap_matrix_type;
+    /**
+        Matrix of character frequencies (for optimal code remap)
+        @internal
+     */
+    typedef
+    bm::heap_matrix<size_t,
+                    MAX_STR_SIZE, /* ROWS */
+                    256,          /* COLS = number of chars in the ASCII set */
+                    typename bvector_type::allocator_type>
+                                                    octet_freq_matrix_type;
 
     struct is_remap_support { enum trait { value = true }; };
     struct is_rsc_support { enum trait { value = false }; };
@@ -94,8 +110,9 @@ public:
     class const_reference
     {
     public:
-        const_reference(const str_sparse_vector<CharType, BV, MAX_STR_SIZE>& str_sv,
-                  size_type idx) BMNOEXCEPT
+        const_reference(
+                const str_sparse_vector<CharType, BV, MAX_STR_SIZE>& str_sv,
+                size_type idx) BMNOEXCEPT
         : str_sv_(str_sv), idx_(idx)
         {}
         
@@ -123,7 +140,6 @@ public:
          Reference class to access elements via common [] operator
          @ingroup sv
     */
-
     class reference
     {
     public:
@@ -194,10 +210,31 @@ public:
         typedef CharType*                   pointer;
         typedef CharType*&                  reference;
     public:
+        /**
+            Construct iterator (not attached to any particular vector)
+         */
         const_iterator() BMNOEXCEPT;
+        /**
+            Construct iterator (attached to sparse vector)
+            @param sv - pointer to sparse vector
+         */
         const_iterator(const str_sparse_vector_type* sv) BMNOEXCEPT;
+        /**
+            Construct iterator (attached to sparse vector) and positioned
+            @param sv - reference to sparse vector
+            @param pos - position in the vector to start
+         */
         const_iterator(const str_sparse_vector_type* sv, size_type pos) BMNOEXCEPT;
+
         const_iterator(const const_iterator& it) BMNOEXCEPT;
+
+        /**
+            setup iterator to retrieve a sub-string of a string
+            @param from - Position of the first character to be copied
+            @param len - length of a substring
+         */
+        void set_substr(unsigned from, unsigned len = MAX_STR_SIZE) BMNOEXCEPT;
+
         
         bool operator==(const const_iterator& it) const BMNOEXCEPT
                                 { return (pos_ == it.pos_) && (sv_ == it.sv_); }
@@ -246,16 +283,19 @@ public:
         void advance() BMNOEXCEPT;
 
     protected:
-        typedef bm::heap_matrix<CharType,
-                        1024,         // ROWS: number of strings in one batch
-                        MAX_STR_SIZE, // COLS
-                        allocator_type> buffer_matrix_type;
+        enum buf_size_e
+        {
+            n_rows = 1024
+        };
+        typedef dynamic_heap_matrix<CharType, allocator_type> buffer_matrix_type;
 
     private:
         const str_sparse_vector_type*     sv_;      ///!< ptr to parent
-        mutable size_type                 pos_;     ///!< Position
-        mutable buffer_matrix_type        buf_matrix_; ///!< decode value buffer
-        mutable size_type                 pos_in_buf_; ///!< buffer position
+        unsigned                          substr_from_; ///!< substring from
+        unsigned                          substr_to_;   ///!< substring to
+        mutable size_type                 pos_;         ///!< Position
+        mutable buffer_matrix_type        buf_matrix_;  ///!< decode value buffer
+        mutable size_type                 pos_in_buf_;  ///!< buffer position
     };
 
 
@@ -332,37 +372,37 @@ public:
         /** add a series of consequitve NULLs (no-value) to the container */
         void add_null(size_type count);
 
-        /** return true if insertion buffer is empty */
-        bool empty() const BMNOEXCEPT;
-        
         /** flush the accumulated buffer */
         void flush();
     protected:
+        /** return true if insertion buffer is empty */
+        bool empty() const BMNOEXCEPT;
+
         typedef typename bvector_type::block_idx_type     block_idx_type;
 
         /** add value to the buffer without changing the NULL vector
             @param v - value to push back
-            @return index of added value in the internal buffer
             @internal
         */
-        size_type add_value(const value_type* v);
+        void add_value(const value_type* v);
 
     private:
         enum buf_size_e
         {
             n_buf_size = 1024 * 8
         };
+
         typedef bm::heap_matrix<CharType,
                         n_buf_size,   // ROWS: number of strings in one batch
                         MAX_STR_SIZE, // COLS
                         allocator_type> buffer_matrix_type;
 
     private:
-        str_sparse_vector_type*  sv_;          ///!< pointer on the parent vector
-        bvector_type*            bv_null_;     ///!< not NULL vector pointer
-        buffer_matrix_type       buf_matrix_;  ///!< value buffer
-        size_type                pos_in_buf_;  ///!< buffer position
-        block_idx_type           prev_nb_;     ///!< previous block added
+        str_sparse_vector_type*  sv_;         ///!< pointer on the parent vector
+        bvector_type*            bv_null_;    ///!< not NULL vector pointer
+        buffer_matrix_type       buf_matrix_; ///!< value buffer
+        size_type                pos_in_buf_; ///!< buffer position
+        block_idx_type           prev_nb_;    ///!< previous block added
     };
 
 
@@ -784,17 +824,26 @@ public:
     */
     void remap_from(const str_sparse_vector& str_sv);
 
+    /**
+        Build remapping profile and re-load content to save memory
+    */
+    void remap();
+
     /*!
         Calculate flags which octets are present on each byte-plain.
         @internal
     */
-    void calc_octet_stat(plain_octet_matrix_type& octet_matrix) const BMNOEXCEPT;
+    void calc_octet_stat(octet_freq_matrix_type& octet_matrix) const BMNOEXCEPT;
 
+    /*!
+        Compute optimal remap codes
+        @internal
+    */
     static
     void build_octet_remap(
-                plain_octet_matrix_type& octet_remap_matrix1,
-                plain_octet_matrix_type& octet_remap_matrix2,
-                const plain_octet_matrix_type& octet_occupancy_matrix);
+                plane_octet_matrix_type& octet_remap_matrix1,
+                plane_octet_matrix_type& octet_remap_matrix2,
+                octet_freq_matrix_type& octet_occupancy_matrix);
     /*!
         remap string from external (ASCII) system to matrix internal code
         @return true if remapping was ok, false if found incorrect value
@@ -805,7 +854,7 @@ public:
     bool remap_tosv(value_type*  BMRESTRICT      sv_str,
                     size_type                    buf_size,
                     const value_type* BMRESTRICT str,
-                    const plain_octet_matrix_type& BMRESTRICT octet_remap_matrix2
+                    const plane_octet_matrix_type& BMRESTRICT octet_remap_matrix2
                     ) BMNOEXCEPT;
     
     /*!
@@ -829,7 +878,7 @@ public:
             value_type*   BMRESTRICT     str,
             size_type                    buf_size,
             const value_type* BMRESTRICT sv_str,
-            const plain_octet_matrix_type& BMRESTRICT octet_remap_matrix1
+            const plane_octet_matrix_type& BMRESTRICT octet_remap_matrix1
             ) BMNOEXCEPT;
     /*!
         re-calculate remap matrix2 based on matrix1
@@ -842,29 +891,105 @@ public:
     // ------------------------------------------------------------
     /*! @name Export content to C-style                          */
     ///@{
-    
+
+    /**
+        \brief Bulk export strings to a C-style matrix of chars
+
+        \param cmatr  - dest matrix (bm::heap_matrix)
+        \param idx_from - index in the sparse vector to export from
+        \param dec_size - decoding size (matrix column allocation should match)
+        \param zero_mem - set to false if target array is pre-initialized
+                          with 0s to avoid performance penalty
+
+        \return number of actually exported elements (can be less than requested)
+    */
+    template<typename CharMatrix>
+    size_type decode(CharMatrix& cmatr,
+                     size_type   idx_from,
+                     size_type   dec_size,
+                     bool        zero_mem = true) const
+    {
+        return decode_substr(cmatr, idx_from, dec_size,
+                             0, MAX_STR_SIZE-1, zero_mem);
+
+    }
+
     /**
         \brief Bulk export strings to a C-style matrix of chars
      
         \param cmatr  - dest matrix (bm::heap_matrix)
         \param idx_from - index in the sparse vector to export from
         \param dec_size - decoding size (matrix column allocation should match)
+        \param substr_from - sub-string position from
+        \param substr_to - sub-string position to
         \param zero_mem - set to false if target array is pre-initialized
                           with 0s to avoid performance penalty
      
         \return number of actually exported elements (can be less than requested)
     */
     template<typename CharMatrix>
-    size_type decode(CharMatrix& cmatr,
-                     size_type   idx_from, size_type  dec_size,
+    size_type decode_substr(CharMatrix& cmatr,
+                     size_type   idx_from,
+                     size_type   dec_size,
+                     unsigned    substr_from,
+                     unsigned    substr_to,
                      bool        zero_mem = true) const
     {
+
+    /// Decoder functor
+    /// @internal
+    ///
+    struct sv_decode_visitor_func
+    {
+        sv_decode_visitor_func(CharMatrix& cmatr) BMNOEXCEPT2
+            : cmatr_(cmatr), mask_(0), sv_off_(0)
+        {}
+
+        void add_bits(size_type bv_offset,
+                      const unsigned char* BMRESTRICT bits, unsigned bits_size) BMNOEXCEPT
+        {
+            // can be negative (-1) when bv base offset = 0 and sv = 1,2..
+            size_type base = bv_offset - sv_off_;
+            value_type m = mask_;
+            const unsigned i = substr_i_;
+            for (unsigned j = 0; j < bits_size; ++j)
+            {
+                size_type idx = bits[j] + base;
+                value_type* BMRESTRICT str = cmatr_.row(idx);
+                str[i] |= m;
+            } // for i
+        }
+        void add_range(size_type bv_offset, size_type sz) BMNOEXCEPT
+        {
+            auto base = bv_offset - sv_off_;
+            value_type m = mask_;
+            const unsigned i = substr_i_;
+            for (size_type j = 0; j < sz; ++j)
+            {
+                size_type idx = j + base;
+                value_type* BMRESTRICT str = cmatr_.row(idx);
+                str[i] |= m;
+            } // for i
+        }
+
+        CharMatrix&            cmatr_;     ///< target array for reverse transpose
+        value_type             mask_;      ///< bit-plane mask
+        unsigned               substr_i_;  ///< i
+        size_type              sv_off_;    ///< SV read offset
+    };
+
+
+        BM_ASSERT(substr_from <= substr_to);
+        BM_ASSERT(substr_from <= MAX_STR_SIZE);
         BM_ASSERT(cmatr.is_init());
+
+        if (substr_to >= MAX_STR_SIZE)
+            substr_to = MAX_STR_SIZE-1;
+
         if (zero_mem)
-            cmatr.set_zero();
+            cmatr.set_zero(); // TODO: set zero based on requested capacity
         
         size_type rows = size_type(cmatr.rows());
-        BM_ASSERT(cmatr.cols() >= MAX_STR_SIZE);
         size_type max_sz = this->size() - idx_from;
         if (max_sz < dec_size)
             dec_size = max_sz;
@@ -872,25 +997,26 @@ public:
             dec_size = rows;
         if (!dec_size)
             return dec_size;
-        
-        for (unsigned i = 0; i < MAX_STR_SIZE; ++i)
+
+        sv_decode_visitor_func func(cmatr);
+
+        for (unsigned i = substr_from; i <= substr_to; ++i)
         {
             unsigned bi = 0;
+            func.substr_i_ = i - substr_from; // to put substr at the str[0]
+
             for (unsigned k = i * 8; k < (i * 8) + 8; ++k, ++bi)
             {
                 const bvector_type* bv = this->bmatr_.get_row(k);
                 if (!bv)
                     continue;
-                value_type mask = value_type(1u << bi);
-                typename bvector_type::enumerator en(bv, idx_from);
-                for ( ;en.valid(); ++en )
-                {
-                    size_type idx = *en - idx_from;
-                    if (idx >= dec_size)
-                        break;
-                    typename CharMatrix::value_type* str = cmatr.row(idx);
-                    str[i] |= mask;
-                } // for en
+
+                func.mask_ = value_type(1u << bi);
+                func.sv_off_ = idx_from;
+
+                size_type end = idx_from + dec_size;
+                bm::for_each_bit_range_no_check(*bv, idx_from, end-1, func);
+
             } // for k
         } // for i
         
@@ -1120,7 +1246,7 @@ protected:
                 { return remap_matrix1_.get_buffer().buf(); }
     unsigned char* init_remap_buffer()
     {
-        remap_matrix1_.init();
+        remap_matrix1_.init(true);
         return remap_matrix1_.get_buffer().data();
     }
     void set_remap() { remap_flags_ = 1; }
@@ -1133,14 +1259,19 @@ protected:
         *idx_from = from; *idx_to = to; return true;
     }
 
+    const remap_matrix_type* get_remap_matrix() const
+        { return &remap_matrix1_; }
+    remap_matrix_type* get_remap_matrix()
+        { return &remap_matrix1_; }
+
 protected:
     template<class SVect> friend class sparse_vector_serializer;
     template<class SVect> friend class sparse_vector_deserializer;
-    
+
 protected:
     unsigned                 remap_flags_;   ///< remapping status
-    plain_octet_matrix_type  remap_matrix1_; ///< octet remap table 1
-    plain_octet_matrix_type  remap_matrix2_; ///< octet remap table 2
+    plane_octet_matrix_type  remap_matrix1_; ///< octet remap table 1
+    plane_octet_matrix_type  remap_matrix2_; ///< octet remap table 2
 };
 
 //---------------------------------------------------------------------
@@ -1389,7 +1520,7 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::calc_stat(
     st->memory_used += remap_mem_usage;
     if (remap_flags_) // use of remapping requires some extra storage
     {
-        st->max_serialize_mem += remap_mem_usage;
+        st->max_serialize_mem += (remap_mem_usage * 2);
     }
 }
 
@@ -1402,23 +1533,41 @@ int str_sparse_vector<CharType, BV, MAX_STR_SIZE>::compare(
 {
     BM_ASSERT(str);
     int res = 0;
-    for (unsigned i = 0; i < MAX_STR_SIZE; ++i)
+    if (remap_flags_)
     {
-        CharType ch = str[i];
-        if (remap_flags_ && ch)
+        for (unsigned i = 0; i < MAX_STR_SIZE; ++i)
         {
-            unsigned char remap_value = remap_matrix2_.get(i, unsigned(ch));
-            if (!remap_value) // unknown dictionary element
+            CharType octet = str[i];
+            CharType sv_octet = (CharType)this->bmatr_.get_octet(idx, i);
+            if (!sv_octet)
             {
-                throw_bad_value(0);
+                res = -octet; // -1 || 0
+                break;
             }
-            ch = CharType(remap_value);
-        }
-
-        res = this->bmatr_.compare_octet(idx, i, ch);
-        if (res || !ch)
-            break;
-    } // for
+            const unsigned char* remap_row = remap_matrix1_.row(i);
+            unsigned char remap_value = remap_row[unsigned(sv_octet)];
+            BM_ASSERT(remap_value);
+            res = (remap_value > octet) - (remap_value < octet);
+            if (res || !octet)
+                break;
+        } // for
+    }
+    else
+    {
+        for (unsigned i = 0; i < MAX_STR_SIZE; ++i)
+        {
+            CharType octet = str[i];
+            CharType sv_octet = (CharType)this->bmatr_.get_octet(idx, i);
+            if (!sv_octet)
+            {
+                res = -octet; // -1 || 0
+                break;
+            }
+            res = (sv_octet > octet) - (sv_octet < octet);
+            if (res || !octet)
+                break;
+        } // for
+    }
     return res;
 }
 
@@ -1484,58 +1633,63 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::effective_max_str()
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
 void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::calc_octet_stat(
-                    plain_octet_matrix_type& octet_matrix) const BMNOEXCEPT
+                    octet_freq_matrix_type& octet_matrix) const BMNOEXCEPT
 {
-    octet_matrix.init();
-    octet_matrix.set_zero();
-    
-    size_type size = this->size();
-    
-    for (unsigned i = 0; i < MAX_STR_SIZE; ++i)
+    octet_matrix.init(true); // init and set zero
+
+    const_iterator it(this);
+    for(; it.valid(); ++it)
     {
-        unsigned char* row = octet_matrix.row(i);
-        
-        // TODO: optimize partial transposition
-        for (size_type j = 0; j < size; ++j)
+        const value_type* s = *it; // get asciiz char*
+        for (unsigned i = 0; true; ++i) // for each char in str
         {
-            unsigned char ch = this->bmatr_.get_octet(j, i);
-            unsigned k = ch;
-            if (k)
-                row[k] = 1;
-        } // for j
-    } // for i
+            value_type ch = s[i];
+            if (!ch)
+                break;
+            typename octet_freq_matrix_type::value_type* row =
+                                                    octet_matrix.row(i);
+            row[size_t(ch)] += 1;
+        } // for i
+    } // for it
+
 }
 
 //---------------------------------------------------------------------
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
 void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::build_octet_remap(
-            plain_octet_matrix_type& octet_remap_matrix1,
-            plain_octet_matrix_type& octet_remap_matrix2,
-            const plain_octet_matrix_type& octet_occupancy_matrix)
+            plane_octet_matrix_type& octet_remap_matrix1,
+            plane_octet_matrix_type& octet_remap_matrix2,
+            octet_freq_matrix_type& octet_occupancy_matrix)
 {
-    octet_remap_matrix1.init();
-    octet_remap_matrix1.set_zero();
-    octet_remap_matrix2.init();
-    octet_remap_matrix2.set_zero();
+    octet_remap_matrix1.init(true); // init and set-zero
+    octet_remap_matrix2.init(true);
 
     for (unsigned i = 0; i < octet_occupancy_matrix.rows(); ++i)
     {
-        const unsigned char* row = octet_occupancy_matrix.row(i);
+        typename octet_freq_matrix_type::value_type* frq_row =
+                                                octet_occupancy_matrix.row(i);
+
         unsigned char* remap_row1 = octet_remap_matrix1.row(i);
         unsigned char* remap_row2 = octet_remap_matrix2.row(i);
-        unsigned count = 1;
-        for (unsigned j = 1; j < octet_occupancy_matrix.cols(); ++j)
+
+        const typename plane_octet_matrix_type::size_type row_size =
+                                             octet_occupancy_matrix.cols();
+        for (unsigned remap_code = 1; true; ++remap_code)
         {
-            if (row[j]) // octet is present
-            {
-                // set two remapping table values
-                remap_row1[count] = (unsigned char)j;
-                remap_row2[j] = (unsigned char)count;
-                ++count;
-                BM_ASSERT(count < 256);
-            }
-        } // for j
+            typename octet_freq_matrix_type::size_type char_idx;
+            bool found = bm::find_max_nz(frq_row, row_size, &char_idx);
+            #if 0
+            bool found = bm::find_first_nz(frq_row, row_size, &char_idx);
+            #endif
+            if (!found)
+                break;
+            BM_ASSERT(char_idx);
+            unsigned char ch = (unsigned char)char_idx;
+            remap_row1[remap_code] = ch;
+            remap_row2[ch] = (unsigned char)remap_code;
+            frq_row[char_idx] = 0; // clear the picked char
+        } // for
     } // for i
 }
 
@@ -1546,9 +1700,8 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::recalc_remap_matrix2()
 {
     BM_ASSERT(remap_flags_);
     
-    remap_matrix2_.init();
-    remap_matrix2_.set_zero();
-    
+    remap_matrix2_.init(true);
+
     for (unsigned i = 0; i < remap_matrix1_.rows(); ++i)
     {
         const unsigned char* remap_row1 = remap_matrix1_.row(i);
@@ -1557,9 +1710,9 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::recalc_remap_matrix2()
         {
             if (remap_row1[j])
             {
-                unsigned count = remap_row1[j];
-                remap_row2[count] = (unsigned char)j;
-                BM_ASSERT(count < 256);
+                unsigned ch_code = remap_row1[j];
+                remap_row2[ch_code] = (unsigned char)j;
+                BM_ASSERT(ch_code < 256);
             }
         } // for j
     } // for i
@@ -1572,12 +1725,12 @@ bool str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_tosv(
        value_type*   BMRESTRICT     sv_str,
        size_type                    buf_size,
        const value_type* BMRESTRICT str,
-       const plain_octet_matrix_type& BMRESTRICT octet_remap_matrix2) BMNOEXCEPT
+       const plane_octet_matrix_type& BMRESTRICT octet_remap_matrix2) BMNOEXCEPT
 {
     for (unsigned i = 0; i < buf_size; ++i)
     {
         CharType ch = str[i];
-        if (ch == 0)
+        if (!ch)
         {
             sv_str[i] = ch;
             break;
@@ -1600,13 +1753,13 @@ bool str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_fromsv(
          value_type* BMRESTRICT str,
          size_type         buf_size,
          const value_type* BMRESTRICT sv_str,
-         const plain_octet_matrix_type& BMRESTRICT octet_remap_matrix1
+         const plane_octet_matrix_type& BMRESTRICT octet_remap_matrix1
          ) BMNOEXCEPT
 {
     for (unsigned i = 0; i < buf_size; ++i)
     {
         CharType ch = sv_str[i];
-        if (ch == 0)
+        if (!ch)
         {
             str[i] = ch;
             break;
@@ -1625,8 +1778,21 @@ bool str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_fromsv(
 //---------------------------------------------------------------------
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
+void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap()
+{
+    // TODO: get rid of tmp, implement a move-remapping
+    str_sparse_vector<CharType, BV, MAX_STR_SIZE>
+                                sv_tmp(this->get_null_support());
+    sv_tmp.remap_from(*this);
+    sv_tmp.swap(*this);
+}
+
+//---------------------------------------------------------------------
+
+template<class CharType, class BV, unsigned MAX_STR_SIZE>
 void
-str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_from(const str_sparse_vector& str_sv)
+str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_from(
+                                            const str_sparse_vector& str_sv)
 {
     if (str_sv.is_remap())
     {
@@ -1639,7 +1805,7 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_from(const str_sparse_vecto
         return;
     }
     
-    plain_octet_matrix_type omatrix; // occupancy map
+    octet_freq_matrix_type omatrix; // occupancy map
     str_sv.calc_octet_stat(omatrix);
     
     str_sv.build_octet_remap(remap_matrix1_, remap_matrix2_, omatrix);
@@ -1661,6 +1827,19 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::remap_from(const str_sparse_vecto
         this->import(cmatr, i, dsize);
         i += dsize;
     } // for i
+
+    bvector_type* bv_null = this->get_null_bvect();
+    if (bv_null)
+    {
+        const bvector_type* bv_null_arg = str_sv.get_null_bvector();
+        if (bv_null_arg)
+            *bv_null = *bv_null_arg;
+        else
+        {
+            // TODO: exception? assert? maybe it is OK...
+        }
+    }
+
 }
 
 //---------------------------------------------------------------------
@@ -1777,16 +1956,21 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::throw_bad_value(
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::const_iterator() BMNOEXCEPT
-: sv_(0), pos_(bm::id_max), pos_in_buf_(~size_type(0))
-{}
+: sv_(0), substr_from_(0), substr_to_(MAX_STR_SIZE),
+  pos_(bm::id_max), pos_in_buf_(~size_type(0))
+{
+}
 
 //---------------------------------------------------------------------
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::const_iterator(
    const str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator& it) BMNOEXCEPT
-: sv_(it.sv_), pos_(it.pos_), pos_in_buf_(~size_type(0))
-{}
+: sv_(it.sv_),
+  substr_from_(it.substr_from_), substr_to_(it.substr_to_),
+  pos_(it.pos_), pos_in_buf_(~size_type(0))
+{
+}
 
 //---------------------------------------------------------------------
 
@@ -1794,7 +1978,12 @@ template<class CharType, class BV, unsigned MAX_STR_SIZE>
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::const_iterator(
     const str_sparse_vector<CharType, BV, MAX_STR_SIZE>* sv) BMNOEXCEPT
 : sv_(sv), pos_(sv->empty() ? bm::id_max : 0), pos_in_buf_(~size_type(0))
-{}
+{
+    substr_from_ = 0;
+    substr_to_ = (unsigned) sv_->effective_max_str();
+    buf_matrix_.resize(n_rows, substr_to_+1);
+
+}
 
 //---------------------------------------------------------------------
 
@@ -1803,7 +1992,29 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::const_iterator(
     const str_sparse_vector<CharType, BV, MAX_STR_SIZE>* sv,
     typename str_sparse_vector<CharType, BV, MAX_STR_SIZE>::size_type pos) BMNOEXCEPT
 : sv_(sv), pos_(pos >= sv->size() ? bm::id_max : pos), pos_in_buf_(~size_type(0))
-{}
+{
+    substr_from_ = 0;
+    substr_to_ = (unsigned) sv_->effective_max_str();
+    buf_matrix_.resize(n_rows, substr_to_+1);
+}
+
+//---------------------------------------------------------------------
+
+template<class CharType, class BV, unsigned MAX_STR_SIZE>
+void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::set_substr(
+                    unsigned from, unsigned len) BMNOEXCEPT
+{
+    BM_ASSERT(from < MAX_STR_SIZE);
+    BM_ASSERT(len);
+
+    unsigned max_str = sv_->effective_max_str();
+
+    substr_from_ = from;
+    substr_to_ = substr_from_ + len - 1;
+    if (max_str < substr_to_)
+        substr_to_ = max_str;
+    buf_matrix_.resize(n_rows, len+1);
+}
 
 //---------------------------------------------------------------------
 
@@ -1818,7 +2029,8 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::value() const BMN
         if (!buf_matrix_.is_init())
             buf_matrix_.init();
         pos_in_buf_ = 0;
-        size_type d = sv_->decode(buf_matrix_, pos_, buffer_matrix_type::n_rows);
+        size_type d = sv_->decode_substr(buf_matrix_, pos_, n_rows,
+                                         substr_from_, substr_to_);
         if (!d)
         {
             pos_ = bm::id_max;
@@ -1857,7 +2069,7 @@ str_sparse_vector<CharType, BV, MAX_STR_SIZE>::const_iterator::advance() BMNOEXC
         if (pos_in_buf_ != ~size_type(0))
         {
             ++pos_in_buf_;
-            if (pos_in_buf_ >= buffer_matrix_type::n_rows)
+            if (pos_in_buf_ >= n_rows)
                 pos_in_buf_ = ~size_type(0);
         }
     }
@@ -1926,7 +2138,8 @@ void str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::flush(
     if (this->empty())
         return;
 
-    sv_->import_no_check(buf_matrix_, sv_->size(), pos_in_buf_+1, false);
+    size_type imp_idx = sv_->size();
+    sv_->import_no_check(buf_matrix_, imp_idx, pos_in_buf_+1, false);
     pos_in_buf_ = ~size_type(0);
     block_idx_type nb = sv_->size() >> bm::set_block_shift;
     if (nb != prev_nb_)
@@ -1948,11 +2161,13 @@ const typename str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterat
         this->add_null();
         return;
     }
-    size_type buf_idx = this->add_value(v);
+    size_type buf_idx = this->pos_in_buf_; // offset in
+    size_type sz = sv_->size();
+
+    this->add_value(v);
     if (bv_null_)
     {
-        size_type sz = sv_->size();
-        bv_null_->set_bit_no_check(sz + buf_idx);
+        bv_null_->set_bit_no_check(sz + buf_idx + 1);
     }
 }
 
@@ -1978,7 +2193,7 @@ typename str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::si
 //---------------------------------------------------------------------
 
 template<class CharType, class BV, unsigned MAX_STR_SIZE>
-typename str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::size_type
+void
 str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::add_value(
 const str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::value_type* v)
 {
@@ -1988,20 +2203,19 @@ const str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::value
     {
         if (!buf_matrix_.is_init())
             buf_matrix_.init();
-        pos_in_buf_ = 0;
-        buf_matrix_.set_zero();
+        pos_in_buf_ = 0; buf_matrix_.set_zero();
     }
     else
     if (pos_in_buf_ >= buffer_matrix_type::n_rows-1)
     {
         this->flush();
-        pos_in_buf_ = 0;
-        buf_matrix_.set_zero();
+        pos_in_buf_ = 0; buf_matrix_.set_zero();
     }
     else
     {
         ++pos_in_buf_;
     }
+
     value_type* r = buf_matrix_.row(pos_in_buf_);
     for (unsigned i = 0; i < buffer_matrix_type::n_columns; ++i)
     {
@@ -2009,7 +2223,7 @@ const str_sparse_vector<CharType, BV, MAX_STR_SIZE>::back_insert_iterator::value
         if (!r[i])
             break;
     } // for i
-    return pos_in_buf_;
+    //return pos_in_buf_;
 }
 
 //---------------------------------------------------------------------
