@@ -1153,7 +1153,7 @@ echo "error:  2 a_run = \$a_run"
 
 RunJobs()
 {
-    res_list=$1
+    res_list=\$1
     x_i=0
     while read x_row; do
         x_row=\`echo "\$x_row" | sed -e 's/ ____ /;/g' | sed -e 's/ ____/;/g' | sed -e 's/ ;/;/g'\`
