@@ -1317,7 +1317,7 @@ void CSerialIOTestApp::Init(void)
     descrs->AddOptionalKey("err_pos", "ErrPos", "error position", CArgDescriptions::eString);
     descrs->SetConstraint("err_pos", new CArgAllow_Set(ErrorPositionNames));
 
-    descrs->AddDefaultKey("timeout", "TimeoutMs", "socket timeout base value", CArgDescriptions::eInteger, "100");
+    descrs->AddDefaultKey("timeout", "TimeoutMs", "socket timeout base value", CArgDescriptions::eInteger, "200");
     descrs->SetConstraint("timeout", &(*new CArgAllow_Integers(0, 3600000)));
 
     descrs->AddDefaultKey("threads", "Threads", "number of threads to run", CArgDescriptions::eInteger, "16");
