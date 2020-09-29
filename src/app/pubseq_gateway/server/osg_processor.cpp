@@ -85,9 +85,9 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
         return nullptr;
 
     case CPSGS_Request::ePSGS_TSEChunkRequest:
-        if ( CPSGS_OSGGetChunks::CanLoad(request->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId) ) {
-            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
-        }
+//        if ( CPSGS_OSGGetChunks::CanLoad(request->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId) ) {
+//            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
+//        }
         return nullptr;
 
     case CPSGS_Request::ePSGS_AnnotationRequest:

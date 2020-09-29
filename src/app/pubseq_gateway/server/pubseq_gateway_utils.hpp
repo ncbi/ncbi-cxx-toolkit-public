@@ -165,6 +165,24 @@ string  GetBlobPropMessageHeader(size_t  item_id,
 string  GetBlobPropCompletionHeader(size_t  item_id,
                                     const string &  processor_id,
                                     size_t  chunk_count);
+string  GetTSEBlobPropHeader(size_t  item_id,
+                             const string &  processor_id,
+                             int64_t  id2_chunk,
+                             const string &  id2_info,
+                             size_t  blob_prop_size);
+string  GetTSEBlobPropMessageHeader(size_t  item_id,
+                                    const string &  processor_id,
+                                    int64_t  id2_chunk,
+                                    const string &  id2_info,
+                                    size_t  msg_size,
+                                    CRequestStatus::ECode  status,
+                                    int  code,
+                                    EDiagSev  severity);
+string  GetTSEBlobPropCompletionHeader(size_t  item_id,
+                                       const string &  processor_id,
+                                       int64_t  id2_chunk,
+                                       const string &  id2_info,
+                                       size_t  chunk_count);
 
 // Blob chunk messages
 string  GetBlobChunkHeader(size_t  item_id,
@@ -172,14 +190,6 @@ string  GetBlobChunkHeader(size_t  item_id,
                            const string &  blob_id,
                            size_t  chunk_size,
                            size_t  chunk_number);
-string  GetTSEBlobChunkHeader(size_t  item_id,
-                              const string &  processor_id,
-                              const string &  blob_id,
-                              size_t  chunk_size,
-                              size_t  chunk_number,
-                              const string &  id2_info,
-                              const string &  tse_id,
-                              int64_t  last_modified);
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
                                 const string &  blob_id,
@@ -195,6 +205,25 @@ string  GetBlobExcludeHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
+string  GetTSEBlobChunkHeader(size_t  item_id,
+                              const string &  processor_id,
+                              size_t  chunk_size,
+                              size_t  chunk_number,
+                              int64_t  id2_chunk,
+                              const string &  id2_info);
+string  GetTSEBlobMessageHeader(size_t  item_id,
+                                const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                size_t  msg_size,
+                                CRequestStatus::ECode  status,
+                                int  code,
+                                EDiagSev  severity);
+string GetTSEBlobCompletionHeader(size_t  item_id,
+                                  const string &  processor_id,
+                                  int64_t  id2_chunk,
+                                  const string &  id2_info,
+                                  size_t  chunk_count);
 
 // Named annotation messages
 string GetNamedAnnotationHeader(size_t  item_id,

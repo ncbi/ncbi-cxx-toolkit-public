@@ -70,6 +70,10 @@ protected:
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
     void SetFinished(CCassBlobFetch *  fetch_details);
+    bool CountError(CRequestStatus::ECode  status,
+                    int  code,
+                    EDiagSev  severity,
+                    const string &  message);
 
 private:
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
@@ -125,12 +129,12 @@ private:
                         CBlobRecord const &  blob);
 
 protected:
-    // Used for TSE chunk request and for get blob by sat/sat key request
-    SCass_BlobId                m_BlobId;
+    // Used for get blob by sat/sat key request
+    SCass_BlobId                    m_BlobId;
 
 private:
-    unique_ptr<CPSGId2Info>     m_Id2Info;
-    string                      m_ProcessorId;
+    unique_ptr<CPSGFlavorId2Info>   m_Id2Info;
+    string                          m_ProcessorId;
 };
 
 #endif  // PSGS_CASSBLOBBASE__HPP

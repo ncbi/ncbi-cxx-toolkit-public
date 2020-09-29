@@ -61,8 +61,7 @@ public:
     CPSGS_TSEChunkProcessor(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply,
                             TProcessorPriority  priority,
-                            const SCass_BlobId &  blob_id,
-                            const CPSGId2Info &  id2_info);
+                            const CPSGFlavorId2Info &  id2_info);
     virtual ~CPSGS_TSEChunkProcessor();
 
 private:
@@ -81,7 +80,7 @@ private:
                               CRequestStatus::ECode  status,
                               int  code);
     bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
-                                  CPSGId2Info::TChunks  total_chunks);
+                                  CPSGFlavorId2Info::TChunks  total_chunks);
     bool x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id);
 
 private:
@@ -92,7 +91,7 @@ private:
 private:
     SPSGS_TSEChunkRequest *     m_TSEChunkRequest;
     bool                        m_Cancelled;
-    CPSGId2Info                 m_Id2Info;
+    CPSGFlavorId2Info           m_Id2Info;
 };
 
 #endif  // PSGS_TSECHUNKPROCESSOR__HPP

@@ -67,7 +67,7 @@ static string  kUsernameParam = "username";
 static string  kAlertParam = "alert";
 static string  kResetParam = "reset";
 static string  kTSEIdParam = "tse_id";
-static string  kChunkParam = "chunk";
+static string  kId2ChunkParam = "id2_chunk";
 static string  kId2InfoParam = "id2_info";
 static string  kAccSubstitutionParam = "acc_substitution";
 static string  kAutoBlobSkippingParam = "auto_blob_skipping";
@@ -551,61 +551,26 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         // Reply should use PSG protocol
         reply->SetContentType(ePSGS_PSGMime);
 
-        // tse_id is in fact a blob_id...
-        SRequestParameter   tse_id_param = x_GetParam(req, kTSEIdParam);
-        if (!tse_id_param.m_Found) {
+        // Mandatory parameter id2_chunk
+        SRequestParameter   id2_chunk_param = x_GetParam(req, kId2ChunkParam);
+        int64_t             id2_chunk_value = INT64_MIN;
+        if (!id2_chunk_param.m_Found) {
             x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                    "'" + kTSEIdParam + "' is not found.");
-            return 0;
-        }
-
-        string      tse_id(tse_id_param.m_Value);
-        if (tse_id.empty()) {
-            x_MalformedArguments(reply, context,
-                                 "The '" + kTSEIdParam + "' parameter value "
-                                 "has not been supplied");
-            return 0;
-        }
-
-        SRequestParameter   tse_last_modified_param = x_GetParam(req, kTSELastModifiedParam);
-        int64_t             tse_last_modified_value = INT64_MIN;
-        if (!tse_last_modified_param.m_Found) {
-            x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                    "'" + kTSELastModifiedParam +
-                                    "' is not found.");
+                                    "'" + kId2ChunkParam + "' is not found.");
             return 0;
         }
 
         try {
-            tse_last_modified_value = NStr::StringToLong(
-                                            tse_last_modified_param.m_Value);
-        } catch (...) {
-            x_MalformedArguments(reply, context,
-                                 "Malformed '" + kTSELastModifiedParam +
-                                 "' parameter. Expected an integer");
-            return 0;
-        }
-
-        SRequestParameter   chunk_param = x_GetParam(req, kChunkParam);
-        int64_t             chunk_value = INT64_MIN;
-        if (!chunk_param.m_Found)
-        {
-            x_InsufficientArguments(reply, context, "Mandatory parameter "
-                                    "'" + kChunkParam + "' is not found.");
-            return 0;
-        }
-
-        try {
-            chunk_value = NStr::StringToLong(chunk_param.m_Value);
-            if (chunk_value < 0) {
+            id2_chunk_value = NStr::StringToLong(id2_chunk_param.m_Value);
+            if (id2_chunk_value < 0) {
                 x_MalformedArguments(reply, context,
-                                     "Invalid '" + kChunkParam +
+                                     "Invalid '" + kId2ChunkParam +
                                      "' parameter. Expected >= 0");
                 return 0;
             }
         } catch (...) {
             x_MalformedArguments(reply, context,
-                                 "Malformed '" + kChunkParam + "' parameter. "
+                                 "Malformed '" + kId2ChunkParam + "' parameter. "
                                  "Expected an integer");
             return 0;
         }
@@ -638,8 +603,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         m_RequestCounters.IncGetTSEChunk();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
-                        tse_id, tse_last_modified_value,
-                        chunk_value, id2_info_param.m_Value,
+                        id2_chunk_value, id2_info_param.m_Value,
                         use_cache, hops, trace, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));

@@ -303,7 +303,7 @@ public:
                            const SCass_BlobId &  tse_id,
                            int64_t  split_version) :
         m_TSEId(tse_id),
-        m_Chunk(chunk_request.m_Chunk),
+        m_Chunk(chunk_request.m_Id2Chunk),
         m_SplitVersion(split_version),
         m_UseCache(chunk_request.m_UseCache)
     {

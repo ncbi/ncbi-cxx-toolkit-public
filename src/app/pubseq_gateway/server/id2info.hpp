@@ -38,7 +38,7 @@
 using namespace std;
 
 
-class CPSGId2Info
+class CPSGFlavorId2Info
 {
     public:
         using TSat = int16_t;
@@ -47,9 +47,9 @@ class CPSGId2Info
         using TSplitVersion = int32_t;
 
     public:
-        CPSGId2Info(const string &  id2_info,
-                    bool  count_errors = true);
-        CPSGId2Info() :
+        CPSGFlavorId2Info(const string &  id2_info,
+                          bool  count_errors = true);
+        CPSGFlavorId2Info() :
             m_Sat(-1), m_Info(-1), m_Chunks(-1), m_SplitVersion(-1)
         {}
 
@@ -72,7 +72,6 @@ class CPSGId2Info
         TChunks         m_Chunks;
         TSplitVersion   m_SplitVersion;
 };
-
 
 #endif /* PUBSEQ_GATEWAY_ID2INFO__HPP */
 

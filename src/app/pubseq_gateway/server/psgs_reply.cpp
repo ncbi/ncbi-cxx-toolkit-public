@@ -164,6 +164,26 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
 }
 
 
+void CPSGS_Reply::x_PrepareTSEBlobPropMessage(size_t                 item_id,
+                                              const string &         processor_id,
+                                              int64_t                id2_chunk,
+                                              const string &         id2_info,
+                                              const string &         msg,
+                                              CRequestStatus::ECode  status,
+                                              int                    err_code,
+                                              EDiagSev               severity)
+{
+    string      header = GetTSEBlobPropMessageHeader(
+                                item_id, processor_id, id2_chunk, id2_info,
+                                msg.size(), status, err_code, severity);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
                                          const string &         processor_id,
                                          const string &         msg,
@@ -173,6 +193,22 @@ void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
 {
     PrepareBlobPropMessage(fetch_details->GetBlobPropItemId(this),
                            processor_id, msg, status, err_code, severity);
+    fetch_details->IncrementTotalSentBlobChunks();
+}
+
+
+void CPSGS_Reply::PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details,
+                                            const string &         processor_id,
+                                            int64_t                id2_chunk,
+                                            const string &         id2_info,
+                                            const string &         msg,
+                                            CRequestStatus::ECode  status,
+                                            int                    err_code,
+                                            EDiagSev               severity)
+{
+    x_PrepareTSEBlobPropMessage(fetch_details->GetBlobPropItemId(this),
+                                processor_id, id2_chunk, id2_info, msg,
+                                status, err_code, severity);
     fetch_details->IncrementTotalSentBlobChunks();
 }
 
@@ -204,6 +240,37 @@ void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
                         fetch_details->GetBlobId().ToString(),
                         content);
     fetch_details->IncrementTotalSentBlobChunks();
+}
+
+
+void CPSGS_Reply::PrepareTSEBlobPropData(CCassBlobFetch *  fetch_details,
+                                         const string &    processor_id,
+                                         int64_t           id2_chunk,
+                                         const string &    id2_info,
+                                         const string &    content)
+{
+    x_PrepareTSEBlobPropData(fetch_details->GetBlobPropItemId(this),
+                             processor_id, id2_chunk, id2_info, content);
+    fetch_details->IncrementTotalSentBlobChunks();
+}
+
+
+void CPSGS_Reply::x_PrepareTSEBlobPropData(size_t  item_id,
+                                           const string &    processor_id,
+                                           int64_t           id2_chunk,
+                                           const string &    id2_info,
+                                           const string &    content)
+{
+    string  header = GetTSEBlobPropHeader(item_id,
+                                          processor_id,
+                                          id2_chunk, id2_info,
+                                          content.size());
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(content.data()),
+                    content.size()));
+    ++m_TotalSentReplyChunks;
 }
 
 
@@ -246,22 +313,19 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
 
 void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
                                      const string &         processor_id,
-                                     const string &         blob_id,
                                      const unsigned char *  chunk_data,
                                      unsigned int           data_size,
                                      int                    chunk_no,
-                                     const string &         id2_info,
-                                     const string &         tse_id,
-                                     int64_t                last_modified)
+                                     int64_t                id2_chunk,
+                                     const string &         id2_info)
 {
     ++m_TotalSentReplyChunks;
 
     string  header = GetTSEBlobChunkHeader(
                             item_id,
                             processor_id,
-                            blob_id,
                             data_size, chunk_no,
-                            id2_info, tse_id, last_modified);
+                            id2_chunk, id2_info);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
                     header.size()));
@@ -276,16 +340,14 @@ void CPSGS_Reply::PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
                                      const unsigned char *  chunk_data,
                                      unsigned int  data_size,
                                      int  chunk_no,
-                                     const string &  id2_info,
-                                     const string &  tse_id,
-                                     int64_t  last_modified)
+                                     int64_t  id2_chunk,
+                                     const string &  id2_info)
 {
     fetch_details->IncrementTotalSentBlobChunks();
     PrepareTSEBlobData(fetch_details->GetBlobChunkItemId(this),
                        processor_id,
-                       fetch_details->GetBlobId().ToString(),
                        chunk_data, data_size, chunk_no,
-                       id2_info, tse_id, last_modified);
+                       id2_chunk, id2_info);
 }
 
 
@@ -296,6 +358,24 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
                                                              processor_id,
                                                              chunk_count);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(blob_prop_meta.data()),
+                    blob_prop_meta.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
+void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
+                                                 const string &  processor_id,
+                                                 int64_t         id2_chunk,
+                                                 const string &  id2_info,
+                                                 size_t          chunk_count)
+{
+    string      blob_prop_meta = GetTSEBlobPropCompletionHeader(item_id,
+                                                                processor_id,
+                                                                id2_chunk,
+                                                                id2_info,
+                                                                chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(blob_prop_meta.data()),
                     blob_prop_meta.size()));
@@ -315,6 +395,23 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
     fetch_details->ResetTotalSentBlobChunks();
     fetch_details->SetBlobPropSent();
 }
+
+
+void CPSGS_Reply::PrepareTSEBlobPropCompletion(CCassBlobFetch *  fetch_details,
+                                               const string &  processor_id,
+                                               int64_t  id2_chunk,
+                                               const string &  id2_info)
+{
+    // +1 is for the completion itself
+    x_PrepareTSEBlobPropCompletion(fetch_details->GetBlobPropItemId(this),
+                                   processor_id, id2_chunk, id2_info,
+                                   fetch_details->GetTotalSentBlobChunks() + 1);
+
+    // From now the counter will count chunks for the blob data
+    fetch_details->ResetTotalSentBlobChunks();
+    fetch_details->SetBlobPropSent();
+}
+
 
 void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
                                      const string &         processor_id,
@@ -350,6 +447,41 @@ void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
 }
 
 
+void CPSGS_Reply::x_PrepareTSEBlobMessage(size_t  item_id,
+                                          const string &  processor_id,
+                                          int64_t  id2_chunk,
+                                          const string &  id2_info,
+                                          const string &  msg,
+                                          CRequestStatus::ECode  status,
+                                          int  err_code,
+                                          EDiagSev  severity)
+{
+    string      header = GetTSEBlobMessageHeader(item_id, processor_id,
+                                                 id2_chunk, id2_info, msg.size(),
+                                                 status, err_code, severity);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
+void CPSGS_Reply::PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
+                                        const string &  processor_id,
+                                        int64_t  id2_chunk,
+                                        const string &  id2_info,
+                                        const string &  msg,
+                                        CRequestStatus::ECode  status, int  err_code,
+                                        EDiagSev  severity)
+{
+    x_PrepareTSEBlobMessage(fetch_details->GetBlobChunkItemId(this),
+                            processor_id, id2_chunk, id2_info,
+                            msg, status, err_code, severity);
+    fetch_details->IncrementTotalSentBlobChunks();
+}
+
+
 void CPSGS_Reply::PrepareBlobCompletion(size_t          item_id,
                                         const string &  processor_id,
                                         const string &  blob_id,
@@ -357,6 +489,35 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t          item_id,
 {
     string completion = GetBlobCompletionHeader(item_id, processor_id,
                                                 blob_id, chunk_count);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(completion.data()),
+                    completion.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
+void CPSGS_Reply::PrepareTSEBlobCompletion(CCassBlobFetch *  fetch_details,
+                                           const string &  processor_id,
+                                           int64_t  id2_chunk,
+                                           const string &  id2_info)
+{
+    // +1 is for the completion itself
+    x_PrepareTSEBlobCompletion(fetch_details->GetBlobChunkItemId(this),
+                               processor_id, id2_chunk, id2_info,
+                               fetch_details->GetTotalSentBlobChunks() + 1);
+    fetch_details->IncrementTotalSentBlobChunks();
+}
+
+
+void CPSGS_Reply::x_PrepareTSEBlobCompletion(size_t  item_id,
+                                             const string &  processor_id,
+                                             int64_t  id2_chunk,
+                                             const string &  id2_info,
+                                             size_t  chunk_count)
+{
+    string completion = GetTSEBlobCompletionHeader(item_id, processor_id,
+                                                   id2_chunk, id2_info,
+                                                   chunk_count);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));

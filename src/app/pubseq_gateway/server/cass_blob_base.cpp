@@ -633,6 +633,66 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
     fetch_details->GetLoader()->ClearError();
 
     // It could be a message or an error
+    bool    is_error = CountError(status, code, severity, message);
+
+    if (is_error) {
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+
+        if (fetch_details->IsBlobPropStage()) {
+            m_Reply->PrepareBlobPropMessage(
+                                fetch_details, m_ProcessorId, message,
+                                CRequestStatus::e500_InternalServerError,
+                                code, severity);
+            m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
+        } else {
+            m_Reply->PrepareBlobMessage(
+                                fetch_details, m_ProcessorId, message,
+                                CRequestStatus::e500_InternalServerError,
+                                code, severity);
+            m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
+        }
+
+        // This code is reused by 2 requests:
+        // - get blob by sat/sat_key
+        // - get blob by seq_id/seq_id_type
+        auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+
+        if (fetch_details->GetBlobId() == m_BlobId) {
+            if (blob_request.m_ExcludeBlobCacheAdded &&
+                ! blob_request.m_ClientId.empty()) {
+                auto *  app = CPubseqGatewayApp::GetInstance();
+                app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
+                                                   m_BlobId.m_Sat,
+                                                   m_BlobId.m_SatKey);
+
+                // To prevent any updates
+                blob_request.m_ExcludeBlobCacheAdded = false;
+            }
+        }
+
+        // If it is an error then regardless what stage it was, props or
+        // chunks, there will be no more activity
+        fetch_details->SetReadFinished();
+    } else {
+        if (fetch_details->IsBlobPropStage())
+            m_Reply->PrepareBlobPropMessage(fetch_details, m_ProcessorId,
+                                            message, status, code, severity);
+        else
+            m_Reply->PrepareBlobMessage(fetch_details, m_ProcessorId, message,
+                                        status, code, severity);
+    }
+
+    SetFinished(fetch_details);
+}
+
+
+bool
+CPSGS_CassBlobBase::CountError(CRequestStatus::ECode  status,
+                               int  code,
+                               EDiagSev  severity,
+                               const string &  message)
+{
+    // It could be a message or an error
     bool    is_error = (severity == eDiag_Error ||
                         severity == eDiag_Critical ||
                         severity == eDiag_Fatal);
@@ -661,62 +721,7 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
         }
     }
 
-    if (is_error) {
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-
-        if (fetch_details->IsBlobPropStage()) {
-            m_Reply->PrepareBlobPropMessage(
-                                fetch_details, m_ProcessorId, message,
-                                CRequestStatus::e500_InternalServerError,
-                                code, severity);
-            m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
-        } else {
-            m_Reply->PrepareBlobMessage(
-                                fetch_details, m_ProcessorId, message,
-                                CRequestStatus::e500_InternalServerError,
-                                code, severity);
-            m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
-        }
-
-        // This code is reused by 3 requests:
-        // - get blob by sat/sat_key
-        // - get blob by seq_id/seq_id_type
-        // - get tse chunk
-        // the get tse chunk request does not deal with excluded blobs cache
-        auto    request_type = m_Request->GetRequestType();
-        if (request_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest ||
-            request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-            // So get the reference to the blob base request for
-            // - get blob by sat/sat_key
-            // - get blob by seq_id/seq_id_type
-            auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
-
-            if (fetch_details->GetBlobId() == m_BlobId) {
-                if (blob_request.m_ExcludeBlobCacheAdded &&
-                    ! blob_request.m_ClientId.empty()) {
-                    app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
-                                                       m_BlobId.m_Sat,
-                                                       m_BlobId.m_SatKey);
-
-                    // To prevent any updates
-                    blob_request.m_ExcludeBlobCacheAdded = false;
-                }
-            }
-        }
-
-        // If it is an error then regardless what stage it was, props or
-        // chunks, there will be no more activity
-        fetch_details->SetReadFinished();
-    } else {
-        if (fetch_details->IsBlobPropStage())
-            m_Reply->PrepareBlobPropMessage(fetch_details, m_ProcessorId,
-                                            message, status, code, severity);
-        else
-            m_Reply->PrepareBlobMessage(fetch_details, m_ProcessorId, message,
-                                        status, code, severity);
-    }
-
-    SetFinished(fetch_details);
+    return is_error;
 }
 
 
@@ -794,23 +799,17 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
                                         ePSGS_BlobPropsNotFound, eDiag_Error);
     }
 
-    // The handler deals with three kind of requests requests:
+    // The handler deals with 2 kind of requests:
     // - get blob by sat/sat_key
     // - get blob by seq_id/seq_id_type
-    // - get tse chunk
-    // get tse chunk request does not deal with exclude blob cache
-    auto    request_type = m_Request->GetRequestType();
-    if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest ||
-        request_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
-        auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+    auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
 
-        if (blob_id == m_BlobId) {
-            if (blob_request.m_ExcludeBlobCacheAdded && !blob_request.m_ClientId.empty()) {
-                app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
-                                                   m_BlobId.m_Sat,
-                                                   m_BlobId.m_SatKey);
-                blob_request.m_ExcludeBlobCacheAdded = false;
-            }
+    if (blob_id == m_BlobId) {
+        if (blob_request.m_ExcludeBlobCacheAdded && !blob_request.m_ClientId.empty()) {
+            app->GetExcludeBlobCache()->Remove(blob_request.m_ClientId,
+                                               m_BlobId.m_Sat,
+                                               m_BlobId.m_SatKey);
+            blob_request.m_ExcludeBlobCacheAdded = false;
         }
     }
 
@@ -825,7 +824,7 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
 {
     string      err_msg;
     try {
-        m_Id2Info.reset(new CPSGId2Info(blob.GetId2Info()));
+        m_Id2Info.reset(new CPSGFlavorId2Info(blob.GetId2Info()));
         return true;
     } catch (const exception &  exc) {
         err_msg = "Error extracting id2 info for the blob " +

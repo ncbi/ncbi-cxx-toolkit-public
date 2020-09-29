@@ -140,9 +140,8 @@ static string   s_NA = "na=";
 static string   s_Reason = "reason=";
 static string   s_NChunksOne = "n_chunks=1";
 static string   s_ProcessorId = "processor_id=";
+static string   s_Id2Chunk = "id2_chunk=";
 static string   s_Id2Info = "id2_info=";
-static string   s_TSEId = "tse_id=";
-static string   s_TSELastModified = "tse_last_modified=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -184,9 +183,8 @@ static string   s_AndReplyItem = "&" + s_ReplyItem;
 static string   s_ProcessorItem = s_ItemType + s_Processor;
 static string   s_AndProcessorItem = "&" + s_ProcessorItem;
 static string   s_AndProcessorId = "&" + s_ProcessorId;
+static string   s_AndId2Chunk = "&" + s_Id2Chunk;
 static string   s_AndId2Info = "&" + s_Id2Info;
-static string   s_AndTSEId = "&" + s_TSEId;
-static string   s_AndTSELastModified = "&" + s_TSELastModified;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_AndDataChunk = "&" + s_DataChunk;
@@ -285,7 +283,7 @@ string  GetBlobPropHeader(size_t  item_id,
                           const string &  blob_id,
                           size_t  blob_prop_size)
 {
-    // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550&sat=111
+    // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
@@ -297,6 +295,29 @@ string  GetBlobPropHeader(size_t  item_id,
                 .append(to_string(blob_prop_size))
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(1, '\n');
+}
+
+string  GetTSEBlobPropHeader(size_t  item_id,
+                             const string &  processor_id,
+                             int64_t  id2_chunk,
+                             const string &  id2_info,
+                             size_t  blob_prop_size)
+{
+    // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobPropItem)
+                .append(s_AndDataChunk)
+                .append(s_AndSize)
+                .append(to_string(blob_prop_size))
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
                 .append(1, '\n');
 }
 
@@ -327,6 +348,37 @@ string  GetBlobPropMessageHeader(size_t  item_id,
 }
 
 
+string  GetTSEBlobPropMessageHeader(size_t  item_id,
+                                    const string &  processor_id,
+                                    int64_t  id2_chunk,
+                                    const string &  id2_info,
+                                    size_t  msg_size,
+                                    CRequestStatus::ECode  status,
+                                    int  code,
+                                    EDiagSev  severity)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndBlobPropItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
+                .append(to_string(msg_size))
+                .append(s_AndStatus)
+                .append(to_string(static_cast<int>(status)))
+                .append(s_AndCode)
+                .append(to_string(code))
+                .append(s_AndSeverity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
+}
+
 string  GetBlobPropCompletionHeader(size_t  item_id,
                                     const string &  processor_id,
                                     size_t  chunk_count)
@@ -338,6 +390,29 @@ string  GetBlobPropCompletionHeader(size_t  item_id,
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobPropItem)
                 .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
+                .append(to_string(chunk_count))
+                .append(1, '\n');
+}
+
+
+string  GetTSEBlobPropCompletionHeader(size_t  item_id,
+                                       const string &  processor_id,
+                                       int64_t  id2_chunk,
+                                       const string &  id2_info,
+                                       size_t  chunk_count)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobPropItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
@@ -370,14 +445,13 @@ string  GetBlobChunkHeader(size_t  item_id,
 
 string  GetTSEBlobChunkHeader(size_t  item_id,
                               const string &  processor_id,
-                              const string &  blob_id,
                               size_t  chunk_size,
                               size_t  chunk_number,
-                              const string &  id2_info,
-                              const string &  tse_id,
-                              int64_t  last_modified)
+                              int64_t  id2_chunk,
+                              const string &  id2_info)
 {
-    // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
+    // E.g. PSG-Reply-Chunk:
+    // item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&id2_chunk=11&id2_info=33.44.55&blob_chunk=37
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
@@ -387,16 +461,12 @@ string  GetTSEBlobChunkHeader(size_t  item_id,
                 .append(s_AndDataChunk)
                 .append(s_AndSize)
                 .append(to_string(chunk_size))
-                .append(s_AndBlobId)
-                .append(blob_id)
                 .append(s_AndBlobChunk)
                 .append(to_string(chunk_number))
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
                 .append(s_AndId2Info)
                 .append(id2_info)
-                .append(s_AndTSEId)
-                .append(tse_id)
-                .append(s_AndTSELastModified)
-                .append(to_string(last_modified))
                 .append(1, '\n');
 }
 
@@ -456,6 +526,32 @@ string  GetBlobCompletionHeader(size_t  item_id,
 }
 
 
+string GetTSEBlobCompletionHeader(size_t  item_id,
+                                  const string &  processor_id,
+                                  int64_t  id2_chunk,
+                                  const string &  id2_info,
+                                  size_t  chunk_count)
+{
+    // E.g. PSG-Reply-Chunk:
+    // item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&id2_chunk=11&id2_info=333.444.555&n_chunks=100
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndNChunks)
+                .append(to_string(chunk_count))
+                .append(1, '\n');
+
+}
+
+
 string  GetBlobMessageHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
@@ -476,6 +572,38 @@ string  GetBlobMessageHeader(size_t  item_id,
                 .append(to_string(msg_size))
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(s_AndStatus)
+                .append(to_string(static_cast<int>(status)))
+                .append(s_AndCode)
+                .append(to_string(code))
+                .append(s_AndSeverity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
+}
+
+
+string  GetTSEBlobMessageHeader(size_t  item_id,
+                                const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                size_t  msg_size,
+                                CRequestStatus::ECode  status,
+                                int  code,
+                                EDiagSev  severity)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobItem)
+                .append(s_AndMessageChunk)
+                .append(s_AndSize)
+                .append(to_string(msg_size))
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
                 .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
                 .append(s_AndCode)

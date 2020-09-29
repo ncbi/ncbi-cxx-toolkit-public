@@ -116,11 +116,11 @@ void CPSGS_OSGGetChunks::CreateRequests()
     CRef<CID2_Request> osg_req(new CID2_Request);
     auto& psg_req = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     auto& req = osg_req->SetRequest().SetGet_chunks();
-    req.SetBlob_id(*GetOSGBlobId(psg_req.m_TSEId));
+//    req.SetBlob_id(*GetOSGBlobId(psg_req.m_TSEId));
 //    req.SetSplit_version(psg_req.m_SplitVersion);
     // TODO: multiple chunks in request
     CID2S_Chunk_Id chunk_id;
-    chunk_id.Set(psg_req.m_Chunk);
+    chunk_id.Set(psg_req.m_Id2Chunk);
     req.SetChunks().push_back(chunk_id);
     AddRequest(osg_req);
 }

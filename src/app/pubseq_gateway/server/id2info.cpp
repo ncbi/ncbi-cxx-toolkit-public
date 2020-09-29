@@ -39,8 +39,8 @@ USING_NCBI_SCOPE;
 #include "pubseq_gateway.hpp"
 
 
-CPSGId2Info::CPSGId2Info(const string &  id2_info,
-                         bool  count_errors) :
+CPSGFlavorId2Info::CPSGFlavorId2Info(const string &  id2_info,
+                                     bool  count_errors) :
     m_Sat(0), m_Info(0), m_Chunks(0), m_SplitVersion(0)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
