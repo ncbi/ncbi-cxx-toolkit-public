@@ -49,6 +49,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 
 namespace {
 
@@ -185,7 +186,13 @@ TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
     );
 }
 
-TEST_F(CGetPublicCommentTest, DISABLED_WithdrawnWithDefaultComment) {
+TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
+
+    CPSGMessages messages;
+    string messages_error;
+    EXPECT_TRUE(FetchMessages("sat_info", m_Connection, messages, messages_error));
+    EXPECT_EQ("", messages_error);
+
     CCassBlobTaskLoadBlob fetch_blob(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         4317, false,
@@ -201,11 +208,45 @@ TEST_F(CGetPublicCommentTest, DISABLED_WithdrawnWithDefaultComment) {
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         *blob, error_function
     );
+    get_comment.SetMessages(&messages);
     comment_wait_function(get_comment);
     EXPECT_EQ(
         "This record was removed at the submitter's request. Contact info@ncbi.nlm.nih.gov for further information",
         get_comment.GetComment()
     );
+}
+
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
+    CPSGMessages messages;
+    string suppressed_value = "BLOB_STATUS_SUPPRESSED";
+    messages.Set(suppressed_value, suppressed_value);
+    CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
+    blob.SetSuppress(true);
+    CCassStatusHistoryTaskGetPublicComment get_comment(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        blob, error_function
+    );
+    get_comment.SetMessages(&messages);
+    comment_wait_function(get_comment);
+    EXPECT_EQ(suppressed_value, get_comment.GetComment());
+}
+
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
+    CPSGMessages messages;
+    string messages_error;
+    EXPECT_TRUE(FetchMessages("sat_info", m_Connection, messages, messages_error));
+    EXPECT_EQ("", messages_error);
+    CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
+    blob.SetSuppress(true);
+    CCassStatusHistoryTaskGetPublicComment get_comment(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        blob, error_function
+    );
+    get_comment.SetMessages(&messages);
+    comment_wait_function(get_comment);
+    EXPECT_EQ(
+        "This record was removed from further distribution at the submitter's request. Contact info@ncbi.nlm.nih.gov for further information",
+        get_comment.GetComment());
 }
 
 TEST_F(CGetPublicCommentTest, AliveBlob) {

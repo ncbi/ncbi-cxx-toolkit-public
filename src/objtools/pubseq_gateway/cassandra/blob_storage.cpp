@@ -147,5 +147,46 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
     return false;
 }
 
+bool FetchMessages(const string &  mapping_keyspace,
+                   shared_ptr<CCassConnection>  conn,
+                   CPSGMessages &  messages,
+                   string &  err_msg)
+{
+    if (mapping_keyspace.empty()) {
+        err_msg = "mapping_keyspace is not specified";
+        return false;
+    }
+
+    bool rv = false;
+    err_msg = mapping_keyspace + ".messages info is empty";
+    for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
+        try {
+            shared_ptr<CCassQuery>  query = conn->NewQuery();
+            query->SetSQL("SELECT name, value FROM " + mapping_keyspace + ".messages", 0);
+            query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
+            while (query->NextRow() == ar_dataready) {
+                messages.Set(
+                    query->FieldGetStrValue(0),
+                    query->FieldGetStrValueDef(1, "")
+                );
+                err_msg.clear();
+            }
+            rv = true;
+            break;
+        }
+        catch (const CCassandraException& e) {
+            if (
+                (e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable)
+                && i > 0
+            ) {
+                continue;
+            }
+            throw;
+        }
+    }
+
+    return rv;
+}
+
 
 END_IDBLOB_SCOPE

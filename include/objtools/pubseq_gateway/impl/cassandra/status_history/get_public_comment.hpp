@@ -42,6 +42,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/record.hpp>
@@ -59,13 +60,8 @@ class CCassStatusHistoryTaskGetPublicComment
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
-    static constexpr int64_t kMaxReplacesRetries = 5;
 
  public:
-    static constexpr TBlobStatusFlagsBase kWithdrawnMask =
-        static_cast<TBlobStatusFlagsBase>(EBlobStatusFlags::eWithdrawn) +
-        static_cast<TBlobStatusFlagsBase>(EBlobStatusFlags::eWithdrawnPermanently);
-
     CCassStatusHistoryTaskGetPublicComment(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
@@ -75,18 +71,9 @@ class CCassStatusHistoryTaskGetPublicComment
         TDataErrorCallback data_error_cb
     );
 
-    string GetComment()
-    {
-        if (m_State != eDone && m_State != eError && !m_Cancelled) {
-            Error(
-                CRequestStatus::e500_InternalServerError, CCassandraException::eGeneric,
-                eDiag_Error, "GetComment() called before task completion"
-            );
-        }
-        return m_PublicComment;
-    }
-
+    void SetMessages(CPSGMessages const * messages);
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
+    string GetComment();
 
  protected:
     virtual void Wait1(void) override;
@@ -94,6 +81,7 @@ class CCassStatusHistoryTaskGetPublicComment
  private:
     void JumpToReplaced(CBlobRecord::TSatKey replaced);
 
+    CPSGMessages const * m_Messages;
     TBlobFlagBase m_BlobFlags;
     TBlobStatusFlagsBase m_FirstHistoryFlags;
     bool m_MatchingStatusRowFound;

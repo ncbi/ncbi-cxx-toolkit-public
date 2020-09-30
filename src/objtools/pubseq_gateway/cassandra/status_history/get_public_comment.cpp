@@ -48,6 +48,13 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE()
 
+constexpr int64_t kMaxReplacesRetries = 5;
+constexpr TBlobStatusFlagsBase kWithdrawnMask =
+    static_cast<TBlobStatusFlagsBase>(EBlobStatusFlags::eWithdrawn) +
+    static_cast<TBlobStatusFlagsBase>(EBlobStatusFlags::eWithdrawnPermanently);
+const char * kDefaultSuppressedMessage = "BLOB_STATUS_SUPPRESSED";
+const char * kDefaultWithdrawnMessage= "BLOB_STATUS_WITHDRAWN";
+
 bool IsBlobWithdrawn(TBlobFlagBase flags) {
     return (flags & static_cast<TBlobFlagBase>(EBlobFlags::eWithdrawn)) != 0;
 }
@@ -57,8 +64,7 @@ bool IsBlobSuppressed(TBlobFlagBase flags) {
 }
 
 bool SameWithdrawn(TBlobStatusFlagsBase a, TBlobStatusFlagsBase b) {
-    using TTask = CCassStatusHistoryTaskGetPublicComment;
-    return (a & TTask::kWithdrawnMask) == (b & TTask::kWithdrawnMask);
+    return (a & kWithdrawnMask) == (b & kWithdrawnMask);
 }
 
 bool IsHistorySuppressed(TBlobStatusFlagsBase flags) {
@@ -79,6 +85,7 @@ CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
         op_timeout_ms, conn, keyspace, blob.GetKey(),
         true, max_retries, move(data_error_cb)
       )
+    , m_Messages(nullptr)
     , m_BlobFlags(blob.GetFlags())
     , m_FirstHistoryFlags(-1)
     , m_MatchingStatusRowFound(false)
@@ -102,6 +109,30 @@ void CCassStatusHistoryTaskGetPublicComment::JumpToReplaced(CBlobRecord::TSatKey
     m_MatchingStatusRowFound = false;
     m_State = eStartReading;
     m_PublicComment.clear();
+}
+
+void CCassStatusHistoryTaskGetPublicComment::SetMessages(CPSGMessages const * messages)
+{
+    m_Messages = messages;
+}
+
+string CCassStatusHistoryTaskGetPublicComment::GetComment()
+{
+    if (m_State != eDone && m_State != eError && !m_Cancelled) {
+        Error(
+            CRequestStatus::e500_InternalServerError, CCassandraException::eGeneric,
+            eDiag_Error, "GetComment() called before task completion"
+        );
+        return "";
+    }
+    if (m_PublicComment.empty() && m_Messages != nullptr) {
+        if (IsBlobSuppressed(m_BlobFlags)) {
+            return m_Messages->Get(kDefaultSuppressedMessage);
+        } else if (IsBlobWithdrawn(m_BlobFlags)) {
+            return m_Messages->Get(kDefaultWithdrawnMessage);
+        }
+    }
+    return m_PublicComment;
 }
 
 void CCassStatusHistoryTaskGetPublicComment::Wait1()

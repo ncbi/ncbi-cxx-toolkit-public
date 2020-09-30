@@ -36,6 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 #include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE
@@ -75,6 +76,11 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                vector<pair<string, int32_t>> &  bioseq_na_keyspaces,
                                ECassSchemaType  bioseq_na_schema,
                                string &  err_msg);
+
+bool FetchMessages(const string &  mapping_keyspace,
+                   shared_ptr<CCassConnection>  conn,
+                   CPSGMessages &  messages,
+                   string &  err_msg);
 
 END_IDBLOB_SCOPE
 
