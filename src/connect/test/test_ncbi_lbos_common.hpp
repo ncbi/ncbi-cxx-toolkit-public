@@ -174,22 +174,24 @@
 
 #endif
 
+#ifndef NCBITEST_CHECK_MESSAGE_MT_SAFE
 /* Boost checks are not thread-safe, so they need to be handled appropriately*/
-#define MT_SAFE(E)                                                            \
+#  define MT_SAFE(E)                                                          \
     {{                                                                        \
         CFastMutexGuard spawn_guard(s_BoostTestLock);                         \
         E;                                                                    \
     }}
-#define NCBITEST_CHECK_MESSAGE_MT_SAFE(P,M)                                   \
+#  define NCBITEST_CHECK_MESSAGE_MT_SAFE(P,M)                                 \
             MT_SAFE(NCBITEST_CHECK_MESSAGE(P, M))
-#define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P,M)                                 \
+#  define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P,M)                               \
             MT_SAFE(NCBITEST_REQUIRE_MESSAGE(P, M))
-#define NCBITEST_CHECK_EQUAL_MT_SAFE(S,E)                                     \
+#  define NCBITEST_CHECK_EQUAL_MT_SAFE(S,E)                                   \
             MT_SAFE(NCBITEST_CHECK_EQUAL(S, E))
-#define NCBITEST_CHECK_NE_MT_SAFE(S,E)                                        \
+#  define NCBITEST_CHECK_NE_MT_SAFE(S,E)                                      \
             MT_SAFE(NCBITEST_CHECK_NE(S, E))
-#define NCBITEST_REQUIRE_NE_MT_SAFE(S,E)                                      \
+#  define NCBITEST_REQUIRE_NE_MT_SAFE(S,E)                                    \
             MT_SAFE(NCBITEST_REQUIRE_NE(S, E))
+#endif
 
 #ifdef LBOS_TEST_MT
 #define TEST_PASS return
