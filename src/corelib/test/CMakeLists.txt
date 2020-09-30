@@ -21,5 +21,5 @@ NCBI_add_app(
            test_resource_info test_interprocess_lock test_ncbithr_native 
            test_ncbi_rwstream test_condvar test_base64 test_trial_check 
            test_message_mt test_ncbicntr test_ncbi_url test_trial 
-           test_uncaught_exception test_ncbi_fast
+           test_uncaught_exception test_ncbi_fast test_boost_mt
 )

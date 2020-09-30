@@ -143,6 +143,12 @@ namespace but = boost::unit_test;
 
 BEGIN_NCBI_SCOPE
 
+#ifdef SYSTEM_MUTEX_INITIALIZER
+SSystemFastMutex g_NcbiTestMutex = STATIC_FAST_MUTEX_INITIALIZER;
+#else
+CAutoInitializeStaticFastMutex g_NcbiTestMutex;
+#endif
+
 #if BOOST_VERSION >= 105900
 inline
 static bool s_IsEnabled(const but::test_unit& tu) {

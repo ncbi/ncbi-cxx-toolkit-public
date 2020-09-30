@@ -45,6 +45,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbisys.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
@@ -116,21 +117,24 @@ inline bool BOOST_CURRENT_TEST_PASSED()
 
 #if BOOST_VERSION >= 105900
 #  if BOOST_VERSION >= 106000
-#    define BOOST_CHECK_THROW_IMPL( S, E, P, postfix, TL )              \
+#    define BOOST_CHECK_THROW_IMPL_EX( S, E, P, postfix, TL, guard )    \
 do {                                                                    \
     try {                                                               \
         BOOST_TEST_PASSPOINT();                                         \
         S;                                                              \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, false, "exception " BOOST_STRINGIZE(E) \
                               " expected but not raised",               \
                               TL, CHECK_MSG, _ );                       \
     } catch( E const& ex ) {                                            \
         ::boost::ignore_unused( ex );                                   \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, P,                                     \
                               "exception \"" BOOST_STRINGIZE( E )       \
                               "\" raised as expected" postfix,          \
                               TL, CHECK_MSG, _  );                      \
     } catch (...) {                                                     \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, false,                                 \
                               "an unexpected exception was thrown by "  \
                               BOOST_STRINGIZE( S ),                     \
@@ -138,20 +142,29 @@ do {                                                                    \
     }                                                                   \
 } while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
 /**/
+
+#    define BOOST_THROW_AFFIX ""
+#    define BOOST_EXCEPTION_AFFIX(P)                            \
+    ": validation on the raised exception through predicate \"" \
+    BOOST_STRINGIZE(P) "\""
+
 #  else
-#    define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )               \
+#    define BOOST_CHECK_THROW_IMPL_EX( S, E, P, prefix, TL, guard )     \
 do {                                                                    \
     try {                                                               \
         BOOST_TEST_PASSPOINT();                                         \
         S;                                                              \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, false, "exception " BOOST_STRINGIZE(E) \
                               " is expected",                           \
                               TL, CHECK_MSG, _ );                       \
     } catch( E const& ex ) {                                            \
         ::boost::unit_test::ut_detail::ignore_unused_variable_warning( ex ); \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, P, prefix BOOST_STRINGIZE( E ) " is caught", \
                               TL, CHECK_MSG, _  );                      \
     } catch (...) {                                                     \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, false,                                 \
                               "an unexpected exception was thrown by "  \
                               BOOST_STRINGIZE( S ),                     \
@@ -161,18 +174,21 @@ do {                                                                    \
 /**/
 #  endif
 
-#  define BOOST_CHECK_NO_THROW_IMPL( S, TL )                            \
+#  define BOOST_CHECK_NO_THROW_IMPL_EX( S, TL, guard )                  \
 do {                                                                    \
     try {                                                               \
         S;                                                              \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, true, "no exceptions thrown by "       \
                               BOOST_STRINGIZE( S ),                     \
                               TL, CHECK_MSG, _ );                       \
     } catch (std::exception& ex) {                                      \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, false, "an std::exception was thrown by " \
                               BOOST_STRINGIZE( S ) " : " << ex.what(),  \
                               TL, CHECK_MSG, _ );                       \
     } catch( ... ) {                                                    \
+        guard;                                                          \
         BOOST_TEST_TOOL_IMPL( 2, false, "a nonstandard exception thrown by " \
                               BOOST_STRINGIZE( S ),                     \
                               TL, CHECK_MSG, _ );                       \
@@ -180,42 +196,93 @@ do {                                                                    \
 } while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
 /**/
 #else
-#  define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                  \
+#  define BOOST_CHECK_THROW_IMPL_EX( S, E, P, prefix, TL, guard )        \
 try {                                                                    \
     BOOST_TEST_PASSPOINT();                                              \
     S;                                                                   \
+    guard;                                                               \
     BOOST_CHECK_IMPL( false, "exception " BOOST_STRINGIZE( E )           \
                              " is expected", TL, CHECK_MSG ); }          \
 catch( E const& ex ) {                                                   \
     boost::unit_test::ut_detail::ignore_unused_variable_warning( ex );   \
+    guard;                                                               \
     BOOST_CHECK_IMPL( P, prefix BOOST_STRINGIZE( E ) " is caught",       \
                       TL, CHECK_MSG );                                   \
 }                                                                        \
 catch (...) {                                                            \
+    guard;                                                               \
     BOOST_CHECK_IMPL(false, "an unexpected exception was thrown by "     \
                             BOOST_STRINGIZE( S ),                        \
                      TL, CHECK_MSG);                                     \
 }                                                                        \
 /**/
 
-#  define BOOST_CHECK_NO_THROW_IMPL( S, TL )                                 \
+#  define BOOST_CHECK_NO_THROW_IMPL_EX( S, TL, guard )                       \
 try {                                                                        \
     S;                                                                       \
+    guard;                                                                   \
     BOOST_CHECK_IMPL( true, "no exceptions thrown by " BOOST_STRINGIZE( S ), \
                       TL, CHECK_MSG );                                       \
 }                                                                            \
 catch (std::exception& ex) {                                                 \
+    guard;                                                                   \
     BOOST_CHECK_IMPL( false, "an std::exception was thrown by "              \
                              BOOST_STRINGIZE( S ) " : " << ex.what(),        \
                       TL, CHECK_MSG);                                        \
 }                                                                            \
 catch( ... ) {                                                               \
+    guard;                                                                   \
     BOOST_CHECK_IMPL( false, "a nonstandard exception thrown by "            \
                              BOOST_STRINGIZE( S ),                           \
                       TL, CHECK_MSG );                                       \
 }                                                                            \
 /**/
 #endif
+
+#ifndef BOOST_THROW_AFFIX // 1.59 or older
+#  define BOOST_THROW_AFFIX "exception "
+#  define BOOST_EXCEPTION_AFFIX(P) "incorrect exception "
+#endif
+
+#  define BOOST_CHECK_THROW_IMPL( S, E, P, affix, TL ) \
+    BOOST_CHECK_THROW_IMPL_EX( S, E, P, affix, TL, )
+#  define BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, P, affix, TL )                \
+    BOOST_CHECK_THROW_IMPL_EX( S, E, P, affix, TL,                            \
+                               NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard( \
+                                   NCBI_NS_NCBI::g_NcbiTestMutex) )
+
+#define BOOST_WARN_THROW_MT_SAFE( S, E ) \
+    BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, true, BOOST_THROW_AFFIX, WARN )
+#define BOOST_CHECK_THROW_MT_SAFE( S, E ) \
+    BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, true, BOOST_THROW_AFFIX, CHECK )
+#define BOOST_REQUIRE_THROW_MT_SAFE( S, E ) \
+    BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, true, BOOST_THROW_AFFIX, REQUIRE )
+
+#define BOOST_WARN_EXCEPTION_MT_SAFE( S, E, P )                              \
+    BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, P( ex ), BOOST_EXCEPTION_AFFIX(P), \
+                                    WARN )
+#define BOOST_CHECK_EXCEPTION_MT_SAFE( S, E, P )                             \
+    BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, P( ex ), BOOST_EXCEPTION_AFFIX(P), \
+                                    CHECK )
+#define BOOST_REQUIRE_EXCEPTION_MT_SAFE( S, E, P )                           \
+    BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, P( ex ), BOOST_EXCEPTION_AFFIX(P), \
+                                    REQUIRE )
+
+#define BOOST_CHECK_NO_THROW_IMPL( S, TL ) \
+    BOOST_CHECK_NO_THROW_IMPL_EX( S, TL, )
+#define BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, TL )                      \
+    BOOST_CHECK_NO_THROW_IMPL_EX( S, TL,                                \
+                                  NCBI_NS_NCBI::CFastMutexGuard         \
+                                  _ncbitest_guard(                      \
+                                      NCBI_NS_NCBI::g_NcbiTestMutex) )
+
+#define BOOST_WARN_NO_THROW_MT_SAFE( S ) \
+    BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, WARN )
+#define BOOST_CHECK_NO_THROW_MT_SAFE( S ) \
+    BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, CHECK )
+#define BOOST_REQUIRE_NO_THROW_MT_SAFE( S ) \
+    BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, REQUIRE )
+
 
 #if BOOST_VERSION >= 104200
 #  define NCBI_BOOST_LOCATION()  , boost::execution_exception::location()
@@ -370,6 +437,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 /**/
 
 
+#  define BOOST_TEST_TOOL_PASS_ARG_ONLY( r, _, arg ) , arg
 
 #if BOOST_VERSION >= 105900
 
@@ -384,6 +452,80 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     NCBITEST_CHECK_IMPL_EX(0, ::boost::test_tools::tt_detail::P(),           \
                            check_descr, TL, CT, ARGS)
 
+#  define NCBITEST_CHECK_IMPL_MT_SAFE(P, check_descr, TL, CT)             \
+    do {                                                                  \
+        bool _ncbitest_value;                                             \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                     \
+            (NCBI_NS_NCBI::eEmptyGuard);                                  \
+        BOOST_CHECK_NO_THROW_IMPL_EX(_ncbitest_value = (P);, TL,          \
+            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));        \
+        BOOST_TEST_TOOL_IMPL(2, _ncbitest_value, check_descr, TL, CT, _); \
+    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+
+#  define BOOST_PP_BOOL_00 0
+
+#  define BOOST_TEST_TOOL_PASS_PRED00( P, ARGS ) P
+
+#  define BOOST_TEST_TOOL_PASS_ARGS00( ARGS )                           \
+    BOOST_PP_SEQ_FOR_EACH( BOOST_TEST_TOOL_PASS_ARG_ONLY, _, ARGS )
+
+#  define NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE(P, descr, TL, CT, A1, A2) \
+    do {                                                                    \
+        std::decay<decltype(A1)>::type _ncbitest_value1;                    \
+        std::decay<decltype(A2)>::type _ncbitest_value2;                    \
+        NCBI_NS_NCBI::CFastMutexGuard  _ncbitest_guard                      \
+            (NCBI_NS_NCBI::eEmptyGuard);                                    \
+        BOOST_CHECK_NO_THROW_IMPL_EX(                                       \
+            _ncbitest_value1 = (A1); _ncbitest_value2 = (A2);, TL,          \
+            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));          \
+        BOOST_TEST_TOOL_IMPL(00, ::boost::test_tools::tt_detail::P(),       \
+                             descr, TL, CT,                                 \
+                             (_ncbitest_value1)(BOOST_STRINGIZE(A1))        \
+                             (_ncbitest_value2)(BOOST_STRINGIZE(A2)));      \
+    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+
+#  define BOOST_CHECK_IMPL_MT_SAFE( P, check_descr, TL, CT )                \
+    do {                                                                    \
+        bool _ncbitest_value = (P);                                         \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                       \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                                \
+        BOOST_TEST_TOOL_IMPL( 2, _ncbitest_value, check_descr, TL, CT, _ ); \
+    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+
+#  define BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE(P, descr, TL, CT, A1, A2) \
+    do {                                                                 \
+        auto _ncbitest_value1 = A1;                                      \
+        auto _ncbitest_value2 = A2;                                      \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                    \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                             \
+        BOOST_TEST_TOOL_IMPL(00, ::boost::test_tools::tt_detail::P(),    \
+                             descr, TL, CT,                              \
+                             (_ncbitest_value1)(BOOST_STRINGIZE(A1))     \
+                             (_ncbitest_value2)(BOOST_STRINGIZE(A2)));   \
+    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+
+#  define BOOST_CLOSE_IMPL_MT_SAFE( L, R, T, TL )                             \
+    do {                                                                      \
+        auto _ncbitest_l = L;                                                 \
+        auto _ncbitest_r = R;                                                 \
+        auto _ncbitest_t = ::boost::math::fpc::percent_tolerance(T);          \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                         \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                                  \
+        BOOST_TEST_TOOL_IMPL(                                                 \
+            00, ::boost::test_tools::check_is_close_t(), "", TL, CHECK_CLOSE, \
+            (_ncbitest_l)(BOOST_STRINGIZE(L))(_ncbitest_r)(BOOST_STRINGIZE(R))\
+            (_ncbitest_t)(""));  \
+    } while ( ::boost::test_tools::tt_detail::dummy_cond() )
+
+#  define BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, TL ) \
+    do {                                                             \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                         \
+        BOOST_TEST_TOOL_IMPL(                                        \
+            1, ::boost::test_tools::tt_detail::equal_coll_impl(),    \
+            "", TL, CHECK_EQUAL_COLL, (LB)(LE)(RB)(RE) );            \
+    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+
 #else
 
 #  define NCBITEST_CHECK_IMPL(P, check_descr, TL, CT)                        \
@@ -393,9 +535,81 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     BOOST_CHECK_NO_THROW_IMPL(BOOST_CHECK_WITH_ARGS_IMPL(                    \
     ::boost::test_tools::tt_detail::P(), check_descr, TL, CT, ARGS), TL)
 
+#  define NCBITEST_CHECK_IMPL_MT_SAFE(P, check_descr, TL, CT)           \
+    do {                                                                \
+        bool _ncbitest_value;                                           \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                   \
+            (NCBI_NS_NCBI::eEmptyGuard);                                \
+        BOOST_CHECK_NO_THROW_IMPL_EX(_ncbitest_value = (P), TL,         \
+            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));      \
+        BOOST_CHECK_IMPL(_ncbitest_value, check_descr, TL, CT);         \
+    } while ( ::boost::test_tools::dummy_cond )
+
+#  define NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE(P, descr, TL, CT, A1, A2)   \
+    do {                                                                      \
+        std::decay<decltype(A1)>::type _ncbitest_value1;                      \
+        std::decay<decltype(A2)>::type _ncbitest_value2;                      \
+        NCBI_NS_NCBI::CFastMutexGuard  _ncbitest_guard                        \
+            (NCBI_NS_NCBI::eEmptyGuard);                                      \
+        BOOST_CHECK_NO_THROW_IMPL_EX(                                         \
+            _ncbitest_value1 = (A1); _ncbitest_value2 = (A2);, TL,            \
+            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));            \
+        /* BOOST_TEST_PASSPOINT(); */ /* redundant */                         \
+        BOOST_TEST_TOOL_IMPL( check_frwd,                                     \
+                              ::boost::test_tools::tt_detail::P(),            \
+                              descr, TL, CT )                                 \
+            BOOST_PP_SEQ_FOR_EACH( BOOST_TEST_TOOL_PASS_ARG_ONLY, '_',        \
+                                   (_ncbitest_value1)(BOOST_STRINGIZE(A1))    \
+                                   (_ncbitest_value2)(BOOST_STRINGIZE(A2)))); \
+    } while ( ::boost::test_tools::dummy_cond )
+
+#  define BOOST_CHECK_IMPL_MT_SAFE( P, check_descr, TL, CT )      \
+    do {                                                          \
+        bool _ncbitest_value = (P);                               \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard             \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                      \
+        BOOST_CHECK_IMPL( _ncbitest_value, check_descr, TL, CT ); \
+    } while ( ::boost::test_tools::dummy_cond )
+
+#  define BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE(P, descr, TL, CT, A1, A2)      \
+    do {                                                                      \
+        auto _ncbitest_value1 = A1;                                           \
+        auto _ncbitest_value2 = A2;                                           \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                         \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                                  \
+        BOOST_TEST_PASSPOINT();                                               \
+        BOOST_TEST_TOOL_IMPL( check_frwd,                                     \
+                              ::boost::test_tools::tt_detail::P(),            \
+                              descr, TL, CT )                                 \
+            BOOST_PP_SEQ_FOR_EACH( BOOST_TEST_TOOL_PASS_ARG_ONLY, '_',        \
+                                   (_ncbitest_value1)(BOOST_STRINGIZE(A1))    \
+                                   (_ncbitest_value2)(BOOST_STRINGIZE(A2)))); \
+    } while ( ::boost::test_tools::dummy_cond )
+
+#  define BOOST_CLOSE_IMPL_MT_SAFE( L, R, T, TL )                             \
+    do {                                                                      \
+        auto _ncbitest_l = L;                                                 \
+        auto _ncbitest_r = R;                                                 \
+        auto _ncbitest_t = ::boost::test_tools::percent_tolerance(T);         \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                         \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                                  \
+        BOOST_TEST_PASSPOINT();                                               \
+        BOOST_TEST_TOOL_IMPL(check_frwd, ::boost::test_tools::check_is_close, \
+                             "", TL, CHECK_CLOSE)                             \
+            BOOST_PP_SEQ_FOR_EACH(BOOST_TEST_TOOL_PASS_ARG_ONLY, '_',         \
+                                  (_ncbitest_l)(BOOST_STRINGIZE(L))           \
+                                  (_ncbitest_r)(BOOST_STRINGIZE(R))           \
+                                  (_ncbitest_t)("")));                        \
+    } while ( ::boost::test_tools::dummy_cond )
+
+#  define BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, TL ) \
+    do {                                                             \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);                         \
+        BOOST_EQUAL_COLLECTIONS_IMPL( LB, LE, RB, RE, TL );          \
+    } while( ::boost::test_tools::dummy_cond )
+
 #endif
-
-
 
 // Several analogs to BOOST_* macros that make simultaneous checking of
 // NO_THROW and some other condition
@@ -403,10 +617,27 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #define NCBITEST_CHECK(P)     NCBITEST_CHECK_IMPL( (P), BOOST_TEST_STRINGIZE( P ), CHECK,   CHECK_PRED )
 #define NCBITEST_REQUIRE(P)   NCBITEST_CHECK_IMPL( (P), BOOST_TEST_STRINGIZE( P ), REQUIRE, CHECK_PRED )
 
+#define NCBITEST_WARN_MT_SAFE(P)                                       \
+    NCBITEST_CHECK_IMPL_MT_SAFE( (P), BOOST_TEST_STRINGIZE( P ), WARN, \
+                                 CHECK_PRED )
+#define NCBITEST_CHECK_MT_SAFE(P)                                       \
+    NCBITEST_CHECK_IMPL_MT_SAFE( (P), BOOST_TEST_STRINGIZE( P ), CHECK, \
+                                 CHECK_PRED )
+#define NCBITEST_REQUIRE_MT_SAFE(P)                                       \
+    NCBITEST_CHECK_IMPL_MT_SAFE( (P), BOOST_TEST_STRINGIZE( P ), REQUIRE, \
+                                 CHECK_PRED )
+
 
 #define NCBITEST_WARN_MESSAGE( P, M )    NCBITEST_CHECK_IMPL( (P), M, WARN,    CHECK_MSG )
 #define NCBITEST_CHECK_MESSAGE( P, M )   NCBITEST_CHECK_IMPL( (P), M, CHECK,   CHECK_MSG )
 #define NCBITEST_REQUIRE_MESSAGE( P, M ) NCBITEST_CHECK_IMPL( (P), M, REQUIRE, CHECK_MSG )
+
+#define NCBITEST_WARN_MESSAGE_MT_SAFE( P, M ) \
+    NCBITEST_CHECK_IMPL_MT_SAFE( (P), M, WARN,    CHECK_MSG )
+#define NCBITEST_CHECK_MESSAGE_MT_SAFE( P, M ) \
+    NCBITEST_CHECK_IMPL_MT_SAFE( (P), M, CHECK,   CHECK_MSG )
+#define NCBITEST_REQUIRE_MESSAGE_MT_SAFE( P, M ) \
+    NCBITEST_CHECK_IMPL_MT_SAFE( (P), M, REQUIRE, CHECK_MSG )
 
 
 #define NCBITEST_WARN_EQUAL( L, R ) \
@@ -416,6 +647,16 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #define NCBITEST_REQUIRE_EQUAL( L, R ) \
     NCBITEST_CHECK_WITH_ARGS_IMPL( equal_impl_frwd, "", REQUIRE, CHECK_EQUAL, (L)(R) )
 
+#define NCBITEST_WARN_EQUAL_MT_SAFE( L, R )                             \
+    NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( equal_impl_frwd, "", WARN, \
+                                             CHECK_EQUAL, L, R )
+#define NCBITEST_CHECK_EQUAL_MT_SAFE( L, R )                             \
+    NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( equal_impl_frwd, "", CHECK, \
+                                             CHECK_EQUAL, L, R )
+#define NCBITEST_REQUIRE_EQUAL_MT_SAFE( L, R )                             \
+    NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( equal_impl_frwd, "", REQUIRE, \
+                                             CHECK_EQUAL, L, R )
+
 
 #define NCBITEST_WARN_NE( L, R ) \
     NCBITEST_CHECK_WITH_ARGS_IMPL( ne_impl, "", WARN,    CHECK_NE, (L)(R) )
@@ -424,31 +665,117 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #define NCBITEST_REQUIRE_NE( L, R ) \
     NCBITEST_CHECK_WITH_ARGS_IMPL( ne_impl, "", REQUIRE, CHECK_NE, (L)(R) )
 
+#define NCBITEST_WARN_NE_MT_SAFE( L, R )                        \
+    NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( ne_impl, "", WARN, \
+                                             CHECK_NE, L, R )
+#define NCBITEST_CHECK_NE_MT_SAFE( L, R )                        \
+    NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( ne_impl, "", CHECK, \
+                                             CHECK_NE, L, R )
+#define NCBITEST_REQUIRE_NE_MT_SAFE( L, R )                        \
+    NCBITEST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( ne_impl, "", REQUIRE, \
+                                             CHECK_NE, L, R )
+
+// MT-safe variants of commonly used standard Boost macros
+#define BOOST_WARN_MT_SAFE( P ) \
+    BOOST_CHECK_IMPL_MT_SAFE( (P), BOOST_TEST_STRINGIZE(P), WARN, CHECK_PRED )
+#define BOOST_CHECK_MT_SAFE( P ) \
+    BOOST_CHECK_IMPL_MT_SAFE( (P), BOOST_TEST_STRINGIZE(P), CHECK, CHECK_PRED )
+#define BOOST_REQUIRE_MT_SAFE( P )                                   \
+    BOOST_CHECK_IMPL_MT_SAFE( (P), BOOST_TEST_STRINGIZE(P), REQUIRE, \
+                              CHECK_PRED )
+
+#define BOOST_WARN_MESSAGE_MT_SAFE( P, M ) \
+    BOOST_CHECK_IMPL_MT_SAFE( (P), M, WARN, CHECK_MSG )
+#define BOOST_CHECK_MESSAGE_MT_SAFE( P, M ) \
+    BOOST_CHECK_IMPL_MT_SAFE( (P), M, CHECK, CHECK_MSG )
+#define BOOST_REQUIRE_MESSAGE_MT_SAFE( P, M ) \
+    BOOST_CHECK_IMPL_MT_SAFE( (P), M, REQUIRE, CHECK_MSG )
+
+#define BOOST_WARN_EQUAL_MT_SAFE( L, R )                             \
+    BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( equal_impl_frwd, "", WARN, \
+                                          CHECK_EQUAL, L, R )
+#define BOOST_CHECK_EQUAL_MT_SAFE( L, R )                             \
+    BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( equal_impl_frwd, "", CHECK, \
+                                          CHECK_EQUAL, L, R )
+#define BOOST_REQUIRE_EQUAL_MT_SAFE( L, R )                             \
+    BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( equal_impl_frwd, "", REQUIRE, \
+                                          CHECK_EQUAL, L, R )
+
+#define BOOST_WARN_NE_MT_SAFE( L, R ) \
+    BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( ne_impl, "", WARN,   CHECK_NE, L, R )
+#define BOOST_CHECK_NE_MT_SAFE( L, R ) \
+    BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE( ne_impl, "", CHECK,  CHECK_NE, L, R )
+#define BOOST_REQUIRE_NE_MT_SAFE( L, R ) \
+    BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE(ne_impl, "", REQUIRE, CHECK_NE, L, R )
+
+#define BOOST_ERROR_MT_SAFE( M ) BOOST_CHECK_MESSAGE_MT_SAFE( false, M )
+#define BOOST_FAIL_MT_SAFE( M )  BOOST_REQUIRE_MESSAGE_MT_SAFE( false, M )
+
+#define BOOST_TEST_MESSAGE_MT_SAFE( M )               \
+    do {                                              \
+        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard \
+            (NCBI_NS_NCBI::g_NcbiTestMutex);          \
+        BOOST_TEST_MESSAGE( M );                      \
+    } while (false)
+
+#define BOOST_WARN_CLOSE_MT_SAFE( L, R, T ) \
+    BOOST_CLOSE_IMPL_MT_SAFE( L, R, T, WARN )
+#define BOOST_CHECK_CLOSE_MT_SAFE( L, R, T ) \
+    BOOST_CLOSE_IMPL_MT_SAFE( L, R, T, CHECK )
+#define BOOST_REQUIRE_CLOSE_MT_SAFE( L, R, T ) \
+    BOOST_CLOSE_IMPL_MT_SAFE( L, R, T, REQUIRE )
+
+#define BOOST_WARN_EQUAL_COLLECTIONS_MT_SAFE( LB, LE, RB, RE ) \
+    BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, WARN )
+#define BOOST_CHECK_EQUAL_COLLECTIONS_MT_SAFE( LB, LE, RB, RE ) \
+    BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, CHECK )
+#define BOOST_REQUIRE_EQUAL_COLLECTIONS_MT_SAFE( LB, LE, RB, RE ) \
+    BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, REQUIRE )
 
 // Ensure Clang analysis tools (notably scan-build) recognize that a failed
 // {BOOST,NCBITEST}_REQUIRE* call will bail.
 #ifdef __clang_analyzer__
 #  undef  BOOST_REQUIRE
 #  define BOOST_REQUIRE(P)               _ALWAYS_ASSERT(P)
+#  undef  BOOST_REQUIRE_MT_SAFE
+#  define BOOST_REQUIRE_MT_SAFE(P)       BOOST_REQUIRE(P)
 #  undef  BOOST_REQUIRE_MESSAGE
 #  define BOOST_REQUIRE_MESSAGE(P, M)    _ALWAYS_ASSERT((FORMAT(M), (P)))
+#  undef  BOOST_REQUIRE_MESSAGE_MT_SAFE
+#  define BOOST_REQUIRE_MESSAGE_MT_SAFE(P) BOOST_REQUIRE_MESSAGE(M, P)
 #  undef  BOOST_REQUIRE_EQUAL
 #  define BOOST_REQUIRE_EQUAL(L, R)      _ALWAYS_ASSERT((L) == (R))
+#  undef  BOOST_REQUIRE_EQUAL_MT_SAFE
+#  define BOOST_REQUIRE_EQUAL_MT_SAFE(L, R) BOOST_REQUIRE_EQUAL(L, R)
 #  undef  BOOST_REQUIRE_NE
 #  define BOOST_REQUIRE_NE(L, R)         _ALWAYS_ASSERT((L) != (R))
+#  undef  BOOST_REQUIRE_NE_MT_SAFE
+#  define BOOST_REQUIRE_NE_MT_SAFE(L, R) BOOST_REQUIRE_NE(L, R)
 #  undef  BOOST_REQUIRE_NO_THROW
 #  define BOOST_REQUIRE_NO_THROW(S) try { S; } catch (...) { _ALWAYS_TROUBLE; }
+#  undef  BOOST_REQUIRE_NO_THROW_MT_SAFE
+#  define BOOST_REQUIRE_NO_THROW_MT_SAFE(S) BOOST_REQUIRE_NO_THROW(S)
 #  undef  BOOST_REQUIRE_THROW
 #  define BOOST_REQUIRE_THROW(S, E) \
     do { try { S; } catch (E const&) { break; } _ALWAYS_TROUBLE; } while(false)
+#  undef  BOOST_REQUIRE_THROW_MT_SAFE
+#  define BOOST_REQUIRE_THROW_MT_SAFE(S, E) BOOST_REQUIRE_THROW(S, E)
 #  undef  NCBITEST_REQUIRE
 #  define NCBITEST_REQUIRE(P) BOOST_REQUIRE_NO_THROW(_ALWAYS_ASSERT(P))
+#  undef  NCBITEST_REQUIRE_MT_SAFE
+#  define NCBITEST_REQUIRE_MT_SAFE(P)    NCBITEST_REQUIRE(P)
 #  undef  NCBITEST_REQUIRE_MESSAGE
 #  define NCBITEST_REQUIRE_MESSAGE(P, M) NCBITEST_REQUIRE((FORMAT(M), (P)))
+#  undef  NCBITEST_REQUIRE_MESSAGE_MT_SAFE
+#  define NCBITEST_REQUIRE_MESSAGE_MT_SAFE(P) NCBITEST_REQUIRE_MESSAGE(M, P)
 #  undef  NCBITEST_REQUIRE_EQUAL
 #  define NCBITEST_REQUIRE_EQUAL(L, R)   NCBITEST_REQUIRE((L) == (R))
+#  undef  NCBITEST_REQUIRE_EQUAL_MT_SAFE
+#  define NCBITEST_REQUIRE_EQUAL_MT_SAFE(L, R) NCBITEST_REQUIRE_EQUAL(L, R)
 #  undef  NCBITEST_REQUIRE_NE
 #  define NCBITEST_REQUIRE_NE(L, R)      NCBITEST_REQUIRE((L) != (R))
+#  undef  NCBITEST_REQUIRE_NE_MT_SAFE
+#  define NCBITEST_REQUIRE_NE_MT_SAFE(L, R) NCBITEST_REQUIRE_NE(L, R)
 // Used but left as is: BOOST_REQUIRE_CLOSE, BOOST_REQUIRE_EQUAL_COLLECTIONS.
 // Irrelevant: BOOST_REQUIRE_CTX (custom, based on BOOST_REQUIRE),
 //             BOOST_REQUIRE_CUTPOINT (custom, based on throw).
@@ -701,6 +1028,11 @@ CNcbiRegistry& NcbiTestGetRWConfig(void);
 // macros defined above.
 //////////////////////////////////////////////////////////////////////////
 
+#ifdef SYSTEM_MUTEX_INITIALIZER
+extern SSystemFastMutex g_NcbiTestMutex;
+#else
+extern CAutoInitializeStaticFastMutex g_NcbiTestMutex;
+#endif
 
 /// Helper macro to implement NCBI_TEST_DEPENDS_ON_N.
 #define NCBITEST_DEPENDS_ON_N_IMPL(z, n, names_array)               \
