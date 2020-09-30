@@ -42,7 +42,6 @@
 
 #include <connect/services/netcache_api_expt.hpp>
 #include <misc/netstorage/netstorage.hpp>
-#include <misc/netstorage/impl/netstorage_int.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/reader_writer.hpp>
@@ -50,7 +49,6 @@
 #include <corelib/ncbiargs.hpp>
 
 #define GRID_APP_NAME "ncfetch.cgi"
-#define CONFIG_SECTION "ncfetch"
 
 USING_NCBI_SCOPE;
 
@@ -60,26 +58,25 @@ USING_NCBI_SCOPE;
 ///
 class CNetCacheBlobFetchApp : public CCgiApplication
 {
-public:
-    CNetCacheBlobFetchApp() : m_NetStorage(eVoid) {}
-
 protected:
-    virtual void Init();
     virtual int ProcessRequest(CCgiContext& ctx);
     virtual int OnException(std::exception& e, CNcbiOstream& os);
 
 private:
-    CCompoundIDPool m_CompoundIDPool;
-    CNetStorage m_NetStorage;
+    string x_GetInitString(const string& key);
 };
 
-void CNetCacheBlobFetchApp::Init()
+string CNetCacheBlobFetchApp::x_GetInitString(const string& key)
 {
-    // Standard CGI framework initialization
-    CCgiApplication::Init();
+    try {
+        if (CNetStorageObjectLoc(CCompoundIDPool(), key).HasSubKey()) {
+            return "mode=direct";
+        }
+    }
+    catch (...) {
+    }
 
-    m_NetStorage = CCombinedNetStorage(GetConfig().GetString(CONFIG_SECTION,
-            "netstorage", kEmptyStr));
+    return GetConfig().Get("ncfetch", "netstorage");
 }
 
 void s_WriteHeader(const CCgiRequest& request, CCgiResponse& reply)
@@ -116,21 +113,8 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         NCBI_THROW(CArgException, eNoArg, "CGI entry 'key' is missing");
     }
 
-    string subkey = request.GetEntry("subkey", &is_found);
-
-    // Try to read an ICache blob only if a subkey is provided
-    if (is_found) {
-        string version_str = request.GetEntry("version");
-        CNetStorageObjectLoc::TVersion version;
-
-        if (!version_str.empty()) {
-            version = NStr::StringToNumeric<int>(version_str);
-        }
-
-        key = g_CreateNetStorageObjectLoc(m_NetStorage, key, version, subkey).GetLocator();
-    }
-
-    CNetStorageObject netstorage_object(m_NetStorage.Open(key));
+    CCombinedNetStorage netstorage(x_GetInitString(key));
+    CNetStorageObject netstorage_object(netstorage.Open(key));
 
     char buffer[NETSTORAGE_IO_BUFFER_SIZE];
     size_t total_bytes_written = 0;
