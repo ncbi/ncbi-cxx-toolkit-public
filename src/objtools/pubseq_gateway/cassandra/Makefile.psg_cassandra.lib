@@ -8,7 +8,7 @@ SRC = cass_util cass_blob_op cass_conv cass_driver cass_factory lbsm_resolver Sy
     id2_split_task/insert \
     si2csi/record si2csi_task/fetch si2csi_task/update si2csi_task/delete \
     bioseq_info/record bioseq_info_task/fetch bioseq_info_task/update bioseq_info_task/delete \
-    status_history/insert status_history/delete
+    status_history/insert status_history/delete status_history/get_public_comment
 LIB = psg_cassandra
 
 LIBS = $(CASSANDRA_LIBS)

@@ -81,7 +81,7 @@ void CCassStatusHistoryTaskInsert::Wait1()
                 qry->SetSQL(sql, 7);
                 qry->BindInt32(0, m_Record->GetSatKey());
                 qry->BindInt64(1, m_Record->GetDoneWhen());
-                qry->BindInt16(2, m_Record->GetFlags());
+                qry->BindInt64(2, m_Record->GetFlags());
                 qry->BindStr(3, m_Record->GetUserName());
                 qry->BindStr(4, m_Record->GetComment());
                 qry->BindStr(5, m_Record->GetPublicComment());
