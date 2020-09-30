@@ -36,7 +36,6 @@
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"
-
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -83,6 +82,7 @@
 #define SHORT_GAP 20
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 typedef struct _seq_loc_ids {
     objects::CSeq_loc* badslp;
@@ -745,6 +745,28 @@ static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extr
     return true;
 }
 
+
+static bool s_IsConOrScaffold(const CSeq_id& id, CScope& scope)
+{
+    auto bsh = scope.GetBioseqHandle(id);
+    
+    if (bsh && 
+        bsh.IsSetInst_Repr() &&
+        bsh.GetInst_Repr() == CSeq_inst::eRepr_delta &&
+        bsh.IsSetInst_Ext()) {
+        const auto& ext = bsh.GetInst_Ext();
+        if (ext.IsDelta() &&
+            ext.GetDelta().IsSet()) {
+            const auto& delta = ext.GetDelta().Get();
+            return any_of(begin(delta), 
+                          end(delta), 
+                          [](CRef<CDelta_seq> pDeltaSeq) { return (pDeltaSeq && pDeltaSeq->IsLoc()); });
+        }
+    }
+    return false;
+}
+
+
 /**********************************************************/
 void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Int4 source,
                   Int4 acctype, bool pricon, char* acc)
@@ -827,11 +849,27 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
 
         if(pp->source != ParFlat_EMBL && pp->source != ParFlat_NCBI)
         {
+
+            CRef<CSeq_id> pId(new CSeq_id(*acc));
+            bool IsConOrScaffold=false;
+            try {
+                IsConOrScaffold = s_IsConOrScaffold(*pId, GetScope());
+            }
+            catch (...) {
+                // report an error 
+                continue;
+            } 
+        /*
             Int4 iscon = fta_is_con_div(pp, *id, acc->c_str());
 
             if(iscon < 0 || (iscon == 1 && pricon == false) ||
                (iscon == 0 && pricon && whose == acctype))
             {
+                continue;
+            }
+            */
+            if ((IsConOrScaffold && !pricon) ||
+                (!IsConOrScaffold && pricon && whose == acctype)) {
                 continue;
             }
         }
