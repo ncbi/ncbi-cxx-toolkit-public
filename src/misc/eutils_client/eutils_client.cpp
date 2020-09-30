@@ -187,8 +187,18 @@ public:
         case eDiag_Error:
         case eDiag_Critical:
         case eDiag_Fatal:
-            // NCBI_THROW, but wth err_code as a variable.
-            throw CEUtilsException(DIAG_COMPILE_INFO, 0, err_code, message);
+            if (err_code != CEUtilsException::ePhraseNotFound ||
+                !IsTaxidQuery(message))
+            {
+                // NCBI_THROW, but wth err_code as a variable.
+                throw CEUtilsException(DIAG_COMPILE_INFO, 0, err_code, message);
+            }
+
+            // This is a taxid query that happens to be be found in database;
+            // treat as warning
+
+            NCBI_FALLTHROUGH;
+
         default:
             // ERR_POST, but with severity as a variable.
             CNcbiDiag(DIAG_COMPILE_INFO, severity).GetRef()
@@ -196,6 +206,28 @@ public:
                     << ": "
                     << message << Endm;
         }
+    }
+
+private:
+
+    bool IsTaxidQuery(const string &message) const {
+        /// Taxid queries are of form "txid<number>[orgn]" or "txid<number>[progn"}
+        /// The best way to check this would be using class CRegexp, but that
+        /// could create a circular library dependency, so using more primitive
+        /// string checking methods
+        if (!NStr::StartsWith(message, "txid") ||
+            (!NStr::EndsWith(message, "[orgn]") &&
+             !NStr::EndsWith(message, "[porgn]")))
+        {
+            return false;
+        }
+        try {
+            NStr::StringToUInt(message.substr(4, message.find('[')-4));
+        } catch (CStringException &) {
+            /// "taxid" string is not a number
+            return false;
+        }
+        return true;
     }
 };
 
