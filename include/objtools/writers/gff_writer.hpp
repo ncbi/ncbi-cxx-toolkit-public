@@ -61,6 +61,7 @@ class NCBI_XOBJWRITE_EXPORT CGff2Writer:
 public:
     typedef enum {
         fSoQuirks = (fWriterBaseLast << 1),
+        fGenerateMissingTranscripts = (fWriterBaseLast << 2),
         fGff2WriterLast = fSoQuirks,
     } TFlags;
     
@@ -383,6 +384,11 @@ protected:
 
     virtual bool x_WriteTrackLine(
         const CRef< CUser_object > );
+
+    virtual bool xGeneratingMissingTranscripts() const 
+    {
+        return (m_uFlags & fGenerateMissingTranscripts);
+    }
 
     // data:
     CRef<CScope> m_pScope;

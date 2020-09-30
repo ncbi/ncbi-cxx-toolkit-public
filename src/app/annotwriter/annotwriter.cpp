@@ -349,6 +349,10 @@ void CAnnotWriterApp::Init()
         "GFF dialects: Restore original GFF type and attributes, if possible",
         true );
     arg_desc->AddFlag(
+        "generate-missing-transcripts",
+        "GFF dialects: Generate artificial transcript features for CDS features without one",
+        true );
+    arg_desc->AddFlag(
         "flybase",
         "GFF3 only: Use Flybase interpretation of the GFF3 spec",
         true );
@@ -847,7 +851,9 @@ unsigned int CAnnotWriterApp::xGffFlags(
         eFlags |= CGff3Writer::fIncludeProts;
         eFlags |= CGff3Writer::fExcludeNucs;
     }
-    
+    if (args["generate-missing-transcripts"]) {
+        eFlags |= CGff2Writer::fGenerateMissingTranscripts;
+    }    
     return eFlags;
 }
 
