@@ -179,26 +179,25 @@ void CNetStorageObjectLoc::Parse(CCompoundID cid, bool service_name_only)
     VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
     m_AppDomain = field.GetString();
 
+    m_SubKey.clear();
+    m_Version = 0;
+
     // Restore object identification.
     if (m_LocatorFlags & fLF_HasUserKey) {
         // Get the unique object key.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_ShortUniqueKey = field.GetString();
 
-        if (m_LocatorFlags & fLF_HasVersion) {
-            // null is stored as 0 (0 is not stored as it's the default)
-            VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-            auto version = static_cast<int>(field.GetInteger());
-            m_Version = version ? TVersion(version) : TVersion(null);
-        } else {
-            m_Version = 0;
-        }
-
         if (m_LocatorFlags & fLF_HasSubKey) {
             VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
             m_SubKey = field.GetString();
-        } else {
-            m_SubKey.clear();
+
+            if (m_LocatorFlags & fLF_HasVersion) {
+                // null is stored as 0 (0 is not stored as it's the default)
+                VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+                auto version = static_cast<int>(field.GetInteger());
+                m_Version = version ? TVersion(version) : TVersion(null);
+            }
         }
     } else {
         // Get object creation timestamp.
@@ -308,13 +307,13 @@ void CNetStorageObjectLoc::x_Pack() const
         // Save the unique object key.
         cid.AppendString(m_ShortUniqueKey);
 
-        if (m_LocatorFlags & fLF_HasVersion) {
-            // null is stored as 0 (0 is not stored as it's the default)
-            cid.AppendInteger(m_Version.IsNull() ? 0 : m_Version.GetValue());
-        }
-
         if (m_LocatorFlags & fLF_HasSubKey) {
             cid.AppendString(m_SubKey);
+
+            if (m_LocatorFlags & fLF_HasVersion) {
+                // null is stored as 0 (0 is not stored as it's the default)
+                cid.AppendInteger(m_Version.IsNull() ? 0 : m_Version.GetValue());
+            }
         }
     } else {
         // Save object creation timestamp.
@@ -418,7 +417,19 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     if (m_LocatorFlags & fLF_NetStorageService)
         root.SetString("ServiceName", m_ServiceName);
 
-    root.SetString("ObjectKey", m_UniqueKey);
+    if (m_LocatorFlags & fLF_HasSubKey) {
+        root.SetString("Cache", m_AppDomain);
+        root.SetString("ObjectKey", m_ShortUniqueKey);
+        root.SetString("ObjectSubKey", m_SubKey);
+
+        if (m_Version.IsNull()) {
+            root.SetNull("ObjectVersion");
+        } else {
+            root.SetInteger("ObjectVersion", m_Version);
+        }
+    } else {
+        root.SetString("ObjectKey", m_UniqueKey);
+    }
 
     CJsonNode storage_flags(CJsonNode::NewObjectNode());
 
@@ -467,6 +478,19 @@ CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::ParseFileTrackSite(co
     }
 
     return i->second;
+}
+
+string CNetStorageObjectLoc::Create(const string& service_name, const string& cache_name,
+        const string& key, const string& subkey, const TVersion& version)
+{
+    CCompoundIDPool id_pool;
+    auto ft_site = ParseFileTrackSite(CDiagContext::GetHostRole());
+    CNetStorageObjectLoc loc(id_pool, fNST_NoMetaData, cache_name, key, ft_site);
+    loc.SetLocation(service_name);
+    loc.m_SubKey = subkey;
+    loc.m_Version = version;
+    loc.m_LocatorFlags |= (version == TVersion(0) ? 0 : fLF_HasVersion) | fLF_HasSubKey;
+    return loc.GetLocator();
 }
 
 END_NCBI_SCOPE

@@ -62,8 +62,8 @@ struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
         size_t* blob_size_ptr,
         const CNamedParameterList* optional = NULL);
 
-    void ProlongBlobLifetime(const string&, const CTimeout&,
-            const CNamedParameterList* optional = NULL);
+    void ProlongBlobLifetime(const string& key, const string& subkey,
+            const CTimeout& ttl, const CNamedParameterList* optional = NULL);
 
     SNetCacheAPIImpl* GetNetCacheAPI();
     const SNetCacheAPIImpl* GetNetCacheAPI() const;

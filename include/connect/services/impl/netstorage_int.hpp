@@ -104,6 +104,7 @@ public:
     CTime GetCreationTime() const {return CTime(m_Timestamp);}
 
     bool HasUserKey() const {return (m_LocatorFlags & fLF_HasUserKey) != 0;}
+    bool HasSubKey() const { return m_LocatorFlags & fLF_HasSubKey; }
 
     // These are intended to be used together
     string GetAppDomain() const {return m_AppDomain;}
@@ -112,8 +113,8 @@ public:
     // This contains both of the above
     string GetUniqueKey() const {return m_UniqueKey;}
 
-    const TVersion& GetVersion() const { return m_Version; }
     const string& GetSubKey() const { return m_SubKey; }
+    const TVersion& GetVersion() const { return m_Version; }
 
     void SetLocation(const string& nc_service_name);
 
@@ -137,6 +138,10 @@ public:
 
     static EFileTrackSite ParseFileTrackSite(const string& ft_site_name);
 
+    // Create an object locator for an ICache blob
+    static string Create(const string& service_name, const string& cache_name,
+            const string& key, const string& subkey, const TVersion& version = null);
+
 private:
     enum ELocatorFlags {
         fLF_NetStorageService   = (1 << 0),
@@ -147,8 +152,8 @@ private:
         fLF_Cacheable           = (1 << 5),
         fLF_DevEnv              = (1 << 6),
         fLF_QAEnv               = (1 << 7),
-        fLF_HasVersion          = (1 << 8),
-        fLF_HasSubKey           = (1 << 9),
+        fLF_HasSubKey           = (1 << 8),
+        fLF_HasVersion          = (1 << 9),
 
         eLF_AttrFlags = (
                 fLF_NoMetaData |
@@ -197,8 +202,8 @@ private:
     // The same as above plus app domain
     string m_UniqueKey;
 
-    TVersion m_Version = 0;
     string m_SubKey;
+    TVersion m_Version = 0;
 
     string m_NCServiceName;
 

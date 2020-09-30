@@ -975,7 +975,7 @@ vector<CNetICacheClient::CBlobInfo> CNetICacheClient::Search(
     return result;
 }
 
-void CNetICacheClientExt::ProlongBlobLifetime(const string& key,
+void CNetICacheClientExt::ProlongBlobLifetime(const string& key, const string& subkey,
         const CTimeout& ttl, const CNamedParameterList* optional)
 {
     CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
@@ -985,7 +985,9 @@ void CNetICacheClientExt::ProlongBlobLifetime(const string& key,
     cmd += NStr::PrintableString(parameters.GetCacheName());
     cmd += "\" \"";
     cmd += key;
-    cmd += "\" \"\" ttl=";
+    cmd += "\" \"";
+    cmd += subkey;
+    cmd += "\" ttl=";
     cmd += NStr::NumericToString((unsigned)ttl.GetAsDouble());
 
     m_Impl->AppendClientIPSessionIDHitID(&cmd);

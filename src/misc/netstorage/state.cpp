@@ -362,6 +362,19 @@ INetStorageObjectState* CNetCache::StartRead(void* buf, size_t count,
 }
 
 
+// Cannot make this code a function,
+// as otherwise it would get into thrown exception instead of the methods using this code
+#define NC_CHECK_VERSION(object_loc)                                                    \
+    if (object_loc.GetVersion().IsNull()) {                                             \
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,                               \
+                "Null version is not supported");                                       \
+    }
+
+#define NC_GET_ARGS(object_loc)                                                         \
+    object_loc.GetShortUniqueKey(), object_loc.GetVersion(), object_loc.GetSubKey(),    \
+    nc_cache_name = object_loc.GetAppDomain()
+
+
 INetStorageObjectState* CNetCache::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
 {
@@ -370,9 +383,8 @@ INetStorageObjectState* CNetCache::StartWrite(const void* buf, size_t count,
     CNetStorageObjectLoc& object_loc(Locator());
 
     try {
-        CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(
-                    object_loc.GetShortUniqueKey(), 0, kEmptyStr,
-                    nc_cache_name = object_loc.GetAppDomain()));
+        NC_CHECK_VERSION(object_loc);
+        CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(NC_GET_ARGS(object_loc)));
 
         _ASSERT(writer.get());
 
@@ -391,9 +403,8 @@ Uint8 CNetCache::GetSize()
     CNetStorageObjectLoc& object_loc(Locator());
 
     try {
-        return m_Client.GetBlobSize(
-                object_loc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = object_loc.GetAppDomain());
+        NC_CHECK_VERSION(object_loc);
+        return m_Client.GetBlobSize(NC_GET_ARGS(object_loc));
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + object_loc.GetLocator())
     return 0; // Not reached
@@ -406,9 +417,8 @@ CNetStorageObjectInfo CNetCache::GetInfo()
     CNetStorageObjectLoc& object_loc(Locator());
 
     try {
-        CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(
-                object_loc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = object_loc.GetAppDomain());
+        NC_CHECK_VERSION(object_loc);
+        CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(NC_GET_ARGS(object_loc));
 
         string line, key, val;
 
@@ -432,7 +442,7 @@ CNetStorageObjectInfo CNetCache::GetInfo()
 // as otherwise it would get into thrown exception instead of those methods
 #define NC_EXISTS_IMPL(object_loc)                                          \
     if (!m_Client.HasBlob(object_loc.GetShortUniqueKey(),                   \
-                kEmptyStr, nc_cache_name = object_loc.GetAppDomain())) {    \
+                object_loc.GetSubKey(), nc_cache_name = object_loc.GetAppDomain())) { \
         /* Have to throw to let other locations try */                      \
         NCBI_THROW_FMT(CNetStorageException, eNotExists,                    \
             "NetStorageObject \"" << object_loc.GetLocator() <<             \
@@ -461,8 +471,8 @@ ENetStorageRemoveResult CNetCache::Remove()
         // NetCache returns OK on removing already-removed/non-existent blobs,
         // so have to check for existence first and throw if not
         NC_EXISTS_IMPL(object_loc);
-        m_Client.RemoveBlob(object_loc.GetShortUniqueKey(), 0, kEmptyStr,
-                nc_cache_name = object_loc.GetAppDomain());
+        NC_CHECK_VERSION(object_loc);
+        m_Client.RemoveBlob(NC_GET_ARGS(object_loc));
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on removing " + GetLoc())
 
@@ -484,7 +494,7 @@ void CNetCache::SetExpiration(const CTimeout& requested_ttl)
             ttl.Set(numeric_limits<unsigned>::max(), 0);
         }
 
-        m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), ttl,
+        m_Client.ProlongBlobLifetime(object_loc.GetShortUniqueKey(), object_loc.GetSubKey(), ttl,
                 nc_cache_name = object_loc.GetAppDomain());
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + GetLoc())
