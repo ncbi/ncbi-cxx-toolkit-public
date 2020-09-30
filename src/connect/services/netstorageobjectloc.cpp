@@ -74,18 +74,12 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         TNetStorageAttrFlags flags,
         const string& app_domain,
         const string& unique_key,
-        EFileTrackSite ft_site,
-        const TVersion& version,
-        const string& subkey) :
+        EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
-    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey |
-            (version == TVersion(0) ? 0 : fLF_HasVersion) |
-            (subkey.empty() ? 0 : fLF_HasSubKey)),
+    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey),
     m_AppDomain(app_domain),
     m_ShortUniqueKey(unique_key),
     m_UniqueKey(MakeUniqueKey()),
-    m_Version(version),
-    m_SubKey(subkey),
     m_Dirty(true)
 {
 }

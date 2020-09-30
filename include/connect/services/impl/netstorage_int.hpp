@@ -81,9 +81,7 @@ public:
             TNetStorageAttrFlags flags,
             const string& app_domain,
             const string& unique_key,
-            EFileTrackSite ft_site,
-            const TVersion& version = 0,
-            const string& subkey = kEmptyStr);
+            EFileTrackSite ft_site);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc);
 
