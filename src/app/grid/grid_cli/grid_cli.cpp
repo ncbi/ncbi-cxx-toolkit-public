@@ -702,6 +702,15 @@ struct SCommandDefinition {
             NETSTORAGE_DIRECT_OPTIONS, eFileTrackToken,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_CreateLoc,
+        "createloc", "Create a NetStorage object locator.",
+        "Create a NetStorage object locator for an ICache blob. "
+        "Blob ID must be specified in one of the following formats:\n" \
+        "  * \"key,version,subkey\"\n"
+        "  * \"key\" [\"version\"] \"subkey\"\n" \
+        "    (version could be omitted).",
+        {eNCID, eNetCache, eCache, eLoginToken, -1}},
+
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttrList,
         "getattrlist", "Get list of all attributes set on a NetStorage object.",
         "",

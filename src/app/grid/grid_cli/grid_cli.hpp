@@ -469,6 +469,7 @@ public:
     int Cmd_Relocate();
     int Cmd_NetStorageObjectInfo();
     int Cmd_RemoveNetStorageObject();
+    int Cmd_CreateLoc();
     int Cmd_GetAttrList();
     int Cmd_GetAttr();
     int Cmd_SetAttr();

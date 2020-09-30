@@ -378,6 +378,31 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
     return 0;
 }
 
+int CGridCommandLineInterfaceApp::Cmd_CreateLoc()
+{
+    if (!IsOptionSet(eNetCache)) {
+        NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' option is required.");
+    }
+
+    if (!IsOptionSet(eCache)) {
+        NCBI_THROW(CArgException, eNoValue, "'--" CACHE_OPTION "' option is required.");
+    }
+
+    m_Opts.ncid.Parse(true, false);
+
+    CNetStorageObjectLoc::TVersion version;
+
+    if (m_Opts.ncid.HasVersion()) {
+        version = m_Opts.ncid.version;
+    }
+
+    auto object_loc = CNetStorageObjectLoc::Create(m_Opts.nc_service, m_Opts.cache_name,
+            m_Opts.ncid.key, m_Opts.ncid.subkey, version);
+
+    printf("%s\n", object_loc.c_str());
+    return 0;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_GetAttrList()
 {
     CNetStorageObject netstorage_object(GetNetStorageObject());
