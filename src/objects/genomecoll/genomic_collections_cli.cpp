@@ -94,7 +94,7 @@ CGenomicCollectionsService::CGenomicCollectionsService(const CArgs& args)
 void CGenomicCollectionsService::x_ConfigureConnection()
 {
     SetTimeout(&kTimeout);
-    SetRetryLimit(20);
+    SetRetryLimit(40);
 
     // it's a backward-compatibility fix for old versions of server (no much harm to leave it - only little data overhead is expected)
     // always send request and get response in ASN text format so that server can properly parse request
