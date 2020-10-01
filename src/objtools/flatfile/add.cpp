@@ -793,9 +793,10 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
 
     ibp = pp->entrylist[pp->curindx];
 
+    pri_acc = fta_if_wgs_acc(acc);
     acctmp = StringSave(acc);
-    pri_acc = fta_if_wgs_acc(acctmp);
-    if(pri_acc == 1)
+
+    if(pri_acc == 1) // Contig WGS accession
     {
         for(p = acctmp; (*p >= 'A' && *p <= 'Z') || *p == '_';)
             p++;
@@ -815,27 +816,21 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
             continue;
         }
         sec_acc = fta_if_wgs_acc(accessionString.c_str());
-        if(sec_acc == 0) {
+        if(sec_acc == 0) { // Master WGS accession
             continue;
         }
 
-        if (sec_acc == 1) 
+        if (sec_acc == 1) // Contig WGS accession
         {
-            bool good = false;
-            if(pri_acc == 1)
-            {
-                if (StringNCmp(acctmp, accessionString.c_str(), i) == 0 && accessionString[i] >= '0' && accessionString[i] <= '9')
-                {
-                    if(sec_acc == 1)
-                        good = true;
-                }
-                else if(pp->allow_uwsec)
-                    good = true;
+            if (pri_acc == 0 || pri_acc == 2) { // A Master WGS accession or
+                continue;                       // a scaffold WGS accession
             }
-            else if(pri_acc != 2 && pri_acc != 0)
-                good = true;
-
-            if (!good) {
+        
+            if (pri_acc == 1 && // Contig WGS accession
+                !pp->allow_uwsec &&
+                !(StringNCmp(acctmp, accessionString.c_str(), i) == 0 && 
+                  isdigit(accessionString[i])))
+            {
                 continue;
             }
         }
