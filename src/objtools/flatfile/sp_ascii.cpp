@@ -2118,7 +2118,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
         }
         else if(StringICmp(token1, "EMBL") == 0)
         {
-            ntype = GetNucAccOwner(token2, NULL, false);
+            ntype = GetNucAccOwner(token2, false);
             if(ntype == 0)
             {
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine,

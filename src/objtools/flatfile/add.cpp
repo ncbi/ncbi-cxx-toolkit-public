@@ -775,8 +775,6 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
 
     char*      p;
     char*      acctmp;
-    bool         good;
-    Uint1        whose;
     Int4         pri_acc;
     Int4         sec_acc;
     size_t       i = 0;
@@ -805,28 +803,28 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         i = StringLen(acctmp);
     }
 
-    bool is_hist = bioseq.GetInst().IsSetHist();
+    
+    list<CRef<CSeq_id>> replaces;
 
-    objects::CSeq_hist_rec_Base::TIds& replaces = bioseq.SetInst().SetHist().SetReplaces().SetIds();
-
-    ITERATE(objects::CGB_block::TExtra_accessions, acc, hist)
-    {
-        if (acc->empty())
+    for (const auto& accessionString : hist) {
+        if (accessionString.empty())
             continue;
 
-        whose = GetNucAccOwner(acc->c_str(), NULL, ibp->is_tpa);
-        sec_acc = fta_if_wgs_acc(acc->c_str());
-        if(whose == 0 || sec_acc == 0)
+        const auto idChoice = GetNucAccOwner(accessionString.c_str(), ibp->is_tpa);
+        if (idChoice == CSeq_id::e_not_set) {
             continue;
+        }
+        sec_acc = fta_if_wgs_acc(accessionString.c_str());
+        if(sec_acc == 0) {
+            continue;
+        }
 
-        if(sec_acc != 1)
-            good = true;
-        else
+        if (sec_acc == 1) 
         {
-            good = false;
+            bool good = false;
             if(pri_acc == 1)
             {
-                if (StringNCmp(acctmp, acc->c_str(), i) == 0 && (*acc)[i] >= '0' && (*acc)[i] <= '9')
+                if (StringNCmp(acctmp, accessionString.c_str(), i) == 0 && accessionString[i] >= '0' && accessionString[i] <= '9')
                 {
                     if(sec_acc == 1)
                         good = true;
@@ -836,21 +834,17 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
             }
             else if(pri_acc != 2 && pri_acc != 0)
                 good = true;
+
+            if (!good) {
+                continue;
+            }
         }
 
-        if(!good)
-            continue;
-
-        CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
-        text_id->SetAccession(*acc);
-        CRef<objects::CSeq_id> id(new objects::CSeq_id);
-
-        SetTextId(whose, *id, *text_id);
-
+        CRef<CSeq_id> id(new CSeq_id(idChoice, accessionString));
         if(pp->source != ParFlat_EMBL && pp->source != ParFlat_NCBI)
         {
 
-            CRef<CSeq_id> pId(new CSeq_id(*acc));
+            CRef<CSeq_id> pId(new CSeq_id(accessionString));
             bool IsConOrScaffold=false;
             try {
                 IsConOrScaffold = s_IsConOrScaffold(*pId, GetScope());
@@ -859,17 +853,8 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
                 // report an error 
                 continue;
             } 
-        /*
-            Int4 iscon = fta_is_con_div(pp, *id, acc->c_str());
-
-            if(iscon < 0 || (iscon == 1 && pricon == false) ||
-               (iscon == 0 && pricon && whose == acctype))
-            {
-                continue;
-            }
-            */
             if ((IsConOrScaffold && !pricon) ||
-                (!IsConOrScaffold && pricon && whose == acctype)) {
+                (!IsConOrScaffold && pricon && idChoice == acctype)) {
                 continue;
             }
         }
@@ -877,13 +862,12 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         replaces.push_back(id);
     }
 
-    if (replaces.empty())
-    {
-        if (is_hist)
-            bioseq.SetInst().SetHist().ResetReplaces();
-        else
-            bioseq.SetInst().ResetHist();
+
+    if (!replaces.empty()) {
+        auto& hist_replaces_ids = bioseq.SetInst().SetHist().SetReplaces().SetIds();
+        hist_replaces_ids.splice(hist_replaces_ids.end(), replaces);
     }
+
 
     MemFree(acctmp);
 }
@@ -1179,13 +1163,12 @@ bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum
     Int4           to1;
     Int4           len1;
     Int4           len2;
-    Int2           i;
     Uint1          choice;
 
     if (offset == NULL || acnum == NULL || len < 2)
         return false;
 
-    choice = GetNucAccOwner(acnum, &i, tpa);
+    choice = GetNucAccOwner(acnum, tpa);
 
     if(col_data == 0)                   /* HACK: XML format */
     {
@@ -1306,11 +1289,10 @@ bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum
         }
         else
         {
-            i = 0;
-            tftbp->sicho = GetNucAccOwner(tftbp->accession, &i, false);
+            tftbp->sicho = GetNucAccOwner(tftbp->accession, false);
             if ((tftbp->sicho != objects::CSeq_id::e_Genbank && tftbp->sicho != objects::CSeq_id::e_Embl &&
                 tftbp->sicho != objects::CSeq_id::e_Ddbj &&
-                (tftbp->sicho != objects::CSeq_id::e_Tpg || tpa == false)) || i < 1)
+                (tftbp->sicho != objects::CSeq_id::e_Tpg || tpa == false)))
             {
                 bad_accession = tftbp->accession;
                 break;
@@ -2423,7 +2405,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
         }
     }
 
-    accowner = GetNucAccOwner(accession, NULL, ibp->is_tpa);
+    accowner = GetNucAccOwner(accession, ibp->is_tpa);
     if(accowner == 0)
         accowner = GetProtAccOwner(accession);
 

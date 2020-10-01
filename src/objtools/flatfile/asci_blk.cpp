@@ -922,7 +922,7 @@ static Uint1 ValidSeqType(char* accession, Uint1 type, bool is_nuc, bool is_tpa)
         return(type);
 
     if (is_nuc)
-        cho = GetNucAccOwner(accession, NULL, is_tpa);
+        cho = GetNucAccOwner(accession, is_tpa);
     else
         cho = GetProtAccOwner(accession);
 
@@ -1316,7 +1316,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
     acc = StringSave(ibp->acnum);
     is_cp = (acc[0] == 'C' && acc[1] == 'P');
     pri_acc = fta_if_wgs_acc(acc);
-    pri_owner = GetNucAccOwner(acc, NULL, ibp->is_tpa);
+    pri_owner = GetNucAccOwner(acc, ibp->is_tpa);
     if (pri_acc == 1 || pri_acc == 4)
     {
         for (p = acc; (*p >= 'A' && *p <= 'Z') || *p == '_';)
@@ -1365,7 +1365,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
                 StringCpy(ibp->wgssec, p);
         }
 
-        sec_owner = GetNucAccOwner(p, NULL, ibp->is_tpa);
+        sec_owner = GetNucAccOwner(p, ibp->is_tpa);
 
         if (sec_acc < 0 || sec_acc == 2)
         {

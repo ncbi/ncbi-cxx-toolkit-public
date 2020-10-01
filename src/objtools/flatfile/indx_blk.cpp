@@ -51,7 +51,7 @@
 
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(objects);
 static const char *XML_STRAND_array[] = {
     "   ", "single", "double", "mixed", NULL
 };
@@ -2001,13 +2001,10 @@ const char **GetAccArray(Int2 whose)
 }
 
 /**********************************************************/
-Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
+CSeq_id::E_Choice GetNucAccOwner(const char* acc, bool is_tpa)
 {
     Char    p[4];
     const char*q;
-
-    if(source != NULL)
-        *source = 0;
 
     if(acc == NULL)
         return objects::CSeq_id::e_not_set;
@@ -2030,8 +2027,6 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
             }
             if(*q == '\0')
             {
-                if(source != NULL)
-                    *source = ParFlat_REFSEQ;
                 return(objects::CSeq_id::e_Other);
             }
         }
@@ -2050,8 +2045,6 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
                     break;
             if(*q == '\0')
             {
-                if(source != NULL)
-                    *source = ParFlat_REFSEQ;
                 return objects::CSeq_id::e_Other;
             }
         }
@@ -2067,26 +2060,18 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
 
         if(StringChr(ParFlat_NCBI_AC, acc[0]) != NULL)
         {
-            if(source != NULL)
-                *source = ParFlat_NCBI;
             return objects::CSeq_id::e_Genbank;
         }
         if(StringChr(ParFlat_LANL_AC, acc[0]) != NULL)
         {
-            if(source != NULL)
-                *source = ParFlat_LANL;
             return objects::CSeq_id::e_Genbank;
         }
         if(StringChr(ParFlat_DDBJ_AC, acc[0]) != NULL)
         {
-            if(source != NULL)
-                *source = ParFlat_DDBJ;
             return objects::CSeq_id::e_Ddbj;
         }
         if(StringChr(ParFlat_EMBL_AC, acc[0]) != NULL)
         {
-            if(source != NULL)
-                *source = ParFlat_EMBL;
             if (!is_tpa)
                 return objects::CSeq_id::e_Embl;
             return objects::CSeq_id::e_Tpe;
@@ -2101,8 +2086,6 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
            acc[3] <= 'Z' && acc[4] >= 'A' && acc[4] <= 'Z' &&
            StringCmp(acc + 5, "0000000") == 0)
         {
-            if(source != NULL)
-                *source = ParFlat_DDBJ;
             return(objects::CSeq_id::e_Ddbj);
         }
 
@@ -2136,16 +2119,12 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
            (acc[0] > 'I' && acc[0] < 'O') || (acc[0] > 'O' && acc[0] < 'T') ||
            acc[0] == 'V' || acc[0] == 'W')
         {
-            if(source != NULL)
-                *source = ParFlat_NCBI;
             if(acc[0] == 'D')
                 return objects::CSeq_id::e_Tpg;
             return objects::CSeq_id::e_Genbank;
         }
         if(acc[0] == 'B' || acc[0] == 'E' || acc[0] == 'I' || acc[0] == 'T')
         {
-            if(source != NULL)
-                *source = ParFlat_DDBJ;
             if(acc[0] == 'E')
                 return objects::CSeq_id::e_Tpd;
             return objects::CSeq_id::e_Ddbj;
@@ -2153,8 +2132,6 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         if(acc[0] == 'C' || acc[0] == 'F' || acc[0] == 'O' || acc[0] == 'H' ||
            acc[0] == 'U')
         {
-            if(source != NULL)
-                *source = ParFlat_EMBL;
             if (!is_tpa)
                 return objects::CSeq_id::e_Embl;
             return objects::CSeq_id::e_Tpe;
@@ -2182,9 +2159,6 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
                 return objects::CSeq_id::e_not_set;
             if(len > 16 && (acc[16] < '0' || acc[16] > '9'))
                 return objects::CSeq_id::e_not_set;
-
-            if(source != NULL)
-                *source = ParFlat_REFSEQ;
             return objects::CSeq_id::e_Other;
         }
         if((acc[0] != 'A' && acc[0] != 'B' && acc[0] != 'C') ||
@@ -2204,20 +2178,14 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
 
         if(acc[0] == 'A')
         {
-            if(source != NULL)
-                *source = ParFlat_NCBI;
             return objects::CSeq_id::e_Genbank;
         }
         if(acc[0] == 'B')
         {
-            if(source != NULL)
-                *source = ParFlat_DDBJ;
             return objects::CSeq_id::e_Ddbj;
         }
         if(acc[0] == 'C')
         {
-            if(source != NULL)
-                *source = ParFlat_EMBL;
             return objects::CSeq_id::e_Embl;
         }
         return objects::CSeq_id::e_not_set;
@@ -2237,8 +2205,6 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
         p[3] = '\0';
         if(MatchArrayString(refseq_accpref, p) > -1)
         {
-            if(source != NULL)
-                *source = ParFlat_REFSEQ;
             return objects::CSeq_id::e_Other;
         }
         return objects::CSeq_id::e_not_set;
@@ -2252,30 +2218,22 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
     p[2] = '\0';
     if(MatchArrayString(ncbi_accpref, p) > -1)
     {
-        if(source != NULL)
-            *source = ParFlat_NCBI;
         if(MatchArrayString(ncbi_tpa_accpref, p) > -1)
             return objects::CSeq_id::e_Tpg;
         return objects::CSeq_id::e_Genbank;
     }
     if(MatchArrayString(lanl_accpref, p) > -1)
     {
-        if(source != NULL)
-            *source = ParFlat_LANL;
         return objects::CSeq_id::e_Genbank;
     }
     if(MatchArrayString(ddbj_accpref, p) > -1)
     {
-        if(source != NULL)
-            *source = ParFlat_DDBJ;
         if(MatchArrayString(ddbj_tpa_accpref, p) > -1)
             return objects::CSeq_id::e_Tpd;
         return objects::CSeq_id::e_Ddbj;
     }
     if(MatchArrayString(embl_accpref, p) > -1)
     {
-        if(source != NULL)
-            *source = ParFlat_EMBL;
         if (!is_tpa)
             return objects::CSeq_id::e_Embl;
         return objects::CSeq_id::e_Tpe;
@@ -2283,6 +2241,8 @@ Uint1 GetNucAccOwner(const char*acc, short* source, bool is_tpa)
 
     return objects::CSeq_id::e_not_set;
 }
+
+
 
 /**********************************************************/
 Uint1 GetProtAccOwner(const Char* acc)
