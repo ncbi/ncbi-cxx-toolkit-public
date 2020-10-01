@@ -98,6 +98,10 @@ protected:
         CGtfRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeTranscriptBiotype(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
     virtual bool xAssignFeatureAttributeNote(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -144,6 +148,10 @@ protected:
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >& ) const;
+
+    bool xGenerateMissingTranscript(
+        CGffFeatureContext&,
+        const CMappedFeat&);
 };
 
 END_objects_SCOPE

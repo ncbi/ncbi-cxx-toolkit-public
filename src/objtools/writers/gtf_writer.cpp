@@ -49,6 +49,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
@@ -275,13 +276,13 @@ bool CGtfWriter::xWriteFeatureTranscript(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGtfRecord> pTranscript( new CGtfRecord( context ) );
+    CRef<CGtfRecord> pTranscript(new CGtfRecord(context));
     if (!xAssignFeature(*pTranscript, context, mf)) {
         return false;
     }
     pTranscript->SetType("transcript");
-    pTranscript->AddAttribute(
-        "transcript_biotype", CSeqFeatData::SubtypeValueToName(
+    pTranscript->SetAttribute(
+        "gbkey", CSeqFeatData::SubtypeValueToName(
             mf.GetFeatSubtype()));
     xWriteRecord(pTranscript);
     return xWriteFeatureExons(context, mf);
@@ -314,6 +315,7 @@ bool CGtfWriter::xWriteFeatureExons(
             CRef<CGtfRecord> pExon( 
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
             pExon->MakeChildRecord( *pMrna, subint, uExonNumber++ );
+            pExon->DropAttributes("gbkey");
             xWriteRecord( pExon );
         }
     }
@@ -321,11 +323,66 @@ bool CGtfWriter::xWriteFeatureExons(
 }
 
 //  ----------------------------------------------------------------------------
+bool sHasAccaptableTranscriptParent(
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    static list<CSeqFeatData::ESubtype> acceptableTranscriptTypes = {
+        CSeqFeatData::eSubtype_mRNA,
+        CSeqFeatData::eSubtype_otherRNA,
+        CSeqFeatData::eSubtype_C_region,
+        CSeqFeatData::eSubtype_D_segment,
+        CSeqFeatData::eSubtype_J_segment,
+        CSeqFeatData::eSubtype_V_segment
+    };
+    CMappedFeat parent = feature::GetParentFeature(mf);
+    if (!parent) {
+        return false;
+    }
+    auto itAcceptableType = std::find(
+        acceptableTranscriptTypes.begin(), acceptableTranscriptTypes.end(), 
+        parent.GetFeatSubtype());
+    return (itAcceptableType != acceptableTranscriptTypes.end());
+}    
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xGenerateMissingTranscript(
+    CGffFeatureContext& context,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (!xGeneratingMissingTranscripts()) {
+        return true;
+    }
+    if (sHasAccaptableTranscriptParent(mf)) {
+        return true;
+    }
+
+    CRef<CSeq_feat> pRna(new CSeq_feat);
+    pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    pRna->SetLocation().Assign(mf.GetLocation());
+    pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
+    pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
+    pRna->ResetPartial();
+
+    CScope& scope = mf.GetScope();
+    CSeq_annot_Handle sah = mf.GetAnnot();
+    CSeq_annot_EditHandle saeh = sah.GetEditHandle();
+    saeh.AddFeat(*pRna);
+    CMappedFeat tf = scope.GetObjectHandle(*pRna);
+    context.FeatTree().AddFeature(tf);
+
+    return xWriteFeatureTranscript(context, tf);
+}
+    
+//  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeatureCds(
     CGffFeatureContext& context,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    xGenerateMissingTranscript(context, mf);
+
     CRef<CGtfRecord> pParent( 
         new CGtfRecord( context, (m_uFlags & fNoExonNumbers) ) );
     if (!xAssignFeature(*pParent, context, mf)) {
@@ -591,7 +648,8 @@ bool CGtfWriter::xAssignFeatureAttributesFormatSpecific(
     CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     return (
         xAssignFeatureAttributeGeneId(record, fc, mf)  &&
-        xAssignFeatureAttributeTranscriptId(record, fc, mf));
+        xAssignFeatureAttributeTranscriptId(record, fc, mf)  &&
+        xAssignFeatureAttributeTranscriptBiotype(record, fc, mf));
 }
 
 //  ----------------------------------------------------------------------------
@@ -691,6 +749,35 @@ string CGtfWriter::xGenericTranscriptId(
     //  ----------------------------------------------------------------------------
 {
     return CGtfIdGenerator::NextId("unassigned_transcript");
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xAssignFeatureAttributeTranscriptBiotype(
+    CGtfRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    static list<CSeqFeatData::ESubtype> nonRnaTranscripts = {
+        CSeqFeatData::eSubtype_mRNA,
+        CSeqFeatData::eSubtype_otherRNA,
+        CSeqFeatData::eSubtype_C_region,
+        CSeqFeatData::eSubtype_D_segment,
+        CSeqFeatData::eSubtype_J_segment,
+        CSeqFeatData::eSubtype_V_segment
+    };
+    auto featSubtype = mf.GetFeatSubtype();
+    if (!mf.GetData().IsRna()) {
+        auto it = std::find(
+            nonRnaTranscripts.begin(), nonRnaTranscripts.end(), featSubtype);
+        if (it == nonRnaTranscripts.end()) {
+            return true;
+        }
+    }
+
+    record.SetAttribute("transcript_biotype", 
+        CSeqFeatData::SubtypeValueToName(featSubtype));
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
