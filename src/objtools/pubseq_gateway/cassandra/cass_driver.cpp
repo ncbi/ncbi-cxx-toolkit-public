@@ -970,68 +970,44 @@ void CCassQuery::BindBytes(int  iprm, const unsigned char *  buf, size_t  len)
 
 int32_t CCassQuery::ParamAsInt32(int  iprm)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    if (!m_params[iprm].IsAssigned())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Param #" +
-                   NStr::NumericToString(iprm) + " is not assigned");
+    CheckParamAssigned(iprm);
     return m_params[iprm].AsInt32();
 }
 
 
 int64_t CCassQuery::ParamAsInt64(int  iprm)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    if (!m_params[iprm].IsAssigned())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Param #" +
-                   NStr::NumericToString(iprm) + " is not assigned");
+    CheckParamAssigned(iprm);
     return m_params[iprm].AsInt64();
 }
 
 
 string CCassQuery::ParamAsStr(int  iprm) const
 {
-    string      rv;
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    if (!m_params[iprm].IsAssigned())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Param #" +
-                   NStr::NumericToString(iprm) + " is not assigned");
-    m_params[iprm].AsString(rv);
-    return rv;
+    CheckParamAssigned(iprm);
+    return m_params[iprm].AsString();
 }
 
 
-void CCassQuery::ParamAsStr(int  iprm, string &  value) const
+void CCassQuery::ParamAsStr(int iprm, string & value) const
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    if (!m_params[iprm].IsAssigned())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Param #" +
-                   NStr::NumericToString(iprm) + " is not assigned");
+    CheckParamAssigned(iprm);
     m_params[iprm].AsString(value);
 }
 
-
-CassValueType CCassQuery::ParamType(int  iprm) const
+string CCassQuery::ParamAsStrForDebug(int iprm) const
 {
-    string      rv;
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    if (!m_params[iprm].IsAssigned())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Param #" +
-                   NStr::NumericToString(iprm) + " is not assigned");
+    CheckParamAssigned(iprm);
+    return m_params[iprm].AsStringForDebug();
+}
+
+CassValueType CCassQuery::ParamType(int iprm) const
+{
+    CheckParamAssigned(iprm);
     return m_params[iprm].GetType();
 }
 
-
-void CCassQuery::SetEOF(bool  value)
+void CCassQuery::SetEOF(bool value)
 {
     if (m_EOF != value) {
         m_EOF = value;
@@ -1130,7 +1106,7 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
 void CCassQuery::RestartQuery(CassConsistency c)
 {
     if (!m_future) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
+        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restartable state");
     }
     unsigned int page_size = m_page_size;
     CCassParams params = move(m_params);
@@ -1218,7 +1194,7 @@ void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
 void CCassQuery::RestartExecute(CassConsistency c)
 {
     if (!m_future)
-        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
+        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restartable state");
 
     CCassParams params = move(m_params);
     bool async = m_async, allow_prepared = m_is_prepared;
@@ -1231,7 +1207,7 @@ void CCassQuery::RestartExecute(CassConsistency c)
 void CCassQuery::Restart(CassConsistency c)
 {
     if (!m_future)
-        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
+        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restartable state");
 
     if (m_results_expected)
         RestartQuery(c);

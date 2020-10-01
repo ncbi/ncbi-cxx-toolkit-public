@@ -87,7 +87,7 @@ shared_ptr<CCassConnectionFactory> CCassQueryTest::m_Factory(nullptr);
 shared_ptr<CCassConnection> CCassQueryTest::m_Connection(nullptr);
 
 TEST_F(CCassQueryTest, FieldGetMapValue) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL(
         "SELECT map_field, int_field FROM test_cassandra_driver.test_retrieval "
         " WHERE id = 'row_with_null_map_column'", 0);
@@ -110,6 +110,34 @@ TEST_F(CCassQueryTest, FieldGetMapValue) {
     EXPECT_FALSE(query->FieldIsNull(0)) << "Not null cell is reported as null";
     EXPECT_NO_THROW(query->FieldGetMapValue(0, result));
     EXPECT_EQ(expected, result) << "FieldGetMapValue failed to return valid map value";
+}
+
+TEST_F(CCassQueryTest, ParamAsStrForDebug) {
+    auto query = m_Connection->NewQuery();
+    query->SetSQL("NOQUERY", 1);
+
+    EXPECT_THROW(query->ParamAsStrForDebug(0), CCassandraException);
+    EXPECT_THROW(query->ParamAsStrForDebug(1), CCassandraException);
+
+    string bytes = "AbCdEfGhIJkLmN";
+    query->BindBytes(0, reinterpret_cast<const unsigned char *>(bytes.c_str()), bytes.size());
+    EXPECT_EQ("'0x4162436445664768494a...'", query->ParamAsStrForDebug(0));
+    query->BindBytes(0, reinterpret_cast<const unsigned char *>(bytes.c_str()), 5);
+    EXPECT_EQ("'0x4162436445'", query->ParamAsStrForDebug(0));
+    query->BindStr(0, bytes);
+    EXPECT_EQ("'AbCdEfGhIJ...'", query->ParamAsStrForDebug(0));
+    query->BindStr(0, bytes.substr(0, 10));
+    EXPECT_EQ("'AbCdEfGhIJ'", query->ParamAsStrForDebug(0));
+
+    set<int> s = {0, 1};
+    query->BindSet(0, s);
+    EXPECT_EQ("set(...)", query->ParamAsStrForDebug(0));
+
+    query->BindInt64(0, 867);
+    EXPECT_EQ("867", query->ParamAsStrForDebug(0));
+
+    query->BindNull(0);
+    EXPECT_EQ("Null", query->ParamAsStrForDebug(0));
 }
 
 }  // namespace

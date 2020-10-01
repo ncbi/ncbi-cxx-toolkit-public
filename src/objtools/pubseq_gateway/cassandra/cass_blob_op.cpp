@@ -87,6 +87,18 @@ bool CCassBlobWaiter::CheckMaxActive()
     return (m_Conn->GetActiveStatements() < MAX_ACTIVE_STATEMENTS);
 }
 
+string CCassBlobWaiter::QueryParamsToStringForDebug(shared_ptr<CCassQuery> const& query) const
+{
+    string rv;
+    for (size_t i = 0; i < query->ParamCount(); ++i) {
+        if (i > 0) {
+            rv.append(", ");
+        }
+        rv.append(query->ParamAsStrForDebug(i));
+    }
+    return rv;
+}
+
 
 /*****************************************************
 

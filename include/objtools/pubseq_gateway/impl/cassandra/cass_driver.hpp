@@ -40,17 +40,18 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <string>
-#include <memory>
-#include <unordered_map>
-#include <tuple>
-#include <set>
-#include <cassert>
 #include <atomic>
+#include <cassert>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <limits>
-#include <functional>
 
 #include "IdCassScope.hpp"
 #include "cass_exception.hpp"
@@ -221,6 +222,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
 class CCassPrm
 {
+    static constexpr size_t kMaxVarcharDebugBytes = 10;
  protected:
     CassValueType   m_type;
     bool            m_assigned;
@@ -504,6 +506,55 @@ class CCassPrm
         }
     }
 
+    string AsString() const
+    {
+        string rv;
+        AsString(rv);
+        return rv;
+    }
+
+    string AsStringForDebug() const
+    {
+        switch (m_type) {
+            case CASS_VALUE_TYPE_TINY_INT:
+            case CASS_VALUE_TYPE_SMALL_INT:
+            case CASS_VALUE_TYPE_INT:
+            case CASS_VALUE_TYPE_BIGINT:
+                return AsString();
+            case CASS_VALUE_TYPE_SET:
+                return "set(...)";
+            case CASS_VALUE_TYPE_MAP:
+                return "map(...)";
+            case CASS_VALUE_TYPE_LIST:
+                return "list(...)";
+            case CASS_VALUE_TYPE_TUPLE:
+                return "tuple(...)";
+            case CASS_VALUE_TYPE_UNKNOWN:
+                return "Null";
+            case CASS_VALUE_TYPE_VARCHAR:
+                if (m_bytes.size() > kMaxVarcharDebugBytes) {
+                    return "'" + m_bytes.substr(0, kMaxVarcharDebugBytes) + "...'";
+                } else {
+                    return "'" + m_bytes + "'";
+                }
+            case CASS_VALUE_TYPE_BLOB: {
+                stringstream s;
+                s << "'0x";
+                for (size_t i = 0; i < m_bytes.size() && i < kMaxVarcharDebugBytes; ++i) {
+                    s << hex << setfill('0') << setw(2) << static_cast<int16_t>(m_bytes[i]);
+                }
+                if (m_bytes.size() > kMaxVarcharDebugBytes) {
+                    s << "...'";
+                } else {
+                    s << "'";
+                }
+                return s.str();
+            }
+            default:
+                return "AsStringForDebugNotImplemented(t:" + to_string(m_type) + ")";
+        }
+    }
+
     friend class CCassQuery;
 };
 
@@ -607,6 +658,16 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     friend class CCassQueryCbRef;
 
  private:
+    void CheckParamAssigned(int iprm) const
+    {
+        if (iprm < 0 || iprm >= static_cast<int64_t>(m_params.size())) {
+            RAISE_DB_ERROR(eBindFailed, string("Param index #" + to_string(iprm) + " is out of range"));
+        }
+        if (!m_params[iprm].IsAssigned()) {
+            RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Param #" + to_string(iprm) + " is not assigned");
+        }
+    }
+
     shared_ptr<CCassConnection>     m_connection;
     unsigned int                    m_qtimeoutms;
     int64_t                         m_futuretime;
@@ -797,6 +858,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     int64_t ParamAsInt64(int iprm);
     string ParamAsStr(int iprm) const;
     void ParamAsStr(int iprm, string& value) const;
+    string ParamAsStrForDebug(int iprm) const;
 
     async_rslt_t NextRow();
 

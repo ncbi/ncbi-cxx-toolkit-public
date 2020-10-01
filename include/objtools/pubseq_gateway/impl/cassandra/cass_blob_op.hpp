@@ -247,7 +247,8 @@ class CCassBlobWaiter
         return CanRestart(it.query, it.restart_count);
     }
 
-    static string AllParams(shared_ptr<CCassQuery> qry) {
+    // This function is deprecated and will be removed after Dec-1 2020
+    NCBI_DEPRECATED static string AllParams(shared_ptr<CCassQuery> qry) {
         string rv;
         for (size_t i = 0; i < qry->ParamCount(); ++i) {
             if (i > 0)
@@ -286,7 +287,9 @@ class CCassBlobWaiter
         bool rv = CheckReady(it.query, it.restart_count, need_restart);
         if (!rv && need_restart) {
             try {
-                ERR_POST(Warning << "In-place restart (" + NStr::NumericToString(it.restart_count + 1) + "):\n" << it.query->GetSQL() << "\nParams:\n" << AllParams(it.query));
+                ERR_POST(Warning
+                    << "In-place restart (" + to_string(it.restart_count + 1) + "):\n"
+                    << it.query->GetSQL() << "\nParams:\n" << QueryParamsToStringForDebug(it.query));
                 it.query->Restart();
                 ++it.restart_count;
             } catch (const exception& ex) {
@@ -326,6 +329,9 @@ class CCassBlobWaiter
     bool                            m_Cancelled;
 
     vector<SQueryRec>  m_QueryArr;
+
+ private:
+    string QueryParamsToStringForDebug(shared_ptr<CCassQuery> const& query) const;
 };
 
 class CCassBlobLoader: public CCassBlobWaiter
