@@ -1040,8 +1040,8 @@ bool CAgpReader::ProcessThisRow()
                     prev_row->linkage  == this_row->linkage ) { 
                     m_AgpErr->Msg( CAgpErr::E_SameConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
                 }
-                else if (currentGapType == CAgpRow::eGapContamination ||
-                         prevGapType == CAgpRow::eGapContamination) {
+                else if (currentGapType != CAgpRow::eGapContamination &&
+                         prevGapType != CAgpRow::eGapContamination) {
                     m_AgpErr->Msg( CAgpErr::W_ConseqGaps    , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
                 }
             }
