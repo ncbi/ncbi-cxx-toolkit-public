@@ -456,7 +456,7 @@ static void TestCgi(const CNcbiArguments& args)
     try { // POST only
         char inp_str[] = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
-        char len[32];
+        char len[64];
         assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
         assert( !NcbiSysChar_putenv(len) );
 
@@ -471,7 +471,7 @@ static void TestCgi(const CNcbiArguments& args)
     try { // POST, fDoNotParseContent
         char inp_str[] = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
-        char len[32];
+        char len[64];
         assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
         assert( !NcbiSysChar_putenv(len) );
 
@@ -486,7 +486,7 @@ static void TestCgi(const CNcbiArguments& args)
     try { // POST + aux. functions
         char inp_str[] = "post22void=&post23void=";
         CNcbiIstrstream istr(inp_str);
-        char len[32];
+        char len[64];
         assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
         assert( !NcbiSysChar_putenv(len) );
 
@@ -499,7 +499,7 @@ static void TestCgi(const CNcbiArguments& args)
 
     // this is for all following tests...
     char inp_str[] = "postXXX=valXXX";
-    char len[32];
+    char len[64];
     assert( ::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)) );
     assert( !NcbiSysChar_putenv(len) );
 
@@ -552,7 +552,7 @@ static void TestCgi(const CNcbiArguments& args)
             NcbiCin.clear();
             throw runtime_error("Invalid length of CGI posted data");
         }
-        char cs[32];
+        char cs[64];
         assert( ::sprintf(cs, "CONTENT_LENGTH=%ld", (long) l) );
         assert( !X_PUTENV(cs) );
         NcbiCout << "Enter the CGI posted data now(no spaces): " << NcbiFlush;
