@@ -885,7 +885,7 @@ CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
 CBPF	s	Conservatoire Botanique Pierre Fabre			
-CBS	sc	Westerdijk Fungal Biodiversity Institute		https://wi.knaw.nl/page/fungal_display/name/CBS%	
+CBS	sc	Westerdijk Fungal Biodiversity Institute		https://wi.knaw.nl/page/fungal_display/name/CBS%20	
 CBSIZA	s	Caspian Biological Station Institute of Zoology			
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences			
 CBU<CAN>	s	Cape Breton University			

@@ -918,7 +918,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CBNM\ts\tCedar Breaks National Monument\t\t\t",
 "CBNSA\ts\tConservatoire botanique national Sud-Atlantique\t\t\t",
 "CBPF\ts\tConservatoire Botanique Pierre Fabre\t\t\t",
-"CBS\tsc\tWesterdijk Fungal Biodiversity Institute\t\thttps://wi.knaw.nl/page/fungal_display/name/CBS%\t",
+"CBS\tsc\tWesterdijk Fungal Biodiversity Institute\t\thttps://wi.knaw.nl/page/fungal_display/name/CBS%20\t",
 "CBSIZA\ts\tCaspian Biological Station Institute of Zoology\t\t\t",
 "CBTCCCAS\tc\tThe Cell Bank of Type Culture Collection of Chinese Academy of Sciences\t\t\t",
 "CBU<CAN>\ts\tCape Breton University\t\t\t",
