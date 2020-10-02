@@ -541,7 +541,7 @@ RunTest()
     x_test=\${rargs[1]};
     x_app=\${rargs[2]};
     x_run=\${rargs[3]};
-    x_alias=\${rargs[4]};
+    x_alias=\${rargs[10]};
     x_name=\${rargs[4]};
     x_files=\${rargs[5]};
     x_timeout=\${rargs[6]};
