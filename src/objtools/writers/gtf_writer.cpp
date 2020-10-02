@@ -48,6 +48,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seq/so_map.hpp>
 
 #include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -790,9 +791,13 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptBiotype(
             return true;
         }
     }
-
-    record.SetAttribute("transcript_biotype", 
-        CSeqFeatData::SubtypeValueToName(featSubtype));
+    const auto& feature = mf.GetOriginalFeature();
+    string so_type;
+    if (!CSoMap::FeatureToSoType(feature, so_type)) {
+        return true;
+    }
+    
+    record.SetAttribute("transcript_biotype", so_type);
     return true;
 }
 
