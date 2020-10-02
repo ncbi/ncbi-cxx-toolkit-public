@@ -178,13 +178,14 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
                                 "target size of the output file containing the unit counts",
                                  CArgDescriptions::eInteger, "512" );
     }
-    if(type == eAny || type >= eGenerateMasksWithDuster)
+    if(type == eAny || type >= eGenerateMasksWithDuster) {
         arg_desc.AddDefaultKey( "dust", "use_dust",
                                  "combine window masking with dusting",
                                  CArgDescriptions::eBoolean, "F" );
         arg_desc.AddDefaultKey( "dust_level", "dust_level",
                                  "dust minimum level",
                                  CArgDescriptions::eInteger, "20" );
+    }
 
     if(type == eAny){
         arg_desc.AddFlag( "mk_counts", "generate frequency counts for a database" );
