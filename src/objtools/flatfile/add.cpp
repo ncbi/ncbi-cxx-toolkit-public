@@ -767,17 +767,27 @@ static bool s_IsConOrScaffold(const CSeq_id& id, CScope& scope)
 }
 
 
+static int sGetPrefixLength(const CTempString& accession)
+{
+    auto it = find_if(begin(accession), 
+                      end(accession), 
+                      [](char c) { return !(isalpha(c) || c == '_'); });
+
+    _ASSERT(it != accession.end());
+    return distance(accession.begin(), it);
+}
+
+
 /**********************************************************/
 void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Int4 source,
                   Int4 acctype, bool pricon, char* acc)
 {
     IndexblkPtr  ibp;
 
-    char*      p;
-    char*      acctmp;
+   // char*      p;
+   // char*      acctmp;
     Int4         pri_acc;
     Int4         sec_acc;
-    size_t       i = 0;
 
     if(pp->accver == false || pp->histacc == false ||
        pp->source != source || pp->entrez_fetch == 0)
@@ -794,16 +804,9 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
     ibp = pp->entrylist[pp->curindx];
 
     pri_acc = fta_if_wgs_acc(acc);
-    acctmp = StringSave(acc);
 
-    if(pri_acc == 1) // Contig WGS accession
-    {
-        for(p = acctmp; (*p >= 'A' && *p <= 'Z') || *p == '_';)
-            p++;
-        *p = '\0';
-        i = StringLen(acctmp);
-    }
-
+    CTempString primaryAccession(acc);
+    int prefixLength=0;
     
     list<CRef<CSeq_id>> replaces;
 
@@ -825,13 +828,18 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
             if (pri_acc == 0 || pri_acc == 2) { // A Master WGS accession or
                 continue;                       // a scaffold WGS accession
             }
-        
-            if (pri_acc == 1 && // Contig WGS accession
-                !pp->allow_uwsec &&
-                !(StringNCmp(acctmp, accessionString.c_str(), i) == 0 && 
-                  isdigit(accessionString[i])))
-            {
-                continue;
+
+            if (pri_acc == 1) { // Contig WGS accession
+                if (!prefixLength) {
+                    prefixLength = sGetPrefixLength(primaryAccession);
+                }
+                
+                if ( (accessionString.length() <= prefixLength ||
+                     !NStr::EqualNocase(accessionString, 0, prefixLength, primaryAccession.substr(0,prefixLength)) ||
+                     !isdigit(accessionString[prefixLength])) &&
+                    !pp->allow_uwsec ) {
+                    continue;
+                }
             }
         }
 
@@ -862,9 +870,6 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         auto& hist_replaces_ids = bioseq.SetInst().SetHist().SetReplaces().SetIds();
         hist_replaces_ids.splice(hist_replaces_ids.end(), replaces);
     }
-
-
-    MemFree(acctmp);
 }
 
 /**********************************************************/
