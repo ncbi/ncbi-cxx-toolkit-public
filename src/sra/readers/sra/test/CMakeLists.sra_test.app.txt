@@ -9,7 +9,11 @@ NCBI_begin_app(sra_test)
 
   NCBI_add_test()
   NCBI_add_test(sra_test -sra SRR000001.1)
-  NCBI_add_test(sra_test -sra_all SRR000000.1.2 -no_sra)
-  NCBI_add_test(sra_test -sra SRR000000.1 -no_sra)
+  NCBI_begin_test(sra_test_none)
+    NCBI_set_test_command(sra_test -sra_all SRR000000.1.2 -no_sra)
+  NCBI_end_test()
+  NCBI_begin_test(sra_test_none2)
+    NCBI_set_test_command(sra_test -sra SRR000000.1 -no_sra)
+  NCBI_end_test()
 NCBI_end_app()
 
