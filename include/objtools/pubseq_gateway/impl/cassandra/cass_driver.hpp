@@ -661,10 +661,17 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     void CheckParamAssigned(int iprm) const
     {
         if (iprm < 0 || iprm >= static_cast<int64_t>(m_params.size())) {
-            RAISE_DB_ERROR(eBindFailed, string("Param index #" + to_string(iprm) + " is out of range"));
+            RAISE_DB_ERROR(eBindFailed, "Param index #" + to_string(iprm) + " is out of range");
         }
         if (!m_params[iprm].IsAssigned()) {
             RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Param #" + to_string(iprm) + " is not assigned");
+        }
+    }
+
+    void CheckParamExists(int iprm) const
+    {
+        if (iprm < 0 || (unsigned int)iprm >= m_params.size()) {
+            RAISE_DB_ERROR(eBindFailed, "Param index #" + to_string(iprm) + " is out of range");
         }
     }
 
@@ -755,7 +762,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         m_onexecute_data(nullptr)
     {
         if (!m_connection) {
-            NCBI_THROW(CCassandraException, eFatal, "Cassandra connection is not established");
+            RAISE_DB_ERROR(eFatal, "Cassandra connection is not established");
         }
     }
 
@@ -813,24 +820,21 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template<typename K, typename V>
     void BindMap(int iprm, const map<K, V>& value)
     {
-        if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-            RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+        CheckParamExists(iprm);
         m_params[iprm].Assign<K,V>(value);
     }
 
     template<typename I>
     void BindList(int iprm, I begin, I end, size_t sz)
     {
-        if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-            RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+        CheckParamExists(iprm);
         m_params[iprm].AssignList(begin, end, sz);
     }
 
     template<typename I>
     void BindSet(int iprm, I begin, I end, size_t sz)
     {
-        if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-            RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+        CheckParamExists(iprm);
         m_params[iprm].AssignSet<I>(begin, end, sz);
     }
 
@@ -843,8 +847,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template<typename ...T>
     void BindTuple(int iprm, const tuple<T...>& value)
     {
-        if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-            RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+        CheckParamExists(iprm);
         m_params[iprm].Assign(value);
     }
 
@@ -872,8 +875,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template <typename F = int>
     CCassDataType FieldType(F ifld) const
     {
-        if (FieldIsNull(ifld))
+        if (FieldIsNull(ifld)) {
             return dtNull;
+        }
 
         const CassValue* clm = GetColumn(ifld);
         CassValueType type = cass_value_type(clm);
@@ -1094,7 +1098,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                     while (cass_iterator_next(items_iterator_ptr.get())) {
                         const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
                         if (!value) {
-                            NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                            RAISE_DB_ERROR(eSeqFailed, "cass iterator fetch failed");
                         }
 
                         TValueType v;
@@ -1114,7 +1118,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                 if (!cass_value_is_null(clm)) {
                     RAISE_DB_ERROR(eFetchFailed,
                         "Failed to convert Cassandra value to collection: unsupported data type (Cassandra type - " +
-                        NStr::NumericToString(static_cast<int>(type)) + ")"
+                        to_string(static_cast<int>(type)) + ")"
                     );
                 }
         }
@@ -1153,9 +1157,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template<typename T, typename F = int>
     void FieldGetSetValues(F ifld, std::vector<T>& values) const
     {
-        const CassValue *   clm = GetColumn(ifld);
-        CassValueType       type = cass_value_type(clm);
-
+        const CassValue * clm = GetColumn(ifld);
+        CassValueType type = cass_value_type(clm);
         switch (type) {
             case CASS_VALUE_TYPE_SET: {
                 unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
@@ -1167,8 +1170,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                 while (cass_iterator_next(items_iterator_ptr.get())) {
                     T v;
                     const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
-                    if (!value)
-                        NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                    if (!value) {
+                        RAISE_DB_ERROR(eSeqFailed, "cass iterator fetch failed");
+                    }
                     try {
                         Convert::CassValueConvert(value, v);
                     }
@@ -1183,7 +1187,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             default:
                 RAISE_DB_ERROR(eFetchFailed,
                     "Failed to convert Cassandra value to set<>: unsupported data type (Cassandra type - " +
-                    NStr::NumericToString(static_cast<int>(type)) + ")"
+                    to_string(static_cast<int>(type)) + ")"
                 );
         }
     }
@@ -1191,9 +1195,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template<typename T, typename F = int>
     void FieldGetSetValues(F ifld, std::set<T>& values) const
     {
-        const CassValue *   clm = GetColumn(ifld);
-        CassValueType       type = cass_value_type(clm);
-
+        const CassValue * clm = GetColumn(ifld);
+        CassValueType type = cass_value_type(clm);
         switch (type) {
             case CASS_VALUE_TYPE_SET: {
                 unique_ptr<CassIterator, function<void(CassIterator*)>> items_iterator(
@@ -1207,7 +1210,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                         T v;
                         const CassValue* value = cass_iterator_get_value(items_iterator.get());
                         if (!value) {
-                            NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                            RAISE_DB_ERROR(eSeqFailed, "cass iterator fetch failed");
                         }
                         try {
                             Convert::CassValueConvert(value, v);
@@ -1224,7 +1227,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             default:
                 RAISE_DB_ERROR(eFetchFailed,
                     "Failed to convert Cassandra value to set<>: unsupported data type (Cassandra type - " +
-                    NStr::NumericToString(static_cast<int>(type)) + ")"
+                    to_string(static_cast<int>(type)) + ")"
                 );
         }
     }
@@ -1234,7 +1237,6 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     {
         const CassValue * clm = GetColumn(ifld);
         CassValueType type = cass_value_type(clm);
-
         switch (type) {
             case CASS_VALUE_TYPE_MAP: {
                 result.clear();
@@ -1272,7 +1274,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             default:
                 RAISE_DB_ERROR(eFetchFailed,
                     "Failed to convert Cassandra value to map<>: unsupported data type (Cassandra type - " +
-                    NStr::NumericToString(static_cast<int>(type)) + ")"
+                    to_string(static_cast<int>(type)) + ")"
                 );
         }
     }
@@ -1325,10 +1327,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         const unsigned char * output = nullptr;
         size_t outlen = 0;
         CassError rc = cass_value_get_bytes(clm, &output, &outlen);
-        if (rc != CASS_ERROR_LIB_NULL_VALUE) {
-            if (rc != CASS_OK) {
-                RAISE_CASS_ERROR(rc, eFetchFailed, "Failed to fetch blob data:");
-            }
+        if (rc != CASS_ERROR_LIB_NULL_VALUE && rc != CASS_OK) {
+            RAISE_CASS_ERROR(rc, eFetchFailed, "Failed to fetch blob data:");
         }
         return outlen;
     }
@@ -1343,15 +1343,12 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         if (m_ondata == cb && m_ondata_data == data) {
             return;
         }
-
         if (m_future) {
             if (m_ondata) {
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                    "Future callback has already been assigned");
+                RAISE_DB_ERROR(eSeqFailed, "Future callback has already been assigned");
             }
             if (!cb && m_future) {
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                    "Future callback can not be reset");
+                RAISE_DB_ERROR(eSeqFailed, "Future callback can not be reset");
             }
         }
         m_ondata = move(cb);
@@ -1366,15 +1363,12 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         if (m_ondata2 == cb && m_ondata2_data == Data) {
             return;
         }
-
         if (m_future) {
             if (m_ondata2) {
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                           "Future callback has already been assigned");
+                RAISE_DB_ERROR(eSeqFailed, "Future callback has already been assigned");
             }
             if (!cb) {
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                           "Future callback can not be reset");
+                RAISE_DB_ERROR(eSeqFailed, "Future callback can not be reset");
             }
         }
         m_ondata2 = cb;
@@ -1393,12 +1387,10 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
         if (m_future) {
             if (ondata3) {
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                           "Future callback has already been assigned");
+                RAISE_DB_ERROR(eSeqFailed, "Future callback has already been assigned");
             }
             if (!cb) {
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                           "Future callback can not be reset");
+                RAISE_DB_ERROR(eSeqFailed, "Future callback can not be reset");
             }
         }
         m_ondata3 = cb;

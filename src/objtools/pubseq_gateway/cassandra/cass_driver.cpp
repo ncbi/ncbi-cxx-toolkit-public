@@ -41,13 +41,13 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
 
 #include <atomic>
-#include <memory>
-#include <sstream>
-#include <set>
-#include <vector>
-#include <string>
 #include <limits>
+#include <memory>
+#include <set>
+#include <string>
+#include <sstream>
 #include <utility>
+#include <vector>
 
 #include "corelib/ncbitime.hpp"
 #include "corelib/ncbistr.hpp"
@@ -55,47 +55,55 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define DISCONNECT_TIMEOUT_MS           5000L
-#define CORE_CONNECTIONS_PER_HOST       2
-#define MAX_CONNECTIONS_PER_HOST        4
-#define IO_THREADS                      32
-#define CORE_MAX_REQ_PER_FLUSH          128
+BEGIN_SCOPE()
+    constexpr unsigned kDefaultIOThreads = 32;
+    constexpr cass_duration_t kDisconnectTimeoutMcs = 5000000;
+    void LogCallback(const CassLogMessage * message, void * /*data*/)
+    {
+        switch (message->severity) {
+            case CASS_LOG_CRITICAL:
+                ERR_POST(Critical << message->message);
+                break;
+            case CASS_LOG_WARN:
+                ERR_POST(Warning << message->message);
+                break;
+            case CASS_LOG_INFO:
+                ERR_POST(Info << message->message);
+                break;
+            case CASS_LOG_DEBUG:
+                ERR_POST(Trace << message->message);
+                break;
+            case CASS_LOG_TRACE:
+                ERR_POST(Trace << message->message);
+                break;
+            case CASS_LOG_ERROR:
+            default:
+                ERR_POST(Error << message->message);
+        }
+    }
 
-const unsigned int CCassQuery::DEFAULT_PAGE_SIZE = 4096;
-
+    CassLogLevel s_MapFromToolkitSeverity(EDiagSev  severity)
+    {
+        switch (severity) {
+            case eDiag_Info:        return CASS_LOG_INFO;
+            case eDiag_Warning:     return CASS_LOG_WARN;
+            case eDiag_Error:       return CASS_LOG_ERROR;
+            case eDiag_Critical:    return CASS_LOG_CRITICAL;
+            case eDiag_Fatal:       return CASS_LOG_CRITICAL;
+            case eDiag_Trace:       return CASS_LOG_TRACE;
+        }
+        return CASS_LOG_ERROR;
+    }
+END_SCOPE()
 
 bool CCassConnection::m_LoggingInitialized = false;
 bool CCassConnection::m_LoggingEnabled = false;
 EDiagSev CCassConnection::m_LoggingLevel = eDiag_Error;
+atomic<CassUuidGen*> CCassConnection::m_CassUuidGen(nullptr);
 
-
-static void LogCallback(const CassLogMessage * message, void * /*data*/)
-{
-    switch (message->severity) {
-        case CASS_LOG_CRITICAL:
-            ERR_POST(Critical << message->message);
-            break;
-        case CASS_LOG_WARN:
-            ERR_POST(Warning << message->message);
-            break;
-        case CASS_LOG_INFO:
-            ERR_POST(Info << message->message);
-            break;
-        case CASS_LOG_DEBUG:
-            ERR_POST(Trace << message->message);
-            break;
-        case CASS_LOG_TRACE:
-            ERR_POST(Trace << message->message);
-            break;
-        case CASS_LOG_ERROR:
-        default:
-            ERR_POST(Error << message->message);
-    }
-}
-
+const unsigned int CCassQuery::DEFAULT_PAGE_SIZE = 4096;
 
 /** CCassConnection */
-
 CCassConnection::CCassConnection()
     : m_port(0)
     , m_cluster(nullptr)
@@ -114,20 +122,6 @@ CCassConnection::CCassConnection()
     , m_FallbackWriteConsistency(0)
     , m_active_statements(0)
 {}
-
-
-static CassLogLevel s_MapFromToolkitSeverity(EDiagSev  severity)
-{
-    switch (severity) {
-        case eDiag_Info:        return CASS_LOG_INFO;
-        case eDiag_Warning:     return CASS_LOG_WARN;
-        case eDiag_Error:       return CASS_LOG_ERROR;
-        case eDiag_Critical:    return CASS_LOG_CRITICAL;
-        case eDiag_Fatal:       return CASS_LOG_CRITICAL;
-        case eDiag_Trace:       return CASS_LOG_TRACE;
-    }
-    return CASS_LOG_ERROR;
-}
 
 
 CCassConnection::~CCassConnection()
@@ -157,10 +151,11 @@ void CCassConnection::DisableLogging(void)
 void CCassConnection::UpdateLogging(void)
 {
     if (m_LoggingInitialized) {
-        if (m_LoggingEnabled)
+        if (m_LoggingEnabled) {
             SetLogging(m_LoggingLevel);
-        else
+        } else {
             DisableLogging();
+        }
     }
 }
 
@@ -251,10 +246,6 @@ unsigned int CCassConnection::GetFallBackWrConsistency(void) const
     return m_FallbackWriteConsistency;
 }
 
-
-atomic<CassUuidGen*>    CCassConnection::m_CassUuidGen(nullptr);
-
-
 string CCassConnection::NewTimeUUID()
 {
     char buf[CASS_UUID_STRING_LENGTH];
@@ -293,28 +284,21 @@ void CCassConnection::Connect()
         cass_cluster_set_request_timeout(m_cluster, m_qtimeoutms);
     }
 
-    if (!m_user.empty())
+    if (!m_user.empty()) {
         cass_cluster_set_credentials(m_cluster, m_user.c_str(), m_pwd.c_str());
+    }
 
-    if (m_loadbalancing != LB_DCAWARE) {
-        if (m_loadbalancing == LB_ROUNDROBIN) {
-            cass_cluster_set_load_balance_round_robin(m_cluster);
-        }
+    if (m_loadbalancing != LB_DCAWARE && m_loadbalancing == LB_ROUNDROBIN) {
+        cass_cluster_set_load_balance_round_robin(m_cluster);
     }
 
     cass_cluster_set_token_aware_routing(m_cluster, m_tokenaware ? cass_true : cass_false);
     cass_cluster_set_latency_aware_routing(m_cluster, m_latencyaware ? cass_true : cass_false);
+    cass_cluster_set_num_threads_io(m_cluster, m_numThreadsIo ? m_numThreadsIo : kDefaultIOThreads);
 
-    if (m_numThreadsIo) {
-        cass_cluster_set_num_threads_io(m_cluster, m_numThreadsIo);
-    } else {
-        cass_cluster_set_num_threads_io(m_cluster, IO_THREADS);
-    }
 
     if (m_maxConnPerHost) {
         cass_cluster_set_max_connections_per_host(m_cluster, m_maxConnPerHost);
-        cass_cluster_set_pending_requests_low_water_mark(m_cluster, 64 * m_maxConnPerHost);
-        cass_cluster_set_pending_requests_high_water_mark(m_cluster, 128 * m_maxConnPerHost);
     }
 
     if (m_numConnPerHost) {
@@ -356,7 +340,7 @@ void CCassConnection::CloseSession()
         bool free = false;
         close_future = cass_session_close(m_session);
         if (close_future) {
-            free = cass_future_wait_timed(close_future, DISCONNECT_TIMEOUT_MS * 1000L);
+            free = cass_future_wait_timed(close_future, kDisconnectTimeoutMcs);
             cass_future_free(close_future);
         }
         // otherwise we can't free it, let better leak than crash
@@ -460,7 +444,7 @@ void CCassConnection::SetKeyspace(const string &  keyspace)
 {
     if (m_keyspace != keyspace) {
         if (IsConnected()) {
-            shared_ptr<CCassQuery>      query(NewQuery());
+            shared_ptr<CCassQuery> query(NewQuery());
             query->SetSQL(string("USE ") + keyspace, 0);
             query->Execute(CASS_CONSISTENCY_LOCAL_QUORUM);
         }
@@ -480,9 +464,9 @@ void CCassConnection::SetBlackList(const string & blacklist)
 
 shared_ptr<CCassQuery> CCassConnection::NewQuery()
 {
-    if (!m_session)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, driver is not connected");
+    if (!m_session) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, driver is not connected");
+    }
 
     shared_ptr<CCassQuery> rv(new CCassQuery(shared_from_this()));
     rv->SetTimeout(m_qtimeoutms);
@@ -496,16 +480,16 @@ void CCassConnection::getTokenRanges(TTokenRanges &ranges)
 
 void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
 {
-    set<TTokenValue>                    cluster_tokens;
-    map<string, vector<TTokenValue> >   peer_tokens;
+    set<TTokenValue> cluster_tokens;
+    map<string, vector<TTokenValue>> peer_tokens;
 
-    shared_ptr<CCassQuery>          query(NewQuery());
+    shared_ptr<CCassQuery> query(NewQuery());
     query->SetSQL("select data_center, schema_version, host_id, tokens "
                   "from system.local", 0);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
 
-    string              host_id,  datacenter, schema;
-    vector<string>      tokens;
+    string host_id,  datacenter, schema;
+    vector<string> tokens;
 
     query->NextRow();
     query->FieldGetStrValue(0, datacenter);
@@ -553,8 +537,7 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
                 ERR_POST(Info << "GET_TOKEN_MAP: tokens " << tokens.size());
                 auto itr = peer_tokens.find(peer_host_id);
                 if (itr == peer_tokens.end()) {
-                    itr = peer_tokens.insert(make_pair(peer_host_id,
-                                                       vector<TTokenValue>())).first;
+                    itr = peer_tokens.insert(make_pair(peer_host_id, vector<TTokenValue>())).first;
                     for (const auto & item : tokens) {
                         TTokenValue value = strtol(item.c_str(), nullptr, 10);
                         itr->second.push_back(value);
@@ -572,9 +555,7 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
     }
 
     ERR_POST(Info << "GET_TOKEN_MAP: tokens size " << cluster_tokens.size());
-
     ranges.reserve(cluster_tokens.size() + 1);
-
     TTokenValue lower_bound = numeric_limits<TTokenValue>::min();
     for (int64_t token : cluster_tokens) {
         ERR_POST(Trace << "GET_TOKEN_MAP: token " << token << " : " << token - lower_bound);
@@ -587,13 +568,12 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
 vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspace, string const & table) const
 {
     if (!m_session) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "invalid sequence of operations, driver is not connected");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, driver is not connected");
     }
     using TMeta = const CassSchemaMeta;
     unique_ptr<TMeta, function<void(TMeta*)>> schema_meta(
         cass_session_get_schema_meta(m_session),
-        [](TMeta* meta)->void {
+        [](TMeta* meta)-> void {
             cass_schema_meta_free(meta);
         }
     );
@@ -623,12 +603,10 @@ vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspa
         if (column_meta) {
             const char* name;
             size_t name_length;
-
             cass_column_meta_name(column_meta, &name, &name_length);
             result.emplace_back(name, name_length);
         }
     }
-
     return result;
 }
 
@@ -698,17 +676,18 @@ void CCassConnection::Perform(
     int err_cnt = 0;
     bool is_repeated = false;
     int64_t op_begin = gettime();
-
     while (!PreLoopCB || PreLoopCB()) {
         try {
-            if (OpCB(is_repeated))
+            if (OpCB(is_repeated)) {
                 break;
+            }
             err_cnt = 0;
         } catch (const CCassandraException &  e) {
             // log and ignore, app-specific layer is responsible for
             // re-connetion if needed
-            if (DbExceptCB)
+            if (DbExceptCB) {
                 DbExceptCB(e);
+            }
 
             if (e.GetErrCode() == CCassandraException::eQueryTimeout && ++err_cnt < 10) {
                 ERR_POST(Info << "CAPTURED TIMEOUT: " << e.TimeoutMsg() << ", RESTARTING OP");
@@ -733,17 +712,14 @@ void CCassConnection::Perform(
 }
 
 /** CCassPrm */
-
-void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
+void CCassPrm::Bind(CassStatement * statement, unsigned int idx)
 {
-    CassError       rc = CASS_OK;
-
+    CassError rc = CASS_OK;
     switch (m_type) {
         case CASS_VALUE_TYPE_UNKNOWN:
-            if (!IsAssigned())
-                NCBI_THROW(CCassandraException, eSeqFailed,
-                           "invalid sequence of operations, Param #" +
-                           NStr::NumericToString(idx) + " is not assigned");
+            if (!IsAssigned()) {
+                RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Param #" + to_string(idx) + " is not assigned");
+            }
             rc = cass_statement_bind_null(statement, idx);
             break;
         case CASS_VALUE_TYPE_TINY_INT:
@@ -770,40 +746,42 @@ void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
             rc = cass_statement_bind_string(statement, idx, m_bytes.c_str());
             break;
         case CASS_VALUE_TYPE_BLOB:
-            if (m_bytes.size() > 0)
+            if (m_bytes.size() > 0) {
                 rc = cass_statement_bind_bytes(
                     statement, idx,
                     reinterpret_cast<const unsigned char*>(m_bytes.c_str()),
                     m_bytes.size());
-            else
+            } else {
                 rc = cass_statement_bind_null(statement, idx);
+            }
             break;
         case CASS_VALUE_TYPE_SET:
         case CASS_VALUE_TYPE_LIST:
         case CASS_VALUE_TYPE_MAP:
-            if (m_collection.get())
+            if (m_collection.get()) {
                 rc = cass_statement_bind_collection(statement, idx, m_collection.get());
-            else
+            } else {
                 rc = cass_statement_bind_null(statement, idx);
+            }
             break;
         case CASS_VALUE_TYPE_TUPLE:
-            if (m_tuple.get())
+            if (m_tuple.get()) {
                 rc = cass_statement_bind_tuple(statement, idx, m_tuple.get());
-            else
+            } else {
                 rc = cass_statement_bind_null(statement, idx);
+            }
             break;
         default:
-            RAISE_DB_ERROR(eBindFailed, string("Bind for (") + NStr::NumericToString(static_cast<int>(m_type)) + ") type is not implemented");
+            RAISE_DB_ERROR(eBindFailed, string("Bind for (") + to_string(static_cast<int>(m_type)) + ") type is not implemented");
     }
-    if (rc != CASS_OK)
+    if (rc != CASS_OK) {
         RAISE_CASS_ERROR(rc, eBindFailed,
-                         string("Bind for (") + NStr::NumericToString(static_cast<int>(m_type)) + ") failed with rc= " +
-                         NStr::NumericToString(static_cast<int>(rc)));
+            "Bind for (" + to_string(static_cast<int>(m_type)) + ") failed with rc= " + to_string(static_cast<int>(rc)));
+    }
 }
 
 
 /**  CCassQuery */
-
 void CCassQuery::SetTimeout()
 {
     SetTimeout(CASS_DRV_TIMEOUT_MS);
@@ -872,7 +850,6 @@ void CCassQuery::InternalClose(bool  closebatch)
     m_async = false;
     m_allow_prepare = CASS_PREPARED_Q;
     m_is_prepared = false;
-
     if (m_cb_ref) {
         m_cb_ref->Detach();
         m_cb_ref = nullptr;
@@ -893,12 +870,11 @@ void CCassQuery::SetSQL(const string &  sql, unsigned int  PrmCount)
 
 void CCassQuery::Bind()
 {
-    if (!m_statement)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, query is closed");
-
-    int     cnt = 0;
-    for (auto &  it: m_params) {
+    if (!m_statement) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, query is closed");
+    }
+    int cnt = 0;
+    for (auto & it: m_params) {
         it.Bind(m_statement, cnt);
         cnt++;
     }
@@ -907,63 +883,53 @@ void CCassQuery::Bind()
 
 void CCassQuery::BindNull(int iprm)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    CheckParamExists(iprm);
     m_params[iprm].AssignNull();
 }
 
 void CCassQuery::BindInt8(int iprm, int8_t value)
 {
-    if (iprm < 0 || static_cast<size_t>(iprm) >= m_params.size()) {
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    }
+    CheckParamExists(iprm);
     m_params[iprm].Assign(value);
 }
 
 void CCassQuery::BindInt16(int iprm, int16_t value)
 {
-    if (iprm < 0 || static_cast<size_t>(iprm) >= m_params.size()) {
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
-    }
+    CheckParamExists(iprm);
     m_params[iprm].Assign(value);
 }
 
 void CCassQuery::BindInt32(int iprm, int32_t value)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    CheckParamExists(iprm);
     m_params[iprm].Assign(value);
 }
 
 
 void CCassQuery::BindInt64(int  iprm, int64_t  value)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    CheckParamExists(iprm);
     m_params[iprm].Assign(value);
 }
 
 
 void CCassQuery::BindStr(int  iprm, const string &  value)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    CheckParamExists(iprm);
     m_params[iprm].Assign(value);
 }
 
 
 void CCassQuery::BindStr(int  iprm, const char *  value)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    CheckParamExists(iprm);
     m_params[iprm].Assign(value);
 }
 
 
 void CCassQuery::BindBytes(int  iprm, const unsigned char *  buf, size_t  len)
 {
-    if (iprm < 0 || (unsigned int)iprm >= m_params.size())
-        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    CheckParamExists(iprm);
     m_params[iprm].Assign(buf, len);
 }
 
@@ -1016,19 +982,20 @@ void CCassQuery::SetEOF(bool value)
 
 void CCassQuery::NewBatch()
 {
-    if (!m_connection)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, DB connection closed");
-    if (m_batch)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, batch has already been started");
-    if (IsActive())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, query is active");
+    if (!m_connection) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, DB connection closed");
+    }
+    if (m_batch) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, batch has already been started");
+    }
+    if (IsActive()) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, query is active");
+    }
 
     m_batch = cass_batch_new(CASS_BATCH_TYPE_LOGGED);
-    if (!m_batch)
-        RAISE_DB_ERROR(eRsrcFailed, string("failed to create batch"));
+    if (!m_batch) {
+        RAISE_DB_ERROR(eRsrcFailed, "failed to create batch");
+    }
 }
 
 
@@ -1036,16 +1003,16 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
                        bool  allow_prepared, unsigned int  page_size)
 {
     if (!m_connection) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, DB connection closed");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, DB connection closed");
     }
     if (m_sql.empty()) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, SQL is not set");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, SQL is not set");
     }
     if (m_batch) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, can't run select in batch mode");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, can't run select in batch mode");
     }
     if (IsActive()) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, Query is active");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Query is active");
     }
     const CassPrepared * prepared = nullptr;
     if (allow_prepared) {
@@ -1066,23 +1033,21 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
         CassError rc;
         Bind();
         rc = cass_statement_set_consistency(m_statement, c);
-        if (rc != CASS_OK)
-            RAISE_CASS_ERROR(rc, eQueryFailed,
-                             string("Failed to set consistency level ") +
-                             NStr::NumericToString(static_cast<int>(c)));
+        if (rc != CASS_OK) {
+            RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set consistency level " + to_string(static_cast<int>(c)));
+        }
         if (m_serial_consistency != CASS_CONSISTENCY_ANY) {
             rc = cass_statement_set_serial_consistency(m_statement, m_serial_consistency);
-            if (rc != CASS_OK)
+            if (rc != CASS_OK) {
                 RAISE_CASS_ERROR(rc, eQueryFailed,
-                    string("Failed to set serial consistency level ") +
-                    NStr::NumericToString(static_cast<int>(m_serial_consistency)));
+                    "Failed to set serial consistency level " + to_string(static_cast<int>(m_serial_consistency)));
+            }
         }
         if (page_size > 0) {
             rc = cass_statement_set_paging_size(m_statement, page_size);
-            if (rc != CASS_OK)
-                RAISE_CASS_ERROR(rc, eQueryFailed,
-                    string("Failed to set page size to ") +
-                    NStr::NumericToString(static_cast<int>(page_size)));
+            if (rc != CASS_OK) {
+                RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set page size to " + to_string(static_cast<int>(page_size)));
+            }
         }
 
         m_page_start = true;
@@ -1106,7 +1071,7 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
 void CCassQuery::RestartQuery(CassConsistency c)
 {
     if (!m_future) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restartable state");
+        RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
     }
     unsigned int page_size = m_page_size;
     CCassParams params = move(m_params);
@@ -1118,53 +1083,52 @@ void CCassQuery::RestartQuery(CassConsistency c)
 
 void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
 {
-    if (!m_connection)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, DB connection closed");
-    if (m_sql.empty())
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, SQL is not set");
-    if (m_row != nullptr || m_statement != nullptr)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Query is active");
+    if (!m_connection) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, DB connection closed");
+    }
+    if (m_sql.empty()) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, SQL is not set");
+    }
+    if (m_row != nullptr || m_statement != nullptr) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Query is active");
+    }
 
-    const CassPrepared *    prepared = nullptr;
+    const CassPrepared * prepared = nullptr;
     if (allow_prepared) {
         prepared = m_connection->Prepare(m_sql);
         m_is_prepared = prepared != nullptr;
     }
 
-    if (m_is_prepared)
+    if (m_is_prepared) {
         m_statement = cass_prepared_bind(prepared);
-    else
+    } else {
         m_statement = cass_statement_new(m_sql.c_str(), m_params.size());
+    }
 
-    if (!m_statement)
-        RAISE_DB_ERROR(eRsrcFailed, string("failed to create cassandra query"));
+    if (!m_statement) {
+        RAISE_DB_ERROR(eRsrcFailed, "failed to create cassandra query");
+    }
 
     try {
-        CassError       rc;
+        CassError rc;
         Bind();
         rc = cass_statement_set_consistency(m_statement, c);
-        if (rc != CASS_OK)
-            RAISE_CASS_ERROR(rc, eQueryFailed,
-                             string("Failed to set consistency level ") +
-                             NStr::NumericToString(static_cast<int>(c)));
+        if (rc != CASS_OK) {
+            RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set consistency level " + to_string(static_cast<int>(c)));
+        }
         if (m_serial_consistency != CASS_CONSISTENCY_ANY) {
-            rc = cass_statement_set_serial_consistency(m_statement,
-                                                       m_serial_consistency);
-            if (rc != CASS_OK)
+            rc = cass_statement_set_serial_consistency(m_statement, m_serial_consistency);
+            if (rc != CASS_OK) {
                 RAISE_CASS_ERROR(rc, eQueryFailed,
-                                 string("Failed to set serial consistency level ") +
-                                 NStr::NumericToString(static_cast<int>(m_serial_consistency)));
+                    "Failed to set serial consistency level " + to_string(static_cast<int>(m_serial_consistency)));
+            }
         }
 
         if (m_batch) {
-            CassError   rc = cass_batch_add_statement(m_batch, m_statement);
-            if (rc != CASS_OK)
-                RAISE_CASS_ERROR(rc, eQueryFailed,
-                                 string("Failed to add statement to batch, sql: ") +
-                                 m_sql);
+            CassError rc = cass_batch_add_statement(m_batch, m_statement);
+            if (rc != CASS_OK) {
+                RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to add statement to batch, sql: " + m_sql);
+            }
             cass_statement_free(m_statement);
             m_statement = nullptr;
         }
@@ -1174,7 +1138,6 @@ void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
         SetEOF(false);
         m_results_expected = false;
         m_async = run_async;
-
         if (!m_batch) {
             if (run_async) {
                 GetFuture();
@@ -1193,12 +1156,11 @@ void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
 
 void CCassQuery::RestartExecute(CassConsistency c)
 {
-    if (!m_future)
-        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restartable state");
-
+    if (!m_future) {
+        RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
+    }
     CCassParams params = move(m_params);
     bool async = m_async, allow_prepared = m_is_prepared;
-
     Close();
     m_params = move(params);
     Execute(c, async, allow_prepared);
@@ -1206,13 +1168,14 @@ void CCassQuery::RestartExecute(CassConsistency c)
 
 void CCassQuery::Restart(CassConsistency c)
 {
-    if (!m_future)
-        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restartable state");
-
-    if (m_results_expected)
+    if (!m_future) {
+        RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
+    }
+    if (m_results_expected) {
         RestartQuery(c);
-    else
+    } else {
         RestartExecute(c);
+    }
 }
 
 
@@ -1222,12 +1185,12 @@ void CCassQuery::SetSerialConsistency(CassConsistency  c)
 }
 
 
-async_rslt_t  CCassQuery::RunBatch()
+async_rslt_t CCassQuery::RunBatch()
 {
     async_rslt_t rv = ar_wait;
-    if (!m_batch)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, batch is not created");
+    if (!m_batch) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, batch is not created");
+    }
 
     if (m_async) {
         GetFuture();
@@ -1244,9 +1207,9 @@ async_rslt_t  CCassQuery::RunBatch()
 
 async_rslt_t CCassQuery::WaitAsync(unsigned int  timeoutmks)
 {
-    if (!m_async)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "attempt to wait on query in non-async state");
+    if (!m_async) {
+        RAISE_DB_ERROR(eSeqFailed, "attempt to wait on query in non-async state");
+    }
     return Wait(timeoutmks);
 }
 
@@ -1260,27 +1223,25 @@ bool CCassQuery::IsReady()
 
 void CCassQuery::GetFuture()
 {
-    if (!m_connection)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, DB connection closed");
-    if (!IsActive() && !m_batch)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, Query is not active");
-    if (m_iterator || m_result)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "invalid sequence of operations, results already obtained");
-
+    if (!m_connection) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, DB connection closed");
+    }
+    if (!IsActive() && !m_batch) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Query is not active");
+    }
+    if (m_iterator || m_result) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, results already obtained");
+    }
     if (!m_future) {
         ++m_connection->m_active_statements;
-        if (m_batch)
-            m_future = cass_session_execute_batch(m_connection->m_session,
-                                                  m_batch);
-        else
-            m_future = cass_session_execute(m_connection->m_session,
-                                            m_statement);
+        if (m_batch) {
+            m_future = cass_session_execute_batch(m_connection->m_session, m_batch);
+        } else {
+            m_future = cass_session_execute(m_connection->m_session, m_statement);
+        }
         if (!m_future) {
             --m_connection->m_active_statements;
-            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
+            RAISE_DB_ERROR(eRsrcFailed, "failed to obtain cassandra query future");
         }
         m_futuretime = gettime();
         if (m_ondata || m_ondata2 || m_ondata3.lock()) {
@@ -1296,7 +1257,7 @@ async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
         if (m_async) {
             return ar_dataready;
         }
-        NCBI_THROW(CCassandraException, eSeqFailed, "result has already been allocated");
+        RAISE_DB_ERROR(eSeqFailed, "result has already been allocated");
     }
 
     if (m_EOF && m_results_expected) {
@@ -1339,43 +1300,42 @@ async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
 void CCassQuery::SetupOnDataCallback()
 {
     if (!m_future) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "Future is not assigned");
+        RAISE_DB_ERROR(eSeqFailed, "Future is not assigned");
     }
     if (!m_ondata && !m_ondata2 && !m_ondata3.lock()) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, m_ondata is not set");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, m_ondata is not set");
     }
     if (m_cb_ref) {
         m_cb_ref->Detach();
     }
-
     m_cb_ref.reset(new CCassQueryCbRef(shared_from_this()));
     m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data, m_ondata3.lock());
-
     CassError rv = cass_future_set_callback(m_future, CCassQueryCbRef::s_OnFutureCb, m_cb_ref.get());
     if (rv != CASS_OK) {
         m_cb_ref->Detach(true);
         m_cb_ref = nullptr;
-        NCBI_THROW(CCassandraException, eSeqFailed, "failed to assign future callback");
+        RAISE_DB_ERROR(eSeqFailed, "failed to assign future callback");
     }
 }
 
 void CCassQuery::ProcessFutureResult()
 {
     if (!m_future) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, m_future is not set");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, m_future is not set");
     }
     if (m_iterator || m_result) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, results already obtained");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, results already obtained");
     }
-
     CassError rc = cass_future_error_code(m_future);
     if (rc != CASS_OK) {
         if (m_statement) {
             cass_statement_free(m_statement);
             m_statement = nullptr;
         }
-        string msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR || rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
-            string(", sql: ") + m_sql : string("");
+        string msg;
+        if (rc == CASS_ERROR_SERVER_SYNTAX_ERROR || rc == CASS_ERROR_SERVER_INVALID_QUERY) {
+            msg = ", sql: " + m_sql;
+        }
         RAISE_CASS_QRY_ERROR(m_future, msg);
     }
 
@@ -1385,12 +1345,13 @@ void CCassQuery::ProcessFutureResult()
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query result"));
         }
         if (m_iterator) {
-            NCBI_THROW(CCassandraException, eSeqFailed, "iterator has already been allocated");
+            RAISE_DB_ERROR(eSeqFailed, "iterator has already been allocated");
         }
 
         m_iterator = cass_iterator_from_result(m_result);
-        if (!m_iterator)
+        if (!m_iterator) {
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query iterator"));
+        }
         /*
             we release m_future here for statements that return dataset,
             otherwise we free it in the destructor, keeping m_future not null
@@ -1415,8 +1376,9 @@ void CCassQuery::ProcessFutureResult()
             m_batch = nullptr;
         }
         SetEOF(true);
-        if (m_onexecute)
+        if (m_onexecute) {
             m_onexecute(*this, m_onexecute_data);
+        }
     }
 }
 
@@ -1424,7 +1386,7 @@ void CCassQuery::ProcessFutureResult()
 async_rslt_t CCassQuery::NextRow()
 {
     if (!IsActive()) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "invalid sequence of operations, Query is not active");
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, Query is not active");
     }
     while(1) {
         m_row = nullptr;
@@ -1435,12 +1397,10 @@ async_rslt_t CCassQuery::NextRow()
             } else {
                 wr = Wait(m_qtimeoutms * 1000L);
             }
-
             if (wr != ar_dataready) {
                 return wr;
             }
         }
-
         if (m_iterator && m_result) {
             bool b = cass_iterator_next(m_iterator);
             if (!b) {
@@ -1452,12 +1412,10 @@ async_rslt_t CCassQuery::NextRow()
                             RAISE_CASS_ERROR(err, eFetchFailed, string("failed to retrive next page"));
                         }
                     }
-
                     cass_iterator_free(m_iterator);
                     m_iterator = nullptr;
                     cass_result_free(m_result);
                     m_result = nullptr;
-
                     if (!has_more_pages) {
                         SetEOF(true);
                         return ar_done;
@@ -1476,9 +1434,7 @@ async_rslt_t CCassQuery::NextRow()
                 return ar_dataready;
             }
         } else {
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                "invalid sequence of operations, "
-                "attempt to fetch next row on a closed query");
+            RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, attempt to fetch next row on a closed query");
         }
     }
 }
@@ -1488,15 +1444,11 @@ template<>
 const CassValue * CCassQuery::GetColumn(int ifld) const
 {
     if (!m_row) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+        RAISE_DB_ERROR(eSeqFailed, "query row is not fetched");
     }
-
     const CassValue * clm = cass_row_get_column(m_row, ifld);
     if (!clm) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-            "column is not fetched (index " +
-            NStr::NumericToString(ifld) + " beyound the range?)"
-        );
+        RAISE_DB_ERROR(eSeqFailed, "column is not fetched (index " + to_string(ifld) + " beyound the range?)");
     }
     return clm;
 }
@@ -1506,12 +1458,11 @@ template<>
 const CassValue * CCassQuery::GetColumn(const string & name) const
 {
     if (!m_row) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+        RAISE_DB_ERROR(eSeqFailed, "query row is not fetched");
     }
-
     const CassValue * clm = cass_row_get_column_by_name_n(m_row, name.c_str(), name.size());
     if (!clm) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "column " + name + " is not available");
+        RAISE_DB_ERROR(eSeqFailed, "column " + name + " is not available");
     }
     return clm;
 }
@@ -1520,12 +1471,12 @@ template<>
 const CassValue * CCassQuery::GetColumn(const char * name) const
 {
     if (!m_row) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+        RAISE_DB_ERROR(eSeqFailed, "query row is not fetched");
     }
 
     const CassValue * clm = cass_row_get_column_by_name(m_row, name);
     if (!clm) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "column " + string(name) + " is not available");
+        RAISE_DB_ERROR(eSeqFailed, "column " + string(name) + " is not available");
     }
     return clm;
 }
@@ -1549,8 +1500,9 @@ string CCassQuery::ToString() const
 {
     string params;
     for (size_t i = 0; i < ParamCount(); ++i) {
-        if (!params.empty())
+        if (!params.empty()) {
             params.append(", ");
+        }
         switch (ParamType(i)) {
             case CASS_VALUE_TYPE_SET:
                 params.append("?SET");
