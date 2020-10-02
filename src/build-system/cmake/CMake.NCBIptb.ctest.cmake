@@ -134,6 +134,7 @@ function(NCBI_internal_add_cmake_test _test)
 
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
+        -DNCBITEST_ALIAS=${NCBITEST_${_test}_TESTALIAS}
         -DNCBITEST_CONFIG=$<CONFIG>
         -DNCBITEST_COMMAND=${NCBITEST_${_test}_CMD}
         -DNCBITEST_ARGS=${_args}

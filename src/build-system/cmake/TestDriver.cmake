@@ -212,7 +212,7 @@ endif()
     string(APPEND _info "${NCBITEST_SIGNATURE} ${_name}\n")
     string(APPEND _info "${NCBITEST_XOUTDIR}\n")
     string(APPEND _info "${_test_cmd} ${_test_args}\n")
-    string(APPEND _info "${NCBITEST_NAME}\n")
+    string(APPEND _info "${NCBITEST_ALIAS}\n")
 
     if (${_result} EQUAL "0")
         set(_status "OK")
