@@ -259,7 +259,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ANMR\tc\tAsian Network on Microbial Researches\t\t\t",
 "ANSM\ts\tUniversidad Autonoma Agraria Antonio Narro, Departamento de Botanica\t\t\t",
 "ANSP\ts\tAcademy of Natural Sciences of Drexel University\tANSP\t\t",
-"ANSP:FISH\ts\tAcademy of Natural Sciences of Drexel University, Ichthyology Collection\t\t",
+"ANSP:FISH\ts\tAcademy of Natural Sciences of Drexel University, Ichthyology Collection\t",
 "ANSP:HRP\ts\tAcademy of Natural Sciences of Drexel University, Herpetology collection\t\t",
 "ANSP:Malacology\ts\tAcademy of Natural Sciences of Drexel University, Malacology Collection\t\t",
 "ANSP:MAM\ts\tAcademy of Natural Sciences of Drexel University, Mammal collection\t\t",

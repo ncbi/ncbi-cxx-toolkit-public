@@ -226,7 +226,7 @@ ANLW	s	Amt Der Niederosterreichischen Landsregierung
 ANMR	c	Asian Network on Microbial Researches			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
 ANSP	s	Academy of Natural Sciences of Drexel University	ANSP		
-ANSP:FISH	s	Academy of Natural Sciences of Drexel University, Ichthyology Collection		
+ANSP:FISH	s	Academy of Natural Sciences of Drexel University, Ichthyology Collection	
 ANSP:HRP	s	Academy of Natural Sciences of Drexel University, Herpetology collection		
 ANSP:Malacology	s	Academy of Natural Sciences of Drexel University, Malacology Collection		
 ANSP:MAM	s	Academy of Natural Sciences of Drexel University, Mammal collection		
