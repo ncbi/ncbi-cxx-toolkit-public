@@ -42,6 +42,8 @@ BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
+static CPSGS_OSGGetBlobBase::TID2SplitVersion kSplitInfo_SplitVersion = 999999999;
+
 CPSGS_OSGGetBlobBase::CPSGS_OSGGetBlobBase()
 {
 }
@@ -49,6 +51,20 @@ CPSGS_OSGGetBlobBase::CPSGS_OSGGetBlobBase()
 
 CPSGS_OSGGetBlobBase::~CPSGS_OSGGetBlobBase()
 {
+}
+
+
+void CPSGS_OSGGetBlobBase::x_SetSplitVersion(const CID2_Blob_Id& osg_blob_id,
+                                             TID2SplitVersion split_version)
+{
+    m_PSGBlobId2SplitVersion[GetPSGBlobId(osg_blob_id)] = split_version;
+}
+
+
+CPSGS_OSGGetBlobBase::TID2SplitVersion
+CPSGS_OSGGetBlobBase::x_GetSplitVersion(const CID2_Blob_Id& osg_blob_id)
+{
+    return m_PSGBlobId2SplitVersion[GetPSGBlobId(osg_blob_id)];
 }
 
 
@@ -103,14 +119,6 @@ void CPSGS_OSGGetBlobBase::x_SetBlobDataProps(CBlobRecord& blob_props,
 }
 
 
-void CPSGS_OSGGetBlobBase::x_SetId2SplitInfo(CBlobRecord& blob_props,
-                                             const string& main_blob_id,
-                                             TID2SplitVersion split_version)
-{
-    blob_props.SetId2Info(main_blob_id+".."+std::to_string(split_version));
-}
-
-
 void CPSGS_OSGGetBlobBase::x_SetBlobState(CBlobRecord& blob_props,
                                           TID2BlobState blob_state)
 {
@@ -141,6 +149,21 @@ void CPSGS_OSGGetBlobBase::x_SendBlobProps(const string& psg_blob_id,
 }
 
 
+void CPSGS_OSGGetBlobBase::x_SendChunkBlobProps(const string& id2_info,
+                                                TID2ChunkId chunk_id,
+                                                CBlobRecord& blob_props)
+{
+    size_t item_id = GetReply()->GetItemId();
+    string data_to_send = ToJson(blob_props).Repr(CJsonNode::fStandardJson);
+    if ( GetDebugLevel() >= eDebug_exchange ) {
+        LOG_POST(GetDiagSeverity() << "OSG: "
+                 "Sending chunk blob_prop("<<id2_info<<','<<chunk_id<<"): "<<data_to_send);
+    }
+    GetReply()->PrepareTSEBlobPropData(item_id, GetName(), chunk_id, id2_info, data_to_send);
+    GetReply()->PrepareBlobPropCompletion(item_id, GetName(), 2);
+}
+
+
 void CPSGS_OSGGetBlobBase::x_SendBlobData(const string& psg_blob_id,
                                           const CID2_Reply_Data& data)
 {
@@ -152,6 +175,22 @@ void CPSGS_OSGGetBlobBase::x_SendBlobData(const string& psg_blob_id,
     }
     GetReply()->PrepareBlobCompletion(item_id, GetName(),
                                       psg_blob_id, chunk_no+1);
+}
+
+
+void CPSGS_OSGGetBlobBase::x_SendChunkBlobData(const string& id2_info,
+                                               TID2ChunkId chunk_id,
+                                               const CID2_Reply_Data& data)
+{
+    size_t item_id = GetReply()->GetItemId();
+    int chunk_no = 0;
+    for ( auto& chunk : data.GetData() ) {
+        GetReply()->PrepareTSEBlobData(item_id, GetName(),
+                                       (const unsigned char*)chunk->data(), chunk->size(), chunk_no++,
+                                       chunk_id, id2_info);
+    }
+    GetReply()->PrepareTSEBlobCompletion(item_id, GetName(),
+                                         chunk_id, id2_info, chunk_no+1);
 }
 
 
@@ -185,41 +224,36 @@ void CPSGS_OSGGetBlobBase::x_SendMainEntry(const CID2_Blob_Id& osg_blob_id,
 
 void CPSGS_OSGGetBlobBase::x_SendSplitInfo(const CID2_Blob_Id& osg_blob_id,
                                            TID2BlobState blob_state,
-                                           const CID2_Reply_Data& data,
-                                           TID2SplitVersion split_version)
+                                           TID2SplitVersion split_version,
+                                           const CID2_Reply_Data& data)
 {
     // first send main blob props
     string main_blob_id = GetPSGBlobId(osg_blob_id);
+    string id2_info = GetPSGId2Info(osg_blob_id, split_version);
     
     CBlobRecord main_blob_props;
     x_SetBlobVersion(main_blob_props, osg_blob_id);
     x_SetBlobState(main_blob_props, blob_state);
-    x_SetId2SplitInfo(main_blob_props, main_blob_id, split_version);
+    main_blob_props.SetId2Info(id2_info);
     x_SendBlobProps(main_blob_id, main_blob_props);
     
-    string split_info_blob_id = x_GetSplitInfoPSGBlobId(main_blob_id);
     CBlobRecord split_info_blob_props;
-    x_SetBlobVersion(split_info_blob_props, osg_blob_id);
-    x_SetId2SplitInfo(split_info_blob_props, main_blob_id, split_version);
     x_SetBlobDataProps(split_info_blob_props, data);
-    x_SendBlobProps(split_info_blob_id, split_info_blob_props);
-    x_SendBlobData(split_info_blob_id, data);
+    x_SendChunkBlobProps(id2_info, kSplitInfo_SplitVersion, split_info_blob_props);
+    x_SendChunkBlobData(id2_info, kSplitInfo_SplitVersion, data);
 }
 
 
 void CPSGS_OSGGetBlobBase::x_SendChunk(const CID2_Blob_Id& osg_blob_id,
-                                       const CID2_Reply_Data& data,
-                                       TID2ChunkId chunk_id)
+                                       TID2ChunkId chunk_id,
+                                       const CID2_Reply_Data& data)
 {
-    // first send main blob props
-    string main_blob_id = GetPSGBlobId(osg_blob_id);
+    string id2_info = GetPSGId2Info(osg_blob_id, x_GetSplitVersion(osg_blob_id));
     
-    string chunk_blob_id = x_GetChunkPSGBlobId(main_blob_id, chunk_id);
     CBlobRecord chunk_blob_props;
-    x_SetBlobVersion(chunk_blob_props, osg_blob_id);
     x_SetBlobDataProps(chunk_blob_props, data);
-    x_SendBlobProps(chunk_blob_id, chunk_blob_props);
-    x_SendBlobData(chunk_blob_id, data);
+    x_SendChunkBlobProps(id2_info, chunk_id, chunk_blob_props);
+    x_SendChunkBlobData(id2_info, chunk_id, data);
 }
 
 
@@ -227,25 +261,27 @@ void CPSGS_OSGGetBlobBase::SendBlob()
 {
     if ( m_SplitInfo && !m_Blob ) {
         // split_info with blob inside
+        x_SetSplitVersion(m_SplitInfo->GetBlob_id(), m_SplitInfo->GetSplit_version());
         x_SendSplitInfo(m_SplitInfo->GetBlob_id(),
-                        m_SplitInfo->GetBlob_state(),
-                        m_SplitInfo->GetData(),
-                        m_SplitInfo->GetSplit_version());
+                        x_GetBlobState(*m_SplitInfo),
+                        m_SplitInfo->GetSplit_version(),
+                        m_SplitInfo->GetData());
         SetFinalStatus(ePSGS_Found);
     }
-    else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() && m_Blob->GetData().GetData_type() == CID2_Reply_Data::eData_type_id2s_split_info ) {
+    else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() &&
+              m_Blob->GetData().GetData_type() == CID2_Reply_Data::eData_type_id2s_split_info ) {
         // split_info with blob inside in a get-blob reply
         // TODO: really???
         x_SendSplitInfo(m_Blob->GetBlob_id(),
-                        m_Blob->GetBlob_state(),
-                        m_Blob->GetData(),
-                        0);
+                        x_GetBlobState(*m_Blob),
+                        0,
+                        m_Blob->GetData());
         SetFinalStatus(ePSGS_Found);
     }
     else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() ) {
         // blob only
         x_SendMainEntry(m_Blob->GetBlob_id(),
-                        m_Blob->GetBlob_state(),
+                        x_GetBlobState(*m_Blob),
                         m_Blob->GetData());
         SetFinalStatus(ePSGS_Found);
     }
@@ -259,8 +295,8 @@ void CPSGS_OSGGetBlobBase::SendBlob()
     }
     else if ( m_Chunk ) {
         x_SendChunk(m_Chunk->GetBlob_id(),
-                    m_Chunk->GetData(),
-                    m_Chunk->GetChunk_id());
+                    m_Chunk->GetChunk_id(),
+                    m_Chunk->GetData());
         SetFinalStatus(ePSGS_Found);
     }
     else {
@@ -284,6 +320,30 @@ static const int kOSG_Sat_CDD_min = 8087;
 static const int kOSG_Sat_CDD_max = 8087;
 //static const int kOSG_Sat_NAGraph_min = 8000;
 //static const int kOSG_Sat_NAGraph_max = 8000;
+
+
+static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+{
+    if ( sat >= kOSG_Sat_WGS_min &&
+         sat <= kOSG_Sat_WGS_max ) {
+        return true;
+    }
+    if ( sat >= kOSG_Sat_SNP_min &&
+         sat <= kOSG_Sat_SNP_max ) {
+        return true;
+    }
+    if ( sat >= kOSG_Sat_CDD_min &&
+         sat <= kOSG_Sat_CDD_max ) {
+        return true;
+    }
+    /*
+    if ( sat >= kOSG_Sat_NAGraph_min &&
+         sat <= kOSG_Sat_NAGraph_max ) {
+        return true;
+    }
+    */
+    return false;
+}
 
 
 static bool s_Skip(CTempString& str, char c)
@@ -318,69 +378,46 @@ static bool s_ParseInt(CTempString& str, Int& v)
 }
 
 
-static bool s_ParseOSGBlob(const SPSGS_BlobId& blob_id,
+static bool s_ParseOSGBlob(CTempString& s,
                            Int4& sat, Int4& subsat, Int4& satkey)
 {
-    auto id0 = blob_id.GetId();
-    CTempString id = id0;
-    if ( id.find(kSubSatSeparator) == NPOS ) {
+    if ( s.find(kSubSatSeparator) == NPOS ) {
         return false;
     }
-    if ( !s_ParseInt(id, sat) ) {
+    if ( !s_ParseInt(s, sat) ) {
         return false;
     }
-    if ( !s_Skip(id, kSubSatSeparator) ) {
+    if ( !s_Skip(s, kSubSatSeparator) ) {
         return false;
     }
-    if ( !s_ParseInt(id, subsat) ) {
+    if ( !s_ParseInt(s, subsat) ) {
         return false;
     }
-    if ( !s_Skip(id, '.') ) {
+    if ( !s_Skip(s, '.') ) {
         return false;
     }
-    if ( !s_ParseInt(id, satkey) ) {
+    if ( !s_ParseInt(s, satkey) ) {
         return false;
     }
-    return id.empty();
+    return s_IsOSGBlob(sat, subsat, satkey);
 }
 
 
-bool CPSGS_OSGGetBlobBase::IsOSGBlob(const SPSGS_BlobId& blob_id)
+static void s_FormatBlobId(ostream& s, const CID2_Blob_Id& blob_id)
+{
+    s << blob_id.GetSat()
+      << kSubSatSeparator << blob_id.GetSub_sat()
+      << '.' << blob_id.GetSat_key();
+}
+
+
+CRef<CID2_Blob_Id> CPSGS_OSGGetBlobBase::ParsePSGBlobId(const SPSGS_BlobId& blob_id)
 {
     Int4 sat;
     Int4 subsat;
     Int4 satkey;
-    if ( !s_ParseOSGBlob(blob_id, sat, subsat, satkey) ) {
-        return false;
-    }
-    if ( sat >= kOSG_Sat_WGS_min &&
-         sat <= kOSG_Sat_WGS_max ) {
-        return true;
-    }
-    if ( sat >= kOSG_Sat_SNP_min &&
-         sat <= kOSG_Sat_SNP_max ) {
-        return true;
-    }
-    if ( sat >= kOSG_Sat_CDD_min &&
-         sat <= kOSG_Sat_CDD_max ) {
-        return true;
-    }
-    /*
-    if ( sat >= kOSG_Sat_NAGraph_min &&
-         sat <= kOSG_Sat_NAGraph_max ) {
-        return true;
-    }
-    */
-    return false;
-}
-
-
-CRef<CID2_Blob_Id> CPSGS_OSGGetBlobBase::GetOSGBlobId(const SPSGS_BlobId& blob_id)
-{
-    Int4 sat;
-    Int4 subsat;
-    Int4 satkey;
-    if ( !s_ParseOSGBlob(blob_id, sat, subsat, satkey) ) {
+    CTempString s = blob_id.GetId();
+    if ( !s_ParseOSGBlob(s, sat, subsat, satkey) || !s.empty() ) {
         return null;
     }
     CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
@@ -394,10 +431,47 @@ CRef<CID2_Blob_Id> CPSGS_OSGGetBlobBase::GetOSGBlobId(const SPSGS_BlobId& blob_i
 string CPSGS_OSGGetBlobBase::GetPSGBlobId(const CID2_Blob_Id& blob_id)
 {
     ostringstream s;
-    s << blob_id.GetSat()
-        << kSubSatSeparator << blob_id.GetSub_sat()
-        << '.' << blob_id.GetSat_key();
+    s_FormatBlobId(s, blob_id);
     return s.str();
+}
+
+
+string CPSGS_OSGGetBlobBase::GetPSGId2Info(const CID2_Blob_Id& tse_id,
+                                           TID2SplitVersion split_version)
+{
+    ostringstream s;
+    s_FormatBlobId(s, tse_id);
+    TID2BlobVersion blob_version = tse_id.IsSetVersion()? tse_id.GetVersion(): 0;
+    s << '.' << blob_version << '.' << split_version;
+    return s.str();
+}
+
+
+CPSGS_OSGGetBlobBase::SParsedId2Info
+CPSGS_OSGGetBlobBase::ParsePSGId2Info(const string& id2_info)
+{
+    Int4 sat;
+    Int4 subsat;
+    Int4 satkey;
+    TID2BlobVersion tse_version;
+    TID2SplitVersion split_version;
+    
+    CTempString s = id2_info;
+    if ( !s_ParseOSGBlob(s, sat, subsat, satkey) ||
+         !s_Skip(s, '.') ||
+         !s_ParseInt(s, tse_version) ||
+         !s_Skip(s, '.') ||
+         !s_ParseInt(s, split_version) ||
+         !s.empty() ) {
+        return SParsedId2Info{};
+    }
+    
+    CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
+    id->SetSat(sat);
+    id->SetSub_sat(subsat);
+    id->SetSat_key(satkey);
+    id->SetVersion(tse_version);
+    return SParsedId2Info{id, split_version};
 }
 
 

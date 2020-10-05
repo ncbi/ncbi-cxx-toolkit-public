@@ -168,8 +168,8 @@ void CPSGS_OSGGetBlobBySeqId::CreateRequests()
     auto& req = get_req.SetBlob_id().SetResolve();
     req.SetRequest().SetSeq_id().SetSeq_id().SetSeq_id().Set(psg_req.m_SeqId);
     for ( auto& excl_id : psg_req.m_ExcludeBlobs ) {
-        if ( CPSGS_OSGGetBlobBase::IsOSGBlob(excl_id) ) {
-            req.SetExclude_blobs().push_back(CPSGS_OSGGetBlobBase::GetOSGBlobId(excl_id));
+        if ( auto excl_blob_id = CPSGS_OSGGetBlobBase::ParsePSGBlobId(excl_id) ) {
+            req.SetExclude_blobs().push_back(excl_blob_id);
         }
     }
     AddRequest(osg_req);

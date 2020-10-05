@@ -60,12 +60,15 @@ string CPSGS_OSGGetBlob::GetName() const
 
 void CPSGS_OSGGetBlob::CreateRequests()
 {
-    CRef<CID2_Request> osg_req(new CID2_Request);
     auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
-    auto& req = osg_req->SetRequest().SetGet_blob_info();
-    req.SetBlob_id().SetBlob_id(*GetOSGBlobId(psg_req.m_BlobId));
-    req.SetGet_data();
-    AddRequest(osg_req);
+    if ( auto blob_id = ParsePSGBlobId(psg_req.m_BlobId) ) {
+        CRef<CID2_Request> osg_req(new CID2_Request);
+        auto& req = osg_req->SetRequest().SetGet_blob_info();
+        req.SetBlob_id().SetBlob_id(*blob_id);
+        // TODO: blob version?
+        req.SetGet_data();
+        AddRequest(osg_req);
+    }
 }
 
 
@@ -113,16 +116,16 @@ string CPSGS_OSGGetChunks::GetName() const
 
 void CPSGS_OSGGetChunks::CreateRequests()
 {
-    CRef<CID2_Request> osg_req(new CID2_Request);
     auto& psg_req = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
-    auto& req = osg_req->SetRequest().SetGet_chunks();
-//    req.SetBlob_id(*GetOSGBlobId(psg_req.m_TSEId));
-//    req.SetSplit_version(psg_req.m_SplitVersion);
-    // TODO: multiple chunks in request
-    CID2S_Chunk_Id chunk_id;
-    chunk_id.Set(psg_req.m_Id2Chunk);
-    req.SetChunks().push_back(chunk_id);
-    AddRequest(osg_req);
+    if ( auto parsed = ParsePSGId2Info(psg_req.m_Id2Info) ) {
+        x_SetSplitVersion(*parsed.tse_id, parsed.split_version);
+        CRef<CID2_Request> osg_req(new CID2_Request);
+        auto& req = osg_req->SetRequest().SetGet_chunks();
+        req.SetBlob_id(*parsed.tse_id);
+        req.SetSplit_version(parsed.split_version);
+        req.SetChunks().push_back(CID2S_Chunk_Id(psg_req.m_Id2Chunk));
+        AddRequest(osg_req);
+    }
 }
 
 

@@ -103,7 +103,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
                 }
             }
             else if ( id->IsGi() ) {
-                m_BioseqInfo.SetGI(id->GetGi());
+                m_BioseqInfo.SetGI(GI_TO(CBioseqInfoRecord::TGI,id->GetGi()));
                 m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_Gi;
                 continue;
             }

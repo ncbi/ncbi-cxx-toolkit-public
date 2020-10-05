@@ -54,25 +54,29 @@ BEGIN_NAMESPACE(osg);
 class CPSGS_OSGGetBlobBase : virtual public CPSGS_OSGProcessorBase
 {
 public:
-    CPSGS_OSGGetBlobBase();
-    virtual ~CPSGS_OSGGetBlobBase();
-
-    static bool CanLoad(const SPSGS_BlobId& blob_id)
-        {
-            return IsOSGBlob(blob_id);
-        }
-    
-    static bool IsOSGBlob(const SPSGS_BlobId& blob_id);
-
-    static CRef<CID2_Blob_Id> GetOSGBlobId(const SPSGS_BlobId& blob_id);
-    static string GetPSGBlobId(const CID2_Blob_Id& blob_id);
-
-protected:
     typedef int TID2BlobState;
     typedef int TID2BlobVersion;
     typedef int TID2SplitVersion;
     typedef int TID2ChunkId;
+    
+    CPSGS_OSGGetBlobBase();
+    virtual ~CPSGS_OSGGetBlobBase();
 
+    static CRef<CID2_Blob_Id> ParsePSGBlobId(const SPSGS_BlobId& blob_id);
+    static string GetPSGBlobId(const CID2_Blob_Id& blob_id);
+
+    struct SParsedId2Info
+    {
+        DECLARE_OPERATOR_BOOL_REF(tse_id);
+        
+        CRef<CID2_Blob_Id> tse_id;
+        TID2SplitVersion split_version;
+    };
+    
+    static SParsedId2Info ParsePSGId2Info(const string& idsss2_info);
+    static string GetPSGId2Info(const CID2_Blob_Id& tse_id,
+                                TID2SplitVersion split_version);
+protected:
     void ProcessBlobReply(const CID2_Reply& reply);
     void SendBlob();
     
@@ -80,15 +84,18 @@ protected:
     static string x_GetChunkPSGBlobId(const string& main_blob_id,
                                       TID2ChunkId chunk_id);
     
+    template<class C>
+    static TID2BlobState x_GetBlobState(const C& obj)
+        {
+            return obj.IsSetBlob_state()? obj.GetBlob_state(): 0;
+        }
     string x_GetPSGDataBlobId(const CID2_Blob_Id& blob_id,
                               const CID2_Reply_Data& data);
     void x_SetBlobState(CBlobRecord& blob_props,
                         TID2BlobState blob_state);
     void x_SetBlobVersion(CBlobRecord& blob_props,
                           const CID2_Blob_Id& blob_id);
-    void x_SetId2SplitInfo(CBlobRecord& blob_props,
-                           const string& main_blob_id,
-                           TID2SplitVersion split_version);
+
     void x_SetBlobDataProps(CBlobRecord& blob_props,
                             const CID2_Reply_Data& data);
     
@@ -96,18 +103,29 @@ protected:
                          CBlobRecord& blob_props);
     void x_SendBlobData(const string& psg_blob_id,
                         const CID2_Reply_Data& data);
+    void x_SendChunkBlobProps(const string& id2_info,
+                              TID2ChunkId chunk_id,
+                              CBlobRecord& blob_props);
+    void x_SendChunkBlobData(const string& id2_info,
+                             TID2ChunkId chunk_id,
+                             const CID2_Reply_Data& data);
 
     void x_SendMainEntry(const CID2_Blob_Id& osg_blob_id,
                          TID2BlobState blob_state,
                          const CID2_Reply_Data& data);
     void x_SendSplitInfo(const CID2_Blob_Id& osg_blob_id,
                          TID2BlobState blob_state,
-                         const CID2_Reply_Data& data,
-                         TID2SplitVersion split_version);
+                         TID2SplitVersion split_version,
+                         const CID2_Reply_Data& data);
     void x_SendChunk(const CID2_Blob_Id& osg_blob_id,
-                     const CID2_Reply_Data& data,
-                     TID2ChunkId chunk_id);
-    
+                     TID2ChunkId chunk_id,
+                     const CID2_Reply_Data& data);
+
+    void x_SetSplitVersion(const CID2_Blob_Id& osg_blob_id,
+                           TID2SplitVersion split_version);
+    TID2SplitVersion x_GetSplitVersion(const CID2_Blob_Id& osg_blob_id);
+
+    map<string, TID2SplitVersion> m_PSGBlobId2SplitVersion;
     CConstRef<CID2_Reply_Get_Blob> m_Blob;
     CConstRef<CID2S_Reply_Get_Split_Info> m_SplitInfo;
     CConstRef<CID2S_Reply_Get_Chunk> m_Chunk;

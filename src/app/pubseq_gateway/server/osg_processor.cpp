@@ -36,6 +36,7 @@
 #include "osg_getblob.hpp"
 #include "osg_connection.hpp"
 #include "pubseq_gateway.hpp"
+#include <objects/id2/ID2_Blob_Id.hpp>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -79,15 +80,15 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-        if ( CPSGS_OSGGetBlob::CanLoad(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId) ) {
+        if ( CPSGS_OSGGetBlob::ParsePSGBlobId(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId) ) {
             return new CPSGS_OSGGetBlob(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_TSEChunkRequest:
-//        if ( CPSGS_OSGGetChunks::CanLoad(request->GetRequest<SPSGS_TSEChunkRequest>().m_TSEId) ) {
-//            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
-//        }
+        if ( CPSGS_OSGGetChunks::ParsePSGId2Info(request->GetRequest<SPSGS_TSEChunkRequest>().m_Id2Info) ) {
+            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
+        }
         return nullptr;
 
     case CPSGS_Request::ePSGS_AnnotationRequest:
