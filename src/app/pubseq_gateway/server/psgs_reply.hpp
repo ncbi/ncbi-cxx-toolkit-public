@@ -118,6 +118,11 @@ public:
     void PrepareBlobPropData(CCassBlobFetch *  fetch_details,
                              const string &    processor_id,
                              const string &    content);
+    void PrepareTSEBlobPropData(size_t            item_id,
+                                const string &    processor_id,
+                                int64_t           id2_chunk,
+                                const string &    id2_info,
+                                const string &    content);
     void PrepareTSEBlobPropData(CCassBlobFetch *  fetch_details,
                                 const string &    processor_id,
                                 int64_t           id2_chunk,
@@ -180,6 +185,11 @@ public:
                                const string &  processor_id,
                                const string &  blob_id,
                                size_t  chunk_count);
+    void PrepareTSEBlobCompletion(size_t item_id,
+                                  const string &  processor_id,
+                                  int64_t  id2_chunk,
+                                  const string &  id2_info,
+                                  size_t  chunk_count);
     void PrepareTSEBlobCompletion(CCassBlobFetch *  fetch_details,
                                   const string &  processor_id,
                                   int64_t  id2_chunk,
@@ -221,16 +231,6 @@ public:
     void Send503(const char *  msg);
 
 private:
-    void x_PrepareTSEBlobCompletion(size_t  item_id,
-                                    const string &  processor_id,
-                                    int64_t  id2_chunk,
-                                    const string &  id2_info,
-                                    size_t  chunk_count);
-    void x_PrepareTSEBlobPropData(size_t  item_id,
-                                  const string &    processor_id,
-                                  int64_t           id2_chunk,
-                                  const string &    id2_info,
-                                  const string &    content);
     void x_PrepareTSEBlobPropCompletion(size_t          item_id,
                                         const string &  processor_id,
                                         int64_t         id2_chunk,
