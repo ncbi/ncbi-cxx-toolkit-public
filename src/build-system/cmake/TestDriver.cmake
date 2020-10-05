@@ -150,6 +150,20 @@ endif()
 endif()
 set(ENV{CHECK_TIMEOUT} "${NCBITEST_TIMEOUT}")
 if($ENV{NCBI_AUTOMATED_BUILD})
+    find_program(NCBI_APPLOG NAMES ncbi_applog ncbi_applog.bat PATHS ENV PATH)
+    if(NCBI_APPLOG)
+        execute_process(
+            COMMAND           ${NCBI_APPLOG} generate -phid -sid 
+            OUTPUT_VARIABLE   NCBI_APPLOG_output
+            RESULT_VARIABLE   _result
+        )
+        if("${_result}" EQUAL "0")
+            string(REPLACE "\n" ";" NCBI_APPLOG_output "${NCBI_APPLOG_output}")
+            list(GET NCBI_APPLOG_output 1 NCBI_LOG_HIT_ID)
+            set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}")
+            file(WRITE ${_workdir}/${NCBI_LOG_HIT_ID} "0")
+        endif()
+    endif()
     set(ENV{CHECK_EXEC} "${NCBITEST_SCRIPTDIR}/check_exec_test.sh")
     set(ENV{CHECK_EXEC_STDIN} "${NCBITEST_SCRIPTDIR}/check_exec_test.sh -stdin")
     math(EXPR NCBITEST_TIMEOUT "${NCBITEST_TIMEOUT} + 60")
