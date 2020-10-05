@@ -211,6 +211,20 @@ static string SeverityToLowerString(EDiagSev  severity)
 }
 
 
+static string SkipReasonToString(EPSGS_BlobSkipReason  skip_reason)
+{
+    switch (skip_reason) {
+        case ePSGS_BlobExcluded:
+            return s_Excluded;
+        case ePSGS_BlobInProgress:
+            return s_InProgress;
+        case ePSGS_BlobSent:
+            return s_Sent;
+    }
+    return "UnknownSkipReason";
+}
+
+
 string  GetBioseqInfoHeader(size_t  item_id,
                             const string &  processor_id,
                             size_t  bioseq_info_size,
@@ -477,19 +491,6 @@ string  GetBlobExcludeHeader(size_t  item_id,
                              EPSGS_BlobSkipReason  skip_reason)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
-    string      reason;
-    switch (skip_reason) {
-        case ePSGS_BlobExcluded:
-            reason = s_Excluded;
-            break;
-        case ePSGS_BlobInProgress:
-            reason = s_InProgress;
-            break;
-        case ePSGS_BlobSent:
-            reason = s_Sent;
-            break;
-    }
-
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
@@ -501,9 +502,34 @@ string  GetBlobExcludeHeader(size_t  item_id,
                 .append(blob_id)
                 .append(s_AndNChunksOne)
                 .append(s_AndReason)
-                .append(reason)
+                .append(SkipReasonToString(skip_reason))
                 .append(1, '\n');
 }
+
+
+string  GetTSEBlobExcludeHeader(size_t  item_id,
+                                const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                EPSGS_BlobSkipReason  skip_reason)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunksOne)
+                .append(s_AndReason)
+                .append(SkipReasonToString(skip_reason))
+                .append(1, '\n');
+}
+
 
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,

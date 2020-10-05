@@ -74,6 +74,11 @@ protected:
                     int  code,
                     EDiagSev  severity,
                     const string &  message);
+    bool NeedToAddId2CunkId2Info(void) const;
+    void PrepareServerErrorMessage(CCassBlobFetch *  fetch_details,
+                                   int  code,
+                                   EDiagSev  severity,
+                                   const string &  message);
 
 private:
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
@@ -127,12 +132,35 @@ private:
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details,
                         CBlobRecord const &  blob);
+    int64_t  x_GetId2ChunkNumber(CCassBlobFetch *  fetch_details);
+    void x_PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+                               CBlobRecord const &  blob);
+    void x_PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details);
+    void x_PrepareBlobData(CCassBlobFetch *  fetch_details,
+                           const unsigned char *  chunk_data,
+                           unsigned int  data_size,
+                           int  chunk_no);
+    void x_PrepareBlobCompletion(CCassBlobFetch *  fetch_details);
+    void x_PrepareBlobPropMessage(CCassBlobFetch *  fetch_details,
+                                  const string &  message,
+                                  CRequestStatus::ECode  status,
+                                  int  err_code,
+                                  EDiagSev  severity);
+    void x_PrepareBlobMessage(CCassBlobFetch *  fetch_details,
+                              const string &  message,
+                              CRequestStatus::ECode  status,
+                              int  err_code,
+                              EDiagSev  severity);
+    void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
+                               const string &  blob_id,
+                               EPSGS_BlobSkipReason  skip_reason);
 
 protected:
     // Used for get blob by sat/sat key request
     SCass_BlobId                    m_BlobId;
 
 private:
+    bool                            m_NeedToParseId2Info;
     unique_ptr<CPSGFlavorId2Info>   m_Id2Info;
     string                          m_ProcessorId;
 };

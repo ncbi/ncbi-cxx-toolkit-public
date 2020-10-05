@@ -41,7 +41,8 @@ USING_NCBI_SCOPE;
 
 CPSGFlavorId2Info::CPSGFlavorId2Info(const string &  id2_info,
                                      bool  count_errors) :
-    m_Sat(0), m_Info(0), m_Chunks(0), m_SplitVersion(0)
+    m_Sat(0), m_Info(0), m_Chunks(0),
+    m_SplitVersion(0), m_SplitVersionPresent(false)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
 
@@ -63,8 +64,10 @@ CPSGFlavorId2Info::CPSGFlavorId2Info(const string &  id2_info,
         m_Info = NStr::StringToInt(parts[1]);
         m_Chunks = NStr::StringToInt(parts[2]);
 
-        if (parts.size() >= 4)
+        if (parts.size() >= 4) {
             m_SplitVersion = NStr::StringToInt(parts[3]);
+            m_SplitVersionPresent = true;
+        }
     } catch (...) {
         if (count_errors)
             app->GetErrorCounters().IncInvalidId2InfoError();
@@ -102,5 +105,19 @@ CPSGFlavorId2Info::CPSGFlavorId2Info(const string &  id2_info,
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    validate_message);
     }
+}
+
+
+string CPSGFlavorId2Info::Serialize(void) const
+{
+    if (m_SplitVersionPresent)
+        return to_string(m_Sat) + "." +
+               to_string(m_Info) + "." +
+               to_string(m_Chunks) + "." +
+               to_string(m_SplitVersion);
+
+    return to_string(m_Sat) + "." +
+           to_string(m_Info) + "." +
+           to_string(m_Chunks);
 }
 

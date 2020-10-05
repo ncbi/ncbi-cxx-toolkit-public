@@ -205,6 +205,11 @@ string  GetBlobExcludeHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
+string  GetTSEBlobExcludeHeader(size_t  item_id,
+                                const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                EPSGS_BlobSkipReason  skip_reason);
 string  GetTSEBlobChunkHeader(size_t  item_id,
                               const string &  processor_id,
                               size_t  chunk_size,

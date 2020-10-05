@@ -474,21 +474,7 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         PSG_ERROR(error);
 
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
-        if (blob_fetch->IsBlobPropStage()) {
-            IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                blob_fetch, GetName(),
-                error, CRequestStatus::e500_InternalServerError,
-                ePSGS_UnknownError, eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(blob_fetch,
-                                                                GetName());
-        } else {
-            IPSGS_Processor::m_Reply->PrepareBlobMessage(
-                blob_fetch, GetName(),
-                error, CRequestStatus::e500_InternalServerError,
-                ePSGS_UnknownError, eDiag_Error);
-            IPSGS_Processor::m_Reply->PrepareBlobCompletion(blob_fetch,
-                                                            GetName());
-        }
+        PrepareServerErrorMessage(blob_fetch, ePSGS_UnknownError, eDiag_Error, error);
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);

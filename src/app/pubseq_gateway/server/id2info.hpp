@@ -38,6 +38,9 @@
 using namespace std;
 
 
+const int64_t   kSplitInfoChunk = 999999999;
+
+
 class CPSGFlavorId2Info
 {
     public:
@@ -50,7 +53,8 @@ class CPSGFlavorId2Info
         CPSGFlavorId2Info(const string &  id2_info,
                           bool  count_errors = true);
         CPSGFlavorId2Info() :
-            m_Sat(-1), m_Info(-1), m_Chunks(-1), m_SplitVersion(-1)
+            m_Sat(-1), m_Info(-1), m_Chunks(-1),
+            m_SplitVersion(-1), m_SplitVersionPresent(false)
         {}
 
     public:
@@ -66,11 +70,14 @@ class CPSGFlavorId2Info
         TSplitVersion GetSplitVersion(void) const
         { return m_SplitVersion; }
 
+        string Serialize(void) const;
+
     private:
         TSat            m_Sat;
         TInfo           m_Info;
         TChunks         m_Chunks;
         TSplitVersion   m_SplitVersion;
+        bool            m_SplitVersionPresent;
 };
 
 #endif /* PUBSEQ_GATEWAY_ID2INFO__HPP */

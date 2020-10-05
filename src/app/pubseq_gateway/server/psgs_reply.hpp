@@ -187,6 +187,10 @@ public:
     void PrepareBlobExcluded(const string &  blob_id,
                              const string &  processor_id,
                              EPSGS_BlobSkipReason  skip_reason);
+    void PrepareTSEBlobExcluded(const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                EPSGS_BlobSkipReason  skip_reason);
     void PrepareBlobExcluded(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
