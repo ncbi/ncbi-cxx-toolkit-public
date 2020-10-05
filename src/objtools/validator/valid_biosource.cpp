@@ -258,17 +258,19 @@ bool CValidError_imp::IsArtificial(const CBioSource& src)
 
 static string x_RepairCountryName (string countryname)
 {
-    if (! NStr::StartsWith (countryname, "USA:")) return countryname;
-
     if (NStr::CompareNocase (countryname, "USA: Washington DC") == 0 || NStr::CompareNocase (countryname, "USA: Washington, DC") == 0) {
         countryname = "USA: District of Columbia";
-    } else if (NStr::EndsWith (countryname, ", Puerto Rico")) {
+    } else if (NStr::StartsWith (countryname, "USA:") && NStr::EndsWith (countryname, ", Puerto Rico")) {
         countryname = "USA: Puerto Rico";
-      } else if (NStr::StartsWith (countryname, "Puerto Rico")) {
-          countryname = "USA: Puerto Rico";
+    } else if (NStr::StartsWith (countryname, "Puerto Rico")) {
+        countryname = "USA: Puerto Rico";
     }
     if (NStr::StartsWith (countryname, "USA: Puerto Rico")) {
         countryname = countryname.substr(5);
+    }
+
+    if (NStr::StartsWith (countryname, "China: Hong Kong")) {
+        countryname = countryname.substr(7);
     }
 
     return countryname;
