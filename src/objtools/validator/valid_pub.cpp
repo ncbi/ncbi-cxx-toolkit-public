@@ -621,6 +621,8 @@ bool CValidError_imp::HasIsoJTA(const CTitle& title)
     ITERATE (CTitle::Tdata, item, title.Get() ) {
         if ( (*item)->IsIso_jta() ) {
             return true;
+        } else if ( (*item)->IsMl_jta() ) {
+            return true;
         }
     }
     return false;

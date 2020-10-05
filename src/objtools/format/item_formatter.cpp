@@ -1368,11 +1368,13 @@ static void s_FormatJournal
         }
     }
 
-    // always use iso_jta title if present
+    // always use iso_jta title if present - RW-1157 use ml_jta in lieu of retired iso_jta
     string title;
     ITERATE (CTitle::Tdata, it, ttl.Get()) {
         if ((*it)->IsIso_jta()) {
             title = (*it)->GetIso_jta();
+        } else if ((*it)->IsMl_jta()) {
+            title = (*it)->GetMl_jta();
         }
     }
 
