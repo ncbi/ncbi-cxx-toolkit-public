@@ -436,16 +436,16 @@ namespace {
     };
 #endif
 
-    typedef set<TIntId> TGiSet;
+    typedef set<TGi> TGiSet;
     typedef set<CSeq_id_Handle> TIdSet;
 
     template<class Func>
     void ForEachGiRange(const TGiSet& gis, Func func)
     {
-        TIntId gi_start = 0;
+        TGi gi_start = ZERO_GI;
         int gi_count = 0;
         ITERATE ( TGiSet, it, gis ) {
-            if ( gi_count == 0 || *it != gi_start + gi_count ) {
+            if ( gi_count == 0 || *it != gi_start + GI_FROM(int, gi_count) ) {
                 if ( gi_count > 0 ) {
                     func(gi_start, gi_count);
                 }
@@ -556,19 +556,19 @@ namespace {
 
         enum { SEPARATE = 3 };
 
-        void operator()(TIntId start, int count) const
+        void operator()(TGi start, int count) const
             {
                 _ASSERT(count > 0);
                 if ( count <= SEPARATE ) {
                     for ( ; count > 0; --count, ++start ) {
                         CRef<CID2S_Seq_loc> add(new CID2S_Seq_loc);
-                        add->SetWhole_gi(GI_FROM(TIntId, start));
+                        add->SetWhole_gi(start);
                         AddLoc(m_Loc, add);
                     }
                 }
                 else {
                     CRef<CID2S_Seq_loc> add(new CID2S_Seq_loc);
-                    add->SetWhole_gi_range().SetStart(GI_FROM(TIntId, start));
+                    add->SetWhole_gi_range().SetStart(start);
                     add->SetWhole_gi_range().SetCount(count);
                     AddLoc(m_Loc, add);
                 }
@@ -586,7 +586,7 @@ namespace {
 
         enum { SEPARATE = 2 };
 
-        void operator()(TIntId start, int count) const
+        void operator()(TGi start, int count) const
             {
                 _ASSERT(count > 0);
                 if ( count <= SEPARATE ) {
@@ -594,14 +594,14 @@ namespace {
                     for ( ; count > 0; --count, ++start ) {
                         CRef<CID2S_Bioseq_Ids::C_E> elem
                             (new CID2S_Bioseq_Ids::C_E);
-                        elem->SetGi(GI_FROM(TIntId, start));
+                        elem->SetGi(start);
                         m_Ids.Set().push_back(elem);
                     }
                 }
                 else {
                     CRef<CID2S_Bioseq_Ids::C_E> elem
                         (new CID2S_Bioseq_Ids::C_E);
-                    elem->SetGi_range().SetStart(GI_FROM(TIntId, start));
+                    elem->SetGi_range().SetStart(start);
                     elem->SetGi_range().SetCount(count);
                     m_Ids.Set().push_back(elem);
                 }
@@ -651,7 +651,7 @@ namespace {
         TLessIdSet id_set;
         ITERATE ( set<CSeq_id_Handle>, it, ids ) {
             if ( it->IsGi() ) {
-                gi_set.insert(GI_TO(TIntId, it->GetGi()));
+                gi_set.insert(it->GetGi());
             }
             else {
                 id_set.insert(it->GetSeqId());
@@ -724,7 +724,7 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
         TRange range = it->second.GetTotalRange();
         if ( IsWhole(it->first, range) ) {
             if ( it->first.IsGi() ) {
-                whole_gi_set.insert(GI_TO(TIntId, it->first.GetGi()));
+                whole_gi_set.insert(it->first.GetGi());
             }
             else {
                 whole_id_set.insert(it->first);
@@ -758,7 +758,7 @@ void CBlobSplitterImpl::SetLoc(CID2S_Seq_loc& loc,
             TRange range = it->first;
             if ( IsWhole(id_it->first, range) ) {
                 if ( id_it->first.IsGi() ) {
-                    whole_gi_set.insert(GI_TO(TIntId, id_it->first.GetGi()));
+                    whole_gi_set.insert(id_it->first.GetGi());
                 }
                 else {
                     whole_id_set.insert(id_it->first);
