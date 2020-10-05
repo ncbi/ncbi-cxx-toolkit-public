@@ -139,45 +139,6 @@ CConstRef<CUser_object> sGetUserObjectByType(
 }
 
 //  ----------------------------------------------------------------------------
-bool sIsTrancriptType(
-    const CMappedFeat mf)
-//  ----------------------------------------------------------------------------
-{
-    static list<CSeqFeatData::ESubtype> acceptableTranscriptTypes = {
-        CSeqFeatData::eSubtype_mRNA,
-        CSeqFeatData::eSubtype_otherRNA,
-        CSeqFeatData::eSubtype_C_region,
-        CSeqFeatData::eSubtype_D_segment,
-        CSeqFeatData::eSubtype_J_segment,
-        CSeqFeatData::eSubtype_V_segment
-    };
-   auto itType = std::find(
-        acceptableTranscriptTypes.begin(), acceptableTranscriptTypes.end(), 
-        mf.GetFeatSubtype());
-    return (itType != acceptableTranscriptTypes.end());
-}
-
-//  ----------------------------------------------------------------------------
-bool sHasAccaptableTranscriptParent(
-    const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-    static list<CSeqFeatData::ESubtype> acceptableTranscriptTypes = {
-        CSeqFeatData::eSubtype_mRNA,
-        CSeqFeatData::eSubtype_otherRNA,
-        CSeqFeatData::eSubtype_C_region,
-        CSeqFeatData::eSubtype_D_segment,
-        CSeqFeatData::eSubtype_J_segment,
-        CSeqFeatData::eSubtype_V_segment
-    };
-    CMappedFeat parent = feature::GetParentFeature(mf);
-    if (!parent) {
-        return false;
-    }
-    return sIsTrancriptType(parent);
-}    
-
-//  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
     CScope&scope,
     CNcbiOstream& ostr,
@@ -371,7 +332,7 @@ bool CGtfWriter::xGenerateMissingTranscript(
     if (!xGeneratingMissingTranscripts()) {
         return true;
     }
-    if (sHasAccaptableTranscriptParent(mf)) {
+    if (HasAccaptableTranscriptParent(context, mf)) {
         return true;
     }
 
@@ -824,7 +785,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
             mrnaFeat = mf;
             break;
         case CSeq_feat::TData::eSubtype_cdregion:
-            if (sHasAccaptableTranscriptParent(mf)) {
+            if (HasAccaptableTranscriptParent(fc, mf)) {
                 mrnaFeat = feature::GetParentFeature(mf);
             }
             break;

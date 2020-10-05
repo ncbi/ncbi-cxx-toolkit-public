@@ -5,6 +5,8 @@
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
 AB019592.1	DDBJ	region	1	853	.	+	.	ID=AB019592.1:1..853;Dbxref=taxon:9606;Name=14;cell-type=B lymphocyte;chromosome=14;clone=KKa-3;gbkey=Src;isolate=HCL patient KKa;mol_type=genomic DNA;rearranged=true;sex=male
 AB019592.1	DDBJ	gene	1	227	.	+	.	ID=gene-IgH;Name=IgH;end_range=227,.;gbkey=Gene;gene=IgH;gene_biotype=protein_coding;partial=true;start_range=.,1
+AB019592.1	DDBJ	mRNA	1	227	.	+	.	ID=rna-IgH;Parent=gene-IgH;gbkey=mRNA;gene=IgH
+AB019592.1	DDBJ	exon	1	227	.	+	.	ID=exon-IgH-1;Parent=rna-IgH;gbkey=mRNA;gene=IgH
 AB019592.1	DDBJ	CDS	1	227	.	+	0	ID=cds-BAA35003.1;Parent=gene-IgH;Dbxref=IMGT/LIGM:AB019592,NCBI_GP:BAA35003.1;Name=BAA35003.1;end_range=227,.;gbkey=CDS;gene=IgH;partial=true;product=immunoglobulin heavy chain;protein_id=BAA35003.1;start_range=.,1
 AB019592.1	DDBJ	D_gene_segment	186	204	.	+	.	ID=id-IgH;Parent=gene-IgH;Note=D21/9;gbkey=D_segment;gene=IgH
 AB019592.1	DDBJ	exon	186	204	.	+	.	ID=exon-id-IgH-1;Parent=id-IgH;Note=D21/9;gbkey=D_segment;gene=IgH

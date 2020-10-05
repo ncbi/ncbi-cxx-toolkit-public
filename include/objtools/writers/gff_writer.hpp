@@ -390,6 +390,12 @@ protected:
         return (m_uFlags & fGenerateMissingTranscripts);
     }
 
+    static bool IsTranscriptType(
+        const CMappedFeat&);
+    static bool HasAccaptableTranscriptParent(
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     // data:
     CRef<CScope> m_pScope;
     bool m_bHeaderWritten;

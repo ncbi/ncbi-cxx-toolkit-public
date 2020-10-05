@@ -1299,4 +1299,38 @@ bool CGff2Writer::xAssignFeatureAttributeGbKey(
 }
 
 
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::IsTranscriptType(
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    static list<CSeqFeatData::ESubtype> acceptableTranscriptTypes = {
+        CSeqFeatData::eSubtype_mRNA,
+        CSeqFeatData::eSubtype_otherRNA,
+        CSeqFeatData::eSubtype_C_region,
+        CSeqFeatData::eSubtype_D_segment,
+        CSeqFeatData::eSubtype_J_segment,
+        CSeqFeatData::eSubtype_V_segment
+    };
+   auto itType = std::find(
+        acceptableTranscriptTypes.begin(), acceptableTranscriptTypes.end(), 
+        mf.GetFeatSubtype());
+    return (itType != acceptableTranscriptTypes.end());
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::HasAccaptableTranscriptParent(
+    CGffFeatureContext& context,
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    CMappedFeat parent = context.FeatTree().GetParent(mf);
+    CMappedFeat altParent = feature::GetParentFeature(mf);
+    if (!parent) {
+        return false;
+    }
+    return IsTranscriptType(parent);
+}    
+
+
 END_NCBI_SCOPE

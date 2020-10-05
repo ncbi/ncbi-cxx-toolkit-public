@@ -1,23 +1,23 @@
 ##gff-version 3
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
-1ANH_B	GenInfo	gene	1	10001	.	+	.	ID=gene-MSS-346;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=protein_coding
-1ANH_B	GenInfo	mRNA	1	1001	.	+	.	ID=rna-MSS-346;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	exon	1	1001	.	+	.	ID=exon-MSS-346-1;Parent=rna-MSS-346;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	CDS	1	1001	.	+	0	ID=cds-MSS-346;Parent=rna-MSS-346;gbkey=CDS;gene=MSS-346
-1ANH_B	GenInfo	mRNA	1001	2001	.	+	.	ID=rna-MSS-346-2;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	exon	1001	2001	.	+	.	ID=exon-MSS-346-2-1;Parent=rna-MSS-346-2;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	CDS	1001	2001	.	+	0	ID=cds-MSS-346-2;Parent=rna-MSS-346-2;gbkey=CDS;gene=MSS-346
-1ANH_B	GenInfo	mRNA	2001	3001	.	-	.	ID=rna-1ANH_B:2001..3001;gbkey=mRNA
-1ANH_B	GenInfo	exon	2001	3001	.	-	.	ID=exon-1ANH_B:2001..3001-1;Parent=rna-1ANH_B:2001..3001;gbkey=mRNA
-1ANH_B	GenInfo	CDS	2001	3001	.	-	0	ID=cds-1ANH_B:2001..3001;Parent=rna-1ANH_B:2001..3001;gbkey=CDS
-1ANH_B	GenInfo	mRNA	3001	4001	.	.	.	ID=rna-MSS-346-3;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	exon	3001	4001	.	.	.	ID=exon-MSS-346-3-1;Parent=rna-MSS-346-3;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	CDS	3001	4001	.	.	0	ID=cds-MSS-346-3;Parent=rna-MSS-346-3;gbkey=CDS;gene=MSS-346
-1ANH_B	GenInfo	mRNA	4001	5001	.	.	.	ID=rna-1ANH_B:4001..5001;gbkey=mRNA
-1ANH_B	GenInfo	exon	4001	5001	.	.	.	ID=exon-1ANH_B:4001..5001-1;Parent=rna-1ANH_B:4001..5001;gbkey=mRNA
-1ANH_B	GenInfo	CDS	4001	5001	.	.	0	ID=cds-1ANH_B:4001..5001;Parent=rna-1ANH_B:4001..5001;gbkey=CDS
-1ANH_B	GenInfo	mRNA	5001	6001	.	+	.	ID=rna-MSS-346-4;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	exon	5001	6001	.	+	.	ID=exon-MSS-346-4-1;Parent=rna-MSS-346-4;gbkey=mRNA;gene=MSS-346
-1ANH_B	GenInfo	CDS	5001	6001	.	+	0	ID=cds-MSS-346-4;Parent=rna-MSS-346-4;gbkey=CDS;gene=MSS-346
+1000000	.	gene	1	10001	.	+	.	ID=gene-MSS-346;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=protein_coding
+1000000	.	mRNA	1	1001	.	+	.	ID=rna-MSS-346;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
+1000000	.	exon	1	1001	.	+	.	ID=exon-MSS-346-1;Parent=rna-MSS-346;gbkey=mRNA;gene=MSS-346
+1000000	.	CDS	1	1001	.	+	0	ID=cds-MSS-346;Parent=rna-MSS-346;gbkey=CDS;gene=MSS-346
+1000000	.	mRNA	1001	2001	.	+	.	ID=rna-MSS-346-2;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
+1000000	.	exon	1001	2001	.	+	.	ID=exon-MSS-346-2-1;Parent=rna-MSS-346-2;gbkey=mRNA;gene=MSS-346
+1000000	.	CDS	1001	2001	.	+	0	ID=cds-MSS-346-2;Parent=rna-MSS-346-2;gbkey=CDS;gene=MSS-346
+1000000	.	mRNA	2001	3001	.	-	.	ID=rna-1000000:2001..3001;gbkey=mRNA
+1000000	.	exon	2001	3001	.	-	.	ID=exon-1000000:2001..3001-1;Parent=rna-1000000:2001..3001;gbkey=mRNA
+1000000	.	CDS	2001	3001	.	-	0	ID=cds-1000000:2001..3001;Parent=rna-1000000:2001..3001;gbkey=CDS
+1000000	.	mRNA	3001	4001	.	.	.	ID=rna-MSS-346-3;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
+1000000	.	exon	3001	4001	.	.	.	ID=exon-MSS-346-3-1;Parent=rna-MSS-346-3;gbkey=mRNA;gene=MSS-346
+1000000	.	CDS	3001	4001	.	.	0	ID=cds-MSS-346-3;Parent=rna-MSS-346-3;gbkey=CDS;gene=MSS-346
+1000000	.	mRNA	4001	5001	.	.	.	ID=rna-1000000:4001..5001;gbkey=mRNA
+1000000	.	exon	4001	5001	.	.	.	ID=exon-1000000:4001..5001-1;Parent=rna-1000000:4001..5001;gbkey=mRNA
+1000000	.	CDS	4001	5001	.	.	0	ID=cds-1000000:4001..5001;Parent=rna-1000000:4001..5001;gbkey=CDS
+1000000	.	mRNA	5001	6001	.	+	.	ID=rna-MSS-346-4;Parent=gene-MSS-346;gbkey=mRNA;gene=MSS-346
+1000000	.	exon	5001	6001	.	+	.	ID=exon-MSS-346-4-1;Parent=rna-MSS-346-4;gbkey=mRNA;gene=MSS-346
+1000000	.	CDS	5001	6001	.	+	0	ID=cds-MSS-346-4;Parent=rna-MSS-346-4;gbkey=CDS;gene=MSS-346
 ###
