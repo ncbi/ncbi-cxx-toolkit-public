@@ -1608,11 +1608,6 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
-    } else if ( NStr::Equal (label_str, "Source Identifier") && NStr::Equal (source, "JCVI") ) {
-        result << "<a href=\"http://tigrfams.jcvi.org/cgi-bin/HmmReportPage.cgi?acc="
-               << data_str
-               << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (source, "NCBI SPARCLE") ) {
         string fst;
         string snd;
