@@ -159,7 +159,7 @@ public:
 //
 
 template<class T>
-class PRequested : public unary_function<T,bool>
+class PRequested
 {  
     const CCgiContext& m_ctx;
   
@@ -178,7 +178,7 @@ public:
 //
 
 template<class T>
-class PFindByName : public unary_function<T,bool>
+class PFindByName
 {  
     const string& m_name;
   

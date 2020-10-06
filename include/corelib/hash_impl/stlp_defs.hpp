@@ -225,7 +225,8 @@ NCBI_USING_NAMESPACE_STD;
 // fbp : sort of select1st just for maps
 template <class _Pair, class _Whatever>		
 // JDJ (CW Pro1 doesn't like const when first_type is also const)
-struct __Select1st_hint : public unary_function<_Pair, _Whatever> {
+struct __Select1st_hint
+{
     const _Whatever& operator () (const _Pair& __x) const { return __x.first; }
 };
 #  define  _STLP_SELECT1ST(__x,__y) __Select1st_hint< __x, __y >
@@ -294,7 +295,8 @@ inline void _Destroy(_Tp* __pointer) {
 
 
 template <class _Tp>
-struct _STLP_Identity : public unary_function<_Tp,_Tp> {
+struct _STLP_Identity
+{
     const _Tp& operator()(const _Tp& __x) const { return __x; }
 };
 

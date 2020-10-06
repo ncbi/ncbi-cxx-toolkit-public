@@ -129,7 +129,7 @@ FindGeneticCode(int genetic_code);
 /** Function object to assist in finding all CSeqLocInfo objects which
  * corresponds to a given frame.
  */
-class CFrameFinder : public unary_function<CRef<CSeqLocInfo>, bool>
+class CFrameFinder
 {
 public:
     /// Convenience typedef

@@ -196,7 +196,8 @@ namespace {
 
 
     // add a node as a child
-    struct insert_node : public std::unary_function<xmlNodePtr, void> {
+    struct insert_node
+    {
         insert_node (xmlNodePtr parent) : parent_(parent) { }
         void operator() (xmlNodePtr child) { xmlAddChild(parent_, child); }
 

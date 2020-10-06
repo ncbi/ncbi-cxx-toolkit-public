@@ -267,7 +267,6 @@ CLDS2_DataLoader::x_GetUrlHandler(const SLDS2_File& info)
 
 template<>
 struct PConvertToString<Int8>
-    : public unary_function<Int8, string>
 {
     string operator()(Int8 v) const
         {

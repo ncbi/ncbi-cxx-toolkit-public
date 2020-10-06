@@ -196,7 +196,6 @@ typedef pair<int, CSeq_id_Handle> TBlastDbId;
 /// strings.
 template<>
 struct PConvertToString<TBlastDbId>
-    : public unary_function<TBlastDbId, string>
 {
     /// Convert TBlastDbId (blob IDs) to human readable strings.
     /// @param v The value to convert. [in]

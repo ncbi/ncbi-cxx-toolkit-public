@@ -50,7 +50,6 @@ template<typename Value> struct PConvertToString;
 
 template<>
 struct PConvertToString<int>
-    : public unary_function<int, string>
 {
     string operator()(int v) const
         {
@@ -61,7 +60,6 @@ struct PConvertToString<int>
 
 template<>
 struct PConvertToString<const void*>
-    : public unary_function<const void*, string>
 {
     string operator()(const void* v) const
         {
@@ -72,7 +70,6 @@ struct PConvertToString<const void*>
 
 template<>
 struct PConvertToString<string>
-    : public unary_function<string, const string&>
 {
     const string& operator()(const string& v) const
         {
@@ -83,7 +80,6 @@ struct PConvertToString<string>
 
 template<>
 struct PConvertToString<CSeq_id_Handle>
-    : public unary_function<CSeq_id_Handle, string>
 {
     string operator()(const CSeq_id_Handle& v) const
         {

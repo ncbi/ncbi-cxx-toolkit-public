@@ -1000,7 +1000,6 @@ bool CPluginManager<TClass>::RegisterWithEntryPoint
 
 template <class TClass>
 class CInvalidDrvVer
-    : public unary_function<typename CPluginManager<TClass>::SDriverInfo, bool>
 {
 public:
     typedef typename CPluginManager<TClass>::SDriverInfo TValue;

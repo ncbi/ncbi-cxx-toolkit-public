@@ -104,7 +104,7 @@ CVecscreenRun::GetSearchResultSet() const
     return m_RawBlastResults;
 }
 
-struct SVecscreenMatchFinder : public unary_function<bool, CVecscreenRun::SVecscreenSummary>
+struct SVecscreenMatchFinder
 {
     SVecscreenMatchFinder(const string& match_type)
         : m_MatchType(match_type) {}

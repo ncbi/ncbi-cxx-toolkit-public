@@ -227,7 +227,7 @@ struct CNameGetter
 /// Values are specified by template parameter T, and scoring function by
 /// template parameter F.
 template <typename T, typename F>
-class CBestChoiceTracker : public unary_function<T, void>
+class CBestChoiceTracker
 {
 public:
     /// Constructor.

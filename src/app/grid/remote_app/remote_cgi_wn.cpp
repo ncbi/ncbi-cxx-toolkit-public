@@ -40,8 +40,9 @@
 
 USING_NCBI_SCOPE;
 
-struct IsStandard : unary_function <string,bool>
+struct IsStandard
 {
+    typedef string argument_type;
     bool operator() (const string& val) const;
     static const char* const sm_StandardCgiEnv[];
 };
@@ -87,8 +88,9 @@ inline bool IsStandard::operator() (const string& val) const
 }
 
 template <typename Cont>
-struct HasValue : unary_function <string,bool>
+struct HasValue
 {
+    typedef string argument_type;
     HasValue(const Cont& cont) : m_Cont(cont) {}
     inline bool operator() (const string& val) const
     {

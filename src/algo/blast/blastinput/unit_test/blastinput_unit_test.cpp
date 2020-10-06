@@ -3232,7 +3232,8 @@ public:
 private:
 
     /// Functor to help remove empty strings from a container
-    struct empty_string_remover : public unary_function<bool, string> {
+    struct empty_string_remover
+    {
         bool operator() (const string& str) {
             return str.empty();
         }

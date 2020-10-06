@@ -567,10 +567,11 @@ void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
 }
 
 /// Finder class for matching CBlast4_parameter
-struct SBlast4ParamFinder : public unary_function< CRef<CBlast4_parameter>, bool> {
+struct SBlast4ParamFinder
+{
     SBlast4ParamFinder(EBlastOptIdx opt_idx)
             : m_Target2Find(CBlast4Field::Get(opt_idx)) {}
-    result_type operator()(const argument_type& rhs) {
+    bool operator()(const CRef<CBlast4_parameter>& rhs) {
         return rhs.NotEmpty() ? m_Target2Find.Match(*rhs) : false;
     }
 private:

@@ -80,14 +80,16 @@ CGene_commentary::CGene_commentary(void)
 // some useful CGene_commentary predicate (classes)
     
 class NCBI_ENTREZGENE_EXPORT
-IsGene_commentaryType : public unary_function <CRef<CGene_commentary>, bool>{
+IsGene_commentaryType
+{
     CGene_commentary::EType _type;
 public:
     IsGene_commentaryType(const CGene_commentary::EType& type) : _type(type) {};
     bool operator () (const CRef<CGene_commentary> comment) const;
 };
 class NCBI_ENTREZGENE_EXPORT
-IsGene_commentaryHeading : public unary_function <CRef<CGene_commentary>, bool>{
+IsGene_commentaryHeading
+{
     string _heading;
 public:
     IsGene_commentaryHeading(const string& heading) :  _heading (heading) {};
@@ -95,7 +97,8 @@ public:
 };
 
 class NCBI_ENTREZGENE_EXPORT
-IsGene_commentaryHeadingAndType : public unary_function <CRef<CGene_commentary>, bool>{
+IsGene_commentaryHeadingAndType
+{
     string _heading;
     CGene_commentary::EType _type;
 public:
