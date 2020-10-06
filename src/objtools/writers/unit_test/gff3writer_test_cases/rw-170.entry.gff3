@@ -26,8 +26,6 @@ NC_002058.3	RefSeq	stem_loop	448	556	.	+	.	ID=id-NC_002058.3:448..556;Note=stem-
 NC_002058.3	RefSeq	sequence_conflict	488	488	.	+	.	ID=id-NC_002058.3:488..488;Note=G is GU in [3];gbkey=conflict
 NC_002058.3	RefSeq	stem_loop	581	618	.	+	.	ID=id-NC_002058.3:581..618;Note=stem-loop VI;function=interacts with translation initiation factor 4 gammaprotein (eIF4G).;gbkey=stem_loop
 NC_002058.3	RefSeq	gene	743	7372	.	+	.	ID=gene-PVgp1;Dbxref=GeneID:919920;Name=PVgp1;gbkey=Gene;gene_biotype=protein_coding;locus_tag=PVgp1
-NC_002058.3	RefSeq	mRNA	743	7372	.	+	.	ID=rna-PVgp1;Parent=gene-PVgp1;Dbxref=GeneID:919920;gbkey=mRNA;locus_tag=PVgp1
-NC_002058.3	RefSeq	exon	743	7372	.	+	.	ID=exon-PVgp1-1;Parent=rna-PVgp1;Dbxref=GeneID:919920;gbkey=mRNA;locus_tag=PVgp1
 NC_002058.3	RefSeq	CDS	743	7372	.	+	0	ID=cds-NP_041277.1;Parent=gene-PVgp1;Dbxref=GOA:P03300,UniProtKB/Swiss-Prot:P03300,Genbank:NP_041277.1,GeneID:919920;Name=NP_041277.1;experiment=EXISTENCE:[6264310];gbkey=CDS;locus_tag=PVgp1;product=genome polyprotein;protein_id=NP_041277.1
 NC_002058.3	RefSeq	propeptide_region_of_CDS	746	3385	.	+	.	ID=id-NP_041277.1:2..881;Note=Precursor of structural proteins. 3CDpro cleaves the P1 precursor polypeptide%2C giving rise to proteins VP0%2C VP3 and VP1.;Parent=cds-NP_041277.1;experiment=EXISTENCE:Amino acid sequence analysis cleavage products of the polyprotein.[6264310];gbkey=Prot;product=precursor polypeptide P1
 NC_002058.3	RefSeq	propeptide_region_of_CDS	746	1765	.	+	.	ID=id-NP_041277.1:2..341;Note=Precursor of VP4 and VP2 capsid proteins. Cleavage of VP0 into capsid proteins VP4 and VP2 occurs during maturation of the virion.;Parent=cds-NP_041277.1;experiment=EXISTENCE:[6264310];gbkey=Prot;product=capsid protein VP0
