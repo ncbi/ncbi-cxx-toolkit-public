@@ -5340,10 +5340,12 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
 (const CSeq_loc& loc,
  unsigned int tag,
  bool& bad_seq,
- bool& is_gap)
+ bool& is_gap,
+ bool& abuts_n)
 {
     bad_seq = false;
     is_gap = false;
+    abuts_n = false;
     if ( tag != eSeqlocPartial_Nostart && tag != eSeqlocPartial_Nostop ) {
         return false;
     }
@@ -5396,6 +5398,7 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
                 is_gap = true;
                 return true;
             } else if (s_AfterIsGapORN(stop, 1, len, vec)) {
+                abuts_n = true;
                 return false;
             }
         } else if (tag == eSeqlocPartial_Nostart && start > 0) {
@@ -5403,6 +5406,7 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
                 is_gap = true;
                 return true;
             } else if (s_BeforeIsGapOrN(start, 1, vec)) {
+                abuts_n = true;
                 return false;
             }
         }
@@ -5567,8 +5571,9 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
             const CSeq_loc& mrna_loc = mrna.GetLocation();
             bool bad_seq = false;
             bool is_gap = false;
+            bool abuts_n = false;
             if (s_MatchPartialType(feat.GetLocation(), mrna_loc, partial_type)
-                && x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), partial_type, bad_seq, is_gap)) {
+                && x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), partial_type, bad_seq, is_gap, abuts_n)) {
                 rval = true;
             }
         }
@@ -5710,7 +5715,7 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 }
 
 
-void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat)
+void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, bool abuts_n, const CSeq_feat& feat)
 {
     EDiagSev sev = eDiag_Warning;
     if (m_Imp.IsGenomeSubmission() && 
@@ -5755,6 +5760,10 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
     }
 
     EErrType err_type;
+
+    if (sev == eDiag_Warning && abuts_n) {
+        sev = eDiag_Info;
+    }
 
     if (partial_type == 0) {
         if (mrna) {
@@ -5842,6 +5851,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         if (partial_loc & errtype) {
             bool bad_seq = false;
             bool is_gap = false;
+            bool abuts_n = false;
 
             if ( m_Scope && x_MatchesOverlappingFeaturePartial(feat, errtype)) {
                 // error is suppressed
@@ -5851,11 +5861,11 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 IsOrganelle(m_CurrentHandle) &&
                 x_PartialAdjacentToIntron(feat.GetLocation())) {
                 // suppress
-            } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
+            } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap, abuts_n) ) {
                 if (is_gap || m_Imp.GetGeneCache().IsPseudo(*(feat.GetOriginalSeq_feat()), *m_Scope)) {
                     // suppress for everything
                 } else {
-                    x_ReportStartStopPartialProblem(j, true, *(feat.GetSeq_feat()));
+                    x_ReportStartStopPartialProblem(j, true, abuts_n, *(feat.GetSeq_feat()));
                 }
             } else if ( bad_seq) {                
                 PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
@@ -5878,12 +5888,16 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype, true)) {                                
                     // suppress
                 } else {
+                    EDiagSev sev = eDiag_Warning;
+                    if (abuts_n) {
+                        sev = eDiag_Info;
+                    }
                     if (j == 0) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotSpliceConsensus5Prime,
+                        PostErr(sev, eErr_SEQ_FEAT_PartialProblemNotSpliceConsensus5Prime,
                             "5' partial is not at beginning of sequence, gap, or consensus splice site",
                             *(feat.GetSeq_feat()));
                     } else {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotSpliceConsensus3Prime,
+                        PostErr(sev, eErr_SEQ_FEAT_PartialProblemNotSpliceConsensus3Prime,
                             "3' partial is not at end of sequence, gap, or consensus splice site",
                             *(feat.GetSeq_feat()));
                     }                   
@@ -5906,7 +5920,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
             } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                 // ignore start/stop not at end in genomic gpipe sequence
             } else {
-                x_ReportStartStopPartialProblem(j, false, *(feat.GetSeq_feat()));
+                x_ReportStartStopPartialProblem(j, false, abuts_n, *(feat.GetSeq_feat()));
             }
         }
         errtype <<= 1;
