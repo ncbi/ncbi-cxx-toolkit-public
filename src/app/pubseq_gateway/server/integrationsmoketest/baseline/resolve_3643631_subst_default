@@ -3,7 +3,7 @@
     "reply": "BioseqInfo",
     "canonical_id": "gi|3643631",
     "other_ids": [
-        "gb|AC005299",
+        "gb|AC005299|",
         "gnl|UOKNOR|2H2"
     ],
     "molecule_type": "dna",

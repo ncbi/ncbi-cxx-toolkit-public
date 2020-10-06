@@ -6,7 +6,7 @@
         "gnl|ASM:GCF_000004345.1|C59236869",
         "gnl|REF_WGS:ACTA01|C59236869",
         "gi|295720530",
-        "gpp|GPS_000535975.1"
+        "gpp|GPS_000535975.1|"
     ],
     "molecule_type": "dna",
     "length": 112,

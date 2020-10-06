@@ -1,8 +1,8 @@
 [
 {
-    "status": "Error",
+    "reply": "Error",
     "errors": [
-        "seq_id_type value must be >= 0 and less than 21"
+        "The 'seq_id_type' value must be >= 0 and less than 21"
     ]
 }
 ]

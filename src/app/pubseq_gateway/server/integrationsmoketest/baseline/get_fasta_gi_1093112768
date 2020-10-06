@@ -5,7 +5,7 @@
     "other_ids": [
         "gnl|ASM:GCF_000227165.2|GORGOR4_CHRUN_RANDOM_3256",
         "gi|1093112768",
-        "gpp|GPS_014332008.1"
+        "gpp|GPS_014332008.1|"
     ],
     "molecule_type": "dna",
     "length": 5175,

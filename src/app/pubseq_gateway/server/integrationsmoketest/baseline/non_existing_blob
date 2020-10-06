@@ -1,7 +1,6 @@
 [
 {
     "reply": "BlobInfo",
-    "status": "NotFound",
     "errors": [
         "Blob 4.1 properties are not found"
     ]

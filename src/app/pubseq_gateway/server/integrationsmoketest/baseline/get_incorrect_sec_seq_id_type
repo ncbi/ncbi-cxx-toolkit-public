@@ -1,7 +1,6 @@
 [
 {
     "reply": "BioseqInfo",
-    "status": "NotFound",
     "errors": [
         "Seq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
     ]

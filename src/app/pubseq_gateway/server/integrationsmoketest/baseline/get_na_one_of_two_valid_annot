@@ -5,7 +5,7 @@
     "other_ids": [
         "gnl|ASM:GCF_001984775.1|SCAFFOLD_21139",
         "gi|1142971274",
-        "gpp|GPS_014705339.1"
+        "gpp|GPS_014705339.1|"
     ],
     "molecule_type": "dna",
     "length": 51589,

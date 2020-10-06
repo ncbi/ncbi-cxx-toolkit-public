@@ -1,6 +1,6 @@
 [
 {
-    "status": "NotFound",
+    "reply": "NotFound",
     "errors": [
         "No matching processors found to serve the request"
     ]

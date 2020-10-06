@@ -1,6 +1,6 @@
 [
 {
-    "status": "Error",
+    "reply": "Error",
     "errors": [
         "Malformed 'last_modified' parameter. Expected an integer"
     ]

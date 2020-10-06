@@ -1,9 +1,1 @@
-[
-{
-    "reply": "Processor",
-    "status": "NotFound",
-    "errors": [
-        "LMDB cache/Cassandra get blob processor failed to map sat 999 to a Cassandra keyspace"
-    ]
-}
-]
+Error: (106.16) Application's execution failed (CPSG_Exception::eServerError) Received unknown item type: processor
