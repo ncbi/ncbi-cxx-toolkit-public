@@ -1893,12 +1893,15 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
             sel.SetAdaptiveDepth(true);
         }
 
-        // conditionally allows external annots, based on custom enable bits
-        if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
-            snpOK = true;
-        }
-        if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
-            cddOK = true;
+        // ID-6366 additional tests for -policy web to prevent gridlock caused by loading huge numbers of SNPs
+        if (GetLength() <= 1000000) {
+            // conditionally allows external annots, based on custom enable bits
+            if ((flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
+                snpOK = true;
+            }
+            if ((flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
+                cddOK = true;
+            }
         }
     }
 
