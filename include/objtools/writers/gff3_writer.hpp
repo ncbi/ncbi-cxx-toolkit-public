@@ -252,10 +252,6 @@ protected:
         const CMappedFeat&);
 
 
-    bool xGenerateMissingTranscript(
-        CGffFeatureContext&,
-        const CMappedFeat&);
-
     virtual bool xWriteRecord( 
         const CGffBaseRecord& );
 

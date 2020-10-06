@@ -1332,5 +1332,36 @@ bool CGff2Writer::HasAccaptableTranscriptParent(
     return IsTranscriptType(parent);
 }    
 
+//  ----------------------------------------------------------------------------
+CMappedFeat CGff2Writer::xGenerateMissingTranscript(
+    CGffFeatureContext& context,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (!xGeneratingMissingTranscripts()) {
+        return CMappedFeat();
+    }
+    if (HasAccaptableTranscriptParent(context, mf)) {
+        return CMappedFeat();
+    }
+
+    CRef<CSeq_feat> pMissingTranscript(new CSeq_feat);
+    pMissingTranscript.Reset(new CSeq_feat);
+    pMissingTranscript->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    pMissingTranscript->SetLocation().Assign(mf.GetLocation());
+    pMissingTranscript->SetLocation().SetPartialStart(false, eExtreme_Positional);
+    pMissingTranscript->SetLocation().SetPartialStop(false, eExtreme_Positional);
+    pMissingTranscript->ResetPartial();
+
+    CScope& scope = mf.GetScope();
+    CSeq_annot_Handle sah = mf.GetAnnot();
+    CSeq_annot_EditHandle saeh = sah.GetEditHandle();
+    saeh.AddFeat(*pMissingTranscript);
+    CMappedFeat tf = scope.GetObjectHandle(*pMissingTranscript);
+    context.FeatTree().AddFeature(tf);
+
+    return tf;
+}
+    
 
 END_NCBI_SCOPE

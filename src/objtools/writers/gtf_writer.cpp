@@ -324,42 +324,15 @@ bool CGtfWriter::xWriteFeatureExons(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xGenerateMissingTranscript(
-    CGffFeatureContext& context,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!xGeneratingMissingTranscripts()) {
-        return true;
-    }
-    if (HasAccaptableTranscriptParent(context, mf)) {
-        return true;
-    }
-
-    CRef<CSeq_feat> pRna(new CSeq_feat);
-    pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-    pRna->SetLocation().Assign(mf.GetLocation());
-    pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
-    pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
-    pRna->ResetPartial();
-
-    CScope& scope = mf.GetScope();
-    CSeq_annot_Handle sah = mf.GetAnnot();
-    CSeq_annot_EditHandle saeh = sah.GetEditHandle();
-    saeh.AddFeat(*pRna);
-    CMappedFeat tf = scope.GetObjectHandle(*pRna);
-    context.FeatTree().AddFeature(tf);
-
-    return xWriteFeatureTranscript(context, tf);
-}
-    
-//  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeatureCds(
     CGffFeatureContext& context,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    xGenerateMissingTranscript(context, mf);
+    CMappedFeat tf = xGenerateMissingTranscript(context, mf);
+    if (tf  &&  !xWriteFeatureTranscript(context, tf)) {
+        return false;
+    }
 
     CRef<CGtfRecord> pParent( 
         new CGtfRecord( context, (m_uFlags & fNoExonNumbers) ) );

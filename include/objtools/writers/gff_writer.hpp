@@ -395,6 +395,10 @@ protected:
     static bool HasAccaptableTranscriptParent(
         CGffFeatureContext&,
         const CMappedFeat&);
+    CMappedFeat xGenerateMissingTranscript(
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
 
     // data:
     CRef<CScope> m_pScope;

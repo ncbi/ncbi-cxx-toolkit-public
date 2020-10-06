@@ -2594,7 +2594,10 @@ bool CGff3Writer::xWriteFeatureCds(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    xGenerateMissingTranscript(fc, mf);
+    CMappedFeat tf = xGenerateMissingTranscript(fc, mf);
+    if (tf  && !xWriteNucleotideFeature(fc, tf)) {
+        return false;
+    }
 
     CRef<CGff3FeatureRecord> pCds(new CGff3FeatureRecord());
     if (!xAssignFeature(*pCds, fc, mf)) {
@@ -3040,37 +3043,6 @@ bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
     return false;
 }
 
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xGenerateMissingTranscript(
-    CGffFeatureContext& context,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!xGeneratingMissingTranscripts()) {
-        return true;
-    }
-    if (HasAccaptableTranscriptParent(context, mf)) {
-        return true;
-    }
-
-    CRef<CSeq_feat> pRna(new CSeq_feat);
-    pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-    pRna->SetLocation().Assign(mf.GetLocation());
-    pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
-    pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
-    pRna->ResetPartial();
-
-    CScope& scope = mf.GetScope();
-    CSeq_annot_Handle sah = mf.GetAnnot();
-    CSeq_annot_EditHandle saeh = sah.GetEditHandle();
-    saeh.AddFeat(*pRna);
-    CMappedFeat tf = scope.GetObjectHandle(*pRna);
-    context.FeatTree().AddFeature(tf);
-
-    return xWriteNucleotideFeature(context, tf);
-}
-    
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteRecord( 
