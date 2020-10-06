@@ -855,7 +855,7 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
             catch (...) {
                 ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
                         "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
-                        accessionString);
+                          accessionString.c_str());
                 continue;
             } 
             if ((IsConOrScaffold && !pricon) ||
