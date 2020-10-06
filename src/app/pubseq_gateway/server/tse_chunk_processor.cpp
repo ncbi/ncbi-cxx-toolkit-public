@@ -117,9 +117,15 @@ void CPSGS_TSEChunkProcessor::Process(void)
                                   m_Id2Info.GetChunks()))
         return;
 
-    // For the target chunk - convert sat to sat name chunk's blob id
-    int64_t         sat_key = m_Id2Info.GetInfo() -
-                              m_Id2Info.GetChunks() - 1 + m_TSEChunkRequest->m_Id2Chunk;
+    int64_t         sat_key;
+    if (m_TSEChunkRequest->m_Id2Chunk == kSplitInfoChunk) {
+        // Special case
+        sat_key = m_Id2Info.GetInfo();
+    } else {
+        // For the target chunk - convert sat to sat name chunk's blob id
+        sat_key = m_Id2Info.GetInfo() -
+                  m_Id2Info.GetChunks() - 1 + m_TSEChunkRequest->m_Id2Chunk;
+    }
     SCass_BlobId    chunk_blob_id(m_Id2Info.GetSat(), sat_key);
     if (!x_TSEChunkSatToKeyspace(chunk_blob_id))
         return;
@@ -397,6 +403,11 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
                                     int64_t  requested_chunk,
                                     CPSGFlavorId2Info::TChunks  total_chunks)
 {
+    if (requested_chunk == kSplitInfoChunk) {
+        // Special value: the info chunk must be provided
+        return true;
+    }
+
     if (requested_chunk > total_chunks) {
         string      msg = "Invalid chunk requested. "
                           "The number of available chunks: " +
