@@ -113,6 +113,13 @@ public:
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const; 
 
+    virtual void SetExtent(
+        TSeqPos seqStart,
+        TSeqPos seqStop) {
+        m_uSeqStart = seqStart;
+        m_uSeqStop = seqStop;
+    }
+
     virtual bool xInitFeatureId(
         int, //flags
         CRef<CSeq_feat> ) const;

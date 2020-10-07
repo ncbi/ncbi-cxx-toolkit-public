@@ -86,7 +86,8 @@ CGff2Reader::CGff2Reader(
     CReaderBase(iFlags, name, title, resolver, pRL),
     m_pErrors(0),
     mCurrentFeatureCount(0),
-    mParsingAlignment(false)
+    mParsingAlignment(false),
+    mSequenceSize(0)
 {
 }
 
@@ -211,11 +212,27 @@ CGff2Reader::xGetData(
             }
             return;
         }
+        if (xIsSequenceRegion(line)) {
+            vector<string> tokens;
+            NStr::Split(line, " \n", tokens, NStr::fSplit_MergeDelimiters);
+            try {
+                mSequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
+            }
+            catch (CException& exct) {
+                cerr << "FIXME: Needs proper error recovery" << endl;
+                mSequenceSize = 0;
+            }
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine("track");
+                xGetData(lr, readerData);
+            }
+            return;
+        }
         if (!xIsCurrentDataType(line)) {
             xUngetLine(lr);
             return;
         }
-    readerData.push_back(TReaderLine{m_uLineNumber, line});
+        readerData.push_back(TReaderLine{m_uLineNumber, line});
     }
     ++m_uDataCount;
 }
@@ -1415,6 +1432,13 @@ bool CGff2Reader::IsInGenbankMode() const
     return (m_iFlags & CGff2Reader::fGenbankMode);
 }
 
+//  -------------------------------------------------------------------------------
+bool CGff2Reader::xIsSequenceRegion(
+    const string& line) 
+//  -------------------------------------------------------------------------------
+{
+    return NStr::StartsWith(line, "##sequence-region");
+}
 
 
 END_objects_SCOPE

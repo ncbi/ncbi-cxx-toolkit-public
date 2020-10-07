@@ -470,29 +470,29 @@ bool CGff2Record::xSplitGffAttributes(
 	vector< string >& attributes) const
 //  ----------------------------------------------------------------------------
 {
-	string strCurrAttrib;
-	bool inQuotes = false;
+    string strCurrAttrib;
+    bool inQuotes = false;
 
-	ITERATE (string, iterChar, strRawAttributes) {
-		if (inQuotes) {
-			if (*iterChar == '\"') {
-				inQuotes = false;
-			}  
-			strCurrAttrib += *iterChar;
-		} else { // not in quotes
-			if (*iterChar == ';') {
-				NStr::TruncateSpacesInPlace( strCurrAttrib );
-				if(!strCurrAttrib.empty())
-					attributes.push_back(strCurrAttrib);
-				strCurrAttrib.clear();
-			} else {
-				if(*iterChar == '\"') {
-					inQuotes = true;
-				}
-				strCurrAttrib += *iterChar;
-			}
-		}
-	}
+    ITERATE (string, iterChar, strRawAttributes) {
+        if (inQuotes) {
+            if (*iterChar == '\"') {
+                inQuotes = false;
+            }  
+            strCurrAttrib += *iterChar;
+        } else { // not in quotes
+            if (*iterChar == ';') {
+                NStr::TruncateSpacesInPlace( strCurrAttrib );
+                if(!strCurrAttrib.empty())
+                    attributes.push_back(strCurrAttrib);
+                strCurrAttrib.clear();
+            } else {
+                if(*iterChar == '\"') {
+                    inQuotes = true;
+                }
+                strCurrAttrib += *iterChar;
+            }
+        }
+    }
 
 	NStr::TruncateSpacesInPlace( strCurrAttrib );
 	if (!strCurrAttrib.empty())
@@ -540,7 +540,7 @@ bool CGff2Record::UpdateFeature(
     else {
         // indicates the feature location is already under construction
         pFeature->SetLocation(*pFeature->SetLocation().Add(
-            *pAddLoc, CSeq_loc::fSort | CSeq_loc::fMerge_Abutting, 0));
+            *pAddLoc, CSeq_loc::fMerge_Abutting, 0));
         if (pFeature->GetLocation().IsInt()) {
             CRef<CSeq_loc> pOld(new CSeq_loc);
             pOld->Assign(pFeature->GetLocation());

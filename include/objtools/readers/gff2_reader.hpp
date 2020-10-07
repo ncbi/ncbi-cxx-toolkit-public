@@ -88,24 +88,24 @@ public:
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr);
         
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr);
                 
     virtual void
     ReadSeqAnnots(
         TAnnotList&,
         CNcbiIstream&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr);
                         
     virtual void
     ReadSeqAnnots(
         TAnnotList&,
         ILineReader&,
-        ILineErrorListener* =0 );
+		ILineErrorListener* =nullptr);
 
     //
     // class interface:
@@ -260,6 +260,9 @@ public:
     x_ParseDbtag(
         const string& );
 
+    static bool xIsSequenceRegion(
+        const string& line);
+
     CMessageListenerLenient m_ErrorsPrivate;
     IdToFeatureMap m_MapIdToFeature;
 
@@ -295,6 +298,7 @@ protected:
     bool mParsingAlignment;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
     CRef<CAnnotdesc> m_CurrentTrackInfo;
+    unsigned int mSequenceSize;
 };
 
 END_SCOPE(objects)

@@ -332,31 +332,67 @@ bool CGff3Reader::xParseAlignment(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotFeature(
-    const CGff2Record& record,
+    const CGff2Record& gffRecord,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_feat > pFeature(new CSeq_feat);
+    vector<CGff2Record> subrecords;
+    auto seqStart = gffRecord.SeqStart();
+    auto seqStop = gffRecord.SeqStop();
+    auto seqSize = mSequenceSize;  
+    if ( gffRecord.SeqStop() <= mSequenceSize) {
+        subrecords.push_back(gffRecord);
+    }
+    else {
+        CGff2Record upper(gffRecord);
+        upper.SetExtent(gffRecord.SeqStart(), mSequenceSize-1);
+        subrecords.push_back(upper);
+        CGff2Record lower(gffRecord);
+        lower.SetExtent(0, gffRecord.SeqStop() - mSequenceSize);
+        subrecords.push_back(lower);
+    }
+    
+    for (const auto& record: subrecords) {
+        CRef< CSeq_feat > pFeature(new CSeq_feat);
 
-    string type = record.Type();
-    NStr::ToLower(type);
-    if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
-        return xUpdateAnnotExon(record, pFeature, annot, pEC);
+        string type = record.Type();
+        NStr::ToLower(type);
+        if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
+            if (!xUpdateAnnotExon(record, pFeature, annot, pEC)) {
+                return false;
+            }
+            continue;
+        }
+        if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
+            if (!xUpdateAnnotCds(record, pFeature, annot, pEC)) {
+                return false;
+            }
+            continue;
+        }
+        if (type == "gene") {
+            if (!xUpdateAnnotGene(record, pFeature, annot, pEC)) {
+                return false;
+            }
+            continue;
+        }
+        if (type == "mrna") {
+            if (!xUpdateAnnotMrna(record, pFeature, annot, pEC)) {
+                return false;
+            }
+            continue;
+        }
+        if (type == "region") {
+            if (!xUpdateAnnotRegion(record, pFeature, annot, pEC)) {
+                return false;
+            }
+            continue;
+        }
+        if (!xUpdateAnnotGeneric(record, pFeature, annot, pEC)) {
+            return false;
+        }
     }
-    if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
-        return xUpdateAnnotCds(record, pFeature, annot, pEC);
-    }
-    if (type == "gene") {
-        return xUpdateAnnotGene(record, pFeature, annot, pEC);
-    }
-    if (type == "mrna") {
-        return xUpdateAnnotMrna(record, pFeature, annot, pEC);
-    }
-    if (type == "region") {
-        return xUpdateAnnotRegion(record, pFeature, annot, pEC);
-    }
-    return xUpdateAnnotGeneric(record, pFeature, annot, pEC);
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -629,10 +665,10 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
         m_uLineNumber,
         "Bad data line:  Duplicate feature ID \"" + id + "\".");
     if (record.Id() != mIdToSeqIdMap[id]) {
-        throw fatal;
+        //throw fatal;
     }
     if (it->second->GetData().IsRna()) {
-        throw fatal;
+        //throw fatal;
     }
     CSeq_feat tempFeat;
     if (CSoMap::SoTypeToFeature(record.Type(), tempFeat)) {
