@@ -129,7 +129,14 @@ void CAbstractProjectItem::PreWrite() const
 void CAbstractProjectItem::PostRead()
 {
     const string& type = GetType();
-    const CTypeInfo* info = CClassTypeInfoBase::GetClassInfoByName(type);
+
+    const CTypeInfo* info{ nullptr };
+    try {
+        info = CClassTypeInfoBase::GetClassInfoByName(type);
+    }
+    catch (const std::exception&) {
+        // Ignore
+    }
     if (info) {
         try {
             CRef<CSerialObject> ref(static_cast<CSerialObject*>(info->Create()));
@@ -162,10 +169,6 @@ void CAbstractProjectItem::PostRead()
             LOG_POST(Error << "failed to deserialize abstract object: " << e);
             throw;
         }
-    } else {
-        NCBI_THROW(CException, eUnknown,
-                   "CAbstractProjectItem::PostRead(): "
-                   "failed to find object info for type: " + type);
     }
 }
 
