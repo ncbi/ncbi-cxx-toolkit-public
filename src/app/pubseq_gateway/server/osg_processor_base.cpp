@@ -39,6 +39,8 @@
 #include "osg_connection.hpp"
 
 #include <objects/id2/ID2_Request.hpp>
+#include <objects/id2/ID2_Params.hpp>
+#include <objects/id2/ID2_Param.hpp>
 #include <objects/id2/ID2_Reply.hpp>
 
 
@@ -127,8 +129,17 @@ void CPSGS_OSGProcessorBase::CreateFetches()
 }
 
 
-void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req)
+void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
 {
+    CRef<CID2_Request> req = req0;
+    if ( 1 ) {
+        // set hops
+        auto hops = GetRequest()->GetRequest<SPSGS_RequestBase>().m_Hops + 1;
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("hops");
+        param->SetValue().push_back(to_string(hops));
+        req->SetParams().Set().push_back(param);
+    }
     m_Fetches.push_back(Ref(new COSGFetch(req, m_Context)));
 }
 
