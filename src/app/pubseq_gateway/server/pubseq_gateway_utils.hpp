@@ -155,7 +155,8 @@ string  GetBioseqCompletionHeader(size_t  item_id,
 string  GetBlobPropHeader(size_t  item_id,
                           const string &  processor_id,
                           const string &  blob_id,
-                          size_t  blob_prop_size);
+                          size_t  blob_prop_size,
+                          CBlobRecord::TTimestamp  last_modified=-1);
 string  GetBlobPropMessageHeader(size_t  item_id,
                                  const string &  processor_id,
                                  size_t  msg_size,
@@ -189,22 +190,26 @@ string  GetBlobChunkHeader(size_t  item_id,
                            const string &  processor_id,
                            const string &  blob_id,
                            size_t  chunk_size,
-                           size_t  chunk_number);
+                           size_t  chunk_number,
+                           CBlobRecord::TTimestamp  last_modified=-1);
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
                                 const string &  blob_id,
-                                size_t  chunk_count);
+                                size_t  chunk_count,
+                                CBlobRecord::TTimestamp  last_modified=-1);
 string  GetBlobMessageHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
                              size_t  msg_size,
                              CRequestStatus::ECode  status,
                              int  code,
-                             EDiagSev  severity);
+                             EDiagSev  severity,
+                             CBlobRecord::TTimestamp  last_modified=-1);
 string  GetBlobExcludeHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
-                             EPSGS_BlobSkipReason  skip_reason);
+                             EPSGS_BlobSkipReason  skip_reason,
+                             CBlobRecord::TTimestamp  last_modified=-1);
 string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  processor_id,
                                 int64_t  id2_chunk,

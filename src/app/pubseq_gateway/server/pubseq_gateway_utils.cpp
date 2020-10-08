@@ -142,6 +142,7 @@ static string   s_NChunksOne = "n_chunks=1";
 static string   s_ProcessorId = "processor_id=";
 static string   s_Id2Chunk = "id2_chunk=";
 static string   s_Id2Info = "id2_info=";
+static string   s_LastModified = "last_modified=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -185,6 +186,7 @@ static string   s_AndProcessorItem = "&" + s_ProcessorItem;
 static string   s_AndProcessorId = "&" + s_ProcessorId;
 static string   s_AndId2Chunk = "&" + s_Id2Chunk;
 static string   s_AndId2Info = "&" + s_Id2Info;
+static string   s_AndLastModified = "&" + s_LastModified;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_AndDataChunk = "&" + s_DataChunk;
@@ -295,10 +297,15 @@ string  GetBioseqCompletionHeader(size_t  item_id,
 string  GetBlobPropHeader(size_t  item_id,
                           const string &  processor_id,
                           const string &  blob_id,
-                          size_t  blob_prop_size)
+                          size_t  blob_prop_size,
+                          CBlobRecord::TTimestamp  last_modified)
 {
-    // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550
     string      reply(s_ReplyBegin);
+
+    string      last_modified_part;
+    if (last_modified != -1)
+        last_modified_part.append(s_AndLastModified)
+                          .append(to_string(last_modified));
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
@@ -309,6 +316,7 @@ string  GetBlobPropHeader(size_t  item_id,
                 .append(to_string(blob_prop_size))
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(last_modified_part)
                 .append(1, '\n');
 }
 
@@ -437,10 +445,16 @@ string  GetBlobChunkHeader(size_t  item_id,
                            const string &  processor_id,
                            const string &  blob_id,
                            size_t  chunk_size,
-                           size_t  chunk_number)
+                           size_t  chunk_number,
+                           CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
     string      reply(s_ReplyBegin);
+
+    string      last_modified_part;
+    if (last_modified != -1)
+        last_modified_part.append(s_AndLastModified)
+                          .append(to_string(last_modified));
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
@@ -451,6 +465,7 @@ string  GetBlobChunkHeader(size_t  item_id,
                 .append(to_string(chunk_size))
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(last_modified_part)
                 .append(s_AndBlobChunk)
                 .append(to_string(chunk_number))
                 .append(1, '\n');
@@ -488,10 +503,16 @@ string  GetTSEBlobChunkHeader(size_t  item_id,
 string  GetBlobExcludeHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
-                             EPSGS_BlobSkipReason  skip_reason)
+                             EPSGS_BlobSkipReason  skip_reason,
+                             CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
     string      reply(s_ReplyBegin);
+
+    string      last_modified_part;
+    if (last_modified != -1)
+        last_modified_part.append(s_AndLastModified)
+                          .append(to_string(last_modified));
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
@@ -500,6 +521,7 @@ string  GetBlobExcludeHeader(size_t  item_id,
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(last_modified_part)
                 .append(s_AndNChunksOne)
                 .append(s_AndReason)
                 .append(SkipReasonToString(skip_reason))
@@ -534,10 +556,16 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
                                 const string &  blob_id,
-                                size_t  chunk_count)
+                                size_t  chunk_count,
+                                CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
     string      reply(s_ReplyBegin);
+
+    string      last_modified_part;
+    if (last_modified != -1)
+        last_modified_part.append(s_AndLastModified)
+                          .append(to_string(last_modified));
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
@@ -546,6 +574,7 @@ string  GetBlobCompletionHeader(size_t  item_id,
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(last_modified_part)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
@@ -584,10 +613,16 @@ string  GetBlobMessageHeader(size_t  item_id,
                              size_t  msg_size,
                              CRequestStatus::ECode  status,
                              int  code,
-                             EDiagSev  severity)
+                             EDiagSev  severity,
+                             CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
     string      reply(s_ReplyBegin);
+
+    string      last_modified_part;
+    if (last_modified != -1)
+        last_modified_part.append(s_AndLastModified)
+                          .append(to_string(last_modified));
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
@@ -598,6 +633,7 @@ string  GetBlobMessageHeader(size_t  item_id,
                 .append(to_string(msg_size))
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(last_modified_part)
                 .append(s_AndStatus)
                 .append(to_string(static_cast<int>(status)))
                 .append(s_AndCode)

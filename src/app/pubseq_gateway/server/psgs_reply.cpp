@@ -213,15 +213,17 @@ void CPSGS_Reply::PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details
 }
 
 
-void CPSGS_Reply::PrepareBlobPropData(size_t            item_id,
-                                      const string &    processor_id,
-                                      const string &    blob_id,
-                                      const string &    content)
+void CPSGS_Reply::PrepareBlobPropData(size_t                   item_id,
+                                      const string &           processor_id,
+                                      const string &           blob_id,
+                                      const string &           content,
+                                      CBlobRecord::TTimestamp  last_modified)
 {
     string  header = GetBlobPropHeader(item_id,
                                        processor_id,
                                        blob_id,
-                                       content.size());
+                                       content.size(),
+                                       last_modified);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -231,14 +233,16 @@ void CPSGS_Reply::PrepareBlobPropData(size_t            item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *  fetch_details,
-                                      const string &    processor_id,
-                                      const string &    content)
+void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *         fetch_details,
+                                      const string &           processor_id,
+                                      const string &           content,
+                                      CBlobRecord::TTimestamp  last_modified)
 {
     PrepareBlobPropData(fetch_details->GetBlobPropItemId(this),
                         processor_id,
                         fetch_details->GetBlobId().ToString(),
-                        content);
+                        content,
+                        last_modified);
     fetch_details->IncrementTotalSentBlobChunks();
 }
 
@@ -274,12 +278,13 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobData(size_t                 item_id,
-                                  const string &         processor_id,
-                                  const string &         blob_id,
-                                  const unsigned char *  chunk_data,
-                                  unsigned int           data_size,
-                                  int                    chunk_no)
+void CPSGS_Reply::PrepareBlobData(size_t                   item_id,
+                                  const string &           processor_id,
+                                  const string &           blob_id,
+                                  const unsigned char *    chunk_data,
+                                  unsigned int             data_size,
+                                  int                      chunk_no,
+                                  CBlobRecord::TTimestamp  last_modified)
 {
     ++m_TotalSentReplyChunks;
 
@@ -287,7 +292,8 @@ void CPSGS_Reply::PrepareBlobData(size_t                 item_id,
                             item_id,
                             processor_id,
                             blob_id,
-                            data_size, chunk_no);
+                            data_size, chunk_no,
+                            last_modified);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
                     header.size()));
@@ -297,17 +303,19 @@ void CPSGS_Reply::PrepareBlobData(size_t                 item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *       fetch_details,
-                                  const string &         processor_id,
-                                  const unsigned char *  chunk_data,
-                                  unsigned int           data_size,
-                                  int                    chunk_no)
+void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *         fetch_details,
+                                  const string &           processor_id,
+                                  const unsigned char *    chunk_data,
+                                  unsigned int             data_size,
+                                  int                      chunk_no,
+                                  CBlobRecord::TTimestamp  last_modified)
 {
     fetch_details->IncrementTotalSentBlobChunks();
     PrepareBlobData(fetch_details->GetBlobChunkItemId(this),
                     processor_id,
                     fetch_details->GetBlobId().ToString(),
-                    chunk_data, data_size, chunk_no);
+                    chunk_data, data_size, chunk_no,
+                    last_modified);
 }
 
 
@@ -413,17 +421,19 @@ void CPSGS_Reply::PrepareTSEBlobPropCompletion(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
-                                     const string &         processor_id,
-                                     const string &         blob_id,
-                                     const string &         msg,
-                                     CRequestStatus::ECode  status,
-                                     int                    err_code,
-                                     EDiagSev               severity)
+void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
+                                     const string &           processor_id,
+                                     const string &           blob_id,
+                                     const string &           msg,
+                                     CRequestStatus::ECode    status,
+                                     int                      err_code,
+                                     EDiagSev                 severity,
+                                     CBlobRecord::TTimestamp  last_modified)
 {
     string      header = GetBlobMessageHeader(item_id, processor_id,
                                               blob_id, msg.size(),
-                                              status, err_code, severity);
+                                              status, err_code, severity,
+                                              last_modified);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -432,17 +442,18 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                 item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *       fetch_details,
-                                     const string &         processor_id,
-                                     const string &         msg,
-                                     CRequestStatus::ECode  status,
-                                     int                    err_code,
-                                     EDiagSev               severity)
+void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *         fetch_details,
+                                     const string &           processor_id,
+                                     const string &           msg,
+                                     CRequestStatus::ECode    status,
+                                     int                      err_code,
+                                     EDiagSev                 severity,
+                                     CBlobRecord::TTimestamp  last_modified)
 {
     PrepareBlobMessage(fetch_details->GetBlobChunkItemId(this),
                        processor_id,
                        fetch_details->GetBlobId().ToString(),
-                       msg, status, err_code, severity);
+                       msg, status, err_code, severity, last_modified);
     fetch_details->IncrementTotalSentBlobChunks();
 }
 
@@ -482,13 +493,15 @@ void CPSGS_Reply::PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_Reply::PrepareBlobCompletion(size_t          item_id,
-                                        const string &  processor_id,
-                                        const string &  blob_id,
-                                        size_t          chunk_count)
+void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
+                                        const string &           processor_id,
+                                        const string &           blob_id,
+                                        size_t                   chunk_count,
+                                        CBlobRecord::TTimestamp  last_modified)
 {
     string completion = GetBlobCompletionHeader(item_id, processor_id,
-                                                blob_id, chunk_count);
+                                                blob_id, chunk_count,
+                                                last_modified);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
@@ -525,12 +538,13 @@ void CPSGS_Reply::PrepareTSEBlobCompletion(size_t  item_id,
 }
 
 
-void CPSGS_Reply::PrepareBlobExcluded(const string &        blob_id,
-                                      const string &        processor_id,
-                                      EPSGS_BlobSkipReason  skip_reason)
+void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
+                                      const string &           processor_id,
+                                      EPSGS_BlobSkipReason     skip_reason,
+                                      CBlobRecord::TTimestamp  last_modified)
 {
     string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
-                                           blob_id, skip_reason);
+                                           blob_id, skip_reason, last_modified);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
@@ -567,13 +581,15 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 
 
 void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
-                                        const string &    processor_id)
+                                        const string &    processor_id,
+                                        CBlobRecord::TTimestamp  last_modified)
 {
     // +1 is for the completion itself
     PrepareBlobCompletion(fetch_details->GetBlobChunkItemId(this),
                           processor_id,
                           fetch_details->GetBlobId().ToString(),
-                          fetch_details->GetTotalSentBlobChunks() + 1);
+                          fetch_details->GetTotalSentBlobChunks() + 1,
+                          last_modified);
     fetch_details->IncrementTotalSentBlobChunks();
 }
 

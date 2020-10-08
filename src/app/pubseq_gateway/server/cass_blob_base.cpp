@@ -47,7 +47,8 @@
 using namespace std::placeholders;
 
 
-CPSGS_CassBlobBase::CPSGS_CassBlobBase()
+CPSGS_CassBlobBase::CPSGS_CassBlobBase() :
+    m_LastModified(-1)
 {}
 
 
@@ -56,7 +57,8 @@ CPSGS_CassBlobBase::CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
                                        const string &  processor_id) :
     CPSGS_CassProcessorBase(request, reply),
     m_NeedToParseId2Info(true),
-    m_ProcessorId(processor_id)
+    m_ProcessorId(processor_id),
+    m_LastModified(-1)
 {}
 
 
@@ -86,6 +88,9 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
         // the blob id2info field should be parsed and memorized.
         // Later the original blob id2info is used to decide if id2_chunk
         // and id2_info should be present in the reply.
+
+        if (m_LastModified == -1)
+            m_LastModified = blob.GetModified();
 
         x_PrepareBlobPropData(fetch_details, blob);
 
@@ -902,7 +907,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  fetch_details,
         // so just send blob props without id2_chunk/id2_info
         m_Reply->PrepareBlobPropData(
             fetch_details, m_ProcessorId,
-            ToJson(blob).Repr(CJsonNode::fStandardJson));
+            ToJson(blob).Repr(CJsonNode::fStandardJson), m_LastModified);
     } else {
         m_Reply->PrepareTSEBlobPropData(
             fetch_details, m_ProcessorId,
@@ -937,7 +942,8 @@ CPSGS_CassBlobBase::x_PrepareBlobData(CCassBlobFetch *  fetch_details,
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobData(fetch_details, m_ProcessorId,
-                                 chunk_data, data_size, chunk_no);
+                                 chunk_data, data_size, chunk_no,
+                                 m_LastModified);
     } else {
         m_Reply->PrepareTSEBlobData(
             fetch_details, m_ProcessorId,
@@ -953,7 +959,8 @@ CPSGS_CassBlobBase::x_PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
     if (!NeedToAddId2CunkId2Info()) {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
-        m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
+        m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId,
+                                       m_LastModified);
     } else {
         m_Reply->PrepareTSEBlobCompletion(
             fetch_details, m_ProcessorId,
@@ -996,7 +1003,7 @@ CPSGS_CassBlobBase::x_PrepareBlobMessage(CCassBlobFetch *  fetch_details,
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobMessage(
             fetch_details, m_ProcessorId,
-            message, status, err_code, severity);
+            message, status, err_code, severity, m_LastModified);
     } else {
         m_Reply->PrepareTSEBlobMessage(
             fetch_details, m_ProcessorId,
@@ -1014,7 +1021,8 @@ CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
     if (!NeedToAddId2CunkId2Info()) {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
-        m_Reply->PrepareBlobExcluded(blob_id, m_ProcessorId, skip_reason);
+        m_Reply->PrepareBlobExcluded(blob_id, m_ProcessorId, skip_reason,
+                                     m_LastModified);
     } else {
         m_Reply->PrepareTSEBlobExcluded(
             m_ProcessorId, x_GetId2ChunkNumber(fetch_details),

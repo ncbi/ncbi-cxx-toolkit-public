@@ -163,6 +163,9 @@ private:
     bool                            m_NeedToParseId2Info;
     unique_ptr<CPSGFlavorId2Info>   m_Id2Info;
     string                          m_ProcessorId;
+
+    // last_modified from the original blob props
+    CBlobRecord::TTimestamp         m_LastModified;
 };
 
 #endif  // PSGS_CASSBLOBBASE__HPP

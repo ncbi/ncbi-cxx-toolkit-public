@@ -103,21 +103,23 @@ public:
                                 CRequestStatus::ECode  status,
                                 int  err_code,
                                 EDiagSev  severity);
-    void PrepareTSEBlobPropMessage(CCassBlobFetch *  fetch_details,
-                                   const string &  processor_id,
-                                   int64_t  id2_chunk,
-                                   const string &  id2_info,
-                                   const string &  msg,
+    void PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details,
+                                   const string &         processor_id,
+                                   int64_t                id2_chunk,
+                                   const string &         id2_info,
+                                   const string &         msg,
                                    CRequestStatus::ECode  status,
-                                   int  err_code,
-                                   EDiagSev  severity);
-    void PrepareBlobPropData(size_t            item_id,
-                             const string &    processor_id,
-                             const string &    blob_id,
-                             const string &    content);
-    void PrepareBlobPropData(CCassBlobFetch *  fetch_details,
-                             const string &    processor_id,
-                             const string &    content);
+                                   int                    err_code,
+                                   EDiagSev               severity);
+    void PrepareBlobPropData(size_t                   item_id,
+                             const string &           processor_id,
+                             const string &           blob_id,
+                             const string &           content,
+                             CBlobRecord::TTimestamp  last_modified=-1);
+    void PrepareBlobPropData(CCassBlobFetch *         fetch_details,
+                             const string &           processor_id,
+                             const string &           content,
+                             CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareTSEBlobPropData(size_t            item_id,
                                 const string &    processor_id,
                                 int64_t           id2_chunk,
@@ -128,17 +130,19 @@ public:
                                 int64_t           id2_chunk,
                                 const string &    id2_info,
                                 const string &    content);
-    void PrepareBlobData(size_t                 item_id,
-                         const string &         processor_id,
-                         const string &         blob_id,
-                         const unsigned char *  chunk_data,
-                         unsigned int           data_size,
-                         int                    chunk_no);
-    void PrepareBlobData(CCassBlobFetch *  fetch_details,
-                         const string &  processor_id,
-                         const unsigned char *  chunk_data,
-                         unsigned int  data_size,
-                         int  chunk_no);
+    void PrepareBlobData(size_t                   item_id,
+                         const string &           processor_id,
+                         const string &           blob_id,
+                         const unsigned char *    chunk_data,
+                         unsigned int             data_size,
+                         int                      chunk_no,
+                         CBlobRecord::TTimestamp  last_modified=-1);
+    void PrepareBlobData(CCassBlobFetch *         fetch_details,
+                         const string &           processor_id,
+                         const unsigned char *    chunk_data,
+                         unsigned int             data_size,
+                         int                      chunk_no,
+                         CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareTSEBlobData(size_t                 item_id,
                             const string &         processor_id,
                             const unsigned char *  chunk_data,
@@ -168,12 +172,14 @@ public:
                             const string &  msg,
                             CRequestStatus::ECode  status,
                             int  err_code,
-                            EDiagSev  severity);
+                            EDiagSev  severity,
+                            CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareBlobMessage(CCassBlobFetch *  fetch_details,
                             const string &  processor_id,
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
-                            EDiagSev  severity);
+                            EDiagSev  severity,
+                            CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
                                const string &  processor_id,
                                int64_t  id2_chunk,
@@ -184,7 +190,8 @@ public:
     void PrepareBlobCompletion(size_t  item_id,
                                const string &  processor_id,
                                const string &  blob_id,
-                               size_t  chunk_count);
+                               size_t  chunk_count,
+                               CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareTSEBlobCompletion(size_t item_id,
                                   const string &  processor_id,
                                   int64_t  id2_chunk,
@@ -196,7 +203,8 @@ public:
                                   const string &  id2_info);
     void PrepareBlobExcluded(const string &  blob_id,
                              const string &  processor_id,
-                             EPSGS_BlobSkipReason  skip_reason);
+                             EPSGS_BlobSkipReason  skip_reason,
+                             CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareTSEBlobExcluded(const string &  processor_id,
                                 int64_t  id2_chunk,
                                 const string &  id2_info,
@@ -206,7 +214,8 @@ public:
                              const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
-                               const string &  processor_id);
+                               const string &  processor_id,
+                               CBlobRecord::TTimestamp  last_modified=-1);
     void PrepareProcessorMessage(size_t  item_id, const string &  processor_id,
                                  const string &  msg,
                                  CRequestStatus::ECode  status, int  err_code,
