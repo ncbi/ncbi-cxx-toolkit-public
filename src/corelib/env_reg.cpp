@@ -418,11 +418,11 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
         section = env.substr(uu_pos + 2);
     }
     if (!IRegistry::IsNameSection(section, IRegistry::fInternalSpaces)) {
-        LOG_POST(Info << "Invalid registry section name in environment "
+        ERR_POST(Info << "Invalid registry section name in environment "
                             "variable " << env);
     }
     if (!IRegistry::IsNameEntry(name, IRegistry::fInternalSpaces)) {
-        LOG_POST(Info << "Invalid registry entry name in environment "
+        ERR_POST(Info << "Invalid registry entry name in environment "
                             "variable " << env);
     }
     return true;
