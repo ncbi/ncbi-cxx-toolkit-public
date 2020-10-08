@@ -38,10 +38,12 @@
 
 BEGIN_NCBI_SCOPE
 
-ParserPtr   init_pp(ParserPtr pp);
+class Parser;
 
-void        fta_init_servers(ParserPtr pp);
-void        fta_fini_servers(ParserPtr pp);
+Parser*   init_pp(Parser* pp);
+
+void        fta_init_servers(Parser* pp);
+void        fta_fini_servers(Parser* pp);
 
 END_NCBI_SCOPE
 

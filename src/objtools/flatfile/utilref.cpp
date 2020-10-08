@@ -42,7 +42,7 @@
 #include <objects/biblio/Cit_gen.hpp>
 
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
 

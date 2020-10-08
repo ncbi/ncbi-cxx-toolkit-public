@@ -55,7 +55,7 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Cit_let.hpp>
-#include <objtools/flatfile/sprot.h>
+#include "sprot.h"
 #include <objtools/flatfile/flatdefn.h>
 
 #include "ftaerr.hpp"
@@ -1099,7 +1099,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitPatent(ParRefBlkPtr prbp, Int2 source, objects::CCit_pat& pat)
+static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, objects::CCit_pat& pat)
 {
     char*    num;
     char*    p;
@@ -1348,7 +1348,7 @@ static void DisrootImprint(objects::CCit_sub& sub)
  *      Assume prbp only contains one reference data.
  *
  **********************************************************/
-static CRef<objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Int2 source)
+static CRef<objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
 {
     CRef<objects::CPubdesc> ret;
 

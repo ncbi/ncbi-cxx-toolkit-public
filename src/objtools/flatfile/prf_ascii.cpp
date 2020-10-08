@@ -56,12 +56,12 @@
 #include <objects/biblio/Cit_art.hpp>
 
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/prf_index.h>
+#include "index.h"
+#include "prf_index.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
-#include <objtools/flatfile/ftamain.h>
+#include "ftanet.h"
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"

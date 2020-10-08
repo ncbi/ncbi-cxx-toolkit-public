@@ -60,12 +60,12 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Pubdesc.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/pir_index.h>
+#include "index.h"
+#include "pir_index.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
-#include <objtools/flatfile/ftamain.h>
+#include "ftanet.h"
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
@@ -2413,7 +2413,7 @@ static CRef<objects::CSeq_entry> ind2asn(ParserPtr pp, DataBlkPtr* ind,
 
     bioseq.SetDescr().Set().splice(bioseq.SetDescr().Set().end(), descrs);
 
-    if (no_date(ParFlat_PIR, bioseq.GetDescr().Get()) && !pp->debug)
+    if (no_date(Parser::EFormat::PIR, bioseq.GetDescr().Get()) && !pp->debug)
     {
         ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate,
                    "Illegal create or update date, entry dropped");

@@ -47,7 +47,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/seq/Delta_seq.hpp>
 
-#include <objtools/flatfile/fta_parser.h>
+#include <objtools/flatfile/flatfile_parse_info.hpp>
 #include "valnode.h" 
 
 BEGIN_NCBI_SCOPE

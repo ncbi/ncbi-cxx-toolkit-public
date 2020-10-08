@@ -37,9 +37,8 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/sprot.h>
-
+#include "index.h"
+#include "sprot.h"
 #include "ftaerr.hpp"
 #include "indx_blk.h"
 #include "indx_def.h"

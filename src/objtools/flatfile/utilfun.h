@@ -54,7 +54,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Int2 source);
+CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESource source);
 
 /**********************************************************/
 
@@ -136,8 +136,8 @@ bool            fta_is_tpa_keyword(const char* str);
 bool            fta_tpa_keywords_check(const TKeywordList& kwds);
 bool            fta_is_tsa_keyword(char* str);
 bool            fta_is_tls_keyword(char* str);
-bool            fta_tsa_keywords_check(const TKeywordList& kwds, Int2 source);
-bool            fta_tls_keywords_check(const TKeywordList& kwds, Int2 source);
+bool            fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source);
+bool            fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool            fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds);
 void            fta_StringCpy(char* dst, char* src);
 
@@ -147,8 +147,8 @@ void            fta_keywords_check(const char* str, bool* estk, bool* stsk, bool
 
 void            fta_remove_keywords(Uint1 tech, TKeywordList& kwds);
 void            fta_remove_tpa_keywords(TKeywordList& kwds);
-void            fta_remove_tsa_keywords(TKeywordList& kwds, Int2 source);
-void            fta_remove_tls_keywords(TKeywordList& kwds, Int2 source);
+void            fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source);
+void            fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source);
 void            fta_remove_env_keywords(TKeywordList& kwds);
 
 bool            IsCancelled(const TKeywordList& keywords);

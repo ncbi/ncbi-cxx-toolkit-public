@@ -30,7 +30,7 @@ NCBI_begin_lib(xflatfile)
     fta_qscore
     fta_src
     ftamain
-    fta_parser
+    flatfile_parse_info
     gb_ascii
     genref
     ind

@@ -1,4 +1,4 @@
-/* ftamain.h
+/* ftanet.h
  *
  * ===========================================================================
  *
@@ -24,7 +24,7 @@
  *
  * ===========================================================================
  *
- * File Name:  ftamain.h
+ * File Name:  ftanet.h
  *
  * Author: Alexey Dobronadezhdin
  *
@@ -33,36 +33,28 @@
 
  */
 
-#ifndef FTAMAIN_H
-#define FTAMAIN_H
-
-#include <objtools/flatfile/index.h>
-
-
-namespace ncbi
-{
-    namespace objects
-    {
-        class IObjtoolsListener;
-    };
-    class CSerialObject;
-}
+#ifndef FTANET_H
+#define FTANET_H
+#include <objtools/flatfile/flatfile_parse_info.hpp> 
 
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DEPRECATED Int2 fta_main(ParserPtr pp, bool already);
-
-
-class CFlatFileParser 
+namespace objects
 {
-public:
-    CFlatFileParser(objects::IObjtoolsListener* pMessageListener);
-    virtual ~CFlatFileParser(void);
-    CRef<CSerialObject> Parse(Parser* pParser, bool already);
+    class COrg_ref;
+    class CSeq_id;
+    class CCit_art;
 };
 
+CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh);
+
+void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries);
+void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag);
+Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc);
+void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* drop, char* organelle);
+CRef<objects::CCit_art> fta_citart_by_pmid(Int4 pmid, bool& done);
 
 END_NCBI_SCOPE
 
-#endif // FTAMAIN_H
+#endif // FTANET_H

@@ -1,4 +1,6 @@
-/* ===========================================================================
+/* ftamain.h
+ *
+ * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -22,29 +24,50 @@
  *
  * ===========================================================================
  *
- * File Name:  fta_parser.cpp
+ * File Name:  ftamain.h
  *
- * Author: 
+ * Author: Alexey Dobronadezhdin
  *
  * File Description:
  * -----------------
- *      Main routines for parsing flat files to ASN.1 file format.
- * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
- *
+
  */
-#include <ncbi_pch.hpp>
 
-#include <objtools/flatfile/fta_parser.h>
+#ifndef __FLATFILE_PARSER_HPP__
+#define __FLATFILE_PARSER_HPP__
 
-#include "indx_blk.h"
+#include <objtools/flatfile/flatfile_parse_info.hpp>
+
+#define ParFlat_EMBL_AC             "AFVXYZ"    /* patent is "A" */
+#define ParFlat_LANL_AC             "JKLM"
+#define ParFlat_PIR_AC               NULL
+#define ParFlat_PRF_AC               NULL
+#define ParFlat_SPROT_AC             NULL
+#define ParFlat_DDBJ_AC              "CDE"
+#define ParFlat_NCBI_AC              "BGHIJKLMRSTUWN"    /* backbone = "S" */
 
 BEGIN_NCBI_SCOPE
 
-Parser::~Parser() {
-    ResetParserStruct(this);
-    if (fpo) {
-        free(fpo);
-    }
-}
+class CSerialObject;
+namespace objects 
+{
+    class IObjtoolsListener;
+};
+
+class Parser;
+
+NCBI_DEPRECATED Int2 fta_main(Parser* pp, bool already);
+
+
+class CFlatFileParser 
+{
+public:
+    CFlatFileParser(objects::IObjtoolsListener* pMessageListener);
+    virtual ~CFlatFileParser(void);
+    CRef<CSerialObject> Parse(Parser& parseInfo);
+};
+
 
 END_NCBI_SCOPE
+
+#endif // __FLATFILE_PARSER_HPP__

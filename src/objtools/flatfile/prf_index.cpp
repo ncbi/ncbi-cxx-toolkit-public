@@ -40,8 +40,8 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/prf_index.h>
+#include "index.h"
+#include "prf_index.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"

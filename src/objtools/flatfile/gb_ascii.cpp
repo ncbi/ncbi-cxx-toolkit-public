@@ -60,12 +60,12 @@
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/genbank.h>
+#include "index.h"
+#include "genbank.h"
 
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
+#include "ftanet.h"
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
@@ -100,7 +100,7 @@ static char* GBDivOffset(DataBlkPtr entry, Int4 div_shift)
 }
 
 /**********************************************************/
-static void CheckContigEverywhere(IndexblkPtr ibp, Int2 source)
+static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 {
     bool condiv = (StringICmp(ibp->division, "CON") == 0);
 
@@ -128,7 +128,7 @@ static void CheckContigEverywhere(IndexblkPtr ibp, Int2 source)
     }
     else if(ibp->is_contig && ibp->origin)
     {
-        if(source == ParFlat_EMBL || source == ParFlat_DDBJ)
+        if(source == Parser::ESource::EMBL || source == Parser::ESource::DDBJ)
         {
             ErrPostEx(SEV_INFO, ERR_FORMAT_ContigWithSequenceData,
                       "The CONTIG/CO linetype and sequence data are both present. Ignoring sequence data.");
@@ -563,7 +563,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
             }
             if(tpa_kwd)
             {
-                if(ibp->is_tpa == false && pp->source != ParFlat_EMBL)
+                if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL)
                 {
                     ErrPostEx(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA,
                               "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
@@ -620,7 +620,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
                 else if(i != 2 || env_kwd == false ||
                    (est_kwd == false && gss_kwd == false && wgs_kwd == false))
                 {
-                    if(i != 2 || pp->source != ParFlat_DDBJ ||
+                    if(i != 2 || pp->source != Parser::ESource::DDBJ ||
                        ibp->is_tsa == false || env_kwd == false)
                     {
                         ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords,
@@ -836,7 +836,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
         }
     }
 
-    if (pp->source == ParFlat_DDBJ && gbb->IsSetDiv() && bio_src != NULL &&
+    if (pp->source == Parser::ESource::DDBJ && gbb->IsSetDiv() && bio_src != NULL &&
         bio_src->IsSetOrg() && bio_src->GetOrg().IsSetOrgname() &&
         bio_src->GetOrg().GetOrgname().IsSetDiv())
     {
@@ -1298,7 +1298,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
         descr->SetTitle(title);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if(ibp->is_tpa == false && pp->source != ParFlat_EMBL &&
+        if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
            StringNCmp(title.c_str(), "TPA:", 4) == 0)
         {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA,
@@ -1331,7 +1331,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
     {
         offset = SrchNodeType(entry, ParFlat_PROJECT, &len);
         if(offset != NULL)
-            fta_get_project_user_object(bioseq.SetDescr().Set(), offset, ParFlat_GENBANK,
+            fta_get_project_user_object(bioseq.SetDescr().Set(), offset, Parser::EFormat::GenBank,
                                         &ibp->drop, pp->source);
     }
 
@@ -1405,7 +1405,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
      */
     CRef<objects::CGB_block> gbbp = GetGBBlock(pp, entry, *mol_info, bio_src);
 
-    if ((pp->source == ParFlat_DDBJ || pp->source == ParFlat_EMBL) &&
+    if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
         ibp->is_contig && (!mol_info->IsSetTech() || mol_info->GetTech() == 0))
     {
         Uint1 tech = fta_check_con_for_wgs(bioseq);
@@ -1432,10 +1432,10 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
         fta_fix_orgref_div(bioseq.GetAnnot(), *org_ref, *gbbp);
 
     if(StringNICmp(ibp->division, "CON", 3) == 0)
-        fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), ParFlat_DDBJ,
+        fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ,
                      objects::CSeq_id::e_Ddbj, true, ibp->acnum);
     else
-        fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), ParFlat_DDBJ,
+        fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ,
                      objects::CSeq_id::e_Ddbj, false, ibp->acnum);
 
     {
@@ -1764,7 +1764,7 @@ bool GenBankAscii(ParserPtr pp)
                 if(ibp->gaps != NULL)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                 else if(ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
-                        (ibp->is_pat && pp->source == ParFlat_DDBJ))
+                        (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                         SeqToDelta(*bioseq, ibp->htg);
             }
             else if(ibp->gaps != NULL)
@@ -1840,12 +1840,12 @@ bool GenBankAscii(ParserPtr pp)
          */
         if(no_reference(*bioseq) && pp->debug == false && ibp->wgs_and_gi != 3)
         {
-            if(pp->source == ParFlat_FLYBASE)
+            if(pp->source == Parser::ESource::Flybase)
             {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
                            "No references for entry from FlyBase. Continue anyway.");
             }
-            else if(pp->source == ParFlat_REFSEQ &&
+            else if(pp->source == Parser::ESource::Refseq &&
                     StringNCmp(ibp->acnum, "NW_", 3) == 0)
             {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
@@ -1966,7 +1966,7 @@ bool GenBankAscii(ParserPtr pp)
                 continue;
             }
 
-            if (pp->source == ParFlat_FLYBASE && !seq_entries.empty())
+            if (pp->source == Parser::ESource::Flybase && !seq_entries.empty())
                 fta_get_user_object(*(*seq_entries.begin()), entry);
 
             /* remove out all the features if their seqloc has

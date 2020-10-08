@@ -61,12 +61,12 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/genbank.h>                    /* for ParFlat_FEATURES */
-#include <objtools/flatfile/embl.h>                       /* for ParFlat_FH */
+#include "index.h"
+#include "genbank.h"                    /* for ParFlat_FEATURES */
+#include "embl.h"                       /* for ParFlat_FH */
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
+#include "ftanet.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -174,7 +174,7 @@ char* tata_save(char* str)
 }
 
 /**********************************************************/
-bool no_date(Int2 format, const TSeqdescList& descrs)
+bool no_date(Parser::EFormat format, const TSeqdescList& descrs)
 {
     bool no_create = true;
     bool no_update = true;
@@ -190,7 +190,7 @@ bool no_date(Int2 format, const TSeqdescList& descrs)
             break;
     }
 
-    if(format == ParFlat_GENBANK)
+    if(format == Parser::EFormat::GenBank)
         return(no_update);
 
     return(no_create || no_update);
@@ -249,7 +249,7 @@ bool no_reference(const objects::CBioseq& bioseq)
  *      Returns TRUE if CDS is in the entry.
  *
  **********************************************************/
-bool check_cds(DataBlkPtr entry, Int2 format)
+bool check_cds(DataBlkPtr entry, Parser::EFormat format)
 {
     DataBlkPtr temp;
     DataBlkPtr dbp;
@@ -258,12 +258,12 @@ bool check_cds(DataBlkPtr entry, Int2 format)
     Char       ch;
     Int2       type;
 
-    if(format == ParFlat_EMBL)
+    if(format == Parser::EFormat::EMBL)
     {
         type = ParFlat_FH;
         str = "\nFT   CDS  ";
     }
-    else if(format == ParFlat_GENBANK)
+    else if(format == Parser::EFormat::GenBank)
     {
         type = ParFlat_FEATURES;
         str = "\n     CDS  ";
@@ -779,7 +779,7 @@ static int sGetPrefixLength(const CTempString& accession)
 
 
 /**********************************************************/
-void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Int4 source,
+void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source,
                   Int4 acctype, bool pricon, char* acc)
 {
     IndexblkPtr  ibp;
@@ -844,7 +844,7 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         }
 
         CRef<CSeq_id> id(new CSeq_id(idChoice, accessionString));
-        if(pp->source != ParFlat_EMBL && pp->source != ParFlat_NCBI)
+        if(pp->source != Parser::ESource::EMBL && pp->source != Parser::ESource::NCBI)
         {
 
             CRef<CSeq_id> pId(new CSeq_id(accessionString));
@@ -1583,7 +1583,7 @@ static void fta_validate_assembly(char* name)
 }
 
 /**********************************************************/
-static bool fta_validate_bioproject(char* name, Int2 source)
+static bool fta_validate_bioproject(char* name, Parser::ESource source)
 {
     char* p;
     bool bad_format = false;
@@ -1611,10 +1611,10 @@ static bool fta_validate_bioproject(char* name, Int2 source)
         return false;
     }
 
-    if((source == ParFlat_NCBI && name[3] != 'N') ||
-       (source == ParFlat_DDBJ && name[3] != 'D' &&
+    if((source == Parser::ESource::NCBI && name[3] != 'N') ||
+       (source == Parser::ESource::DDBJ && name[3] != 'D' &&
         (name[3] != 'N' || name[4] != 'A')) ||
-       (source == ParFlat_EMBL && name[3] != 'E' &&
+       (source == Parser::ESource::EMBL && name[3] != 'E' &&
         (name[3] != 'N' || name[4] != 'A')))
         ErrPostEx(SEV_WARNING, ERR_FORMAT_WrongBioProjectPrefix,
                   "BioProject accession number does not agree with this record's database of origin: \"%s\".",
@@ -1624,7 +1624,7 @@ static bool fta_validate_bioproject(char* name, Int2 source)
 }
 
 /**********************************************************/
-static ValNodePtr fta_tokenize_project(char* str, Int2 source, bool newstyle)
+static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool newstyle)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
@@ -1716,8 +1716,8 @@ static ValNodePtr fta_tokenize_project(char* str, Int2 source, bool newstyle)
 
 /**********************************************************/
 void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
-                                 Int2 format, unsigned char* drop,
-                                 Int2 source)
+                                 Parser::EFormat format, unsigned char* drop,
+                                 Parser::ESource source)
 {
     ValNodePtr    vnp;
     ValNodePtr    tvnp;
@@ -1733,7 +1733,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
         return;
 
     bool newstyle = false;
-    if(format == ParFlat_GENBANK)
+    if(format == Parser::EFormat::GenBank)
     {
         i = ParFlat_COL_DATA;
         name = "GenomeProject:";
@@ -1754,7 +1754,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
 
     if(StringNCmp(str, name, len) != 0)
     {
-        if(format == ParFlat_GENBANK)
+        if(format == Parser::EFormat::GenBank)
         {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc,
                       "PROJECT line is missing \"GenomeProject:\" tag. Entry dropped.",
@@ -1766,7 +1766,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
         newstyle = true;
         len = 0;
     }
-    else if(format == ParFlat_EMBL && str[len] == 'P')
+    else if(format == Parser::EFormat::EMBL && str[len] == 'P')
         newstyle = true;
 
     vnp = fta_tokenize_project(str + len, source, newstyle);
@@ -1910,7 +1910,7 @@ bool fta_if_valid_biosample(const Char* id, bool dblink)
 }
 
 /**********************************************************/
-static ValNodePtr fta_tokenize_dblink(char* str, Int2 source)
+static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
@@ -2117,7 +2117,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Int2 source)
 
 /**********************************************************/
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
-                                size_t len, Int2 source, unsigned char* drop,
+                                size_t len, Parser::ESource source, unsigned char* drop,
                                 CRef<objects::CUser_object>& dbuop)
 {
     ValNodePtr    vnp;
@@ -2319,7 +2319,7 @@ Uint1 fta_check_con_for_wgs(objects::CBioseq& bioseq)
 /**********************************************************/
 static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, IndexblkPtr ibp,
                            char* location, char* name, SeqLocIdsPtr slip,
-                           bool iscon, Int2 source)
+                           bool iscon, Parser::ESource source)
 {
     Uint1        accowner;
     Int4         i;
@@ -2421,7 +2421,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
         }
     }
 
-    else if(source == ParFlat_FLYBASE)
+    else if(source == Parser::ESource::Flybase)
     {
         std::string acc(accession);
         id.SetGeneral().SetDb("FlyBase");
@@ -2454,70 +2454,70 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
 
     if (id.IsGenbank())
     {
-        if(source != ParFlat_NCBI && source != ParFlat_ALL &&
-           source != ParFlat_LANL && slip->badslp == nullptr)
+        if(source != Parser::ESource::NCBI && source != Parser::ESource::All &&
+           source != Parser::ESource::LANL && slip->badslp == nullptr)
             slip->badslp = &loc;
         slip->genbank = 1;
     }
     else if(id.IsEmbl())
     {
-        if(source != ParFlat_EMBL && source != ParFlat_ALL &&
+        if(source != Parser::ESource::EMBL && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->embl = 1;
     }
     else if(id.IsPir())
     {
-        if(source != ParFlat_PIR && source != ParFlat_ALL &&
+        if(source != Parser::ESource::PIR && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->pir = 1;
     }
     else if(id.IsSwissprot())
     {
-        if(source != ParFlat_SPROT && source != ParFlat_ALL &&
+        if(source != Parser::ESource::SPROT && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->swissprot = 1;
     }
     else if(id.IsOther())
     {
-        if(source != ParFlat_REFSEQ && source != ParFlat_ALL &&
+        if(source != Parser::ESource::Refseq && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->other = 1;
     }
     else if(id.IsDdbj())
     {
-        if(source != ParFlat_DDBJ && source != ParFlat_ALL &&
+        if(source != Parser::ESource::DDBJ && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->ddbj = 1;
     }
     else if(id.IsPrf())
     {
-        if(source != ParFlat_PRF && source != ParFlat_ALL &&
+        if(source != Parser::ESource::PRF && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->prf = 1;
     }
     else if(id.IsTpg())
     {
-        if(source != ParFlat_NCBI && source != ParFlat_ALL &&
-           source != ParFlat_LANL && slip->badslp == nullptr)
+        if(source != Parser::ESource::NCBI && source != Parser::ESource::All &&
+           source != Parser::ESource::LANL && slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->tpg = 1;
     }
     else if (id.IsTpe())
     {
-        if(source != ParFlat_EMBL && source != ParFlat_ALL &&
+        if(source != Parser::ESource::EMBL && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->tpe = 1;
     }
     else if (id.IsTpd())
     {
-        if(source != ParFlat_DDBJ && source != ParFlat_ALL &&
+        if(source != Parser::ESource::DDBJ && source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->tpd = 1;
@@ -2527,7 +2527,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
 /**********************************************************/
 static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp,
                                   char* location, char* name,
-                                  SeqLocIdsPtr slip, bool iscon, Int2 source)
+                                  SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     NON_CONST_ITERATE(TSeqLocList, loc, locs)
     {

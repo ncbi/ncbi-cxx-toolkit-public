@@ -75,10 +75,10 @@
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seq/MolInfo.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/genbank.h>
-#include <objtools/flatfile/embl.h>
-#include <objtools/flatfile/sprot.h>
+#include "index.h"
+#include "genbank.h"
+#include "embl.h"
+#include "sprot.h"
 
 #include <objtools/flatfile/flatdefn.h>
 
@@ -527,7 +527,7 @@ void GetGenBankSubBlock(DataBlkPtr entry, size_t bases)
 *
 **********************************************************/
 char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
-                        short format, char* eptr)
+                    Parser::EFormat format, char* eptr)
 {
     char* offset;
     Int2    curkw;
@@ -552,7 +552,7 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
         ++len;
 
         nextkw = SrchKeyword(ptr,
-                                (format == ParFlat_SPROT) ? spkwl : emblkwl);
+                                (format == Parser::EFormat::SPROT) ? spkwl : emblkwl);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;
@@ -675,7 +675,7 @@ static bool GetSubNodeType(const char *subkw, char** retbptr,
 *                                              6-15-93
 *
 **********************************************************/
-static void GetEmblRefType(size_t bases, Int2 source, DataBlkPtr dbp)
+static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
 {
     Char    str[100];
     char* ptr;
@@ -688,7 +688,7 @@ static void GetEmblRefType(size_t bases, Int2 source, DataBlkPtr dbp)
 
     if (!GetSubNodeType("RP", &bptr, eptr))
     {
-        if (source == ParFlat_EMBL)
+        if (source == Parser::ESource::EMBL)
             dbp->type = ParFlat_REF_NO_TARGET;
         else
             dbp->type = ParFlat_REF_END;
@@ -704,7 +704,7 @@ static void GetEmblRefType(size_t bases, Int2 source, DataBlkPtr dbp)
         return;
     }
 
-    if (source == ParFlat_EMBL)
+    if (source == Parser::ESource::EMBL)
     {
         ptr = SrchTheStr(bptr, eptr, " 0-0");
         if (ptr != NULL)
@@ -715,7 +715,7 @@ static void GetEmblRefType(size_t bases, Int2 source, DataBlkPtr dbp)
     }
 
     dbp->type = ParFlat_REF_BTW;
-    if (source == ParFlat_NCBI)
+    if (source == Parser::ESource::NCBI)
     {
         for (sptr = bptr + 1; sptr < eptr && *sptr != 'R';)
             sptr++;
@@ -738,7 +738,7 @@ static void GetEmblRefType(size_t bases, Int2 source, DataBlkPtr dbp)
 *                                              5-27-93
 *
 **********************************************************/
-void GetEmblSubBlock(size_t bases, Int2 source, DataBlkPtr entry)
+void GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry)
 {
     DataBlkPtr  temp;
     DataBlkPtr  curdbp;
@@ -1082,7 +1082,7 @@ CRef<objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 
     /* get the SeqId
     */
-    if (pp->source == ParFlat_EMBL && ibp->is_tpa)
+    if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = objects::CSeq_id::e_Tpe;
     else
         seqtype = ValidSeqType(acc, pp->seqtype, is_nuc, ibp->is_tpa);
@@ -1293,7 +1293,7 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
 *      Each accession separated by ";" or blanks.
 *
 **********************************************************/
-void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessionList& accessions)
+void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions)
 {
     TokenBlkPtr tbp;
     Int4        pri_acc;
@@ -1325,7 +1325,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
         i = StringLen(acc);
     }
 
-    if (source == ParFlat_EMBL)
+    if (source == Parser::ESource::EMBL)
         fta_fix_secondaries(ibp->secaccs);
 
     unusual_wgs = false;
@@ -1394,10 +1394,10 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
         {
             if (pri_owner == objects::CSeq_id::e_Embl && sec_owner == objects::CSeq_id::e_Embl &&
                 (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) &&
-                source == ParFlat_EMBL)
+                source == Parser::ESource::EMBL)
                 continue;
-            if (source != ParFlat_EMBL && source != ParFlat_DDBJ &&
-                source != ParFlat_REFSEQ)
+            if (source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ &&
+                source != Parser::ESource::Refseq)
             {
                 ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary,
                             "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.",
@@ -1419,7 +1419,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
                                 "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
                     ibp->drop = 1;
                 }
-                else if (!is_cp || source != ParFlat_NCBI)
+                else if (!is_cp || source != Parser::ESource::NCBI)
                 {
                     ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary,
                                 "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA project is being replaced (either by another project or by finished sequence). This is being allowed via the use of a special parser flag.");
@@ -1453,7 +1453,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
                 unusual_wgs = true;
                 ibp->drop = 1;
             }
-            else if (!is_cp || source != ParFlat_NCBI)
+            else if (!is_cp || source != Parser::ESource::NCBI)
             {
                 if (!unusual_wgs)
                 {
@@ -1486,7 +1486,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessio
             if (sec_acc == 0 || sec_acc == 4)            /* like AAAA10000000 */
                 accessions.push_back(p);
         }
-        else if (allow_uwsec || (!unusual_wgs_msg && (source == ParFlat_DDBJ || source == ParFlat_EMBL)))
+        else if (allow_uwsec || (!unusual_wgs_msg && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL)))
         {
             accessions.push_back(p);
         }
@@ -1731,7 +1731,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
     if (ibp->is_contig || ibp->is_mga)
         return true;
 
-    if (pp->format == ParFlat_XML)
+    if (pp->format == Parser::EFormat::XML)
     {
         str = XMLFindTagValue(entry->offset, ibp->xip, INSDSEQ_SEQUENCE);
         seqptr = str;
@@ -1753,15 +1753,15 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
 
     endptr = seqptr + len;
 
-    if (pp->format == ParFlat_GENBANK || pp->format == ParFlat_EMBL ||
-        pp->format == ParFlat_XML)
+    if (pp->format == Parser::EFormat::GenBank || pp->format == Parser::EFormat::EMBL ||
+        pp->format == Parser::EFormat::XML)
         replacechar = 'N';
     else
         replacechar = 'X';
 
     /* the sequence data will be located in next line of nodetype
     */
-    if (pp->format == ParFlat_XML)
+    if (pp->format == Parser::EFormat::XML)
     {
         while (*seqptr == ' ' || *seqptr == '\n' || *seqptr == '\t')
             seqptr++;
@@ -1778,7 +1778,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
     size_t seqlen = 0;
     for (numns = 0; seqptr < endptr;)
     {
-        if (pp->format == ParFlat_PIR)
+        if (pp->format == Parser::EFormat::PIR)
             len = ScanSequence(false, &seqptr, buf, seqconv, replacechar, NULL);
         else
             len = ScanSequence(true, &seqptr, buf, seqconv, replacechar, &numns);
@@ -1795,7 +1795,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
             seqptr++;
     }
 
-    if (pp->format == ParFlat_PRF)
+    if (pp->format == Parser::EFormat::PRF)
         bioseq.SetInst().SetLength(static_cast<TSeqPos>(seqlen));
     else if (seqlen != bioseq.GetLength())
     {
@@ -1811,7 +1811,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
     {
         if (bioseq.GetLength() < 10)
         {
-            if (pp->source == ParFlat_DDBJ || pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL)
             {
                 if (ibp->is_pat == false)
                     ErrPostEx(SEV_WARNING, ERR_SEQUENCE_TooShort,
@@ -2726,7 +2726,7 @@ bool IsSegBioseq(const objects::CSeq_id* id)
 **********************************************************/
 char* check_div(bool pat_acc, bool pat_ref, bool est_kwd,
                     bool sts_kwd, bool gss_kwd, bool if_cds,
-                    char* div, unsigned char* tech, size_t bases, Int2 source,
+                    char* div, unsigned char* tech, size_t bases, Parser::ESource source,
                     bool& drop)
 {
     if (div == NULL)
@@ -2755,7 +2755,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd,
             ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasGSSKeywords,
                         "GSS keywords present on patent sequence.");
         }
-        if (if_cds && source != ParFlat_EMBL)
+        if (if_cds && source != Parser::ESource::EMBL)
         {
             ErrPostEx(SEV_INFO, ERR_DIVISION_PATHasCDSFeature,
                         "CDS features present on patent sequence.");
@@ -2988,7 +2988,7 @@ CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid)
 
 /**********************************************************/
 void AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata,
-                    Int2 source)
+                    Parser::ESource source)
 {
     DataBlkPtr dbp;
     char*    offset;
@@ -3002,7 +3002,7 @@ void AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 col
     if (sid.Empty())
         return;
 
-    if (!(*offset == 'g' && (source == ParFlat_DDBJ || source == ParFlat_EMBL)))
+    if (!(*offset == 'g' && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL)))
         bioseq.SetId().push_back(sid);
 }
 
@@ -3501,8 +3501,8 @@ static bool descr_cmp(const CRef<objects::CSeqdesc> &desc1,
         const objects::CUser_object &uop2 = desc2->GetUser();
         const char *str1;
         const char *str2;
-        if(&uop1 && uop1.IsSetType() && uop1.GetType().IsStr() &&
-           &uop2 && uop2.IsSetType() && uop2.GetType().IsStr())
+        if(uop1.IsSetType() && uop1.GetType().IsStr() &&
+           uop2.IsSetType() && uop2.GetType().IsStr())
         {
             str1 = uop1.GetType().GetStr().c_str();
             str2 = uop2.GetType().GetStr().c_str();

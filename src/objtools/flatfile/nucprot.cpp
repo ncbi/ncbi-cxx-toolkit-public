@@ -61,6 +61,7 @@
 
 #include "ftacpp.hpp"
 
+#include <objmgr/scope.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
@@ -80,9 +81,9 @@
 #include <objects/seq/GIBB_method.hpp>
 
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
 
 #include "ftaerr.hpp"
@@ -101,6 +102,7 @@
 #define THIS_FILE "nucprot.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 typedef list<CRef<objects::CCode_break> > TCodeBreakList;
 
@@ -362,8 +364,8 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
     if (text_id == nullptr)
         return;
 
-    if (pp->accver == false || (pp->source != ParFlat_EMBL &&
-        pp->source != ParFlat_NCBI && pp->source != ParFlat_DDBJ)) {
+    if (pp->accver == false || (pp->source != Parser::ESource::EMBL &&
+        pp->source != Parser::ESource::NCBI && pp->source != Parser::ESource::DDBJ)) {
         ++(*num);
         sprintf(str, "%d", (int)*num);
 
@@ -390,7 +392,7 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
         return;
     }
 
-    if (pp->mode == FTA_HTGSCON_MODE) {
+    if (pp->mode == Parser::EMode::HTGSCON) {
         MemFree(protacc);
         ++(*num);
         sprintf(str, "%d", (int)*num);
@@ -444,12 +446,12 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
 
     r = NULL;
     ncho = cho;
-    if (pp->source == ParFlat_EMBL && cho != objects::CSeq_id::e_Embl && cho != objects::CSeq_id::e_Tpe)
+    if (pp->source == Parser::ESource::EMBL && cho != objects::CSeq_id::e_Embl && cho != objects::CSeq_id::e_Tpe)
         r = "EMBL";
-    else if (pp->source == ParFlat_DDBJ && cho != objects::CSeq_id::e_Ddbj &&
+    else if (pp->source == Parser::ESource::DDBJ && cho != objects::CSeq_id::e_Ddbj &&
              cho != objects::CSeq_id::e_Tpd)
              r = "DDBJ";
-    else if (pp->source == ParFlat_NCBI && cho != objects::CSeq_id::e_Genbank &&
+    else if (pp->source == Parser::ESource::NCBI && cho != objects::CSeq_id::e_Genbank &&
              cho != objects::CSeq_id::e_Tpg)
              r = "NCBI";
     else {
@@ -489,7 +491,7 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
 
     ids.push_back(seq_id);
 
-    if ((pp->source != ParFlat_DDBJ && pp->source != ParFlat_EMBL) ||
+    if ((pp->source != Parser::ESource::DDBJ && pp->source != Parser::ESource::EMBL) ||
         pp->entrylist[pp->curindx]->is_wgs == false ||
         StringLen(ibp->acnum) == 8) {
         return;
@@ -878,7 +880,7 @@ static void GetProtRefDescr(objects::CSeq_feat& feat, Uint1 method, const object
 *      Returned SeqId must be freed by caller.
 *
 **********************************************************/
-static void QualsToSeqID(objects::CSeq_feat& feat, Int2 source, TSeqIdList& ids)
+static void QualsToSeqID(objects::CSeq_feat& feat, Parser::ESource source, TSeqIdList& ids)
 {
     char*   p;
 
@@ -902,7 +904,7 @@ static void QualsToSeqID(objects::CSeq_feat& feat, Int2 source, TSeqIdList& ids)
                       (*qual)->GetVal().c_str());
         }
         else {
-            if (p[4] == 'g' && (source == ParFlat_DDBJ || source == ParFlat_EMBL))
+            if (p[4] == 'g' && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL))
                 seq_id.Reset();
             else
                 ids.push_back(seq_id);
@@ -984,7 +986,7 @@ static void ValidateQualSeqId(TSeqIdList& ids)
 }
 
 /**********************************************************/
-static void DbxrefToSeqID(objects::CSeq_feat& feat, Int2 source, TSeqIdList& ids)
+static void DbxrefToSeqID(objects::CSeq_feat& feat, Parser::ESource source, TSeqIdList& ids)
 {
     if (!feat.IsSetDbxref())
         return;
@@ -1001,7 +1003,7 @@ static void DbxrefToSeqID(objects::CSeq_feat& feat, Int2 source, TSeqIdList& ids
             const Char* tag_str = (*xref)->GetTag().GetStr().c_str();
             switch (tag_str[0]) {
             case 'g':
-                if (source != ParFlat_DDBJ && source != ParFlat_EMBL) {
+                if (source != Parser::ESource::DDBJ && source != Parser::ESource::EMBL) {
                     id.Reset(new objects::CSeq_id);
                     id->SetGi(GI_FROM(long, strtol(tag_str + 1, NULL, 10)));
                 }
@@ -1055,7 +1057,7 @@ static void DbxrefToSeqID(objects::CSeq_feat& feat, Int2 source, TSeqIdList& ids
 *
 **********************************************************/
 static void ProcessForDbxref(objects::CBioseq& bioseq, objects::CSeq_feat& feat,
-                             Int2 source)
+                             Parser::ESource source)
 {
     TSeqIdList ids;
     QualsToSeqID(feat, source, ids);
@@ -2115,7 +2117,7 @@ static void fta_concat_except_text(objects::CSeq_feat& feat, const Char* text)
 }
 
 /**********************************************************/
-static bool fta_check_exception(objects::CSeq_feat& feat, Int2 source)
+static bool fta_check_exception(objects::CSeq_feat& feat, Parser::ESource source)
 {
     const char **b;
     ErrSev     sev;
@@ -2151,7 +2153,7 @@ static bool fta_check_exception(objects::CSeq_feat& feat, Int2 source)
             continue;
         }
 
-        if (source == ParFlat_REFSEQ)
+        if (source == Parser::ESource::Refseq)
             b = RSExceptionQualVals;
         else
             b = GBExceptionQualVals;
@@ -2163,7 +2165,7 @@ static bool fta_check_exception(objects::CSeq_feat& feat, Int2 source)
         }
 
         if (*b == NULL) {
-            sev = (source == ParFlat_REFSEQ) ? SEV_ERROR : SEV_REJECT;
+            sev = (source == Parser::ESource::Refseq) ? SEV_ERROR : SEV_REJECT;
 
             p = location_to_string(feat.GetLocation());
             ErrPostEx(sev, ERR_QUALIFIER_InvalidException,
@@ -2171,7 +2173,7 @@ static bool fta_check_exception(objects::CSeq_feat& feat, Int2 source)
                       cur_val, (p == NULL) ? "Unknown" : p);
             if (p != NULL)
                 MemFree(p);
-            if (source != ParFlat_REFSEQ) {
+            if (source != Parser::ESource::Refseq) {
                 stopped = true;
                 break;
             }
@@ -2208,7 +2210,7 @@ static bool fta_check_exception(objects::CSeq_feat& feat, Int2 source)
 *   sfp->data.choice = SEQFEAT_CDREGION
 *
 **********************************************************/
-static Int2 CkCdRegion(ParserPtr pp, objects::CSeq_feat& feat, objects::CBioseq& bioseq,
+static Int2 CkCdRegion(ParserPtr pp, CScope& scope, objects::CSeq_feat& feat, objects::CBioseq& bioseq,
                        int* num, GeneRefFeats& gene_refs)
 {
     ProtBlkPtr     pbp;
@@ -2345,17 +2347,17 @@ static Int2 CkCdRegion(ParserPtr pp, objects::CSeq_feat& feat, objects::CBioseq&
     qval = GetTheQualValue(feat.SetQual(), "codon_start");
 
     if (qval == NULL) {
-        if (pp->source == ParFlat_EMBL)
+        if (pp->source == Parser::ESource::EMBL)
             frame = 1;
         else {
             frame = 0;
             objects::CCdregion::EFrame loc_frame = objects::CCdregion::eFrame_not_set;
-            if (objects::CCleanup::SetFrameFromLoc(loc_frame, feat.GetLocation(), GetScope()))
+            if (objects::CCleanup::SetFrameFromLoc(loc_frame, feat.GetLocation(), scope))
                 frame = loc_frame;
 
             if (frame == 0 && is_pseudo == false) {
                 p = location_to_string(feat.GetLocation());
-                sev = (pp->source == ParFlat_DDBJ) ? SEV_INFO : SEV_ERROR;
+                sev = (pp->source == Parser::ESource::DDBJ) ? SEV_INFO : SEV_ERROR;
                 ErrPostEx(sev, ERR_CDREGION_MissingCodonStart,
                           "CDS feature \"%s\" is lacking /codon_start qualifier; assuming frame = 1.",
                           (p == NULL) ? "" : p);
@@ -2429,7 +2431,7 @@ static Int2 CkCdRegion(ParserPtr pp, objects::CSeq_feat& feat, objects::CBioseq&
             return(-1);
         }
 
-        GetScope().AddBioseq(*new_bioseq);
+        scope.AddBioseq(*new_bioseq);
 
         /* remove qualifiers which were processed before
         */
@@ -2502,7 +2504,7 @@ static Int2 CkCdRegion(ParserPtr pp, objects::CSeq_feat& feat, objects::CBioseq&
 *      Return a link list of SeqFeatPtr of type CDREGION.
 *
 **********************************************************/
-static void SrchCdRegion(ParserPtr pp, objects::CBioseq& bioseq, objects::CSeq_annot& annot,
+static void SrchCdRegion(ParserPtr pp, CScope& scope, objects::CBioseq& bioseq, objects::CSeq_annot& annot,
                          GeneRefFeats& gene_refs)
 {
     char*    p;
@@ -2541,7 +2543,7 @@ static void SrchCdRegion(ParserPtr pp, objects::CBioseq& bioseq, objects::CSeq_a
             break;
         }
 
-        i = CkCdRegion(pp, *(*feat), bioseq, &num, gene_refs);
+        i = CkCdRegion(pp, scope, *(*feat), bioseq, &num, gene_refs);
 
         if (i == -2) {
             feat = annot.SetData().SetFtable().erase(feat);
@@ -2567,7 +2569,7 @@ static void SrchCdRegion(ParserPtr pp, objects::CBioseq& bioseq, objects::CSeq_a
 }
 
 /**********************************************************/
-static void FindCd(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_refs)
+static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRefFeats& gene_refs)
 {
     ProtBlkPtr    pbp = pp->pbp;
 
@@ -2600,7 +2602,7 @@ static void FindCd(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_ref
                         continue;
                     }
 
-                    SrchCdRegion(pp, *bioseq, *(*annot), gene_refs);
+                    SrchCdRegion(pp, scope, *bioseq, *(*annot), gene_refs);
                     if (!(*annot)->GetData().GetFtable().empty()) {
                         ++annot;
                         continue;
@@ -2754,7 +2756,7 @@ void ProcNucProt(ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs)
         pbp->orig_gcode = gcode;
     }
 
-    FindCd(seq_entries, pp, gene_refs);
+    FindCd(seq_entries, GetScope(), pp, gene_refs);
 
     if (pp->entrylist[pp->curindx]->drop == 1) {
         ProtBlkFree(pbp);

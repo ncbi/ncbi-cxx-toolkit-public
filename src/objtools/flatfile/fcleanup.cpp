@@ -46,9 +46,9 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 
-#include <objtools/flatfile/fta_parser.h>
+#include <objtools/flatfile/flatfile_parse_info.hpp>
 
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "utilfun.h"
 #include "loadfeat.h"

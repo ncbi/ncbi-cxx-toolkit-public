@@ -61,12 +61,12 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Pubdesc.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/sprot.h>
+#include "index.h"
+#include "sprot.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
-#include <objtools/flatfile/ftamain.h>
+#include "ftanet.h"
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -619,7 +619,7 @@ static CRef<objects::CDbtag> MakeStrDbtag(char* dbname, char* str)
     *   a dd-mmm-yyyy format.
     *
     **********************************************************/
-static CRef<objects::CDate> MakeDatePtr(char* str, Int2 source)
+static CRef<objects::CDate> MakeDatePtr(char* str, Parser::ESource source)
 {
     static Char msg[11];
 
@@ -735,7 +735,7 @@ static void MakeChainPDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol,
  *
  **********************************************************/
 static void MakePDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol, char* rel, char* chain,
-                         unsigned char* drop, Int2 source)
+                         unsigned char* drop, Parser::ESource source)
 {
     if (mol == NULL)
         return;
@@ -2008,7 +2008,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
  *
  **********************************************************/
 static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned char* drop,
-                            Int2 source)
+                            Parser::ESource source)
 {
     ValNodePtr   embl_vnp;
     ValNodePtr   acc_list = NULL;
@@ -2891,7 +2891,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
 
     GetSPDescrComment(entry, descr.Set(), ibp->acnum, spb->GetClass());
 
-    if (spb.NotEmpty() && pp->accver && pp->histacc && pp->source == ParFlat_SPROT)
+    if (spb.NotEmpty() && pp->accver && pp->histacc && pp->source == Parser::ESource::SPROT)
     {
         objects::CSeq_hist_rec::TIds rep_ids;
 

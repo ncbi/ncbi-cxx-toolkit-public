@@ -48,10 +48,10 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
+#include "ftanet.h"
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
@@ -2009,7 +2009,7 @@ static void CheckQualsInSourceFeat(objects::CBioSource& bio, TQualVector& quals,
 }
 
 /**********************************************************/
-static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Int2 source)
+static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parser::ESource source)
 {
     const char **b;
     const char *q;
@@ -2035,26 +2035,26 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Int2 
         return tag;
     }
 
-    if(source == ParFlat_NCBI)
+    if(source == Parser::ESource::NCBI)
         q = "NCBI";
-    else if(source == ParFlat_EMBL)
+    else if(source == Parser::ESource::EMBL)
         q = "EMBL";
-    else if(source == ParFlat_DDBJ)
+    else if(source == Parser::ESource::DDBJ)
         q = "DDBJ";
-    else if(source == ParFlat_SPROT)
+    else if(source == Parser::ESource::SPROT)
         q = "SwissProt";
-    else if(source == ParFlat_PIR)
+    else if(source == Parser::ESource::PIR)
         q = "PIR";
-    else if(source == ParFlat_LANL)
+    else if(source == Parser::ESource::LANL)
         q = "LANL";
-    else if(source == ParFlat_REFSEQ)
+    else if(source == Parser::ESource::Refseq)
         q = "RefSeq";
     else
         q = "Unknown";
 
-    if(source != ParFlat_NCBI && source != ParFlat_DDBJ &&
-       source != ParFlat_EMBL && source != ParFlat_LANL &&
-       source != ParFlat_REFSEQ)
+    if(source != Parser::ESource::NCBI && source != Parser::ESource::DDBJ &&
+       source != Parser::ESource::EMBL && source != Parser::ESource::LANL &&
+       source != Parser::ESource::Refseq)
     {
         *p = ':';
         ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidDbXref,
@@ -2095,20 +2095,20 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Int2 
             break;
     }
 
-    if(*b == NULL && (source == ParFlat_DDBJ || source == ParFlat_EMBL))
+    if(*b == NULL && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL))
     {
         for(b = DESourceDbxrefTag; *b != NULL; b++)
             if (StringICmp(*b, &val_buf[0]) == 0)
                 break;
     }
-    if(*b == NULL && source == ParFlat_EMBL)
+    if(*b == NULL && source == Parser::ESource::EMBL)
     {
         for(b = ESourceDbxrefTag; *b != NULL; b++)
             if (StringICmp(*b, &val_buf[0]) == 0)
                 break;
     }
-    if(*b == NULL && (source == ParFlat_NCBI || source == ParFlat_LANL ||
-                      source == ParFlat_REFSEQ))
+    if(*b == NULL && (source == Parser::ESource::NCBI || source == Parser::ESource::LANL ||
+                      source == Parser::ESource::Refseq))
     {
         for (b = NLRSourceDbxrefTag; *b != NULL; b++)
         {
@@ -2142,7 +2142,7 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Int2 
 }
 
 /**********************************************************/
-static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Int2 source, IndexblkPtr ibp, Uint1 taxserver)
+static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, IndexblkPtr ibp, Uint1 taxserver)
 {
     char*      div;
     char*      tco;
@@ -2410,7 +2410,7 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const objects::CBiose
 }
 
 /**********************************************************/
-static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Int2 source, bool is_pat)
+static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Parser::ESource source, bool is_pat)
 {
     const Char* p;
     ErrSev  sev;
@@ -2427,7 +2427,7 @@ static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Int2 source, bool is_pat)
 
         if (p == NULL || *p == '\0')
         {
-            if ((source == ParFlat_DDBJ || source == ParFlat_EMBL) && is_pat)
+            if ((source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL) && is_pat)
                 sev = SEV_WARNING;
             else
                 sev = SEV_REJECT;
@@ -2591,7 +2591,7 @@ static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, char** moltype)
 }
 
 /**********************************************************/
-static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Int2 source)
+static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource source)
 {
     const char **b;
 
@@ -2656,7 +2656,7 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Int2 source)
     }
     else if(StringICmp(ibp->division, "ENV") == 0)
     {
-        if(source == ParFlat_EMBL)
+        if(source == Parser::ESource::EMBL)
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingEnvSampQual,
                       "This ENV division record has source features that lack the /environmental_sample qualifier. It will not be placed in the ENV division until the qualifier is added.");
         else
@@ -3138,7 +3138,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
+static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
 {
     const char *Mmm[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                          "Aug", "Sep", "Oct", "Nov", "Dec", NULL};
@@ -3219,7 +3219,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
                     {
                         p = val;
                         p[3] = '\0';
-                        if(source == ParFlat_DDBJ)
+                        if(source == Parser::ESource::DDBJ)
                         {
                             if(p[0] >= 'a' && p[0] <= 'z')
                                 p[0] &= ~040;
@@ -3270,7 +3270,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Int2 source)
                                 p++;
                             day = atoi(p);
                             p = val + 3;
-                            if(source == ParFlat_DDBJ)
+                            if(source == Parser::ESource::DDBJ)
                             {
                                 if(p[0] >= 'a' && p[0] <= 'z')
                                     p[0] &= ~040;
@@ -3677,7 +3677,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
         return;
     }
 
-    if(pp->source == ParFlat_EMBL)
+    if(pp->source == Parser::ESource::EMBL)
         need_focus = CheckNeedSYNFocus(sfbp);
     else
         need_focus = true;
@@ -3686,7 +3686,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
     i = CheckTransgenicSourceFeats(sfbp);
     if(i == 5)
     {
-        if(pp->source == ParFlat_DDBJ || pp->source == ParFlat_EMBL)
+        if(pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL)
             sev = SEV_WARNING;
         else
             sev = SEV_ERROR;

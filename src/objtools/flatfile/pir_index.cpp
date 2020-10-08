@@ -39,8 +39,8 @@
 #include <ncbi_pch.hpp>
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/pir_index.h>
+#include "index.h"
+#include "pir_index.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"

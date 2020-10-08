@@ -37,9 +37,9 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
 
 #include "ftaerr.hpp"
@@ -3338,7 +3338,7 @@ static void fta_fix_labels(objects::CBioseq& bioseq, const std::set<std::string>
 /**********************************************************/
 void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
 {
-    if(pp->source == ParFlat_FLYBASE)
+    if(pp->source == Parser::ESource::Flybase)
     {
         std::set<std::string> genes;
         ITERATE(TEntryList, entry, seq_entries)

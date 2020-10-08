@@ -38,7 +38,7 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 #include "ind.hpp"
 #include "utilfun.h"
 
@@ -121,7 +121,7 @@ static const char *ref_tag_embl[] = {
 };
 
 /**********************************************************/
-void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank)
+void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat bank)
 {
     DataBlkPtr subdbp;
     const char **ref_tag;
@@ -132,9 +132,9 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, int bank)
     size_t     i;
     int        j;
 
-    if(bank == ParFlat_GENBANK)
+    if(bank == Parser::EFormat::GenBank)
         ref_tag = ref_tag_gb;
-    else if(bank == ParFlat_EMBL)
+    else if(bank == Parser::EFormat::EMBL)
         ref_tag = ref_tag_embl;
     else
         return;

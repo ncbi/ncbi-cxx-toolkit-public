@@ -37,41 +37,7 @@
 #ifndef _INDEX_
 #define _INDEX_
 
-#include <objtools/flatfile/fta_parser.h>
-
-/* flat file format & source
- */
-#define ParFlat_EMBL                1
-#define ParFlat_GENBANK             2
-#define ParFlat_PIR                 3
-#define ParFlat_SPROT               4
-#define ParFlat_NCBI                5
-#define ParFlat_LANL                6
-#define ParFlat_DDBJ                7
-#define ParFlat_FLYBASE             8
-#define ParFlat_REFSEQ              9
-#define ParFlat_PRF                 10
-#define ParFlat_XML                 11
-#define ParFlat_ALL                 12
-
-#define ParFlat_EMBL_AC             "AFVXYZ"    /* patent is "A"
-                                                   dbEST = "F" */
-#define ParFlat_LANL_AC             "JKLM"
-#define ParFlat_PIR_AC              NULL
-#define ParFlat_PRF_AC              NULL
-#define ParFlat_SPROT_AC            NULL
-#define ParFlat_DDBJ_AC             "CDE"
-#define ParFlat_NCBI_AC             "BGHIJKLMRSTUWN"    /* backbone = "S",
-                                                           patent = "I",
-                                                           dirsub = "U",
-                                                           dbSTS = "G" */
-                                                        /* dbEST = "T" and
-                                                           "HR" added 02/01/95
-                                                           BNW reserved
-                                                           for ESTs */
-                                                        /* "N" reserved
-                                                           for NCBI, ilegal
-                                                           for now */
+#include<objtools/flatfile/flatfile_parser.hpp>
 
 /* genbank format old style LOCUS line column position
  */

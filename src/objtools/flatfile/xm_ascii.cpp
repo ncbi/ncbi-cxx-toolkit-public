@@ -56,10 +56,10 @@
 #include <objects/seq/Pubdesc.hpp>
 
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
-#include <objtools/flatfile/ftanet.h>
-#include <objtools/flatfile/ftamain.h>
+#include "ftanet.h"
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
 
 #include "ftaerr.hpp"
@@ -89,7 +89,7 @@
 BEGIN_NCBI_SCOPE
 
 /**********************************************************/
-static void XMLCheckContigEverywhere(IndexblkPtr ibp, Int2 source)
+static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 {
     if(ibp == NULL)
         return;
@@ -119,7 +119,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Int2 source)
     }
     else if(ibp->is_contig && ibp->origin)
     {
-        if(source == ParFlat_EMBL || source == ParFlat_DDBJ)
+        if(source == Parser::ESource::EMBL || source == Parser::ESource::DDBJ)
         {
             ErrPostEx(SEV_INFO, ERR_FORMAT_ContigWithSequenceData,
                       "The <INSDSeq_contig> linetype and sequence data are both present. Ignoring sequence data.");
@@ -457,7 +457,7 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
             }
             if(tpa_kwd)
             {
-                if(ibp->is_tpa == false && pp->source != ParFlat_EMBL)
+                if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL)
                 {
                     ErrPostEx(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA,
                               "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
@@ -780,7 +780,7 @@ static CRef<objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
 
 /**********************************************************/
 static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bioseq,
-                              Int2 source)
+                              Parser::ESource source)
 {
     char*      organism = NULL;
     char*      taxonomy = NULL;
@@ -818,7 +818,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bi
 
     objects::COrg_ref& org_ref = bio_src->SetOrg();
 
-    if(source == ParFlat_EMBL)
+    if(source == Parser::ESource::EMBL)
     {
         q = StringChr(p, '(');
         if(q != NULL && q > p)
@@ -976,7 +976,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
             p++;
         if(p > str)
             fta_StringCpy(str, p);
-        if(pp->xml_comp && pp->source != ParFlat_EMBL)
+        if(pp->xml_comp && pp->source != Parser::ESource::EMBL)
         {
             p = StringRChr(str, '.');
             if(p == NULL || p[1] != '\0')
@@ -998,7 +998,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
         descr->SetTitle(title);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if(ibp->is_tpa == false && pp->source != ParFlat_EMBL &&
+        if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
            StringNCmp(title.c_str(), "TPA:", 4) == 0)
         {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA,
@@ -1095,7 +1095,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     CRef<objects::CEMBL_block> embl;
     CRef<objects::CGB_block> gbb;
 
-    if (pp->source == ParFlat_EMBL)
+    if (pp->source == Parser::ESource::EMBL)
         embl = XMLGetEMBLBlock(pp, entry->offset, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
     else
         gbb = XMLGetGBBlock(pp, entry->offset, *mol_info, bio_src);
@@ -1111,7 +1111,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    if(pp->source == ParFlat_EMBL)
+    if(pp->source == Parser::ESource::EMBL)
     {
         if (embl.Empty())
         {
@@ -1125,13 +1125,13 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
         return;
     }
 
-    if(pp->source == ParFlat_EMBL)
+    if(pp->source == Parser::ESource::EMBL)
     {
         if(StringNICmp(ibp->division, "CON", 3) == 0)
-            fta_add_hist(pp, bioseq, embl->SetExtra_acc(), ParFlat_EMBL,
+            fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL,
                          objects::CSeq_id::e_Embl, true, ibp->acnum);
         else
-            fta_add_hist(pp, bioseq, embl->SetExtra_acc(), ParFlat_EMBL,
+            fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL,
                          objects::CSeq_id::e_Embl, false, ibp->acnum);
 
         if (embl->GetExtra_acc().empty())
@@ -1140,14 +1140,14 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     else
     {
         if(StringNICmp(ibp->division, "CON", 3) == 0)
-            fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), ParFlat_DDBJ,
+            fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ,
                          objects::CSeq_id::e_Ddbj, true, ibp->acnum);
         else
-            fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), ParFlat_DDBJ,
+            fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ,
                          objects::CSeq_id::e_Ddbj, false, ibp->acnum);
     }
 
-    if(pp->source == ParFlat_EMBL)
+    if(pp->source == Parser::ESource::EMBL)
     {
         if (gbdiv != NULL)
         {
@@ -1308,7 +1308,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
 
     if (std_cre_date.NotEmpty())
     {
-        if(pp->xml_comp == false || pp->source == ParFlat_EMBL)
+        if(pp->xml_comp == false || pp->source == Parser::ESource::EMBL)
         {
             CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
             descr->SetCreate_date().SetStd(*std_cre_date);
@@ -1482,7 +1482,7 @@ bool XMLAscii(ParserPtr pp)
                 if(ibp->gaps != NULL)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                 else if(ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
-                        (ibp->is_pat && pp->source == ParFlat_DDBJ))
+                        (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                         SeqToDelta(*bioseq, ibp->htg);
             }
             else if(ibp->gaps != NULL)
@@ -1560,12 +1560,12 @@ bool XMLAscii(ParserPtr pp)
          */
         if(no_reference(*bioseq) && !pp->debug)
         {
-            if(pp->source == ParFlat_FLYBASE)
+            if(pp->source == Parser::ESource::Flybase)
             {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
                            "No references for entry from FlyBase. Continue anyway.");
             }
-            else if(pp->source == ParFlat_REFSEQ &&
+            else if(pp->source == Parser::ESource::Refseq &&
                     StringNCmp(ibp->acnum, "NW_", 3) == 0)
             {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,

@@ -37,8 +37,8 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/genbank.h>
+#include "index.h"
+#include "genbank.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -180,7 +180,7 @@ static Uint1 gb_err_field(char* str)
 
 /**********************************************************/
 static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
-                                Int2 source, bool ign_toks)
+                                Parser::ESource source, bool ign_toks)
 {
     bool gi;
     char* p;
@@ -246,7 +246,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
         for(*p++ = ch1; *p == ' ' || *p == '\t';)
             p++;
 
-    if(source == ParFlat_DDBJ)
+    if(source == Parser::ESource::DDBJ)
     {
         if(*p != '\0' && !ign_toks)
         {
@@ -392,7 +392,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
         return false;
     }
 
-    bool tpa_check = (pp->source == ParFlat_EMBL);
+    bool tpa_check = (pp->source == Parser::ESource::EMBL);
 
     ibnp = (IndBlkNextPtr) MemNew(sizeof(IndBlkNext));
     ibnp->next = NULL;
@@ -502,7 +502,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         line_ver[i] = '\0';
                         break;
                     case ParFlat_NCBI_GI:
-                        if(pp->source == ParFlat_DDBJ || pp->accver == false ||
+                        if(pp->source == Parser::ESource::DDBJ || pp->accver == false ||
                            line_nid != NULL)
                             break;
                         p = finfo->str + ParFlat_COL_DATA;
@@ -634,7 +634,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 // LCOV_EXCL_STOP
                         break;
                     case ParFlat_USER:
-                        if(pp->source != ParFlat_FLYBASE)
+                        if(pp->source != Parser::ESource::Flybase)
                         {
                             ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType,
                                       "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
@@ -644,15 +644,15 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     case ParFlat_PRIMARY:
                         if(entry->is_tpa == false &&
                            entry->tsa_allowed == false &&
-                           pp->source != ParFlat_REFSEQ)
+                           pp->source != Parser::ESource::Refseq)
                         {
                             ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType,
                                       "Line type \"PRIMARY\" is allowed for TPA or TSA records only. Continue anyway.");
                         }
                         break;
                     case ParFlat_KEYWORDS:
-                        if(pp->source != ParFlat_DDBJ &&
-                           pp->source != ParFlat_EMBL)
+                        if(pp->source != Parser::ESource::DDBJ &&
+                           pp->source != Parser::ESource::EMBL)
                             break;
                         if(kwds != NULL)
                             kwds = ValNodeFreeData(kwds);
@@ -747,9 +747,9 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 if(after_SOURCE == false)
                     entry->drop = gb_err_field((char*) "SOURCE");
 
-                if(after_REFER == false && pp->source != ParFlat_FLYBASE &&
+                if(after_REFER == false && pp->source != Parser::ESource::Flybase &&
                    entry->is_wgs == false &&
-                   (pp->source != ParFlat_REFSEQ ||
+                   (pp->source != Parser::ESource::Refseq ||
                     StringNCmp(entry->acnum, "NW_", 3) != 0))
                     entry->drop = gb_err_field((char*) "REFERENCE");
 
@@ -765,7 +765,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
             }
             if(pp->accver)
             {
-                if(pp->mode == FTA_HTGSCON_MODE)
+                if(pp->mode == Parser::EMode::HTGSCON)
                     entry->vernum = 1;
                 else
                     ParseGenBankVersion(entry, line_ver, line_nid, pp->source,

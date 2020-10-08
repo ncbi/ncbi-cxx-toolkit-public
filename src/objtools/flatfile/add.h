@@ -44,10 +44,10 @@ CRef<objects::CSeq_loc> fta_get_seqloc_int_whole(objects::CSeq_id& seq_id, size_
 
 char*       tata_save(char* str);
 
-bool          no_date(Int2 format, const TSeqdescList& descrs);
+bool          no_date(Parser::EFormat format, const TSeqdescList& descrs);
 bool          no_reference(const objects::CBioseq& bioseq);
 
-bool          check_cds(DataBlkPtr entry, Int2 format);
+bool          check_cds(DataBlkPtr entry, Parser::EFormat format);
 void          err_install(IndexblkPtr ibp, bool accver);
 void          SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
 void          GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
@@ -60,10 +60,10 @@ bool          fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, ch
                                             Int2 vernum, size_t len, Int2 col_data, bool tpa);
                                     
 void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
-                                 Int2 format, unsigned char* drop, Int2 source);
+                                 Parser::EFormat format, unsigned char* drop, Parser::ESource source);
 
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
-                                size_t len, Int2 source, unsigned char* drop,
+                                size_t len, Parser::ESource source, unsigned char* drop,
                                 CRef<objects::CUser_object>& dbuop);
                                     
 Uint1         fta_check_con_for_wgs(objects::CBioseq& bioseq);
@@ -81,7 +81,7 @@ void          fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int
 bool          fta_if_valid_biosample(const char* id, bool dblink);
 bool          fta_if_valid_sra(const char* id, bool dblink);
 void          StripECO(char* str);
-void          fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Int4 source,
+void          fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source,
                                  Int4 acctype, bool pricon, char* acc);
 
 char* StringRStr(char* where, const char *what);

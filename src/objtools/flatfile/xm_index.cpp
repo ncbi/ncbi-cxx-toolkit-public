@@ -36,7 +36,7 @@
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -564,7 +564,7 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
 
 /**********************************************************/
 static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver,
-                            Int2 source)
+                            Parser::ESource source)
 {
     XmlIndexPtr xip;
     char*     buf;
@@ -891,7 +891,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
 }
 
 /**********************************************************/
-static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Int2 source)
+static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource source)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipkwd;
@@ -899,7 +899,7 @@ static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Int2 source)
     char*     buf;
     char*     p;
 
-    bool tpa_check = (source == ParFlat_EMBL);
+    bool tpa_check = (source == Parser::ESource::EMBL);
 
     if(entry == NULL || ibp == NULL || ibp->xip == NULL)
         return true;
@@ -1034,9 +1034,9 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
         ret = XMLErrField(INSDSEQ_SOURCE);
     if(got_organism == false)
         ret = XMLErrField(INSDSEQ_ORGANISM);
-    if(got_reference == false && pp->source != ParFlat_FLYBASE &&
+    if(got_reference == false && pp->source != Parser::ESource::Flybase &&
        ibp->is_wgs == false &&
-       (pp->source != ParFlat_REFSEQ ||
+       (pp->source != Parser::ESource::Refseq ||
         StringNCmp(ibp->acnum, "NW_", 3) != 0))
         ret = XMLErrField(INSDSEQ_REFERENCES);
     if (got_primary && ibp->is_tpa == false && ibp->tsa_allowed == false)

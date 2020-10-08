@@ -65,10 +65,10 @@
 //#include <internal/ID/utils/cpubseq.hpp>
 #include <dbapi/driver/drivers.hpp>
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
@@ -229,7 +229,7 @@ static void fta_fix_last_initials(objects::CName_std &namestd,
 }
 
 /**********************************************************/
-static void fta_fix_affil(TPubList &pub_list, Int2 source)
+static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
 {
     bool got_pmid = false;
 
@@ -330,7 +330,7 @@ static void fta_fix_affil(TPubList &pub_list, Int2 source)
                 {
                     objects::CName_std &namestd = (*it)->SetName().SetName();
 /* bsv: commented out single letter first name population*/
-                    if(source != ParFlat_SPROT && source != ParFlat_PIR &&
+                    if(source != Parser::ESource::SPROT && source != Parser::ESource::PIR &&
                        !got_pmid)
                     {
                         if(!namestd.IsSetFirst() && namestd.IsSetInitials())
@@ -591,14 +591,9 @@ void fta_entrez_fetch_disable(ParserPtr pp)
 /**********************************************************/
 void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag)
 {
-    pp->fpo = (FindPubOptionPtr) MemNew(sizeof(FindPubOption));
-    MemSet((void*) pp->fpo, 0, sizeof(FindPubOption));
-
-    /* no lookup if there is muid in the pub of seqentry
-     */
-    ((FindPubOptionPtr)pp->fpo)->always_look = !htag;
-    ((FindPubOptionPtr)pp->fpo)->replace_cit = !rtag;
-    ((FindPubOptionPtr) pp->fpo)->merge_ids = true;
+    pp->fpo.always_look = !htag;
+    pp->fpo.replace_cit = !rtag;
+    pp->fpo.merge_ids = true;
 }
 
 /**********************************************************/
@@ -636,7 +631,6 @@ static void fta_check_pub_ids(TPubList& pub_list)
 /**********************************************************/
 static void fta_fix_pub_equiv(TPubList& pub_list, ParserPtr pp, bool er)
 {
-    FindPubOptionPtr fpop;
     IndexblkPtr      ibp;
 
     Uint1            drop;
@@ -648,7 +642,6 @@ static void fta_fix_pub_equiv(TPubList& pub_list, ParserPtr pp, bool er)
     if (pp == NULL)
         return;
 
-    fpop = (FindPubOptionPtr) pp->fpo;
     ibp = pp->entrylist[pp->curindx];
 
     objects::CPub_equiv::Tdata cit_arts;
@@ -670,7 +663,7 @@ static void fta_fix_pub_equiv(TPubList& pub_list, ParserPtr pp, bool er)
     if (cit_arts.empty())
     {
         fta_check_pub_ids(pub_list);
-        FixPubEquiv(pub_list, fpop);
+        FixPubEquiv(pub_list, pp->fpo);
         return;
     }
 
@@ -816,7 +809,7 @@ static void fta_fix_pub_annot(CRef<objects::CPub>& pub, ParserPtr pp, bool er)
     TPubList pub_list;
     pub_list.push_back(pub);
 
-    FixPub(pub_list, (FindPubOptionPtr)pp->fpo);
+    FixPub(pub_list, pp->fpo);
 
     if (pub_list.empty())
         pub.Reset();
@@ -1099,7 +1092,7 @@ static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop
         }
         else if(taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID)
         {
-            if((pp->source == ParFlat_DDBJ || pp->source == ParFlat_EMBL) &&
+            if((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
                ibp->is_pat && ibp->taxid > 0 && ibp->organism != NULL)
             {
                 ret = fta_fix_orgref_byid(pp, ibp->taxid, &ibp->drop, true);
@@ -1122,7 +1115,7 @@ static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop
     }
 
     if (taxdata->GetIs_species_level() != 1 && (ibp->is_pat == false ||
-       (pp->source != ParFlat_EMBL && pp->source != ParFlat_DDBJ)))
+       (pp->source != Parser::ESource::EMBL && pp->source != Parser::ESource::DDBJ)))
     {
         ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel,
                   "Taxarch hit is not on species level for [%s].", pn);
@@ -1194,7 +1187,7 @@ void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* dro
     }
     else
     {
-        merge = (pp->format == ParFlat_PIR) ? 0 : 1;
+        merge = (pp->format == Parser::EFormat::PIR) ? 0 : 1;
 
         CRef<objects::COrg_ref> new_org_ref = fta_replace_org(pp, drop, org_ref, taxname.c_str(), merge, attempt);
         if (new_org_ref.Empty() && attempt == 1)
@@ -1208,7 +1201,7 @@ void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* dro
         {
             ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound,
                       "Taxon Id _was_ found for [%s]", taxname.c_str());
-            if(pp->format == ParFlat_PIR)
+            if(pp->format == Parser::EFormat::PIR)
                 new_synonym(org_ref, *new_org_ref);
 
             org_ref.Assign(*new_org_ref);

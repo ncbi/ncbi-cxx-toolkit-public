@@ -37,8 +37,8 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/embl.h>
+#include "index.h"
+#include "embl.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -234,7 +234,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
         return false;
     }
 
-    bool tpa_check = (pp->source == ParFlat_EMBL);
+    bool tpa_check = (pp->source == Parser::ESource::EMBL);
 
     ibnp = (IndBlkNextPtr) MemNew(sizeof(IndBlkNext));
     ibnp->next = NULL;
@@ -277,8 +277,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             {
                 if(StringNCmp(finfo->str, emblkwl[ParFlat_KW].str, 2) == 0)
                 {
-                    if(pp->source == ParFlat_EMBL ||
-                       pp->source == ParFlat_DDBJ)
+                    if(pp->source == Parser::ESource::EMBL ||
+                       pp->source == Parser::ESource::DDBJ)
                     {
                         if(kwds == NULL)
                         {
@@ -345,7 +345,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 else if(StringNCmp(finfo->str, emblkwl[ParFlat_OS].str,
                                    emblkwl[ParFlat_OS].len) == 0)
                 {
-                    if(after_OS && pp->source != ParFlat_EMBL)
+                    if(after_OS && pp->source != Parser::ESource::EMBL)
                     {
                         ErrPostStr(SEV_INFO, ERR_ORGANISM_Multiple,
                                    "Multiple OS lines in the entry");

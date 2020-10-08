@@ -62,12 +62,12 @@
 #include <objects/seq/Pubdesc.hpp>
 
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/embl.h>
+#include "index.h"
+#include "embl.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
-#include <objtools/flatfile/ftamain.h>
+#include "ftanet.h"
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -261,7 +261,7 @@ static const char *ParFlat_DRname_array[] = {
  *                                              12-22-93
  *
  **********************************************************/
-static void GetEmblDate(Int2 source, DataBlkPtr entry,
+static void GetEmblDate(Parser::ESource source, DataBlkPtr entry,
                         CRef<objects::CDate_std>& crdate, CRef<objects::CDate_std>& update)
 {
     char* offset;
@@ -816,7 +816,7 @@ static CRef<objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static void CheckEmblContigEverywhere(IndexblkPtr ibp, Int2 source)
+static void CheckEmblContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 {
     bool condiv = (StringICmp(ibp->division, "CON") == 0);
 
@@ -843,7 +843,7 @@ static void CheckEmblContigEverywhere(IndexblkPtr ibp, Int2 source)
     }
     else if(ibp->is_contig && ibp->origin)
     {
-        if(source == ParFlat_EMBL || source == ParFlat_DDBJ)
+        if(source == Parser::ESource::EMBL || source == Parser::ESource::DDBJ)
         {
             ErrPostEx(SEV_INFO, ERR_FORMAT_ContigWithSequenceData,
                       "The CONTIG/CO linetype and sequence data are both present. Ignoring sequence data.");
@@ -1018,7 +1018,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 
     if (ibp->embl_new_ID == false && inst.GetTopology() != objects::CSeq_inst::eTopology_circular &&
        StringStr(p, "DNA") == NULL && StringStr(p, "RNA") == NULL &&
-       (pp->source != ParFlat_EMBL || (StringStr(p, "xxx") == NULL &&
+       (pp->source != Parser::ESource::EMBL || (StringStr(p, "xxx") == NULL &&
         StringStr(p, "XXX") == NULL)))
     {
         ErrPostEx(SEV_WARNING, ERR_LOCUS_WrongTopology,
@@ -1028,7 +1028,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 
     /* the "p" must be the mol-type
      */
-    if(i == 0 && pp->source == ParFlat_NCBI)
+    if(i == 0 && pp->source == Parser::ESource::NCBI)
     {
         /* source = NCBI can be full variety of strands/mol-type
          */
@@ -1325,7 +1325,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     }
     if(tpa_kwd)
     {
-        if(ibp->is_tpa == false && pp->source != ParFlat_EMBL)
+        if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL)
         {
             ErrPostEx(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA,
                       "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
@@ -1626,7 +1626,7 @@ static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
 
     ibp = pp->entrylist[pp->curindx];
 
-    if(pp->source == ParFlat_NCBI)
+    if(pp->source == Parser::ESource::NCBI)
     {
         ibp->wgssec[0] = '\0';
         GetExtraAccession(ibp, pp->allow_uwsec, pp->source, gbb->SetExtra_accessions());
@@ -1965,7 +1965,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
             *p = '\0';
         }
 
-        if(ibp->is_tpa == false && pp->source != ParFlat_EMBL &&
+        if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
            StringNCmp(str, "TPA:", 4) == 0)
         {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA,
@@ -2025,7 +2025,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     offset = SrchNodeType(entry, ParFlat_PR, &len);
     if(offset != NULL)
         fta_get_project_user_object(bioseq.SetDescr().Set(), offset,
-                                    ParFlat_EMBL, &ibp->drop, pp->source);
+                                    Parser::EFormat::EMBL, &ibp->drop, pp->source);
 
     if(ibp->is_tpa &&
        (title.empty() || (StringNCmp(title.c_str(), "TPA:", 4) != 0 &&
@@ -2116,10 +2116,10 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     CRef<objects::CEMBL_block> embl_block =
         GetDescrEmblBlock(pp, entry, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
 
-    if (pp->source == ParFlat_EMBL && embl_block.NotEmpty())
+    if (pp->source == Parser::ESource::EMBL && embl_block.NotEmpty())
         fta_create_imgt_misc_feat(bioseq, *embl_block, ibp);
 
-    if ((pp->source == ParFlat_DDBJ || pp->source == ParFlat_EMBL) &&
+    if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
         ibp->is_contig && !mol_info->IsSetTech())
     {
         Uint1 tech = fta_check_con_for_wgs(bioseq);
@@ -2155,10 +2155,10 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     }
 
     if(StringNICmp(ibp->division, "CON", 3) == 0)
-        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), ParFlat_EMBL, objects::CSeq_id::e_Embl,
+        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, objects::CSeq_id::e_Embl,
                      true, ibp->acnum);
     else
-        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), ParFlat_EMBL, objects::CSeq_id::e_Embl,
+        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, objects::CSeq_id::e_Embl,
                      false, ibp->acnum);
 
     if (embl_block->GetExtra_acc().empty())
@@ -2168,7 +2168,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     if(gbdiv != NULL)
         MemFree(gbdiv);
 
-    if(pp->source != ParFlat_NCBI)
+    if(pp->source != Parser::ESource::NCBI)
     {
         CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetEmbl(*embl_block);
@@ -2634,7 +2634,7 @@ bool EmblAscii(ParserPtr pp)
                     if(ibp->gaps != NULL)
                         GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                     else if(ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
-                            (ibp->is_pat && pp->source == ParFlat_DDBJ))
+                            (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                             SeqToDelta(*bioseq, ibp->htg);
                 }
                 else if(ibp->gaps != NULL)
@@ -3028,7 +3028,7 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
 
     if(tpa_kwd)
     {
-        if(ibp->is_tpa == false && pp->source != ParFlat_EMBL)
+        if(ibp->is_tpa == false && pp->source != Parser::ESource::EMBL)
         {
             ErrPostEx(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA,
                       "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");

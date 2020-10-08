@@ -50,7 +50,7 @@ typedef struct ind_blk_next {
     struct ind_blk_next *next;
 } IndBlkNext, *IndBlkNextPtr;
 
-CRef<objects::CDate_std> GetUpdateDate(char* ptr, Int2 source);
+CRef<objects::CDate_std> GetUpdateDate(char* ptr, Parser::ESource source);
 
 /**********************************************************/
 bool        XReadFile(FILE* fp, FinfoBlkPtr finfo);
@@ -83,9 +83,9 @@ Int2  XMLCheckTPG(char* str);
 Int2  CheckNADDBJ(char* str);
 Int2  CheckNA(char* str);
 
-bool CkLocusLinePos(char* offset, Int2 source, LocusContPtr lcp, bool is_mga);
+bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool is_mga);
 
-const Char **GetAccArray(Int2 whose);
+const Char **GetAccArray(Parser::ESource source);
 objects::CSeq_id::E_Choice  GetNucAccOwner(const char* accession, bool is_tpa);
 Uint1        GetProtAccOwner(const char* acc);
 //void    FreeParser(ParserPtr pp);

@@ -43,12 +43,12 @@
 #include <objmgr/scope.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/embl.h>
-#include <objtools/flatfile/sprot.h>
-#include <objtools/flatfile/genbank.h>
-#include <objtools/flatfile/fta_parser.h>
-#include <objtools/flatfile/ftamain.h>
+#include "index.h"
+#include "embl.h"
+#include "sprot.h"
+#include "genbank.h"
+#include <objtools/flatfile/flatfile_parse_info.hpp>
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flat2err.h>
 
 #include "utilfun.h"
@@ -187,7 +187,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     cur_block->vernum = vernum;
     cur_block->ppp = pp;
 
-    if (pp->format == ParFlat_GENBANK) {
+    if (pp->format == Parser::EFormat::GenBank) {
         char* q = entry->offset;
         if (q != NULL && entry->len != 0 && StringNCmp(q, "LOCUS ", 6) == 0) {
             char* p = StringChr(q, '\n');
@@ -222,13 +222,13 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     return pp->indx - 1;
 }
 
-static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Int2 format)
+static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat format)
 {
     char* div;
     char* eptr;
     char* offset;
 
-    if (format != ParFlat_GENBANK && format != ParFlat_EMBL)
+    if (format != Parser::EFormat::GenBank && format != Parser::EFormat::EMBL)
         return;
 
     offset = entry->offset;
@@ -237,7 +237,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Int2 format)
     if (offset == NULL || len == 0)
         return;
 
-    if (format == ParFlat_GENBANK) {
+    if (format == Parser::EFormat::GenBank) {
         div = offset + ibp->lc.div;
         StringNCpy(ibp->division, div, 3);
         ibp->division[3] = '\0';
@@ -301,7 +301,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
     bioseq->SetInst().SetLength(static_cast<CSeq_inst::TLength>(ibp->bases));
 
     bool res = false;
-    if (pp->format == ParFlat_EMBL) {
+    if (pp->format == Parser::EFormat::EMBL) {
 
         bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
 
@@ -323,7 +323,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
             }
         }
     }
-    else if (pp->format == ParFlat_GENBANK) {
+    else if (pp->format == Parser::EFormat::GenBank) {
         bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
 
         Int2 curkw = ParFlat_LOCUS;
@@ -345,7 +345,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
             }
         }
     }
-    else if (pp->format == ParFlat_SPROT) {
+    else if (pp->format == Parser::EFormat::SPROT) {
         bioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
         Int2 curkw = ParFlat_ID;
         while (curkw != ParFlatSP_END) {

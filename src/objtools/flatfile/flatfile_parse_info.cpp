@@ -1,6 +1,4 @@
-/* ftanet.h
- *
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -24,41 +22,26 @@
  *
  * ===========================================================================
  *
- * File Name:  ftanet.h
+ * File Name:  fta_parser.cpp
  *
- * Author: Alexey Dobronadezhdin
+ * Author: 
  *
  * File Description:
  * -----------------
-
+ *      Main routines for parsing flat files to ASN.1 file format.
+ * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
+ *
  */
+#include <ncbi_pch.hpp>
 
-#ifndef FTANET_H
-#define FTANET_H
-#include <objtools/flatfile/fta_parser.h> 
+#include <objtools/flatfile/flatfile_parse_info.hpp>
 
-namespace ncbi
-{
-    namespace objects
-    {
-        class COrg_ref;
-        class CSeq_id;
-        class CCit_art;
-    };
-}
+#include "indx_blk.h"
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh);
-
-void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries);
-//void fta_entrez_fetch_enable(ParserPtr pp);
-//void fta_entrez_fetch_disable(ParserPtr pp);
-void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag);
-Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc);
-void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* drop, char* organelle);
-CRef<objects::CCit_art> fta_citart_by_pmid(Int4 pmid, bool& done);
+Parser::~Parser() {
+    ResetParserStruct(this);
+}
 
 END_NCBI_SCOPE
-
-#endif // FTANET_H

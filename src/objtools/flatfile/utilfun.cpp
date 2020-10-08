@@ -44,7 +44,7 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <corelib/tempstr.hpp>
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include "ftaerr.hpp"
 #include "indx_def.h"
@@ -984,7 +984,7 @@ void InfoBioseqFree(InfoBioseqPtr ibp)
     *      Get year, month, day and return CRef<objects::CDate_std>.
     *
     **********************************************************/
-CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Int2 source)
+CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESource source)
 {
     static const char *months[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
         "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
@@ -1047,7 +1047,7 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Int2 source)
                 "Illegal year: %d, current year: %d", year, cur_year);
             else
             {
-                if (source != ParFlat_SPROT || year - cur_year > 1)
+                if (source != Parser::ESource::SPROT || year - cur_year > 1)
                     ErrPostEx(SEV_WARNING, ERR_DATE_IllegalDate,
                     "Illegal year: %d, current year: %d", year, cur_year);
             }
@@ -1279,7 +1279,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
 }
 
 /**********************************************************/
-bool fta_tsa_keywords_check(const TKeywordList& kwds, Int2 source)
+bool fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source)
 {
     bool kwd_tsa = false;
     bool kwd_assembly = false;
@@ -1298,7 +1298,7 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Int2 source)
             kwd_tsa = true;
         else if(i == 1)
             kwd_assembly = true;
-        else if(source == ParFlat_EMBL &&
+        else if(source == Parser::ESource::EMBL &&
                 NStr::EqualNocase(*key, "Transcript Shotgun Assembly"))
             kwd_assembly = true;
     }
@@ -1319,7 +1319,7 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Int2 source)
 }
 
 /**********************************************************/
-bool fta_tls_keywords_check(const TKeywordList& kwds, Int2 source)
+bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
 {
     bool kwd_tls = false;
     bool kwd_study = false;
@@ -1338,7 +1338,7 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Int2 source)
             kwd_tls = true;
         else if(i == 1)
             kwd_study = true;
-        else if(source == ParFlat_EMBL &&
+        else if(source == Parser::ESource::EMBL &&
                 NStr::EqualNocase(*key, "Targeted Locus Study"))
             kwd_study = true;
     }
@@ -1474,7 +1474,7 @@ void fta_remove_tpa_keywords(TKeywordList& kwds)
 }
 
 /**********************************************************/
-void fta_remove_tsa_keywords(TKeywordList& kwds, Int2 source)
+void fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source)
 {
     if (kwds.empty())
         return;
@@ -1482,7 +1482,7 @@ void fta_remove_tsa_keywords(TKeywordList& kwds, Int2 source)
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();)
     {
         if (key->empty() || MatchArrayIString(ParFlat_TSA_kw_array, key->c_str()) != -1 ||
-            (source == ParFlat_EMBL && NStr::EqualNocase(*key, "Transcript Shotgun Assembly")))
+            (source == Parser::ESource::EMBL && NStr::EqualNocase(*key, "Transcript Shotgun Assembly")))
         {
             key = kwds.erase(key);
         }
@@ -1492,7 +1492,7 @@ void fta_remove_tsa_keywords(TKeywordList& kwds, Int2 source)
 }
 
 /**********************************************************/
-void fta_remove_tls_keywords(TKeywordList& kwds, Int2 source)
+void fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source)
 {
     if (kwds.empty())
         return;
@@ -1500,7 +1500,7 @@ void fta_remove_tls_keywords(TKeywordList& kwds, Int2 source)
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();)
     {
         if (key->empty() || MatchArrayIString(ParFlat_TLS_kw_array, key->c_str()) != -1 ||
-            (source == ParFlat_EMBL && NStr::EqualNocase(*key, "Targeted Locus Study")))
+            (source == Parser::ESource::EMBL && NStr::EqualNocase(*key, "Targeted Locus Study")))
         {
             key = kwds.erase(key);
         }

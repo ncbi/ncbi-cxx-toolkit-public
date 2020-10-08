@@ -58,7 +58,7 @@
 #include <corelib/ncbi_url.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
@@ -1147,7 +1147,7 @@ CRef<objects::CCit_art> FetchPubPmId(Int4 pmid)
  *       Tries to make any Pub into muid/cit-art
  *
  **********************************************************/
-void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
+void FixPub(TPubList& pub_list, TFindPubOptions& findPubOptions)
 {
     TEntrezId       pmid;
 
@@ -1167,7 +1167,7 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
             if (cit_art.IsSetFrom() && cit_art.GetFrom().IsBook())
                 return;
 
-            fpop->lookups_attempted++;
+            findPubOptions.lookups_attempted++;
 
             CRef<CPub> cpub(new CPub());
             cpub->SetArticle(cit_art);
@@ -1184,19 +1184,19 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
             if (pmid > ZERO_ENTREZ_ID)                /* matched it */
             {
                 print_pub(cit_art, true, false, pmid);
-                fpop->lookups_succeeded++;
-                if (fpop->replace_cit)
+                findPubOptions.lookups_succeeded++;
+                if (findPubOptions.replace_cit)
                 {
-                    fpop->fetches_attempted++;
+                    findPubOptions.fetches_attempted++;
                     CRef<objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(int, pmid));
 
                     if (new_cit_art.NotEmpty())
                     {
                         if (ten_authors(cit_art, *new_cit_art))
                         {
-                            fpop->fetches_succeeded++;
+                            findPubOptions.fetches_succeeded++;
 
-                            if (fpop->merge_ids)
+                            if (findPubOptions.merge_ids)
                                 MergeNonPubmedPubIds(*new_cit_art, cit_art);
 
                             first_pub.Reset();
@@ -1225,7 +1225,7 @@ void FixPub(TPubList& pub_list, FindPubOptionPtr fpop)
             }
             break;
         case objects::CPub::e_Equiv:
-            FixPubEquiv(pub_list, fpop);
+            FixPubEquiv(pub_list, findPubOptions);
             break;
         default:
             break;
@@ -1325,7 +1325,7 @@ static void FixPubEquivAppendPmid(Int4 muid, objects::CPub_equiv::Tdata& pmids)
 }
 
 /**********************************************************/
-void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
+void FixPubEquiv(TPubList& pub_list, TFindPubOptions& findPubOptions)
 {
     bool       inpress;
     TEntrezId  oldmuid = ZERO_ENTREZ_ID;
@@ -1360,7 +1360,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
     pub_list.clear();
 
     if ((!muids.empty() || !pmids.empty()) &&  /* got a muid or pmid */
-        !fpop->always_look)
+        !findPubOptions.always_look)
     {
         pub_list.splice(pub_list.end(), cit_arts);
         pub_list.splice(pub_list.end(), muids);
@@ -1435,7 +1435,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
 
         objects::CCit_art* cit_art = &cit_arts.front()->SetArticle();
         inpress = if_inpress_set(*cit_art);
-        fpop->lookups_attempted++;
+        findPubOptions.lookups_attempted++;
 
         CRef<objects::CPub> new_pub(new objects::CPub);
         new_pub->SetArticle(*cit_art);
@@ -1453,21 +1453,21 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
         if (pmid != ZERO_ENTREZ_ID)                   /* success */
         {
             print_pub(*cit_art, true, false, pmid);
-            fpop->lookups_succeeded++;
+            findPubOptions.lookups_succeeded++;
             if (oldpmid > ZERO_ENTREZ_ID && oldpmid != pmid)  /* already had a pmid */
                 ErrPostEx(SEV_ERROR, ERR_REFERENCE_PmidMissmatch,
                 "OldPMID=%ld doesn't match lookup (%ld). Keeping lookup.",
                 ENTREZ_ID_TO(long, oldpmid), ENTREZ_ID_TO(long, pmid));
 
-            if (fpop->replace_cit)
+            if (findPubOptions.replace_cit)
             {
-                fpop->fetches_attempted++;
+                findPubOptions.fetches_attempted++;
 
                 CRef<objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(Int4, pmid));
 
                 if (new_cit_art.NotEmpty())
                 {
-                    fpop->fetches_succeeded++;
+                    findPubOptions.fetches_succeeded++;
 
                     if (ten_authors(*cit_art, *new_cit_art))
                     {
@@ -1484,7 +1484,7 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
                         cit_pub->SetArticle(*new_cit_art);
                         pub_list.push_back(cit_pub);
 
-                        if (fpop->merge_ids)
+                        if (findPubOptions.merge_ids)
                             MergeNonPubmedPubIds(cit_pub->SetArticle(), *cit_art);
 
                         cit_arts.clear();
@@ -1552,14 +1552,14 @@ void FixPubEquiv(TPubList& pub_list, FindPubOptionPtr fpop)
 
     if (oldpmid != ZERO_ENTREZ_ID)                    /* have a pmid but no cit-art */
     {
-        fpop->fetches_attempted++;
+        findPubOptions.fetches_attempted++;
 
         CRef<objects::CCit_art> new_cit_art = FetchPubPmId(ENTREZ_ID_TO(int, oldpmid));
 
         if (new_cit_art.NotEmpty())
         {
-            fpop->fetches_succeeded++;
-            if (fpop->replace_cit)
+            findPubOptions.fetches_succeeded++;
+            if (findPubOptions.replace_cit)
             {
                 MedlineToISO(*new_cit_art);
                 CRef<objects::CPub> cit_pub(new objects::CPub);

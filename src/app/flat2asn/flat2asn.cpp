@@ -36,14 +36,13 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <serial/objostrasn.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-//#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/fta_parse_buf.h>
-#include <objtools/flatfile/ftanet.h>
 #include <objtools/logging/listener.hpp>
 
 #ifdef THIS_FILE
@@ -71,11 +70,11 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.ign_prot_src = args["j"].AsBoolean();
 
     if (args["m"].AsInteger() == 1)
-        config.mode = FTA_HTGS_MODE;
+        config.mode = Parser::EMode::HTGS;
     else if (args["m"].AsInteger() == 2)
-        config.mode = FTA_HTGSCON_MODE;
+        config.mode = Parser::EMode::HTGSCON;
     else
-        config.mode = FTA_RELEASE_MODE;
+        config.mode = Parser::EMode::Release;
 
     /* replace update by currdate
      */
@@ -114,16 +113,16 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.qamode = args["Q"].AsBoolean();
 
     if (args["y"].AsString() == "Bioseq-set")
-        config.output_format = FTA_OUTPUT_BIOSEQSET;
+        config.output_format = Parser::EOutput::BioseqSet;
     else if (args["y"].AsString() == "Seq-submit")
-        config.output_format = FTA_OUTPUT_SEQSUBMIT;
+        config.output_format = Parser::EOutput::Seqsubmit;
 
-    fta_fill_find_pub_option(&config, args["h"].AsBoolean(), args["h"].AsBoolean());
+    config.fpo.always_look = config.fpo.replace_cit = !args["h"].AsBoolean();
 
     std::string format = args["f"].AsString(),
                 source = args["s"].AsString();
 
-    config.all = args["a"].AsBoolean() ? ParFlat_ALL : 0;
+    config.all = args["a"].AsBoolean();
 
    if (!fta_set_format_source(config, format, source)) {
         retval = false;
@@ -136,35 +135,19 @@ static bool InitConfig(const CArgs& args, Parser& config)
 static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener)
 {
     Char      str[1000];
-
-    FILE* fd;
-
-    Char      tfile[PATH_MAX];
-    bool      delin;
-    bool      delout;
-
-    delin = false;
-    delout = true;
+    bool delin=false;
 
     std::string infile = args["i"].AsString();
     if (infile == "stdin")
     {
+        infile = CDirEntry::GetTmpName(CFile::eTmpFileCreate);
         delin = true;
-        tmpnam(tfile);
-        fd = fopen(tfile, "w");
+        auto fd = fopen(infile.c_str(), "w");
+
         while(fgets(str, 999, stdin) != NULL)
             fprintf(fd, "%s", str);
-
         fclose(fd);
-
-        infile = tfile;
     }
-
-    config.outfile = args["o"].AsString();
-
-    if (config.outfile == "stdout")
-        delout = false;
-
 
 #ifdef WIN32
     config.ifp = fopen(infile.c_str(), "rb");
@@ -184,8 +167,6 @@ static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& lis
         return false;
     }
 
-    if(args["b"].AsBoolean())
-        config.output_binary = true;
 
     if(config.qsfile != NULL)
     {
@@ -197,11 +178,6 @@ static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& lis
 
             fclose(config.ifp);
             config.ifp = NULL;
-
-            if (delout) {
-                CDirEntry de(config.outfile);
-                de.Remove();
-            }
             return false;
         }
     }
@@ -248,8 +224,8 @@ void CFlat2AsnApp::Init()
     arg_descrs->Delete("h");
 
     arg_descrs->AddDefaultKey("i", "InputFlatfile", "Input flatfile to parse", ncbi::CArgDescriptions::eString, "stdin");
-    arg_descrs->AddDefaultKey("o", "OutputAsnFile", "Output ASN.1 file", ncbi::CArgDescriptions::eString, "stdout");
 
+    arg_descrs->AddOptionalKey("o", "OutputAsnFile", "Output ASN.1 file", ncbi::CArgDescriptions::eOutputFile);
     arg_descrs->AddOptionalKey("l", "LogFile", "Log file", ncbi::CArgDescriptions::eOutputFile);
 
     arg_descrs->AddDefaultKey("a", "ParseRegardlessAccessionPrefix", "Parse all flatfile entries, regardless of accession prefix letter", ncbi::CArgDescriptions::eBoolean, "F");
@@ -353,7 +329,7 @@ int CFlat2AsnApp::Run()
     }
 
     CFlatFileParser ffparser(&messageListener);
-    auto pSerialObject = ffparser.Parse(pConfig.get(), false);
+    auto pSerialObject = ffparser.Parse(*pConfig);
 
 
     if (messageListener.Count() > 0) {
@@ -361,6 +337,15 @@ int CFlat2AsnApp::Run()
     }
 
     if (pSerialObject) {
+        CNcbiOstream* pOstream = args["o"] ?
+            &args["o"].AsOutputFile() :
+            &NcbiCout;
+        if (args["b"].AsBoolean()) {
+            *pOstream << MSerial_AsnBinary << *pSerialObject;
+        } 
+        else {
+            *pOstream << MSerial_AsnText << *pSerialObject;
+        }
         return 0;
     }
 

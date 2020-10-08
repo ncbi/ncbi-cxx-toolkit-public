@@ -79,8 +79,7 @@
 
 #include <objtools/edit/feattable_edit.hpp>
 
-#include <objtools/flatfile/fta_parser.h>
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -1242,19 +1241,19 @@ CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat form
     switch (format)
     {
         case CFormatGuess::eFlatFileGenbank:
-            pp->format = ParFlat_GENBANK;
-            pp->source = ParFlat_GENBANK;
+            pp->format = Parser::EFormat::GenBank;
+            pp->source = Parser::ESource::GenBank;
             pp->seqtype = ncbi::objects::CSeq_id::e_Genbank;
             break;
         case CFormatGuess::eFlatFileEna:
-            pp->format = ParFlat_EMBL;
-            pp->source = ParFlat_EMBL;
+            pp->format = Parser::EFormat::EMBL;
+            pp->source = Parser::ESource::EMBL;
             pp->acprefix = ParFlat_EMBL_AC;
             pp->seqtype = ncbi::objects::CSeq_id::e_Embl;
             break;
         case CFormatGuess::eFlatFileUniProt:
-            pp->format = ParFlat_SPROT;
-            pp->source = ParFlat_SPROT;
+            pp->format = Parser::EFormat::SPROT;
+            pp->source = Parser::ESource::SPROT;
             pp->seqtype = ncbi::objects::CSeq_id::e_Swissprot;
             break;
         default:
@@ -1267,14 +1266,12 @@ CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat form
 #else
     pp->ifp = fopen(filename.c_str(), "r");
 #endif
-    pp->output_format = FTA_OUTPUT_BIOSEQSET;
+    pp->output_format = Parser::EOutput::BioseqSet;
 
     CFlatFileParser ffparser(m_context.m_logger);
-    auto obj = ffparser.Parse(pp.get(), false);
+    auto obj = ffparser.Parse(*pp);
     if (obj.NotEmpty())
     {
-        //cerr << MSerial_AsnText << *obj;
-
         if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo())
         {
             auto bioseq_set = Ref(CTypeConverter<CBioseq_set>::SafeCast(obj.GetPointerOrNull()));            

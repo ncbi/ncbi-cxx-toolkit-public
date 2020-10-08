@@ -45,14 +45,14 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Auth_list.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/sprot.h>
-#include <objtools/flatfile/embl.h>
-#include <objtools/flatfile/genbank.h>
+#include "index.h"
+#include "sprot.h"
+#include "embl.h"
+#include "genbank.h"
 
 #include <objtools/flatfile/ff2asn.h>
-#include <objtools/flatfile/ftanet.h>
-#include <objtools/flatfile/ftamain.h>
+#include "ftanet.h"
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
 
 
@@ -369,7 +369,7 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 {
     CRef<objects::CBioseq_set> bio_set(new objects::CBioseq_set);
 
-    if (pp->source == ParFlat_PIR)
+    if (pp->source == Parser::ESource::PIR)
         bio_set->SetClass(objects::CBioseq_set::eClass_pir);
     else
         bio_set->SetClass(objects::CBioseq_set::eClass_genbank);
@@ -405,57 +405,57 @@ static void SetReleaseStr(ParserPtr pp)
 {
     if (!pp->xml_comp)
     {
-        if(pp->source == ParFlat_NCBI)
+        if(pp->source == Parser::ESource::NCBI)
         {
-            if(pp->format == ParFlat_GENBANK)
+            if(pp->format == Parser::EFormat::GenBank)
                 pp->release_str = "source:ncbi, format:genbank";
-            else if(pp->format == ParFlat_EMBL)
+            else if(pp->format == Parser::EFormat::EMBL)
                 pp->release_str = "source:ncbi, format:embl";
-            else if(pp->format == ParFlat_XML)
+            else if(pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:ncbi, format:xml";
         }
-        else if(pp->source == ParFlat_DDBJ)
+        else if(pp->source == Parser::ESource::DDBJ)
         {
-            if(pp->format == ParFlat_GENBANK)
+            if(pp->format == Parser::EFormat::GenBank)
                 pp->release_str = "source:ddbj, format:genbank";
-            else if(pp->format == ParFlat_EMBL)
+            else if(pp->format == Parser::EFormat::EMBL)
                 pp->release_str = "source:ddbj, format:embl";
-            else if(pp->format == ParFlat_XML)
+            else if(pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:ddbj, format:xml";
         }
-        else if(pp->source == ParFlat_LANL)
+        else if(pp->source == Parser::ESource::LANL)
         {
-            if(pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:lanl, format:xml";
             else
                 pp->release_str = "source:lanl, format:genbank";
         }
-        else if(pp->source == ParFlat_FLYBASE)
+        else if(pp->source == Parser::ESource::Flybase)
         {
-            if(pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:flybase, format:xml";
             else
                 pp->release_str = "source:flybase, format:genbank";
         }
-        else if(pp->source == ParFlat_REFSEQ)
+        else if(pp->source == Parser::ESource::Refseq)
         {
-            if(pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:refseq, format:xml";
             else
                 pp->release_str = "source:refseq, format:genbank";
         }
-        else if(pp->source == ParFlat_EMBL)
+        else if(pp->source == Parser::ESource::EMBL)
         {
-            if(pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:embl, format:xml";
             else
                 pp->release_str = "source:embl, format:embl";
         }
-        else if(pp->source == ParFlat_SPROT)
+        else if(pp->source == Parser::ESource::SPROT)
             pp->release_str = "source:swissprot, format:swissprot";
-        else if(pp->source == ParFlat_PIR)
+        else if(pp->source == Parser::ESource::PIR)
             pp->release_str = "source:pir, format:pir";
-        else if(pp->source == ParFlat_PRF)
+        else if(pp->source == Parser::ESource::PRF)
             pp->release_str = "source:prf, format:prf";
         else
             pp->release_str = "source:unknown, format:unknown";
@@ -465,18 +465,18 @@ static void SetReleaseStr(ParserPtr pp)
 /**********************************************************/
 static void GetAuthorsStr(ParserPtr pp)
 {
-    if(pp->source == ParFlat_EMBL)
+    if(pp->source == Parser::ESource::EMBL)
         pp->authors_str = "European Nucleotide Archive";
-    else if(pp->source == ParFlat_DDBJ)
+    else if(pp->source == Parser::ESource::DDBJ)
         pp->authors_str = "DNA Databank of Japan";
-    else if(pp->source == ParFlat_NCBI || pp->source == ParFlat_LANL ||
-            pp->source == ParFlat_REFSEQ)
+    else if(pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::LANL ||
+            pp->source == Parser::ESource::Refseq)
         pp->authors_str = "National Center for Biotechnology Information";
-    else if(pp->source == ParFlat_SPROT)
+    else if(pp->source == Parser::ESource::SPROT)
         pp->authors_str = "UniProt KnowledgeBase";
-    else if(pp->source == ParFlat_PIR)
+    else if(pp->source == Parser::ESource::PIR)
         pp->authors_str = "PIR";
-    else if(pp->source == ParFlat_PRF)
+    else if(pp->source == Parser::ESource::PRF)
         pp->authors_str = "PRF";
     else
         pp->authors_str = "FlyBase";
@@ -491,44 +491,24 @@ static CRef<CSerialObject> CloseAll(ParserPtr pp)
 
     if (!pp->entries.empty())
     {
-        if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
+        if(pp->output_format == Parser::EOutput::BioseqSet)
         {
             ret = MakeBioseqSet(pp);
         }
-        else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
+        else if(pp->output_format == Parser::EOutput::Seqsubmit)
         {
             ret = MakeSeqSubmit(pp);
-        }
-
-        if (!pp->outfile.empty())
-        {
-            CNcbiOfstream ostr(pp->outfile.c_str());
-
-            if (pp->output_binary)
-                ostr << MSerial_AsnBinary << *ret;
-            else
-                ostr << MSerial_AsnText << *ret;
         }
     }
     return ret;
 }
 
-/*
-Int2 fta_main(ParserPtr pp, bool already)
-{
-    CRef<CSerialObject> ret;
-
-    auto good = sParseFlatfile(ret, pp, already);    
-
-    return((good == false) ? 1 : 0);
-}
-*/
 
 static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
 {
-    if(pp->output_format == FTA_OUTPUT_BIOSEQSET)
+    if(pp->output_format == Parser::EOutput::BioseqSet)
         SetReleaseStr(pp);
-    else if(pp->output_format == FTA_OUTPUT_SEQSUBMIT)
+    else if(pp->output_format == Parser::EOutput::Seqsubmit)
         GetAuthorsStr(pp);
 
     if (!already)
@@ -551,14 +531,14 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
     fta_init_gbdataloader();
     GetScope().AddDefaults();
 
-    if(pp->format == ParFlat_SPROT || pp->format == ParFlat_PIR ||
-       pp->format == ParFlat_PRF)
+    if(pp->format == Parser::EFormat::SPROT || pp->format == Parser::EFormat::PIR ||
+       pp->format == Parser::EFormat::PRF)
     {
         FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
-        if(pp->format == ParFlat_SPROT)
+        if(pp->format == Parser::EFormat::SPROT)
             good = SprotAscii(pp);
-        else if(pp->format == ParFlat_PIR)
+        else if(pp->format == Parser::EFormat::PIR)
             good = PirAscii(pp);
         else
             good = PrfAscii(pp);
@@ -603,15 +583,15 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
-    if(pp->format == ParFlat_GENBANK)
+    if(pp->format == Parser::EFormat::GenBank)
     {
         good = GenBankAscii(pp);
     }
-    else if(pp->format == ParFlat_EMBL)
+    else if(pp->format == Parser::EFormat::EMBL)
     {
         good = EmblAscii(pp);
     }
-    else if(pp->format == ParFlat_XML)
+    else if(pp->format == Parser::EFormat::XML)
     {
         good = XMLAscii(pp);
     }
@@ -649,44 +629,44 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
     {
         pp.acprefix = ParFlat_PIR_AC;
         pp.seqtype = objects::CSeq_id::e_Pir;
-        pp.source = ParFlat_PIR;
+        pp.source = Parser::ESource::PIR;
     }
     else if (NStr::EqualNocase(source, "PRF"))
     {
         pp.acprefix = ParFlat_PRF_AC;
         pp.seqtype = objects::CSeq_id::e_Prf;
-        pp.source = ParFlat_PRF;
+        pp.source = Parser::ESource::PRF;
     }
     else if (NStr::EqualNocase(source, "SPROT"))
     {
         pp.acprefix = ParFlat_SPROT_AC;
         pp.seqtype = objects::CSeq_id::e_Swissprot;
-        pp.source = ParFlat_SPROT;
+        pp.source = Parser::ESource::SPROT;
     }
     else if (NStr::EqualNocase(source, "LANL"))
     {
         pp.acprefix = ParFlat_LANL_AC;         /* lanl or genbank */
         pp.seqtype = objects::CSeq_id::e_Genbank;
-        pp.source = ParFlat_LANL;
+        pp.source = Parser::ESource::LANL;
     }
     else if (NStr::EqualNocase(source, "EMBL"))
     {
         pp.acprefix = ParFlat_EMBL_AC;
         pp.seqtype = objects::CSeq_id::e_Embl;
-        pp.source = ParFlat_EMBL;
+        pp.source = Parser::ESource::EMBL;
     }
     else if (NStr::EqualNocase(source, "DDBJ"))
     {
         pp.acprefix = ParFlat_DDBJ_AC;
         pp.seqtype = objects::CSeq_id::e_Ddbj;
-        pp.source = ParFlat_DDBJ;
+        pp.source = Parser::ESource::DDBJ;
     }
     else if (NStr::EqualNocase(source, "FLYBASE"))
     {
-        pp.source = ParFlat_FLYBASE;
+        pp.source = Parser::ESource::Flybase;
         pp.seqtype = objects::CSeq_id::e_Genbank;
         pp.acprefix = NULL;
-        if(pp.format != ParFlat_GENBANK)
+        if(pp.format != Parser::EFormat::GenBank)
         {
             ErrPostEx(SEV_FATAL, 0, 0,
                       "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
@@ -695,10 +675,10 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
     }
     else if (NStr::EqualNocase(source, "REFSEQ"))
     {
-        pp.source = ParFlat_REFSEQ;
+        pp.source = Parser::ESource::Refseq;
         pp.seqtype = objects::CSeq_id::e_Other;
         pp.acprefix = NULL;
-        if(pp.format != ParFlat_GENBANK)
+        if(pp.format != Parser::EFormat::GenBank)
         {
             ErrPostEx(SEV_FATAL, 0, 0,
                       "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
@@ -712,8 +692,8 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
          * in -i (subtool) mode, both embl and genbank format might
          * be expected.
          */
-        if(pp.format != ParFlat_EMBL && pp.format != ParFlat_GENBANK &&
-           pp.format != ParFlat_XML)
+        if(pp.format != Parser::EFormat::EMBL && pp.format != Parser::EFormat::GenBank &&
+           pp.format != Parser::EFormat::XML)
         {
             ErrPostEx(SEV_FATAL, 0, 0,
                       "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
@@ -723,7 +703,7 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
         pp.acprefix = ParFlat_NCBI_AC;
         pp.seqtype = objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
                                                                GenBank SEQIDS - Karl */
-        pp.source = ParFlat_NCBI;
+        pp.source = Parser::ESource::NCBI;
     }
     else
     {
@@ -737,13 +717,13 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
     if (all)
     {
         pp.acprefix = NULL;
-        pp.all = ParFlat_ALL;
+        pp.all = true;
         pp.accpref = NULL;
     }
     else
         pp.accpref = (char**) GetAccArray(pp.source);
 
-    pp.citat = (pp.source != ParFlat_SPROT);
+    pp.citat = (pp.source != Parser::ESource::SPROT);
 
     return true;
 }
@@ -754,19 +734,19 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 /**********************************************************/
 // TODO function is not used 
 void Flat2AsnCheck(char* ffentry, char* source, char* format,
-                   bool accver, Int4 mode, Int4 limit)
+                   bool accver, Parser::EMode mode, Int4 limit)
 {
     ParserPtr pp;
-    Int2      form;
+    Parser::EFormat form;
 
     if (NStr::EqualNocase(format, "embl"))
-        form = ParFlat_EMBL;
+        form = Parser::EFormat::EMBL;
     else if (NStr::EqualNocase(format, "genbank"))
-        form = ParFlat_GENBANK;
+        form = Parser::EFormat::GenBank;
     else if (NStr::EqualNocase(format, "sprot"))
-        form = ParFlat_SPROT;
+        form = Parser::EFormat::SPROT;
     else if (NStr::EqualNocase(format, "xml"))
-        form = ParFlat_XML;
+        form = Parser::EFormat::XML;
     else
     {
         ErrPostEx(SEV_ERROR, 0, 0, "Unknown format of flat entry");
@@ -834,6 +814,10 @@ CFlatFileParser::CFlatFileParser(IObjtoolsListener* pMessageListener)
 {
     FtaErrInit();
     CFlatFileMessageReporter::GetInstance().SetListener(pMessageListener);
+
+    // Do we really need this?
+    CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
+    GetScope().AddDefaults();
 }
 
 
@@ -843,10 +827,10 @@ CFlatFileParser::~CFlatFileParser()
 }
 
 
-CRef<CSerialObject> CFlatFileParser::Parse(Parser* pp, bool already)
+CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo)
 {
     CRef<CSerialObject> pResult;
-    if (sParseFlatfile(pResult, pp, already)) {
+    if (sParseFlatfile(pResult, &parseInfo, false)) {
         return pResult;
     }
 
@@ -859,11 +843,6 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     if (buf == NULL || *buf == '\0') {
         return pp.entries;
     }
-
-    if (pp.fpo == nullptr) {
-        fta_fill_find_pub_option(&pp, false, false);
-    }
-
     pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
 
 //    CErrorMgr err_mgr;
@@ -894,13 +873,13 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     GetScope().AddDefaults();
 
-    if (pp.format == ParFlat_SPROT || pp.format == ParFlat_PIR ||
-        pp.format == ParFlat_PRF) {
+    if (pp.format == Parser::EFormat::SPROT || pp.format == Parser::EFormat::PIR ||
+        pp.format == Parser::EFormat::PRF) {
         FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
-        if (pp.format == ParFlat_SPROT)
+        if (pp.format == Parser::EFormat::SPROT)
             good = SprotAscii(&pp);
-        else if (pp.format == ParFlat_PIR)
+        else if (pp.format == Parser::EFormat::PIR)
             good = PirAscii(&pp);
         else
             good = PrfAscii(&pp);
@@ -967,13 +946,13 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     pp.pbp = new ProtBlk;
     pp.pbp->ibp = new InfoBioseq;
 
-    if (pp.format == ParFlat_GENBANK) {
+    if (pp.format == Parser::EFormat::GenBank) {
         good = GenBankAscii(&pp);
     }
-    else if (pp.format == ParFlat_EMBL) {
+    else if (pp.format == Parser::EFormat::EMBL) {
         good = EmblAscii(&pp);
     }
-    else if (pp.format == ParFlat_XML) {
+    else if (pp.format == Parser::EFormat::XML) {
         good = XMLAscii(&pp);
     }
 
@@ -1005,17 +984,17 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source)
 {
     if (format == "embl")
-        pp.format = ParFlat_EMBL;
+        pp.format = Parser::EFormat::EMBL;
     else if (format == "genbank")
-        pp.format = ParFlat_GENBANK;
+        pp.format = Parser::EFormat::GenBank;
     else if (format == "sprot")
-        pp.format = ParFlat_SPROT;
+        pp.format = Parser::EFormat::SPROT;
     else if (format == "pir")
-        pp.format = ParFlat_PIR;
+        pp.format = Parser::EFormat::PIR;
     else if (format == "prf")
-        pp.format = ParFlat_PRF;
+        pp.format = Parser::EFormat::PRF;
     else if (format == "xml")
-        pp.format = ParFlat_XML;
+        pp.format = Parser::EFormat::XML;
     else {
         ErrPostEx(SEV_FATAL, 0, 0,
                   "Sorry, the format is not available yet ==> available format embl, genbank, pir, prf, sprot, xml.");
@@ -1047,8 +1026,8 @@ void fta_init_pp(Parser& pp)
 	*/
 	pp.limit = 0;
 	pp.all = 0;
-	pp.fpo = nullptr;
-	fta_fill_find_pub_option(&pp, false, false);
+	//pp.fpo = nullptr;
+	//fta_fill_find_pub_option(&pp, false, false);
 
 	pp.indx = 0;
 	pp.entrylist = nullptr;
@@ -1070,7 +1049,7 @@ void fta_init_pp(Parser& pp)
 	pp.ff_get_entry_pp = nullptr;
 	pp.ff_get_entry_v_pp = nullptr;
 	pp.ign_bad_qs = false;
-	pp.mode = FTA_RELEASE_MODE;
+	pp.mode = Parser::EMode::Release;
 	pp.sp_dt_seq_ver = true;
 	pp.simple_genes = false;
 	pp.cleanup = 1;

@@ -43,7 +43,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
 

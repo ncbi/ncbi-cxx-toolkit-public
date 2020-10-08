@@ -50,7 +50,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Annot_descr.hpp>
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
 #include <algorithm>

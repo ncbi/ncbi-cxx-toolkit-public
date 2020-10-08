@@ -60,7 +60,7 @@ typedef struct feature_block {
 } FeatBlk, *FeatBlkPtr;
 
 void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq);
-int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Int2 format);
+int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Parser::EFormat format);
 
 void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, DataBlkPtr entry, const objects::COrg_ref* org_ref);
 

@@ -36,7 +36,7 @@
 
 #include "ftacpp.hpp"
 
-#include <objtools/flatfile/index.h>
+#include "index.h"
 
 #include "ftaerr.hpp"
 #include "indx_err.h"
@@ -189,7 +189,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
         if (q + 3 < eptr && q[3] == '.')
         {
             q[3] = ' ';
-            if (pp->source != ParFlat_NCBI || pp->format != ParFlat_EMBL)
+            if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL)
             {
                 ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode,
                           "The format allowed only in DirSubMode: period after the tag");

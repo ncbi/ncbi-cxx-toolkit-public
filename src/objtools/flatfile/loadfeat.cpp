@@ -69,11 +69,11 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/embl.h>
-#include <objtools/flatfile/genbank.h>
+#include "index.h"
+#include "embl.h"
+#include "genbank.h"
 
-#include <objtools/flatfile/ftamain.h>
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
 
 #include "ftaerr.hpp"
@@ -568,7 +568,7 @@ static void FreeFeatBlkQual(FeatBlkPtr fbp)
 }
 
 /**********************************************************/
-static void FreeFeatBlk(DataBlkPtr dbp, Int2 format)
+static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
 {
     DataBlkPtr dbpnext;
     FeatBlkPtr fbp;
@@ -582,7 +582,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Int2 format)
             FreeFeatBlkQual(fbp);
             dbp->data = NULL;
         }
-        if(format == ParFlat_XML)
+        if(format == Parser::EFormat::XML)
             MemFree(dbp);
     }
 }
@@ -688,7 +688,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
             if (*pp->buf == '\0')
                 return(-1);
 
-            if (pp->source == ParFlat_NCBI || pp->source == ParFlat_REFSEQ)
+            if (pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::Refseq)
                 ErrPostEx(SEV_WARNING, ERR_LOCATION_NCBIRefersToExternalRecord,
                 "Feature location references an interval on another record : %s",
                 pp->buf);
@@ -721,7 +721,7 @@ static bool CheckForeignLoc(const objects::CSeq_loc& loc, const objects::CSeq_id
 }
 
 /**********************************************************/
-static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Int2 source)
+static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Parser::ESource source)
 {
     CRef<objects::CDbtag> tag;
 
@@ -803,7 +803,7 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, In
         }
     }
     else if(MatchArrayIString(DbxrefTagStr, line.c_str()) > -1 ||
-            (source == ParFlat_EMBL &&
+            (source == Parser::ESource::EMBL &&
              MatchArrayIString(EMBLDbxrefTagStr, line.c_str()) > -1))
     {
         for(strid = p; *p >= '0' && *p <= '9';)
@@ -916,7 +916,7 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, In
  *      None.
  *
  **********************************************************/
-static void FilterDb_xref(objects::CSeq_feat& feat, Int2 source)
+static void FilterDb_xref(objects::CSeq_feat& feat, Parser::ESource source)
 {
     if (!feat.IsSetQual())
         return;
@@ -1237,7 +1237,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
 
     /* REFERENCE, to Seq-feat
      */
-    if(pp->format == ParFlat_XML)
+    if(pp->format == Parser::EFormat::XML)
         dbp = XMLBuildRefDataBlk(entry->offset, ibp->xip, ParFlat_REF_BTW);
     else
         dbp = TrackNodeType(entry, ParFlat_REF_BTW);
@@ -1258,7 +1258,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
         feat->SetData().SetPub(*pubdesc);
 
         location = NULL;
-        if(pp->format == ParFlat_XML)
+        if(pp->format == Parser::EFormat::XML)
         {
             location = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
                                        INSDREFERENCE_POSITION);
@@ -1289,13 +1289,13 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
                 }
             }
         }
-        else if(pp->format == ParFlat_GENBANK)
+        else if(pp->format == Parser::EFormat::GenBank)
         {
             for(p = dbp->offset + col_data; *p != '\0' && *p != '(';)
                 p++;
             location = CheckLocStr(std::string(p, dbp->offset + dbp->len - p).c_str());
         }
-        else if(pp->format == ParFlat_EMBL)
+        else if(pp->format == Parser::EFormat::EMBL)
         {
             subdbp = (DataBlkPtr) dbp->data;
             for(; subdbp != NULL; subdbp = subdbp->next)
@@ -1389,7 +1389,7 @@ static void ImpFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
 
     /* REFERENCE, Imp-feat
      */
-    if(pp->format == ParFlat_XML)
+    if(pp->format == Parser::EFormat::XML)
         dbp = XMLBuildRefDataBlk(entry->offset, ibp->xip, ParFlat_REF_SITES);
     else
         dbp = TrackNodeType(entry, ParFlat_REF_SITES);
@@ -2032,7 +2032,7 @@ static int get_first_codon_from_trna(const objects::CTrna_ext& trna)
 
 /**********************************************************/
 static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
-                      Int2 source, bool accver)
+                      Parser::ESource source, bool accver)
 {
     char*    qval;
     char*    p;
@@ -2113,7 +2113,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
         }
 
         if (qval == NULL && type == objects::CRNA_ref::eType_mRNA &&
-           source != ParFlat_EMBL && source != ParFlat_DDBJ)
+           source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ)
            qval = GetTheQualValue(feat.SetQual(), "standard_name");
 
         if (qval == NULL && feat.IsSetComment() && type == objects::CRNA_ref::eType_mRNA)
@@ -3721,13 +3721,13 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
 
     if(ibp->keywords.empty())
     {
-        if(pp->format == ParFlat_GENBANK)
+        if(pp->format == Parser::EFormat::GenBank)
             GetSequenceOfKeywords(entry, ParFlat_KEYWORDS,
                                   ParFlat_COL_DATA, ibp->keywords);
-        else if(pp->format == ParFlat_EMBL)
+        else if(pp->format == Parser::EFormat::EMBL)
             GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL,
                                   ibp->keywords);
-        else if(pp->format == ParFlat_XML)
+        else if(pp->format == Parser::EFormat::XML)
             XMLGetKeywords(entry->offset, ibp->xip, ibp->keywords);
     }
 
@@ -4019,7 +4019,7 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
             }
             else if(estimated_length != to - from + 1)
             {
-                if(pp->source == ParFlat_EMBL || pp->source == ParFlat_DDBJ)
+                if(pp->source == Parser::ESource::EMBL || pp->source == Parser::ESource::DDBJ)
                     sev = SEV_ERROR;
                 else
                 {
@@ -4045,7 +4045,7 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
                 }
                 else if(to + 1 == gfp->from || from - 1 == gfp->to)
                 {
-                    if(pp->source == ParFlat_EMBL)
+                    if(pp->source == Parser::ESource::EMBL)
                         sev = SEV_ERROR;
                     else
                     {
@@ -4437,7 +4437,7 @@ static void fta_process_con_slice(std::vector<char>& val_buf)
  *
  **********************************************************/
 static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
-                            Int2 format)
+                            Parser::EFormat format)
 {
     const char **b;
 
@@ -4454,7 +4454,7 @@ static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
     Int2       quotes;
     Int2       reject;
 
-    vallen = (format == ParFlat_EMBL) ? 59 : 58;
+    vallen = (format == Parser::EFormat::EMBL) ? 59 : 58;
 
     qstr = (char*) MemNew(eptr - bptr + 2);
     ch = *eptr;
@@ -4830,7 +4830,7 @@ static void fta_check_satellite(char* str, unsigned char* drop)
  *
  **********************************************************/
 int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
-                      Int2 source, Int2 format)
+                      Parser::ESource source, Parser::EFormat format)
 {
     char*    bptr;
     char*    eptr;
@@ -4997,7 +4997,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
                 /* last argument is perform_corrections if debug
                  * mode is FALSE
                  */
-                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, (source == ParFlat_FLYBASE ? false : !deb));
+                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, (source == Parser::ESource::Flybase ? false : !deb));
             }
             if(ret > retval)
                 retval = ret;
@@ -5194,7 +5194,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
 }
 
 /**********************************************************/
-static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Int2 source)
+static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source)
 {
     FeatBlkPtr fbp;
     char*    p;
@@ -5255,7 +5255,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Int2 source)
                 /* last argument is perform_corrections if debug
                  * mode is FALSE
                  */
-                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, ((source == ParFlat_FLYBASE) ? false : !deb));
+                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, ((source == Parser::ESource::Flybase) ? false : !deb));
             }
             if(ret > retval)
                 retval = ret;
@@ -5790,7 +5790,7 @@ static void fta_create_wgs_dbtag(objects::CBioseq &bioseq,
 
 /**********************************************************/
 static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
-                                 IndexblkPtr ibp, Int2 source)
+                                 IndexblkPtr ibp, Parser::ESource source)
 {
     TokenBlkPtr tbp;
     char*     prefix;
@@ -5944,7 +5944,7 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
         return;
     }
 
-    if((source == ParFlat_EMBL || source == ParFlat_DDBJ) && ibp->is_tsa)
+    if((source == Parser::ESource::EMBL || source == Parser::ESource::DDBJ) && ibp->is_tsa)
     {
         ErrPostEx(SEV_ERROR, ERR_SOURCE_SubmitterSeqidIgnored,
                   "Submitter sequence identifiers for non-project-based TSA records are not supported. /submitter_seqid \"%s\" has been dropped.",
@@ -5988,12 +5988,12 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
     TSeqIdList ids;
     ids.push_back(seq_id);
 
-    if(pp->format == ParFlat_GENBANK)
+    if(pp->format == Parser::EFormat::GenBank)
     {
         col_data = ParFlat_COL_DATA;
         type = ParFlat_FEATURES;
     }
-    else if(pp->format == ParFlat_XML)
+    else if(pp->format == Parser::EFormat::XML)
     {
         col_data = 0;
         type = XML_FEATURES;
@@ -6010,7 +6010,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
      * parses a single feature at a time.
      *                                          -Karl
      */
-    if(pp->format == ParFlat_XML)
+    if(pp->format == Parser::EFormat::XML)
         dab = XMLLoadFeatBlk(entry->offset, ibp->xip);
     else
         dab = TrackNodeType(entry, type);
@@ -6022,7 +6022,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
         /* Parsing each feature subblock to FeatBlkPtr, fbp
          * it also checks semantics of qualifiers and keys
          */
-        if(pp->format == ParFlat_XML)
+        if(pp->format == Parser::EFormat::XML)
             XMLParseFeatureBlock(pp->debug, (DataBlkPtr) dbp->data, pp->source);
         else
             ParseFeatureBlock(ibp, pp->debug, (DataBlkPtr) dbp->data, pp->source, pp->format);
@@ -6065,7 +6065,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
         {
             dabnext = dab->next;
             FreeFeatBlk((DataBlkPtr) dab->data, pp->format);
-            if(pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::XML)
                 MemFree(dab);
         }
         xinstall_gbparse_range_func(NULL, NULL);
@@ -6100,7 +6100,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
         dabnext = dab->next;
         if(dab->type != type)
         {
-            if(pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::XML)
                 MemFree(dab);
             continue;
         }
@@ -6114,7 +6114,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
             if(StringCmp(fbp->key, "source") == 0 ||
                StringCmp(fbp->key, "assembly_gap") == 0 ||
                (StringCmp(fbp->key, "gap") == 0 &&
-                pp->source != ParFlat_DDBJ && pp->source != ParFlat_EMBL))
+                pp->source != Parser::ESource::DDBJ && pp->source != Parser::ESource::EMBL))
                 continue;
 
             fta_sort_quals(fbp, pp->qamode);
@@ -6194,7 +6194,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
             }
         }
         FreeFeatBlk((DataBlkPtr) dab->data, pp->format);
-        if(pp->format == ParFlat_XML)
+        if(pp->format == Parser::EFormat::XML)
             MemFree(dab);
     }
 
@@ -6343,7 +6343,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     c = '\0';
     if(ibp->moltype != NULL)
     {
-        if(pp->source == ParFlat_DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
+        if(pp->source == Parser::ESource::DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
             return;
 
         biomol = Seq_descr_GIBB_mol_genomic;
@@ -6353,7 +6353,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         {
             q = molstr;
             r = molstr;
-            if(pp->format == ParFlat_EMBL || pp->format == ParFlat_XML)
+            if(pp->format == Parser::EFormat::EMBL || pp->format == Parser::EFormat::XML)
                 while(*r != ';' && *r != '\n' && *r != '\0')
                     r++;
             else
@@ -6378,7 +6378,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_genomic;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "DNA") != 0 &&
                    StringICmp(ibp->moltype, q) != 0)
@@ -6392,7 +6392,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_genomic;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6405,7 +6405,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_mRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6418,7 +6418,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_tRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6431,7 +6431,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_rRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6444,7 +6444,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_snoRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6457,7 +6457,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_snRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6470,7 +6470,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_scRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6483,7 +6483,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_preRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6496,7 +6496,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_preRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6512,7 +6512,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_other;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6528,7 +6528,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_other;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "DNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6544,7 +6544,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_unknown;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6560,7 +6560,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_unknown;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "DNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6573,7 +6573,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_cRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 &&
                    StringICmp(q, "cRNA") != 0 &&
@@ -6588,7 +6588,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             biomol = Seq_descr_GIBB_mol_trRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
 
-            if (pp->source == ParFlat_EMBL)
+            if (pp->source == Parser::ESource::EMBL)
             {
                 if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
                     same = false;
@@ -6673,8 +6673,8 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         return;
     }
 
-    if(pp->source == ParFlat_DDBJ || pp->source == ParFlat_LANL ||
-       pp->source == ParFlat_NCBI)
+    if(pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::LANL ||
+       pp->source == Parser::ESource::NCBI)
     {
         biomol = Seq_descr_GIBB_mol_genomic;
         bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
@@ -6690,22 +6690,22 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     else
     {
         genomic = CheckNA(molstr);
-        if(genomic < 0 && pp->source == ParFlat_DDBJ)
+        if(genomic < 0 && pp->source == Parser::ESource::DDBJ)
             genomic = CheckNADDBJ(molstr);
     }
 
     if(genomic < 0 || genomic > 20)
     {
-        if(pp->source == ParFlat_EMBL && StringNICmp(molstr, "XXX", 3) == 0)
+        if(pp->source == Parser::ESource::EMBL && StringNICmp(molstr, "XXX", 3) == 0)
             return;
-        if(pp->source == ParFlat_DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
+        if(pp->source == Parser::ESource::DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
             return;
         ibp->drop = 1;
         q = molstr;
         c = '\0';
         if(q != NULL)
         {
-            if(pp->format == ParFlat_EMBL)
+            if(pp->format == Parser::EFormat::EMBL)
                 while(*q != ';' && *q != '\n' && *q != '\0')
                     q++;
             else
@@ -6720,11 +6720,11 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             c = *q;
             *q = '\0';
         }
-        if(pp->source == ParFlat_DDBJ)
+        if(pp->source == Parser::ESource::DDBJ)
             p = "DDBJ";
-        else if(pp->source == ParFlat_EMBL)
+        else if(pp->source == Parser::ESource::EMBL)
             p = "EMBL";
-        else if(pp->source == ParFlat_LANL)
+        else if(pp->source == Parser::ESource::LANL)
             p = "LANL";
         else
             p = "NCBI";
@@ -6809,7 +6809,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     if (org_ref != NULL && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetDiv())
         div = org_ref->GetOrgname().GetDiv().c_str();
 
-    if(pp->source != ParFlat_EMBL || pp->format != ParFlat_EMBL)
+    if(pp->source != Parser::ESource::EMBL || pp->format != Parser::EFormat::EMBL)
     {
         biomol = Seq_descr_GIBB_mol_genomic;
         if (div == NULL || StringNCmp(div, "VRL", 3) != 0)

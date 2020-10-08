@@ -60,12 +60,12 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/biblio/Cit_proc.hpp>
 
-#include <objtools/flatfile/index.h>
-#include <objtools/flatfile/genbank.h>
-#include <objtools/flatfile/embl.h>
+#include "index.h"
+#include "genbank.h"
+#include "embl.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include <objtools/flatfile/ftanet.h>
+#include "ftanet.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -256,7 +256,7 @@ static CRef<objects::CPub> get_num(char* str)
  *                                              12-4-93
  *
  **********************************************************/
-static CRef<objects::CPub> get_muid(char* str, Uint1 format)
+static CRef<objects::CPub> get_muid(char* str, Parser::EFormat format)
 {
     char* p;
     Int4    i;
@@ -266,9 +266,9 @@ static CRef<objects::CPub> get_muid(char* str, Uint1 format)
     if(str == NULL)
         return muid;
 
-    if(format == ParFlat_GENBANK || format == ParFlat_XML)
+    if(format == Parser::EFormat::GenBank || format == Parser::EFormat::XML)
         p = str;
-    else if(format == ParFlat_EMBL)
+    else if(format == Parser::EFormat::EMBL)
     {
         p = StringIStr(str, "MEDLINE;");
         if(p == NULL)
@@ -430,7 +430,7 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
 
     temp = StringSave(bptr);
 
-    ch = (pp->format == ParFlat_EMBL) ? '.' : ';';
+    ch = (pp->format == Parser::EFormat::EMBL) ? '.' : ';';
     p = StringChr(temp, ch);
     if(p != NULL)
         *p = '\0';
@@ -445,7 +445,7 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
                    "Too many patent references for patent sequence; ignoring all but the first.");
     }
 
-    q = (pp->format == ParFlat_EMBL) ? (char*) "Patent number" :
+    q = (pp->format == Parser::EFormat::EMBL) ? (char*) "Patent number" :
                                        (char*) "Patent:";
     size_t len = StringLen(q);
     if(StringNICmp(q, bptr, len) != 0)
@@ -470,7 +470,7 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
     }
     s = q + 1;
 
-    if(pp->format != ParFlat_EMBL)
+    if(pp->format != Parser::EFormat::EMBL)
         *s++ = '\0';
     while(*s == ' ')
         s++;
@@ -542,7 +542,7 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
         *p = ch;
 
     std::string msg = NStr::Sanitize(number);
-    if(pp->format == ParFlat_EMBL)
+    if(pp->format == Parser::EFormat::EMBL)
         *number = '\0';
 
     cit_pat.Reset(new objects::CCit_pat);
@@ -784,13 +784,13 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
 
     CRef<objects::CCit_art> cit_art;
 
-    if(pp->format == ParFlat_GENBANK || pp->format == ParFlat_PRF)
+    if(pp->format == Parser::EFormat::GenBank || pp->format == Parser::EFormat::PRF)
         symbol = ',';
-    else if(pp->format == ParFlat_EMBL)
+    else if(pp->format == Parser::EFormat::EMBL)
         symbol = ':';
-    else if(pp->format == ParFlat_XML)
+    else if(pp->format == Parser::EFormat::XML)
     {
-        if(pp->source == ParFlat_EMBL)
+        if(pp->source == Parser::ESource::EMBL)
             symbol = ':';
         else
             symbol = ',';
@@ -819,7 +819,7 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
         return cit_art;
     }
 
-    if(pp->format == ParFlat_PRF && s > buf &&
+    if(pp->format == Parser::EFormat::PRF && s > buf &&
        (StringLen(s) != 6 || s[1] < '1' || s[1] > '2' || s[2] < '0' ||
         s[2] > '9' || s[3] < '0' || s[3] > '9' || s[4] < '0' || s[4] > '9'))
     {
@@ -862,13 +862,13 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     {
         /* try delimiter from other format
          */
-        if(pp->format == ParFlat_GENBANK)
+        if(pp->format == Parser::EFormat::GenBank)
             symbol = ':';
-        else if(pp->format == ParFlat_EMBL)
+        else if(pp->format == Parser::EFormat::EMBL)
             symbol = ',';
-        else if(pp->format == ParFlat_XML)
+        else if(pp->format == Parser::EFormat::XML)
         {
-            if(pp->source == ParFlat_EMBL)
+            if(pp->source == Parser::ESource::EMBL)
                 symbol = ',';
             else
                 symbol = ':';
@@ -906,7 +906,7 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     if(*year == '0')
     {
         if(pages != NULL && StringNCmp(pages, "0-0", 3) == 0 &&
-           pp->source == ParFlat_EMBL)
+           pp->source == Parser::ESource::EMBL)
             *all_zeros = true;
         MemFree(buf);
         return cit_art;
@@ -1096,7 +1096,7 @@ static CRef<objects::CCit_gen> get_unpub(char* bptr, char* eptr, CRef<objects::C
  *
  **********************************************************/
 static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title,
-                                                    int pre, Int2 format, char* jour)
+                                                    int pre, Parser::EFormat format, char* jour)
 {
     char*    s;
     char*    ss;
@@ -1119,16 +1119,16 @@ static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& a
 
     switch(format)
     {
-        case ParFlat_EMBL:
+        case Parser::EFormat::EMBL:
             ref_fmt = EMBL_REF;
             break;
-        case ParFlat_GENBANK:
+        case Parser::EFormat::GenBank:
             ref_fmt = GB_REF;
             break;
-        case ParFlat_PIR:
+        case Parser::EFormat::PIR:
             ref_fmt = PIR_REF;
             break;
-        case ParFlat_SPROT:
+        case Parser::EFormat::SPROT:
             ref_fmt = SP_REF;
             break;
     }
@@ -2097,7 +2097,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
         {
             q = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
                                 INSDREFERENCE_JOURNAL);
-            get_auth(p, (pp->source == ParFlat_EMBL) ? EMBL_REF : GB_REF, q, auth_list);
+            get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
             MemFree(q);
         }
         MemFree(p);
@@ -2257,7 +2257,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
         else
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
                       "No reference number.");
-        ind_subdbp(dbp, ind, MAXKW, ParFlat_GENBANK);
+        ind_subdbp(dbp, ind, MAXKW, Parser::EFormat::GenBank);
     }
     else
     {
@@ -2265,7 +2265,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
          */
         if(ppInd != NULL)
         {
-            ind_subdbp(dbp, ind, MAXKW, ParFlat_GENBANK);
+            ind_subdbp(dbp, ind, MAXKW, Parser::EFormat::GenBank);
             *ppInd = &ind[0];
 
             return desc;
@@ -2280,7 +2280,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     if(ind[ParFlat_MEDLINE] != NULL)
     {
         p = ind[ParFlat_MEDLINE]->offset;
-        CRef<objects::CPub> pub = get_muid(p, ParFlat_GENBANK);
+        CRef<objects::CPub> pub = get_muid(p, Parser::EFormat::GenBank);
         if (pub.NotEmpty())
         {
             has_muid = true;
@@ -2443,7 +2443,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
                   "No reference number.");
 
-    ind_subdbp(dbp, ind, MAXKW, ParFlat_EMBL);
+    ind_subdbp(dbp, ind, MAXKW, Parser::EFormat::EMBL);
 
     has_muid = false;
     pmid = 0;
@@ -2459,7 +2459,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
     if(ind[ParFlat_RX] != NULL)
     {
         p = ind[ParFlat_RX]->offset;
-        CRef<objects::CPub> pub = get_muid(p, ParFlat_EMBL);
+        CRef<objects::CPub> pub = get_muid(p, Parser::EFormat::EMBL);
 
         const Char* id = get_embl_str_pub_id(p, "DOI;");
         if (id)
@@ -2789,18 +2789,18 @@ CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
     bool rej = false;
     bool no_auth = false;
 
-    if(pp->mode == FTA_HTGS_MODE)
+    if(pp->mode == Parser::EMode::HTGS)
         soft_report = true;
 
     CRef<objects::CPubdesc> desc;
 
-    if (pp->format == ParFlat_SPROT)
+    if (pp->format == Parser::EFormat::SPROT)
         desc = sp_refs(pp, dbp, col_data);
-    else if(pp->format == ParFlat_XML)
+    else if(pp->format == Parser::EFormat::XML)
         desc = XMLRefs(pp, dbp, no_auth, rej);
-    else if(pp->format == ParFlat_GENBANK)
+    else if(pp->format == Parser::EFormat::GenBank)
         desc = gb_refs_common(pp, dbp, col_data, true, NULL, no_auth);
-    else if(pp->format == ParFlat_EMBL)
+    else if(pp->format == Parser::EFormat::EMBL)
         desc = embl_refs(pp, dbp, col_data, no_auth);
 
     if(desc && desc->IsSetComment())
@@ -2812,7 +2812,7 @@ CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 
     if(no_auth)
     {
-        if(pp->source == ParFlat_EMBL)
+        if(pp->source == Parser::ESource::EMBL)
             ErrPostEx(SEV_ERROR, ERR_REFERENCE_MissingAuthors,
                       "Reference has no author names.");
         else

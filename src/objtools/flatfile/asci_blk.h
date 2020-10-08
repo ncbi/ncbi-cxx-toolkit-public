@@ -51,8 +51,8 @@ void PackEntries(TEntryList& seq_entries);
 Int4        ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns);
 char*     GetGenBankBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
 void        GetGenBankSubBlock(DataBlkPtr entry, size_t bases);
-char*     GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Int2 format, char* eptr);
-void        GetEmblSubBlock(size_t bases, Int2 source, DataBlkPtr entry);
+char*     GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
+void        GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry);
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 char*     GetPrfBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
@@ -61,7 +61,7 @@ void        BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw);
 void        GetLenSubNode(DataBlkPtr dbp);
 char*     SrchNodeSubType(DataBlkPtr entry, Int2 type, Int2 subtype, size_t* len);
 char*     GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat);
-void        GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Int2 source, TAccessionList& accessions);
+void        GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions);
 void        GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data, TKeywordList& keywords);
 
 bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& cpp_bsp,
@@ -80,9 +80,9 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
 bool        IsSegBioseq(const objects::CSeq_id* id);
 char*     check_div(bool pat_acc, bool pat_ref, bool est_kwd,
                             bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases,
-                            Int2 source, bool& drop);
+                            Parser::ESource source, bool& drop);
 void        EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
-void        AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata, Int2 source);
+void        AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata, Parser::ESource source);
 void        DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori, bool cancelled);
 void        XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled);
 void        CheckHTGDivision(char* div, Uint1 tech);
