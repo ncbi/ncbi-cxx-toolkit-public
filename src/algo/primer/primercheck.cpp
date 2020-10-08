@@ -933,10 +933,6 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
     return same_target;
 }
 
-static bool ContainsId(const CBioseq_Handle& bh, const CSeq_id_Handle& id) {
-
-    return (find(bh.GetId().begin(), bh.GetId().end(), id) != bh.GetId().end());
-}
 
 static bool SeqLocAllowed(const list<CRef<CSeq_loc> >& allowed_seq,
                           const CSeq_id& hit_id, 
@@ -1014,10 +1010,8 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     
     bool left_template_aln_overlap = m_Hits->m_TemplateRange.IntersectingWith(left_align.GetSeqRange(1));
     bool right_template_aln_overlap = m_Hits->m_TemplateRange.IntersectingWith(right_align.GetSeqRange(1));
-    bool template_hit_same_id = ContainsId(m_Hits->m_TemplateHandle,
-                                           CSeq_id_Handle::
-                                           GetHandle(left_align.GetSeq_id(1)));
 
+    bool template_hit_same_id = IsSameBioseq(*(m_Hits->m_TemplateHandle.GetSeqId()), left_align.GetSeq_id(1), m_Scope);
     const CRef<CSeq_id> hit_wid
         = FindBestChoice(m_Scope->GetBioseqHandle(left_align.GetSeq_id(1)).
                    GetBioseqCore()->GetId(),
