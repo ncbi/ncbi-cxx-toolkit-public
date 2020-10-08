@@ -403,7 +403,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetProcessor::GetStatus(void)
 
 string CPSGS_GetProcessor::GetName(void) const
 {
-    return "LMDB cache/Cassandra get processor";
+    return "Cassandra-get";
 }
 
 

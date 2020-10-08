@@ -392,7 +392,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
 
 string CPSGS_AnnotProcessor::GetName(void) const
 {
-    return "LMDB cache/Cassandra named annotations processor";
+    return "Cassandra-getna";
 }
 
 

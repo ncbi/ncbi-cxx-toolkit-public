@@ -96,7 +96,7 @@ void CPSGS_GetBlobProcessor::Process(void)
     if (!m_BlobId.MapSatToKeyspace()) {
         app->GetErrorCounters().IncClientSatToSatName();
 
-        string  err_msg = GetName() + " failed to map sat " +
+        string  err_msg = GetName() + " processor failed to map sat " +
                           to_string(m_BlobId.m_Sat) +
                           " to a Cassandra keyspace";
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
@@ -296,7 +296,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 
 string CPSGS_GetBlobProcessor::GetName(void) const
 {
-    return "LMDB cache/Cassandra get blob processor";
+    return "Cassandra-getblob";
 }
 
 
