@@ -84,6 +84,12 @@ Seq-annot ::= {
       },
       location mix {
         int {
+          from 4326,
+          to 4328,
+          strand plus,
+          id local str "scaffold12159"
+        },
+        int {
           from 3819,
           to 4199,
           strand plus,
@@ -92,6 +98,12 @@ Seq-annot ::= {
         int {
           from 4239,
           to 4328,
+          strand plus,
+          id local str "scaffold12159"
+        },
+        int {
+          from 3819,
+          to 3821,
           strand plus,
           id local str "scaffold12159"
         }

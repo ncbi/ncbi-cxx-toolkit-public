@@ -241,6 +241,60 @@ Seq-annot ::= {
             accession "NW_006763130",
             version 1
           }
+        },
+        int {
+          from 20967,
+          to 21078,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 19496,
+          to 19585,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 18432,
+          to 18650,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 15408,
+          to 15547,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 12340,
+          to 12443,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 8934,
+          to 9069,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
         }
       },
       qual {
@@ -642,6 +696,60 @@ Seq-annot ::= {
             accession "NW_006763130",
             version 1
           }
+        },
+        int {
+          from 79292,
+          to 79403,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 77723,
+          to 77812,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 76297,
+          to 76515,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74240,
+          to 74382,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64324,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
         }
       },
       qual {
@@ -765,6 +873,69 @@ Seq-annot ::= {
         },
         int {
           from 64255,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 79292,
+          to 79403,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 77723,
+          to 77812,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 76297,
+          to 76515,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74892,
+          to 74930,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74240,
+          to 74382,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64324,
           to 64459,
           strand minus,
           id other {
@@ -1853,6 +2024,60 @@ Seq-annot ::= {
             accession "NW_006763130",
             version 1
           }
+        },
+        int {
+          from 171201,
+          to 171312,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 169825,
+          to 169914,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 168723,
+          to 168929,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 166283,
+          to 166425,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 163852,
+          to 163955,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 149806,
+          to 149941,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
         }
       },
       qual {
@@ -2186,6 +2411,60 @@ Seq-annot ::= {
         },
         int {
           from 248233,
+          to 248680,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 290526,
+          to 290637,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 289047,
+          to 289136,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 288001,
+          to 288219,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 254930,
+          to 255069,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 251885,
+          to 251988,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 248548,
           to 248680,
           strand minus,
           id other {
@@ -2625,6 +2904,60 @@ Seq-annot ::= {
         },
         int {
           from 315936,
+          to 316372,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 332676,
+          to 332787,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 331124,
+          to 331213,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 329778,
+          to 329981,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 327323,
+          to 327465,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 324929,
+          to 325032,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 316237,
           to 316372,
           strand minus,
           id other {
@@ -3575,6 +3908,24 @@ Seq-annot ::= {
  relative to this genomic sequence to represent the inferred CDS: inserted 1
  base in 1 codon",
       location mix {
+        int {
+          from 538387,
+          to 538621,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 536046,
+          to 538233,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
         int {
           from 538387,
           to 538621,

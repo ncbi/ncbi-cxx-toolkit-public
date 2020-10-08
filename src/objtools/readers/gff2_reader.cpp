@@ -215,12 +215,19 @@ CGff2Reader::xGetData(
         if (xIsSequenceRegion(line)) {
             vector<string> tokens;
             NStr::Split(line, " \n", tokens, NStr::fSplit_MergeDelimiters);
-            try {
+            if (tokens.size() < 4) {
+                mSequenceSize = 0;
+            }
+            else {
                 mSequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
             }
-            catch (CException& exct) {
-                cerr << "FIXME: Needs proper error recovery" << endl;
+            if (mSequenceSize == -1) {
                 mSequenceSize = 0;
+                CReaderMessage warning(
+                    ncbi::eDiag_Warning,
+                    m_uLineNumber,
+                    "Bad sequence-region pragma - ignored.");
+                throw warning;
             }
             if (!mCurrentFeatureCount) {
                 xParseTrackLine("track");
