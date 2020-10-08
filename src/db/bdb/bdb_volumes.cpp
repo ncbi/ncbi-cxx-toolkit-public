@@ -113,7 +113,7 @@ void CBDB_Volumes::Open(const string& dir_path)
         catch (CBDB_ErrnoException& err_ex)
         {
             if (err_ex.IsRecovery()) {
-                LOG_POST_X(2, Warning <<
+                ERR_POST_X(2, Warning <<
                            "'Warning: DB_ENV returned DB_RUNRECOVERY code."
                            " Running the recovery procedure.");
             }

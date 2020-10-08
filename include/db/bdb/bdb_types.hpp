@@ -2414,7 +2414,7 @@ void CBDB_FieldString::Set(const char* str, EOverflowAction if_overflow)
     if (new_len > GetBufferSize()) {
         switch (if_overflow) {
         case eTruncateOnOverflowLogError:
-            LOG_POST(Warning << "Value truncated for field '"
+            ERR_POST(Warning << "Value truncated for field '"
                     << GetName() << "'");
             NCBI_FALLTHROUGH;
         case eTruncateOnOverflow:

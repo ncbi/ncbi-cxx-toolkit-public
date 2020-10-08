@@ -104,15 +104,15 @@ void CBDB_CheckPointThread::DoJob(void)
             RequestStop();
             string msg ="Fatal Berkeley DB error: DB_RUNRECOVERY."
                         " Checkpoint thread has been stopped.";
-            LOG_POST_X(3, Error << msg);
+            ERR_POST_X(3, Error << msg);
         } else {
-            LOG_POST_X(4, Error << "Error in checkpoint thread(supressed) "
+            ERR_POST_X(4, Error << "Error in checkpoint thread(supressed) "
                                 << ex.what());
         }
 
         if (m_ErrCnt > m_MaxErrors) {
             RequestStop();
-            LOG_POST_X(5, Error <<
+            ERR_POST_X(5, Error <<
                        "Checkpoint thread has been stopped (too many errors)");
         }
     }
@@ -121,12 +121,12 @@ void CBDB_CheckPointThread::DoJob(void)
         if (m_MaxErrors) {
             ++m_ErrCnt;
         }
-        LOG_POST_X(6, Error << "Error in checkpoint thread: "
+        ERR_POST_X(6, Error << "Error in checkpoint thread: "
                             << ex.what());
 
         if (m_ErrCnt > m_MaxErrors) {
             RequestStop();
-            LOG_POST_X(7, Error <<
+            ERR_POST_X(7, Error <<
                        "Checkpoint thread has been stopped (too many errors)");
         }
     }

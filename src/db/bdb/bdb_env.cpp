@@ -212,14 +212,14 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
 
         if (!recover_requested) {
             fatal_recovery:
-            LOG_POST_X(1, Warning << "BDB_Env: Trying fatal recovery.");
+            ERR_POST_X(1, Warning << "BDB_Env: Trying fatal recovery.");
             if ((ret == DB_RUNRECOVERY) && (flags & DB_INIT_TXN)) {
                 recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
                 recover_flag &= ~DB_RECOVER;
 
                 ret = m_Env->open(m_Env, db_home_param, recover_flag, 0664);
                 if (ret) {
-                    LOG_POST_X(2, Warning <<
+                    ERR_POST_X(2, Warning <<
                                "Fatal recovery returned error code=" << ret);
                 }
             }
@@ -1103,7 +1103,7 @@ void CBDB_Env::RunBackgroundWriter(TBackgroundFlags flags,
     m_CheckThread->Run();
     *m_StopThreadFlag = true;
 # else
-    LOG_POST_X(7, Warning <<
+    ERR_POST_X(7, Warning <<
      "Cannot run BDB transaction checkpoint thread in non-MT configuration.");
 # endif
 }

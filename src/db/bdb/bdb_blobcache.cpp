@@ -1260,13 +1260,13 @@ void CBDB_Cache::Open(const string& cache_path,
         &&  s_OpenedDirs.count(m_Path) == 0)
     {
         if (m_InitIfDirty) {
-            LOG_POST("Database was closed uncleanly. Removing directory "
+            ERR_POST("Database was closed uncleanly. Removing directory "
                      << m_Path);
             dir.Remove();
         }
         else {
             // Opening db with recover flags is unreliable.
-            LOG_POST("Database was closed uncleanly. Running recovery...");
+            ERR_POST("Database was closed uncleanly. Running recovery...");
             BDB_RecoverEnv(m_Path, false);
             fl_clean.Remove();
         }
@@ -1310,7 +1310,7 @@ void CBDB_Cache::Open(const string& cache_path,
         catch (CBDB_ErrnoException& err_ex)
         {
             if (err_ex.IsRecovery()) {
-                LOG_POST_X(4, Warning <<
+                ERR_POST_X(4, Warning <<
                            "LC: '" << cache_name <<
                            "'Warning: DB_ENV returned DB_RUNRECOVERY code."
                            " Running the recovery procedure.");
@@ -1543,7 +1543,7 @@ void CBDB_Cache::Open(const string& cache_path,
                                        m_MempTrickle);
         }
 # else
-       LOG_POST_X(8, Warning <<
+       ERR_POST_X(8, Warning <<
                   "Cannot run background thread in non-MT configuration.");
        m_Env->TransactionCheckpoint();
 # endif
@@ -1662,7 +1662,7 @@ void CBDB_Cache::Close()
         }
     }
     catch (exception& ex) {
-        LOG_POST_X(15, Warning << "LC: '" << m_Name
+        ERR_POST_X(15, Warning << "LC: '" << m_Name
                          << "' Exception in Close() " << ex.what()
                          << " (ignored.)");
     }
@@ -1924,7 +1924,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
 
             ret = m_CacheAttrDB->Insert();
             if (ret != eBDB_Ok) {
-                LOG_POST_X(16, Error << "Failed to insert BLOB attributes "
+                ERR_POST_X(16, Error << "Failed to insert BLOB attributes "
                                << key << " " << version << " " << subkey);
             } else {
                 m_CacheIdIDX->blob_id = next_blob_id;
@@ -1934,7 +1934,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
 
                 ret = m_CacheIdIDX->Insert();
                 if (ret != eBDB_Ok) {
-                    LOG_POST_X(17, Error << "Failed to insert BLOB id index "
+                    ERR_POST_X(17, Error << "Failed to insert BLOB id index "
                                    << key << " " << version << " " << subkey);
                 }
             }
@@ -1967,7 +1967,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
                                     CBDB_RawFile::eThrowOnError);
         }
         catch (CBDB_Exception& ex) {
-            LOG_POST_X(18, Error << "Cannot delete BLOB from split store "
+            ERR_POST_X(18, Error << "Cannot delete BLOB from split store "
                            << ex.what());
             throw;
         }
@@ -2095,7 +2095,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                                               CBDB_RawFile::eThrowOnError);
                 }
                 catch (CBDB_Exception& ex) {
-                    LOG_POST_X(19, Error << "Cannot delete BLOB from split store "
+                    ERR_POST_X(19, Error << "Cannot delete BLOB from split store "
                                    << ex.what());
                     throw;
                 }
@@ -3822,7 +3822,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             if (ex.IsRecovery()) {  // serious stuff! need to quit
                 throw;
             }
-            LOG_POST_X(20, Error
+            ERR_POST_X(20, Error
                 <<  "Purge suppressed exception when deleting BLOB "
                 << ex.what());
             if (m_Monitor && m_Monitor->IsActive()) {
@@ -3831,7 +3831,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
 
         }
         catch(exception& ex) {
-            LOG_POST_X(21, Error
+            ERR_POST_X(21, Error
                 <<  "Purge suppressed exception when deleting BLOB "
                 << ex.what());
             if (m_Monitor && m_Monitor->IsActive()) {
@@ -4131,7 +4131,7 @@ purge_start:
                     if (ex.IsRecovery()) {  // serious stuff! need to quit
                         throw;
                     }
-                    LOG_POST_X(22, Error
+                    ERR_POST_X(22, Error
                         <<  "Purge suppressed exception when deleting BLOB "
                         << ex.what());
                     if (m_Monitor && m_Monitor->IsActive()) {
@@ -4140,7 +4140,7 @@ purge_start:
 
                 }
                 catch(exception& ex) {
-                    LOG_POST_X(23, Error
+                    ERR_POST_X(23, Error
                         <<  "Purge suppressed exception when deleting BLOB "
                         << ex.what());
                     if (m_Monitor && m_Monitor->IsActive()) {
@@ -4169,7 +4169,7 @@ purge_start:
 
         EvaluateTimeLine(&scan_interrupted);
         if (scan_interrupted) {
-            LOG_POST_X(25, Warning << "BDB Cache: Stopping Purge execution.");
+            ERR_POST_X(25, Warning << "BDB Cache: Stopping Purge execution.");
             return;
         }
 
@@ -4360,7 +4360,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
                     DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON);
     }
 
-    LOG_POST_X(26, "Cache location: " + string(cache_path));
+    ERR_POST_X(26, "Cache location: " + string(cache_path));
 
     string cache_blob_db_name =
        string("lcs_") + string(cache_name) + string("_blob")+ string(".db");
@@ -4373,7 +4373,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
     string bak = m_Path + attr_db_name + ".bak";
     FILE* fl = fopen(bak.c_str(), "wb");
 
-    LOG_POST_X(27, "Running verification for: " + attr_db_name);
+    ERR_POST_X(27, "Running verification for: " + attr_db_name);
     m_CacheAttrDB->Verify(attr_db_name.c_str(), 0, fl);
     delete m_CacheAttrDB; m_CacheAttrDB = 0;
 
@@ -4385,7 +4385,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
         bool deleted = m_Env->Remove();
 
         if (!deleted)
-            LOG_POST_X(28, "Cannot delete the environment (it is busy by another process)");
+            ERR_POST_X(28, "Cannot delete the environment (it is busy by another process)");
     }
     delete m_Env; m_Env = 0;
 }
