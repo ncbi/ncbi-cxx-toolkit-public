@@ -102,7 +102,7 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 
 string CPSGS_OSGProcessor::GetName() const
 {
-    return "OSG processor";
+    return "OSG";
 }
 
 

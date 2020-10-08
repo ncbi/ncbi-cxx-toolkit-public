@@ -63,7 +63,7 @@ CPSGS_OSGResolve::~CPSGS_OSGResolve()
 
 string CPSGS_OSGResolve::GetName() const
 {
-    return "OSG processor: resolve";
+    return "OSG-resolve";
 }
 
 
@@ -153,7 +153,7 @@ CPSGS_OSGGetBlobBySeqId::~CPSGS_OSGGetBlobBySeqId()
 
 string CPSGS_OSGGetBlobBySeqId::GetName() const
 {
-    return "OSG processor: get blob by Seq-id";
+    return "OSG-get";
 }
 
 

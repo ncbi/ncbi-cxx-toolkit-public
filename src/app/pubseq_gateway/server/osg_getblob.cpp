@@ -54,7 +54,7 @@ CPSGS_OSGGetBlob::CPSGS_OSGGetBlob(const CRef<COSGConnectionPool>& pool,
 
 string CPSGS_OSGGetBlob::GetName() const
 {
-    return "OSG processor: get blob";
+    return "OSG-getblob";
 }
 
 
@@ -110,7 +110,7 @@ CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
 
 string CPSGS_OSGGetChunks::GetName() const
 {
-    return "OSG processor: get chunks";
+    return "OSG-gettsechunk";
 }
 
 
