@@ -472,7 +472,7 @@ public:
         try {
             m_IdleTask.reset(new TWorkerNodeIdleTask(context));
         } catch (exception& ex) {
-            LOG_POST_XX(ConnServ_WorkerNode, 16,
+            ERR_POST_XX(ConnServ_WorkerNode, 16,
                         "Error during Idle task construction: " << ex.what());
             throw;
         }
