@@ -444,7 +444,7 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     // data sources and estimate the time needed for different
     // techniques.  This has not been done.
 
-    bool mixed_ids = m_UserList.Empty() || (!! m_UserList->GetNumSis());
+    bool mixed_ids = m_UserList.Empty() || (!! m_UserList->GetNumSis())|| (m_UserList->GetNumTaxIds());
 
     if (! mixed_ids) {
         if ((m_UserList->GetNumTis() && gilist->GetNumGis()) ||

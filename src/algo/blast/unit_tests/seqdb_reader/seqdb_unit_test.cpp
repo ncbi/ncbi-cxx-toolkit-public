@@ -4468,6 +4468,23 @@ BOOST_AUTO_TEST_CASE(CombinedFilters)
 
 }
 
+BOOST_AUTO_TEST_CASE(TaxFilterWithGiListDB)
+{
+    string db_name = "refseq_mrna";
+   	CRef<CSeqDBGiList> pos_list(new CSeqDBGiList());
+   	set<TTaxId> t;
+   	t.insert(TAX_ID_CONST(9606));
+	pos_list->AddTaxIds(t);
+
+   	CSeqDB db(db_name, CSeqDB::eNucleotide, &*pos_list);
+    int total_num_seqs = 0;
+    Uint8 total_length = 0;
+    db.GetTotals(CSeqDB::eFilteredAll, &total_num_seqs, &total_length, true);
+    BOOST_REQUIRE(total_num_seqs > 0);
+    BOOST_REQUIRE(total_length > 0);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
