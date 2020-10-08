@@ -1242,7 +1242,7 @@ namespace NWinHook
                 BOOL result = pHook->UnHookImport();
 
                 if (result == FALSE) {
-                    LOG_POST_X(4, Warning << pHook->GetFuncName() <<
+                    ERR_POST_X(4, Warning << pHook->GetFuncName() <<
                                " wasn't unhooked in " << NCBI_CURRENT_FUNCTION);
                 }
             }
@@ -1303,7 +1303,7 @@ namespace NWinHook
             BOOL result = UnHookImport();
 
             if (result == FALSE) {
-                LOG_POST_X(4, Warning <<
+                ERR_POST_X(4, Warning <<
                            "Import is not unhooked in " << NCBI_CURRENT_FUNCTION);
             }
         }
@@ -1917,7 +1917,7 @@ namespace NWinHook
                                      );
 
                 if (bResult == FALSE) {
-                    LOG_POST_X(4, Warning
+                    ERR_POST_X(4, Warning
                                << "LoadLibraryA is not hooked in "
                                << NCBI_CURRENT_FUNCTION
                                );
@@ -1931,7 +1931,7 @@ namespace NWinHook
                                      ) || bResult;
 
                 if (bResult == FALSE) {
-                    LOG_POST_X(4, Warning
+                    ERR_POST_X(4, Warning
                                << "LoadLibraryW is not hooked in "
                                << NCBI_CURRENT_FUNCTION
                                );
@@ -1945,7 +1945,7 @@ namespace NWinHook
                                      ) || bResult;
 
                 if (bResult == FALSE) {
-                    LOG_POST_X(4, Warning
+                    ERR_POST_X(4, Warning
                                << "LoadLibraryExA is not hooked in "
                                << NCBI_CURRENT_FUNCTION
                                );
@@ -1959,7 +1959,7 @@ namespace NWinHook
                                      ) || bResult;
 
                 if (bResult == FALSE) {
-                    LOG_POST_X(4, Warning
+                    ERR_POST_X(4, Warning
                                << "LoadLibraryExW is not hooked in "
                                << NCBI_CURRENT_FUNCTION
                                );
@@ -1973,7 +1973,7 @@ namespace NWinHook
                                      ) || bResult;
 
                 if (bResult == FALSE) {
-                    LOG_POST_X(4, Warning
+                    ERR_POST_X(4, Warning
                                << "GetProcAddress is not hooked in"
                                << NCBI_CURRENT_FUNCTION
                                );
@@ -2100,7 +2100,7 @@ namespace NWinHook
             BOOL result = pHook->HookImport();
 
             if (result == FALSE) {
-                LOG_POST_X(4, Warning << pszFuncName
+                ERR_POST_X(4, Warning << pszFuncName
                            << " is not hooked in "
                            << NCBI_CURRENT_FUNCTION
                            );
@@ -2345,7 +2345,7 @@ namespace NWinHook
         m_Hooked = (result == TRUE);
 
         if (!m_Hooked) {
-            LOG_POST_X(4, Warning
+            ERR_POST_X(4, Warning
                        << "ExitProcess is not hooked in "
                        << NCBI_CURRENT_FUNCTION
                        );

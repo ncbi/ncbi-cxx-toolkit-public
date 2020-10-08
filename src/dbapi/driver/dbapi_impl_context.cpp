@@ -973,7 +973,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
             conns.push_back(MakeConnection(params));
         }
         catch (CDB_Exception& ex) {
-            LOG_POST_X(1, "Error filling connection pool: " << ex);
+            ERR_POST_X(1, "Error filling connection pool: " << ex);
             return false;
         }
     }
