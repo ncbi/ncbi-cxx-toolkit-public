@@ -245,7 +245,7 @@ int CBDBEnvKeeperApp::Run(void)
             LOG_POST(Info
                 << "Environment has been unmounted and deleted.");
         } else {
-            LOG_POST(Warning
+            ERR_POST(Warning
                 << "Environment still in use. Cannot delete it.");
         }
     }}

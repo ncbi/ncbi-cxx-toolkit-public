@@ -295,7 +295,7 @@ void CBlastHitMatrix::x_InitGraphics(const string& font_path)
         CIRef<IRender>  mgr = CGlResMgr::Instance().
             GetRenderer( CGlResMgr::Instance().GetApiLevel());
         if (mgr.IsNull()) {
-            LOG_POST(Error << "CGlRender object not available.");
+            ERR_POST(Error << "CGlRender object not available.");
             NCBI_THROW(CException, eUnknown,
                        string("no CGlRender object not available"));
 

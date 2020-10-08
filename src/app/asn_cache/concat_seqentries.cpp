@@ -106,10 +106,10 @@ int CConcatSeqEntriesApplication::Run(void)
 
     CDir    cache_dir( args["cache"].AsString() );
     if (! cache_dir.Exists() ) {
-        LOG_POST( Error << cache_dir.GetPath() << " does not exist!" );
+        ERR_POST( Error << cache_dir.GetPath() << " does not exist!" );
         return 1;
     } else if ( ! cache_dir.IsDir() ) {
-        LOG_POST( Error << cache_dir.GetPath() << " does not point to a "
+        ERR_POST( Error << cache_dir.GetPath() << " does not point to a "
                     << "valid cache path!" );
         return 2;
     }
@@ -150,7 +150,7 @@ void    DumpSeqEntries( CDir & cache_dir, CNcbiOstream & output_stream )
         } catch( CEofException & ) {
             // Ignore this -- we reached the end of the file.
         } catch (...) {
-            LOG_POST( Error << "Object stream exception on chunk number " << chunk_count );
+            ERR_POST( Error << "Object stream exception on chunk number " << chunk_count );
             throw;
         }
             

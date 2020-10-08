@@ -616,12 +616,12 @@ int BlastdbCopyApplication::Run(void)
 
     }}
     catch (CException& ex) {
-        LOG_POST( Error << ex );
+        ERR_POST( Error << ex );
         DeleteBlastDb(args[kArgOutput].AsString(), seq_type);
         retval = -1;
     }
     catch (...) {
-        LOG_POST( Error << "Unknown error in BlastdbCopyApplication::Run()" );
+        ERR_POST( Error << "Unknown error in BlastdbCopyApplication::Run()" );
         DeleteBlastDb(args[kArgOutput].AsString(), seq_type);
         retval = -2;
     }

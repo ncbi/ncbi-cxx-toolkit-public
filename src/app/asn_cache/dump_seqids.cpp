@@ -103,10 +103,10 @@ int CAsnCacheDumpSeqIdsApplication::Run(void)
 
     CDir    cache_dir( args["cache"].AsString() );
     if (! cache_dir.Exists() ) {
-        LOG_POST( Error << cache_dir.GetPath() << " does not exist!" );
+        ERR_POST( Error << cache_dir.GetPath() << " does not exist!" );
         return 1;
     } else if ( ! cache_dir.IsDir() ) {
-        LOG_POST( Error << cache_dir.GetPath() << " does not point to a "
+        ERR_POST( Error << cache_dir.GetPath() << " does not point to a "
                     << "valid cache path!" );
         return 2;
     }

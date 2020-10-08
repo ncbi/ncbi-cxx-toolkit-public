@@ -1724,23 +1724,23 @@ int CMakeProfileDBApp::Run(void)
 	int status = 0;
 	try { x_Run(); }
 	catch(const blast::CInputException& e)  {
-		 LOG_POST(Error << "INPUT ERROR: " << e.GetMsg());
+		 ERR_POST(Error << "INPUT ERROR: " << e.GetMsg());
 		 status = BLAST_INPUT_ERROR;
 	}
 	catch (const CSeqDBException& e) {
-	     LOG_POST(Error << "ERROR: " << e.GetMsg());
+         ERR_POST(Error << "ERROR: " << e.GetMsg());
 	     status = BLAST_DATABASE_ERROR;
 	}
 	catch (const blast::CBlastException& e) {
-		 LOG_POST(Error << "ERROR: " << e.GetMsg());
+		 ERR_POST(Error << "ERROR: " << e.GetMsg());
 		 status = BLAST_INPUT_ERROR;
 	}
 	catch (const CException& e) {
-	    LOG_POST(Error << "ERROR: " << e.GetMsg());
+        ERR_POST(Error << "ERROR: " << e.GetMsg());
 	    status = BLAST_UNKNOWN_ERROR;
 	}
 	catch (...) {
-	    LOG_POST(Error << "Error: Unknown exception");
+        ERR_POST(Error << "Error: Unknown exception");
 	    status = BLAST_UNKNOWN_ERROR;
 	}
 

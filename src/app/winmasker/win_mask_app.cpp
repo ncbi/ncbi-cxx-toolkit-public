@@ -192,7 +192,7 @@ int CWinMaskApplication::Run (void)
     }
 
     if(aConfig.InFmt() == "seqids"){
-        LOG_POST(Error << "windowmasker with seqids input not implemented yet");
+        ERR_POST(Error << "windowmasker with seqids input not implemented yet");
         return 1;
     }
 

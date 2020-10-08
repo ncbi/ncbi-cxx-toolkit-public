@@ -231,7 +231,7 @@ public:
                 //Process(*bioseq);
         }
         catch (CException& e) {
-            LOG_POST(Error << "error processing bioseq: " << e.what());
+            ERR_POST(Error << "error processing bioseq: " << e.what());
         }
     }
 

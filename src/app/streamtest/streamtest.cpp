@@ -305,7 +305,7 @@ int CStreamTestApp::Run(void)
     pProcess = GetProcess( args );
     pPresenter = GetPresenter( args );
     if ( pProcess == 0 || pPresenter == 0 ) {
-        LOG_POST( Error << "Not yet implemented!" );
+        ERR_POST( Error << "Not yet implemented!" );
         return 1;
     }
 

@@ -135,7 +135,7 @@ public:
             }
         }
         catch (CException& e) {
-            LOG_POST(Error << "error processing seqentry: " << e.what());
+            ERR_POST(Error << "error processing seqentry: " << e.what());
         }
         if ( m_report_interval && 
             ! (m_process->GetObjectCount() % m_report_interval) ) 

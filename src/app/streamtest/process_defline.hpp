@@ -310,7 +310,7 @@ public:
             }
         }
         catch (CException& e) {
-            LOG_POST(Error << "error processing seqentry: " << e.what());
+            ERR_POST(Error << "error processing seqentry: " << e.what());
         }
     };
 
@@ -368,7 +368,7 @@ public:
             }
         }
         catch (CException& e) {
-            LOG_POST(Error << "error processing seqentry: " << e.what());
+            ERR_POST(Error << "error processing seqentry: " << e.what());
         }
     };
 

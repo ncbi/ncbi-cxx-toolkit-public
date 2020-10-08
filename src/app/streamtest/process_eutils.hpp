@@ -113,13 +113,13 @@ protected:
 protected:
     bool error(const string& message)
     {
-        LOG_POST(Error << "parse error: " << message);
+        ERR_POST(Error << "parse error: " << message);
         return false;
     }
 
     bool warning(const string& message)
     {
-        LOG_POST(Warning << "parse warning: " << message);
+        ERR_POST(Warning << "parse warning: " << message);
         return false;
     }
 

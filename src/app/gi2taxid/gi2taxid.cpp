@@ -132,7 +132,7 @@ int CGi2TaxIdApp::Run()
         }
 
         if (gi == ZERO_GI) {
-            LOG_POST(Error << "don't know anything about accession/id: "
+            ERR_POST(Error << "don't know anything about accession/id: "
                 << id_str);
             continue;
         }

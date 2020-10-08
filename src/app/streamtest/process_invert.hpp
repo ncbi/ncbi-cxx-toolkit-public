@@ -126,7 +126,7 @@ public:
             *m_out << MSerial_AsnText << *m_entry << endl;
         }
         catch (CException& e) {
-            LOG_POST(Error << "error processing seqentry: " << e.what());
+            ERR_POST(Error << "error processing seqentry: " << e.what());
         }
     };
 

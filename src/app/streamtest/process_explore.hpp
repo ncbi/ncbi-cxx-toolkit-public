@@ -157,7 +157,7 @@ public:
         }
 
         if (! bsx) {
-            LOG_POST(Error << "Unable to process Bioseq");
+            ERR_POST(Error << "Unable to process Bioseq");
         }
 
         // Report far fetch failure
