@@ -51,7 +51,7 @@ struct GiFootPrint
 	int to;
 };
 
-struct LessByFootPrint : public binary_function <GiFootPrint, GiFootPrint, bool> 
+struct LessByFootPrint
 {
 	bool operator()(const GiFootPrint& left, const GiFootPrint& right) const
 	{

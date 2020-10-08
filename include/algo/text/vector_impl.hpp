@@ -63,7 +63,7 @@ inline string InitialValue<string>(string* /*t*/)
 /////////////////////////////////////////////////////////////////////////////
 
 template<class T, class U>
-struct SSortByFirst : public binary_function< pair<T,U>,  pair<T,U>, bool>
+struct SSortByFirst
 {
     bool operator()(const pair<T,U>& it1, const pair<T,U>& it2) const
     {
@@ -73,7 +73,7 @@ struct SSortByFirst : public binary_function< pair<T,U>,  pair<T,U>, bool>
 
 
 template<class T, class U>
-struct SSortBySecond : public binary_function<pair<T,U>, pair<T,U>, bool>
+struct SSortBySecond
 {
     bool operator()(const pair<T,U>& it1, const pair<T,U>& it2) const
     {

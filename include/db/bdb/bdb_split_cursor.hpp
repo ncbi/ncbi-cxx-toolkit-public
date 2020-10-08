@@ -48,7 +48,7 @@ template <typename BDB_SplitStore, typename BDB_Vol = typename BDB_SplitStore::T
 class CBDB_SplitCursor
 {
 public:
-    struct SVolumeLess : public binary_function<string, string, bool>
+    struct SVolumeLess
     {
         bool operator() (const string& s1, const string& s2) const
         {

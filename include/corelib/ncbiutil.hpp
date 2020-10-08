@@ -54,42 +54,30 @@ BEGIN_NCBI_SCOPE
 
 /// Check for equality of objects pointed to by pointer.
 template <class T>
-struct p_equal_to : public binary_function
-<const T*, const T*, bool>
+struct p_equal_to
 {
-#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_VISUALAGE)
-    // fails to define these
-    typedef const T* first_argument_type;
-    typedef const T* second_argument_type;
-#endif
-    // Sigh.  WorkShop rejects this code without typename (but only in
-    // 64-bit mode!), and GCC rejects typename without a scope.
-    bool operator() (const typename p_equal_to::first_argument_type& x,
-                     const typename p_equal_to::second_argument_type& y) const
-    { return *x == *y; }
+    bool operator() (const T* x, const T* y) const {
+        return *x == *y;
+    }
 };
 
 /// Compare objects pointed to by (smart) pointer.
 template <class T>
-struct PPtrLess : public binary_function<T, T, bool>
+struct PPtrLess
 {
-#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_VISUALAGE)
-    // fails to define these
-    typedef T first_argument_type;
-    typedef T second_argument_type;
-#endif
-    bool operator() (const T& x, const T& y) const
-    { return *x < *y; }
+    bool operator() (const T& x, const T& y) const {
+        return *x < *y;
+    }
 };
 
 /// Check whether a pair's second element matches a given value.
 template <class Pair>
-struct pair_equal_to : public binary_function
-<Pair, typename Pair::second_type, bool>
+struct pair_equal_to
 {
     bool operator() (const Pair& x,
-                     const typename Pair::second_type& y) const
-    { return x.second == y; }
+                     const typename Pair::second_type& y) const {
+        return x.second == y;
+    }
 };
 
 /// Check for not null value (after C malloc, strdup etc.).

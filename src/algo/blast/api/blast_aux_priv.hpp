@@ -69,26 +69,20 @@ CreateWholeSeqLocFromIds(const list< CRef<objects::CSeq_id> > seqids);
 
 // Auxiliary comparison functors for TQueryMessages (need to dereference the
 // CRef<>'s contained)
-struct TQueryMessagesLessComparator : 
-    public binary_function< CRef<CSearchMessage>, 
-                            CRef<CSearchMessage>, 
-                            bool>
+struct TQueryMessagesLessComparator
 { 
     /// Operator to determine if *a is less than *b
-    result_type operator() (const first_argument_type& a,
-                            const second_argument_type& b) const {
+    bool operator() (const CRef<CSearchMessage>& a,
+                     const CRef<CSearchMessage>& b) const {
         return *a < *b;
     }
 };
 
-struct TQueryMessagesEqualComparator : 
-    public binary_function< CRef<CSearchMessage>, 
-                            CRef<CSearchMessage>, 
-                            bool>
+struct TQueryMessagesEqualComparator
 { 
     /// Operator to determine if *a is equal to *b
-    result_type operator() (const first_argument_type& a,
-                            const second_argument_type& b) const {
+    bool operator() (const CRef<CSearchMessage>& a,
+                     const CRef<CSearchMessage>& b) const {
         return *a == *b;
     }
 };

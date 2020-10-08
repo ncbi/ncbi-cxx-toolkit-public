@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 /// slower or illegal on some platforms.
 ///
 template <typename TComp>
-struct SStringLess : public binary_function<string, string, bool>
+struct SStringLess
 {
     bool operator() (const string& s1, const string& s2) const
     {

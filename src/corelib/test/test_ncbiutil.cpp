@@ -49,10 +49,10 @@ static void TestPEqualTo(void)
     set<const int*> s;
 
     s.insert(&n1);
-    assert(find_if(s.begin(), s.end(), bind2nd(p_equal_to<int>(), &n2))
-            == s.end());
-    assert(find_if(s.begin(), s.end(), bind2nd(p_equal_to<int>(), &n3))
-            != s.end());
+    assert(find_if(s.begin(), s.end(), [&](const auto& e) {return p_equal_to<int>()(e, &n2);} )
+        == s.end());
+    assert(find_if(s.begin(), s.end(), [&](const auto& e) {return p_equal_to<int>()(e, &n3); })
+        != s.end());
     NcbiCout << "p_equal_to works." << NcbiEndl;
 }
 

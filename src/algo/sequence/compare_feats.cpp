@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /// Comparison functor for pqueue storing related comparisons
-struct SCompareFeats_OpLess : public binary_function<CRef<CCompareFeats>&, CRef<CCompareFeats>&, bool>
+struct SCompareFeats_OpLess
 {
 public:
     bool operator()(const CRef<CCompareFeats>& c1, const CRef<CCompareFeats>& c2) const
@@ -964,7 +964,7 @@ CConstRef<CSeq_loc> CCompareSeqRegions::x_GetSelfLoc(
 
 
 
-struct SFeats_OpLess : public binary_function<CConstRef<CSeq_feat>, CConstRef<CSeq_feat>, bool>
+struct SFeats_OpLess
 {
 public:
     bool operator()(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2) const

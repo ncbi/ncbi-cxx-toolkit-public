@@ -86,22 +86,20 @@ public:
 typedef CIRef<IAlnSeqId> TAlnSeqIdIRef;
 
 
-struct SAlnSeqIdIRefComp :
-    public binary_function<TAlnSeqIdIRef, TAlnSeqIdIRef, bool>
+struct SAlnSeqIdIRefComp
 {
     bool operator()(const TAlnSeqIdIRef& l_id_ref,
-                        const TAlnSeqIdIRef& r_id_ref) const
+                    const TAlnSeqIdIRef& r_id_ref) const
     {
         return *l_id_ref < *r_id_ref;
     }
 };
 
 
-struct SAlnSeqIdRefEqual :
-    public binary_function<TAlnSeqIdIRef, TAlnSeqIdIRef, bool>
+struct SAlnSeqIdRefEqual
 {
     bool operator()(const TAlnSeqIdIRef& l_id_ref,
-                        const TAlnSeqIdIRef& r_id_ref) const
+                    const TAlnSeqIdIRef& r_id_ref) const
     {
         return *l_id_ref == *r_id_ref;
     }

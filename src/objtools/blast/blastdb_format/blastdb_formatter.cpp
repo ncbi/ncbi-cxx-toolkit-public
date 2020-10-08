@@ -164,7 +164,7 @@ CBlastDbFormatter::Write(const SSeqDBInitInfo& db_init_info)
 
 /// Auxiliary functor to compute the length of a string (shamlessly copied from
 /// seq_writer.cpp)
-struct StrLenAdd : public binary_function<SIZE_TYPE, const string&, SIZE_TYPE>
+struct StrLenAdd
 {
     SIZE_TYPE operator() (SIZE_TYPE a, const string& b) const {
         return a + b.size();

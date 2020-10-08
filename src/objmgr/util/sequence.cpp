@@ -778,7 +778,6 @@ typedef vector<TFeatScore> TFeatScores;
 
 template <class T, class U>
 struct SPairLessByFirst
-    : public binary_function< pair<T,U>, pair<T,U>, bool >
 {
     bool operator()(const pair<T,U>& p1, const pair<T,U>& p2) const
     {
@@ -788,7 +787,6 @@ struct SPairLessByFirst
 
 template <class T, class U>
 struct SPairLessBySecond
-    : public binary_function< pair<T,U>, pair<T,U>, bool >
 {
     bool operator()(const pair<T,U>& p1, const pair<T,U>& p2) const
     {

@@ -48,7 +48,8 @@ class node;
 
 namespace impl {
 
-    struct cbfo_node_compare : public std::binary_function<xml::node, xml::node, bool> {
+    struct cbfo_node_compare
+	{
 	virtual ~cbfo_node_compare (void) { }
 	virtual bool operator() (const xml::node &lhs, const xml::node &rhs) = 0;
     };

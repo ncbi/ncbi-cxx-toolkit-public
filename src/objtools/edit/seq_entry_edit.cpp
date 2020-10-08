@@ -2234,7 +2234,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 *******************************************************************************/
 
 /// Helper functor to compare cuts during sorting
-class CRangeCmp : public binary_function<TRange, TRange, bool>
+class CRangeCmp
 {
 public:
     enum ESortOrder {

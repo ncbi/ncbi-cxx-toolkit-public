@@ -62,13 +62,10 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
-struct TQueryMessagesComparator : 
-        public binary_function< CRef<CSearchMessage>, 
-                                CRef<CSearchMessage>, 
-                                bool>
+struct TQueryMessagesComparator
 { 
-        result_type operator() (const first_argument_type& a,
-                                const second_argument_type& b) const {
+        bool operator() (const CRef<CSearchMessage>& a,
+                         const CRef<CSearchMessage>& b) const {
             return *a < *b;
         }
 };

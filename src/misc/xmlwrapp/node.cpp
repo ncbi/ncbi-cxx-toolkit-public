@@ -102,8 +102,8 @@ struct xml::impl::node_impl : public pimpl_base<xml::impl::node_impl> {
 };
 
 
-struct xml::impl::node_cmp : public std::binary_function<xmlNodePtr,
-                                                         xmlNodePtr, bool> {
+struct xml::impl::node_cmp
+{
 
     node_cmp (cbfo_node_compare &cb) : cb_(cb) { }
 
@@ -154,8 +154,8 @@ namespace {
     };
 
     // sort compare function to sort based on attribute
-    struct compare_attr : public std::binary_function<xmlNodePtr,
-                                                      xmlNodePtr, bool> {
+    struct compare_attr
+    {
         compare_attr (const char *attr_name) : name_(attr_name) { }
 
         bool operator() (xmlNodePtr lhs, xmlNodePtr rhs) {

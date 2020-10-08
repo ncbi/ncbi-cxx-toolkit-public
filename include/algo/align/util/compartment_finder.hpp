@@ -638,8 +638,7 @@ CCompartmentFinder<THit>::CCompartmentFinder(
 
 // Query match accumulator
 template<class THit>
-class CQueryMatchAccumulator:
-    public binary_function<double, CRef<THit>, double>
+class CQueryMatchAccumulator
 {
 public:
 

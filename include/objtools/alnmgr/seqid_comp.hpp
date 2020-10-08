@@ -49,8 +49,7 @@ USING_SCOPE(objects);
 
 
 template <typename TSeqIdPtr>
-class SCompareOrdered :
-    public binary_function<TSeqIdPtr, TSeqIdPtr, bool>
+class SCompareOrdered
 {
 public:
     bool operator()(TSeqIdPtr left_seq_id,
@@ -62,8 +61,7 @@ public:
 
 
 template <typename TSeqIdPtr>
-class CSeqIdBioseqHandleComp :
-    public binary_function<TSeqIdPtr, TSeqIdPtr, bool>
+class CSeqIdBioseqHandleComp
 {
 public:
     CSeqIdBioseqHandleComp(CScope& scope) : m_Scope(scope) {}

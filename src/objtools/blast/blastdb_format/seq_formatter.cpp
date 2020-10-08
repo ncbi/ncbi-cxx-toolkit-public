@@ -549,7 +549,7 @@ void CBlastDB_BioseqFormatter::DumpAll(const CBlastDB_FormatterConfig & config)
 
 
 /// Auxiliary functor to compute the length of a string
-struct StrLenAdd : public binary_function<SIZE_TYPE, const string&, SIZE_TYPE>
+struct StrLenAdd
 {
     SIZE_TYPE operator() (SIZE_TYPE a, const string& b) const {
         return a + b.size();

@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-struct LessBySeqId : public binary_function <CRef<CSeq_id>, CRef<CSeq_id>, bool> 
+struct LessBySeqId
 {
 	bool operator()(const CRef<CSeq_id>& left, const CRef<CSeq_id>& right) const
 	{
