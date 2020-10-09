@@ -103,7 +103,7 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
             }
         }
 
-        TSeqPos length; 
+        TSeqPos length=0; 
         if(trim_end_gaps) {
 
             int endi = transcript.size() - 1;
