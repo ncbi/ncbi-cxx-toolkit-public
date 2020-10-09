@@ -234,7 +234,7 @@ template <typename interval_type> string GetLocationString ( const interval_type
   TSeqPos from, to;
   ENa_strand strand;
   CReadBlastApp::getFromTo( loc, from, to, strand);
-  strstream label;
+  CNcbiStrstream label;
   string strand_sign = strand == eNa_strand_plus ? "+" : "-";
   label << from << "-" << to << ":" << strand_sign << '\0';
 

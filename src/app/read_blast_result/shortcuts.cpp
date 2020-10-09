@@ -319,7 +319,7 @@ string GetStringDescr(const CBioseq& bioseq)
 
 string printed_range(const TSeqPos from2, const TSeqPos to2) // Mother of All Printed_Ranges
 {
-   strstream rstr;
+   CNcbiStrstream rstr;
    rstr << from2 << "..." << to2 << '\0';
    string r  = rstr.str();
    return r;
@@ -375,7 +375,7 @@ string printed_range(const TSimpleSeqs::iterator& ext_rna)
 /*
    int from = ext_rna->exons[0].from;
    int to   = ext_rna->exons[ext_rna->exons.size()-1].to;
-   strstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
+   CNcbiStrstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
    string ext_rna_range = ext_rna_range_stream.str();
    return ext_rna_range;
 */

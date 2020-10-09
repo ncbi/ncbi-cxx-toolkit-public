@@ -589,7 +589,7 @@ static void s_BuildIds(TIdList & ids, const char ** gis)
 
 CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
 {
-    istrstream istr(str.data(), str.size());
+    CNcbiIstrstream istr(str.data(), str.size());
 
     CRef<ILineReader> lr(new CStreamLineReader(istr));
 

@@ -416,7 +416,7 @@ public:
                            const int from, const int to, const int key);
     static int sequence_proximity(const int target_from, const int target_to,
                            const int from, const int to, const int key, const int max_distance);
-    static void addSimpleTab(strstream& buffer, const string tag, const TSimpleSeqs::iterator& ext_rna, 
+    static void addSimpleTab(CNcbiStrstream& buffer, const string tag, const TSimpleSeqs::iterator& ext_rna, 
        const int max_distance);
 
 

@@ -176,7 +176,7 @@ void CReadBlastApp::reportProblemMessage(const string& message, ostream& out)
 
 string CReadBlastApp::ProblemType(const EProblem type)
 {
-   strstream strres;
+   CNcbiStrstream strres;
    strres << "unknown_problem_type=" << type << '\0';
    string result=strres.str();
    if(type & eOverlap)
@@ -805,7 +805,7 @@ int CReadBlastApp::RemoveInterim2(CBioseq::TAnnot& annots)
        {
        if(PrintDetails()) NcbiCerr << "RemoveInterim2(annots): gen_feature feat start" << NcbiEndl;
        const CSeq_feat& featr = **feat;
-       strstream buff;
+       CNcbiStrstream buff;
        buff << MSerial_AsnText  << featr;
        buff << '\0';
        if(PrintDetails()) NcbiCerr << "RemoveInterim2(annots): feat ASN:" << NcbiEndl;

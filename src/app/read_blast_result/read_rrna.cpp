@@ -87,7 +87,7 @@ int CReadBlastApp::ReadRRNA2(const string& file)
     // if(last_for_type.find(type3) != last_for_type.end()) ilast_for_type = last_for_type[type3];
     last_for_type[type3]++;
 //
-    strstream descstr;
+    CNcbiStrstream descstr;
     descstr << type3 << " ribosomal RNA predicted by NCBI method with " 
        << (method=="ideal" ? "high":"low" )
        << " score";

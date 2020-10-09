@@ -107,7 +107,7 @@ static int s_StreamPushback(iostream&   ios,
             char savech = data[j + i];
             data[j+i] = '\0';  // to prevent reading past "i" from strstream
             // We don't actually do any "app", but w/o it we can't read
-            strstream str(data + j, (int)i, IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
+            CNcbiStrstream str(NCBI_STRSTREAM_INIT(data + j, i), IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
             PushDiagPostPrefix("-");
             ERR_POST(Info << "Sub-streaming "
                      << NStr::UInt8ToString((Uint8) i)

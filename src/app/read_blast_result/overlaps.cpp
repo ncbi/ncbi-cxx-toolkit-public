@@ -94,14 +94,14 @@ int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::i
    int nseq=0;
    int from = ext_rna->exons[0].from;
    int to   = ext_rna->exons[ext_rna->exons.size()-1].to;
-   strstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
+   CNcbiStrstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
    string ext_rna_range = ext_rna_range_stream.str();
    TSimpleSeqs::iterator& best_seq = seq;
    for(;seq!=seqs.end(); seq++, nseq++)
      {
      int from2 = seq->exons[0].from;
      int to2   = seq->exons[seq->exons.size()-1].to;
-     strstream ext_rna_range_stream2; ext_rna_range_stream2 << from2 << "..." << to2 << '\0';
+     CNcbiStrstream ext_rna_range_stream2; ext_rna_range_stream2 << from2 << "..." << to2 << '\0';
      string ext_rna_range2 = ext_rna_range_stream2.str();
      if(PrintDetails()) NcbiCerr << "find_overlap" 
           << "[" << ext_rna_range << "]" 
@@ -118,7 +118,7 @@ int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::i
            {
            int from2 = seq2->exons[0].from;
            int to2   = seq2->exons[seq->exons.size()-1].to;
-           strstream ext_rna_range_stream2; ext_rna_range_stream2 << from2 << "..." << to2 << '\0';
+           CNcbiStrstream ext_rna_range_stream2; ext_rna_range_stream2 << from2 << "..." << to2 << '\0';
            string ext_rna_range2 = ext_rna_range_stream2.str();
            if(PrintDetails()) NcbiCerr << "\tfind_overlap" 
               << "[" << ext_rna_range << "]" 
@@ -273,23 +273,23 @@ bool CReadBlastApp::overlaps_prot_na
        report->loc2 = &seq_interval;
 
        char bufferchar[20480];  memset(bufferchar, 0, 20480);
-       strstream buffer(bufferchar, 20480, IOS_BASE::out);
+       CNcbiStrstream buffer(bufferchar, 20480, IOS_BASE::out);
        printOverlapReport(report, buffer);
 
-       strstream buff_misc_feat_rna;
+       CNcbiStrstream buff_misc_feat_rna;
        buff_misc_feat_rna
             << "potential RNA location (" 
             << name1 << ") that overlaps protein (" << get_title(seq) << ")" << '\0';
 
-       strstream buff_misc_feat_protein;
+       CNcbiStrstream buff_misc_feat_protein;
        buff_misc_feat_protein
             << "potential protein location ("
             << get_title(seq) << ") that overlaps RNA (" << name1 << ")" << '\0';
 
 
-       strstream misc_feat_rna;
+       CNcbiStrstream misc_feat_rna;
        misc_feat_rna << buff_misc_feat_rna.str() << '\0';
-       strstream misc_feat_protein;
+       CNcbiStrstream misc_feat_protein;
        misc_feat_protein << buff_misc_feat_protein.str() << '\0';
 
        if(PrintDetails()) NcbiCerr << "overlaps_prot_na[seq,feats]: created RNA buffer: "     << buff_misc_feat_rna.str()     << "\n";
@@ -661,22 +661,22 @@ bool CReadBlastApp::overlaps
     report->right_frame    = right_frame;
 
     char bufferchar[20480];  memset(bufferchar, 0, 20480);
-    strstream buffer(bufferchar, 20480, IOS_BASE::out);
+    CNcbiStrstream buffer(bufferchar, 20480, IOS_BASE::out);
     printOverlapReport(report, buffer);
 /*
-    strstream misc_feat;
+    CNcbiStrstream misc_feat;
     misc_feat << "potential protein locations )" << GetProtName(left)
             << ") and " << printed_range(right)
             << " overlap by " << scratch_overlap
             << "bp"
             << NcbiEndl << '\0';
 */
-    strstream misc_feat_left;
+    CNcbiStrstream misc_feat_left;
     misc_feat_left 
        << "potential protein location (" << GetProtName(left) 
        << ") that overlaps protein (" << GetProtName(right) << ")" << NcbiEndl << '\0';
 
-    strstream misc_feat_right;
+    CNcbiStrstream misc_feat_right;
     misc_feat_right
        << "potential protein location (" << GetProtName(right) 
        << ") that overlaps protein (" << GetProtName(left) << ")" << NcbiEndl << '\0';

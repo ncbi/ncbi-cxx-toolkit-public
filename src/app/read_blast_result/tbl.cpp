@@ -62,7 +62,7 @@ bool Ctbl_feat::Read(istream& in)
     NcbiCerr << "FATAL: Ctbl_feat::Read(): wrong format I" << NcbiEndl;
     throw;
     }
-  istrstream bufStr(buf);
+  CNcbiIstrstream bufStr(buf);
   string dummy, seqid, table_name; /////////////////////
   bufStr >>  dummy >> seqid >> table_name;
   m_table_name = table_name;

@@ -306,13 +306,13 @@ void CDiagParserApp::x_CheckMessage(void)
     unique_ptr<SDiagMessage> msg;
     CTime post_time(CTime::eCurrent);
     char buffer[4096] = "";
-    ostrstream str(buffer, 4096, ios::out);
+    CNcbiOstrstream str(buffer, 4096, ios::out);
     try {
         SetDiagStream(&str);
         info = DIAG_COMPILE_INFO;
         ERR_POST_EX(123, 45, "Test error post message");
 
-        result = string(str.str(), (size_t)str.pcount());
+        result = CNcbiOstrstreamToString(str);
         msg.reset(new SDiagMessage(result));
     }
     catch (...) {

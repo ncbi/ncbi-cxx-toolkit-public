@@ -58,7 +58,7 @@ bool CReadBlastApp::match_na
   input_left = from;
   input_right = to;
   }
-  strstream input_range_stream;
+  CNcbiStrstream input_range_stream;
   input_range_stream << (input_left + 1) << "..." << (input_right + 1) << '\0';
   string input_range = input_range_stream.str();
   NON_CONST_ITERATE(TSimpleSeqs, ext_rna, m_extRNAtable2)
@@ -120,7 +120,7 @@ bool CReadBlastApp::match_na
      } // NON_CONST_ITERATE(TSimpleSeqs, ext_rna, m_extRNAtable2)
   if(absent)
     {
-    strstream buffer;
+    CNcbiStrstream buffer;
     if ( ! is_rrna ) {
         buffer << "no external tRNA for this aminoacid: " 
             <<type1 << "[" << input_range << "]" << NcbiEndl;
@@ -131,7 +131,7 @@ bool CReadBlastApp::match_na
     buffer << "start bp: " << gabs_left << NcbiEndl;
     buffer << '\0';
     if(PrintDetails()) NcbiCerr << "match_na[f1,type1]: " << buffer.str() << NcbiEndl;
-    strstream misc_feat;
+    CNcbiStrstream misc_feat;
     misc_feat << buffer.str() << '\0';
     problemStr problem = {eTRNAMissing, 
         buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
@@ -140,7 +140,7 @@ bool CReadBlastApp::match_na
     }
   if(!match_ext && !absent)
     {
-    strstream buffer;
+    CNcbiStrstream buffer;
     if ( ! is_rrna) {
         buffer << "tRNA does not match strand this aminoacid: " 
             <<type1 << "[" << input_range << "]" << NcbiEndl;
@@ -151,7 +151,7 @@ bool CReadBlastApp::match_na
     buffer << "start bp: " << gabs_left << NcbiEndl;
     buffer << '\0';
     if(PrintDetails()) NcbiCerr << "match_na[f1,type1]: " << buffer.str() << NcbiEndl;
-    strstream misc_feat;
+    CNcbiStrstream misc_feat;
     misc_feat << buffer.str() << '\0';
     problemStr problem = {eTRNABadStrand, 
         buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };
@@ -162,13 +162,13 @@ bool CReadBlastApp::match_na
     {
     if(!goverlap)
       {
-      strstream buffer;
+      CNcbiStrstream buffer;
       buffer << "closest " << diag_name_rna 
         << "for (" <<type1 << "[" << input_range << "]" 
         << ") does not even overlap" << NcbiEndl;
       buffer << "start bp: " << gabs_left << NcbiEndl;
       buffer << '\0';
-      strstream misc_feat;
+      CNcbiStrstream misc_feat;
       misc_feat << buffer.str() << '\0';
       if(PrintDetails()) NcbiCerr << "match_na[f1,type1]: " << buffer.str() 
             << NcbiEndl;
@@ -178,7 +178,7 @@ bool CReadBlastApp::match_na
       }
     else
       {
-      strstream buffer;
+      CNcbiStrstream buffer;
       if ( ! is_rrna ) {
           buffer << "closest tRNA for this aminoacid: " 
                 <<type1 << "[" << input_range << "]" 
@@ -191,7 +191,7 @@ bool CReadBlastApp::match_na
       buffer << "start bp: " << gabs_left << NcbiEndl;
       buffer << "left: " << gleft << ", right: " << gright << " bp shifted relative to the calculated ends" << NcbiEndl;
       buffer << "overlap: " << goverlap << NcbiEndl;
-      strstream misc_feat;
+      CNcbiStrstream misc_feat;
       misc_feat << buffer.str() << '\0';
       if(PrintDetails()) NcbiCerr << "match_na[f1,type1]: " << buffer.str() << NcbiEndl;
       problemStr problem = {eTRNAMismatch, buffer.str(), misc_feat.str(), "", "", -1, -1, eNa_strand_unknown };

@@ -131,7 +131,7 @@ void CReadBlastApp::ugly_simple_overlaps_call(int& n_user_neighbors, int& n_ext_
               }
            }
 
-         strstream buffer;
+         CNcbiStrstream buffer;
          addSimpleTab(buffer, "CENTER_REFERENCE", ext_rna, max_distance);
          for(TSimpleSeqs::iterator entry = first_ext_in_range; entry!= first_ext_non_in_range; entry++)
            {
@@ -181,7 +181,7 @@ int CReadBlastApp::simple_overlaps()
        {
        int overlap=0;
        overlaps(ext_rna, seq2, overlap);
-       strstream seq2_range_stream; 
+       CNcbiStrstream seq2_range_stream;
        string seq2_range = printed_range(seq2);
        if(PrintDetails()) NcbiCerr << "simple_overlaps"
                                    << "[" << type2 
@@ -220,7 +220,7 @@ int CReadBlastApp::simple_overlaps()
             ext_rna, first_user_in_range, first_user_non_in_range, seqs, max_distance,
             first_ext_in_range, first_ext_non_in_range, bufferstr);
          }
-       strstream misc_feat;
+       CNcbiStrstream misc_feat;
        string seq_range = printed_range(seq);
        EProblem trnaStrandProblem = undef_strand ? eTRNAUndefStrand : eTRNABadStrand;
        misc_feat << "RNA does not match strand for feature located at " << seq_range << NcbiEndl;
@@ -247,7 +247,7 @@ int CReadBlastApp::simple_overlaps()
              ext_rna, first_user_in_range, first_user_non_in_range, seqs, max_distance,
              first_ext_in_range, first_ext_non_in_range, bufferstr);
          }
-       strstream misc_feat;
+       CNcbiStrstream misc_feat;
        misc_feat << "no RNA in the input this type: " <<type2 << "[" << ext_rna_range << "]" << NcbiEndl;
        misc_feat << '\0';
        problemStr problem = {eTRNAAbsent , "", misc_feat.str(), "", "", from, to, strand};
@@ -373,7 +373,7 @@ int CReadBlastApp::sequence_proximity(const int target_from, const int target_to
   return 0;
 }
 
-void CReadBlastApp::addSimpleTab(strstream& buffer, const string tag, const TSimpleSeqs::iterator& ext_rna,
+void CReadBlastApp::addSimpleTab(CNcbiStrstream& buffer, const string tag, const TSimpleSeqs::iterator& ext_rna,
    const int max_distance)
 {
    ITERATE(TSimplePairs, e, ext_rna->exons)

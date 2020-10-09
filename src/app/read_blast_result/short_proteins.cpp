@@ -67,8 +67,8 @@ int CReadBlastApp::short_proteins()
         if(e2->to > len_nu - 4 ) { edge=true; edge_to=true; if (e2->fuzzy_to) fuzzy_edge = true; }
         }
       if(edge_from && edge_to && seq->exons.size()>1 ) { edge=false; } // annotation crossing the origin of a  circular molecule, not really an edge
-      strstream bufferstr; 
-      strstream misc;
+      CNcbiStrstream bufferstr;
+      CNcbiStrstream misc;
       misc << "Annotation is too short " << seq->name << '\0';
       int from, to;
       from = seq->exons[0].from;

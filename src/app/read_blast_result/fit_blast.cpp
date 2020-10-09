@@ -172,9 +172,9 @@ bool CReadBlastApp::fit_blast
         if(PrintDetails()) NcbiCerr << "!!!! Blast bounds match !!!!! numFit: " << numFit << NcbiEndl;
 
         char bufferchar[20480];  memset(bufferchar, 0, 20480);
-        strstream buffer(bufferchar, 20480, IOS_BASE::out);
+        CNcbiStrstream buffer(bufferchar, 20480, IOS_BASE::out);
         printReport(report, buffer);
-        strstream misc_feat;
+        CNcbiStrstream misc_feat;
         if(common_subject.size())
           {
           misc_feat << "potential frameshift: common BLAST hit: "
@@ -262,7 +262,7 @@ bool CReadBlastApp::fit_blast
 // print exhonerating hits to stderr if detailed printing
      {
      char bufferchar[2048];  memset(bufferchar, 0, 2048);
-     strstream buffer(bufferchar, 2048, IOS_BASE::out);
+     CNcbiStrstream buffer(bufferchar, 2048, IOS_BASE::out);
      buffer << "Left sequence has " << left_perfect.size() << " perfect hits." << NcbiEndl;
      ITERATE(vector<perfectHitStr>, hit, left_perfect)
        {

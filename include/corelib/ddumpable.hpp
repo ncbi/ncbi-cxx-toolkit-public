@@ -206,7 +206,7 @@ template<class T>
 void DebugDumpValue( CDebugDumpContext& _this, const string& name,
     const T& value, const string& comment = kEmptyStr)
 {
-    ostrstream os;
+    CNcbiOstrstream os;
     os << value << '\0';
     _this.Log(name, string(os.str()), CDebugDumpFormatter::eValue, comment);
 }
@@ -340,7 +340,7 @@ void DebugDumpPairsValuePtr( CDebugDumpContext& _this, const string& name,
     --depth;
     CDebugDumpContext ddc2(_this,name);
     for ( int n=0; it != it_end; ++it, ++n) {
-        ostrstream os;
+        CNcbiOstrstream os;
         os << (it->first) << '\0';
         string member_name = name + "[ " + os.str() + " ]";
         ddc2.Log(member_name,it->second, depth);

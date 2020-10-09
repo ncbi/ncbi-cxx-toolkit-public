@@ -87,9 +87,9 @@ int CReadBlastApp::ReadTRNA2(const string& file)
     if(PrintDetails()) NcbiCerr << "ReadTRNA2(" << file << "): type3 = " << type3 << NcbiEndl;
     if(PrintDetails()) NcbiCerr << "ReadTRNA2(" << file << "): last_for_type[type3] = " << last_for_type[type3]  << NcbiEndl;
     int ilast_for_type = last_for_type[type3];
-    strstream namestr;
+    CNcbiStrstream namestr;
     namestr << genome_name << "|calculated|" << type3 << "_" << ilast_for_type << '\0';
-    strstream descstr;
+    CNcbiStrstream descstr;
     descstr << "tRNA for " << type3 << ", codon " << codon << " predicted by tRNAscan" << '\0';
     TSimpleSeq ext_rna;
 // lot of tRNAs seems to be having left position just one bp off, assuming that it is a difference in naming
