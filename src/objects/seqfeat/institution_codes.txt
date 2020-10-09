@@ -2990,6 +2990,7 @@ IJSM	s	Institute of Jamaica, Natural History Museum
 IK	s	Zoological Institute, Ukrainian Academy of Sciences			
 ILCA	s	International Livestock Research Institute			
 ILF	s	Iflracombe Museum			
+ILFE	c	Lowland Forestry and Environment, University of Novi Sad			
 ILH	s	Iowa Lakeside Laboratory			
 ILL	sc	University of Illinois, Plant Biology Department			
 ILLS	s	Illinois Natural History Survey			
@@ -7418,6 +7419,7 @@ USGS:ASC	s	U.S. Geological Survey, Alaska Science Center
 USH	s	Ushaw College			
 USI	s	University of Southern Indiana			
 USJ	s	Universidad de Costa Rica			
+USJCC	c	 University of Sri Jayewardenepura Culture Collection			
 USLH	s	University of Louisiana Lafayette, Department of Renewable Resources			
 USM<MYS>	s	Universiti Sains Malaysia			
 USM<MYS>:VCRU	s	Universiti Sains Malaysia, Vector Control Research Unit		
