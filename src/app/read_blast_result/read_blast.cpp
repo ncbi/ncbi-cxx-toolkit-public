@@ -575,7 +575,7 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
         (double)q_ali_len/qLen > m_entireThreshold  )
         {
         char bufferchar[2048];  memset(bufferchar, 0, 2048);
-        CNcbiStrstream buffer(bufferchar, 2048, IOS_BASE::out);
+        CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 2048));
         buffer.flush();
         buffer << "Query" << "\t"
                << qname << "\t"
@@ -610,7 +610,7 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
        m_diag[qname].problems.push_back(*problem);
        }
      char bufferchar[2048];  memset(bufferchar, 0, 2048);
-     CNcbiStrstream buffer(bufferchar, 2048, IOS_BASE::out);
+     CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 2048));
      buffer.flush();
      NcbiCerr << qname  << "(" << qLen << ")"
                  << " is a potential partial annotation." << NcbiEndl;

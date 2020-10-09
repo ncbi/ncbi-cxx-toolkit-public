@@ -273,7 +273,7 @@ bool CReadBlastApp::overlaps_prot_na
        report->loc2 = &seq_interval;
 
        char bufferchar[20480];  memset(bufferchar, 0, 20480);
-       CNcbiStrstream buffer(bufferchar, 20480, IOS_BASE::out);
+       CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 20480));
        printOverlapReport(report, buffer);
 
        CNcbiStrstream buff_misc_feat_rna;
@@ -661,7 +661,7 @@ bool CReadBlastApp::overlaps
     report->right_frame    = right_frame;
 
     char bufferchar[20480];  memset(bufferchar, 0, 20480);
-    CNcbiStrstream buffer(bufferchar, 20480, IOS_BASE::out);
+    CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 20480));
     printOverlapReport(report, buffer);
 /*
     CNcbiStrstream misc_feat;
