@@ -428,7 +428,8 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         m_Conn = nullptr;
     }
 
-    void GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size);
+    NCBI_DEPRECATED void GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size);
+    void GetBlobChunkSize(unsigned int timeout_ms, const string & keyspace, int64_t * chunk_size);
     void SetKeyspace(const string &  keyspace)
     {
         m_Keyspace = keyspace;
@@ -539,8 +540,14 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter);
 
-    bool GetSetting(unsigned int op_timeout_ms, const string & name, string & value);
-    void UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value);
+    // @deprecated Use GetSetting with explicit domain parameter
+    NCBI_DEPRECATED bool GetSetting(unsigned int op_timeout_ms, const string & name, string & value);
+
+    // @deprecated Use UpdateSetting with explicit domain parameter
+    NCBI_DEPRECATED void UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value);
+
+    bool GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value);
+    void UpdateSetting(unsigned int op_timeout_ms, const string & domain, const string & name, const string & value);
 
     shared_ptr<CCassConnection> GetConn(void)
     {

@@ -47,11 +47,9 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-#include <unistd.h>
 #include <algorithm>
 #include <mutex>
 #include <atomic>
-#include <cassert>
 #include <fstream>
 #include <vector>
 #include <list>
@@ -62,29 +60,25 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define SETTING_LARGE_CHUNK_SZ "LARGE_CHUNK_SZ"
-#define ABS_MIN_LARGE_CHUNK_SZ  (4 * 1024)
-#define DFLT_LARGE_CHUNK_SZ     (512 * 1024)
+BEGIN_SCOPE()
 
-#define ASYNC_QUEUE_TIMESLICE_MKS 300
+constexpr const char * kSettingLargeChunkSize = "LARGE_CHUNK_SZ";
+constexpr int64_t kChunkSizeMin = 4 * 1024;
+constexpr int64_t kChunkSizeDefault = 512 * 1024;
+constexpr int64_t kActiveStatementsMax = 512;
 
-#define KEYLOAD_SPLIT_COUNT 500
-#define KEYLOAD_CONCURRENCY 512
-#define KEYLOAD_CONSISTENCY CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM
-#define KEYLOAD_PAGESIZE 4096
-
-#define MAX_ACTIVE_STATEMENTS 512
-
-static string KeySpaceDot(const string& keyspace)
+string KeySpaceDot(const string& keyspace)
 {
     return keyspace.empty() ? keyspace : keyspace + ".";
 }
+
+END_SCOPE()
 
 /** CCassBlobWaiter */
 
 bool CCassBlobWaiter::CheckMaxActive()
 {
-    return (m_Conn->GetActiveStatements() < MAX_ACTIVE_STATEMENTS);
+    return (m_Conn->GetActiveStatements() < kActiveStatementsMax);
 }
 
 string CCassBlobWaiter::QueryParamsToStringForDebug(shared_ptr<CCassQuery> const& query) const
@@ -106,15 +100,22 @@ string CCassBlobWaiter::QueryParamsToStringForDebug(shared_ptr<CCassQuery> const
 
 *****************************************************/
 
-void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size)
+void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, const string & keyspace, int64_t * chunk_size)
 {
     string s;
-    if (!GetSetting(timeout_ms, SETTING_LARGE_CHUNK_SZ, s) ||
-        !NStr::StringToNumeric(s, chunk_size) ||
-        *chunk_size < ABS_MIN_LARGE_CHUNK_SZ) {
-        *chunk_size = DFLT_LARGE_CHUNK_SZ;
-        UpdateSetting(timeout_ms, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(*chunk_size));
+    if (
+        !GetSetting(timeout_ms, keyspace, kSettingLargeChunkSize, s)
+        || !NStr::StringToNumeric(s, chunk_size)
+        || *chunk_size < kChunkSizeMin
+    ) {
+        *chunk_size = kChunkSizeDefault;
+        UpdateSetting(timeout_ms, keyspace, kSettingLargeChunkSize, NStr::NumericToString(*chunk_size));
     }
+}
+
+void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size)
+{
+    GetBlobChunkSize(timeout_ms, m_Keyspace, chunk_size);
 }
 
 void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
@@ -407,31 +408,13 @@ void CCassBlobOp::UpdateBlobFlagsExtended(
 
 *****************************************************/
 
-//#define MULTI_SETTINGS_TBL
-
-void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value)
+void CCassBlobOp::UpdateSetting(unsigned int timeout_ms, const string & domain, const string & name, const string & value)
 {
-#ifdef MULTI_SETTINGS_TBL
-
-    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [this, name, value](bool /*is_repeated*/) {
-            string sql = "INSERT INTO " + KeySpaceDot(m_Keyspace) + "settings (name, value) VALUES(?, ?)";
-            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            qry->SetSQL(sql, 2);
-            qry->BindStr(0, name);
-            qry->BindStr(1, value);
-            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
-            return true;
-        }
-    );
-#endif
-    
-    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [this, name, value](bool /*is_repeated*/) {
-            string sql = "INSERT INTO maintenance.settings (domain, name, value) VALUES(?, ?, ?)";
-            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            qry->SetSQL(sql, 3);
-            qry->BindStr(0, m_Keyspace);
+    CCassConnection::Perform(timeout_ms, nullptr, nullptr,
+        [this, domain, name, value](bool /*is_repeated*/) {
+            auto qry = m_Conn->NewQuery();
+            qry->SetSQL("INSERT INTO maintenance.settings (domain, name, value) VALUES(?, ?, ?)", 3);
+            qry->BindStr(0, domain);
             qry->BindStr(1, name);
             qry->BindStr(2, value);
             qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
@@ -440,42 +423,26 @@ void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name,
     );
 }
 
-bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, string & value)
+void CCassBlobOp::UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value)
+{
+    UpdateSetting(op_timeout_ms, m_Keyspace, name, value);
+}
+
+bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value)
 {
     bool rslt = false;
-#ifdef MULTI_SETTINGS_TBL
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [this, name, &value, &rslt](bool is_repeated) {
-            string sql = "SELECT value FROM " + KeySpaceDot(m_Keyspace) + "settings WHERE name = ?";
-            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            qry->SetSQL(sql, 1);
-            qry->BindStr(0, name);
-            CassConsistency cons = is_repeated && m_Conn->GetFallBackRdConsistency() ?
-                CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
-            qry->Query(cons, false, false);
-            async_rslt_t rv = qry->NextRow();
-            if (rv == ar_dataready) {
-                qry->FieldGetStrValue(0, value);
-                rslt = true;
-            }
-            return true;
-        }
-    );
-    @@@
-#endif
-    
-    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [this, name, &value, &rslt](bool is_repeated) {
-            string sql = "SELECT value FROM maintenance.settings WHERE domain = ? AND name = ?";
-            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
-            qry->SetSQL(sql, 2);
-            qry->BindStr(0, m_Keyspace);
+        [this, domain, name, &value, &rslt]
+        (bool is_repeated)
+        {
+            auto qry = m_Conn->NewQuery();
+            qry->SetSQL("SELECT value FROM maintenance.settings WHERE domain = ? AND name = ?", 2);
+            qry->BindStr(0, domain);
             qry->BindStr(1, name);
             CassConsistency cons = is_repeated && m_Conn->GetFallBackRdConsistency() ?
                 CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
             qry->Query(cons, false, false);
-            async_rslt_t rv = qry->NextRow();
-            if (rv == ar_dataready) {
+            if (qry->NextRow() == ar_dataready) {
                 qry->FieldGetStrValue(0, value);
                 rslt = true;
             }
@@ -484,6 +451,11 @@ bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, st
     );
 
     return rslt;
+}
+
+bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & name, string & value)
+{
+    return GetSetting(op_timeout_ms, m_Keyspace, name, value);
 }
 
 END_IDBLOB_SCOPE
