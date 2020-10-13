@@ -129,15 +129,24 @@ TEST_F(CGetPublicCommentTest, BasicSuppressed) {
     auto blob = fetch_blob.ConsumeBlobRecord();
     EXPECT_TRUE(blob->GetFlag(EBlobFlags::eSuppress));
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eWithdrawn));
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         *blob, error_function
     );
-    comment_wait_function(get_comment);
-    EXPECT_EQ(
-        "This record was removed by RefSeq staff. Please contact info@ncbi.nlm.nih.gov for further details.",
-        get_comment.GetComment()
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This record was removed by RefSeq staff."
+                " Please contact info@ncbi.nlm.nih.gov for further details.", comment);
+        }
     );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
@@ -152,15 +161,24 @@ TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
     auto blob = fetch_blob.ConsumeBlobRecord();
     EXPECT_TRUE(blob->GetFlag(EBlobFlags::eSuppress));
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eWithdrawn));
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         *blob, error_function
     );
-    comment_wait_function(get_comment);
-    EXPECT_EQ(
-        "This RefSeq genome was suppressed because updated RefSeq validation criteria identified problems with the assembly or annotation.",
-        get_comment.GetComment()
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This RefSeq genome was suppressed because updated RefSeq validation"
+                " criteria identified problems with the assembly or annotation.", comment);
+        }
     );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
@@ -175,15 +193,24 @@ TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
     auto blob = fetch_blob.ConsumeBlobRecord();
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eSuppress));
     EXPECT_TRUE(blob->GetFlag(EBlobFlags::eWithdrawn));
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         *blob, error_function
     );
-    comment_wait_function(get_comment);
-    EXPECT_EQ(
-        "This record was removed at the submitter's request. Please contact info@ncbi.nlm.nih.gov for further details.",
-        get_comment.GetComment()
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This record was removed at the submitter's request. "
+                "Please contact info@ncbi.nlm.nih.gov for further details.", comment);
+        }
     );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
@@ -204,16 +231,25 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
     auto blob = fetch_blob.ConsumeBlobRecord();
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eSuppress));
     EXPECT_TRUE(blob->GetFlag(EBlobFlags::eWithdrawn));
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         *blob, error_function
     );
     get_comment.SetMessages(&messages);
-    comment_wait_function(get_comment);
-    EXPECT_EQ(
-        "This record was removed at the submitter's request. Contact info@ncbi.nlm.nih.gov for further information",
-        get_comment.GetComment()
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This record was removed at the submitter's request. "
+                "Contact info@ncbi.nlm.nih.gov for further information", comment);
+        }
     );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
@@ -222,13 +258,82 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
     messages.Set(suppressed_value, suppressed_value);
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         blob, error_function
     );
     get_comment.SetMessages(&messages);
+    get_comment.SetCommentCallback(
+        [&call_count, suppressed_value]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ(suppressed_value, comment);
+        }
+    );
     comment_wait_function(get_comment);
-    EXPECT_EQ(suppressed_value, get_comment.GetComment());
+    EXPECT_EQ(1UL, call_count);
+}
+
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured) {
+    CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
+    blob.SetSuppress(true);
+
+    size_t call_count{0}, error_call_count{0};
+    CCassStatusHistoryTaskGetPublicComment get_comment(
+        m_Timeout, 0, m_Connection, m_KeyspaceName, blob,
+        [&error_call_count]
+        (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+        {
+            ++error_call_count;
+            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CCassandraException::eMissData, code);
+            EXPECT_EQ(eDiag_Error, severity);
+        }
+    );
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+        }
+    );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(0UL, call_count);
+    EXPECT_EQ(1UL, error_call_count);
+}
+
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage) {
+    CPSGMessages messages;
+    CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
+    blob.SetSuppress(true);
+
+    size_t call_count{0}, error_call_count{0};
+    CCassStatusHistoryTaskGetPublicComment get_comment(
+        m_Timeout, 0, m_Connection, m_KeyspaceName, blob,
+        [&error_call_count]
+        (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+        {
+            ++error_call_count;
+            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CCassandraException::eMissData, code);
+            EXPECT_EQ(eDiag_Error, severity);
+        }
+    );
+    get_comment.SetMessages(&messages);
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+        }
+    );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(0UL, call_count);
+    EXPECT_EQ(1UL, error_call_count);
 }
 
 TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
@@ -238,15 +343,25 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
     EXPECT_EQ("", messages_error);
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         blob, error_function
     );
     get_comment.SetMessages(&messages);
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This record was removed from further distribution at the submitter's request. "
+                "Contact info@ncbi.nlm.nih.gov for further information", comment);
+        }
+    );
     comment_wait_function(get_comment);
-    EXPECT_EQ(
-        "This record was removed from further distribution at the submitter's request. Contact info@ncbi.nlm.nih.gov for further information",
-        get_comment.GetComment());
+    EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CGetPublicCommentTest, AliveBlob) {
@@ -261,12 +376,23 @@ TEST_F(CGetPublicCommentTest, AliveBlob) {
     auto blob = fetch_blob.ConsumeBlobRecord();
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eSuppress));
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eWithdrawn));
+
+    size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
         *blob, error_function
     );
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(false, isFound);
+            EXPECT_EQ("", comment);
+        }
+    );
     comment_wait_function(get_comment);
-    EXPECT_EQ("", get_comment.GetComment());
+    EXPECT_EQ(1UL, call_count);
 }
 
 }  // namespace

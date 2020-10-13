@@ -57,11 +57,14 @@ class CCassStatusHistoryTaskGetPublicComment
         eInit = 0,
         eStartReading,
         eReadingHistory,
+        eReturnResult,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
 
  public:
+    using TCommentCallback = function<void(string comment, bool isFound)>;
+
     CCassStatusHistoryTaskGetPublicComment(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
@@ -72,8 +75,8 @@ class CCassStatusHistoryTaskGetPublicComment
     );
 
     void SetMessages(CPSGMessages const * messages);
+    void SetCommentCallback(TCommentCallback callback);
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
-    string GetComment();
 
  protected:
     virtual void Wait1(void) override;
@@ -81,6 +84,7 @@ class CCassStatusHistoryTaskGetPublicComment
  private:
     void JumpToReplaced(CBlobRecord::TSatKey replaced);
 
+    TCommentCallback m_CommentCallback;
     CPSGMessages const * m_Messages;
     TBlobFlagBase m_BlobFlags;
     TBlobStatusFlagsBase m_FirstHistoryFlags;

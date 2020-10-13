@@ -85,6 +85,7 @@ CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
         op_timeout_ms, conn, keyspace, blob.GetKey(),
         true, max_retries, move(data_error_cb)
       )
+    , m_CommentCallback(nullptr)
     , m_Messages(nullptr)
     , m_BlobFlags(blob.GetFlags())
     , m_FirstHistoryFlags(-1)
@@ -116,23 +117,9 @@ void CCassStatusHistoryTaskGetPublicComment::SetMessages(CPSGMessages const * me
     m_Messages = messages;
 }
 
-string CCassStatusHistoryTaskGetPublicComment::GetComment()
+void CCassStatusHistoryTaskGetPublicComment::SetCommentCallback(TCommentCallback callback)
 {
-    if (m_State != eDone && m_State != eError && !m_Cancelled) {
-        Error(
-            CRequestStatus::e500_InternalServerError, CCassandraException::eGeneric,
-            eDiag_Error, "GetComment() called before task completion"
-        );
-        return "";
-    }
-    if (m_PublicComment.empty() && m_Messages != nullptr) {
-        if (IsBlobSuppressed(m_BlobFlags)) {
-            return m_Messages->Get(kDefaultSuppressedMessage);
-        } else if (IsBlobWithdrawn(m_BlobFlags)) {
-            return m_Messages->Get(kDefaultWithdrawnMessage);
-        }
-    }
-    return m_PublicComment;
+    m_CommentCallback = move(callback);
 }
 
 void CCassStatusHistoryTaskGetPublicComment::Wait1()
@@ -147,11 +134,14 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
 
             case eInit: {
                 if (!IsBlobSuppressed(m_BlobFlags) && !IsBlobWithdrawn(m_BlobFlags)) {
+                    if (m_CommentCallback) {
+                        m_CommentCallback("", false);
+                    }
                     m_State = eDone;
-                    return;
+                } else {
+                    m_State = eStartReading;
+                    b_need_repeat = true;
                 }
-                m_State = eStartReading;
-                b_need_repeat = true;
                 break;
             }
 
@@ -175,7 +165,7 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
             case eReadingHistory: {
                 auto query = m_QueryArr[0].query;
                 if (CheckReady(m_QueryArr[0])) {
-                    while (query->NextRow() == ar_dataready) {
+                    while (m_State == eReadingHistory && query->NextRow() == ar_dataready) {
                         int64_t flags = query->FieldGetInt64Value(0, 0);
                         string comment = query->FieldGetStrValueDef(1, "");
                         CBlobRecord::TSatKey replaces = query->FieldGetInt32Value(2, 0);
@@ -189,15 +179,13 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                         if (IsBlobWithdrawn(m_BlobFlags)) {
                             if (!SameWithdrawn(flags, m_FirstHistoryFlags)) {
                                 if (m_MatchingStatusRowFound) {
-                                    m_State = eDone;
-                                    return;
+                                    m_State = eReturnResult;
                                 } else if (replaces > 0 && m_ReplacesRetries > 0) {
                                     JumpToReplaced(replaces);
-                                    b_need_repeat = true;
                                 } else {
-                                    m_State = eDone;
-                                    return;
+                                    m_State = eReturnResult;
                                 }
+                                b_need_repeat = true;
                             } else {
                                 m_MatchingStatusRowFound = true;
                                 m_PublicComment = comment;
@@ -207,15 +195,13 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                         else {
                             if (!IsHistorySuppressed(flags)) {
                                 if (m_MatchingStatusRowFound) {
-                                    m_State = eDone;
-                                    return;
+                                    m_State = eReturnResult;
                                 } else if (replaces > 0 && m_ReplacesRetries > 0) {
                                     JumpToReplaced(replaces);
-                                    b_need_repeat = true;
                                 } else {
-                                    m_State = eDone;
-                                    return;
+                                    m_State = eReturnResult;
                                 }
+                                b_need_repeat = true;
                             } else {
                                 m_MatchingStatusRowFound = true;
                                 m_PublicComment = comment;
@@ -223,10 +209,43 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                         }
                     }
                     if (query->IsEOF()) {
-                        CloseAll();
-                        m_State = eDone;
+                        m_State = eReturnResult;
+                        b_need_repeat = true;
                     }
                 }
+                break;
+            }
+
+            case eReturnResult: {
+                CloseAll();
+                if (m_CommentCallback) {
+                    if (m_PublicComment.empty()) {
+                        if (m_Messages != nullptr) {
+                            string comment;
+                            const char * message_type = nullptr;
+                            if (IsBlobSuppressed(m_BlobFlags)) {
+                                comment = m_Messages->Get(kDefaultSuppressedMessage);
+                                message_type = kDefaultSuppressedMessage;
+                            } else if (IsBlobWithdrawn(m_BlobFlags)) {
+                                comment = m_Messages->Get(kDefaultWithdrawnMessage);
+                                message_type = kDefaultWithdrawnMessage;
+                            }
+                            if (comment.empty() && message_type != nullptr) {
+                                char msg[1024];
+                                snprintf(msg, sizeof(msg), "Message is empty for (%s)", message_type);
+                                Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData, eDiag_Error, msg);
+                            } else {
+                                m_CommentCallback(comment, true);
+                            }
+                        } else {
+                            Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData,
+                                eDiag_Error, "Messages provider not configured for Public Comment retrieval");
+                        }
+                    } else {
+                        m_CommentCallback(m_PublicComment, true);
+                    }
+                }
+                m_State = eDone;
                 break;
             }
 
