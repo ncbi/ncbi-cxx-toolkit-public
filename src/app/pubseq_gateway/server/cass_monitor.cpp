@@ -53,6 +53,9 @@ void CassMonitorThreadedFunction(void)
         switch (app->GetStartupDataState()) {
             case ePSGS_NoCassConnection:
                 if (app->OpenCass()) {
+                    // Public comments mapping (populated once)
+                    app->PopulatePublicCommentsMapping();
+
                     // true => the 'accept' alert is set if sucessfull
                     if (app->PopulateCassandraMapping(true)) {
                         app->OpenCache();

@@ -39,6 +39,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 
 #include "pending_operation.hpp"
 #include "http_server_transport.hpp"
@@ -110,6 +111,7 @@ public:
     void OpenCache(void);
     bool OpenCass(void);
     bool PopulateCassandraMapping(bool  need_accept_alert=false);
+    void PopulatePublicCommentsMapping(void);
     void CheckCassMapping(void);
     void CloseCass(void);
     bool SatToKeyspace(int  sat, string &  sat_name);
@@ -132,6 +134,11 @@ public:
     CExcludeBlobCache *  GetExcludeBlobCache(void)
     {
         return m_ExcludeBlobCache.get();
+    }
+
+    CPSGMessages *  GetPublicCommentsMapping(void)
+    {
+        return m_PublicComments.get();
     }
 
     unsigned long GetSlimMaxBlobSize(void) const
@@ -300,6 +307,7 @@ private:
     size_t                              m_MappingIndex;
     SCassMapping                        m_CassMapping[2];
     vector<string>                      m_SatNames;
+    unique_ptr<CPSGMessages>            m_PublicComments;
 
     unsigned short                      m_HttpPort;
     unsigned short                      m_HttpWorkers;
@@ -355,7 +363,7 @@ private:
     map<string, tuple<string, string>>  m_IdToNameAndDescription;
 
     CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
-    
+
     // Requests dispatcher
     CPSGS_Dispatcher                    m_RequestDispatcher;
 

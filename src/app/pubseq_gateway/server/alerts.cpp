@@ -43,24 +43,25 @@ struct SAlertToId
 
 
 const SAlertToId     kAlertToIdMap[] = {
-    { ePSGS_ConfigAuthDecrypt,               "ConfigAuthDecrypt" },
-    { ePSGS_ConfigHttpWorkers,               "ConfigHttpWorkers" },
-    { ePSGS_ConfigListenerBacklog,           "ConfigListenerBacklog" },
-    { ePSGS_ConfigMaxConnections,            "ConfigMaxConnections" },
-    { ePSGS_ConfigTimeout,                   "ConfigTimeout" },
-    { ePSGS_ConfigRetries,                   "ConfigRetries" },
-    { ePSGS_ConfigExcludeCacheSize,          "ConfigExcludeCacheSize" },
-    { ePSGS_ConfigExcludeCachePurgeSize,     "ConfigExcludeCachePurgeSize" },
-    { ePSGS_ConfigExcludeCacheInactivity,    "ConfigExcludeCacheInactivity" },
-    { ePSGS_ConfigStatScaleType,             "ConfigStatScaleType" },
-    { ePSGS_ConfigStatMinMaxVal,             "ConfigStatMinMaxVal" },
-    { ePSGS_ConfigStatNBins,                 "ConfigStatNBins" },
-    { ePSGS_OpenCassandra,                   "OpenCassandra" },
-    { ePSGS_NoValidCassandraMapping,         "NoValidCassandraMapping" },
-    { ePSGS_InvalidCassandraMapping,         "InvalidCassandraMapping" },
-    { ePSGS_NewCassandraMappingAccepted,     "NewCassandraMappingAccepted"},
-    { ePSGS_NewCassandraSatNamesMapping,     "NewCassandraSatNamesMapping" },
-    { ePSGS_OpenCache,                       "OpenCache" }
+    { ePSGS_ConfigAuthDecrypt,                "ConfigAuthDecrypt" },
+    { ePSGS_ConfigHttpWorkers,                "ConfigHttpWorkers" },
+    { ePSGS_ConfigListenerBacklog,            "ConfigListenerBacklog" },
+    { ePSGS_ConfigMaxConnections,             "ConfigMaxConnections" },
+    { ePSGS_ConfigTimeout,                    "ConfigTimeout" },
+    { ePSGS_ConfigRetries,                    "ConfigRetries" },
+    { ePSGS_ConfigExcludeCacheSize,           "ConfigExcludeCacheSize" },
+    { ePSGS_ConfigExcludeCachePurgeSize,      "ConfigExcludeCachePurgeSize" },
+    { ePSGS_ConfigExcludeCacheInactivity,     "ConfigExcludeCacheInactivity" },
+    { ePSGS_ConfigStatScaleType,              "ConfigStatScaleType" },
+    { ePSGS_ConfigStatMinMaxVal,              "ConfigStatMinMaxVal" },
+    { ePSGS_ConfigStatNBins,                  "ConfigStatNBins" },
+    { ePSGS_OpenCassandra,                    "OpenCassandra" },
+    { ePSGS_NoValidCassandraMapping,          "NoValidCassandraMapping" },
+    { ePSGS_InvalidCassandraMapping,          "InvalidCassandraMapping" },
+    { ePSGS_NewCassandraMappingAccepted,      "NewCassandraMappingAccepted"},
+    { ePSGS_NewCassandraSatNamesMapping,      "NewCassandraSatNamesMapping" },
+    { ePSGS_OpenCache,                        "OpenCache" },
+    { ePSGS_NoCassandraPublicCommentsMapping, "NoCassandraPublicCommentsMapping" },
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

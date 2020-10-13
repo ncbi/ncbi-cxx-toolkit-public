@@ -393,8 +393,10 @@ int CPubseqGatewayApp::Run(void)
 
     bool    connected = OpenCass();
     bool    populated = false;
-    if (connected)
+    if (connected) {
+        PopulatePublicCommentsMapping();
         populated = PopulateCassandraMapping();
+    }
 
     if (populated)
         OpenCache();
@@ -1245,6 +1247,38 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
 
     need_logging = false;
     return errors.empty();
+}
+
+
+void CPubseqGatewayApp::PopulatePublicCommentsMapping(void)
+{
+    if (m_PublicComments.get() != nullptr)
+        return;     // We have already been here: the mapping needs to be
+                    // populated once
+
+    try {
+        string      err_msg;
+
+        m_PublicComments.reset(new CPSGMessages);
+
+        if (!FetchMessages(m_RootKeyspace, m_CassConnection,
+                           *m_PublicComments.get(), err_msg)) {
+            err_msg = "Error populating cassandra public comments mapping: " + err_msg;
+            PSG_ERROR(err_msg);
+            m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping, err_msg);
+        }
+    } catch (const exception &  exc) {
+        string      err_msg = "Cannot populate public comments mapping from Cassandra";
+        PSG_ERROR(exc);
+        PSG_ERROR(err_msg);
+        m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping,
+                          err_msg + ". " + exc.what());
+    } catch (...) {
+        string      err_msg = "Unknown error while populating "
+                              "public comments mapping from Cassandra";
+        PSG_ERROR(err_msg);
+        m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping, err_msg);
+    }
 }
 
 

@@ -58,13 +58,14 @@ enum EPSGS_AlertType {
     ePSGS_ConfigStatMinMaxVal = 10,
     ePSGS_ConfigStatNBins = 11,
     ePSGS_OpenCassandra = 12,
-    ePSGS_NoValidCassandraMapping = 13,      // PSG has no valid cassandra mapping at hand
-    ePSGS_InvalidCassandraMapping = 14,      // PSG has detected an invalid mapping in cassandra
-    ePSGS_NewCassandraMappingAccepted = 15,  // PSG accepted an updated mapping from cassandra
-    ePSGS_NewCassandraSatNamesMapping = 16,  // PSG has detected new sat names mapping in cassandra
-                                             // however it can be accepted only
-                                             // after restart
-    ePSGS_OpenCache = 17                     // PSG cannot create or open the LMDB cache
+    ePSGS_NoValidCassandraMapping = 13,         // PSG has no valid cassandra mapping at hand
+    ePSGS_InvalidCassandraMapping = 14,         // PSG has detected an invalid mapping in cassandra
+    ePSGS_NewCassandraMappingAccepted = 15,     // PSG accepted an updated mapping from cassandra
+    ePSGS_NewCassandraSatNamesMapping = 16,     // PSG has detected new sat names mapping in cassandra
+                                                // however it can be accepted only
+                                                // after restart
+    ePSGS_OpenCache = 17,                       // PSG cannot create or open the LMDB cache
+    ePSGS_NoCassandraPublicCommentsMapping = 18 // PSG has no public comments mapping
 };
 
 enum EPSGS_AlertAckResult {
