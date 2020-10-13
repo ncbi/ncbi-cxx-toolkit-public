@@ -74,10 +74,14 @@ ostream& CPatent_seq_id::AsFastaString(ostream& s) const
 	
     s << idp.GetCountry() << '|';  // no Upcase per Ostell - Karl 7/2001
 
-    if ( idp.GetId().IsNumber() ) {
-        s << idp.GetId().GetNumber();
+    const CId_pat_Base::C_Id& id = idp.GetId();
+    if ( id.IsNumber() ) {
+        s << id.GetNumber();
     } else {
-        s << idp.GetId().GetApp_number();
+        s << id.GetApp_number();
+        if ( idp.IsSetDoc_type() ) {
+            s << idp.GetDoc_type();
+        }
     }
     s << '|' << GetSeqid();
     return s;

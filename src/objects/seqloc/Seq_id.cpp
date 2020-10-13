@@ -1565,7 +1565,7 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
         break;
 
     case CSeq_id::e_Patent:
-        *label += id.GetPatent().GetCit().GetId().IsNumber() ? "pat" : "pgp";
+        *label += id.GetPatent().GetCit().GetId().IsNumber() ? "pat" : "pat";
         break;
 
     default:
@@ -1823,7 +1823,7 @@ void CSeq_id::WriteAsFasta(ostream& out)
         the_type = e_not_set;
 
     if (IsPatent()  &&  !GetPatent().GetCit().GetId().IsNumber() ) {
-        const char pgp[] = "pgp|";
+        const char pgp[] = "pat|";
         out.write(pgp, sizeof(pgp) - 1);
     } else if (IsSwissprot()  &&  GetSwissprot().IsSetRelease()
                &&  GetSwissprot().GetRelease() == "unreviewed") {
@@ -2444,7 +2444,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         }
         // to distinguish applications from granted patents; the numeric
         // content has already made its way into ver.
-        fields[2] = tv == eTV_pgp ? "pgp" : "pat";
+        fields[2] = tv == eTV_pgp ? "pat" : "pat";
         break;
 
     case e_Pdb:
