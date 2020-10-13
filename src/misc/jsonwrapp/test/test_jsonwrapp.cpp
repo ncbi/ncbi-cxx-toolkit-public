@@ -235,7 +235,8 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 
     CJson_Document doc(CJson_Value::eObject);
     CJson_Object obj( doc.SetObject());
-//will not compile
+    CJson_Object obj_alias(obj);
+    //will not compile
 #if 0
     CJson_Node tn;
     CJson_Value tv;
@@ -247,7 +248,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 // add/delete elements into object
     {
         obj["bool"].SetValue().SetBool(true);
-        obj["int4"].SetValue().SetInt4(4);
+        obj_alias["int4"].SetValue().SetInt4(4);
         BOOST_CHECK(obj.size() == 2);
         obj.erase( obj.begin());
         BOOST_CHECK(obj.size() == 1);
@@ -255,7 +256,9 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         BOOST_CHECK(obj.empty());
 
         CJson_ConstObject o2(obj);
-//will not compile
+        CJson_ConstObject o2_alias(obj);
+        BOOST_CHECK(o2_alias.IsObject());
+        //will not compile
 #if 0
         o2["bool"].IsValue();
 #endif
@@ -353,11 +356,15 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         o3.insert("two", 2);
         CJson_Array a1 = o3.insert_array("array");
         BOOST_CHECK(!a1.IsNull());
+        CJson_Array a1_alias(a1);
+        BOOST_CHECK(a1_alias.IsArray());
+        CJson_ConstArray a1_calias(a1);
+        BOOST_CHECK(a1_calias.IsArray());
 
 // --------------------------------------------------------------------------
 // add/delete elements into array
         a1.push_back(1);
-        a1.erase(a1.begin());
+        a1_alias.erase(a1.begin());
         BOOST_CHECK(a1.empty());
         a1.push_back(1);
         a1.push_back("two");
