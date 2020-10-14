@@ -595,10 +595,7 @@ CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
 
     typedef CFastaReader::EFlags TFlags;
 
-    TFlags flags = (TFlags) (CFastaReader::fAllSeqIds |
-                             (protein
-                              ? CFastaReader::fAssumeProt
-                              : CFastaReader::fAssumeNuc));
+    TFlags flags = (TFlags) (protein ? CFastaReader::fAssumeProt : CFastaReader::fAssumeNuc);
 
     CFastaReader fr(*lr, flags);
 
@@ -2541,8 +2538,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
     CTaxIdSet tis(kTaxId);
     const string kDbName("foo");
     CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
-    const CFastaReader::TFlags flags =
-        CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds;
+    const CFastaReader::TFlags flags = CFastaReader::fAssumeNuc;
     // This file contains TAB characters, which shouldn't create any warnings
     CFastaReader reader("data/rabbit_mrna.fsa", flags);
     set<TGi> gis;
@@ -2577,8 +2573,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMap)
     CRef<CTaxIdSet> tis(new CTaxIdSet());
     const string kDbName("foo");
     CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
-    const CFastaReader::TFlags flags =
-        CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds;
+    const CFastaReader::TFlags flags = CFastaReader::fAssumeNuc;
     // This file contains TAB characters, which shouldn't create any warnings
     CFastaReader reader("data/rabbit_mrna.fsa", flags);
     CNcbiIfstream taxidmap("data/rabbit_taxidmap.txt");
@@ -2615,8 +2610,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMapLclIds)
     CRef<CTaxIdSet> tis(new CTaxIdSet());
     const string kDbName("foo");
     CWriteDB blastdb(kDbName, CWriteDB::eProtein, kDbName);
-    const CFastaReader::TFlags flags =
-        CFastaReader::fAssumeProt | CFastaReader::fAllSeqIds;
+    const CFastaReader::TFlags flags = CFastaReader::fAssumeProt;
     // This file contains TAB characters, which shouldn't create any warnings
     CFastaReader reader("data/lclseqs.fsa", flags);
     CNcbiIfstream taxidmap("data/lclseqs_taxidmap.txt");
@@ -2843,15 +2837,14 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WGS_gap)
     BOOST_REQUIRE(f1.Exists() == true);
 }
 
+#ifdef NCBI_INT8_GI
 BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
 {
     // When process exits, clean up these files if they still exist.
     CFileDeleteAtExit::Add("big_gi.00.pni");
     CFileDeleteAtExit::Add("big_gi.00.pnd");
 
-    // Define a value that's too large to fit in a signed int without rollover.
-    const Uint4 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
-
+    const Int8 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
     // Write a numeric ISAM DB containing GI/OID records using GIs starting
     // with big_gi above.
 
@@ -2864,78 +2857,46 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
             false       // use sparse mode?
     );
 
-    // Seed for random number generator (RNG).
-    const int seed = 1776;
-
     // Set number of records to be written/read
-    const Uint4 nrecs = 10;
+    const int nrecs = 10;
 
-    // Seed RNG.
-    srand(seed);
-
-    // Write some records, all with too-large-for-31-bits GIs.
-    // If NCBI_INT8_GI is NOT defined, this should throw immediately.
-    // Otherwise, this should succeed without exception.
+    // (Try to) create seqid reference from GI.
+    // If we succeed, add seqid and random OID value to DB.
     for (Uint4 i = 0; i < nrecs; ++i) {
-        TGi gi = GI_FROM(Uint4, (big_gi + i));
-#ifndef NCBI_INT8_GI
-        BOOST_REQUIRE_THROW(
-                CSeq_id(CSeq_id::e_Gi, gi),
-                CException
-        );
-        return;
-#else
-        // (Try to) create seqid reference from GI.
-        // If we succeed, add seqid and random OID value to DB.
-        CWriteDB_Isam::TIdList tidlist;
-        try {
-            CRef<CSeq_id> seqid(
-                    new CSeq_id(CSeq_id::e_Gi, gi)
-            );
-            tidlist.push_back(seqid);
-            wdb.AddIds(rand(), tidlist);
-        } catch (...) {
-            BOOST_FAIL("CSeq_id constructor threw exception");
-            return;
-        }
-#endif
+    	CWriteDB_Isam::TIdList tidlist;
+    	TGi gi = GI_FROM(Int8, (big_gi + i));
+    	try {
+    	    CRef<CSeq_id> seqid( new CSeq_id(CSeq_id::e_Gi, gi));
+    	    tidlist.push_back(seqid);
+        	wdb.AddIds(i, tidlist);
+    	} catch (...) {
+        	BOOST_FAIL("CSeq_id constructor threw exception");
+        	return;
+    	}
     }
-
     // Close database.
     wdb.Close();
 
     // Reopen DB for reading.
     CSeqDBAtlas atlas(true);
     CSeqDBLockHold lock(atlas);
-    CRef<CSeqDBIsam> rdb(
-            new CSeqDBIsam(
-                    atlas,
-                    "big_gi.00",
-                    'p',
-                    'n',
-                    eGiId
-            )
-    );
-
-    // Reseed RNG to original seed.
-    srand(seed);
+    CRef<CSeqDBIsam> rdb( new CSeqDBIsam( atlas, "big_gi.00", 'p', 'n', eGiId));
 
     // Read back records and verify.
-    for (Uint4 i = 0; i < nrecs; ++i) {
-        TGi gi = GI_FROM(Uint4, (big_gi + i));
+    for (int i = 0; i < nrecs; ++i) {
+        TGi gi = GI_FROM(Int8, (big_gi + i));
         try {
-            CRef<CSeq_id> seqid(
-                    new CSeq_id(CSeq_id::e_Gi, gi)
-            );
+            CRef<CSeq_id> seqid( new CSeq_id(CSeq_id::e_Gi, gi));
             int oid;
-            rdb->IdToOid(GI_TO(long, seqid->GetGi()), oid);
-            BOOST_REQUIRE(oid == rand());
+            rdb->IdToOid(GI_TO(Int8, seqid->GetGi()), oid);
+            BOOST_REQUIRE(oid == i);
         } catch (...) {
             BOOST_FAIL("CSeq_id constructor threw exception");
             return;
         }
     }
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
 {
