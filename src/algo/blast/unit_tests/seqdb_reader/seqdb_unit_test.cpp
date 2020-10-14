@@ -4222,18 +4222,17 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
             )
     );
 
-    // Define a value that's too large to fit in a signed int without rollover.
-    const Uint4 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
+    {
+    	const Uint4 uint4_gi = 0xFFFFFFFF;
+    	int gi = GI_FROM(Uint4, uint4_gi);
+    	BOOST_REQUIRE_THROW( CSeq_id(CSeq_id::e_Gi, gi), CException );
+    }
 
+#ifdef NCBI_INT8_GI
+    const Int8 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
     for (Uint4 i = 0; i < nrecs; ++i) {
-        TGi gi = GI_FROM(Uint4, (big_gi + i));
-#ifndef NCBI_INT8_GI
-        BOOST_REQUIRE_THROW(
-                CSeq_id(CSeq_id::e_Gi, gi),
-                CException
-        );
-        return;
-#else
+        TGi gi = GI_FROM(Int8, (big_gi + i));
+
         try {
             CRef<CSeq_id> seqid(
                     new CSeq_id(CSeq_id::e_Gi, gi)
@@ -4245,8 +4244,8 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
             BOOST_FAIL("CSeq_id constructor threw exception");
             return;
         }
-#endif
     }
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(Test_SeqIdList_AliasFile)
