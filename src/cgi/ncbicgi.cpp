@@ -1264,13 +1264,13 @@ void CCgiRequest::x_InitRequestContext(TFlags flags)
     if ( !rctx.IsSetHitID(CRequestContext::eHitID_Request) ) {
         if ((flags & fIgnorePageHitId) == 0) {
             string phid;
-            // Check if pageviewid is present. If not, generate one.
-            TCgiEntries::iterator phid_it = m_Entries.find(
-                g_GetNcbiString(eNcbiStrings_PHID));
-            if (phid_it != m_Entries.end()) {
-                phid = phid_it->second;
+            // Check if page hit id is present. If not, generate one.
+            auto phid_rg = m_Entries.equal_range(g_GetNcbiString(eNcbiStrings_PHID));
+            while (phid_rg.first != phid_rg.second) {
+                phid = phid_rg.first->second;
+                ++phid_rg.first;
             }
-            else {
+            if (phid.empty()) {
                 // Try HTTP_NCBI_PHID
                 phid = CRequestContext::SelectLastHitID(
                     GetRandomProperty("NCBI_PHID", true));
