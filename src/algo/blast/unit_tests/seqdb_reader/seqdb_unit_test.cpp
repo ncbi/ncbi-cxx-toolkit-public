@@ -4222,13 +4222,14 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
             )
     );
 
+#ifndef NCBI_INT8_GI
     {
     	const Uint4 uint4_gi = 0xFFFFFFFF;
-    	int gi = GI_FROM(Uint4, uint4_gi);
+    	TGi gi = GI_FROM(Uint4, uint4_gi);
     	BOOST_REQUIRE_THROW( CSeq_id(CSeq_id::e_Gi, gi), CException );
     }
 
-#ifdef NCBI_INT8_GI
+#else
     const Int8 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
     for (Uint4 i = 0; i < nrecs; ++i) {
         TGi gi = GI_FROM(Int8, (big_gi + i));
