@@ -1370,12 +1370,19 @@ static void s_FormatJournal
 
     // always use iso_jta title if present - RW-1157 use ml_jta in lieu of retired iso_jta
     string title;
+    string iso_jta;
+    string ml_jta;
     ITERATE (CTitle::Tdata, it, ttl.Get()) {
         if ((*it)->IsIso_jta()) {
-            title = (*it)->GetIso_jta();
+            iso_jta = (*it)->GetIso_jta();
         } else if ((*it)->IsMl_jta()) {
-            title = (*it)->GetMl_jta();
+            ml_jta = (*it)->GetMl_jta();
         }
+    }
+    if (! NStr::IsBlank(iso_jta)) {
+        title = iso_jta;
+    } else if (! NStr::IsBlank(ml_jta)) {
+        title = ml_jta;
     }
 
     if (NStr::IsBlank(title)  &&  s_StrictIsoJta(ctx)  &&  !ref.IsElectronic()) {
