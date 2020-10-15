@@ -134,6 +134,8 @@ class CFrameFinder
 public:
     /// Convenience typedef
     typedef CSeqLocInfo::ETranslationFrame ETranslationFrame;
+    typedef const CRef<CSeqLocInfo> argument_type;
+    typedef bool result_type;
 
     /// ctor
     /// @param frame the translation frame [in]
@@ -142,7 +144,7 @@ public:
     /// Returns true if its argument's frame corresponds to the one used to
     /// create this object
     /// @param seqlocinfo the object to examine [in]
-    bool operator() (const CRef<CSeqLocInfo>& seqlocinfo) const {
+    result_type operator() (argument_type& seqlocinfo) const {
         if (seqlocinfo.Empty()) {
             NCBI_THROW(CBlastException, eInvalidArgument, 
                        "Empty CRef<CSeqLocInfo>!");
