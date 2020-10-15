@@ -1385,7 +1385,7 @@ CTaxon1::GetTaxId4GI(TGi gi, TTaxId& tax_id_out )
     if( SendRequest( req, resp ) ) {
         if( resp.IsId4gi() ) {
             // Correct response, return object
-            tax_id_out = TAX_ID_FROM(TIntId, GI_TO(TIntId, resp.GetId4gi()));
+            tax_id_out = resp.GetId4gi();
             return true;
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Id4gi" );

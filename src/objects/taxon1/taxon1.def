@@ -10,8 +10,8 @@ maxtaxid._type = ncbi::TTaxId
 maxtaxid._storage_type = int
 getunique._type = ncbi::TTaxId
 getunique._storage_type = int
-id4gi._type = ncbi::TGi
-id4gi._storage_type = ncbi::TIntId
+id4gi._type = ncbi::TTaxId
+id4gi._storage_type = int
 
 [Taxon1-info]
 ival1._type = ncbi::TIntId
