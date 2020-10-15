@@ -247,7 +247,7 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     x_ReadIdToNameAndDescriptionConfiguration(registry, "COUNTERS");
 
-    if ( registry.GetBool("OSG", "enabled", false) ) {
+    if ( registry.GetBool("OSG_PROCESSOR", "enabled", false) ) {
         m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
         m_OSGConnectionPool->AppParseArgs(args);
         m_OSGConnectionPool->LoadConfig(registry);
