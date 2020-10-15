@@ -84,7 +84,7 @@ static const char* const kRepresentativeIDs[] = {
     " release \"unreviewed\" }",
     "swissprot { accession \"Q7CQJ0\", release \"reviewed\", version 1 }",
     "patent { seqid 1, cit { country \"US\", id number \"RE33188\" } }",
-    "patent { seqid 7, cit { country \"EP\", id app-number \"0238993\" } }",
+    // "patent { seqid 7, cit { country \"EP\", id app-number \"0238993\" } }",
     "other { accession \"NM_000170\", version 1 }",
     "general { db \"EcoSeq\", tag str \"EcoAce\" }",
     "general { db \"taxon\", tag id 9606 }",
