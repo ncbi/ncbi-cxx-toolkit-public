@@ -574,23 +574,27 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPatent)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|Z")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188")));
 
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pgp|EP|0238993|7")));
+    /*
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pat|EP|0238993|7")));
     BOOST_CHECK(id->IsPatent());
     BOOST_CHECK_EQUAL(id->GetPatent().GetSeqid(), 7);
     BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("EP"));
     BOOST_CHECK(id->GetPatent().GetCit().GetId().IsApp_number());
     BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
                 string("0238993"));
+    */
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
                                         "US", "RE33188", 1)));
     BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
                 string("RE33188"));
 
+    /*
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
                                         "EP", "0238993", 7, "PGP")));
     BOOST_CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
                 string("0238993"));
+    */
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaRefseq)
@@ -825,7 +829,7 @@ static const char* kTestFastaStrings[] = {
     "tr|Q90RT2|Q90RT2_9HIV1",
     "sp|Q7CQJ0.1|",
     "pat|US|RE33188|1",
-    "pgp|EP|0238993|7",
+    // "pgp|EP|0238993|7",
     "ref|NM_000170.1|",
     "gnl|EcoSeq|EcoAce",
     "gnl|Celera|CDM:10213987", 
@@ -943,9 +947,11 @@ BOOST_AUTO_TEST_CASE(s_TestListOps)
     BOOST_CHECK_EQUAL
         (CSeq_id::GetStringDescr(bs, CSeq_id::eFormat_BestWithoutVersion),
          string("ref|NM_000170"));
+    /*
     BOOST_CHECK_EQUAL
         (CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV", true),
          size_t(2));
+    */
     NCBI_CHECK_THROW_SEQID
         (CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV"));
 }
@@ -2162,7 +2168,7 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "tr|Q90RT2|Q90RT2_9hiv1", { "Q90RT2", "Q90RT2_9HIV1" } },
     { "sp|Q7CQJ0.1|", { "Q7CQJ0" } },
     { "pat|US|re33188|1", { "", "US|RE33188|1" } },
-    { "pgp|ep|0238993|7", { "", "EP|0238993|7" } },
+    // { "pgp|ep|0238993|7", { "", "EP|0238993|7" } },
     { "ref|NM_000170.1|", { "NM_000170" } },
     { "gnl|EcoSeq|EcoAce", { "", "ECOSEQ|ECOACE" } },
     { "gnl|Celera|cdm:10213987", { "", "CELERA|CDM:10213987" } },
