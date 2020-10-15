@@ -233,7 +233,7 @@ bool CHttpRequest::GetParam(const char *  name, size_t  len, bool  required,
     if (!m_ParamParsed)
         ParseParams();
 
-    for (size_t i = 0; i < m_ParamCount; i++) {
+    for (size_t i = 0; i < m_ParamCount; ++i) {
         if (m_Params[i].m_NameLen == len &&
             memcmp(m_Params[i].m_Name, name, len) == 0) {
             *value = m_Params[i].m_Val;
@@ -247,6 +247,25 @@ bool CHttpRequest::GetParam(const char *  name, size_t  len, bool  required,
         *value_len = 0;
 
     return !required;
+}
+
+
+bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
+                                          vector<string> &  values)
+{
+    if (!m_ParamParsed)
+        ParseParams();
+
+    bool        found = false;
+    for (size_t i = 0; i < m_ParamCount; ++i) {
+        if (m_Params[i].m_NameLen == len &&
+            memcmp(m_Params[i].m_Name, name, len) == 0) {
+            values.push_back(string(m_Params[i].m_Val,
+                                    m_Params[i].m_ValLen));
+            found = true;
+        }
+    }
+    return found;
 }
 
 

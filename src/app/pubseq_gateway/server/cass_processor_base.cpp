@@ -36,6 +36,7 @@
 #include <corelib/ncbidiag.hpp>
 
 #include "cass_processor_base.hpp"
+#include "pubseq_gateway.hpp"
 
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
@@ -107,5 +108,43 @@ void
 CPSGS_CassProcessorBase::UpdateOverallStatus(CRequestStatus::ECode  status)
 {
     m_Status = max(status, m_Status);
+}
+
+
+bool
+CPSGS_CassProcessorBase::IsCassandraProcessorEnabled(
+                                    shared_ptr<CPSGS_Request> request) const
+{
+    // CXX-11549: for the time being the processor name does not participate in
+    //            the decision. Only the hardcoded "cassandra" is searched in
+    //            the enable/disable list.
+    //            Also, what list is consulted depends on a configuration file
+    //            setting which tells whether the cassandra processors are
+    //            enabled or not. This leads to a nice case when looking at the
+    //            request it is impossible to say if a processor was enabled or
+    //            disabled at the time of request if enable/disable options are
+    //            not in the request.
+    static string   kCassandra = "cassandra";
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    bool        enabled = app->GetCassandraProcessorsEnabled();
+
+    if (enabled) {
+        for (const auto &  dis_processor :
+                request->GetRequest<SPSGS_RequestBase>().m_DisabledProcessors) {
+            if (NStr::CompareNocase(dis_processor, kCassandra) == 0) {
+                return false;
+            }
+        }
+    } else {
+        for (const auto &  en_processor :
+                request->GetRequest<SPSGS_RequestBase>().m_EnabledProcessors) {
+            if (NStr::CompareNocase(en_processor, kCassandra) == 0) {
+                return true;
+            }
+        }
+    }
+
+    return enabled;
 }
 

@@ -77,6 +77,9 @@ CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                          shared_ptr<CPSGS_Reply> reply,
                                          TProcessorPriority  priority) const
 {
+    if (!IsCassandraProcessorEnabled(request))
+        return nullptr;
+
     if (request->GetRequestType() != CPSGS_Request::ePSGS_TSEChunkRequest)
         return nullptr;
 
@@ -150,6 +153,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
                                       "", 0, trace_flag,
+                                      vector<string>(), vector<string>(),
                                       chrono::high_resolution_clock::now());
 
     unique_ptr<CCassBlobFetch>  fetch_details;

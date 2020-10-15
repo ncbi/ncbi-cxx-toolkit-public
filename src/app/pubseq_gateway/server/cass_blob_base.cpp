@@ -304,6 +304,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(TBlobChunkCB  blob_chunk_cb,
                               SPSGS_RequestBase::ePSGS_UnknownUseCache,
                               fetch_details->GetClientId(),
                               0, trace_flag,
+                              vector<string>(), vector<string>(),
                               chrono::high_resolution_clock::now());
 
     // Create the cass async loader
@@ -385,6 +386,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           "", 0, trace_flag,
+                          vector<string>(), vector<string>(),
                           chrono::high_resolution_clock::now());
 
     // Prepare Id2Info retrieval
@@ -515,6 +517,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           "", 0, trace_flag,
+                          vector<string>(), vector<string>(),
                           chrono::high_resolution_clock::now());
 
         unique_ptr<CCassBlobFetch>   details;

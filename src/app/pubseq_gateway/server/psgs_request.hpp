@@ -182,6 +182,8 @@ struct SPSGS_RequestBase
     int                             m_Hops;
     EPSGS_Trace                     m_Trace;
     TPSGS_HighResolutionTimePoint   m_StartTimestamp;
+    vector<string>                  m_EnabledProcessors;
+    vector<string>                  m_DisabledProcessors;
 
     SPSGS_RequestBase() :
         m_Hops(0),
@@ -191,8 +193,12 @@ struct SPSGS_RequestBase
 
     SPSGS_RequestBase(int  hops,
                       EPSGS_Trace  trace,
+                      const vector<string> &  enabled_processors,
+                      const vector<string> &  disabled_processors,
                       const TPSGS_HighResolutionTimePoint &  start) :
-        m_Hops(hops), m_Trace(trace), m_StartTimestamp(start)
+        m_Hops(hops), m_Trace(trace), m_StartTimestamp(start),
+        m_EnabledProcessors(enabled_processors),
+        m_DisabledProcessors(disabled_processors)
     {}
 
     virtual ~SPSGS_RequestBase() {}
@@ -276,8 +282,12 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
                          EPSGS_AccSubstitutioOption  subst_option,
                          int  hops,
                          EPSGS_Trace  trace,
+                         const vector<string> &  enabled_processors,
+                         const vector<string> &  disabled_processors,
                          const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace,
+                          enabled_processors, disabled_processors,
+                          start_timestamp),
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
@@ -349,8 +359,12 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
                           const string &  client_id,
                           int  hops,
                           EPSGS_Trace  trace,
+                          const vector<string> &  enabled_processors,
+                          const vector<string> &  disabled_processors,
                           const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace,
+                          enabled_processors, disabled_processors,
+                          start_timestamp),
         m_TSEOption(tse_option),
         m_UseCache(use_cache),
         m_ClientId(client_id),
@@ -391,8 +405,12 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              const string &  client_id,
                              int  hops,
                              EPSGS_Trace  trace,
+                             const vector<string> &  enabled_processors,
+                             const vector<string> &  disabled_processors,
                              const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace, start_timestamp),
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace,
+                              enabled_processors, disabled_processors,
+                              start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(move(exclude_blobs)),
@@ -437,8 +455,12 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
                                  const string &  client_id,
                                  int  hops,
                                  EPSGS_Trace  trace,
+                                 const vector<string> &  enabled_processors,
+                                 const vector<string> &  disabled_processors,
                                  const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace, start_timestamp),
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace,
+                              enabled_processors, disabled_processors,
+                              start_timestamp),
         m_LastModified(last_modified)
     {
         m_BlobId = blob_id;
@@ -475,8 +497,12 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
                        EPSGS_CacheAndDbUse  use_cache,
                        int  hops,
                        EPSGS_Trace  trace,
+                       const vector<string> &  enabled_processors,
+                       const vector<string> &  disabled_processors,
                        const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace,
+                          enabled_processors, disabled_processors,
+                          start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
@@ -544,8 +570,12 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
                           EPSGS_CacheAndDbUse  use_cache,
                           int  hops,
                           EPSGS_Trace  trace,
+                          const vector<string> &  enabled_processors,
+                          const vector<string> &  disabled_processors,
                           const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, start_timestamp),
+        SPSGS_RequestBase(hops, trace,
+                          enabled_processors, disabled_processors,
+                          start_timestamp),
         m_Id2Chunk(id2_chunk),
         m_Id2Info(id2_info),
         m_UseCache(use_cache)

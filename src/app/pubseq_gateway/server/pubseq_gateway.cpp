@@ -89,6 +89,7 @@ const bool              kDefaultAllowIOTest = false;
 const unsigned long     kDefaultSlimMaxBlobSize = 10 * 1024;
 const unsigned int      kDefaultMaxHops = 2;
 const unsigned long     kDefaultSmallBlobSize = 16;
+const bool              kDefaultCassandraProcessorsEnabled = true;
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -132,6 +133,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
     m_MaxHops(kDefaultMaxHops),
+    m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
     m_ExcludeBlobCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection)
 {
@@ -251,6 +253,10 @@ void CPubseqGatewayApp::ParseArgs(void)
         m_OSGConnectionPool->LoadConfig(registry);
         m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
     }
+
+    m_CassandraProcessorsEnabled = registry.GetBool(
+            "CASSANDRA_PROCESSOR", "enabled",
+            kDefaultCassandraProcessorsEnabled);
 
     // It throws an exception in case of inability to start
     x_ValidateArgs();
@@ -1107,6 +1113,53 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
             return false;
         }
     }
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
+                                        CHttpRequest &  req,
+                                        shared_ptr<CPSGS_Reply>  reply,
+                                        vector<string> &  enabled_processors,
+                                        vector<string> &  disabled_processors)
+{
+    static string   kEnableProcessor = "enable_processor";
+    static string   kDisableProcessor = "disable_processor";
+
+    req.GetMultipleValuesParam(kEnableProcessor.data(),
+                               kEnableProcessor.size(),
+                               enabled_processors);
+    req.GetMultipleValuesParam(kDisableProcessor.data(),
+                               kDisableProcessor.size(),
+                               disabled_processors);
+
+    enabled_processors.erase(
+        remove_if(enabled_processors.begin(), enabled_processors.end(),
+                  [](string const & s) { return s.empty(); }),
+        enabled_processors.end());
+    disabled_processors.erase(
+        remove_if(disabled_processors.begin(), disabled_processors.end(),
+                  [](string const & s) { return s.empty(); }),
+        disabled_processors.end());
+
+    for (const auto & en_processor : enabled_processors) {
+        for (const auto &  dis_processor : disabled_processors) {
+            if (NStr::CompareNocase(en_processor, dis_processor) == 0) {
+                string      err_msg = "The same processor name is found "
+                    "in both '" + kEnableProcessor + "' (has it as " + en_processor + ") and '" +
+                    kDisableProcessor + "' (has it as " + dis_processor + ") lists";
+                m_ErrorCounters.IncMalformedArguments();
+                x_SendMessageAndCompletionChunks(reply, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 ePSGS_MalformedParameter,
+                                                 eDiag_Error);
+                PSG_WARNING(err_msg);
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 

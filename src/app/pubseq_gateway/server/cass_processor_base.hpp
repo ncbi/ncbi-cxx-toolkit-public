@@ -57,6 +57,7 @@ protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) const;
     bool AreAllFinishedRead(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);
+    bool IsCassandraProcessorEnabled(shared_ptr<CPSGS_Request> request) const;
 
 private:
     IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;

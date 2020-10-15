@@ -857,6 +857,8 @@ public:
 
     bool GetParam(const char *  name, size_t  len, bool  required,
                   const char **  value, size_t *  value_len);
+    bool GetMultipleValuesParam(const char *  name, size_t  len,
+                                vector<string> &  values);
 
     size_t ParamCount(void) const
     {

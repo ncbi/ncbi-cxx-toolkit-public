@@ -209,6 +209,11 @@ public:
         return m_OSGConnectionPool;
     }
 
+    bool GetCassandraProcessorsEnabled(void) const
+    {
+        return m_CassandraProcessorsEnabled;
+    }
+
     list<unique_ptr<IPSGS_Processor>>
         DispatchRequest(shared_ptr<CPSGS_Request> request,
                         shared_ptr<CPSGS_Reply> reply) const
@@ -282,6 +287,10 @@ private:
                              string &  err_msg);
     bool x_GetHops(CHttpRequest &  req,
                    shared_ptr<CPSGS_Reply>  reply, int &  hops);
+    bool x_GetEnabledAndDisabledProcessors(CHttpRequest &  req,
+                                           shared_ptr<CPSGS_Reply>  reply,
+                                           vector<string> &  enabled_processors,
+                                           vector<string> &  disabled_processors);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
@@ -338,6 +347,8 @@ private:
 
     unsigned long                       m_SlimMaxBlobSize;
     int                                 m_MaxHops;
+
+    bool                                m_CassandraProcessorsEnabled;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<CHttpDaemon<CPendingOperation>>

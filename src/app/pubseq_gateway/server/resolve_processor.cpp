@@ -78,6 +78,9 @@ CPSGS_ResolveProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                         shared_ptr<CPSGS_Reply> reply,
                                         TProcessorPriority  priority) const
 {
+    if (!IsCassandraProcessorEnabled(request))
+        return nullptr;
+
     if (request->GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest)
         return new CPSGS_ResolveProcessor(request, reply, priority);
     return nullptr;

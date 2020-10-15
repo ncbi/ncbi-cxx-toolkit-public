@@ -247,6 +247,12 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             auto_blob_skipping = auto_blob_skipping_param.m_Value == "yes";
         }
 
+        vector<string>      enabled_processors;
+        vector<string>      disabled_processors;
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+                                               disabled_processors))
+            return 0;
+
         m_RequestCounters.IncGetBlobBySeqId();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_BlobBySeqIdRequest(
@@ -256,7 +262,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         auto_blob_skipping,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        hops, trace, now));
+                        hops, trace, enabled_processors, disabled_processors,
+                        now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
@@ -358,6 +365,12 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
             SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
+            vector<string>      enabled_processors;
+            vector<string>      disabled_processors;
+            if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+                                                   disabled_processors))
+                return 0;
+
             m_RequestCounters.IncGetBlobBySatSatKey();
             unique_ptr<SPSGS_RequestBase>
                     req(new SPSGS_BlobBySatSatKeyRequest(
@@ -365,7 +378,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                 tse_option, use_cache,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
-                                hops, trace, now));
+                                hops, trace,
+                                enabled_processors, disabled_processors, now));
             unique_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
             unique_ptr<CPendingOperation>
@@ -498,13 +512,20 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             return 0;
         }
 
+        vector<string>      enabled_processors;
+        vector<string>      disabled_processors;
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+                                               disabled_processors))
+            return 0;
+
         // Parameters processing has finished
         m_RequestCounters.IncResolve();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_ResolveRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, include_data_flags, output_format,
-                        use_cache, subst_option, hops, trace, now));
+                        use_cache, subst_option, hops, trace,
+                        enabled_processors, disabled_processors, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
@@ -599,12 +620,19 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
             return 0;
         }
 
+        vector<string>      enabled_processors;
+        vector<string>      disabled_processors;
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+                                               disabled_processors))
+            return 0;
+
         // All parameters are good
         m_RequestCounters.IncGetTSEChunk();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
                         id2_chunk_value, id2_info_param.m_Value,
-                        use_cache, hops, trace, now));
+                        use_cache, hops, trace,
+                        enabled_processors, enabled_processors, now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
@@ -707,12 +735,20 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             return 0;
         }
 
+        vector<string>      enabled_processors;
+        vector<string>      disabled_processors;
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+                                               disabled_processors))
+            return 0;
+
         // Parameters processing has finished
         m_RequestCounters.IncGetNA();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
-                        seq_id_type, names, use_cache, hops, trace, now));
+                        seq_id_type, names, use_cache, hops, trace,
+                        enabled_processors, disabled_processors,
+                        now));
         unique_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
         unique_ptr<CPendingOperation>
