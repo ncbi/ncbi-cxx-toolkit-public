@@ -807,7 +807,7 @@ NCBI_define_component(LEVELDB leveldb)
 
 #############################################################################
 # WGMLST
-if(NOT NCBI_COMPONENT_WGMLST_DISABLED)
+if(DEFINED NCBI_COMPONENT_WGMLST_DISABLED AND NOT NCBI_COMPONENT_WGMLST_DISABLED)
     find_package(SKESA)
     if (WGMLST_FOUND)
         set(NCBI_COMPONENT_WGMLST_FOUND YES)
