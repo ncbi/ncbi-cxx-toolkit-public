@@ -98,7 +98,7 @@ static const char* const kRepresentativeIDs[] = {
     "pdb { mol \"1GAV\", chain 33 }",  // !
     "pdb { mol \"1GAV\", chain 88 }",  // X
     // "pdb { mol \"1GAV\", chain 120 }", // x
-    "pdb { mol \"1GAV\", chain 124 }", // |
+    // "pdb { mol \"1GAV\", chain 124 }", // |
     "tpg { accession \"BK003456\" }",
     "tpe { accession \"BN000123\" }",
     "tpd { accession \"FAA00017\" }",
