@@ -97,15 +97,10 @@ ostream& CPDB_seq_id::AsFastaString(ostream& s) const
             return s << GetMol().Get() << '|' << GetChain_id();
     }
     // no Upcase per Ostell - Karl 7/2001 
-    // Output "VB" when chain id is ASCII 124 ('|').
-    // Output double upper case letter when chain is a lower case character.
     char chain = (char) GetChain();
 
     if (chain == '|') {
-        return s << GetMol().Get() << "|VB";
-    } else if ( islower((unsigned char) chain) != 0 ) {
-        return s << GetMol().Get() << '|'
-                 << (char) toupper((unsigned char) chain) << (char) toupper((unsigned char) chain);
+        return s << GetMol().Get() << '|'; // historically |VB
     } else if ( chain == '\0' ) {
         return s << GetMol().Get() << "| ";
     } 

@@ -339,13 +339,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
     BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XY");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|XX")));
-    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XX");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV_!")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '!');
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "!");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|VB")));
-    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "VB");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|AAA")));
     BOOST_CHECK( !id->GetPdb().IsSetChain() );
@@ -681,13 +681,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPdb)
     BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XY");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|XX")));
-    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XX");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|!")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '!');
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "!");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|VB")));
-    BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "VB");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
     BOOST_CHECK( !id->GetPdb().IsSetChain() );
@@ -1105,7 +1105,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
 
         "Seq-id ::= pdb { mol \"1GAV\", chain 120 }",
         "pdb", "1GAV_x", "pdb|1GAV_x",
-        "pdb|1GAV|XX", "1GAV_x", "1GAV_x", "PDB|1GAV|x",
+        "pdb|1GAV|x", "1GAV_x", "1GAV_x", "PDB|1GAV|x",
 
         "Seq-id ::= pdb { mol \"1GAV\", chain-id \"xY\" }",
         "pdb", "1GAV_xY", "pdb|1GAV_xY",

@@ -2646,12 +2646,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
             } else if (name.empty()) {
                 pdb.SetChain(' ');
                 name = " ";
-            } else if (name.size() == 1) { // force upper case?
+            } else if (name.size() == 1) {
                 pdb.SetChain(static_cast<unsigned char>(name[0]));
-            } else if (NStr::EqualNocase(name, "VB")) {
-                pdb.SetChain('|');
-            } else if (name.size() == 2  &&  name[0] == name[1]) {
-                pdb.SetChain(tolower(static_cast<unsigned char>(name[0])));
             } else {
                 pdb.ResetChain();
                 ERR_POST_X(16,
