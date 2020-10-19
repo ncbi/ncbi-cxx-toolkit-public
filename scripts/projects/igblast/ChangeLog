@@ -1,3 +1,11 @@
+Oct 16, 2020
+Release 1.17.0
+
+*Added the V frame shift field to indicate if there is an internal frame shift in V gene translation frame (for example, nucleotide deletions/insertions found in pseudogenes or caused by somatic mutations).
+
+*The definition for whether a sequence is productive or not has now been updated.  Previously, a sequence is considered to be productive if the V(D)J rearrangement frame is in-frame and no stop codon is found.  Now the definition for a productive sequence includes no internal frame shift in V gene, in addition to previous requirement of V(D)J rearrangement frame being in-frame and no stop codon.
+	
+	
 Apr 10, 2020
 Release 1.16.0
 
