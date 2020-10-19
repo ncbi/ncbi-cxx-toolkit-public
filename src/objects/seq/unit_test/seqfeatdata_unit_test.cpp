@@ -2030,7 +2030,7 @@ BOOST_AUTO_TEST_CASE(Test_IsLegalClass)
 {
     BOOST_CHECK_EQUAL(CRNA_gen::IsLegalClass("lncRNA"), true);
     BOOST_CHECK_EQUAL(CRNA_gen::IsLegalClass("babble"), false);
-    BOOST_CHECK_EQUAL(CRNA_gen::GetncRNAClassList().size(), 23);
+    BOOST_CHECK_EQUAL(CRNA_gen::GetncRNAClassList().size(), 24);
 }
 
 
@@ -2336,10 +2336,10 @@ BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
 {
     size_t count = 0;
     auto all_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_any);
-    BOOST_CHECK_EQUAL(all_quals.size(), 134);
+    BOOST_CHECK_EQUAL(all_quals.size(), 135);
     for (auto b : all_quals)
         ++count;
-    BOOST_CHECK_EQUAL(count, 134);
+    BOOST_CHECK_EQUAL(count, 135);
 
     auto empty_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_clone);
     BOOST_CHECK_EQUAL(empty_quals.size(), 0);
