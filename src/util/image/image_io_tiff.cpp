@@ -83,7 +83,7 @@ static void s_TiffWarningHandler(const char* module, const char* fmt,
     string msg = module;
     msg += ": ";
     msg += NStr::FormatVarargs(fmt, args);
-    LOG_POST_X(29, Warning << "Warning reading TIFF image: " << msg);
+    ERR_POST_X(29, Warning << "Warning reading TIFF image: " << msg);
 }
 
 

@@ -135,13 +135,13 @@ bool CHydraServer::RunHydraSearch(const string& query,
 
 bool CHydraServer::error(const string& message)
 {
-    LOG_POST(Error << "parse error: " << message);
+    ERR_POST(Error << "parse error: " << message);
     return false;
 }
 
 bool CHydraServer::warning(const string& message)
 {
-    LOG_POST(Warning << "parse warning: " << message);
+    ERR_POST(Warning << "parse warning: " << message);
     return false;
 }
 

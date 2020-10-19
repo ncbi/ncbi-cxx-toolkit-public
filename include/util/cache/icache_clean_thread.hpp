@@ -62,7 +62,7 @@ public:
         catch(exception& ex)
         {
             RequestStop();
-            LOG_POST_XX(Util_Cache, 3,
+            ERR_POST_XX(Util_Cache, 3,
                         Error << "Error when cleaning cache: " 
                               << ex.what()
                               << " cleaning thread has been stopped.");

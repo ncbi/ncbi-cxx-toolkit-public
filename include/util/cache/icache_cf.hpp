@@ -102,7 +102,7 @@ public:
                                     kCFParam_keep_versions_drop_all)==0) {
                 kv_policy = ICache::eDropAll;
             } else {
-                LOG_POST_XX(Util_Cache, 1, Warning 
+                ERR_POST_XX(Util_Cache, 1, Warning 
                     << "ICache::ClassFactory: Unknown keep_versions" 
                        " policy parameter: "
                     << keep_versions_str);
@@ -163,7 +163,7 @@ public:
                 ts_flag |= ICache::fCheckExpirationAlways;
                 continue;
             }
-            LOG_POST_XX(Util_Cache, 2, Warning 
+            ERR_POST_XX(Util_Cache, 2, Warning 
                       << "ICache::ClassFactory: Unknown timeout policy parameter: "
                       << opt_value);
         } // ITERATE

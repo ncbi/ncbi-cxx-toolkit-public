@@ -80,7 +80,7 @@ static void s_PngWriteErrorHandler(png_structp /*png_ptr*/,png_const_charp msg)
 //
 static void s_PngWarningHandler(png_structp /*png_ptr*/, png_const_charp msg)
 {
-    LOG_POST_X(25, Warning << "Warning in PNG file: " << msg);
+    ERR_POST_X(25, Warning << "Warning in PNG file: " << msg);
 }
 
 
@@ -162,7 +162,7 @@ static void s_PngWriteInit(png_structp& png_ptr,
         png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
         break;
     default:
-        LOG_POST_X(26, Error << "unknown compression type: " << (int)compress);
+        ERR_POST_X(26, Error << "unknown compression type: " << (int)compress);
         break;
     }
 
@@ -222,13 +222,13 @@ static void s_PngReadValidate(png_structp png_ptr,
         // clamp our width and height to the image size
         if (x + w >= width) {
             w = width - x;
-            LOG_POST_X(27, Warning
+            ERR_POST_X(27, Warning
                      << "CImageIOPng::ReadImage(): clamped width to " << w);
         }
 
         if (y + h >= height) {
             h = height - y;
-            LOG_POST_X(28, Warning
+            ERR_POST_X(28, Warning
                      << "CImageIOPng::ReadImage(): clamped height to " << h);
         }
     }

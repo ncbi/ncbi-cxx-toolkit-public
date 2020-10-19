@@ -56,7 +56,7 @@ CRfamTool::GetModelByAccession(const string& accession, CRfamModel& model)
     xml::node_set attrNodes = m_doc.get_root_node().run_xpath_query(xpath.c_str());
     xml::node_set::iterator it = attrNodes.begin();
     if(attrNodes.size() != 1) {
-        LOG_POST(Error << "doc xpath=" << xpath << " did not return required number (1) of nodes, it returned " << attrNodes.size() << " nodes");
+        ERR_POST(Error << "doc xpath=" << xpath << " did not return required number (1) of nodes, it returned " << attrNodes.size() << " nodes");
         return false;
     } else {
         return sx_GetModel(*it, model);
@@ -74,7 +74,7 @@ CRfamTool::GetModelByIdentification(const string& model_identification, CRfamMod
     xml::node_set attrNodes = m_doc.get_root_node().run_xpath_query(xpath.c_str());
     xml::node_set::iterator it = attrNodes.begin();
     if(attrNodes.size() != 1) {
-        LOG_POST(Error << "doc xpath=" << xpath << " did not return required number (1) of nodes, it returned " << attrNodes.size() << " nodes");
+        ERR_POST(Error << "doc xpath=" << xpath << " did not return required number (1) of nodes, it returned " << attrNodes.size() << " nodes");
         return false;
     } else {
         return sx_GetModel(*it, model);

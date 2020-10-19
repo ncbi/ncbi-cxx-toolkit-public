@@ -308,7 +308,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
         case 4:
             {{
-                 LOG_POST_X(10, Warning <<
+                 ERR_POST_X(10, Warning <<
                                 "CImageIOGif::WriteImage(): "
                                 "ignoring alpha channel");
                  for ( ;  from_data != end_data;  ) {
@@ -405,7 +405,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
     catch (...) {
         if (fp) {
             if (EGifCloseFile(fp) == GIF_ERROR) {
-                LOG_POST_X(11, Error
+                ERR_POST_X(11, Error
                     << "CImageIOGif::WriteImage(): error closing file");
             }
             fp = NULL;

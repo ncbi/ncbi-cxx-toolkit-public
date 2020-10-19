@@ -454,7 +454,7 @@ bool CReportEntry::x_MapPos(const CSeq_loc_Mapper& mapper,
     // Due to defect in definition of Map (non-const) we need to use coercion
     mapped_loc = const_cast<CSeq_loc_Mapper*>(&mapper)->Map(fake_loc.GetObject());
     if (mapped_loc->Which() == CSeq_loc::e_Null) {
-        LOG_POST(Warning << "loc mapping did not work");
+        ERR_POST(Warning << "loc mapping did not work");
         return false;
     }
     mapped_pos = mapped_loc->GetPnt().GetPoint();
@@ -506,7 +506,7 @@ void CReportEntry::x_GetRCoordinate(CScope& scope, TSeqPos pos,
     CRef<CHGVS_Coordinate> ref(x_NewCoordinate(scope, m_transcript_id, pos));
 
     if (!m_mrna_mapper) {
-        LOG_POST(Warning << "mRNA mapper is empty");
+        ERR_POST(Warning << "mRNA mapper is empty");
         return;
     }
     TSeqPos mapped_pos;

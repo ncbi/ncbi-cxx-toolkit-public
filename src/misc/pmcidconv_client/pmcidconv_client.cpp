@@ -133,13 +133,13 @@ bool CPMCIDConverterServer::GetPmids(const vector<string>& uids)
 
 bool CPMCIDConverterServer::error(const string& message)
 {
-    LOG_POST(Error << "parse error: " << message);
+    ERR_POST(Error << "parse error: " << message);
     return false;
 }
 
 bool CPMCIDConverterServer::warning(const string& message)
 {
-    LOG_POST(Warning << "parse warning: " << message);
+    ERR_POST(Warning << "parse warning: " << message);
     return false;
 }
 

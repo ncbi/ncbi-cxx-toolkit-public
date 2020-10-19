@@ -246,7 +246,7 @@ public:
 protected:
     bool error(const string& message)
     {
-        LOG_POST(Error << "parse error: " << message);
+        ERR_POST(Error << "parse error: " << message);
         return false;
     }
 
@@ -768,7 +768,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
                     count = ParseSearchResults(xml_file, uids);
                 }
                 else {
-                    LOG_POST(Error << "Unable to open file for writing: "
+                    ERR_POST(Error << "Unable to open file for writing: "
                              + xml_file);
                     count = ParseSearchResults(istr, uids);
                 }
@@ -1118,7 +1118,7 @@ void CEutilsClient::x_Link(const string& db_from,
                     }
                 }
                 else {
-                    LOG_POST(Error << "Unable to open file for writing: "
+                    ERR_POST(Error << "Unable to open file for writing: "
                              + xml_file);
                     parser.parse_stream(istr, &msgs);
                 }

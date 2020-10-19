@@ -105,7 +105,7 @@ int CSubImageApp::Run(void)
     double read_time = sw.Elapsed();
 
     if ( !image ) {
-        LOG_POST(Error << "error: can't get subimage");
+        ERR_POST(Error << "error: can't get subimage");
         return 1;
     }
 
