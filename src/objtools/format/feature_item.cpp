@@ -1471,6 +1471,14 @@ void CFeatureItem::x_AddQualExceptions(
             }
             continue;
         }
+        if ( NStr::EqualNocase(cur, "circular RNA") ) {
+            if( data.IsRna() ) {
+              x_AddQual( eFQ_circular_RNA, new CFlatBoolQVal( true ) );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
         const bool is_cds_or_mrna = ( data.IsCdregion() || 
             data.GetSubtype() == CSeqFeatData::eSubtype_mRNA );
         if( NStr::EqualNocase(cur, "artificial location") ) {
@@ -4044,6 +4052,7 @@ void CFeatureItem::x_ImportQuals(
 #define DO_IMPORT(x) { #x, eFQ_##x }
         DO_IMPORT(allele),
         DO_IMPORT(bound_moiety),
+        DO_IMPORT(circular_RNA),
         DO_IMPORT(clone),
         DO_IMPORT(codon),
         DO_IMPORT(compare),
@@ -4533,6 +4542,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(exception);
     DO_QUAL(ribosomal_slippage);
     DO_QUAL(trans_splicing);
+    DO_QUAL(circular_RNA);
     DO_QUAL(artificial_location);
 
     if ( !cfg.GoQualsToNote() ) {
@@ -5160,6 +5170,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_bound_moiety, CSeqFeatData::eQual_bound_moiety },
     { eFQ_calculated_mol_wt, CSeqFeatData::eQual_calculated_mol_wt },
     { eFQ_cds_product, CSeqFeatData::eQual_product },
+    { eFQ_circular_RNA, CSeqFeatData::eQual_circular_RNA },
     { eFQ_citation, CSeqFeatData::eQual_citation },
     { eFQ_clone, CSeqFeatData::eQual_clone },
     { eFQ_coded_by, CSeqFeatData::eQual_coded_by },
@@ -5380,6 +5391,9 @@ void CFeatureItem::x_AddFTableQuals(
         }
         else if ( exception_text == "trans-splicing" ) {
           x_AddFTableQual("trans_splicing");
+        }
+        else if ( exception_text == "circular RNA" ) {
+          x_AddFTableQual("circular_RNA");
         }
         x_AddFTableQual("exception", m_Feat.GetExcept_text());
     } else if ( m_Feat.IsSetExcept()  &&  m_Feat.GetExcept() ) {

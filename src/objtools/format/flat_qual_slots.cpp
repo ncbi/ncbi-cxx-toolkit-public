@@ -64,6 +64,7 @@ GetStringOfFeatQual(EFeatureQualifier eFeatureQualifier)
         TYPICAL_FQ(bound_moiety),
         TYPICAL_FQ(calculated_mol_wt),
         { eFQ_cds_product, "product" },
+        TYPICAL_FQ(circular_RNA),
         TYPICAL_FQ(citation),
         TYPICAL_FQ(clone),
         TYPICAL_FQ(coded_by),

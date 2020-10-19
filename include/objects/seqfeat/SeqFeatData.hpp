@@ -338,6 +338,7 @@ public:
         eQual_chloroplast,
         eQual_chromoplast,
         eQual_chromosome,
+        eQual_circular_RNA,
         eQual_citation,
         eQual_clone,
         eQual_clone_lib,

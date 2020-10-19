@@ -57,6 +57,7 @@ enum EFeatureQualifier {
     eFQ_bound_moiety,
     eFQ_calculated_mol_wt,
     eFQ_cds_product,
+    eFQ_circular_RNA,
     eFQ_citation,
     eFQ_clone,
     eFQ_coded_by,

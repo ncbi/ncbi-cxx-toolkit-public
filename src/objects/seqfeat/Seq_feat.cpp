@@ -484,6 +484,7 @@ static const TExceptionPairElem k_LegalExceptionMap[] = {
     { "annotated by transcript or proteomic data", false },
     { "artificial frameshift", false },
     { "artificial location", false },
+    { "circular RNA", false },
     { "dicistronic gene", false },
     { "gene split at contig boundary", false },
     { "gene split at sequence boundary", false },

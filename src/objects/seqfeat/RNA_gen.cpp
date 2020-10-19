@@ -56,6 +56,7 @@ CRNA_gen::~CRNA_gen(void)
 static const char* const kAcceptedClasses[] = {
     "antisense_RNA",
     "autocatalytically_spliced_intron",
+    "circRNA",
     "guide_RNA",
     "hammerhead_ribozyme",
     "lncRNA",
