@@ -2844,7 +2844,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
     CFileDeleteAtExit::Add("big_gi.00.pni");
     CFileDeleteAtExit::Add("big_gi.00.pnd");
 
-    const Int8 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
+    const Int8 big_gi = 0xC0000000;    // 3 "billion"
     // Write a numeric ISAM DB containing GI/OID records using GIs starting
     // with big_gi above.
 
