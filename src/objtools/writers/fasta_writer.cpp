@@ -53,7 +53,6 @@
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/fasta_writer.hpp>
-#include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil.hpp>
@@ -71,11 +70,6 @@ CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) :
 {
 }
 
-CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out, CScope& scope) : 
-    CFastaOstreamEx(out)
-{
-    m_InternalScope->AddScope(scope);
-}
 
 void CFastaOstreamEx::ResetFeatureCount(void) 
 {
@@ -988,30 +982,6 @@ void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
     x_AddDeflineAttribute("ncRNA_class", ncRNA_class, defline);
 }
 
-void CFastaOstreamEx::x_GetBestId(CConstRef<CSeq_id>& gi_id, 
-                                  CConstRef<CSeq_id>& best_id, 
-                                  bool& hide_prefix, 
-                                  const CBioseq& bioseq)
-{
-    if (!(m_Flags & fAvoidGi)) {
-        CFastaOstream::x_GetBestId(gi_id, best_id, hide_prefix, bioseq);
-    }
-
-    bool is_na = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
-    best_id = FindBestChoice(bioseq.GetId(), is_na ? CSeq_id::FastaNARank : CSeq_id::FastaAARank);
-
-    //CScope scope(*CObjectManager::GetInstance());
-    //scope.AddDefaults();
-    //m_InternalScope->AddScope(scope);
-    //CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
-    string best_id_str;
-    CGenbankIdResolve::Get().GetBestId(
-        CSeq_id_Handle::GetHandle(*best_id),
-        *m_InternalScope,
-        best_id_str);
-    //return best_id;
-}
-
 
 static const string s_TrnaList[] = {
     "tRNA-Gap",
@@ -1409,6 +1379,5 @@ void CQualScoreWriter::x_Advance(int& column, const int num_columns)
     }
     ++column;
 }
-
 
 END_NCBI_SCOPE
