@@ -198,9 +198,7 @@ void* CIgBlastnApp::CIgWorker::Main(void)
 	CSignal::Raise( CSignal::eSignal_SEGV );
     }
 
-    int *ret_code = new int;
-    *ret_code = 0; // OK
-    return ret_code;
+    return (void*) NULL;
 }
 void CIgBlastnApp::CIgWorker::OnExit(void){
       CFastMutexGuard g1(  thm_Mutex_Output  );
@@ -212,8 +210,6 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 {
     thm_tid = CThread::GetSelf();
 
-    int *ret_code = new int;
-    *ret_code = 0; // OK
     int waiting_batch_number=0;
 
     try{
@@ -498,7 +494,6 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
             for( vector< CRef<CSearchResults> >::const_iterator result = results->begin(); result != results->end(); result ++) { //ITERATE(CSearchResultSet, result, *results) 
                 CBlastFormat::SClone clone_info;
                 SCloneNuc clone_nuc;
-                AaMap* aa_info = new AaMap;
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
                 
@@ -543,6 +538,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
                         }
                         
                     } else {
+                        AaMap* aa_info = new AaMap; // new loc
                         (*aa_info)[aa_status] = info;
                         thm_Clone.insert(CloneInfo::value_type(clone_nuc, aa_info));
                     }
@@ -571,7 +567,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
     }
 
 
-    return ret_code;
+    return (void*) NULL; 
 }
 void CIgBlastnApp::CIgFormatter::OnExit(void){
 }
