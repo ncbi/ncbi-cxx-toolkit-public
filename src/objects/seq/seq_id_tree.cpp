@@ -230,6 +230,10 @@ void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
     x_Unindex(info);
     _ASSERT(!info->IsLocked());
     _ASSERT(info->m_Seq_id_Type != CSeq_id::e_not_set);
+    // ThreadSanitizer may report this as a race since m_Seq_id_Type
+    // may be accessed by other threads without locking the mutex.
+    // This race is safe to suppress since the object is never actually
+    // used after entering DropInfo().
     const_cast<CSeq_id_Info*>(info)->m_Seq_id_Type = CSeq_id::e_not_set;
 }
 
