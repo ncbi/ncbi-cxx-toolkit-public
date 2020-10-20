@@ -36,6 +36,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/so_map.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_loc_mix_.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
@@ -515,6 +516,37 @@ bool CGff2Record::InitializeFeature(
 }
 
 //  ----------------------------------------------------------------------------
+void sGffMergeLocation(
+    CSeq_feat& feature,
+    CSeq_loc& addition)
+//  ----------------------------------------------------------------------------
+{
+    // Problem to be solved:
+    // CSeq_loc merge flags only work right if combined with fSort.
+    // However, the sort order must be preserved because it's the only indication
+    //  of the first exon of a transcript that wraps across the origin of a
+    //  circular sequence.
+
+    // Note:
+    // This code will narrowly work in the context of assembling transcripts from
+    //  GFF records. It won't be sufficient in a more general context.
+
+    auto& featLoc = feature.SetLocation();
+    if (featLoc.IsMix()) {
+        for (const auto& pSubLoc: featLoc.GetMix().Get()) {
+            //auto pIntersect = pSubLoc->Intersect(addition, 0, nullptr);
+            //if (!pIntersect->IsNull()) {
+            if (1 == pSubLoc->Compare(addition)) {
+                return;
+            }
+        }
+    }
+    auto pAdded = featLoc.Add(addition, CSeq_loc::fMerge_All, 0);
+    feature.SetLocation(*pAdded);
+    return;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Record::UpdateFeature(
     int flags,
     CRef<CSeq_feat> pFeature,
@@ -524,7 +556,6 @@ bool CGff2Record::UpdateFeature(
     auto subtype = pFeature->GetData().GetSubtype();
     auto recType = Type();
     NStr::ToLower(recType);
-
     const CSeq_loc& target = pFeature->GetLocation();
     CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags, seqidresolve);
 
@@ -539,8 +570,7 @@ bool CGff2Record::UpdateFeature(
     }
     else {
         // indicates the feature location is already under construction
-        pFeature->SetLocation(*pFeature->SetLocation().Add(
-            *pAddLoc, CSeq_loc::fMerge_Abutting, 0));
+        sGffMergeLocation(*pFeature, *pAddLoc);
         if (pFeature->GetLocation().IsInt()) {
             CRef<CSeq_loc> pOld(new CSeq_loc);
             pOld->Assign(pFeature->GetLocation());

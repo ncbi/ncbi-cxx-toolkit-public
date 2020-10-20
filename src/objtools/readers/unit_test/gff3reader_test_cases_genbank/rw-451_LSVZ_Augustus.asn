@@ -94,18 +94,6 @@ Seq-annot ::= {
           to 4199,
           strand plus,
           id local str "scaffold12159"
-        },
-        int {
-          from 4239,
-          to 4328,
-          strand plus,
-          id local str "scaffold12159"
-        },
-        int {
-          from 3819,
-          to 3821,
-          strand plus,
-          id local str "scaffold12159"
         }
       },
       qual {

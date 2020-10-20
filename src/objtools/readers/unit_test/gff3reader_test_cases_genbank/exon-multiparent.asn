@@ -50,30 +50,6 @@ Seq-annot ::= {
           to 8999,
           strand plus,
           id local str "ctg123"
-        },
-        int {
-          from 1200,
-          to 1499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 2999,
-          to 3901,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 4999,
-          to 5499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 6999,
-          to 7599,
-          strand plus,
-          id local str "ctg123"
         }
       },
       qual {
@@ -113,24 +89,6 @@ Seq-annot ::= {
         int {
           from 6999,
           to 8999,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 1200,
-          to 1499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 4999,
-          to 5499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 6999,
-          to 7599,
           strand plus,
           id local str "ctg123"
         }
@@ -178,24 +136,6 @@ Seq-annot ::= {
         int {
           from 6999,
           to 8999,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 3300,
-          to 3901,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 4999,
-          to 5499,
-          strand plus,
-          id local str "ctg123"
-        },
-        int {
-          from 6999,
-          to 7599,
           strand plus,
           id local str "ctg123"
         }
