@@ -1482,9 +1482,9 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
 
     auto_ptr<SScoreInfo> score_info(new SScoreInfo);
 
-    CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln);
+    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln)); 
     if(seqSetInfo->hspNum == 0) {//calulated params are not in ASN - calculate now
-        seqSetInfo = CAlignFormatUtil::GetSeqAlignSetCalcParams(aln,m_QueryLength,m_TranslatedNucAlignment);
+        seqSetInfo.reset( CAlignFormatUtil::GetSeqAlignSetCalcParams(aln,m_QueryLength,m_TranslatedNucAlignment)); 
     }
 
     CAlignFormatUtil::GetScoreString(seqSetInfo->evalue, seqSetInfo->bit_score, seqSetInfo->total_bit_score, seqSetInfo->raw_score,

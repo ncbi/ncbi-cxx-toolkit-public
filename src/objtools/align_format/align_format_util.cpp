@@ -1461,8 +1461,8 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
     //i2->Set().sort(SortHspByPercentIdentityDescending);
 
 
-    CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo1 = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info1);
-    CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo2 = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info2);
+    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo1( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info1)); 
+    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo2( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info2)); 
     double evalue1 = seqSetInfo1->evalue;
     double evalue2 = seqSetInfo2->evalue;
     double percentIdent1 = seqSetInfo1->percent_identity;
