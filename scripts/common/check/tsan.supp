@@ -4,23 +4,27 @@ race:^ncbi::CSafeStatic<ncbi::CParam
 
 
 ################################################################
-# grichenk CXX-10544
+# grichenk
 
-# false positive
+# false positive CXX-10544
 race:^ncbi::CSafeStatic<ncbi::CTls
 race:^ncbi::CTlsBase::x_SetValue
 
-# error, just not important - ignore (whole test)
+# error, just not important - ignore (whole test) CXX-10544
 race:corelib/test/test_ncbidiag_mt.cpp
 
 # This one is actually a race, the only possible consequence is 
 # an additional message about temporary suspending log output. 
 # So suppress this and leave the code as-is.
-
+# CXX-10544
 race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
 
 # ncbi_url.cpp default encoder. Leave as is. CXX-10543
 race:^ncbi::CSafeStatic<ncbi::CDefaultUrlEncoder, ncbi::CSafeStatic_Callbacks<ncbi::CDefaultUrlEncoder> >::x_Init()$
+
+# This is actually a race, but harmless. CXX-10546
+race:^s_ResetInstance$
+race:^ncbi::objects::CSeq_id_Which_Tree::DropInfo
 
 
 ################################################################
