@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial)
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
             for (size_t i = 0;  i < real_prot_seq.size()  &&  i < tmp.size();  ++i) {
                 if (real_prot_seq[i] != tmp[i]) {
-                    LOG_POST(Error << "char " << i << ": "
+                    ERR_POST(Error << "char " << i << ": "
                              << real_prot_seq[i] << " != "
                              << tmp[i]);
                 }
@@ -636,7 +636,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial_minus)
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
             for (size_t i = 0;  i < real_prot_seq.size()  &&  i < tmp.size();  ++i) {
                 if (real_prot_seq[i] != tmp[i]) {
-                    LOG_POST(Error << "char " << i << ": "
+                    ERR_POST(Error << "char " << i << ": "
                              << real_prot_seq[i] << " != "
                              << tmp[i]);
                 }
@@ -686,7 +686,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_TerminalTranslExcept)
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
             for (size_t i = 0;  i < real_prot_seq.size()  &&  i < tmp.size();  ++i) {
                 if (real_prot_seq[i] != tmp[i]) {
-                    LOG_POST(Error << "char " << i << ": "
+                    ERR_POST(Error << "char " << i << ": "
                              << real_prot_seq[i] << " != "
                              << tmp[i]);
                 }

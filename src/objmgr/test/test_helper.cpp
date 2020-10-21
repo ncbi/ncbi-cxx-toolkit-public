@@ -831,7 +831,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         } catch (exception) { \
             got_exception = true; \
             if ( !have_errors ) { \
-                LOG_POST("Can not " MSG); throw; \
+                ERR_POST("Can not " MSG); throw; \
             } \
         } \
         if ( have_errors && !got_exception ) { \

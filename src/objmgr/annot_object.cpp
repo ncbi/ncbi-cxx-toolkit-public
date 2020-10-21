@@ -835,7 +835,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
         }
     default:
         {
-            LOG_POST_X(8, Warning << "Unknown type of Seq-align: "<<
+            ERR_POST_X(8, Warning << "Unknown type of Seq-align: "<<
                        align.GetSegs().Which());
             break;
         }

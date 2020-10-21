@@ -1031,7 +1031,7 @@ size_t CBioseqIndex::IterateGaps (Fnc m)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateGaps: " << e.what());
+        ERR_POST(Error << "Error in CBioseqIndex::IterateGaps: " << e.what());
     }
     return count;
 }
@@ -1055,7 +1055,7 @@ size_t CBioseqIndex::IterateDescriptors (Fnc m)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateDescriptors: " << e.what());
+        ERR_POST(Error << "Error in CBioseqIndex::IterateDescriptors: " << e.what());
     }
     return count;
 }
@@ -1079,7 +1079,7 @@ size_t CBioseqIndex::IterateFeatures (Fnc m)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
+        ERR_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
     }
     return count;
 }
@@ -1100,7 +1100,7 @@ size_t CBioseqIndex::IterateFeatures (CSeq_loc& slp, Fnc m)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
+        ERR_POST(Error << "Error in CBioseqIndex::IterateFeatures: " << e.what());
     }
     return count;
 }

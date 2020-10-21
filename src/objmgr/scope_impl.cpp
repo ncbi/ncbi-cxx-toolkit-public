@@ -3133,7 +3133,7 @@ void CScope_Impl::x_AddSynonym(const CSeq_id_Handle& idh,
     else {
         CRef<CBioseq_ScopeInfo> info2 = seq_id_info.second.m_Bioseq_Info;
         _ASSERT(info2 != &info);
-        LOG_POST_X(17, Warning << "CScope::GetSynonyms: "
+        ERR_POST_X(17, Warning << "CScope::GetSynonyms: "
                    "Bioseq["<<info.IdString()<<"]: "
                    "id "<<idh.AsString()<<" is resolved to another "
                    "Bioseq["<<info2->IdString()<<"]");
