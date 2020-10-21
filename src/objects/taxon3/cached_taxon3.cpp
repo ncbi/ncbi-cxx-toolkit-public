@@ -151,13 +151,13 @@ CRef<CTaxon3_reply> CCachedTaxon3::x_AddReplyToCache(
         static const TAddFlags addflags = fAdd_NoReplace;
         const TOrder ord = Add(key, reply, 1, addflags);
         if (ord < 0) {
-            LOG_POST(Warning << "Unable to add data for key: " << key);
+            ERR_POST(Warning << "Unable to add data for key: " << key);
         }
         static const int cache_getflags = fGet_NoTouch | fGet_NoCreate | fGet_NoInsert;
         return Get(key, cache_getflags);
     }
     catch (const CException& e) {
-        LOG_POST(Error << "Unable to add reply to taxon cache: " << e.GetMsg());
+        ERR_POST(Error << "Unable to add reply to taxon cache: " << e.GetMsg());
     }
     return CRef<CTaxon3_reply>();
 }
@@ -180,7 +180,7 @@ CRef<CTaxon3_reply> CCachedTaxon3::x_GetReplyForOrgRef(
         }
     }
     catch (const CException& e) {
-        LOG_POST(Trace << "Taxon cache miss for key " << key);
+        ERR_POST(Trace << "Taxon cache miss for key " << key);
     }
 
     //Couldn't find it, so create a new one

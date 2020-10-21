@@ -3510,12 +3510,12 @@ void CSeq_loc::SetId(CSeq_id& id)
         break;
 
     case e_Feat:
-        LOG_POST_X(1, Error
+        ERR_POST_X(1, Error
                       << "unhandled loc type in CSeq_loc::SetId(): e_Feat");
         break;
 
     default:
-        LOG_POST_X(2, Error << "unhandled loc type in CSeq_loc::SetId(): "
+        ERR_POST_X(2, Error << "unhandled loc type in CSeq_loc::SetId(): "
                       << Which());
         break;
     }

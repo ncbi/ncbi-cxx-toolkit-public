@@ -166,7 +166,7 @@ void CAbstractProjectItem::PostRead()
             throw runtime_error("invalid format");
         }
         catch (CException& e) {
-            LOG_POST(Error << "failed to deserialize abstract object: " << e);
+            ERR_POST(Error << "failed to deserialize abstract object: " << e);
             throw;
         }
     }

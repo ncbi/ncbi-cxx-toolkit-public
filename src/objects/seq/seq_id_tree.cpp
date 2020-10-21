@@ -343,7 +343,7 @@ CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& /*id*/)
 void CSeq_id_not_set_Tree::FindMatch(const CSeq_id_Handle& /*id*/,
                                      TSeq_id_MatchList& /*id_list*/) const
 {
-    LOG_POST_X(3, Warning << "CSeq_id_Mapper::GetMatchingHandles() -- "
+    ERR_POST_X(3, Warning << "CSeq_id_Mapper::GetMatchingHandles() -- "
                "uninitialized seq-id");
 }
 
@@ -357,7 +357,7 @@ void CSeq_id_not_set_Tree::FindMatchStr(const string& /*sid*/,
 void CSeq_id_not_set_Tree::FindReverseMatch(const CSeq_id_Handle& /*id*/,
                                             TSeq_id_MatchList& /*id_list*/)
 {
-    LOG_POST_X(4, Warning << "CSeq_id_Mapper::GetReverseMatchingHandles() -- "
+    ERR_POST_X(4, Warning << "CSeq_id_Mapper::GetReverseMatchingHandles() -- "
                "uninitialized seq-id");
 }
 

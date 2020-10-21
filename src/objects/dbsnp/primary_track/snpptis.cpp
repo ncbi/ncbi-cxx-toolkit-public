@@ -197,7 +197,7 @@ string CSnpPtisClient_Impl::x_GetPrimarySnpTrack(const TRequest& request)
         if ( ++cur_retry >= max_retries ) {
             NCBI_THROW(CException, eUnknown, status.error_message());
         }
-        LOG_POST(Trace<<
+        ERR_POST(Trace<<
                  "CSnpPtisClient: failed : "<<status.error_message()<<". "
                  "Waiting "<<cur_wait_time<<" seconds before retry...");
         SleepMicroSec(Int8(cur_wait_time*1e6));
