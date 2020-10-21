@@ -3186,7 +3186,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             if( NStr::EqualNocase(e.what(), "job cancelled") ||
                 NStr::EqualNocase(e.what(), "job canceled") )
             {
-                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                ERR_POST_X(2, Error << "Job canceled while processing feature "
                                 << s_GetFeatDesc(mf.GetSeq_feat_Handle())
                                 << " [" << e << "]; flatfile may be truncated");
                 return;
@@ -3198,7 +3198,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             }
 
             // post to log, go on to next feature
-            LOG_POST_X(2, Error << "Error processing feature "
+            ERR_POST_X(2, Error << "Error processing feature "
                                 << s_GetFeatDesc(mf.GetSeq_feat_Handle())
                                 << " [" << e << "]");
         }
@@ -3364,7 +3364,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             if( NStr::EqualNocase(e.what(), "job cancelled") ||
                 NStr::EqualNocase(e.what(), "job canceled") )
             {
-                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                ERR_POST_X(2, Error << "Job canceled while processing feature "
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]; flatfile may be truncated");
                 return;
@@ -3376,7 +3376,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             }
 
             // post to log, go on to next feature
-            LOG_POST_X(2, Error << "Error processing feature "
+            ERR_POST_X(2, Error << "Error processing feature "
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]");
         }
@@ -3640,7 +3640,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             if( NStr::EqualNocase(e.what(), "job cancelled") ||
                 NStr::EqualNocase(e.what(), "job canceled") )
             {
-                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                ERR_POST_X(2, Error << "Job canceled while processing feature "
                                 << s_GetFeatDesc(mf.GetSeq_feat_Handle())
                                 << " [" << e << "]; flatfile may be truncated");
                 return;
@@ -3652,7 +3652,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             }
 
             // post to log, go on to next feature
-            LOG_POST_X(2, Error << "Error processing feature "
+            ERR_POST_X(2, Error << "Error processing feature "
                                 << s_GetFeatDesc(mf.GetSeq_feat_Handle())
                                 << " [" << e << "]");
         }
@@ -3802,7 +3802,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
             if( NStr::EqualNocase(e.what(), "job cancelled") ||
                 NStr::EqualNocase(e.what(), "job canceled") )
             {
-                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                ERR_POST_X(2, Error << "Job canceled while processing feature "
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]; flatfile may be truncated");
 #ifdef USE_DELTA
@@ -3820,7 +3820,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
             }
 
             // post to log, go on to next feature
-            LOG_POST_X(2, Error << "Error processing feature "
+            ERR_POST_X(2, Error << "Error processing feature "
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]");
         }
@@ -4027,7 +4027,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
 
                 out << item;
             } catch (CAnnotMapperException& e) {
-                LOG_POST_X(2, Error << e );
+                ERR_POST_X(2, Error << e );
             }
         }
 
@@ -4159,7 +4159,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
                 out << item;
             } catch (CAnnotMapperException& e) {
-                LOG_POST_X(2, Error << e );
+                ERR_POST_X(2, Error << e );
             }
         }
 

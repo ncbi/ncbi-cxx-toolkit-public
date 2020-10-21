@@ -170,7 +170,7 @@ int CSeqVecBench::Run(void)
     try {
         id.Reset(new CSeq_id(args["id"].AsString()));
     } catch (CSeqIdException& e) {
-        LOG_POST(Fatal << "seq id " << args["id"].AsString()
+        ERR_POST(Fatal << "seq id " << args["id"].AsString()
                  << " not recognized: " << e.what());
     }
 
@@ -184,7 +184,7 @@ int CSeqVecBench::Run(void)
 
     CBioseq_Handle handle = scope.GetBioseqHandle(*id);
     if ( !handle ) {
-        LOG_POST(Fatal << "failed to retrieve sequence "
+        ERR_POST(Fatal << "failed to retrieve sequence "
                  << args["id"].AsString());
     }
 

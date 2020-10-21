@@ -177,7 +177,7 @@ CRemoteBlastDbDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 
     vector<int> oids;
     if ( !rmt_blastdb_svc->SeqidToOidBatch(ids2fetch, oids) ) {
-        LOG_POST(Error << "Failed to fetch sequences in batch mode");
+        ERR_POST(Error << "Failed to fetch sequences in batch mode");
         return;
     }
     _ASSERT(oids.size() == tse_sets.size());

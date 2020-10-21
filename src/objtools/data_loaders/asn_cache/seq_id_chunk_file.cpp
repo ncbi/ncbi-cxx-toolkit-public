@@ -67,7 +67,7 @@ void    CSeqIdChunkFile::OpenForWrite( const string & root_path )
                                ios::out | ios::binary | ios::app );
         } else {
             m_FileStream.open( GetPath().c_str(), ios::out | ios::binary );
-            LOG_POST( Info << "SeqId chunk file " << GetPath()
+            ERR_POST( Info << "SeqId chunk file " << GetPath()
                       << " does not exist.  Creating." );
         }
     }
@@ -77,7 +77,7 @@ void    CSeqIdChunkFile::OpenForWrite( const string & root_path )
         string error_string = "Unable to open a seqid chunk file for writing at " + GetPath() ;
         error_string += " (errno = " + NStr::NumericToString( saved_errno ) + ": ";
         error_string += string( NCBI_ERRNO_STR_WRAPPER( saved_errno ) + string( ")" ) );
-        LOG_POST( Error << error_string );
+        ERR_POST( Error << error_string );
         NCBI_THROW( CASNCacheException, eCantOpenChunkFile, error_string );
     }
 }
@@ -102,13 +102,13 @@ void    CSeqIdChunkFile::OpenForRead( const string & root_path )
                 string error_string = "Unable to open a seqid chunk file for reading at " + GetPath() ;
                 error_string += " (errno = " + NStr::NumericToString( saved_errno ) + ": ";
                 error_string += string( NCBI_ERRNO_STR_WRAPPER( saved_errno ) + string( ")" ) );
-                LOG_POST( Error << error_string );
+                ERR_POST( Error << error_string );
                 NCBI_THROW( CASNCacheException, eCantOpenChunkFile, error_string );
             }
         } else {
             string error_string = "Tried to read nonexistant seqid chunk file at "
                 + GetPath();
-            LOG_POST( Error << error_string );
+            ERR_POST( Error << error_string );
             NCBI_THROW( CASNCacheException, eCantOpenChunkFile, error_string );
         }
     }
@@ -188,7 +188,7 @@ bool    CSeqIdChunkFile::Append( const string & root_path, const CFile & input_s
     CNcbiIfstream   input_seq_id_chunk_stream( input_seq_id_chunk_file.GetPath().c_str(), ios::in | ios::binary );
     input_seq_id_chunk_stream.seekg( input_offset );
     if (! NcbiStreamCopy( m_FileStream, input_seq_id_chunk_stream ) ) {
-        LOG_POST( Error << "Append of " << input_seq_id_chunk_file.GetPath() << " to " << file_path
+        ERR_POST( Error << "Append of " << input_seq_id_chunk_file.GetPath() << " to " << file_path
                     << " at offset " << input_offset << " failed." );
         return false;
     }

@@ -127,7 +127,7 @@ bool CAsnCacheStore::s_GetChunkAndOffset(const CSeq_id_Handle&   idh,
         CAsnIndex::SIndexInfo current_info(index);
 
         if (current_info.seq_id != seq_id) {
-            LOG_POST(Error << "error: bad seq-id");
+            ERR_POST(Error << "error: bad seq-id");
             break;
         }
 

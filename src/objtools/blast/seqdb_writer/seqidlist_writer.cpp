@@ -117,14 +117,14 @@ int WriteBlastSeqidlistFile(const vector<string> & idlist, CNcbiOstream & os, co
 		}
 		tmplist.push_back(seqid.GetSeqIdString(true));
 		} catch (CException & e) {
-			LOG_POST(e.GetMsg());
+            ERR_POST(e.GetMsg());
 			NCBI_THROW(CSeqDBException, eArgErr, "Invalid seq id: " + idlist[i]);
 
 		}
 	}
 
 	if (tmplist.size() == 0) {
-		LOG_POST("Empty seqid list");
+        ERR_POST("Empty seqid list");
 		return -1;
 	}
 	sort(tmplist.begin(), tmplist.end());

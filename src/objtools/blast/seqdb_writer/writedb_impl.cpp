@@ -97,7 +97,7 @@ CWriteDB_Impl::~CWriteDB_Impl()
     try {
     	Close();
     } catch (const CWriteDBException& e) {
-	 LOG_POST(Error << "BLAST Database creation error: " << e.GetMsg());
+        ERR_POST(Error << "BLAST Database creation error: " << e.GetMsg());
     }
 
 }

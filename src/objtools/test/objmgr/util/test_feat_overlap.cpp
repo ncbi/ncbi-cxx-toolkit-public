@@ -106,13 +106,13 @@ int CFeatOverlapTester::Run(void)
     try {
         id.Reset(new CSeq_id(args["id"].AsString()));
     } catch (CSeqIdException& e) {
-        LOG_POST(Fatal << "can't understand ID: " << args["id"].AsString()
+        ERR_POST(Fatal << "can't understand ID: " << args["id"].AsString()
                  << ": " << e.what());
     }
 
     CBioseq_Handle handle = scope.GetBioseqHandle(*id);
     if ( !handle ) {
-        LOG_POST(Fatal << "can't retrieve sequence: " << args["id"].AsString());
+        ERR_POST(Fatal << "can't retrieve sequence: " << args["id"].AsString());
     }
 
 

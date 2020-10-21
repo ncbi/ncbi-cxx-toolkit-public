@@ -369,7 +369,7 @@ CIRef<IGBProject> CProjectStorage::GetProject(const string& key)
     try {
         *obj_istr >> *real_project;
     } catch (CException& e) {
-        LOG_POST(Error << "Can't deserialize the blob data as a GBProject ASN, msg: "
+        ERR_POST(Error << "Can't deserialize the blob data as a GBProject ASN, msg: "
                  << e.GetMsg());
         throw;
     }
@@ -414,7 +414,7 @@ CRef<CSerialObject> CProjectStorage::GetObject(const string& key)
             
         } catch (CEofException& e) {
             // data type is correct, other error, give up
-            LOG_POST(Warning << "NCTools::GetObjects: failed to get GB project, msg: "
+            ERR_POST(Warning << "NCTools::GetObjects: failed to get GB project, msg: "
                      << e.ReportAll());
             throw;
             
@@ -433,14 +433,14 @@ CRef<CSerialObject> CProjectStorage::GetObject(const string& key)
         
     } catch (CEofException& ee) {
         // data type is correct, other error, give up
-        LOG_POST(Warning << "NCTools::GetObjects: failed to get seq-annot, msg: "
+        ERR_POST(Warning << "NCTools::GetObjects: failed to get seq-annot, msg: "
                  << ee.GetMsg());
         throw;
         
     } catch (CException& e) {
         // unknown data, give up
         // report the earlier exception
-        LOG_POST(Warning << "NCTools::GetObjects: " << e.ReportAll());
+        ERR_POST(Warning << "NCTools::GetObjects: " << e.ReportAll());
         NCBI_THROW(CPrjStorageException, eAsnObjectNotMatch, e.ReportAll() /*"Unknown ASN content"*/);
     }
 
@@ -591,15 +591,15 @@ bool CProjectStorage::Exists(const string& key)
         } else {
             msg = "Error when trying to connect to NetCache service";
         }
-        LOG_POST(Info << msg << ", msg: " << e.GetMsg());
+        ERR_POST(Info << msg << ", msg: " << e.GetMsg());
         return false;
     } catch (CException& e) {
-        LOG_POST(Warning
+        ERR_POST(Warning
                  << "Error connecting to the net storage service: "
                  << e.GetMsg());
         return false;
     } catch (exception& e) {
-        LOG_POST(Warning
+        ERR_POST(Warning
                  << "Error connecting to net storage service: "
                  << e.what());
         return false;

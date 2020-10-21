@@ -324,7 +324,7 @@ void CValidError_imp::PostErr
     const CTypeInfo* type_info = obj.GetThisTypeInfo();
     if (type_info == CSeqdesc::GetTypeInfo()) {
         const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
-        LOG_POST_X(1, Warning << "Seqdesc validation error using default context.");
+        ERR_POST_X(1, Warning << "Seqdesc validation error using default context.");
         PostErr (sv, et, msg, GetTSE(), *desc);
     } else if (type_info == CSeq_feat::GetTypeInfo()) {
         const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
@@ -360,7 +360,7 @@ void CValidError_imp::PostErr
         const CSeq_submit* ss = dynamic_cast < const CSeq_submit* > (&obj);
         PostErr (sv, et, msg, *ss);
     } else {
-        LOG_POST_X(1, Warning << "Unknown data type in PostErr.");
+        ERR_POST_X(1, Warning << "Unknown data type in PostErr.");
     }
 }
 

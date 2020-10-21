@@ -427,7 +427,7 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
         }
         if ( !m_Context ) {
             for ( size_t i = 0; i < driver_count; ++i ) {
-                LOG_POST_X(2, "Failed to create dbapi context with driver '"
+                ERR_POST_X(2, "Failed to create dbapi context with driver '"
                            <<driver_list[i]<<"': "<<errmsg[i]);
             }
             NCBI_THROW(CLoaderException, eNoConnection,

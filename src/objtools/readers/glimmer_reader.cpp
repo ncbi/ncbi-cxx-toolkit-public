@@ -105,7 +105,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify defline: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST_X(1, Error << msg);
+                ERR_POST_X(1, Error << msg);
                 NCBI_THROW(CException, eUnknown, msg);
             }
         } else {
@@ -117,7 +117,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                     << count << ": invalid number of tokens: "
                     << "found " << toks.size() << ", expected 5: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST_X(2, Error << msg);
+                ERR_POST_X(2, Error << msg);
                 ++errs;
                 if (errs > 5) {
                     NCBI_THROW(CException, eUnknown, msg);
@@ -140,7 +140,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify start pos: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST_X(3, Error << msg);
+                ERR_POST_X(3, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -161,7 +161,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify stop pos: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST_X(4, Error << msg);
+                ERR_POST_X(4, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -190,7 +190,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify frame: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST_X(5, Error << msg);
+                ERR_POST_X(5, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -210,7 +210,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify score: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST_X(6, Error << msg);
+                ERR_POST_X(6, Error << msg);
 
                 ++errs;
                 if (errs > 5) {

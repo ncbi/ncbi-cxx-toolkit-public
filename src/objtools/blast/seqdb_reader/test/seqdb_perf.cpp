@@ -351,10 +351,10 @@ int CSeqDBPerfApp::Run(void)
         }
         x_ReportMemUsage();
     } catch (const CSeqDBException& e) {
-        LOG_POST(Error << "BLAST Database error: " << e.GetMsg());
+        ERR_POST(Error << "BLAST Database error: " << e.GetMsg());
         status = 1;
     } catch (const exception& e) {
-        LOG_POST(Error << "Error: " << e.what());
+        ERR_POST(Error << "Error: " << e.what());
         status = 1;
     } catch (...) {
         cerr << "Unknown exception!" << endl;

@@ -971,7 +971,7 @@ void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
         case eError_Throw:
             throw;
         case eError_Report:
-            LOG_POST(Error
+            ERR_POST(Error
                 << "CScoreBuilderBase::AddScore(): error computing score: "
                 << e);
         default:

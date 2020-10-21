@@ -134,7 +134,7 @@ bool CVcfWriter::WriteAnnot(
         {
             string label;
             seq_id->GetLabel(&label);
-            LOG_POST(Error << "Cannot process Seq-id: " << label << Endm);
+            ERR_POST(Error << "Cannot process Seq-id: " << label << Endm);
             return false;
         }
     }
@@ -389,7 +389,7 @@ bool CVcfWriter::x_WriteFeature(
          type != CVariation_inst::eType_del  && type != CVariation_inst::eType_delins &&
          type != CVariation_inst::eType_snv  && type != CVariation_inst::eType_mnp )
     {
-        LOG_POST(Warning << "Cannot process type: " << type << Endm);
+        ERR_POST(Warning << "Cannot process type: " << type << Endm);
         return false;
     }
 
@@ -438,7 +438,7 @@ bool CVcfWriter::x_WriteFeature(
         {
             string label;
             seq_id->GetLabel(&label);
-            LOG_POST(Error << "Cannot process Seq-id: " << label << Endm);
+            ERR_POST(Error << "Cannot process Seq-id: " << label << Endm);
             return true;
         }
     }

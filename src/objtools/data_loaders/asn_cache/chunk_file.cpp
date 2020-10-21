@@ -90,7 +90,7 @@ void    CChunkFile::OpenForWrite( const string & root_path )
         error_string += " (errno = " + NStr::NumericToString( saved_errno ) + ": ";
         error_string += string( NCBI_ERRNO_STR_WRAPPER( saved_errno ) +
                                 string( ")" ) );
-        LOG_POST( Error << error_string );
+        ERR_POST( Error << error_string );
         NCBI_THROW( CASNCacheException, eCantOpenChunkFile, error_string );
     }
 }
@@ -124,14 +124,14 @@ void    CChunkFile::OpenForRead( const string & root_path,
                     NStr::NumericToString( saved_errno ) + ": ";
                 error_string += string( NCBI_ERRNO_STR_WRAPPER( saved_errno ) +
                                         string( ")" ) );
-                LOG_POST( Error << error_string );
+                ERR_POST( Error << error_string );
                 NCBI_THROW( CASNCacheException, eCantOpenChunkFile,
                             error_string );
             }
         } else {
             string error_string = "Tried to read nonexistant chunk file at "
                 + file_path;
-            LOG_POST( Error << error_string );
+            ERR_POST( Error << error_string );
             NCBI_THROW( CASNCacheException, eCantOpenChunkFile, error_string );
         }
     }
@@ -215,7 +215,7 @@ size_t    CChunkFile::Append( const string & root_path, const CFile & input_chun
     CNcbiIfstream   input_chunk_stream( input_chunk_file.GetPath().c_str(), ios::in | ios::binary );
     input_chunk_stream.seekg( input_offset );
     if (! NcbiStreamCopy( m_FileStream, input_chunk_stream ) ) {
-        LOG_POST( Error << "Append of " << input_chunk_file.GetPath() << " to " << file_path
+        ERR_POST( Error << "Append of " << input_chunk_file.GetPath() << " to " << file_path
                     << " at offset " << input_offset << " failed." );
         return 0;
     }

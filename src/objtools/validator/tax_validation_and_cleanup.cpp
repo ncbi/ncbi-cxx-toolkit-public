@@ -1245,7 +1245,7 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
         if (!NStr::IsBlank(error_message)) 
         {
             // post error message
-            LOG_POST(Error << error_message);
+            ERR_POST(Error << error_message);
             return false;
         }      
         edited_orgs.insert(edited_orgs.end(), tmp_edited_orgs.begin(), tmp_edited_orgs.end());
@@ -1264,7 +1264,7 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
             if (!NStr::IsBlank(error_message))
             {
                 // post error message
-                LOG_POST(Error << error_message);
+                ERR_POST(Error << error_message);
                 return false;
             }
             i += len;
@@ -1339,7 +1339,7 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
     if (!NStr::IsBlank(error_message))
     {
         // post error message
-         LOG_POST(Error << error_message);
+        ERR_POST(Error << error_message);
     }
 
 
@@ -1380,7 +1380,7 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
     error_msg = err_msg;
 
     if (!NStr::IsBlank(err_msg)) {
-        LOG_POST(Error << err_msg);
+        ERR_POST(Error << err_msg);
         m_HostMap.Clear();
         rval = false;
     } else {

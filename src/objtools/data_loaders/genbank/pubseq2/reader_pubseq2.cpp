@@ -394,7 +394,7 @@ static string s_GetCubbyUserName(const string& web_cookie)
                     cubby_user = result.GetUE().GetUU().GetUserName();
             } catch(CException& e) {
                 string msg = e.what();
-                LOG_POST_X(1, Warning << "s_GetCubbyUserName: unable to read MyNCBI XML: "<< msg);
+                ERR_POST_X(1, Warning << "s_GetCubbyUserName: unable to read MyNCBI XML: "<< msg);
             }
         }
     }
@@ -433,7 +433,7 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
         }
         if ( !m_Context ) {
             for ( size_t i = 0; i < driver_count; ++i ) {
-                LOG_POST_X(2, "Failed to create dbapi context with driver '"
+                ERR_POST_X(2, "Failed to create dbapi context with driver '"
                            <<driver_list[i]<<"': "<<errmsg[i]);
             }
             NCBI_THROW(CLoaderException, eNoConnection,

@@ -163,7 +163,7 @@ void s_ProcessSeqIDsForV5 (vector<string> & idlist)
             }
             tmplist.push_back(seqid.GetSeqIdString(true));
             } catch (CException & e) {
-                    LOG_POST(e.GetMsg());
+                    ERR_POST(e.GetMsg());
                     NCBI_THROW(CSeqDBException, eArgErr, "Invalid seq id: " + idlist[i]);
 
             }

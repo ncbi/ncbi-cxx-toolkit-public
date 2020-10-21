@@ -8253,7 +8253,7 @@ void CValidError_bioseq::ValidateTwintrons(
     catch (CException& e) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             if (! IsSelfReferential(bioseq)) {
-                LOG_POST(Error << "ValidateTwintrons error: " << e.what());
+                ERR_POST(Error << "ValidateTwintrons error: " << e.what());
             }
         }
     }

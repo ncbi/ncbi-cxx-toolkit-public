@@ -358,7 +358,7 @@ void CRepeatLibrary::Read(CNcbiIstream& stream)
                     if (i_specificity.second) {
                         i_specificity.first->second = m_Taxonomy->GetTaxId(repeat.m_RptSpecificityName);
                         if (! i_specificity.first->second) {
-                            LOG_POST(Warning
+                            ERR_POST(Warning
                                      << "RepeatMasker library species failed lookup to taxonomy: "
                                      << repeat.m_RptSpecificityName);
                         }
