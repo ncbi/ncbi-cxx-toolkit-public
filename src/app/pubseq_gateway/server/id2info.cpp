@@ -39,8 +39,9 @@ USING_NCBI_SCOPE;
 #include "pubseq_gateway.hpp"
 
 
-CPSGFlavorId2Info::CPSGFlavorId2Info(const string &  id2_info,
-                                     bool  count_errors) :
+CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
+                                                    const string &  id2_info,
+                                                    bool  count_errors) :
     m_Sat(0), m_Info(0), m_Chunks(0),
     m_SplitVersion(0), m_SplitVersionPresent(false)
 {
@@ -108,7 +109,7 @@ CPSGFlavorId2Info::CPSGFlavorId2Info(const string &  id2_info,
 }
 
 
-string CPSGFlavorId2Info::Serialize(void) const
+string CPSGS_SatInfoChunksVerFlavorId2Info::Serialize(void) const
 {
     if (m_SplitVersionPresent)
         return to_string(m_Sat) + "." +
@@ -119,5 +120,102 @@ string CPSGFlavorId2Info::Serialize(void) const
     return to_string(m_Sat) + "." +
            to_string(m_Info) + "." +
            to_string(m_Chunks);
+}
+
+
+
+static string   kSeparator = "~~";
+static string   kPrefix = "psg";
+static string   kTseId = "tse_id-";
+static string   kTseLastModified = "tse_last_modified-";
+static string   kTseSplitVersion = "tse_split_version-";
+
+CPSGS_IdModifiedVerFlavorId2Info::CPSGS_IdModifiedVerFlavorId2Info(
+                                                    const string &  id2_info) :
+    m_LastModified(0), m_SplitVersion(0),
+    m_LastModifiedPresent(false), m_SplitVersionPresent(false)
+{
+    // id2_info:
+    // "psg~~tse_id-4.1234[~~tse_last_modified-98765][~~tse_split_version-888]"
+    list<string>            parts;
+    NStr::Split(id2_info, kSeparator, parts, NStr::fSplit_ByPattern);
+
+    if (parts.size() < 2) {
+        NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                   "Invalid id2_info parameter value '" + id2_info +
+                   "'. Expected 2 or more (" + kSeparator +
+                   " separated) parts, found " +
+                   to_string(parts.size()) + " parts.");
+    }
+
+    if (parts.front() != kPrefix) {
+        NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                   "Invalid id2_info parameter value '" + id2_info +
+                   "'. It has to start with '" + kPrefix + kSeparator + "'.");
+    }
+
+    // Remove the prefix
+    parts.pop_front();
+
+    bool    tse_id_found = false;
+    for (const auto &  part : parts) {
+        if (part.find(kTseId) == 0) {
+            m_TSEId = SCass_BlobId(part.substr(kTseId.size()));
+            if (!m_TSEId.IsValid()) {
+                NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                           "Invalid id2 info part '" + part +
+                           "'. Cannot convert the part value "
+                           "into a pair '<sat>.<sat_key>'.");
+            }
+            tse_id_found = true;
+            continue;
+        }
+
+        if (part.find(kTseLastModified) == 0) {
+            try {
+                m_LastModified = NStr::StringToInt(part.substr(kTseLastModified.size()));
+                m_LastModifiedPresent = true;
+            } catch (...) {
+                NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                           "Invalid id2 info part '" + part +
+                           "'. Cannot convert the part value into an integer.");
+            }
+            continue;
+        }
+
+        if (part.find(kTseSplitVersion) == 0) {
+            try {
+                m_SplitVersion = NStr::StringToInt(part.substr(kTseSplitVersion.size()));
+                m_SplitVersionPresent = true;
+            } catch (...) {
+                NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                           "Invalid id2 info part '" + part +
+                           "'. Cannot convert the part value into an integer.");
+            }
+            continue;
+        }
+
+        NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                   "Invalid id2_info parameter value '" + id2_info +
+                   "'. The part '" + part + "' is not recognized.");
+    }
+
+    if (tse_id_found == false) {
+        NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
+                   "Invalid id2_info parameter value '" + id2_info +
+                   "'. The mandatory part '" + kTseId + "' is not found.");
+    }
+}
+
+
+
+string CPSGS_IdModifiedVerFlavorId2Info::Serialize(void) const
+{
+    string      ret = kPrefix + kSeparator + kTseId + m_TSEId.ToString();
+    if (m_LastModifiedPresent)
+        ret += kSeparator + kTseLastModified + to_string(m_LastModified);
+    if (m_SplitVersionPresent)
+        ret += kSeparator + kTseSplitVersion + to_string(m_SplitVersion);
+    return ret;
 }
 

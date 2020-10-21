@@ -129,6 +129,11 @@ static map<string, tuple<string, string>>   s_IdToNameDescription =
           "Number of times a malformed bioseq info ID2 field was detected"
         }
     },
+    { kSplitHistoryNotFoundErrorCount,
+        { "Split history not found error count",
+          "Number of times a split history was not found"
+        }
+    },
     { kMaxHopsExceededErrorCount,
         { "Max hops exceeded error count",
           "Number of times the max number of hops was exceeded"
@@ -142,6 +147,18 @@ static map<string, tuple<string, string>>   s_IdToNameDescription =
     { kInputSeqIdNotResolved,
         { "Seq id not resolved counter",
           "Number of times a client provided seq id could not be resolved"
+        }
+    },
+    { kTSEChunkSplitVersionCacheMatched,
+        { "Requested TSE chunk split version matched the cached one counter",
+          "Number of times a client requested TSE chunk split version "
+          "matched the cached version"
+        }
+    },
+    { kTSEChunkSplitVersionCacheNotMatched,
+        { "Requested TSE chunk split version did not match the cached one counter",
+          "Number of times a client requested TSE chunk split version "
+          "did not match the cached version"
         }
     },
     { kAdminRequestCount,
@@ -376,6 +393,10 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     err_sum += value;
     AppendValueNode(dict, kInvalidId2InfoErrorCount, value);
 
+    value = m_SplitHistoryNotFoundError;
+    err_sum += value;
+    AppendValueNode(dict, kSplitHistoryNotFoundErrorCount, value);
+
     value = m_MaxHopsExceededError;
     err_sum += value;
     AppendValueNode(dict, kMaxHopsExceededErrorCount, value);
@@ -387,6 +408,10 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
 void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
 {
     AppendValueNode(dict, kInputSeqIdNotResolved, m_NotResolved);
+    AppendValueNode(dict, kTSEChunkSplitVersionCacheMatched,
+                    m_TSEChunkSplitVersionCacheMatched);
+    AppendValueNode(dict, kTSEChunkSplitVersionCacheNotMatched,
+                    m_TSEChunkSplitVersionCacheNotMatched);
 
     uint64_t    req_sum(0);
     uint64_t    value(0);

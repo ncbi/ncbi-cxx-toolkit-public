@@ -160,9 +160,9 @@ protected:
     SCass_BlobId                    m_BlobId;
 
 private:
-    bool                            m_NeedToParseId2Info;
-    unique_ptr<CPSGFlavorId2Info>   m_Id2Info;
-    string                          m_ProcessorId;
+    bool                                                m_NeedToParseId2Info;
+    unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>     m_Id2Info;
+    string                                              m_ProcessorId;
 
     // last_modified from the original blob props
     CBlobRecord::TTimestamp         m_LastModified;

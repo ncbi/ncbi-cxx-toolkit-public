@@ -845,7 +845,7 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
 {
     string      err_msg;
     try {
-        m_Id2Info.reset(new CPSGFlavorId2Info(blob.GetId2Info()));
+        m_Id2Info.reset(new CPSGS_SatInfoChunksVerFlavorId2Info(blob.GetId2Info()));
         return true;
     } catch (const exception &  exc) {
         err_msg = "Error extracting id2 info for the blob " +

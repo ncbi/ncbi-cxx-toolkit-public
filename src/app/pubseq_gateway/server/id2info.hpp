@@ -33,6 +33,7 @@
  *
  */
 
+#include "cass_blob_id.hpp"
 
 #include <string>
 using namespace std;
@@ -41,7 +42,16 @@ using namespace std;
 const int64_t   kSplitInfoChunk = 999999999;
 
 
-class CPSGFlavorId2Info
+// There could be many ID2INFO flavors
+enum EPSGSId2InfoFlavor {
+    ePSGS_SatInfoChunksVerId2InfoFlavor,
+    ePSGS_IdModifiedVerId2InfoFlavor,
+    ePSGS_UnknownId2InfoFlavor
+};
+
+
+// May be found in cassandra
+class CPSGS_SatInfoChunksVerFlavorId2Info
 {
     public:
         using TSat = int16_t;
@@ -50,9 +60,9 @@ class CPSGFlavorId2Info
         using TSplitVersion = int32_t;
 
     public:
-        CPSGFlavorId2Info(const string &  id2_info,
-                          bool  count_errors = true);
-        CPSGFlavorId2Info() :
+        CPSGS_SatInfoChunksVerFlavorId2Info(const string &  id2_info,
+                                            bool  count_errors = true);
+        CPSGS_SatInfoChunksVerFlavorId2Info() :
             m_Sat(-1), m_Info(-1), m_Chunks(-1),
             m_SplitVersion(-1), m_SplitVersionPresent(false)
         {}
@@ -77,6 +87,42 @@ class CPSGFlavorId2Info
         TInfo           m_Info;
         TChunks         m_Chunks;
         TSplitVersion   m_SplitVersion;
+        bool            m_SplitVersionPresent;
+};
+
+
+// May come in the URL
+class CPSGS_IdModifiedVerFlavorId2Info
+{
+    public:
+        using TLastModified = int64_t;
+        using TSplitVersion = int32_t;
+
+    public:
+        CPSGS_IdModifiedVerFlavorId2Info(const string &  id2_info);
+        CPSGS_IdModifiedVerFlavorId2Info() :
+            m_LastModified(-1), m_SplitVersion(-1),
+            m_LastModifiedPresent(false),
+            m_SplitVersionPresent(false)
+        {}
+
+    public:
+        SCass_BlobId &  GetTSEId(void)
+        { return m_TSEId; }
+
+        TLastModified GetLastModified(void) const
+        { return m_LastModified; }
+
+        TSplitVersion GetSplitVersion(void) const
+        { return m_SplitVersion; }
+
+        string Serialize(void) const;
+
+    private:
+        SCass_BlobId    m_TSEId;
+        TLastModified   m_LastModified;
+        TSplitVersion   m_SplitVersion;
+        bool            m_LastModifiedPresent;
         bool            m_SplitVersionPresent;
 };
 

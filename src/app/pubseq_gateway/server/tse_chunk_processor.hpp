@@ -58,10 +58,12 @@ public:
 
 public:
     CPSGS_TSEChunkProcessor();
-    CPSGS_TSEChunkProcessor(shared_ptr<CPSGS_Request> request,
-                            shared_ptr<CPSGS_Reply> reply,
-                            TProcessorPriority  priority,
-                            const CPSGFlavorId2Info &  id2_info);
+    CPSGS_TSEChunkProcessor(
+            shared_ptr<CPSGS_Request> request,
+            shared_ptr<CPSGS_Reply> reply,
+            TProcessorPriority  priority,
+            shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info> sat_info_chunk_ver_id2info,
+            shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>    id_mod_ver_id2info);
     virtual ~CPSGS_TSEChunkProcessor();
 
 private:
@@ -74,14 +76,39 @@ private:
                         CBlobRecord const &  blob,
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
+    void OnGetSplitHistoryError(CCassSplitHistoryFetch *  fetch_details,
+                                CRequestStatus::ECode  status,
+                                int  code,
+                                EDiagSev  severity,
+                                const string &  message);
+    void OnGetSplitHistory(CCassSplitHistoryFetch *  fetch_details,
+                           vector<SSplitHistoryRecord> && result);
 
 private:
+    void x_ProcessSatInfoChunkVerId2Info(void);
+    void x_ProcessIdModVerId2Info(void);
+
     void x_SendProcessorError(const string &  msg,
                               CRequestStatus::ECode  status,
                               int  code);
-    bool x_ValidateTSEChunkNumber(int64_t  requested_chunk,
-                                  CPSGFlavorId2Info::TChunks  total_chunks);
+    bool x_ValidateTSEChunkNumber(
+                    int64_t  requested_chunk,
+                    CPSGS_SatInfoChunksVerFlavorId2Info::TChunks  total_chunks,
+                    bool  need_finish);
     bool x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id);
+    EPSGSId2InfoFlavor x_DetectId2InfoFlavor(
+            const string &                                    id2_info,
+            shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info> & sat_info_chunk_ver_id2info,
+            shared_ptr<CPSGS_IdModifiedVerFlavorId2Info> &    id_mod_ver_id2info) const;
+    bool x_ParseTSEChunkId2Info(
+            const string &                                     info,
+            unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info> &  id2_info,
+            const SCass_BlobId &                               blob_id,
+            bool                                               need_finish);
+    bool x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
+                                 bool  need_finish);
+    void x_RequestTSEChunk(const SSplitHistoryRecord &  split_record,
+                           CCassSplitHistoryFetch *  fetch_details);
 
 private:
     void x_Peek(bool  need_wait);
@@ -89,9 +116,12 @@ private:
                 bool  need_wait);
 
 private:
-    SPSGS_TSEChunkRequest *     m_TSEChunkRequest;
-    bool                        m_Cancelled;
-    CPSGFlavorId2Info           m_Id2Info;
+    SPSGS_TSEChunkRequest *                             m_TSEChunkRequest;
+    bool                                                m_Cancelled;
+
+    // NB: Only one will be populated
+    shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>     m_SatInfoChunkVerId2Info;
+    shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>        m_IdModVerId2Info;
 };
 
 #endif  // PSGS_TSECHUNKPROCESSOR__HPP
