@@ -195,6 +195,11 @@ protected:
         CSeq_annot&);
 
     virtual bool
+    xProcessFileFormat(
+        const string&,
+        CSeq_annot&);
+
+    virtual bool
     xProcessMetaLineInfo(
         const string&,
         CSeq_annot&);
@@ -318,6 +323,8 @@ private:
         CRef<CDbtag> pDbtag) const;
 
 protected:
+    static const double mMaxSupportedVersion;
+    double mActualVersion;
     CRef< CAnnotdesc > m_Meta;
     map<string,CVcfInfoSpec> m_InfoSpecs;
     map<string,CVcfFormatSpec> m_FormatSpecs;

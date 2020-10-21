@@ -1,4 +1,4 @@
                 Warning
-Line:           2
-Problem:        CVcfReader::xAssignVcfMeta: Missing VCF header data.
+Line:           1
+Problem:        CVcfReader::xProcessMetaLineFileFormat: Missing VCF version string. Assuming VCFv0. Proceed with care!
 

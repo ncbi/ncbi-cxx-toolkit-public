@@ -62,6 +62,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
+const double CVcfReader::mMaxSupportedVersion = 4.1;
+//  ============================================================================
+
+//  ============================================================================
 class CVcfData
 //  ============================================================================
 {
@@ -159,6 +163,7 @@ CVcfReader::CVcfReader(
     int flags,
     CReaderListener* pRL):
     CReaderBase(flags, "", "", CReadUtil::AsSeqId, pRL),
+    mActualVersion(0.0),
     m_MetaHandled(false)
 //  ----------------------------------------------------------------------------
 {
@@ -228,6 +233,13 @@ CVcfReader::xProcessData(
 {
     for (auto lineInfo: readerData) {
         const auto& line = lineInfo.mData; 
+        if (mActualVersion == 0.0) {
+            if (!xProcessFileFormat(line, annot)) {
+                mActualVersion = mMaxSupportedVersion;
+            }
+            // fall through to process as meta data as well
+        }
+
         if (xParseBrowserLine(line, annot)) {
             return;
         }
@@ -275,6 +287,58 @@ CVcfReader::xProcessMetaLine(
         return true;
     }
     if (xProcessMetaLineFormat(line, annot)) {
+        return true;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xProcessFileFormat(
+    const string& line,
+    CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    const string prefix = "##fileformat=VCFv";
+
+    if (!NStr::StartsWith(line, prefix)) {
+        CReaderMessage warning(
+            eDiag_Warning,
+            m_uLineNumber,
+            string("CVcfReader::xProcessMetaLineFileFormat: ") +
+                "Missing VCF version string. Assuming VCFv" +
+                NStr::DoubleToString(mActualVersion) +
+                ". Proceed with care!");
+        m_pMessageHandler->Report(warning);
+        return false;
+    }
+    
+    string versionStr = line.substr(prefix.length(), string::npos);
+    try {
+        mActualVersion = NStr::StringToDouble(versionStr);
+    }
+    catch (std::exception except) {
+        mActualVersion = mMaxSupportedVersion;
+        CReaderMessage warning(
+            eDiag_Warning,
+            m_uLineNumber,
+            string("CVcfReader::xProcessMetaLineFileFormat: ") +
+            "Data file contains an unrecognized version string \"" +
+                versionStr +
+                "\". Proceed with care!");
+        m_pMessageHandler->Report(warning);
+        return true;
+    }
+    if (mActualVersion > mMaxSupportedVersion) {
+        CReaderMessage warning(
+            eDiag_Warning,
+            m_uLineNumber,
+            string("CVcfReader::xProcessMetaLineFileFormat: Data file format \"") +
+                versionStr +
+                "\" exceeds reader supported format \"" +
+                NStr::DoubleToString(mMaxSupportedVersion) +
+                "\". Proceed with care!");
+        m_pMessageHandler->Report(warning);
         return true;
     }
     return true;
@@ -516,13 +580,14 @@ CVcfReader::xAssignVcfMeta(
             annot.SetDesc(*desc);
         }
         annot.SetDesc().Set().push_back( m_Meta );
-    } else { // VCF input ought to include a header
-        CReaderMessage warning(
-            eDiag_Warning,
-            m_uLineNumber,
-            "CVcfReader::xAssignVcfMeta: Missing VCF header data.");
-        m_pMessageHandler->Report(warning);
-    }
+    } 
+    //else { // VCF input ought to include a header
+    //    CReaderMessage warning(
+    //        eDiag_Warning,
+    //        m_uLineNumber,
+    //        "CVcfReader::xAssignVcfMeta: Missing VCF header data.");
+    //    m_pMessageHandler->Report(warning);
+    //}
     return true;
 }
 
