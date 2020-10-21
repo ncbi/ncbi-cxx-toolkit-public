@@ -126,6 +126,9 @@ ESpecNumber SpecNumber(
     const string& specnumber )
 //  ----------------------------------------------------------------------------
 {
+    if ( specnumber == "R" ) {
+        return eNumber_CountAllAlleles;
+    }
     if ( specnumber == "A" ) {
         return eNumber_CountAlleles;
     }
@@ -144,7 +147,7 @@ ESpecNumber SpecNumber(
                 eDiag_Warning,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: Unrecognized SpecNumber type in FORAMT directive. "
-                "Recognized settings are \'A\', \'G\', \'.\', or numeric.",
+                "Recognized settings are \'A\', \'G\', \'R\', \'.\', or numeric.",
                 ILineError::eProblem_GeneralParsingError) );
         pErr->Throw();
     }    

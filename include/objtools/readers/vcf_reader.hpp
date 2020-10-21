@@ -66,7 +66,8 @@ enum ESpecNumber
 {
     eNumber_CountAlleles = -1,
     eNumber_CountGenotypes = -2,
-    eNumber_CountUnknown = -3
+    eNumber_CountUnknown = -3,
+    eNumber_CountAllAlleles = -4
 };
 ESpecNumber SpecNumber( const string& );
 
