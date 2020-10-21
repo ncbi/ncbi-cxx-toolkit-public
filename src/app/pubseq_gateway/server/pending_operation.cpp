@@ -44,6 +44,23 @@
 USING_IDBLOB_SCOPE;
 
 
+string  ProcessorStatusToString(IPSGS_Processor::EPSGS_Status  status)
+{
+    switch (status) {
+        case IPSGS_Processor::ePSGS_InProgress:
+            return "ePSGS_InProgress";
+        case IPSGS_Processor::ePSGS_Found:
+            return "ePSGS_Found";
+        case IPSGS_Processor::ePSGS_NotFound:
+            return "ePSGS_NotFound";
+        case IPSGS_Processor::ePSGS_Error:
+            return "ePSGS_Error";
+        default:
+            break;
+    }
+    return "unknown (" + to_string(status) + ")";
+}
+
 
 CPendingOperation::CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
                                      shared_ptr<CPSGS_Reply>  reply) :
@@ -157,11 +174,12 @@ void CPendingOperation::Peek(bool  need_wait)
         m_FinishStatuses.push_back(processor_status);
 
         PSG_TRACE("Processor: " << (*m_CurrentProcessor)->GetName() <<
-                  " finished with status " << processor_status);
+                  " finished with status " <<
+                  ProcessorStatusToString(processor_status));
         if (m_UserRequest->NeedTrace()) {
             m_Reply->SendTrace(
                 "Processor: " + (*m_CurrentProcessor)->GetName() +
-                " finished with status " + to_string(processor_status),
+                " finished with status " + ProcessorStatusToString(processor_status),
                 m_UserRequest->GetStartTimestamp());
         }
 

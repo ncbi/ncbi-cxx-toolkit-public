@@ -49,9 +49,25 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     TProcessorPriority                      priority = m_Processors.size();
 
     for (auto const &  proc : m_Processors) {
+        if (request->NeedTrace()) {
+            reply->SendTrace("Try to create processor: " + proc->GetName(),
+                             request->GetStartTimestamp());
+        }
         IPSGS_Processor *   p = proc->CreateProcessor(request, reply, priority);
-        if (p)
+        if (p) {
             ret.push_back(unique_ptr<IPSGS_Processor>(p));
+            if (request->NeedTrace()) {
+                reply->SendTrace("Processor " + proc->GetName() +
+                                 " has been created sucessfully",
+                                 request->GetStartTimestamp());
+            }
+        } else {
+            if (request->NeedTrace()) {
+                reply->SendTrace("Processor " + proc->GetName() +
+                                 " has not been created",
+                                 request->GetStartTimestamp());
+            }
+        }
         --priority;
     }
     return ret;
