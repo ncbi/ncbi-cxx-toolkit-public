@@ -49,7 +49,7 @@ BEGIN_NAMESPACE(osg);
 
 
 // Configuration parameters' names
-static const char kConfigSection[] = "OSG";
+static const char kConfigSection[] = "OSG_PROCESSOR";
 static const char kParamServiceName[] = "service";
 static const char kParamMaxConnectionCount[] = "max_connections";
 static const char kParamDebugLevel[] = "debug";
