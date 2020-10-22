@@ -495,25 +495,27 @@ ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
 {
     if (auto rv = Init()) return rv;
 
-    const size_t total = size;
+    _DEBUG_ARG(size_t total = 0);
 
-    for (;;) {
+    while (size > 0) {
         auto rv = nghttp2_session_mem_recv(m_Session, buffer, size);
 
         if (rv > 0) {
+            buffer += rv;
             size -= rv;
+            _DEBUG_CODE(total += rv;);
 
-            if (size > 0) continue;
-        }
-
-        if (rv < 0) {
+        } else if (rv < 0) {
             NCBI_NGHTTP2_SESSION_TRACE(this << " receive failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
             return x_DelOnError(rv);
+
         } else {
-            NCBI_NGHTTP2_SESSION_TRACE(this << " received: " << total);
-            return total;
+            break;
         }
     }
+
+    NCBI_NGHTTP2_SESSION_TRACE(this << " received: " << total);
+    return 0;
 }
 
 bool SUvNgHttp2_SessionBase::Send()
