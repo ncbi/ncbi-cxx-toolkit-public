@@ -416,7 +416,8 @@ CRef<CID2_Blob_Id> CPSGS_OSGGetBlobBase::ParsePSGBlobId(const SPSGS_BlobId& blob
     Int4 sat;
     Int4 subsat;
     Int4 satkey;
-    CTempString s = blob_id.GetId();
+    auto id_str = blob_id.GetId();
+    CTempString s = id_str;
     if ( !s_ParseOSGBlob(s, sat, subsat, satkey) || !s.empty() ) {
         return null;
     }
