@@ -49,6 +49,8 @@ public:
 
     virtual string GetName() const;
 
+    static bool CanProcess(SPSGS_BlobBySatSatKeyRequest& request);
+    
     void CreateRequests();
     virtual void ProcessReplies();
 };
@@ -64,6 +66,8 @@ public:
     
     virtual string GetName() const;
 
+    static bool CanProcess(SPSGS_TSEChunkRequest& request);
+    
     void CreateRequests();
     virtual void ProcessReplies();
 };

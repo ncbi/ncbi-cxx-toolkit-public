@@ -58,6 +58,12 @@ string CPSGS_OSGGetBlob::GetName() const
 }
 
 
+bool CPSGS_OSGGetBlob::CanProcess(SPSGS_BlobBySatSatKeyRequest& request)
+{
+    return ParsePSGBlobId(request.m_BlobId);
+}
+
+
 void CPSGS_OSGGetBlob::CreateRequests()
 {
     auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
@@ -111,6 +117,12 @@ CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
 string CPSGS_OSGGetChunks::GetName() const
 {
     return "OSG-gettsechunk";
+}
+
+
+bool CPSGS_OSGGetChunks::CanProcess(SPSGS_TSEChunkRequest& request)
+{
+    return ParsePSGId2Info(request.m_Id2Info);
 }
 
 
