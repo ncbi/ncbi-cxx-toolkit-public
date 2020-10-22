@@ -74,7 +74,7 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
             ++count_accepted;
         }
         catch (CAlnException& e) {
-            LOG_POST(Error
+            ERR_POST(Error
                 << "CAlgoPlugin_AlignCleanup::x_Run_AlignMgr(): "
                 << "failed to extract IDs: " << e.GetMsg());
         }
@@ -87,7 +87,7 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
             return;
         }
 
-        LOG_POST(Warning
+        ERR_POST(Warning
             << count_accepted << "/" << aln_container.size()
             << " alignments had no IDs to extract.");
     }
@@ -192,7 +192,7 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
                 pairwise.push_back(align);
             }
             catch (CException& e) {
-                LOG_POST(Error
+                ERR_POST(Error
                     << "CAlignCleanup::CreatePairwiseFromMultiple(): "
                     << "failed to validate: " << e.GetMsg());
             }
@@ -280,7 +280,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
             aln_container.insert(*aln);
         }
         catch (CException& e) {
-            LOG_POST(Error
+            ERR_POST(Error
                 << "CAlgoPlugin_AlignCleanup::x_Run_AlignMgr(): "
                 << "failed to validate: " << e.GetMsg());
             ++count_invalid;
@@ -296,7 +296,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
         if (count_invalid == count) {
             NCBI_THROW(CException, eUnknown, msg);
         } else {
-            LOG_POST(Warning << msg);
+            ERR_POST(Warning << msg);
         }
     }
 
@@ -310,7 +310,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
             ++count_accepted;
         }
         catch (CAlnException& e) {
-            LOG_POST(Error
+            ERR_POST(Error
                 << "CAlgoPlugin_AlignCleanup::x_Run_AlignMgr(): "
                 << "failed to extract IDs: " << e.GetMsg());
         }
@@ -323,7 +323,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
             return;
         }
 
-        LOG_POST(Warning
+        ERR_POST(Warning
             << count_accepted << "/" << aln_container.size()
             << " alignments had no IDs to extract.");
     }
@@ -531,7 +531,7 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                 }
             }
             catch (CException& e) {
-                LOG_POST(Error << "CAlgoPlugin_AlignCleanup::Run(): "
+                ERR_POST(Error << "CAlgoPlugin_AlignCleanup::Run(): "
                     "error merging alignments: "
                     << e.GetMsg());
                 if ( !msg.empty() ) {

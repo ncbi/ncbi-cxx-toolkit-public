@@ -813,7 +813,7 @@ CTreeAlignMerger::x_MakeSeqAlign(TEquivList& Equivs,
 		CRef<CDense_seg> Temp = Denseg.FillUnaligned();
 		Denseg.Assign(*Temp);
 	} catch(CException& e) {
-		LOG_POST(Error << e.ReportAll() << MSerial_AsnText << Denseg);
+        ERR_POST(Error << e.ReportAll() << MSerial_AsnText << Denseg);
         throw;
 	}
 	Denseg.Compact();
@@ -822,7 +822,7 @@ CTreeAlignMerger::x_MakeSeqAlign(TEquivList& Equivs,
 		New->Validate(true);
 		return New;
 	} catch(CException& e) {
-		LOG_POST(Error << e.ReportAll() << MSerial_AsnText << Denseg);
+        ERR_POST(Error << e.ReportAll() << MSerial_AsnText << Denseg);
         throw;
 	}
 

@@ -50,7 +50,7 @@ void CWinMaskUtil::CIdSet_SeqId::insert( const string & id_str )
         CRef<CSeq_id> id(new CSeq_id(id_str));
         idset.insert(CSeq_id_Handle::GetHandle(*id));
     } catch (CSeqIdException& e) {
-        LOG_POST(Error
+        ERR_POST(Error
             << "CWinMaskConfig::FillIdList(): can't understand id: "
             << id_str << ": " << e.what() << ": ignoring");
     }
@@ -105,7 +105,7 @@ void CWinMaskUtil::CIdSet_TextMatch::insert( const string & id_str )
     Uint4 nwords = split( id_str ).size() - 1;
 
     if( nwords == 0 ) {
-        LOG_POST( Error
+        ERR_POST( Error
             << "CWinMaskConfig::CIdSet_TextMatch::insert(): bad id: "
             << id_str << ": ignoring");
     }

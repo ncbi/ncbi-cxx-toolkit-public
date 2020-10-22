@@ -140,7 +140,7 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType l
     SSeqInfo info;
     CVDBTableIndex idx(GraphTable(), "sid", CVDBTableIndex::eMissing_Allow);
     if ( !idx ) {
-        LOG_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
+        ERR_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
         for ( TVDBRowId row = 1; row <= last_row; ++row ) {
             // read range and names
             TSeqPos start = *curs->START(row);

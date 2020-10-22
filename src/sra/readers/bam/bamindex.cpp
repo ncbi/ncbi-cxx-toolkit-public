@@ -975,7 +975,7 @@ void CBamIndex::Read(CNcbiIstream& in)
     }
 
     if ( end_pos != extra_pos ) {
-        LOG_POST(Warning<<
+        ERR_POST(Warning<<
                  "Extra "<<(end_pos-extra_pos)<<" bytes in BAM index");
     }
 }
@@ -1003,7 +1003,7 @@ void CBamIndex::Read(const char* buffer_ptr, size_t buffer_size)
     }
 
     if ( buffer_ptr != buffer_end ) {
-        LOG_POST(Warning<<
+        ERR_POST(Warning<<
                  "Extra "<<(buffer_end-buffer_ptr)<<" bytes in BAM index");
     }
 }

@@ -2767,7 +2767,7 @@ void CTabularFormatter::SetFormat(const string& format)
             m_Formatters.push_back(CIRef<IFormatter>(new CTabularFormatter_FixedText(score_name, score_name)));
 
         } else {
-            LOG_POST(Error << "unhandled field: " << s);
+            ERR_POST(Error << "unhandled field: " << s);
         }
     }
 

@@ -417,8 +417,8 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
             throw;
         }
         _TRACE(Trace << "score " << score_name << " not found");
-        //LOG_POST(Warning << "score " << score_name << " not found");
-        //LOG_POST(Info << e);
+        //ERR_POST(Warning << "score " << score_name << " not found");
+        //ERR_POST(Info << e);
         return numeric_limits<double>::quiet_NaN();
     }
 }
@@ -883,7 +883,7 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                                 ==  !is_not);
 
                 default:
-                    LOG_POST(Warning << "unhandled parse node in expression");
+                    ERR_POST(Warning << "unhandled parse node in expression");
                     break;
                 }
 
@@ -1019,7 +1019,7 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
         return ((l_val >= r_val)  ==  !is_not);
 
     default:
-        LOG_POST(Warning << "unhandled parse node in expression");
+        ERR_POST(Warning << "unhandled parse node in expression");
         break;
     }
 

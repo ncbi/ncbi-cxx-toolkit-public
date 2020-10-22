@@ -238,9 +238,9 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             old_alignment = alignment;
             if (total_covered.IntersectingWith(covered_range)) {
                 ITERATE (list< CRef<CSeq_align> >, it2, alignments) {
-                    LOG_POST(Error << "Patches on "
+                    ERR_POST(Error << "Patches on "
                                    << target.GetSeq_id_Handle().AsString());
-                    LOG_POST(Error << (*it2)->GetSeq_id(0).AsFastaString()
+                    ERR_POST(Error << (*it2)->GetSeq_id(0).AsFastaString()
                                    << " covers " << (*it2)->GetSeqStart(1)
                                    << " - " << (*it2)->GetSeqStop(1));
                 }
@@ -457,7 +457,7 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             current_pos += length_to_replace;
             --it;
         } catch (exception &e) {
-            LOG_POST(Error << "While applying patch "
+            ERR_POST(Error << "While applying patch "
                            << sequence::GetId(patch_sequence,
                                               sequence::eGetId_Best)
                            << " on " << sequence::GetId(target,

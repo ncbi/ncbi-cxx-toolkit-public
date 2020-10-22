@@ -2646,7 +2646,7 @@ void CFeatureGenerator::SImplementation::x_CheckInconsistentDbxrefs(
                 }
                 if(propagated_feature->CanGetProduct())
                     propagated_feature_desc += " " + propagated_feature->GetProduct().GetId()->AsFastaString();
-                LOG_POST(Warning << "Features for gene "
+                ERR_POST(Warning << "Features for gene "
                                  << gene_feat->GetLocation().GetId()->AsFastaString()
                                  << " and " << propagated_feature_desc
                                  << " have " << (*gene_xref_it)->GetDb()

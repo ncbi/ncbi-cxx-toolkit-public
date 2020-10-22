@@ -3073,7 +3073,7 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
         if (args.Exist(kArgSubject) && args[kArgSubject].HasValue() &&
             m_NumThreads != CThreadable::kMinNumThreads) {
             m_NumThreads = CThreadable::kMinNumThreads;
-            LOG_POST(Warning << "'" << kArgNumThreads << "' is currently "
+            ERR_POST(Warning << "'" << kArgNumThreads << "' is currently "
                      << "ignored when '" << kArgSubject << "' is specified.");
         }
     }
@@ -3612,13 +3612,13 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
                     // No need to issue warning here, as it's OK to change this
                     continue;
                 }
-                LOG_POST(Warning << arg_name << " cannot be overridden when "
+                ERR_POST(Warning << arg_name << " cannot be overridden when "
                          "using a search strategy");
             }
         }
         // if the argument cannot be overridden, issue a warning
         if (can_override.find(arg_name) == can_override.end()) {
-            LOG_POST(Warning << arg_name << " cannot be overridden when "
+            ERR_POST(Warning << arg_name << " cannot be overridden when "
                      "using a search strategy");
         }
     }
