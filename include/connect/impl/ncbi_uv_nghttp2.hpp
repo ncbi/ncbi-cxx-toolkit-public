@@ -390,18 +390,7 @@ private:
 struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 {
     template <class ...TArgs>
-    SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TArgs&&... args) :
-        m_Authority(address.AsString()),
-        m_Tcp(
-                loop,
-                address,
-                rd_buf_size,
-                wr_buf_size,
-                bind(&SUvNgHttp2_SessionBase::OnConnect, this, placeholders::_1),
-                bind(&SUvNgHttp2_SessionBase::OnRead, this, placeholders::_1, placeholders::_2),
-                bind(&SUvNgHttp2_SessionBase::OnWrite, this, placeholders::_1)),
-        m_Session(this, forward<TArgs>(args)...)
-    {}
+    SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TArgs&&... args);
 
     virtual ~SUvNgHttp2_SessionBase() {}
 
@@ -415,6 +404,12 @@ protected:
     SNgHttp2_Session m_Session;
 
 private:
+    template<typename TR, class... TArgs>
+    function<TR(TArgs...)> BindThis(TR (SUvNgHttp2_SessionBase::*member)(TArgs...))
+    {
+        return [this, member](TArgs&&... args) -> TR { return (this->*member)(forward<TArgs>(args)...); };
+    };
+
     bool Write();
 
     void OnConnect(int status);
@@ -459,6 +454,21 @@ private:
         return GetThat(user_data)->OnError(session, msg, len);
     }
 };
+
+template <class ...TArgs>
+SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TArgs&&... args) :
+    m_Authority(address.AsString()),
+    m_Tcp(
+            loop,
+            address,
+            rd_buf_size,
+            wr_buf_size,
+            BindThis(&SUvNgHttp2_SessionBase::OnConnect),
+            BindThis(&SUvNgHttp2_SessionBase::OnRead),
+            BindThis(&SUvNgHttp2_SessionBase::OnWrite)),
+    m_Session(this, forward<TArgs>(args)...)
+{
+}
 
 END_NCBI_SCOPE
 
