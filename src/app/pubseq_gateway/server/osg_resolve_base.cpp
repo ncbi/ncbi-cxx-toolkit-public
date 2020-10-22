@@ -155,7 +155,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             if ( reply_ids.IsSetBlob_state() ) {
                 id2_state = reply_ids.GetBlob_state();
             }
-            int psg_state;
+            int psg_state = 0;
             if ( id2_state == 0 ) {
                 psg_state = 10;
             }
