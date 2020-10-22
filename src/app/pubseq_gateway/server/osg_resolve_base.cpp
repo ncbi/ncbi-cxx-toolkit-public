@@ -59,6 +59,14 @@ CPSGS_OSGResolveBase::~CPSGS_OSGResolveBase()
 }
 
 
+void CPSGS_OSGResolveBase::SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id)
+{
+    // TODO: seq_id_type
+    id.Set(seq_id);
+    //id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id_Base::E_Choice(seq_id_type), seq_id);
+}
+
+
 static const char kSpecialId_label[] = "LABEL";
 static const char kSpecialId_taxid[] = "TAXID";
 static const char kSpecialId_hash[] = "HASH";
@@ -378,10 +386,11 @@ static bool IsWGSAccession(const CTextseq_id& id)
 }
 
 
-bool CPSGS_OSGResolveBase::CanBeWGS(const string& seq_id)
+bool CPSGS_OSGResolveBase::CanBeWGS(int seq_id_type, const string& seq_id)
 {
     try {
-        CSeq_id id(seq_id);
+        CSeq_id id;
+        SetSeqId(id, seq_id_type, seq_id);
         if ( id.IsGi() ) {
             return true;
         }

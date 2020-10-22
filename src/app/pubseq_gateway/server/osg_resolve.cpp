@@ -67,6 +67,12 @@ string CPSGS_OSGResolve::GetName() const
 }
 
 
+bool CPSGS_OSGResolve::CanProcess(SPSGS_ResolveRequest& request)
+{
+    return CanResolve(request.m_SeqIdType, request.m_SeqId);
+}
+
+
 void CPSGS_OSGResolve::CreateRequests()
 {
     auto& psg_req = GetRequest()->GetRequest<SPSGS_ResolveRequest>();
@@ -74,7 +80,7 @@ void CPSGS_OSGResolve::CreateRequests()
          (psg_req.fPSGS_AllBioseqFields & ~psg_req.fPSGS_BlobId) ) {
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_seq_id();
-        req.SetSeq_id().SetSeq_id().Set(psg_req.m_SeqId);
+        SetSeqId(req.SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
         req.SetSeq_id_type(0);
         if ( psg_req.m_IncludeDataFlags & psg_req.fPSGS_Gi ) {
             req.SetSeq_id_type() |= CID2_Request_Get_Seq_id::eSeq_id_type_gi;
@@ -104,7 +110,7 @@ void CPSGS_OSGResolve::CreateRequests()
     if ( psg_req.m_IncludeDataFlags & psg_req.fPSGS_BlobId ) {
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_blob_id();
-        req.SetSeq_id().SetSeq_id().SetSeq_id().Set(psg_req.m_SeqId);
+        SetSeqId(req.SetSeq_id().SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
         AddRequest(osg_req);
     }
 }
@@ -157,6 +163,12 @@ string CPSGS_OSGGetBlobBySeqId::GetName() const
 }
 
 
+bool CPSGS_OSGGetBlobBySeqId::CanProcess(SPSGS_BlobBySeqIdRequest& request)
+{
+    return CanResolve(request.m_SeqIdType, request.m_SeqId);
+}
+
+
 void CPSGS_OSGGetBlobBySeqId::CreateRequests()
 {
     auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>();
@@ -166,7 +178,7 @@ void CPSGS_OSGGetBlobBySeqId::CreateRequests()
         get_req.SetGet_data();
     }
     auto& req = get_req.SetBlob_id().SetResolve();
-    req.SetRequest().SetSeq_id().SetSeq_id().SetSeq_id().Set(psg_req.m_SeqId);
+    SetSeqId(req.SetRequest().SetSeq_id().SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
     for ( auto& excl_id : psg_req.m_ExcludeBlobs ) {
         if ( auto excl_blob_id = CPSGS_OSGGetBlobBase::ParsePSGBlobId(excl_id) ) {
             req.SetExclude_blobs().push_back(excl_blob_id);

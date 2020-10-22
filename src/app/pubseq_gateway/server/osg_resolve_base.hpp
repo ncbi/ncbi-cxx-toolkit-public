@@ -38,6 +38,7 @@ BEGIN_NCBI_NAMESPACE;
 
 BEGIN_NAMESPACE(objects);
 
+class CSeq_id;
 class CID2_Blob_Id;
 
 END_NAMESPACE(objects);
@@ -52,12 +53,14 @@ public:
     CPSGS_OSGResolveBase();
     virtual ~CPSGS_OSGResolveBase();
 
-    static bool CanResolve(const string& seq_id)
+    static bool CanResolve(int seq_id_type, const string& seq_id)
         {
-            return CanBeWGS(seq_id);
+            return CanBeWGS(seq_id_type, seq_id);
         }
 
-    static bool CanBeWGS(const string& seq_id);
+    static bool CanBeWGS(int seq_id_type, const string& seq_id);
+
+    static void SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id);
 
 protected:
     typedef SPSGS_ResolveRequest::EPSGS_OutputFormat EOutputFormat;

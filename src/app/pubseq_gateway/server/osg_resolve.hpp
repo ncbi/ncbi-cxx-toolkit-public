@@ -60,6 +60,8 @@ public:
     virtual ~CPSGS_OSGResolve();
 
     virtual string GetName() const;
+
+    static bool CanProcess(SPSGS_ResolveRequest& request);
     
     void CreateRequests();
     virtual void ProcessReplies();
@@ -78,6 +80,8 @@ public:
     virtual ~CPSGS_OSGGetBlobBySeqId();
 
     virtual string GetName() const;
+    
+    static bool CanProcess(SPSGS_BlobBySeqIdRequest& request);
     
     void CreateRequests();
     virtual void ProcessReplies();

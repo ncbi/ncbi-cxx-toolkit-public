@@ -34,6 +34,7 @@
 #include "osg_processor.hpp"
 #include "osg_resolve.hpp"
 #include "osg_getblob.hpp"
+#include "osg_annot.hpp"
 #include "osg_connection.hpp"
 #include "pubseq_gateway.hpp"
 #include <objects/id2/ID2_Blob_Id.hpp>
@@ -67,32 +68,35 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     switch ( request->GetRequestType() ) {
     case CPSGS_Request::ePSGS_ResolveRequest:
         // VDB WGS sequences
-        if ( CPSGS_OSGResolve::CanResolve(request->GetRequest<SPSGS_ResolveRequest>().m_SeqId) ) {
+        if ( CPSGS_OSGResolve::CanProcess(request->GetRequest<SPSGS_ResolveRequest>()) ) {
             return new CPSGS_OSGResolve(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
         // VDB WGS sequences
-        if ( CPSGS_OSGGetBlobBySeqId::CanResolve(request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId) ) {
+        if ( CPSGS_OSGGetBlobBySeqId::CanProcess(request->GetRequest<SPSGS_BlobBySeqIdRequest>()) ) {
             return new CPSGS_OSGGetBlobBySeqId(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-        if ( CPSGS_OSGGetBlob::ParsePSGBlobId(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId) ) {
+        if ( CPSGS_OSGGetBlob::CanProcess(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>()) ) {
             return new CPSGS_OSGGetBlob(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_TSEChunkRequest:
-        if ( CPSGS_OSGGetChunks::ParsePSGId2Info(request->GetRequest<SPSGS_TSEChunkRequest>().m_Id2Info) ) {
+        if ( CPSGS_OSGGetChunks::CanProcess(request->GetRequest<SPSGS_TSEChunkRequest>()) ) {
             return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_AnnotationRequest:
-        return nullptr; // TODO: named annots
+        if ( CPSGS_OSGAnnot::CanProcess(request->GetRequest<SPSGS_AnnotRequest>(), priority) ) {
+            return new CPSGS_OSGAnnot(app->GetOSGConnectionPool(), request, reply, priority);
+        }
+        return nullptr;
 
     default:
         return nullptr;

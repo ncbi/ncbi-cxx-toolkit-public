@@ -14,7 +14,7 @@ SRC = pubseq_gateway  \
       async_resolve_base async_bioseq_info_base annot_processor \
       get_processor psgs_dispatcher cass_blob_id \
       osg_connection osg_caller osg_fetch osg_processor osg_processor_base \
-      osg_resolve_base osg_resolve osg_getblob_base osg_getblob
+      osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot
 
 LIBS = $(PCRE_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS) $(KRB5_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
