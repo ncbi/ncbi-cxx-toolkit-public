@@ -131,6 +131,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     }
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
+    m_Status = status;
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
 }
@@ -171,6 +172,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(msg);
 
+    m_Status = CRequestStatus::e500_InternalServerError;
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
 }
