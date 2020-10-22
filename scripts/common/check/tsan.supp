@@ -19,8 +19,14 @@ race:corelib/test/test_ncbidiag_mt.cpp
 # CXX-10544
 race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
 
+# The only danger here is to calculate and cache the same value several times. CXX-10544
+race:^ncbi::objects::CSeq_loc::x_UpdateTotalRange()
+
 # ncbi_url.cpp default encoder. Leave as is. CXX-10543
 race:^ncbi::CSafeStatic<ncbi::CDefaultUrlEncoder, ncbi::CSafeStatic_Callbacks<ncbi::CDefaultUrlEncoder> >::x_Init()$
+
+# There's no actual race, the variable is read while executing ~CSeq_id_Mapper when no other threads are using it. CXX-10543
+race:^ncbi::objects::CSeq_id_Textseq_Tree::Empty()
 
 # This is actually a race, but harmless. CXX-10546
 race:^s_ResetInstance$
