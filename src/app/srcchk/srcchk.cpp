@@ -276,8 +276,8 @@ bool CSrcChkApp::xTryProcessSeqEntry(
     }
 
     const char* infile = args["seq-entry"].AsString().c_str();
-    unique_ptr<CNcbiIstream> pInputStream(new CNcbiIfstream(infile, ios::binary));
-    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, *pInputStream, eTakeOwnership);
+    CNcbiIstream* pInputStream = new CNcbiIfstream(infile, ios::binary);
+    unique_ptr<CObjectIStream> pI(CObjectIStream::Open(eSerial_AsnText, *pInputStream, eTakeOwnership));
     if (!pI) {
         string msg("Unable to open Seq-entry file \"" + args["seq-entry"].AsString() + "\".");
         CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, msg);
