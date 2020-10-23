@@ -11,7 +11,7 @@
 
 ##############################################################################
 # Testing
-set(NCBITEST_DRIVER "../../${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake")
+set(NCBITEST_DRIVER "${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake")
 NCBI_define_test_resource(ServiceMapper 8)
 enable_testing()
 
@@ -131,6 +131,11 @@ function(NCBI_internal_add_cmake_test _test)
     endif()
 
     file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
+    if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
+        set(_root ${NCBI_EXTERNAL_TREE_ROOT})
+    else()
+        set(_root ${NCBI_TREE_ROOT})
+    endif()
 
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
@@ -143,13 +148,9 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_XOUTDIR=${_xoutdir}
         -DNCBITEST_WATCHER=${_watcher}
         -DNCBITEST_SIGNATURE=${NCBITEST_SIGNATURE}
-        -DNCBITEST_BINDIR=../${NCBI_DIRNAME_RUNTIME}
-        -DNCBITEST_LIBDIR=../${NCBI_DIRNAME_ARCHIVE}
-        -DNCBITEST_OUTDIR=../${NCBI_DIRNAME_TESTING}
-        -DNCBITEST_SOURCEDIR=../../${NCBI_DIRNAME_SRC}
-        -DNCBITEST_SCRIPTDIR=../../${NCBI_DIRNAME_COMMON_SCRIPTS}/check
+        -DNCBITEST_PARAMS=../${NCBI_DIRNAME_TESTING}/TestParams.cmake
         ${_extra}
-        -P ${NCBITEST_DRIVER}
+        -P ${_root}/${NCBITEST_DRIVER}
         WORKING_DIRECTORY .
     )
 
@@ -169,6 +170,25 @@ endfunction()
 function(NCBI_internal_FinalizeCMakeTest)
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary)
+
+    if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
+        set(_root ${NCBI_EXTERNAL_TREE_ROOT})
+    else()
+        set(_root ${NCBI_TREE_ROOT})
+    endif()
+    set(_info "")
+    string(APPEND _info "set(NCBITEST_BINDIR ../${NCBI_DIRNAME_RUNTIME})\n")
+    string(APPEND _info "set(NCBITEST_LIBDIR ../${NCBI_DIRNAME_ARCHIVE})\n")
+    string(APPEND _info "set(NCBITEST_OUTDIR ../${NCBI_DIRNAME_TESTING})\n")
+    string(APPEND _info "set(NCBITEST_SOURCEDIR ${NCBI_SRC_ROOT})\n")
+    string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check)\n")
+    string(REPLACE ";" " " _x "${NCBI_PTBCFG_PROJECT_FEATURES}")
+    string(APPEND _info "set(NCBITEST_FEATURES ${_x})\n")
+    string(REPLACE ";" " " _x "${NCBI_ALL_COMPONENTS}")
+    string(APPEND _info "set(NCBITEST_COMPONENTS ${_x})\n")
+    string(REPLACE ";" " " _x "${NCBI_ALL_REQUIRES}")
+    string(APPEND _info "set(NCBITEST_REQUIRES ${_x})\n")
+    file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake ${_info})
 endfunction()
 
 #############################################################################

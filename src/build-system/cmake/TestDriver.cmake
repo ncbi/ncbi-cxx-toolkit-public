@@ -13,6 +13,11 @@ string(REPLACE " " ";" NCBITEST_ASSETS  "${NCBITEST_ASSETS}")
 
 # ---------------------------------------------------------------------------
 # Set directories
+if(NOT IS_ABSOLUTE ${NCBITEST_PARAMS})
+    set(NCBITEST_PARAMS ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_PARAMS})
+endif()
+include(${NCBITEST_PARAMS}) 
+
 if(NOT IS_ABSOLUTE ${NCBITEST_BINDIR})
     set(NCBITEST_BINDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_BINDIR})
 endif()
