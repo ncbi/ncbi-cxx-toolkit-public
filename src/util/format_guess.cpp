@@ -2053,8 +2053,11 @@ bool CFormatGuess::TestFormatPsl(EMode mode)
     bool ignoreFirstColumn = false;
     unsigned int uPslLineCount = 0;
     list<string>::iterator it = m_TestLines.begin();
-    while (NStr::StartsWith(*it, "#")) {
+    while (it != m_TestLines.end()  &&  NStr::StartsWith(*it, "#")) {
         it++;
+    }
+    if (it == m_TestLines.end()) {
+        return false;
     }
     if (!IsLinePsl(*it, ignoreFirstColumn)) {
         ignoreFirstColumn = true;
