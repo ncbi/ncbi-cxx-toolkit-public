@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "connect_misc_impl.hpp"
+
 #include "ncbi_servicep.h"
 
 #include <connect/impl/connect_misc.hpp>
@@ -179,5 +181,7 @@ CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& servic
 
     return rv;
 }
+
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_strerror);
 
 END_NCBI_SCOPE

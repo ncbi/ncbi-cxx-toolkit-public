@@ -50,6 +50,12 @@ BEGIN_NCBI_SCOPE
 
 struct SUvNgHttp2_Error
 {
+    struct SMbedTlsStr : private array<char, 256>
+    {
+        template <typename T, enable_if_t<is_signed<T>::value, T> = 0> const char* operator()(T e);
+        friend ostream& operator<<(ostream& os, const SMbedTlsStr& str) { return os << str.data(); }
+    };
+
     SUvNgHttp2_Error(const char* m) : m_Value("error: ") { m_Value += m; }
 
     template <typename T>
@@ -57,6 +63,9 @@ struct SUvNgHttp2_Error
 
     template <typename T>
     static SUvNgHttp2_Error FromLibuv(T e, const char* w) { return { "libuv error: ", LibuvStr<T>, e, w }; }
+
+    template <typename T>
+    static SUvNgHttp2_Error FromMbedTls(T e, const char* w) { return { "mbed TLS error: ", SMbedTlsStr(), e, w }; }
 
     template <typename T, enable_if_t<is_signed<T>::value, T> = 0>
     static const char* NgHttp2Str(T e) { return nghttp2_strerror(static_cast<int>(e)); }
@@ -66,6 +75,9 @@ struct SUvNgHttp2_Error
 
     template <typename T, enable_if_t<is_signed<T>::value, T> = 0>
     static const char* LibuvStr(T e) { return uv_strerror(static_cast<int>(e)); }
+
+    template <typename T, enable_if_t<is_signed<T>::value, T> = 0>
+    static SMbedTlsStr MbedTlsStr(T e) { SMbedTlsStr str; str(e); return str; }
 
     operator string() const { return m_Value; }
 

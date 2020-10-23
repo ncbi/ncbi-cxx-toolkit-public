@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "connect_misc_impl.hpp"
+
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
 #include <connect/ncbi_socket.hpp>
 
@@ -41,6 +43,13 @@ BEGIN_NCBI_SCOPE
 #define NCBI_UV_TCP_TRACE(message)          _TRACE(message)
 #define NCBI_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
 #define NCBI_UVNGHTTP2_SESSION_TRACE(message) _TRACE(message)
+
+template <typename T, enable_if_t<is_signed<T>::value, T>>
+const char* SUvNgHttp2_Error::SMbedTlsStr::operator()(T e)
+{
+    NCBI_XCONNECT::mbedtls_strerror(static_cast<int>(e), data(), size());
+    return data();
+}
 
 SUv_Write::SUv_Write(void* user_data, size_t buf_size) :
     m_UserData(user_data),

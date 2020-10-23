@@ -1442,6 +1442,46 @@ unique_ptr<T, void(*)(T*)> make_c_unique(T* p)
 /// @}
 
 
+/// Helpers for exporting stand-alone functions from DLLs without changing the functions.
+/// Useful for exporting third-party APIs without a need to adjust third-party headers.
+/// @example:
+/// dll_header.hpp: NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_strerror);
+/// dll_source.cpp: NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_strerror);
+/// app.cpp:        NCBI_XCONNECT::mbedtls_strerror(err, buf, sizeof(buf));
+/// @{
+#define NCBI_EXPORT_FUNC_DECLARE(lib, func)                                     \
+namespace NCBI_ ## lib                                                          \
+{                                                                               \
+    namespace S ## func                                                         \
+    {                                                                           \
+        using T = decltype(func);                                               \
+                                                                                \
+        NCBI_ ## lib ## _EXPORT T* F();                                         \
+                                                                                \
+        template <class T>                                                      \
+        struct S;                                                               \
+                                                                                \
+        template <class TR, class... TArgs>                                     \
+        struct S<TR (TArgs...)>                                                 \
+        {                                                                       \
+            static TR Call(TArgs... args) { return F()(args...); }              \
+        };                                                                      \
+    }                                                                           \
+                                                                                \
+    constexpr auto func = S ## func::S<S ## func::T>::Call;                     \
+}
+
+#define NCBI_EXPORT_FUNC_DEFINE(lib, func)                                      \
+namespace NCBI_ ## lib                                                          \
+{                                                                               \
+    namespace S ## func                                                         \
+    {                                                                           \
+        T* F() { return ::func; }                                               \
+    }                                                                           \
+}
+/// @}
+
+
 END_NCBI_NAMESPACE;
 
 BEGIN_STD_NAMESPACE;
