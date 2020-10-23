@@ -42,6 +42,30 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_free);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_init);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_random);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_seed);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_entropy_free);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_entropy_func);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_entropy_init);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_close_notify);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_alpn_protocols);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_authmode);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_rng);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_config_defaults);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_config_free);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_config_init);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_free);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_get_verify_result);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_handshake);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_init);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_read);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_session_reset);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_set_bio);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_set_hostname);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_setup);
+NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_write);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_strerror);
 
 END_NCBI_SCOPE

@@ -33,6 +33,7 @@
 
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_tls.h>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
@@ -42,12 +43,15 @@ BEGIN_NCBI_SCOPE
 #define NCBI_UV_WRITE_TRACE(message)        _TRACE(message)
 #define NCBI_UV_TCP_TRACE(message)          _TRACE(message)
 #define NCBI_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
+#define NCBI_UVNGHTTP2_TLS_TRACE(message)   _TRACE(message)
 #define NCBI_UVNGHTTP2_SESSION_TRACE(message) _TRACE(message)
+
+using namespace NCBI_XCONNECT;
 
 template <typename T, enable_if_t<is_signed<T>::value, T>>
 const char* SUvNgHttp2_Error::SMbedTlsStr::operator()(T e)
 {
-    NCBI_XCONNECT::mbedtls_strerror(static_cast<int>(e), data(), size());
+    mbedtls_strerror(static_cast<int>(e), data(), size());
     return data();
 }
 
@@ -543,16 +547,268 @@ private:
     vector<char>& m_TcpWriteBuffer;
 };
 
+struct SUvNgHttp2_TlsImpl : SUvNgHttp2_Tls
+{
+    SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf);
+    ~SUvNgHttp2_TlsImpl() override;
+
+    int Read(const char* buf, ssize_t nread) override;
+    int Write() override;
+    int Close() override;
+
+    const char* GetReadBuffer() override { return m_ReadBuffer.data(); }
+    vector<char>& GetWriteBuffer() override { return m_WriteBuffer; }
+
+private:
+    SUvNgHttp2_TlsImpl(const SUvNgHttp2_TlsImpl&) = delete;
+    SUvNgHttp2_TlsImpl(SUvNgHttp2_TlsImpl&&) = delete;
+
+    SUvNgHttp2_TlsImpl& operator=(const SUvNgHttp2_TlsImpl&) = delete;
+    SUvNgHttp2_TlsImpl& operator=(SUvNgHttp2_TlsImpl&&) = delete;
+
+    int Init();
+    int GetReady();
+
+    int OnRecv(unsigned char* buf, size_t len);
+    int OnSend(const unsigned char* buf, size_t len);
+
+    static SUvNgHttp2_TlsImpl* GetThat(void* ctx)
+    {
+        _ASSERT(ctx);
+        return static_cast<SUvNgHttp2_TlsImpl*>(ctx);
+    }
+
+    static int s_OnRecv(void* ctx, unsigned char* buf, size_t len)
+    {
+        return GetThat(ctx)->OnRecv(buf, len);
+    }
+
+    static int s_OnSend(void* ctx, const unsigned char* buf, size_t len)
+    {
+        return GetThat(ctx)->OnSend(buf, len);
+    }
+
+    enum { eInitialized, eReady, eClosed } m_State = eInitialized;
+
+    vector<char> m_ReadBuffer;
+    vector<char> m_WriteBuffer;
+    pair<const char*, ssize_t> m_IncomingData;
+    vector<char>& m_TcpWriteBuffer;
+
+    mbedtls_ssl_context m_Ssl;
+    mbedtls_ssl_config m_Conf;
+    mbedtls_ctr_drbg_context m_CtrDrbg;
+    mbedtls_entropy_context m_Entropy;
+    array<const char*, 2> m_Protocols;
+};
+
 bool s_WantReadOrWrite(int rv)
 {
     return (rv == MBEDTLS_ERR_SSL_WANT_READ) || (rv == MBEDTLS_ERR_SSL_WANT_WRITE);
 }
 
-SUvNgHttp2_Tls* SUvNgHttp2_Tls::Create(bool https, const SSocketAddress&, size_t, size_t, vector<char>& tcp_write_buf)
+SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf) :
+    m_ReadBuffer(rd_buf_size),
+    m_IncomingData(nullptr, 0),
+    m_TcpWriteBuffer(tcp_write_buf),
+    m_Protocols({ "h2", nullptr })
+{
+    NCBI_UVNGHTTP2_TLS_TRACE(this << " created");
+    m_WriteBuffer.reserve(wr_buf_size),
+
+    SOCK_SetupSSLEx(NcbiSetupTls);
+    mbedtls_ssl_config_init(&m_Conf);
+
+    if (auto rv = mbedtls_ssl_config_defaults(&m_Conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_config_defaults: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+        return;
+    }
+
+    mbedtls_ssl_conf_authmode(&m_Conf, MBEDTLS_SSL_VERIFY_NONE);
+    mbedtls_entropy_init(&m_Entropy);
+    mbedtls_ctr_drbg_init(&m_CtrDrbg);
+
+    if (auto rv = mbedtls_ctr_drbg_seed(&m_CtrDrbg, mbedtls_entropy_func, &m_Entropy, nullptr, 0)) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ctr_drbg_seed: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+        return;
+    }
+
+    mbedtls_ssl_conf_rng(&m_Conf, mbedtls_ctr_drbg_random, &m_CtrDrbg);
+    mbedtls_ssl_conf_alpn_protocols(&m_Conf, m_Protocols.data());
+    mbedtls_ssl_init(&m_Ssl);
+
+    if (auto rv = mbedtls_ssl_setup(&m_Ssl, &m_Conf)) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_setup: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+        return;
+    }
+
+    const auto host_name = address.GetHostName();
+    if (auto rv = mbedtls_ssl_set_hostname(&m_Ssl, host_name.c_str())) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_set_hostname: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+        return;
+    }
+
+    mbedtls_ssl_set_bio(&m_Ssl, this, s_OnSend, s_OnRecv, nullptr);
+}
+
+SUvNgHttp2_TlsImpl::~SUvNgHttp2_TlsImpl()
+{
+    mbedtls_entropy_free(&m_Entropy);
+    mbedtls_ctr_drbg_free(&m_CtrDrbg);
+    mbedtls_ssl_config_free(&m_Conf);
+    mbedtls_ssl_free(&m_Ssl);
+}
+
+int SUvNgHttp2_TlsImpl::Init()
+{
+    switch (m_State)
+    {
+        case eInitialized:
+            return GetReady();
+
+        case eReady:
+            return 0;
+
+        case eClosed:
+            break;
+    }
+
+    m_WriteBuffer.clear();
+    auto rv = mbedtls_ssl_session_reset(&m_Ssl);
+
+    if (rv < 0) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " reset: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+    } else {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " reset: " << rv);
+        m_State = eInitialized;
+    }
+
+    return rv;
+}
+
+int SUvNgHttp2_TlsImpl::GetReady()
+{
+    auto hs_rv = mbedtls_ssl_handshake(&m_Ssl);
+
+    if (hs_rv < 0) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " handshake: " << SUvNgHttp2_Error::MbedTlsStr(hs_rv));
+        return hs_rv;
+    }
+
+    NCBI_UVNGHTTP2_TLS_TRACE(this << " handshake: " << hs_rv);
+
+    if (auto v_rv = mbedtls_ssl_get_verify_result(&m_Ssl)) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " verify: " << v_rv);
+    }
+
+    m_State = eReady;
+    return 0;
+}
+
+int SUvNgHttp2_TlsImpl::Read(const char* buf, ssize_t nread)
+{
+    m_IncomingData = make_pair(buf, nread);
+
+    if (auto rv = Init()) return rv;
+
+    auto output_buf = reinterpret_cast<unsigned char*>(m_ReadBuffer.data());
+    auto output_buf_size = m_ReadBuffer.size();
+
+    do {
+        auto rv = mbedtls_ssl_read(&m_Ssl, output_buf, output_buf_size);
+
+        if (rv < 0) {
+            NCBI_UVNGHTTP2_TLS_TRACE(this << " read: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+        } else {
+            NCBI_UVNGHTTP2_TLS_TRACE(this << " read: " << rv);
+        }
+
+        if (rv <= 0) return rv;
+
+        output_buf += rv;
+        output_buf_size -= rv;
+
+        if (output_buf_size == 0) {
+            output_buf_size = m_ReadBuffer.size();
+            m_ReadBuffer.resize(2 * m_ReadBuffer.size());
+        }
+    }
+    while (m_IncomingData.second > 0);
+
+    return static_cast<int>(m_ReadBuffer.size() - output_buf_size);
+}
+
+int SUvNgHttp2_TlsImpl::Write()
+{
+    if (auto rv = Init()) return rv;
+
+    auto buf = m_WriteBuffer.data();
+    auto size = m_WriteBuffer.size();
+
+    while (size > 0) {
+        auto rv = mbedtls_ssl_write(&m_Ssl, (unsigned char*)buf, size);
+
+        if (rv > 0) {
+            buf += rv;
+            size -= rv;
+
+        } else if (rv < 0) {
+            NCBI_UVNGHTTP2_TLS_TRACE(this << " write: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+            return rv;
+        }
+    }
+
+    auto written = m_WriteBuffer.size() - size;
+    m_WriteBuffer.erase(m_WriteBuffer.begin(), m_WriteBuffer.begin() + written);
+    NCBI_UVNGHTTP2_TLS_TRACE(this << " write: " << written);
+    return static_cast<int>(written);
+}
+
+int SUvNgHttp2_TlsImpl::Close()
+{
+    NCBI_UVNGHTTP2_TLS_TRACE(this << " close");
+
+    switch (m_State)
+    {
+        case eInitialized:
+        case eClosed:      return 0;
+        case eReady:       break;
+    }
+
+    m_State = eClosed;
+    return mbedtls_ssl_close_notify(&m_Ssl);
+}
+
+int SUvNgHttp2_TlsImpl::OnRecv(unsigned char* buf, size_t len)
+{
+    if (m_IncomingData.first && m_IncomingData.second) {
+        auto copied = min(len, static_cast<size_t>(m_IncomingData.second));
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " on receiving: " << copied);
+
+        if (copied) {
+            memcpy(buf, m_IncomingData.first, copied);
+            m_IncomingData.first += copied;
+            m_IncomingData.second -= copied;
+            return static_cast<int>(copied);
+        }
+    } else {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " on receiving");
+    }
+
+    return MBEDTLS_ERR_SSL_WANT_READ;
+}
+
+int SUvNgHttp2_TlsImpl::OnSend(const unsigned char* buf, size_t len)
+{
+    NCBI_UVNGHTTP2_TLS_TRACE(this << " on sending: " << len);
+    m_TcpWriteBuffer.insert(m_TcpWriteBuffer.end(), buf, buf + len);
+    return static_cast<int>(len);
+}
+
+SUvNgHttp2_Tls* SUvNgHttp2_Tls::Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf)
 {
     if (https) {
-        // TODO
-        return new SUvNgHttp2_TlsNoOp(tcp_write_buf);
+        return new SUvNgHttp2_TlsImpl(address, rd_buf_size, wr_buf_size, tcp_write_buf);
     }
 
     return new SUvNgHttp2_TlsNoOp(tcp_write_buf);
