@@ -106,8 +106,7 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    if (status != CRequestStatus::e404_NotFound)
-        UpdateOverallStatus(status);
+    UpdateOverallStatus(status);
     PSG_WARNING(message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();

@@ -158,6 +158,7 @@ bool CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
     if (need_finish) {
         x_SendProcessorError(err_msg, CRequestStatus::e500_InternalServerError,
                              ePSGS_InvalidId2Info);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     } else {
@@ -186,6 +187,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
         // This method is used only in case of the TSE chunk requests.
         // So in case of errors - synchronous or asynchronous - it is
         // necessary to finish the reply anyway.
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
     } else {
@@ -227,6 +229,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                   " to a Cassandra keyspace";
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
                              ePSGS_UnknownResolvedSatellite);
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
 
@@ -846,6 +849,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             err_msg += " due to LMDB error";
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
                              ePSGS_BlobPropsNotFound);
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
         return;
     }
@@ -957,6 +961,7 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
             app->GetErrorCounters().IncMalformedArguments();
             x_SendProcessorError(msg, CRequestStatus::e400_BadRequest,
                                  ePSGS_MalformedParameter);
+            UpdateOverallStatus(CRequestStatus::e400_BadRequest);
             m_Completed = true;
             IPSGS_Processor::m_Reply->SignalProcessorFinished();
         } else {
@@ -986,6 +991,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
     // This method is used only in case of the TSE chunk requests.
     // So in case of errors - synchronous or asynchronous - it is
     // necessary to finish the reply anyway.
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
     return false;

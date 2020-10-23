@@ -144,8 +144,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    if (status != CRequestStatus::e404_NotFound)
-        UpdateOverallStatus(status);
+    UpdateOverallStatus(status);
     PSG_WARNING(message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
@@ -267,6 +266,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
 
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
         return false;

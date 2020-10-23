@@ -160,18 +160,21 @@ void CPSGS_GetBlobProcessor::Process(void)
         if (m_BlobRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
             size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-            if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
+            auto        ret_status = CRequestStatus::e404_NotFound;
+            if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found",
-                    CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
-            else
+            } else {
+                ret_status = CRequestStatus::e500_InternalServerError;
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found due to a cache lookup error",
-                    CRequestStatus::e500_InternalServerError, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
+            }
             IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,
                                                                 GetName(),
                                                                 2);
@@ -188,6 +191,7 @@ void CPSGS_GetBlobProcessor::Process(void)
             }
 
             // Finished without reaching cassandra
+            UpdateOverallStatus(ret_status);
             m_Completed = true;
             IPSGS_Processor::m_Reply->SignalProcessorFinished();
             return;

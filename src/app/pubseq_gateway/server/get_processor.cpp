@@ -113,8 +113,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    if (status != CRequestStatus::e404_NotFound)
-        UpdateOverallStatus(status);
+    UpdateOverallStatus(status);
     PSG_WARNING(message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
@@ -131,7 +130,6 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     }
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
-    m_Status = status;
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
 }
@@ -172,7 +170,6 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(msg);
 
-    m_Status = CRequestStatus::e500_InternalServerError;
     m_Completed = true;
     IPSGS_Processor::m_Reply->SignalProcessorFinished();
 }
@@ -280,18 +277,21 @@ void CPSGS_GetProcessor::x_GetBlob(void)
         if (m_BlobRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
             size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-            if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
+            auto        ret_status = CRequestStatus::e404_NotFound;
+            if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found",
-                    CRequestStatus::e404_NotFound, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
-            else
+            } else {
+                ret_status = CRequestStatus::e500_InternalServerError;
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found due to a cache lookup error",
-                    CRequestStatus::e500_InternalServerError, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_BlobPropsNotFound,
                     eDiag_Error);
+            }
             IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,
                                                                 GetName(),
                                                                 2);
@@ -308,6 +308,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             }
 
             // Finished without reaching cassandra
+            UpdateOverallStatus(ret_status);
             m_Completed = true;
             IPSGS_Processor::m_Reply->SignalProcessorFinished();
             return;
