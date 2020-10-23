@@ -111,6 +111,13 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
     }
 
     // Parse into entries
+    string mid_seps = "=&";
+    string end_seps = "&";
+    if (!m_SemicolonIsNotArgDelimiter)
+    {
+        mid_seps += ';';
+        end_seps += ';';
+    }
     unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
         // ignore ampersand and "&amp;"
@@ -129,14 +136,6 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
         }
 
         // parse and URL-decode name
-        string mid_seps = "=&";
-        string end_seps = "&";
-        if (!m_SemicolonIsNotArgDelimiter)
-        {
-            mid_seps += ';';
-            end_seps += ';';
-        }
-
         SIZE_TYPE mid = query.find_first_of(mid_seps, beg);
         // '=' is the first char (empty name)? Skip to the next separator.
         if (mid == beg) {

@@ -2228,23 +2228,6 @@ void CArgDescriptions::SetArgsType(EArgSetType args_type)
                        + *m_PosArgs.begin() + "'.");
         }
 
-        // Must have no flag arguments
-        ITERATE (TArgs, it, m_Args) {
-            const CArgDesc& arg = **it;
-            if ( s_IsFlag(arg) ) {
-                const string& name = arg.GetName();
-
-                if ((m_AutoHelp && name == s_AutoHelp) ||
-                    name == s_AutoHelpFull ||
-                    name == s_AutoHelpXml)  // help
-                    continue;
-
-                NCBI_THROW(CArgException, eInvalidArg,
-                           "CGI application cannot have flag arguments, "
-                           "name of the offending flag: '" + name + "'.");
-            }
-        }
-
         // Must have no unnamed positional arguments
         if (m_nExtra  ||  m_nExtraOpt) {
             NCBI_THROW(CArgException, eInvalidArg,
