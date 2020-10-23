@@ -420,8 +420,6 @@ string  GetBlobPropCompletionHeader(size_t  item_id,
 
 string  GetTSEBlobPropCompletionHeader(size_t  item_id,
                                        const string &  processor_id,
-                                       int64_t  id2_chunk,
-                                       const string &  id2_info,
                                        size_t  chunk_count)
 {
     string      reply(s_ReplyBegin);
@@ -431,10 +429,6 @@ string  GetTSEBlobPropCompletionHeader(size_t  item_id,
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobPropItem)
                 .append(s_AndMetaChunk)
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
@@ -555,26 +549,16 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
 
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
-                                const string &  blob_id,
-                                size_t  chunk_count,
-                                CBlobRecord::TTimestamp  last_modified)
+                                size_t  chunk_count)
 {
-    // E.g. PSG-Reply-Chunk: item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
+    // E.g. PSG-Reply-Chunk: item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&n_chunks=100
     string      reply(s_ReplyBegin);
-
-    string      last_modified_part;
-    if (last_modified != -1)
-        last_modified_part.append(s_AndLastModified)
-                          .append(to_string(last_modified));
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(last_modified_part)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');
@@ -583,12 +567,10 @@ string  GetBlobCompletionHeader(size_t  item_id,
 
 string GetTSEBlobCompletionHeader(size_t  item_id,
                                   const string &  processor_id,
-                                  int64_t  id2_chunk,
-                                  const string &  id2_info,
                                   size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk:
-    // item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&id2_chunk=11&id2_info=333.444.555&n_chunks=100
+    // item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&n_chunks=100
     string      reply(s_ReplyBegin);
 
     return reply.append(to_string(item_id))
@@ -596,10 +578,6 @@ string GetTSEBlobCompletionHeader(size_t  item_id,
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))
                 .append(1, '\n');

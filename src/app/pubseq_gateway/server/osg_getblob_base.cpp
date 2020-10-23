@@ -173,8 +173,7 @@ void CPSGS_OSGGetBlobBase::x_SendBlobData(const string& psg_blob_id,
         GetReply()->PrepareBlobData(item_id, GetName(), psg_blob_id,
                                     (const unsigned char*)chunk->data(), chunk->size(), chunk_no++);
     }
-    GetReply()->PrepareBlobCompletion(item_id, GetName(),
-                                      psg_blob_id, chunk_no+1);
+    GetReply()->PrepareBlobCompletion(item_id, GetName(), chunk_no+1);
 }
 
 
@@ -189,8 +188,7 @@ void CPSGS_OSGGetBlobBase::x_SendChunkBlobData(const string& id2_info,
                                        (const unsigned char*)chunk->data(), chunk->size(), chunk_no++,
                                        chunk_id, id2_info);
     }
-    GetReply()->PrepareTSEBlobCompletion(item_id, GetName(),
-                                         chunk_id, id2_info, chunk_no+1);
+    GetReply()->PrepareTSEBlobCompletion(item_id, GetName(), chunk_no+1);
 }
 
 

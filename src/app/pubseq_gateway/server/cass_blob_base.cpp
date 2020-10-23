@@ -102,6 +102,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
                     return;
                 }
             }
+            m_NeedToParseId2Info = false;
         }
 
         // Note: initially only blob_props are requested and at that moment the
@@ -140,8 +141,6 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
     } else {
         x_OnBlobPropNotFound(fetch_details);
     }
-
-    m_NeedToParseId2Info = false;
 }
 
 
@@ -928,9 +927,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
     } else {
-        m_Reply->PrepareTSEBlobPropCompletion(
-            fetch_details, m_ProcessorId,
-            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize());
+        m_Reply->PrepareTSEBlobPropCompletion(fetch_details, m_ProcessorId);
     }
 }
 
@@ -962,12 +959,9 @@ CPSGS_CassBlobBase::x_PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
     if (!NeedToAddId2CunkId2Info()) {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
-        m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId,
-                                       m_LastModified);
+        m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
     } else {
-        m_Reply->PrepareTSEBlobCompletion(
-            fetch_details, m_ProcessorId,
-            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize());
+        m_Reply->PrepareTSEBlobCompletion(fetch_details, m_ProcessorId);
     }
 }
 

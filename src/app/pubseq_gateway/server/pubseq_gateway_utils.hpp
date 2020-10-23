@@ -181,8 +181,6 @@ string  GetTSEBlobPropMessageHeader(size_t  item_id,
                                     EDiagSev  severity);
 string  GetTSEBlobPropCompletionHeader(size_t  item_id,
                                        const string &  processor_id,
-                                       int64_t  id2_chunk,
-                                       const string &  id2_info,
                                        size_t  chunk_count);
 
 // Blob chunk messages
@@ -194,9 +192,7 @@ string  GetBlobChunkHeader(size_t  item_id,
                            CBlobRecord::TTimestamp  last_modified=-1);
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
-                                const string &  blob_id,
-                                size_t  chunk_count,
-                                CBlobRecord::TTimestamp  last_modified=-1);
+                                size_t  chunk_count);
 string  GetBlobMessageHeader(size_t  item_id,
                              const string &  processor_id,
                              const string &  blob_id,
@@ -231,8 +227,6 @@ string  GetTSEBlobMessageHeader(size_t  item_id,
                                 EDiagSev  severity);
 string GetTSEBlobCompletionHeader(size_t  item_id,
                                   const string &  processor_id,
-                                  int64_t  id2_chunk,
-                                  const string &  id2_info,
                                   size_t  chunk_count);
 
 // Named annotation messages

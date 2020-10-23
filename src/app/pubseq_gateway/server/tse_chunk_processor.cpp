@@ -546,9 +546,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 m_TSEChunkRequest->m_Id2Info,
                 ToJson(blob).Repr(CJsonNode::fStandardJson));
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk,
-                m_TSEChunkRequest->m_Id2Info);
+                fetch_details, GetName());
     } else {
         // Not found; it is the user error, not the data inconsistency
         auto *  app = CPubseqGatewayApp::GetInstance();
@@ -564,9 +562,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 message, CRequestStatus::e404_NotFound,
                 ePSGS_BlobPropsNotFound, eDiag_Error);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk,
-                m_TSEChunkRequest->m_Id2Info);
+                fetch_details, GetName());
         SetFinished(fetch_details);
     }
 
@@ -602,16 +598,14 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                 m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
                 message, CRequestStatus::e500_InternalServerError, code, severity);
             IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info);
+                fetch_details, GetName());
         } else {
             IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
                 fetch_details, GetName(),
                 m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
                 message, CRequestStatus::e500_InternalServerError, code, severity);
             IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info);
+                fetch_details, GetName());
         }
 
         // If it is an error then regardless what stage it was, props or
@@ -687,8 +681,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
         // End of the blob
         IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-                fetch_details, GetName(), m_TSEChunkRequest->m_Id2Chunk,
-                m_TSEChunkRequest->m_Id2Info);
+                fetch_details, GetName());
         SetFinished(fetch_details);
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -1070,9 +1063,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
             IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                    blob_fetch, GetName(),
-                    m_TSEChunkRequest->m_Id2Chunk,
-                    m_TSEChunkRequest->m_Id2Info);
+                    blob_fetch, GetName());
         } else {
             IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
                 blob_fetch, GetName(),
@@ -1080,8 +1071,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
             IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-                blob_fetch, GetName(), m_TSEChunkRequest->m_Id2Chunk,
-                m_TSEChunkRequest->m_Id2Info);
+                blob_fetch, GetName());
         }
 
         // Mark finished
