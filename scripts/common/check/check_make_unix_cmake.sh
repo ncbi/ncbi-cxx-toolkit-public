@@ -1029,7 +1029,7 @@ MailToAuthors()
 
 ProcessDone()
 {
-    while test ! -e "\$checkdir/~DONE"; do
+    while true; do
         sleep 2
         p_done=\`ls \${checkdir}/*.started 2>/dev/null\`
         if test -n "\$p_done"; then
@@ -1084,6 +1084,10 @@ ProcessDone()
                 fi
                 rm -f \$p_file
             done
+        else
+            if test -e "\$checkdir/~DONE"; then
+                break
+            fi
         fi
     done
     rm "\$checkdir/~DONE"
