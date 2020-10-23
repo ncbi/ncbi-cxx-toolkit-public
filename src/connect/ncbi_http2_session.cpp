@@ -292,12 +292,13 @@ constexpr size_t kWriteBufSize = 64 * 1024;
 constexpr uint32_t kMaxStreams = 200;
 
 template <class... TNgHttp2Cbs>
-SH2S_Session::SH2S_Session(const SSocketAddress& address, uv_loop_t* loop, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks) :
+SH2S_Session::SH2S_Session(uv_loop_t* loop, const SSocketAddress& address, bool https, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks) :
     SUvNgHttp2_SessionBase(
             loop,
             address,
             kReadBufSize,
             kWriteBufSize,
+            https,
             kMaxStreams,
             forward<TNgHttp2Cbs>(callbacks)...,
             s_OnFrameRecv),
@@ -594,11 +595,10 @@ void SH2S_IoCoordinator::Process()
 
 SH2S_Session* SH2S_IoCoordinator::NewSession(const CUrl& url)
 {
+    auto scheme = url.GetScheme();
     auto port = url.GetPort();
 
     if (port.empty()) {
-        auto scheme = url.GetScheme();
-
         if (scheme == "http") {
             port = "80";
         } else if (scheme == "https") {
@@ -609,6 +609,7 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const CUrl& url)
     }
 
     SSocketAddress address(url.GetHost(), port);
+    auto https = scheme == "https" || (scheme.empty() && (port == "443"));
     auto range = m_Sessions.equal_range(address);
 
     for (auto it = range.first; it != range.second; ++it) {
@@ -618,7 +619,7 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const CUrl& url)
     }
 
     // No such sessions yet or all are full
-    auto it = m_Sessions.emplace(piecewise_construct, forward_as_tuple(address), forward_as_tuple(address, &m_Loop, m_SessionsByQueues));
+    auto it = m_Sessions.emplace(piecewise_construct, forward_as_tuple(address), forward_as_tuple(&m_Loop, address, https, m_SessionsByQueues));
     return &it->second;
 }
 

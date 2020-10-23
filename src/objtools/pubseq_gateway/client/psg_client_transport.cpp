@@ -457,6 +457,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
             s.address,
             TPSG_RdBufSize::GetDefault(),
             TPSG_WrBufSize::GetDefault(),
+            false,
             TPSG_MaxConcurrentStreams::GetDefault(),
             forward<TNgHttp2Cbs>(callbacks)...),
     server(s),

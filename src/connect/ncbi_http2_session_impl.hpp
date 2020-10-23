@@ -166,7 +166,7 @@ using TH2S_SessionsByQueues = map<TH2S_WeakResponseQueue, reference_wrapper<SH2S
 struct SH2S_Session : SUvNgHttp2_SessionBase
 {
     template <class... TNgHttp2Cbs>
-    SH2S_Session(const SSocketAddress& address, uv_loop_t* loop, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks);
+    SH2S_Session(uv_loop_t* loop, const SSocketAddress& address, bool https, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks);
 
     bool Request(TH2S_RequestEvent request);
 

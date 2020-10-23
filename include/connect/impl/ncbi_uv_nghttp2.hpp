@@ -399,10 +399,24 @@ private:
     static string Init();
 };
 
+struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_Tls
+{
+    virtual ~SUvNgHttp2_Tls() {}
+
+    virtual int Read(const char* buf, ssize_t nread) = 0;
+    virtual int Write() = 0;
+    virtual int Close() = 0;
+
+    virtual const char* GetReadBuffer() = 0;
+    virtual vector<char>& GetWriteBuffer() = 0;
+
+    static SUvNgHttp2_Tls* Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf);
+};
+
 struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 {
     template <class ...TArgs>
-    SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TArgs&&... args);
+    SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args);
 
     virtual ~SUvNgHttp2_SessionBase() {}
 
@@ -413,6 +427,7 @@ protected:
 
     const string m_Authority;
     SUv_Tcp m_Tcp;
+    unique_ptr<SUvNgHttp2_Tls> m_Tls;
     SNgHttp2_Session m_Session;
 
 private:
@@ -468,7 +483,7 @@ private:
 };
 
 template <class ...TArgs>
-SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TArgs&&... args) :
+SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args) :
     m_Authority(address.AsString()),
     m_Tcp(
             loop,
@@ -478,6 +493,7 @@ SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAdd
             BindThis(&SUvNgHttp2_SessionBase::OnConnect),
             BindThis(&SUvNgHttp2_SessionBase::OnRead),
             BindThis(&SUvNgHttp2_SessionBase::OnWrite)),
+    m_Tls(SUvNgHttp2_Tls::Create(https, address, rd_buf_size, wr_buf_size, m_Tcp.GetWriteBuffer())),
     m_Session(this, forward<TArgs>(args)...)
 {
 }
