@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(FetchNonRedundantEntry)
      const size_t kExpectedLength(536);
      const TTaxId kExpectedTaxid = TAX_ID_CONST(9606);
 
-     CSeq_id seqid1("NP_653295.1");  // human protein
+     CSeq_id seqid1("NP_001308920");  // human protein
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(kExpectedLength, handle1.GetInst().GetLength());
