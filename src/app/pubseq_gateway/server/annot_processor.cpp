@@ -255,6 +255,18 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
+    if (IPSGS_Processor::m_Request->NeedTrace()) {
+        if (last) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Named annotation no-more-data callback",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        } else {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Named annotation data received",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+    }
+
     if (m_Cancelled) {
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
@@ -273,22 +285,11 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     }
 
     if (last) {
-        if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Named annotation no-more-data callback",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
-        }
         fetch_details->SetReadFinished();
 
         m_Completed = true;
         IPSGS_Processor::m_Reply->SignalProcessorFinished();
         return false;
-    }
-
-    if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Named annotation data received",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
     auto    other_proc_priority = m_AnnotRequest->RegisterProcessedName(
