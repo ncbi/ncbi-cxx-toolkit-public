@@ -1181,7 +1181,7 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
                 bool bad_match = false; // Limit ? to matching letters
                 SIZE_TYPE pos = wit->first.find('?');
                 while (pos != NPOS) {
-                    if ( !isalnum(pfx[pos]) ) {
+                    if ( !isalnum(pfx[pos])  &&  pfx[pos] != '?' ) {
                         bad_match = true;
                         break;
                     } else {
