@@ -234,10 +234,17 @@ CVcfReader::xProcessData(
     for (auto lineInfo: readerData) {
         const auto& line = lineInfo.mData; 
         if (mActualVersion == 0.0) {
-            if (!xProcessFileFormat(line, annot)) {
-                mActualVersion = mMaxSupportedVersion;
-            }
-            // fall through to process as meta data as well
+            bool lineContainsVersion(false);
+            xSetFileFormat(line, annot, lineContainsVersion);
+            // Note:
+            // Currently, the line format specifier is also processed as a
+            // meta line even though it really isn't, or at least it's a very
+            // different meta than all other VCF metas.
+            // Uncomment the following lines to no longer process the file format
+            // specifier as a meta.
+            //if (lineContainsVersion) {
+                //return;
+            //}
         }
 
         if (xParseBrowserLine(line, annot)) {
@@ -293,10 +300,11 @@ CVcfReader::xProcessMetaLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool
-CVcfReader::xProcessFileFormat(
+void
+CVcfReader::xSetFileFormat(
     const string& line,
-    CSeq_annot& annot)
+    CSeq_annot& annot,
+    bool& lineContainsVersion)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##fileformat=VCFv";
@@ -307,28 +315,35 @@ CVcfReader::xProcessFileFormat(
             m_uLineNumber,
             string("CVcfReader::xProcessMetaLineFileFormat: ") +
                 "Missing VCF version string. Assuming VCFv" +
-                NStr::DoubleToString(mActualVersion) +
+                NStr::DoubleToString(mMaxSupportedVersion) +
                 ". Proceed with care!");
         m_pMessageHandler->Report(warning);
-        return false;
+        mActualVersion = mMaxSupportedVersion;
+        lineContainsVersion = false;
+        return;
     }
     
+    lineContainsVersion = true;
+
     string versionStr = line.substr(prefix.length(), string::npos);
     try {
         mActualVersion = NStr::StringToDouble(versionStr);
     }
     catch (std::exception except) {
-        mActualVersion = mMaxSupportedVersion;
         CReaderMessage warning(
             eDiag_Warning,
             m_uLineNumber,
             string("CVcfReader::xProcessMetaLineFileFormat: ") +
             "Data file contains an unrecognized version string \"" +
                 versionStr +
-                "\". Proceed with care!");
+                "\". Assuming VCFv" +
+                NStr::DoubleToString(mMaxSupportedVersion) +
+                ". Proceed with care!");
         m_pMessageHandler->Report(warning);
-        return true;
+        mActualVersion = mMaxSupportedVersion;
+        return;
     }
+
     if (mActualVersion > mMaxSupportedVersion) {
         CReaderMessage warning(
             eDiag_Warning,
@@ -339,9 +354,9 @@ CVcfReader::xProcessFileFormat(
                 NStr::DoubleToString(mMaxSupportedVersion) +
                 "\". Proceed with care!");
         m_pMessageHandler->Report(warning);
-        return true;
+        mActualVersion = mMaxSupportedVersion;
+        return;
     }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------

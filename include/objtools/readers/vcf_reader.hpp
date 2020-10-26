@@ -194,10 +194,11 @@ protected:
         const string&,
         CSeq_annot&);
 
-    virtual bool
-    xProcessFileFormat(
+    virtual void
+    xSetFileFormat(
         const string&,
-        CSeq_annot&);
+        CSeq_annot&,
+        bool&);
 
     virtual bool
     xProcessMetaLineInfo(
