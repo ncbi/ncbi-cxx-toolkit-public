@@ -1002,7 +1002,7 @@ CSeq_align::CreateTranslatedDensegFromNADenseg() const
 /// Strict weak ordering for pairs (by first)
 /// Used by CreateDensegFromDisc
 template <typename T, typename Pred = less<TSeqPos> >
-struct ds_cmp : public binary_function<T, T, bool> {
+struct ds_cmp {
     bool operator()(const T& x, const T& y) { 
         return m_Pred(x.first, y.first); 
     }
