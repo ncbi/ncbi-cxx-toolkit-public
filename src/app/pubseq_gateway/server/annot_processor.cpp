@@ -287,9 +287,19 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     if (last) {
         fetch_details->SetReadFinished();
 
-        m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
-        return false;
+        // There could be many sat_name(s) requested so the callback is called
+        // many times. If all of them finished then the completion should be
+        // set to true. Otherwise the process of waiting for the other callback
+        // should continue.
+        if (AreAllFinishedRead()) {
+            m_Completed = true;
+            IPSGS_Processor::m_Reply->SignalProcessorFinished();
+            return false;
+        }
+
+        // Not all finished so wait for more callbacks
+        x_Peek(false);
+        return true;
     }
 
     auto    other_proc_priority = m_AnnotRequest->RegisterProcessedName(
