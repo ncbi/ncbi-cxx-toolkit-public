@@ -392,18 +392,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
     CFeat_CI feat_iter(sah, sel);
 
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
-    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
-    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
-    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
-        CMappedFeat mRoot = *pit;
-        fc.AssignShouldInheritPseudo(false);
-        if (!xWriteNucleotideFeature(fc, mRoot)) {
-            // error!
-            continue;
-        }
-        xWriteAllChildren(fc, mRoot);
-    }
-    return true;
+    return x_WriteFeatureContext(fc);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1452,16 +1441,10 @@ bool CGff3Writer::xWriteProteinSequence(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xWriteNucleotideSequence(
-    CBioseq_Handle bsh ) 
+bool CGff3Writer::x_WriteFeatureContext(
+    CGffFeatureContext& fc)
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel = SetAnnotSelector();
-    const auto& display_range = GetRange();
-    CFeat_CI feat_iter(bsh, display_range, sel);
-    //CFeat_CI feat_iter(bsh);
-    CGffFeatureContext fc(feat_iter, bsh);
-
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
     std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
@@ -1474,6 +1457,19 @@ bool CGff3Writer::xWriteNucleotideSequence(
         xWriteAllChildren(fc, mRoot);
     }
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteNucleotideSequence(
+    CBioseq_Handle bsh ) 
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel = SetAnnotSelector();
+    const auto& display_range = GetRange();
+    CFeat_CI feat_iter(bsh, display_range, sel);
+    //CFeat_CI feat_iter(bsh);
+    CGffFeatureContext fc(feat_iter, bsh);
+    return x_WriteFeatureContext(fc);
 }
 
 //  ----------------------------------------------------------------------------

@@ -183,6 +183,8 @@ protected:
         CBioseq_Handle ) override;
 	virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
+    virtual bool x_WriteFeatureContext(
+        CGffFeatureContext&);
 
     virtual bool xPassesFilterByViewMode(
         CBioseq_Handle);
