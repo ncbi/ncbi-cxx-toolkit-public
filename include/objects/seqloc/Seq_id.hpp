@@ -482,6 +482,14 @@ public:
         eAcc_ddbj_tpa_other      = e_Tpd | eAcc_other,
         eAcc_ddbj_tpa_nuc        = e_Tpd | eAcc_other | fAcc_nuc,       // BR
         eAcc_ddbj_tpa_prot       = e_Tpd | eAcc_other | fAcc_prot,      // FAA
+        eAcc_ddbj_tpa_tsa_nuc    = e_Tpd | eAcc_tsa        | fAcc_nuc,  // YAAA
+        eAcc_ddbj_tpa_tsa_prot   = e_Tpd | eAcc_tsa        | fAcc_prot, // unused
+        eAcc_ddbj_tpa_tsam_nuc   = e_Tpd | eAcc_tsa_master | fAcc_nuc,
+        eAcc_ddbj_tpa_tsam_prot  = e_Tpd | eAcc_tsa_master | fAcc_prot,
+        eAcc_ddbj_tpa_tsav_nuc   = e_Tpd | eAcc_tsa_vdb_only   | fAcc_nuc,
+        eAcc_ddbj_tpa_tsav_prot  = e_Tpd | eAcc_tsa_vdb_only   | fAcc_prot,
+        eAcc_ddbj_tpa_tsavm_nuc  = e_Tpd | eAcc_tsa_vdb_master | fAcc_nuc,
+        eAcc_ddbj_tpa_tsavm_prot = e_Tpd | eAcc_tsa_vdb_master | fAcc_prot,
         eAcc_ddbj_tpa_con        = e_Tpd | eAcc_con        | fAcc_nuc,  // HT
         eAcc_ddbj_tpa_wgs_nuc    = e_Tpd | eAcc_wgs        | fAcc_nuc,  // EAAA
         eAcc_ddbj_tpa_wgs_prot   = e_Tpd | eAcc_wgs        | fAcc_prot, // IAA
@@ -492,6 +500,10 @@ public:
         eAcc_ddbj_tpa_wgsvm_nuc  = e_Tpd | eAcc_wgs_vdb_master | fAcc_nuc,
         eAcc_ddbj_tpa_wgsvm_prot = e_Tpd | eAcc_wgs_vdb_master | fAcc_prot,
         eAcc_ddbj_tpa_chromosome = e_Tpd | eAcc_chromosome | fAcc_nuc,  // HU
+        eAcc_ddbj_tpa_targeted_nuc = e_Tpd | eAcc_targeted | fAcc_nuc,  // ZAAA
+        eAcc_ddbj_tpa_targetedm_nuc= e_Tpd | eAcc_targeted_master   | fAcc_nuc,
+        eAcc_ddbj_tpa_targetedv_nuc= e_Tpd | eAcc_targeted_vdb_only | fAcc_nuc,
+        eAcc_ddbj_tpa_targetedvm_nuc=e_Tpd | eAcc_targeted_vdb_master | fAcc_nuc,
 
         // genome pipeline, modeled after RefSeq
         eAcc_gpipe_other_nuc  = e_Gpipe | eAcc_other | fAcc_nuc,       // GPN_
