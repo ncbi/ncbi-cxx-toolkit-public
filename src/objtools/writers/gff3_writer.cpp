@@ -392,11 +392,16 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
     CFeat_CI feat_iter(sah, sel);
 
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
-
-    for ( /*0*/; feat_iter; ++feat_iter ) {
-        if ( ! xWriteNucleotideFeature( fc, *feat_iter ) ) {
-            return false;
+    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
+        CMappedFeat mRoot = *pit;
+        fc.AssignShouldInheritPseudo(false);
+        if (!xWriteNucleotideFeature(fc, mRoot)) {
+            // error!
+            continue;
         }
+        xWriteAllChildren(fc, mRoot);
     }
     return true;
 }
