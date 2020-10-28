@@ -2527,6 +2527,7 @@ HGV	s	Herbario de Glomeromycota de Venezuela
 HH	s	Instituto de Investigaciones de la Amazonia Peruana			
 HHBG	s	Hangzhou Botanical Garden			
 HHC	s	University of Helsinki, Horticulture Department			
+HHD	s	Hasan Huseyin Dogan			
 HHE	s	HouHe National Nature Reserve			
 HHH	s	Hartwick College			
 HHM	s	Collyer's School			

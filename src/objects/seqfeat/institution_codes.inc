@@ -2560,6 +2560,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HH\ts\tInstituto de Investigaciones de la Amazonia Peruana\t\t\t",
 "HHBG\ts\tHangzhou Botanical Garden\t\t\t",
 "HHC\ts\tUniversity of Helsinki, Horticulture Department\t\t\t",
+"HHD\ts\tHasan Huseyin Dogan\t\t\t",
 "HHE\ts\tHouHe National Nature Reserve\t\t\t",
 "HHH\ts\tHartwick College\t\t\t",
 "HHM\ts\tCollyer's School\t\t\t",
