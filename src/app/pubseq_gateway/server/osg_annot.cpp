@@ -68,9 +68,15 @@ string CPSGS_OSGAnnot::GetName() const
 bool CPSGS_OSGAnnot::CanProcess(SPSGS_AnnotRequest& request,
                                 TProcessorPriority priority)
 {
-    if ( !CanResolve(request.m_SeqIdType, request.m_SeqId) ) {
+    // check if id is good enough
+    CSeq_id id;
+    SetSeqId(id, request.m_SeqIdType, request.m_SeqId);
+    if ( !id.IsGi() && !id.GetTextseq_Id() ) {
         return false;
     }
+    //if ( !CanResolve(request.m_SeqIdType, request.m_SeqId) ) {
+    //    return false;
+    //}
     return !GetNamesToProcess(request, priority).empty();
 }
 
