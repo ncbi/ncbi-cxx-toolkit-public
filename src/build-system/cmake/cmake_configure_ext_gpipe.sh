@@ -40,6 +40,7 @@ configure_ext_ParseArgs()
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Release}"
       add_gpipe_warnings
       ;; 
@@ -47,6 +48,7 @@ configure_ext_ParseArgs()
       BUILD_TYPE="Debug"
       BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Debug}"
       add_gpipe_warnings
       ;; 
@@ -54,13 +56,14 @@ configure_ext_ParseArgs()
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="OFF"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Static}"
       add_gpipe_warnings
       ;; 
     "--gpipe-distrib")
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="OFF"
-      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};-PCRE"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST;-PCRE"
       : "${BUILD_ROOT:=../Distrib}"
       add_gpipe_warnings
       ;; 
