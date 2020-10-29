@@ -195,13 +195,16 @@ function(NCBI_internal_FinalizeCMakeTest)
     string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
     string(APPEND _info "set(NCBITEST_SIGNATURE ${NCBITEST_SIGNATURE})\n")
 
-    list(JOIN NCBI_PTBCFG_PROJECT_FEATURES " " _x)
+    #list(JOIN NCBI_PTBCFG_PROJECT_FEATURES " " _x)
+    string(REPLACE ";" " " _x "${NCBI_PTBCFG_PROJECT_FEATURES}")
     string(APPEND _info "set(NCBITEST_PROJECT_FEATURES ${_x})\n")
     
-    list(JOIN NCBI_ALL_COMPONENTS " " _x)
+    #list(JOIN NCBI_ALL_COMPONENTS " " _x)
+    string(REPLACE ";" " " _x "${NCBI_ALL_COMPONENTS}")
     string(APPEND _info "set(NCBITEST_COMPONENTS ${_x})\n")
     
-    list(JOIN NCBI_ALL_REQUIRES " " _x)
+    #list(JOIN NCBI_ALL_REQUIRES " " _x)
+    string(REPLACE ";" " " _x "${NCBI_ALL_REQUIRES}")
     string(APPEND _info "set(NCBITEST_REQUIRES ${_x})\n")
 
     # Test features (project_features + components + requires + etc)
@@ -211,7 +214,8 @@ function(NCBI_internal_FinalizeCMakeTest)
     list(APPEND _features ${NCBI_PTBCFG_PROJECT_FEATURES})
     list(APPEND _features ${CONFIG})
    
-    list(JOIN   _features " " _x)
+    #list(JOIN   _features " " _x)
+    string(REPLACE ";" " " _x "${_features}")
     string(APPEND _info "set(NCBITEST_FEATURES ${_x})\n")
 
     file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake ${_info})
