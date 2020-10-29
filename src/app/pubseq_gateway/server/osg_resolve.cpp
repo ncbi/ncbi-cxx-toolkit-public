@@ -138,8 +138,13 @@ void CPSGS_OSGResolve::ProcessReplies()
             }
         }
     }
-    SendBioseqInfo(GetRequest()->GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
-    FinalizeResult(ePSGS_Found);
+    if ( m_BioseqInfoFlags == 0 ) {
+        FinalizeResult(ePSGS_NotFound);
+    }
+    else {
+        SendBioseqInfo(GetRequest()->GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
+        FinalizeResult(ePSGS_Found);
+    }
 }
 
 
@@ -216,9 +221,14 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
             }
         }
     }
-    SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
-    SendBlob();
-    FinalizeResult();
+    if ( m_BioseqInfoFlags == 0 ) {
+        FinalizeResult(ePSGS_NotFound);
+    }
+    else {
+        SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
+        SendBlob();
+        FinalizeResult(ePSGS_Found);
+    }
 }
 
 
