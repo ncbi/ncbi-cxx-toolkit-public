@@ -151,6 +151,7 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_ASSETS=${_assets}
         -DNCBITEST_XOUTDIR=${_xoutdir}
         -DNCBITEST_WATCHER=${_watcher}
+        -DNCBITEST_SIGNATURE=${NCBITEST_SIGNATURE}        
         -DNCBITEST_PARAMS=../${NCBI_DIRNAME_TESTING}/TestParams.cmake
         ${_extra}
         -P ${_root}/${NCBITEST_DRIVER}
