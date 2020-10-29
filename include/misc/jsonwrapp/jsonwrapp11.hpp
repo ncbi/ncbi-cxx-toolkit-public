@@ -1319,7 +1319,7 @@ CJson_ConstValue::operator=(const CJson_ConstValue& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
 inline CJson_Value::CJson_Value( const CJson_Value& n)
-    : CJson_ConstValue(n), CJson_Node(n) {
+    : CJson_ConstNode(n), CJson_ConstValue(n), CJson_Node(n) {
     x_Assign(n);
 }
 inline CJson_Value&
@@ -1410,7 +1410,7 @@ CJson_ConstArray::operator=(const CJson_ConstArray& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
 inline CJson_Array::CJson_Array( const CJson_Array& n)
-    : CJson_ConstArray(n), CJson_Node(n) {
+    : CJson_ConstNode(n), CJson_ConstArray(n), CJson_Node(n) {
     x_Assign(n);
 }
 inline CJson_Array&
@@ -1739,7 +1739,7 @@ CJson_ConstObject::operator=(const CJson_ConstObject& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
 inline CJson_Object::CJson_Object( const CJson_Object& n)
-    : CJson_ConstObject(n), CJson_Node(n) {
+    : CJson_ConstNode(n), CJson_ConstObject(n), CJson_Node(n) {
     x_Assign(n);
 }
 inline CJson_Object&
