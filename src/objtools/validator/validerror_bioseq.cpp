@@ -264,6 +264,7 @@ void CValidError_bioseq::x_SetupCommonFlags (CBioseq_Handle bsh)
                 NStr::StartsWith(lineage, "Archaea; ")) {
                 m_splicing_not_expected = true;
                 m_report_missing_chromosome = false;
+                m_is_bact_or_arch = true;
             }
             if (NStr::StartsWith(lineage, "Viruses; ")) {
                 m_report_missing_chromosome = false;
@@ -276,9 +277,14 @@ void CValidError_bioseq::x_SetupCommonFlags (CBioseq_Handle bsh)
                 m_report_missing_chromosome = false;
             }
         }
-        // check for organelle
-        if (source.IsSetGenome() && IsOrganelle(source.GetGenome())) {
-            m_report_missing_chromosome = false;
+        if (source.IsSetGenome()) {
+            CBioSource::TGenome genome = source.GetGenome();
+            // check for organelle
+            if (IsOrganelle(genome)) {
+                m_report_missing_chromosome = false;
+            }
+            m_is_plasmid = (genome == NCBI_GENOME(plasmid));
+            m_is_chromosome = (genome == NCBI_GENOME(chromosome));
         }
 
         ++d;
@@ -293,6 +299,9 @@ void CValidError_bioseq::ValidateBioseq (
     m_splicing_not_expected = false;
     m_report_missing_chromosome = true;
     m_report_short_seq = true;
+    m_is_bact_or_arch = false;
+    m_is_plasmid = false;
+    m_is_chromosome = false;
 
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
@@ -1139,6 +1148,21 @@ void CValidError_bioseq::ValidateInst(
                      inst.GetStrand() != CSeq_inst::eStrand_not_set) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadProteinMoltype,
                              "Protein not single stranded", seq);
+                }
+                break;
+
+            case CSeq_inst::eMol_dna:
+                if (seq.IsSetInst() && seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
+                    if (m_is_bact_or_arch) {
+                        if (! m_is_plasmid && ! m_is_chromosome) {
+                            EDiagSev sev = eDiag_Error;
+                            if (IsEmblOrDdbj(seq)) {
+                                sev = eDiag_Warning;
+                            }
+                            PostErr(sev, eErr_SEQ_INST_CircBactGenomeProblem,
+                                     "Circular Bacteria or Archaea should be chromosome or plasmid", seq);
+                        }
+                    }
                 }
                 break;
 
@@ -7050,8 +7074,8 @@ bool x_IsPseudo(const CSeq_feat& feat, CValidError_imp& imp)
         x_IsPseudo(feat.GetData().GetGene())) {
         return true;
     } else {
-		    try {
-			      CConstRef<CSeq_feat> gene = imp.GetCachedGene(&feat);
+        try {
+            CConstRef<CSeq_feat> gene = imp.GetCachedGene(&feat);
             if (gene) {
                 if (gene->IsSetPseudo() && gene->GetPseudo()) {
                     return true;
@@ -7066,8 +7090,8 @@ bool x_IsPseudo(const CSeq_feat& feat, CValidError_imp& imp)
                     }
                 }
             }
-		    } catch (...) {
-		    }
+        } catch (...) {
+        }
     }
     return false;
 }

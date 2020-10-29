@@ -360,6 +360,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_HighNpercent3Prime,
     { "HighNpercent3Prime",
       "Sequence with a large number or percentage of Ns at the 3' end might need to be trimmed" } } ,
+    { eErr_SEQ_INST_CircBactGenomeProblem,
+    { "CircBactGenomeProblem",
+      "Circular bacteria or archaea sequence should be annotated as chromosome or plasmid" } } ,
 
     /* SEQ_DESCR */
 

@@ -338,6 +338,9 @@ private:
     bool m_splicing_not_expected;
     bool m_report_missing_chromosome;
     bool m_report_short_seq;
+    bool m_is_bact_or_arch;
+    bool m_is_plasmid;
+    bool m_is_chromosome;
 };
 
 
