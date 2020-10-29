@@ -37,21 +37,23 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/sample/lib/asn_lib/asn_sample_lib.asn \
   src/sample/lib/dtd/dtd_sample_lib.dtd \
   src/sample/lib/xsd/xsd_sample_lib.xsd \
-  src/sample/lib/jsd/jsd_sample_lib.dtd \
+  src/sample/lib/jsd/jsd_sample_lib.jsd \
   src/internal/objects/*/*.asn src/internal/objects/*/*.xsd \
   src/internal/stax/taxon/taxon.dtd \
   src/internal/ncbils2/asn/login.asn src/internal/ncbils2/auth/*xml/*.dtd \
   src/internal/geo/cgi/geo*/objects/geo*.asn \
   src/internal/aligndb/aligndb_client.asn \
+  src/internal/ID/replication/protobuf/replication_schema.proto \
   src/internal/mapview/objects/*/*.asn \
   src/internal/gbench/packages/pkg_radar/*/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
   src/internal/blast/DistribDbSupport/*asn*/*.asn \
   src/internal/blast/JIRA/LibJiraAsn/jirasvc.asn \
-  src/internal/blast/SplitDB/asn*/*.asn \
+  src/internal/blast/SplitDB/as*[^d]/*.asn \
   src/internal/blast/SplitDB/BlastdbInfo/asn/BlastdbInfo.asn \
   src/internal/blast/Blastdb2Entrez/dbASN/bdb2ez.asn \
   src/internal/cppcore/test_stat_ext/loader/BoostTestXML.dtd \
+  src/internal/cppcore/http2_perf/grpc/grpc_test.proto \
   src/internal/gpipe/objects/*/*.asn src/internal/gpipe/objects/*/*.dtd \
   src/internal/gpipe/objects/*/*.xsd \
   src/internal/gpipe/gpinit/src/asn_config/objects/gpinit_obj.asn \
