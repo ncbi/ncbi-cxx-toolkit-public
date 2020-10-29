@@ -15,6 +15,10 @@ if(NOT IS_ABSOLUTE ${NCBITEST_PARAMS})
 endif()
 include(${NCBITEST_PARAMS}) 
 
+# Update signature
+string(REPLACE "\$<CONFIG>" "${NCBITEST_CONFIG}" _x "${NCBITEST_SIGNATURE}")
+set(NCBITEST_SIGNATURE ${_x})
+
 
 # ---------------------------------------------------------------------------
 # Set directories
