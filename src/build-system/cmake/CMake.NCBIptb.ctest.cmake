@@ -1,7 +1,6 @@
 #############################################################################
 # $Id$
 #############################################################################
-#############################################################################
 ##
 ##  NCBI CMake wrapper extension
 ##  In NCBI CMake wrapper, adds CMake tests (which use CMake testing framework)
@@ -11,7 +10,9 @@
 
 ##############################################################################
 # Testing
+
 set(NCBITEST_DRIVER "${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake")
+
 NCBI_define_test_resource(ServiceMapper 8)
 enable_testing()
 
@@ -28,6 +29,7 @@ if (WIN32)
 endif()
 
 ##############################################################################
+
 macro(NCBI_internal_process_cmake_test_requires _test)
     set(NCBITEST_REQUIRE_NOTFOUND "")
     set(_all ${NCBITEST__REQUIRES} ${NCBITEST_${_test}_REQUIRES})
@@ -50,6 +52,7 @@ macro(NCBI_internal_process_cmake_test_requires _test)
 endmacro()
 
 ##############################################################################
+
 macro(NCBI_internal_process_cmake_test_resources _test)
     set(_all ${NCBITEST__RESOURCES} ${NCBITEST_${_test}_RESOURCES})
     if (NOT "${_all}" STREQUAL "")
@@ -86,6 +89,7 @@ macro(NCBI_internal_process_cmake_test_resources _test)
 endmacro()
 
 ##############################################################################
+
 function(NCBI_internal_add_cmake_test _test)
     if( NOT DEFINED NCBITEST_${_test}_CMD)
         set(NCBITEST_${_test}_CMD ${NCBI_${NCBI_PROJECT}_OUTPUT})
@@ -147,7 +151,6 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_ASSETS=${_assets}
         -DNCBITEST_XOUTDIR=${_xoutdir}
         -DNCBITEST_WATCHER=${_watcher}
-        -DNCBITEST_SIGNATURE=${NCBITEST_SIGNATURE}
         -DNCBITEST_PARAMS=../${NCBI_DIRNAME_TESTING}/TestParams.cmake
         ${_extra}
         -P ${_root}/${NCBITEST_DRIVER}
@@ -158,16 +161,21 @@ function(NCBI_internal_add_cmake_test _test)
 endfunction()
 
 ##############################################################################
+
 function(NCBI_internal_AddCMakeTest _variable _access)
+
     if("${_access}" STREQUAL "MODIFIED_ACCESS" AND DEFINED NCBI_${NCBI_PROJECT}_ALLTESTS)
         foreach(_test IN LISTS NCBI_${NCBI_PROJECT}_ALLTESTS)
             NCBI_internal_add_cmake_test(${_test})
         endforeach()
     endif()
+
 endfunction()
 
 #############################################################################
+
 function(NCBI_internal_FinalizeCMakeTest)
+
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary)
 
@@ -176,21 +184,41 @@ function(NCBI_internal_FinalizeCMakeTest)
     else()
         set(_root ${NCBI_TREE_ROOT})
     endif()
+
+    # Generate a file with some common test parameters
+    
     set(_info "")
     string(APPEND _info "set(NCBITEST_BINDIR ../${NCBI_DIRNAME_RUNTIME})\n")
     string(APPEND _info "set(NCBITEST_LIBDIR ../${NCBI_DIRNAME_ARCHIVE})\n")
     string(APPEND _info "set(NCBITEST_OUTDIR ../${NCBI_DIRNAME_TESTING})\n")
     string(APPEND _info "set(NCBITEST_SOURCEDIR ${NCBI_SRC_ROOT})\n")
-    string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check)\n")
-    string(REPLACE ";" " " _x "${NCBI_PTBCFG_PROJECT_FEATURES}")
-    string(APPEND _info "set(NCBITEST_FEATURES ${_x})\n")
-    string(REPLACE ";" " " _x "${NCBI_ALL_COMPONENTS}")
+    string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
+    string(APPEND _info "set(NCBITEST_SIGNATURE ${NCBITEST_SIGNATURE})\n")
+
+    list(JOIN NCBI_PTBCFG_PROJECT_FEATURES " " _x)
+    string(APPEND _info "set(NCBITEST_PROJECT_FEATURES ${_x})\n")
+    
+    list(JOIN NCBI_ALL_COMPONENTS " " _x)
     string(APPEND _info "set(NCBITEST_COMPONENTS ${_x})\n")
-    string(REPLACE ";" " " _x "${NCBI_ALL_REQUIRES}")
+    
+    list(JOIN NCBI_ALL_REQUIRES " " _x)
     string(APPEND _info "set(NCBITEST_REQUIRES ${_x})\n")
+
+    # Test features (project_features + components + requires + etc)
+    set(_features "")
+    list(APPEND _features ${NCBI_ALL_COMPONENTS})
+    list(APPEND _features ${NCBI_ALL_REQUIRES})
+    list(APPEND _features ${NCBI_PTBCFG_PROJECT_FEATURES})
+    list(APPEND _features ${CONFIG})
+   
+    list(JOIN   _features " " _x)
+    string(APPEND _info "set(NCBITEST_FEATURES ${_x})\n")
+
     file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake ${_info})
+
 endfunction()
 
 #############################################################################
+
 NCBI_register_hook(TARGET_ADDED NCBI_internal_AddCMakeTest)
 NCBI_register_hook(ALL_ADDED    NCBI_internal_FinalizeCMakeTest)
