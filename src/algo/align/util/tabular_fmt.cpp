@@ -2442,8 +2442,9 @@ void CTabularFormatter_GeneSymbol::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
-CTabularFormatter::CTabularFormatter(CNcbiOstream& ostr, CScoreLookup &scores)
-: m_Scores(&scores), m_Ostr(ostr)
+CTabularFormatter::CTabularFormatter(CNcbiOstream& ostr, CScoreLookup &scores,
+                                     const string &unavailable_string)
+: m_Scores(&scores), m_Ostr(ostr), m_UnavailableString(unavailable_string)
 {
     s_RegisterStandardFields(*this);
 }
@@ -2797,7 +2798,16 @@ void CTabularFormatter::WriteHeader()
 void CTabularFormatter::Format(const CSeq_align& align)
 {
     NON_CONST_ITERATE (list< CIRef<IFormatter> >, it, m_Formatters) {
-        (*it)->Print(m_Ostr, align);
+        try {
+            (*it)->Print(m_Ostr, align);
+        } catch (...) {
+            if (m_UnavailableString.empty()) {
+                throw;
+            }
+            /// User provided a string to mark unavailable fields instead of
+            /// failing
+            m_Ostr << m_UnavailableString;
+        }
 
         list< CIRef<IFormatter> >::const_iterator i = it;
         ++i;

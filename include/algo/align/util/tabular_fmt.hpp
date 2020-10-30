@@ -75,7 +75,8 @@ public:
 
     typedef map< string, CIRef<IFormatter> > TFormatterMap;
 
-    CTabularFormatter(CNcbiOstream& ostr, objects::CScoreLookup &scores);
+    CTabularFormatter(CNcbiOstream& ostr, objects::CScoreLookup &scores,
+                      const string &unavailable_string = "");
     void SetFormat(const string& format);
 
     void SetGencoll(CConstRef<objects::CGC_Assembly> gencoll);
@@ -99,6 +100,7 @@ private:
     objects::CScoreLookup *m_Scores;
     CNcbiOstream &m_Ostr;
     TFormatterMap m_FormatterMap;
+    string m_UnavailableString;
 
     static void s_RegisterStandardFields(CTabularFormatter &formatter);
 };
