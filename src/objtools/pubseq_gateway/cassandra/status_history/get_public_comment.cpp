@@ -93,14 +93,24 @@ CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
     , m_ReplacesRetries(kMaxReplacesRetries)
 {}
 
-void CCassStatusHistoryTaskGetPublicComment::SetDataReadyCB(TDataReadyCallback callback, void * data)
+void CCassStatusHistoryTaskGetPublicComment::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
 {
     if (callback && m_State != eInit) {
         NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBlobTaskLoadBlob: DataReadyCB can't be assigned "
+           "CCassStatusHistoryTaskGetPublicComment: DataReadyCB can't be assigned "
            "after the loading process has started");
     }
-    CCassBlobWaiter::SetDataReadyCB(callback, data);
+    CCassBlobWaiter::SetDataReadyCB3(callback);
+}
+
+void CCassStatusHistoryTaskGetPublicComment::Cancel(void)
+{
+    if (m_State != eDone) {
+        m_Cancelled = true;
+        CloseAll();
+        m_QueryArr.clear();
+        m_State = eError;
+    }
 }
 
 void CCassStatusHistoryTaskGetPublicComment::JumpToReplaced(CBlobRecord::TSatKey replaced)
@@ -235,14 +245,14 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                                 snprintf(msg, sizeof(msg), "Message is empty for (%s)", message_type);
                                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData, eDiag_Error, msg);
                             } else {
-                                m_CommentCallback(comment, true);
+                                m_CommentCallback(move(comment), true);
                             }
                         } else {
                             Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData,
                                 eDiag_Error, "Messages provider not configured for Public Comment retrieval");
                         }
                     } else {
-                        m_CommentCallback(m_PublicComment, true);
+                        m_CommentCallback(move(m_PublicComment), true);
                     }
                 }
                 m_State = eDone;
