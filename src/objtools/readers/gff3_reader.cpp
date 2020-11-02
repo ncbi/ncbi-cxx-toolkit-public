@@ -663,12 +663,6 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
         eDiag_Fatal,
         m_uLineNumber,
         "Bad data line:  Duplicate feature ID \"" + id + "\".");
-    if (record.Id() != mIdToSeqIdMap[id]) {
-        //throw fatal;
-    }
-    if (it->second->GetData().IsRna()) {
-        //throw fatal;
-    }
     CSeq_feat tempFeat;
     if (CSoMap::SoTypeToFeature(record.Type(), tempFeat)) {
         if (it->second->GetData().GetSubtype() != tempFeat.GetData().GetSubtype()) {
