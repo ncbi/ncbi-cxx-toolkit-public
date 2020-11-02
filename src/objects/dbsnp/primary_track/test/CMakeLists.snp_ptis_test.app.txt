@@ -5,4 +5,6 @@
 NCBI_begin_app(snp_ptis_test)
   NCBI_sources(snp_ptis_test)
   NCBI_uses_toolkit_libraries(dbsnp_ptis)
+  NCBI_set_test_requires(in-house-resources GRPC)
+  NCBI_add_test()
 NCBI_end_app()
