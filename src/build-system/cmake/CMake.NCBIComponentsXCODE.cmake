@@ -89,6 +89,14 @@ set(NCBI_ThirdParty_GMP       ${NCBI_TOOLS_ROOT}/gmp-6.0.0a)
 #############################################################################
 
 #############################################################################
+# in-house-resources
+if(EXISTS "${NCBI_TOOLS_ROOT}/.ncbirc" AND EXISTS "/am/ncbiapdata/test_data")
+    set(NCBITEST_TESTDATA_PATH "/am/ncbiapdata/test_data")
+    set(NCBI_REQUIRE_in-house-resources_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES in-house-resources)
+endif()
+
+#############################################################################
 # NCBI_C
 set(NCBI_COMPONENT_NCBI_C_FOUND NO)
 

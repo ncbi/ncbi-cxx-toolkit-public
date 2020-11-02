@@ -86,7 +86,12 @@ set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPar
 #############################################################################
 
 #############################################################################
-#############################################################################
+# in-house-resources
+if(EXISTS "${NCBI_TOOLS_ROOT}/Scripts/test_data")
+    set(NCBITEST_TESTDATA_PATH "${NCBI_TOOLS_ROOT}/Scripts/test_data")
+    set(NCBI_REQUIRE_in-house-resources_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES in-house-resources)
+endif()
 
 #############################################################################
 # NCBI_C

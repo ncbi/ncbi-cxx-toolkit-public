@@ -104,6 +104,14 @@ set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.5 CACHE PATH "H2O r
 #############################################################################
 
 #############################################################################
+# in-house-resources
+if(EXISTS "${NCBI_TOOLS_ROOT}/.ncbirc" AND EXISTS "/am/ncbiapdata/test_data")
+    set(NCBITEST_TESTDATA_PATH "/am/ncbiapdata/test_data")
+    set(NCBI_REQUIRE_in-house-resources_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES in-house-resources)
+endif()
+
+#############################################################################
 # NCBI_C
 if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
     set(NCBI_C_ROOT "${NCBI_TOOLS_ROOT}/ncbi")
