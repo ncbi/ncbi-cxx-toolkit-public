@@ -7,7 +7,7 @@ NCBI_begin_app(vdb_test)
   NCBI_uses_toolkit_libraries(sraread)
   NCBI_project_watchers(vasilche ucko)
 
-  NCBI_set_test_requires(-MSWin)
+  NCBI_set_test_requires(in-house-resources -MSWin)
   NCBI_begin_test(vdb_test_SRA)
     NCBI_set_test_command(vdb_test -acc SRR035417 -refseq_table -quality_graph -seq_entry  -scan_reads)
   NCBI_end_test()

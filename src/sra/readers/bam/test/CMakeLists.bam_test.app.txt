@@ -7,6 +7,7 @@ NCBI_begin_app(bam_test)
   NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
   NCBI_project_watchers(vasilche ucko)
 
+  NCBI_set_test_requires(in-house-resources -MSWin)
   NCBI_begin_test(bam_test_no_index0)
     NCBI_set_test_command(bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -no_index)
   NCBI_end_test()

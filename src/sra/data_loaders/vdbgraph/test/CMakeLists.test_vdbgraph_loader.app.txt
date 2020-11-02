@@ -7,6 +7,7 @@ NCBI_begin_app(test_vdbgraph_loader)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_vdbgraph)
   NCBI_project_watchers(vasilche)
+  NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
 NCBI_end_app()
 
