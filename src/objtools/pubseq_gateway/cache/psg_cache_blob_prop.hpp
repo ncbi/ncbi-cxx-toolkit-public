@@ -56,6 +56,7 @@ class CPubseqGatewayCacheBlobProp
     void Open(const set<int>& sat_ids);
 
     vector<CBlobRecord> Fetch(CBlobFetchRequest const& request);
+    vector<CBlobRecord> FetchLast(CBlobFetchRequest const& request);
 
     static string PackKey(int32_t sat_key);
     static string PackKey(int32_t sat_key, int64_t last_modified);

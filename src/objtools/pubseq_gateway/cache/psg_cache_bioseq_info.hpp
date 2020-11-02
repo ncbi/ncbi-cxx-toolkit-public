@@ -53,6 +53,7 @@ class CPubseqGatewayCacheBioseqInfo
     void Open();
 
     vector<CBioseqInfoRecord> Fetch(CBioseqInfoFetchRequest const& request);
+    vector<CBioseqInfoRecord> FetchLast(void);
 
     static string PackKey(const string& accession, int version);
     static string PackKey(const string& accession, int version, int seq_id_type);

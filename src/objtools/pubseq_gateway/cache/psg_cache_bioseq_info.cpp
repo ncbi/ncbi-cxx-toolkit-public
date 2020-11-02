@@ -179,7 +179,8 @@ vector<CBioseqInfoRecord> CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchR
         if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
             lmdb::val key;
             string accession = request.GetAccession();
-            while (cursor.get(key, val, MDB_GET_CURRENT)) {
+            bool has_current = cursor.get(key, val, MDB_GET_CURRENT);
+            while (has_current) {
                 int seq_id_type{-1}, version{-1};
                 int64_t gi{-1};
                 if (
@@ -189,8 +190,8 @@ vector<CBioseqInfoRecord> CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchR
                     break;
                 }
 
-                bool rv = UnpackKey(key.data<const char>(), key.size(), version, seq_id_type, gi);
-                if (rv && x_IsMatchingRecord(request, version, seq_id_type, gi)) {
+                has_current = UnpackKey(key.data<const char>(), key.size(), version, seq_id_type, gi);
+                if (has_current && x_IsMatchingRecord(request, version, seq_id_type, gi)) {
                     response.resize(response.size() + 1);
                     auto& last_record = response[response.size() - 1];
                     last_record
@@ -203,8 +204,40 @@ vector<CBioseqInfoRecord> CPubseqGatewayCacheBioseqInfo::Fetch(CBioseqInfoFetchR
                         response.resize(response.size() - 1);
                     }
                 }
-                rv = cursor.get(key, val, MDB_NEXT);
+                has_current = cursor.get(key, val, MDB_NEXT);
             }
+        }
+    }
+
+    return response;
+}
+
+vector<CBioseqInfoRecord> CPubseqGatewayCacheBioseqInfo::FetchLast(void)
+{
+    vector<CBioseqInfoRecord> response;
+    {
+        auto rdtxn = BeginReadTxn();
+        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
+        lmdb::val key, val;
+        bool current = cursor.get(key, val, MDB_LAST);
+        while (current) {
+            int seq_id_type{-1}, version{-1};
+            int64_t gi{-1};
+            string accession;
+            if (UnpackKey(key.data<const char>(), key.size(), accession, version, seq_id_type, gi)) {
+                response.resize(response.size() + 1);
+                auto& last_record = response[response.size() - 1];
+                last_record
+                    .SetAccession(accession)
+                    .SetVersion(version)
+                    .SetSeqIdType(seq_id_type)
+                    .SetGI(gi);
+                // Skip record if we cannot parse protobuf data
+                if (!x_ExtractRecord(last_record, val)) {
+                    response.resize(response.size() - 1);
+                }
+            }
+            current = cursor.get(key, val, MDB_NEXT);
         }
     }
 

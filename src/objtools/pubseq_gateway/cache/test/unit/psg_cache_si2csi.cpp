@@ -138,5 +138,24 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
     EXPECT_EQ(3643631, response[0].GetGI());
 }
 
+TEST_F(CPsgCacheSi2CsiTest, LookupCsiForLastRecord)
+{
+    auto response = m_Cache->FetchSi2CsiLast();
+    ASSERT_FALSE(response.empty());
+    auto last = response[response.size() - 1];
+
+    CPubseqGatewayCache::TSi2CsiRequest request;
+    request.SetSecSeqId(last.GetSecSeqId()).SetSecSeqIdType(last.GetSecSeqIdType());
+    response = m_Cache->FetchSi2Csi(request);
+
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(last.GetSecSeqId(), response[0].GetSecSeqId());
+    EXPECT_EQ(last.GetSecSeqIdType(), response[0].GetSecSeqIdType());
+    EXPECT_EQ(last.GetAccession(), response[0].GetAccession());
+    EXPECT_EQ(last.GetVersion(), response[0].GetVersion());
+    EXPECT_EQ(last.GetSeqIdType(), response[0].GetSeqIdType());
+    EXPECT_EQ(last.GetGI(), response[0].GetGI());
+}
+
 END_SCOPE()
 

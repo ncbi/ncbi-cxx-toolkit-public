@@ -90,8 +90,11 @@ class CPubseqGatewayCache
     }
 
     TBioseqInfoResponse FetchBioseqInfo(TBioseqInfoRequest const& request);
+    TBioseqInfoResponse FetchBioseqInfoLast(void);
     TBlobPropResponse FetchBlobProp(TBlobPropRequest const& request);
+    TBlobPropResponse FetchBlobPropLast(TBlobPropRequest const& request);
     TSi2CsiResponse FetchSi2Csi(CSi2CsiFetchRequest const& request);
+    TSi2CsiResponse FetchSi2CsiLast(void);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);

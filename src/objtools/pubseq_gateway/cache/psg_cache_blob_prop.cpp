@@ -141,7 +141,8 @@ vector<CBlobRecord> CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& 
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
         if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
             lmdb::val key;
-            while (cursor.get(key, val, MDB_GET_CURRENT)) {
+            bool has_current = cursor.get(key, val, MDB_GET_CURRENT);
+            while (has_current) {
                 int64_t last_modified{-1};
                 if (
                     key.size() != kPackedKeySize
@@ -150,8 +151,8 @@ vector<CBlobRecord> CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& 
                     break;
                 }
 
-                bool rv = UnpackKey(key.data<const char>(), key.size(), last_modified);
-                if (rv && (!with_modified || last_modified == request.GetLastModified())) {
+                has_current = UnpackKey(key.data<const char>(), key.size(), last_modified);
+                if (has_current && (!with_modified || last_modified == request.GetLastModified())) {
                     response.resize(response.size() + 1);
                     auto& last_record = response[response.size() - 1];
                     last_record.SetKey(sat_key);
@@ -161,8 +162,46 @@ vector<CBlobRecord> CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& 
                         response.resize(response.size() - 1);
                     }
                 }
-                rv = cursor.get(key, val, MDB_NEXT);
+                has_current = cursor.get(key, val, MDB_NEXT);
             }
+        }
+    }
+    return response;
+}
+
+vector<CBlobRecord> CPubseqGatewayCacheBlobProp::FetchLast(CBlobFetchRequest const& request)
+{
+    vector<CBlobRecord> response;
+    if (!request.HasField(CBlobFetchRequest::EFields::eSat)) {
+        return response;
+    }
+    auto sat = request.GetSat();
+    if (!m_Env || sat < 0 || static_cast<size_t>(sat) >= m_Dbis.size() || !m_Dbis[sat]) {
+        return response;
+    }
+    {
+        auto rdtxn = BeginReadTxn();
+        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
+        lmdb::val key, val;
+        bool has_current = cursor.get(key, val, MDB_LAST);
+        while (has_current) {
+            int64_t last_modified{-1};
+            CBlobRecord::TSatKey sat_key{-1};
+            if (key.size() != kPackedKeySize) {
+                break;
+            }
+            has_current = UnpackKey(key.data<const char>(), key.size(), last_modified, sat_key);
+            if (has_current) {
+                response.resize(response.size() + 1);
+                auto& last_record = response[response.size() - 1];
+                last_record.SetKey(sat_key);
+                last_record.SetModified(last_modified);
+                // Skip record if we cannot parse protobuf data
+                if (!x_ExtractRecord(last_record, val)) {
+                    response.resize(response.size() - 1);
+                }
+            }
+            has_current = cursor.get(key, val, MDB_NEXT);
         }
     }
     return response;

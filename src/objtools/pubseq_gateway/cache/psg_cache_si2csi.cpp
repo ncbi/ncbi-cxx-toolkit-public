@@ -114,7 +114,8 @@ vector<CSI2CSIRecord> CPubseqGatewayCacheSi2Csi::Fetch(CSi2CsiFetchRequest const
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
         if (cursor.get(lmdb::val(filter), val, MDB_SET_RANGE)) {
             lmdb::val key;
-            while (cursor.get(key, val, MDB_GET_CURRENT)) {
+            bool has_current = cursor.get(key, val, MDB_GET_CURRENT);
+            while (has_current) {
                 int sec_seq_it_type{-1};
                 if (
                     key.size() != PackedKeySize(sec_seqid.size())
@@ -122,8 +123,8 @@ vector<CSI2CSIRecord> CPubseqGatewayCacheSi2Csi::Fetch(CSi2CsiFetchRequest const
                 ) {
                     break;
                 }
-                bool rv = UnpackKey(key.data<const char>(), key.size(), sec_seq_it_type);
-                if (rv && (!with_type || sec_seq_it_type == request.GetSecSeqIdType())) {
+                has_current = UnpackKey(key.data<const char>(), key.size(), sec_seq_it_type);
+                if (has_current && (!with_type || sec_seq_it_type == request.GetSecSeqIdType())) {
                     response.resize(response.size() + 1);
                     auto& last_record = response[response.size() - 1];
                     last_record
@@ -134,8 +135,36 @@ vector<CSI2CSIRecord> CPubseqGatewayCacheSi2Csi::Fetch(CSi2CsiFetchRequest const
                         response.resize(response.size() - 1);
                     }
                 }
-                rv = cursor.get(key, val, MDB_NEXT);
+                has_current = cursor.get(key, val, MDB_NEXT);
             }
+        }
+    }
+    return response;
+}
+
+vector<CSI2CSIRecord> CPubseqGatewayCacheSi2Csi::FetchLast(void)
+{
+    vector<CSI2CSIRecord> response;
+    {
+        auto rdtxn = BeginReadTxn();
+        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
+        lmdb::val key, val;
+        bool has_current = cursor.get(key, val, MDB_LAST);
+        while (has_current) {
+            int sec_seq_it_type{-1};
+            string sec_seqid;
+            if (UnpackKey(key.data<const char>(), key.size(), sec_seqid, sec_seq_it_type)) {
+                response.resize(response.size() + 1);
+                auto& last_record = response[response.size() - 1];
+                last_record
+                    .SetSecSeqId(sec_seqid)
+                    .SetSecSeqIdType(sec_seq_it_type);
+                // Skip record if we cannot parse protobuf data
+                if (!x_ExtractRecord(last_record, val)) {
+                    response.resize(response.size() - 1);
+                }
+            }
+            has_current = cursor.get(key, val, MDB_NEXT);
         }
     }
     return response;
@@ -162,6 +191,15 @@ bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& s
         }
     }
     return rv;
+}
+
+bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, string& sec_seqid, int& sec_seq_id_type)
+{
+    if (UnpackKey(key, key_sz, sec_seq_id_type)) {
+        sec_seqid.assign(key, key_sz - (kPackedKeyZero + kPackedSeqIdTypeSz));
+        return true;
+    }
+    return false;
 }
 
 END_IDBLOB_SCOPE

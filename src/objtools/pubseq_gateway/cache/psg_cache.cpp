@@ -169,6 +169,18 @@ CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfo(TB
     return TBioseqInfoResponse();
 }
 
+CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfoLast(void)
+{
+    if (m_BioseqInfoCache) {
+        TBioseqInfoResponse response = m_BioseqInfoCache->FetchLast();
+        for (auto & record : response) {
+            ApplyInheritedSeqIds(m_BioseqInfoCache.get(), record);
+        }
+        return response;
+    }
+    return TBioseqInfoResponse();
+}
+
 CPubseqGatewayCache::TBlobPropResponse CPubseqGatewayCache::FetchBlobProp(TBlobPropRequest const& request)
 {
     if (m_BlobPropCache) {
@@ -178,10 +190,28 @@ CPubseqGatewayCache::TBlobPropResponse CPubseqGatewayCache::FetchBlobProp(TBlobP
     return TBlobPropResponse();
 }
 
+CPubseqGatewayCache::TBlobPropResponse CPubseqGatewayCache::FetchBlobPropLast(TBlobPropRequest const& request)
+{
+    if (m_BlobPropCache) {
+        return m_BlobPropCache->FetchLast(request);
+    }
+
+    return TBlobPropResponse();
+}
+
 CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2Csi(TSi2CsiRequest const& request)
 {
     if (m_Si2CsiCache && request.HasField(TSi2CsiRequest::EFields::eSecSeqId)) {
         return m_Si2CsiCache->Fetch(request);
+    }
+
+    return TSi2CsiResponse();
+}
+
+CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2CsiLast(void)
+{
+    if (m_Si2CsiCache) {
+        return m_Si2CsiCache->FetchLast();
     }
 
     return TSi2CsiResponse();

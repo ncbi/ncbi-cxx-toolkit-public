@@ -164,5 +164,23 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKeyLastModified)
     EXPECT_EQ("cavanaug", response[0].GetUserName());
 }
 
+TEST_F(CPsgCacheBlobPropTest, LookupBlobPropForLastRecord)
+{
+    CPubseqGatewayCache::TBlobPropRequest request;
+    request.SetSat(0);
+    auto response = m_Cache->FetchBlobPropLast(request);
+    ASSERT_FALSE(response.empty());
+    auto last = response[response.size() - 1];
+
+    request.Reset().SetSat(0).SetSatKey(last.GetKey()).SetLastModified(last.GetModified());
+    response = m_Cache->FetchBlobProp(request);
+
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(last.GetModified(), response[0].GetModified());
+    EXPECT_EQ(last.GetModified(), response[0].GetModified());
+    EXPECT_EQ(last.GetDiv(), response[0].GetDiv());
+    EXPECT_EQ(last.GetSize(), response[0].GetSize());
+}
+
 END_SCOPE()
 

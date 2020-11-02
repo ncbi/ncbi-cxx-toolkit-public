@@ -54,9 +54,11 @@ class CPubseqGatewayCacheSi2Csi
     void Open();
 
     vector<CSI2CSIRecord> Fetch(CSi2CsiFetchRequest const& request);
+    vector<CSI2CSIRecord> FetchLast();
 
     static string PackKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type);
+    static bool UnpackKey(const char* key, size_t key_sz, string& sec_seqid, int& sec_seq_id_type);
 
  private:
     bool x_ExtractRecord(CSI2CSIRecord& record, lmdb::val const& value) const;

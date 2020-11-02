@@ -60,6 +60,8 @@ using TJob = enum class EJob {
     jb_unpack_bi_key,
     jb_unpack_si_key,
     jb_unpack_bp_key,
+    jb_last_si,
+    jb_last_bi,
 };
 
 bool IsHex(char ch)
@@ -117,6 +119,7 @@ class CTestPsgCache
         , m_force_version{}
         , m_force_seq_id_type{}
     {}
+    virtual ~CTestPsgCache() = default;
     virtual void Init();
     virtual int Run();
 
@@ -131,6 +134,8 @@ class CTestPsgCache
     void PrintPrimaryId(CSI2CSIRecord const& record) const;
     void PrintBlobProp(CBlobRecord const& record) const;
 
+    void LastSi2Csi(void);
+    void LastBioseqInfo(void);
     void LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type);
     void LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type);
     void LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type);
@@ -156,10 +161,10 @@ void CTestPsgCache::Init()
        "File with configuration information", CArgDescriptions::eString, "test_psg_cache.ini");
     argdesc->AddKey("j", "job", "Job type", CArgDescriptions::eString);
     argdesc->SetConstraint("j",
-        &(*new CArgAllow_Strings, "bi_pri", "bi_sec", "si2csi", "blob_prop", "unp_bi", "unp_si", "unp_bp"),
+        &(*new CArgAllow_Strings, "bi_pri", "bi_sec", "si2csi", "blob_prop", "unp_bi", "unp_si", "unp_bp", "last_si", "last_bi"),
         CArgDescriptions::eConstraint
     );
-    argdesc->AddKey("q", "query", "Query string (depends on job type)", CArgDescriptions::eString);
+    argdesc->AddOptionalKey("q", "query", "Query string (depends on job type)", CArgDescriptions::eString);
     argdesc->AddDefaultKey("v", "ver", "Force version", CArgDescriptions::eInteger, to_string(INT_MIN));
     argdesc->AddDefaultKey("t", "seqidtype", "Force seq_id_type", CArgDescriptions::eInteger, to_string(INT_MIN));
     SetupArgDescriptions(argdesc.release());
@@ -175,6 +180,8 @@ void CTestPsgCache::ParseArgs()
         { "unp_bi", TJob::jb_unpack_bi_key    },
         { "unp_si", TJob::jb_unpack_si_key    },
         { "unp_bp", TJob::jb_unpack_bp_key    },
+        { "last_si", TJob::jb_last_si },
+        { "last_bi", TJob::jb_last_bi },
     });
 
     const CArgs & args = GetArgs();
@@ -191,7 +198,9 @@ void CTestPsgCache::ParseArgs()
         }
         m_job = it->second;
     }
-    m_query = args["q"].AsString();
+    if (args["q"].HasValue()) {
+        m_query = args["q"].AsString();
+    }
     m_force_version = args["v"].AsInteger();
     m_force_seq_id_type = args["t"].AsInteger();
 }
@@ -203,6 +212,14 @@ int CTestPsgCache::Run()
     m_LookupCache->Open({4});
 
     switch (m_job) {
+        case TJob::jb_last_si: {
+            LastSi2Csi();
+            break;
+        }
+        case TJob::jb_last_bi: {
+            LastBioseqInfo();
+            break;
+        }
         case TJob::jb_lookup_bi_primary: {
             LookupBioseqInfoByPrimary(m_query, m_force_version, m_force_seq_id_type);
             break;
@@ -409,6 +426,30 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int for
     }
 
     LookupBioseqInfoByPrimaryAVT(accession, version, seq_id_type);
+}
+
+void CTestPsgCache::LastSi2Csi(void)
+{
+    auto response = m_LookupCache->FetchSi2CsiLast();
+    if (response.empty()) {
+        cout << "result: si2csi should be empty" << endl;
+    } else {
+        for (auto & item : response) {
+            PrintPrimaryId(item);
+        }
+    }
+}
+
+void CTestPsgCache::LastBioseqInfo(void)
+{
+    auto response = m_LookupCache->FetchBioseqInfoLast();
+    if (response.empty()) {
+        cout << "result: bioseq_info should be empty" << endl;
+    } else {
+        for (auto & item : response) {
+            PrintBioseqInfo(item);
+        }
+    }
 }
 
 void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type)

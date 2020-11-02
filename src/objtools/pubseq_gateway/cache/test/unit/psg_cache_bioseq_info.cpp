@@ -238,5 +238,26 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
     EXPECT_EQ(expected_seq_ids, response[0].GetSeqIds());
 }
 
+TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoForLastRecord)
+{
+    auto response = m_Cache->FetchBioseqInfoLast();
+    ASSERT_FALSE(response.empty());
+    auto last = response[response.size() - 1];
+
+    CPubseqGatewayCache::TBioseqInfoRequest request;
+    request
+        .SetAccession(last.GetAccession())
+        .SetVersion(last.GetVersion())
+        .SetSeqIdType(last.GetSeqIdType())
+        .SetGI(last.GetGI());
+    response = m_Cache->FetchBioseqInfo(request);
+
+    ASSERT_EQ(1UL, response.size());
+    EXPECT_EQ(last.GetAccession(), response[0].GetAccession());
+    EXPECT_EQ(last.GetVersion(), response[0].GetVersion());
+    EXPECT_EQ(last.GetSeqIdType(), response[0].GetSeqIdType());
+    EXPECT_EQ(last.GetGI(), response[0].GetGI());
+}
+
 END_SCOPE()
 
