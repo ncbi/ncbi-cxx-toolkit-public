@@ -5,6 +5,7 @@
 NCBI_requires(Boost.Test.Included)
 NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/../../api)
 NCBI_add_definitions(NCBI_MODULE=BLAST)
+NCBI_set_test_requires(in-house-resources)
 
 NCBI_add_library(blast_unit_test_util seqalign_util)
 
