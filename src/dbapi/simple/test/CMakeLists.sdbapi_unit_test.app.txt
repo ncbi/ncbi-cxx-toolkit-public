@@ -15,6 +15,7 @@ NCBI_begin_app(sdbapi_unit_test)
   NCBI_set_pch_header(sdbapi_unit_test_pch.hpp)
   NCBI_uses_toolkit_libraries(sdbapi)
 
+  NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_assets(sdbapi_unit_test.ini)
   NCBI_set_test_timeout(600)
   NCBI_add_test(sdbapi_unit_test -dr ftds95 -S MsSql)

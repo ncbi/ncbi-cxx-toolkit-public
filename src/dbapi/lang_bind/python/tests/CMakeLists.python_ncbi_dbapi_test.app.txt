@@ -20,7 +20,7 @@ NCBI_begin_app(python_ncbi_dbapi_test)
   endif()
   NCBI_project_watchers(ucko satskyse)
 
-  NCBI_set_test_requires(unix DLL_BUILD)
+  NCBI_set_test_requires(unix DLL_BUILD in-house-resources)
   NCBI_set_test_resources(PythonTest)
   NCBI_set_test_assets(python_ncbi_dbapi_test.ini)
   NCBI_set_test_timeout(300)
