@@ -848,7 +848,7 @@
 #cmakedefine HAVE_LIBBZ2 1
 
 /* Define to 1 if non-public CONNECT extensions are available. */
-#define HAVE_LIBCONNEXT 1
+#cmakedefine HAVE_LIBCONNEXT 1
 
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
@@ -875,7 +875,7 @@
 #cmakedefine HAVE_LIBFASTCGI 1
 
 /* Define to 1 if FreeTDS libraries are available. */
-#define HAVE_LIBFTDS 1
+#cmakedefine HAVE_LIBFTDS 1
 
 /* Define to 1 if libftgl is available. */
 #cmakedefine HAVE_LIBFTGL 1

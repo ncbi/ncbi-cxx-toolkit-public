@@ -17,6 +17,10 @@
 
 set(NCBI_REQUIRE_MSWin_FOUND YES)
 list(APPEND NCBI_ALL_REQUIRES MSWin)
+if(BUILD_SHARED_LIBS)
+    set(NCBI_REQUIRE_DLL_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES DLL)
+endif()
 #to debug
 #set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################

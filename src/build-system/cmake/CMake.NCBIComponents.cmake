@@ -603,7 +603,7 @@ else()
 endif()
 
 #############################################################################
-#LocalLMDB
+# LocalLMDB
 if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb)
   set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES LocalLMDB)
@@ -614,11 +614,27 @@ else()
 endif()
 
 #############################################################################
+# connext
+if (EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt)
+  set(NCBI_REQUIRE_connext_FOUND YES)
+  set(HAVE_LIBCONNEXT 1)
+  list(APPEND NCBI_ALL_REQUIRES connext)
+endif()
+
+#############################################################################
+# PubSeqOS
+if (EXISTS ${NCBITK_SRC_ROOT}/objtools/data_loaders/genbank/pubseq/CMakeLists.txt)
+  set(NCBI_REQUIRE_PubSeqOS_FOUND YES)
+  list(APPEND NCBI_ALL_REQUIRES PubSeqOS)
+endif()
+
+#############################################################################
 # FreeTDS
 set(FTDS95_INCLUDE  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95/freetds)
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
 set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
+set(HAVE_LIBFTDS 1)
 list(APPEND NCBI_ALL_REQUIRES FreeTDS)
 set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS100_INCLUDE})
 #set(NCBI_COMPONENT_FreeTDS_LIBS    ct_ftds100)
@@ -650,3 +666,4 @@ set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/d
 
 #############################################################################
 list(SORT NCBI_ALL_COMPONENTS)
+list(SORT NCBI_ALL_REQUIRES)
