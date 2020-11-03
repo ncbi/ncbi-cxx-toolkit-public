@@ -16,4 +16,4 @@ LOCAL_CPPFLAGS += -fno-delete-null-pointer-checks
 LOCAL_LDFLAGS = -L$(import_root)/../lib
 LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(LOCAL_LDFLAGS) $(COVERAGE_FLAGS)
 
-#CHECK_CMD = psg_cache_unit
+CHECK_CMD = psg_cache_unit

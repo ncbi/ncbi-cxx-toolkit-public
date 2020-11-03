@@ -187,9 +187,9 @@ void CTestPsgCache::ParseArgs()
     const CArgs & args = GetArgs();
     const CNcbiRegistry & registry = GetConfig();
 
-    m_Si2csiDbFile = registry.GetString("LMDB_CACHE", "dbfile_si2csi", "");
-    m_BioseqInfoDbFile = registry.GetString("LMDB_CACHE", "dbfile_bioseq_info", "");
-    m_BlobPropDbFile = registry.GetString("LMDB_CACHE", "dbfile_blob_prop", "");
+    m_Si2csiDbFile = registry.GetString("LMDB_CACHE", "si2csi", "");
+    m_BioseqInfoDbFile = registry.GetString("LMDB_CACHE", "bioseq_info", "");
+    m_BlobPropDbFile = registry.GetString("LMDB_CACHE", "blob_prop", "");
 
     if (args["j"]) {
         auto it = jm.find(args["j"].AsString());
