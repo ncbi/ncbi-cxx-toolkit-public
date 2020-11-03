@@ -703,16 +703,20 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                 if (prot_f) {
                     feature::GetLabel(*(prot_f->GetSeq_feat()), &label, feature::fFGL_Content);
                     if (m_MainFeat.IsSetPartial() && m_MainFeat.GetPartial()) {
-                        CFeat_CI mat_pi(prot_h, CSeqFeatData::eSubtype_mat_peptide_aa);
-                        if (mat_pi && mat_pi->GetData().GetProt().IsSetName()) {
-                            const string&  m_name = mat_pi->GetData().GetProt().GetName().front();
-                            ++mat_pi;
-                            if (!mat_pi && !m_name.empty()) {
-                                if (label.empty()) {
-                                    label = m_name;
-                                }
-                                else {
-                                    label += ", " + m_name + " region,";
+                        // RW-1216 suppress mat-peptide region phrase if sig-peptide also present
+                        CFeat_CI sig_pi(prot_h, CSeqFeatData::eSubtype_sig_peptide_aa);
+                        if (!sig_pi) {
+                            CFeat_CI mat_pi(prot_h, CSeqFeatData::eSubtype_mat_peptide_aa);
+                            if (mat_pi && mat_pi->GetData().GetProt().IsSetName()) {
+                                const string&  m_name = mat_pi->GetData().GetProt().GetName().front();
+                                ++mat_pi;
+                                if (!mat_pi && !m_name.empty()) {
+                                    if (label.empty()) {
+                                        label = m_name;
+                                    }
+                                    else {
+                                        label += ", " + m_name + " region,";
+                                    }
                                 }
                             }
                         }

@@ -2481,7 +2481,17 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4529)
 }
 
 
-void TestMatPeptideListing(bool cds_is_partial)
+void AddProtFeat(CRef<CSeq_entry> prot, CProt_ref::EProcessed proc)
+{
+    CRef<CSeq_feat> p = unit_test_util::AddMiscFeature(prot);
+    p->SetData().SetProt().SetProcessed(proc);
+    p->SetData().SetProt().SetName().clear();
+    p->SetData().SetProt().SetName().push_back("RdRp");
+    p->ResetComment();
+}
+
+
+void TestMatPeptideListing(bool cds_is_partial, bool has_sig_peptide)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
@@ -2497,14 +2507,17 @@ void TestMatPeptideListing(bool cds_is_partial)
     pfeat->SetData().SetProt().SetName().clear();
     pfeat->SetData().SetProt().SetName().push_back("nonstructural polyprotein");
     CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
-    CRef<CSeq_feat> matp = unit_test_util::AddMiscFeature(prot);
-    matp->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
-    matp->SetData().SetProt().SetName().clear();
-    matp->SetData().SetProt().SetName().push_back("RdRp");
-    matp->ResetComment();
+    AddProtFeat(prot, CProt_ref::eProcessed_mature);
+    if (has_sig_peptide) {
+        AddProtFeat(prot, CProt_ref::eProcessed_signal_peptide);
+    }
 
     if (cds_is_partial) {
-        AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein, RdRp region, (ORF1) gene, partial cds.");
+        if (has_sig_peptide) {
+            AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein (ORF1) gene, partial cds.");
+        } else {
+            AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein, RdRp region, (ORF1) gene, partial cds.");
+        }
     } else {
         AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein (ORF1) gene, complete cds.");
     }
@@ -2514,8 +2527,10 @@ void TestMatPeptideListing(bool cds_is_partial)
 
 BOOST_AUTO_TEST_CASE(Test_SQD_4593)
 {
-    TestMatPeptideListing(true);
-    TestMatPeptideListing(false);
+    TestMatPeptideListing(true, false);
+    TestMatPeptideListing(true, true);
+    TestMatPeptideListing(false, false);
+    TestMatPeptideListing(false, true);
 }
 
 
