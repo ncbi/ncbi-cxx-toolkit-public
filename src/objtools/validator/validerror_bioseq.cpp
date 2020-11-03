@@ -549,7 +549,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     if ( letter_after_digit  ||  bad_id_chars ) {
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, ctx);
-                    } else if ( is_NZ  &&  num_letters == 4  && 
+                    } else if ( is_NZ  &&  ( num_letters == 4 || num_letters == 6 )  && 
                         ( num_digits == 8 || num_digits == 9 )  &&  num_underscores == 0 ) {
                         // valid accession - do nothing!
                     } else if ( is_NZ  &&  ValidateAccessionString (acc, false) == eAccessionFormat_valid ) {
