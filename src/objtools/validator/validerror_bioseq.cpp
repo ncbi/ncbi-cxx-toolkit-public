@@ -285,6 +285,7 @@ void CValidError_bioseq::x_SetupCommonFlags (CBioseq_Handle bsh)
             }
             m_is_plasmid = (genome == NCBI_GENOME(plasmid));
             m_is_chromosome = (genome == NCBI_GENOME(chromosome));
+            m_is_extrachrom = (genome == NCBI_GENOME(extrachrom));
         }
 
         ++d;
@@ -302,6 +303,7 @@ void CValidError_bioseq::ValidateBioseq (
     m_is_bact_or_arch = false;
     m_is_plasmid = false;
     m_is_chromosome = false;
+    m_is_extrachrom = false;
 
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
@@ -1154,13 +1156,15 @@ void CValidError_bioseq::ValidateInst(
             case CSeq_inst::eMol_dna:
                 if (seq.IsSetInst() && seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
                     if (m_is_bact_or_arch) {
-                        if (! m_is_plasmid && ! m_is_chromosome) {
+                        if (! m_is_plasmid && ! m_is_chromosome  && ! m_is_extrachrom) {
                             EDiagSev sev = eDiag_Error;
-                            if (IsEmblOrDdbj(seq)) {
+                            if (IsRefSeq(seq) || m_Imp.IsRefSeqConventions()) {
+                                sev = eDiag_Error;
+                            } else if (IsEmblOrDdbj(seq)) {
                                 sev = eDiag_Warning;
                             }
                             PostErr(sev, eErr_SEQ_INST_CircBactGenomeProblem,
-                                     "Circular Bacteria or Archaea should be chromosome or plasmid", seq);
+                                     "Circular Bacteria or Archaea should be chromosome, or plasmid, or extrachromosomal", seq);
                         }
                     }
                 }

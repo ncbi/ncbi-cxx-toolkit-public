@@ -341,6 +341,7 @@ private:
     bool m_is_bact_or_arch;
     bool m_is_plasmid;
     bool m_is_chromosome;
+    bool m_is_extrachrom;
 };
 
 
