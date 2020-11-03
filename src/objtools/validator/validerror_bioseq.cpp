@@ -550,7 +550,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, ctx);
                     } else if ( is_NZ  &&  ( num_letters == 4 || num_letters == 6 )  && 
-                        ( num_digits == 8 || num_digits == 9 )  &&  num_underscores == 0 ) {
+                        ( num_digits >= 8 && num_digits <= 11 )  &&  num_underscores == 0 ) {
                         // valid accession - do nothing!
                     } else if ( is_NZ  &&  ValidateAccessionString (acc, false) == eAccessionFormat_valid ) {
                         // valid accession - do nothing!
@@ -619,7 +619,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                         size_t idlen = dbt.GetTag().GetStr().length();
                         static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
-                        if (idlen > maxlen) {
+                        if (idlen > maxlen && ! m_Imp.IsGI()) {
                             PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
                         }
                         if (idlen == 0) {
