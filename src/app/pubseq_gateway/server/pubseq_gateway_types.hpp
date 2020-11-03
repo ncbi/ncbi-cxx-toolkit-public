@@ -89,6 +89,7 @@ enum EPSGS_DbFetchType {
     ePSGS_BioseqInfoFetch,
     ePSGS_Si2csiFetch,
     ePSGS_SplitHistoryFetch,
+    ePSGS_PublicCommentFetch,
     ePSGS_UnknownFetch
 };
 

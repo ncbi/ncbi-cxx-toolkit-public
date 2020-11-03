@@ -42,8 +42,7 @@ using namespace std::placeholders;
 
 
 CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor() :
-    m_BlobRequest(nullptr),
-    m_Cancelled(false)
+    m_BlobRequest(nullptr)
 {}
 
 
@@ -53,8 +52,7 @@ CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor(
                                         TProcessorPriority  priority,
                                         const SCass_BlobId &  blob_id) :
     CPSGS_CassProcessorBase(request, reply),
-    CPSGS_CassBlobBase(request, reply, GetName()),
-    m_Cancelled(false)
+    CPSGS_CassBlobBase(request, reply, GetName())
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;

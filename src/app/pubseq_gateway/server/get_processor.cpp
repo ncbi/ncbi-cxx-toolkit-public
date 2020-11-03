@@ -42,8 +42,7 @@ using namespace std::placeholders;
 
 
 CPSGS_GetProcessor::CPSGS_GetProcessor() :
-    m_BlobRequest(nullptr),
-    m_Cancelled(false)
+    m_BlobRequest(nullptr)
 {}
 
 
@@ -56,8 +55,7 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                            this, _1),
                       bind(&CPSGS_GetProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4)),
-    CPSGS_CassBlobBase(request, reply, GetName()),
-    m_Cancelled(false)
+    CPSGS_CassBlobBase(request, reply, GetName())
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;

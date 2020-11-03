@@ -41,6 +41,7 @@ void CCassNamedAnnotFetch::ResetCallbacks(void)
     if (m_Loader) {
         CCassNAnnotTaskFetch *      loader =
                     static_cast<CCassNAnnotTaskFetch *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
     }
@@ -68,7 +69,7 @@ void CCassBlobFetch::ResetCallbacks(void)
     if (m_Loader) {
         CCassBlobTaskLoadBlob *     loader =
                         static_cast<CCassBlobTaskLoadBlob *>(m_Loader.get());
-        loader->SetDataReadyCB(nullptr, nullptr);
+        loader->SetDataReadyCB(nullptr);
         loader->SetErrorCB(nullptr);
         loader->SetChunkCallback(nullptr);
     }
@@ -80,6 +81,7 @@ void CCassBioseqInfoFetch::ResetCallbacks(void)
     if (m_Loader) {
         CCassBioseqInfoTaskFetch *      loader =
                     static_cast<CCassBioseqInfoTaskFetch *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
     }
@@ -91,6 +93,7 @@ void CCassSi2csiFetch::ResetCallbacks(void)
     if (m_Loader) {
         CCassSI2CSITaskFetch *      loader =
                     static_cast<CCassSI2CSITaskFetch *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
     }
@@ -102,7 +105,20 @@ void CCassSplitHistoryFetch::ResetCallbacks(void)
     if (m_Loader) {
         CCassBlobTaskFetchSplitHistory *    loader =
             static_cast<CCassBlobTaskFetchSplitHistory *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
+        loader->SetErrorCB(nullptr);
+    }
+}
+
+
+void CCassPublicCommentFetch::ResetCallbacks(void)
+{
+    if (m_Loader) {
+        CCassStatusHistoryTaskGetPublicComment *    loader =
+            static_cast<CCassStatusHistoryTaskGetPublicComment *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
+        loader->SetCommentCallback(nullptr);
         loader->SetErrorCB(nullptr);
     }
 }

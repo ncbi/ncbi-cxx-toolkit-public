@@ -62,13 +62,15 @@ if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
     exit 0
 fi
 
-if [[ $obasename == "many_chunk_blob" ]]; then
+TESTS="many_chunk_blob get_auto_blob_skipping_no2 get_auto_blob_skipping_no1 get_115952497_3 get_115952497__12_3 get_with_exclude_not_excluded get_115952497_2 get_115952497__12_2 get_fasta_bbm_164040 get_fasta_bbm_164040__3 get_AC052670 get_AC052670__5 get_115952497 get_115952497__12 get_164040__3 get_invalid_exclude_blob comment_basic_suppressed comment_basic_diff_suppressed comment_basic_withdrawn comment_withdrawn_default"
+if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
-    curl -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sort > $ofile
+    curl -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sed  -r 's/item_id=[0-9]+&//g' | sort > $ofile
     exit 0
 fi
 
-if [[ $obasename == "get_AC052670__5" ]] || [[ $obasename == "get_AC052670" ]] || [[ $obasename == "get_splitted_tse_whole" ]] || [[ $obasename == "get_splitted_tse_orig" ]] || [[ $obasename == "get_non_splitted_tse_smart" ]] || [[ $obasename == "get_non_splitted_tse_whole" ]] || [[ $obasename == "get_non_splitted_tse_orig" ]] || [[ $obasename == "get_blob_splitted_tse_whole" ]] || [[ $obasename == "get_blob_splitted_tse_orig" ]] || [[ $obasename == "get_blob_non_splitted_tse_smart" ]] || [[ $obasename == "get_blob_non_splitted_tse_whole" ]] || [[ $obasename == "get_blob_non_splitted_tse_orig" ]]; then
+TESTS="get_splitted_tse_whole get_splitted_tse_orig get_non_splitted_tse_smart get_non_splitted_tse_whole get_non_splitted_tse_orig get_blob_splitted_tse_whole get_blob_splitted_tse_orig get_blob_non_splitted_tse_smart get_blob_non_splitted_tse_whole get_blob_non_splitted_tse_orig"
+if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in arbitrary order so diff may fail
     curl -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sed  -r 's/item_id=[0-9]+&//g' | sort > $ofile
     exit 0

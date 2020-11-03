@@ -95,7 +95,6 @@ private:
 private:
     SPSGS_BlobBySeqIdRequest *      m_BlobRequest;
     vector<SCass_BlobId>            m_ExcludeBlobs;
-    bool                            m_Cancelled;
 };
 
 #endif  // PSGS_GETPROCESSOR__HPP

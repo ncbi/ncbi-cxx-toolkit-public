@@ -117,7 +117,6 @@ private:
 
 private:
     SPSGS_TSEChunkRequest *                             m_TSEChunkRequest;
-    bool                                                m_Cancelled;
 
     // NB: Only one will be populated
     shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>     m_SatInfoChunkVerId2Info;

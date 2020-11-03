@@ -81,7 +81,6 @@ private:
 
 private:
     SPSGS_BlobBySatSatKeyRequest *  m_BlobRequest;
-    bool                            m_Cancelled;
 };
 
 #endif  // PSGS_GETBLOBPROCESSOR__HPP

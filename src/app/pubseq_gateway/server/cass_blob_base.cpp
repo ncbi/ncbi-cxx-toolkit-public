@@ -43,11 +43,13 @@
 #include "cass_blob_base.hpp"
 #include "pubseq_gateway_cache_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
+#include "public_comment_callback.hpp"
 
 using namespace std::placeholders;
 
 
 CPSGS_CassBlobBase::CPSGS_CassBlobBase() :
+    m_Cancelled(false),
     m_LastModified(-1)
 {}
 
@@ -56,6 +58,7 @@ CPSGS_CassBlobBase::CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
                                        shared_ptr<CPSGS_Reply>  reply,
                                        const string &  processor_id) :
     CPSGS_CassProcessorBase(request, reply),
+    m_Cancelled(false),
     m_NeedToParseId2Info(true),
     m_ProcessorId(processor_id),
     m_LastModified(-1)
@@ -901,20 +904,73 @@ CPSGS_CassBlobBase::x_GetId2ChunkNumber(CCassBlobFetch *  fetch_details)
 
 
 void
-CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  fetch_details,
+CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                                           CBlobRecord const &  blob)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    bool    need_id2_identification = NeedToAddId2CunkId2Info();
+
+    // CXX-11547: may be public comments request is needed as well
+    if (blob.GetFlag(EBlobFlags::eSuppress) ||
+        blob.GetFlag(EBlobFlags::eWithdrawn)) {
+        // Request public comment
+        auto                                    app = CPubseqGatewayApp::GetInstance();
+        unique_ptr<CCassPublicCommentFetch>     comment_fetch_details;
+        comment_fetch_details.reset(new CCassPublicCommentFetch());
+        // Memorize the identification which will be used at the moment of
+        // sending the comment to the client
+        if (need_id2_identification) {
+            comment_fetch_details->SetId2Identification(
+                x_GetId2ChunkNumber(blob_fetch_details),
+                m_Id2Info->Serialize());
+        } else {
+            comment_fetch_details->SetCassBlobIdentification(
+                blob_fetch_details->GetBlobId(),
+                m_LastModified);
+        }
+
+        CCassStatusHistoryTaskGetPublicComment *    load_task =
+            new CCassStatusHistoryTaskGetPublicComment(app->GetCassandraTimeout(),
+                                                       app->GetCassandraMaxRetries(),
+                                                       app->GetCassandraConnection(),
+                                                       blob_fetch_details->GetBlobId().m_Keyspace,
+                                                       blob, nullptr);
+        comment_fetch_details->SetLoader(load_task);
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+        load_task->SetErrorCB(
+            CPublicCommentErrorCallback(
+                bind(&CPSGS_CassBlobBase::OnPublicCommentError,
+                     this, _1, _2, _3, _4, _5),
+                comment_fetch_details.get()));
+        load_task->SetCommentCallback(
+            CPublicCommentConsumeCallback(
+                bind(&CPSGS_CassBlobBase::OnPublicComment,
+                     this, _1, _2, _3),
+                comment_fetch_details.get()));
+        load_task->SetMessages(app->GetPublicCommentsMapping());
+
+        if (m_Request->NeedTrace()) {
+            m_Reply->SendTrace(
+                "Cassandra request: " +
+                ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                m_Request->GetStartTimestamp());
+        }
+
+        m_FetchDetails.push_back(move(comment_fetch_details));
+        load_task->Wait();  // Initiate cassandra request
+    }
+
+
+    if (need_id2_identification) {
+        m_Reply->PrepareTSEBlobPropData(
+            blob_fetch_details, m_ProcessorId,
+            x_GetId2ChunkNumber(blob_fetch_details), m_Id2Info->Serialize(),
+            ToJson(blob).Repr(CJsonNode::fStandardJson));
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob props without id2_chunk/id2_info
         m_Reply->PrepareBlobPropData(
-            fetch_details, m_ProcessorId,
+            blob_fetch_details, m_ProcessorId,
             ToJson(blob).Repr(CJsonNode::fStandardJson), m_LastModified);
-    } else {
-        m_Reply->PrepareTSEBlobPropData(
-            fetch_details, m_ProcessorId,
-            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
-            ToJson(blob).Repr(CJsonNode::fStandardJson));
     }
 }
 
@@ -922,12 +978,12 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  fetch_details,
 void
 CPSGS_CassBlobBase::x_PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobPropCompletion(fetch_details, m_ProcessorId);
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobPropCompletion(fetch_details, m_ProcessorId);
-    } else {
-        m_Reply->PrepareTSEBlobPropCompletion(fetch_details, m_ProcessorId);
     }
 }
 
@@ -938,17 +994,17 @@ CPSGS_CassBlobBase::x_PrepareBlobData(CCassBlobFetch *  fetch_details,
                                       unsigned int  data_size,
                                       int  chunk_no)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobData(
+            fetch_details, m_ProcessorId,
+            chunk_data, data_size, chunk_no,
+            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize());
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobData(fetch_details, m_ProcessorId,
                                  chunk_data, data_size, chunk_no,
                                  m_LastModified);
-    } else {
-        m_Reply->PrepareTSEBlobData(
-            fetch_details, m_ProcessorId,
-            chunk_data, data_size, chunk_no,
-            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize());
     }
 }
 
@@ -956,12 +1012,12 @@ CPSGS_CassBlobBase::x_PrepareBlobData(CCassBlobFetch *  fetch_details,
 void
 CPSGS_CassBlobBase::x_PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobCompletion(fetch_details, m_ProcessorId);
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobCompletion(fetch_details, m_ProcessorId);
-    } else {
-        m_Reply->PrepareTSEBlobCompletion(fetch_details, m_ProcessorId);
     }
 }
 
@@ -973,16 +1029,16 @@ CPSGS_CassBlobBase::x_PrepareBlobPropMessage(CCassBlobFetch *  fetch_details,
                                              int  err_code,
                                              EDiagSev  severity)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobPropMessage(
+            fetch_details, m_ProcessorId,
+            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
+            message, status, err_code, severity);
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobPropMessage(
             fetch_details, m_ProcessorId,
-            message, status, err_code, severity);
-    } else {
-        m_Reply->PrepareTSEBlobPropMessage(
-            fetch_details, m_ProcessorId,
-            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
             message, status, err_code, severity);
     }
 }
@@ -995,17 +1051,17 @@ CPSGS_CassBlobBase::x_PrepareBlobMessage(CCassBlobFetch *  fetch_details,
                                          int  err_code,
                                          EDiagSev  severity)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobMessage(
+            fetch_details, m_ProcessorId,
+            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
+            message, status, err_code, severity);
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobMessage(
             fetch_details, m_ProcessorId,
             message, status, err_code, severity, m_LastModified);
-    } else {
-        m_Reply->PrepareTSEBlobMessage(
-            fetch_details, m_ProcessorId,
-            x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
-            message, status, err_code, severity);
     }
 }
 
@@ -1015,15 +1071,123 @@ CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                           const string &  blob_id,
                                           EPSGS_BlobSkipReason  skip_reason)
 {
-    if (!NeedToAddId2CunkId2Info()) {
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobExcluded(
+            m_ProcessorId, x_GetId2ChunkNumber(fetch_details),
+            m_Id2Info->Serialize(), skip_reason);
+    } else {
         // There is no id2info in the originally requested blob
         // so just send blob prop completion without id2_chunk/id2_info
         m_Reply->PrepareBlobExcluded(blob_id, m_ProcessorId, skip_reason,
                                      m_LastModified);
-    } else {
-        m_Reply->PrepareTSEBlobExcluded(
-            m_ProcessorId, x_GetId2ChunkNumber(fetch_details),
-            m_Id2Info->Serialize(), skip_reason);
     }
+}
+
+
+void
+CPSGS_CassBlobBase::OnPublicCommentError(
+                            CCassPublicCommentFetch *  fetch_details,
+                            CRequestStatus::ECode  status,
+                            int  code,
+                            EDiagSev  severity,
+                            const string &  message)
+{
+    CRequestContextResetter     context_resetter;
+    m_Request->SetRequestContext();
+
+    if (m_Cancelled) {
+        fetch_details->SetReadFinished();
+        fetch_details->GetLoader()->Cancel();
+        return;
+    }
+
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
+
+    // It could be a message or an error
+    bool    is_error = (severity == eDiag_Error ||
+                        severity == eDiag_Critical ||
+                        severity == eDiag_Fatal);
+
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    if (status >= CRequestStatus::e400_BadRequest &&
+        status < CRequestStatus::e500_InternalServerError) {
+        PSG_WARNING(message);
+    } else {
+        PSG_ERROR(message);
+    }
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace(
+            "Public comment error callback; status: " + to_string(status),
+            m_Request->GetStartTimestamp());
+    }
+
+    m_Reply->PrepareProcessorMessage(
+        m_Reply->GetItemId(),
+        m_ProcessorId, message, status, code, severity);
+
+    if (is_error) {
+        if (code == CCassandraException::eQueryTimeout)
+            app->GetErrorCounters().IncCassQueryTimeoutError();
+        else
+            app->GetErrorCounters().IncUnknownError();
+
+        // If it is an error then there will be no more activity
+        fetch_details->SetReadFinished();
+    }
+
+    // Note: is it necessary to call something like x_Peek() of the actual
+    //       processor class to send this immediately? It should work without
+    //       this call and at the moment x_Peek() is not available here
+    // if (m_Reply->IsOutputReady())
+    //     x_Peek(false);
+}
+
+
+void
+CPSGS_CassBlobBase::OnPublicComment(
+                            CCassPublicCommentFetch *  fetch_details,
+                            string  comment,
+                            bool  is_found)
+{
+    CRequestContextResetter     context_resetter;
+    m_Request->SetRequestContext();
+
+    fetch_details->SetReadFinished();
+
+    if (m_Cancelled) {
+        fetch_details->GetLoader()->Cancel();
+        return;
+    }
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace(
+            "Public comment callback; found: " + to_string(is_found),
+            m_Request->GetStartTimestamp());
+    }
+
+    if (is_found) {
+        if (fetch_details->GetIdentification() ==
+                        CCassPublicCommentFetch::ePSGS_ById2) {
+            m_Reply->PreparePublicComment(
+                        m_ProcessorId, comment,
+                        fetch_details->GetId2Chunk(),
+                        fetch_details->GetId2Info());
+        } else {
+            // There is no id2info in the originally requested blob
+            // so just send blob prop completion without id2_chunk/id2_info
+            m_Reply->PreparePublicComment(
+                        m_ProcessorId, comment,
+                        fetch_details->GetBlobId().ToString(),
+                        fetch_details->GetLastModified());
+        }
+    }
+
+    // Note: is it necessary to call something like x_Peek() of the actual
+    //       processor class to send this immediately? It should work without
+    //       this call and at the moment x_Peek() is not available here
+    // if (m_Reply->IsOutputReady())
+    //     x_Peek(false);
 }
 

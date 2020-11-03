@@ -211,6 +211,14 @@ public:
                                  const string &  msg,
                                  CRequestStatus::ECode  status, int  err_code,
                                  EDiagSev  severity);
+    void PreparePublicComment(const string &  processor_id,
+                              const string &  public_comment,
+                              const string &  blob_id,
+                              CBlobRecord::TTimestamp  last_modified);
+    void PreparePublicComment(const string &  processor_id,
+                              const string &  public_comment,
+                              int64_t  id2_chunk,
+                              const string &  id2_info);
     void PrepareReplyMessage(const string &  msg,
                              CRequestStatus::ECode  status, int  err_code,
                              EDiagSev  severity);

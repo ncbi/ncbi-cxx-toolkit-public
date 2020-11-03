@@ -159,6 +159,7 @@ static string   s_Excluded = "excluded";
 static string   s_InProgress = "inprogress";
 static string   s_Sent = "sent";
 static string   s_Processor = "processor";
+static string   s_PublicComment = "public_comment";
 
 // Combinations
 static string   s_AndSize = "&" + s_Size;
@@ -182,7 +183,9 @@ static string   s_AndBlobItem = "&" + s_BlobItem;
 static string   s_ReplyItem = s_ItemType + s_Reply;
 static string   s_AndReplyItem = "&" + s_ReplyItem;
 static string   s_ProcessorItem = s_ItemType + s_Processor;
+static string   s_PublicCommentItem = s_ItemType + s_PublicComment;
 static string   s_AndProcessorItem = "&" + s_ProcessorItem;
+static string   s_AndPublicCommentItem = "&" + s_PublicCommentItem;
 static string   s_AndProcessorId = "&" + s_ProcessorId;
 static string   s_AndId2Chunk = "&" + s_Id2Chunk;
 static string   s_AndId2Info = "&" + s_Id2Info;
@@ -806,6 +809,68 @@ string GetProcessorMessageCompletionHeader(size_t  item_id,
                 .append(s_AndProcessorId)
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndProcessorItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
+                .append(to_string(chunk_count))
+                .append(1, '\n');
+}
+
+
+string GetPublicCommentHeader(size_t  item_id,
+                              const string &  processor_id,
+                              const string &  blob_id,
+                              CBlobRecord::TTimestamp  last_modified,
+                              size_t  msg_size)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndPublicCommentItem)
+                .append(s_AndBlobId)
+                .append(blob_id)
+                .append(s_AndLastModified)
+                .append(to_string(last_modified))
+                .append(s_AndSize)
+                .append(to_string(msg_size))
+                .append(1, '\n');
+}
+
+
+string GetPublicCommentHeader(size_t  item_id,
+                              const string &  processor_id,
+                              int64_t  id2_chunk,
+                              const string &  id2_info,
+                              size_t  msg_size)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndPublicCommentItem)
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndSize)
+                .append(to_string(msg_size))
+                .append(1, '\n');
+
+}
+
+
+string GetPublicCommentCompletionHeader(size_t  item_id,
+                                        const string &  processor_id,
+                                        size_t  chunk_count)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndPublicCommentItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))

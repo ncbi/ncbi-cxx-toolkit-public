@@ -42,6 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/si2csi_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
 USING_IDBLOB_SCOPE;
 
 
@@ -341,6 +342,86 @@ private:
     int64_t                                 m_SplitVersion;
     SPSGS_RequestBase::EPSGS_CacheAndDbUse  m_UseCache;
 };
+
+
+class CCassPublicCommentFetch : public CCassFetch
+{
+public:
+    enum EPSGS_Identification {
+        ePSGS_ByCassBlob,
+        ePSGS_ById2
+    };
+
+public:
+    CCassPublicCommentFetch() :
+        m_Identification(ePSGS_ByCassBlob),
+        m_LastModified(-1),
+        m_Id2Chunk(-1)
+    {
+        m_FetchType = ePSGS_PublicCommentFetch;
+    }
+
+    virtual ~CCassPublicCommentFetch()
+    {}
+
+public:
+    EPSGS_Identification  GetIdentification(void) const
+    {
+        return m_Identification;
+    }
+
+    void SetCassBlobIdentification(const SCass_BlobId &  blob_id,
+                                   int64_t  last_modified)
+    {
+        m_Identification = ePSGS_ByCassBlob;
+        m_BlobId = blob_id;
+        m_LastModified = last_modified;
+    }
+
+    void SetId2Identification(int64_t  id2_chunk,
+                              const string &  id2_info)
+    {
+        m_Identification = ePSGS_ById2;
+        m_Id2Chunk = id2_chunk;
+        m_Id2Info = id2_info;
+    }
+
+    SCass_BlobId  GetBlobId(void) const
+    { return m_BlobId; }
+
+    int64_t  GetLastModified(void) const
+    { return m_LastModified; }
+
+    int64_t  GetId2Chunk(void) const
+    { return m_Id2Chunk; }
+
+    string  GetId2Info(void) const
+    { return m_Id2Info; }
+
+    void SetLoader(CCassStatusHistoryTaskGetPublicComment *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassStatusHistoryTaskGetPublicComment * GetLoader(void)
+    { return static_cast<CCassStatusHistoryTaskGetPublicComment *>(m_Loader.get()); }
+
+public:
+    virtual void ResetCallbacks(void);
+
+private:
+    // Selector between two options
+    EPSGS_Identification    m_Identification;
+
+    // ePSGS_ByCassBlob
+    SCass_BlobId            m_BlobId;
+    int64_t                 m_LastModified;
+
+    // ePSGS_ById2
+    int64_t                 m_Id2Chunk;
+    string                  m_Id2Info;
+};
+
+
+
 
 #endif
 

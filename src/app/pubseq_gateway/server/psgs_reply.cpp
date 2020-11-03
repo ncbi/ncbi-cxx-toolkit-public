@@ -617,6 +617,52 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
 }
 
 
+void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
+                                       const string &  public_comment,
+                                       const string &  blob_id,
+                                       CBlobRecord::TTimestamp  last_modified)
+{
+    auto        item_id = GetItemId();
+    string      header = GetPublicCommentHeader(item_id, processor_id, blob_id,
+                                                last_modified, public_comment.size());
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(public_comment.data()), public_comment.size()));
+    ++m_TotalSentReplyChunks;
+
+    string      completion = GetPublicCommentCompletionHeader(item_id,
+                                                              processor_id,
+                                                              2);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(completion.data()), completion.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
+void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
+                                       const string &  public_comment,
+                                       int64_t  id2_chunk,
+                                       const string &  id2_info)
+{
+    auto        item_id = GetItemId();
+    string      header = GetPublicCommentHeader(item_id, processor_id, id2_chunk,
+                                                id2_info, public_comment.size());
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(public_comment.data()), public_comment.size()));
+    ++m_TotalSentReplyChunks;
+
+    string      completion = GetPublicCommentCompletionHeader(item_id,
+                                                              processor_id,
+                                                              2);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(completion.data()), completion.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
                                              const string &  processor_id,
                                              const string &  content)

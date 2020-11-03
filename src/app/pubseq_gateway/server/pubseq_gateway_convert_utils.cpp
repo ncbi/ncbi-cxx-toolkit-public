@@ -394,3 +394,14 @@ CJsonNode ToJson(const CCassNAnnotTaskFetch &  request)
     return json;
 }
 
+
+CJsonNode ToJson(const CCassStatusHistoryTaskGetPublicComment &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Public comment request");
+    json.SetString(kSatName, request.GetKeySpace());
+    json.SetInteger(kSatKey, request.key());
+    return json;
+}
+

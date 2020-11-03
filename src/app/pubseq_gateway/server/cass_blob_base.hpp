@@ -79,6 +79,14 @@ protected:
                                    int  code,
                                    EDiagSev  severity,
                                    const string &  message);
+    void OnPublicCommentError(CCassPublicCommentFetch *  fetch_details,
+                              CRequestStatus::ECode  status,
+                              int  code,
+                              EDiagSev  severity,
+                              const string &  message);
+    void OnPublicComment(CCassPublicCommentFetch *  fetch_details,
+                         string  comment,
+                         bool  is_found);
 
 private:
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
@@ -158,6 +166,9 @@ private:
 protected:
     // Used for get blob by sat/sat key request
     SCass_BlobId                    m_BlobId;
+
+    // Used by get/getblob/gettsechunk processors
+    bool                            m_Cancelled;
 
 private:
     bool                                                m_NeedToParseId2Info;

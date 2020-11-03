@@ -42,6 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
 
 #include "pubseq_gateway_types.hpp"
 #include "pubseq_gateway_utils.hpp"
@@ -71,5 +72,6 @@ CJsonNode ToJson(const CSI2CSIRecord &  record);
 CJsonNode ToJson(const CCassBlobTaskLoadBlob &  request);
 CJsonNode ToJson(const CCassBlobTaskFetchSplitHistory &  request);
 CJsonNode ToJson(const CCassNAnnotTaskFetch &  request);
+CJsonNode ToJson(const CCassStatusHistoryTaskGetPublicComment &  request);
 
 #endif

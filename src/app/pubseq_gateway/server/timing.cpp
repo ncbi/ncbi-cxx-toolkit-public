@@ -451,6 +451,29 @@ CSplitHistoryRetrieveTiming::CSplitHistoryRetrieveTiming(unsigned long  min_stat
 }
 
 
+CPublicCommentRetrieveTiming::CPublicCommentRetrieveTiming(unsigned long  min_stat_value,
+                                                           unsigned long  max_stat_value,
+                                                           unsigned long  n_bins,
+                                                           TOnePSGTiming::EScaleType  stat_type,
+                                                           bool &  reset_to_default)
+{
+    reset_to_default = false;
+
+    try {
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    } catch (...) {
+        reset_to_default = true;
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    }
+}
+
+
 CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
                                      unsigned long  max_stat_value,
                                      unsigned long  n_bins,
@@ -530,6 +553,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CSplitHistoryRetrieveTiming>(
                 new CSplitHistoryRetrieveTiming(min_stat_value, max_stat_value,
                                                 n_bins, scale_type, reset_to_default)));
+
+        m_PublicCommentRetrieveTiming.push_back(
+            unique_ptr<CPublicCommentRetrieveTiming>(
+                new CPublicCommentRetrieveTiming(min_stat_value, max_stat_value,
+                                                 n_bins, scale_type, reset_to_default)));
     }
 
     m_HugeBlobRetrievalTiming.reset(
@@ -706,6 +734,19 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
           SInfo(m_SplitHistoryRetrieveTiming[1].get(),
                 "Split history not found",
                 "The timing of split history retrieval "
+                "when nothing was found"
+               )
+        },
+        { "PublicCommentRetrieveFound",
+          SInfo(m_PublicCommentRetrieveTiming[0].get(),
+                "Public comment found",
+                "The timing of a public comment successful retrieval"
+               )
+        },
+        { "PublicCommentRetrieveNotFound",
+          SInfo(m_PublicCommentRetrieveTiming[1].get(),
+                "Public comment not found",
+                "The timing of public comment retrieval "
                 "when nothing was found"
                )
         },
@@ -920,6 +961,9 @@ void COperationTiming::Register(EPSGOperation  operation,
         case eSplitHistoryRetrieve:
             m_SplitHistoryRetrieveTiming[index]->Add(mks);
             break;
+        case ePublicCommentRetrieve:
+            m_PublicCommentRetrieveTiming[index]->Add(mks);
+            break;
         case eResolutionError:
             m_ResolutionErrorTiming->Add(mks);
             break;
@@ -955,6 +999,7 @@ void COperationTiming::Rotate(void)
         m_ResolutionCassTiming[k]->Rotate();
         m_NARetrieveTiming[k]->Rotate();
         m_SplitHistoryRetrieveTiming[k]->Rotate();
+        m_PublicCommentRetrieveTiming[k]->Rotate();
     }
 
     m_HugeBlobRetrievalTiming->Rotate();
@@ -986,6 +1031,7 @@ void COperationTiming::Reset(void)
         m_ResolutionCassTiming[k]->Reset();
         m_NARetrieveTiming[k]->Reset();
         m_SplitHistoryRetrieveTiming[k]->Reset();
+        m_PublicCommentRetrieveTiming[k]->Reset();
     }
 
     m_HugeBlobRetrievalTiming->Reset();
