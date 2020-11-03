@@ -663,7 +663,7 @@ void UpdateViewer::ImportStructure(void)
     }
 
     // make list of protein chains in this structure
-    vector < pair < const CSeq_id * , char > > chains;  // holds Seq-id and chain name
+    vector < pair < const CSeq_id * , string > > chains;  // holds Seq-id and chain name
     map < const CSeq_id * , int > moleculeIDs;          // maps Seq-id -> molecule ID within MMDB object
     CBiostruc_graph::TDescr::const_iterator d, de;
     CBiostruc_graph::TMolecule_graphs::const_iterator
@@ -672,16 +672,19 @@ void UpdateViewer::ImportStructure(void)
         bool isProtein = false;
         const CSeq_id *sid = NULL;
         char name = 0;
+        string full_name = "";
 
         // check descr for chain name/type
         de = (*m)->GetDescr().end();
         for (d=(*m)->GetDescr().begin(); d!=de; ++d) {
-            if ((*d)->IsName())
+            if ((*d)->IsName()) {
+                full_name = (*d)->GetName();
                 name = (*d)->GetName()[0];
+            }
             else if ((*d)->IsMolecule_type() &&
                      (*d)->GetMolecule_type() == CBiomol_descr::eMolecule_type_protein)
                 isProtein = true;
-            if (isProtein && name) break;
+            if (isProtein && (full_name != "")) break;
         }
 
         // get gi
@@ -689,9 +692,9 @@ void UpdateViewer::ImportStructure(void)
             sid = &((*m)->GetSeq_id());
 
         // add protein to list
-        if (isProtein && name && sid != NULL) {
+        if (isProtein && (full_name != "" ) && sid != NULL) {
             moleculeIDs[sid] = (*m)->GetId().Get();
-            chains.push_back(make_pair(sid, name));
+            chains.push_back(make_pair(sid, full_name));
         }
     }
     if (chains.size() == 0) {
@@ -717,7 +720,7 @@ void UpdateViewer::ImportStructure(void)
         wxString *choices = new wxString[chains.size()];
         int choice;
         for (choice=0; choice<(int)chains.size(); ++choice)
-            choices[choice].Printf("%s_%c %s",
+            choices[choice].Printf("%s_%s %s",
                 pdbID.c_str(), chains[choice].second, chains[choice].first->GetSeqIdString().c_str());
         wxArrayInt selections;
 //        selections.Add(0);    // select first by default
