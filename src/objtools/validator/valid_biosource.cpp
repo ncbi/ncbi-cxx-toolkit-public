@@ -1840,6 +1840,20 @@ bool s_IsBacteria(const CBioSource& source)
 }
 
 
+bool s_IsArchaea(const CBioSource& source)
+{
+    bool rval = false;
+
+    if (source.IsSetLineage()) {
+        string lineage = source.GetLineage();
+        if (NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 bool s_IsBioSample(const CBioseq_Handle& bsh)
 {
     bool rval = false;
@@ -2045,8 +2059,10 @@ const CBioseq_Handle& bsh)
 
     }
 
-    if (IsGpipe() || IsIndexerVersion()) {
-        if (s_IsBacteria(source) && s_IsBioSample(bsh)) {
+    if ( (IsGpipe() || IsIndexerVersion() ) & s_IsBioSample(bsh) ) {
+        bool is_bact = s_IsBacteria(source);
+        bool is_arch = s_IsArchaea(source);
+        if ( is_bact || is_arch ) {
             bool has_strain = false;
             bool has_isolate = false;
             bool env_sample = false;
@@ -2080,9 +2096,15 @@ const CBioseq_Handle& bsh)
 
 
             if (!has_strain && !has_isolate && !env_sample) {
-                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BacteriaMissingSourceQualifier,
-                    "Bacteria should have strain or isolate or environmental sample",
-                    obj, ctx);
+                if (is_bact) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BacteriaMissingSourceQualifier,
+                        "Bacteria should have strain or isolate or environmental sample",
+                        obj, ctx);
+                } else if (is_arch) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BacteriaMissingSourceQualifier,
+                        "Archaea should have strain or isolate or environmental sample",
+                        obj, ctx);
+                }
             }
         }
     }
