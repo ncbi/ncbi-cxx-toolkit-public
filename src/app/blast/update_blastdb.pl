@@ -213,7 +213,13 @@ if ($location ne "NCBI") {
             my $cmd;
             my $fh = File::Temp->new();
             if ($location eq "GCP" and defined($gsutil)) {
-                $cmd = "$gsutil " . ($opt_nt > 1 ? "-m" : "" ) . " -q cp ";
+                $cmd = "$gsutil ";
+                if ($opt_nt > 1) {
+                    $cmd .= "-m -q cp ";
+                    $cmd .= "-o 'GSUtil:parallel_thread_count=1' -o 'GSUtil:parallel_process_count=$opt_nt' ";
+                } else {
+                    $cmd .= "-q cp ";
+                }
                 $cmd .= join(" ", @files2download) . " .";
             } elsif ($location eq "AWS" and defined ($awscli)) {
                 my $aws_cmd = "$awscli s3 cp ";
@@ -231,10 +237,10 @@ if ($location ne "NCBI") {
                     print $fh join("\n", @files2download);
                     $cmd = "/usr/bin/xargs -P $opt_nt -n 1";
                     $cmd .= " -t" if $opt_verbose > 3;
-                    $cmd .= " $curl -sOR";
+                    $cmd .= " $curl -sSOR";
                     $cmd .= " <$fh " ;
                 } else {
-                    $cmd = "$curl -sR";
+                    $cmd = "$curl -sSR";
                     $cmd .= " -O $_" foreach (@files2download);
                 }
             }
@@ -412,9 +418,9 @@ sub _decompress_impl($)
 {
     my $file = shift;
     if ($^O eq "cygwin") {
-	local $ENV{PATH} = "/bin:/usr/bin";
-	my $cmd = "tar -zxf $file 2>/dev/null";
-	return 1 unless (system($cmd));
+        local $ENV{PATH} = "/bin:/usr/bin";
+        my $cmd = "tar -zxf $file 2>/dev/null";
+        return 1 unless (system($cmd));
     }
     unless ($^O =~ /win/i) {
         local $ENV{PATH} = "/bin:/usr/bin";
