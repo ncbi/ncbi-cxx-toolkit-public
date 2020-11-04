@@ -329,8 +329,9 @@ namespace {
                              (types.size() == 1 &&
                               types.front()->GetType() == 0 &&
                               !types.front()->IsSetSubtypes()) ) {
-                            json.SetByKey(to_string(CSeq_annot::C_Data::e_Seq_table),
-                                          CJsonNode::NewObjectNode());
+                            CJsonNode type_json = CJsonNode::NewArrayNode();
+                            type_json.AppendInteger(0);
+                            json.SetByKey(to_string(CSeq_annot::C_Data::e_Seq_table), type_json);
                         }
                         else {
                             CJsonNode type_json = CJsonNode::NewObjectNode();
