@@ -62,7 +62,7 @@ public:
     virtual string GetName() const;
 
     static bool CanProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
-    static vector<string> GetNamesToProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
+    static set<string> GetNamesToProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
     static bool CanProcessAnnotName(const string& name);
 
     void CreateRequests();
@@ -72,7 +72,7 @@ public:
     void AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id);
         
 protected:
-    vector<string> m_NamesToProcess;
+    set<string> m_NamesToProcess;
     vector<CConstRef<CID2_Reply_Get_Blob_Id>> m_BlobIds;
 };
 
