@@ -314,12 +314,14 @@ namespace {
 
                     // collect types
                     if ( ai->IsSetAlign() ) {
-                        json.SetByKey(to_string(CSeq_annot::C_Data::e_Align),
-                                      CJsonNode::NewObjectNode());
+                        CJsonNode type_json = CJsonNode::NewArrayNode();
+                        type_json.AppendInteger(0);
+                        json.SetByKey(to_string(CSeq_annot::C_Data::e_Align), type_json);
                     }
                     if ( ai->IsSetGraph() ) {
-                        json.SetByKey(to_string(CSeq_annot::C_Data::e_Graph),
-                                      CJsonNode::NewObjectNode());
+                        CJsonNode type_json = CJsonNode::NewArrayNode();
+                        type_json.AppendInteger(0);
+                        json.SetByKey(to_string(CSeq_annot::C_Data::e_Graph), type_json);
                     }
                     if ( ai->IsSetFeat() ) {
                         auto& types = ai->GetFeat();
@@ -389,6 +391,11 @@ void CPSGS_OSGAnnot::SendReplies()
             if ( info.range != CRange<TSeqPos>::GetWhole() ) {
                 json.SetInteger("start", info.range.GetFrom());
                 json.SetInteger("stop", info.range.GetTo());
+            }
+            else {
+                // whole sequence
+                json.SetInteger("start", 0);
+                json.SetInteger("stop", 0);
             }
             json.SetString("annot_info", info.json.Repr(CJsonNode::fStandardJson));
         }
