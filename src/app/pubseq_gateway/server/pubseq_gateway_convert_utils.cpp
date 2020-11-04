@@ -243,6 +243,9 @@ CJsonNode ToJson(const CNAnnotRecord &  annot_record,
         json.SetString(kBlobId, custom_blob_id);
     }
 
+    json.SetString("accession", annot_record.GetAccession());
+    json.SetInteger("version", annot_record.GetVersion());
+    json.SetInteger("seq_id_type", annot_record.GetSeqIdType());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
     json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());
