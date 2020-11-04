@@ -37,12 +37,12 @@
 #include <objects/seqsplit/seqsplit__.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include "pubseq_gateway_convert_utils.hpp"
+#include "id2info.hpp"
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
-static CPSGS_OSGGetBlobBase::TID2SplitVersion kSplitInfo_SplitVersion = 999999999;
 
 CPSGS_OSGGetBlobBase::CPSGS_OSGGetBlobBase()
 {
@@ -237,8 +237,8 @@ void CPSGS_OSGGetBlobBase::x_SendSplitInfo(const CID2_Blob_Id& osg_blob_id,
     
     CBlobRecord split_info_blob_props;
     x_SetBlobDataProps(split_info_blob_props, data);
-    x_SendChunkBlobProps(id2_info, kSplitInfo_SplitVersion, split_info_blob_props);
-    x_SendChunkBlobData(id2_info, kSplitInfo_SplitVersion, data);
+    x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
+    x_SendChunkBlobData(id2_info, kSplitInfoChunk, data);
 }
 
 
