@@ -63,6 +63,7 @@
 ##              NCBI_set_test_timeout(seconds)
 ##              NCBI_set_test_requires(list of components)
 ##              NCBI_set_test_resources(list of test resources)
+##              NCBI_set_test_labels(list of labels)
 ##          NCBI_end_test()
 ##
 ##    NCBI_end_lib(result) or NCBI_end_app(result) - argument 'result' is optional
@@ -552,6 +553,11 @@ endmacro()
 ##############################################################################
 macro(NCBI_set_test_resources)
     set(NCBITEST_${NCBI_${NCBI_PROJECT}_TEST}_RESOURCES "${ARGV}")
+endmacro()
+
+##############################################################################
+macro(NCBI_set_test_labels)
+    set(NCBITEST_${NCBI_${NCBI_PROJECT}_TEST}_LABELS "${ARGV}")
 endmacro()
 
 ##############################################################################

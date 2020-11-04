@@ -90,6 +90,19 @@ endmacro()
 
 ##############################################################################
 
+macro(NCBI_internal_process_cmake_test_labels _test)
+    set(_all ${NCBI__PROJTAG} ${NCBI_${NCBI_PROJECT}_PROJTAG} ${NCBITEST__LABELS} ${NCBITEST_${_test}_LABELS})
+    if (NOT "${_all}" STREQUAL "")
+        list(REMOVE_DUPLICATES _all)
+        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+            message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} labels = ${_all}")
+        endif()
+        set_tests_properties(${_test} PROPERTIES LABELS "${_all}")
+    endif()
+endmacro()
+
+##############################################################################
+
 function(NCBI_internal_add_cmake_test _test)
     if( NOT DEFINED NCBITEST_${_test}_CMD)
         set(NCBITEST_${_test}_CMD ${NCBI_${NCBI_PROJECT}_OUTPUT})
@@ -158,6 +171,7 @@ function(NCBI_internal_add_cmake_test _test)
     )
 
     NCBI_internal_process_cmake_test_resources(${_test})
+    NCBI_internal_process_cmake_test_labels(${_test})
 endfunction()
 
 ##############################################################################
