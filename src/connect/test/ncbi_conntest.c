@@ -48,11 +48,14 @@
 
 /* Standard error report
  */
-#define TEST_LOG(status, descr)                         \
-    CORE_LOGF(status == eIO_Success ? eLOG_Note    :    \
-              status == eIO_Closed  ? eLOG_Warning :    \
-              eLOG_Error,                               \
-              ("%s (%s)", descr, IO_StatusStr(status)))
+inline
+void TEST_LOG(EIO_Status status, const char* descr)
+{
+    CORE_LOGF(status == eIO_Success ? eLOG_Note :
+        status == eIO_Closed ? eLOG_Warning :
+        eLOG_Error,
+        ("%s (%s)", descr, IO_StatusStr(status)));
+}
 
 
 /* TESTs

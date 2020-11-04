@@ -254,6 +254,21 @@ public:
         , m_RowsInBatch(0)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
+public:
+    template<class E>
+    static CDB_Exception& MakeException(const CDiagCompileInfo& info,
+        const SMessageInContext& message,
+        EDiagSev severity,
+        int db_err_code)
+    {
+        E ex(info, nullptr, message, severity, db_err_code);
+        if (severity == eDiag_Error || severity == eDiag_Fatal)
+            ex.SetRetriable(eRetriable_No);
+        else
+            ex.SetRetriable(eRetriable_Unknown);
+        return ex;
+    }
+
 protected:
     int     m_DBErrCode;
 
@@ -699,15 +714,9 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 /// database error code and message string.
 #define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
     do { \
-        exception_class ex( DIAG_COMPILE_INFO, \
-                            0, (message), severity, err_code ); \
-        if (severity == eDiag_Error || severity == eDiag_Fatal) \
-            ex.SetRetriable(eRetriable_No); \
-        else \
-            ex.SetRetriable(eRetriable_Unknown); \
-        throw ex; \
+        throw NCBI_NS_NCBI::CDB_Exception::MakeException<exception_class>( \
+            DIAG_COMPILE_INFO, (message), severity, err_code); \
     } while(0)
-
 #define NCBI_DATABASE_RETHROW( prev_exception, exception_class, message, \
     err_code, severity ) \
     throw exception_class( DIAG_COMPILE_INFO, \
