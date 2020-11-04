@@ -534,9 +534,9 @@ void sGffMergeLocation(
     auto& featLoc = feature.SetLocation();
     if (featLoc.IsMix()) {
         for (const auto& pSubLoc: featLoc.GetMix().Get()) {
-            //auto pIntersect = pSubLoc->Intersect(addition, 0, nullptr);
-            //if (!pIntersect->IsNull()) {
-            if (1 == pSubLoc->Compare(addition)) {
+            auto pIntersect = pSubLoc->Intersect(addition, 0, nullptr);
+            if (!pIntersect->IsNull()) {
+            //if (1 == pSubLoc->Compare(addition)) {
                 return;
             }
         }
