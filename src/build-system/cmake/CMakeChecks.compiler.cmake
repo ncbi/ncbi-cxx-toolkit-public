@@ -18,10 +18,6 @@ endif()
 # ---------------------------------------------------------------------------
 # compilation features
 set(NCBI_PTBCFG_INSTALL_SUFFIX "")
-if(ChaosMonkey IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-    add_definitions(-DNCBI_MONKEY)
-endif()
-
 if(Int8GI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_INT8_GI)
     set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}Int8GI")
