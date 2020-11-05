@@ -50,7 +50,14 @@ USING_NCBI_SCOPE;
 
 class CCassandraFullscanWorker
 {
-    struct SQueryContext {
+    struct SQueryContext
+        : public CCassDataCallbackReceiver
+    {
+        SQueryContext(const SQueryContext &) = delete;
+        SQueryContext & operator=(const SQueryContext &) = delete;
+        SQueryContext(SQueryContext &&) = default;
+        SQueryContext & operator=(SQueryContext &&) = default;
+
         SQueryContext()
             : SQueryContext(nullptr, nullptr, 0)
         {}
@@ -60,10 +67,13 @@ class CCassandraFullscanWorker
             , total_ready(ready)
             , retires(max_retries)
         {}
-        SQueryContext(SQueryContext&& other) = delete;
-        SQueryContext(const SQueryContext&) = delete;
-        SQueryContext& operator=(SQueryContext&& other) = delete;
-        SQueryContext& operator=(const SQueryContext&) = delete;
+
+        void OnData() override
+        {
+            data_ready = true;
+            total_ready->Inc();
+        }
+
         ~SQueryContext()
         {
             if (query) {
@@ -71,11 +81,13 @@ class CCassandraFullscanWorker
                 query = nullptr;
             }
         }
+
         CCassandraFullscanPlan::TQueryPtr query;
         atomic_bool data_ready;
         shared_ptr<CFutex> total_ready;
         unsigned int retires;
     };
+
  public:
     using TTaskProvider = function<CCassandraFullscanPlan::TQueryPtr()>;
 
@@ -110,7 +122,7 @@ class CCassandraFullscanWorker
     unsigned int m_MaxActiveStatements;
     TTaskProvider m_TaskProvider;
 
-    vector<unique_ptr<SQueryContext>> m_Queries;
+    vector<shared_ptr<SQueryContext>> m_Queries;
     shared_ptr<CFutex> m_ReadyQueries;
     unique_ptr<atomic_long> m_ActiveQueries;
     unsigned int m_QueryMaxRetryCount;

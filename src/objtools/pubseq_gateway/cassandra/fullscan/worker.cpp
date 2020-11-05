@@ -126,16 +126,9 @@ bool CCassandraFullscanWorker::StartQuery(size_t index)
     try {
         CCassandraFullscanPlan::TQueryPtr task = GetNextTask();
         if (task) {
-            m_Queries[index] = unique_ptr<SQueryContext>(new SQueryContext(task, m_ReadyQueries, m_QueryMaxRetryCount));
-            SQueryContext *context = m_Queries[index].get();
-            context->query->SetOnData2(
-                [](void * data) {
-                    SQueryContext * context = static_cast<SQueryContext *>(data);
-                    context->data_ready = true;
-                    context->total_ready->Inc();
-                },
-                context
-            );
+            m_Queries[index] = make_shared<SQueryContext>(move(task), m_ReadyQueries, m_QueryMaxRetryCount);
+            auto &context = m_Queries[index];
+            context->query->SetOnData3(context);
             context->query->Query(m_Consistency, true, true, m_PageSize);
             (*m_ActiveQueries)++;
             return true;

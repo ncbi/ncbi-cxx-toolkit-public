@@ -71,6 +71,7 @@ class CCassandraFullscanRunnerTest
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        //r.Set(config_section, "numthreadsio", "1", IRegistry::fPersistent);
         m_Factory = CCassConnectionFactory::s_Create();
         m_Factory->LoadConfig(r, config_section);
         m_Connection = m_Factory->CreateInstance();
@@ -120,7 +121,7 @@ class CSimpleRowConsumer
     {
     }
 
-    virtual bool Tick()
+    bool Tick() override
     {
         if (m_Context) {
             CFastMutexGuard _(m_Context->mutex);
@@ -136,7 +137,7 @@ class CSimpleRowConsumer
         return m_Context ? m_Context->tick_result : true;
     }
 
-    virtual bool ReadRow(CCassQuery const & query)
+    bool ReadRow(CCassQuery const & query) override
     {
         if (m_Context) {
             CFastMutexGuard _(m_Context->mutex);
@@ -150,7 +151,8 @@ class CSimpleRowConsumer
         }
         return m_Context ? m_Context->read_result : true;
     }
-    virtual void Finalize()
+
+    void Finalize() override
     {
         if (m_Context) {
             CFastMutexGuard _(m_Context->mutex);
@@ -167,7 +169,7 @@ class CSimpleRowConsumer
 
 unique_ptr<MockCassandraFullscanPlan> make_default_plan_mock()
 {
-    unique_ptr<MockCassandraFullscanPlan> plan_mock(new MockCassandraFullscanPlan());
+    auto plan_mock = make_unique<MockCassandraFullscanPlan>();
     EXPECT_CALL(*plan_mock, Generate())
         .Times(1);
     EXPECT_CALL(*plan_mock, GetQueryCount())
@@ -182,8 +184,8 @@ TEST_F(CCassandraFullscanRunnerTest, NonConfiguredRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, BrokenQueryRunnerTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
-    unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
+    auto query = m_Connection->NewQuery();
+    auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query));
 
@@ -192,9 +194,7 @@ TEST_F(CCassandraFullscanRunnerTest, BrokenQueryRunnerTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            []() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(nullptr));
-            }
+            [] { return make_unique<CSimpleRowConsumer>(nullptr);}
         );
 
     EXPECT_THROW(runner.SetExecutionPlan(nullptr), CCassandraException)
@@ -205,7 +205,7 @@ TEST_F(CCassandraFullscanRunnerTest, BrokenQueryRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, AtLeastOneActiveStatementPerThread) {
-    unique_ptr<MockCassandraFullscanPlan> plan_mock(new MockCassandraFullscanPlan());
+    auto plan_mock = make_unique<MockCassandraFullscanPlan>();
     EXPECT_CALL(*plan_mock, Generate())
         .Times(1);
     EXPECT_CALL(*plan_mock, GetQueryCount())
@@ -220,8 +220,8 @@ TEST_F(CCassandraFullscanRunnerTest, AtLeastOneActiveStatementPerThread) {
         .SetExecutionPlan(move(plan_mock))
         .SetMaxActiveStatements(1)
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -230,10 +230,10 @@ TEST_F(CCassandraFullscanRunnerTest, AtLeastOneActiveStatementPerThread) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
-    unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
+    auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query))
         .WillRepeatedly(Return(nullptr));
@@ -244,8 +244,8 @@ TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -258,14 +258,14 @@ TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, MultiThreadRunnerTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
-    shared_ptr<CCassQuery> query1 = m_Connection->NewQuery();
+    auto query1 = m_Connection->NewQuery();
     query1->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 103317145", 0);
-    shared_ptr<CCassQuery> query2 = m_Connection->NewQuery();
+    auto query2 = m_Connection->NewQuery();
     query2->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
 
-    unique_ptr<MockCassandraFullscanPlan> plan_mock(new MockCassandraFullscanPlan());
+    auto plan_mock = make_unique<MockCassandraFullscanPlan>();
     EXPECT_CALL(*plan_mock, Generate())
         .Times(1);
     EXPECT_CALL(*plan_mock, GetQueryCount())
@@ -283,8 +283,8 @@ TEST_F(CCassandraFullscanRunnerTest, MultiThreadRunnerTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -300,9 +300,9 @@ TEST_F(CCassandraFullscanRunnerTest, MultiThreadRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, FinalizeMayThrowTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
-    shared_ptr<CCassQuery> query1 = m_Connection->NewQuery();
+    auto query1 = m_Connection->NewQuery();
     query1->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
     unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
@@ -318,8 +318,8 @@ TEST_F(CCassandraFullscanRunnerTest, FinalizeMayThrowTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -328,10 +328,10 @@ TEST_F(CCassandraFullscanRunnerTest, FinalizeMayThrowTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, ReadMayThrowTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
-    unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
+    auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query))
         .WillOnce(Return(nullptr));
@@ -343,8 +343,8 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayThrowTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -353,10 +353,10 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayThrowTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, ReadMayReturnFalseTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
 
-    unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
+    auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query))
         .WillOnce(Return(nullptr));
@@ -368,8 +368,8 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayReturnFalseTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -379,12 +379,12 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayReturnFalseTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, TickMayReturnFalseTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
-    shared_ptr<CCassQuery> query1 = m_Connection->NewQuery();
+    auto query1 = m_Connection->NewQuery();
     query1->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
-    unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
+    auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query))
         .WillOnce(Return(query1))
@@ -397,8 +397,8 @@ TEST_F(CCassandraFullscanRunnerTest, TickMayReturnFalseTest) {
         .SetThreadCount(1)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -408,11 +408,11 @@ TEST_F(CCassandraFullscanRunnerTest, TickMayReturnFalseTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
-    shared_ptr<CCassQuery> query = m_Connection->NewQuery();
+    auto query = m_Connection->NewQuery();
     // this group has 3 records
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
 
-    unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
+    auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query))
         .WillOnce(Return(nullptr));
@@ -425,8 +425,8 @@ TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
         .SetPageSize(2)
         .SetExecutionPlan(move(plan_mock))
         .SetConsumerFactory(
-            [&context]() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(&context));
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
 
@@ -435,7 +435,7 @@ TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
-    unique_ptr<CCassandraFullscanPlan> plan(new CCassandraFullscanPlan());
+    auto plan = make_unique<CCassandraFullscanPlan>();
     plan
         ->SetConnection(m_Connection)
         .SetFieldList({"ipg", "accession"})
@@ -447,8 +447,8 @@ TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan))
         .SetConsumerFactory(
-            []() -> unique_ptr<CSimpleRowConsumer> {
-                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer(nullptr));
+            [] {
+                return make_unique<CSimpleRowConsumer>(nullptr);
             }
         );
     EXPECT_TRUE(runner.Execute());

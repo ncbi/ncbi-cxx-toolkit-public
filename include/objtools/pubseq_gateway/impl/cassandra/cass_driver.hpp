@@ -1338,7 +1338,10 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         return m_connection;
     }
 
-    void SetOnData(TCassQueryOnDataCallback cb, void* data)
+    /**
+     * Use SatOnData3. This one is unsafe and will be removed
+     */
+    NCBI_DEPRECATED void SetOnData(TCassQueryOnDataCallback cb, void* data)
     {
         if (m_ondata == cb && m_ondata_data == data) {
             return;
@@ -1358,7 +1361,10 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         }
     }
 
-    void SetOnData2(TCassQueryOnData2Callback cb, void* Data)
+    /**
+     * Use SatOnData3. This one is unsafe and will be removed
+     */
+    NCBI_DEPRECATED void SetOnData2(TCassQueryOnData2Callback cb, void* Data)
     {
         if (m_ondata2 == cb && m_ondata2_data == Data) {
             return;
