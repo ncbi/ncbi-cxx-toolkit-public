@@ -48,7 +48,6 @@
 
 /* Standard error report
  */
-inline
 void TEST_LOG(EIO_Status status, const char* descr)
 {
     CORE_LOGF(status == eIO_Success ? eLOG_Note :
