@@ -632,7 +632,6 @@ bool CGff3Writer::xAssignAlignmentSplicedType(
         return true;
     }
     const CSeq_id& genomicId = *genomicH.GetSeqId();
-    const CSeq_id& productId =*productH.GetSeqId();
     record.SetType(sBestMatchType(genomicId));
     return true;
 }
@@ -2210,7 +2209,6 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
      "Note", "Dbxref", "Ontology_term", "Is_circular"};
     
 
-    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     const CSeq_feat::TQual& quals = mf.GetQual();
     for (const auto& qual: quals) {
         if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
@@ -2607,8 +2605,6 @@ bool CGff3Writer::xWriteFeatureCds(
 
     const CSeq_feat& feature = mf.GetMappedFeature();
     const CSeq_loc& PackedInt = pCds->Location();
-    bool bStrandAdjust = PackedInt.IsSetStrand()  
-        &&  (PackedInt.GetStrand()  ==  eNa_strand_minus);
     int /*CCdregion::EFrame*/ iPhase = 0;
     const CRange<TSeqPos>& display_range = GetRange();
     if (display_range.IsWhole())  {
@@ -2619,7 +2615,6 @@ bool CGff3Writer::xWriteFeatureCds(
     else {
         iPhase = max(sequence::CFeatTrim::GetCdsFrame(feature, display_range)-1, 0);
     }
-
 
     int iTotSize = -iPhase;
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -2649,7 +2644,6 @@ bool CGff3Writer::xWriteFeatureCds(
         return true;
     }
     CConstRef<CSeq_id> protId(mf.GetProduct().GetId());
-    const  CSeq_id& constProdId = *protId;
     CBioseq_Handle protein_h = m_pScope->GetBioseqHandleFromTSE(*protId, fc.BioseqHandle());
     if (!protein_h) {
         return true;

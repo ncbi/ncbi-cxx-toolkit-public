@@ -338,8 +338,6 @@ bool CGff3Reader::xUpdateAnnotFeature(
 //  ----------------------------------------------------------------------------
 {
     vector<CGff2Record> subrecords;
-    auto seqStart = gffRecord.SeqStart();
-    auto seqStop = gffRecord.SeqStop();
     if (mSequenceSize == 0  ||  gffRecord.SeqStop() <= mSequenceSize) {
         subrecords.push_back(gffRecord);
     }

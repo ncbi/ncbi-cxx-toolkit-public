@@ -182,7 +182,7 @@ protected:
     virtual bool x_WriteBioseqHandle(
         CBioseq_Handle ) override;
 	virtual bool x_WriteSeqAnnotHandle(
-        CSeq_annot_Handle );
+        CSeq_annot_Handle ) override;
     virtual bool x_WriteFeatureContext(
         CGffFeatureContext&);
 
