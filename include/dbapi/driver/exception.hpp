@@ -256,7 +256,7 @@ public:
 
 public:
     template<class E>
-    static CDB_Exception& MakeException(const CDiagCompileInfo& info,
+    NCBI_NORETURN static void MakeException(const CDiagCompileInfo& info,
         const SMessageInContext& message,
         EDiagSev severity,
         int db_err_code)
@@ -266,7 +266,7 @@ public:
             ex.SetRetriable(eRetriable_No);
         else
             ex.SetRetriable(eRetriable_Unknown);
-        return ex;
+        throw ex;
     }
 
 protected:
@@ -714,7 +714,7 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 /// database error code and message string.
 #define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
     do { \
-        throw NCBI_NS_NCBI::CDB_Exception::MakeException<exception_class>( \
+        NCBI_NS_NCBI::CDB_Exception::MakeException<exception_class>( \
             DIAG_COMPILE_INFO, (message), severity, err_code); \
     } while(0)
 #define NCBI_DATABASE_RETHROW( prev_exception, exception_class, message, \
