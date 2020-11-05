@@ -4180,6 +4180,7 @@ MGAB	s	Muzeul de Istorie Naturala "Grigore Antipa"
 MGAP	s	Museu Anchieta	MAPA		
 MGB	s	Museo de Geologia (del Seminario Diocesano) de Barcelona			
 MGC	s	Universidad de Malaga, Departamento de Biologia Vegetal			
+MGCL	s	McGuire Center for Lepidoptera and Biodiversity			
 MGDL	s	Museum d'Histoire Naturalle du Grand-Duchy de Luxembourg			
 MGF	s	Museum George Frey			
 MGFT	s	Museum G. Frey			
@@ -5706,6 +5707,7 @@ QCA	s	Pontificia Universidad Catolica del Ecuador, Departamento de Biologia
 QCAM	s	Pontificia Universidad Catolica del Ecuador			
 QCAZ	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador			
 QCAZ:A	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection		
+QCAZ:M	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Mammal Collection	
 QCAZ:R	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection		
 QCC	c	 Qatari Culture Collection			
 QCNE	s	Herbario Nacional del Ecuador			
