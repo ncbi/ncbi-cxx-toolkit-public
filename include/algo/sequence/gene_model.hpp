@@ -48,7 +48,7 @@ BEGIN_SCOPE(objects)
     class CSeq_annot;
     class CBioseq_set;
     class CBioseq_Handle;
-    class SAnnotSelector;
+    struct SAnnotSelector;
 END_SCOPE(objects)
 
 class CAlgoFeatureGeneratorException : public CException
