@@ -316,10 +316,12 @@ int CAsnCacheTestApplication::Run(void)
                     if(args["find-annotated"]) {
                         bool is_annotated = x_FindAnnotated(*entry);
                         CDataLoader::TIds id_set;
-                        if(loader)
+                        if(loader) {
                             loader->GetIds(*id_it, id_set);
-                        else
+                        }
+                        else {
                             cache->GetSeqIds(*id_it, id_set);
+                        }
                             cout<<"is_annotated" << "\t" 
                                 << "original" << "\t"
                                 << *id_it << "\t" 
@@ -349,7 +351,7 @@ int CAsnCacheTestApplication::Run(void)
                             if(desc->GetQual() == "inference" ||
                                desc->GetQual() == "experiment" 
                             ) {
-                                if(first) cout << *id_it << endl;  first=false;
+                                if(first) { cout << *id_it << endl;  } first=false;
                                 cout << MSerial_AsnText << *desc;
                             }
                         }
