@@ -326,7 +326,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
         pReader->Read(flags, &logger);
         pEntry = pReader->GetSeqEntry(sGetFastaFlags(sTestName), &logger);
     } 
-    catch (CObjReaderParseException& except) {
+    catch (CObjReaderParseException&) {
         cerr << "";
     }
     ifstr.close();

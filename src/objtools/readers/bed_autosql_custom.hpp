@@ -1,4 +1,4 @@
-#ifndef _BED_SUTOSQL_CUSTOM_HPP_
+#ifndef _BED_AUTOSQL_CUSTOM_HPP_
 #define _BED_AUTOSQL_CUSTOM_HPP_
 
 /*
