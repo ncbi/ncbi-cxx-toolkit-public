@@ -80,11 +80,11 @@ BOOST_AUTO_TEST_CASE(Test_Throw_NoThrow)
     BOOST_WARN_NO_THROW(throw runtime_error("Aieee!"));
     BOOST_WARN_NO_THROW_MT_SAFE(throw runtime_error("Aieee!"));
 
-    BOOST_CHECK_NO_THROW();
-    BOOST_CHECK_NO_THROW_MT_SAFE();
+    BOOST_CHECK_NO_THROW(;);
+    BOOST_CHECK_NO_THROW_MT_SAFE(;);
 
-    BOOST_WARN_THROW(, runtime_error);
-    BOOST_WARN_THROW_MT_SAFE(, runtime_error);
+    BOOST_WARN_THROW(;, runtime_error);
+    BOOST_WARN_THROW_MT_SAFE(;, runtime_error);
 
     BOOST_REQUIRE_THROW(throw runtime_error("Aieee!"), runtime_error);
     BOOST_REQUIRE_THROW_MT_SAFE(throw runtime_error("Aieee!"), runtime_error);
