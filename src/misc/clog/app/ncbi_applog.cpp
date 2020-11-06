@@ -713,7 +713,7 @@ static bool s_PeekStdin(const CTimeout& timeout)
             break;
         }
         // n < 0
-        if ((n = errno) != EINTR) {
+        if (errno != EINTR) {
             // error
             break;
         }
