@@ -4183,7 +4183,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     }
 #endif //NCBI_OS_UNIX
 #ifdef NCBI_OS_MSWIN
-    // These are fake but we don't want to leave plain 0 (root) in there
+    // These are fake but we don't want to leave plain 0 (Unix root) in there
     st.orig.st_uid = (uid_t) uid;
     st.orig.st_gid = (gid_t) gid;
 #endif //NCBI_OS_MSWIN
@@ -4398,7 +4398,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                  &m_Current.m_UserName,
                                  &m_Current.m_GroupName,
                                  &uid, &gid);
-    // these are fake but we don't want to leave plain 0 (Unix root) in there
+    // These are fake but we don't want to leave plain 0 (Unix root) in there
     m_Current.m_Stat.orig.st_uid = (uid_t) uid;
     m_Current.m_Stat.orig.st_gid = (gid_t) gid;
 #endif //NCBI_OS_MSWIN
