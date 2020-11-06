@@ -133,6 +133,9 @@ CChecksumBase::CChecksumBase(const CChecksumBase& other)
 
 CChecksumBase& CChecksumBase::operator= (const CChecksumBase& other)
 {
+    if (&other == this){
+        return *this;
+    }
     x_Free();
 
     m_Method    = other.m_Method;
