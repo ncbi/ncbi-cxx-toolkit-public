@@ -1284,7 +1284,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             BOOST_CHECK_EQUAL( Int1_value, value_Int8 );
             Uint1_value = Convert(variant_Int8);
             BOOST_CHECK_EQUAL( Int8(Uint1_value), value_Int8 );
-            bool_value  = Convert(variant_Int8);
+            /* bool_value = */ Convert(variant_Int8);
 
             string str_value = NCBI_CONVERT_TO(Convert(variant_Int8), string);
         }
