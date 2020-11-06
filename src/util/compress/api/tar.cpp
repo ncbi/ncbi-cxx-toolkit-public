@@ -1384,10 +1384,10 @@ void CTar::x_Init(void)
 {
     _ASSERT(!OFFSET_OF(m_BufferSize));
     size_t pagesize = (size_t) CSystemInfo::GetVirtualMemoryPageSize();
-    size_t pagemask = pagesize - 1;
-    if (pagesize < 4096  ||  (pagesize & pagemask)) {
+    if (pagesize < 4096  ||  (pagesize & (pagesize - 1))) {
         pagesize = 4096;  // reasonable default
     }
+    size_t pagemask = pagesize - 1;
     m_BufPtr = new char[m_BufferSize + pagemask];
     // Make m_Buffer page-aligned
     m_Buffer = m_BufPtr +
