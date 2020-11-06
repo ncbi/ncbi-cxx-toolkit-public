@@ -247,7 +247,7 @@ void CBDB_Volumes::Delete(const vector<unsigned>& remove_list)
             NCBI_THROW(CBDB_VolumesException, eVolumeNotFound,
                 string("Cannot find volume=") + NStr::UIntToString(*iter));
         }
-        err = m_VolumesDB->Delete();
+        m_VolumesDB->Delete();
     }
 
     trans.Commit();
