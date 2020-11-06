@@ -1495,9 +1495,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( haveUnion ) {
                     if ( haveBuffer ) {
                         methods << "BUF_";
-                        if (i->memberType == eUtf8StringMember) {
-                            addRef = true;
-                        }
                     }
                     else {
                         methods << "PTR_";
