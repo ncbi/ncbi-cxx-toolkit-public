@@ -3987,8 +3987,8 @@ retry:
     if ( !m_IsTuneup ) {
 #if !defined(TIMEZONE_IS_UNDEFINED)
         // Get current timezone
-        TSeconds x_timezone = TimeZone();
-        int x_daylight = Daylight();
+        TSeconds x_timezone;
+        int x_daylight;
         {{
             // MT-Safe protect: use CTime locking mutex
             CMutexGuard LOCK_TM(s_TimeMutex);
