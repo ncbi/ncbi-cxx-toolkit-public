@@ -230,13 +230,12 @@ int CUnicodeToAsciiTranslation::x_ParseLine(
     symbol = 0;
     translation.clear();
 
-    string::size_type begin=0, end = 0;
 // symbol
-    begin = line.find_first_not_of(" \t", begin=0);
+    string::size_type begin = line.find_first_not_of(" \t", 0);
     if (begin == string::npos) {
         return res;
     }
-    end = line.find_first_of(" \t,#",begin);
+    string::size_type end = line.find_first_of(" \t,#",begin);
     if (end == begin) {
         return res;
     }
