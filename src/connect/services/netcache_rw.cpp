@@ -352,7 +352,7 @@ void CNetCacheWriter::Abort()
 
 void CNetCacheWriter::WriteBufferAndClose(const char* buf_ptr, size_t buf_size)
 {
-    size_t bytes_written;
+    size_t bytes_written = buf_size;
 
     while (buf_size > 0) {
         Write(buf_ptr, buf_size, &bytes_written);
