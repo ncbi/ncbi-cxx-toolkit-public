@@ -372,7 +372,7 @@ void CGRPCServerCallbacks::BeginRequest(TGRPCServerContext* sctx,
                 value = &it.second.begin()->second;
             } else {
                 _ASSERT(it.second.size() == 2);
-                const string *old_name, *new_name;
+                const string *old_name = nullptr, *new_name = nullptr;
                 for (const auto& it2 : it.second) {
                     if (NStr::StartsWith(it2.first, "ncbi_")) {
                         new_name = &it2.first;
