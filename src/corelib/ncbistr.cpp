@@ -4533,8 +4533,8 @@ string NStr::HtmlDecode(const CTempString str, EEncoding encoding, THtmlDecode* 
         ch = *(i++);
         //check for HTML entities and character references
         if (i != e && ch == '&') {
-            CTempString::const_iterator itmp, end_of_entity, start_of_entity;
-            itmp = end_of_entity = start_of_entity = i;
+            CTempString::const_iterator start_of_entity, end_of_entity, itmp;
+            end_of_entity = itmp = i;
             bool ent, dec, hex, parsed=false;
             ent = isalpha((unsigned char)(*itmp)) != 0;
             dec = !ent && *itmp == '#' && ++itmp != e && 
@@ -4561,7 +4561,7 @@ string NStr::HtmlDecode(const CTempString str, EEncoding encoding, THtmlDecode* 
                 if (end_of_entity != i && (ent || dec || hex)) {
                     uch = 0;
                     if (ent) {
-                        string entity(start_of_entity,end_of_entity);
+                        string entity(start_of_entity, end_of_entity);
                         const struct tag_HtmlEntities* p = s_HtmlEntities;
                         for ( ; p->u != 0; ++p) {
                             if (entity.compare(p->s) == 0) {
