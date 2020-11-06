@@ -15,7 +15,8 @@ VCProjectVersion = 15.0
 
 [Configuration.1600]
 PlatformToolset=v142
-ToolsVersion = 16.0
+ToolsVersion = Current
+WindowsTargetPlatformVersion=10.0
 
 
 [Compiler]
