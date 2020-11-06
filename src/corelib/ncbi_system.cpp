@@ -1123,9 +1123,7 @@ bool GetCurrentProcessTimes(double* user_time, double* system_time)
 extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
 {
 #ifdef NCBI_OS_UNIX
-    int            fd_count = 0;
-    struct dirent* dp;
-
+    int     fd_count = 0;
     rlim_t  cur_limit = -1;
     rlim_t  max_limit = -1;
 
@@ -1140,7 +1138,7 @@ extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
 
     DIR* dir = opendir("/proc/self/fd/");
     if (dir) {
-        while ((dp = readdir(dir)) != NULL) {
+        while (readdir(dir) != NULL) {
             ++fd_count;
         }
         closedir(dir);
@@ -1197,12 +1195,11 @@ extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
 extern int GetProcessThreadCount(void)
 {
 #ifdef NCBI_OS_LINUX
-    int            thread_count = 0;
-    struct dirent* dp;
+    int thread_count = 0;
 
     DIR* dir = opendir("/proc/self/task/");
     if (dir) {
-        while ((dp = readdir(dir)) != NULL)
+        while (readdir(dir) != NULL)
             ++thread_count;
         closedir(dir);
         thread_count -= 2;  // '.' and '..'

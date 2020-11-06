@@ -499,8 +499,7 @@ int CLinuxFeature::GetThreadCount(pid_t pid)
     string name = PROCFS(pid, "task");
     DIR* dir = opendir(name.c_str());
     if (dir) {
-        struct dirent* de;
-        while ((de = readdir(dir)) != NULL) {
+        while (readdir(dir) != NULL) {
             ++n;
         }
         closedir(dir);
@@ -520,8 +519,7 @@ int CLinuxFeature::GetFileDescriptorsCount(pid_t pid)
     string name = PROCFS(pid, "fd");
     DIR* dir = opendir(name.c_str());
     if (dir) {
-        struct dirent* de;
-        while ((de = readdir(dir)) != NULL) {
+        while (readdir(dir) != NULL) {
             ++n;
         }
         closedir(dir);
