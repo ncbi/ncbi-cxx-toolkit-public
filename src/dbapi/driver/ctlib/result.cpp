@@ -710,6 +710,9 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         CTime t;
         my_ct_get_data(cmd, item_no, buffer, (CS_INT) sizeof(buffer), &outlen,
                        is_null);
+
+        ENSURE_ITEM();
+
         if ( !is_null ) {
             CS_DATEREC dr = { 0 };
             CS_CONTEXT* ctx = m_Connect->GetCTLibContext().CTLIB_GetContext();
