@@ -66,8 +66,7 @@ public:
     static size_t GetNewCapacity(size_t /*cur_capacity*/,
                                  size_t required_size)
     {
-        size_t  new_size = required_size * 2;
-
+        size_t new_size = required_size * 2;
         // Overrun
         if (new_size < required_size)
             return std::numeric_limits<size_t>::max();
@@ -85,15 +84,15 @@ template <typename T = unsigned char,
 class CSimpleBufferT
 {
 public:
-    typedef T             value_type;
-    typedef size_t        size_type;
+    typedef T       value_type;
+    typedef size_t  size_type;
 public:
     explicit CSimpleBufferT(size_type new_size = 0)
     {
         if (new_size) {
             m_Buffer = x_Allocate(new_size);
         } else {
-            m_Buffer = 0;
+            m_Buffer = NULL;
         }
         m_Size = m_Capacity = new_size;
     }
@@ -105,10 +104,14 @@ public:
     CSimpleBufferT(const CSimpleBufferT& sb)
     {
         size_type new_size = sb.capacity();
-        m_Buffer = x_Allocate(new_size);
         m_Capacity = new_size;
         m_Size = sb.size();
-        memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
+        if (new_size) {
+            m_Buffer = x_Allocate(new_size);
+            memcpy(m_Buffer, sb.data(), m_Size * sizeof(value_type));
+        } else {
+            m_Buffer = NULL;
+        }
     }
 
     CSimpleBufferT& operator=(const CSimpleBufferT& sb)
@@ -125,7 +128,7 @@ public:
                 m_Capacity = sb.capacity();
                 m_Size = sb.size();
             }
-            memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
+            memcpy(m_Buffer, sb.data(), m_Size * sizeof(value_type));
         }
         return *this;
     }
@@ -234,11 +237,11 @@ public:
     {
         return m_Buffer;
     }
+
     value_type* data()
     {
         return m_Buffer;
     }
-
 
 
 private:
@@ -246,7 +249,9 @@ private:
 #ifdef _DEBUG
     void x_Fill(value_type* buffer, int value, size_t elem)
     {
-        memset(buffer, value, elem * sizeof(value_type));
+        if (m_Buffer) {
+            memset(buffer, value, elem * sizeof(value_type));
+        }
     }
 #else
     void x_Fill(value_type*, int, size_t) {}
@@ -276,6 +281,7 @@ private:
 };
 
 typedef CSimpleBufferT<> CSimpleBuffer;
+
 
 END_NCBI_SCOPE
 
