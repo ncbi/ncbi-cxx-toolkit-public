@@ -352,10 +352,13 @@ void CNetCacheWriter::Abort()
 
 void CNetCacheWriter::WriteBufferAndClose(const char* buf_ptr, size_t buf_size)
 {
-    size_t bytes_written = buf_size;
+    size_t bytes_written;
 
     while (buf_size > 0) {
-        Write(buf_ptr, buf_size, &bytes_written);
+        if (Write(buf_ptr, buf_size, &bytes_written) != eRW_Success) {
+            NCBI_THROW(CNetServiceException, eCommunicationError, "Unknown error");
+        }
+
         buf_ptr += bytes_written;
         buf_size -= bytes_written;
     }
