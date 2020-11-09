@@ -2299,7 +2299,7 @@ Uint1 GetProtAccOwner(const Char* acc)
     {
         if(len == 8)
             return(0);
-        if(acc[8] < '0' || acc[8] >= '9' || acc[9] <= '0' || acc[9] >= '9')
+        if(acc[8] < '0' || acc[8] > '9' || acc[9] < '0' || acc[9] > '9')
             return(0);
     }
 
