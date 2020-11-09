@@ -58,6 +58,7 @@ public:
         fNormal =       0,
         fGenbankMode =  1 << 4,
         fRetainLocusIds = 1 << 5,
+        fAssumeCircularSequence = 1 << 6,
     } TFlags;
 
     using IdToFeatureMap = map<string, CRef<CSeq_feat>>;

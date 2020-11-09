@@ -518,9 +518,20 @@ bool CGff2Record::InitializeFeature(
 //  ----------------------------------------------------------------------------
 void sGffMergeLocation(
     CSeq_feat& feature,
-    CSeq_loc& addition)
+    CSeq_loc& addition,
+    bool bAssumeCircularSequence)
 //  ----------------------------------------------------------------------------
 {
+    auto& featLoc = feature.SetLocation();
+
+    // For linear sequences:
+    // RW-1196: *** Temporarily disable circular merging ***
+    if (true  ||  !bAssumeCircularSequence) {
+        feature.SetLocation(*featLoc.Add(
+            addition, CSeq_loc::fSort | CSeq_loc::fMerge_All, 0));
+        return;
+    }
+
     // Problem to be solved:
     // CSeq_loc merge flags only work right if combined with fSort.
     // However, the sort order must be preserved because it's the only indication
@@ -531,7 +542,6 @@ void sGffMergeLocation(
     // This code will narrowly work in the context of assembling transcripts from
     //  GFF records. It won't be sufficient in a more general context.
 
-    auto& featLoc = feature.SetLocation();
     if (featLoc.IsMix()) {
         for (const auto& pSubLoc: featLoc.GetMix().Get()) {
             auto pIntersect = pSubLoc->Intersect(addition, 0, nullptr);
@@ -541,8 +551,12 @@ void sGffMergeLocation(
             }
         }
     }
-    auto pAdded = featLoc.Add(addition, CSeq_loc::fMerge_All, 0);
-    feature.SetLocation(*pAdded);
+    if (featLoc.GetStrand() == eNa_strand_minus) {
+        feature.SetLocation(*addition.Add(featLoc, CSeq_loc::fMerge_All, 0));
+    }
+    else {
+        feature.SetLocation(*featLoc.Add(addition, CSeq_loc::fMerge_All, 0));
+    }
     return;
 }
 
@@ -570,7 +584,7 @@ bool CGff2Record::UpdateFeature(
     }
     else {
         // indicates the feature location is already under construction
-        sGffMergeLocation(*pFeature, *pAddLoc);
+        sGffMergeLocation(*pFeature, *pAddLoc, flags & CGff2Reader::fAssumeCircularSequence);
         if (pFeature->GetLocation().IsInt()) {
             CRef<CSeq_loc> pOld(new CSeq_loc);
             pOld->Assign(pFeature->GetLocation());

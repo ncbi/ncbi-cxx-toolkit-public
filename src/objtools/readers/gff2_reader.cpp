@@ -220,6 +220,7 @@ CGff2Reader::xGetData(
             }
             else {
                 mSequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
+                m_iFlags |= fAssumeCircularSequence;
             }
             if (mSequenceSize == -1) {
                 mSequenceSize = 0;
