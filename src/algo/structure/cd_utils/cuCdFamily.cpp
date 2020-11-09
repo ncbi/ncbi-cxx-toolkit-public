@@ -410,14 +410,15 @@ bool CDFamily::IsFamilyValid(const CDFamily* family, string& err) {
     if (!family) {
         err.append("Null CDFamily Object.\n");
         hasError = true;
-    }
-    if (family->getRootCD() == NULL) {
-        err.append("CDFamily Object Has No Root.\n");
-        hasError = true;
-    }
-    if (family->getCDCounts() <= 0) {
-        err.append("CDFamily Object With No CDs.\n");
-        hasError = true;
+    } else {
+        if (family->getRootCD() == NULL) {
+            err.append("CDFamily Object Has No Root.\n");
+            hasError = true;
+        } else if (family->getCDCounts() <= 0) {
+            err.append("CDFamily Object With No CDs.\n");
+            hasError = true;
+        }
+            
     }
     return (!hasError);
 }
@@ -435,23 +436,6 @@ void CDFamily::inspect()const
 CDFamily::~CDFamily()
 {
 }
-
-/*
-int CDFamily::getFamilies(vector<CDFamily>& families, vector<CCdCore*>& cds, bool findChildren)
-{
-	families.clear();
-	if (findChildren)	
-		retrieveFamilies(cds, families);
-	else
-	{
-		vector<CCdCore*> tmp(cds);
-		createFamilies(tmp, families);
-	}
-	return families.size();
-}*/
-
-//
-
 
 bool CDFamily::isDup(CDFamily& one, vector<CDFamily>& all)
 {
@@ -474,28 +458,6 @@ CDFamily* CDFamily::findFamily(CCdCore* cd, vector<CDFamily>& families)
 	}
 	return 0;
 }
-
-//includeChildren = false
-/*
-int CDFamily::createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families)
-{
-	vector<CCdCore*>::iterator cdIterator = cds.begin();
-	while(cdIterator != cds.end())
-	{
-		CCdCore* cd = *cdIterator;
-		if (!findParent(cd, cds))  //no parent, then use this cd as a root of family
-		{
-			CDFamily* cdFamily = new CDFamily(cd);
-			cds.erase(cdIterator);
-			extractFamily(cd, *cdFamily, cds);
-			families.push_back(*cdFamily);
-			cdIterator = cds.begin();
-		}
-		else
-			++cdIterator;
-	}
-	return families.size(); //all cds should be added
-}*/
 
 //  In the vector, pass back pointers to vs copies of the families.
 //  Requires that the caller cleans up the families after!!
