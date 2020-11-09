@@ -23,6 +23,7 @@
     <ProjectGuid>{FDC9447A-C7F1-492D-B84F-D54A1E610F16}</ProjectGuid>
     <RootNamespace>MasterProject</RootNamespace>
     <Keyword>ManagedCProj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">

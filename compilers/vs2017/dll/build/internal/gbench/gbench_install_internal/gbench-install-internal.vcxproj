@@ -54,6 +54,7 @@
     <ProjectGuid>{6C23686B-1522-4B44-8D48-7E3176C36248}</ProjectGuid>
     <RootNamespace>gbench-install</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">

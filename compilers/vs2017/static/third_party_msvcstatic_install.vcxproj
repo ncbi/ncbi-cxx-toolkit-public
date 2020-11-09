@@ -101,6 +101,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9E4B5381-9B6C-4867-BF8A-F1AAA1FD581E}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'" Label="Configuration">

@@ -69,6 +69,7 @@ if exist "%SLN_DIR%configure_prebuild.bat" (
 )
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
+set DEVENV=%DEVENV:.exe=.com%
 
 REM -------------------------------------------------------------------------
 REM get PTB version: from DEFPTB_VERSION_FILE  or from PREBUILT_PTB_EXE
