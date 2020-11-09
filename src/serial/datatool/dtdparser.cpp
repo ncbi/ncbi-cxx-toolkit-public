@@ -1358,11 +1358,12 @@ CDataType* DTDParser::CompositeNode(
         (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
 
     AutoPtr<CDataType> type(Type(node, DTDElement::eOne, false, true));
-    AutoPtr<CDataMember> member(new CDataMember(node.GetName(),
-        uniseq ? (AutoPtr<CDataType>(new CUniSequenceDataType(type))) : type));
     if (uniseq) {
-        member->GetType()->SetSourceLine( type->GetSourceLine() );
+        int line = type->GetSourceLine();
+        type.reset(new CUniSequenceDataType(type));
+        type->SetSourceLine( line );
     }
+    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
 
     if ((occ == DTDElement::eZeroOrOne) ||
         (occ == DTDElement::eZeroOrMore)) {
