@@ -129,10 +129,15 @@ void COSGCaller::AddFetch(CID2_Request_Packet& packet, const CRef<COSGFetch>& fe
 }
 
 
+static bool kAlwaysSendInit = false;
+
+
 CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
 {
     CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
-    AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
+    if ( kAlwaysSendInit || m_Connection->GetNextRequestSerialNumber() == 0 ) {
+        AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
+    }
     for ( auto& f : fetches ) {
         AddFetch(*packet, f);
     }
