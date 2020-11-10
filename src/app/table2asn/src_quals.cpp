@@ -677,6 +677,8 @@ void CApplyMods::x_GetModsFromFileMap(
 void CApplyMods::operator()(CBioseq& bioseq)
 {
     CModHandler mod_handler;
+    mod_handler.SetExcludedMods({"lineage"});
+
     mod_handler.SetMods(m_CommandLineMods);
     string remainder = m_CommandLineRemainder;
     TModList rejectedMods;
