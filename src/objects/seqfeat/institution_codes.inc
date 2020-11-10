@@ -1982,6 +1982,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FAK\ts\tDepartment of Fisheries, Faculty of Agriculture\t\t\t",
 "FAKOU\ts\tFaculty of Agriculture, Kochi Univerisity\t\t\t",
 "FAKU\ts\tKyoto University\t\t\t",
+"FAMU\ts\tMycological Society MycoBH\t\t\t",
 "FAN\ts\tMuseum of Fanjingshan National Nature Reserve\t\t\t",
 "FAR\ts\tUniversity of Tarbiat-Moaallem, Biology Department\t\t\t",
 "FARM\ts\tLongwood University, Department of Natural Sciences\t\t\t",

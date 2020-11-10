@@ -1949,6 +1949,7 @@ FACS	s	Fujian Agricultural College
 FAK	s	Department of Fisheries, Faculty of Agriculture			
 FAKOU	s	Faculty of Agriculture, Kochi Univerisity			
 FAKU	s	Kyoto University			
+FAMU	s	Mycological Society MycoBH			
 FAN	s	Museum of Fanjingshan National Nature Reserve			
 FAR	s	University of Tarbiat-Moaallem, Biology Department			
 FARM	s	Longwood University, Department of Natural Sciences			
