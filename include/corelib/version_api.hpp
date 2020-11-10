@@ -315,6 +315,7 @@ public:
         fPackageFull    = 0x08,  ///< Print package info, if available
         fBuildInfo      = 0x10,  ///< Print build info (date and tag)
         fBuildSignature = 0x20,  ///< Print build signature, if available
+        fGI64bit        = 0x40,  ///< Print info about GI size
         fTCBuildNumber  = 0x0,   ///< obsolete, has no effect
         fPrintAll       = 0xFF   ///< Print all version data
     };

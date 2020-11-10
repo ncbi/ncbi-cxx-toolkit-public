@@ -729,6 +729,13 @@ string CVersionAPI::Print(const string& appname, TPrintFlags flags) const
         os << " Build-Signature: " << ' ' << NCBI_SIGNATURE << endl;
     }
 #endif
+    if (flags & fGI64bit) {
+#ifdef NCBI_INT8_GI
+        os << " GI-64bit:  TRUE" << endl;
+#else
+        os << " GI-64bit:  FALSE" << endl;
+#endif
+    }
 
     if (flags & fBuildInfo) {
         os << m_BuildInfo.Print();
