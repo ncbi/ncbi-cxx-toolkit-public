@@ -130,7 +130,7 @@ s_FwdCompareHSPs(const void* v1, const void* v2)
 
     if (h1->context < h2->context)
         return -1;
-    else if (h1->context > h2->context)
+    if (h1->context > h2->context)
         return 1;
 
 	if (h1->query.offset < h2->query.offset) 
