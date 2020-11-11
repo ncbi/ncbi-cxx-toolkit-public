@@ -85,6 +85,9 @@ GetAlignmentForRna(
     if (canonical) {
         feat_idh = canonical;
     }
+    if (!feat_idh) {
+        return CConstRef<CSeq_align>();
+    }
     list<CConstRef<CSeq_align> > align_list;
     for(CAlign_CI align_it(a_scope, a_feat.GetLocation()); align_it; ++align_it) {
         const CSeq_align& cur_align = *align_it;
@@ -168,8 +171,13 @@ void CFeatureGenerator::CreateMicroIntrons(
         }
         CConstRef<CSeq_align> align_ref = GetAlignmentForRna(mrna_feat, scope, ignore_errors);
         if(!align_ref) {
-            continue;
+            if(ignore_errors) {
+                continue;
+            }
+            NCBI_THROW(CAlgoFeatureGeneratorException, eMicroIntrons, 
+                "Unable to get alignment for mRNA.");
         }
+
         const CSeq_align& cur_align = *align_ref;
         CBioseq_Handle mrna_bsh = scope.GetBioseqHandle(mrna_feat.GetProductId());
         if(!mrna_bsh) {
