@@ -4246,6 +4246,7 @@ MIB:ZPL	s	University of Milano - Bicocca, Department of Biotechnology and Biosci
 MIC	s	Mar Ivanios College (Zoology museum)			
 MICG	s	Universidad de San Carlos de Guatemala			
 MICH	s	University of Michigan		http://quod.lib.umich.edu/h/herb4ic/x-mich10007/MICH&spec;	
+MICH:CZEUM	s	University of Michigan, Collection of Zoosporic Eufungi at the University of Michigan	
 MICKKU	c	MICKKU Culture Collection			
 MID	s	Middlebury College, Biology Department			
 MIE	s	Mie Prefectural Museum			
@@ -7836,6 +7837,7 @@ WSRP	s	University of Podlasie, Botany Department
 WSU<USA-UT>	s	Weber State University, Bird and Mammal Collection			
 WSU<USA-WA>	s	Washington State University			
 WSUMNH	s	Wayne State University, Museum of Natural History			
+WSUSoM	s	Wayne State University, School of  Medicine			
 WSY	s	Royal Horticultural Society Garden Wisley			
 WTR	s	Winchester College, Biology Department			
 WTS	s	West Texas A&M University, Department of Life, Earth and Environmental Sciences			
