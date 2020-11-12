@@ -533,6 +533,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
                             iter2->second->total_identity += info->total_identity;
                             iter2->second->count  ++;
                             iter2->second->all_seqid = iter2->second->all_seqid + "," + info->seqid; 
+                            delete info;
                         } else {
                             (*iter->second).insert(AaMap::value_type(aa_status, info));
                         }
