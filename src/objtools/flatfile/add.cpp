@@ -844,24 +844,21 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         }
 
         CRef<CSeq_id> id(new CSeq_id(idChoice, accessionString));
-        if(pp->source != Parser::ESource::EMBL && pp->source != Parser::ESource::NCBI)
-        {
 
-            CRef<CSeq_id> pId(new CSeq_id(accessionString));
-            bool IsConOrScaffold=false;
-            try {
-                IsConOrScaffold = s_IsConOrScaffold(*pId, GetScope());
-            }
-            catch (...) {
-                ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
-                        "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
-                          accessionString.c_str());
-                continue;
-            } 
-            if ((IsConOrScaffold && !pricon) ||
-                (!IsConOrScaffold && pricon && idChoice == acctype)) {
-                continue;
-            }
+        CRef<CSeq_id> pId(new CSeq_id(accessionString));
+        bool IsConOrScaffold=false;
+        try {
+            IsConOrScaffold = s_IsConOrScaffold(*pId, GetScope());
+        }
+        catch (...) {
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
+                "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
+                accessionString.c_str());
+            continue;
+        } 
+        if ((IsConOrScaffold && !pricon) ||
+            (!IsConOrScaffold && pricon && idChoice == acctype)) {
+            continue;
         }
 
         replaces.push_back(id);
