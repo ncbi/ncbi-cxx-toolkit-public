@@ -386,7 +386,9 @@ public:
         eGapFiller = 4096,
         eUnmodifiedAlign = 8192,
         eChangedByFilter = 16384,
-        eTSA = 32768
+        eTSA = 32768,
+        eLeftConfirmed = 65536,
+        eRightConfirmed = 131072
     };
 
     CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :

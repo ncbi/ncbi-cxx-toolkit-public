@@ -1737,6 +1737,8 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Status()&CGeneModel::ecDNAIntrons)!=0)    attributes["flags"] += ",cDNAIntrons";
     if ((a.Status()&CGeneModel::eChangedByFilter)!=0)    attributes["flags"] += ",ChangedByFilter";
     if ((a.Status()&CGeneModel::eTSA)!=0)    attributes["flags"] += ",TSA";
+    if ((a.Status()&CGeneModel::eLeftConfirmed)!=0)    attributes["flags"] += ",LeftConfirmed";
+    if ((a.Status()&CGeneModel::eRightConfirmed)!=0)    attributes["flags"] += ",RightConfirmed";
 
     if (a.GetCdsInfo().ReadingFrame().NotEmpty()) {
 
@@ -1854,6 +1856,8 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "GapFiller") a.Status()|= CGeneModel::eGapFiller;
         else if (*f == "cDNAIntrons") a.Status()       |= CGeneModel::ecDNAIntrons;
         else if (*f == "TSA") a.Status()       |= CGeneModel::eTSA;
+        else if (*f == "LeftConfirmed") a.Status()       |= CGeneModel::eLeftConfirmed;
+        else if (*f == "RightConfirmed") a.Status()       |= CGeneModel::eRightConfirmed;
         else if (*f == "ChangedByFilter") a.Status()       |= CGeneModel::eChangedByFilter;
         else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
         else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
@@ -2191,7 +2195,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
     return os;
 }
 
-struct Precedence
+struct Precedence : public binary_function<TSignedSeqRange, TSignedSeqRange, bool>
 {
     bool operator()(const TSignedSeqRange& __x, const TSignedSeqRange& __y) const
     { return Precede( __x, __y ); }
@@ -2227,7 +2231,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 
     do {
         recs.push_back(rec);
-    } while (is >> rec && rec.seqid == recs.front().seqid && rec.model == id);
+    } while (is >> rec && rec.seqid == recs.front().seqid && rec.model == id && rec.type != "mRNA");
 
     Ungetline(is);
     
