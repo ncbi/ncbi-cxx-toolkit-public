@@ -66,6 +66,7 @@ message("-----------------------------------------------------------------------
     message("")
     message("Components Found:  ${NCBI_ALL_COMPONENTS}")
     message("Other features:    ${NCBI_ALL_REQUIRES} ${NCBI_PTBCFG_PROJECT_FEATURES}")
+    message("Deprecated components:  ${NCBI_ALL_LEGACY}")
 
     message("------------------------------------------------------------------------------")
     message("")

@@ -16,6 +16,9 @@
 
 #############################################################################
 set(NCBI_ALL_COMPONENTS "")
+set(NCBI_ALL_LEGACY "")
+set(NCBI_ALL_REQUIRES "")
+
 set(NCBI_REQUIRE_MT_FOUND YES)
 list(APPEND NCBI_ALL_REQUIRES MT)
 if(BUILD_SHARED_LIBS)
@@ -665,5 +668,7 @@ set(FTDS95_INCLUDE  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95  ${NCBITK_INC_ROOT}/d
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
 #############################################################################
+list(SORT NCBI_ALL_LEGACY)
+list(APPEND NCBI_ALL_COMPONENTS ${NCBI_ALL_LEGACY})
 list(SORT NCBI_ALL_COMPONENTS)
 list(SORT NCBI_ALL_REQUIRES)

@@ -204,13 +204,15 @@ NCBI_find_package(TIFF TIFF)
 #############################################################################
 # TLS
 if (EXISTS ${NCBI_ThirdParty_TLS}/include)
-  message(STATUS "Found TLS: ${NCBI_ThirdParty_TLS}")
-  set(NCBI_COMPONENT_TLS_FOUND YES)
-  set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_ThirdParty_TLS}/include)
-  list(APPEND NCBI_ALL_COMPONENTS TLS)
+    message(STATUS "Found TLS: ${NCBI_ThirdParty_TLS}")
+    set(NCBI_COMPONENT_TLS_FOUND YES)
+    set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_ThirdParty_TLS}/include)
+    list(APPEND NCBI_ALL_COMPONENTS TLS)
+    list(APPEND NCBI_ALL_LEGACY GNUTLS)
+    set(NCBI_COMPONENT_GNUTLS_FOUND TLS)
 else()
-  message("Component TLS ERROR: ${NCBI_ThirdParty_TLS}/include not found")
-  set(NCBI_COMPONENT_TLS_FOUND NO)
+    message("Component TLS ERROR: ${NCBI_ThirdParty_TLS}/include not found")
+    set(NCBI_COMPONENT_TLS_FOUND NO)
 endif()
 
 #############################################################################
@@ -330,6 +332,10 @@ if(NOT NCBI_COMPONENT_XML_FOUND)
         set(NCBI_COMPONENT_XML_LIBS ${NCBI_COMPONENT_XML_LIBS} -liconv)
     endif()
 endif()
+if(NCBI_COMPONENT_XML_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXML)
+    set(NCBI_COMPONENT_LIBXML_FOUND XML)
+endif()
 
 #############################################################################
 # XSLT
@@ -343,6 +349,10 @@ if(NCBI_COMPONENT_XSLT_FOUND)
     set(NCBI_COMPONENT_XSLTPROCTOOL_FOUND YES)
     set(NCBI_XSLTPROCTOOL ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
 endif()
+if(NCBI_COMPONENT_XSLT_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXSLT)
+    set(NCBI_COMPONENT_LIBXSLT_FOUND XSLT)
+endif()
 
 #############################################################################
 # EXSLT
@@ -351,6 +361,10 @@ if(ON)
 endif()
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
     NCBI_define_component(EXSLT exslt)
+endif()
+if(NCBI_COMPONENT_EXSLT_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
+    set(NCBI_COMPONENT_LIBEXSLT_FOUND EXSLT)
 endif()
 
 #############################################################################
@@ -441,6 +455,10 @@ if(ON)
 endif()
 if(NOT NCBI_COMPONENT_UV_FOUND)
     NCBI_define_component(UV uv)
+endif()
+if(NCBI_COMPONENT_UV_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBUV)
+    set(NCBI_COMPONENT_LIBUV_FOUND UV)
 endif()
 
 #############################################################################

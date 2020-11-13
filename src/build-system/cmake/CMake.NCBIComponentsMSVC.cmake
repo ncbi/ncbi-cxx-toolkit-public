@@ -109,6 +109,10 @@ if(OFF)
 endif()
 if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
     NCBI_define_Wcomponent(NCBI_C ncbiobj.lib ncbimmdb.lib ncbi.lib)
+    if(NCBI_COMPONENT_NCBI_C_FOUND)
+        list(APPEND NCBI_ALL_LEGACY C-Toolkit)
+        set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
+    endif()
 else()
     message("DISABLED NCBI_C")
 endif()
@@ -229,10 +233,18 @@ NCBI_define_Wcomponent(TIFF libtiff.lib)
 #############################################################################
 # TLS
 NCBI_define_Wcomponent(TLS)
+if(NCBI_COMPONENT_TLS_FOUND)
+    list(APPEND NCBI_ALL_LEGACY GNUTLS)
+    set(NCBI_COMPONENT_GNUTLS_FOUND TLS)
+endif()
 
 #############################################################################
 # FASTCGI
 NCBI_define_Wcomponent(FASTCGI libfcgi.lib)
+if(NCBI_COMPONENT_FASTCGI_FOUND)
+    list(APPEND NCBI_ALL_LEGACY Fast-CGI)
+    set(NCBI_COMPONENT_Fast-CGI_FOUND FASTCGI)
+endif()
 
 #############################################################################
 # BerkeleyDB
@@ -251,14 +263,26 @@ if (NCBI_COMPONENT_XML_FOUND)
         set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
     endif()
 endif()
+if(NCBI_COMPONENT_XML_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXML)
+    set(NCBI_COMPONENT_LIBXML_FOUND XML)
+endif()
 
 #############################################################################
 # XSLT
 NCBI_define_Wcomponent(XSLT libexslt.lib libxslt.lib)
+if(NCBI_COMPONENT_XSLT_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXSLT)
+    set(NCBI_COMPONENT_LIBXSLT_FOUND XSLT)
+endif()
 
 #############################################################################
 # EXSLT
 NCBI_define_Wcomponent(EXSLT libexslt.lib)
+if(NCBI_COMPONENT_EXSLT_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
+    set(NCBI_COMPONENT_LIBEXSLT_FOUND EXSLT)
+endif()
 
 #############################################################################
 # SQLITE3
@@ -337,6 +361,10 @@ endif()
 ##############################################################################
 # XALAN
 NCBI_define_Wcomponent(XALAN xalan-c.lib XalanMessages.lib)
+if(NCBI_COMPONENT_XALAN_FOUND)
+    list(APPEND NCBI_ALL_LEGACY Xalan)
+    set(NCBI_COMPONENT_Xalan_FOUND XALAN)
+endif()
 
 ##############################################################################
 # XERCES
@@ -347,6 +375,10 @@ if(NCBI_COMPONENT_XERCES_FOUND)
     else()
         set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
     endif()
+endif()
+if(NCBI_COMPONENT_XERCES_FOUND)
+    list(APPEND NCBI_ALL_LEGACY Xerces)
+    set(NCBI_COMPONENT_Xerces_FOUND XERCES)
 endif()
 
 ##############################################################################
@@ -391,6 +423,10 @@ endif()
 NCBI_define_Wcomponent(UV libuv.lib)
 if(NCBI_COMPONENT_UV_FOUND)
     set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
+endif()
+if(NCBI_COMPONENT_UV_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBUV)
+    set(NCBI_COMPONENT_LIBUV_FOUND UV)
 endif()
 
 ##############################################################################

@@ -157,6 +157,8 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         set(NCBI_COMPONENT_NCBI_C_LIBS -L${NCBI_C_LIBPATH} ${_c_libs})
         set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1)
         list(APPEND NCBI_ALL_COMPONENTS NCBI_C)
+        list(APPEND NCBI_ALL_LEGACY C-Toolkit)
+        set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
     else()
         set(NCBI_COMPONENT_NCBI_C_FOUND NO)
         message("NOT FOUND NCBI_C")
@@ -358,6 +360,10 @@ list(APPEND NCBI_ALL_COMPONENTS TLS)
 #############################################################################
 # FASTCGI
 NCBI_define_component(FASTCGI fcgi)
+if(NCBI_COMPONENT_FASTCGI_FOUND)
+    list(APPEND NCBI_ALL_LEGACY Fast-CGI)
+    set(NCBI_COMPONENT_Fast-CGI_FOUND FASTCGI)
+endif()
 
 #############################################################################
 # SQLITE3
@@ -554,6 +560,10 @@ if(NOT NCBI_COMPONENT_XML_FOUND)
         set(NCBI_COMPONENT_XML_INCLUDE ${NCBI_COMPONENT_XML_INCLUDE} ${NCBI_COMPONENT_XML_INCLUDE}/libxml2)
     endif()
 endif()
+if(NCBI_COMPONENT_XML_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXML)
+    set(NCBI_COMPONENT_LIBXML_FOUND XML)
+endif()
 
 #############################################################################
 # XSLT
@@ -575,6 +585,10 @@ if(NCBI_COMPONENT_XSLT_FOUND)
     set(NCBI_COMPONENT_XSLTPROCTOOL_FOUND YES)
     set(NCBI_XSLTPROCTOOL ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
 endif()
+if(NCBI_COMPONENT_XSLT_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXSLT)
+    set(NCBI_COMPONENT_LIBXSLT_FOUND XSLT)
+endif()
 
 #############################################################################
 # EXSLT
@@ -592,10 +606,18 @@ if(NOT NCBI_COMPONENT_EXSLT_FOUND)
         message("NOT FOUND EXSLT: required component GCRYPT not found")
     endif()
 endif()
+if(NCBI_COMPONENT_EXSLT_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
+    set(NCBI_COMPONENT_LIBEXSLT_FOUND EXSLT)
+endif()
 
 #############################################################################
 # XLSXWRITER
 NCBI_define_component(XLSXWRITER xlsxwriter)
+if(NCBI_COMPONENT_XLSXWRITER_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBXLSXWRITER)
+    set(NCBI_COMPONENT_LIBXLSXWRITER_FOUND XLSXWRITER)
+endif()
 
 #############################################################################
 # LAPACK
@@ -704,6 +726,10 @@ NCBI_define_component(OSMesa OSMesa GLU GL)
 if(NCBI_COMPONENT_OSMesa_FOUND)
     set(NCBI_COMPONENT_OSMesa_LIBS ${NCBI_COMPONENT_OSMesa_LIBS}  -lXmu -lXt -lXext -lX11)
 endif()
+if(NCBI_COMPONENT_OSMesa_FOUND)
+    list(APPEND NCBI_ALL_LEGACY MESA)
+    set(NCBI_COMPONENT_MESA_FOUND OSMesa)
+endif()
 
 #############################################################################
 # XERCES
@@ -712,6 +738,10 @@ if(ON)
 endif()
 if(NOT NCBI_COMPONENT_XERCES_FOUND)
     NCBI_define_component(XERCES xerces-c)
+endif()
+if(NCBI_COMPONENT_XERCES_FOUND)
+    list(APPEND NCBI_ALL_LEGACY Xerces)
+    set(NCBI_COMPONENT_Xerces_FOUND XERCES)
 endif()
 
 ##############################################################################
@@ -748,6 +778,10 @@ endif()
 #############################################################################
 # XALAN
 NCBI_define_component(XALAN xalan-c xalanMsg)
+if(NCBI_COMPONENT_XALAN_FOUND)
+    list(APPEND NCBI_ALL_LEGACY Xalan)
+    set(NCBI_COMPONENT_Xalan_FOUND XALAN)
+endif()
 
 ##############################################################################
 # PERL
@@ -772,6 +806,10 @@ if(ON)
     NCBI_find_package(OpenSSL OpenSSL)
 else()
     NCBI_find_library(OpenSSL ssl crypto)
+endif()
+if(NCBI_COMPONENT_OpenSSL_FOUND)
+    list(APPEND NCBI_ALL_LEGACY OPENSSL)
+    set(NCBI_COMPONENT_OPENSSL_FOUND OpenSSL)
 endif()
 
 #############################################################################
@@ -810,6 +848,10 @@ if(NOT NCBI_COMPONENT_MONGOCXX_FOUND)
             set(NCBI_COMPONENT_MONGOCXX_LIBS    ${NCBI_COMPONENT_MONGOCXX_LIBS}    ${NCBI_COMPONENT_MONGOC_LIBS})
         endif()
     endif()
+endif()
+if(NCBI_COMPONENT_MONGOCXX_FOUND)
+    list(APPEND NCBI_ALL_LEGACY MONGODB3)
+    set(NCBI_COMPONENT_MONGODB3_FOUND MONGOCXX)
 endif()
 
 #############################################################################
@@ -853,6 +895,10 @@ if(ON)
 endif()
 if(NOT NCBI_COMPONENT_UV_FOUND)
     NCBI_define_component(UV uv)
+endif()
+if(NCBI_COMPONENT_UV_FOUND)
+    list(APPEND NCBI_ALL_LEGACY LIBUV)
+    set(NCBI_COMPONENT_LUBUV_FOUND UV)
 endif()
 
 #############################################################################
