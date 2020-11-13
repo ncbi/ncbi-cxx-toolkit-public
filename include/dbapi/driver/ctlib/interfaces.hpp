@@ -515,6 +515,8 @@ private:
                            size_t size);
 
     I_BlobDescriptor* x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& d);
+    bool x_IsLegacyBlobColumnType(const string& table_name,
+                                  const string& column_name);
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 

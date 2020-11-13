@@ -1024,9 +1024,10 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
         return x_SendUpdateWrite(*dbdesc, stream, size);
     } else if (descr_in.DescriptorType() != CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
         if (dbdesc != NULL) {
-            try {
+            if (x_IsLegacyBlobColumnType(dbdesc->TableName(),
+                                     dbdesc->ColumnName())) {
                 p_desc = x_GetNativeBlobDescriptor(*dbdesc);
-            } catch (CDB_Exception&) { // apparently not a legacy column type
+            } else {
                 return x_SendUpdateWrite(*dbdesc, stream, size);
             }
         }
@@ -1352,6 +1353,72 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 
     return descr;
 }
+
+
+bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
+                                              const string& column_name)
+{
+    string sp_name = "sp_columns";
+    string table_owner;
+    CTempString base_name = table_name;
+    if (table_name[0] == '#') {
+        sp_name = "tempdb.." + sp_name;
+    } else {
+        auto dot_pos = table_name.rfind('.');
+        if (dot_pos > 0  &&  dot_pos != NPOS) {
+            auto dot_pos2 = table_name.rfind('.', dot_pos - 1);
+            if (dot_pos2 == NPOS) {
+                table_owner = table_name.substr(0, dot_pos);
+            } else {
+                sp_name = table_name.substr(0, dot_pos2) + ".." + sp_name;
+                table_owner = table_name.substr(dot_pos2 + 1,
+                                                dot_pos - dot_pos2 - 1);
+            }
+            base_name = base_name.substr(dot_pos + 1);
+        }
+    }
+    CDB_VarChar table_param(base_name);
+    CDB_VarChar owner_param(table_owner);
+    CDB_VarChar column_param(column_name);
+    unique_ptr<CDB_RPCCmd> cmd(RPC(sp_name));
+    cmd->SetParam("@table_name",  &table_param);
+    cmd->SetParam("@column_name", &column_param);
+    if ( !table_owner.empty() ) {
+        cmd->SetParam("@table_owner", &owner_param);
+    }
+    auto rc = !cmd->Send();
+    CHECK_DRIVER_ERROR(rc, "Cannot send the language command." + GetDbgInfo(),
+                       110038);
+    while (cmd->HasMoreResults()) {
+        unique_ptr<CDB_Result> res(cmd->Result());
+        if (res == nullptr  ||  res->ResultType() != eDB_RowResult) {
+            continue;
+        }
+        while (res->Fetch()) {
+            auto n = res->NofItems();
+            for (auto i = 0;  i < n;  ++i) {
+                if ( !NStr::EqualNocase(res->ItemName(i), "SS_DATA_TYPE") ) {
+                    res->SkipItem();
+                    continue;
+                }
+                CDB_Int item;
+                res->GetItem(&item);
+                switch (item.Value()) {
+                case 34: // IMAGE
+                case 35: // TEXT
+                case 99: // NTEXT
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
+    // Presumably Sybase, which doesn't support new blob types or
+    // corresponding syntax, or introspection of temporary tables even with
+    // an explicit "tempdb.." procedure name qualifier.
+    return true;
+}
+
 
 bool CTL_Connection::Abort()
 {
