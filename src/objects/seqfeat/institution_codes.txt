@@ -6218,6 +6218,7 @@ SIAC<ITA>	s	Accademia dei Fisiocritici Onlus
 SIB	s	Sibiu Natural History Museum			
 SIBAC	s	Southwest Institute of Biology			
 SIBS	s	Institute of Marine Biological Research (IMBR)			
+SICAUCC	c	Sichuan Agricultural University Culture Collection			
 SICH	s	Simpson College, Biology and Environmental Sciences Department			
 SIEMEA	s	Severtsov Insitute for Evolutionary Morphology and Animal Ecology			
 SIENA	s	Universita di Siena, Dipartimento di Scienze Ambientali "G. Sarfatti"			
