@@ -42,6 +42,7 @@
 #include <objects/cdd/Update_comment.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
@@ -678,8 +679,8 @@ void UpdateViewer::ImportStructure(void)
         de = (*m)->GetDescr().end();
         for (d=(*m)->GetDescr().begin(); d!=de; ++d) {
             if ((*d)->IsName()) {
-                full_name = (*d)->GetName();
-                name = (*d)->GetName()[0];
+                full_name = (*d)->GetName();  // long chain-id
+                name = (*d)->GetName()[0];  // this only works for single-char chain-ids
             }
             else if ((*d)->IsMolecule_type() &&
                      (*d)->GetMolecule_type() == CBiomol_descr::eMolecule_type_protein)
@@ -714,8 +715,10 @@ void UpdateViewer::ImportStructure(void)
 
     // which chains to align?
     vector < const CSeq_id * > sids;
+    vector < string > sids_chain_ids;
     if (chains.size() == 1) {
         sids.push_back(chains[0].first);
+        sids_chain_ids.push_back(chains[0].second);
     } else {
         wxString *choices = new wxString[chains.size()];
         int choice;
@@ -727,8 +730,10 @@ void UpdateViewer::ImportStructure(void)
         int nsel = wxGetSelectedChoices(selections, "Which chain(s) do you want to align?",
             "Select Chain", chains.size(), choices, *viewerWindow);
         if (nsel == 0) return;
-        for (choice=0; choice<nsel; ++choice)
-            sids.push_back(chains[selections[choice]].first);
+        for (choice = 0; choice < nsel; ++choice) {
+            sids.push_back(chains[selections[choice]].first);               // chains[i].first: pdb-id
+            sids_chain_ids.push_back(chains[selections[choice]].second);    // chains[i].second: chain-id
+        }
     }
 
     SequenceList newSequences;
@@ -756,9 +761,53 @@ void UpdateViewer::ImportStructure(void)
                         break;
                 }
                 if (i != ie) {
+
+                    //=======================================================================================================
+                    // This is for long chain-id testing. This is section 1.
+                    // Get the gi of the (**b) bioseq to use later.
+                    // This is so we can find this bioseq later.
+                    //=======================================================================================================
+                    CBioseq::TId IDs = (*b)->GetId();
+                    CBioseq::TId::const_iterator i;
+                    TGi bioseq_GI;
+                    for (i = IDs.begin(); i != IDs.end(); ++i) {
+                        if ((*i)->IsGi()) {
+                            bioseq_GI = (*i)->GetGi();
+                        }
+                    }
+                    //=======================================================================================================
+                    // end of long chain-id testing section 1.
+                    //=======================================================================================================
+
                     const Sequence *sequence = master->parentSet->FindOrCreateSequence(**b);
                     if (sequence) {
+
+                        //=======================================================================================================
+                        // This is for long chain-id testing. This is section 2.
+                        // Some of our test data has biostrucs with long chain-ids and bioseqs with single-char chain-ids.
+                        // Replace the single-char chain-id in this sequence (from the bioseqs)
+                        // with a long chain-id from sids (from the biostruc) when a matching gi is found
+                        //=======================================================================================================
+                        // iterate through sids (these come from the biostruc)
+                        for (unsigned int j=0; j<sids.size(); ++j) {
+                            // if a matching gi is found
+                            TGi sequence_GI = sequence->identifier->gi;
+                            TGi sid_GI = sids[j]->GetGi();
+                            if (bioseq_GI == sid_GI) {
+                                // replace the pdb-id in the newSequence with the pdb-id from the biostruc
+                                (const_cast<MoleculeIdentifier*>(sequence->identifier))->pdbID = pdbID;
+                                (const_cast<MoleculeIdentifier*>(sequence->identifier))->pdbChain = sids_chain_ids[j];
+                                // check to see if they match
+                                string test1 = sequence->identifier->ToString();
+                                string test2 = sids[j]->GetSeqIdString();
+                            }
+                        }
+                        //=======================================================================================================
+                        // end of long chain-id testing section 2.
+                        //=======================================================================================================
+
                         TRACEMSG("found Bioseq for " << sids[j]->GetSeqIdString());
+
                         newSequences.push_back(sequence);
                         seq2id[sequence] = sids[j];
                         break;

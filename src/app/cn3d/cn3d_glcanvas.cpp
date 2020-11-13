@@ -235,8 +235,12 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 // in wxGTK >= 2.3.2, this causes a system crash on some Solaris machines...
 #if !defined(__WXGTK__)
     // keep mouse focus while holding down button
-    if (event.LeftDown()) CaptureMouse();
-    if (event.LeftUp()) ReleaseMouse();
+    if (event.LeftDown())
+        CaptureMouse();
+    if (event.LeftDClick())
+        CaptureMouse();
+    if (event.LeftUp())
+        ReleaseMouse();
 #endif
 
     if (event.LeftIsDown()) {

@@ -151,8 +151,18 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
     
     if (assemblyId == 0)  {
         // construct URL [mmdbsrv.cgi]
-        host = "www.ncbi.nlm.nih.gov";
-        path = "/Structure/mmdb/mmdbsrv.cgi";
+
+        // this is for a test release for Gabi for testing long pdb chain ids. Dave 10/19/20.
+        // this is from Dachuan, showing what the test URL looks like, and an example.
+        // https://dev.ncbi.nlm.nih.gov/Structure/pdbtest/[mmdb|cdd|vast|vastplus|wrbsp]/[*].cgi
+        // https://dev.ncbi.nlm.nih.gov/Structure/pdbtest/mmdb/mmdbsrv.cgi
+        host = "dev.ncbi.nlm.nih.gov";                                                   // *
+        path = "/Structure/pdbtest/mmdb/mmdbsrv.cgi";                                    // *
+
+        // this is the original, prior to making the test release for Gabi.
+        // host = "www.ncbi.nlm.nih.gov";
+        // path = "/Structure/mmdb/mmdbsrv.cgi";
+
         args = "save=Save&dopt=j&uid=";
         if (mmdbID > 0)
             args += NStr::IntToString(mmdbID);
@@ -266,6 +276,11 @@ bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type mo
     CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
     CRef < CNcbi_mime_asn1 > mime(LoadStructureViaCache(uid, modelType, assemblyId));
+
+    // debugging
+    // string errStr;
+    // WriteASNToFile("mime_data.txt", mime.GetObject(), false, &errStr);
+
     return (mime.NotEmpty() && ExtractBiostrucAndBioseqs(*mime, biostruc, sequences));
 }
 
