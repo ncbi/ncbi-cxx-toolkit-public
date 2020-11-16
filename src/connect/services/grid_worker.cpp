@@ -577,6 +577,10 @@ int SGridWorkerNodeImpl::Run(
         }
     }
 
+    if (vhosts.size() && m_Masters.empty()) {
+        LOG_POST_X(41, Warning << "All hosts from master_nodes were ignored");
+    }
+
     vhosts.clear();
 
     NStr::Split(m_SynRegistry->Get("server", "admin_hosts", kEmptyStr), " ;,", vhosts);
@@ -585,6 +589,10 @@ int SGridWorkerNodeImpl::Run(
         unsigned int ha = CSocketAPI::gethostbyname(*it);
         if (ha != 0)
             m_AdminHosts.insert(ha);
+    }
+
+    if (vhosts.size() && m_AdminHosts.empty()) {
+        LOG_POST_X(42, Warning << "All hosts from admin_hosts were ignored");
     }
 
     m_CommitJobInterval = m_SynRegistry->Get("server", "commit_job_interval", COMMIT_JOB_INTERVAL_DEFAULT);
