@@ -25,7 +25,7 @@ setup()
 
 prep_binary_component_package() 
 {
-    BLAST_BINS="igblastn igblastp makeblastdb edit_imgt_file.pl"
+    BLAST_BINS="igblastn igblastp makeblastdb blastdbcmd edit_imgt_file.pl"
     DATA_DIRS="optional_file internal_data"
     ALL_BINS="$BLAST_BINS"
 

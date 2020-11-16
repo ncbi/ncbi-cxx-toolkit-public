@@ -65,6 +65,7 @@ Section "DefaultSection" SecDflt
   File "edit_imgt_file.pl"
   File "ncbi-vdb-md.dll"
   File "makeblastdb.exe"
+  File "blastdbcmd.exe"   
   File "nghttp2.dll"
   
   SetOutPath "$INSTDIR\doc"
