@@ -1285,6 +1285,10 @@ int CGridCommandLineInterfaceApp::Run()
     if (!reg.HasEntry(netservice_api_section, max_find_lbname_retries))
         reg.Set(netservice_api_section, max_find_lbname_retries, "0");
 
+    if (!reg.HasEntry(netservice_api_section, "warn_on_unexpected_reply")) {
+        reg.Set(netservice_api_section, "warn_on_unexpected_reply", "true");
+    }
+
     const SCommandDefinition* cmd_def;
     const int* cmd_opt;
 
