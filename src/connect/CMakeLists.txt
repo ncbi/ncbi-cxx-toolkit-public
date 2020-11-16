@@ -7,10 +7,14 @@
 # independent C++ toolkit library
 # These variables capture the split
 
-if (UNIX)
-    set(os_src ${LOCAL_LBSM})
-elseif (WIN32)
-    set(os_src ncbi_lbsmd_stub ncbi_strerror)
+if (WIN32)
+    set(lbsm_src ncbi_lbsmd_stub ncbi_strerror)
+else()
+    if(EXISTS ${NCBI_CURRENT_SOURCE_DIR}/ncbi_lbsm.c)
+        set(lbsm_src ncbi_lbsm.c ncbi_lbsm_ipc.c ncbi_lbsmd.c)
+    else(WIN32)
+        set(lbsm_src ncbi_lbsmd_stub)
+    endif()
 endif()
 
 
@@ -48,7 +52,7 @@ set(SRC_C
     ncbi_version ncbi_iprange ncbi_local ncbi_dispd
     ncbi_lbos ncbi_linkerd ncbi_namerd parson
     ncbi_localip
-    ${os_src}
+    ${lbsm_src}
     )
 
 set(SRC_CXX
