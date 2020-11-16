@@ -26,28 +26,6 @@ Seq-entry ::= set {
           div "BCT" } } } ,
     pub {
       pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    consortium "NCBI Microbial Genomes Annotation Project" } } ,
-            affil
-              std {
-                affil "National Center for Biotechnology Information, NIH" ,
-                city "Bethesda" ,
-                sub "MD" ,
-                country "USA" ,
-                postal-code "20894" } } ,
-          medium other ,
-          date
-            std {
-              year 2001 ,
-              month 6 ,
-              day 25 } } } } ,
-    pub {
-      pub {
         article {
           title {
             name "The genome of Nanoarchaeum equitans: insights into early
@@ -232,27 +210,6 @@ Seq-entry ::= set {
                 str "PMC240731" } } } ,
         pmid 14566062 ,
         muid 22946215 } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    consortium "NCBI Genome Project" } } ,
-            affil
-              std {
-                affil "National Center for Biotechnology Information, NIH" ,
-                city "Bethesda" ,
-                sub "MD" ,
-                country "USA" ,
-                postal-code "20894" } } ,
-          date
-            std {
-              year 2003 ,
-              month 11 ,
-              day 17 } } } } ,
     user {
       type
         str "DBLink" ,
@@ -66045,26 +66002,6 @@ Seq-entry ::= set {
             medline 96399071 } } ,
         pmid 8805642 ,
         muid 96399071 } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Marion" ,
-                      initials "T.N." } } } ,
-            affil
-              str "Dept. of Microbiology/Immunology, University of Tennessee,
- 858 Madison Ave., Memphis, TN 38163, USA" } ,
-          medium other ,
-          date
-            std {
-              year 1996 ,
-              month 4 ,
-              day 18 } } } } ,
     create-date
       std {
         year 1997 ,
@@ -66268,26 +66205,6 @@ Seq-entry ::= set {
             medline 96399071 } } ,
         pmid 8805642 ,
         muid 96399071 } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Marion" ,
-                      initials "T.N." } } } ,
-            affil
-              str "Dept. of Microbiology/Immunology, University of Tennessee,
- 858 Madison Ave., Memphis, TN 38163, USA" } ,
-          medium other ,
-          date
-            std {
-              year 1996 ,
-              month 4 ,
-              day 18 } } } } ,
     create-date
       std {
         year 1997 ,
@@ -66483,29 +66400,6 @@ Seq-entry ::= set {
                 street "57 Stone Rd West" ,
                 postal-code "N1G2W1" } } ,
           title "iBOL Data Release" } } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    consortium "International Barcode of Life (iBOL)" } } ,
-            affil
-              std {
-                affil "University of Guelph" ,
-                div "Biodiversity Institute of Ontario" ,
-                city "Guelph" ,
-                sub "Ontario" ,
-                country "Canada" ,
-                street "50 Stone Rd West" ,
-                postal-code "N1G2W1" } } ,
-          date
-            std {
-              year 2011 ,
-              month 1 ,
-              day 24 } } } } ,
     update-date
       std {
         year 2014 ,
@@ -66766,29 +66660,6 @@ Seq-entry ::= set {
                 street "57 Stone Rd West" ,
                 postal-code "N1G2W1" } } ,
           title "iBOL Data Release" } } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    consortium "International Barcode of Life (iBOL)" } } ,
-            affil
-              std {
-                affil "University of Guelph" ,
-                div "Biodiversity Institute of Ontario" ,
-                city "Guelph" ,
-                sub "Ontario" ,
-                country "Canada" ,
-                street "50 Stone Rd West" ,
-                postal-code "N1G2W1" } } ,
-          date
-            std {
-              year 2011 ,
-              month 1 ,
-              day 24 } } } } ,
     update-date
       std {
         year 2014 ,

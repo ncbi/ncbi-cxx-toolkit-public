@@ -87,62 +87,7 @@ Seq-entry ::= set {
       std {
         year 2014 ,
         month 12 ,
-        day 11 } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Nwagbo" ,
-                      first "Ijeoma" ,
-                      initials "I.O." } } ,
-                {
-                  name
-                    name {
-                      last "Shittu" ,
-                      first "Ismail" ,
-                      initials "I.A." } } ,
-                {
-                  name
-                    name {
-                      last "Nwosuh" ,
-                      first "Chika" ,
-                      initials "C.I." } } ,
-                {
-                  name
-                    name {
-                      last "Ezeifeka" ,
-                      first "George" ,
-                      initials "G.O." } } ,
-                {
-                  name
-                    name {
-                      last "Odibo" ,
-                      first "Frederick" ,
-                      initials "F.J.C." } } ,
-                {
-                  name
-                    name {
-                      last "Jackwood" ,
-                      first "Daral" ,
-                      initials "D.J." } } } ,
-            affil
-              std {
-                affil "National Veterinary Research Institute" ,
-                div "Virology" ,
-                city "Vom" ,
-                sub "Plateau" ,
-                country "Nigeria" ,
-                postal-code "930103" } } ,
-          date
-            std {
-              year 2014 ,
-              month 12 ,
-              day 11 } } } } } ,
+        day 11 } } ,
   seq-set {
     set {
       class nuc-prot ,

@@ -192,56 +192,6 @@ Seq-entry ::= seq {
               tag
                 str "PMC2945380" } } } ,
         pmid 20877444 } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Bensch-Schubert" ,
-                      first "Konstanze" ,
-                      initials "K." } } ,
-                {
-                  name
-                    name {
-                      last "Groenewald" ,
-                      first "Johannes" ,
-                      initials "J.Z." } } ,
-                {
-                  name
-                    name {
-                      last "Starink-Willemse" ,
-                      first "Mieke" ,
-                      initials "M." } } ,
-                {
-                  name
-                    name {
-                      last "Braun" ,
-                      first "Uwe" ,
-                      initials "U." } } ,
-                {
-                  name
-                    name {
-                      last "Crous" ,
-                      first "Pedro" ,
-                      initials "P.W." } } } ,
-            affil
-              std {
-                affil "CBS-KNAW Fungal Biodiversity Centre" ,
-                div "Evolutionary Phytopathology" ,
-                city "Utrecht" ,
-                sub "Utrecht" ,
-                country "The Netherlands" ,
-                street "Uppsalalaan 8" ,
-                postal-code "3584 CT" } } ,
-          date
-            std {
-              year 2010 ,
-              month 4 ,
-              day 23 } } } } ,
     user {
       type
         str "DBLink" ,
@@ -253,27 +203,6 @@ Seq-entry ::= seq {
           data
             strs {
               "PRJNA177353" } } } } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    consortium "NCBI RefSeq Targeted Loci Project" } } ,
-            affil
-              std {
-                affil "National Center for Biotechnology Information, NIH" ,
-                city "Bethesda" ,
-                sub "MD" ,
-                country "USA" ,
-                postal-code "20894" } } ,
-          date
-            std {
-              year 2014 ,
-              month 4 ,
-              day 29 } } } } ,
     user {
       type
         str "RefGeneTracking" ,

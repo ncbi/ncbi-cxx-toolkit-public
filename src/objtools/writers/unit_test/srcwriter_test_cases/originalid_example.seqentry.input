@@ -142,59 +142,6 @@ Seq-entry ::= set {
                 }
               }
             },
-            pub {
-              pub {
-                sub {
-                  authors {
-                    names std {
-                      {
-                        name name {
-                          last "Maitip",
-                          first "Jakkrawut",
-                          initials "J."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Chantawannakul",
-                          first "Panuwan",
-                          initials "P."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Trueman",
-                          first "Holly",
-                          initials "H.E."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Sutherland",
-                          first "Tara",
-                          initials "T.D."
-                        }
-                      }
-                    },
-                    affil std {
-                      affil "Chiang Mai University",
-                      div "Department of Biology",
-                      city "Chiang Mai",
-                      sub "Muang District",
-                      country "Thailand",
-                      street "Huay Kaew Road",
-                      postal-code "50200"
-                    }
-                  },
-                  medium email,
-                  date std {
-                    year 2014,
-                    month 12,
-                    day 31
-                  }
-                }
-              }
-            },
             user {
               type str "Submission",
               data {
@@ -522,59 +469,6 @@ EVTKGKKEDINLNG"
                   },
                   title "Comparative evolution of coiled coil silks amongst
  the honey bees."
-                }
-              }
-            },
-            pub {
-              pub {
-                sub {
-                  authors {
-                    names std {
-                      {
-                        name name {
-                          last "Maitip",
-                          first "Jakkrawut",
-                          initials "J."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Phokasem",
-                          first "Panuwan",
-                          initials "P."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Trueman",
-                          first "Holly",
-                          initials "H."
-                        }
-                      },
-                      {
-                        name name {
-                          last "Sutherland",
-                          first "Tara",
-                          initials "T."
-                        }
-                      }
-                    },
-                    affil std {
-                      affil "Chiang Mai University",
-                      div "Department of Biology",
-                      city "Chiang Mai",
-                      sub "Muang District",
-                      country "Thailand",
-                      street "Huay Kaew Road",
-                      postal-code "50200"
-                    }
-                  },
-                  medium email,
-                  date std {
-                    year 2014,
-                    month 12,
-                    day 31
-                  }
                 }
               }
             },
