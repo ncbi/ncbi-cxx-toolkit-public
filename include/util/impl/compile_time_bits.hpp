@@ -627,7 +627,7 @@ namespace compile_time_bits
         }
 
         template<size_t N, typename _Indices, std::size_t... I>
-        static constexpr auto construct_hashes(const init_type(&init)[N], const _Indices& indices, std::index_sequence<I...> is) noexcept
+        static constexpr auto construct_hashes(const init_type(&init)[N], const _Indices& indices, std::index_sequence<I...> /*is_unused*/) noexcept
             -> aligned_index<hash_type, N>
         {
             return { { select_hash<I>(init, indices) ...} };
