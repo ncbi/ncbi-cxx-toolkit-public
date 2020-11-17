@@ -73,7 +73,6 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TBioseqInfoConsumeCallback callback);
     void AllowInheritance(bool value);
-    void Cancel(void);
 
  protected:
     virtual void Wait1(void) override;

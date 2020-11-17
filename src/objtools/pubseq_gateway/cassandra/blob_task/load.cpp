@@ -101,16 +101,6 @@ uint64_t CCassBlobLoader::GetBlobSize(void) const
 
 }
 
-void CCassBlobLoader::Cancel(void)
-{
-    if (m_State == eDone)
-        return;
-
-    m_Cancelled = true;
-    CloseAll();
-    m_State = eError;
-}
-
 int32_t CCassBlobLoader::GetTotalChunksInBlob(void) const
 {
     return m_LargeParts;

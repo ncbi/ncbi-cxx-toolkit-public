@@ -271,7 +271,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                         if ((flags & static_cast<TBlobFlagBase>(EBlobFlags::eCheckFailed)) != 0) {
                             string msg = "Blob failed check or it's "
                                          "incomplete ("
-                                         "key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) + 
+                                         "key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) +
                                          ", modified=" + NStr::NumericToString(m_Blob->GetModified()) +
                                          ", flags=0x" + NStr::NumericToString(flags, 16) + ")";
                             Error(CRequestStatus::e502_BadGateway,
@@ -279,7 +279,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                                   eDiag_Error, msg);
                         }
                         else if (m_Blob->GetNChunks() < 0) {
-                            string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks()) + 
+                            string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks()) +
                                          " (key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) + ")";
                             Error(
                                 CRequestStatus::e500_InternalServerError,
@@ -351,16 +351,6 @@ void CCassBlobTaskLoadBlob::Wait1()
             }
         }
     } while (b_need_repeat);
-}
-
-void CCassBlobTaskLoadBlob::Cancel(void)
-{
-    if (m_State != eDone) {
-        m_Cancelled = true;
-        CloseAll();
-        m_QueryArr.clear();
-        m_State = eError;
-    }
 }
 
 bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed(void) const

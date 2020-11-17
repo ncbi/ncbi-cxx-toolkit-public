@@ -105,16 +105,6 @@ void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(shared_ptr<CCassDataCallback
     CCassBlobWaiter::SetDataReadyCB3(callback);
 }
 
-
-void CCassBlobTaskFetchSplitHistory::Cancel(void)
-{
-    if (m_State != eDone) {
-        m_Cancelled = true;
-        CloseAll();
-        m_State = eError;
-    }
-}
-
 void CCassBlobTaskFetchSplitHistory::Wait1(void)
 {
     bool restarted;

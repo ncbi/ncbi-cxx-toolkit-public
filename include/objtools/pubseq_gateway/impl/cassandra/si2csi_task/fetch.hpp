@@ -70,7 +70,6 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TSI2CSIConsumeCallback callback);
-    void Cancel(void);
 
  protected:
     virtual void Wait1(void) override;

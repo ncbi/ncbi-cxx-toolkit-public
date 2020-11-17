@@ -123,16 +123,6 @@ void CCassBioseqInfoTaskFetch::AllowInheritance(bool value)
     m_InheritanceAllowed = value;
 }
 
-void CCassBioseqInfoTaskFetch::Cancel(void)
-{
-    if (m_State != eDone) {
-        m_Cancelled = true;
-        CloseAll();
-        m_QueryArr.clear();
-        m_State = eError;
-    }
-}
-
 void CCassBioseqInfoTaskFetch::x_InitializeQuery(void)
 {
     static const string s_Where_1 = ".bioseq_info WHERE accession = ?";

@@ -100,7 +100,6 @@ class CCassNAnnotTaskFetch
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TNAnnotConsumeCallback callback);
-    void Cancel(void);
 
     string GetKeyspace() const
     {

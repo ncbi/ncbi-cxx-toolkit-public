@@ -90,16 +90,6 @@ void CCassSI2CSITaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> 
     CCassBlobWaiter::SetDataReadyCB3(callback);
 }
 
-void CCassSI2CSITaskFetch::Cancel(void)
-{
-    if (m_State != eDone) {
-        m_Cancelled = true;
-        CloseAll();
-        m_QueryArr.clear();
-        m_State = eError;
-    }
-}
-
 void CCassSI2CSITaskFetch::x_InitializeQuery(void)
 {
     static const string s_Select = "SELECT sec_seq_id_type, accession, gi, sec_seq_state, "

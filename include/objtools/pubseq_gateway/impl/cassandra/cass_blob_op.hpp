@@ -112,6 +112,16 @@ class CCassBlobWaiter
         CloseAll();
     }
 
+    virtual void Cancel(void)
+    {
+        if (m_State != eDone) {
+            m_Cancelled = true;
+            CloseAll();
+            m_QueryArr.clear();
+            m_State = eError;
+        }
+    }
+
     bool Wait(void)
     {
         while (m_State != eDone && m_State != eError && !m_Cancelled) {
@@ -363,8 +373,6 @@ class CCassBlobLoader: public CCassBlobWaiter
     {
         m_PropsCallback = std::move(prop_cb);
     }
-
-    void Cancel(void);
 
  protected:
     virtual void Wait1(void) override;

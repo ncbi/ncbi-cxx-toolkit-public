@@ -103,16 +103,6 @@ void CCassStatusHistoryTaskGetPublicComment::SetDataReadyCB(shared_ptr<CCassData
     CCassBlobWaiter::SetDataReadyCB3(callback);
 }
 
-void CCassStatusHistoryTaskGetPublicComment::Cancel(void)
-{
-    if (m_State != eDone) {
-        m_Cancelled = true;
-        CloseAll();
-        m_QueryArr.clear();
-        m_State = eError;
-    }
-}
-
 void CCassStatusHistoryTaskGetPublicComment::JumpToReplaced(CBlobRecord::TSatKey replaced)
 {
     --m_ReplacesRetries;

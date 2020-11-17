@@ -146,16 +146,6 @@ void CCassNAnnotTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> 
     CCassBlobWaiter::SetDataReadyCB3(callback);
 }
 
-void CCassNAnnotTaskFetch::Cancel(void)
-{
-    if (m_State != eDone) {
-        m_Cancelled = true;
-        CloseAll();
-        m_QueryArr.clear();
-        m_State = eError;
-    }
-}
-
 size_t CCassNAnnotTaskFetch::x_AnnotNamesSize() const
 {
     if (m_AnnotNames.empty()) {
