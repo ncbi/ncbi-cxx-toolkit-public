@@ -4,7 +4,8 @@
 
 NCBI_begin_app(mysql_lang)
   NCBI_sources(mysql_lang)
-  NCBI_uses_toolkit_libraries(ncbi_xdbapi_mysql xconnext)
+  NCBI_uses_toolkit_libraries(ncbi_xdbapi_mysql)
+  NCBI_optional_components(connext)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_app()
 

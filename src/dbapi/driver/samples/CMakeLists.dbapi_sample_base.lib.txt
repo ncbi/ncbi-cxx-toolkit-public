@@ -7,8 +7,8 @@ NCBI_begin_lib(dbapi_sample_base)
   NCBI_uses_toolkit_libraries(
     ncbi_xdbapi_ftds
     ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
-    dbapi_driver xconnext xutil
+    dbapi_driver xutil
   )
-  NCBI_optional_components(Sybase ODBC)
+  NCBI_optional_components(Sybase ODBC connext)
 NCBI_end_lib()
 
