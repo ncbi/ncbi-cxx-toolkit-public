@@ -1576,7 +1576,8 @@ bool CGff3Writer::xWriteFeatureTrna(
         if (!xWriteFeatureRecords( *pRna, mf.GetLocation(), seqlength ) ) {
             return false;
         }
-    }else{
+    }
+    else {
         if(!xWriteRecord(*pRna)){
             return false;
         }
@@ -2621,6 +2622,8 @@ bool CGff3Writer::xWriteFeatureCds(
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
         string cdsId = pCds->Id();
+        int partNum = 1;
+        bool useParts = (sublocs.size() > 1);
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pCds));
@@ -2630,6 +2633,9 @@ bool CGff3Writer::xWriteFeatureCds(
             pExon->DropAttributes("end_range");
             pExon->SetLocation(subint);
             pExon->SetPhase(iPhase);
+            if (useParts) {
+                pExon->SetAttribute("part", NStr::NumericToString(partNum++));
+            }
             if (!xWriteRecord(*pExon)) {
                 return false;
             }
@@ -2686,6 +2692,8 @@ bool CGff3Writer::xWriteFeatureRna(
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         auto parentId = pRna->Id();
         list< CRef< CSeq_interval > >::const_iterator it;
+        int partNum = 1;
+        bool useParts = (sublocs.size() > 1);
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
@@ -2697,6 +2705,9 @@ bool CGff3Writer::xWriteFeatureRna(
             pChild->SetParent(parentId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);
+            if (useParts) {
+                pChild->SetAttribute("part", NStr::NumericToString(partNum++));
+            }
             if (!xWriteRecord(*pChild)) {
                 return false;
             }
