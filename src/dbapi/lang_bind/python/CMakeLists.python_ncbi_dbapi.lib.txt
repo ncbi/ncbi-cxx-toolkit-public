@@ -5,7 +5,8 @@
 NCBI_begin_lib(python_ncbi_dbapi)
   NCBI_sources(python_ncbi_dbapi)
   NCBI_headers(*.hpp pythonpp/*.hpp)
-  NCBI_uses_toolkit_libraries(dbapi xconnext xutil)
+  NCBI_uses_toolkit_libraries(dbapi xutil)
+  NCBI_optional_components(connext)
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib(_result)
 
