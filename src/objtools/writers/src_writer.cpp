@@ -49,6 +49,18 @@
 #include <objects/seqtable/SeqTable_multi_data.hpp>
 #include <objects/seq/seq_macros.hpp>
 
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/pub/Pub_set.hpp>
+
+#include <objects/biblio/biblio__.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Affil.hpp>
+#include <objects/general/Name_std.hpp>
+
+#include <objects/general/Date_.hpp>
+
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/writers/src_writer.hpp>
@@ -83,7 +95,9 @@ static const string arrDefaultSrcCheckFields[] = {
     "serotype",
     "serovar",
     "type-material",
-    "old-name"
+    "old-name",
+    "author",
+    "affil"
 };
 
 static const string arrDefaultSeqEntryFields[] = {
@@ -106,7 +120,9 @@ static const string arrDefaultSeqEntryFields[] = {
     "serotype",
     "serovar",
     "type-material",
-    "old-name"
+    "old-name",
+    "author",
+    "affil"
 };
 
 
@@ -282,6 +298,9 @@ void CSrcWriter::xInit()
         sFieldnameToColname["def"] = "definition";
         sFieldnameToColname["defline"] = "definition";
 
+        sFieldnameToColname["author"] = "author";
+        sFieldnameToColname["affil"] = "affil";
+
         sFieldnameToColname["db"] = "db";
         sFieldnameToColname["org.db"] = "db";
 
@@ -328,7 +347,8 @@ void CSrcWriter::xInit()
                 sFieldnameToColname[xCompressFieldName(*cit)] = *cit;
             }
         }
-    } 
+
+    }
 
 
     mSrcTable.Reset(new CSeq_table());
@@ -364,6 +384,9 @@ CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames(const FIELDS& defaultFields
     lexicalFields.push_back("division");
     lexicalFields.push_back("definition");
     lexicalFields.push_back("bankitid");
+
+    lexicalFields.push_back("author");
+    lexicalFields.push_back("affil");
 
     NAMELIST nameList = xGetOrgModSubtypeNames();
     for(NAMELIST::const_iterator cit=nameList.begin();
@@ -547,6 +570,8 @@ bool CSrcWriter::xGather(
     bool wantLocalId = ( find(desiredFields.begin(), desiredFields.end(), "localid") != desiredFields.end() );
     bool wantBankitId = ( find(desiredFields.begin(), desiredFields.end(), "bankitid") != desiredFields.end() );
     bool wantDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
+    bool wantAuthor = ( find(desiredFields.begin(), desiredFields.end(), "author") != desiredFields.end() );
+    bool wantAffil = ( find(desiredFields.begin(), desiredFields.end(), "affil") != desiredFields.end() );
 
 
     if (!bsh) {
@@ -563,14 +588,109 @@ bool CSrcWriter::xGather(
                       // the row is not counted.
     }
 
+    if (wantAuthor || wantAffil) {
+        string auths;
+        string comma;
+        string affls;
+        const CCit_sub* latest_sub = 0;
+        const CDate* latest_date = 0;
+        for (CSeqdesc_CI pdit(bsh, CSeqdesc::e_Pub); pdit; ++pdit) {
+            const CPubdesc& pubdesc = pdit->GetPub();
+            if (pubdesc.IsSetPub()) {
+                const CPub_equiv& pep = pubdesc.GetPub();
+                if (pep.IsSet()) {
+                    ITERATE ( CPub_equiv::Tdata, it, pep.Get()) {
+                        if ((*it)->Which() == CPub::e_Sub) {
+                            const CCit_sub& sub = (*it)->GetSub();
+                            if (sub.IsSetDate()) {
+                                const CDate& curr_date = sub.GetDate();
+                                if (latest_date != 0) {
+                                    if (latest_date->Compare(curr_date) == CDate::eCompare_before) {
+                                        latest_sub = &sub;
+                                        latest_date = &curr_date;
+                                    }
+                                } else {
+                                    latest_sub = &sub;
+                                    latest_date = &curr_date;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (latest_sub != 0) {
+           if (latest_sub->IsSetAuthors()) {
+              const CAuth_list& authors = latest_sub->GetAuthors();
+              if (authors.IsSetNames()) {
+                  const CAuth_list::TNames& names = authors.GetNames();
+                  if (names.IsStd()) {
+                      ITERATE (CAuth_list::TNames::TStd, it, names.GetStd()) {
+                          const CAuthor& auth = **it;
+                          if (auth.IsSetName()) {
+                              const CPerson_id& pid = auth.GetName();
+                              if (pid.IsName()) {
+                                  const CName_std& name = pid.GetName();
+                                  if (name.IsSetLast()) {
+                                      string nm;
+                                      if (name.IsSetInitials()) {
+                                          nm = name.GetInitials() + " ";
+                                      }
+                                      nm += name.GetLast();
+                                      auths += comma + nm;
+                                  }
+                                  comma = ", ";
+                              } else if (pid.IsConsortium()) {
+                                  string cnsrt = pid.GetConsortium();
+                                  auths += comma + cnsrt;
+                                  comma = ", ";
+                              }
+                          }
+                      }
+                  }
+              }
+              if (authors.IsSetAffil()) {
+                  const CAffil& affil = authors.GetAffil();
+                  if (affil.IsStr()) {
+                      affls = affil.GetStr();
+                  } else if (affil.IsStd()) {
+                      const CAffil::C_Std& std = affil.GetStd();
+                      if (std.IsSetAffil()) {
+                          affls = std.GetAffil();
+                      }
+                  }
+              }
+          }
+        }
+        if (wantAuthor) {
+            if (auths.length() > 0) {
+                static const string colName = "author";
+                static const string displayName = colName;
+                static const string defaultValue = "";
 
+                xPrepareTableColumn(colName, displayName, defaultValue);
+                xAppendColumnValue(colName, auths);
+            }
+        }
+        if (wantAffil) {
+            if (affls.length() > 0) {
+                static const string colName = "affil";
+                static const string displayName = colName;
+                static const string defaultValue = "";
+
+                xPrepareTableColumn(colName, displayName, defaultValue);
+                xAppendColumnValue(colName, affls);
+            }
+        }
+    }
 
     int num_sources = 0;
     for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
-            if (*cit == "id" || *cit == "gi" || *cit == "definition" || *cit == "localid" || *cit == "bankitid") {
+            if (*cit == "id" || *cit == "gi" || *cit == "definition" || *cit == "localid" ||
+                *cit == "bankitid" || *cit == "author" || *cit == "affil") {
                 continue;
             }
             if (!xHandleSourceField(src, *cit)) {
