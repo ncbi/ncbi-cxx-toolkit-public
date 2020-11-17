@@ -7,7 +7,8 @@ NCBI_begin_lib(sdbapi)
   NCBI_uses_toolkit_libraries(
     dbapi dbapi_util_blobstore
     ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
-    xconnext xutil
+    xutil xconnect
   )
+  NCBI_optional_components(connext)
 NCBI_end_lib()
 
