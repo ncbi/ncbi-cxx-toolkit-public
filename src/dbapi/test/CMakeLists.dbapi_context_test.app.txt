@@ -6,14 +6,15 @@ NCBI_begin_app(dbapi_context_test)
   NCBI_sources(dbapi_unit_test_common dbapi_context_test)
   NCBI_set_pch_header(dbapi_unit_test_pch.hpp)
   NCBI_requires(Boost.Test.Included)
-  NCBI_optional_components(Sybase ODBC)
+  NCBI_optional_components(Sybase ODBC connext)
   NCBI_uses_toolkit_libraries(
     ncbi_xdbapi_ftds
     ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
-    dbapi xconnext
+    dbapi xconnect
   )
   NCBI_project_watchers(ucko satskyse)
 
+  NCBI_set_test_requires(connext in-house-resources)
   NCBI_set_test_timeout(60)
   NCBI_set_test_assets(dbapi_context_test.ini)
   NCBI_add_test(dbapi_context_test -dr ftds95     -S MsSql)
