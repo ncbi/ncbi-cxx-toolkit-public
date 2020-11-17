@@ -60,6 +60,7 @@
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include "index.h"
 #include "genbank.h"                    /* for ParFlat_FEATURES */
@@ -746,10 +747,14 @@ static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extr
 }
 
 
-static bool s_IsConOrScaffold(const CSeq_id& id, CScope& scope)
+static bool s_IsConOrScaffold(CBioseq_Handle bsh) 
 {
-    auto bsh = scope.GetBioseqHandle(id);
-    
+    if (bsh && 
+        bsh.IsSetInst_Repr() &&
+        bsh.GetInst_Repr() == CSeq_inst::eRepr_delta &&
+        bsh.IsSetInst_Ext()) {
+    }
+
     if (bsh && 
         bsh.IsSetInst_Repr() &&
         bsh.GetInst_Repr() == CSeq_inst::eRepr_delta &&
@@ -764,6 +769,73 @@ static bool s_IsConOrScaffold(const CSeq_id& id, CScope& scope)
         }
     }
     return false;
+}
+
+static bool s_IsAccession(const CSeq_id& id) {
+    const auto idType = id.Which();
+    switch (idType) {
+    case CSeq_id::e_Local:
+    case CSeq_id::e_General:
+    case CSeq_id::e_Gi:
+        return false;
+    }
+    return true;
+}
+
+static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id& primary, CScope& scope)
+{
+    const auto primaryType = primary.Which();
+    string primaryString = primary.GetSeqIdString();
+    const bool primaryIsAccession = s_IsAccession(primary);
+    const bool primaryIsGi = (primaryType == CSeq_id::e_Gi);
+    
+    CSeq_id_Handle primaryAccessionHandle;
+
+    for (const auto& pDeltaSeq : delta_ext.Get()) {
+        if (pDeltaSeq && pDeltaSeq->IsLoc()) {
+            auto pId = pDeltaSeq->GetLoc().GetId();
+            const auto& deltaIdType = pId->Which(); 
+            if (deltaIdType == primaryType) {
+                if (pId->GetSeqIdString() == primaryString) {
+                    return false;
+                }
+            }
+            else {
+                if (primaryIsAccession && deltaIdType == CSeq_id::e_Gi) {
+                    auto deltaHandle = CSeq_id_Handle::GetHandle(pId->GetGi());
+                    auto deltaAccessionHandle = scope.GetAccVer(deltaHandle);
+                    if (!deltaAccessionHandle) {
+                        return false;
+                    }
+                    if (deltaAccessionHandle == primaryAccessionHandle) {
+                        return false;
+                    }
+                }
+                else 
+                if (primaryIsGi && s_IsAccession(*pId)) {
+                    if (!primaryAccessionHandle) {
+                        auto primaryGiHandle = CSeq_id_Handle::GetHandle(pId->GetGi());
+                        primaryAccessionHandle = scope.GetAccVer(primaryGiHandle);       
+                    }
+                    if (!primaryAccessionHandle) {
+                        return false;   
+                    }
+                    auto deltaAccessionHandle = CSeq_id_Handle::GetHandle(*pId);
+                    if (primaryAccessionHandle == deltaAccessionHandle) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+static bool s_IsConOrScaffold(const CSeq_id& id, CScope& scope)
+{
+    auto bsh = scope.GetBioseqHandle(id);
+
+    return s_IsConOrScaffold(bsh);
 }
 
 
@@ -846,19 +918,30 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         CRef<CSeq_id> id(new CSeq_id(idChoice, accessionString));
 
         CRef<CSeq_id> pId(new CSeq_id(accessionString));
+        auto secondaryBsh = GetScope().GetBioseqHandle(*pId);
         bool IsConOrScaffold=false;
         try {
-            IsConOrScaffold = s_IsConOrScaffold(*pId, GetScope());
+            IsConOrScaffold = s_IsConOrScaffold(secondaryBsh);
         }
         catch (...) {
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
                 "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
                 accessionString.c_str());
             continue;
-        } 
-        if ((IsConOrScaffold && !pricon) ||
-            (!IsConOrScaffold && pricon && idChoice == acctype)) {
+        }
+
+        if (!IsConOrScaffold && pricon && idChoice == acctype) {
             continue;
+        }
+
+        if (IsConOrScaffold && !pricon) {
+            CRef<CSeq_id> pPrimary(new CSeq_id(primaryAccession));
+            if (s_DoesNotReferencePrimary(secondaryBsh.GetInst_Ext().GetDelta(), 
+                        *pPrimary, 
+                        GetScope())) {
+                replaces.push_back(id); 
+                continue;
+            }
         }
 
         replaces.push_back(id);
