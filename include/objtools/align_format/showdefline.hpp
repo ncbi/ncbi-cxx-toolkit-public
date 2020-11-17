@@ -489,6 +489,9 @@ protected:
     //Coverage header size
     size_t m_MaxQueryCoverLen;  
     size_t m_MaxAccLength;
+    size_t m_MaxTaxonomyNameLength;
+    size_t m_MaxTaxidLength;
+    size_t m_AccLenLength;
     //Query Lenghth
     int m_QueryLength;
     ///Indicates if 'Related structures' link should show
