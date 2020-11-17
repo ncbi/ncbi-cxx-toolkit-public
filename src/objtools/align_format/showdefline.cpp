@@ -100,6 +100,12 @@ static const string kQueryCovLine2 = "cover";
 static const string kPerc = "Per.";
 static const string kAccession = "Accession";
 static const string kDescription = "Description";
+static const string kScientific = "Scientific";
+static const string kCommon = "Common";
+static const string kName = "Name";
+static const string kAccAbbr = "Acc.";
+static const string kLenAbbr = "Len";
+static const string kTaxid = "Taxid";
 
 //psiblast related
 static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
@@ -1614,6 +1620,23 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
         delete sdl;
     }
 }
+
+SSeqDBTaxInfo taxInfo;
+static void s_GetTaxonomyInfoForTaxID(TTaxId sdlTaxid, SSeqDBTaxInfo &taxInfo)
+{
+    string taxid;
+    if(sdlTaxid > 0) {        
+        taxid = NStr::IntToString(sdlTaxid);
+        try{
+            CSeqDB::GetTaxInfo(sdlTaxid, taxInfo);         
+        } catch (const CException&){
+            taxInfo.common_name = "Unknown";
+            taxInfo.scientific_name  = "Unknown";
+            taxInfo.blast_name  = "Unknown";
+        }        
+    }    
+}          
+
 void CShowBlastDefline::x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out)
 {
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
@@ -1637,17 +1660,26 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out)
 
 	    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
 	    s_LimitDescrLength(descr);
-        if(NStr::Find(descr,",") != -1) {
+        if(NStr::Find(descr,",") != NPOS) {
             descr = "\"" + descr + "\"";    
         }
 	    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",descr);
+
+        SSeqDBTaxInfo taxInfo;
+        s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);        
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));            
               
             
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",(*iter)->bit_string);
         defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",(*iter)->total_bit_string);
         defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString((*iter)->percent_coverage) + "%");
         defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",(*iter)->evalue_string);    
+        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::DoubleToString((*iter)->percent_identity,2));
+        int len = sequence::GetLength(*sdl->id, m_ScopeRef);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
         //defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqid);    
 
         out << defLine;
@@ -1661,21 +1693,32 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
 {
         m_MaxPercentIdentityLen = kIdentLine2.size() + 1;
         m_MaxAccLength = 16;
+        m_MaxTaxonomyNameLength = 15;
+        m_MaxTaxidLength = 10;
+        m_AccLenLength = 10;
                 
         string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"descr_hd1"," ",m_LineLen); //empty string
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd1",kScientific,m_MaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd1",kCommon,m_MaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd1"," ",m_MaxTaxidLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",kE,m_MaxEvalueLen,CAlignFormatUtil::eSpacePosToCenter);    
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,m_MaxPercentIdentityLen, CAlignFormatUtil::eSpacePosToCenter);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1","  " + kE + "  ",m_MaxEvalueLen);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,m_MaxPercentIdentityLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd1",kAccAbbr,m_AccLenLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",m_MaxAccLength);        
         //kBits 	kTotalLine2 kQueryCovLine2 kValue kIdentLine2 
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"descr_hd2",kDescription,m_LineLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd2",kName,m_MaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd2",kName,m_MaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd2",kTaxid,m_MaxTaxidLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kScoreLine2,m_MaxScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kScoreLine2,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd2",kQueryCovLine2,m_MaxQueryCoverLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd2",kValue,m_MaxEvalueLen);    
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd2",kIdentLine2,m_MaxPercentIdentityLen);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd2",kLenAbbr,m_AccLenLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd2",kAccession,m_MaxAccLength);
         
         out << descrHeader;
@@ -1693,18 +1736,27 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
         string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
 	    s_LimitDescrLength(descr,m_LineLen);
 	    defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"dfln_defline",descr, m_LineLen);
-    
+        SSeqDBTaxInfo taxInfo;
+        s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"common_name",taxInfo.common_name,m_MaxTaxonomyNameLength);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"scientific_name",taxInfo.scientific_name,m_MaxTaxonomyNameLength);        
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid),m_MaxTaxidLength);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"score_info",(*iter)->bit_string,m_MaxScoreLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"total_bit_string",(*iter)->total_bit_string,m_MaxTotalScoreLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_coverage",NStr::IntToString((*iter)->percent_coverage) + "%",m_MaxQueryCoverLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"evalue_string",(*iter)->evalue_string,m_MaxEvalueLen);    
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_identity",NStr::DoubleToString((*iter)->percent_identity,2),m_MaxPercentIdentityLen);
+        
+        int len = sequence::GetLength(*sdl->id, m_ScopeRef);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"acclen",NStr::IntToString(len),m_AccLenLength);        
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"seq_info",seqid,m_MaxAccLength);    
+        
 
         out << defLine;
         delete sdl;
     }
 }
+
 
 string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHeaderSort)
 {
@@ -1775,23 +1827,14 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
-    }
+    }       
     SSeqDBTaxInfo taxInfo;
-    string taxid;
-    if(sdl->taxid > 0) {        
-        taxid = NStr::IntToString(sdl->taxid);
-        try{
-            CSeqDB::GetTaxInfo(sdl->taxid, taxInfo);         
-        } catch (const CException&){
-            taxInfo.common_name = "Unknown";
-            taxInfo.scientific_name  = "Unknown";
-            taxInfo.blast_name  = "Unknown";
-        }        
-    }    
+    s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"blast_name",taxInfo.blast_name);
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",taxid);            
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));            
+        
     int len = sequence::GetLength(*sdl->id, m_ScopeRef);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
     //Setup applog info structure
