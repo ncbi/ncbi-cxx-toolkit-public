@@ -1196,13 +1196,19 @@ void* CTestThread::Main(void)
             CTestWriter writer(test_case);
             CRef<CWriterThread> thr(new CWriterThread(writer));
             thr->Run();
-            STimeout timeout;
-            int ms = writer.GetTimeout();
-            timeout.sec = ms / 1000;
-            timeout.usec = (ms % 1000) * 1000;
-            CConn_SocketStream sstr("127.0.0.1", thr->GetPort(), 1, &timeout);
-            s_CheckStream(writer, sstr, test_case);
-            sstr.Close();
+            try {
+                STimeout timeout;
+                int ms = writer.GetTimeout();
+                timeout.sec = ms / 1000;
+                timeout.usec = (ms % 1000) * 1000;
+                CConn_SocketStream sstr("127.0.0.1", thr->GetPort(), 1, &timeout);
+                s_CheckStream(writer, sstr, test_case);
+                sstr.Close();
+            }
+            catch (...) {
+                thr->Join();
+                throw;
+            }
             thr->Join();
             break;
         }
