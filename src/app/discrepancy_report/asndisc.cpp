@@ -71,17 +71,17 @@ protected:
     vector<string> m_Files;
     vector<string> m_Tests;
 
-    char m_Group;
-    bool m_SuspectProductNames;
-    bool m_Ext;
-    bool m_Fat;
-    bool m_AutoFix;
-    bool m_Xml;
-    bool m_Print;
+    char m_Group{0};
+    bool m_SuspectProductNames{false};
+    bool m_Ext{false};
+    bool m_Fat{false};
+    bool m_AutoFix{false};
+    bool m_Xml{false};
+    bool m_Print{false};
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Group(0), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void)
 {
     SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
@@ -231,16 +231,24 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 {
     CDir Dir(name);
+    if (!Dir.Exists() || !Dir.IsDir()) return;
+
     string ext = GetArgs()["x"].AsString();
     if (!ext.empty() && ext[0] != '.') {
         ext = "." + ext;
     }
-    if (!Dir.Exists() || !Dir.IsDir()) return;
+    string autofixext = ".autofix" + ext;
+
     CDir::TEntries Entries = Dir.GetEntries();
     for (auto& entry: Entries) {
-        if (entry->GetName() == "." || entry->GetName() == "..") continue;
+        auto name = entry->GetName();
+        if (name == "." || name == "..") continue;
         if (recursive && entry->IsDir()) x_ParseDirectory(entry->GetPath(), true);
-        if (entry->IsFile() && entry->GetExt() == ext) m_Files.push_back(entry->GetPath());
+        if (NStr::EndsWith(name, ext) && !NStr::EndsWith(name, autofixext))
+        {
+            if (entry->IsFile()) 
+                m_Files.push_back(entry->GetPath());
+        }
     }
 }
 
@@ -538,5 +546,23 @@ int CDiscRepApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    #ifdef _DEBUG
+    // this code converts single argument into multiple, just to simplify testing
+    std::list<std::string> split_args;
+    std::vector<const char*> new_argv;    
+
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
+    {
+        NStr::Split(argv[1], " ", split_args);
+        argc = 1 + split_args.size();
+        new_argv.reserve(argc);
+        new_argv.push_back(argv[0]);
+        for (auto& s: split_args)
+            new_argv.push_back(s.c_str());
+
+        argv = new_argv.data();
+    }
+    #endif
+
     return CDiscRepApp().AppMain(argc, argv);
 }
