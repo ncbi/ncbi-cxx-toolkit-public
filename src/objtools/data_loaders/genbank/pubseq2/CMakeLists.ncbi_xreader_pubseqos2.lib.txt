@@ -5,7 +5,8 @@
 NCBI_begin_lib(ncbi_xreader_pubseqos2 SHARED)
   NCBI_sources(reader_pubseq2)
   NCBI_add_definitions(NCBI_XREADER_PUBSEQOS2_EXPORTS)
-  NCBI_uses_toolkit_libraries(dbapi_driver ncbi_xreader xconnext eMyNCBI_result)
+  NCBI_uses_toolkit_libraries(dbapi_driver ncbi_xreader eMyNCBI_result)
+  NCBI_optional_components(connext)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
