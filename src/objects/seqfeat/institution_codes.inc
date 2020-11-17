@@ -7182,6 +7182,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UGGG\ts\tUniversity of Guyana\t\t\t",
 "UGM\ts\tUniversity of Guam\tESUG,UGG\t\t",
 "UGMD\ts\tZoology Museum of the University of Ghent\t\t\t",
+"UGSB\tsc\tUniversity of Giessen Systematics and Biodiversity collection\t\t\t",
 "UH\ts\tUniversity of Hawaii\t\t\t",
 "UHCC\tc\tUniversity of Helsinki Cyanobacteria Culture Collection\t\t\t",
 "UHI\ts\tUssishkin House, Botany Department\t\t\t",
