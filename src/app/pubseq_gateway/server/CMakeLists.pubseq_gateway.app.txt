@@ -16,6 +16,6 @@ NCBI_begin_app(pubseq_gateway)
     osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot
   )
   NCBI_uses_toolkit_libraries(xregexp id2 seq psg_cassandra psg_protobuf psg_cache connext xconnserv xconnect)
-  NCBI_requires(CASSANDRA MT Linux H2O LMDB UV PROTOBUF)
+  NCBI_requires(CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
