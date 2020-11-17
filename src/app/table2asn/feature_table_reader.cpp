@@ -1111,8 +1111,9 @@ void CFeatureTableReader::_ParseCdregions(CSeq_entry& entry)
     while(annot_it != annots.end()) {
         auto pAnnot = *annot_it;
         if (pAnnot->IsFtable()) {
-            main_ftable->SetData().SetFtable().merge(
-                pAnnot->SetData().SetFtable());
+            main_ftable->SetData().SetFtable().splice(
+                    end(main_ftable->SetData().SetFtable()),
+                    pAnnot->SetData().SetFtable());
             annot_it = annots.erase(annot_it);
             continue;
         }
