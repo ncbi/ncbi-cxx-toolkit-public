@@ -262,7 +262,7 @@ function(NCBI_internal_FinalizeCMakeTest)
         ERROR_VARIABLE  _error
         )
     if (NOT _retcode EQUAL 0)
-        string(APPEND _info "set(NCBITEST_LINKERD_BACKUP "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142")\n")
+        string(APPEND _info "set(NCBITEST_LINKERD_BACKUP \"pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142\")\n")
     endif()
 
 
