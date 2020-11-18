@@ -200,41 +200,102 @@ function(NCBI_internal_FinalizeCMakeTest)
     endif()
 
     # Generate a file with some common test parameters
+    # ------------------------------------------------
     
     set(_info "")
+   
+    # System name / signature / compiler
+    
+    string(APPEND _info "set(NCBITEST_SYSTEM    ${CMAKE_SYSTEM_NAME})\n")
+    string(APPEND _info "set(NCBITEST_COMPILER  ${NCBI_COMPILER})\n")
+    string(APPEND _info "set(NCBITEST_SIGNATURE ${NCBITEST_SIGNATURE})\n")
+    string(APPEND _info "\n")
+
+    # Directories
+    
     string(APPEND _info "set(NCBITEST_BINDIR ../${NCBI_DIRNAME_RUNTIME})\n")
     string(APPEND _info "set(NCBITEST_LIBDIR ../${NCBI_DIRNAME_ARCHIVE})\n")
     string(APPEND _info "set(NCBITEST_OUTDIR ../${NCBI_DIRNAME_TESTING})\n")
     string(APPEND _info "set(NCBITEST_SOURCEDIR ${NCBI_SRC_ROOT})\n")
     string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
-    string(APPEND _info "set(NCBITEST_SIGNATURE ${NCBITEST_SIGNATURE})\n")
-
+    string(APPEND _info "\n")
+    
+    # Project features: Int8GI, Symbols, CfgProps and etc
+    
     #list(JOIN NCBI_PTBCFG_PROJECT_FEATURES " " _x)
     string(REPLACE ";" " " _x "${NCBI_PTBCFG_PROJECT_FEATURES}")
     string(APPEND _info "set(NCBITEST_PROJECT_FEATURES ${_x})\n")
+    
+    # Detected components
     
     #list(JOIN NCBI_ALL_COMPONENTS " " _x)
     string(REPLACE ";" " " _x "${NCBI_ALL_COMPONENTS}")
     string(APPEND _info "set(NCBITEST_COMPONENTS ${_x})\n")
     
+    # Build requirements
+    
     #list(JOIN NCBI_ALL_REQUIRES " " _x)
     string(REPLACE ";" " " _x "${NCBI_ALL_REQUIRES}")
     string(APPEND _info "set(NCBITEST_REQUIRES ${_x})\n")
 
-    # Test features (project_features + components + requires + etc)
+    # Combined test features (project_features + components + requires + etc)
+    
     set(_features "")
+    list(APPEND _features ${CMAKE_SYSTEM_NAME})
+    list(APPEND _features ${NCBI_COMPILER})
+    list(APPEND _features ${NCBI_PTBCFG_PROJECT_FEATURES})
     list(APPEND _features ${NCBI_ALL_COMPONENTS})
     list(APPEND _features ${NCBI_ALL_REQUIRES})
-    list(APPEND _features ${NCBI_PTBCFG_PROJECT_FEATURES})
-    list(APPEND _features ${CONFIG})
-   
+    list(APPEND _features ${NCBI_ALL_LEGACY})
     #list(JOIN   _features " " _x)
     string(REPLACE ";" " " _x "${_features}")
     string(APPEND _info "set(NCBITEST_FEATURES ${_x})\n")
+    string(APPEND _info "\n")
 
+    # Check on linkerd and set backup
+
+    set(_retcode)
+    execute_process(
+        COMMAND sh -c "echo test | nc -w 1 linkerd 4142"
+        RESULT_VARIABLE _retcode
+        OUTPUT_VARIABLE _output
+        ERROR_VARIABLE  _error
+        )
+    if (NOT _retcode EQUAL 0)
+        string(APPEND _info "set(NCBITEST_LINKERD_BACKUP "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142")\n")
+    endif()
+
+
+    # Check on debug tools to get stack/back trace (except running under memory checkers)
+    if(UNIX)
+        if(NOT DEFINED NCBITEST_CHECK_TOOL)
+            set(_retcode)
+            execute_process(
+                COMMAND which gdb
+                RESULT_VARIABLE _retcode
+                OUTPUT_VARIABLE _foo_output
+                ERROR_VARIABLE  _foo_error
+                )
+            if (_retcode EQUAL 0)
+                string(APPEND _info "set(NCBITEST_BACK_TRACE 1)\n")
+            endif()
+            execute_process(
+                COMMAND which gstack
+                RESULT_VARIABLE _retcode
+                OUTPUT_VARIABLE _foo_output
+                ERROR_VARIABLE  _foo_error
+                )
+            if (_retcode EQUAL 0)
+                string(APPEND _info "set(NCBITEST_STACK_TRACE 1)\n")
+            endif()
+        endif()
+    endif()
+    
+    # Create a file:
     file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake ${_info})
 
 endfunction()
+
 
 #############################################################################
 

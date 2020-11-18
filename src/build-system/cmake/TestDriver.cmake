@@ -6,6 +6,8 @@
 ##    Author: Andrei Gourianov, gouriano@ncbi
 ##
 
+cmake_policy(SET CMP0057 NEW)
+
 string(REPLACE " " ";" NCBITEST_ARGS    "${NCBITEST_ARGS}")
 string(REPLACE " " ";" NCBITEST_ASSETS  "${NCBITEST_ASSETS}")
 
@@ -19,6 +21,14 @@ include(${NCBITEST_PARAMS})
 string(REPLACE "\$<CONFIG>" "${NCBITEST_CONFIG}" _x "${NCBITEST_SIGNATURE}")
 set(NCBITEST_SIGNATURE ${_x})
 
+# Extend $FEATURES if set already (NTest sets it, CTest doesn't)
+list(APPEND NCBITEST_FEATURES $ENV{FEATURES})
+list(APPEND NCBITEST_FEATURES ${NCBITEST_CONFIG})
+list(REMOVE_DUPLICATES NCBITEST_FEATURES)
+list(SORT NCBITEST_FEATURES)
+string(REPLACE ";" " " _x "${NCBITEST_FEATURES}")
+set(ENV{FEATURES} ${_x})
+    
 
 # ---------------------------------------------------------------------------
 # Set directories
@@ -94,10 +104,17 @@ endif()
 # ---------------------------------------------------------------------------
 # Set environment variables
 
+set(ENV{CHECK_SIGNATURE} "${NCBITEST_SIGNATURE}")
+
+#  -- Set bin/lib paths before $PATH
+ 
 file(TO_NATIVE_PATH "${NCBITEST_BINDIR}" _cfg_bin)
 file(TO_NATIVE_PATH "${NCBITEST_LIBDIR}" _cfg_lib)
 set(ENV{CFG_BIN} "${_cfg_bin}")
 set(ENV{CFG_LIB} "${_cfg_lib}")
+
+
+# -- PATH
 
 if(WIN32)
     set(ENV{PATH} "${NCBITEST_SCRIPTDIR}/common/impl;${NCBITEST_CHECK_SCRIPTDIR};${_cfg_bin};${_cfg_lib};$ENV{PATH}")
@@ -112,6 +129,9 @@ else()
     endif()
 endif()
 
+
+# -- NCBI_TEST_DATA_PATH
+
 if(WIN32)
     set(ENV{NCBI_TEST_DATA_PATH} "//snowman/win-coremake/Scripts/test_data")
 else()
@@ -119,28 +139,69 @@ else()
 endif()
 set(ENV{NCBI_TEST_DATA} "$ENV{NCBI_TEST_DATA_PATH}")
 
+
+# -- Misc 
+
 set(ENV{NCBI_APPLOG_SITE} "testcxx")
 set(ENV{BOOST_TEST_CATCH_SYSTEM_ERRORS} "no")
 set(ENV{NCBI_CONFIG__LOG__FILE} "-")
-set(ENV{CHECK_TIMEOUT} "${NCBITEST_TIMEOUT}")
 
 if("$ENV{DIAG_OLD_POST_FORMAT}" STREQUAL "")
     set(ENV{DIAG_OLD_POST_FORMAT} "false")
 endif()
 
-set(ENV{DYLD_BIND_AT_LAUNCH} "1")
-
-set(ENV{CHECK_SIGNATURE} "${NCBITEST_SIGNATURE}")
-
-if(NOT "$ENV{NCBI_CHECK_TIMEOUT_MULT}" STREQUAL "")
-    math(EXPR NCBITEST_TIMEOUT "${NCBITEST_TIMEOUT} * $ENV{NCBI_CHECK_TIMEOUT_MULT}")
+if (DEFINED NCBITEST_LINKERD_BACKUP)
+    set(ENV{NCBI_CONFIG__ID2SNP__PTIS_NAME "${NCBITEST_LINKERD_BACKUP}")
 endif()
+
+
+# -- DYLD_BIND_AT_LAUNCH / MALLOC_DEBUG_
+
+set(ENV{DYLD_BIND_AT_LAUNCH} "1")
+if(MaxDebug IN_LIST NCBITEST_PROJECT_FEATURES)
+    if(Linux IN_LIST NCBITEST_REQUIRES)
+        set(ENV{MALLOC_DEBUG_} 2)
+    endif()
+endif()
+
+# -- Add library directory to runpath
+
+if(UNIX OR APPLE)
+    if(DEFINED $ENV{LD_LIBRARY_PATH})
+        set(ENV{LD_LIBRARY_PATH} "${NCBITEST_LIBDIR}:$ENV{LD_LIBRARY_PATH}")
+    else()
+        set(ENV{LD_LIBRARY_PATH} "${NCBITEST_LIBDIR}")
+    endif()
+    if (${NCBITEST_SYSTEM} MATCHES "Darwin")
+        set(ENV{DYLD_LIBRARY_PATH} "$ENV{LD_LIBRARY_PATH}")
+    endif()
+    # TODO:
+    # Add additional path for imported projects to point to local /lib first
+endif()
+
+# -- Timeout
+
+set(_timeout_mult 1)
+if(NOT "$ENV{NCBI_CHECK_TIMEOUT_MULT}" STREQUAL "")
+    set(_timeout_mult $ENV{NCBI_CHECK_TIMEOUT_MULT})
+else()
+    if(MaxDebug IN_LIST NCBITEST_PROJECT_FEATURES)
+        if("${NCBITEST_COMPILER}" STREQUAL "GCC" OR "${NCBITEST_COMPILER}" STREQUAL "ICC")
+            set(_timeout_mult 20)
+        endif()
+    endif()
+endif()
+math(EXPR NCBITEST_TIMEOUT "${NCBITEST_TIMEOUT} * ${_timeout_mult}")
+set(ENV{CHECK_TIMEOUT} "${NCBITEST_TIMEOUT}")
 
 
 # -- Debug tools to get stack/back trace (except running under memory checkers)
 
-if(UNIX)
-
+if(DEFINED NCBITEST_BACK_TRACE)
+    set(ENV{NCBI_CHECK_BACK_TRACE} "gdb --batch --quiet -ex \"thread apply all bt\" -ex \"quit\"")
+endif()
+if(DEFINED NCBITEST_STACK_TRACE)
+    set(ENV{NCBI_CHECK_STACK_TRACE} "gstack")
 endif()
 
 
@@ -152,9 +213,9 @@ if($ENV{NCBI_AUTOMATED_BUILD})
     find_program(NCBI_APPLOG NAMES ncbi_applog ncbi_applog.bat PATHS ENV PATH)
     if(NCBI_APPLOG)
         execute_process(
-            COMMAND           ${NCBI_APPLOG} generate -phid -sid 
-            OUTPUT_VARIABLE   NCBI_APPLOG_output
-            RESULT_VARIABLE   _result
+            COMMAND          ${NCBI_APPLOG} generate -phid -sid 
+            OUTPUT_VARIABLE  NCBI_APPLOG_output
+            RESULT_VARIABLE  _result
         )
         if("${_result}" EQUAL "0")
             string(REPLACE "\n" ";" NCBI_APPLOG_output "${NCBI_APPLOG_output}")
