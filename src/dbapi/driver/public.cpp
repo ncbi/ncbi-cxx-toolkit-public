@@ -1172,11 +1172,13 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
 CDB_BlobDescriptor::CDB_BlobDescriptor(const string& table_name,
                                    const string& column_name,
                                    const string& search_conditions,
-                                   ETDescriptorType column_type)
+                                       ETDescriptorType column_type,
+                                       ETriState has_legacy_type)
 : m_TableName(table_name)
 , m_ColumnName(column_name)
 , m_SearchConditions(search_conditions)
 , m_ColumnType(column_type)
+, m_HasLegacyType(has_legacy_type)
 {
 }
 
