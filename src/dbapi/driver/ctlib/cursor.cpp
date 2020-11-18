@@ -320,19 +320,19 @@ I_BlobDescriptor* CTL_CursorCmd::x_GetBlobDescriptor(unsigned int item_num)
 
     unique_ptr<I_BlobDescriptor> desc(GetResult().GetBlobDescriptor(item_num));
     if (desc.get() != NULL) {
-        try {
-            GetConnection().CompleteBlobDescriptor(*desc, GetCmdName(),
-                                                   item_num);
-        } catch (CDB_Exception &) {
-            if (desc->DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
-                CTL_BlobDescriptor& ctl_desc
-                    = static_cast<CTL_BlobDescriptor&>(*desc);
-                string table, column;
-                NStr::SplitInTwo(ctl_desc.m_Desc.name, ".", table, column);
-                desc.reset(new CTL_CursorBlobDescriptor
-                           (static_cast<CTL_CursorResult&>(GetResult()),
-                            table, column, ctl_desc.m_Desc.datatype));
-            }
+        CTL_BlobDescriptor& ctl_desc = static_cast<CTL_BlobDescriptor&>(*desc);
+        auto last_dot = strrchr(ctl_desc.m_Desc.name, '.');
+        if (last_dot == NULL) {
+            return desc.release();
+        }
+        string table(ctl_desc.m_Desc.name, last_dot), column(last_dot + 1);
+        auto &conn = GetConnection();
+        if (conn.x_IsLegacyBlobColumnType(table, column)) {
+            conn.CompleteBlobDescriptor(*desc, GetCmdName(), item_num);
+        } else if (desc->DescriptorType() == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
+            desc.reset(new CTL_CursorBlobDescriptor
+                       (static_cast<CTL_CursorResult&>(GetResult()),
+                        table, column, ctl_desc.m_Desc.datatype));
         }
     }
     return desc.release();

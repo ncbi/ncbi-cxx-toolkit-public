@@ -1212,12 +1212,16 @@ public:
     ///   result in updating multiple rows in some cases.)
     /// @param column_type
     ///   General column type (text or binary), if known.  (Optional.)
+    /// @param has_legacy_type
+    ///   Whether the column has a legacy type (IMAGE or [N]TEXT) or
+    ///   a modern type like [N]VARCHAR(MAX).  (Optional.)
     /// @sa CQuery::CField::GetBookmark
     CBlobBookmark NewBookmark(const string&            table_name,
                               const string&            column_name,
                               const string&            search_conditions,
                               CBlobBookmark::EBlobType column_type
-                                  = CBlobBookmark::eUnknown);
+                              = CBlobBookmark::eUnknown,
+                              ETriState has_legacy_type = eTriState_Unknown);
 
     /// Get new CBlobStoreStatic object (to be owned by caller).
     /// Automatically establish an initial connection if necessary,

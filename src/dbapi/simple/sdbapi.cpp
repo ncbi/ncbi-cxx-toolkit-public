@@ -2064,7 +2064,8 @@ CDatabase::NewBulkInsert(const string& table_name, int autoflush)
 CBlobBookmark
 CDatabase::NewBookmark(const string& table_name, const string& column_name,
                        const string& search_conditions,
-                       CBlobBookmark::EBlobType column_type)
+                       CBlobBookmark::EBlobType column_type,
+                       ETriState has_legacy_type)
 {
     CONNECT_AS_NEEDED();
 
@@ -2083,7 +2084,7 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
 
     unique_ptr<I_BlobDescriptor> desc
         (new CDB_BlobDescriptor(table_name, column_name, search_conditions,
-                                desc_type));
+                                desc_type, has_legacy_type));
                                                        
     CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Impl, desc.release()));
     return CBlobBookmark(bm);

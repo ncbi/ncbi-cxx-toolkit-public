@@ -979,7 +979,8 @@ public:
     CDB_BlobDescriptor(const string& table_name,
                        const string& column_name,
                        const string& search_conditions,
-                       ETDescriptorType column_type = eUnknown);
+                       ETDescriptorType column_type = eUnknown,
+                       ETriState     has_legacy_type = eTriState_Unknown);
     virtual ~CDB_BlobDescriptor(void);
 
     virtual int DescriptorType(void) const;
@@ -1000,11 +1001,19 @@ public:
         m_ColumnType = type;
     }
 
+    ETriState GetHasLegacyType(void) const {
+        return m_HasLegacyType;
+    }
+    void SetHasLegacyType(ETriState state) {
+        m_HasLegacyType = state;
+    }
+
 protected:
     string              m_TableName;
     string              m_ColumnName;
     string              m_SearchConditions;
     ETDescriptorType    m_ColumnType;
+    ETriState           m_HasLegacyType;
 };
 
 // historical name

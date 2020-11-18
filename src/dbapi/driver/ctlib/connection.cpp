@@ -1024,8 +1024,14 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
         return x_SendUpdateWrite(*dbdesc, stream, size);
     } else if (descr_in.DescriptorType() != CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM) {
         if (dbdesc != NULL) {
-            if (x_IsLegacyBlobColumnType(dbdesc->TableName(),
-                                     dbdesc->ColumnName())) {
+            auto has_legacy_type = dbdesc->GetHasLegacyType();
+            if (has_legacy_type == eTriState_Unknown) {
+                bool is_legacy = x_IsLegacyBlobColumnType
+                    (dbdesc->TableName(), dbdesc->ColumnName());
+                has_legacy_type = is_legacy ? eTriState_True : eTriState_False;
+                dbdesc->SetHasLegacyType(has_legacy_type);
+            }
+            if (has_legacy_type == eTriState_True) {
                 p_desc = x_GetNativeBlobDescriptor(*dbdesc);
             } else {
                 return x_SendUpdateWrite(*dbdesc, stream, size);
