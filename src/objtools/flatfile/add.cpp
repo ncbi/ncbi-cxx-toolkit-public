@@ -777,6 +777,7 @@ static bool s_IsAccession(const CSeq_id& id) {
     case CSeq_id::e_Local:
     case CSeq_id::e_General:
     case CSeq_id::e_Gi:
+    case CSeq_id::e_Named_annot_track:
         return false;
     }
     return true;
@@ -787,9 +788,11 @@ static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id
     const auto primaryType = primary.Which();
     string primaryString = primary.GetSeqIdString();
     const bool primaryIsAccession = s_IsAccession(primary);
-    const bool primaryIsGi = (primaryType == CSeq_id::e_Gi);
+    const bool primaryIsGi = primaryIsAccession ? 
+                             false :
+                             (primaryType == CSeq_id::e_Gi);
     
-    CSeq_id_Handle primaryAccessionHandle;
+    unique_ptr<string> pPrimaryAccessionString;
 
     for (const auto& pDeltaSeq : delta_ext.Get()) {
         if (pDeltaSeq && pDeltaSeq->IsLoc()) {
@@ -807,21 +810,25 @@ static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id
                     if (!deltaAccessionHandle) {
                         return false;
                     }
-                    if (deltaAccessionHandle == primaryAccessionHandle) {
+                
+                    if (deltaAccessionHandle.GetSeqId()->GetSeqIdString() ==
+                        primaryString) {
                         return false;
                     }
                 }
-                else 
+                else
                 if (primaryIsGi && s_IsAccession(*pId)) {
-                    if (!primaryAccessionHandle) {
+                    if (!pPrimaryAccessionString) {
                         auto primaryGiHandle = CSeq_id_Handle::GetHandle(pId->GetGi());
-                        primaryAccessionHandle = scope.GetAccVer(primaryGiHandle);       
+                        auto primaryAccessionHandle = scope.GetAccVer(primaryGiHandle);
+                        if (!primaryAccessionHandle) {
+                            return false;
+                        }
+                        pPrimaryAccessionString = 
+                            make_unique<string>(primaryAccessionHandle.GetSeqId()->GetSeqIdString());
                     }
-                    if (!primaryAccessionHandle) {
-                        return false;   
-                    }
-                    auto deltaAccessionHandle = CSeq_id_Handle::GetHandle(*pId);
-                    if (primaryAccessionHandle == deltaAccessionHandle) {
+
+                    if (*pPrimaryAccessionString == pId->GetSeqIdString()) {
                         return false;
                     }
                 }
