@@ -176,7 +176,9 @@ struct SBlobOnly
 class CProcessing
 {
 public:
-    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SBlobOnly* blob_only = nullptr);
+    struct SLatency : pair<bool, bool> { SLatency(const CArgs& args); };
+
+    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SLatency latency, SBlobOnly* blob_only = nullptr);
     static int ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo);
     static int Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os);
     static int Report(istream& is, ostream& os, double percentage);

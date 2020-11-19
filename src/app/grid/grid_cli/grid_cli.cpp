@@ -35,6 +35,7 @@
 #include "grid_cli.hpp"
 
 #include <connect/ncbi_userhost.hpp>
+#include <connect/impl/connect_misc.hpp>
 #include <connect/services/clparser.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
@@ -1294,6 +1295,10 @@ int CGridCommandLineInterfaceApp::Run()
 
     ifstream input_file;
     COutputFileHelper output_file_helper;
+    CLogLatencyReport latency_report{
+        R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ --- SOCK#\d+\[\d+\]@([0-9.:]+): Written at offset .+ ncbi_phid=.+)",
+        R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ --- SOCK#\d+\[\d+\]@([0-9.:]+): Read at offset .+)"
+    };
 
     {
         bool enable_extended_cli = false;
@@ -1309,7 +1314,9 @@ int CGridCommandLineInterfaceApp::Run()
                 m_AdminMode = true;
             else if (strcmp(*argv, "--debug") == 0)
                 debug = true;
-            else {
+            else if (strcmp(*argv, "--latency") == 0) {
+                latency_report.Start();
+            } else {
                 ++argv;
                 continue;
             }
@@ -1318,7 +1325,7 @@ int CGridCommandLineInterfaceApp::Run()
                 memmove(argv, argv + 1, argc * sizeof(*argv));
         }
 
-        if (enable_extended_cli && debug) {
+        if (enable_extended_cli && (debug || latency_report)) {
             // Setup error posting
             SetDiagTrace(eDT_Enable);
             SetDiagPostLevel(eDiag_Trace);
@@ -1332,6 +1339,7 @@ int CGridCommandLineInterfaceApp::Run()
             NcbiSysChar_putenv(s_ConnDebugEnv);
             // Enable data logging
             reg.Set(netservice_api_section, "connection_data_logging", "true");
+            latency_report.SetDebug(debug);
         }
 
         CCommandLineParser clparser(GRID_APP_NAME, GRID_APP_VERSION_INFO,

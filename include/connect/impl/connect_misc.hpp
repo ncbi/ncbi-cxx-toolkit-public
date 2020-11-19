@@ -35,9 +35,13 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
 
+#include <chrono>
 #include <memory>
 #include <mutex>
+#include <regex>
+#include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -134,6 +138,47 @@ protected:
 
 private:
     TType m_Object;
+};
+
+class NCBI_XCONNECT_EXPORT CLogLatencies : public unordered_map<string, chrono::microseconds>
+{
+public:
+    template <size_t SIZE1, size_t SIZE2>
+    CLogLatencies(const char (&s1)[SIZE1], const char (&s2)[SIZE2]) :
+        m_Start(s1, SIZE1 - 1),
+        m_Stop(s2, SIZE2 - 1)
+    {}
+
+    void SetDebug(bool debug) { m_Debug = debug; }
+
+    friend istream& operator>>(istream& is, CLogLatencies& latencies);
+
+private:
+    regex m_Start;
+    regex m_Stop;
+    bool m_Debug = false;
+};
+
+class NCBI_XCONNECT_EXPORT CLogLatencyReport : public CLogLatencies
+{
+public:
+    template <class... TArgs>
+    CLogLatencyReport(TArgs&&... args) : CLogLatencies(forward<TArgs>(args)...) {}
+
+    ~CLogLatencyReport();
+
+    void Start();
+    explicit operator bool() const { return m_CerrBuf; }
+
+private:
+    struct SNullBuf : streambuf
+    {
+        int_type overflow(int_type c) override { return traits_type::not_eof(c); }
+    };
+
+    SNullBuf m_NullBuf;
+    stringstream m_CerrOutput;
+    streambuf* m_CerrBuf = nullptr;
 };
 
 END_NCBI_SCOPE

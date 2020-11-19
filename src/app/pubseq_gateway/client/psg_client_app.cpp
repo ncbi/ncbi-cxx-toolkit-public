@@ -163,6 +163,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
+    arg_desc.AddFlag("latency", "Latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("verbose", "Verbose output");
 }
 
@@ -318,7 +319,7 @@ int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
     auto request = SRequestBuilder::Build<TRequest>(args);
 
     if (!args.Exist("blob-only") || !args["blob-only"].HasValue()) {
-        return CProcessing::OneRequest(service, request);
+        return CProcessing::OneRequest(service, request, args);
     }
 
     SBlobOnly blob_only;
@@ -331,7 +332,7 @@ int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
         }
     }
 
-    return CProcessing::OneRequest(service, request, &blob_only);
+    return CProcessing::OneRequest(service, request, args, &blob_only);
 }
 
 template<>
@@ -341,7 +342,7 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const string& service, const
 
     if (single_request) {
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
-        return CProcessing::OneRequest(service, request);
+        return CProcessing::OneRequest(service, request, args);
     } else {
         auto& ctx = CDiagContext::GetRequestContext();
 

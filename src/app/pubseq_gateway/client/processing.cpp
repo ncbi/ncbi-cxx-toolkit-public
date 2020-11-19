@@ -32,6 +32,7 @@
 #include <numeric>
 #include <unordered_set>
 
+#include <connect/impl/connect_misc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
@@ -431,8 +432,24 @@ void SBlobOnly::Copy(istream& is, ostream& os)
     os << ss.rdbuf();
 }
 
-int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SBlobOnly* blob_only)
+CProcessing::SLatency::SLatency(const CArgs& args) :
+    pair<bool, bool>((args["latency"].HasValue()), args["debug-printout"].HasValue())
 {
+}
+
+int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SLatency latency, SBlobOnly* blob_only)
+{
+    CLogLatencyReport latency_report{
+        R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: (\S+:[0-9]+)/\S+?\S+&client_id=\S+)",
+        R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: Closed with status \S+)"
+    };
+
+    if (latency.first) {
+        latency_report.Start();
+        latency_report.SetDebug(latency.second);
+        TPSG_DebugPrintout::SetDefault(TPSG_DebugPrintout::TValue::eSome);
+    }
+
     CPSG_Queue queue(service);
     SJsonOut json_out;
 

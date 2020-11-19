@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <array>
+
 #include "connect_misc_impl.hpp"
 
 #include "ncbi_servicep.h"
@@ -180,6 +182,100 @@ CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& servic
     }
 
     return rv;
+}
+
+istream& operator>>(istream& is, CLogLatencies& latencies)
+{
+    using namespace chrono;
+
+    enum : size_t { eTime = 1, eMicroseconds, eServer };
+    enum : size_t { fNothing = 0, fStart, fStop, eBoth };
+    array<const char*, eBoth> prefixes{ "         ", "Start -> ", "Stop ->  " };
+
+    array<char, 1024> line;
+    cmatch m;
+
+    using TServer = pair<size_t, array<system_clock::time_point, eBoth>>;
+    unordered_map<string, TServer> servers;
+    TServer* current = nullptr;
+
+    for (;;) {
+        if (!is.getline(line.data(), line.size())) {
+            // If it was a partial read (the line was too long)
+            if (is.fail() && (is.gcount() == line.size() - 1)) {
+                is.clear();
+            } else {
+                break;
+            }
+        }
+
+        size_t matched = fNothing;
+
+        if (regex_match(line.data(), m, latencies.m_Start)) {
+            matched = fStart;
+            current = &servers[m[eServer].str()];
+
+        } else if (regex_match(line.data(), m, latencies.m_Stop)) {
+            matched = fStop;
+
+            // If there is a server specified
+            if (m.size() > eServer) {
+                current = &servers[m[eServer].str()];
+            }
+        }
+
+        if (matched && current) {
+            tm tm = {};
+            stringstream(m[eTime].str()) >> get_time(&tm, "%Y-%m-%dT%H:%M:%S %b %d");
+            auto tp = system_clock::from_time_t(mktime(&tm)) + microseconds(stoull(m[eMicroseconds].str()));
+            current->first |= matched;
+            current->second[matched] = tp;
+        }
+
+        if (latencies.m_Debug) {
+            cerr << prefixes[matched] << line.data() << endl;
+        }
+    }
+
+    for (const auto& server : servers) {
+        const auto& server_name = server.first;
+        const auto& server_data = server.second;
+
+        if (server_data.first == eBoth) {
+            const auto& start = server_data.second[fStart];
+            const auto& stop = server_data.second[fStop];
+            latencies.emplace(server_name, duration_cast<microseconds>(stop - start));
+        }
+    }
+
+    return is;
+}
+
+CLogLatencyReport::~CLogLatencyReport()
+{
+    // It has not been started, nothing to report
+    if (!m_CerrBuf) {
+        return;
+    }
+
+    cerr.rdbuf(m_CerrBuf);
+    m_CerrOutput.seekg(0);
+    m_CerrOutput >> *this;
+
+    for (const auto& server : *this) {
+        const auto& server_name = server.first;
+        const auto& server_latency = server.second;
+        cerr << "server=" << server_name << "&latency=" << server_latency.count() << endl;
+    }
+
+    cerr.rdbuf(nullptr);
+}
+
+void CLogLatencyReport::Start()
+{
+    _ASSERT(!m_CerrBuf);
+    m_CerrBuf = cerr.rdbuf(m_CerrOutput.rdbuf());
+    GetDiagContext().SetOldPostFormat(false);
 }
 
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ctr_drbg_free);
