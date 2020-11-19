@@ -226,7 +226,8 @@ istream& operator>>(istream& is, CLogLatencies& latencies)
 
         if (matched && current) {
             tm tm = {};
-            stringstream(m[eTime].str()) >> get_time(&tm, "%Y-%m-%dT%H:%M:%S %b %d");
+            stringstream ss(m[eTime].str());
+            ss >> get_time(&tm, "%Y-%m-%dT%H:%M:%S %b %d");
             auto tp = system_clock::from_time_t(mktime(&tm)) + microseconds(stoull(m[eMicroseconds].str()));
             current->first |= matched;
             current->second[matched] = tp;
