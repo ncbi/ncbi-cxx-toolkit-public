@@ -26,7 +26,7 @@ endif()
 #############################################################################
 # common settings
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
-string(REPLACE "\\" "/" NCBI_TOOLS_ROOT ${NCBI_TOOLS_ROOT})
+string(REPLACE "\\" "/" NCBI_TOOLS_ROOT "${NCBI_TOOLS_ROOT}")
 
 set(NCBI_PlatformBits 64)
 if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
