@@ -37,6 +37,7 @@
 // standard includes
 #include <ncbi_pch.hpp>
 
+#include <iterator>
 // generated includes
 #include <objects/seq/Linkage_evidence.hpp>
 
@@ -70,50 +71,36 @@ bool CLinkage_evidence::GetLinkageEvidence(
     TLinkage_evidence& output_result, 
     const vector<string> &linkage_evidence )
 {
-    // remember the old size so we can resize if there's an error
-    const SIZE_TYPE original_output_result_size = output_result.size();
+    static const map<string, EType> kStringToEType {
+        {"paired-ends",        eType_paired_ends},
+        {"align_genus",        eType_align_genus},
+        {"align_xgenus",       eType_align_xgenus},
+        {"align_trnscpt",      eType_align_trnscpt},
+        {"within_clone",       eType_within_clone},
+        {"clone_contig",       eType_clone_contig},
+        {"map",                eType_map},
+        {"strobe",             eType_strobe},
+        {"unspecified",        eType_unspecified},
+        {"pcr",                eType_pcr},
+        {"proximity_ligation", eType_proximity_ligation}
+    };
 
+    TLinkage_evidence temp_vector;
     for (const auto& evidence : linkage_evidence) {
-        CRef<CLinkage_evidence> new_evid( new CLinkage_evidence );
-        if( evidence == "paired-ends" ) {
-            new_evid->SetType( eType_paired_ends );
-        } else if( evidence == "align_genus" ) {
-            new_evid->SetType( eType_align_genus );
-        } else if( evidence == "align_xgenus" ) {
-            new_evid->SetType( eType_align_xgenus );
-        } else if( evidence == "align_trnscpt" ) {
-            new_evid->SetType( eType_align_trnscpt );
-        } else if( evidence == "within_clone" ) {
-            new_evid->SetType( eType_within_clone );
-        } else if( evidence == "clone_contig" ) {
-            new_evid->SetType( eType_clone_contig );
-        } else if( evidence == "map" ) {
-            new_evid->SetType( eType_map );
-        } else if( evidence == "strobe" ) {
-            new_evid->SetType( eType_strobe );
-        } else if( evidence == "unspecified" ) {
-            new_evid->SetType( eType_unspecified );
-        } else if( evidence == "pcr" ) {
-            new_evid->SetType( eType_pcr );
-        } else if ( evidence == "proximity_ligation" ) {
-            new_evid->SetType( eType_proximity_ligation ); 
-        } else {
-            // we can detect the error below
-            break;
+        
+        auto it = kStringToEType.find(evidence);
+        if (it == kStringToEType.end()) {
+            return false;
         }
-        output_result.push_back( new_evid );
+        CRef<CLinkage_evidence> new_evid( new CLinkage_evidence() );
+        new_evid->SetType(it->second);
+        temp_vector.push_back(move(new_evid));
+
     }
 
-    if( output_result.size() != 
-        (original_output_result_size + linkage_evidence.size()) ) 
-    {
-        // sizes don't match up, so we must have failed somewhere.
-        // shrink output_result back to its original size so that
-        // we don't change output_result if there's a failure
-        output_result.resize(original_output_result_size);
-        return false;
-    }
-    // success
+    output_result.insert(end(output_result),
+                         make_move_iterator(begin(temp_vector)),
+                         make_move_iterator(end(temp_vector)));
     return true;
 }
 
