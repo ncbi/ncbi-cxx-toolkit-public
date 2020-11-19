@@ -3,30 +3,6 @@ Severity   : Error
 Message    : Bad data line: Invalid feature type "TF_binding_site"
 
 Line No    : 10
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
-
-Line No    : 11
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
-
-Line No    : 12
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
-
-Line No    : 13
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
-
-Line No    : 14
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
-
-Line No    : 15
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
-
-Line No    : 16
-Severity   : Error
-Message    : Unsupported: CDS record with multiple parents.
+Severity   : Fatal
+Message    : Multiparented features are not supported in Genbank mode
 

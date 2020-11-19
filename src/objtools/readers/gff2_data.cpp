@@ -555,7 +555,7 @@ void sGffMergeLocation(
         feature.SetLocation(*addition.Add(featLoc, CSeq_loc::fMerge_All, 0));
     }
     else {
-        feature.SetLocation(*featLoc.Add(addition, CSeq_loc::fMerge_All, 0));
+        feature.SetLocation(*addition.Add(featLoc, CSeq_loc::fMerge_All, 0));
     }
     return;
 }
@@ -1227,6 +1227,18 @@ bool CGff2Record::xInitFeatureData(
         throw error;
     }
     return CGffBaseColumns::xInitFeatureData(flags, pFeature);
+}
+
+//  ============================================================================
+bool
+CGff2Record::IsMultiParent() const
+//  =============================================================================
+{
+    list<string> parentIds;
+    if (!GetAttribute("Parent", parentIds)) {
+        return false;
+    }
+    return (parentIds.size() > 1);
 }
 
 END_objects_SCOPE

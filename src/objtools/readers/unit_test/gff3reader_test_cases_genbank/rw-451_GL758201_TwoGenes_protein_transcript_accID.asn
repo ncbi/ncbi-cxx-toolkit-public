@@ -97,6 +97,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 3
+        },
+        {
+          id local id 4
         }
       }
     },
@@ -105,24 +108,51 @@ Seq-annot ::= {
       data cdregion {
         frame one
       },
-      location mix {
-        int {
-          from 16479,
-          to 17274,
-          strand plus,
-          id genbank {
-            accession "GL758201",
-            version 1
-          }
+      location int {
+        from 16479,
+        to 17274,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "CDS:Solyc00g005000.2.1.1"
         },
-        int {
-          from 17335,
-          to 17939,
-          strand plus,
-          id genbank {
-            accession "GL758201",
-            version 1
-          }
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "protein_id",
+          val "gnl|KC|Solyc00g005000.2.1.2"
+        },
+        {
+          qual "Parent",
+          val "mRNA:Solyc00g005000.2.1"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 4,
+      data cdregion {
+        frame three
+      },
+      location int {
+        from 17335,
+        to 17939,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
         }
       },
       qual {
@@ -150,7 +180,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 5,
       data gene {
         locus-tag "Solyc_00g005020"
       },
@@ -183,7 +213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local id 6,
       data rna {
         type mRNA
       },
@@ -249,42 +279,104 @@ Seq-annot ::= {
       },
       xref {
         {
+          id local id 7
+        },
+        {
+          id local id 8
+        },
+        {
+          id local id 9
+        }
+      }
+    },
+    {
+      id local id 7,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 68061,
+        to 68210,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "CDS:Solyc00g005020.1.1.1"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "protein_id",
+          val "gnl|KC|Solyc00g005020.1.1.2|gb|AAC12345.1"
+        },
+        {
+          qual "Parent",
+          val "mRNA:Solyc00g005020.1.1"
+        }
+      },
+      xref {
+        {
           id local id 6
         }
       }
     },
     {
-      id local id 6,
+      id local id 8,
       data cdregion {
         frame one
       },
-      location mix {
-        int {
-          from 68061,
-          to 68210,
-          strand plus,
-          id genbank {
-            accession "GL758201",
-            version 1
-          }
+      location int {
+        from 68343,
+        to 68567,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "CDS:Solyc00g005020.1.1.2"
         },
-        int {
-          from 68343,
-          to 68567,
-          strand plus,
-          id genbank {
-            accession "GL758201",
-            version 1
-          }
+        {
+          qual "from_BOGAS",
+          val "1"
         },
-        int {
-          from 68653,
-          to 68763,
-          strand plus,
-          id genbank {
-            accession "GL758201",
-            version 1
-          }
+        {
+          qual "protein_id",
+          val "gnl|KC|Solyc00g005020.1.1.2|gb|AAC12345.1"
+        },
+        {
+          qual "Parent",
+          val "mRNA:Solyc00g005020.1.1"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        }
+      }
+    },
+    {
+      id local id 9,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 68653,
+        to 68763,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
         }
       },
       qual {
@@ -307,7 +399,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local id 6
         }
       }
     }

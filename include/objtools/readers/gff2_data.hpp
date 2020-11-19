@@ -101,6 +101,8 @@ public:
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
+    bool IsMultiParent() const;
+
     static void TokenizeGFF(
         vector<CTempStringEx>& columns, 
         const CTempStringEx& line);
@@ -110,9 +112,9 @@ protected:
         const string&,
         const string& );
 
-	bool xSplitGffAttributes(
-		const string&,
-		vector< string >& ) const;
+    bool xSplitGffAttributes(
+        const string&,
+        vector< string >& ) const;
 
     virtual bool xMigrateAttributes(
         int,

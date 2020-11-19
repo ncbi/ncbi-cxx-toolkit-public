@@ -48,13 +48,11 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 833,
-          to 934,
-          strand plus,
-          id local str "unclustered_scaffold_7989"
-        }
+      location int {
+        from 833,
+        to 934,
+        strand plus,
+        id local str "unclustered_scaffold_7989"
       },
       qual {
         {

@@ -37,15 +37,13 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 189,
-          to 254,
-          strand plus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
@@ -180,15 +178,13 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 336,
-          to 2798,
-          strand plus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 336,
+        to 2798,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
@@ -467,15 +463,13 @@ Seq-annot ::= {
       comment "acts as tRNA-Ala and mRNA template for tagging proteins
  resulting from premature transcription termination for degradation, a process
  known as trans-translation",
-      location mix {
-        int {
-          from 2755592,
-          to 2755954,
-          strand plus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 2755592,
+        to 2755954,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
@@ -580,15 +574,13 @@ Seq-annot ::= {
         type tRNA
       },
       comment "anticodon: GAU",
-      location mix {
-        int {
-          from 2785761,
-          to 2785836,
-          strand minus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 2785761,
+        to 2785836,
+        strand minus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
@@ -651,15 +643,13 @@ Seq-annot ::= {
       data rna {
         type rRNA
       },
-      location mix {
-        int {
-          from 3423422,
-          to 3423541,
-          strand minus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 3423422,
+        to 3423541,
+        strand minus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {

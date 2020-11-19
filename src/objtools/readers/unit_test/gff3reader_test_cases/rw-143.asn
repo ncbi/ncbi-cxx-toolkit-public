@@ -54,13 +54,11 @@ Seq-annot ::= {
       comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
  conserved domain at 5 end of model near gap in scaffold. Premature
  stop-codons are probably remnants of the pseudogene.",
-      location mix {
-        int {
-          from 12504878,
-          to 12518543,
-          strand plus,
-          id local str "Scaffold7"
-        }
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
       },
       qual {
         {

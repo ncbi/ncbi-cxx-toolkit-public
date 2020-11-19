@@ -23,13 +23,11 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 32925,
-          to 33083,
-          strand minus,
-          id local str "scaffold_944"
-        }
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
       },
       qual {
         {
@@ -113,13 +111,11 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 32925,
-          to 33083,
-          strand minus,
-          id local str "scaffold_944"
-        }
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
       },
       qual {
         {
@@ -203,13 +199,11 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 32925,
-          to 33083,
-          strand minus,
-          id local str "scaffold_944"
-        }
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
       },
       qual {
         {

@@ -57,6 +57,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
+#include "gff3_location_merger.hpp"
+
 #include "reader_message_handler.hpp"
 
 #include <algorithm>
@@ -167,6 +169,7 @@ CGff3Reader::CGff3Reader(
 //  ----------------------------------------------------------------------------
     CGff2Reader( uFlags, name, title, resolver, pRL )
 {
+    mpLocations.reset(new CGff3LocationMerger(uFlags, resolver, 0));
     CGff2Record::ResetId();
 }
 
@@ -280,6 +283,16 @@ CGff3Reader::xParseFeature(
         return true;
     }
 
+    //no support for multiparented features in genbank mode:
+    if (this->IsInGenbankMode()  &&  pRecord->IsMultiParent()) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Multiparented features are not supported in Genbank mode"));
+        ProcessError(*pErr, pEC);
+    }
+
     //append feature to annot:
     if (!xUpdateAnnotFeature(*pRecord, annot, pEC)) {
         return false;
@@ -329,7 +342,6 @@ bool CGff3Reader::xParseAlignment(
     return true;
 }
 
-
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotFeature(
     const CGff2Record& gffRecord,
@@ -337,60 +349,33 @@ bool CGff3Reader::xUpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    vector<CGff2Record> subrecords;
-    if (mSequenceSize == 0  ||  gffRecord.SeqStop() <= mSequenceSize) {
-        subrecords.push_back(gffRecord);
-    }
-    else {
-        CGff2Record upper(gffRecord);
-        upper.SetExtent(gffRecord.SeqStart(), mSequenceSize-1);
-        subrecords.push_back(upper);
-        CGff2Record lower(gffRecord);
-        lower.SetExtent(0, gffRecord.SeqStop() - mSequenceSize);
-        subrecords.push_back(lower);
-    }
-    
-    for (const auto& record: subrecords) {
-        CRef< CSeq_feat > pFeature(new CSeq_feat);
+    mpLocations->AddRecord(gffRecord);
 
-        string type = record.Type();
-        NStr::ToLower(type);
-        if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
-            if (!xUpdateAnnotExon(record, pFeature, annot, pEC)) {
-                return false;
-            }
-            continue;
-        }
-        if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
-            if (!xUpdateAnnotCds(record, pFeature, annot, pEC)) {
-                return false;
-            }
-            continue;
-        }
-        if (type == "gene") {
-            if (!xUpdateAnnotGene(record, pFeature, annot, pEC)) {
-                return false;
-            }
-            continue;
-        }
-        if (type == "mrna") {
-            if (!xUpdateAnnotMrna(record, pFeature, annot, pEC)) {
-                return false;
-            }
-            continue;
-        }
-        if (type == "region") {
-            if (!xUpdateAnnotRegion(record, pFeature, annot, pEC)) {
-                return false;
-            }
-            continue;
-        }
-        if (!xUpdateAnnotGeneric(record, pFeature, annot, pEC)) {
-            return false;
-        }
+    CRef< CSeq_feat > pFeature(new CSeq_feat);
+
+    string type = gffRecord.Type();
+    NStr::ToLower(type);
+    if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
+        return xUpdateAnnotExon(gffRecord, pFeature, annot, pEC);
+    }
+    if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
+        return xUpdateAnnotCds(gffRecord, pFeature, annot, pEC);
+    }
+    if (type == "gene") {
+         return xUpdateAnnotGene(gffRecord, pFeature, annot, pEC);
+    }
+    if (type == "mrna") {
+        return xUpdateAnnotMrna(gffRecord, pFeature, annot, pEC);
+    }
+    if (type == "region") {
+        return xUpdateAnnotRegion(gffRecord, pFeature, annot, pEC);
+    }
+    if (!xUpdateAnnotGeneric(gffRecord, pFeature, annot, pEC)) {
+        return false;
     }
     return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 void CGff3Reader::xVerifyExonLocation(
@@ -475,100 +460,42 @@ bool CGff3Reader::xUpdateAnnotCds(
 {
     xVerifyCdsParents(record);
 
-    list<string> parents;
-    record.GetAttribute("Parent", parents);
-    map<string, string> impliedCdsFeats;
+    string id;
+    string parentId;
 
-    // Preliminary:
-    //  We do not support multiparented CDS features in -genbank mode yet.
-    if (IsInGenbankMode()  &&  parents.size() > 1){
-        CReaderMessage error(
-            eDiag_Error,
-            m_uLineNumber,
-            "Unsupported: CDS record with multiple parents.");
-        throw error;
+    if (record.GetAttribute("ID", id)) {
+        if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
+            return true;
+        }
+        m_MapIdToFeature[id] = pFeature;
+        xInitializeFeature(record, pFeature);
+        xAddFeatureToAnnot(pFeature, annot);
+
+        if (record.GetAttribute("Parent", parentId)  &&  !parentId.empty()) {
+            xFeatureSetQualifier("Parent", parentId, pFeature);
+            xFeatureSetXrefParent(parentId, pFeature);
+            if (m_iFlags & fGeneXrefs) {
+                xFeatureSetXrefGrandParent(parentId, pFeature);
+            }
+        }
     }
-
-    // Step 1:
-    // Locations of parent mRNAs are constructed on the fly, by joining in the 
-    //  locations of child exons and CDSs as we discover them. Do this
-    //  first.
-    // IDs for CDS features are derived from the IDs of their parent features.
-    //  Generate a list of CDS IDs this record pertains to as we cycle through
-    //  the parent list.
-    //
-    for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
-            ++it) {
-        string parentId = *it;
-        bool parentIsGene = false;
-        //update parent location:
-        IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(parentId);
-        if (featIt != m_MapIdToFeature.end()) {
-            CRef<CSeq_feat> pParent = featIt->second;
-            parentIsGene = pParent->GetData().IsGene();
-            if (!parentIsGene  &&  !record.UpdateFeature(m_iFlags, pParent)) {
-                return false;
-            }
-            //rw-143:
-            // if parent type is miscRNA then change it to mRNA:
-            if (pParent->GetData().IsRna()  &&  
-                    pParent->GetData().GetRna().GetType()  ==  CRNA_ref::eType_other) {
-                pParent->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-            }
+    else {
+        if (!record.GetAttribute("Parent", parentId)) {
+            return false;
         }
-
-        //generate applicable CDS ID:
-        string siblingId("cds");
-        if (!record.GetAttribute("ID", siblingId)  ||  !parentIsGene) {
-            siblingId = string("cds:") + parentId;
+        id = record.Type() + ":" + parentId;
+        if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
+            return true;
         }
-        impliedCdsFeats[siblingId] = parentId;
-    }
-    // deal with unparented cds
-    if (parents.empty()) {
-        string cdsId;
-        if (!record.GetAttribute("ID", cdsId)) {
-            if (IsInGenbankMode()) {
-                cdsId = xNextGenericId();
+        m_MapIdToFeature[id] = pFeature;
+        xInitializeFeature(record, pFeature);
+        xAddFeatureToAnnot(pFeature, annot);
+        if (!parentId.empty()) {
+            xFeatureSetQualifier("Parent", parentId, pFeature);
+            xFeatureSetXrefParent(parentId, pFeature);
+            if (m_iFlags & fGeneXrefs) {
+                xFeatureSetXrefGrandParent(parentId, pFeature);
             }
-            else {
-                cdsId = "cds";
-            }
-        }
-        impliedCdsFeats[cdsId] = "";
-    }
-
-    // Step 2:
-    // For every sibling CDS feature, look if there is already a feature with that
-    //  ID under construction.
-    // If there is, use record to update feature under construction.
-    // If there isn't, use record to initialize a brand new feature.
-    //
-    for (auto featIt = impliedCdsFeats.begin(); featIt != impliedCdsFeats.end(); ++featIt) {
-        auto cdsId = featIt->first;
-        auto parentId = featIt->second;
-        auto idIt = m_MapIdToFeature.find(cdsId);
-        if (idIt == m_MapIdToFeature.end()) {
-            auto altId =  string("cds:") + parentId;
-            idIt = m_MapIdToFeature.find(altId);
-        }
-        if (idIt != m_MapIdToFeature.end()) {
-            //found feature with ID in question: update
-            record.UpdateFeature(m_iFlags, idIt->second);
-        }
-        else {
-            //didn't find feature with that ID: create new one
-            pFeature.Reset(new CSeq_feat);
-            xInitializeFeature(record, pFeature);
-            if (!parentId.empty()) {
-                xFeatureSetQualifier("Parent", parentId, pFeature);
-                xFeatureSetXrefParent(parentId, pFeature);
-                if (m_iFlags & fGeneXrefs) {
-                    xFeatureSetXrefGrandParent(parentId, pFeature);
-                }
-            }
-            xAddFeatureToAnnot(pFeature, annot);
-            m_MapIdToFeature[cdsId] = pFeature;
         }
     }
     return true;
@@ -1055,9 +982,25 @@ void CGff3Reader::xPostProcessAnnot(
         CReaderMessage warning(
             eDiag_Warning,
             m_uLineNumber,
-            "Bad data line: Record references non-existant Parent=" + it.first);
+            "Bad data line: Record references non-existent Parent=" + it.first);
         m_pMessageHandler->Report(warning);
     }
+
+    //location fixup:
+    mpLocations->SetSequenceSize(mSequenceSize);
+    for (auto itLocation: mpLocations->LocationMap()) {
+        auto id = itLocation.first;
+        auto itFeature = m_MapIdToFeature.find(id);
+        if (itFeature == m_MapIdToFeature.end()) {
+            continue;
+        }
+        CRef<CSeq_loc> pNewLoc = CGff3LocationMerger::MergeLocation(itLocation.second);
+        CRef<CSeq_feat> pFeature = itFeature->second;
+        if (!pFeature->GetData().IsGene()) {
+            pFeature->SetLocation(*pNewLoc);
+        }
+    }
+
     return CGff2Reader::xPostProcessAnnot(annot);
 }
 

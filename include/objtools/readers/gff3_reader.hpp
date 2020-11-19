@@ -39,8 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-class CGFFReader;
-class CGff3ReadRecord;
+class CGff3LocationMerger;
 
 //  ============================================================================
 class CGff3ReadRecord
@@ -219,6 +218,7 @@ protected:
     using PENDING_EXONS = map<string, list<CGff2Record> >;
     PENDING_EXONS mPendingExons;
 
+    unique_ptr<CGff3LocationMerger> mpLocations;
     static unsigned int msGenericIdCounter;
 };
 
