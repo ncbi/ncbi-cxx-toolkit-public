@@ -63,3 +63,30 @@ BOOST_AUTO_TEST_CASE(GetLinkageEvidence)
 }
 
 
+BOOST_AUTO_TEST_CASE(VecToString)
+{
+    vector<string> initial_strings  {"paired-ends", 
+                                     "align_genus", 
+                                     "align_xgenus", 
+                                     "align_trnscpt", 
+                                     "within_clone",
+                                     "clone_contig",
+                                     "map",
+                                     "strobe",
+                                     "unspecified",
+                                     "pcr",
+                                     "proximity_ligation"};
+
+    CLinkage_evidence::TLinkage_evidence evidence_vector;
+    CLinkage_evidence::GetLinkageEvidence(evidence_vector, initial_strings);
+
+    string output;
+    auto success = CLinkage_evidence::VecToString(output, evidence_vector);
+    BOOST_CHECK(success); 
+    string expected = "paired-ends;align_genus;align_xgenus;"
+                      "align_trnscpt;within_clone;clone_contig;"
+                      "map;strobe;unspecified;pcr;proximity_ligation";
+    BOOST_CHECK_EQUAL(output, expected);
+} 
+
+

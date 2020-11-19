@@ -157,6 +157,8 @@ bool CLinkage_evidence::VecToString(
                 case eType_pcr:
                     evid_str = "pcr";
                     break;
+                case eType_proximity_ligation:
+                    evid_str = "proximity_ligation";
                 default:
                     break;
             }
