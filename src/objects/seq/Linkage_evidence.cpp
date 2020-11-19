@@ -72,28 +72,31 @@ bool CLinkage_evidence::GetLinkageEvidence(
 {
     // remember the old size so we can resize if there's an error
     const SIZE_TYPE original_output_result_size = output_result.size();
-    ITERATE( vector<string>, evid_iter, linkage_evidence ) {
+
+    for (const auto& evidence : linkage_evidence) {
         CRef<CLinkage_evidence> new_evid( new CLinkage_evidence );
-        if( *evid_iter == "paired-ends" ) {
+        if( evidence == "paired-ends" ) {
             new_evid->SetType( eType_paired_ends );
-        } else if( *evid_iter == "align_genus" ) {
+        } else if( evidence == "align_genus" ) {
             new_evid->SetType( eType_align_genus );
-        } else if( *evid_iter == "align_xgenus" ) {
+        } else if( evidence == "align_xgenus" ) {
             new_evid->SetType( eType_align_xgenus );
-        } else if( *evid_iter == "align_trnscpt" ) {
+        } else if( evidence == "align_trnscpt" ) {
             new_evid->SetType( eType_align_trnscpt );
-        } else if( *evid_iter == "within_clone" ) {
+        } else if( evidence == "within_clone" ) {
             new_evid->SetType( eType_within_clone );
-        } else if( *evid_iter == "clone_contig" ) {
+        } else if( evidence == "clone_contig" ) {
             new_evid->SetType( eType_clone_contig );
-        } else if( *evid_iter == "map" ) {
+        } else if( evidence == "map" ) {
             new_evid->SetType( eType_map );
-        } else if( *evid_iter == "strobe" ) {
+        } else if( evidence == "strobe" ) {
             new_evid->SetType( eType_strobe );
-        } else if( *evid_iter == "unspecified" ) {
+        } else if( evidence == "unspecified" ) {
             new_evid->SetType( eType_unspecified );
-        } else if( *evid_iter == "pcr" ) {
+        } else if( evidence == "pcr" ) {
             new_evid->SetType( eType_pcr );
+        } else if ( evidence == "proximity_ligation" ) {
+            new_evid->SetType( eType_proximity_ligation ); 
         } else {
             // we can detect the error below
             break;
@@ -109,10 +112,9 @@ bool CLinkage_evidence::GetLinkageEvidence(
         // we don't change output_result if there's a failure
         output_result.resize(original_output_result_size);
         return false;
-    } else {
-        // success
-        return true;
     }
+    // success
+    return true;
 }
 
 bool CLinkage_evidence::VecToString( 

@@ -1,0 +1,11 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_linkage_evidence)
+  NCBI_sources(unit_test_linkage_evidence)
+  NCBI_uses_toolkit_libraries(seq test_boost)
+  NCBI_project_watchers(foleyjp)
+  NCBI_add_test()
+NCBI_end_app()
+

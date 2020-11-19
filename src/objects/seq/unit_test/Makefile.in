@@ -2,7 +2,7 @@
 
 APP_PROJ = seq_id_unit_test seqalign_unit_test mapper_unit_test \
            ecnum_unit_test seq_c_compat_unit_test seqfeatdata_unit_test seqfeat_unit_test \
-	   seq_loc_unit_test unit_test_so_map
+	   seq_loc_unit_test unit_test_so_map unit_test_linkage_evidence
 PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included objects

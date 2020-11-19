@@ -14,4 +14,5 @@ NCBI_add_app(
   seqfeat_unit_test 
   seqfeatdata_unit_test
   unit_test_so_map
+  unit_test_linkage_evidence
 )
