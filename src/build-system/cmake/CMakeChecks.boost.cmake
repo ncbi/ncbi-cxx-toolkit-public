@@ -3,7 +3,6 @@
 if (BUILD_SHARED_LIBS)
     set(Boost_USE_STATIC_LIBS       OFF)
     set(Boost_USE_STATIC_RUNTIME    OFF)
-    add_definitions(-DBOOST_LOG_DYN_LINK)
 else()
     set(Boost_USE_STATIC_LIBS       ON)
     set(Boost_USE_STATIC_RUNTIME    ON)
@@ -35,20 +34,22 @@ endif()
 
 #set(Boost_DEBUG ON)
 find_package(Boost
-             COMPONENTS chrono context coroutine date_time filesystem
+    COMPONENTS chrono context coroutine date_time filesystem
                iostreams regex serialization system thread
-             REQUIRED)
+            )
 set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
+if(Boost_FOUND)
+    add_definitions(-DBOOST_LOG_DYN_LINK)
 
-set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
-set(BOOST_LIBPATH -Wl,-rpath,${Boost_LIBRARY_DIRS} -L${Boost_LIBRARY_DIRS})
+    set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(BOOST_LIBPATH -Wl,-rpath,${Boost_LIBRARY_DIRS} -L${Boost_LIBRARY_DIRS})
 
-message(STATUS "Boost libraries: ${Boost_LIBRARY_DIRS}")
-set(BOOST_LIBPATH -Wl,-rpath,${BOOST_LIBRARYDIR} -L${Boost_LIBRARY_DIRS})
+    message(STATUS "Boost libraries: ${Boost_LIBRARY_DIRS}")
+    set(BOOST_LIBPATH -Wl,-rpath,${BOOST_LIBRARYDIR} -L${Boost_LIBRARY_DIRS})
 
 #
 # As a blanket statement, we now include Boost everywhere
 # This avoids a serious insidious version skew if we have both the
 # system-installed Boost libraries and a custom version of Boost
-include_directories(SYSTEM ${BOOST_INCLUDE})
-
+    include_directories(SYSTEM ${BOOST_INCLUDE})
+endif()
