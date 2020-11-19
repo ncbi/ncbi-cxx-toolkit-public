@@ -13,14 +13,6 @@ set tree_root=%initial_dir%
 set extension=cmake_configure_ext.bat
 
 REM #########################################################################
-REM check for cygwin
-for /f %%a in ('uname 2^>NUL ^| grep -i cygwin') do (
-  if not "%%a"=="" (
-    set OSTYPE=cygwin
-  )
-)
-
-REM #########################################################################
 set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere"
 if "%CMAKE_CMD%"=="" (
   for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -version 15.0 -property installationPath`) do (
