@@ -878,9 +878,9 @@ CBD<USA>	c	USF Center for Biological Defense	USF:CBD
 CBF	s	Coleccion Boliviana de Fauna	CBFC		
 CBFS	s	University of South Bohemia, Department of Botany			
 CBG	s	Australian National Botanic Gardens			
-CBM	s	Natural History Museum and Institute			
-CBM:ZC	s	Natural History Museum and Institute, Zoological Collection		
-CBM:ZF	s	Natural History Museum and Institute, Zoology Fish		
+CBM	s	Natural History Museum and Institute, Chiba			
+CBM:ZC	s	Natural History Museum and Institute, Chiba, Natural History Museum and Institute, Chiba, Zoology Crustacea	
+CBM:ZF	s	Natural History Museum and Institute, Chiba, Natural History Museum and Institute, Chiba, Zoology Fish	
 CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry (Colecao Brasileira de Microrganismos de Ambiente e Industria)			
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
@@ -7546,7 +7546,7 @@ UWM	s	University of Wisconsin, Biological Sciences Department
 UWM<POL>	s	University of Warmia and Mazury in Olsztyn			
 UWMA	s	University of Wisconsin, Milwaukee, Department of Anthropology			
 UWMIL	s	University of Wisconsin, Milwaukee, Department of Biological Sciences			
-UWO	sc	University of Western Ontario			
+UWO	sc	University of Western Ontario	UWO		
 UWOC	s	University of Western Ontario			
 UWP	s	University of Wrocklaw			
 UWPG	s	University of Winnipeg, Biology Department			
