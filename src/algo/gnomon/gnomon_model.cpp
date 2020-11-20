@@ -2276,7 +2276,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             string fs, ss;
             if(!r->attributes["Splices"].empty()) {
                 string splices = r->attributes["Splices"];
-                unsigned int ispl = splices.find("..");
+                auto ispl = splices.find("..");
                 if(ispl != string::npos) {
                     if(ispl == 2)
                         fs = splices.substr(0,2);

@@ -107,7 +107,7 @@ CAlignModel CAlignCommon::GetAlignment(const SAlignIndividual& ali, const deque<
     align.SetTargetId(*target_id);
 
     return align;
-};
+}
 
 struct LeftAndLongFirstOrder {
     LeftAndLongFirstOrder(const deque<char>& idp) : id_pool(idp) {}

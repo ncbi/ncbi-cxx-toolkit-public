@@ -95,7 +95,7 @@ private:
     void IncludeInContained(SChainMember& big, SChainMember& small);
     void FindContainedAlignments(TContained& pointers);
     void DuplicateNotOriented(CChainMembers& pointers, TGeneModelList& clust);
-    void Duplicate5pendsAndShortCDSes(CChainMembers& pointers, TGeneModelList& clust);
+    void Duplicate5pendsAndShortCDSes(CChainMembers& pointers);
     void ReplicatePStops(CChainMembers& pointers);
     void ScoreCdnas(CChainMembers& pointers);
     void DuplicateUTRs(CChainMembers& pointers);
@@ -1756,8 +1756,8 @@ public:
     void DuplicateUTR(SChainMember* copy_ofp); 
     void SpliceFromOther(CChainMembers& other);
 private:
-    CChainMembers(const CChainMembers& object) { }
-    CChainMembers& operator=(const CChainMembers& object) { return *this; }    
+    CChainMembers(const CChainMembers& object) = delete;
+    CChainMembers& operator=(const CChainMembers& object) = delete;    
     list<SChainMember> m_members;
     list<TContained> m_copylist;
     list<CAlignMap> m_align_maps;
@@ -2059,7 +2059,7 @@ void CChainer::CChainerImpl::ScoreCdnas(CChainMembers& pointers)
 }
 
 
-void CChainer::CChainerImpl::Duplicate5pendsAndShortCDSes(CChainMembers& pointers, TGeneModelList& clust)
+void CChainer::CChainerImpl::Duplicate5pendsAndShortCDSes(CChainMembers& pointers)
 {
     unsigned int initial_size = pointers.size();
     for(unsigned int i = 0; i < initial_size; ++i) {
@@ -2835,7 +2835,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
     DuplicateNotOriented(allpointers, clust);
     ReplicatePStops(allpointers);
     ScoreCdnas(allpointers);
-    Duplicate5pendsAndShortCDSes(allpointers, clust);
+    Duplicate5pendsAndShortCDSes(allpointers);
     DuplicateUTRs(allpointers);
     CalculateSpliceWeights(allpointers);
     FindContainedAlignments(allpointers);
@@ -3478,7 +3478,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                 }
 
                 CChainMembers unmapointers(unmacl, orig_aligns, unmodified_aligns);
-                Duplicate5pendsAndShortCDSes(unmapointers, unmacl);
+                Duplicate5pendsAndShortCDSes(unmapointers);
                 sort(pointers.begin(),pointers.end(),GenomeOrderD());
                 ITERATE(TContained, ip, unmapointers) {
                     SChainMember& mi = **ip;
@@ -4151,7 +4151,7 @@ void CChain::RestoreTrimmedEnds(int trim)
 {
     // add back trimmed off UTRs    
     
-    if((Status()&eLeftConfirmed == 0) && (!OpenLeftEnd() || ReadingFrame().Empty()) && (Strand() == ePlus || (Status()&ePolyA) == 0) && (Strand() == eMinus || (Status()&eCap) == 0)) {
+    if(((Status()&eLeftConfirmed) == 0) && (!OpenLeftEnd() || ReadingFrame().Empty()) && (Strand() == ePlus || (Status()&ePolyA) == 0) && (Strand() == eMinus || (Status()&eCap) == 0)) {
         for(int ia = 0; ia < (int)m_members.size(); ++ia)  {
             const CGeneModel a = *m_members[ia]->m_align;
             if((a.Type() & eProt)==0 && (a.Status() & CGeneModel::eLeftTrimmed)!=0 &&
@@ -4162,7 +4162,7 @@ void CChain::RestoreTrimmedEnds(int trim)
         }
     }
      
-    if((Status()&eRightConfirmed == 0) && (!OpenRightEnd() || ReadingFrame().Empty()) && (Strand() == eMinus || (Status()&ePolyA) == 0) && (Strand() == ePlus || (Status()&eCap) == 0)) {
+    if(((Status()&eRightConfirmed) == 0) && (!OpenRightEnd() || ReadingFrame().Empty()) && (Strand() == eMinus || (Status()&ePolyA) == 0) && (Strand() == ePlus || (Status()&eCap) == 0)) {
         for(int ia = 0; ia < (int)m_members.size(); ++ia)  {
             const CGeneModel a = *m_members[ia]->m_align;
             if((a.Type() & eProt)==0 && (a.Status() & CGeneModel::eRightTrimmed)!=0 &&
