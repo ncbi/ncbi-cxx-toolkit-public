@@ -72,7 +72,12 @@ bool CPSGS_OSGAnnot::CanProcess(SPSGS_AnnotRequest& request,
 {
     // check if id is good enough
     CSeq_id id;
-    SetSeqId(id, request.m_SeqIdType, request.m_SeqId);
+    try {
+        SetSeqId(id, request.m_SeqIdType, request.m_SeqId);
+    }
+    catch ( exception& /*ignore*/ ) {
+        return false;
+    }
     if ( !id.IsGi() && !id.GetTextseq_Id() ) {
         return false;
     }
@@ -96,21 +101,35 @@ set<string> CPSGS_OSGAnnot::GetNamesToProcess(SPSGS_AnnotRequest& request,
 }
 
 
+static bool IsCDDName(const string& name)
+{
+    return NStr::EqualNocase(name, "CDD");
+}
+
+
+// primary SNP track
+static bool IsPrimarySNPName(const string& name)
+{
+    return NStr::EqualNocase(name, "SNP");
+}
+
+
+// explicit name for a SNP track
+static bool IsExplicitSNPName(const string& name)
+{
+    return NStr::StartsWith(name, "NA", NStr::eNocase) && name.find("#") != NPOS;
+}
+
+
+static bool IsSNPName(const string& name)
+{
+    return IsPrimarySNPName(name) || IsExplicitSNPName(name);
+}
+
+
 bool CPSGS_OSGAnnot::CanProcessAnnotName(const string& name)
 {
-    if ( name == "CDD" ) {
-        // CDD annots
-        return true;
-    }
-    if ( name == "SNP" ) {
-        // default SNP track
-        return true;
-    }
-    if ( NStr::StartsWith(name, "NA") && name.find("#") != NPOS ) {
-        // explicitly names SNP track
-        return true;
-    }
-    return false;
+    return IsCDDName(name) || IsSNPName(name);
 }
 
 
@@ -123,7 +142,14 @@ void CPSGS_OSGAnnot::CreateRequests()
     m_NamesToProcess.clear();
     for ( auto& name : GetNamesToProcess(psg_req, GetPriority()) ) {
         m_NamesToProcess.insert(name);
-        req.SetSources().push_back(name);
+        if ( IsCDDName(name) ) {
+            // CDD are external annotations in OSG
+            req.SetExternal();
+        }
+        else {
+            // others have named annot accession (source)
+            req.SetSources().push_back(name);
+        }
     }
     AddRequest(osg_req);
 }
@@ -376,6 +402,9 @@ void CPSGS_OSGAnnot::SendReplies()
     }
     auto& psg_req = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     for ( auto& r : m_BlobIds ) {
+        if ( !CPSGS_OSGGetBlobBase::IsOSGBlob(r->GetBlob_id()) ) {
+            continue;
+        }
         string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
         CJsonNode       json(CJsonNode::NewObjectNode());
         json.SetString("blob_id", psg_blob_id);
