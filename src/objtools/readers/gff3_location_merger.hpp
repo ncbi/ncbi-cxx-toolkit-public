@@ -53,12 +53,14 @@ public:
     CGff3LocationRecord(
         const CGff3LocationRecord&);
 
-    CRef<CSeq_loc> GetLocation();
+    CRef<CSeq_loc> GetLocation(
+        TSeqPos sequenceSize);
 
     CSeq_id mId;
     TSeqPos mStart;
     TSeqPos mStop;
     ENa_strand mStrand;
+    string mType;
     size_t mPartNum; 
 
     static bool ComparePartNumbers(
@@ -81,10 +83,10 @@ public:
     CGff3LocationMerger(
         unsigned int flags =0,
         CGff3ReadRecord::SeqIdResolver =nullptr,
-        size_t sequenceSize =0);
+        TSeqPos sequenceSize =0);
 
     void SetSequenceSize(
-        size_t sequenceSize) { mSequenceSize = sequenceSize; }
+        TSeqPos sequenceSize) { mSequenceSize = sequenceSize; }
 
     bool AddRecord(
         const CGff2Record&);
@@ -94,7 +96,7 @@ public:
     CRef<CSeq_loc> GetLocation(
         const string&);
 
-    static CRef<CSeq_loc> MergeLocation(
+    CRef<CSeq_loc> MergeLocation(
         LOCATIONS&);
 
 private:
@@ -105,7 +107,7 @@ private:
     static void xSortLocations(
         LOCATIONS&);
 
-    size_t mSequenceSize;
+    TSeqPos mSequenceSize;
     unsigned int mFlags;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 

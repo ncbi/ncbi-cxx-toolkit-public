@@ -984,11 +984,9 @@ void CGff3Reader::xPostProcessAnnot(
         if (itFeature == m_MapIdToFeature.end()) {
             continue;
         }
-        CRef<CSeq_loc> pNewLoc = CGff3LocationMerger::MergeLocation(itLocation.second);
+        CRef<CSeq_loc> pNewLoc = mpLocations->MergeLocation(itLocation.second);
         CRef<CSeq_feat> pFeature = itFeature->second;
-        if (!pFeature->GetData().IsGene()) {
-            pFeature->SetLocation(*pNewLoc);
-        }
+        pFeature->SetLocation(*pNewLoc);
     }
 
     return CGff2Reader::xPostProcessAnnot(annot);
