@@ -164,6 +164,10 @@ void ASNLexer::SkipComment(void)
     while ( true ) {
         // wait for end of comments
         char c = Char();
+        if (c == '\r') {
+            SkipChar();
+            continue;
+        }
         switch ( c ) {
         case '\n':
             SkipChar();
