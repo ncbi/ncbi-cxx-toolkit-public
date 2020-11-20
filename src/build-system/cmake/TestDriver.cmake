@@ -197,10 +197,10 @@ set(ENV{CHECK_TIMEOUT} "${NCBITEST_TIMEOUT}")
 
 # -- Debug tools to get stack/back trace (except running under memory checkers)
 
-if(DEFINED NCBITEST_BACK_TRACE)
+if(NCBITEST_BACK_TRACE)
     set(ENV{NCBI_CHECK_BACK_TRACE} "gdb --batch --quiet -ex \"thread apply all bt\" -ex \"quit\"")
 endif()
-if(DEFINED NCBITEST_STACK_TRACE)
+if(NCBITEST_STACK_TRACE)
     set(ENV{NCBI_CHECK_STACK_TRACE} "gstack")
 endif()
 
@@ -215,9 +215,9 @@ if($ENV{NCBI_AUTOMATED_BUILD})
         execute_process(
             COMMAND          ${NCBI_APPLOG} generate -phid -sid 
             OUTPUT_VARIABLE  NCBI_APPLOG_output
-            RESULT_VARIABLE  _result
+            RESULT_VARIABLE  _retcode
         )
-        if("${_result}" EQUAL "0")
+        if(${_retcode} EQUAL 0)
             string(REPLACE "\n" ";" NCBI_APPLOG_output "${NCBI_APPLOG_output}")
             list(GET NCBI_APPLOG_output 0 NCBI_LOG_HIT_ID)
             set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}.1")
@@ -279,7 +279,7 @@ endif()
 # ---------------------------------------------------------------------------
 # Run command
 
-set(_result "1")
+set(_result 1)
 string(TIMESTAMP _test_start "%m/%d/%Y %H:%M:%S")
 string(TIMESTAMP _time_start "%s")
 execute_process(
@@ -295,17 +295,40 @@ string(TIMESTAMP _test_stop "%m/%d/%Y %H:%M:%S")
 math(EXPR _test_times "${_time_stop} - ${_time_start}")
 set(_test_times "real ${_test_times}")
 
+# ---------------------------------------------------------------------------
+# Post-run updates
+
+set(_uptime "")
+if(NCBITEST_HAVE_UPTIME)
+    execute_process(
+        COMMAND uptime
+        RESULT_VARIABLE _retcode
+        OUTPUT_VARIABLE _uptime_output
+        )
+    if (_retcode EQUAL 0)
+        string(APPEND _info "set(NCBITEST_HAVE_UPTIME 1)\n")
+    endif()
+    string(REPLACE "\n" " " _uptime ${_uptime_output})
+    string(REGEX REPLACE ".*averages*: *\(.*\) *$" "\\1" _uptime ${_uptime})
+    string(REGEX REPLACE "[, ][, ]*"               " "  _uptime ${_uptime})
+endif()
+
+# Result can have an error description, not a numeric exist code, so for such cases set it always to 1.
+if (NOT ${_result} MATCHES "[0-9]+$")
+    set(_result 1)
+endif()
+
 
 # ---------------------------------------------------------------------------
 # Add header/footer into output
 
-file(READ ${_tmp_out} _contents)
+file(READ ${_tmp_out} _out)
 set(_info)
 string(APPEND _info "======================================================================\n")
 string(APPEND _info "${NCBITEST_NAME}\n")
 string(APPEND _info "======================================================================\n")
 string(APPEND _info "\nCommand line: ${_test_cmd} ${_test_args}\n\n")
-string(APPEND _info ${_contents})
+string(APPEND _info ${_out})
 string(APPEND _info "Start time   : ${_test_start}\n")
 string(APPEND _info "Stop time    : ${_test_stop}\n")
 #string(APPEND _info "Load averages: unavailable\n")
@@ -318,43 +341,30 @@ file(WRITE ${_test_out} ${_info})
 
 if($ENV{NCBI_AUTOMATED_BUILD})
     set(_info)
-if(OFF)
-    cmake_host_system_information(RESULT _name QUERY OS_NAME)
-else()
-    if(APPLE)
-        set(_name "Darwin")
-    elseif(UNIX)
-        set(_name "Linux")
-    elseif(WIN32)
-        set(_name "Windows")
-    else()
-        set(_name "Unknown")
-    endif()
-endif()
-    string(APPEND _info "${NCBITEST_SIGNATURE} ${_name}\n")
+    string(APPEND _info "${NCBITEST_SIGNATURE}\n")
     string(APPEND _info "${NCBITEST_XOUTDIR}\n")
     string(APPEND _info "${_test_cmd} ${_test_args}\n")
     string(APPEND _info "${NCBITEST_ALIAS}\n")
 
-    if (${_result} EQUAL "0")
+    if (${_result} EQUAL 0)
         set(_status "OK")
     else()
         set(_status "ERR")
     endif()
-    string(FIND "${_contents}" "NCBI_UNITTEST_DISABLED" _pos)
+    string(FIND "${_out}" "NCBI_UNITTEST_DISABLED" _pos)
     if(${_pos} GREATER_EQUAL 0)
         set(_status "DIS")
     endif()
-    string(FIND "${_contents}" "NCBI_UNITTEST_SKIPPED" _pos)
+    string(FIND "${_out}" "NCBI_UNITTEST_SKIPPED" _pos)
     if(${_pos} GREATER_EQUAL 0)
         set(_status "SKP")
     endif()
-    string(FIND "${_contents}" "NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS" _pos)
+    string(FIND "${_out}" "NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS" _pos)
     if(${_pos} GREATER_EQUAL 0)
         set(_status "TO")
         set(_result "Process terminated due to timeout")
     endif()
-    string(FIND "${_contents}" "Maximum execution time of" _pos)
+    string(FIND "${_out}" "Maximum execution time of" _pos)
     if(${_pos} GREATER_EQUAL 0)
         set(_status "TO")
         set(_result "Process terminated due to timeout")
@@ -363,9 +373,9 @@ endif()
     if(${_pos} GREATER_EQUAL 0)
         set(_status "TO")
     endif()
-    string(FIND "${_contents}" "real " _pos REVERSE)
+    string(FIND "${_out}" "real " _pos REVERSE)
     if(${_pos} GREATER_EQUAL 0)
-        string(SUBSTRING "${_contents}" ${_pos} -1 _times)
+        string(SUBSTRING "${_out}" ${_pos} -1 _times)
         string(STRIP "${_times}" _times)
         string(REPLACE "\n" ", " _times  "${_times}")
         if("${_times}" MATCHES "^real [0-9].* user [0-9].* sys [0-9]")
@@ -378,16 +388,20 @@ endif()
     string(APPEND _info "${_result}\n")
     string(APPEND _info "${_test_times}\n")
     string(APPEND _info "${NCBITEST_WATCHER}\n")
-    string(APPEND _info "unavailable\n")
+    if(NCBITEST_HAVE_UPTIME)
+        string(APPEND _info "${_uptime}\n")
+    else()
+        string(APPEND _info "unavailable\n")
+    endif()
+    
     string(TIMESTAMP _test_stop "%y%m%d%H%M%S")
     if(EXISTS ${_workdir}/check_exec.pid)
         file(STRINGS ${_workdir}/check_exec.pid _id)
         list(GET _id 0 _id)
     else()
-        string(RANDOM ALPHABET "0123456789" _id)
+        set(_id "?")
     endif()
-    cmake_host_system_information(RESULT _name  QUERY HOSTNAME)
-    string(APPEND _info "${_test_stop}-${_id}-${_name}\n")
+    string(APPEND _info "${_test_stop}-${_id}-${NCBITEST_HOST}\n")
     file(WRITE ${_test_rep} ${_info})
 endif()
 
@@ -402,6 +416,6 @@ file(REMOVE ${_tmp_out})
 
 # ---------------------------------------------------------------------------
 
-if (NOT ${_result} EQUAL "0")
+if (NOT ${_result} EQUAL 0)
     message(SEND_ERROR "Test ${NCBITEST_NAME} failed (error=${_result})")
 endif()

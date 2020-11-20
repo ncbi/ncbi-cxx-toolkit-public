@@ -204,8 +204,10 @@ function(NCBI_internal_FinalizeCMakeTest)
     
     set(_info "")
    
-    # System name / signature / compiler
+    # Host / system name / signature / compiler
     
+    cmake_host_system_information(RESULT _host QUERY HOSTNAME)
+    string(APPEND _info "set(NCBITEST_HOST      ${_host})\n")
     string(APPEND _info "set(NCBITEST_SYSTEM    ${CMAKE_SYSTEM_NAME})\n")
     string(APPEND _info "set(NCBITEST_COMPILER  ${NCBI_COMPILER})\n")
     string(APPEND _info "set(NCBITEST_SIGNATURE ${NCBITEST_SIGNATURE})\n")
@@ -238,7 +240,7 @@ function(NCBI_internal_FinalizeCMakeTest)
     string(REPLACE ";" " " _x "${NCBI_ALL_REQUIRES}")
     string(APPEND _info "set(NCBITEST_REQUIRES ${_x})\n")
 
-    # Combined test features (project_features + components + requires + etc)
+    # Combine test features (project_features + components + requires + etc)
     
     set(_features "")
     list(APPEND _features ${CMAKE_SYSTEM_NAME})
@@ -254,27 +256,21 @@ function(NCBI_internal_FinalizeCMakeTest)
 
     # Check on linkerd and set backup
 
-    set(_retcode)
     execute_process(
         COMMAND sh -c "echo test | nc -w 1 linkerd 4142"
         RESULT_VARIABLE _retcode
-        OUTPUT_VARIABLE _output
-        ERROR_VARIABLE  _error
         )
     if (NOT _retcode EQUAL 0)
         string(APPEND _info "set(NCBITEST_LINKERD_BACKUP \"pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142\")\n")
     endif()
 
-
     # Check on debug tools to get stack/back trace (except running under memory checkers)
+
     if(UNIX)
         if(NOT DEFINED NCBITEST_CHECK_TOOL)
-            set(_retcode)
             execute_process(
                 COMMAND which gdb
                 RESULT_VARIABLE _retcode
-                OUTPUT_VARIABLE _foo_output
-                ERROR_VARIABLE  _foo_error
                 )
             if (_retcode EQUAL 0)
                 string(APPEND _info "set(NCBITEST_BACK_TRACE 1)\n")
@@ -282,14 +278,26 @@ function(NCBI_internal_FinalizeCMakeTest)
             execute_process(
                 COMMAND which gstack
                 RESULT_VARIABLE _retcode
-                OUTPUT_VARIABLE _foo_output
-                ERROR_VARIABLE  _foo_error
                 )
             if (_retcode EQUAL 0)
                 string(APPEND _info "set(NCBITEST_STACK_TRACE 1)\n")
             endif()
         endif()
     endif()
+
+    # Check on uptime (for autimated builds)
+
+    set(_uptime 0)
+    if(UNIX AND DEFINED $ENV{NCBI_AUTOMATED_BUILD})
+        execute_process(
+            COMMAND which uptime
+            RESULT_VARIABLE _retcode
+            )
+        if (_retcode EQUAL 0)
+            set(_uptime 1)
+        endif()
+    endif()
+    string(APPEND _info "set(NCBITEST_HAVE_UPTIME ${_uptime})\n")
     
     # Create a file:
     file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake ${_info})
