@@ -578,7 +578,7 @@ basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(
 }
 template <typename TChar> inline
 basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(
-    const CTempString str, const TChar* substitute_on_error, EValidate validate)
+    const CTempString /*str*/, const TChar* /*substitute_on_error*/, EValidate /*validate*/)
 {
     return CNotImplemented<TChar>::Cannot_convert_to_nonUnicode_string();
 }
