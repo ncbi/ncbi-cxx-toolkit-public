@@ -2,7 +2,7 @@
 {
     "reply": "BlobInfo",
     "errors": [
-        "Blob 4.1 properties are not found"
+        "Blob 4.1 properties are not found (last modified: -1)"
     ]
 }
 ]
