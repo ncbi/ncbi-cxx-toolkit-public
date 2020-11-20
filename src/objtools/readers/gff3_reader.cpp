@@ -463,39 +463,29 @@ bool CGff3Reader::xUpdateAnnotCds(
     string id;
     string parentId;
 
-    if (record.GetAttribute("ID", id)) {
-        if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
-            return true;
-        }
-        m_MapIdToFeature[id] = pFeature;
-        xInitializeFeature(record, pFeature);
-        xAddFeatureToAnnot(pFeature, annot);
-
-        if (record.GetAttribute("Parent", parentId)  &&  !parentId.empty()) {
-            xFeatureSetQualifier("Parent", parentId, pFeature);
-            xFeatureSetXrefParent(parentId, pFeature);
-            if (m_iFlags & fGeneXrefs) {
-                xFeatureSetXrefGrandParent(parentId, pFeature);
-            }
-        }
+    if (record.GetAttribute("ID", id)  &&  m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
+        return true;
     }
-    else {
-        if (!record.GetAttribute("Parent", parentId)) {
+    record.GetAttribute("Parent", parentId);
+    if (id.empty()) {
+        if (parentId.empty()) {
             return false;
         }
         id = record.Type() + ":" + parentId;
         if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
             return true;
         }
-        m_MapIdToFeature[id] = pFeature;
-        xInitializeFeature(record, pFeature);
-        xAddFeatureToAnnot(pFeature, annot);
-        if (!parentId.empty()) {
-            xFeatureSetQualifier("Parent", parentId, pFeature);
-            xFeatureSetXrefParent(parentId, pFeature);
-            if (m_iFlags & fGeneXrefs) {
-                xFeatureSetXrefGrandParent(parentId, pFeature);
-            }
+    }
+
+    m_MapIdToFeature[id] = pFeature;
+    xInitializeFeature(record, pFeature);
+    xAddFeatureToAnnot(pFeature, annot);
+
+    if (!parentId.empty()) {
+        xFeatureSetQualifier("Parent", parentId, pFeature);
+        xFeatureSetXrefParent(parentId, pFeature);
+        if (m_iFlags & fGeneXrefs) {
+            xFeatureSetXrefGrandParent(parentId, pFeature);
         }
     }
     return true;

@@ -516,51 +516,6 @@ bool CGff2Record::InitializeFeature(
 }
 
 //  ----------------------------------------------------------------------------
-void sGffMergeLocation(
-    CSeq_feat& feature,
-    CSeq_loc& addition,
-    bool bAssumeCircularSequence)
-//  ----------------------------------------------------------------------------
-{
-    auto& featLoc = feature.SetLocation();
-
-    // For linear sequences:
-    // RW-1196: *** Temporarily disable circular merging ***
-    if (true  ||  !bAssumeCircularSequence) {
-        feature.SetLocation(*featLoc.Add(
-            addition, CSeq_loc::fSort | CSeq_loc::fMerge_All, 0));
-        return;
-    }
-
-    // Problem to be solved:
-    // CSeq_loc merge flags only work right if combined with fSort.
-    // However, the sort order must be preserved because it's the only indication
-    //  of the first exon of a transcript that wraps across the origin of a
-    //  circular sequence.
-
-    // Note:
-    // This code will narrowly work in the context of assembling transcripts from
-    //  GFF records. It won't be sufficient in a more general context.
-
-    if (featLoc.IsMix()) {
-        for (const auto& pSubLoc: featLoc.GetMix().Get()) {
-            auto pIntersect = pSubLoc->Intersect(addition, 0, nullptr);
-            if (!pIntersect->IsNull()) {
-            //if (1 == pSubLoc->Compare(addition)) {
-                return;
-            }
-        }
-    }
-    if (featLoc.GetStrand() == eNa_strand_minus) {
-        feature.SetLocation(*addition.Add(featLoc, CSeq_loc::fMerge_All, 0));
-    }
-    else {
-        feature.SetLocation(*addition.Add(featLoc, CSeq_loc::fMerge_All, 0));
-    }
-    return;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Record::UpdateFeature(
     int flags,
     CRef<CSeq_feat> pFeature,
@@ -573,24 +528,7 @@ bool CGff2Record::UpdateFeature(
     const CSeq_loc& target = pFeature->GetLocation();
     CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags, seqidresolve);
 
-    if (target.IsInt()  &&  target.GetInt().GetFrom() <= SeqStart()  &&
-        target.GetInt().GetTo() >= SeqStop() ) {
-        if (recType == "start_codon"  ||  recType == "stop_codon") {
-            return true;
-        }
-        // indicates current feature location is a placeholder interval to be
-        //  totally overwritten by the constituent sub-intervals
-        pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
-    }
-    else {
-        // indicates the feature location is already under construction
-        sGffMergeLocation(*pFeature, *pAddLoc, flags & CGff2Reader::fAssumeCircularSequence);
-        if (pFeature->GetLocation().IsInt()) {
-            CRef<CSeq_loc> pOld(new CSeq_loc);
-            pOld->Assign(pFeature->GetLocation());
-            pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
-        }
-    }
+    pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
     if (!xUpdateFeatureData(flags, pFeature)) {
         return false;
     }
