@@ -375,7 +375,7 @@ public:
     static TObjectPtr AddElement(const CContainerTypeInfo* /*containerType*/,
                                  TObjectPtr containerPtr,
                                  TConstObjectPtr elementPtr,
-                                 ESerialRecursionMode how = eRecursive)
+                                 ESerialRecursionMode /*how*/ = eRecursive)
         {
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
