@@ -7546,8 +7546,8 @@ UWM	s	University of Wisconsin, Biological Sciences Department
 UWM<POL>	s	University of Warmia and Mazury in Olsztyn			
 UWMA	s	University of Wisconsin, Milwaukee, Department of Anthropology			
 UWMIL	s	University of Wisconsin, Milwaukee, Department of Biological Sciences			
-UWO	sc	University of Western Ontario	UWO		
 UWOC	s	University of Western Ontario			
+UWOPS	sc	University of Western Ontario	UWO		
 UWP	s	University of Wrocklaw			
 UWPG	s	University of Winnipeg, Biology Department			
 UWSP	s	University of Wisconsin-Stevens Point,			
