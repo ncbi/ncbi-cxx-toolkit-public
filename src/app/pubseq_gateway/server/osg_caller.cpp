@@ -148,7 +148,6 @@ CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
 void COSGCaller::Process(const TFetches& fetches)
 {
     m_RequestPacket = MakePacket(fetches);
-    _ASSERT(m_RequestPacket->Get().size() == fetches.size()+1); // plus init request
     _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
     m_WaitingRequestCount = m_RequestPacket->Get().size();
     m_Connection->SendRequestPacket(*m_RequestPacket);
