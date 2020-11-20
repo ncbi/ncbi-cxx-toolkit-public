@@ -274,7 +274,7 @@ namespace std
         return in[i];
     }
     template<class T, size_t N>
-    constexpr size_t size(const ct::const_array<T, N>& in) noexcept
+    constexpr size_t size(const ct::const_array<T, N>& /*in*/) noexcept
     {
         return N;
     }
