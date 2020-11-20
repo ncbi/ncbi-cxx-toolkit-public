@@ -753,12 +753,6 @@ static bool s_IsConOrScaffold(CBioseq_Handle bsh)
         bsh.IsSetInst_Repr() &&
         bsh.GetInst_Repr() == CSeq_inst::eRepr_delta &&
         bsh.IsSetInst_Ext()) {
-    }
-
-    if (bsh && 
-        bsh.IsSetInst_Repr() &&
-        bsh.GetInst_Repr() == CSeq_inst::eRepr_delta &&
-        bsh.IsSetInst_Ext()) {
         const auto& ext = bsh.GetInst_Ext();
         if (ext.IsDelta() &&
             ext.GetDelta().IsSet()) {
@@ -782,6 +776,7 @@ static bool s_IsAccession(const CSeq_id& id) {
     }
     return true;
 }
+
 
 static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id& primary, CScope& scope)
 {
@@ -838,13 +833,6 @@ static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id
     return true;
 }
 
-static bool s_IsConOrScaffold(const CSeq_id& id, CScope& scope)
-{
-    auto bsh = scope.GetBioseqHandle(id);
-
-    return s_IsConOrScaffold(bsh);
-}
-
 
 static int sGetPrefixLength(const CTempString& accession)
 {
@@ -863,8 +851,6 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
 {
     IndexblkPtr  ibp;
 
-   // char*      p;
-   // char*      acctmp;
     Int4         pri_acc;
     Int4         sec_acc;
 
@@ -923,9 +909,7 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
         }
 
         CRef<CSeq_id> id(new CSeq_id(idChoice, accessionString));
-
-        CRef<CSeq_id> pId(new CSeq_id(accessionString));
-        auto secondaryBsh = GetScope().GetBioseqHandle(*pId);
+        auto secondaryBsh = GetScope().GetBioseqHandle(*id);
         bool IsConOrScaffold=false;
         try {
             IsConOrScaffold = s_IsConOrScaffold(secondaryBsh);
@@ -947,8 +931,8 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
                         *pPrimary, 
                         GetScope())) {
                 replaces.push_back(id); 
-                continue;
             }
+            continue;
         }
 
         replaces.push_back(id);
