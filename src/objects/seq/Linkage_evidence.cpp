@@ -108,49 +108,34 @@ bool CLinkage_evidence::VecToString(
     string & output_result,
     const TLinkage_evidence & linkage_evidence )
 {
+
+    static const map<EType, string> kETypeToString {
+        {eType_paired_ends,         "paired-ends"},
+        {eType_align_genus,         "align_genus"},
+        {eType_align_xgenus,        "align_xgenus"},
+        {eType_align_trnscpt,       "align_trnscpt"},
+        {eType_within_clone,        "within_clone"},
+        {eType_clone_contig,        "clone_contig"},
+        {eType_map,                 "map"},
+        {eType_strobe,              "strobe"},
+        {eType_unspecified,         "unspecified"},
+        {eType_pcr,                 "pcr"},
+        {eType_proximity_ligation,  "proximity_ligation"}
+    };
+
     bool all_converted_okay = true;
 
-    ITERATE( TLinkage_evidence, evid_iter, linkage_evidence ) {
-        const char *evid_str = NULL;
-        if( (*evid_iter)->IsSetType() ) {
-            switch( (*evid_iter)->GetType() ) {
-                case eType_paired_ends:
-                    evid_str = "paired-ends";
-                    break;
-                case eType_align_genus:
-                    evid_str = "align_genus";
-                    break;
-                case eType_align_xgenus:
-                    evid_str = "align_xgenus";
-                    break;
-                case eType_align_trnscpt:
-                    evid_str = "align_trnscpt";
-                    break;
-                case eType_within_clone:
-                    evid_str = "within_clone";
-                    break;
-                case eType_clone_contig:
-                    evid_str = "clone_contig";
-                    break;
-                case eType_map:
-                    evid_str = "map";
-                    break;
-                case eType_strobe:
-                    evid_str = "strobe";
-                    break;
-                case eType_unspecified:
-                    evid_str = "unspecified";
-                    break;
-                case eType_pcr:
-                    evid_str = "pcr";
-                    break;
-                case eType_proximity_ligation:
-                    evid_str = "proximity_ligation";
-                default:
-                    break;
+    for (const auto& evid : linkage_evidence) {
+
+        const char* evid_str=nullptr;
+
+        if (evid->IsSetType()) {
+            auto it = kETypeToString.find(static_cast<EType>(evid->GetType()));
+            if (it != kETypeToString.end()) {
+                evid_str = it->second.c_str();
             }
         }
-        if( evid_str == NULL ) {
+        if(!evid_str) {
             evid_str = "UNKNOWN";
             all_converted_okay = false;
         }
