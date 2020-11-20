@@ -140,9 +140,9 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             // TODO?
         }
     }
-    else if ( reply.GetReply().IsGet_blob_id() ) {
+    else if ( reply.GetReply().IsGet_blob_id()) {
         auto& reply_ids = reply.GetReply().GetGet_blob_id();
-        if ( reply_ids.IsSetBlob_id() ) {
+        if ( reply_ids.IsSetBlob_id() && CPSGS_OSGGetBlobBase::IsOSGBlob(reply_ids.GetBlob_id()) ) {
             const CID2_Blob_Id& blob_id = reply_ids.GetBlob_id();
             m_BlobId = CPSGS_OSGGetBlobBase::GetPSGBlobId(blob_id);
             m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_BlobId;

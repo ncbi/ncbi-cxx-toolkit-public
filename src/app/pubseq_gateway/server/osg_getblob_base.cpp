@@ -72,25 +72,31 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
 {
     switch ( reply.GetReply().Which() ) {
     case CID2_Reply::TReply::e_Get_blob:
-        if ( m_Blob ) {
-            ERR_POST(GetName()<<": "
-                     "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+        if ( IsOSGBlob(reply.GetReply().GetGet_blob().GetBlob_id()) ) {
+            if ( m_Blob ) {
+                ERR_POST(GetName()<<": "
+                         "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+            }
+            m_Blob = &reply.GetReply().GetGet_blob();
         }
-        m_Blob = &reply.GetReply().GetGet_blob();
         break;
     case CID2_Reply::TReply::e_Get_split_info:
-        if ( m_SplitInfo ) {
-            ERR_POST(GetName()<<": "
-                     "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+        if ( IsOSGBlob(reply.GetReply().GetGet_split_info().GetBlob_id()) ) {
+            if ( m_SplitInfo ) {
+                ERR_POST(GetName()<<": "
+                         "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+            }
+            m_SplitInfo = &reply.GetReply().GetGet_split_info();
         }
-        m_SplitInfo = &reply.GetReply().GetGet_split_info();
         break;
     case CID2_Reply::TReply::e_Get_chunk:
-        if ( m_Chunk ) {
-            ERR_POST(GetName()<<": "
-                     "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+        if ( IsOSGBlob(reply.GetReply().GetGet_chunk().GetBlob_id()) ) {
+            if ( m_Chunk ) {
+                ERR_POST(GetName()<<": "
+                         "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+            }
+            m_Chunk = &reply.GetReply().GetGet_chunk();
         }
-        m_Chunk = &reply.GetReply().GetGet_chunk();
         break;
     default:
         ERR_POST(GetName()<<": "
@@ -315,7 +321,7 @@ static const int kOSG_Sat_WGS_max = 1130;
 static const int kOSG_Sat_SNP_min = 2001;
 static const int kOSG_Sat_SNP_max = 3999;
 static const int kOSG_Sat_CDD_min = 8087;
-static const int kOSG_Sat_CDD_max = 8087;
+static const int kOSG_Sat_CDD_max = 8088;
 //static const int kOSG_Sat_NAGraph_min = 8000;
 //static const int kOSG_Sat_NAGraph_max = 8000;
 
@@ -341,6 +347,12 @@ static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
     }
     */
     return false;
+}
+
+
+bool CPSGS_OSGGetBlobBase::IsOSGBlob(const CID2_Blob_Id& blob_id)
+{
+    return s_IsOSGBlob(blob_id.GetSat(), blob_id.GetSub_sat(), blob_id.GetSat_key());
 }
 
 
@@ -430,7 +442,9 @@ CRef<CID2_Blob_Id> CPSGS_OSGGetBlobBase::ParsePSGBlobId(const SPSGS_BlobId& blob
 string CPSGS_OSGGetBlobBase::GetPSGBlobId(const CID2_Blob_Id& blob_id)
 {
     ostringstream s;
-    s_FormatBlobId(s, blob_id);
+    if ( IsOSGBlob(blob_id) ) {
+        s_FormatBlobId(s, blob_id);
+    }
     return s.str();
 }
 
@@ -439,9 +453,11 @@ string CPSGS_OSGGetBlobBase::GetPSGId2Info(const CID2_Blob_Id& tse_id,
                                            TID2SplitVersion split_version)
 {
     ostringstream s;
-    s_FormatBlobId(s, tse_id);
-    TID2BlobVersion blob_version = tse_id.IsSetVersion()? tse_id.GetVersion(): 0;
-    s << '.' << blob_version << '.' << split_version;
+    if ( IsOSGBlob(tse_id) ) {
+        s_FormatBlobId(s, tse_id);
+        TID2BlobVersion blob_version = tse_id.IsSetVersion()? tse_id.GetVersion(): 0;
+        s << '.' << blob_version << '.' << split_version;
+    }
     return s.str();
 }
 
