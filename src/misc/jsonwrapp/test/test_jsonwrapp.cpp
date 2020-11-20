@@ -554,10 +554,10 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     for_each(obj.begin(), obj.end(), [](CJson_Object_pair& v) {
         cout << v.name << ": " << v.value << endl;
     });
-    for(const CJson_ConstObject::const_iterator::pair& v : obj) {
+    for(const CJson_ConstObject::const_iterator::pair v : obj) {
         cout << v.name << ": " << v.value << endl;
     }
-    for(const CJson_ConstObject_pair& v : obj) {
+    for(const CJson_ConstObject_pair v : obj) {
         cout << v.name << ": " << v.value << endl;
     }
     for(CJson_Object::iterator::pair& v : obj) {
