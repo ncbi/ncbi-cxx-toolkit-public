@@ -879,8 +879,8 @@ CBF	s	Coleccion Boliviana de Fauna	CBFC
 CBFS	s	University of South Bohemia, Department of Botany			
 CBG	s	Australian National Botanic Gardens			
 CBM	s	Natural History Museum and Institute, Chiba			
-CBM:ZC	s	Natural History Museum and Institute, Chiba, Natural History Museum and Institute, Chiba, Zoology Crustacea	
-CBM:ZF	s	Natural History Museum and Institute, Chiba, Natural History Museum and Institute, Chiba, Zoology Fish	
+CBM:ZC	s	Natural History Museum and Institute, Chiba,  Zoology Crustacea	
+CBM:ZF	s	Natural History Museum and Institute, Chiba,  Zoology Fish	
 CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry (Colecao Brasileira de Microrganismos de Ambiente e Industria)			
 CBNM	s	Cedar Breaks National Monument			
 CBNSA	s	Conservatoire botanique national Sud-Atlantique			
