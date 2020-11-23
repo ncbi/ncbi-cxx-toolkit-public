@@ -567,6 +567,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
     //bool circular = bioseq.IsSetInst() && bioseq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
     for (auto& feat : context.GetAllFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion()) {
+            if (feat.IsSetPseudo() && feat.GetPseudo() == true && !context.IsRefseq()) continue;
             bool add_this = false;
             if (feat.GetLocation().IsPartialStart(eExtreme_Positional)) {
                 TSeqPos start = feat.GetLocation().GetStart(eExtreme_Positional);
