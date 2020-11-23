@@ -3569,6 +3569,34 @@ if test "$ac_cv_header_cxxabi_h" = "yes"; then
       [], [[@%:@include <cxxabi.h>]])
 fi
 
+orig_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS $OPENMP_FLAGS"
+AC_CHECK_HEADER(omp.h)
+if test "$ac_cv_header_omp_h" = no; then
+   if test "$with_openmp" = yes; then
+      AC_MSG_ERROR([$with_openmp explicitly specified, but unavailable with $CC.])
+   else
+      OPENMP_FLAGS=
+   fi
+fi
+CFLAGS=$orig_CFLAGS
+dnl case $compiler:$host_os in
+dnl    LLVMClang:linux* )
+dnl       AC_CACHE_CHECK([whether $CC needs GCC's omp.h],
+dnl          ncbi_cv_cc_lacks_omp_h,
+dnl          [AC_COMPILE_IFELSE(
+dnl             [AC_LANG_PROGRAM([@%:@include <omp.h>], [])],
+dnl             ncbi_cv_cc_lacks_omp_h=no, ncbi_cv_cc_lacks_omp_h=yes)])
+dnl       if test "$ncbi_cv_cc_lacks_omp_h" = yes; then
+dnl          d=$(echo '@%:@include <omp.h>' | "$gccdir"/bin/gcc -E -M - | \
+dnl              sed -ne 's, \([[^ ]]*\)/omp\.h,\1,p')
+dnl          CPPFLAGS="-idirafter $d $CPPFLAGS"
+dnl          $LN_S "$("$gccdir"/bin/gcc -print-file-name=libgomp.so)" \
+dnl             "$build_root"/lib/libomp.so
+dnl       fi
+dnl       ;;
+dnl esac
+
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,

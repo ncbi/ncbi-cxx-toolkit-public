@@ -13502,6 +13502,23 @@ fi
 
 fi
 
+orig_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS $OPENMP_FLAGS"
+ac_fn_cxx_check_header_mongrel "$LINENO" "omp.h" "ac_cv_header_omp_h" "$ac_includes_default"
+if test "x$ac_cv_header_omp_h" = x""yes; then :
+
+fi
+
+
+if test "$ac_cv_header_omp_h" = no; then
+   if test "$with_openmp" = yes; then
+      as_fn_error $? "$with_openmp explicitly specified, but unavailable with $CC." "$LINENO" 5
+   else
+      OPENMP_FLAGS=
+   fi
+fi
+CFLAGS=$orig_CFLAGS
+
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gethostbyname_r" >&5
