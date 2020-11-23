@@ -33,6 +33,7 @@ if (UNIX)
                 COMMAND /usr/bin/lsb_release -is
                 RESULT_VARIABLE _retcode
                 OUTPUT_VARIABLE _tmp
+                ERROR_QUIET
                 )
             if (_retcode EQUAL 0)
                string(REPLACE "\n" "" _distr ${_tmp})
@@ -44,6 +45,7 @@ if (UNIX)
                 COMMAND cut -d' ' -f1 /etc/redhat-release
                 RESULT_VARIABLE _retcode
                 OUTPUT_VARIABLE _tmp
+                ERROR_QUIET
                 )
             if (_retcode EQUAL 0)
                string(REPLACE "\n" "" _distr ${_tmp})

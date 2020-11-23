@@ -261,6 +261,8 @@ function(NCBI_internal_FinalizeCMakeTest)
     execute_process(
         COMMAND sh -c "echo test | nc -w 1 linkerd 4142"
         RESULT_VARIABLE _retcode
+        OUTPUT_QUIET
+        ERROR_QUIET
         )
     if (NOT _retcode EQUAL 0)
         string(APPEND _info "set(NCBITEST_LINKERD_BACKUP \"pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4142\")\n")
@@ -274,6 +276,7 @@ function(NCBI_internal_FinalizeCMakeTest)
                 COMMAND which gdb
                 RESULT_VARIABLE _retcode
                 OUTPUT_QUIET
+                ERROR_QUIET
                 )
             if (_retcode EQUAL 0)
                 string(APPEND _info "set(NCBITEST_BACK_TRACE 1)\n")
@@ -282,6 +285,7 @@ function(NCBI_internal_FinalizeCMakeTest)
                 COMMAND which gstack
                 RESULT_VARIABLE _retcode
                 OUTPUT_QUIET
+                ERROR_QUIET
                 )
             if (_retcode EQUAL 0)
                 string(APPEND _info "set(NCBITEST_STACK_TRACE 1)\n")
@@ -296,6 +300,8 @@ function(NCBI_internal_FinalizeCMakeTest)
         execute_process(
             COMMAND which uptime
             RESULT_VARIABLE _retcode
+            OUTPUT_QUIET
+            ERROR_QUIET
             )
         if (_retcode EQUAL 0)
             set(_uptime 1)
