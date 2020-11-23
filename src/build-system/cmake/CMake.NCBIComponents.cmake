@@ -557,7 +557,7 @@ endfunction()
 
 #############################################################################
 # local_lbsm
-if(WIN32)
+if(WIN32 OR CYGWIN)
     set(NCBI_COMPONENT_local_lbsm_FOUND NO)
 else()
     if (EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
@@ -604,7 +604,7 @@ endif()
 
 #############################################################################
 # LocalLMDB
-if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb)
+if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN)
   set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES LocalLMDB)
   set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)

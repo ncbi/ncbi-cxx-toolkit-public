@@ -16,7 +16,7 @@
 
 set(NCBI_REQUIRE_unix_FOUND YES)
 list(APPEND NCBI_ALL_REQUIRES unix)
-if(NOT APPLE)
+if(NOT APPLE AND NOT CYGWIN)
     set(NCBI_REQUIRE_Linux_FOUND YES)
     list(APPEND NCBI_ALL_REQUIRES Linux)
 endif()
@@ -57,6 +57,9 @@ set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 ############################################################################
 # Kerberos 5 (via GSSAPI)
 find_external_library(KRB5 INCLUDES gssapi/gssapi_krb5.h LIBS gssapi_krb5 krb5 k5crypto com_err)
+if(KRB5_FOUND)
+    set(HAVE_LIBKRB5 1)
+endif()
 
 #############################################################################
 set(NCBI_ThirdParty_BACKWARD      ${NCBI_TOOLS_ROOT}/backward-cpp-1.3.20180206-44ae960 CACHE PATH "BACKWARD root")

@@ -300,7 +300,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 
 #
 # OpenMP
-if (NOT XCODE AND NOT NCBI_COMPILER_LLVM_CLANG)
+if (NOT XCODE AND NOT NCBI_COMPILER_LLVM_CLANG AND NOT CYGWIN)
 find_package(OpenMP)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
 ## message("OpenMP_CXX_SPEC_DATE: ${OpenMP_CXX_SPEC_DATE}")
@@ -399,10 +399,14 @@ if (CMAKE_COMPILER_IS_GNUCC)
         set(CMAKE_USE_DISTCC OFF)
     endif()
 endif()
+if(CYGWIN)
+    set(CMAKE_USE_CCACHE OFF)
+    set(CMAKE_USE_DISTCC OFF)
+endif()
 
 if (APPLE)
   add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
-elseif (UNIX)
+elseif (UNIX AND NOT CYGWIN)
   add_definitions(-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64)
 endif (APPLE)
 
@@ -492,7 +496,7 @@ if (NOT APPLE)
 endif ()
 
 
-if (NOT WIN32 AND NOT APPLE)
+if (NOT WIN32 AND NOT APPLE AND NOT CYGWIN)
 # Establishing sane RPATH definitions
 # use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
