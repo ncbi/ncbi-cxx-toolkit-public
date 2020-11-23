@@ -11,6 +11,7 @@ NCBI_begin_lib(trackmgrgridcli)
     supported_assemblies_client
   )
   NCBI_uses_toolkit_libraries(trackmgr xcompress xconnserv)
+  NCBI_requires(LZO)
   NCBI_project_watchers(meric clausen)
 NCBI_end_lib()
 
