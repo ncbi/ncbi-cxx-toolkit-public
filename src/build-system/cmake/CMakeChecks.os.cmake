@@ -2,6 +2,8 @@
 # OS-specific settings
 #
 
+set(HOST_OS_DISTR "")
+
 if (UNIX)
     SET(NCBI_OS_UNIX 1 CACHE INTERNAL "Is Unix")
     SET(NCBI_OS "UNIX" CACHE INTERNAL "Is Unix")
@@ -23,6 +25,35 @@ if (UNIX)
         list(GET _tmp 1 _v2)
         list(GET _tmp 2 _v3)
         set(HOST_OS_WITH_VERSION "linux${_v1}.${_v2}.${_v3}-gnu")
+
+        # Detect Linux distributive
+        set(_distr)
+        if(EXISTS /usr/bin/lsb_release)
+            execute_process(
+                COMMAND /usr/bin/lsb_release -is
+                RESULT_VARIABLE _retcode
+                OUTPUT_VARIABLE _tmp
+                )
+            if (_retcode EQUAL 0)
+               string(REPLACE "\n" "" _distr ${_tmp})
+            endif()
+        elseif(EXISTS /etc/SuSE-release)
+            set(_distr suse)
+        elseif(EXISTS /etc/redhat-release)
+            execute_process(
+                COMMAND cut -d' ' -f1 /etc/redhat-release
+                RESULT_VARIABLE _retcode
+                OUTPUT_VARIABLE _tmp
+                )
+            if (_retcode EQUAL 0)
+               string(REPLACE "\n" "" _distr ${_tmp})
+            endif()
+        elseif(EXISTS /usr/share/doc/ubuntu-keyring)
+            set(_distr ubuntu)
+        endif()
+        if(NOT "${_distr}" STREQUAL "")
+            string(TOLOWER "${_distr}" HOST_OS_DISTR)
+        endif()
 
 #        set(HOST_CPU "x86_64")
         set(HOST_CPU ${CMAKE_SYSTEM_PROCESSOR})
@@ -58,3 +89,6 @@ if (APPLE)
     set(HOST_CPU ${CMAKE_SYSTEM_PROCESSOR})
 endif(APPLE)
 
+if("${HOST_OS_DISTR}" STREQUAL "")
+    set(HOST_OS_DISTR ${HOST_OS})
+endif()

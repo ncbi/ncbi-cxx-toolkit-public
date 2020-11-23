@@ -28,7 +28,7 @@ list(REMOVE_DUPLICATES NCBITEST_FEATURES)
 list(SORT NCBITEST_FEATURES)
 string(REPLACE ";" " " _x "${NCBITEST_FEATURES}")
 set(ENV{FEATURES} ${_x})
-    
+
 
 # ---------------------------------------------------------------------------
 # Set directories
@@ -159,7 +159,7 @@ endif()
 
 set(ENV{DYLD_BIND_AT_LAUNCH} "1")
 if(MaxDebug IN_LIST NCBITEST_PROJECT_FEATURES)
-    if(Linux IN_LIST NCBITEST_REQUIRES)
+    if(${NCBITEST_SYSTEM_NAME} STREQUAL Linux)
         set(ENV{MALLOC_DEBUG_} 2)
     endif()
 endif()
@@ -172,7 +172,7 @@ if(UNIX OR APPLE)
     else()
         set(ENV{LD_LIBRARY_PATH} "${NCBITEST_LIBDIR}")
     endif()
-    if (${NCBITEST_SYSTEM} MATCHES "Darwin")
+    if (${NCBITEST_SYSTEM_NAME} STREQUAL Darwin)
         set(ENV{DYLD_LIBRARY_PATH} "$ENV{LD_LIBRARY_PATH}")
     endif()
     # TODO:
@@ -341,7 +341,8 @@ file(WRITE ${_test_out} ${_info})
 
 if($ENV{NCBI_AUTOMATED_BUILD})
     set(_info)
-    string(APPEND _info "${NCBITEST_SIGNATURE}\n")
+
+    string(APPEND _info "${NCBITEST_SIGNATURE} ${NCBITEST_OS_DISTR}\n")
     string(APPEND _info "${NCBITEST_XOUTDIR}\n")
     string(APPEND _info "${_test_cmd} ${_test_args}\n")
     string(APPEND _info "${NCBITEST_ALIAS}\n")

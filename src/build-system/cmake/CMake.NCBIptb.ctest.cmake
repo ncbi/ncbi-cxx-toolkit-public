@@ -205,12 +205,14 @@ function(NCBI_internal_FinalizeCMakeTest)
     set(_info "")
    
     # Host / system name / signature / compiler
-    
+
     cmake_host_system_information(RESULT _host QUERY HOSTNAME)
-    string(APPEND _info "set(NCBITEST_HOST      ${_host})\n")
-    string(APPEND _info "set(NCBITEST_SYSTEM    ${CMAKE_SYSTEM_NAME})\n")
-    string(APPEND _info "set(NCBITEST_COMPILER  ${NCBI_COMPILER})\n")
-    string(APPEND _info "set(NCBITEST_SIGNATURE ${NCBITEST_SIGNATURE})\n")
+    string(APPEND _info "set(NCBITEST_HOST        ${_host})\n")
+    string(APPEND _info "set(NCBITEST_SYSTEM_NAME ${CMAKE_SYSTEM_NAME})\n")
+    string(APPEND _info "set(NCBITEST_OS_NAME     ${HOST_OS})\n")
+    string(APPEND _info "set(NCBITEST_OS_DISTR    ${HOST_OS_DISTR})\n")
+    string(APPEND _info "set(NCBITEST_COMPILER    ${NCBI_COMPILER})\n")
+    string(APPEND _info "set(NCBITEST_SIGNATURE   ${NCBITEST_SIGNATURE})\n")
     string(APPEND _info "\n")
 
     # Directories

@@ -130,7 +130,7 @@ function(NCBI_internal_create_ncbi_checklist _variable _access)
         set(VALGRIND_PATH "valgrind")
     endif()
     set(CHECK_TIMEOUT_MULT 1)
-    set(CHECK_OS_NAME "${HOST_OS}")
+    set(CHECK_OS_NAME "${HOST_OS_DISTR}")
     file(WRITE ${_listdir}/check.sh.list ${_checklist})
 
     if (EXISTS ${NCBI_BUILD_ROOT}/status)
