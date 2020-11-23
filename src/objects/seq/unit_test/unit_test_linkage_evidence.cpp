@@ -90,3 +90,25 @@ BOOST_AUTO_TEST_CASE(VecToString)
 } 
 
 
+BOOST_AUTO_TEST_CASE(VecToStringUnknown)
+{
+   vector<CLinkage_evidence::EType> type_vector { 
+        CLinkage_evidence::eType_paired_ends,
+        CLinkage_evidence::eType_other,
+        CLinkage_evidence::eType_unspecified };
+
+
+    CLinkage_evidence::TLinkage_evidence evidence_vector;
+    for (auto linkage_type : type_vector) {
+        auto evidence = Ref(new CLinkage_evidence());
+        evidence->SetType(linkage_type);
+        evidence_vector.push_back(move(evidence));
+    }
+
+    string output;
+    auto success = CLinkage_evidence::VecToString(output, evidence_vector);
+    BOOST_CHECK(!success); 
+    string expected = "paired-ends;UNKNOWN;unspecified";
+    BOOST_CHECK_EQUAL(output, expected);
+} 
+
