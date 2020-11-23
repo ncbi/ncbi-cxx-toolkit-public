@@ -32,7 +32,7 @@ NCBI_begin_lib(seqdb)
     seqidlist_reader
   )
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
-  NCBI_optional_components(LMDB)
+  NCBI_requires(LMDB)
   NCBI_uses_toolkit_libraries(blastdb xobjmgr)
   NCBI_project_watchers(camacho fongah2 rackerst)
 NCBI_end_lib()
