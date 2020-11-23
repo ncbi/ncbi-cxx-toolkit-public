@@ -96,9 +96,37 @@ private:
     void Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob);
     void Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info);
     void Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
+    void Fill(shared_ptr<CPSG_PublicComment> public_comment);
 
     template <class TItem>
     void Fill(TItem item, EPSG_Status status);
+
+    template <class TReplyItem>
+    void Set(const char* name, shared_ptr<TReplyItem>& reply_item)
+    {
+        if      (auto blob_id  = reply_item->template GetId<CPSG_BlobId> ()) Set(name, *blob_id);
+        else if (auto chunk_id = reply_item->template GetId<CPSG_ChunkId>()) Set(name, *chunk_id);
+    }
+
+    template <typename T>
+    void Set(const char* name, T&& v) { Set(m_JsonObj[name], forward<T>(v)); }
+
+    // enable_if required here to avoid recursion as CJson_Value (returned by SetValue) is derived from CJson_Node
+    template <class TNode, typename T, typename enable_if<is_same<TNode, CJson_Node>::value, int>::type = 0>
+    static void Set(TNode node, T&& v) { Set(node.SetValue(), forward<T>(v)); }
+
+    static void Set(CJson_Node node, const CPSG_BioId& bio_id);
+    static void Set(CJson_Node node, const vector<CPSG_BioId>& bio_ids);
+    static void Set(CJson_Node node, const CPSG_BlobId& blob_id);
+    static void Set(CJson_Node node, const CPSG_ChunkId& chunk_id);
+
+    static void Set(CJson_Value value, const string& v) { value.SetString(v); }
+    static void Set(CJson_Value value, const char* v)   { value.SetString(v); }
+    static void Set(CJson_Value value, Int4 v)          { value.SetInt4(v);   }
+    static void Set(CJson_Value value, Int8 v)          { value.SetInt8(v);   }
+    static void Set(CJson_Value value, Uint4 v)         { value.SetUint4(v);  }
+    static void Set(CJson_Value value, Uint8 v)         { value.SetUint8(v);  }
+    static void Set(CJson_Value value, bool v)          { value.SetBool(v);   }
 
     CJson_Object m_JsonObj;
     static bool sm_SetReplyType;
@@ -184,6 +212,7 @@ public:
     static int Report(istream& is, ostream& os, double percentage);
     static int Testing(const string& service);
     static int Io(const string& service, time_t start_time, int duration, int user_threads, int download_size);
+    static int JsonCheck(istream* schema_is, istream& doc_is);
 
     static CJson_Document RequestSchema();
 
@@ -223,17 +252,11 @@ private:
     static CPSG_BioId GetBioId(const CArgs& input);
     static CPSG_BioId GetBioId(const CJson_ConstObject& input);
 
-    static CPSG_BlobId GetBlobId(const CArgs& input) { return input["ID"].AsString(); }
-    static CPSG_BlobId GetBlobId(const CJson_ConstObject& input) { return input["blob_id"].GetValue().GetString(); }
+    static CPSG_BlobId GetBlobId(const CArgs& input);
+    static CPSG_BlobId GetBlobId(const CJson_ConstObject& input);
 
-    static string GetLastModified(const CArgs& input) { return input["last-modified"].HasValue() ? input["last-modified"].AsString() : ""; }
-    static string GetLastModified(const CJson_ConstObject& input) { return input.has("last_modified") ? input["last_modified"].GetValue().GetString() : ""; }
-
-    static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CArgs& input) { return input["CHUNK_NO"].AsInteger(); }
-    static CPSG_Request_TSE_Chunk::TChunkNo GetChunkNo(const CJson_ConstObject& input) { return input["chunk_no"].GetValue().GetUint4(); }
-
-    static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CArgs& input) { return input["SPLIT_VER"].AsInteger(); }
-    static CPSG_Request_TSE_Chunk::TSplitVersion GetSplitVer(const CJson_ConstObject& input) { return input["split_ver"].GetValue().GetInt4(); }
+    static CPSG_ChunkId GetChunkId(const CArgs& input);
+    static CPSG_ChunkId GetChunkId(const CJson_ConstObject& input);
 
     static vector<string> GetNamedAnnots(const CArgs& input) { return input["na"].GetStringList(); }
     static vector<string> GetNamedAnnots(const CJson_ConstObject& input);
@@ -272,7 +295,7 @@ struct SRequestBuilder::SImpl
     operator shared_ptr<CPSG_Request_Resolve>();
     operator shared_ptr<CPSG_Request_Blob>();
     operator shared_ptr<CPSG_Request_NamedAnnotInfo>();
-    operator shared_ptr<CPSG_Request_TSE_Chunk>();
+    operator shared_ptr<CPSG_Request_Chunk>();
 };
 
 template <class TRequest>
@@ -322,8 +345,8 @@ shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_
         return static_cast<shared_ptr<CPSG_Request_Resolve>>(build);
     } else if (name == "named_annot") {
         return static_cast<shared_ptr<CPSG_Request_NamedAnnotInfo>>(build);
-    } else if (name == "tse_chunk") {
-        return static_cast<shared_ptr<CPSG_Request_TSE_Chunk>>(build);
+    } else if (name == "chunk") {
+        return static_cast<shared_ptr<CPSG_Request_Chunk>>(build);
     } else {
         return {};
     }
@@ -363,8 +386,7 @@ template <class TInput>
 SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Blob>()
 {
     auto blob_id = GetBlobId(input);
-    auto last_modified = GetLastModified(input);
-    auto request = make_shared<CPSG_Request_Blob>(move(blob_id), move(last_modified), move(user_context));
+    auto request = make_shared<CPSG_Request_Blob>(move(blob_id), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Blob>(input);
     IncludeData(request, specified);
     return request;
@@ -381,12 +403,10 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_NamedAnnotInfo>
 }
 
 template <class TInput>
-SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_TSE_Chunk>()
+SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Chunk>()
 {
-    auto blob_id = GetBlobId(input);
-    auto chunk_no = GetChunkNo(input);
-    auto split_ver = GetSplitVer(input);
-    return make_shared<CPSG_Request_TSE_Chunk>(move(blob_id), move(chunk_no), move(split_ver), move(user_context));
+    auto chunk_id = GetChunkId(input);
+    return make_shared<CPSG_Request_Chunk>(move(chunk_id), move(user_context));
 }
 
 template <class TRequest>

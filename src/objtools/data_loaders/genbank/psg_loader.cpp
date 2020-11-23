@@ -176,13 +176,13 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBi
 
 void CPSGDataLoader::GetChunk(TChunk chunk)
 {
-    m_Impl->LoadChunk(*chunk);
+    m_Impl->LoadChunk(GetDataSource(), *chunk);
 }
 
 
 void CPSGDataLoader::GetChunks(const TChunkSet& chunks)
 {
-    m_Impl->LoadChunks(chunks);
+    m_Impl->LoadChunks(GetDataSource(), chunks);
 }
 
 
@@ -203,6 +203,20 @@ CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 void CPSGDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     m_Impl->GetIds(idh, ids);
+}
+
+
+CDataLoader::SGiFound
+CPSGDataLoader::GetGiFound(const CSeq_id_Handle& idh)
+{
+    return m_Impl->GetGi(idh);
+}
+
+
+CDataLoader::SAccVerFound
+CPSGDataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
+{
+    return m_Impl->GetAccVer(idh);
 }
 
 

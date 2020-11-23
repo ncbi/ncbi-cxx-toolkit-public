@@ -115,9 +115,6 @@ public:
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
-    static void AddWGSMaster(CLoadLockSetter& blob);
-    static void LoadWGSMaster(CDataLoader* loader,
-                              CRef<CTSE_Chunk_Info> chunk);
 
     static TIntId GetGiOffset(void);
     static void OffsetGi(TGi& gi, TIntId gi_offset)

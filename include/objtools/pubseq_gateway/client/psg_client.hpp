@@ -30,6 +30,7 @@
  *
  */
 
+#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_url.hpp>
 #include <corelib/request_ctx.hpp>
@@ -99,8 +100,6 @@ protected:
 
     virtual ~CPSG_Request() = default;
 
-    struct x_GetBioIdParams;
-
 private:
     virtual string x_GetType() const = 0;
     virtual string x_GetId() const = 0;
@@ -126,37 +125,96 @@ public:
     ///  Bio ID (like accession)
     CPSG_BioId(string id, TType type = {}) : m_Id(move(id)), m_Type(type) {}
 
-    const string& Get()     const { return m_Id; }
+    /// Get tilde-separated string representation of this bio ID (e.g. for logging)
+    string Repr() const;
+
+    /// Get ID
+    const string& GetId() const { return m_Id; }
+
+    /// Get type
+    TType GetType() const { return m_Type; }
 
 private:
     string m_Id;
     TType  m_Type;
-
-    friend class CPSG_Request;
 };
 
 
 
-/// Data blob unique ID
+/// Blob data unique ID
 ///
-class CPSG_BlobId
+class CPSG_DataId
 {
 public:
+    virtual ~CPSG_DataId() = default;
+
+    /// Get tilde-separated string representation of this data ID (e.g. for logging)
+    virtual string Repr() const = 0;
+};
+
+
+
+/// Blob unique ID
+///
+class CPSG_BlobId : public CPSG_DataId
+{
+public:
+    using TLastModified = CNullable<Int8>;
+
     /// Mainstream blob ID ctor - from a string ID
     /// @param id
     ///  Blob ID
-    CPSG_BlobId(string id) : m_Id(move(id)) {}
+    CPSG_BlobId(string id, TLastModified last_modified = {})
+        : m_Id(move(id)),
+          m_LastModified(move(last_modified))
+    {}
 
     /// Historical blob ID system -- based on the "satellite" and the "key"
     /// inside it. It'll be translated into "<sat>.<sat_key>" string.
     /// @sa  objects::CID2_Blob_Id::TSat, objects::CID2_Blob_Id::TSat_key
-    CPSG_BlobId(int sat, int sat_key) : m_Id(to_string(sat) + "." + to_string(sat_key)) {}
+    CPSG_BlobId(int sat, int sat_key, TLastModified last_modified = {})
+        : m_Id(to_string(sat) + "." + to_string(sat_key)),
+          m_LastModified(move(last_modified))
+    {}
 
-    /// Get the blob ID
-    const string& Get() const { return m_Id; }
+    /// Get tilde-separated string representation of this blob ID (e.g. for logging)
+    string Repr() const override;
+
+    /// Get ID
+    const string& GetId() const { return m_Id; }
+
+    /// Get last modified
+    const TLastModified& GetLastModified() const { return m_LastModified; }
 
 private:
     string m_Id;
+    TLastModified m_LastModified;
+};
+
+
+
+/// Chunk unique ID
+///
+class CPSG_ChunkId : public CPSG_DataId
+{
+public:
+    CPSG_ChunkId(Uint8 id2_chunk, string id2_info)
+        : m_Id2Chunk(id2_chunk),
+          m_Id2Info(move(id2_info))
+    {}
+
+    /// Get tilde-separated string representation of this chunk ID (e.g. for logging)
+    string Repr() const override;
+
+    /// Get ID2 chunk number
+    Uint8 GetId2Chunk() const { return m_Id2Chunk; }
+
+    /// Get ID2 info
+    const string& GetId2Info() const { return m_Id2Info; }
+
+private:
+    Uint8 m_Id2Chunk;
+    string m_Id2Info;
 };
 
 
@@ -228,7 +286,7 @@ public:
 
 private:
     string x_GetType() const override { return "biodata"; }
-    string x_GetId() const override { return GetBioId().Get(); }
+    string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId    m_BioId;
@@ -283,7 +341,7 @@ public:
 
 private:
     string x_GetType() const override { return "resolve"; }
-    string x_GetId() const override { return GetBioId().Get(); }
+    string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId    m_BioId;
@@ -300,17 +358,14 @@ class CPSG_Request_Blob : public CPSG_Request
 {
 public:
     /// 
-    CPSG_Request_Blob(CPSG_BlobId      blob_id,
-                      string           last_modified = {},
-                      shared_ptr<void> user_context = {},
+    CPSG_Request_Blob(CPSG_BlobId           blob_id,
+                      shared_ptr<void>      user_context = {},
                       CRef<CRequestContext> request_context = {})
-        : CPSG_Request(user_context, request_context),
-          m_BlobId(blob_id),
-          m_LastModified(last_modified)
+        : CPSG_Request(move(user_context), move(request_context)),
+          m_BlobId(move(blob_id))
     {}
 
     const CPSG_BlobId& GetBlobId()       const { return m_BlobId; }
-    const string&      GetLastModified() const { return m_LastModified; }
 
     /// Specify which data is needed (info is always returned)
     using EIncludeData = CPSG_Request_Biodata::EIncludeData;
@@ -320,11 +375,10 @@ public:
 
 private:
     string x_GetType() const override { return "blob"; }
-    string x_GetId() const override { return GetBlobId().Get(); }
+    string x_GetId() const override { return GetBlobId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BlobId  m_BlobId;
-    string       m_LastModified;
     EIncludeData m_IncludeData = EIncludeData::eDefault;
 };
 
@@ -361,7 +415,7 @@ public:
 
 private:
     string x_GetType() const override { return "annot"; }
-    string x_GetId() const override { return GetBioId().Get(); }
+    string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId  m_BioId;
@@ -371,39 +425,27 @@ private:
 
 
 
-/// Request to the PSG server
-/// (by TSE blob-id and chunk number, for a particular version of split)
+/// Request blob data chunk
 ///
 
-class CPSG_Request_TSE_Chunk : public CPSG_Request
+class CPSG_Request_Chunk : public CPSG_Request
 {
 public:
-    using TChunkNo = unsigned;
-    using TSplitVersion = int;
-
-    CPSG_Request_TSE_Chunk(CPSG_BlobId      tse_blob_id,
-                           TChunkNo         chunk_no,
-                           TSplitVersion    split_version,
-                           shared_ptr<void> user_context = {},
-                           CRef<CRequestContext> request_context = {})
-        : CPSG_Request(user_context, request_context),
-          m_TSE_BlobId(tse_blob_id),
-          m_ChunkNo(chunk_no),
-          m_SplitVersion(split_version)
+    CPSG_Request_Chunk(CPSG_ChunkId          chunk_id,
+                       shared_ptr<void>      user_context = {},
+                       CRef<CRequestContext> request_context = {})
+        : CPSG_Request(move(user_context), move(request_context)),
+          m_ChunkId(move(chunk_id))
     {}
 
-    const CPSG_BlobId&  GetTSE_BlobId()   const { return m_TSE_BlobId;   }
-    TChunkNo            GetChunkNo()      const { return m_ChunkNo;      }
-    TSplitVersion       GetSplitVersion() const { return m_SplitVersion; }
+    const CPSG_ChunkId& GetChunkId() const { return m_ChunkId; }
 
 private:
-    string x_GetType() const override { return "tse_chunk"; }
-    string x_GetId() const override { return GetTSE_BlobId().Get(); }
+    string x_GetType() const override { return "chunk"; }
+    string x_GetId() const override { return GetChunkId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
-    CPSG_BlobId    m_TSE_BlobId;
-    TChunkNo       m_ChunkNo;
-    TSplitVersion  m_SplitVersion;
+    CPSG_ChunkId m_ChunkId;
 };
 
 
@@ -445,6 +487,7 @@ public:
         eSkippedBlob,
         eBioseqInfo,
         eNamedAnnotInfo,
+        ePublicComment,
         eProcessor,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
     };
@@ -484,22 +527,23 @@ private:
 
 
 
-/// Data blob.
+/// Blob data.
 
 class CPSG_BlobData : public CPSG_ReplyItem
 {
 public:
-    /// Get blob ID
-    const CPSG_BlobId& GetId() const { return m_Id; }
+    /// Get data ID
+    template <class TDataId = CPSG_DataId>
+    const TDataId* GetId() const { return dynamic_cast<const TDataId*>(m_Id.get()); }
 
     /// Get the stream from which to read the item's content.
     /// @note  If no content, then reading from the stream will result in EOF.
     istream& GetStream() const { return *m_Stream; }
 
 private:
-    CPSG_BlobData(CPSG_BlobId id);
+    CPSG_BlobData(unique_ptr<CPSG_DataId> id);
 
-    CPSG_BlobId         m_Id;
+    unique_ptr<CPSG_DataId> m_Id;
     unique_ptr<istream> m_Stream;
 
     friend class CPSG_Reply;
@@ -507,80 +551,66 @@ private:
 
 
 
-/// Data blob meta information
-///
-/// @note  Most of the data comes from table "BIOSEQ_BLOB" or "ANNOT_BLOB".
+/// Blob data meta information
 
 class CPSG_BlobInfo : public CPSG_ReplyItem
 {
 public:
-    /// Get blob ID
-    const CPSG_BlobId& GetId() const { return m_Id; }
+    /// Get data ID
+    template <class TDataId = CPSG_DataId>
+    const TDataId* GetId() const { return dynamic_cast<const TDataId*>(m_Id.get()); }
 
     /// Get data compression algorithm: gzip, bzip2, zip, compress, nlmzip, ...
-    /// Return empty string if the blob is not compressed
+    /// Return empty string if the blob data is not compressed
     string GetCompression() const;
 
     /// Get data serialization format:  asn.1, asn1-text, json, xml, ...
     string GetFormat() const;
 
-    /// Get blob version (the larger the version the fresher the blob data)
-    Uint8 GetVersion() const;
-
-    /// Get size of the blob (as it is stored)
+    /// Get size of the blob data (as it is stored)
     Uint8 GetStorageSize() const;
 
     /// Get size of the real (before any compression or encryption) blob data
     Uint8 GetSize() const;
 
-    /// Return TRUE if the blob is "dead"
+    /// Return TRUE if the blob data is "dead"
     bool IsDead() const;
 
-    /// Return TRUE if the blob is "suppressed"
+    /// Return TRUE if the blob data is "suppressed"
     bool IsSuppressed() const;
 
-    /// Return TRUE if the blob is "withdrawn"
+    /// Return TRUE if the blob data is "withdrawn"
     bool IsWithdrawn() const;
 
-    /// Date when the blob will be released for public use.
-    /// If the blob is already released, then return "empty" (IsEmpty()) time
+    /// Date when the blob data will be released for public use.
+    /// If the blob data is already released, then return "empty" (IsEmpty()) time
     CTime GetHupReleaseDate() const;
 
-    /// Blob owner's ID
+    /// Blob data owner's ID
     Uint8 GetOwner() const;
 
-    /// Date when the blob was first loaded into the database
+    /// Date when the blob data was first loaded into the database
     CTime GetOriginalLoadDate() const;
 
-    /// Class of this blob
+    /// Class of this blob data
     objects::CBioseq_set::EClass GetClass() const;
 
     /// Internal division value (used by various dumpers)
     string GetDivision() const;
 
-    /// Name of the user who loaded this blob
+    /// Name of the user who loaded this blob data
     string GetUsername() const;
 
-    /// Get coordinates of the blob that contains the specified ID2 split info.
-    /// If the blob is not split, then return an empty blob id.
-    CPSG_BlobId GetSplitInfoBlobId() const;
+    /// Get ID2 info
+    string GetId2Info() const;
 
-
-    /// Check if client can detemine chunks' coordinates locally
-    bool CanGetChunkBlobId() const;
-
-    /// Get coordinates of a chunk blob -- from the chunk's serial number.
-    /// @throw  If the blob has not been splitted.
-    CPSG_BlobId GetChunkBlobId(unsigned split_chunk_no) const;
-
-    /// Return ID2 split version (or zero, if not available)
-    using TSplitVersion = int;
-    TSplitVersion GetSplitVersion() const;
+    /// Get number of chunks
+    Uint8 GetNChunks() const;
 
 private:
-    CPSG_BlobInfo(CPSG_BlobId id);
+    CPSG_BlobInfo(unique_ptr<CPSG_DataId> id);
 
-    CPSG_BlobId m_Id;
+    unique_ptr<CPSG_DataId> m_Id;
     CJsonNode m_Data;
 
     friend class CPSG_Reply;
@@ -705,14 +735,14 @@ public:
     /// Name of the annotation
     const string& GetName() const { return m_Name; }
 
+    /// Annotated bio-id
+    CPSG_BioId GetAnnotatedId() const;
+
     /// Range where the feature(s) from this NA appear on the bio-sequence
     CRange<TSeqPos> GetRange() const;
 
     /// Coordinates of the blob that contains the NA data
     CPSG_BlobId GetBlobId() const;
-
-    /// Get NA version (the larger the version the fresher the NA data)
-    Uint8 GetVersion() const;
 
     /// Available zoom levels
     using TZoomLevel  = unsigned int;
@@ -737,6 +767,29 @@ private:
 
     string     m_Name;
     CJsonNode  m_Data;
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// Public comment
+
+class CPSG_PublicComment : public CPSG_ReplyItem
+{
+public:
+    /// Get data ID for this public comment
+    template <class TDataId = CPSG_DataId>
+    const TDataId* GetId() const { return dynamic_cast<const TDataId*>(m_Id.get()); }
+
+    /// Get text
+    const string& GetText() const { return m_Text; }
+
+private:
+    CPSG_PublicComment(unique_ptr<CPSG_DataId> id, string text);
+
+    unique_ptr<CPSG_DataId> m_Id;
+    string m_Text;
 
     friend class CPSG_Reply;
 };

@@ -35,6 +35,7 @@
 #include <objtools/data_loaders/genbank/gbloader_params.h>
 #include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/impl/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/wgsmaster.hpp>
 
 #include <objtools/data_loaders/genbank/reader_interface.hpp>
 #include <objtools/data_loaders/genbank/writer_interface.hpp>
@@ -1495,7 +1496,7 @@ void CGBDataLoader_Native::GetChunk(TChunk chunk)
 {
     CReader::TChunkId id = chunk->GetChunkId();
     if ( id == kMasterWGS_ChunkId ) {
-        CProcessor::LoadWGSMaster(this, chunk);
+        CWGSMasterSupport::LoadWGSMaster(this, chunk);
     }
     else {
         CGBReaderRequestResult result(this, CSeq_id_Handle());
@@ -1513,7 +1514,7 @@ void CGBDataLoader_Native::GetChunks(const TChunkSet& chunks)
     ITERATE(TChunkSet, it, chunks) {
         CReader::TChunkId id = (*it)->GetChunkId();
         if ( id == kMasterWGS_ChunkId ) {
-            CProcessor::LoadWGSMaster(this, *it);
+            CWGSMasterSupport::LoadWGSMaster(this, *it);
         }
         else {
             chunk_ids[(*it)->GetBlobId()].push_back(id);

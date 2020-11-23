@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = dispatcher reader writer processors \
+SRC = dispatcher reader writer processors wgsmaster \
     reader_snp seqref blob_id request_result \
     reader_id1_base reader_id2_base reader_service incr_time info_cache
 

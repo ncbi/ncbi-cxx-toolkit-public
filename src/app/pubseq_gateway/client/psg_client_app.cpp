@@ -84,6 +84,7 @@ struct SPerformance {};
 struct SReport {};
 struct STesting {};
 struct SIo {};
+struct SJsonCheck {};
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc);
 const string& s_SetPsgDefaults(const CArgs& args, bool parallel);
@@ -94,12 +95,13 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Blob>          ("blob",        "Request blob by blob ID"),
             s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID", SCommand::fParallel),
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID"),
-            s_GetCommand<CPSG_Request_TSE_Chunk>     ("tse_chunk",   "Request particular version of split by TSE blob ID and chunk number"),
+            s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
             s_GetCommand<SReport>                    ("report",      "Performance reporting", SCommand::fHidden),
             s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::fHidden),
             s_GetCommand<SIo>                        ("io",          "IO mode", SCommand::fHidden),
+            s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
         })
 {
 }
@@ -156,7 +158,7 @@ void s_InitDataFlags(CArgDescriptions& arg_desc)
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "PSG");
+    arg_desc.AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "PSG2");
     arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
@@ -212,7 +214,7 @@ template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
-    arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eInt8);
     s_InitBlobOnly(arg_desc, {"seqentry", "seqannot", "splitinfo", "chunk"});
     s_InitDataFlags(arg_desc);
 }
@@ -227,11 +229,10 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
 }
 
 template <>
-void CPsgClientApp::s_InitRequest<CPSG_Request_TSE_Chunk>(CArgDescriptions& arg_desc)
+void CPsgClientApp::s_InitRequest<CPSG_Request_Chunk>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPositional("ID", "TSE Blob ID", CArgDescriptions::eString);
-    arg_desc.AddPositional("CHUNK_NO", "Chunk number", CArgDescriptions::eInteger);
-    arg_desc.AddPositional("SPLIT_VER", "Split version", CArgDescriptions::eInteger);
+    arg_desc.AddPositional("ID2_CHUNK", "ID2 chunk number", CArgDescriptions::eInt8);
+    arg_desc.AddPositional("ID2_INFO", "ID2 info", CArgDescriptions::eString);
     s_InitBlobOnly(arg_desc);
 }
 
@@ -273,6 +274,13 @@ void CPsgClientApp::s_InitRequest<SIo>(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("DURATION", "Duration (seconds)", CArgDescriptions::eInteger);
     arg_desc.AddPositional("USER_THREADS", "Number of user threads", CArgDescriptions::eInteger);
     arg_desc.AddPositional("DOWNLOAD_SIZE", "Download size", CArgDescriptions::eInteger);
+}
+
+template <>
+void CPsgClientApp::s_InitRequest<SJsonCheck>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddOptionalKey("schema-file", "FILENAME", "JSON-RPC schema file (built-in by default)", CArgDescriptions::eInputFile);
+    arg_desc.AddDefaultKey("input-file", "FILENAME", "JSON-RPC requests file (one per line)", CArgDescriptions::eInputFile, "-");
 }
 
 const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
@@ -415,6 +423,14 @@ int CPsgClientApp::RunRequest<SIo>(const string& service, const CArgs& args)
     auto user_threads = args["USER_THREADS"].AsInteger();
     auto download_size = args["DOWNLOAD_SIZE"].AsInteger();
     return CProcessing::Io(service, start_time, duration, user_threads, download_size);
+}
+
+template <>
+int CPsgClientApp::RunRequest<SJsonCheck>(const string&, const CArgs& args)
+{
+    const auto& schema = args["schema-file"];
+    auto& doc_is = args["input-file"].AsInputFile();
+    return CProcessing::JsonCheck(schema.HasValue() ? &schema.AsInputFile() : nullptr, doc_is);
 }
 
 template <class TRequest>

@@ -67,51 +67,53 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 
-    TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
-    TBlobId GetBlobIdFromString(const string& str) const override;
+    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
+    virtual TBlobId GetBlobIdFromString(const string& str) const override;
 
-    bool CanGetBlobById(void) const override;
-    TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
+    virtual bool CanGetBlobById(void) const override;
+    virtual TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
 
-    TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
 
-    TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+    virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
         const SAnnotSelector* sel,
         TProcessedNAs* processed_nas) override;
-    TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
         const SAnnotSelector* sel,
         TProcessedNAs* processed_nas) override;
-    TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
         const SAnnotSelector* sel,
         TProcessedNAs* processed_nas) override;
 
-    void GetChunk(TChunk chunk) override;
-    void GetChunks(const TChunkSet& chunks) override;
+    virtual void GetChunk(TChunk chunk) override;
+    virtual void GetChunks(const TChunkSet& chunks) override;
 
     virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
 
-    void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
-    TTaxId GetTaxId(const CSeq_id_Handle& idh) override;
-    TSeqPos GetSequenceLength(const CSeq_id_Handle& idh) override;
-    SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh) override;
-    STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh) override;
-    int GetSequenceState(const CSeq_id_Handle& idh) override;
+    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
+    virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh) override;
+    virtual SGiFound GetGiFound(const CSeq_id_Handle& idh) override;
+    virtual TTaxId GetTaxId(const CSeq_id_Handle& idh) override;
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh) override;
+    virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh) override;
+    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh) override;
+    virtual int GetSequenceState(const CSeq_id_Handle& idh) override;
 
-    void DropTSE(CRef<CTSE_Info> tse_info) override;
+    virtual void DropTSE(CRef<CTSE_Info> tse_info) override;
 
-    TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) override;
-    TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
+    virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) override;
+    virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
         const string& named_acc) override;
-    bool HaveCache(TCacheType cache_type = fCache_Any) override
+    virtual bool HaveCache(TCacheType cache_type = fCache_Any) override
     {
         return false;
     }
-    void PurgeCache(TCacheType            cache_type,
+    virtual void PurgeCache(TCacheType            cache_type,
         time_t                access_timeout = 0) override {}
-    void CloseCache(void) override {}
+    virtual void CloseCache(void) override {}
 
-    void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret) override;
-    void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret) override;
+    virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret) override;
+    virtual void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret) override;
     /*
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret) override;
     void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret) override;

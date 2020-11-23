@@ -139,7 +139,7 @@ CJsonResponse::CJsonResponse(EPSG_Status status, TItem item) :
     m_JsonObj(SetObject())
 {
     if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
-        m_JsonObj["request_id"].SetValue().SetString(*request_id);
+        Set("request_id", *request_id);
     }
 
     Fill(status, item);
@@ -148,7 +148,7 @@ CJsonResponse::CJsonResponse(EPSG_Status status, TItem item) :
 CJsonResponse::CJsonResponse(const string& id, bool result) :
     CJsonResponse(id)
 {
-    m_JsonObj["result"].SetValue().SetBool(result);
+    Set("result", result);
 }
 
 CJsonResponse::CJsonResponse(const string& id, const CJson_Document& result) :
@@ -161,14 +161,14 @@ CJsonResponse::CJsonResponse(const string& id, int code, const string& message) 
     CJsonResponse(id)
 {
     CJson_Object error_obj = m_JsonObj.insert_object("error");
-    error_obj["code"].SetValue().SetInt4(code);
-    error_obj["message"].SetValue().SetString(message);
+    Set(error_obj["code"],    code);
+    Set(error_obj["message"], message);
 }
 
 CJsonResponse::CJsonResponse(const string& id) :
     m_JsonObj(SetObject())
 {
-    m_JsonObj["jsonrpc"].SetValue().SetString("2.0");
+    Set("jsonrpc", "2.0");
 
     auto id_value = m_JsonObj["id"].SetValue();
 
@@ -187,6 +187,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type)
         case CPSG_ReplyItem::eSkippedBlob:    return "SkippedBlob";
         case CPSG_ReplyItem::eBioseqInfo:     return "BioseqInfo";
         case CPSG_ReplyItem::eNamedAnnotInfo: return "NamedAnnotInfo";
+        case CPSG_ReplyItem::ePublicComment:  return "PublicComment";
         case CPSG_ReplyItem::eProcessor:      return "Processor";
         case CPSG_ReplyItem::eEndOfReply:     _TROUBLE;
     }
@@ -199,11 +200,11 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
     auto reply_item_type = reply_item->GetType();
 
     if (sm_SetReplyType) {
-        m_JsonObj["reply"].SetValue().SetString(s_GetItemName(reply_item_type));
+        Set("reply", s_GetItemName(reply_item_type));
     }
 
     if (sm_Verbose) {
-        m_JsonObj["processor_id"].SetValue().SetString(reply_item->GetProcessorId());
+        Set("processor_id", reply_item->GetProcessorId());
     }
 
     if (reply_item_status != EPSG_Status::eSuccess) {
@@ -226,6 +227,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
         case CPSG_ReplyItem::eNamedAnnotInfo:
             return Fill(static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item));
 
+        case CPSG_ReplyItem::ePublicComment:
+            return Fill(static_pointer_cast<CPSG_PublicComment>(reply_item));
+
         case CPSG_ReplyItem::eProcessor:
             return Fill(reply_item, reply_item_status);
 
@@ -237,39 +241,30 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
 {
-    m_JsonObj["id"].SetValue().SetString(blob_data->GetId().Get());
+    Set("id", blob_data);
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
-    m_JsonObj["data"].SetValue().SetString(NStr::JsonEncode(os.str()));
+    Set("data", NStr::JsonEncode(os.str()));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
 {
-    m_JsonObj["id"].SetValue().SetString(blob_info->GetId().Get());
-    m_JsonObj["compression"].SetValue().SetString(blob_info->GetCompression());
-    m_JsonObj["format"].SetValue().SetString(blob_info->GetFormat());
-    m_JsonObj["version"].SetValue().SetUint8(blob_info->GetVersion());
-    m_JsonObj["storage_size"].SetValue().SetUint8(blob_info->GetStorageSize());
-    m_JsonObj["size"].SetValue().SetUint8(blob_info->GetSize());
-    m_JsonObj["is_dead"].SetValue().SetBool(blob_info->IsDead());
-    m_JsonObj["is_suppressed"].SetValue().SetBool(blob_info->IsSuppressed());
-    m_JsonObj["is_withdrawn"].SetValue().SetBool(blob_info->IsWithdrawn());
-    m_JsonObj["hup_release_date"].SetValue().SetString(blob_info->GetHupReleaseDate().AsString());
-    m_JsonObj["owner"].SetValue().SetUint8(blob_info->GetOwner());
-    m_JsonObj["original_load_date"].SetValue().SetString(blob_info->GetOriginalLoadDate().AsString());
-    m_JsonObj["class"].SetValue().SetString(objects::CBioseq_set::ENUM_METHOD_NAME(EClass)()->FindName(blob_info->GetClass(), true));
-    m_JsonObj["division"].SetValue().SetString(blob_info->GetDivision());
-    m_JsonObj["username"].SetValue().SetString(blob_info->GetUsername());
-    m_JsonObj["split_info_blob_id"].SetValue().SetString(blob_info->GetSplitInfoBlobId().Get());
-
-    for (int i = 1; ; ++i) {
-        auto blob_id = blob_info->GetChunkBlobId(i).Get();
-        if (blob_id.empty()) break;
-        if (i == 1) CJson_Array ar = m_JsonObj.insert_array("chunk_blob_id");
-        m_JsonObj["chunk_blob_id"].SetArray().push_back(blob_id);
-    }
-
-    m_JsonObj["split_version"].SetValue().SetInt8(blob_info->GetSplitVersion());
+    Set("id",                 blob_info);
+    Set("compression",        blob_info->GetCompression());
+    Set("format",             blob_info->GetFormat());
+    Set("storage_size",       blob_info->GetStorageSize());
+    Set("size",               blob_info->GetSize());
+    Set("is_dead",            blob_info->IsDead());
+    Set("is_suppressed",      blob_info->IsSuppressed());
+    Set("is_withdrawn",       blob_info->IsWithdrawn());
+    Set("hup_release_date",   blob_info->GetHupReleaseDate().AsString());
+    Set("owner",              blob_info->GetOwner());
+    Set("original_load_date", blob_info->GetOriginalLoadDate().AsString());
+    Set("class",              objects::CBioseq_set::ENUM_METHOD_NAME(EClass)()->FindName(blob_info->GetClass(), true));
+    Set("division",           blob_info->GetDivision());
+    Set("username",           blob_info->GetUsername());
+    Set("id2_info",           blob_info->GetId2Info());
+    Set("n_chunks",           blob_info->GetNChunks());
 }
 
 string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
@@ -287,46 +282,45 @@ string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
 {
-    m_JsonObj["id"].SetValue().SetString(skipped_blob->GetId().Get());
-    m_JsonObj["reason"].SetValue().SetString(s_ReasonToString(skipped_blob->GetReason()));
+    Set("id",     skipped_blob->GetId());
+    Set("reason", s_ReasonToString(skipped_blob->GetReason()));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
     const auto included_info = bioseq_info->IncludedInfo();
 
-    if (included_info & CPSG_Request_Resolve::fCanonicalId)  m_JsonObj["canonical_id"].SetValue().SetString(bioseq_info->GetCanonicalId().Get());
-
-    if (included_info & CPSG_Request_Resolve::fOtherIds) {
-        CJson_Array ar = m_JsonObj.insert_array("other_ids");
-
-        for (const auto& bio_id : bioseq_info->GetOtherIds()) {
-            m_JsonObj["other_ids"].SetArray().push_back(bio_id.Get());
-        }
-    }
-
-    if (included_info & CPSG_Request_Resolve::fMoleculeType) m_JsonObj["molecule_type"].SetValue().SetString(objects::CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(bioseq_info->GetMoleculeType(), true));
-    if (included_info & CPSG_Request_Resolve::fLength)       m_JsonObj["length"].SetValue().SetUint8(bioseq_info->GetLength());
-    if (included_info & CPSG_Request_Resolve::fChainState)   m_JsonObj["seq_state"].SetValue().SetInt8(bioseq_info->GetChainState());
-    if (included_info & CPSG_Request_Resolve::fState)        m_JsonObj["state"].SetValue().SetInt8(bioseq_info->GetState());
-    if (included_info & CPSG_Request_Resolve::fBlobId)       m_JsonObj["blob_id"].SetValue().SetString(bioseq_info->GetBlobId().Get());
-    if (included_info & CPSG_Request_Resolve::fTaxId)        m_JsonObj["tax_id"].SetValue().SetInt8(TAX_ID_TO(Int8, bioseq_info->GetTaxId()));
-    if (included_info & CPSG_Request_Resolve::fHash)         m_JsonObj["hash"].SetValue().SetInt8(bioseq_info->GetHash());
-    if (included_info & CPSG_Request_Resolve::fDateChanged)  m_JsonObj["date_changed"].SetValue().SetString(bioseq_info->GetDateChanged().AsString());
-    if (included_info & CPSG_Request_Resolve::fGi)           m_JsonObj["gi"].SetValue().SetInt8(GI_TO(Int8, bioseq_info->GetGi()));
+    if (included_info & CPSG_Request_Resolve::fCanonicalId)  Set("canonical_id",  bioseq_info->GetCanonicalId());
+    if (included_info & CPSG_Request_Resolve::fOtherIds)     Set("other_ids",     bioseq_info->GetOtherIds());
+    if (included_info & CPSG_Request_Resolve::fMoleculeType) Set("molecule_type", objects::CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(bioseq_info->GetMoleculeType(), true));
+    if (included_info & CPSG_Request_Resolve::fLength)       Set("length",        bioseq_info->GetLength());
+    if (included_info & CPSG_Request_Resolve::fChainState)   Set("seq_state",     bioseq_info->GetChainState());
+    if (included_info & CPSG_Request_Resolve::fState)        Set("state",         bioseq_info->GetState());
+    if (included_info & CPSG_Request_Resolve::fBlobId)       Set("blob_id",       bioseq_info->GetBlobId());
+    if (included_info & CPSG_Request_Resolve::fTaxId)        Set("tax_id",        TAX_ID_TO(Int8, bioseq_info->GetTaxId()));
+    if (included_info & CPSG_Request_Resolve::fHash)         Set("hash",          bioseq_info->GetHash());
+    if (included_info & CPSG_Request_Resolve::fDateChanged)  Set("date_changed",  bioseq_info->GetDateChanged().AsString());
+    if (included_info & CPSG_Request_Resolve::fGi)           Set("gi",            GI_TO(Int8, bioseq_info->GetGi()));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
-    m_JsonObj["name"].SetValue().SetString(named_annot_info->GetName());
+    Set("name", named_annot_info->GetName());
+
+// TODO: Pending server change
+try {
+    Set("annotated_id", named_annot_info->GetAnnotatedId());
+}
+catch (exception& e) {
+    cerr << e.what() << endl;
+}
 
     const auto range = named_annot_info->GetRange();
     CJson_Object range_obj = m_JsonObj.insert_object("range");
-    range_obj["from"].SetValue().SetInt8(range.GetFrom());
-    range_obj["to"].SetValue().SetInt8(range.GetTo());
+    Set(range_obj["from"], range.GetFrom());
+    Set(range_obj["to"],   range.GetTo());
 
-    m_JsonObj["blob_id"].SetValue().SetString(named_annot_info->GetBlobId().Get());
-    m_JsonObj["version"].SetValue().SetUint8(named_annot_info->GetVersion());
+    Set("blob_id", named_annot_info->GetBlobId());
 
     CJson_Array zoom_level_array = m_JsonObj.insert_array("zoom_levels");
     for (const auto zoom_level : named_annot_info->GetZoomLevels()) {
@@ -336,16 +330,22 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     CJson_Array annot_info_array = m_JsonObj.insert_array("annot_info_list");
     for (const auto annot_info : named_annot_info->GetAnnotInfoList()) {
         CJson_Object annot_info_obj = annot_info_array.push_back_object();
-        annot_info_obj["annot_type"].SetValue().SetInt8(annot_info.annot_type);
-        annot_info_obj["feat_type"].SetValue().SetInt8(annot_info.feat_type);
-        annot_info_obj["feat_subtype"].SetValue().SetInt8(annot_info.feat_subtype);
+        Set(annot_info_obj["annot_type"],   annot_info.annot_type);
+        Set(annot_info_obj["feat_type"],    annot_info.feat_type);
+        Set(annot_info_obj["feat_subtype"], annot_info.feat_subtype);
     }
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_PublicComment> public_comment)
+{
+    Set("id",   public_comment);
+    Set("text", public_comment->GetText());
 }
 
 template <class TItem>
 void CJsonResponse::Fill(TItem item, EPSG_Status status)
 {
-    m_JsonObj["status"].SetValue().SetString(s_StrStatus(status));
+    Set("status", s_StrStatus(status));
 
     for (;;) {
         auto message = item->GetNextMessage();
@@ -354,6 +354,47 @@ void CJsonResponse::Fill(TItem item, EPSG_Status status)
 
         m_JsonObj.insert_array("errors").push_back(message);
     }
+}
+
+void CJsonResponse::Set(CJson_Node node, const CPSG_BioId& bio_id)
+{
+    auto obj = node.ResetObject();
+    Set(obj["id"], bio_id.GetId());
+
+    const auto& type = bio_id.GetType();
+
+    if (type != CPSG_BioId::TType::e_not_set) {
+        Set(obj["type"], type);
+    }
+}
+
+void CJsonResponse::Set(CJson_Node node, const vector<CPSG_BioId>& bio_ids)
+{
+    auto ar = node.ResetArray();
+
+    for (const auto& bio_id : bio_ids) {
+        ar.push_back();
+        Set(ar.back(), bio_id);
+    }
+}
+
+void CJsonResponse::Set(CJson_Node node, const CPSG_BlobId& blob_id)
+{
+    auto obj = node.ResetObject();
+    Set(obj["id"], blob_id.GetId());
+
+    const auto& last_modified = blob_id.GetLastModified();
+
+    if (!last_modified.IsNull()) {
+        Set(obj["last_modified"], last_modified.GetValue());
+    }
+}
+
+void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
+{
+    auto obj = node.ResetObject();
+    Set(obj["id2_chunk"], chunk_id.GetId2Chunk());
+    Set(obj["id2_info"],  chunk_id.GetId2Info());
 }
 
 template <class TItem, class TStr>
@@ -600,7 +641,11 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
     static atomic_size_t instances(0);
     instances++;
 
-    CJson_Schema json_schema(CProcessing::RequestSchema());
+    CJson_Document json_schema_doc(CProcessing::RequestSchema());
+    // cout << boolalpha << json_schema_doc.ReadSucceeded() << '|' << json_schema_doc.GetReadError() << endl;
+    // cout << json_schema_doc.ToString() << endl;
+
+    CJson_Schema json_schema(json_schema_doc);
     string line;
 
     while (input.Pop(line)) {
@@ -1449,6 +1494,43 @@ int CProcessing::Io(const string& service, time_t start_time, int duration, int 
     return 0;
 }
 
+int CProcessing::JsonCheck(istream* schema_is, istream& doc_is)
+{
+    CJson_Document schema_doc;
+
+    if (!schema_is) {
+        schema_doc = RequestSchema();
+
+    } else if (!schema_doc.Read(*schema_is)) {
+        cerr << "Error on reading JSON schema: " << schema_doc.GetReadError() << endl;
+        return -1;
+    }
+
+    CJson_Schema schema(schema_doc);
+    string line;
+    size_t line_no = 0;
+    int rv = 0;
+
+    while (ReadLine(line, doc_is)) {
+        CJson_Document input_doc;
+        ++line_no;
+
+        if (!input_doc.ParseString(line)) {
+            cerr << "Error on reading JSON document (" << line_no << "): " << input_doc.GetReadError() << endl;
+            if (rv == 0) rv = -2;
+        }
+
+        if (schema.Validate(input_doc)) {
+        } else {
+            cerr << "Error on validating JSON document (" << line_no << "): " << schema.GetValidationError() << endl;
+            if (rv == 0) rv = -3;
+        }
+    }
+
+    cout << "JSON documents (" << line_no << ") are valid" << endl;
+    return rv;
+}
+
 CPSG_BioId::TType SRequestBuilder::GetBioIdType(string type)
 {
     CObjectTypeInfo info(objects::CSeq_id::GetTypeInfo());
@@ -1481,6 +1563,31 @@ CPSG_BioId SRequestBuilder::GetBioId(const CJson_ConstObject& input)
     return CPSG_BioId(id, type);
 }
 
+CPSG_BlobId SRequestBuilder::GetBlobId(const CArgs& input)
+{
+    const auto& id = input["ID"].AsString();
+    const auto& last_modified = input["last-modified"];
+    return last_modified.HasValue() ? CPSG_BlobId(id, last_modified.AsInt8()) : id;
+}
+
+CPSG_BlobId SRequestBuilder::GetBlobId(const CJson_ConstObject& input)
+{
+    auto array = input["blob_id"].GetArray();
+    auto id = array[0].GetValue().GetString();
+    return array.size() > 1 ? CPSG_BlobId(move(id), array[1].GetValue().GetInt8()) : move(id);
+}
+
+CPSG_ChunkId SRequestBuilder::GetChunkId(const CArgs& input)
+{
+    return { static_cast<Uint8>(input["ID2_CHUNK"].AsInt8()), input["ID2_INFO"].AsString() };
+}
+
+CPSG_ChunkId SRequestBuilder::GetChunkId(const CJson_ConstObject& input)
+{
+    auto array = input["chunk_id"].GetArray();
+    return { array[0].GetValue().GetUint8(), array[1].GetValue().GetString() };
+}
+
 vector<string> SRequestBuilder::GetNamedAnnots(const CJson_ConstObject& input)
 {
     auto na_array = input["named_annots"].GetArray();
@@ -1499,7 +1606,7 @@ CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(TSpecified sp
 
     auto i = info_flags.begin();
     bool all_info_except = specified(i->name);
-    unsigned include_info = all_info_except ? CPSG_Request_Resolve::fAllInfo : 0u;
+    CPSG_Request_Resolve::TIncludeInfo include_info = all_info_except ? CPSG_Request_Resolve::fAllInfo : CPSG_Request_Resolve::TIncludeInfo(0);
 
     for (++i; i != info_flags.end(); ++i) {
         if (specified(i->name)) {
@@ -1577,7 +1684,6 @@ CJson_Document CProcessing::RequestSchema()
 {
     return CJson_Document(R"REQUEST_SCHEMA(
 {
-    "$schema": "http://json-schema.org/schema#",
     "type": "object",
     "definitions": {
         "jsonrpc": {
@@ -1591,10 +1697,50 @@ CJson_Document CProcessing::RequestSchema()
         "bio_id": {
             "$id": "#bio_id",
             "type": "array",
-            "items": {
-                "type": "string"
-            },
+            "items": [
+                {
+                    "type": "string"
+                },
+                {
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "number"
+                        }
+                    ]
+                }
+            ],
             "minItems": 1,
+            "maxItems": 2
+        },
+        "blob_id": {
+            "$id": "#blob_id",
+            "type": "array",
+            "items": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "minItems": 1,
+            "maxItems": 2
+        },
+        "chunk_id": {
+            "$id": "#chunk_id",
+            "type": "array",
+            "items": [
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "minItems": 2,
             "maxItems": 2
         },
         "include_data": {
@@ -1665,93 +1811,90 @@ CJson_Document CProcessing::RequestSchema()
     "oneOf": [
         {
             "properties": {
-                "jsonrpc": { "$rev": "#jsonrpc" },
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
                 "method": { "enum": [ "biodata" ] },
                 "params": {
                     "type": "object",
                     "properties": {
-                        "bio_id" : { "$ref": "#bio_id" },
-                        "include_data": { "$ref": "#include_data" },
-                        "exclude_blobs": { "$ref": "#exclude_blobs" },
-                        "acc_substitution": { "$ref": "#acc_substitution" },
+                        "bio_id" : { "$ref": "#/definitions/bio_id" },
+                        "include_data": { "$ref": "#/definitions/include_data" },
+                        "exclude_blobs": { "$ref": "#/definitions/exclude_blobs" },
+                        "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
                         "auto_blob_skipping": { "type": "boolean" },
-                        "context": { "$ref": "#context" }
+                        "context": { "$ref": "#/definitions/context" }
                     },
                     "required": [ "bio_id" ]
                 },
-                "id": { "$ref": "#id" }
+                "id": { "$ref": "#/definitions/id" }
             },
             "required": [ "jsonrpc", "method", "params", "id" ]
         },
         {
             "properties": {
-                "jsonrpc": { "$rev": "#jsonrpc" },
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
                 "method": { "enum": [ "blob" ] },
                 "params": {
                     "type": "object",
                     "properties": {
-                        "blob_id": { "type": "string" },
-                        "last_modified": { "type": "string" },
-                        "include_data": { "$ref": "#include_data" },
-                        "context": { "$ref": "#context" }
+                        "blob_id": { "$ref": "#/definitions/blob_id" },
+                        "include_data": { "$ref": "#/definitions/include_data" },
+                        "context": { "$ref": "#/definitions/context" }
                     },
                     "required": [ "blob_id" ]
                 },
-                "id": { "$ref": "#id" }
+                "id": { "$ref": "#/definitions/id" }
             },
             "required": [ "jsonrpc", "method", "params", "id" ]
         },
         {
             "properties": {
-                "jsonrpc": { "$rev": "#jsonrpc" },
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
                 "method": { "enum": [ "resolve" ] },
                 "params": {
                     "type": "object",
                     "properties": {
-                        "bio_id" : { "$ref": "#bio_id" },
-                        "include_info": { "$ref": "#include_info" },
-                        "acc_substitution": { "$ref": "#acc_substitution" },
-                        "context": { "$ref": "#context" }
+                        "bio_id" : { "$ref": "#/definitions/bio_id" },
+                        "include_info": { "$ref": "#/definitions/include_info" },
+                        "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
+                        "context": { "$ref": "#/definitions/context" }
                     },
                     "required": [ "bio_id" ]
                 },
-                "id": { "$ref": "#id" }
+                "id": { "$ref": "#/definitions/id" }
             },
             "required": [ "jsonrpc", "method", "params", "id" ]
         },
         {
             "properties": {
-                "jsonrpc": { "$rev": "#jsonrpc" },
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
                 "method": { "enum": [ "named_annot" ] },
                 "params": {
                     "type": "object",
                     "properties": {
-                        "bio_id" : { "$ref": "#bio_id" },
-                        "named_annots": { "$ref": "#named_annots" },
-                        "acc_substitution": { "$ref": "#acc_substitution" },
-                        "context": { "$ref": "#context" }
+                        "bio_id" : { "$ref": "#/definitions/bio_id" },
+                        "named_annots": { "$ref": "#/definitions/named_annots" },
+                        "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
+                        "context": { "$ref": "#/definitions/context" }
                     },
                     "required": [ "bio_id","named_annots" ]
                 },
-                "id": { "$ref": "#id" }
+                "id": { "$ref": "#/definitions/id" }
             },
             "required": [ "jsonrpc", "method", "params", "id" ]
         },
         {
             "properties": {
-                "jsonrpc": { "$rev": "#jsonrpc" },
-                "method": { "enum": [ "tse_chunk" ] },
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
+                "method": { "enum": [ "chunk" ] },
                 "params": {
                     "type": "object",
                     "properties": {
-                        "blob_id": { "type": "string" },
-                        "chunk_no": { "type": "number" },
-                        "split_ver": { "type": "number" },
-                        "context": { "$ref": "#context" }
+                        "chunk_id": { "$ref": "#/definitions/chunk_id" },
+                        "context": { "$ref": "#/definitions/context" }
                     },
-                    "required": [ "blob_id", "chunk_no", "split_ver" ]
+                    "required": [ "chunk_id" ]
                 },
-                "id": { "$ref": "#id" }
+                "id": { "$ref": "#/definitions/id" }
             },
             "required": [ "jsonrpc", "method", "params", "id" ]
         }

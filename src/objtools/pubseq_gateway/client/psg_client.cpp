@@ -163,7 +163,88 @@ void SPSG_BlobReader::CheckForNewChunks()
 
 
 static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move constructor must be noexcept");
+
+string CPSG_BioId::Repr() const
+{
+    return m_Type == TType::e_not_set ? m_Id : m_Id + '~' + to_string(m_Type);
+}
+
+CPSG_BioId s_GetBioId(const CJsonNode& data)
+{
+    auto type = static_cast<CPSG_BioId::TType>(data.GetInteger("seq_id_type"));
+    auto accession = data.GetString("accession");
+    auto name_node = data.GetByKeyOrNull("name");
+    auto name = name_node && name_node.IsString() ? name_node.AsString() : string();
+    auto version = static_cast<int>(data.GetInteger("version"));
+    return { objects::CSeq_id(type, accession, name, version).AsFastaString(), type };
+};
+
+ostream& operator<<(ostream& os, const CPSG_BioId& bio_id)
+{
+    if (bio_id.GetType()) os << "seq_id_type=" << bio_id.GetType() << '&';
+    return os << "seq_id=" << bio_id.GetId();
+}
+
+
 static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId move constructor must be noexcept");
+
+string CPSG_BlobId::Repr() const
+{
+    return m_LastModified.IsNull() ? m_Id : m_Id + '~' + to_string(m_LastModified.GetValue());
+}
+
+unique_ptr<CPSG_DataId> s_GetDataId(const SPSG_Args& args)
+{
+    const auto& blob_id = args.GetValue("blob_id");
+
+    if (blob_id.empty()) {
+        auto id2_chunk = NStr::StringToNumeric<Uint8>(args.GetValue("id2_chunk"));
+        return unique_ptr<CPSG_DataId>(new CPSG_ChunkId(id2_chunk, args.GetValue("id2_info")));
+    }
+
+    CPSG_BlobId::TLastModified last_modified;
+    const auto& last_modified_str = args.GetValue("last_modified");
+
+    if (!last_modified_str.empty()) {
+        last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
+    }
+
+    return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id, move(last_modified)));
+}
+
+CPSG_BlobId s_GetBlobId(const CJsonNode& data)
+{
+    CPSG_BlobId::TLastModified last_modified;
+
+    if (data.HasKey("last_modified")) {
+        last_modified = data.GetInteger("last_modified");
+    }
+
+    if (data.HasKey("blob_id")) {
+        return { data.GetString("blob_id"), last_modified };
+    }
+
+    auto sat = static_cast<int>(data.GetInteger("sat"));
+    auto sat_key = static_cast<int>(data.GetInteger("sat_key"));
+    return { sat, sat_key, last_modified };
+}
+
+ostream& operator<<(ostream& os, const CPSG_BlobId& blob_id)
+{
+    if (!blob_id.GetLastModified().IsNull()) os << "last_modified=" << blob_id.GetLastModified().GetValue() << '&';
+    return os << "blob_id=" << blob_id.GetId();
+}
+
+
+string CPSG_ChunkId::Repr() const
+{
+    return to_string(m_Id2Chunk) + '~' + m_Id2Info;
+}
+
+ostream& operator<<(ostream& os, const CPSG_ChunkId& chunk_id)
+{
+    return os << "id2_chunk=" << chunk_id.GetId2Chunk() << "&id2_info=" << chunk_id.GetId2Info();
+}
 
 
 template <class TReplyItem>
@@ -200,11 +281,11 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
     auto processor_id = args.GetValue("processor_id");
 
     if (item_type == "blob") {
-        auto blob_id = args.GetValue("blob_id");
+        auto data_id = s_GetDataId(args);
         auto reason = args.GetValue("reason");
 
         if (reason.empty()) {
-            unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(blob_id));
+            unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(move(data_id)));
             blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
             rv.reset(blob_data.release());
         } else {
@@ -218,19 +299,23 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
                 r = CPSG_SkippedBlob::eSent;
             }
 
-            rv.reset(new CPSG_SkippedBlob(blob_id, r));
+            auto blob_id = move(dynamic_cast<CPSG_BlobId&>(*data_id));
+            rv.reset(new CPSG_SkippedBlob(move(blob_id), r));
         }
 
     } else if (item_type == "bioseq_info") {
         rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
 
     } else if (item_type == "blob_prop") {
-        auto blob_id = args.GetValue("blob_id");
-        rv.reset(CreateImpl(new CPSG_BlobInfo(blob_id), chunks));
+        rv.reset(CreateImpl(new CPSG_BlobInfo(s_GetDataId(args)), chunks));
 
     } else if (item_type == "bioseq_na") {
         auto name = args.GetValue("na");
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(name), chunks));
+
+    } else if (item_type == "public_comment") {
+        auto text = chunks.empty() ? string() : chunks.front();
+        rv.reset(new CPSG_PublicComment(s_GetDataId(args), text));
 
     } else if (item_type == "processor") {
         rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor));
@@ -351,24 +436,9 @@ const char* s_GetAutoBlobSkipping(ESwitch value)
 }
 
 
-struct CPSG_Request::x_GetBioIdParams
-{
-    const string& id;
-    const CPSG_BioId::TType& type;
-
-    x_GetBioIdParams(const CPSG_BioId& bio_id) : id(bio_id.m_Id), type(bio_id.m_Type) {}
-
-    friend ostream& operator<<(ostream& os, const x_GetBioIdParams& bio_id)
-    {
-        if (bio_id.type) os << "seq_id_type=" << bio_id.type << '&';
-        return os << "seq_id=" << bio_id.id;
-    }
-};
-
-
 void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/get?" << x_GetBioIdParams(m_BioId);
+    os << "/ID/get?" << m_BioId;
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
@@ -377,7 +447,7 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 
         char delimiter = '=';
         for (const auto& blob_id : m_ExcludeTSEs) {
-            os << delimiter << blob_id.Get();
+            os << delimiter << blob_id.GetId();
             delimiter = ',';
         }
     }
@@ -388,7 +458,7 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 
 void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/resolve?" << x_GetBioIdParams(m_BioId) << "&fmt=json&psg_protocol=yes";
+    os << "/ID/resolve?" << m_BioId << "&fmt=json&psg_protocol=yes";
 
     auto value = "yes";
     auto include_info = m_IncludeInfo;
@@ -418,16 +488,14 @@ void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
 
 void CPSG_Request_Blob::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/getblob?blob_id=" << m_BlobId.Get();
-
-    if (!m_LastModified.empty()) os << "&last_modified=" << m_LastModified;
+    os << "/ID/getblob?" << m_BlobId;
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 }
 
 void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/get_na?" << x_GetBioIdParams(m_BioId) << "&names=";
+    os << "/ID/get_na?" << m_BioId << "&names=";
 
     for (const auto& name : m_AnnotNames) {
         os << name << ",";
@@ -439,10 +507,9 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
     os << s_GetAccSubstitution(m_AccSubstitution);
 }
 
-void CPSG_Request_TSE_Chunk::x_GetAbsPathRef(ostream& os) const
+void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/get_tse_chunk?tse_id=" << m_TSE_BlobId.Get() <<
-        "&chunk=" << m_ChunkNo << "&split_version=" << m_SplitVersion;
+    os << "/ID/get_tse_chunk?" << m_ChunkId;
 }
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, const CDeadline& deadline)
@@ -513,14 +580,14 @@ CPSG_ReplyItem::CPSG_ReplyItem(EType type) :
 }
 
 
-CPSG_BlobData::CPSG_BlobData(CPSG_BlobId id) :
+CPSG_BlobData::CPSG_BlobData(unique_ptr<CPSG_DataId> id) :
     CPSG_ReplyItem(eBlobData),
     m_Id(move(id))
 {
 }
 
 
-CPSG_BlobInfo::CPSG_BlobInfo(CPSG_BlobId id) :
+CPSG_BlobInfo::CPSG_BlobInfo(unique_ptr<CPSG_DataId> id) :
     CPSG_ReplyItem(eBlobInfo),
     m_Id(move(id))
 {
@@ -544,11 +611,6 @@ string CPSG_BlobInfo::GetCompression() const
 string CPSG_BlobInfo::GetFormat() const
 {
     return "asn.1";
-}
-
-Uint8 CPSG_BlobInfo::GetVersion() const
-{
-    return static_cast<Uint8>(m_Data.GetInteger("last_modified"));
 }
 
 Uint8 CPSG_BlobInfo::GetStorageSize() const
@@ -611,109 +673,14 @@ string CPSG_BlobInfo::GetUsername() const
     return m_Data.GetString("username");
 }
 
-struct SId2Info
+string CPSG_BlobInfo::GetId2Info() const
 {
-    enum : size_t { eSat, eSatKey, eNChunks, eSplitVer, eMinSize = eNChunks + 1 };
-
-    vector<CTempString> values;
-
-    SId2Info(const CJsonNode& data, const CPSG_BlobId& id);
-
-    explicit operator bool() const {
-        return values.size() > eSat && !values[eSat].empty();
-    }
-
-    string GetSplitInfoBlobId() const {
-        if ( !*this || values.size() <= eSatKey ) {
-            return string();
-        }
-        if ( CanGetChunkBlobId() ) {
-            return values[eSat] + "." + values[eSatKey];
-        }
-        else {
-            return values[eSat] + "." + values[eSatKey] + ".";
-        }
-    }
-
-    int GetSplitVersion() const {
-        if ( !*this || values.size() <= eSplitVer ) {
-            return 0;
-        }
-        
-        auto split_ver = values[eSplitVer];
-        return split_ver.empty() ? 0 : NStr::StringToInt(split_ver);
-    }
-
-    bool CanGetChunkBlobId() const {
-        return *this && values.size() > eNChunks && !values[eNChunks].empty();
-    }
-
-    string GetChunkBlobId(unsigned split_chunk_no) const {
-        if ( !CanGetChunkBlobId() ) {
-            return kEmptyStr;
-        }
-
-        if ( values[eNChunks].empty() ) {
-            return kEmptyStr;
-        }
-        else {
-            auto sat_key = NStr::StringToInt(values[eSatKey]);
-            if (sat_key <= 0) return kEmptyStr;
-
-            int index = static_cast<int>(split_chunk_no);
-            
-            auto nchunks = NStr::StringToInt(values[eNChunks]);
-            if (nchunks <= 0) return kEmptyStr;
-            if (nchunks < index) return kEmptyStr;
-
-            return values[eSat] + "." + to_string(sat_key + index - nchunks - 1);
-        }
-    }
-
-private:
-    string m_Value;
-};
-
-SId2Info::SId2Info(const CJsonNode& data, const CPSG_BlobId& id)
-{
-    if (!data.HasKey("id2_info")) return;
-
-    m_Value = data.GetString("id2_info");
-
-    if (m_Value.empty()) return;
-
-    NStr::Split(m_Value, ".", values);
-
-    if (values.size() < eMinSize ) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong id2_info format: " << m_Value <<
-                " for blob '" << id.Get() << '\'');
-    }
+    return m_Data.GetString("id2_info");
 }
 
-CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId() const
+Uint8 CPSG_BlobInfo::GetNChunks() const
 {
-    SId2Info id2_info(m_Data, m_Id);
-    return CPSG_BlobId(id2_info.GetSplitInfoBlobId());
-}
-
-bool CPSG_BlobInfo::CanGetChunkBlobId() const
-{
-    SId2Info id2_info(m_Data, m_Id);
-    return id2_info.CanGetChunkBlobId();
-}
-
-CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
-{
-    if (split_chunk_no == 0) return kEmptyStr;
-
-    SId2Info id2_info(m_Data, m_Id);
-    return CPSG_BlobId(id2_info.GetChunkBlobId(split_chunk_no));
-}
-
-CPSG_BlobInfo::TSplitVersion CPSG_BlobInfo::GetSplitVersion() const
-{
-    SId2Info id2_info(m_Data, m_Id);
-    return id2_info.GetSplitVersion();
+    return static_cast<Uint8>(m_Data.GetInteger("n_chunks"));
 }
 
 
@@ -732,12 +699,7 @@ CPSG_BioseqInfo::CPSG_BioseqInfo()
 
 CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
 {
-    auto type = static_cast<CPSG_BioId::TType>(m_Data.GetInteger("seq_id_type"));
-    auto accession = m_Data.GetString("accession");
-    auto name_node = m_Data.GetByKeyOrNull("name");
-    auto name = name_node && name_node.IsString() ? name_node.AsString() : string();
-    auto version = static_cast<int>(m_Data.GetInteger("version"));
-    return objects::CSeq_id(type, accession, name, version).AsFastaString();
+    return s_GetBioId(m_Data);
 };
 
 vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
@@ -754,7 +716,7 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
             auto type = static_cast<CPSG_BioId::TType>(seq_id.GetAt(0).AsInteger());
             auto content = seq_id.GetAt(1).AsString();
             rv.emplace_back(string(objects::CSeq_id::WhichFastaTag(type))
-                            + '|' + content);
+                            + '|' + content, type);
         }
     }
 
@@ -790,17 +752,6 @@ CPSG_BioseqInfo::TState CPSG_BioseqInfo::GetChainState() const
 CPSG_BioseqInfo::TState CPSG_BioseqInfo::GetState() const
 {
     return static_cast<TState>(m_Data.GetInteger("state"));
-}
-
-CPSG_BlobId s_GetBlobId(const CJsonNode& data)
-{
-    if (data.HasKey("blob_id")) {
-        return data.GetString("blob_id");
-    }
-
-    auto sat = static_cast<int>(data.GetInteger("sat"));
-    auto sat_key = static_cast<int>(data.GetInteger("sat_key"));
-    return { sat, sat_key };
 }
 
 CPSG_BlobId CPSG_BioseqInfo::GetBlobId() const
@@ -839,7 +790,8 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
     if (m_Data.HasKey("length"))                                          rv |= CPSG_Request_Resolve::fLength;
     if (m_Data.HasKey("seq_state"))                                       rv |= CPSG_Request_Resolve::fChainState;
     if (m_Data.HasKey("state"))                                           rv |= CPSG_Request_Resolve::fState;
-    if (m_Data.HasKey("sat") && m_Data.HasKey("sat_key"))                 rv |= CPSG_Request_Resolve::fBlobId;
+    if (m_Data.HasKey("blob_id") ||
+        (m_Data.HasKey("sat") && m_Data.HasKey("sat_key")))               rv |= CPSG_Request_Resolve::fBlobId;
     if (m_Data.HasKey("tax_id"))                                          rv |= CPSG_Request_Resolve::fTaxId;
     if (m_Data.HasKey("hash"))                                            rv |= CPSG_Request_Resolve::fHash;
     if (m_Data.HasKey("date_changed"))                                    rv |= CPSG_Request_Resolve::fDateChanged;
@@ -855,21 +807,25 @@ CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(string name) :
 {
 }
 
+CPSG_BioId CPSG_NamedAnnotInfo::GetAnnotatedId() const
+{
+    return s_GetBioId(m_Data);
+}
+
 CRange<TSeqPos> CPSG_NamedAnnotInfo::GetRange() const
 {
-    auto start = static_cast<TSeqPos>(m_Data.GetInteger("start"));
-    auto stop = static_cast<TSeqPos>(m_Data.GetInteger("stop"));
-    return { start, stop };
+    if (auto start = static_cast<TSeqPos>(m_Data.GetInteger("start"))) {
+        if (auto stop = static_cast<TSeqPos>(m_Data.GetInteger("stop"))) {
+            return { start, stop };
+        }
+    }
+
+    return CRange<TSeqPos>::GetWhole();
 }
 
 CPSG_BlobId CPSG_NamedAnnotInfo::GetBlobId() const
 {
     return s_GetBlobId(m_Data);
-}
-
-Uint8 CPSG_NamedAnnotInfo::GetVersion() const
-{
-    return static_cast<Uint8>(m_Data.GetInteger("last_modified"));
 }
 
 template <class TResult>
@@ -1008,6 +964,14 @@ CPSG_NamedAnnotInfo::TAnnotInfoList CPSG_NamedAnnotInfo::GetAnnotInfoList() cons
     });
 
     return processor(this, m_Data);
+}
+
+
+CPSG_PublicComment::CPSG_PublicComment(unique_ptr<CPSG_DataId> id, string text) :
+    CPSG_ReplyItem(ePublicComment),
+    m_Id(move(id)),
+    m_Text(move(text))
+{
 }
 
 

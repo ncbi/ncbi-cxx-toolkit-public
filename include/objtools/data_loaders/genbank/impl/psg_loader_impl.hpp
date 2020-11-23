@@ -53,6 +53,7 @@ class CPsgBlobId : public CBlobId
 {
 public:
     explicit CPsgBlobId(const string& id);
+    CPsgBlobId(const string& id, const string& id2_info);
     virtual ~CPsgBlobId();
     
     const string& ToPsgId() const
@@ -63,9 +64,19 @@ public:
     virtual string ToString(void) const override;
     virtual bool operator<(const CBlobId& id) const override;
     virtual bool operator==(const CBlobId& id) const override;
+
+    const string& GetId2Info() const
+        {
+            return m_Id2Info;
+        }
+    void SetId2Info(const string& id2_info)
+        {
+            m_Id2Info = id2_info;
+        }
     
 private:
     string m_Id;
+    string m_Id2Info;
 };
 
 struct SPsgBioseqInfo
@@ -95,21 +106,14 @@ struct SPsgBlobInfo
 {
     SPsgBlobInfo(const CPSG_BlobInfo& blob_info);
 
-    typedef int TChunkId;
-    typedef vector<string> TChunks;
-
     string blob_id_main;
-    string blob_id_split;
+    string id2_info;
     int blob_state;
-    int blob_version;
-    int split_version;
-    bool use_get_blob_for_chunks;
-    TChunks chunks;
+    Int8 last_modified;
 
-    const string& GetBlobIdForChunk(TChunkId chunk_id) const;
+    int GetBlobVersion() const { return last_modified/60000; /* ms to minutes */ }
 
-    const string& GetDataBlobId() const { return IsSplit() ? blob_id_split : blob_id_main; }
-    bool IsSplit() const { return !blob_id_split.empty(); }
+    bool IsSplit() const { return !id2_info.empty(); }
 
 private:
     SPsgBlobInfo(const SPsgBlobInfo&);
@@ -136,6 +140,8 @@ public:
     typedef CDataLoader::TTSE_LockSets TTSE_LockSets;
 
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+    CDataLoader::SGiFound GetGi(const CSeq_id_Handle& idh);
+    CDataLoader::SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
     TTaxId GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
@@ -148,8 +154,10 @@ public:
     CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
     CTSE_Lock GetBlobById(CDataSource* data_source,
                               const CPsgBlobId& blob_id);
-    void LoadChunk(CTSE_Chunk_Info& chunk_info);
-    void LoadChunks(const CDataLoader::TChunkSet& chunks);
+    void LoadChunk(CDataSource* data_source,
+                   CTSE_Chunk_Info& chunk_info);
+    void LoadChunks(CDataSource* data_source,
+                    const CDataLoader::TChunkSet& chunks);
 
     void GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets);
 
@@ -186,7 +194,8 @@ private:
         const SPsgBlobInfo& psg_blob_info,
         const CPSG_BlobInfo& blob_info,
         const CPSG_BlobData& blob_data,
-        CTSE_LoadLock& load_lock);
+        CTSE_LoadLock& load_lock,
+        bool is_split_info);
 
     typedef map<void*, size_t> TIdxMap;
 
@@ -195,10 +204,16 @@ private:
         TLoaded& loaded,
         TBioseqInfos& ret);
 
+    shared_ptr<CPSG_Request_Blob>
+    x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
+                                   CDataLoader::TChunk chunk,
+                                   shared_ptr<CPsgClientContext_Bulk> context);
+    
     // Map seq-id to bioseq info.
     typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
 
     bool m_NoSplit = false;
+    bool m_AddWGSMasterDescr = true;
     shared_ptr<CPSG_Queue> m_Queue;
     CRef<CPsgClientThread> m_Thread;
     unique_ptr<CPSGBlobMap> m_BlobMap;
