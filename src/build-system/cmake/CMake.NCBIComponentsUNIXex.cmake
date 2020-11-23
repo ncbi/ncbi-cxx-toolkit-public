@@ -32,7 +32,7 @@ set(NCBI_PlatformBits 64)
 
 include(CheckLibraryExists)
 include(${NCBI_TREE_CMAKECFG}/FindExternalLibrary.cmake)
-find_package(PkgConfig REQUIRED)
+find_package(PkgConfig)
 
 check_library_exists(dl dlopen "" HAVE_LIBDL)
 if(HAVE_LIBDL)
@@ -214,7 +214,7 @@ NCBI_find_library(UUID uuid)
 
 ##############################################################################
 # CURL
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(CURL CURL)
 else()
     NCBI_find_library(CURL curl)
@@ -246,7 +246,7 @@ endif()
 
 #############################################################################
 # Z
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(Z ZLIB)
 else()
     NCBI_find_library(Z z)
@@ -260,7 +260,7 @@ endif()
 #############################################################################
 # BZ2
 if(NOT USE_LOCAL_BZLIB)
-    if(ON)
+    if(PKG_CONFIG_FOUND)
         NCBI_find_package(BZ2 BZip2)
     else()
         NCBI_find_library(BZ2 bz2)
@@ -322,7 +322,7 @@ endif()
 
 #############################################################################
 # JPEG
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(JPEG JPEG)
 else()
     NCBI_find_library(JPEG jpeg)
@@ -330,7 +330,7 @@ endif()
 
 #############################################################################
 # PNG
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(PNG PNG)
 else()
     NCBI_find_library(PNG png)
@@ -338,7 +338,7 @@ endif()
 
 #############################################################################
 # GIF
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(GIF GIF)
 else()
     NCBI_find_library(GIF gif)
@@ -346,7 +346,7 @@ endif()
 
 #############################################################################
 # TIFF
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(TIFF TIFF)
 else()
     NCBI_find_library(TIFF tiff)
@@ -367,7 +367,7 @@ endif()
 
 #############################################################################
 # SQLITE3
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(SQLITE3 sqlite3)
 endif()
 if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
@@ -476,7 +476,7 @@ if(OFF)
         list(APPEND NCBI_ALL_COMPONENTS wxWidgets)
     endif()
 else()
-    if(ON)
+    if(PKG_CONFIG_FOUND)
         NCBI_find_package(GTK2 GTK2)
         NCBI_find_package(FONTCONFIG Fontconfig)
         set(_wx_ver 3.1)
@@ -551,7 +551,7 @@ endif()
 
 #############################################################################
 # XML
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(XML libxml-2.0)
 endif()
 if(NOT NCBI_COMPONENT_XML_FOUND)
@@ -567,7 +567,7 @@ endif()
 
 #############################################################################
 # XSLT
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(XSLT libxslt)
 endif()
 if(NOT NCBI_COMPONENT_XSLT_FOUND)
@@ -592,7 +592,7 @@ endif()
 
 #############################################################################
 # EXSLT
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(EXSLT libexslt)
 endif()
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
@@ -621,7 +621,7 @@ endif()
 
 #############################################################################
 # LAPACK
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(LAPACK LAPACK)
     if(NCBI_COMPONENT_LAPACK_FOUND)
         set(LAPACK_FOUND YES)
@@ -672,7 +672,7 @@ endif()
 
 #############################################################################
 # FreeType
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(FreeType Freetype)
 else()
     NCBI_find_library(FreeType freetype)
@@ -683,7 +683,7 @@ endif()
 
 #############################################################################
 # FTGL
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(FTGL ftgl)
 endif()
 if(NOT NCBI_COMPONENT_FTGL_FOUND)
@@ -692,7 +692,7 @@ endif()
 
 #############################################################################
 # GLEW
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(GLEW glew)
     if(NCBI_COMPONENT_GLEW_FOUND)
         get_filename_component(_incdir ${NCBI_COMPONENT_GLEW_INCLUDE} DIRECTORY)
@@ -733,7 +733,7 @@ endif()
 
 #############################################################################
 # XERCES
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(XERCES xerces-c)
 endif()
 if(NOT NCBI_COMPONENT_XERCES_FOUND)
@@ -749,7 +749,7 @@ endif()
 set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/protoc")
 set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/grpc_cpp_plugin")
 
-if(ON)
+if(PKG_CONFIG_FOUND)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         NCBI_define_component(PROTOBUF protobufd)
     else()
@@ -802,7 +802,7 @@ endif()
 
 #############################################################################
 # OpenSSL
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(OpenSSL OpenSSL)
 else()
     NCBI_find_library(OpenSSL ssl crypto)
@@ -835,7 +835,7 @@ endif()
 
 #############################################################################
 # MONGOCXX
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(MONGOCXX libmongocxx)
 endif()
 if(NOT NCBI_COMPONENT_MONGOCXX_FOUND)
@@ -890,7 +890,7 @@ endif()
 
 #############################################################################
 # UV
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(UV libuv)
 endif()
 if(NOT NCBI_COMPONENT_UV_FOUND)
@@ -903,7 +903,7 @@ endif()
 
 #############################################################################
 # NGHTTP2
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(NGHTTP2 libnghttp2)
 endif()
 if(NOT NCBI_COMPONENT_NGHTTP2_FOUND)
@@ -916,7 +916,7 @@ NCBI_define_component(GL2PS gl2ps)
 
 #############################################################################
 # GMOCK
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(GMOCK gmock)
     NCBI_find_package(GTEST gtest)
     if(NCBI_COMPONENT_GMOCK_FOUND)
@@ -940,7 +940,7 @@ endif()
 
 #############################################################################
 # H2O
-if(ON)
+if(PKG_CONFIG_FOUND)
     NCBI_find_package(H2O libh2o)
 endif()
 if(NOT NCBI_COMPONENT_H2O_FOUND)
