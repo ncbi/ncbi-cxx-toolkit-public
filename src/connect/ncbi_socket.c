@@ -1107,7 +1107,7 @@ static const char* x_ChooseIP(char** addrs)
     for (n = 0;  addrs[n];  ++n) {
         unsigned int ip;
         memcpy(&ip, addrs[n], sizeof(ip));
-        if (!x_IsAPIPA(ntohl(ip)))
+        if (!SOCK_IsLoopbackAddress(ip)  &&  !x_IsAPIPA(ntohl(ip)))
             return addrs[n];
     }
     return addrs[0];
@@ -1122,9 +1122,11 @@ static unsigned int s_gethostbyname_(const char* hostname,
     char buf[CONN_HOST_LEN + 1];
     unsigned int host;
 
-    if (!hostname  ||  !*hostname) {
+    assert(!hostname  ||  *hostname);
+    if (!hostname) {
         if (s_gethostname(buf, sizeof(buf), log) != 0)
             return 0;
+        assert(*buf);
 #if 0/*def NCBI_OS_DARWIN*/
         {{
             char* p;
@@ -1140,11 +1142,11 @@ static unsigned int s_gethostbyname_(const char* hostname,
 
 #ifdef NCBI_OS_DARWIN
     if (strspn(hostname, ".0123456789") == strlen(hostname)) {
+        /* Darwin's inet_addr() does not care for integer overflows :-/ */
         if (!SOCK_isip(hostname)) {
             host = 0;
             goto out;
-        } else
-            not_ip = 0/*false*/;
+        }
     }
 #endif /*NCBI_OS_DARWIN*/
 
@@ -1160,7 +1162,8 @@ static unsigned int s_gethostbyname_(const char* hostname,
                 char* addrs[128];
                 size_t n;
                 for (n = 0;  n < sizeof(addrs) / sizeof(addrs[0]) - 1;  ++n) {
-                    struct sockaddr_in* sin = (struct sockaddr_in*) tmp->ai_addr;
+                    struct sockaddr_in* sin
+                        = (struct sockaddr_in*) tmp->ai_addr;
                     assert(sin->sin_family == AF_INET);
                     addrs[n] = (char*) &sin->sin_addr;
                     if (!(tmp = tmp->ai_next))
@@ -1306,9 +1309,11 @@ static unsigned int s_gethostbyname(const char* hostname,
                                     ESwitch     log)
 {
     static void* /*bool*/ s_Once = 0/*false*/;
-    unsigned int retval = s_gethostbyname_(hostname, not_ip, 0, log);
+    unsigned int retval;
 
-    if (!retval) {
+    if (hostname &&  !*hostname)
+        hostname = 0;
+    if (!(retval = s_gethostbyname_(hostname, not_ip, 0, log))) {
         if (s_ErrHook) {
             SSOCK_ErrInfo info;
             memset(&info, 0, sizeof(info));
@@ -1324,6 +1329,7 @@ static unsigned int s_gethostbyname(const char* hostname,
                     ("[SOCK::gethostbyname] "
                      " Got loopback address%s for local host name", addr));
     }
+
     return retval;
 }
 
@@ -1427,8 +1433,8 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #else
                 error = ERANGE;
 #endif /*ENOSPC*/
-                name[0] = '\0';
                 log = eOn;
+                name[0] = '\0';
                 name = 0;
             }
         } else
@@ -1461,7 +1467,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         }
 #endif /*HAVE_GETNAMEINFO && !__GLIBC__*/
     } else {
-        name[0] = 0;
+        name[0] = '\0';
         name = 0;
     }
 
@@ -8379,7 +8385,7 @@ extern int SOCK_ntoa(unsigned int host,
             memcpy(buf, x_buf, (size_t) len + 1);
             return 0/*success*/;
         }
-        buf[0] = '\0';
+        *buf = '\0';
     }
     return -1/*failed*/;
 }
@@ -8471,7 +8477,7 @@ extern int SOCK_gethostnameEx(char* buf, size_t bufsize, ESwitch log)
 
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
-        buf[0] = buf[bufsize - 1] = 0;
+        buf[0] = buf[bufsize - 1] = '\0';
         return -1/*failure*/;
     }
 
@@ -8510,7 +8516,7 @@ extern const char* SOCK_gethostbyaddrEx(unsigned int host,
 
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
-        buf[0] = '\0';
+        *buf = '\0';
         return 0;
     }
 
