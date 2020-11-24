@@ -187,6 +187,7 @@ endmacro( GetClientName )
 ##
 
 macro( RunDatatool MODULE MODULE_SEARCH )
+    message(WARNING "RunDatatool is deprecated and will be removed soon")
     if ("${MODULE_EXT}" STREQUAL "")
         set(MODULE_EXT "asn")
     endif()
