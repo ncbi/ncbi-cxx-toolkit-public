@@ -1092,8 +1092,31 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ x_IsAPIPA(unsigned int addr)
+{
+    return !((addr & 0xFFFF0000) ^ 0xA9FE0000); /* 169.254/16 per IANA */
+}
+
+
+static const char* x_ChooseIP(char** addrs)
+{
+    int n;
+    for (n = 0;  addrs[n];  ++n) {
+        unsigned int ip;
+        memcpy(&ip, addrs[n], sizeof(ip));
+        if (!x_IsAPIPA(ntohl(ip)))
+            return addrs[n];
+    }
+    return addrs[0];
+}
+
+
 static unsigned int s_gethostbyname_(const char* hostname,
                                      int/*bool*/ not_ip,
+                                     int/*bool*/ self,
                                      ESwitch     log)
 {
     char buf[CONN_HOST_LEN + 1];
@@ -1132,9 +1155,24 @@ static unsigned int s_gethostbyname_(const char* hostname,
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
         if ((error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
-            struct sockaddr_in* sin = (struct sockaddr_in*) out->ai_addr;
-            assert(sin->sin_family == AF_INET);
-            host = sin->sin_addr.s_addr;
+            if (self  &&  out->ai_next) {
+                struct addrinfo* tmp = out;
+                char* addrs[128];
+                size_t n;
+                for (n = 0;  n < sizeof(addrs) / sizeof(addrs[0]) - 1;  ++n) {
+                    struct sockaddr_in* sin = (struct sockaddr_in*) tmp->ai_addr;
+                    assert(sin->sin_family == AF_INET);
+                    addrs[n] = (char*) &sin->sin_addr;
+                    if (!(tmp = tmp->ai_next))
+                        break;
+                }
+                addrs[n] = 0;
+                memcpy(&host, x_ChooseIP(addrs), sizeof(host));
+            } else {
+                struct sockaddr_in* sin = (struct sockaddr_in*) out->ai_addr;
+                assert(sin->sin_family == AF_INET);
+                host = sin->sin_addr.s_addr;
+            }
         } else {
             if (log) {
                 const char* strerr;
@@ -1198,7 +1236,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
                 error = EINVAL;
             host = 0;
         } else
-            memcpy(&host, he->h_addr, sizeof(host));
+            memcpy(&host, self ? x_ChooseIP(he->h_addr_list) : he->h_addr, sizeof(host));
 
 #  ifndef HAVE_GETHOSTBYNAME_R
 #    ifndef SOCK_GHBX_MT_SAFE
@@ -1250,7 +1288,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
     /* cached IP address of the local host */
     static unsigned int s_LocalHostAddress = 0;
     if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
-        s_LocalHostAddress = s_gethostbyname_(0, 0, log);
+        s_LocalHostAddress = s_gethostbyname_(0, 0, 1/*self*/, log);
     if (s_LocalHostAddress)
         return s_LocalHostAddress;
     if (reget != eOff  &&  CORE_Once(&s_Once)) {
@@ -1268,7 +1306,7 @@ static unsigned int s_gethostbyname(const char* hostname,
                                     ESwitch     log)
 {
     static void* /*bool*/ s_Once = 0/*false*/;
-    unsigned int retval = s_gethostbyname_(hostname, not_ip, log);
+    unsigned int retval = s_gethostbyname_(hostname, not_ip, 0, log);
 
     if (!retval) {
         if (s_ErrHook) {
