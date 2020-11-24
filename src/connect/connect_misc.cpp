@@ -202,7 +202,7 @@ istream& operator>>(istream& is, CLogLatencies& latencies)
     for (;;) {
         if (!is.getline(line.data(), line.size())) {
             // If it was a partial read (the line was too long)
-            if (is.fail() && (is.gcount() == line.size() - 1)) {
+            if (is.fail()  &&  is.gcount() == (streamsize) line.size() - 1) {
                 is.clear();
             } else {
                 break;
