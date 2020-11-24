@@ -150,7 +150,7 @@ auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
-bacterial_pipeline_proc needs $(GPIPE_COMMON_LIBS)
+bacterial_pipeline_proc needs gc_utils
 bacterial_pipeline_proc needs gpipe_asn_proc
 bacterial_pipeline_proc needs pgap_yaml_input_reader
 bag_access needs gpipe_common
