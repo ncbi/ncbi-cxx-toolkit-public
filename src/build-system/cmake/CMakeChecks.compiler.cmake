@@ -447,7 +447,7 @@ macro(set_c_compiler_flag_optional)
     endif()
 endmacro()
 
-if(NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+if("${HOST_CPU}" MATCHES "x86" AND NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 	set_cxx_compiler_flag_optional("-msse4.2")
 	set_c_compiler_flag_optional  ("-msse4.2")
 endif()
