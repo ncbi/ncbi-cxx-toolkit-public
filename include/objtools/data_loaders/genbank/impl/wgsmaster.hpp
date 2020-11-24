@@ -40,7 +40,7 @@ class CSeq_entry;
 class CBioseq_Info;
 class CTSE_Chunk_Info;
 
-class CWGSMasterSupport
+class NCBI_XREADER_EXPORT CWGSMasterSupport
 {
 public:
     static const int kForceDescrMask = ((1<<CSeqdesc::e_Pub) |
@@ -82,7 +82,7 @@ private:
 };
 
 
-class CWGSBioseqUpdaterChunk : public CWGSBioseqUpdater_Base
+class NCBI_XREADER_EXPORT CWGSBioseqUpdaterChunk : public CWGSBioseqUpdater_Base
 {
 public:
     CWGSBioseqUpdaterChunk(const CSeq_id_Handle& master_idh);
@@ -92,7 +92,7 @@ public:
 };
 
 
-class CWGSBioseqUpdaterDescr : public CWGSBioseqUpdater_Base
+class NCBI_XREADER_EXPORT CWGSBioseqUpdaterDescr : public CWGSBioseqUpdater_Base
 {
 public:
     CWGSBioseqUpdaterDescr(const CSeq_id_Handle& master_idh,
@@ -106,7 +106,7 @@ private:
 };
 
 
-class CWGSMasterChunkInfo : public CTSE_Chunk_Info
+class NCBI_XREADER_EXPORT CWGSMasterChunkInfo : public CTSE_Chunk_Info
 {
 public:
     CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh,
