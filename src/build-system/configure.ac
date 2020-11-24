@@ -64,6 +64,16 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
+      if test "${with_aws_sdk-no}" != "no"; then
+         AC_MSG_ERROR([incompatible options: --with-aws-sdk but --without-3psw])
+      else
+         with_aws_sdk=no
+      fi
+      if test "${with_apache_arrow-no}" != "no"; then
+         AC_MSG_ERROR([incompatible options: --with-apache-arrow but --without-3psw])
+      else
+         with_apache_arrow=no
+      fi
       m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, libunwind,
                      z, bz2, lzo, zstd, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
@@ -75,8 +85,8 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
-                     libxlsxwriter, protobuf, grpc, msgsl, aws-sdk, hiredis,
-                     apache-arrow, librdkafka, cppkafka],
+                     libxlsxwriter, protobuf, grpc, msgsl, hiredis,
+                     librdkafka, cppkafka],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else

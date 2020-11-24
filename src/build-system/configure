@@ -3570,6 +3570,16 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
+      if test "${with_aws_sdk-no}" != "no"; then
+         as_fn_error $? "incompatible options: --with-aws-sdk but --without-3psw"
+      else
+         with_aws_sdk=no
+      fi
+      if test "${with_apache_arrow-no}" != "no"; then
+         as_fn_error $? "incompatible options: --with-apache-arrow but --without-3psw"
+      else
+         with_apache_arrow=no
+      fi
       if test "${with_sss-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-sss but --without-3psw"
          else
@@ -3970,20 +3980,10 @@ case "$with_3psw" in
          else
             with_msgsl=no
          fi
-        if test "${with_aws-sdk-no}" != "no"; then
-            as_fn_error $? "incompatible options: --with-aws-sdk but --without-3psw"
-         else
-            with_aws-sdk=no
-         fi
         if test "${with_hiredis-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-hiredis but --without-3psw"
          else
             with_hiredis=no
-         fi
-        if test "${with_apache-arrow-no}" != "no"; then
-            as_fn_error $? "incompatible options: --with-apache-arrow but --without-3psw"
-         else
-            with_apache-arrow=no
          fi
         if test "${with_librdkafka-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-librdkafka but --without-3psw"
