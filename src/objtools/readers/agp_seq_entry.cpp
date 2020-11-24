@@ -257,7 +257,8 @@ void CAgpToSeqEntry::x_SetSeqGap( CSeq_gap & out_gap_info )
                 { CAgpRow::fLinkageEvidence_clone_contig, CLinkage_evidence::eType_clone_contig },
                 { CAgpRow::fLinkageEvidence_map, CLinkage_evidence::eType_map },
                 { CAgpRow::fLinkageEvidence_strobe, CLinkage_evidence::eType_strobe },
-                { CAgpRow::fLinkageEvidence_pcr, CLinkage_evidence::eType_pcr }
+                { CAgpRow::fLinkageEvidence_pcr, CLinkage_evidence::eType_pcr },
+                { CAgpRow::fLinkageEvidence_proximity_ligation, CLinkage_evidence::eType_proximity_ligation }
             };
             typedef CStaticPairArrayMap<CAgpRow::ELinkageEvidence, CLinkage_evidence::EType> TEvidMap;
             DEFINE_STATIC_ARRAY_MAP(TEvidMap, sc_EvidMap, sc_EvidTrans);
