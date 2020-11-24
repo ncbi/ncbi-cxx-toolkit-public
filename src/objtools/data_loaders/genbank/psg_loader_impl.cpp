@@ -53,7 +53,7 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 #include <util/thread_pool.hpp>
-
+#include <sstream>
 
 #if defined(HAVE_PSG_LOADER)
 
