@@ -1478,6 +1478,7 @@ public:
     static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignSetCalcParams(const objects::CSeq_align_set& aln,int queryLength,bool do_translation);
 
     static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignSetCalcParamsFromASN(const objects::CSeq_align_set& alnSet);
+    static double GetSeqAlignSetCalcPercentIdent(const objects::CSeq_align_set& aln, bool do_translation);
 
     static map < string, CRef<objects::CSeq_align_set>  >  HspListToHitMap(vector <string> seqIdList, const objects::CSeq_align_set& source);
 
