@@ -6,7 +6,7 @@ REQUIRES = -MSWin
 APP = test_ncbi_linkerd
 SRC = test_ncbi_linkerd
 
-LIB = connssl connect
+LIB = connssl connect $(NCBIATOMIC_LIB)
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources

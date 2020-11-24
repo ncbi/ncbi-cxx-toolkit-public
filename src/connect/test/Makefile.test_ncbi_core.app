@@ -2,7 +2,7 @@
 
 APP = test_ncbi_core
 SRC = test_ncbi_core
-LIB = connect
+LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)

@@ -2,7 +2,7 @@
 
 APP = test_ncbi_iprange
 SRC = test_ncbi_iprange
-LIB = connect
+LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(C_LIBS)
 LINK = $(C_LINK)

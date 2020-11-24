@@ -3,7 +3,7 @@
 APP = test_ncbi_namerd
 SRC = test_ncbi_namerd
 
-LIB = connect
+LIB = connect $(NCBIATOMIC_LIB)
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources

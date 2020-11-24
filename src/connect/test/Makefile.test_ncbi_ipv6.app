@@ -2,7 +2,7 @@
 
 APP = test_ncbi_ipv6
 SRC = test_ncbi_ipv6
-LIB = connect
+LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
