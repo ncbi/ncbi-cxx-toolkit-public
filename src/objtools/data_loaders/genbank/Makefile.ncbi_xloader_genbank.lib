@@ -10,7 +10,7 @@ ASN_DEP = seqsplit
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = ncbi_xreader$(DLL) $(GENBANK_PSG_CLIENT_LDEP)
+DLL_LIB = general ncbi_xreader$(DLL) $(GENBANK_PSG_CLIENT_LDEP)
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
