@@ -789,7 +789,7 @@ CPSGDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
     auto seq_info = x_GetBioseqInfo(idh);
     if (seq_info) {
         ret.sequence_found = true;
-        if ( seq_info->gi ) {
+        if ( seq_info->gi != ZERO_GI ) {
             ret.gi = seq_info->gi;
         }
     }
@@ -1509,7 +1509,7 @@ static bool x_ParseLocalCDDEntryId(const CPsgBlobId& blob_id,
     if ( !gi_id ) {
         return false;
     }
-    gi = CSeq_id_Handle::GetGiHandle(gi_id);
+    gi = CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, gi_id));
     if ( str.get() == kLocalCDDEntryIdSeparator ) {
         string extra;
         str >> extra;
