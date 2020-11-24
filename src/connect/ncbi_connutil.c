@@ -1419,9 +1419,9 @@ static const char* x_ClientAddress(const char* client_host,
         client_host = s;  /*NB: this usually makes client_host insufficient*/
 
     if ((client_host == c  &&  x_IsSufficientAddress(client_host))
-        ||  !(ip = *c  &&  !local_host
-              ? SOCK_gethostbyname(c)
-              : SOCK_GetLocalHostAddress(eDefault))
+        ||  !(ip = (*c  &&  !local_host
+                    ? SOCK_gethostbyname(c)
+                    : SOCK_GetLocalHostAddress(eDefault)))
         ||  SOCK_ntoa(ip, addr, sizeof(addr)) != 0
         ||  !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
         return client_host/*least we can do :-/*/;
