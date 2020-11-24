@@ -1427,25 +1427,9 @@ static void s_CalcAlnPercentIdent(const CRef<CSeq_align_set>& info1,
 
     i1->Set().sort(CAlignFormatUtil::SortHspByPercentIdentityDescending);
     i2->Set().sort(CAlignFormatUtil::SortHspByPercentIdentityDescending);
-
-    int score1, sum_n1, num_ident1;
-    double bits1, evalue1;
-    list<TGi> use_this_gi1;
     
-    int score2, sum_n2, num_ident2;
-    double bits2, evalue2;
-    list<TGi> use_this_gi2;
-    
-    CAlignFormatUtil::GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
-    CAlignFormatUtil::GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
-    
-    int length1 = CAlignFormatUtil::GetAlignmentLength(*(info1->Get().front()), kTranslation);
-    int length2 = CAlignFormatUtil::GetAlignmentLength(*(info2->Get().front()), kTranslation);
-    if(length1 > 0 && length2 > 0 && num_ident1 > 0 && num_ident2 > 0) {
-        percentIdent1 = ((double)num_ident1)/length1;
-        percentIdent2 = ((double)num_ident2)/length2;
-    }
-
+    percentIdent1 = CAlignFormatUtil::GetSeqAlignSetCalcPercentIdent(*info1, kTranslation);
+    percentIdent2 = CAlignFormatUtil::GetSeqAlignSetCalcPercentIdent(*info2, kTranslation);
     return;    
 }
 
@@ -4173,6 +4157,49 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
 
     return seqSetInfo;
 }
+
+double CAlignFormatUtil::GetSeqAlignSetCalcPercentIdent(const CSeq_align_set& aln, bool do_translation)
+{
+    int score = 0;
+    double bits = 0;
+    double evalue = 0;
+    int sum_n = 0;
+    int num_ident = 0;
+    
+    if(aln.Get().empty())    
+      return -1;
+
+    double highest_bits = 0;
+    int highest_length = 1;
+    int highest_ident = 0;
+        
+    list<TGi> use_this_gi;   // Not used here, but needed for GetAlnScores.    
+    
+    ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
+        int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, do_translation);
+                                                            
+        CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
+                                   num_ident, use_this_gi);  
+        
+        
+/// IMPORTANT: based on WB-1175, the trigger for setting the highest identity
+///            is not the highest identity value, but the identity value of 
+///            the alignment with the highest score!
+///
+///     if (100*num_ident/align_length > highest_identity) { -- this condition is disabled
+
+        if (bits > highest_bits) {  // this is the replacement condition (WB-1175)
+            highest_length = align_length;
+            highest_ident = num_ident;
+///         highest_identity = 100*num_ident/align_length;
+            highest_bits = bits;
+        }    
+    }
+    
+    double percent_identity = CAlignFormatUtil::GetPercentIdentity(highest_ident, highest_length);    
+    return percent_identity;
+}
+
 
 template<class container> bool
 s_GetBlastScore(const container&  scoreList, 
