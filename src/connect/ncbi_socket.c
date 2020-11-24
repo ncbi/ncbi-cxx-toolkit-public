@@ -1126,7 +1126,6 @@ static unsigned int s_gethostbyname_(const char* hostname,
     if (!hostname) {
         if (s_gethostname(buf, sizeof(buf), log) != 0)
             return 0;
-        assert(*buf);
 #if 0/*def NCBI_OS_DARWIN*/
         {{
             char* p;
@@ -1136,6 +1135,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
 #endif /*NCBI_OS_DARWIN*/
         not_ip = 1/*true*/;
         hostname = buf;
+        assert(*buf);
     }
 
     CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
