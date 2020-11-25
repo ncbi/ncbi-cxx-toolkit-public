@@ -619,8 +619,10 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_
     SOCK_SetupSSLEx(NcbiSetupTls);
     mbedtls_ssl_config_init(&m_Conf);
 
-    if (auto rv = mbedtls_ssl_config_defaults(&m_Conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) {
-        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_config_defaults: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+    auto c_rv = mbedtls_ssl_config_defaults(&m_Conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
+
+    if (c_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_config_defaults: " << SUvNgHttp2_Error::MbedTlsStr(c_rv));
         return;
     }
 
@@ -628,8 +630,10 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_
     mbedtls_entropy_init(&m_Entropy);
     mbedtls_ctr_drbg_init(&m_CtrDrbg);
 
-    if (auto rv = mbedtls_ctr_drbg_seed(&m_CtrDrbg, mbedtls_entropy_func, &m_Entropy, nullptr, 0)) {
-        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ctr_drbg_seed: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+    auto d_rv = mbedtls_ctr_drbg_seed(&m_CtrDrbg, mbedtls_entropy_func, &m_Entropy, nullptr, 0);
+
+    if (d_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ctr_drbg_seed: " << SUvNgHttp2_Error::MbedTlsStr(d_rv));
         return;
     }
 
@@ -637,14 +641,18 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_
     mbedtls_ssl_conf_alpn_protocols(&m_Conf, m_Protocols.data());
     mbedtls_ssl_init(&m_Ssl);
 
-    if (auto rv = mbedtls_ssl_setup(&m_Ssl, &m_Conf)) {
-        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_setup: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+    auto s_rv = mbedtls_ssl_setup(&m_Ssl, &m_Conf);
+
+    if (s_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_setup: " << SUvNgHttp2_Error::MbedTlsStr(s_rv));
         return;
     }
 
     const auto host_name = address.GetHostName();
-    if (auto rv = mbedtls_ssl_set_hostname(&m_Ssl, host_name.c_str())) {
-        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_set_hostname: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+    auto h_rv = mbedtls_ssl_set_hostname(&m_Ssl, host_name.c_str());
+
+    if (h_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_set_hostname: " << SUvNgHttp2_Error::MbedTlsStr(h_rv));
         return;
     }
 
@@ -697,8 +705,12 @@ int SUvNgHttp2_TlsImpl::GetReady()
 
     NCBI_UVNGHTTP2_TLS_TRACE(this << " handshake: " << hs_rv);
 
-    if (auto v_rv = mbedtls_ssl_get_verify_result(&m_Ssl)) {
+    auto v_rv = mbedtls_ssl_get_verify_result(&m_Ssl);
+
+    if (v_rv) {
         NCBI_UVNGHTTP2_TLS_TRACE(this << " verify: " << v_rv);
+    } else {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " verified");
     }
 
     m_State = eReady;
