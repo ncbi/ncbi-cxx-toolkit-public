@@ -421,7 +421,7 @@ void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag, const char* conf)
     try {
         Init();
     }
-    catch (CArgHelpException& ) {
+    catch (const CArgHelpException&) {
         throw;
     }
 #else
@@ -627,22 +627,22 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
             try {
                 x_TryInit(diag, conf);
             }
-            catch (CArgHelpException) {
+            catch (const CArgHelpException&) {
                 // This exceptions will be caught later regardless of the
                 // handle-exceptions flag.
                 throw;
             }
-            catch (CArgException&) {
+            catch (const CArgException&) {
 //                NCBI_RETHROW_SAME(e, "Application's initialization failed");
                 throw;
             }
-            catch (CException& e) {
+            catch (const CException& e) {
                 NCBI_REPORT_EXCEPTION_X(15,
                                         "Application's initialization failed", e);
                 *got_exception = true;
                 *exit_code = 2;
             }
-            catch (exception& e) {
+            catch (const exception& e) {
                 ERR_POST_X(6, "Application's initialization failed: " << e.what());
                 *got_exception = true;
                 *exit_code = 2;
@@ -652,7 +652,7 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
             x_TryInit(diag, conf);
         }
     }
-    catch (CArgHelpException& e) {
+    catch (const CArgHelpException& e) {
         x_AddDefaultArgs();
         // Print USAGE
         if (e.GetErrCode() == CArgHelpException::eHelpXml) {
@@ -677,7 +677,7 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
             catch (CArgException& e) {
                 NCBI_RETHROW_SAME(e, "Application's execution failed");
             }
-            catch (CException& e) {
+            catch (const CException& e) {
                 CRef<CRequestContext> cur_ctx(&GetDiagContext().GetRequestContext());
                 if (cur_ctx != &e.GetRequestContext()) {
                     GetDiagContext().SetRequestContext(&e.GetRequestContext());
@@ -690,7 +690,7 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
                 *got_exception = true;
                 *exit_code = 3;
             }
-            catch (exception& e) {
+            catch (const exception& e) {
                 ERR_POST_X(7, "Application's execution failed: " << e.what());
                 *got_exception = true;
                 *exit_code = 3;
@@ -711,11 +711,11 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
         catch (CArgException& e) {
             NCBI_RETHROW_SAME(e, "Application's cleanup failed");
         }
-        catch (CException& e) {
+        catch (const CException& e) {
             NCBI_REPORT_EXCEPTION_X(17, "Application's cleanup failed", e);
             *got_exception = true;
         }
-        catch (exception& e) {
+        catch (const exception& e) {
             ERR_POST_X(8, "Application's cleanup failed: "<< e.what());
             *got_exception = true;
         }
@@ -821,10 +821,10 @@ int CNcbiApplicationAPI::AppMain
     // Setup for diagnostics
     try {
         CDiagContext::SetupDiag(diag, 0, eDCM_NoChange, m_LogFile);
-    } catch (CException& e) {
+    } catch (const CException& e) {
         NCBI_RETHROW(e, CAppException, eSetupDiag,
                      "Application diagnostic stream's setup failed");
-    } catch (exception& e) {
+    } catch (const exception& e) {
         NCBI_THROW(CAppException, eSetupDiag,
                    "Application diagnostic stream's setup failed: " +
                    string(e.what()));
@@ -990,7 +990,7 @@ int CNcbiApplicationAPI::AppMain
             try {
                 x_TryMain(diag, conf, &exit_code, &got_exception);
             }
-            catch (CArgException) {
+            catch (const CArgException&) {
                 // This exceptions will be caught later regardless of the
                 // handle-exceptions flag.
                 throw;
@@ -1017,7 +1017,7 @@ int CNcbiApplicationAPI::AppMain
             x_TryMain(diag, conf, &exit_code, &got_exception);
         }
     }
-    catch (CArgException& e) {
+    catch (const CArgException& e) {
         // Print USAGE and the exception error message
         if ( e.GetErrCode() != CArgException::eNoValue &&  m_ArgDesc.get() ) {
             x_AddDefaultArgs();
@@ -1528,7 +1528,7 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
             }
         }
     }
-    catch (CException) {
+    catch (const CException&) {
         ; // Just catch an all exceptions from CDll
     }
     // This method didn't work -- use standard method
@@ -1716,7 +1716,7 @@ void CNcbiApplicationAPI::x_HonorStandardSettings( IRegistry* reg)
                 // (converted without exception)
                 mem_size_limit = NStr::StringToSizet(s) * 1024 * 1024;
             }
-            catch (CStringException&) {
+            catch (const CStringException&) {
                 // Otherwise, size have suffix (MiB, G, GB, etc)
                 Uint8 bytes = NStr::StringToUInt8_DataSize(s);
                 if ( bytes > get_limits(mem_size_limit).max() ) {

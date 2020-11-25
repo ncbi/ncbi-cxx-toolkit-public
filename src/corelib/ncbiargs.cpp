@@ -110,7 +110,7 @@ Int8 s_StringToInt8(const string& value)
 {
     try {
         return NStr::StringToInt8(value);
-    } catch (CStringException&) {
+    } catch (const CStringException&) {
         if (NStr::StartsWith(value, "0x", NStr::eNocase)) {
             return NStr::StringToInt8(value, 0, 16);
         } else {
@@ -344,7 +344,7 @@ inline CArg_Int8::CArg_Int8(const string& name, const string& value)
 {
     try {
         m_Integer = s_StringToInt8(value);
-    } catch (CException& e) {
+    } catch (const CException& e) {
         NCBI_RETHROW(e, CArgException, eConvert, s_ArgExptMsg(GetName(),
             "Argument cannot be converted", value));
     }
@@ -433,7 +433,7 @@ inline CArg_DataSize::CArg_DataSize(const string& name, const string& value)
 {
     try {
         m_Integer = NStr::StringToUInt8_DataSize(value);
-    } catch (CException& e) {
+    } catch (const CException& e) {
         NCBI_RETHROW(e, CArgException, eConvert, s_ArgExptMsg(GetName(),
             "Argument cannot be converted", value));
     }
@@ -453,7 +453,7 @@ inline CArg_Double::CArg_Double(const string& name, const string& value)
 {
     try {
         m_Double = NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
-    } catch (CException& e) {
+    } catch (const CException& e) {
         NCBI_RETHROW(e,CArgException,eConvert,
             s_ArgExptMsg(GetName(),"Argument cannot be converted",value));
     }
@@ -482,7 +482,7 @@ inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
-    } catch (CException& e) {
+    } catch (const CException& e) {
         NCBI_RETHROW(e,CArgException,eConvert, s_ArgExptMsg(GetName(),
             "Argument cannot be converted",value));
     }
@@ -2675,10 +2675,10 @@ void CArgDescriptions::x_PreCheck(void) const
         try {
             arg.VerifyDefault();
             continue;
-        } catch (CException& e) {
+        } catch (const CException& e) {
             NCBI_RETHROW(e,CArgException,eConstraint,
                 "Invalid default argument value");
-        } catch (exception& e) {
+        } catch (const exception& e) {
             NCBI_THROW(CArgException, eConstraint,
                 string("Invalid default value: ") + e.what());
         }
@@ -2732,7 +2732,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
             TArgsCI it = m_Args.end();
             try {
                 it = x_Find(name);
-            } catch (CArgException&) {
+            } catch (const CArgException&) {
             }
             if (it == m_Args.end()) {
                 if (m_OpeningArgs.size() > argssofar) {
@@ -2814,7 +2814,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     TArgsCI it;
     try {
         it = x_Find(name, &negative);
-    } catch (CArgException&) {
+    } catch (const CArgException&) {
         // Suppress overzealous "invalid argument name" exceptions
         // in the no-separator case.
         if (m_NoSeparator.find(name[0]) != NPOS) {
@@ -2837,7 +2837,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         {
             try {
                 it = x_Find(test);
-            } catch (CArgException&) {
+            } catch (const CArgException&) {
                 it = m_Args.end();
             }
             if (it != m_Args.end()) {
@@ -2957,7 +2957,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
             av = arg.ProcessArgument(value);
         }
     }
-    catch (CArgException) {
+    catch (const CArgException&) {
         const CArgErrorHandler* err_handler = arg.GetErrorHandler();
         if ( !err_handler ) {
             err_handler = m_ErrorHandler.GetPointerOrNull();
@@ -3138,7 +3138,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
             // Add the value to "args"
             args.Add(arg_value);
         } 
-        catch (CArgException&) {
+        catch (const CArgException&) {
             // mandatory argument, for CGI can be taken not only from the
             // command line but also from the HTTP request
             if (GetArgsType() != eCgiArgs  ||  caller == eConvertKeys) {

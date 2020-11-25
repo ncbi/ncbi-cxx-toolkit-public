@@ -1813,7 +1813,7 @@ void CDiagContext::SetProperty(const string& name,
         try {
             SetAppState(s_StrToAppState(value));
         }
-        catch (CException) {
+        catch (const CException&) {
         }
         return;
     }
@@ -3434,7 +3434,7 @@ static bool s_GetLogConfigBool(const CTempString name,
         try {
             return NStr::StringToBool(_T_STDSTRING(val));
         }
-        catch (CStringException) {
+        catch (const CStringException&) {
         }
     }
     return defval;
@@ -4737,7 +4737,7 @@ bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
     try {
         parser.Parse(CTempString(str.c_str() + pos));
     }
-    catch (CStringException) {
+    catch (const CStringException&) {
         string n, v;
         NStr::SplitInTwo(CTempString(str.c_str() + pos), "=", n, v);
         // Try to decode only the name, leave the value as-is.
@@ -4749,7 +4749,7 @@ bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
             m_ExtraArgs.push_back(TExtraArg(n, v));
             return true;
         }
-        catch (CStringException) {
+        catch (const CStringException&) {
             return false;
         }
     }
@@ -4836,7 +4836,7 @@ bool SDiagMessage::ParseMessage(const string& message)
             try {
                 m_Data->m_Time = CTime(tmp, s_TimeFormats[2]);
             }
-            catch (CTimeException) {
+            catch (const CTimeException&) {
                 m_Data->m_Time = CTime(tmp, s_TimeFormats[3]);
             }
         }
@@ -5022,7 +5022,7 @@ bool SDiagMessage::ParseMessage(const string& message)
                         m_ErrCode = NStr::StringToInt(tmp.substr(0, dot_pos));
                         m_ErrSubCode = NStr::StringToInt(tmp.substr(dot_pos + 1));
                     }
-                    catch (CStringException) {
+                    catch (const CStringException&) {
                         m_ErrCode = 0;
                         m_ErrSubCode = 0;
                     }
@@ -5108,7 +5108,7 @@ parse_unk_func:
         m_BufferLen = m_Data->m_Message.length();
         m_Buffer = m_Data->m_Message.empty() ? 0 : &m_Data->m_Message[0];
     }
-    catch (CException) {
+    catch (const CException&) {
         return false;
     }
 
@@ -6393,7 +6393,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
             CDirEntry entry(GetLogName());
             m_LowDiskSpace = CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20;
         }
-        catch (CException) {
+        catch (const CException&) {
             // Ignore error - could not check free space for some reason.
             // Try to open the file anyway.
         }
@@ -7059,7 +7059,7 @@ CAsyncDiagHandler::InstallToDiag(void)
     try {
         m_AsyncThread->Run();
     }
-    catch (CThreadException&) {
+    catch (const CThreadException&) {
         m_AsyncThread->RemoveReference();
         m_AsyncThread = NULL;
         throw;
@@ -7348,7 +7348,7 @@ CAsyncDiagThread::Stop(void)
 #endif
         Join();
     }
-    catch (CException& ex) {
+    catch (const CException& ex) {
         ERR_POST_X(24, Critical
                    << "Error while stopping thread for AsyncDiagHandler: " << ex);
     }
@@ -8075,7 +8075,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
             x_severity = -1;
         }
     }
-    catch (CException& e) {
+    catch (const CException& e) {
         ERR_POST_X(13, Warning << "Error message file parsing: " << e.GetMsg() <<
                        ", line " + NStr::UInt8ToString(line));
         return false;

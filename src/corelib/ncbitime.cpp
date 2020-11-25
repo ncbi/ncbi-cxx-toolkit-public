@@ -688,7 +688,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             try {
                 x_hour = NStr::StringToLong(value_str);
             }
-            catch (CStringException) {
+            catch (const CStringException&) {
                 x_hour = 0;
             }
             try {
@@ -707,7 +707,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
                                                NStr::fAllowTrailingSymbols);
                 }
             }
-            catch (CStringException) {
+            catch (const CStringException&) {
                 x_min = 0;
             }
             adjust_needed = true;
@@ -936,7 +936,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
     }
 
     // see 'try' at the beginning of the method
-    } catch (CException&) {
+    } catch (const CException&) {
         if (err_action == eErr_Throw) {
             throw;
         } else {

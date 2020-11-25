@@ -490,7 +490,7 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             try {
                 x_SetPort(host.substr(pos + 1), *encoder);
             }
-            catch (CStringException) {
+            catch (const CStringException&) {
                 NCBI_THROW2(CUrlParserException, eFormat,
                     "Invalid port value: \"" + orig_url + "\"", pos + 1);
             }

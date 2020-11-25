@@ -324,7 +324,7 @@ bool CHttpCookie::Validate(void) const
         if ( !IsValidValue(m_Path, eField_Path, NULL) ) return false;
         if ( !IsValidValue(m_Extension, eField_Extension, NULL) ) return false;
     }
-    catch (CHttpCookieException) {
+    catch (const CHttpCookieException&) {
         return false;
     }
     return true;

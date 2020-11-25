@@ -166,7 +166,7 @@ void CExceptApplication::f2(void)
     try {
         f3();
     }
-    catch (CSubsystemException e) {  // catch by value
+    catch (CSubsystemException e) { /* NCBI_FAKE_WARNING */  // catch by value
 /*
     catching exception by value results in copying
     CSupersystemException into CSubsystemException and
@@ -364,7 +364,7 @@ int CExceptApplication::Run(void)
     } catch (CErrnoTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
         assert((int)e.GetErrCode() == (int)CException::eInvalid);
-    } catch (CCoreException e) {
+    } catch (CCoreException& e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         assert((int)e.GetErrCode() == (int)CException::eInvalid);
     } catch (exception&) {

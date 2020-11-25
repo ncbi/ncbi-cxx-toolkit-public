@@ -4629,7 +4629,7 @@ public:
                     name = decoder->Decode(name, IStringDecoder::eName);
                     val = decoder->Decode(val, IStringDecoder::eValue);
                 }
-                catch (CStringException) {
+                catch (const CStringException&) {
                     // Discard all data
                     pairs.clear();
                     throw;
