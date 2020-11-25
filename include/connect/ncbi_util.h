@@ -678,6 +678,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
  *  Hostname to shorten (if possible)
  * @return
  *  NULL if the hostname wasn't modified;  otherwise, return "hostname"
+ *  (shortened in place)
  */
 extern NCBI_XCONNECT_EXPORT char* UTIL_NcbiLocalHostName
 (char* hostname

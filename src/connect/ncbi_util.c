@@ -1359,22 +1359,26 @@ extern int/*bool*/ UTIL_MatchesMask(const char* text, const char* mask)
 extern char* UTIL_NcbiLocalHostName(char* hostname)
 {
     static const struct {
-        const char*  text;
+        const char*  end;
         const size_t len;
     } kEndings[] = {
         {".ncbi.nlm.nih.gov", 17},
         {".ncbi.nih.gov",     13}
     };
     size_t len = hostname ? strlen(hostname) : 0;
-
+    if (len  &&  hostname[len - 1] == '.')
+        len--;
     if (len) {
         size_t i;
         for (i = 0;  i < sizeof(kEndings) / sizeof(kEndings[0]);  ++i) {
-            assert(strlen(kEndings[i].text) == kEndings[i].len);
+            assert(strlen(kEndings[i].end) == kEndings[i].len);
             if (len > kEndings[i].len) {
-                size_t prefix = len - kEndings[i].len;
-                if (strcasecmp(hostname + prefix, kEndings[i].text) == 0) {
-                    hostname[prefix] = '\0';
+                size_t beg = len - kEndings[i].len;
+                if (hostname[beg - 1] != '.'
+                    &&  strncasecmp(hostname + beg,
+                                    kEndings[i].end,
+                                    kEndings[i].len) == 0) {
+                    hostname[beg] = '\0';
                     return hostname;
                 }
             }
