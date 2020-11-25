@@ -264,7 +264,7 @@ if [ "`uname`" = "Linux" ]; then
   nseek="`expr $nseek '*' 2`"
   dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" conv=notrunc if=/dev/urandom  ||  exit 1
   dd of=$test_base.1/newdir/post-sparse bs="$posbs" count=1                            if=/dev/urandom  ||  exit 1
-  ls -l $test_base.1/newdir/*sparse*
+  ls -ltr $test_base.1/newdir/*sparse*
 
   ( cd $test_base.1/newdir  &&  $tar ${format}Srvf $test_base.tar pre-sparse sparse-file post-sparse )  ||  exit 1
 
