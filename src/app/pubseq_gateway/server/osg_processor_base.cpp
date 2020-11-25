@@ -147,25 +147,14 @@ void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
 void CPSGS_OSGProcessorBase::Start()
 {
     CreateFetches();
-    AllocateOSGCaller();
-}
-
-
-void CPSGS_OSGProcessorBase::AllocateOSGCaller()
-{
-    if ( !m_OSGCaller ) {
-        m_Connection = m_ConnectionPool->AllocateConnection();
-        m_OSGCaller = new COSGCaller(m_Connection, m_Context);
-        m_OSGCaller->Process(m_Fetches);
-    }
+    m_OSGCaller = new COSGCaller(m_ConnectionPool, m_Context, m_Fetches);
 }
 
 
 void CPSGS_OSGProcessorBase::WaitForFinish()
 {
     _ASSERT(m_OSGCaller);
-    m_OSGCaller->WaitForFinish();
-    m_ConnectionPool->ReleaseConnection(m_Connection);
+    m_OSGCaller->WaitForReplies();
     ProcessReplies();
 }
 

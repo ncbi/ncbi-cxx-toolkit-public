@@ -98,7 +98,6 @@ public:
 protected:
     void Start();
     void CreateFetches();
-    void AllocateOSGCaller();
     void WaitForFinish();
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);

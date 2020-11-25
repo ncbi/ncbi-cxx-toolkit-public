@@ -78,6 +78,8 @@ public:
     void SendRequestPacket(const CID2_Request_Packet& packet);
     CRef<CID2_Reply> ReceiveReply();
 
+    double UpdateTimestamp();
+
 protected:
     friend class COSGConnectionPool;
 
@@ -86,9 +88,10 @@ protected:
     
 private:
     size_t m_ConnectionID;
-    CRef<COSGConnectionPool> m_ReleaseTo;
+    CRef<COSGConnectionPool> m_RemoveFrom;
     unique_ptr<CConn_IOStream> m_Stream;
     int m_RequestCount;
+    CStopWatch m_Timestamp;
 };
 
 
@@ -101,6 +104,10 @@ public:
     void AppParseArgs(const CArgs& args);
     void LoadConfig(const CNcbiRegistry& registry, string section = string());
     void SetLogging(EDiagSev severity);
+
+    int GetRetryCount() const {
+        return m_RetryCount;
+    }
 
     CRef<COSGConnection> AllocateConnection();
     void ReleaseConnection(CRef<COSGConnection>& conn);
@@ -115,6 +122,9 @@ protected:
 private:
     string m_ServiceName;
     size_t m_MaxConnectionCount;
+    double m_ExpirationTimeout;
+    double m_ReadTimeout;
+    int m_RetryCount;
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;
     size_t m_NextConnectionID;

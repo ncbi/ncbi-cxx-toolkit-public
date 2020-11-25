@@ -50,13 +50,15 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-COSGCaller::COSGCaller(CRef<COSGConnection> connection,
-                       const CRef<CRequestContext>& context)
-    : m_Connection(connection),
+COSGCaller::COSGCaller(const CRef<COSGConnectionPool>& connection_pool,
+                       const CRef<CRequestContext>& context,
+                       const TFetches& fetches)
+    : m_ConnectionPool(connection_pool),
       m_Context(context),
       m_WaitingRequestCount(0)
 {
-    _ASSERT(connection);
+    _ASSERT(m_ConnectionPool);
+    Start(fetches);
 }
 
 
@@ -145,12 +147,26 @@ CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
 }
 
 
-void COSGCaller::Process(const TFetches& fetches)
+void COSGCaller::Start(const TFetches& fetches)
 {
-    m_RequestPacket = MakePacket(fetches);
-    _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
-    m_WaitingRequestCount = m_RequestPacket->Get().size();
-    m_Connection->SendRequestPacket(*m_RequestPacket);
+    // retry sending
+    for ( int i = m_ConnectionPool->GetRetryCount(); i > 0; --i ) {
+        try {
+            m_Connection = nullptr;
+            m_Connection = m_ConnectionPool->AllocateConnection();
+            m_RequestPacket = MakePacket(fetches);
+            _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
+            m_WaitingRequestCount = m_RequestPacket->Get().size();
+            m_Connection->SendRequestPacket(*m_RequestPacket);
+            break;
+        }
+        catch ( CException& exc ) {
+            ERR_POST("OSG: failed sending packet: "<<exc);
+            if ( i == 1 ) {
+                throw;
+            }
+        }
+    }
 }
 
 
@@ -173,7 +189,7 @@ size_t COSGCaller::GetRequestIndex(const CID2_Reply& reply) const
 }
 
 
-void COSGCaller::WaitForFinish()
+void COSGCaller::WaitForReplies()
 {
     while ( m_WaitingRequestCount > 0 ) {
         CRef<CID2_Reply> reply = m_Connection->ReceiveReply();
@@ -183,6 +199,8 @@ void COSGCaller::WaitForFinish()
             --m_WaitingRequestCount;
         }
     }
+    m_ConnectionPool->ReleaseConnection(m_Connection);
+    _ASSERT(!m_Connection);
 }
 
 

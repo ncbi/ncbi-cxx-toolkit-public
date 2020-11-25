@@ -51,34 +51,43 @@ BEGIN_NAMESPACE(osg);
 // Configuration parameters' names
 static const char kConfigSection[] = "OSG_PROCESSOR";
 static const char kParamServiceName[] = "service";
-static const char kParamMaxConnectionCount[] = "max_connections";
+static const char kParamMaxConnectionCount[] = "maxconn";
 static const char kParamDebugLevel[] = "debug";
+static const char kParamExpirationTimeout[] = "expiration_timeout";
+static const char kParamReadTimeout[] = "read_timeout";
+static const char kParamRetryCount[] = "retry_count";
 
 // Default configuration parameters' values
 static const char kDefaultServiceName[] = "ID2_SNP2";
-static const int kDefaultMaxConnectionCount = 1;
+static const int kDefaultMaxConnectionCount = 8;
 static const EDebugLevel kDefaultDebugLevel = eDebug_error;
+static const double kDefaultExpirationTimeout = 60;
+static const double kDefaultReadTimeout = 30;
+static const double kDefaultRetryCount = 3;
 
 
 COSGConnection::COSGConnection(size_t connection_id,
                                unique_ptr<CConn_IOStream>&& stream)
-    : m_ConnectionID(0),
+    : m_ConnectionID(connection_id),
       m_Stream(move(stream)),
-      m_RequestCount(0)
+      m_RequestCount(0),
+      m_Timestamp(CStopWatch::eStart)
 {
 }
 
 
 COSGConnection::~COSGConnection()
 {
-    if ( m_ReleaseTo ) {
-        if ( GetDebugLevel() >= eDebug_open ) {
-            LOG_POST(GetDiagSeverity()<<"OSG("<<GetConnectionID()<<"): "
-                     "Closing");
-        }
-        m_ReleaseTo->RemoveConnection(*this);
+    if ( m_RemoveFrom ) {
+        m_RemoveFrom->RemoveConnection(*this);
     }
-    _ASSERT(!m_ReleaseTo);
+    _ASSERT(!m_RemoveFrom);
+}
+
+
+double COSGConnection::UpdateTimestamp()
+{
+    return m_Timestamp.Restart();
 }
 
 
@@ -112,7 +121,7 @@ SConditionalASNLogger<Type> LogASNIf(const Type& obj, bool condition)
 
 void COSGConnection::SendRequestPacket(const CID2_Request_Packet& packet)
 {
-    _ASSERT(m_ReleaseTo);
+    _ASSERT(m_RemoveFrom);
     if ( GetDebugLevel() >= eDebug_exchange ) {
         LOG_POST(GetDiagSeverity() << "OSG("<<GetConnectionID()<<"): "
                  "Sending "<<LogASNIf(packet, GetDebugLevel() >= eDebug_asn));
@@ -125,7 +134,7 @@ CRef<CID2_Reply> COSGConnection::ReceiveReply()
 {
     CRef<CID2_Reply> reply(new CID2_Reply());
     *m_Stream >> MSerial_AsnBinary >> *reply;
-    _ASSERT(m_ReleaseTo);
+    _ASSERT(m_RemoveFrom);
     if ( GetDebugLevel() >= eDebug_exchange ) {
         if ( GetDebugLevel() == eDebug_asn ) {
             CTypeIterator<CID2_Reply_Data> iter = Begin(*reply);
@@ -191,9 +200,25 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
         registry.GetInt(section,
                         kParamMaxConnectionCount,
                         kDefaultMaxConnectionCount);
+    m_ExpirationTimeout =
+        registry.GetDouble(section,
+                           kParamExpirationTimeout,
+                           kDefaultExpirationTimeout);
+    m_ReadTimeout =
+        registry.GetDouble(section,
+                           kParamReadTimeout,
+                           kDefaultReadTimeout);
+    m_RetryCount =
+        registry.GetInt(section,
+                           kParamRetryCount,
+                           kDefaultRetryCount);
     SetDebugLevel(registry.GetInt(section,
                                   kParamDebugLevel,
                                   eDebugLevel_default));
+    if ( GetDebugLevel() >= eDebug_exchange ) {
+        LOG_POST(GetDiagSeverity()<<"OSG: pool of "<<m_MaxConnectionCount<<
+                 " connections to "<<m_ServiceName);
+    }
 }
 
 
@@ -206,25 +231,33 @@ void COSGConnectionPool::SetLogging(EDiagSev severity)
 CRef<COSGConnection> COSGConnectionPool::AllocateConnection()
 {
     CRef<COSGConnection> conn;
-    for ( ;; ) {
+    while ( !conn ) {
         {{
             CMutexGuard guard(m_Mutex);
-            if ( !m_FreeConnections.empty() ) {
+            while ( !conn && !m_FreeConnections.empty() ) {
                 conn = move(m_FreeConnections.front());
                 m_FreeConnections.pop_front();
-                break;
+                if ( conn->UpdateTimestamp() > m_ExpirationTimeout ) {
+                    if ( GetDebugLevel() >= eDebug_open ) {
+                        LOG_POST(GetDiagSeverity()<<"OSG("<<conn->GetConnectionID()<<"): "
+                                 "Closing expired connection");
+                    }
+                    --m_ConnectionCount;
+                    conn = nullptr;
+                }
             }
-            if ( m_ConnectionCount < m_MaxConnectionCount ) {
+            if ( !conn && m_ConnectionCount < m_MaxConnectionCount ) {
                 conn = x_CreateConnection();
                 ++m_ConnectionCount;
-                break;
             }
         }}
-        m_WaitConnectionSlot.Wait();
+        if ( !conn ) {
+            m_WaitConnectionSlot.Wait();
+        }
     }
     _ASSERT(m_ConnectionCount > 0);
-    _ASSERT(!conn->m_ReleaseTo);
-    conn->m_ReleaseTo = this;
+    _ASSERT(!conn->m_RemoveFrom);
+    conn->m_RemoveFrom = this;
     return conn;
 }
 
@@ -259,22 +292,26 @@ void COSGConnectionPool::ReleaseConnection(CRef<COSGConnection>& conn)
     CMutexGuard guard(m_Mutex);
     _ASSERT(conn);
     _ASSERT(m_ConnectionCount > 0);
-    _ASSERT(conn->m_ReleaseTo == this);
-    m_FreeConnections.push_back(conn);
-    conn->m_ReleaseTo = nullptr;
-    conn = nullptr;
+    _ASSERT(conn->m_RemoveFrom == this);
+    conn->m_RemoveFrom = nullptr;
+    m_FreeConnections.push_back(move(conn));
+    _ASSERT(!conn);
     m_WaitConnectionSlot.Post();
 }
 
 
 void COSGConnectionPool::RemoveConnection(COSGConnection& conn)
 {
+    if ( GetDebugLevel() >= eDebug_open ) {
+        LOG_POST(GetDiagSeverity()<<"OSG("<<conn.GetConnectionID()<<"): "
+                 "Closing failed connection");
+    }
     CMutexGuard guard(m_Mutex);
     _ASSERT(m_ConnectionCount > 0);
-    _ASSERT(conn.m_ReleaseTo == this);
+    _ASSERT(conn.m_RemoveFrom == this);
+    conn.m_RemoveFrom = nullptr;
     --m_ConnectionCount;
     m_WaitConnectionSlot.Post();
-    conn.m_ReleaseTo = nullptr;
 }
 
 

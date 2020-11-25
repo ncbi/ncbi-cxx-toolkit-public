@@ -50,6 +50,7 @@ END_NAMESPACE(objects);
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
+class COSGConnectionPool;
 class COSGConnection;
 class COSGFetch;
 
@@ -59,19 +60,22 @@ USING_SCOPE(objects);
 class COSGCaller : public CObject
 {
 public:
-    explicit COSGCaller(CRef<COSGConnection> connection,
-                        const CRef<CRequestContext>& context);
+    typedef vector<CRef<COSGFetch>> TFetches;
+    
+    explicit COSGCaller(const CRef<COSGConnectionPool>& connection_pool,
+                        const CRef<CRequestContext>& context,
+                        const TFetches& fetches);
     virtual ~COSGCaller();
 
+    void WaitForReplies();
+
+protected:
     const CRef<COSGConnection>& GetConnection() const
         {
             return m_Connection;
         }
     
-    typedef vector<CRef<COSGFetch>> TFetches;
-    void Process(const TFetches& fetches);
-    void WaitForFinish();
-
+    void Start(const TFetches& fetches);
     CRef<CID2_Request> MakeInitRequest();
     void SetContext(CID2_Request& req, const CRef<COSGFetch>& fetch);
     void AddFetch(CID2_Request_Packet& packet, const CRef<COSGFetch>& fetch);
@@ -82,6 +86,7 @@ public:
     bool EndOfReplies(size_t index) const;
     
 private:
+    CRef<COSGConnectionPool> m_ConnectionPool;
     CRef<COSGConnection> m_Connection;
     CRef<CRequestContext> m_Context;
     CRef<CID2_Request_Packet> m_RequestPacket;
