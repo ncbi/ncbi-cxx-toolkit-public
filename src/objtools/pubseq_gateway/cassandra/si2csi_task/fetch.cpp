@@ -72,15 +72,6 @@ void CCassSI2CSITaskFetch::SetConsumeCallback(TSI2CSIConsumeCallback  callback)
     m_ConsumeCallback = move(callback);
 }
 
-void CCassSI2CSITaskFetch::SetDataReadyCB(TDataReadyCallback callback, void * data)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassSI2CSITaskFetch: DataReadyCB can't be assigned after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB(callback, data);
-}
-
 void CCassSI2CSITaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
 {
     if (callback && m_State != eInit) {
@@ -125,15 +116,7 @@ void CCassSI2CSITaskFetch::Wait1(void)
                     m_QueryArr.resize(1);
                     m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                     x_InitializeQuery();
-                    if (m_DataReadyCb) {
-                        m_QueryArr[0].query->SetOnData2(m_DataReadyCb, m_DataReadyData);
-                    }
-                    {
-                        auto DataReadyCb3 = m_DataReadyCb3.lock();
-                        if (DataReadyCb3) {
-                            m_QueryArr[0].query->SetOnData3(DataReadyCb3);
-                        }
-                    }
+                    SetupQueryCB3(m_QueryArr[0].query);
                     UpdateLastActivity();
                     m_QueryArr[0].query->Query(kSi2CsiConsistency, m_Async, true, m_PageSize);
                     m_State = eFetchStarted;

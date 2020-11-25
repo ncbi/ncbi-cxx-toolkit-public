@@ -106,7 +106,6 @@ class CCassBlobTaskFetchSplitHistory
         return m_SplitVersion;
     }
 
-    void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TConsumeCallback callback);
 

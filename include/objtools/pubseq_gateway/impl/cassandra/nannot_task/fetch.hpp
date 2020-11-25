@@ -97,7 +97,6 @@ class CCassNAnnotTaskFetch
         TDataErrorCallback data_error_cb
     );
 
-    void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TNAnnotConsumeCallback callback);
 

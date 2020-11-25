@@ -126,16 +126,6 @@ void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
     m_Consume = move(callback);
 }
 
-void CCassNAnnotTaskFetch::SetDataReadyCB(TDataReadyCallback callback, void * data)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassNAnnotTaskFetch: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB(callback, data);
-}
-
 void CCassNAnnotTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
 {
     if (callback && m_State != eInit) {
@@ -245,16 +235,7 @@ void CCassNAnnotTaskFetch::Wait1()
                     }
                 }
 
-                if (m_DataReadyCb) {
-                    m_QueryArr[0].query->SetOnData2(m_DataReadyCb, m_DataReadyData);
-                }
-                {
-                    auto DataReadyCb3 = m_DataReadyCb3.lock();
-                    if (DataReadyCb3) {
-                        m_QueryArr[0].query->SetOnData3(DataReadyCb3);
-                    }
-                }
-
+                SetupQueryCB3(m_QueryArr[0].query);
                 UpdateLastActivity();
                 m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true, m_PageSize);
                 m_State = eFetchStarted;

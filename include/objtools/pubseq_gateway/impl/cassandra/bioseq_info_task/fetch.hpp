@@ -69,7 +69,6 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
                              TBioseqInfoConsumeCallback consume_callback,
                              TDataErrorCallback data_error_cb);
 
-    void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TBioseqInfoConsumeCallback callback);
     void AllowInheritance(bool value);

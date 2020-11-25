@@ -37,6 +37,7 @@
 #include <corelib/request_status.hpp>
 #include <corelib/ncbidiag.hpp>
 
+#include <atomic>
 #include <vector>
 #include <utility>
 #include <string>
@@ -91,8 +92,6 @@ class CCassBlobWaiter
         TDataErrorCallback error_cb
     )
       : m_ErrorCb(move(error_cb))
-      ,  m_DataReadyCb(nullptr)
-      ,  m_DataReadyData(nullptr)
       ,  m_Conn(conn)
       ,  m_Keyspace(keyspace)
       ,  m_Key(key)
@@ -112,12 +111,15 @@ class CCassBlobWaiter
         CloseAll();
     }
 
+    bool Cancelled() const
+    {
+        return m_Cancelled;
+    }
+
     virtual void Cancel(void)
     {
         if (m_State != eDone) {
             m_Cancelled = true;
-            CloseAll();
-            m_QueryArr.clear();
             m_State = eError;
         }
     }
@@ -141,7 +143,7 @@ class CCassBlobWaiter
                 break;
             }
         }
-        return (m_State == eDone || m_State == eError);
+        return (m_State == eDone || m_State == eError || m_Cancelled);
     }
 
     bool HasError(void) const
@@ -179,12 +181,6 @@ class CCassBlobWaiter
     void SetErrorCB(TDataErrorCallback error_cb)
     {
         m_ErrorCb = std::move(error_cb);
-    }
-
-    void SetDataReadyCB(TDataReadyCallback datareadycb, void * data)
-    {
-        m_DataReadyData = data;
-        m_DataReadyCb = datareadycb;
     }
 
     void SetDataReadyCB3(shared_ptr<CCassDataCallbackReceiver> datareadycb3)
@@ -324,19 +320,17 @@ class CCassBlobWaiter
     virtual void Wait1(void) = 0;
 
     TDataErrorCallback              m_ErrorCb;
-    TDataReadyCallback              m_DataReadyCb;
-    void *                          m_DataReadyData;
     weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
     shared_ptr<CCassConnection>     m_Conn;
     string                          m_Keyspace;
     int32_t                         m_Key;
-    int32_t                         m_State;
+    atomic<int32_t>                 m_State;
     unsigned int                    m_OpTimeoutMs;
     int64_t                         m_LastActivityMs;
     string                          m_LastError;
     unsigned int                    m_MaxRetries;
     bool                            m_Async;
-    bool                            m_Cancelled;
+    atomic_bool                     m_Cancelled;
 
     vector<SQueryRec>  m_QueryArr;
 
@@ -395,6 +389,9 @@ class CCassBlobLoader: public CCassBlobWaiter
     int x_GetReadyChunkNo(bool &  have_inactive);
     bool x_AreAllChunksProcessed(void);
     void x_MarkChunkProcessed(size_t  chunk_no);
+
+    TDataReadyCallback  m_DataReadyCb;
+    void *              m_DataReadyData;
 
     TPropsCallback      m_PropsCallback;
     bool                m_StatLoaded;

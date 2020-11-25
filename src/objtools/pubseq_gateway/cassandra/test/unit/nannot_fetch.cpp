@@ -166,11 +166,6 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
         return m_TestRestartDone;
     }
 
-    bool Cancelled() const
-    {
-        return m_Cancelled;
-    }
-
     bool HasErrorState() const
     {
         return m_State == EBlobWaiterState::eError;

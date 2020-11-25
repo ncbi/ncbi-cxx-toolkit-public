@@ -63,6 +63,8 @@ CCassBlobLoader::CCassBlobLoader(
         max_retries,
         move(data_error_cb)
     )
+    , m_DataReadyCb(nullptr)
+    , m_DataReadyData(nullptr)
     , m_StatLoaded(false)
     , m_DataCb(move(data_chunk_cb))
     , m_ExpectedSize(0)
@@ -77,11 +79,13 @@ void CCassBlobLoader::SetDataChunkCB(TBlobChunkCallback chunk_callback)
 
 void CCassBlobLoader::SetDataReadyCB(TDataReadyCallback datareadycb, void * data)
 {
-    if (datareadycb && m_State != eInit)
+    if (datareadycb && m_State != eInit) {
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "CCassBlobLoader: DataReadyCB can't be assigned "
                    "after the loading process has started");
-    CCassBlobWaiter::SetDataReadyCB(datareadycb, data);
+    }
+    m_DataReadyData = data;
+    m_DataReadyCb = datareadycb;
 }
 
 SBlobStat CCassBlobLoader::GetBlobStat(void) const

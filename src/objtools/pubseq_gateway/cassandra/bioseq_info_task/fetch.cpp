@@ -97,17 +97,6 @@ void CCassBioseqInfoTaskFetch::SetConsumeCallback(TBioseqInfoConsumeCallback  ca
     m_ConsumeCallback = move(callback);
 }
 
-void CCassBioseqInfoTaskFetch::SetDataReadyCB(TDataReadyCallback  callback,
-                                              void *              data)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBioseqInfoTaskFetch: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB(callback, data);
-}
-
 void CCassBioseqInfoTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
 {
     if (callback && m_State != eInit) {
@@ -170,16 +159,7 @@ void CCassBioseqInfoTaskFetch::x_InitializeAliveRecordQuery(void)
 
 void CCassBioseqInfoTaskFetch::x_StartQuery(void)
 {
-    if (m_DataReadyCb) {
-        m_QueryArr[0].query->SetOnData2(m_DataReadyCb, m_DataReadyData);
-    }
-    {
-        auto DataReadyCb3 = m_DataReadyCb3.lock();
-        if (DataReadyCb3) {
-            m_QueryArr[0].query->SetOnData3(DataReadyCb3);
-        }
-    }
-
+    SetupQueryCB3(m_QueryArr[0].query);
     UpdateLastActivity();
     m_QueryArr[0].query->Query(kBioSeqInfoConsistency, m_Async, true, m_PageSize);
 }

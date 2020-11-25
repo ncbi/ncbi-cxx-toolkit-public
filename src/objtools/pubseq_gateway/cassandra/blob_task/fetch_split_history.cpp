@@ -84,17 +84,6 @@ void CCassBlobTaskFetchSplitHistory::SetConsumeCallback(TConsumeCallback callbac
     m_ConsumeCallback = move(callback);
 }
 
-void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(TDataReadyCallback callback, void * data)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBlobTaskFetchSplitHistory: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB(callback, data);
-}
-
-
 void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
 {
     if (callback && m_State != eInit) {
@@ -131,15 +120,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                     query->BindInt32(1, m_SplitVersion);
                 }
 
-                if (m_DataReadyCb) {
-                    query->SetOnData2(m_DataReadyCb, m_DataReadyData);
-                }
-                {
-                    auto DataReadyCb3 = m_DataReadyCb3.lock();
-                    if (DataReadyCb3) {
-                        query->SetOnData3(DataReadyCb3);
-                    }
-                }
+                SetupQueryCB3(query);
                 UpdateLastActivity();
                 query->Query(GetQueryConsistency(), m_Async, true);
                 m_State = eWaitingForFetch;
