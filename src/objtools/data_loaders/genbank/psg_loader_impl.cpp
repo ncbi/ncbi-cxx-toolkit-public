@@ -759,9 +759,25 @@ CPSGDataLoader_Impl::~CPSGDataLoader_Impl(void)
 
 static bool CannotProcess(const CSeq_id_Handle& sih)
 {
-    return !sih || sih.Which() == CSeq_id::e_Local ||
-        (sih.Which() == CSeq_id::e_General &&
-         !NStr::EqualNocase(sih.GetSeqId()->GetGeneral().GetDb(), "SRA"));
+    if ( !sih ) {
+        return true;
+    }
+    if ( sih.Which() == CSeq_id::e_Local ) {
+        return true;
+    }
+    if ( sih.Which() == CSeq_id::e_General ) {
+        if ( NStr::EqualNocase(sih.GetSeqId()->GetGeneral().GetDb(), "SRA") ) {
+            // SRA is good
+            return false;
+        }
+        if ( NStr::StartsWith(sih.GetSeqId()->GetGeneral().GetDb(), "WGS:", NStr::eNocase) ) {
+            // WGS is good
+            return false;
+        }
+        // other general ids are bad
+        return true;
+    }
+    return false;
 }
 
 
