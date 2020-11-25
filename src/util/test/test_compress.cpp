@@ -383,11 +383,13 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
     size_t n;
 
     assert(
-        CZipCompression::fAllowEmptyData == CBZip2Compression::fAllowEmptyData
+        static_cast<int>(CZipCompression::fAllowEmptyData) == 
+        static_cast<int>(CBZip2Compression::fAllowEmptyData)
     );
 #ifdef HAVE_LIBLZO
     assert(
-        CZipCompression::fAllowEmptyData == CLZOCompression::fAllowEmptyData
+        static_cast<int>(CZipCompression::fAllowEmptyData) == 
+        static_cast<int>(CLZOCompression::fAllowEmptyData)
     );
 #endif
 
