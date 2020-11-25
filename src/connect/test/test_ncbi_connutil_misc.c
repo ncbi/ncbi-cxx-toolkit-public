@@ -238,6 +238,27 @@ static void TEST_MIME(void)
 }
 
 
+static void TEST_Misc(void)
+{
+    char buf[80];
+
+    CORE_LOG(eLOG_Note, "MISC test started");
+
+    assert(UTIL_NcbiLocalHostName(strcpy(buf, "www.ncbi.nlm.nih.gov.")) ==buf);
+    assert(strcmp(buf, "www") == 0);
+    assert(UTIL_NcbiLocalHostName(strcpy(buf, "web.ncbi.nlm.nih.gov"))  ==buf);
+    assert(strcmp(buf, "web") == 0);
+    assert(UTIL_NcbiLocalHostName(strcpy(buf, "one.host.ncbi.nih.gov."))==buf);
+    assert(strcmp(buf, "one.host") == 0);
+    assert(UTIL_NcbiLocalHostName(strcpy(buf, "some.host.ncbi.nih.gov"))==buf);
+    assert(strcmp(buf, "some.host") == 0);
+    assert(!UTIL_NcbiLocalHostName(strcpy(buf, "bad..ncbi.nih.gov")));
+    assert(!UTIL_NcbiLocalHostName(strcpy(buf, "host.nih.gov")));
+
+    CORE_LOG(eLOG_Note, "MISC test completed");
+}
+
+
 static void TEST_ConnNetInfo(void)
 {
     size_t n;
@@ -662,14 +683,15 @@ int main(void)
         = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOGFormatFlags(fLOG_None
+                           | fLOG_OmitNoteLevel | fLOG_DateTime | fLOG_Level);
+    CORE_SetLOGFILE(stderr, 0/*no auto-close*/);
 
     CORE_LOG(eLOG_Note, "Miscellaneous tests started");
 
     TEST_URL_Encoding();
     TEST_MIME();
+    TEST_Misc();
     TEST_ConnNetInfo();
     TEST_DoubleConv();
 
