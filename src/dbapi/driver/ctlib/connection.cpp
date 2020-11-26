@@ -1402,8 +1402,8 @@ bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
         }
         while (res->Fetch()) {
             auto n = res->NofItems();
-            for (auto i = 0;  i < n;  ++i) {
-                if ( !NStr::EqualNocase(res->ItemName(i), "SS_DATA_TYPE") ) {
+            for (auto i = n;  i > 0;  --i) {
+                if ( !NStr::EqualNocase(res->ItemName(n-i), "SS_DATA_TYPE") ) {
                     res->SkipItem();
                     continue;
                 }

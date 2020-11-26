@@ -78,11 +78,13 @@
 #endif
 
 /* cf getopt(3) */
+#ifndef __CYGWIN__
 extern char *optarg;
 extern int optind;
 extern int optopt;
 extern int opterr;
 extern int optreset;
+#endif
 
 extern char PASSWORD[512];
 extern char USER[512];

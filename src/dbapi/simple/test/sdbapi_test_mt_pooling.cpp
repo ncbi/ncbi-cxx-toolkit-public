@@ -46,16 +46,17 @@ private:
 };
 
 
-bool CSDBAPITestMTPoolingApp::Thread_Run(int idx) {
-    int n = GetArgs()["queries-per-thread"].AsInteger();
+bool CSDBAPITestMTPoolingApp::Thread_Run(int idx)
+{
+    auto n = GetArgs()["queries-per-thread"].AsInteger();
     const string& query_string = GetArgs()["query"].AsString();
-    for (unsigned i = 0;  i < n;  ++i) {
+    for (auto i = n;  i > 0;  --i) {
         CDatabase db(m_Params);
         db.Connect();
         CQuery query = db.NewQuery(query_string);
         query.Execute();
         query.PurgeResults();
-        ERR_POST(Note << idx << '\t' << i);
+        ERR_POST(Note << idx << '\t' << (n-i));
     }
     return true;
 }

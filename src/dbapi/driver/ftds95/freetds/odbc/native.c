@@ -185,7 +185,7 @@ parse_const_param(const char *s, TDS_SERVER_TYPE *type)
 	/* binary */
 	if (strncasecmp(s, "0x", 2) == 0) {
 		s += 2;
-		while (isxdigit(*s))
+		while (isxdigit((unsigned char)(*s)))
 			++s;
 		*type = SYBVARBINARY;
 		return s;
@@ -198,7 +198,7 @@ parse_const_param(const char *s, TDS_SERVER_TYPE *type)
 	}
 
 	/* integer/float */
-	if (isdigit(*s) || *s == '+' || *s == '-') {
+	if (isdigit((unsigned char)(*s)) || *s == '+' || *s == '-') {
 		errno = 0;
 		strtod(s, &end);
 		if (end != s && strcspn(s, ".eE") < (size_t) (end-s) && errno == 0) {

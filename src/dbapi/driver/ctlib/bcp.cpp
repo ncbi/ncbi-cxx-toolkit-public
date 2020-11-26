@@ -513,7 +513,7 @@ bool CTL_BCPInCmd::x_AssignParams()
                         ) {
                         param_fmt.maxlength
                             = sizeof(TCharUCS2) * (s.size() + 1);
-                        _ASSERT(param_fmt.maxlength
+                        _ASSERT((size_t) param_fmt.maxlength
                                 <= sizeof(SBcpBind::buffer));
                         TStringUCS2 ws = CUtf8::AsBasicString<TCharUCS2>(s);
                         memcpy(bind.buffer, ws.c_str(), param_fmt.maxlength);
