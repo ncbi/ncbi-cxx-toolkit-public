@@ -532,7 +532,7 @@ int CCgiApplication::Run(void)
             
             try {
                 m_Cache.reset( GetCacheStorage() );
-            } catch( exception& ex ) {
+            } catch (const exception& ex) {
                 ERR_POST_X(1, "Couldn't create cache : " << ex.what());
             }
             bool skip_process_request = false;
@@ -597,7 +597,7 @@ int CCgiApplication::Run(void)
                 }
             }
         }
-        catch (CCgiException& e) {
+        catch (const CCgiException& e) {
             if ( x_DoneHeadRequest() ) {
                 // Ignore errors after HEAD request has been finished.
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
@@ -1062,7 +1062,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
             return -1;
         }
     }
-    catch (exception& ex) {
+    catch (const exception& ex) {
         NCBI_REPORT_EXCEPTION_X(14, "(CGI) CCgiApplication::Run", ex);
     }
     return 0;
@@ -1150,7 +1150,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                     rctx.SetBytesRd(NcbiStreamposToInt8(m_InputStream->tellg()));
                 }
             }
-            catch (exception&) {
+            catch (const exception&) {
             }
             try {
                 if ( m_OutputStream.get() ) {
@@ -1161,7 +1161,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                     rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
                 }
             }
-            catch (exception&) {
+            catch (const exception&) {
             }
             break;
         }
@@ -1448,7 +1448,7 @@ bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstrea
             CRStream cache_reader(reader.get());
             return NcbiStreamCopy(os, cache_reader);
         }
-    } catch (exception& ex) {
+    } catch (const exception& ex) {
         ERR_POST_X(5, "Couldn't read cached request : " << ex.what());
     }
     return false;
@@ -1468,7 +1468,7 @@ void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream
             CWStream cache_writer(writer.get());
             NcbiStreamCopy(cache_writer, is);
         }
-    } catch (exception& ex) {
+    } catch (const exception& ex) {
         ERR_POST_X(6, "Couldn't cache request : " << ex.what());
     } 
 }
@@ -1484,7 +1484,7 @@ void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
             CWStream cache_stream(writer.get());            
             request.Serialize(cache_stream);
         }
-    } catch (exception& ex) {
+    } catch (const exception& ex) {
         ERR_POST_X(7, "Couldn't save request : " << ex.what());
     } 
 }
@@ -1502,7 +1502,7 @@ CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
             request->Deserialize(cache_stream, 0);
             return request.release();
         }
-    } catch (exception& ex) {
+    } catch (const exception& ex) {
         ERR_POST_X(8, "Couldn't read saved request : " << ex.what());
     } 
     return NULL;
@@ -1901,7 +1901,7 @@ bool CCgiApplication::x_ProcessVersionRequest(void)
         bool is_enabled = NStr::StringToBool(vparam);
         if (!is_enabled) return false;
     }
-    catch (CStringException) {
+    catch (const CStringException&) {
         use_alt_name = true;
     }
 

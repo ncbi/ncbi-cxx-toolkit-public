@@ -389,7 +389,7 @@ CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
             ck->SetPath(path);
             _VERIFY( m_Cookies.insert(ck).second );
         }
-    } catch (CCgiCookieException& ex) {
+    } catch (const CCgiCookieException& ex) {
         // This can only happen if cookie has empty name, ignore
         // Store/StoreAndError flags in this case.
         switch ( on_bad_cookie ) {
@@ -397,7 +397,7 @@ CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
             throw;
         case eOnBadCookie_StoreAndError:
         case eOnBadCookie_SkipAndError: {
-            CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
+            const CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
             ERR_POST_X(1, Severity(TCookieErrorSeverity::GetDefault()) << cex);
             return NULL;
         }
@@ -452,19 +452,19 @@ CCgiCookies::x_CheckField(const string&          str,
 {
     try {
         CCgiCookie::x_CheckField(str, ftype, banned_symbols, cookie_name);
-    } catch (CCgiCookieException& ex) {
+    } catch (const CCgiCookieException& ex) {
         switch ( on_bad_cookie ) {
         case eOnBadCookie_ThrowException:
             throw;
         case eOnBadCookie_SkipAndError: {
-            CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
+            const CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
             ERR_POST_X(2, Severity(TCookieErrorSeverity::GetDefault()) << cex);
             return eCheck_SkipInvalid;
         }
         case eOnBadCookie_Skip:
             return eCheck_SkipInvalid;
         case eOnBadCookie_StoreAndError: {
-            CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
+            const CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
             ERR_POST_X(3, Severity(TCookieErrorSeverity::GetDefault()) << cex);
             return eCheck_StoreInvalid;
         }
@@ -1122,7 +1122,7 @@ void CCgiRequest::x_Init
     try {
         m_Cookies.Add(GetProperty(eCgi_HttpCookie),
             TOnBadCookieParam::GetDefault());
-    } catch (CCgiCookieException& e) {
+    } catch (const CCgiCookieException& e) {
         NCBI_RETHROW(e, CCgiRequestException, eCookie,
                      "Error in parsing HTTP request cookies");
     }
@@ -1491,7 +1491,7 @@ size_t CCgiRequest::GetContentLength(void) const
     size_t content_length;
     try {
         content_length = (size_t) NStr::StringToUInt(str);
-    } catch (CStringException& e) {
+    } catch (const CStringException& e) {
         NCBI_RETHROW(e, CCgiRequestException, eFormat,
                      "Malformed Content-Length value in HTTP request: " + str);
     }
@@ -1523,7 +1523,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     try {
         parser.SetQueryString(str);
     }
-    catch (CUrlParserException& ae) {
+    catch (const CUrlParserException& ae) {
         return ae.GetPos();
     }
     return 0;
@@ -1536,7 +1536,7 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
     try {
         parser.SetQueryString(str);
     }
-    catch (CUrlParserException& ae) {
+    catch (const CUrlParserException& ae) {
         return ae.GetPos();
     }
     return 0;
@@ -1600,7 +1600,7 @@ CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 
     try {
         m_Session->Load();
-    } catch (CCgiSessionException& ex) {
+    } catch (const CCgiSessionException& ex) {
         if (ex.GetErrCode() != CCgiSessionException::eSessionId) {
             NCBI_RETHROW(ex, CCgiSessionException, eImplException, 
                          "Session implementation error");
@@ -1673,7 +1673,7 @@ void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
         try {
             ival = NStr::StringToInt(val);
         }
-        catch (CStringException) {
+        catch (const CStringException&) {
             ERR_POST(Error << "Invalid argument size limit: " << *it);
             continue;
         }
@@ -1930,7 +1930,7 @@ CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
     try {
         ReadIntoUtf8(is, &utf_str, enc);
     }
-    catch (CException) {
+    catch (const CException&) {
         if (on_error == eCharsetError_Throw) {
             throw;
         }
