@@ -48,12 +48,11 @@
 
 /* Standard error report
  */
-void TEST_LOG(EIO_Status status, const char* descr)
+static void TEST_LOG(EIO_Status status, const char* descr)
 {
-    CORE_LOGF(status == eIO_Success ? eLOG_Note :
-        status == eIO_Closed ? eLOG_Warning :
-        eLOG_Error,
-        ("%s (%s)", descr, IO_StatusStr(status)));
+    CORE_LOGF(status == eIO_Success ? eLOG_Note    :
+              status == eIO_Closed  ? eLOG_Warning : eLOG_Error,
+              ("%s (%s)", descr, IO_StatusStr(status)));
 }
 
 
