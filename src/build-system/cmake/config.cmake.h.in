@@ -52,7 +52,7 @@
 /* #undef NCBI_OS_AIX */
 
 /* Define to 1 on *BSD. */
-/* #undef NCBI_OS_BSD */
+#cmakedefine NCBI_OS_BSD @NCBI_OS_BSD@
 
 /* Define to 1 on Cygwin. */
 #cmakedefine NCBI_OS_CYGWIN @NCBI_OS_CYGWIN@

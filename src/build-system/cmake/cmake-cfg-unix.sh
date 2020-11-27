@@ -40,7 +40,7 @@ SKIP_ANALYSIS="OFF"
 
 ############################################################################# 
 Check_function_exists() {
-  t=`type -t $1`
+  t=`type -t $1 2>/dev/null`
   test "$t" = "function"
 }
 
@@ -289,13 +289,19 @@ else
   if [ -z "$CC" ]; then
     CC=`which gcc 2>/dev/null`
     if test $? -ne 0; then
-      CC=""
+      CC=`which cc 2>/dev/null`
+      if test $? -ne 0; then
+        CC=""
+      fi
     fi
   fi
   if [ -z "$CXX" ]; then
     CXX=`which g++ 2>/dev/null`
     if test $? -ne 0; then
-      CXX=""
+      CXX=`which c++ 2>/dev/null`
+      if test $? -ne 0; then
+        CXX=""
+      fi
     fi
   fi
 fi
@@ -312,7 +318,7 @@ if [ -n "$CC" ]; then
       fi
     ;;
     *)
-      if test $host_os = "Darwin"; then
+      if test $host_os = "Darwin" -o $host_os = "FreeBSD"; then
         CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
         CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
         if [ $CC_NAME = "clang" ]; then
