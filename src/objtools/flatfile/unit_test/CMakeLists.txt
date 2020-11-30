@@ -1,7 +1,9 @@
 #############################################################################
 # $Id$
 #############################################################################
-# 
-#
-NCBI_add_library(flatfile)
-NCBI_add_subdirectory(unit_test)
+
+NCBI_project_tags(test)
+NCBI_add_app(
+  unit_test_flatfile_secondaries
+)
+

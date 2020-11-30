@@ -87,6 +87,12 @@ void          fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_
 char* StringRStr(char* where, const char *what);
 bool    fta_dblink_has_sra(const CRef<objects::CUser_object>& uop);
 
+namespace objects {
+    class CScope;
+};
+
+bool g_DoesNotReferencePrimary(const objects::CDelta_ext& delta_ext, const objects::CSeq_id& primary, objects::CScope& scope);
+
 END_NCBI_SCOPE
 
 #endif // ADD_H

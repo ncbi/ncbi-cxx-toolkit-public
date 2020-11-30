@@ -1,0 +1,5 @@
+APP_PROJ = unit_test_flatfile_secondaries
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

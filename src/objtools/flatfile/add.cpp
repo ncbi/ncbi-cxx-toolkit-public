@@ -778,7 +778,7 @@ static bool s_IsAccession(const CSeq_id& id) {
 }
 
 
-static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id& primary, CScope& scope)
+bool g_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id& primary, CScope& scope)
 {
     const auto primaryType = primary.Which();
     string primaryString = primary.GetSeqIdString();
@@ -786,7 +786,7 @@ static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id
     const bool primaryIsGi = primaryIsAccession ? 
                              false :
                              (primaryType == CSeq_id::e_Gi);
-    
+
     unique_ptr<string> pPrimaryAccessionString;
 
     for (const auto& pDeltaSeq : delta_ext.Get()) {
@@ -814,7 +814,7 @@ static bool s_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id
                 else
                 if (primaryIsGi && s_IsAccession(*pId)) {
                     if (!pPrimaryAccessionString) {
-                        auto primaryGiHandle = CSeq_id_Handle::GetHandle(pId->GetGi());
+                        auto primaryGiHandle = CSeq_id_Handle::GetHandle(primary.GetGi());
                         auto primaryAccessionHandle = scope.GetAccVer(primaryGiHandle);
                         if (!primaryAccessionHandle) {
                             return false;
@@ -927,7 +927,7 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
 
         if (IsConOrScaffold && !pricon) {
             CRef<CSeq_id> pPrimary(new CSeq_id(primaryAccession));
-            if (s_DoesNotReferencePrimary(secondaryBsh.GetInst_Ext().GetDelta(), 
+            if (g_DoesNotReferencePrimary(secondaryBsh.GetInst_Ext().GetDelta(), 
                         *pPrimary, 
                         GetScope())) {
                 replaces.push_back(id); 

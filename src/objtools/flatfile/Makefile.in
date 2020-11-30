@@ -1,4 +1,5 @@
 LIB_PROJ = flatfile
+SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
