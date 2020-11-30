@@ -2292,8 +2292,12 @@ fi
 case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_libcxx" in
   GCC:*:yes:no | *Clang:*:yes:no )
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
-    case "$libstdcxx" in
-       /*)
+    case "$host_os:$libstdcxx" in
+       cygwin*:/*)
+          LDFLAGS="$LDFLAGS -Wl,--allow-multiple-definition"
+          LDFLAGS="$LDFLAGS -static-libstdc++ -static-libgcc"
+          ;;
+       *:/*)
           # LIBS="$libstdcxx $LIBS"
           # LINK=$C_LINK
           LDFLAGS="$LDFLAGS -static-libstdc++"
