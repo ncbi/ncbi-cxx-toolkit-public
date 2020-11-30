@@ -53,7 +53,9 @@ public:
     void InitLocation(
         const CSeq_loc&);
     void SetLocation(
-        const CSeq_interval&);
+        const CSeq_interval&,
+        unsigned int,
+        unsigned int =0);
     void SetEndpoints(
         unsigned int start,
         unsigned int stop,

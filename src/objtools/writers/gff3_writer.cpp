@@ -1555,6 +1555,29 @@ bool CGff3Writer::xWriteNucleotideFeature(
 }
 
 //  ----------------------------------------------------------------------------
+void
+sGetWrapInfo(
+    const list<CRef<CSeq_interval> >& subInts,
+    CGffFeatureContext& fc,
+    unsigned int& wrapSize,
+    unsigned int& wrapPoint)
+//  ----------------------------------------------------------------------------
+{
+    wrapSize = wrapPoint = 0;
+    if (subInts.empty()) {
+        return;
+    }
+    if (!fc.BioseqHandle().CanGetInst_Length()) {
+        return;
+    }
+    wrapSize = fc.BioseqHandle().GetInst_Length();
+    const auto& front = *subInts.front();
+    wrapPoint = (front.CanGetStrand()  &&  front.GetStrand() == eNa_strand_minus) ?
+        subInts.back()->GetFrom() :
+        subInts.front()->GetFrom();
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureTrna(
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
@@ -1587,13 +1610,16 @@ bool CGff3Writer::xWriteFeatureTrna(
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
-        list< CRef< CSeq_interval > >::const_iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+
+        unsigned int wrapSize(0), wrapPoint(0);
+        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+
+        for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
             pChild->SetRecordId(m_idGenerator.GetNextGffExonId(rnaId));
             pChild->SetType("exon");
-            pChild->SetLocation(subint);
+            pChild->SetLocation(subint, wrapSize, wrapPoint);
             pChild->SetParent(rnaId);
             if ( ! xWriteRecord(*pChild ) ) {
                 return false;
@@ -2624,6 +2650,10 @@ bool CGff3Writer::xWriteFeatureCds(
         string cdsId = pCds->Id();
         int partNum = 1;
         bool useParts = (sublocs.size() > 1);
+
+        unsigned int wrapSize(0), wrapPoint(0);
+        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pCds));
@@ -2631,7 +2661,7 @@ bool CGff3Writer::xWriteFeatureCds(
             pExon->SetType("CDS");
             pExon->DropAttributes("start_range");
             pExon->DropAttributes("end_range");
-            pExon->SetLocation(subint);
+            pExon->SetLocation(subint, wrapSize, wrapPoint);
             pExon->SetPhase(iPhase);
             if (useParts) {
                 pExon->SetAttribute("part", NStr::NumericToString(partNum++));
@@ -2694,6 +2724,10 @@ bool CGff3Writer::xWriteFeatureRna(
         list< CRef< CSeq_interval > >::const_iterator it;
         int partNum = 1;
         bool useParts = (sublocs.size() > 1);
+
+        unsigned int wrapSize(0), wrapPoint(0);
+        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
@@ -2704,7 +2738,7 @@ bool CGff3Writer::xWriteFeatureRna(
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(subint);
+            pChild->SetLocation(subint, wrapSize, wrapPoint);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
@@ -2750,8 +2784,11 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     const auto parentId = pSegment->Id();
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
-        list< CRef< CSeq_interval> >::const_iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+
+        unsigned int wrapSize(0), wrapPoint(0);
+        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+
+        for (auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pSegment));
             pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
@@ -2760,7 +2797,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             pChild->DropAttributes("end_range");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(subint);
+            pChild->SetLocation(subint, wrapSize, wrapPoint);
             if (!xWriteRecord(*pChild)) {
                 return false;
             }
@@ -2849,11 +2886,14 @@ bool CGff3Writer::xWriteFeatureProtein(
         seqlength = fc.BioseqHandle().GetInst().GetLength();
 
     list< CRef< CSeq_interval > > sublocs( packedInt.GetPacked_int().Get() );
-    list< CRef< CSeq_interval > >::const_iterator it;
-    for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+
+    unsigned int wrapSize(0), wrapPoint(0);
+    sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+
+    for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
         const CSeq_interval& subint = **it;
         CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pRecord));
-        pExon->SetLocation(subint);
+        pExon->SetLocation(subint, wrapSize, wrapPoint);
         if (!xWriteRecord(*pExon)) {
             return false;
         }
@@ -2881,13 +2921,13 @@ bool CGff3Writer::xWriteFeatureRecords(
     if (sublocs.size() == 1) {
         return xWriteRecord(record);
     }
-    list<CRef<CSeq_interval> >::const_iterator it;
+
     string totIntervals = string("/") + NStr::NumericToString(sublocs.size());
     unsigned int curInterval = 1;
-    for (it = sublocs.begin(); it != sublocs.end(); ++it) {
+    for (auto it = sublocs.begin(); it != sublocs.end(); ++it) {
         const CSeq_interval& subint = **it;
         CRef<CGffFeatureRecord> pChild(new CGff3FeatureRecord(*pRecord));
-        pChild->SetLocation(subint);
+        pChild->SetLocation(subint, 0);
         string part = NStr::IntToString(curInterval++) + totIntervals;
         pChild->SetAttribute("part", part);
         if (!xWriteRecord(*pChild)) {

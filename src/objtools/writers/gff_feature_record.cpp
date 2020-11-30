@@ -76,7 +76,9 @@ void CGffFeatureRecord::SetEndpoints(
 
 //  ----------------------------------------------------------------------------
 void CGffFeatureRecord::SetLocation(
-    const CSeq_interval& interval) 
+    const CSeq_interval& interval,
+    unsigned int wrapSize,
+    unsigned int wrapPoint) 
 //  ----------------------------------------------------------------------------
 {
     m_pLoc.Reset(new CSeq_loc());
@@ -86,6 +88,10 @@ void CGffFeatureRecord::SetLocation(
     }
     if ( interval.CanGetTo() ) {
         mSeqStop = interval.GetTo();
+    }
+    if (wrapSize != 0 && mSeqStart < wrapPoint) {
+        mSeqStart += wrapSize;
+        mSeqStop += wrapSize;
     }
     unsigned int seqStart = Location().GetStart(eExtreme_Positional);
     unsigned int seqStop = Location().GetStop(eExtreme_Positional);
