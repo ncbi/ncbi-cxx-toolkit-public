@@ -133,7 +133,7 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         aid              INTEGER,                 -- PubChem BioAssay ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        mim              INTEGER,                 -- MIM, Mendelian Inheritance in Man, Number 
+        mim              INTEGER,                 -- MIM, Mendelian Inheritance in Man, Number
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         gene             INTEGER,                 -- Entrez Gene ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
@@ -145,7 +145,12 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         geogsm           INTEGER,                 -- Gene Expression Omnibus Sample Accession (GEO GSM) ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        patent           VisibleString            -- Patent Identifier (e.g., USPTO, EPO, WPO, JPO, CPO)
+        patent           VisibleString,           -- Patent Identifier (e.g., USPTO, EPO, WPO, JPO, CPO)
+        accession        VisibleString,           -- GenBank Accession
+        protein-accession        VisibleString,   -- GenBank Accession for a Protein
+        nucleotide-accession     VisibleString,   -- GenBank Accession for a Nucleotide
+        doi                      VisibleString,   -- digital object identifier (DOI)
+        citation                 VisibleString    -- citation when PMID or DOI are not available
 }
 
 
@@ -254,8 +259,8 @@ PC-InfoData ::= SEQUENCE {
 }
 
 
--- Universal Resource Name 
---    Provides explicit source information on derived or calculated data 
+-- Universal Resource Name
+--    Provides explicit source information on derived or calculated data
 PC-Urn ::= SEQUENCE {
     label           VisibleString,                       -- Generic Name or Label for Display  [e.g., "Log P"]
     name            VisibleString              OPTIONAL, -- Qualified Name  [e.g., "XlogP"]
