@@ -1535,6 +1535,7 @@ CCpuFeatures::InstructionSet::InstructionSet(void)
       f81_ECX_  { 0 },
       f81_EDX_  { 0 }
 {
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
     int nIds   = 0;
     int nExIds = 0;
 
@@ -1619,6 +1620,7 @@ CCpuFeatures::InstructionSet::InstructionSet(void)
         memcpy(brand + 32, m_ExtData[4].data(), sizeof(registers));
         m_BrandStr = brand;
     }
+#endif
 };
 
 
