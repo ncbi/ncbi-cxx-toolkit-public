@@ -1174,7 +1174,7 @@ void CModelExon::Extend(const CModelExon& e)
         m_ssplice_sig = e.m_ssplice_sig;    
 }
 
-void CGeneModel::TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant)
+void CGeneModel::TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps)
 {
     if(Exons().empty())
         return;
@@ -1225,9 +1225,9 @@ void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
     CGeneModel other_align = align;
 
     if ( !other_align.Continuous() )
-        this->TrimEdgesToFrameInOtherAlignGaps(other_align.Exons(),ensure_cds_invariant);
+        this->TrimEdgesToFrameInOtherAlignGaps(other_align.Exons());
     if ( !this->Continuous() )
-        other_align.TrimEdgesToFrameInOtherAlignGaps(this->Exons(),ensure_cds_invariant);
+        other_align.TrimEdgesToFrameInOtherAlignGaps(this->Exons());
 
     TExons a = MyExons();
     TExons b = other_align.Exons();
@@ -2403,24 +2403,6 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     return is;
 }
 
-CNcbiIstream& readGnomon(CNcbiIstream& is, CGeneModel& align)
-{
-    is.setstate(ios::failbit);
-    return is;
-}
-
-CNcbiOstream& printASN(CNcbiOstream& os, const CGeneModel& align)
-{
-    os.setstate(ios::failbit);
-    return os;
-}
-
-CNcbiIstream& readASN(CNcbiIstream& is, CGeneModel& align)
-{
-    is.setstate(ios::failbit);
-    return is;
-}
-
 CNcbiOstream& operator<<(CNcbiOstream& s, const CGeneModel& a)
 {
     return operator<<(s, CAlignModel(a, a.GetAlignMap()));
@@ -2429,18 +2411,12 @@ CNcbiOstream& operator<<(CNcbiOstream& s, const CGeneModel& a)
 CNcbiOstream& operator<<(CNcbiOstream& os, const CAlignModel& a)
 {
     switch (model_file_format_state.slot(os)) {
-    case eGnomonFileFormat:
-        break;
     case eGFF3FileFormat:
         return printGFF3(os,a);
-    case eASNFileFormat:
-        break;
     default:
-        break;
+        os.setstate(ios::failbit);
+        return os;
     }
-
-    os.setstate(ios::failbit);
-    return os;
 }
 
 CNcbiIstream& operator>>(CNcbiIstream& is, CAlignModel& align)
@@ -2448,17 +2424,11 @@ CNcbiIstream& operator>>(CNcbiIstream& is, CAlignModel& align)
     switch (model_file_format_state.slot(is)) {
     case eGFF3FileFormat:
         return readGFF3(is, align);
-    case eGnomonFileFormat:
-        return readGnomon(is, align);
-    case eASNFileFormat:
-        return readASN(is, align);
     default:
-        is.setstate(ios::failbit);
-        break;
+        is.setstate(ios::failbit);        
+        return is;
     }
-    return is;
 }
-
 
 CSupportInfo::CSupportInfo(Int8 model_id, bool core)
     : m_id( model_id), m_core_align(core)

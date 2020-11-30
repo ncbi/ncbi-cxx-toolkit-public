@@ -580,7 +580,7 @@ public:
 
 private:
     void RemoveExtraFShifts(int left, int right);
-    void TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant = true);
+    void TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps);
 
     int m_type;
     Int8 m_id;

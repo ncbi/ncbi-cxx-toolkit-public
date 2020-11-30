@@ -53,9 +53,8 @@ public:
                 const CIntronParameters& intron_params,
                 TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, 
                 const TInDels& initial_fshifts, double mpp, const CGnomonEngine& gnomon);
-    void Init(CResidueVec& original_sequence, bool repeats, bool leftwall, 
+    void Init(CResidueVec& original_sequence, bool leftwall, 
               bool rightwall, double consensuspenalty,
-              const CIntergenicParameters& intergenic_params,
               const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len,
               const CGnomonAnnotator_Base::TGgapInfo& ggapinfo
               );

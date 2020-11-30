@@ -847,10 +847,11 @@ void CChainer::CChainerImpl::ReplacePseudoGeneSeeds(list<CGene>& alts, TChainPoi
                 included_in.push_back(itl);
                 break;
             case eNotCompatible:
-                if(itl->IsAlternative(algn, orig_aligns)) {
+                if(itl->IsAlternative(algn, orig_aligns))
                     included_in.push_back(itl);
-                    break;
-                }
+                else
+                    good_model = false;                
+                break;
             default:
                 good_model = false;
                 break;

@@ -144,7 +144,7 @@ template bool IsStopCodon<EResidue>(const EResidue * seq, int strand);
 template bool IsStopCodon<TResidue>(const TResidue * seq, int strand);
 
 
-void FindAllCodonInstances(TIVec positions[], const EResidue codon[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
+void FindAllCodonInstances(TIVec positions[], const EResidue codon[], const CEResidueVec& mrna, TSignedSeqRange search_region, int fixed_frame)
 {
     for (CEResidueVec::const_iterator pos = mrna.begin()+search_region.GetFrom(); (pos = search(pos,mrna.end(),codon,codon+3)) < mrna.begin()+search_region.GetTo(); ++pos) {
         int l = pos-mrna.begin();
@@ -154,15 +154,15 @@ void FindAllCodonInstances(TIVec positions[], const EResidue codon[], const CERe
     }
 }
 
-void FindAllStarts(TIVec starts[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
+void FindAllStarts(TIVec starts[], const CEResidueVec& mrna, TSignedSeqRange search_region, int fixed_frame)
 {
-    FindAllCodonInstances(starts, ecodons[0], mrna, mrnamap, search_region, fixed_frame);
+    FindAllCodonInstances(starts, ecodons[0], mrna, search_region, fixed_frame);
 }
 
-void FindAllStops(TIVec stops[], const CEResidueVec& mrna, const CAlignMap& mrnamap, TSignedSeqRange search_region, int fixed_frame)
+void FindAllStops(TIVec stops[], const CEResidueVec& mrna, TSignedSeqRange search_region, int fixed_frame)
 {
     for (int i=1; i <=3; ++i)
-        FindAllCodonInstances(stops, ecodons[i], mrna, mrnamap, search_region, fixed_frame);
+        FindAllCodonInstances(stops, ecodons[i], mrna, search_region, fixed_frame);
     for (int f = 0; f < 3; ++f)
         sort(stops[f].begin(), stops[f].end());
 }
@@ -216,13 +216,13 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
 
         if (left_cds_limit<0) {
             if (reading_frame_start >= 3) {
-                FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(0,reading_frame_start),frame);
+                FindAllStops(stops,mrna,TSignedSeqRange(0,reading_frame_start),frame);
             }
 
             if (stops[frame].size()>0)
                 left_cds_limit = stops[frame].back()+3;
         } else {
-            FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(0,left_cds_limit),frame);
+            FindAllStops(stops,mrna,TSignedSeqRange(0,left_cds_limit),frame);
         }
 
         reading_frame_start = reading_frame_stop-5;              // allow starts inside reading frame if not protein
@@ -266,13 +266,13 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         TSignedSeqRange start = mrnamap.MapRangeOrigToEdited(model.GetCdsInfo().Start(),false);
         starts[frame].push_back(start.GetFrom());
     } else if(reading_frame_start-left_cds_limit >= 3) {
-        FindAllStarts(starts,mrna,mrnamap,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame);
+        FindAllStarts(starts,mrna,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame);
     }
 
     if (frame==-1) {
-        FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(0,mrna.size()-1),frame);
+        FindAllStops(stops,mrna,TSignedSeqRange(0,mrna.size()-1),frame);
     } else if (right_cds_limit - reading_frame_stop >= 3) {
-        FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(reading_frame_stop+1,right_cds_limit),frame);
+        FindAllStops(stops,mrna,TSignedSeqRange(reading_frame_stop+1,right_cds_limit),frame);
     }
 
     if (int(mrna.size()) <= right_cds_limit) {

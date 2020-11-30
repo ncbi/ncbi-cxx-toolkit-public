@@ -192,7 +192,7 @@ double CSingleExon::TermScore() const
     else return m_seqscr->StartScore(Stop(),Strand());
 }
 
-double CSingleExon::BranchScore(const CIntergenic& next) const 
+double CSingleExon::BranchScore(const CIntergenic&) const 
 { 
     if(isPlus() || (Stop()-Start())%3 == 2) return kLnHalf;
     else return BadScore();
@@ -297,7 +297,7 @@ double CLastExon::TermScore() const
     else return m_seqscr->AcceptorScore(Stop(),Strand());
 }
 
-double CLastExon::BranchScore(const CIntergenic& next) const 
+double CLastExon::BranchScore(const CIntergenic&) const 
 { 
     if(isPlus() || (Phase()+Stop()-Start())%3 == 2) return kLnHalf;
     else return BadScore(); 

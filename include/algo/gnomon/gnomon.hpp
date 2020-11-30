@@ -90,10 +90,9 @@ public:
                                   TIVec starts[3],  TIVec stops[3], int& frame, int& best_start, int& best_stop, bool extend5p = true) const;
 
     // run gnomon. return score
-    double Run(bool repeats = true, bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
+    double Run(bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
 
-    double Run(const TGeneModelList& chains,
-               bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore(), 
+    double Run(const TGeneModelList& chains, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore(), 
                const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len = CGnomonAnnotator_Base::TIntMap(),
                const CGnomonAnnotator_Base::TGgapInfo& ggapinfo = CGnomonAnnotator_Base::TGgapInfo());
 

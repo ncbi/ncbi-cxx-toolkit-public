@@ -212,7 +212,7 @@ class CNullRegion : public CNonCodingRegion
 {
     public:
     ~CNullRegion() {}
-        double Score(const CEResidueVec& seq, int i) const { return 0; };
+        double Score(const CEResidueVec&, int) const { return 0; };
 };
 
 struct SStateScores
@@ -357,7 +357,7 @@ public:
     double LengthScore() const; 
     double TermScore() const;
     virtual double VirtTermScore() const { return TermScore(); }
-    double BranchScore(const CHMM_State& next) const { return BadScore(); }
+    double BranchScore(const CHMM_State& ) const { return BadScore(); }
     double BranchScore(const CIntergenic& next) const;
     SStateScores GetStateScores() const { return CalcStateScores(*this); }
     string GetStateName() const { return "SingleExon"; }
@@ -377,7 +377,7 @@ class CFirstExon : public CExon
         double LengthScore() const;
         double TermScore() const;
     virtual double VirtTermScore() const { return TermScore(); }
-        double BranchScore(const CHMM_State& next) const { return BadScore(); }
+        double BranchScore(const CHMM_State& ) const { return BadScore(); }
         double BranchScore(const CIntron& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "FirstExon"; }
@@ -397,7 +397,7 @@ class CInternalExon : public CExon
         double LengthScore() const; 
         double TermScore() const;
     virtual double VirtTermScore() const { return TermScore(); }
-        double BranchScore(const CHMM_State& next) const { return BadScore(); }
+        double BranchScore(const CHMM_State& ) const { return BadScore(); }
         double BranchScore(const CIntron& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "InternalExon"; }
@@ -414,7 +414,7 @@ class CLastExon : public CExon
         double LengthScore() const; 
         double TermScore() const;
     virtual double VirtTermScore() const { return TermScore(); }
-        double BranchScore(const CHMM_State& next) const { return BadScore(); }
+        double BranchScore(const CHMM_State& ) const { return BadScore(); }
         double BranchScore(const CIntergenic& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "LastExon"; }
@@ -470,7 +470,7 @@ public:
     double ClosingLengthScore() const;
     double ThroughLengthScore() const  { return m_param->m_lnThrough[Phase()]; }
     double InitialLengthScore() const { return m_param->m_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
-    double BranchScore(const CHMM_State& next) const { return BadScore(); }
+    double BranchScore(const CHMM_State& ) const { return BadScore(); }
     double BranchScore(const CLastExon& next) const;
     double BranchScore(const CInternalExon& next) const;
     bool SplittedStop() const
@@ -548,7 +548,7 @@ class CIntergenic : public CHMM_State
         double ClosingLengthScore() const { return m_param->m_intergeniclen.ClosingScore(Stop()-Start()+1); }
         double ThroughLengthScore() const { return m_param->m_lnThrough; }
         double InitialLengthScore() const { return m_param->m_lnDen+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
-        double BranchScore(const CHMM_State& next) const { return BadScore(); }
+        double BranchScore(const CHMM_State& ) const { return BadScore(); }
         double BranchScore(const CFirstExon& next) const; 
         double BranchScore(const CSingleExon& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }

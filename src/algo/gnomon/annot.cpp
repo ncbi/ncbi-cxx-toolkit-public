@@ -86,7 +86,7 @@ double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
     cerr << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
                     
     m_gnomon->ResetRange(l,r);
-    return m_gnomon->Run(test_align, true, false, false, false, false, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
+    return m_gnomon->Run(test_align, false, false, false, false, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
 }
 
 double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns, TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
@@ -128,7 +128,7 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
         m_gnomon->ResetRange(left, right);
         if(found_bad_cluster) {
             cerr << "Testing w/o bad alignments in fragment " << left << ' ' << right << endl;
-            return m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
+            return m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
         }
     }
     return BadScore();
@@ -147,7 +147,7 @@ double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_alig
         it = suspect_aligns.erase(it);
         
         cerr << "Testing w/o " << algn.ID();
-        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
+        score = m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
         if (score != BadScore()) {
             cerr << "- Good. Deleting alignment " << algn.ID() << endl;
             algn.Status() |= CGeneModel::eSkipped;
@@ -178,7 +178,7 @@ double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspec
         it = suspect_aligns.erase(it);
         
         cerr << "Testing fragment " << left << ' ' << right << endl;
-        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
+        score = m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
     }
     return score;
 }
@@ -238,7 +238,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 
             cerr << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
         
-            score = m_gnomon->Run(aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
+            score = m_gnomon->Run(aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs);
         
             if(score == BadScore()) {
                 cerr << "Inconsistent alignments in fragment " << left << ' ' << right << '\n';

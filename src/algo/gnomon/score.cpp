@@ -268,7 +268,8 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
     }
 }
 
-void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, 
+//void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, 
+void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool rightwall, double consensuspenalty, 
          const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
