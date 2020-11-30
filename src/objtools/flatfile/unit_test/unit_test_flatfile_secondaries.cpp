@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(CheckDoesNotReferencePrimary)
 {
     auto pPrimaryAcc = Ref(new CSeq_id("AF123456.1"));
     auto pPrimaryGi = Ref(new CSeq_id());
-    pPrimaryGi->SetGi(1234);
+    pPrimaryGi->SetGi(GI_CONST(1234));
 
     list<CRef<CSeq_id>> ids;
     ids.push_back(pPrimaryAcc);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(CheckDoesNotReferencePrimary)
     BOOST_CHECK(!g_DoesNotReferencePrimary(*pDeltaExt, *pOtherAcc, *pScope));
 
     auto pOtherGi = Ref(new CSeq_id());
-    pOtherGi->SetGi(5678);
+    pOtherGi->SetGi(GI_CONST(5678));
     BOOST_CHECK(g_DoesNotReferencePrimary(*pDeltaExt, *pOtherGi, *pScope));
 }
 
