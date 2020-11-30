@@ -71,6 +71,7 @@ extern "C" {
 #undef NCBI_COUNTER_RESERVED_VALUE
 #undef NCBI_COUNTER_ASM_OK
 #undef NCBI_COUNTER_USE_ASM
+#undef NCBI_COUNTER_USE_STD_ATOMIC
 #undef NCBI_COUNTER_ADD
 #undef NCBI_COUNTER_NEED_MUTEX
 #undef NCBI_SWAP_POINTERS
@@ -141,6 +142,7 @@ extern "C" {
 #  endif
 #  define NCBI_ATOMIC_TYPE(t) std::atomic<t>
 #  define NCBI_COUNTER_UNSIGNED 1
+#  define NCBI_COUNTER_USE_STD_ATOMIC 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
 #elif defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_ATOMIC_H) /* Solaris 10+. */
 #  include <atomic.h>

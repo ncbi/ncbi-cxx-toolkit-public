@@ -72,6 +72,13 @@ class CAtomicCounter
 public:
     typedef TNCBIAtomicValue TValue;  ///< Alias TValue for TNCBIAtomicValue
 
+#ifdef NCBI_COUNTER_USE_STD_ATOMIC
+    CAtomicCounter() = default;
+    CAtomicCounter(CAtomicCounter& other)
+        : m_Value(other.Get())
+        { }
+#endif
+
     /// Get atomic counter value.
     TValue Get(void) const THROWS_NONE;
 
