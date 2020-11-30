@@ -35,6 +35,7 @@
 
 #include <corelib/test_boost.hpp>
 
+#include <deque>
 #include <thread>
 #include <random>
 
@@ -88,25 +89,13 @@ private:
     uniform_int_distribution<size_t> m_CharsDistribution;
 };
 
-// Cannot use stringstream directly as it might have no move ctor (due to bug 54316 in libstdc++/gcc).
-struct SStream : stringstream
-{
-    SStream() {}
-
-    SStream(const SStream& src) : stringstream(src.str()) {}
-    SStream(SStream&&) = default;
-
-    SStream& operator=(const SStream& src) { str(src.str()); return *this; }
-    SStream& operator=(SStream&&) = default;
-};
-
 struct SFixture
 {
     using TData = vector<char>;
 
     static thread_local SRandom r;
     unordered_map<string, TData> src_blobs;
-    vector<SStream> src_chunks;
+    deque<stringstream> src_chunks;
 
     SFixture();
     void Reset();
