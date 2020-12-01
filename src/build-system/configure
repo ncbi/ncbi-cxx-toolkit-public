@@ -20561,7 +20561,7 @@ $as_echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed 
             fi
             with_bdb=no
             ;;
-         4.[3-6].* ) ;;
+         4.[3-6].* | [5-9].* | 1[0-7].* | 18.[01].* ) ;;
          * )
             { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Untested Berkeley DB version; may prove incompatible." >&5
 $as_echo "$as_me: WARNING: Untested Berkeley DB version; may prove incompatible." >&2;}
@@ -22021,7 +22021,7 @@ $as_echo "$as_me: WARNING: Your Boost version is too old to use.  (Needed >= 1.3
          fi
          with_boost=no
          ;;
-      1_3[5-9] | 1_3[5-9]_* | 1_[4-6]* | 1_70 | 1_70_* ) ;;
+      1_3[5-9] | 1_3[5-9]_* | 1_[4-6]* | 1_7[0-4] | 1_7[0-4]_* ) ;;
       '' ) with_boost=no ;;
       * )
          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Untested Boost version; may prove incompatible." >&5

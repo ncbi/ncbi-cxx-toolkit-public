@@ -5395,7 +5395,7 @@ ncbi_cv_lib_berkeley_db_version=\`get_DB_VERSION | tr -cd 0123456789.\`
             fi
             with_bdb=no
             ;;
-         4.[[3-6]].* ) ;;
+         4.[[3-6]].* | [[5-9]].* | 1[[0-7]].* | 18.[[01]].* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])
@@ -5716,7 +5716,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          fi
          with_boost=no
          ;;
-      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[4-6]]* | 1_70 | 1_70_* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[4-6]]* | 1_7[[0-4]] | 1_7[[0-4]]_* ) ;;
       '' ) with_boost=no ;;
       * )
          AC_MSG_WARN(
