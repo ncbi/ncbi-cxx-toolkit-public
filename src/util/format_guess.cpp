@@ -639,10 +639,19 @@ CFormatGuess::EnsureTestBuffer()
         CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
         
         if (IsAllComment()) {
+            if (Multiplier >= 1024)  {
+                // this is how far we will go and no further.
+                // if it's indeed all comments then none of the format specific 
+                //  tests will assert.
+                // if something was misidentified as a comment then the relevant 
+                //  format specific test may still have a good sample to work with.
+                // so it does not hurt to at least try.
+                return true;
+            }
             Multiplier *= 2;
             delete [] m_pTestBuffer;
             m_pTestBuffer = NULL;
-            if (Multiplier >= 1024 || m_iTestDataSize < m_iTestBufferSize)  {
+            if (m_iTestDataSize < m_iTestBufferSize)  {
                 return false;
             }
             continue;
@@ -3734,15 +3743,13 @@ CFormatGuess::IsAllComment()
         if(it->empty()) {
             continue;
         }
-        else if(NStr::StartsWith(*it, "#")) {
+        if (NStr::StartsWith(*it, "#")) {
             continue;
         }
-        else if(NStr::StartsWith(*it, "--")) {
+        if(NStr::StartsWith(*it, "--")) {
             continue;
         }
-        else {
-            return false;
-        }
+        return false;
     }
     
     return true;
