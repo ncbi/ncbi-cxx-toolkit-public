@@ -8697,6 +8697,11 @@ void CheckUnbalancedParenthesesSubSource(CSubSource::TSubtype subtype, const str
 
     STANDARD_SETUP
 
+    if (subtype == CSubSource::eSubtype_segment) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NonViralSegment",
+                "Non-viral source feature should not have a segment qualifier"));
+    }
+
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
             "Unbalanced parentheses in subsource '" + val + "'"));
     eval = validator.Validate(seh, options);
@@ -21371,6 +21376,11 @@ BOOST_AUTO_TEST_CASE(Test_VR_28)
     
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NonViralSegment",
+            "Non-viral source feature should not have a segment qualifier"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NonViralSegment",
+            "Non-viral source feature should not have a segment qualifier"));
+
     expected_errors.push_back(new CExpectedError("lcl|good", 
                                                  eDiag_Warning, 
                                                  "MultipleSourceQualifiers",
@@ -21384,6 +21394,13 @@ BOOST_AUTO_TEST_CASE(Test_VR_28)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, "");
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("lcl|good",
+                                                 eDiag_Warning,
+                                                 "MultipleSourceQualifiers",
+                                                 "Multiple segment qualifiers present"));
 
     // Multiple collected_by qualifiers
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collected_by, "Michael Hunter");
@@ -24431,6 +24448,11 @@ void TestOneReplicon(CSubSource::ESubtype subtype, const string& val, const stri
 
     if (!NStr::IsBlank(err_code)) {
         expected_errors.push_back(new CExpectedError("lcl|good", sev, err_code, msg));
+    }
+
+    if (subtype == CSubSource::eSubtype_segment) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NonViralSegment",
+                "Non-viral source feature should not have a segment qualifier"));
     }
 
     eval = validator.Validate(seh, options);
