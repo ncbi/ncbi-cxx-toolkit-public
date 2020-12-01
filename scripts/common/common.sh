@@ -430,6 +430,7 @@ COMMON_DetectPlatform()
 	FreeBSD\ amd64  ) echo FreeBSD64  ;;
 	FreeBSD\ i386   ) echo FreeBSD32  ;;
 	IRIX64\ *       ) echo IRIX64     ;;
+	Linux\ aarch64  ) echo LinuxARM64 ;;
 	Linux\ i?86     ) echo Linux32    ;;
 	Linux\ x86_64   ) echo Linux64    ;;
 	SunOS\ i*86*    ) echo SunOSx86   ;;
