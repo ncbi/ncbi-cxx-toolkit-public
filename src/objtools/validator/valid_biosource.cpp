@@ -484,7 +484,7 @@ const CSeq_entry *ctx)
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(ssit, bsrc)
     {
-        ValidateSubSource(**ssit, obj, ctx);
+        ValidateSubSource(**ssit, obj, ctx, isViral);
         if (!(*ssit)->IsSetSubtype()) {
             continue;
         }
@@ -1017,7 +1017,8 @@ const CSeq_entry *ctx)
 void CValidError_imp::ValidateSubSource
 (const CSubSource&    subsrc,
 const CSerialObject& obj,
-const CSeq_entry *ctx)
+const CSeq_entry *ctx,
+const bool isViral)
 {
     if (!subsrc.IsSetSubtype()) {
         PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BadSubSource,
@@ -1232,6 +1233,11 @@ const CSeq_entry *ctx)
         if (!CSubSource::IsSegmentValid(sname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadTextInSourceQualifier,
                 CSubSource::GetSubtypeName(subsrc.GetSubtype()) + " value should start with letter or number",
+                obj, ctx);
+        }
+        if ( ! isViral ) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_NonViralSegment,
+                "Non-viral source feature should not have a segment qualifier",
                 obj, ctx);
         }
         break;

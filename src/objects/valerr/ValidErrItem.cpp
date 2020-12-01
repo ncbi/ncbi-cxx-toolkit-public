@@ -965,6 +965,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_TaxonomyBlankSample,
     { "TaxonomyBlankSample", 
       "Blank sample taxonomy should not coexist with sequence records" } },
+    { eErr_SEQ_DESCR_NonViralSegment,
+    { "NonViralSegment", 
+      "Non-viral taxonomy should not have segment qualifier" } },
 
 
     /* SEQ_GENERIC */

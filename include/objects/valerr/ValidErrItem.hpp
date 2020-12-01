@@ -349,6 +349,7 @@ enum EErrType {
     eErr_SEQ_DESCR_TaxonomyEmptyInput,
     eErr_SEQ_DESCR_ChromosomeWithoutLocation,
     eErr_SEQ_DESCR_TaxonomyBlankSample,
+    eErr_SEQ_DESCR_NonViralSegment,
     ERR_CODE_END(SEQ_DESCR),
 
 
