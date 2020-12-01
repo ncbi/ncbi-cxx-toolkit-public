@@ -100,7 +100,7 @@ static char* x_ServiceName(unsigned int depth,
 
     assert(!svc == !service);
     assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
-    if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*")))
+    if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
         ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
         if (!service  ||  strcasecmp(service, svc) == 0)
             service = "";
@@ -725,7 +725,7 @@ SERV_ITER SERV_OpenP(const char*         service,
                      const char*         val)
 {
     return s_Open(service,
-                  service  &&  (!*service  ||  strpbrk(service, "?*")), types,
+                  service  &&  (!*service  ||  strpbrk(service, "?*[")), types,
                   preferred_host, preferred_port, preference,
                   net_info, skip, n_skip,
                   external, arg, val,

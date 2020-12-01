@@ -386,7 +386,7 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
     net_info = ConnNetInfo_Create(svc);
     if (*hdr)  ConnNetInfo_SetUserHeader(net_info, hdr);
     iter = SERV_OpenP(svc, fSERV_All |
-                      (strpbrk(svc, "?*") ? fSERV_Promiscuous : 0),
+                      (strpbrk(svc, "?*[") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);

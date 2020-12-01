@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     CORE_SetLOGFILE(stderr, 0/*false*/);
     LBSMD_FastHeapAccess(eOn);
     wildcard
-        = service && (!*service  ||  strpbrk(service, "?*")) ? 1/*T*/ : 0/*F*/;
+        = service && (!*service  ||  strpbrk(service, "?*["))? 1/*T*/ : 0/*F*/;
     if (!wildcard) {
         net_info = ConnNetInfo_Create(service);
         SOCK_SetupSSL(NcbiSetupTls);

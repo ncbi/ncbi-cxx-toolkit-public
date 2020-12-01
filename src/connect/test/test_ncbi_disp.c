@@ -225,7 +225,7 @@ int main(int argc, const char* argv[])
     if (x_gettimeofday(&start) != 0)
         memset(&start, 0, sizeof(start));
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
-                      (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
+                      (strpbrk(service, "?*[") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       getenv("NCBI_EXTERNAL")  ||  getenv("HTTP_NCBI_EXTERNAL")

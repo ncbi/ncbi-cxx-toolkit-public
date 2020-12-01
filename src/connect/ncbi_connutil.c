@@ -256,7 +256,7 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
                                          const char* def_value)
 {
     int/*bool*/ dummy;
-    assert(!service  ||  !strpbrk(service, "?*"));
+    assert(!service  ||  !strpbrk(service, "?*["));
     assert(value  &&  value_size > 1  &&  param  &&  *param);
     *value = '\0';
     return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
@@ -279,7 +279,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         return 0;
 
     if (service) {
-        if (!*service  ||  strpbrk(service, "?*"))
+        if (!*service  ||  strpbrk(service, "?*["))
             svclen = 0;
         else if (!(service = SERV_ServiceName(service)))
             return 0;
@@ -409,7 +409,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     double dbl;
     char*  e;
 
-    assert(!service  ||  !strpbrk(service, "?*"));
+    assert(!service  ||  !strpbrk(service, "?*["));
     len = service  &&  *service ? strlen(service) : 0;
 
     /* NB: created *NOT* cleared up with all 0s */
@@ -580,7 +580,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     const char* x_service;
     SConnNetInfo* retval;
 
-    if (service  &&  *service  &&  !strpbrk(service, "?*")) {
+    if (service  &&  *service  &&  !strpbrk(service, "?*[")) {
         if (!(x_service = SERV_ServiceName(service)))
             return 0;
         assert(*x_service);
