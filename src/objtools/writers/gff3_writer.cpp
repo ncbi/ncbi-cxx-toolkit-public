@@ -1614,6 +1614,9 @@ bool CGff3Writer::xWriteFeatureTrna(
         unsigned int wrapSize(0), wrapPoint(0);
         sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
 
+        int partNum = 1;
+        bool useParts = (sublocs.size() > 1);
+
         for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
@@ -1621,6 +1624,9 @@ bool CGff3Writer::xWriteFeatureTrna(
             pChild->SetType("exon");
             pChild->SetLocation(subint, wrapSize, wrapPoint);
             pChild->SetParent(rnaId);
+            if (useParts) {
+                pChild->SetAttribute("part", NStr::NumericToString(partNum++));
+            }
             if ( ! xWriteRecord(*pChild ) ) {
                 return false;
             }
