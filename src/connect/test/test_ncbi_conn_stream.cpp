@@ -840,7 +840,7 @@ int CNCBITestConnStreamApp::Run(void)
     smallbuf[size] = '\0';
     if (strncasecmp(hello.c_str(), smallbuf, strlen(smallbuf)) != 0)
         ERR_POST(Fatal << "SOCK data mismatch. Test 12 failed");
-    // NB:  put positions may be not always comparable because for a servers of
+    // NB:  put positions may be not always comparable because for a server of
     // the STANDALONE or NCBID type, "sock" could have been also used to push a
     // 4-byte ticket prior to any actual user data...
     m = size_t(echo.tellg()) << 1;
