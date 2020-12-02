@@ -226,7 +226,7 @@ protected:
         const CGvfReadRecord&,
         CVariation_ref&);
 
-    virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
+    virtual CGff3ReadRecord* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
 
     bool xIsDbvarCall(
         const string& nameAttr) const;

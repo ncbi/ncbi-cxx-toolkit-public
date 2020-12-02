@@ -76,6 +76,8 @@ class NCBI_XOBJREAD_EXPORT CGff3Reader
 //  ============================================================================
     : public CGff2Reader
 {
+    friend class CGff3ReadRecord;
+
 public:
     //
     //  object management:
@@ -110,7 +112,7 @@ protected:
         const TReaderData&,
         CSeq_annot&);
 
-    virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
+    virtual CGff3ReadRecord* x_CreateRecord() { return new CGff3ReadRecord(); };    
 
     virtual bool xInitializeFeature(
         const CGff2Record&,
@@ -178,7 +180,7 @@ protected:
 
     virtual bool xReadInit();
 
-    string xNextGenericId();
+    static string xNextGenericId();
 
     void xVerifyExonLocation(
         const string&,

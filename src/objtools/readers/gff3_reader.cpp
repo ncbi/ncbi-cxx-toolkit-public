@@ -83,6 +83,12 @@ bool CGff3ReadRecord::AssignFromGff(
     if (!CGff2Record::AssignFromGff(strRawInput)) {
         return false;
     }
+    string id, parent;
+    GetAttribute("ID", id);
+    GetAttribute("Parent", parent);
+    if (id.empty()  &&  parent.empty()) {
+        m_Attributes["ID"] = CGff3Reader::xNextGenericId();
+    }
     if (m_strType == "pseudogene") {
         m_strType = "gene";
         m_Attributes["pseudo"] = "true";
@@ -264,7 +270,7 @@ CGff3Reader::xParseFeature(
     }
 
     //parse record:
-    shared_ptr<CGff2Record> pRecord(x_CreateRecord());
+    shared_ptr<CGff3ReadRecord> pRecord(x_CreateRecord());
     try {
         if (!pRecord->AssignFromGff(line)) {
 			return false;
@@ -274,6 +280,7 @@ CGff3Reader::xParseFeature(
         ProcessError(err, pEC);
         return false;
     }
+    
 
     //make sure we are interested:
     if (xIsIgnoredFeatureType(pRecord->Type())) {
@@ -469,11 +476,13 @@ bool CGff3Reader::xUpdateAnnotCds(
     record.GetAttribute("Parent", parentId);
     if (id.empty()) {
         if (parentId.empty()) {
-            return false;
+            id = xNextGenericId();
         }
-        id = record.Type() + ":" + parentId;
-        if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
-            return true;
+        else {
+            id = record.Type() + ":" + parentId;
+            if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
+                return true;
+            }
         }
     }
 

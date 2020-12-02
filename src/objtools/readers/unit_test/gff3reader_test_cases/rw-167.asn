@@ -18,6 +18,10 @@ Seq-annot ::= {
           val "chromosome"
         },
         {
+          qual "ID",
+          val "generic11"
+        },
+        {
           qual "Is_circular",
           val "true"
         }
