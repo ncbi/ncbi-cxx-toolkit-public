@@ -240,11 +240,7 @@ endif()
 #############################################################################
 # PCRE
 if(NOT USE_LOCAL_PCRE)
-    if(OFF)
-        NCBI_find_package(PCRE libpcre)
-    else()
-        NCBI_find_library(PCRE pcre)
-    endif()
+    NCBI_find_library(PCRE pcre)
 endif()
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -376,7 +372,7 @@ endif()
 #############################################################################
 # SQLITE3
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(SQLITE3 sqlite3)
+    NCBI_find_module(SQLITE3 sqlite3)
 endif()
 if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
     NCBI_define_component(SQLITE3 sqlite3)
@@ -397,11 +393,7 @@ endif()
 
 #############################################################################
 # ODBC
-if(OFF)
-    NCBI_find_package(ODBC ODBC)
-else()
-    set(NCBI_COMPONENT_ODBC_FOUND NO)
-endif()
+set(NCBI_COMPONENT_ODBC_FOUND NO)
 
 #############################################################################
 # MySQL
@@ -560,7 +552,7 @@ endif()
 #############################################################################
 # XML
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(XML libxml-2.0)
+    NCBI_find_module(XML libxml-2.0)
 endif()
 if(NOT NCBI_COMPONENT_XML_FOUND)
     NCBI_define_component(XML xml2)
@@ -576,7 +568,7 @@ endif()
 #############################################################################
 # XSLT
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(XSLT libxslt)
+    NCBI_find_module(XSLT libxslt)
 endif()
 if(NOT NCBI_COMPONENT_XSLT_FOUND)
     if (NCBI_COMPONENT_GCRYPT_FOUND)
@@ -601,7 +593,7 @@ endif()
 #############################################################################
 # EXSLT
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(EXSLT libexslt)
+    NCBI_find_module(EXSLT libexslt)
 endif()
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
     if (NCBI_COMPONENT_GCRYPT_FOUND)
@@ -692,7 +684,7 @@ endif()
 #############################################################################
 # FTGL
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(FTGL ftgl)
+    NCBI_find_module(FTGL ftgl)
 endif()
 if(NOT NCBI_COMPONENT_FTGL_FOUND)
     NCBI_define_component(FTGL ftgl)
@@ -701,7 +693,7 @@ endif()
 #############################################################################
 # GLEW
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(GLEW glew)
+    NCBI_find_module(GLEW glew)
     if(NCBI_COMPONENT_GLEW_FOUND)
         get_filename_component(_incdir ${NCBI_COMPONENT_GLEW_INCLUDE} DIRECTORY)
         get_filename_component(_incGL ${NCBI_COMPONENT_GLEW_INCLUDE} NAME)
@@ -742,7 +734,7 @@ endif()
 #############################################################################
 # XERCES
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(XERCES xerces-c)
+    NCBI_find_module(XERCES xerces-c)
 endif()
 if(NOT NCBI_COMPONENT_XERCES_FOUND)
     NCBI_define_component(XERCES xerces-c)
@@ -761,9 +753,9 @@ if(PKG_CONFIG_FOUND)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         NCBI_define_component(PROTOBUF protobufd)
     else()
-        NCBI_find_package(PROTOBUF protobuf)
+        NCBI_find_module(PROTOBUF protobuf)
     endif()
-    NCBI_find_package(GRPC grpc++)
+    NCBI_find_module(GRPC grpc++)
     NCBI_define_component(Boring boringssl boringcrypto)
     if(NCBI_COMPONENT_GRPC_FOUND)
         set(NCBI_COMPONENT_GRPC_LIBS  ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
@@ -844,7 +836,7 @@ endif()
 #############################################################################
 # MONGOCXX
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(MONGOCXX libmongocxx)
+    NCBI_find_module(MONGOCXX libmongocxx)
 endif()
 if(NOT NCBI_COMPONENT_MONGOCXX_FOUND)
     NCBI_define_component(MONGOCXX mongocxx bsoncxx)
@@ -899,7 +891,7 @@ endif()
 #############################################################################
 # UV
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(UV libuv)
+    NCBI_find_module(UV libuv)
 endif()
 if(NOT NCBI_COMPONENT_UV_FOUND)
     NCBI_define_component(UV uv)
@@ -912,7 +904,7 @@ endif()
 #############################################################################
 # NGHTTP2
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(NGHTTP2 libnghttp2)
+    NCBI_find_module(NGHTTP2 libnghttp2)
 endif()
 if(NOT NCBI_COMPONENT_NGHTTP2_FOUND)
     NCBI_define_component(NGHTTP2 nghttp2)
@@ -925,8 +917,8 @@ NCBI_define_component(GL2PS gl2ps)
 #############################################################################
 # GMOCK
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(GMOCK gmock)
-    NCBI_find_package(GTEST gtest)
+    NCBI_find_module(GMOCK gmock)
+    NCBI_find_module(GTEST gtest)
     if(NCBI_COMPONENT_GMOCK_FOUND)
         set(NCBI_COMPONENT_GMOCK_INCLUDE ${NCBI_COMPONENT_GMOCK_INCLUDE} ${NCBI_COMPONENT_GTEST_INCLUDE})
         set(NCBI_COMPONENT_GMOCK_LIBS    ${NCBI_COMPONENT_GMOCK_LIBS}    ${NCBI_COMPONENT_GTEST_LIBS})
@@ -940,7 +932,7 @@ endif()
 #############################################################################
 # CASSANDRA
 if(OFF)
-    NCBI_find_package(CASSANDRA cassandra)
+    NCBI_find_module(CASSANDRA cassandra)
 endif()
 if(NOT NCBI_COMPONENT_CASSANDRA_FOUND)
     NCBI_define_component(CASSANDRA cassandra)
@@ -949,7 +941,7 @@ endif()
 #############################################################################
 # H2O
 if(PKG_CONFIG_FOUND)
-    NCBI_find_package(H2O libh2o)
+    NCBI_find_module(H2O libh2o)
 endif()
 if(NOT NCBI_COMPONENT_H2O_FOUND)
     NCBI_define_component(H2O h2o)
