@@ -402,7 +402,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunksAhead(void)
             if (!it.query) {
                 passed_active_check = CheckMaxActive();
                 if (!passed_active_check) {
-                    ERR_POST(Warning << "Max active queries level reached while fetching blob chunk");
+                    ERR_POST(Trace << "Max active queries level reached while fetching blob chunk");
                 }
                 // We should not skip sending query if active count is 0.
                 // There will not be data ready callback in that case
