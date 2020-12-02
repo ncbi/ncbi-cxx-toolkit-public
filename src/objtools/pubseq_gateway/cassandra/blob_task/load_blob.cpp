@@ -159,7 +159,6 @@ void CCassBlobTaskLoadBlob::Wait1()
             case eInit:
                 // m_Blob has already been provided explicitly so we can move to eFinishedPropsFetch
                 if (m_ExplicitBlob) {
-
                     m_State = eFinishedPropsFetch;
                     m_RemainingSize = m_Blob->GetSize();
                     b_need_repeat = true;
@@ -296,8 +295,8 @@ void CCassBlobTaskLoadBlob::Wait1()
 
             case eLoadingChunks: {
                 while(!x_AreAllChunksProcessed()) {
-                    x_RequestChunksAhead();
                     x_CheckChunksFinished(b_need_repeat);
+                    x_RequestChunksAhead();
                     if (b_need_repeat) {
                         b_need_repeat = false;
                         continue;
@@ -325,7 +324,7 @@ void CCassBlobTaskLoadBlob::Wait1()
             default: {
                 char msg[1024];
                 snprintf(msg, sizeof(msg),
-                    "Failed to insert blob (key=%s.%d) unexpected state (%d)",
+                    "Failed to fetch blob (key=%s.%d) unexpected state (%d)",
                     m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway,
                     CCassandraException::eQueryFailed,
@@ -393,17 +392,27 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
 void CCassBlobTaskLoadBlob::x_RequestChunksAhead(void)
 {
     auto n_chunks = m_Blob->GetNChunks();
-    for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries < kMaxChunksAhead; ++chunk_no) {
+    bool passed_active_check = true;
+    for (int32_t chunk_no = 0;
+        chunk_no < n_chunks && m_ActiveQueries < kMaxChunksAhead && passed_active_check;
+        ++chunk_no
+    ) {
         if (!m_ProcessedChunks[chunk_no]) {
             auto& it = m_QueryArr[chunk_no];
             if (!it.query) {
-                if (!CheckMaxActive()) {
-                    break;
+                passed_active_check = CheckMaxActive();
+                if (!passed_active_check) {
+                    ERR_POST(Warning << "Max active queries level reached while fetching blob chunk");
                 }
-                it.query = m_Conn->NewQuery();
-                it.restart_count = 0;
-                x_RequestChunk(*it.query, chunk_no);
-                ++m_ActiveQueries;
+                // We should not skip sending query if active count is 0.
+                // There will not be data ready callback in that case
+                // Operation will hang
+                if (passed_active_check || m_ActiveQueries < 1) {
+                    it.query = m_Conn->NewQuery();
+                    it.restart_count = 0;
+                    x_RequestChunk(*it.query, chunk_no);
+                    ++m_ActiveQueries;
+                }
             }
         }
     }
@@ -421,6 +430,12 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
         auto DataReadyCb3 = m_DataReadyCb3.lock();
         if (DataReadyCb3) {
             qry.SetOnData3(DataReadyCb3);
+        } else if (IsDataReadyCallbackExpired()) {
+            char msg[1024];
+            snprintf(msg, sizeof(msg),
+                 "Failed to setup data ready callback (expired) for blob chunk (key=%s.%d, chunk=%d)",
+                 m_Keyspace.c_str(), m_Key, chunk_no);
+            Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
     UpdateLastActivity();

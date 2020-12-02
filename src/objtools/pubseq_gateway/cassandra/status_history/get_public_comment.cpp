@@ -149,15 +149,15 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                 CloseAll();
                 m_QueryArr.clear();
                 m_QueryArr.push_back({m_Conn->NewQuery(), 0});
-                auto qry = m_QueryArr[0].query;
+                auto query = m_QueryArr[0].query;
                 string sql =
                     "SELECT flags, public_comment, replaces "
                     "FROM " + GetKeySpace() + ".blob_status_history WHERE sat_key = ?";
-                qry->SetSQL(sql, 1);
-                qry->BindInt32(0, m_Key);
-                SetupQueryCB3(qry);
+                query->SetSQL(sql, 1);
+                query->BindInt32(0, m_Key);
+                SetupQueryCB3(query);
                 UpdateLastActivity();
-                qry->Query(GetQueryConsistency(), m_Async, true);
+                query->Query(GetQueryConsistency(), m_Async, true);
                 m_State = eReadingHistory;
                 break;
             }

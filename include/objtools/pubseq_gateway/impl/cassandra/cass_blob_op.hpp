@@ -212,7 +212,18 @@ class CCassBlobWaiter
         auto DataReadyCb3 = m_DataReadyCb3.lock();
         if (DataReadyCb3) {
             query->SetOnData3(DataReadyCb3);
+        } else if (IsDataReadyCallbackExpired()) {
+            char msg[1024];
+            snprintf(msg, sizeof(msg), "Failed to setup data ready callback (expired)");
+            Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
         }
+    }
+
+    // Returns true for expired non empty weak pointers
+    bool IsDataReadyCallbackExpired() const
+    {
+        using wt = weak_ptr<CCassDataCallbackReceiver>;
+        return m_DataReadyCb3.owner_before(wt{}) || wt{}.owner_before(m_DataReadyCb3);
     }
 
     void Error(CRequestStatus::ECode  status,

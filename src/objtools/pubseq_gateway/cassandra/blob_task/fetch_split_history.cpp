@@ -155,7 +155,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                 }
                 UpdateLastActivity();
                 break;
-        }
+            }
 
             default: {
                 char  msg[1024];
