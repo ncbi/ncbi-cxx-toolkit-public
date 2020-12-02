@@ -26,7 +26,7 @@
 * Author: Frank Ludwig, NCBI
 *
 * File Description:
-*   Convenience wrapper around some of the other feature processing finctions
+*   Convenience wrapper around some of the other feature processing functions
 *   in the xobjedit library.
 */
 
@@ -117,8 +117,33 @@ CFeatTableEdit::CFeatTableEdit(
     unsigned int locusTagNumber,
     unsigned int startingFeatId,
     IObjtoolsListener* pMessageListener) :
-    //  -------------------------------------------------------------------------
+//  -------------------------------------------------------------------------
     mAnnot(annot),
+    mSequenceSize(0),
+    mpMessageListener(pMessageListener),
+    mNextFeatId(startingFeatId),
+    mLocusTagNumber(locusTagNumber),
+    mLocusTagPrefix(locusTagPrefix)
+{
+    mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
+    mpScope->AddDefaults();
+    mHandle = mpScope->AddSeq_annot(mAnnot);
+    mEditHandle = mpScope->GetEditHandle(mHandle);
+    mTree = feature::CFeatTree(mHandle);
+};
+
+
+//  -------------------------------------------------------------------------
+CFeatTableEdit::CFeatTableEdit(
+    CSeq_annot& annot,
+    unsigned int sequenceSize,
+    const string& locusTagPrefix,
+    unsigned int locusTagNumber,
+    unsigned int startingFeatId,
+    IObjtoolsListener* pMessageListener) :
+//  -------------------------------------------------------------------------
+    mAnnot(annot),
+    mSequenceSize(sequenceSize),
     mpMessageListener(pMessageListener),
     mNextFeatId(startingFeatId),
     mLocusTagNumber(locusTagNumber),
@@ -1563,9 +1588,63 @@ string CFeatTableEdit::xNextTranscriptId(
 }
 
 //  ----------------------------------------------------------------------------
+CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
+    const CSeq_loc& baseLoc)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_loc> pEnvelope(new CSeq_loc);
+
+    auto baseStart = baseLoc.GetStart(eExtreme_Positional);
+    auto baseStop = baseLoc.GetStop(eExtreme_Positional);
+    auto& baseId = *baseLoc.GetId();
+    auto baseStrand = baseLoc.GetStrand();
+
+    if (mSequenceSize == 0  ||  baseStart <= baseStop) {
+        pEnvelope->SetInt();
+        pEnvelope->SetId(baseId);
+        pEnvelope->SetInt().SetFrom(baseStart);
+        pEnvelope->SetInt().SetTo(baseStop);
+        pEnvelope->SetInt().SetStrand(baseLoc.GetStrand());
+    }
+    else {
+        if (baseLoc.GetStrand() != eNa_strand_minus) {
+            CRef<CSeq_interval> pTop(new CSeq_interval);
+            pTop->SetId().Assign(baseId);
+            pTop->SetFrom(baseStart);
+            pTop->SetTo(mSequenceSize);
+            pTop->SetStrand(baseLoc.GetStrand());
+            pEnvelope->SetPacked_int().AddInterval(*pTop);
+            CRef<CSeq_interval> pBottom(new CSeq_interval);
+            pBottom->SetId().Assign(baseId);
+            pBottom->SetFrom(0);
+            pBottom->SetTo(baseStop);
+            pBottom->SetStrand(baseLoc.GetStrand());
+            pEnvelope->SetPacked_int().AddInterval(*pBottom);
+            pEnvelope->ChangeToMix();
+        }
+        else {
+            CRef<CSeq_interval> pBottom(new CSeq_interval);
+            pBottom->SetId().Assign(baseId);
+            pBottom->SetFrom(0);
+            pBottom->SetTo(baseStop);
+            pBottom->SetStrand(baseLoc.GetStrand());
+            pEnvelope->SetPacked_int().AddInterval(*pBottom);
+            CRef<CSeq_interval> pTop(new CSeq_interval);
+            pTop->SetId().Assign(baseId);
+            pTop->SetFrom(baseStart);
+            pTop->SetTo(mSequenceSize);
+            pTop->SetStrand(baseLoc.GetStrand());
+            pEnvelope->SetPacked_int().AddInterval(*pTop);
+            pEnvelope->ChangeToMix();
+        }
+    }
+    return pEnvelope;
+}
+
+//  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
     const CMappedFeat& rna)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
     //const CSeq_loc& loc = rna.GetOriginalFeature().GetLocation();
@@ -1579,14 +1658,11 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
         return pGene;
     }
     pGene.Reset(new CSeq_feat);
-    pGene->SetLocation().SetInt();
-    pGene->SetLocation().SetId(*rna.GetLocation().GetId());
-    pGene->SetLocation().SetInt().SetFrom(rna.GetLocation().GetStart(
-        eExtreme_Positional));
-    pGene->SetLocation().SetInt().SetTo(rna.GetLocation().GetStop(
-        eExtreme_Positional));
-    pGene->SetLocation().SetInt().SetStrand(rna.GetLocation().GetStrand());
+    pGene->SetLocation(*xGetGeneLocation(rna.GetLocation()));
     pGene->SetData().SetGene();
+
+    const auto& rnaLocation = rna.GetLocation();
+    const auto& geneLocation = pGene->GetLocation();
     return pGene;
 }
 

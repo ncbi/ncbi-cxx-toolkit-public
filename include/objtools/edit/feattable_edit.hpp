@@ -57,6 +57,15 @@ public:
         unsigned int = 1, //starting locus tag
         unsigned int = 1, //starting feature id
         IObjtoolsListener* = nullptr);
+    
+    CFeatTableEdit(
+        CSeq_annot&,
+        unsigned int sequenceSize,
+        const string& = "",
+        unsigned int = 1, //starting locus tag
+        unsigned int = 1, //starting feature id
+        IObjtoolsListener* = nullptr);
+    
     ~CFeatTableEdit();
 
     void GenerateLocusTags();
@@ -164,6 +173,9 @@ protected:
     bool xAdjustExistingParentGene(
         CMappedFeat);
 
+    CRef<CSeq_loc> xGetGeneLocation(
+        const CSeq_loc&);
+
     static std::string xGetIdStr(
         CMappedFeat);
     std::string xGetCurrentLocusTagPrefix(
@@ -187,6 +199,7 @@ protected:
         FeatMap&);
 
     CSeq_annot& mAnnot;
+    unsigned int mSequenceSize;
     CRef<CScope> mpScope;
     CSeq_annot_Handle mHandle;
     feature::CFeatTree mTree;

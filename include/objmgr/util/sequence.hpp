@@ -765,7 +765,8 @@ public:
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps,
-        fUseAutoDef         = 1 << 17  ///< Disregard original ID when constructing defline
+        fUseAutoDef         = 1 << 17,  ///< Disregard original ID when constructing defline
+        fBaseFirstUnused    = 1 << 18  ///< first avalailabe for derived classes
     };
     typedef long TFlags; ///< binary OR of EFlags
 

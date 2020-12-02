@@ -869,12 +869,12 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     entry->SetSeq();
     reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
     
-    x_PostProcessAnnot(*entry);
+    x_PostProcessAnnot(*entry, reader.SequenceSize());
 
     return entry;
 }
 
-void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
+void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int sequenceSize)
 {
     unsigned int startingLocusTagNumber = 1;
     unsigned int startingFeatureId = 1;
@@ -884,7 +884,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
     for (auto it = annots.begin(); it != annots.end(); ++it) {
 
         edit::CFeatTableEdit fte(
-            **it, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
+            **it, sequenceSize, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
         //fte.InferPartials();
         fte.GenerateMissingParentFeatures(m_context.m_eukariote);
         if (m_context.m_locus_tags_needed) {

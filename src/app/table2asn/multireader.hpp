@@ -56,7 +56,7 @@ private:
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
-    void x_PostProcessAnnot(objects::CSeq_entry& entry);
+    void x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int sequenceSize =0);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename);

@@ -106,7 +106,10 @@ public:
     ReadSeqAnnots(
         TAnnotList&,
         ILineReader&,
-		ILineErrorListener* =nullptr);
+        ILineErrorListener* =nullptr);
+
+    unsigned int
+    SequenceSize() const { return mSequenceSize; };
 
     //
     // class interface:

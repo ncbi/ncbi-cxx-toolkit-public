@@ -174,7 +174,7 @@ private:
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
 
-    void xPostProcessAnnot(const CArgs&, CSeq_annot&);
+    void xPostProcessAnnot(const CArgs&, CSeq_annot&, unsigned int =0);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
 
@@ -1030,7 +1030,7 @@ void CMultiReaderApp::xProcessGff3(
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
-		xPostProcessAnnot(args, **it);
+		xPostProcessAnnot(args, **it, reader.SequenceSize());
         xWriteObject(args, **it, ostr);
     }
 }
@@ -1417,7 +1417,8 @@ void CMultiReaderApp::xSetFlags(
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xPostProcessAnnot(
     const CArgs & args,
-    CSeq_annot& annot)
+    CSeq_annot& annot,
+    unsigned int sequenceSize)
 //  ----------------------------------------------------------------------------
 {
     static unsigned int startingLocusTagNumber = 1;
@@ -1450,7 +1451,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     }
 
     edit::CFeatTableEdit fte(
-        annot, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
+        annot, sequenceSize, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
     fte.InferPartials();
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
     if (args["genbank"].AsBoolean()  &&  !fte.AnnotHasAllLocusTags()) {
