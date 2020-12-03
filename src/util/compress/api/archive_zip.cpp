@@ -43,7 +43,18 @@ BEGIN_NCBI_SCOPE
 
 // Directly include miniz library
 
-#define MINIZ_NO_ZLIB_APIS      // disable zlib emulation, we have it separately anyway
+// disable zlib emulation, we have it separately anyway
+#define MINIZ_NO_ZLIB_APIS      
+
+// Disable miniz warning about using large files on BSD and Cygwin64
+#if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)
+#  define fopen64   fopen
+#  define ftello64  ftello
+#  define fseeko64  fseeko
+#  define stat64    stat
+#  define freopen64 freopen
+#  define _LARGEFILE64_SOURCE
+#endif
 
 #include "miniz/miniz.c"
 #include "miniz/miniz_zip.c"
