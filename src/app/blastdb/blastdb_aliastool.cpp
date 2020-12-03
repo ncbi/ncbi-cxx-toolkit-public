@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
 #include <algo/blast/api/version.hpp>
+#include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
@@ -430,7 +431,13 @@ CBlastDBAliasApp::CreateAliasFile() const
             ConvertGiFile(input, output, &ifname, &gilist);
         }
     }
-
+    
+    if (args["dblist"].HasValue()) {
+        //use SeqDBExpert to check if the orginal db exists
+        CSeqDBExpert::ESeqType db_seqtype = seq_type == CWriteDB::eProtein ? 
+            CSeqDBExpert::eProtein : CSeqDBExpert::eNucleotide;
+        CSeqDBExpert original_db(args["dblist"].AsString(), db_seqtype);
+    }
 
     const EAliasFileFilterType alias_type = (isTiList ? eTiList : eGiList);
     if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
