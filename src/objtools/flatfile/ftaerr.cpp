@@ -802,7 +802,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
           {SEV_FATAL , eDiag_Fatal}}; 
 
     CFlatFileMessageReporter::GetInstance()
-        .Report(fpi.module, 
+        .Report(fpi.module ? fpi.module : "", 
                 sSeverityMap.at(static_cast<ErrSev>(fpi.sevcode)), 
                 lev1, lev2, textStream.str());
 }

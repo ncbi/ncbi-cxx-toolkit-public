@@ -65,6 +65,7 @@ TokenStatBlk* TokenStringByDelimiter(char* str, Char delimiter);
 void            FreeTokenstatblk(TokenStatBlk* tsbp);
 void            FreeTokenblk(TokenBlk* tbp);
 bool            ParseAccessionRange(TokenStatBlk* tsbp, Int4 skip);
+bool            ParseAccessionRange(list<string>& tokens, int skip);
 void            UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist);
 
 /* Return array position of the matched length of string in array_string.

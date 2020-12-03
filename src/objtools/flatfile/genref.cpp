@@ -1349,6 +1349,10 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             text_id = nullptr;
         }
 
+        if (!text_id) {
+            return;
+        }
+
         mlp = (MixLocPtr) MemNew(sizeof(MixLoc));
         mlp->acc = StringSave(text_id->GetAccession().c_str());
         mlp->ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;

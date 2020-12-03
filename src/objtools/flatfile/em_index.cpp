@@ -220,7 +220,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     ValNodePtr      kwds;
     ValNodePtr      tkwds;
 
-    finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
+    finfo = new FinfoBlk();
+
 
     if(pp->ifp == NULL)
         end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblkwl[ParFlat_ID].str,
@@ -541,7 +542,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
         MemFree(tibnp);
     }
 
-    MemFree(finfo);
+    delete finfo;
 
     if(pp->segment)
 // LCOV_EXCL_START

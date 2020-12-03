@@ -2486,7 +2486,6 @@ bool EmblAscii(ParserPtr pp)
     DataBlkPtr  entry;
     EntryBlkPtr ebp;
 
-    unsigned char*    dnaconv;
 
     TEntryList seq_entries;
 
@@ -2496,7 +2495,7 @@ bool EmblAscii(ParserPtr pp)
     bool     seq_long = false;
     IndexblkPtr ibp;
 
-    dnaconv = GetDNAConv();             /* set up sequence alphabets */
+    auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
 
     for(imax = pp->indx, i = 0; i < imax; i++)
     {
@@ -2575,7 +2574,7 @@ bool EmblAscii(ParserPtr pp)
             GetScope().AddBioseq(*bioseq);
 
             GetReleaseInfo(entry, pp->accver);
-            if (!GetEmblInst(pp, entry, dnaconv))
+            if (!GetEmblInst(pp, entry, dnaconv.get()))
             {
                 ibp->drop = 1;
                 ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
@@ -2831,7 +2830,6 @@ bool EmblAscii(ParserPtr pp)
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete,
               "COMPLETED : SUCCEEDED = %d; SKIPPED = %d.",
               total, imax - total);
-    MemFree(dnaconv);
     return true;
 }
 

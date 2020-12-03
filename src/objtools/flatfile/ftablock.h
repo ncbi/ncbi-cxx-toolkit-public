@@ -124,6 +124,17 @@ typedef struct _locus_cont {
     Int4 date;
 } LocusCont, *LocusContPtr;
 
+struct SLocusLineInfo 
+{
+    string bases; 
+    string bp;
+    string strand;
+    string molecule;
+    string topology;
+    string div;
+    string date;
+};
+
 typedef struct _gap_feats {
     Int4    from;
     Int4    to;
@@ -220,6 +231,8 @@ typedef struct indexblk_struct {
     LocusCont          lc;
     char*            moltype;         /* the value of /mol_type qual */
     GapFeatsPtr        gaps;
+
+    list<string>       secondary_accessions;
     TokenBlkPtr        secaccs;
     XmlIndexPtr        xip;
     bool               embl_new_ID;

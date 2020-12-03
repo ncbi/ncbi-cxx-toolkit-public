@@ -53,7 +53,7 @@
 
 BEGIN_NCBI_SCOPE
 
-KwordBlk gbkwl[] = {
+KwordBlk genbankKeywordLength[] = {
     {"LOCUS", 5},     {"DEFINITION", 10}, {"ACCESSION", 9}, {"NID", 3},
     {"GSDB ID", 7},   {"KEYWORDS", 8},    {"SEGMENT", 7},   {"SOURCE", 6},
     {"REFERENCE", 9}, {"COMMENT", 7},     {"FEATURES", 8},  {"BASE COUNT", 10},
@@ -180,7 +180,9 @@ static Uint1 gb_err_field(char* str)
 
 /**********************************************************/
 static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
-                                Parser::ESource source, bool ign_toks)
+                                Parser::ESource source, 
+                                Parser::EMode mode,
+                                bool ign_toks)
 {
     bool gi;
     char* p;
@@ -201,20 +203,25 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
     q = StringRChr(line, '.');
     if(q == NULL)
     {
-        *p = ch1;
-        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum,
-                  "Missing VERSION number in VERSION line: \"%s\".", line);
-        entry->drop = 1;
+        if (mode != Parser::EMode::Relaxed) {
+            *p = ch1;
+            ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum,
+                    "Missing VERSION number in VERSION line: \"%s\".", line);
+            entry->drop = 1;
+        }
         return;
     }
+
     for(r = q + 1; *r >= '0' && *r <= '9';)
         r++;
     if(*r != '\0')
     {
-        *p = ch1;
-        ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum,
-                  "Incorrect VERSION number in VERSION line: \"%s\".", line);
-        entry->drop = 1;
+        if (mode != Parser::EMode::Relaxed) {
+            *p = ch1;
+            ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum,
+                    "Incorrect VERSION number in VERSION line: \"%s\".", line);
+            entry->drop = 1;
+        }
         return;
     }
     ch = *q;
@@ -223,10 +230,12 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
     {
         *q = ch;
         *p = ch1;
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch,
+        if (mode != Parser::EMode::Relaxed) {
+            ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch,
                   "Accessions in VERSION and ACCESSION lines don't match: \"%s\" vs \"%s\".",
                   line, (entry->acnum == NULL) ? "NULL" : entry->acnum);
-        entry->drop = 1;
+            entry->drop = 1;
+        }
         return;
     }
     entry->vernum = atoi(q + 1);
@@ -344,8 +353,10 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
     return true;
 }
 
+
+
 /**********************************************************/
-bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
+bool GenBankIndex(ParserPtr pp)
 {
     FinfoBlkPtr   finfo;
 
@@ -362,7 +373,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     bool          after_MGA;
 
     IndexblkPtr   entry;
-    Int2          curkw;
+    Int2          currentKeyword;
     Int4          indx = 0;
     DataBlkPtr    data = NULL;
     IndBlkNextPtr ibnp;
@@ -381,11 +392,9 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
     if(pp->ifp == NULL)
-        end_of_file = SkipTitleBuf(pp->ffbuf, finfo, gbkwl[ParFlat_LOCUS].str,
-                                   gbkwl[ParFlat_LOCUS].len);
+        end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
     else
-        end_of_file = SkipTitle(pp->ifp, finfo, gbkwl[ParFlat_LOCUS].str,
-                                gbkwl[ParFlat_LOCUS].len);
+        end_of_file = SkipTitle(pp->ifp, finfo, "LOCUS");
     if(end_of_file)
     {
         MsgSkipTitleFail((char*) "GenBank", finfo);
@@ -428,7 +437,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
             after_VERSION = false;
             after_MGA = false;
 
-            curkw = ParFlat_LOCUS;
+            currentKeyword = ParFlat_LOCUS;
             line_ver = NULL;
             line_nid = NULL;
             line_locus = NULL;
@@ -440,9 +449,9 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 dbl = ValNodeFreeData(dbl);
             tdbl = NULL;
             size_t dbl_len = 0;
-            while(curkw != ParFlat_END && !end_of_file)
+            while(currentKeyword != ParFlat_END && !end_of_file)
             {
-                switch(curkw)
+                switch(currentKeyword)
                 {
                     case ParFlat_LOCUS:
                         if(after_LOCUS)
@@ -585,9 +594,10 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                                       "More than two lines 'FEATURES'");
                             entry->drop = 1;
                         }
-                        else if(after_LOCUS == false ||
+                        else if(pp->mode != Parser::EMode::Relaxed &&
+                                (after_LOCUS == false ||
                                 after_DEFNTN == false ||
-                                after_SOURCE == false)
+                                after_SOURCE == false))
                         {
                             ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder,
                                       "FEATURES field out of order");
@@ -604,10 +614,12 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                                       "More than two lines 'ORIGIN'");
                             entry->drop = 1;
                         }
-                        else if(after_LOCUS == false ||
+                        else if(
+                                pp->mode != Parser::EMode::Relaxed &&
+                                (after_LOCUS == false ||
                                 after_DEFNTN == false ||
                                 after_SOURCE == false ||
-                                after_FEAT == false)
+                                after_FEAT == false))
                         {
                             ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder,
                                       "ORIGIN field out of order");
@@ -623,8 +635,11 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         if(acwflag == false)    /* first accession line */
                         {
                             acwflag = true;
-                            if (!GetAccession(pp, finfo->str, entry, 2))
-                                pp->num_drop++;
+                            if (!GetAccession(pp, finfo->str, entry, 2)) {
+                                if (pp->mode != Parser::EMode::Relaxed) {
+                                    pp->num_drop++;
+                                }
+                            }
                         }
                         break;
                     case ParFlat_SEGMENT:
@@ -680,7 +695,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
                 while (!end_of_file && (finfo->str[0] == ' ' || finfo->str[0] == '\t'))
                 {
-                    if(curkw == ParFlat_KEYWORDS && tkwds != NULL)
+                    if(currentKeyword == ParFlat_KEYWORDS && tkwds != NULL)
                     {
                         tkwds->next = ValNodeNew(NULL);
                         tkwds = tkwds->next;
@@ -688,7 +703,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         kwds_len += StringLen(finfo->str);
                     }
 
-                    if(curkw == ParFlat_DBLINK && tdbl != NULL)
+                    if(currentKeyword == ParFlat_DBLINK && tdbl != NULL)
                     {
                         tdbl->next = ValNodeNew(NULL);
                         tdbl = tdbl->next;
@@ -696,7 +711,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         dbl_len += StringLen(finfo->str);
                     }
 
-                    if(curkw == ParFlat_ACCESSION && entry->drop == 0 &&
+                    if(currentKeyword == ParFlat_ACCESSION && entry->drop == 0 &&
                        GetAccession(pp, finfo->str, entry, 0) == false)
                         pp->num_drop++;
 
@@ -705,6 +720,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     else
                         end_of_file = XReadFile(pp->ifp, finfo);
                 }
+
+
 
                 if(kwds != NULL)
                 {
@@ -717,9 +734,16 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     kwds_len = 0;
                 }
 
-                curkw = SrchKeyword(finfo->str, gbkwl);
+                if (pp->mode == Parser::EMode::Relaxed &&
+                    NStr::IsBlank(finfo->str)) {
+                    currentKeyword = ParFlat_UNKW;
+                    continue;
+                }
+
+                currentKeyword = SrchKeyword(finfo->str, genbankKeywordLength);
+
                 if(finfo->str[0] != ' ' && finfo->str[0] != '\t' &&
-                   CheckLineType(finfo->str, finfo->line, gbkwl, after_ORIGIN) == false)
+                   CheckLineType(finfo->str, finfo->line, genbankKeywordLength, after_ORIGIN) == false)
                      entry->drop = 1;
 
             } /* while, end of one entry */
@@ -728,33 +752,38 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
             if(entry->drop != 1)
             {
-                if(line_locus != NULL &&
-                   CkLocusLinePos(line_locus, pp->source, &entry->lc, entry->is_mga) == false)
-                    entry->drop = 1;
 
-                if(entry->is_mga && after_MGA == false)
-                    entry->drop = gb_err_field((char*) "MGA");
+                if (pp->mode != Parser::EMode::Relaxed) {
+                    if(line_locus != NULL &&
+                    CkLocusLinePos(line_locus, pp->source, &entry->lc, entry->is_mga) == false)
+                        entry->drop = 1;
 
-                if(after_LOCUS == false)
-                    entry->drop = gb_err_field((char*) "LOCUS");
+                    if(entry->is_mga && after_MGA == false)
+                        entry->drop = gb_err_field((char*) "MGA");
 
-                if(after_VERSION == false && pp->accver)
-                    entry->drop = gb_err_field((char*) "VERSION");
+                    if(after_LOCUS == false)
+                        entry->drop = gb_err_field((char*) "LOCUS");
 
-                if(after_DEFNTN == false)
-                    entry->drop = gb_err_field((char*) "DEFINITION");
+                    if(after_VERSION == false && pp->accver)
+                        entry->drop = gb_err_field((char*) "VERSION");
 
-                if(after_SOURCE == false)
-                    entry->drop = gb_err_field((char*) "SOURCE");
+                    if(after_DEFNTN == false)
+                        entry->drop = gb_err_field((char*) "DEFINITION");
 
-                if(after_REFER == false && pp->source != Parser::ESource::Flybase &&
-                   entry->is_wgs == false &&
-                   (pp->source != Parser::ESource::Refseq ||
-                    StringNCmp(entry->acnum, "NW_", 3) != 0))
-                    entry->drop = gb_err_field((char*) "REFERENCE");
+                    if(after_SOURCE == false)
+                        entry->drop = gb_err_field((char*) "SOURCE");
 
-                if(after_FEAT == false)
-                    entry->drop = gb_err_field((char*) "FEATURES");
+                    if(after_REFER == false && pp->source != Parser::ESource::Flybase &&
+                       entry->is_wgs == false &&
+                       (pp->source != Parser::ESource::Refseq ||
+                        StringNCmp(entry->acnum, "NW_", 3) != 0)) {
+                            entry->drop = gb_err_field((char*) "REFERENCE");
+                    }
+
+                    if(after_FEAT == false) {
+                        entry->drop = gb_err_field((char*) "FEATURES");
+                    }
+                } // !Parser::EMode::Relaxed
 
                 if(entry->is_contig && entry->segnum != 0)
                 {
@@ -768,8 +797,13 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 if(pp->mode == Parser::EMode::HTGSCON)
                     entry->vernum = 1;
                 else
-                    ParseGenBankVersion(entry, line_ver, line_nid, pp->source,
-                                        pp->ign_toks);
+                    ParseGenBankVersion(
+                            entry, 
+                            line_ver, 
+                            line_nid, 
+                            pp->source,   
+                            pp->mode,
+                            pp->ign_toks);
             }
             if(line_locus != NULL)
             {
@@ -791,14 +825,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                              entry->offset;
             else
                 entry->len = (size_t) ftell(pp->ifp) - entry->offset;
-            if(fun != NULL)
-            {
-                data = LoadEntry(pp, entry->offset, entry->len);
-                (*fun)(entry, data->offset, static_cast<Int4>(data->len));
-                FreeEntry(data);
-            }
-
-            if(acwflag == false)
+            if(acwflag == false &&
+               pp->mode != Parser::EMode::Relaxed)
             {
                 ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
                           "No accession # for this entry, about line %ld",
@@ -814,23 +842,15 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
         else
         {
             if(pp->ifp == NULL)
-                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                               gbkwl[ParFlat_END].str,
-                                               gbkwl[ParFlat_END].len);
+                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "//");
             else
-                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                            gbkwl[ParFlat_END].str,
-                                            gbkwl[ParFlat_END].len);
+                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo, "//");
         }
 
         if(pp->ifp == NULL)
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           gbkwl[ParFlat_LOCUS].str,
-                                           gbkwl[ParFlat_LOCUS].len);
+            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "LOCUS");
         else
-            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                        gbkwl[ParFlat_LOCUS].str,
-                                        gbkwl[ParFlat_LOCUS].len);
+            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo, "LOCUS");
 
     } /* while, end_of_file */
 

@@ -5342,14 +5342,13 @@ static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protco
 bool SprotAscii(ParserPtr pp)
 {
     DataBlkPtr  entry;
-    unsigned char*    protconv;
 
     Int4        total;
     Int4        i;
     IndexblkPtr ibp;
     Int4        imax;
 
-    protconv = GetProteinConv();
+    auto protconv = GetProteinConv();
 
     for(total = 0, i = 0, imax = pp->indx; i < imax; i++)
     {
@@ -5367,7 +5366,7 @@ bool SprotAscii(ParserPtr pp)
                 return false;
             }
 
-            SpPrepareEntry(pp, entry, protconv);
+            SpPrepareEntry(pp, entry, protconv.get());
 
             if(ibp->drop != 1)
             {
@@ -5397,7 +5396,6 @@ bool SprotAscii(ParserPtr pp)
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete,
               "Parsing completed, %d entr%s parsed",
               total, (total == 1) ? "y" : "ies");
-    MemFree(protconv);
     return true;
 }
 

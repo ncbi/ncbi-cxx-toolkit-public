@@ -281,7 +281,6 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 {
     IndexblkPtr ibp;
     EntryBlkPtr ebp;
-    unsigned char*    molconv;
     char*     ptr;
     char*     eptr;
 
@@ -312,9 +311,9 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         if (ptr < eptr) {
 
             if (!ibp->is_contig) {
-                molconv = GetDNAConv();
-                res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv, eSeq_code_type_iupacna);
-                MemFree(molconv);
+                auto molconv = GetDNAConv();
+                res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+             //   MemFree(molconv);
             }
             else {
                 pp->farseq = true;
@@ -334,9 +333,9 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
             res = false;
             if (!ibp->is_contig) {
-                molconv = GetDNAConv();
-                res = GetSeqData(pp, entry, *bioseq, ParFlat_ORIGIN, molconv, eSeq_code_type_iupacna);
-                MemFree(molconv);
+                auto molconv = GetDNAConv();
+                res = GetSeqData(pp, entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
+               // MemFree(molconv);
             }
             else {
                 pp->farseq = true;
@@ -353,9 +352,9 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         }
 
         if (ptr < eptr) {
-            molconv = GetProteinConv();
-            res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv, eSeq_code_type_iupacna);
-            MemFree(molconv);
+            auto molconv = GetProteinConv();
+            res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+        //    MemFree(molconv);
         }
     }
 

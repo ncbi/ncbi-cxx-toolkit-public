@@ -45,6 +45,10 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objtools/edit/cds_fix.hpp>
 
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 
@@ -60,6 +64,7 @@
 #define THIS_FILE "fcleanup.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /**********************************************************/
 // TODO To be moved to cleanup
@@ -411,6 +416,51 @@ static void ConvertPackedIntToInterval(objects::CSeq_loc& loc)
                        ranges.front().first, ranges.back().second, loc);
     }
 }
+
+
+void g_InstantiateMissingProteins(CSeq_entry_Handle entryHandle) 
+{
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+    auto& scope = entryHandle.GetScope();
+
+    int protein_id_counter=99;
+
+    for (CFeat_CI cds_it(entryHandle, sel); cds_it; ++cds_it) {
+        auto pCds = cds_it->GetSeq_feat();
+        if (!sequence::IsPseudo(*pCds, scope)) {
+            if (!pCds->IsSetProduct()) {
+                auto pNewCds = Ref(new CSeq_feat());
+                pNewCds->Assign(*pCds);
+                string idLabel;
+                auto pProteinId = 
+                    edit::GetNewProtId(scope.GetBioseqHandle(pNewCds->GetLocation()), protein_id_counter, idLabel, false);
+                pNewCds->SetProduct().SetWhole().Assign(*pProteinId);
+                CSeq_feat_EditHandle pCdsEditHandle(*cds_it);
+                pCdsEditHandle.Replace(*pNewCds);
+                pCds  = pNewCds;
+            }
+            else if (pCds->GetProduct().GetId() && 
+                     scope.Exists(*pCds->GetProduct().GetId())) {
+                continue; 
+            }
+            // Add protein
+            CCleanup::AddProtein(*pCds, scope);
+            auto protHandle = scope.GetBioseqHandle(pCds->GetProduct());
+            if (protHandle) {
+                CFeat_CI feat_ci(protHandle, CSeqFeatData::eSubtype_prot);
+                if (!feat_ci) {
+                    string protName = CCleanup::GetProteinName(*pCds, scope);
+                    if (NStr::IsBlank(protName)) {
+                        protName = "hypothetical protein";
+                    }   
+                    feature::AddProteinFeature(*(protHandle.GetCompleteBioseq()), protName, *pCds, scope); 
+                }
+            }
+        }
+    }
+}
+
+
 
 void FinalCleanup(TEntryList& seq_entries)
 {

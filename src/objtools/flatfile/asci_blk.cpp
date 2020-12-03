@@ -98,6 +98,7 @@
 #define Seq_descr_pub_same 50
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 const char *magic_phrases[] = {
     "*** SEQUENCING IN PROGRESS ***",
@@ -108,7 +109,7 @@ const char *magic_phrases[] = {
     NULL
 };
 
-extern KwordBlk gbkwl[];
+extern KwordBlk genbankKeywordLength[];
 extern KwordBlk emblkwl[];
 extern KwordBlk spkwl[];
 extern KwordBlk prfkwl[];
@@ -259,7 +260,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(ptr, gbkwl);
+        nextkw = SrchKeyword(ptr, genbankKeywordLength);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;
@@ -268,7 +269,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
             break;
     } while (nextkw == curkw);
 
-    nextkw = SrchKeyword(ptr, gbkwl);
+    nextkw = SrchKeyword(ptr, genbankKeywordLength);
 
     InsertDatablkVal(chain, curkw, offset, len);
 
@@ -1087,8 +1088,20 @@ CRef<objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
     else
         seqtype = ValidSeqType(acc, pp->seqtype, is_nuc, ibp->is_tpa);
 
-    if (seqtype == 0 ||
-        ((locus == NULL || *locus == '\0') && (acc == NULL || *acc == '\0')))
+    if (seqtype == 0) {
+        if (acc && !NStr::IsBlank(acc)) {
+            auto pId = Ref(new CSeq_id(CSeq_id::e_Local, acc));
+            res->SetId().push_back(move(pId));
+        }
+        else if (pp->mode == Parser::EMode::Relaxed && locus) {
+            auto pId = Ref(new CSeq_id(CSeq_id::e_Local, locus));
+            res->SetId().push_back(move(pId));
+        }
+        else {
+            SetEmptyId(*res);
+        }
+    }
+    else if ((locus == NULL || *locus == '\0') && (acc == NULL || *acc == '\0'))
     {
         SetEmptyId(*res);
     }
@@ -1284,6 +1297,32 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
     *p = '1';
 }
 
+
+/**********************************************************/
+static void fta_fix_secondaries(list<string>& secondaries)
+{
+    if (secondaries.size() < 2) {
+        return;
+    }
+
+    auto it = secondaries.begin();
+    const auto& first = *it;
+    const auto& second = *next(it);
+
+    if (first.empty()||
+        second.empty() ||
+        fta_if_wgs_acc(second.c_str()) != 0 ||
+        second != "-") {
+        return;
+    }
+
+    string newSecondary = *it;
+    newSecondary.back() = '1';
+    ++it;
+    secondaries.insert(it, newSecondary);
+}
+
+
 /**********************************************************
 *
 *   void GetExtraAccession(ibp, allow_uwsec, source, accessions):
@@ -1310,8 +1349,10 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     Uint1       pri_owner;
     Uint1       sec_owner;
 
-    if (ibp->secaccs == NULL)
+    if (ibp->secaccs == NULL &&
+        ibp->secondary_accessions.empty()) {
         return;
+    }
 
     acc = StringSave(ibp->acnum);
     is_cp = (acc[0] == 'C' && acc[1] == 'P');
@@ -1325,8 +1366,10 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         i = StringLen(acc);
     }
 
-    if (source == Parser::ESource::EMBL)
+    if (source == Parser::ESource::EMBL) {
         fta_fix_secondaries(ibp->secaccs);
+        fta_fix_secondaries(ibp->secondary_accessions);
+    }
 
     unusual_wgs = false;
     for (tbp = ibp->secaccs; tbp != NULL; tbp = tbp->next)
@@ -1590,10 +1633,16 @@ void GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data,
         return;
 
     kwstr = GetBlkDataReplaceNewLine(bptr, bptr + len, col_data);
+    if (!kwstr) {
+        return;
+    }
+
     if(type == ParFlatSP_KW)
         StripECO(kwstr);
     if(type == ParFlat_KW)
         kwstr = FixEMBLKeywords(kwstr);
+    
+
 
     tsbp = TokenStringByDelimiter(kwstr, ';');
 
@@ -1662,6 +1711,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
 
     blank = count = 0;
     ptr = *seqptr;
+
     bu = buf;
     while (*ptr != '\n' && *ptr != '\0' && blank < 6 && count < 100)
     {
@@ -1853,23 +1903,31 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
 *                                              3-29-93
 *
 **********************************************************/
-unsigned char* GetDNAConv(void)
+unique_ptr<unsigned char[]> GetDNAConv(void)
 {
-    unsigned char*        dnaconv;
 
-    dnaconv = (unsigned char*)MemNew((size_t)255);                  /* DNA */
-    MemSet((char*)dnaconv, (Uint1)1, (size_t)255);         /* everything
-                                                                an error */
+    unique_ptr<unsigned char[]> dnaconv(new unsigned char[255]());
+
+  //  unsigned char*        dnaconv;
+
+  //  dnaconv = (unsigned char*)MemNew((size_t)255);                  /* DNA */
+  //  MemSet((char*)dnaconv, (Uint1)1, (size_t)255);
+    
+    MemSet((char*)dnaconv.get(), (Uint1)1, (size_t)255);
+
     dnaconv[32] = 0;                    /* blank */
 
     objects::CSeqportUtil::TPair range = objects::CSeqportUtil::GetCodeIndexFromTo(objects::eSeq_code_type_iupacna);
     for (objects::CSeqportUtil::TIndex i = range.first; i <= range.second; ++i)
     {
         const string& code = objects::CSeqportUtil::GetCode(objects::eSeq_code_type_iupacna, i);
-        dnaconv[(int)TO_LOWER(code[0])] = code[0];   /* genbank, embl uses lower
-                                                        case dna */
+
+        dnaconv[static_cast<int>(code[0])] = code[0];
+        dnaconv[(int)TO_LOWER(code[0])] = code[0];   
     }
-    return(dnaconv);
+
+    return dnaconv;
+//    return(dnaconv);
 }
 
 /**********************************************************
@@ -1881,12 +1939,13 @@ unsigned char* GetDNAConv(void)
 *                                              3-29-93
 *
 **********************************************************/
-unsigned char* GetProteinConv(void)
+unique_ptr<unsigned char[]> GetProteinConv(void)
 {
-    unsigned char*        protconv;
+   // unsigned char*        protconv;
+    unique_ptr<unsigned char[]> protconv(new unsigned char[255]());
 
-    protconv = (unsigned char*)MemNew((size_t)255);                  /* proteins */
-    MemSet((char*)protconv, (Uint1)1, (size_t)255);         /* everything
+   // protconv = (unsigned char*)MemNew((size_t)255);                  /* proteins */
+    MemSet((char*)protconv.get(), (Uint1)1, (size_t)255);         /* everything
                                                                 an error */
     protconv[32] = 0;                    /* blank */
 

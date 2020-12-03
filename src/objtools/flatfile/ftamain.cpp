@@ -324,6 +324,10 @@ static void CheckDupEntries(ParserPtr pp)
             if(pp->accver && first->vernum != second->vernum)
                 break;
 
+            if (!first->date || !second->date) {
+                continue;
+            }
+
             objects::CDate::ECompare dtm = first->date->Compare(*second->date);
             if (dtm == objects::CDate::eCompare_before)
             {
@@ -687,23 +691,30 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
     }
     else if (NStr::EqualNocase(source, "NCBI"))
     {
-        /* for NCBI, the legal formats are embl and genbank, and
-         * filenames, etc. need to be set accordingly. For example,
-         * in -i (subtool) mode, both embl and genbank format might
-         * be expected.
-         */
-        if(pp.format != Parser::EFormat::EMBL && pp.format != Parser::EFormat::GenBank &&
-           pp.format != Parser::EFormat::XML)
-        {
-            ErrPostEx(SEV_FATAL, 0, 0,
-                      "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
-            return false;
+        if (pp.mode == Parser::EMode::Relaxed) {
+            pp.acprefix = NULL;
+            pp.accpref = NULL;
+            pp.source = Parser::ESource::NCBI;
         }
+        else {
+            /* for NCBI, the legal formats are embl and genbank, and
+             * filenames, etc. need to be set accordingly. For example,
+             * in -i (subtool) mode, both embl and genbank format might
+             * be expected.
+             */
+            if(pp.format != Parser::EFormat::EMBL && pp.format != Parser::EFormat::GenBank &&
+              pp.format != Parser::EFormat::XML)
+            {
+                ErrPostEx(SEV_FATAL, 0, 0,
+                      "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
+                return false;
+            }
 
-        pp.acprefix = ParFlat_NCBI_AC;
-        pp.seqtype = objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
+            pp.acprefix = ParFlat_NCBI_AC;
+            pp.seqtype = objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
                                                                GenBank SEQIDS - Karl */
-        pp.source = Parser::ESource::NCBI;
+            pp.source = Parser::ESource::NCBI;
+        }
     }
     else
     {

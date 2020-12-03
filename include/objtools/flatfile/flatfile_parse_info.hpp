@@ -63,7 +63,8 @@ struct Parser {
     enum class EMode {
         Release,
         HTGS,
-        HTGSCON
+        HTGSCON,
+        Relaxed
     };
 
     enum class ESource {

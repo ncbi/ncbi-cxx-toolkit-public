@@ -2700,7 +2700,6 @@ bool PirAscii(ParserPtr pp)
     int         end_of_file;
     DataBlkPtr  dbp;
     DataBlkPtr  ind[MAXTAG];
-    unsigned char*    protconv;
 
     char*     entry_str;
     char*     acc_str;
@@ -2716,7 +2715,7 @@ bool PirAscii(ParserPtr pp)
     else if(pp->ffbuf != NULL)
         pp->ffbuf->current = pp->ffbuf->start;
 
-    protconv = GetProteinConv();        /* set up sequence alphabets
+    auto protconv = GetProteinConv();        /* set up sequence alphabets
                                            in block.c */
 
     beg_str = (char*) dbp_tag[ParFlatPIR_ENTRY];
@@ -2797,7 +2796,7 @@ bool PirAscii(ParserPtr pp)
             offset++;
         } while(end_of_file == 0 && i_tag != ParFlatPIR_ENTRY);
 
-        CRef<objects::CSeq_entry> cur_entry = ind2asn(pp, ind, sub_ind, protconv);
+        CRef<objects::CSeq_entry> cur_entry = ind2asn(pp, ind, sub_ind, protconv.get());
         if (cur_entry.Empty())
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
@@ -2816,7 +2815,6 @@ bool PirAscii(ParserPtr pp)
 
     ErrPostStr(SEV_INFO, ERR_ENTRY_Parsed, "Parsing completed");
 
-    MemFree(protconv);
     return true;
 }
 

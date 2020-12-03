@@ -256,6 +256,186 @@ void UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_acc
     ret.swap(hist);
 }
 
+static bool sIsPrefixChar(char c) { 
+    return ('A' <= c &&  c <= 'Z') || c == '_'; 
+}
+/**********************************************************/
+bool ParseAccessionRange(list<string>& tokens, int skip)
+{
+    bool bad = false;
+
+    if (tokens.empty()) {
+        return true;
+    }
+
+    if (tokens.size() <= skip+1) {
+        return true;
+    }
+
+
+
+    auto it = tokens.begin();
+    if (skip) {
+        advance(it, skip);
+    }
+
+    for (; it != tokens.end(); ++it) {
+        const auto& token = *it;
+        if (token.empty()) {
+            continue;
+        }
+
+        CTempString first, last;
+        if (!NStr::SplitInTwo(token, "-", first, last)) {
+            continue;
+        }
+        if (first.size() != last.size()) {
+            bad = true;
+            break;
+        }
+
+        auto first_it = 
+            find_if_not(begin(first), end(first), sIsPrefixChar);
+
+        if (first_it == first.end()) {
+            bad = true;
+            break;
+        }
+
+
+        auto last_it = 
+            find_if_not(begin(last), end(last), sIsPrefixChar);
+        if (last_it == last.end()) {
+            bad = true;
+            break;
+        }
+
+        auto prefixLength = distance(first.begin(), first_it);
+        if (prefixLength != distance(last.begin(), last_it) ||
+            !NStr::EqualCase(first, 0, prefixLength, last.substr(0, prefixLength))) {
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch,
+                      "Inconsistent prefix found in secondary accession range \"%s\".",
+                      token.c_str());
+            break;
+        }
+
+        auto num1 = NStr::StringToInt(first.substr(prefixLength));  
+        auto num2 = NStr::StringToInt(last.substr(prefixLength));
+
+        if  (num2 <= num1) {
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange,
+                      "Invalid start/end values in secondary accession range \"%s\".",
+                      token.c_str());
+        }
+
+        *it = first;
+        it = tokens.insert(it, "-");
+        it = tokens.insert(it, last);
+    }
+
+
+/*
+    for(bad = false; tbp != NULL; tbp = tbpnext)
+    {
+        tbpnext = tbp->next;
+        if(tbp->str == NULL)
+            continue;
+        dash = StringChr(tbp->str, '-');
+        if(dash == NULL)
+            continue;
+        *dash = '\0';
+        first = tbp->str;
+        last = dash + 1;
+        if(StringLen(first) != StringLen(last) || *first < 'A' ||
+           *first > 'Z' || *last < 'A' || *last > 'Z')
+        {
+            *dash = '-';
+            bad = true;
+            break;
+        }
+
+        for(p = first; (*p >= 'A' && *p <= 'Z') || *p == '_';)
+            p++;
+        if(*p < '0' || *p > '9')
+        {
+            *dash = '-';
+            bad = true;
+            break;
+        }
+        for(q = last; (*q >= 'A' && *q <= 'Z') || *q == '_';)
+            q++;
+        if(*q < '0' || *q > '9')
+        {
+            *dash = '-';
+            bad = true;
+            break;
+        }
+        size_t preflen = p - first;
+        if(preflen != (size_t) (q - last) || StringNCmp(first, last, preflen) != 0)
+        {
+            *dash = '-';
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch,
+                      "Inconsistent prefix found in secondary accession range \"%s\".",
+                      tbp->str);
+            break;
+        }
+
+
+        while(*p == '0') // ignore all the zeros
+            p++;
+        for(q = p; *p >= '0' && *p <= '9';) 
+            p++;
+        if(*p != '\0')
+        {
+            *dash = '-';
+            bad = true;
+            break;
+        }
+        num1 = atoi(q); // the first number
+
+        for(p = last + preflen; *p == '0';)
+            p++;
+        for(q = p; *p >= '0' && *p <= '9';)
+            p++;
+        if(*p != '\0')
+        {
+            *dash = '-';
+            bad = true;
+            break;
+        }
+        num2 = atoi(q);
+
+        if(num1 > num2)
+        {
+            *dash = '-';
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange,
+                      "Invalid start/end values in secondary accession range \"%s\".",
+                      tbp->str);
+            break;
+        }
+
+        tbp->next = (TokenBlkPtr) MemNew(sizeof(TokenBlk));
+        tbp = tbp->next;
+        tbp->str = StringSave("-");
+        tbp->next = (TokenBlkPtr) MemNew(sizeof(TokenBlk));
+        tbp = tbp->next;
+        tbp->str = StringSave(last);
+        tsbp->num += 2;
+
+        tbp->next = tbpnext;
+    }
+    if(tbp == NULL)
+        return true;
+    */
+    if(bad)
+    {
+        ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange,
+                  "Incorrect secondary accession range provided: \"%s\".",
+                  it->c_str());
+    }
+    return false;
+}
+
 /**********************************************************/
 bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
 {
@@ -955,6 +1135,11 @@ void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
         }
 
         ibp->ids.push_back(new_id);
+    }
+    else {
+        auto pId = Ref(new CSeq_id());
+        pId->Assign(id);
+        ibp->ids.push_back(move(pId));
     }
 }
 

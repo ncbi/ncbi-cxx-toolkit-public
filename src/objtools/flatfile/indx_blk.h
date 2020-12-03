@@ -39,11 +39,17 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef struct file_infomation_block {
+struct FinfoBlk {
     Char   str[256];                    /* the current string data */
     Int4   line;                        /* the current line number */
     size_t pos;                         /* the current file position */
-} FinfoBlk, *FinfoBlkPtr;
+};
+
+using FinfoBlkPtr = FinfoBlk*;
+
+
+
+
 
 typedef struct ind_blk_next {
     IndexblkPtr              ibp;
@@ -57,23 +63,31 @@ bool        XReadFile(FILE* fp, FinfoBlkPtr finfo);
 bool        XReadFileBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo);
 bool        SkipTitle(FILE* fp, FinfoBlkPtr finfo, const Char *str, Int2 len);
 bool        SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const Char *str, Int2 len);
+bool        SkipTitle(FILE* fp, FinfoBlkPtr finfo, const CTempString& keyword);
+bool        SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const CTempString& keyword);
 bool        FindNextEntry(bool end_of_file, FILE* ifp,
                                 FinfoBlkPtr finfo, const Char *str, Int2 len);
 bool        FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf,
                                    FinfoBlkPtr finfo, const Char *str, Int2 len);
+bool        FindNextEntry(bool end_of_file, FILE* ifp,
+                                FinfoBlkPtr finfo, const CTempString& keyword);
+bool        FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf,
+                                   FinfoBlkPtr finfo, const CTempString& keyword);
+
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo);
 bool        GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip);
+bool        GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip);
 void        CloseFiles(ParserPtr pp);
 void        MsgSkipTitleFail(const Char *flatfile, FinfoBlkPtr finfo);
 bool        FlatFileIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
 void        ResetParserStruct(ParserPtr pp);
 bool        QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
 
-bool  IsValidAccessPrefix(char* acc, char** accpref);
+//bool  IsValidAccessPrefix(char* acc, char** accpref);
 
 void  DelNoneDigitTail(char* str);
 Int4  fta_if_wgs_acc(const Char* acc);
-Int2  CheckSTRAND(char* str);
+Int2  CheckSTRAND(const char* str);
 Int2  CheckTPG(char* str);
 Int2  CheckDIV(char* str);
 Int4  IsNewAccessFormat(const char* acnum);

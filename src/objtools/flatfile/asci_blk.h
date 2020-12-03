@@ -67,8 +67,8 @@ void        GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data, TK
 bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& cpp_bsp,
                       Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type);
     
-unsigned char*    GetDNAConv(void);
-unsigned char*    GetProteinConv(void);
+unique_ptr<unsigned char[]>   GetDNAConv(void);
+unique_ptr<unsigned char[]>   GetProteinConv(void);
 void   GetSeqExt(ParserPtr pp, objects::CSeq_loc& seq_loc);
 
 // LCOV_EXCL_START

@@ -92,6 +92,7 @@
 #define THIS_FILE "gb_ascii.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /**********************************************************/
 static char* GBDivOffset(DataBlkPtr entry, Int4 div_shift)
@@ -249,7 +250,7 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnacon
     Int2         strand;
     char*      bptr;
     char*      topstr;
-    char*      strandstr;
+    //char*      strandstr;
     LocusContPtr lcp;
     IndexblkPtr  ibp;
 
@@ -258,7 +259,6 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnacon
     lcp = &ibp->lc;
 
     topstr = bptr + lcp->topology;
-    strandstr = bptr + lcp->strand;
 
     ebp = reinterpret_cast<EntryBlkPtr>(entry->data);
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
@@ -272,7 +272,7 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnacon
     if (topology > 1)
         inst.SetTopology(static_cast<objects::CSeq_inst::ETopology>(topology));
 
-    strand = CheckSTRAND(strandstr);
+    strand = CheckSTRAND((lcp->strand >= 0) ? bptr+lcp->strand : "   ");
     if (strand > 0)
         inst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
 
@@ -284,12 +284,6 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnacon
         return false;
 
     return true;
-}
-
-/**********************************************************/
-static char* GBDateOffset(DataBlkPtr entry, Int4 shift_date)
-{
-    return(entry->offset + shift_date);
 }
 
 /**********************************************************/
@@ -456,14 +450,6 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
     }
 
     lcp = &ibp->lc;
-
-    bptr = GBDateOffset(entry, lcp->date);
-
-    while(*bptr == ' ')
-        bptr--;
-
-    while(*bptr != ' ')
-        bptr--;
 
     bptr = GBDivOffset(entry, lcp->div);
 
@@ -702,7 +688,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
                 gbb->ResetDiv();
             }
         }
-        else
+        else if (pp->mode != Parser::EMode::Relaxed)
         {
             MemCpy(msg, bptr, 3);
             msg[3] = '\0';
@@ -1551,9 +1537,9 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
         date.Reset(new objects::CDate);
         date->SetToTime(time);
     }
-    else
+    else if(ibp->lc.date > 0)
     {
-        CRef<objects::CDate_std> std_date = GetUpdateDate(GBDateOffset(entry, ibp->lc.date), pp->source);
+        CRef<objects::CDate_std> std_date = GetUpdateDate(entry->offset+ibp->lc.date, pp->source);
         if (std_date.NotEmpty())
         {
             date.Reset(new objects::CDate);
@@ -1601,8 +1587,8 @@ bool GenBankAscii(ParserPtr pp)
     DataBlkPtr  entry;
     EntryBlkPtr ebp;
 
-    unsigned char*    dnaconv;
-    unsigned char*    protconv;
+//    unsigned char*    dnaconv;
+//    unsigned char*    protconv;
     unsigned char*    conv;
 
     TEntryList seq_entries;
@@ -1614,8 +1600,8 @@ bool GenBankAscii(ParserPtr pp)
     IndexblkPtr ibp;
     IndexblkPtr tibp;
 
-    dnaconv = GetDNAConv();             /* set up sequence alphabets */
-    protconv = GetProteinConv();        /* set up sequence alphabets */
+    auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
+    auto protconv = GetProteinConv();        /* set up sequence alphabets */
 
     segindx = -1;
 
@@ -1641,8 +1627,8 @@ bool GenBankAscii(ParserPtr pp)
         if(entry == NULL)
         {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-            MemFree(dnaconv);
-            MemFree(protconv);
+            //MemFree(dnaconv);
+            //MemFree(protconv);
             return false;
         }
 
@@ -1655,15 +1641,16 @@ bool GenBankAscii(ParserPtr pp)
             ptr = GetGenBankBlock(&ebp->chain, ptr, &curkw, eptr);
         }
 
-        GenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, entry);
-
-        if(StringCmp(ibp->division, "TSA") == 0)
-        {
-            if(ibp->tsa_allowed == false)
-                ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession,
-                          "The record with accession \"%s\" is not expected to have a TSA division code.",
-                          ibp->acnum);
-            ibp->is_tsa = true;
+        if (pp->entrylist[pp->curindx]->lc.div > -1) {
+            GenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, entry);
+            if(StringCmp(ibp->division, "TSA") == 0)
+            {
+                if(ibp->tsa_allowed == false)
+                    ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession,
+                            "The record with accession \"%s\" is not expected to have a TSA division code.",
+                            ibp->acnum);
+                ibp->is_tsa = true;
+            }
         }
 
         CheckContigEverywhere(ibp, pp->source);
@@ -1699,12 +1686,12 @@ bool GenBankAscii(ParserPtr pp)
         if(StringNCmp(entry->offset + ibp->lc.bp, "aa", 2) == 0)
         {
             ibp->is_prot = true;
-            conv = protconv;
+            conv = protconv.get();
         }
         else
         {
             ibp->is_prot = false;
-            conv = dnaconv;
+            conv = dnaconv.get();
         }
 
         ebp->seq_entry.Reset(new objects::CSeq_entry);
@@ -1772,7 +1759,8 @@ bool GenBankAscii(ParserPtr pp)
         }
 
         if (no_date(pp->format, bioseq->GetDescr().Get()) && pp->debug == false &&
-           pp->no_date == false)
+           pp->no_date == false &&
+           pp->mode != Parser::EMode::Relaxed)
         {
             ibp->drop = 1;
             ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate,
@@ -1838,7 +1826,10 @@ bool GenBankAscii(ParserPtr pp)
 
         /* add PatentSeqId if patent is found in reference
          */
-        if(no_reference(*bioseq) && pp->debug == false && ibp->wgs_and_gi != 3)
+        if(pp->mode != Parser::EMode::Relaxed &&
+           pp->debug == false &&
+           ibp->wgs_and_gi != 3 &&
+           no_reference(*bioseq))
         {
             if(pp->source == Parser::ESource::Flybase)
             {
@@ -2032,7 +2023,12 @@ bool GenBankAscii(ParserPtr pp)
                     }
                 }
             }
-
+            if (pp->mode == Parser::EMode::Relaxed) {
+                for(auto pEntry : seq_entries) {
+                    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+                    g_InstantiateMissingProteins(pScope->AddTopLevelSeqEntry(*pEntry));
+                }
+            }
             if (pp->convert)
             {
                 if(pp->cleanup <= 1)
@@ -2132,8 +2128,8 @@ bool GenBankAscii(ParserPtr pp)
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete,
               "COMPLETED : SUCCEEDED = %d (including: LONG ones = %d); SKIPPED = %d.",
               total, total_long, total_dropped);
-    MemFree(dnaconv);
-    MemFree(protconv);
+   // MemFree(dnaconv);
+   // MemFree(protconv);
 
     return true;
 }

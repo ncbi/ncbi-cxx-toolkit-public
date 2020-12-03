@@ -69,12 +69,18 @@ static bool InitConfig(const CArgs& args, Parser& config)
      */
     config.ign_prot_src = args["j"].AsBoolean();
 
-    if (args["m"].AsInteger() == 1)
+    if (args["m"].AsInteger() == 1) {
         config.mode = Parser::EMode::HTGS;
-    else if (args["m"].AsInteger() == 2)
+    }
+    else if (args["m"].AsInteger() == 2) {
         config.mode = Parser::EMode::HTGSCON;
-    else
+    }
+    else if (args["m"].AsInteger() == 3) {
+        config.mode = Parser::EMode::Relaxed;
+    }
+    else {
         config.mode = Parser::EMode::Release;
+    }
 
     /* replace update by currdate
      */
@@ -231,8 +237,14 @@ void CFlat2AsnApp::Init()
     arg_descrs->AddDefaultKey("a", "ParseRegardlessAccessionPrefix", "Parse all flatfile entries, regardless of accession prefix letter", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("D", "DebugMode", "Debug mode, output everything possible", ncbi::CArgDescriptions::eBoolean, "F");
 
-    arg_descrs->AddKey("f", "FlatfileFormat", "Flatfile format(embl, genbank, pir, prf, sprot, xml)", CArgDescriptions::eString);
-    arg_descrs->AddKey("s", "SourceData", "Source of the data file(embl, ddbj, lanl, ncbi, pir, prf, sprot, flybase, refseq)", CArgDescriptions::eString);
+    arg_descrs->AddKey("f", "FlatfileFormat", "Flatfile format", CArgDescriptions::eString);
+    arg_descrs->AddAlias("format", "f");
+    arg_descrs->SetConstraint("f",
+            &(*new CArgAllow_Strings, "embl", "genbank", "pir", "prf", "sprot", "xml"));
+    arg_descrs->AddKey("s", "SourceData", "Source of the data file", CArgDescriptions::eString);
+    arg_descrs->AddAlias("source", "s");
+    arg_descrs->SetConstraint("s",
+            &(*new CArgAllow_Strings, "embl", "ddbj", "lanl", "ncbi", "pir", "prf", "sprot", "flybase", "refseq"));
 
     arg_descrs->AddDefaultKey("u", "AvoidMuidLookup", "Avoid MUID lookup", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("h", "AvoidReferencesLookup", "Avoid lookup of references which already have muids", ncbi::CArgDescriptions::eBoolean, "F");
@@ -256,7 +268,8 @@ void CFlat2AsnApp::Init()
                               ncbi::CArgDescriptions::eBoolean, "F");
 
     // constraint: 0, 1
-    arg_descrs->AddDefaultKey("m", "ParsingMode", "Parsing mode. Values: 0 - RELEASE, 1 - HTGS", ncbi::CArgDescriptions::eInteger, "0");
+    arg_descrs->AddDefaultKey("m", "ParsingMode", "Parsing mode. Values: 0 - RELEASE, 1 - HTGS, 2 - HTGSCON, 3 - Relaxed (only applies to NCBI source)", ncbi::CArgDescriptions::eInteger, "0");
+    arg_descrs->AddAlias("mode", "m");
 
     arg_descrs->AddDefaultKey("Y", "AllowsInconsistentPair", "Allows inconsistent pairs of /gene+/locus_tag quals, when same genes go along with different locus_tags", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("w", "AllowsUnusualWgsAccessions", "Allows unusual secondary WGS accessions with prefixes not matching the primary one", ncbi::CArgDescriptions::eBoolean, "F");

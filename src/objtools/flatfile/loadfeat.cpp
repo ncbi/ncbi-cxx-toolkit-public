@@ -96,6 +96,7 @@
 #define THIS_FILE "loadfeat.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 #define Seq_descr_GIBB_mol_unknown       0
 #define Seq_descr_GIBB_mol_genomic       1
@@ -5984,6 +5985,15 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
 
     CRef<objects::CSeq_id> seq_id =
         MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, true, ibp->is_tpa);
+
+    if (!seq_id) {
+        if (ibp->acnum && !NStr::IsBlank(ibp->acnum)) {
+            seq_id = Ref(new CSeq_id(CSeq_id::e_Local, ibp->acnum));
+        }
+        else if (pp->mode == Parser::EMode::Relaxed) {
+            seq_id = Ref(new CSeq_id(CSeq_id::e_Local, ibp->locusname));
+        }
+    }
 
     TSeqIdList ids;
     ids.push_back(seq_id);

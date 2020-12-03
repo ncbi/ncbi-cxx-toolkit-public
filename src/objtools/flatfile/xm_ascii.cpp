@@ -1352,7 +1352,6 @@ bool XMLAscii(ParserPtr pp)
     char*     entry;
     EntryBlkPtr ebp;
 
-    unsigned char*    dnaconv;
 
     TEntryList seq_entries;
 
@@ -1363,7 +1362,7 @@ bool XMLAscii(ParserPtr pp)
     IndexblkPtr tibp;
     DataBlkPtr  dbp;
 
-    dnaconv = GetDNAConv();             /* set up sequence alphabets */
+    auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
 
     segindx = -1;
 
@@ -1425,7 +1424,7 @@ bool XMLAscii(ParserPtr pp)
         dbp->offset = entry;
         dbp->len = StringLen(entry);
 
-        if(!XMLGetInst(pp, dbp, dnaconv, *bioseq))
+        if(!XMLGetInst(pp, dbp, dnaconv.get(), *bioseq))
         {
             ibp->drop = 1;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
@@ -1856,7 +1855,6 @@ bool XMLAscii(ParserPtr pp)
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete,
               "COMPLETED : SUCCEEDED = %d (including: LONG ones = %d); SKIPPED = %d.",
               total, total_long, total_dropped);
-    MemFree(dnaconv);
 
     return true;
 }

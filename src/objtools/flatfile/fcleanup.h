@@ -37,8 +37,11 @@
 #define FCLEANUP_H
 
 #include "ftablock.h"
+#include <objmgr/seq_entry_handle.hpp>
 
 BEGIN_NCBI_SCOPE
+
+void g_InstantiateMissingProteins(objects::CSeq_entry_Handle entryHandle);
 
 void FinalCleanup(TEntryList& seq_entries);
 

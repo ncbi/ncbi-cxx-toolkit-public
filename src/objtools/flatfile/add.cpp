@@ -2399,6 +2399,10 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
     if (ibp == NULL)
         return;
 
+    if (id.IsLocal()) {
+        return;
+    }
+
     if(name == NULL && id.IsGeneral())
     {
         const objects::CDbtag& tag = id.GetGeneral();

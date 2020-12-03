@@ -196,7 +196,9 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
     char*       p;
     char*       q;
 
-    finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
+   // finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
+
+    finfo = new FinfoBlk();
 
     if(pp->ifp == NULL)
         end_of_file = SkipTitleBuf(pp->ffbuf, finfo,
@@ -354,7 +356,9 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         ibnp = tibnp->next;
         MemFree(tibnp);
     }
-    MemFree(finfo);
+    //MemFree(finfo);
+
+    delete finfo;
 
     return(end_of_file);
 }

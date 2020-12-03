@@ -195,8 +195,6 @@ static const char *source[11] = {
     "unknown"
 };
 
-//static const map<Parser::ESource, string> sourceNames =  {
-//    {Parser::ESource::Unknown, "unknown"}};
 
 static const map<Parser::ESource, string> sourceNames =  {
     {Parser::ESource::unknown, "unknown"},
@@ -241,7 +239,7 @@ static const char *ValidMolTypes[] = {
 
 // functions below are implemented in different source files
 bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
-bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
+bool GenBankIndex(ParserPtr pp);
 bool SprotIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
 bool PrfIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
 bool PirIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
@@ -380,6 +378,12 @@ bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const char *str, Int2 len)
     return(end_of_file);
 }
 
+
+bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const CTempString& keyword)
+{
+    return SkipTitle(fp, finfo, keyword.data(), keyword.size());
+}
+
 /**********************************************************/
 bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
 {
@@ -389,6 +393,13 @@ bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const char *str, Int2 len
 
     return(end_of_file);
 }
+
+
+bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+{
+    return SkipTitleBuf(fpbuf, finfo, keyword.data(), keyword.size());
+}
+
 
 /**********************************************************
  *
@@ -400,6 +411,8 @@ bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const char *str, Int2 len
  **********************************************************/
 static bool CheckLocus(char* locus, Parser::ESource source)
 {
+    return false;
+
     char* p = locus;
     if(StringNCmp(locus, "SEG_", 4) == 0 &&
        (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
@@ -491,7 +504,7 @@ static bool CkDateFormat(char* date)
 }
 
 /**********************************************************/
-Int2 CheckSTRAND(char* str)
+Int2 CheckSTRAND(const char* str)
 {
     return(fta_StringMatch(ParFlat_STRAND_array, str));
 }
@@ -753,6 +766,110 @@ indexblk_struct::indexblk_struct() :
     wgssec[0] = 0;
 }
 
+static bool isSpace(char c) 
+{
+    return isspace(c);
+}
+
+
+static CTempString::const_iterator 
+sFindNextSpace(const CTempString& tempString, 
+        CTempString::const_iterator current_it)
+{
+    return find_if(current_it, tempString.end(), isSpace);
+}
+
+
+static CTempString::const_iterator 
+sFindNextNonSpace(const CTempString& tempString, 
+        CTempString::const_iterator current_it)
+{
+    return find_if_not(current_it, tempString.end(), isSpace);
+}
+
+
+static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offsets) 
+{
+    offsets.bases = -1;
+    offsets.bp = -1;
+    offsets.strand = -1;
+    offsets.molecule = -1;
+    offsets.topology = -1;
+    offsets.div = -1;
+    offsets.date = -1;
+
+    if (locusLine.substr(0,5) != "LOCUS") {
+        // throw an exception - invalid locus line
+    }
+
+
+    auto it = sFindNextNonSpace(locusLine, locusLine.begin()+5);
+    if (it == locusLine.end()) {
+        // throw an exception - no locus name
+    }
+
+    it = sFindNextSpace(locusLine, it);
+    if (it == locusLine.end()) {
+        return;
+    }
+
+    // find the number of bases
+    it = sFindNextNonSpace(locusLine, it);
+    if (it == locusLine.end()) {
+        return;
+    }
+    auto space_it = sFindNextSpace(locusLine, it);
+    if (NStr::StringToNonNegativeInt(locusLine.substr(it-begin(locusLine), space_it-it)) == -1) {
+        return;
+    }
+
+    offsets.bases = it - begin(locusLine);
+
+    it = sFindNextNonSpace(locusLine, space_it);
+    offsets.bp = it - begin(locusLine);
+
+    it = sFindNextSpace(locusLine, it);
+    it = sFindNextNonSpace(locusLine, it);
+    // the next one might be a strand
+    // or might be a molecule
+    space_it = sFindNextSpace(locusLine, it);
+    offsets.strand = -1;
+    if ((space_it - it)==3) {
+        auto currentSubstr = locusLine.substr(it-begin(locusLine),3);
+        if (currentSubstr=="ss-" ||
+            currentSubstr=="ds-" ||
+            currentSubstr=="ms-") {
+            offsets.strand = it - begin(locusLine);
+            it = sFindNextNonSpace(locusLine, space_it);
+        }
+        offsets.molecule = it - begin(locusLine);
+    }
+    else {
+        offsets.molecule = it - begin(locusLine);
+    }
+
+    // topology
+    it = sFindNextSpace(locusLine, it);
+    it = sFindNextNonSpace(locusLine, it);
+    if (it != locusLine.end()) {
+        offsets.topology = it - begin(locusLine); 
+    }
+
+    // find division
+    it = sFindNextSpace(locusLine, it);
+    it = sFindNextNonSpace(locusLine, it);
+    if (it != locusLine.end()) {
+        offsets.div = it - begin(locusLine);
+    }
+
+    // find date - date is optional
+    it = sFindNextSpace(locusLine, it);
+    it = sFindNextNonSpace(locusLine, it);
+    if (it != locusLine.end()) {
+        offsets.date = it - begin(locusLine);
+    } 
+}
+
 /**********************************************************
  *
  *   IndexblkPtr InitialEntry(pp, finfo):
@@ -792,25 +909,29 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
     if(stoken->num > 2 || (pp->format == Parser::EFormat::PRF && stoken->num > 1))
     {
         p = finfo->str;
-        if(StringLen(p) > 78 && p[28] == ' ' && p[63] == ' ' && p[67] == ' ')
-        {
-            entry->lc.bases = ParFlat_COL_BASES_NEW;
-            entry->lc.bp = ParFlat_COL_BP_NEW;
-            entry->lc.strand = ParFlat_COL_STRAND_NEW;
-            entry->lc.molecule = ParFlat_COL_MOLECULE_NEW;
-            entry->lc.topology = ParFlat_COL_TOPOLOGY_NEW;
-            entry->lc.div = ParFlat_COL_DIV_NEW;
-            entry->lc.date = ParFlat_COL_DATE_NEW;
-        }
-        else
-        {
-            entry->lc.bases = ParFlat_COL_BASES;
-            entry->lc.bp = ParFlat_COL_BP;
-            entry->lc.strand = ParFlat_COL_STRAND;
-            entry->lc.molecule = ParFlat_COL_MOLECULE;
-            entry->lc.topology = ParFlat_COL_TOPOLOGY;
-            entry->lc.div = ParFlat_COL_DIV;
-            entry->lc.date = ParFlat_COL_DATE;
+        if (pp->mode == Parser::EMode::Relaxed) {
+            sSetLocusLineOffsets(p, entry->lc);
+        } else {
+            if(StringLen(p) > 78 && p[28] == ' ' && p[63] == ' ' && p[67] == ' ')
+            {
+                entry->lc.bases = ParFlat_COL_BASES_NEW;
+                entry->lc.bp = ParFlat_COL_BP_NEW;
+                entry->lc.strand = ParFlat_COL_STRAND_NEW;
+                entry->lc.molecule = ParFlat_COL_MOLECULE_NEW;
+                entry->lc.topology = ParFlat_COL_TOPOLOGY_NEW;
+                entry->lc.div = ParFlat_COL_DIV_NEW;
+                entry->lc.date = ParFlat_COL_DATE_NEW;
+            }
+            else
+            {
+                entry->lc.bases = ParFlat_COL_BASES;
+                entry->lc.bp = ParFlat_COL_BP;
+                entry->lc.strand = ParFlat_COL_STRAND;
+                entry->lc.molecule = ParFlat_COL_MOLECULE;
+                entry->lc.topology = ParFlat_COL_TOPOLOGY;
+                entry->lc.div = ParFlat_COL_DIV;
+                entry->lc.date = ParFlat_COL_DATE;
+            }
         }
 
         ptr = stoken->list->next;
@@ -863,11 +984,11 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
             }
             else if(pp->format == Parser::EFormat::PIR || pp->format == Parser::EFormat::PRF)
                 badlocus = false;
-            else
+            else 
                 badlocus = CheckLocus(entry->locusname, pp->source);
         }
     }
-    else
+    else if (pp->mode != Parser::EMode::Relaxed) 
     {
         badlocus = true;
         ErrPostStr(SEV_ERROR, ERR_LOCUS_NoLocusName,
@@ -898,7 +1019,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
     if(bases != NULL)
         entry->bases = (size_t) atoi(bases);
 
-    if(pp->format == Parser::EFormat::GenBank)
+    if(pp->format == Parser::EFormat::GenBank &&
+       entry->lc.date > -1)
     {
         /* last token in the LOCUS line is date of the update's data
          */
@@ -964,6 +1086,18 @@ void DelNoneDigitTail(char* str)
     *p = '\0';
 }
 
+static void sDelNonDigitTail(string& str)
+{
+    if (str.empty()) {
+        return;
+    }
+    auto nondigitPos = str.find_first_not_of("0123456789");
+    if (nondigitPos != string::npos) {
+        str = str.substr(0,nondigitPos);
+    }
+}
+
+
 /**********************************************************
  *
  * Here X is an alpha character, N - numeric one.
@@ -1025,7 +1159,7 @@ Int4 IsNewAccessFormat(const Char* acnum)
 }
 
 /**********************************************************/
-bool IsValidAccessPrefix(char* acc, char** accpref)
+static bool IsValidAccessPrefix(const char* acc, char** accpref)
 {
     Int4 i = IsNewAccessFormat(acc);
     if(i == 0 || accpref == NULL)
@@ -1045,9 +1179,9 @@ bool IsValidAccessPrefix(char* acc, char** accpref)
 }
 
 /**********************************************************/
-static bool fta_if_master_wgs_accession(char* acnum, Int4 accformat)
+static bool fta_if_master_wgs_accession(const char* acnum, Int4 accformat)
 {
-    char* p;
+    const char* p;
 
     if(accformat == 3)
         p = acnum + 4;
@@ -1257,6 +1391,197 @@ bool IsSPROTAccession(const char* acc)
     return true;
 }
 
+
+
+static bool sCheckAccession(const list<string>& tokens, 
+                            Parser::ESource source,
+                            Parser::EMode mode,
+                            const char* priacc, int skip)
+{
+    TokenBlkPtr tbp;
+    bool        badac;
+    bool        res = true;
+    bool        iswgs;
+    Char        acnum[200];
+    Int4        accformat;
+    Int4        priformat;
+    Int4        count;
+    size_t        i;
+
+    if(priacc == NULL || mode == Parser::EMode::Relaxed)
+        return true;
+
+    auto it = tokens.begin();
+    if (skip) {
+        advance(it, skip);
+    }
+
+    priformat = IsNewAccessFormat(priacc);
+    if((priformat == 3 || priformat == 4 || priformat == 8) &&
+       fta_if_master_wgs_accession(priacc, priformat) == false)
+        iswgs = true;
+    else
+        iswgs = false;
+
+    count = 0;
+    for(; it != tokens.end(); ++it)
+    {
+        StringCpy(acnum, it->c_str());
+        if(acnum[0] == '-' && acnum[1] == '\0')
+            continue;
+
+        if(skip == 2 && count == 0)
+            accformat = priformat;
+        else
+            accformat = IsNewAccessFormat(acnum);
+
+        size_t len = StringLen(acnum);
+        if(acnum[len-1] == ';')
+        {
+            len--;
+            acnum[len] = '\0';
+        }
+        badac = false;
+        if(accformat == 1)
+        {
+            if(len != 8 && len != 10)
+                badac = true;
+            else
+            {
+                for(i = 2; i < 8 && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 2)
+        {
+            if(len != 9 && len != 12)
+                badac = true;
+            else
+            {
+                for(i = 3; i < len && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 3)
+        {
+            if(len < 12 || len > 14)
+                badac = true;
+            else
+            {
+                for(i = 4; i < len && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 8)
+        {
+            if(len < 15 || len > 17)
+                badac = true;
+            else
+            {
+                for(i = 6; i < len && !badac; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 4)
+        {
+            if(len < 15 || len > 17)
+                badac = true;
+            else
+            {
+                for(i = 7; i < len && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 5)
+        {
+            if(len != 12)
+                badac = true;
+            else
+            {
+                for(i = 5; i < len && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 6)
+        {
+            if(len != 11 || acnum[0] != 'N' || acnum[1] != 'Z' ||
+               acnum[2] != '_' || acnum[3] < 'A' || acnum[3] > 'Z' ||
+               acnum[4] < 'A' || acnum[4] > 'Z')
+                badac = true;
+            else
+            {
+                for(i = 5; i < len && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 7)
+        {
+            if(len < 13 || len > 15)
+                badac = true;
+            else
+            {
+                for(i = 7; i < len && badac == false; i++)
+                    if(acnum[i] < '0' || acnum[i] > '9')
+                        badac = true;
+            }
+        }
+        else if(accformat == 0)
+        {
+            if(len != 6 && len != 10)
+                badac = true;
+            else if(acnum[0] >= 'A' && acnum[0] <= 'Z')
+            {
+                if(source == Parser::ESource::SPROT)
+                {
+                    if(!IsSPROTAccession(acnum))
+                        badac = true;
+                }
+                else if(len == 10)
+                {
+                    badac = true;
+                }
+                else
+                {
+                    for(i = 1; i < 6 && badac == false; i++)
+                        if(acnum[i] < '0' || acnum[i] > '9')
+                            badac = true;
+                }
+            }
+            else
+                badac = true;
+        }
+        else
+            badac = true;
+
+        if(badac)
+        {
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
+                      "Bad accession #, %s for this entry", acnum);
+            res = false;
+            count++;
+            continue;
+        }
+
+        if(skip == 2 && count == 0 && !iswgs &&
+           (accformat == 3 || accformat == 4 || accformat == 8))
+        {
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri,
+                      "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
+            res = false;
+        }
+        count++;
+    }
+
+    return(res);
+}
+
 /**********************************************************
  *
  *   static bool CheckAccession(stoken, source, entryacc,
@@ -1269,8 +1594,10 @@ bool IsSPROTAccession(const char* acc)
  *                                              7-6-93
  *
  **********************************************************/
-static bool CheckAccession(TokenStatBlkPtr stoken, Parser::ESource source,
-                              char* priacc, Int4 skip)
+static bool CheckAccession(TokenStatBlkPtr stoken, 
+                           Parser::ESource source,
+                           Parser::EMode mode,
+                           char* priacc, Int4 skip)
 {
     TokenBlkPtr tbp;
     bool        badac;
@@ -1282,7 +1609,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken, Parser::ESource source,
     Int4        count;
     size_t        i;
 
-    if(priacc == NULL)
+    if(priacc == NULL || mode == Parser::EMode::Relaxed)
         return true;
 
     tbp = (skip == 0) ? stoken->list : stoken->list->next;
@@ -1453,7 +1780,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken, Parser::ESource source,
 }
 
 /**********************************************************/
-static bool IsPatentedAccPrefix(ParserPtr pp, char* acc)
+static bool IsPatentedAccPrefix(const Parser& parseInfo, const char* acc)
 {
     if(acc[2] == '\0')
     {
@@ -1465,7 +1792,7 @@ static bool IsPatentedAccPrefix(ParserPtr pp, char* acc)
             StringCmp(acc, "HK") == 0 || StringCmp(acc, "HL") == 0 ||
             StringCmp(acc, "KH") == 0 || StringCmp(acc, "MI") == 0 ||
             StringCmp(acc, "MM") == 0 || StringCmp(acc, "MO") == 0) &&
-           (pp->all == true || pp->source == Parser::ESource::NCBI))
+           (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
             return true;
         if((StringNCmp(acc, "AX", 2) == 0 || StringNCmp(acc, "CQ", 2) == 0 ||
             StringNCmp(acc, "CS", 2) == 0 || StringNCmp(acc, "FB", 2) == 0 ||
@@ -1479,7 +1806,7 @@ static bool IsPatentedAccPrefix(ParserPtr pp, char* acc)
             StringNCmp(acc, "LQ", 2) == 0 || StringNCmp(acc, "MP", 2) == 0 ||
             StringNCmp(acc, "MQ", 2) == 0 || StringNCmp(acc, "MR", 2) == 0 ||
             StringNCmp(acc, "MS", 2) == 0) &&
-           (pp->all == true || pp->source == Parser::ESource::EMBL))
+           (parseInfo.all == true || parseInfo.source == Parser::ESource::EMBL))
            return true;
         if ((StringNCmp(acc, "BD", 2) == 0 || StringNCmp(acc, "DD", 2) == 0 ||
             StringNCmp(acc, "DI", 2) == 0 || StringNCmp(acc, "DJ", 2) == 0 ||
@@ -1494,7 +1821,7 @@ static bool IsPatentedAccPrefix(ParserPtr pp, char* acc)
             StringNCmp(acc, "MA", 2) == 0 || StringNCmp(acc, "MB", 2) == 0 ||
             StringNCmp(acc, "MC", 2) == 0 || StringNCmp(acc, "MD", 2) == 0 ||
             StringNCmp(acc, "ME", 2) == 0 || StringNCmp(acc, "OF", 2) == 0) &&
-           (pp->all == true || pp->source == Parser::ESource::DDBJ))
+           (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
            return true;
 
         return false;
@@ -1502,17 +1829,17 @@ static bool IsPatentedAccPrefix(ParserPtr pp, char* acc)
 
     if(acc[1] == '\0' && (*acc == 'I' || *acc == 'A' || *acc == 'E'))
     {
-        if(pp->all == true ||
-           (*acc == 'I' && pp->source == Parser::ESource::NCBI) ||
-           (*acc == 'A' && pp->source == Parser::ESource::EMBL) ||
-           (*acc == 'E' && pp->source == Parser::ESource::DDBJ))
+        if(parseInfo.all == true ||
+           (*acc == 'I' && parseInfo.source == Parser::ESource::NCBI) ||
+           (*acc == 'A' && parseInfo.source == Parser::ESource::EMBL) ||
+           (*acc == 'E' && parseInfo.source == Parser::ESource::DDBJ))
            return true;
     }
     return false;
 }
 
 /**********************************************************/
-static bool IsTPAAccPrefix(ParserPtr pp, char* acc)
+static bool IsTPAAccPrefix(const Parser& parseInfo, const char* acc)
 {
     if(acc == NULL)
         return(false);
@@ -1524,52 +1851,52 @@ static bool IsTPAAccPrefix(ParserPtr pp, char* acc)
     if(i == 4)
     {
         if(acc[0] == 'D' &&
-           (pp->all == true || pp->source == Parser::ESource::NCBI))
+           (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
             return(true);
         if(acc[0] == 'E' &&
-           (pp->all == true || pp->source == Parser::ESource::DDBJ))
+           (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
             return(true);
         return(false);
     }
 
     if(fta_StringMatch(ncbi_tpa_accpref, acc) > -1 &&
-       (pp->all == true || pp->source == Parser::ESource::NCBI))
+       (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
         return(true);
     if(fta_StringMatch(ddbj_tpa_accpref, acc) > -1 &&
-       (pp->all == true || pp->source == Parser::ESource::DDBJ))
+       (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
         return(true);
     return(false);
 }
 
 /**********************************************************/
-static bool IsWGSAccPrefix(ParserPtr pp, char* acc)
+static bool IsWGSAccPrefix(const Parser& parseInfo, const char* acc)
 {
     if(acc == NULL || StringLen(acc) != 2)
         return(false);
 
     if(fta_StringMatch(ncbi_wgs_accpref, acc) > -1 &&
-       (pp->all == true || pp->source == Parser::ESource::NCBI))
+       (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
         return(true);
     if(fta_StringMatch(ddbj_wgs_accpref, acc) > -1 &&
-       (pp->all == true || pp->source == Parser::ESource::DDBJ))
+       (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
         return(true);
     return(false);
 }
 
 /**********************************************************/
-static void IsTSAAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
+static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr ibp)
 {
     if(acc == NULL || *acc == '\0')
         return;
 
-    if(pp->source == Parser::ESource::EMBL)
+    if(parseInfo.source == Parser::ESource::EMBL)
     {
         ibp->tsa_allowed = true;
         return;
     }
 
     if(acc[0] == 'U' && acc[1] == '\0' &&
-       (pp->all == true || pp->source == Parser::ESource::NCBI))
+       (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
     {
         ibp->tsa_allowed = true;
         return;
@@ -1578,7 +1905,7 @@ static void IsTSAAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
     if(StringLen(acc) != 2 && StringLen(acc) != 4)
         return;
 
-    if(pp->all == true || pp->source == Parser::ESource::NCBI)
+    if(parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI)
     {
         if((StringLen(acc) == 2 &&
             (StringCmp(acc, "EZ") == 0 || StringCmp(acc, "HP") == 0 ||
@@ -1596,7 +1923,7 @@ static void IsTSAAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
             ibp->tsa_allowed = true;
     }
 
-    if(pp->all == true || pp->source == Parser::ESource::DDBJ)
+    if(parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ)
     {
         if(StringNCmp(acc, "FX", 2) == 0 || StringNCmp(acc, "LA", 2) == 0 ||
            StringNCmp(acc, "LE", 2) == 0 || StringNCmp(acc, "LH", 2) == 0 ||
@@ -1608,7 +1935,7 @@ static void IsTSAAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
         }
     }
 
-    if(pp->all == true || pp->source == Parser::ESource::EMBL)
+    if(parseInfo.all == true || parseInfo.source == Parser::ESource::EMBL)
     {
         if(fta_if_wgs_acc(ibp->acnum) == 9)
         {
@@ -1619,17 +1946,20 @@ static void IsTSAAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-static void IsTLSAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
+static void IsTLSAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr ibp)
 {
     if(acc == NULL || *acc == '\0' || StringLen(acc) != 4)
         return;
 
-    if(pp->all == true || pp->source == Parser::ESource::NCBI ||
-       pp->source == Parser::ESource::DDBJ)
+    if(parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI ||
+       parseInfo.source == Parser::ESource::DDBJ)
         if(fta_if_wgs_acc(ibp->acnum) == 11)
             ibp->is_tls = true;
 }
 
+static bool sIsAccPrefixChar(char c)  {
+    return (c >= 'A'  && c <= 'Z');
+}
 /**********************************************************
  *
  *   bool GetAccession(pp, str, entry, skip):
@@ -1642,6 +1972,161 @@ static void IsTLSAccPrefix(ParserPtr pp, char* acc, IndexblkPtr ibp)
  *                                              3-4-93
  *
  **********************************************************/
+bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip)
+{
+    string accession;
+    list<string> tokens;
+    bool get = true;
+
+    if (skip != 2 && parseInfo.source == Parser::ESource::Flybase)
+            return true;
+
+    NStr::Split(str, " ;", tokens, NStr::fSplit_Tokenize);
+
+
+    if (skip != 2)
+    {
+        get = ParseAccessionRange(tokens, skip);
+        if (get)
+            get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, skip);
+        if (!get) 
+            entry->drop = 1;
+
+        if (tokens.size()>skip && skip<2) { // Not sure about the logic
+            auto it = skip ? next(tokens.begin(), skip) : tokens.begin();
+            move(it, tokens.end(), entry->secondary_accessions.end());
+        } 
+        return get;
+    }
+
+    // skip == 2
+    entry->is_tpa = false;
+    if(tokens.size() < 2)
+    {
+        if (parseInfo.mode != Parser::EMode::Relaxed) {
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
+                    "No accession # for this entry, about line %ld",
+                    (long int) entry->linenum);
+            entry->drop = 1;
+        }
+        return false;
+    }
+    
+
+    accession = *next(tokens.begin());
+    sDelNonDigitTail(accession);
+
+    StringCpy(entry->acnum, accession.c_str());
+
+    if (parseInfo.format != Parser::EFormat::XML) {
+        string temp = accession;
+        if (parseInfo.accver && entry->vernum > 0) {
+            temp += "." + NStr::NumericToString(entry->vernum); 
+        }
+        if (temp.empty()) {
+            if (entry->locusname[0] != '\0') {
+                temp = entry->locusname;
+            }
+            else {
+                temp = "???";
+            } 
+        }
+        FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str(), NULL);
+    }
+
+    if (parseInfo.source == Parser::ESource::Flybase) 
+    {
+        return true;
+    }
+
+    if (accession.size() < 2) {
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
+                  "Wrong accession [%s] for this entry.", accession.c_str());
+        entry->drop = 1;
+        return false;
+    }
+
+    if (sIsAccPrefixChar(accession[0]) && sIsAccPrefixChar(accession[1])) {
+        if (parseInfo.accpref && !IsValidAccessPrefix(accession.c_str(), parseInfo.accpref)) {
+            get = false;
+        }
+
+        if (sIsAccPrefixChar(accession[2]) && sIsAccPrefixChar(accession[3])) {
+            if (sIsAccPrefixChar(accession[4])) {
+                accession = accession.substr(0,5);
+            }
+            else {
+                accession = accession.substr(0,4);
+            }
+        }
+        else if (accession[2] == '_') {
+            accession = accession.substr(0,3);
+        }
+        else {
+            accession = accession.substr(0,2);
+        }
+    }
+    else {
+        if (parseInfo.acprefix && !StringChr(parseInfo.acprefix, accession[0])) {
+            get = false;
+        }
+        accession = accession.substr(0,1);
+    }
+
+    if (get) {
+        if (tokens.size() > 2) {
+            get = ParseAccessionRange(tokens,2);
+            if (get) {
+                get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, 2);
+            }
+        }
+    }
+    else {
+        string sourceName = sourceNames.at(parseInfo.source);
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
+                  "Wrong accession # prefix [%s] for this source: %s",
+                  accession.c_str(), sourceName.c_str());
+    }
+
+    entry->secondary_accessions.clear(); // Is this necessary?
+    move(next(tokens.begin(),2), tokens.end(), entry->secondary_accessions.begin());
+
+    if (!entry->is_pat) {
+        entry->is_pat = IsPatentedAccPrefix(parseInfo, accession.c_str());
+    }
+    entry->is_tpa = IsTPAAccPrefix(parseInfo, accession.c_str());
+    entry->is_wgs = IsWGSAccPrefix(parseInfo, accession.c_str());
+    IsTSAAccPrefix(parseInfo, accession.c_str(), entry);
+    IsTLSAccPrefix(parseInfo, accession.c_str(), entry);
+
+    auto i = IsNewAccessFormat(entry->acnum);
+    if(i == 3 || i == 8)
+    {
+        entry->is_wgs = true;
+        entry->wgs_and_gi |= 02;
+    }
+    else if(i == 5)
+    {
+        char* p = entry->acnum;
+        if(parseInfo.source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
+           StringCmp(p + 5, "0000000") != 0)
+        {
+            string sourceName = sourceNames.at(parseInfo.source);
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
+                      "Wrong accession \"%s\" for this source: %s",
+                      p, sourceName.c_str());
+            get = false;
+        }
+        entry->is_mga = true;
+    }
+
+    if(!get)
+        entry->drop = 1;
+
+    return get;
+}
+
+
 bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
 {
     Char            acc[200];
@@ -1667,7 +2152,7 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
     {
         get = ParseAccessionRange(stoken, skip);
         if(get)
-            get = CheckAccession(stoken, pp->source, entry->acnum, skip);
+            get = CheckAccession(stoken, pp->source, pp->mode, entry->acnum, skip);
         if(!get)
             entry->drop = 1;
 
@@ -1704,18 +2189,22 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
     acc[0] = '\0';
     if(stoken->num < 2)
     {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
-                  "No accession # for this entry, about line %ld",
-                  (long int) entry->linenum);
+        if (pp->mode != Parser::EMode::Relaxed) {
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
+                    "No accession # for this entry, about line %ld",
+                    (long int) entry->linenum);
+            entry->drop = 1;
+        }
         FreeTokenstatblk(stoken);
-        entry->drop = 1;
         MemFree(line);
         return false;
     }
 
     StringCpy(acc, stoken->list->next->str);    /* get first accession */
-
-    DelNoneDigitTail(acc);
+    
+    if (pp->mode != Parser::EMode::Relaxed) {
+        DelNoneDigitTail(acc);
+    }
 
     StringCpy(entry->acnum, acc);
 
@@ -1743,7 +2232,8 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
         return true;
     }
 
-    if(StringLen(acc) < 2)
+    if((StringLen(acc) < 2) &&
+        pp->mode != Parser::EMode::Relaxed)
     {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
                   "Wrong accession [%s] for this entry.", acc);
@@ -1753,39 +2243,46 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
         return false;
     }
 
-    if(acc[0] >= 'A' && acc[0] <= 'Z' && acc[1] >= 'A' && acc[1] <= 'Z')
-    {
-        if(IsValidAccessPrefix(acc, pp->accpref) == false && pp->accpref != NULL)
-            get = false;
-        if(acc[2] >= 'A' && acc[2] <= 'Z' && acc[3] >= 'A' && acc[3] <= 'Z')
+    if (pp->mode != Parser::EMode::Relaxed) {
+        if(acc[0] >= 'A' && acc[0] <= 'Z' && acc[1] >= 'A' && acc[1] <= 'Z')
         {
-            if(acc[4] >= 'A' && acc[4] <= 'Z')
-                acc[5] = '\0';
-            else
-                acc[4] = '\0';
+            if(IsValidAccessPrefix(acc, pp->accpref) == false && pp->accpref != NULL)
+                get = false;
+            if(acc[2] >= 'A' && acc[2] <= 'Z' && acc[3] >= 'A' && acc[3] <= 'Z')
+            {
+                if(acc[4] >= 'A' && acc[4] <= 'Z') {
+                    acc[5] = '\0';
+                }
+                else {
+                    acc[4] = '\0';
+                }
+            }
+            else if(acc[2] == '_') {
+                acc[3] = '\0';
+            }
+            else {
+                acc[2] = '\0';
+            }
         }
-        else if(acc[2] == '_')
-            acc[3] = '\0';
         else
-            acc[2] = '\0';
-    }
-    else
-    {
-        /* Processing of accession numbers in old format
-         */
-        /* check valid prefix accession number
-         */
-        if(pp->acprefix != NULL && StringChr(pp->acprefix, *acc) == NULL)
-            get = false;
-        acc[1] = '\0';
+        {
+            /* Processing of accession numbers in old format
+            */
+            /* check valid prefix accession number
+            */
+            if(pp->acprefix != NULL && StringChr(pp->acprefix, *acc) == NULL)
+                get = false;
+            acc[1] = '\0';
+        }
     }
 
     if(get)
     {
         if (stoken->num > 2)
             get = ParseAccessionRange(stoken, 2);
-        if (get)
-            get = CheckAccession(stoken, pp->source, entry->acnum, 2);
+        if (get) {
+            get = CheckAccession(stoken, pp->source, pp->mode, entry->acnum, 2);
+        }
     }
     else
     {
@@ -1801,11 +2298,11 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
     FreeTokenstatblk(stoken);
 
     if(!entry->is_pat)
-        entry->is_pat = IsPatentedAccPrefix(pp, acc);
-    entry->is_tpa = IsTPAAccPrefix(pp, acc);
-    entry->is_wgs = IsWGSAccPrefix(pp, acc);
-    IsTSAAccPrefix(pp, acc, entry);
-    IsTLSAccPrefix(pp, acc, entry);
+        entry->is_pat = IsPatentedAccPrefix(*pp, acc);
+    entry->is_tpa = IsTPAAccPrefix(*pp, acc);
+    entry->is_wgs = IsWGSAccPrefix(*pp, acc);
+    IsTSAAccPrefix(*pp, acc, entry);
+    IsTLSAccPrefix(*pp, acc, entry);
 
     i = IsNewAccessFormat(entry->acnum);
     if(i == 3 || i == 8)
@@ -1949,6 +2446,11 @@ bool FindNextEntry(bool end_of_file, FILE* ifp, FinfoBlkPtr finfo, const char *s
     return(done);
 }
 
+bool FindNextEntry(bool end_of_file, FILE* ifp, FinfoBlkPtr finfo, const CTempString& keyword) 
+{
+    return FindNextEntry(end_of_file, ifp, finfo, keyword.data(), keyword.size());
+}
+
 /**********************************************************/
 bool FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
 {
@@ -1958,6 +2460,13 @@ bool FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf, FinfoBlkPtr finfo, co
 
     return(done);
 }
+
+
+bool FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+{
+    return FindNextEntryBuf(end_of_file, ifpbuf, finfo, keyword.data(), keyword.size());
+}
+
 
 /**********************************************************
  *
@@ -1973,7 +2482,7 @@ bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, In
     switch(pp->format)
     {
         case Parser::EFormat::GenBank:
-            index = GenBankIndex(pp, fun);
+            index = GenBankIndex(pp);
             break;
         case Parser::EFormat::EMBL:
             index = EmblIndex(pp, fun);

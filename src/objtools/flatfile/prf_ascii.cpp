@@ -982,14 +982,13 @@ static CRef<objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry,
 bool PrfAscii(ParserPtr pp)
 {
     DataBlkPtr  entry;
-    unsigned char*    protconv;
 
     Int4        total;
     Int4        i;
     IndexblkPtr ibp;
     Int4        imax;
 
-    protconv = GetProteinConv();
+    auto protconv = GetProteinConv();
 
     for(total = 0, i = 0, imax = pp->indx; i < imax; i++)
     {
@@ -1007,7 +1006,7 @@ bool PrfAscii(ParserPtr pp)
                 return false;
             }
 
-            CRef<objects::CSeq_entry> cur_entry = PrfPrepareEntry(pp, entry, protconv, ibp);
+            CRef<objects::CSeq_entry> cur_entry = PrfPrepareEntry(pp, entry, protconv.get(), ibp);
             if (ibp->drop != 1 && cur_entry.NotEmpty())
             {
                 pp->entries.push_back(cur_entry);
@@ -1035,7 +1034,6 @@ bool PrfAscii(ParserPtr pp)
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete,
               "Parsing completed, %d entr%s parsed.",
               total, (total == 1) ? "y" : "ies");
-    MemFree(protconv);
     return true;
 }
 
