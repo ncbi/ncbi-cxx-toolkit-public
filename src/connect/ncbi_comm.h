@@ -88,14 +88,14 @@ typedef unsigned int  ticket_t;
  *  In a successful reply, FWDaemon sends back a "host:port" pair for the
  *  client to re-connect to, and to send a new (non-zero) "ticket" as the very
  *  first data of that connection, so that the client can reach the endpoint
- *  requested.  If FWD_RR_KEEPALIVE was requested in "flag", the "ticket" can
+ *  requested.  If FWD_RR_KEEPALIVE was requested in "flag", then "ticket" can
  *  be returned as 0 to indicate that the client _must_ keep reusing the
- *  existing connection to that FWDaemon in order to talk to the endpoint.
+ *  existing connection to this FWDaemon in order to talk to the endpoint.
  *  FWDaemon identifies itself in the "origin" field.
  *  Non-zero bit 0 in "flag" of a successful reply indicates that the true
  *  firewall mode (via DMZ) is available (acknowledged when requested), and is
  *  being used by FWDaemon.  The "text" field contains no useful information
- *  (it may not present at all if the "ticket" returned non-zero, i.e. the
+ *  (it may not be present at all if the "ticket" returned non-zero, i.e. the
  *  re-connect is required;  otherwise, it is always '\0'-terminated unless it
  *  extends to the maximal reply size, FWD_RR_MAX_SIZE).
  *
