@@ -2064,7 +2064,7 @@ bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
 //LCOV_EXCL_STOP
 
 
-CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
+CRef<CSeq_entry> CCleanup::AddProtein(const CSeq_feat& cds, CScope& scope)
 {
     CBioseq_Handle cds_bsh = scope.GetBioseqHandle(cds.GetLocation());
     if (!cds_bsh) {
