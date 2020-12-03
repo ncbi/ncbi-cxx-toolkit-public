@@ -55,7 +55,8 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(const CRef<COSGConnectionPool>& p
                                                TProcessorPriority priority)
     : m_Context(request->GetRequestContext()),
       m_ConnectionPool(pool),
-      m_Status(IPSGS_Processor::ePSGS_InProgress)
+      m_Status(IPSGS_Processor::ePSGS_InProgress),
+      m_Canceled(false)
 {
     m_Request = request;
     m_Reply = reply;
@@ -107,25 +108,102 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 }
 
 
+void CPSGS_OSGProcessorBase::PrepareOSGRequest()
+{
+    if ( m_Fetches.empty() ) {
+        CreateRequests();
+    }
+    _ASSERT(!m_Fetches.empty());
+}
+
+
+bool CPSGS_OSGProcessorBase::CallOSG(bool last_attempt)
+{
+    try {
+        NotifyOSGCallStart();
+        COSGCaller caller(m_ConnectionPool, m_Context, m_Fetches);
+        caller.WaitForReplies(*this);
+        NotifyOSGCallEnd();
+        return true;
+    }
+    catch ( CException& exc ) {
+        if ( last_attempt ) {
+            ERR_POST("OSG: failed processing request: "<<exc);
+            throw;
+        }
+        else {
+            ERR_POST("OSG: retrying after failed processing request: "<<exc);
+            return false;
+        }
+    }
+    catch ( exception& exc ) {
+        if ( last_attempt ) {
+            ERR_POST("OSG: failed processing request: "<<exc.what());
+            throw;
+        }
+        else {
+            ERR_POST("OSG: retrying after failed processing request: "<<exc.what());
+            return false;
+        }
+    }
+}
+
+
+void CPSGS_OSGProcessorBase::ProcessOSGReply()
+{
+    ProcessReplies();
+}
+
+
 void CPSGS_OSGProcessorBase::Process()
 {
-    Start();
-    WaitForFinish();
+    if ( m_Canceled ) {
+        return;
+    }
+    PrepareOSGRequest();
+    for ( int i = m_ConnectionPool->GetRetryCount(); i > 0; --i ) {
+        if ( m_Canceled ) {
+            return;
+        }
+        if ( CallOSG(i == 1) ) {
+            // succeeded - exit retry loop
+            break;
+        }
+        else {
+            // failed attempt
+            ResetReplies();
+        }
+    }
+    if ( m_Canceled ) {
+        return;
+    }
+    ProcessOSGReply();
 }
 
 
 void CPSGS_OSGProcessorBase::Cancel()
 {
-    // TODO
+    m_Canceled = true;
 }
 
 
-void CPSGS_OSGProcessorBase::CreateFetches()
+void CPSGS_OSGProcessorBase::ResetReplies()
 {
-    if ( m_Fetches.empty() ) {
-        CreateRequests();
-        _ASSERT(!m_Fetches.empty());
-    }
+}
+
+
+void CPSGS_OSGProcessorBase::NotifyOSGCallStart()
+{
+}
+
+
+void CPSGS_OSGProcessorBase::NotifyOSGCallReply(const CID2_Reply& /*reply*/)
+{
+}
+
+
+void CPSGS_OSGProcessorBase::NotifyOSGCallEnd()
+{
 }
 
 
@@ -141,21 +219,6 @@ void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
         req->SetParams().Set().push_back(param);
     }
     m_Fetches.push_back(Ref(new COSGFetch(req, m_Context)));
-}
-
-
-void CPSGS_OSGProcessorBase::Start()
-{
-    CreateFetches();
-    m_OSGCaller = new COSGCaller(m_ConnectionPool, m_Context, m_Fetches);
-}
-
-
-void CPSGS_OSGProcessorBase::WaitForFinish()
-{
-    _ASSERT(m_OSGCaller);
-    m_OSGCaller->WaitForReplies();
-    ProcessReplies();
 }
 
 

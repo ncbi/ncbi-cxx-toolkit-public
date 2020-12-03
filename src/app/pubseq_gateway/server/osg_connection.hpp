@@ -109,6 +109,10 @@ public:
         return m_RetryCount;
     }
 
+    double GetCDDRetryTimeout() const {
+        return m_CDDRetryTimeout;
+    }
+
     CRef<COSGConnection> AllocateConnection();
     void ReleaseConnection(CRef<COSGConnection>& conn);
 
@@ -124,6 +128,7 @@ private:
     size_t m_MaxConnectionCount;
     double m_ExpirationTimeout;
     double m_ReadTimeout;
+    double m_CDDRetryTimeout;
     int m_RetryCount;
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;

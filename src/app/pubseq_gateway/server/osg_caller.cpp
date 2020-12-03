@@ -35,6 +35,7 @@
 #include "osg_caller.hpp"
 #include "osg_fetch.hpp"
 #include "osg_connection.hpp"
+#include "osg_processor_base.hpp"
 #include "pubseq_gateway_exception.hpp"
 
 #include <corelib/request_ctx.hpp>
@@ -127,6 +128,7 @@ void COSGCaller::AddFetch(CID2_Request_Packet& packet, const CRef<COSGFetch>& fe
     SetContext(req, fetch);
     req.SetSerial_number(m_Connection->AllocateRequestSerialNumber());
     packet.Set().push_back(fetch->GetRequest());
+    fetch.GetNCObject().ResetReplies();
     m_Fetches.push_back(fetch);
 }
 
@@ -137,6 +139,7 @@ static bool kAlwaysSendInit = false;
 CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
 {
     CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
+    m_Fetches.clear();
     if ( kAlwaysSendInit || m_Connection->GetNextRequestSerialNumber() == 0 ) {
         AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
     }
@@ -161,9 +164,21 @@ void COSGCaller::Start(const TFetches& fetches)
             break;
         }
         catch ( CException& exc ) {
-            ERR_POST("OSG: failed sending packet: "<<exc);
             if ( i == 1 ) {
+                ERR_POST("OSG: failed sending packet: "<<exc);
                 throw;
+            }
+            else {
+                ERR_POST("OSG: retrying after failing sending packet: "<<exc);
+            }
+        }
+        catch ( exception& exc ) {
+            if ( i == 1 ) {
+                ERR_POST("OSG: failed sending packet: "<<exc.what());
+                throw;
+            }
+            else {
+                ERR_POST("OSG: retrying after failing sending packet: "<<exc.what());
             }
         }
     }
@@ -189,15 +204,19 @@ size_t COSGCaller::GetRequestIndex(const CID2_Reply& reply) const
 }
 
 
-void COSGCaller::WaitForReplies()
+void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
 {
     while ( m_WaitingRequestCount > 0 ) {
+        if ( processor.IsCanceled() ) {
+            return;
+        }
         CRef<CID2_Reply> reply = m_Connection->ReceiveReply();
         size_t index = GetRequestIndex(*reply);
         m_Fetches[index]->AddReply(move(reply));
         if ( m_Fetches[index]->EndOfReplies() ) {
             --m_WaitingRequestCount;
         }
+        processor.NotifyOSGCallReply(*reply);
     }
     m_ConnectionPool->ReleaseConnection(m_Connection);
     _ASSERT(!m_Connection);

@@ -140,11 +140,13 @@ void CPSGS_OSGAnnot::CreateRequests()
     auto& req = osg_req->SetRequest().SetGet_blob_id();
     SetSeqId(req.SetSeq_id().SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
     m_NamesToProcess.clear();
+    m_ApplyCDDFix = false;
     for ( auto& name : GetNamesToProcess(psg_req, GetPriority()) ) {
         m_NamesToProcess.insert(name);
         if ( IsCDDName(name) ) {
             // CDD are external annotations in OSG
             req.SetExternal();
+            m_ApplyCDDFix = GetConnectionPool().GetCDDRetryTimeout() > 0;
         }
         else {
             // others have named annot accession (source)
@@ -155,10 +157,48 @@ void CPSGS_OSGAnnot::CreateRequests()
 }
 
 
+void CPSGS_OSGAnnot::NotifyOSGCallStart()
+{
+    if ( m_ApplyCDDFix ) {
+        m_CDDReceived = false;
+        m_RequestTime.Start();
+    }
+}
+
+
+void CPSGS_OSGAnnot::NotifyOSGCallReply(const CID2_Reply& reply)
+{
+    if ( m_ApplyCDDFix ) {
+        if ( IsCDDReply(reply) ) {
+            m_CDDReceived = true;
+        }
+    }
+}
+
+
+void CPSGS_OSGAnnot::NotifyOSGCallEnd()
+{
+    if ( m_ApplyCDDFix ) {
+        if ( !m_CDDReceived &&
+             m_RequestTime.Elapsed() > GetConnectionPool().GetCDDRetryTimeout() ) {
+            NCBI_THROW(CPubseqGatewayException, eRequestCancelled, "no CDD due to OSG timeout");
+        }
+    }
+}
+
+
 void CPSGS_OSGAnnot::ProcessReplies()
 {
     for ( auto& f : GetFetches() ) {
+        if ( GetDebugLevel() >= eDebug_exchange ) {
+            LOG_POST(GetDiagSeverity() << "OSG: "
+                     "Processing fetch: "<<MSerial_AsnText<<f->GetRequest());
+        }
         for ( auto& r : f->GetReplies() ) {
+            if ( GetDebugLevel() >= eDebug_exchange ) {
+                LOG_POST(GetDiagSeverity() << "OSG: "
+                         "Processing reply: "<<MSerial_AsnText<<*r);
+            }
             switch ( r->GetReply().Which() ) {
             case CID2_Reply::TReply::e_Init:
             case CID2_Reply::TReply::e_Empty:
@@ -449,6 +489,30 @@ void CPSGS_OSGAnnot::SendReplies()
     // register processed names
     for ( auto& name : m_NamesToProcess ) {
         psg_req.RegisterProcessedName(GetPriority(), name);
+    }
+}
+
+
+bool CPSGS_OSGAnnot::IsCDDReply(const CID2_Reply& reply) const
+{
+    if ( !reply.GetReply().IsGet_blob_id() ) {
+        return false;
+    }
+    
+    const CID2_Reply_Get_Blob_Id& blob_id = reply.GetReply().GetGet_blob_id();
+    if ( !blob_id.IsSetBlob_id() || !CPSGS_OSGGetBlobBase::IsOSGBlob(blob_id.GetBlob_id()) ) {
+        return false;
+    }
+
+    if ( !blob_id.IsSetAnnot_info() ) {
+        return false;
+    }
+    try {
+        SAnnotInfo info(blob_id.GetAnnot_info());
+        return IsCDDName(info.annot_name);
+    }
+    catch ( exception& /*ignored*/ ) {
+        return false;
     }
 }
 

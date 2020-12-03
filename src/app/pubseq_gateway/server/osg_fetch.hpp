@@ -83,6 +83,7 @@ public:
         }
     bool EndOfReplies() const;
     void AddReply(CRef<CID2_Reply>&& reply);
+    void ResetReplies();
     
     EStatus GetStatus() const
         {

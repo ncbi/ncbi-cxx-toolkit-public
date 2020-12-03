@@ -53,6 +53,7 @@ BEGIN_NAMESPACE(osg);
 class COSGConnectionPool;
 class COSGConnection;
 class COSGFetch;
+class CPSGS_OSGProcessorBase;
 
 USING_SCOPE(objects);
 
@@ -67,7 +68,7 @@ public:
                         const TFetches& fetches);
     virtual ~COSGCaller();
 
-    void WaitForReplies();
+    void WaitForReplies(CPSGS_OSGProcessorBase& processor);
 
 protected:
     const CRef<COSGConnection>& GetConnection() const

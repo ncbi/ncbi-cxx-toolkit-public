@@ -59,12 +59,12 @@ public:
                      TProcessorPriority priority);
     virtual ~CPSGS_OSGResolve();
 
-    virtual string GetName() const;
+    virtual string GetName() const override;
 
     static bool CanProcess(SPSGS_ResolveRequest& request);
     
-    void CreateRequests();
-    virtual void ProcessReplies();
+    virtual void CreateRequests() override;
+    virtual void ProcessReplies() override;
 };
 
 
@@ -79,12 +79,12 @@ public:
                             TProcessorPriority priority);
     virtual ~CPSGS_OSGGetBlobBySeqId();
 
-    virtual string GetName() const;
+    virtual string GetName() const override;
     
     static bool CanProcess(SPSGS_BlobBySeqIdRequest& request);
     
-    void CreateRequests();
-    virtual void ProcessReplies();
+    virtual void CreateRequests() override;
+    virtual void ProcessReplies() override;
 };
 
 

@@ -34,6 +34,7 @@
 
 #include "osg_connection.hpp"
 
+#include <corelib/ncbithr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <objects/id2/ID2_Request_Packet.hpp>
 #include <objects/id2/ID2_Reply.hpp>
@@ -55,6 +56,7 @@ static const char kParamMaxConnectionCount[] = "maxconn";
 static const char kParamDebugLevel[] = "debug";
 static const char kParamExpirationTimeout[] = "expiration_timeout";
 static const char kParamReadTimeout[] = "read_timeout";
+static const char kParamCDDRetryTimeout[] = "cdd_retry_timeout";
 static const char kParamRetryCount[] = "retry_count";
 
 // Default configuration parameters' values
@@ -63,6 +65,7 @@ static const int kDefaultMaxConnectionCount = 8;
 static const EDebugLevel kDefaultDebugLevel = eDebug_error;
 static const double kDefaultExpirationTimeout = 60;
 static const double kDefaultReadTimeout = 30;
+static const double kDefaultCDDRetryTimeout = 0.9;
 static const double kDefaultRetryCount = 3;
 
 
@@ -119,6 +122,33 @@ SConditionalASNLogger<Type> LogASNIf(const Type& obj, bool condition)
     return SConditionalASNLogger<Type>(obj, condition);
 }
 
+
+const bool kSimulateFailures = false;
+const int kNoFailureCount = 8;
+const int kFailureRate = 8;
+static DECLARE_TLS_VAR(int, s_NoFailureCount);
+
+static void s_SimulateFailure(const char* where)
+{
+    if ( !kSimulateFailures ) {
+        return;
+    }
+    if ( s_NoFailureCount > 0 ) {
+        --s_NoFailureCount;
+    }
+    else if ( random() % kFailureRate == 0 ) {
+        s_NoFailureCount = kNoFailureCount;
+        string msg = string("simulated OSG ")+where+" failure";
+        if ( random() % 2 ) {
+            throw runtime_error(msg);
+        }
+        else {
+            NCBI_THROW(CIOException, eWrite, msg);
+        }
+    }
+}
+
+
 void COSGConnection::SendRequestPacket(const CID2_Request_Packet& packet)
 {
     _ASSERT(m_RemoveFrom);
@@ -126,12 +156,14 @@ void COSGConnection::SendRequestPacket(const CID2_Request_Packet& packet)
         LOG_POST(GetDiagSeverity() << "OSG("<<GetConnectionID()<<"): "
                  "Sending "<<LogASNIf(packet, GetDebugLevel() >= eDebug_asn));
     }
+    s_SimulateFailure("send");
     *m_Stream << MSerial_AsnBinary << packet;
 }
 
 
 CRef<CID2_Reply> COSGConnection::ReceiveReply()
 {
+    s_SimulateFailure("read");
     CRef<CID2_Reply> reply(new CID2_Reply());
     *m_Stream >> MSerial_AsnBinary >> *reply;
     _ASSERT(m_RemoveFrom);
@@ -169,6 +201,10 @@ CRef<CID2_Reply> COSGConnection::ReceiveReply()
 COSGConnectionPool::COSGConnectionPool()
     : m_ServiceName(kDefaultServiceName),
       m_MaxConnectionCount(kDefaultMaxConnectionCount),
+      m_ExpirationTimeout(kDefaultExpirationTimeout),
+      m_ReadTimeout(kDefaultReadTimeout),
+      m_CDDRetryTimeout(kDefaultCDDRetryTimeout),
+      m_RetryCount(kDefaultRetryCount),
       m_WaitConnectionSlot(0, kMax_Int),
       m_NextConnectionID(1),
       m_ConnectionCount(0)
@@ -208,6 +244,10 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
         registry.GetDouble(section,
                            kParamReadTimeout,
                            kDefaultReadTimeout);
+    m_CDDRetryTimeout =
+        registry.GetDouble(section,
+                           kParamCDDRetryTimeout,
+                           kDefaultCDDRetryTimeout);
     m_RetryCount =
         registry.GetInt(section,
                            kParamRetryCount,

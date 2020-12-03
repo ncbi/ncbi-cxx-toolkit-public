@@ -52,6 +52,11 @@ CPSGS_OSGGetBlob::CPSGS_OSGGetBlob(const CRef<COSGConnectionPool>& pool,
 }
 
 
+CPSGS_OSGGetBlob::~CPSGS_OSGGetBlob()
+{
+}
+
+
 string CPSGS_OSGGetBlob::GetName() const
 {
     return "OSG-getblob";
@@ -110,6 +115,11 @@ CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
                                        const shared_ptr<CPSGS_Reply>& reply,
                                        TProcessorPriority priority)
     : CPSGS_OSGProcessorBase(pool, request, reply, priority)
+{
+}
+
+
+CPSGS_OSGGetChunks::~CPSGS_OSGGetChunks()
 {
 }
 

@@ -58,6 +58,12 @@ COSGFetch::~COSGFetch()
 }
 
 
+void COSGFetch::ResetReplies()
+{
+    m_Replies.clear();
+}
+
+
 void COSGFetch::AddReply(CRef<CID2_Reply>&& reply)
 {
     _ASSERT(!EndOfReplies());

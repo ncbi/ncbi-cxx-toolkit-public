@@ -53,7 +53,6 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 class COSGFetch;
-class COSGCaller;
 class COSGConnectionPool;
 class COSGConnection;
 
@@ -90,15 +89,29 @@ public:
 
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
-                                             TProcessorPriority priority) const;
-    virtual void Process(void);
-    virtual void Cancel(void);
-    virtual EPSGS_Status GetStatus(void);
+                                             TProcessorPriority priority) const override;
+    virtual void Process(void) override;
+    virtual void Cancel(void) override;
+    virtual EPSGS_Status GetStatus(void) override;
 
+    bool IsCanceled() const
+        {
+            return m_Canceled;
+        }
+
+    // notify processor about communication events
+    virtual void NotifyOSGCallStart();
+    virtual void NotifyOSGCallReply(const CID2_Reply& reply);
+    virtual void NotifyOSGCallEnd();
+    
 protected:
-    void Start();
-    void CreateFetches();
-    void WaitForFinish();
+    COSGConnectionPool& GetConnectionPool() const {
+        return m_ConnectionPool.GetNCObject();
+    }
+    void PrepareOSGRequest();
+    bool CallOSG(bool last_attempt);
+    void ProcessOSGReply();
+    
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
     void FinalizeResult();
@@ -110,17 +123,21 @@ protected:
         {
             return m_Fetches;
         }
-    
+
+    // create ID2 requests for the PSG request
     virtual void CreateRequests() = 0;
+    // process ID2 replies and issue PSG reply
     virtual void ProcessReplies() = 0;
-    
+    // reset processing state in case of ID2 communication failure before next attempt
+    virtual void ResetReplies();
+
 private:
     CRef<CRequestContext> m_Context;
     CRef<COSGConnectionPool> m_ConnectionPool;
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
-    CRef<COSGCaller> m_OSGCaller;
     EPSGS_Status m_Status;
+    volatile bool m_Canceled;
 };
 
 

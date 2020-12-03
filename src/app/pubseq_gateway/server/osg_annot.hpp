@@ -59,21 +59,31 @@ public:
                    TProcessorPriority priority);
     virtual ~CPSGS_OSGAnnot();
 
-    virtual string GetName() const;
+    virtual string GetName() const override;
 
     static bool CanProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
     static set<string> GetNamesToProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
     static bool CanProcessAnnotName(const string& name);
 
-    void CreateRequests();
-    virtual void ProcessReplies();
+    virtual void CreateRequests() override;
+    virtual void ProcessReplies() override;
 
+    // check if CDD request timed out inside OSG
+    virtual void NotifyOSGCallStart() override;
+    virtual void NotifyOSGCallReply(const CID2_Reply& reply) override;
+    virtual void NotifyOSGCallEnd() override;
+
+protected:
     void SendReplies();
     void AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id);
+    bool IsCDDReply(const CID2_Reply& reply) const;
         
 protected:
     set<string> m_NamesToProcess;
     vector<CConstRef<CID2_Reply_Get_Blob_Id>> m_BlobIds;
+    bool m_ApplyCDDFix;
+    bool m_CDDReceived;
+    CStopWatch m_RequestTime;
 };
 
 

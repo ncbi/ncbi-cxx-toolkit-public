@@ -46,13 +46,14 @@ public:
                      const shared_ptr<CPSGS_Request>& request,
                      const shared_ptr<CPSGS_Reply>& reply,
                      TProcessorPriority priority);
+    virtual ~CPSGS_OSGGetBlob();
 
-    virtual string GetName() const;
+    virtual string GetName() const override;
 
     static bool CanProcess(SPSGS_BlobBySatSatKeyRequest& request);
     
-    void CreateRequests();
-    virtual void ProcessReplies();
+    void CreateRequests() override;
+    virtual void ProcessReplies() override;
 };
 
 
@@ -63,13 +64,14 @@ public:
                        const shared_ptr<CPSGS_Request>& request,
                        const shared_ptr<CPSGS_Reply>& reply,
                        TProcessorPriority priority);
+    virtual ~CPSGS_OSGGetChunks();
     
-    virtual string GetName() const;
+    virtual string GetName() const override;
 
     static bool CanProcess(SPSGS_TSEChunkRequest& request);
     
-    void CreateRequests();
-    virtual void ProcessReplies();
+    void CreateRequests() override;
+    virtual void ProcessReplies() override;
 };
 
 
