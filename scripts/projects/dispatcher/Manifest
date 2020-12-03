@@ -7,7 +7,7 @@
 #
 
 APP: lbsmd lbsmc lbsm_feedback
-APP: launcherd fwdaemon dispd.cgi
+APP: launcherd fwdaemon servnsd dispd.cgi
 APP: ncbi_dblb_cli
 
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
