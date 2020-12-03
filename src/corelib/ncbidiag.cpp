@@ -6277,11 +6277,13 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
         return;
     }
     CDiagLock lock(CDiagLock::ePost);
+    if (m_Stream->bad()) return;
     m_Stream->clear();
     stringstream str_os;
     str_os << mess;
     string str = str_os.str();
     m_Stream->write(str.data(), str.size());
+    if (!m_Stream->good()) return;
     if (m_QuickFlush) {
         *m_Stream << NcbiFlush;
     }
