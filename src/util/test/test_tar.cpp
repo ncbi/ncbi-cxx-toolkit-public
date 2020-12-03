@@ -467,6 +467,11 @@ int CTarTest::Run(void)
     _setmode(_fileno(stdout), _O_BINARY);
 #endif // NCBI_OS_MSWIN
 
+#ifdef TEST_CONN_TAR
+    CCanceled canceled;
+    unique_ptr<CConn_IOStream> conn;
+#endif // TEST_CONN_TAR
+
     CNcbiIfstream ifs;
     CNcbiOfstream ofs;
     CNcbiIstream* in = 0;
@@ -474,8 +479,6 @@ int CTarTest::Run(void)
     unique_ptr<CNcbiIos> io;
 
 #ifdef TEST_CONN_TAR
-    CCanceled canceled;
-    unique_ptr<CConn_IOStream> conn;
     if (NStr::Find(CTempString(file, 3/*pos*/, 5/*len*/), "://") != NPOS) {
         if (action == eList  ||  action == eExtract  ||  action == eTest
             ||  pipethru) {
