@@ -117,9 +117,10 @@ extern "C" {
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
 #elif (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC) || \
        defined(NCBI_COMPILER_ANY_CLANG))  && \
-  (defined(__i386)  ||  defined(__sparc)  ||  defined(__x86_64))  &&   \
+  (defined(__i386)  ||  defined(__sparc)  ||  defined(__x86_64)  || \
+   defined(__aarch64__))  && \
   (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK))
-#  if defined(__x86_64)
+#  if defined(__x86_64)  ||  defined(__aarch64__)
 #    define NCBI_COUNTER_64_BIT
 #  endif
 #  ifdef NCBI_COUNTER_64_BIT

@@ -102,6 +102,24 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
     asm volatile("lock; xchg %0, %1" : "=m" (*nv_loc), "=r" (old_value)
                  : "1" (new_value), "m" (*nv_loc));
     return old_value;
+#    elif defined(__aarch64__)
+    void* old_value;
+#     ifdef __ARM_FEATURE_ATOMICS
+    asm volatile("swpal %2, %0, %1" : "=&r" (old_value), "+Q" (*nv_loc)
+                 : "r" (new_value));
+    return old_value;
+#     else
+    NCBI_SCHED_SPIN_INIT();
+    register int undone asm("w9") = 1;
+    while (undone) {
+        asm volatile("ldxr %1, %2\n\tstlxr w9, %3, %2"
+                     : "=&r" (undone), "=&r" (old_value), "+Q" (*nv_loc)
+                     : "r" (new_value));
+        if (undone) {
+            NCBI_SCHED_SPIN_YIELD();
+        }
+    }
+#     endif    
 #    elif defined(__sparcv9)
     void* old_value;
     NCBI_SCHED_SPIN_INIT();

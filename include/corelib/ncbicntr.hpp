@@ -247,6 +247,23 @@ THROWS_NONE
                  : "1" (delta), "m" (*nv_value_p));
 #   endif
     result += delta;
+#  elif defined(__aarch64__)
+#     ifdef __ARM_FEATURE_ATOMICS
+    asm volatile("ldaddal %2, %0, %1" : "=&r" (result), "+Q" (*nv_value_p)
+                 : "r" (Int8(delta)));
+    result += delta;
+#     else
+    NCBI_SCHED_SPIN_INIT();
+    register int undone asm("w9") = 1;
+    while (undone) {
+        asm volatile("ldxr %1, %2\n\tadd %1, %1, %3\n\tstlxr w9, %1, %2"
+                     : "=&r" (undone), "=&r" (result), "+Q" (*nv_value_p)
+                     : "r" (Int8(delta)));
+        if (undone) {
+            NCBI_SCHED_SPIN_YIELD();
+        }
+    }
+#     endif
 #  else
 #    error "Unsupported processor type for assembly implementation!"
 #  endif
