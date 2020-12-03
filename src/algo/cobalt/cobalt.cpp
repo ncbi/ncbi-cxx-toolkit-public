@@ -396,7 +396,8 @@ CMultiAligner::x_SetScoreMatrix(const char *matrix_name)
         m_Aligner.SetScoreMatrix(&NCBISM_Pam250);
     else
         NCBI_THROW(CMultiAlignerException, eInvalidScoreMatrix,
-                   "Unsupported score matrix");
+                   "Unsupported score matrix. Valid matrix names: BLOSUM45, "\
+                   "BLOSUM62, BLOSUM80, PAM30, PAM70 and PAM250");
 }
 
 
