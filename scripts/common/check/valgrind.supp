@@ -475,8 +475,16 @@
     fun:_ZN4ncbi7CObject11InitCounterEv
     fun:*
 }
+
 {
-    corelib/Diag/s_CreateDefaultHandler
+    corelib/Diag/s_CreateDefaultDiagHandler 1
+    Memcheck:Leak
+    ...
+    fun:s_CreateDefaultDiagHandler
+    fun:__static_initialization_and_destruction_0
+}
+{
+    corelib/Diag/s_CreateDefaultHandler 2
     Memcheck:Leak
     ...
     fun:_ZN4ncbiL26s_CreateDefaultDiagHandlerEv
@@ -487,6 +495,14 @@
     ...
     fun:_ZN4ncbi24CreateDefaultDiagHandlerEv
 }
+{
+    corelib/Diag/CDiagContext::SetupDiag
+    Memcheck:Leak
+    ...
+    fun:_ZN4ncbi12CDiagContext9SetupDiagENS_14EAppDiagStreamEPNS_13CNcbiRegistryENS_20EDiagCollectMessagesEPKc
+    fun:_ZN4ncbi15InitDiagHandlerEv
+}
+
 {
     corelib/SSystemMutex/InitializeDynamic
     Memcheck:Cond
