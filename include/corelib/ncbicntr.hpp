@@ -245,7 +245,7 @@ THROWS_NONE
 #   else
     asm volatile("lock; xaddl %1, %0" : "=m" (*nv_value_p), "=r" (result)
                  : "1" (delta), "m" (*nv_value_p));
-#endif
+#   endif
     result += delta;
 #  else
 #    error "Unsupported processor type for assembly implementation!"
