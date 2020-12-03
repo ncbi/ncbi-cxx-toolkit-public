@@ -176,6 +176,9 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
             default:
                 args += "2"; break;
         }
+
+        // This is for long chain-id testing. This is for Gabi's test release.
+        // args += "&readfile=1";
     }
     
     else {

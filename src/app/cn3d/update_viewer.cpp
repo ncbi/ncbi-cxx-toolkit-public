@@ -765,16 +765,16 @@ void UpdateViewer::ImportStructure(void)
                     //=======================================================================================================
                     // This is for long chain-id testing. This is section 1.
                     // Get the gi of the (**b) bioseq to use later.
-                    // This is so we can find this bioseq later.
+                    // This is so we can find this bioseq later. keywords: debugging. Gabi.
                     //=======================================================================================================
-                    CBioseq::TId IDs = (*b)->GetId();
-                    CBioseq::TId::const_iterator i;
-                    TGi bioseq_GI;
-                    for (i = IDs.begin(); i != IDs.end(); ++i) {
-                        if ((*i)->IsGi()) {
-                            bioseq_GI = (*i)->GetGi();
-                        }
-                    }
+                    // CBioseq::TId IDs = (*b)->GetId();
+                    // CBioseq::TId::const_iterator i;
+                    // TGi bioseq_GI;
+                    // for (i = IDs.begin(); i != IDs.end(); ++i) {
+                    //     if ((*i)->IsGi()) {
+                    //         bioseq_GI = (*i)->GetGi();
+                    //     }
+                    // }
                     //=======================================================================================================
                     // end of long chain-id testing section 1.
                     //=======================================================================================================
@@ -789,19 +789,19 @@ void UpdateViewer::ImportStructure(void)
                         // with a long chain-id from sids (from the biostruc) when a matching gi is found
                         //=======================================================================================================
                         // iterate through sids (these come from the biostruc)
-                        for (unsigned int j=0; j<sids.size(); ++j) {
-                            // if a matching gi is found
-                            TGi sequence_GI = sequence->identifier->gi;
-                            TGi sid_GI = sids[j]->GetGi();
-                            if (bioseq_GI == sid_GI) {
-                                // replace the pdb-id in the newSequence with the pdb-id from the biostruc
-                                (const_cast<MoleculeIdentifier*>(sequence->identifier))->pdbID = pdbID;
-                                (const_cast<MoleculeIdentifier*>(sequence->identifier))->pdbChain = sids_chain_ids[j];
-                                // check to see if they match
-                                string test1 = sequence->identifier->ToString();
-                                string test2 = sids[j]->GetSeqIdString();
-                            }
-                        }
+                        // for (unsigned int j=0; j<sids.size(); ++j) {
+                        //     // if a matching gi is found
+                        //     TGi sequence_GI = sequence->identifier->gi;
+                        //     TGi sid_GI = sids[j]->GetGi();
+                        //     if (bioseq_GI == sid_GI) {
+                        //         // replace the pdb-id in the newSequence with the pdb-id from the biostruc
+                        //         (const_cast<MoleculeIdentifier*>(sequence->identifier))->pdbID = pdbID;
+                        //         (const_cast<MoleculeIdentifier*>(sequence->identifier))->pdbChain = sids_chain_ids[j];
+                        //         // check to see if they match
+                        //         string test1 = sequence->identifier->ToString();
+                        //         string test2 = sids[j]->GetSeqIdString();
+                        //     }
+                        // }
                         //=======================================================================================================
                         // end of long chain-id testing section 2.
                         //=======================================================================================================

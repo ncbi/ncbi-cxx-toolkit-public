@@ -214,6 +214,11 @@ bool GetAsnDataViaHTTPS(
 
     url = hostCopy + path + "?" + args;
 
+    // temporary!  debugging!
+    // url = hostCopy + path;
+    // url.erase(url.end() - 12, url.end());
+    // url += "/testpage.html";
+
     if (!asnObject) {
         if (err) *err = "GetAsnDataViaHTTPS:  Empty object pointer provided.";
         return false;
