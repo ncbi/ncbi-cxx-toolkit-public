@@ -725,11 +725,11 @@ int CNCBITestConnStreamApp::Run(void)
         if (buf2.get()[i] != buf1.get()[i])
             break;
     }
+    ios.Close();
     if (i < kBufferSize)
         ERR_POST(Fatal << "Not entirely bounced, mismatch position: " << i+1);
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
-    ios.Close();
 
     LOG_POST(Info << "Test 8 passed\n");
 
@@ -764,9 +764,9 @@ int CNCBITestConnStreamApp::Run(void)
     code        = bad_http.GetStatusCode();
     string text = bad_http.GetStatusText();
     NcbiCout << "Status(bad) = " << code << ' ' << text << NcbiEndl;
+    bad_http.Close();
     if (code != 404  ||  text.empty())
         ERR_POST(Fatal << "Test 10 failed");
-    bad_http.Close();
 
     CConn_HttpStream good_http("https://www.ncbi.nlm.nih.gov/index.html");
     good_http >> ftpfile/*dummy*/;
@@ -774,9 +774,9 @@ int CNCBITestConnStreamApp::Run(void)
     code = good_http.GetStatusCode();
     text = good_http.GetStatusText();
     NcbiCout << "Status(good) = " << code << ' ' << text << NcbiEndl;
+    good_http.Close();
     if (code != 200  ||  text.empty())
         ERR_POST(Fatal << "Test 10 failed");
-    good_http.Close();
 
     LOG_POST(Info << "Test 10 passed\n");
 
@@ -845,9 +845,9 @@ int CNCBITestConnStreamApp::Run(void)
     // 4-byte ticket prior to any actual user data...
     m = size_t(echo.tellg()) << 1;
     n = size_t(SOCK_GetPosition(sock, eIO_Read));
+    echo.Close();
     if (n != m)
         ERR_POST(Fatal << "Position mismatch. Test 12 failed");
-    echo.Close();
 
     LOG_POST(Info << "Test 12 passed\n");
 
