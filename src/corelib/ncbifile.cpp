@@ -2755,7 +2755,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( gid ) *gid = 0;
 
     if ( !owner  &&  !group ) {
-        LOG_ERROR_NCBI(24, "CDirEntry::GetOwner(): parameters are empty", CNcbiError::eInvalidArgument);
+        LOG_ERROR_NCBI(24, "CDirEntry::GetOwner(): Parameters are empty for: " + GetPath(), CNcbiError::eInvalidArgument);
         return false;
     }
 
@@ -2764,7 +2764,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     bool res = CWinSecurity::GetFileOwner(GetPath(), owner, group, uid, gid);
     if (!res) {
         // CWinSecurity already set CNcbiError
-        LOG_ERROR(24, "CDirEntry::GetOwner(): unable to get owner for: " + GetPath());
+        LOG_ERROR(24, "CDirEntry::GetOwner(): Unable to get owner for: " + GetPath());
     }
     return res;
 
@@ -2813,7 +2813,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     if ( gid ) *gid = (unsigned int)(-1);
 
     if ( owner.empty()  &&  group.empty() ) {
-        LOG_ERROR_NCBI(103, "CDirEntry::SetOwner(): parameters are empty", CNcbiError::eInvalidArgument);
+        LOG_ERROR_NCBI(103, "CDirEntry::SetOwner(): Parameters are empty for: " + GetPath(), CNcbiError::eInvalidArgument);
         return false;
     }
 
@@ -2821,7 +2821,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     bool res = CWinSecurity::SetFileOwner(GetPath(), owner, group, uid, gid);
     if (!res) {
         // CWinSecurity already set CNcbiError
-        LOG_ERROR(104, "CDirEntry::SetOwner(): unable to set owner for: " + GetPath());
+        LOG_ERROR(104, "CDirEntry::SetOwner(): Unable to set owner \""
+                  + owner + ':' + group + "\" for: " + GetPath());
     }
     return res;
 
@@ -2834,7 +2835,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             CNcbiError::SetFromErrno();
             unsigned int temp;
             if (!NStr::StringToNumeric(owner, &temp, NStr::fConvErr_NoThrow, 0)) {
-                LOG_ERROR(25, "CDirEntry::SetOwner(): Invalid owner name: " + owner);
+                LOG_ERROR(25, "CDirEntry::SetOwner(): Invalid owner name \""
+                          + owner + "\" for: " + GetPath());
                 return false;
             }
             temp_uid = (uid_t) temp;
@@ -2853,7 +2855,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             CNcbiError::SetFromErrno();
             unsigned int temp;
             if (!NStr::StringToNumeric(group, &temp, NStr::fConvErr_NoThrow, 0)) {
-                LOG_ERROR(26, "CDirEntry::SetOwner(): Invalid group name: " + group);
+                LOG_ERROR(26, "CDirEntry::SetOwner(): Invalid group name \""
+                          + group + "\" for: " + GetPath());
                 return false;
             }
             temp_gid = (gid_t) temp;
@@ -2867,14 +2870,16 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 
     if (follow == eFollowLinks  ||  GetType(eIgnoreLinks) != eLink) {
         if ( chown(GetPath().c_str(), temp_uid, temp_gid) ) {
-            LOG_ERROR_ERRNO(27, "CDirEntry::SetOwner(): Cannot change owner for: " + GetPath());
+            LOG_ERROR_ERRNO(27, "CDirEntry::SetOwner(): Cannot change owner \""
+                            + owner + ':' + group + "\" for: " + GetPath());
             return false;
         }
     }
 #  if defined(HAVE_LCHOWN)
     else {
         if ( lchown(GetPath().c_str(), temp_uid, temp_gid) ) {
-            LOG_ERROR_ERRNO(28, "CDirEntry::SetOwner(): Cannot change symlink owner for: " + GetPath());
+            LOG_ERROR_ERRNO(28, "CDirEntry::SetOwner(): Cannot change symlink owner \""
+                            + owner + ':' + group + "\" for: " + GetPath());
             return false;
         }
     }
