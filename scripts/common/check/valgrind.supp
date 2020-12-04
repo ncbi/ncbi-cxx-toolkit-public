@@ -502,6 +502,13 @@
     fun:_ZN4ncbi12CDiagContext9SetupDiagENS_14EAppDiagStreamEPNS_13CNcbiRegistryENS_20EDiagCollectMessagesEPKc
     fun:_ZN4ncbi15InitDiagHandlerEv
 }
+{  
+    corelib/Diag/global-init
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_GLOBAL__sub_I_ncbidiag.cpp
+    fun:__libc_csu_init
+}
 
 {
     corelib/SSystemMutex/InitializeDynamic
