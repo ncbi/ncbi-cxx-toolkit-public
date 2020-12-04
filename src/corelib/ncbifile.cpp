@@ -2751,8 +2751,8 @@ bool CDirEntry::GetOwner(string* owner, string* group,
                          EFollowLinks follow, 
                          unsigned int* uid, unsigned int* gid) const
 {
-    if ( uid ) *uid = (unsigned int)(-1);
-    if ( gid ) *gid = (unsigned int)(-1);
+    if ( uid ) *uid = 0;
+    if ( gid ) *gid = 0;
 
     if ( !owner  &&  !group ) {
         LOG_ERROR_NCBI(24, "CDirEntry::GetOwner(): parameters are empty", CNcbiError::eInvalidArgument);
