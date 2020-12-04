@@ -215,10 +215,9 @@ static bool s_GetOwnerGroupFromSIDs(PSID owner_sid, PSID group_sid,
     }
     // Get group name
     if ( group_name  &&  !x_GetAccountNameBySid(group_sid, group_name) ) {
-        // This is not an error, because the group name on Windows
-        // is an auxiliary information.  Sometimes accounts cannot
-        // belong to groups, or we don't have permissions to get
-        // such information.
+        // This is not an error, actually, because group name on Windows is an
+        // auxiliary information.  Sometimes accounts do not belong to any
+        // group(s), or we don't have permissions to get such information.
         group_name->clear();
     }
     return true;
@@ -235,7 +234,7 @@ bool CWinSecurity::GetObjectOwner(HANDLE         obj_handle,
     PSECURITY_DESCRIPTOR sd;
 
     DWORD res = ::GetSecurityInfo(obj_handle, obj_type, ACCOUNT_SECURITY_INFO,
-                                  &sid_owner, &sid_group, NULL, NULL, &sd );
+                                  &sid_owner, &sid_group, NULL, NULL, &sd);
     if ( res != ERROR_SUCCESS ) {
         CNcbiError::SetWindowsError(res);
         return false;
@@ -255,15 +254,15 @@ bool CWinSecurity::GetObjectOwner(const string&  obj_name,
     PSID sid_group;
     PSECURITY_DESCRIPTOR sd;
 
-    DWORD res = GetNamedSecurityInfo(_T_XCSTRING(obj_name), obj_type,
-                                     ACCOUNT_SECURITY_INFO,
-                                     &sid_owner, &sid_group, NULL, NULL, &sd );
+    DWORD res = ::GetNamedSecurityInfo(_T_XCSTRING(obj_name), obj_type,
+                                       ACCOUNT_SECURITY_INFO,
+                                       &sid_owner, &sid_group, NULL, NULL, &sd);
     if ( res != ERROR_SUCCESS ) {
         CNcbiError::SetWindowsError(res);
         return false;
     }
     bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group, owner, group, uid, gid);
-    LocalFree(sd);
+    ::LocalFree(sd);
     return retval;
 }
 
@@ -301,13 +300,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
                                 const string& owner, const string& group, 
                                 unsigned int* uid, unsigned int* gid)
 {
-    if ( uid ) *uid = 0;
-    if ( gid ) *gid = 0;
-
-    if ( owner.empty()  &&  group.empty() ) {
-        CNcbiError::Set(CNcbiError::eInvalidArgument);
-        return false;
-    }
+    _ASSERT(!owner.empty()  ||  !group.empty());
 
     HANDLE  token     = INVALID_HANDLE_VALUE;
     PSID    owner_sid = NULL;
@@ -342,26 +335,27 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     }
 
     // Set new owner/group in the object's security descriptor
-    if ( SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
-                              SE_FILE_OBJECT, security_info,
-                              owner_sid, group_sid, NULL, NULL) == ERROR_SUCCESS ) {
+    if ( ::SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
+                                SE_FILE_OBJECT, security_info,
+                                owner_sid, group_sid, NULL, NULL) == ERROR_SUCCESS ) {
         success = true;
         goto cleanup;
     }
 
-    // If the previous call failed because access was denied,
-    // enable the necessary admin privileges for the current thread and try again.
+    // If the previous call failed because access was denied, try to enable the
+    // necessary admin privileges for the current thread, then try again.
 
-    token = s_GetCurrentThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
-    if ( token == INVALID_HANDLE_VALUE) {
+    if ( (token = s_GetCurrentThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY)) == INVALID_HANDLE_VALUE) {
         goto cleanup;
     }
     bool prev_ownership_name;
     bool prev_restore_name;
-
-    if ( !SetTokenPrivilege(token, SE_TAKE_OWNERSHIP_NAME, true, &prev_ownership_name) ||
-         !SetTokenPrivilege(token, SE_RESTORE_NAME, true, &prev_restore_name) ) {
+    
+    if ( !SetTokenPrivilege(token, SE_TAKE_OWNERSHIP_NAME, true, &prev_ownership_name) ) {
         goto cleanup;
+    }
+    if ( !SetTokenPrivilege(token, SE_RESTORE_NAME,        true, &prev_restore_name) ) {
+        goto cleanup2;
     }
     if ( ::SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
                                 SE_FILE_OBJECT, security_info,
@@ -369,14 +363,14 @@ bool CWinSecurity::SetFileOwner(const string& filename,
         success = true;
     }
     // Restore privileges
+    SetTokenPrivilege(token, SE_RESTORE_NAME,        prev_restore_name);
+cleanup2:
     SetTokenPrivilege(token, SE_TAKE_OWNERSHIP_NAME, prev_ownership_name);
-    SetTokenPrivilege(token, SE_RESTORE_NAME, prev_restore_name);
-
 
 cleanup:
-    if ( owner_sid ) LocalFree(owner_sid);
-    if ( group_sid ) LocalFree(group_sid);
-    if ( token != INVALID_HANDLE_VALUE) ::CloseHandle(token);
+    if ( token != INVALID_HANDLE_VALUE ) ::CloseHandle(token);
+    if ( group_sid ) ::LocalFree(group_sid);
+    if ( owner_sid ) ::LocalFree(owner_sid);
 
     return success;
 }

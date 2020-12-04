@@ -1084,7 +1084,7 @@ public:
     ///   Pointer to an unsigned int to receive numeric group id
     ///   (this information is purely supplemental).
     /// @note
-    ///   Numeric uid/gid may be the fake ones on Windows (and may be 0).
+    ///   Numeric uid/gid may be fake ones on Windows (and may be 0).
     /// @note
     ///   The call will fail if neither owner nor group is provided non-NULL
     ///   (even though uid and/or gid may be non-NULL).
@@ -1108,15 +1108,15 @@ public:
     ///   Only administrative privileges (Restore and Take Ownership)
     ///   grant rights to change ownership. Without one of the privileges,
     ///   an administrator cannot take ownership of any file or give ownership
-    ///   back to the some user.
+    ///   back to the same user.
     /// UNIX:
-    ///   The owner of an entry can change the group to any group of which
-    ///   that owner is a member of. The super-user may assign the group
+    ///   The owner of an entry can change the group to any group, of which
+    ///   that owner is a member. The super-user may assign the group
     ///   arbitrarily.
     /// @param owner
-    ///   New owner name to set. Use empty string if dont want to change.
+    ///   New owner name to set. Use empty string if don't want to change.
     /// @param group
-    ///   New group name to set. Use empty string if dont want to change.
+    ///   New group name to set. Use empty string if don't want to change.
     /// @param uid
     ///   Pointer to an unsigned int to receive numeric user id of the
     ///   prospective owner (this information is purely supplemental).
@@ -1125,7 +1125,7 @@ public:
     ///   prospective owner (this information is purely supplemental).
     /// @note
     ///   Numeric uid/gid can be returned even if the call was unsuccessful;
-    ///   they may be the fake ones on Windows (and may be 0).
+    ///   they may be fake ones on Windows (and may be 0).
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     /// @sa

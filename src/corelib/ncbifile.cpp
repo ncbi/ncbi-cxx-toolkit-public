@@ -2751,6 +2751,9 @@ bool CDirEntry::GetOwner(string* owner, string* group,
                          EFollowLinks follow, 
                          unsigned int* uid, unsigned int* gid) const
 {
+    if ( uid ) *uid = (unsigned int)(-1);
+    if ( gid ) *gid = (unsigned int)(-1);
+
     if ( !owner  &&  !group ) {
         LOG_ERROR_NCBI(24, "CDirEntry::GetOwner(): parameters are empty", CNcbiError::eInvalidArgument);
         return false;
@@ -2806,8 +2809,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                          EFollowLinks follow,
                          unsigned int* uid, unsigned int* gid) const
 {
-    if ( gid ) *gid = 0;
-    if ( uid ) *uid = 0;
+    if ( uid ) *uid = (unsigned int)(-1);
+    if ( gid ) *gid = (unsigned int)(-1);
 
     if ( owner.empty()  &&  group.empty() ) {
         LOG_ERROR_NCBI(103, "CDirEntry::SetOwner(): parameters are empty", CNcbiError::eInvalidArgument);
@@ -2840,7 +2843,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             *uid = temp_uid;
         }
     } else {
-        temp_uid = (uid_t)(-1);
+        temp_uid = (uid_t)(-1);  // no change
     }
 
     gid_t temp_gid;
@@ -2859,7 +2862,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             *gid = temp_gid;
         }
     } else {
-        temp_gid = (gid_t)(-1);
+        temp_gid = (gid_t)(-1);  // no change
     }
 
     if (follow == eFollowLinks  ||  GetType(eIgnoreLinks) != eLink) {
