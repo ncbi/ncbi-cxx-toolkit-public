@@ -2271,7 +2271,10 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
             error = "Lat_lon '" + lat_lon + "' is in water '" + id->GetGuessWater() + "'";
         }
     } else if (!NStr::IsBlank(id->GetGuessCountry())) {
-        if (NStr::IsBlank(id->GetClaimedFull())) {
+        string full_guess = id->GetFullGuess();
+        if (NStr::EqualNocase (country, "China") && NStr::EqualNocase (full_guess, "Hong Kong")) {
+            // skip
+        } else if (NStr::IsBlank(id->GetClaimedFull())) {
             if (NStr::Equal(id->GetGuessCountry(), country) && !NStr::Equal(id->GetGuessProvince(), province)) {
                 errcode = eLatLonCountryErr_State;
             } else {
