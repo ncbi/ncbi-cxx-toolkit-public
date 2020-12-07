@@ -1349,8 +1349,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     Uint1       pri_owner;
     Uint1       sec_owner;
 
-    if (ibp->secaccs == NULL &&
-        ibp->secondary_accessions.empty()) {
+    if (ibp->secaccs == NULL) {
         return;
     }
 
@@ -1368,7 +1367,6 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
 
     if (source == Parser::ESource::EMBL) {
         fta_fix_secondaries(ibp->secaccs);
-        fta_fix_secondaries(ibp->secondary_accessions);
     }
 
     unusual_wgs = false;

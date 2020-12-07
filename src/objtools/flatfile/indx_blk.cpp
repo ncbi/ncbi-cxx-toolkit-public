@@ -1972,6 +1972,7 @@ static bool sIsAccPrefixChar(char c)  {
  *                                              3-4-93
  *
  **********************************************************/
+/*
 bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip)
 {
     string accession;
@@ -2125,6 +2126,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 
     return get;
 }
+*/
 
 
 bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
