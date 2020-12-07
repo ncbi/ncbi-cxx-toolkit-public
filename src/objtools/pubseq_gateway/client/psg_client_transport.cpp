@@ -493,6 +493,8 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error)
 {
     SContextSetter setter(req->context);
+    server.throttling.AddFailure();
+
     auto& debug_printout = req->reply->debug_printout;
     auto retries = req->GetRetries();
 
@@ -506,7 +508,6 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
 
     debug_printout << error << endl;
     req->reply->reply_item.GetLock()->state.AddError(error);
-    server.throttling.AddFailure();
     _DEBUG_ARG(const auto& server_name = server.address.AsString());
     PSG_THROTTLING_TRACE("Server '" << server_name << "' failed to process request '" <<
             debug_printout.id << '\'');
