@@ -473,6 +473,13 @@ bool CGff3Reader::xUpdateAnnotCds(
     if (record.GetAttribute("ID", id)  &&  m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
         return true;
     }
+
+    auto recType = record.Type();
+    if (id.empty()  &&  (recType == "start_codon"  ||  (recType == "stop_codon"))) {
+        //not sure if it's even legal, but seen in the wild
+        return true;
+    }
+
     record.GetAttribute("Parent", parentId);
     if (id.empty()) {
         if (parentId.empty()) {
