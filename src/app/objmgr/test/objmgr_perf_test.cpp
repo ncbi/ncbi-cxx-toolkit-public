@@ -236,7 +236,7 @@ int CPerfTestApp::Run(void)
 
 #if defined(NCBI_OS_MSWIN)
     // Windows does not have unsetenv(), but putting an empty value works fine.
-    putenv("GENBANK_LOADER_PSG=");
+    _putenv("GENBANK_LOADER_PSG=");
 #else
     // On Linux putting an empty value results in empty string being fetched by CParam, not NULL.
     unsetenv("GENBANK_LOADER_PSG");
@@ -569,7 +569,7 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
         }
 
         double p75;
-        size_t idx75 = count * 0.75;
+        size_t idx75 = count * 3 / 4;
         if (idx75 + 1 >= count) {
             p75 = st[idx75];
         }
