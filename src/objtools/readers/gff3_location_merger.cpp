@@ -180,19 +180,29 @@ CGff3LocationMerger::AddRecord(
     }
 
     for (const auto& id: ids) {
-        auto existingEntry = mMapIdToLocations.find(id);
-        if (existingEntry == mMapIdToLocations.end()) {
-            existingEntry = mMapIdToLocations.emplace(id, LOCATIONS()).first;
-        }
-        LOCATIONS& locations = existingEntry->second;
-        // special case: gene
-        if (locations.size() == 1  &&  locations.front().mType == "gene") {
-            continue;
-        }
-        CGff3LocationRecord location(record, mFlags, mIdResolver);
-        existingEntry->second.push_front(location);
+        AddRecordForId(id, record);
     }
     return true;
+}
+
+//  ============================================================================
+void
+CGff3LocationMerger::AddRecordForId(
+    const string& id,
+    const CGff2Record& record)
+//  ============================================================================
+{
+    auto existingEntry = mMapIdToLocations.find(id);
+    if (existingEntry == mMapIdToLocations.end()) {
+        existingEntry = mMapIdToLocations.emplace(id, LOCATIONS()).first;
+    }
+    LOCATIONS& locations = existingEntry->second;
+    // special case: gene
+    if (locations.size() == 1  &&  locations.front().mType == "gene") {
+        return;
+    }
+    CGff3LocationRecord location(record, mFlags, mIdResolver);
+    existingEntry->second.push_front(location);
 }
 
 //  ============================================================================

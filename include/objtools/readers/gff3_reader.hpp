@@ -182,6 +182,9 @@ protected:
 
     static string xNextGenericId();
 
+    string xMakeRecordId(
+        const CGff2Record& record);
+
     void xVerifyExonLocation(
         const string&,
         const CGff2Record&);

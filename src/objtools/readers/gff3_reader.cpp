@@ -69,6 +69,33 @@ BEGIN_objects_SCOPE
 unsigned int CGff3Reader::msGenericIdCounter = 0;
 
 //  ----------------------------------------------------------------------------
+string CGff3Reader::xMakeRecordId(
+    const CGff2Record& record)
+//  ----------------------------------------------------------------------------
+{
+    string id, parentId;
+    record.GetAttribute("ID", id);
+    record.GetAttribute("Parent", parentId);
+    
+    auto recordType = record.Type();
+    NStr::ToLower(recordType);
+    if (recordType == "cds") {
+        string cdsId = parentId;
+        if (cdsId.empty()) {
+            cdsId = (id.empty() ? xNextGenericId() : id);
+        }
+        else {
+            cdsId += ":cds";
+        }
+        return cdsId;
+    }
+    if (id.empty()) {
+        return xNextGenericId();
+    }
+    return id;
+}
+
+//  ----------------------------------------------------------------------------
 string CGff3Reader::xNextGenericId()
 //  ----------------------------------------------------------------------------
 {
@@ -356,7 +383,11 @@ bool CGff3Reader::xUpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    mpLocations->AddRecord(gffRecord);
+    auto recType = gffRecord.Type();
+    NStr::ToLower(recType);
+    if (recType != "cds") {
+        mpLocations->AddRecord(gffRecord);
+    }
 
     CRef< CSeq_feat > pFeature(new CSeq_feat);
 
@@ -365,7 +396,7 @@ bool CGff3Reader::xUpdateAnnotFeature(
     if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
         return xUpdateAnnotExon(gffRecord, pFeature, annot, pEC);
     }
-    if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
+    if (type == "cds") {
         return xUpdateAnnotCds(gffRecord, pFeature, annot, pEC);
     }
     if (type == "gene") {
@@ -467,36 +498,19 @@ bool CGff3Reader::xUpdateAnnotCds(
 {
     xVerifyCdsParents(record);
 
-    string id;
-    string parentId;
+    string cdsId = xMakeRecordId(record);
+    mpLocations->AddRecordForId(cdsId, record);
 
-    if (record.GetAttribute("ID", id)  &&  m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
+    if (m_MapIdToFeature.find(cdsId) != m_MapIdToFeature.end()) {
         return true;
     }
 
-    auto recType = record.Type();
-    if (id.empty()  &&  (recType == "start_codon"  ||  (recType == "stop_codon"))) {
-        //not sure if it's even legal, but seen in the wild
-        return true;
-    }
-
-    record.GetAttribute("Parent", parentId);
-    if (id.empty()) {
-        if (parentId.empty()) {
-            id = xNextGenericId();
-        }
-        else {
-            id = record.Type() + ":" + parentId;
-            if (m_MapIdToFeature.find(id) != m_MapIdToFeature.end()) {
-                return true;
-            }
-        }
-    }
-
-    m_MapIdToFeature[id] = pFeature;
+    m_MapIdToFeature[cdsId] = pFeature;
     xInitializeFeature(record, pFeature);
     xAddFeatureToAnnot(pFeature, annot);
 
+    string parentId;
+    record.GetAttribute("Parent", parentId);
     if (!parentId.empty()) {
         xFeatureSetQualifier("Parent", parentId, pFeature);
         xFeatureSetXrefParent(parentId, pFeature);
@@ -840,7 +854,9 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     string ftype(CSoMap::ResolveSoAlias(featureType));
 
     static const char* const ignoredTypesAlways_[] = {
-        "protein"
+        "protein",
+        "start_codon", // also part of a cds feature
+        "stop_codon", // in GFF3, also part of a cds feature
     };
     DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);    
     STRINGARRAY::const_iterator cit = ignoredTypesAlways.find(ftype);

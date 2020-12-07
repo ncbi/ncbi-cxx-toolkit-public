@@ -91,6 +91,10 @@ public:
     bool AddRecord(
         const CGff2Record&);
 
+    void AddRecordForId(
+        const string&,
+        const CGff2Record&);
+
     LOCATION_MAP& LocationMap() { return mMapIdToLocations; }
 
     CRef<CSeq_loc> GetLocation(
