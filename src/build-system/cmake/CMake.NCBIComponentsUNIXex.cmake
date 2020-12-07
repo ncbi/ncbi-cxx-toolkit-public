@@ -598,33 +598,7 @@ endif()
 
 #############################################################################
 # LAPACK
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(LAPACK LAPACK)
-    if(NCBI_COMPONENT_LAPACK_FOUND)
-        set(LAPACK_FOUND YES)
-    endif()
-else()
-    if(NOT NCBI_COMPONENT_LAPACK_DISABLED)
-        find_package(LAPACK)
-        if (LAPACK_FOUND)
-            set(LAPACK_INCLUDE ${LAPACK_INCLUDE_DIRS})
-            set(LAPACK_LIBS ${LAPACK_LIBRARIES})
-        else ()
-            find_library(LAPACK_LIBS lapack blas)
-        endif ()
-        if(LAPACK_FOUND)
-            set(NCBI_COMPONENT_LAPACK_FOUND YES)
-            set(NCBI_COMPONENT_LAPACK_INCLUDE ${LAPACK_INCLUDE})
-            set(NCBI_COMPONENT_LAPACK_LIBS ${LAPACK_LIBS})
-            list(APPEND NCBI_ALL_COMPONENTS LAPACK)
-        else()
-          set(NCBI_COMPONENT_LAPACK_FOUND NO)
-        endif()
-    else()
-        message("DISABLED LAPACK")
-    endif()
-endif()
-
+NCBI_define_Xcomponent(NAME LAPACK PACKAGE LAPACK LIB lapack blas)
 if(NCBI_COMPONENT_LAPACK_FOUND)
     check_include_file(lapacke.h HAVE_LAPACKE_H)
     check_include_file(lapacke/lapacke.h HAVE_LAPACKE_LAPACKE_H)
@@ -649,40 +623,21 @@ endif()
 
 #############################################################################
 # FreeType
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(FreeType Freetype)
-else()
-    NCBI_find_library(FreeType freetype)
-    if(NCBI_COMPONENT_FreeType_FOUND)
-        set(NCBI_COMPONENT_FreeType_INCLUDE "/usr/include/freetype2")
-    endif()
-endif()
+NCBI_define_Xcomponent(NAME FreeType PACKAGE Freetype LIB freetype INCLUDE freetype2)
 
 #############################################################################
 # FTGL
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(FTGL ftgl)
-endif()
-if(NOT NCBI_COMPONENT_FTGL_FOUND)
-    NCBI_define_component(FTGL ftgl)
-endif()
+NCBI_define_Xcomponent(NAME FTGL MODULE ftgl LIB ftgl INCLUDE FTGL)
 
 #############################################################################
 # GLEW
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(GLEW glew)
-    if(NCBI_COMPONENT_GLEW_FOUND)
-        get_filename_component(_incdir ${NCBI_COMPONENT_GLEW_INCLUDE} DIRECTORY)
-        get_filename_component(_incGL ${NCBI_COMPONENT_GLEW_INCLUDE} NAME)
-        if("${_incGL}" STREQUAL "GL")
-            set(NCBI_COMPONENT_GLEW_INCLUDE ${_incdir})
-        endif()
-    endif()
-endif()
-if(NOT NCBI_COMPONENT_GLEW_FOUND)
-    NCBI_define_component(GLEW GLEW)
-endif()
+NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
+    get_filename_component(_incdir ${NCBI_COMPONENT_GLEW_INCLUDE} DIRECTORY)
+    get_filename_component(_incGL ${NCBI_COMPONENT_GLEW_INCLUDE} NAME)
+    if("${_incGL}" STREQUAL "GL")
+        set(NCBI_COMPONENT_GLEW_INCLUDE ${_incdir})
+    endif()
     if(BUILD_SHARED_LIBS)
         set(NCBI_COMPONENT_GLEW_DEFINES ${NCBI_COMPONENT_GLEW_DEFINES} GLEW_MX)
     else()
@@ -692,17 +647,14 @@ endif()
 
 ##############################################################################
 # OpenGL
-NCBI_define_component(OpenGL GLU GL)
+NCBI_define_Xcomponent(NAME OpenGL PACKAGE OpenGL LIB GLU GL)
 if(NCBI_COMPONENT_OpenGL_FOUND)
     set(NCBI_COMPONENT_OpenGL_LIBS ${NCBI_COMPONENT_OpenGL_LIBS}  -lXmu -lXt -lXext -lX11)
 endif()
 
 ##############################################################################
 # OSMesa
-NCBI_define_component(OSMesa OSMesa GLU GL)
-if(NCBI_COMPONENT_OSMesa_FOUND)
-    set(NCBI_COMPONENT_OSMesa_LIBS ${NCBI_COMPONENT_OSMesa_LIBS}  -lXmu -lXt -lXext -lX11)
-endif()
+NCBI_define_Xcomponent(NAME OSMesa LIB OSMesa COMPONENT OpenGL)
 if(NCBI_COMPONENT_OSMesa_FOUND)
     list(APPEND NCBI_ALL_LEGACY MESA)
     set(NCBI_COMPONENT_MESA_FOUND OSMesa)
@@ -710,12 +662,7 @@ endif()
 
 #############################################################################
 # XERCES
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(XERCES xerces-c)
-endif()
-if(NOT NCBI_COMPONENT_XERCES_FOUND)
-    NCBI_define_component(XERCES xerces-c)
-endif()
+NCBI_define_Xcomponent(NAME XERCES MODULE xerces-c PACKAGE XercesC LIB xerces-c)
 if(NCBI_COMPONENT_XERCES_FOUND)
     list(APPEND NCBI_ALL_LEGACY Xerces)
     set(NCBI_COMPONENT_Xerces_FOUND XERCES)
@@ -754,7 +701,7 @@ endif()
 
 #############################################################################
 # XALAN
-NCBI_define_component(XALAN xalan-c xalanMsg)
+NCBI_define_Xcomponent(NAME XALAN PACKAGE XalanC LIB xalan-c xalanMsg)
 if(NCBI_COMPONENT_XALAN_FOUND)
     list(APPEND NCBI_ALL_LEGACY Xalan)
     set(NCBI_COMPONENT_Xalan_FOUND XALAN)
