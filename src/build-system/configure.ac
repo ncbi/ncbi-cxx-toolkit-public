@@ -5743,7 +5743,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                   BOOST_TAG="-clang-darwin"
                else
                   BOOST_TAG="-xgcc"
-                  boost_comp_vers=`echo $gccver | cut -c1-2`
+                  boost_comp_vers=`echo $gccver | tr -d . | cut -c1-2`
                fi
                ;;
             *:*CLANG)
@@ -5751,7 +5751,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                   BOOST_TAG="-clang"
                else
                   BOOST_TAG="-gcc"
-                  boost_comp_vers=`echo $gccver | cut -c1-2`
+                  boost_comp_vers=`echo $gccver | tr -d . | cut -c1-2`
                fi
                ;;
          esac
