@@ -5,7 +5,12 @@
 NCBI_begin_app(test_ncbitime)
   NCBI_sources(test_ncbitime)
   NCBI_uses_toolkit_libraries(xncbi)
-  NCBI_add_test()
+
+  NCBI_begin_test(test_ncbitime)
+    NCBI_set_test_command(test_ncbitime.sh test_ncbitime)
+    NCBI_set_test_assets(test_ncbitime.sh)
+  NCBI_end_test()
+
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
