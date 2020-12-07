@@ -69,7 +69,7 @@ bool CSeqdesc_CI::x_ValidDesc(void) const
 inline
 bool CSeqdesc_CI::x_RequestedType(void) const
 {
-    _ASSERT(TDescTypeMask(1 << CSeqdesc::e_MaxChoice));
+    _ASSERT(TDescTypeMask(1 << CSeqdesc::e_MaxChoice) != 0);
     _ASSERT(x_ValidDesc());
     return m_Choice & (1<<(**m_Desc_CI).Which()) ? true : false;
 }
