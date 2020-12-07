@@ -4,6 +4,7 @@ APP = test_ncbitime
 SRC = test_ncbitime
 LIB = xncbi
 
-CHECK_CMD = env TZ=America/New_York test_ncbitime
+CHECK_CMD = test_ncbitime.sh /CHECK_NAME= test_ncbitime
+CHECK_COPY = test_ncbitime.sh
 
 WATCHERS = ivanov
