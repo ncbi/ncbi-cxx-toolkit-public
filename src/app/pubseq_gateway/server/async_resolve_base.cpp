@@ -63,14 +63,17 @@ CPSGS_AsyncResolveBase::CPSGS_AsyncResolveBase(
                                 shared_ptr<CPSGS_Request> request,
                                 shared_ptr<CPSGS_Reply> reply,
                                 TSeqIdResolutionFinishedCB finished_cb,
-                                TSeqIdResolutionErrorCB error_cb) :
+                                TSeqIdResolutionErrorCB error_cb,
+                                TSeqIdResolutionStartProcessingCB  start_processing_cb) :
     CPSGS_CassProcessorBase(request, reply),
     m_FinishedCB(finished_cb),
     m_ErrorCB(error_cb),
+    m_StartProcessingCB(start_processing_cb),
     m_ResolveStage(eInit),
     m_SecondaryIndex(0),
     m_CurrentFetch(nullptr),
-    m_NoSeqIdTypeFetch(nullptr)
+    m_NoSeqIdTypeFetch(nullptr),
+    m_StartProcessingCalled(false)
 {}
 
 
@@ -574,6 +577,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         return;
     }
 
+    // Looking good data have appeared => inform the upper level
+    x_SignalStartProcessing();
+
     if (m_Request->NeedTrace()) {
         m_Reply->SendTrace(
             "Selected record: " +
@@ -625,6 +631,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
 
     switch (decision.status) {
         case CRequestStatus::e200_Ok:
+            // Looking good data have appeared => inform the upper level
+            x_SignalStartProcessing();
+
             m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
@@ -727,6 +736,9 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
         return;
     }
 
+    // Looking good data have appeared
+    x_SignalStartProcessing();
+
     app->GetTiming().Register(eLookupCassSi2csi, eOpStatusFound,
                               m_Si2csiStart);
     app->GetDBCounters().IncSi2csiFoundOne();
@@ -771,6 +783,9 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
     auto    app = CPubseqGatewayApp::GetInstance();
 
     if (async_bioseq_resolution.IsValid()) {
+        // Just in case; the second call will be prevented anyway
+        x_SignalStartProcessing();
+
         m_FinishedCB(move(async_bioseq_resolution));
     } else {
         app->GetRequestCounters().IncNotResolved();
@@ -784,6 +799,16 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
             m_ErrorCB(
                     CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                     eDiag_Error, "Could not resolve seq_id " + GetRequestSeqId());
+    }
+}
+
+
+
+void CPSGS_AsyncResolveBase::x_SignalStartProcessing(void)
+{
+    if (!m_StartProcessingCalled) {
+        m_StartProcessingCalled = true;
+        m_StartProcessingCB();
     }
 }
 

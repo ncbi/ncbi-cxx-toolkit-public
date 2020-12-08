@@ -45,12 +45,13 @@ USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
 
-class CPSGS_CassProcessorBase
+class CPSGS_CassProcessorBase : public IPSGS_Processor
 {
 public:
     CPSGS_CassProcessorBase();
     CPSGS_CassProcessorBase(shared_ptr<CPSGS_Request> request,
-                            shared_ptr<CPSGS_Reply> reply);
+                            shared_ptr<CPSGS_Reply> reply,
+                            TProcessorPriority  priority);
     virtual ~CPSGS_CassProcessorBase();
 
 protected:
@@ -58,6 +59,7 @@ protected:
     bool AreAllFinishedRead(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);
     bool IsCassandraProcessorEnabled(shared_ptr<CPSGS_Request> request) const;
+    void CancelLoaders(void);
 
 private:
     IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;
@@ -70,10 +72,6 @@ protected:
     // when blob props must be searched only in cache and caches is not hit.
     // m_Completed signals such conditions
     bool                            m_Completed;
-
-    // Any cassandra processor will need both of these items
-    shared_ptr<CPSGS_Request>       m_Request;
-    shared_ptr<CPSGS_Reply>         m_Reply;
 
     // The overall processor status.
     // It should not interfere the other processor statuses and be updated

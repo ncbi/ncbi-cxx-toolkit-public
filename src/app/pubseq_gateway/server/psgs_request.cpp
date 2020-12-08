@@ -36,15 +36,29 @@
 
 USING_NCBI_SCOPE;
 
+static atomic<bool>     s_RequestIdLock(false);
+static size_t           s_NextRequestId = 0;
 
-CPSGS_Request::CPSGS_Request()
+
+size_t  GetNextRequestId(void)
+{
+    while (s_RequestIdLock.exchange(true)) {}   // acquire lock
+    auto request_id = ++s_NextRequestId;
+    s_RequestIdLock = false;                    // release lock
+    return request_id;
+}
+
+
+CPSGS_Request::CPSGS_Request() :
+    m_RequestId(0)
 {}
 
 
 CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                              CRef<CRequestContext>  request_context) :
     m_Request(move(req)),
-    m_RequestContext(request_context)
+    m_RequestContext(request_context),
+    m_RequestId(GetNextRequestId())
 {}
 
 
@@ -56,16 +70,20 @@ CPSGS_Request::EPSGS_Type  CPSGS_Request::GetRequestType(void) const
 }
 
 
+// Provides the original request context
 CRef<CRequestContext>  CPSGS_Request::GetRequestContext(void)
 {
     return m_RequestContext;
 }
 
 
+// Sets the cloned request context so that many threads can produce messages
 void CPSGS_Request::SetRequestContext(void)
 {
-    if (m_RequestContext.NotNull())
-        CDiagContext::SetRequestContext(m_RequestContext);
+    if (m_RequestContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_RequestContext->Clone());
+        CDiagContext::GetRequestContext().SetReadOnly(false);
+    }
 }
 
 
@@ -214,6 +232,8 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
 {
     TProcessorPriority      ret = kUnknownPriority;
 
+    while (m_Lock.exchange(true)) {}        // acquire lock
+
     for (auto &  item : m_Processed) {
         if (item.second == name) {
             ret = item.first;
@@ -227,6 +247,18 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
         m_Processed.push_back(make_pair(priority, name));
     }
 
+    m_Lock = false;                         // release lock
+    return ret;
+}
+
+
+TProcessorPriority
+SPSGS_AnnotRequest::RegisterBioseqInfo(TProcessorPriority  priority)
+{
+    while (m_Lock.exchange(true)) {}        // acquire lock
+    TProcessorPriority      ret = m_ProcessedBioseqInfo;
+    m_ProcessedBioseqInfo = max(m_ProcessedBioseqInfo, priority);
+    m_Lock = false;                         // release lock
     return ret;
 }
 
@@ -238,6 +270,7 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
 {
     vector<string>      ret = m_Names;
 
+    while (m_Lock.exchange(true)) {}        // acquire lock
     for (const auto &  item : m_Processed) {
         if (item.first >= priority) {
             auto    it = find(ret.begin(), ret.end(), item.second);
@@ -246,6 +279,7 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
             }
         }
     }
+    m_Lock = false;                         // release lock
     return ret;
 }
 
@@ -253,7 +287,10 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
 vector<pair<TProcessorPriority, string>>
 SPSGS_AnnotRequest::GetProcessedNames(void) const
 {
-    return m_Processed;
+    while (m_Lock.exchange(true)) {}        // acquire lock
+    auto    ret = m_Processed;
+    m_Lock = false;                         // release lock
+    return ret;
 }
 
 

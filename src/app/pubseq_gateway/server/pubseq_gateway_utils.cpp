@@ -882,10 +882,19 @@ string GetPublicCommentCompletionHeader(size_t  item_id,
 
 
 extern bool  g_Log;
+
+
+// If the thread had no context set => the context need to be reset.
+// The client IP address is set only for non default context.
+CRequestContextResetter::CRequestContextResetter() :
+    m_NeedReset(!CDiagContext::GetRequestContext().IsSetClientIP())
+{}
+
 CRequestContextResetter::~CRequestContextResetter()
 {
-    if (g_Log)
+    if (g_Log && m_NeedReset) {
         CDiagContext::SetRequestContext(NULL);
+    }
 }
 
 

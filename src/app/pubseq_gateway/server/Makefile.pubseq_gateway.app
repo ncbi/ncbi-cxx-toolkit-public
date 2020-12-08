@@ -12,7 +12,7 @@ SRC = pubseq_gateway  \
       insdc_utils introspection psgs_request getblob_processor cass_processor_base \
       cass_blob_base tse_chunk_processor resolve_processor resolve_base \
       async_resolve_base async_bioseq_info_base annot_processor \
-      get_processor psgs_dispatcher cass_blob_id \
+      get_processor psgs_dispatcher cass_blob_id ipsgs_processor \
       osg_connection osg_caller osg_fetch osg_processor osg_processor_base \
       osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot
 

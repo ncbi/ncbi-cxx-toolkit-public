@@ -95,6 +95,11 @@ public:
         m_Reply(reply)
     {}
 
+    bool IsAllowed(void) const
+    {
+        return m_Allowed;
+    }
+
     EPSGS_CacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     {
         if (m_Allowed)

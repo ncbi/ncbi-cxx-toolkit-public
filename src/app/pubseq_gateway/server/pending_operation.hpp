@@ -56,17 +56,18 @@ class IPSGS_Processor;
 class CPendingOperation
 {
 public:
-    CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
-                      shared_ptr<CPSGS_Reply>  reply);
+    CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
+                      shared_ptr<CPSGS_Reply>  reply,
+                      IPSGS_Processor *  processor);
     ~CPendingOperation();
 
     void Clear(void);
     void Start(void);
     void Peek(bool  need_wait);
 
-    void Cancel(void)
+    void ConnectionCancel(void)
     {
-        m_Cancelled = true;
+        m_ConnectionCancelled = true;
     }
 
 public:
@@ -76,24 +77,21 @@ public:
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
 private:
-    void x_PrintRequestStop(void);
-    CRequestStatus::ECode x_GetRequestStopStatus(void) const;
-    void x_FinalizeReply(void);
-
-private:
     // Incoming request
     shared_ptr<CPSGS_Request>               m_UserRequest;
     // Outcoming reply
     shared_ptr<CPSGS_Reply>                 m_Reply;
 
-    bool                                    m_Cancelled;
+    // The PendigOperation objects are created for each of the processor and
+    // each of them is postponed. The postpone may call Start() and the
+    // infrastructure calls them for all PendingOperations stored for the
+    // reply. To avoid multiple Process() calls for a processor the flag below
+    // is created.
+    bool                                    m_Started;
+    bool                                    m_ConnectionCancelled;
 
-    list<unique_ptr<IPSGS_Processor>>       m_Processors;
-    list<unique_ptr<IPSGS_Processor>>::iterator
-                                            m_CurrentProcessor;
-
-    // Each processor may finish with its own status
-    vector<IPSGS_Processor::EPSGS_Status>   m_FinishStatuses;
+    unique_ptr<IPSGS_Processor>             m_Processor;
+    bool                                    m_InProcess;
 };
 
 #endif

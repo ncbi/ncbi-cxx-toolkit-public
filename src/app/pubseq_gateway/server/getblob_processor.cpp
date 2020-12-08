@@ -42,7 +42,8 @@ using namespace std::placeholders;
 
 
 CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor() :
-    m_BlobRequest(nullptr)
+    m_BlobRequest(nullptr),
+    m_InPeek(false)
 {}
 
 
@@ -51,13 +52,10 @@ CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor(
                                         shared_ptr<CPSGS_Reply> reply,
                                         TProcessorPriority  priority,
                                         const SCass_BlobId &  blob_id) :
-    CPSGS_CassProcessorBase(request, reply),
-    CPSGS_CassBlobBase(request, reply, GetName())
+    CPSGS_CassProcessorBase(request, reply, priority),
+    CPSGS_CassBlobBase(request, reply, GetName()),
+    m_InPeek(false)
 {
-    IPSGS_Processor::m_Request = request;
-    IPSGS_Processor::m_Reply = reply;
-    IPSGS_Processor::m_Priority = priority;
-
     m_BlobId = blob_id;
 
     // Convenience to avoid calling
@@ -108,7 +106,7 @@ void CPSGS_GetBlobProcessor::Process(void)
         PSG_WARNING(err_msg);
 
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
 
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
@@ -191,7 +189,7 @@ void CPSGS_GetBlobProcessor::Process(void)
             // Finished without reaching cassandra
             UpdateOverallStatus(ret_status);
             m_Completed = true;
-            IPSGS_Processor::m_Reply->SignalProcessorFinished();
+            SignalFinishProcessing();
             return;
         }
 
@@ -246,6 +244,16 @@ void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                            CBlobRecord const &  blob,
                                            bool is_found)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
+    if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
+        m_Completed = true;
+        return;
+    }
+
     CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
                                            this, _1, _2, _3),
                                       bind(&CPSGS_GetBlobProcessor::OnGetBlobChunk,
@@ -265,6 +273,11 @@ void CPSGS_GetBlobProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                             EDiagSev  severity,
                                             const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
 
@@ -290,12 +303,20 @@ void CPSGS_GetBlobProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 void CPSGS_GetBlobProcessor::Cancel(void)
 {
     m_Cancelled = true;
+    CancelLoaders();
 }
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::GetStatus();
+    auto    status = CPSGS_CassProcessorBase::GetStatus();
+    if (status == IPSGS_Processor::ePSGS_InProgress)
+        return status;
+
+    if (m_Cancelled)
+        return IPSGS_Processor::ePSGS_Cancelled;
+
+    return status;
 }
 
 
@@ -316,12 +337,27 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
     if (m_Cancelled)
         return;
 
+    if (m_InPeek)
+        return;
+
+    m_InPeek = true;
+
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    for (auto &  details: m_FetchDetails) {
-        if (details)
-            x_Peek(details, need_wait);
+    bool        overall_final_state = false;
+    while (true) {
+        auto initial_size = m_FetchDetails.size();
+
+        for (auto &  details: m_FetchDetails) {
+            if (details) {
+                overall_final_state |= x_Peek(details, need_wait);
+            }
+        }
+
+        if (initial_size == m_FetchDetails.size()) {
+            break;
+        }
     }
 
     // Blob specific: ready packets need to be sent right away
@@ -345,18 +381,21 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
             blob_request.m_ExcludeBlobCacheCompleted = true;
         }
     }
+
+    m_InPeek = false;
 }
 
 
-void CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+bool CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                                     bool  need_wait)
 {
     if (!fetch_details->GetLoader())
-        return;
+        return true;
 
+    bool    final_state = false;
     if (need_wait)
         if (!fetch_details->ReadFinished())
-            fetch_details->GetLoader()->Wait();
+            final_state = fetch_details->GetLoader()->Wait();
 
     if (fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
@@ -374,7 +413,9 @@ void CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     }
+
+    return final_state;
 }
 

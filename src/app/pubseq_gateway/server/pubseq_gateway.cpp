@@ -1488,7 +1488,8 @@ void CPubseqGatewayApp::x_ReadIdToNameAndDescriptionConfiguration(
 
 void CPubseqGatewayApp::x_RegisterProcessors(void)
 {
-    // Note: the order of adding defines the order of running
+    // Note: the order of adding defines the priority.
+    //       Earleir added - higher priority
     m_RequestDispatcher.AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_ResolveProcessor()));
     m_RequestDispatcher.AddProcessor(

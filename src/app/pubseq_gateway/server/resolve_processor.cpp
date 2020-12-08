@@ -43,7 +43,8 @@ using namespace std::placeholders;
 
 CPSGS_ResolveProcessor::CPSGS_ResolveProcessor() :
     m_ResolveRequest(nullptr),
-    m_Cancelled(false)
+    m_Cancelled(false),
+    m_InPeek(false)
 {}
 
 
@@ -51,18 +52,17 @@ CPSGS_ResolveProcessor::CPSGS_ResolveProcessor(
                                 shared_ptr<CPSGS_Request> request,
                                 shared_ptr<CPSGS_Reply> reply,
                                 TProcessorPriority  priority) :
-    CPSGS_CassProcessorBase(request, reply),
+    CPSGS_CassProcessorBase(request, reply, priority),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_ResolveProcessor::x_OnSeqIdResolveFinished,
                            this, _1),
                       bind(&CPSGS_ResolveProcessor::x_OnSeqIdResolveError,
-                           this, _1, _2, _3, _4)),
-    m_Cancelled(false)
+                           this, _1, _2, _3, _4),
+                      bind(&CPSGS_ResolveProcessor::x_OnResolutionGoodData,
+                           this)),
+    m_Cancelled(false),
+    m_InPeek(false)
 {
-    IPSGS_Processor::m_Request = request;
-    IPSGS_Processor::m_Reply = reply;
-    IPSGS_Processor::m_Priority = priority;
-
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_ResolveRequest>() everywhere
     m_ResolveRequest = & request->GetRequest<SPSGS_ResolveRequest>();
@@ -103,11 +103,15 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
                         EDiagSev  severity,
                         const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
     UpdateOverallStatus(status);
-    PSG_WARNING(message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     if (status == CRequestStatus::e404_NotFound) {
@@ -116,6 +120,7 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
                                                        ePSGS_NoBioseqInfo,
                                                        eDiag_Error);
     } else {
+        PSG_WARNING(message);
         IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
                                                        message, status,
                                                        ePSGS_BioseqInfoError,
@@ -124,7 +129,7 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
-    IPSGS_Processor::m_Reply->SignalProcessorFinished();
+    SignalFinishProcessing();
 }
 
 
@@ -133,13 +138,18 @@ void
 CPSGS_ResolveProcessor::x_OnSeqIdResolveFinished(
                             SBioseqResolution &&  bioseq_resolution)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
     x_SendBioseqInfo(bioseq_resolution);
 
     m_Completed = true;
-    IPSGS_Processor::m_Reply->SignalProcessorFinished();
+    SignalFinishProcessing();
 }
 
 
@@ -176,12 +186,20 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 void CPSGS_ResolveProcessor::Cancel(void)
 {
     m_Cancelled = true;
+    CancelLoaders();
 }
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::GetStatus();
+    auto    status = CPSGS_CassProcessorBase::GetStatus();
+    if (status == IPSGS_Processor::ePSGS_InProgress)
+        return status;
+
+    if (m_Cancelled)
+        return IPSGS_Processor::ePSGS_Cancelled;
+
+    return status;
 }
 
 
@@ -199,33 +217,60 @@ void CPSGS_ResolveProcessor::ProcessEvent(void)
 
 void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled)
+    if (m_Cancelled) {
         return;
+    }
+
+    if (m_InPeek) {
+        return;
+    }
+
+    m_InPeek = true;
 
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    for (auto &  details: m_FetchDetails) {
-        if (details)
-            x_Peek(details, need_wait);
+    bool        overall_final_state = false;
+
+    while (true) {
+        auto initial_size = m_FetchDetails.size();
+
+        for (auto &  details: m_FetchDetails) {
+            if (details)
+                overall_final_state |= x_Peek(details, need_wait);
+        }
+
+        if (initial_size == m_FetchDetails.size())
+            break;
     }
 
     // Ready packets needs to be send only once when everything is finished
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
-        if (AreAllFinishedRead())
-            IPSGS_Processor::m_Reply->Flush(false);
+    if (overall_final_state) {
+        if (AreAllFinishedRead()) {
+            if (IPSGS_Processor::m_Reply->IsOutputReady()) {
+                IPSGS_Processor::m_Reply->Flush(false);
+            }
+        }
+    }
+
+    m_InPeek = false;
 }
 
 
-void CPSGS_ResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+bool CPSGS_ResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                                     bool  need_wait)
 {
     if (!fetch_details->GetLoader())
-        return;
+        return true;
 
+    bool    final_state = false;
     if (need_wait)
-        if (!fetch_details->ReadFinished())
-            fetch_details->GetLoader()->Wait();
+        if (!fetch_details->ReadFinished()) {
+            final_state = fetch_details->GetLoader()->Wait();
+            if (final_state) {
+                fetch_details->SetReadFinished();
+            }
+        }
 
     if (fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
@@ -245,7 +290,23 @@ void CPSGS_ResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
+    }
+
+    return final_state;
+}
+
+
+void CPSGS_ResolveProcessor::x_OnResolutionGoodData(void)
+{
+    // The resolution process started to receive data which look good so
+    // the dispatcher should be notified that the other processors can be
+    // stopped
+    if (m_Cancelled || m_Completed)
+        return;
+
+    if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
+        m_Completed = true;
     }
 }
 

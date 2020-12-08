@@ -32,7 +32,6 @@
  *
  */
 
-#include "ipsgs_processor.hpp"
 #include "resolve_base.hpp"
 
 USING_NCBI_SCOPE;
@@ -42,8 +41,7 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_ResolveProcessor : public IPSGS_Processor,
-                               public CPSGS_ResolveBase
+class CPSGS_ResolveProcessor : public CPSGS_ResolveBase
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -63,6 +61,7 @@ public:
     virtual ~CPSGS_ResolveProcessor();
 
 private:
+    void x_OnResolutionGoodData(void);
     void x_OnSeqIdResolveError(
                         CRequestStatus::ECode  status,
                         int  code,
@@ -74,12 +73,14 @@ private:
 
 private:
     void x_Peek(bool  need_wait);
-    void x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
 
 private:
     SPSGS_ResolveRequest *      m_ResolveRequest;
     bool                        m_Cancelled;
+
+    bool                        m_InPeek;
 };
 
 #endif  // PSGS_RESOLVEPROCESSOR__HPP

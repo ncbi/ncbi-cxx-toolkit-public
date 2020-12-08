@@ -55,13 +55,15 @@ class CCassFetch
 public:
     CCassFetch() :
         m_FinishedRead(false),
-        m_FetchType(ePSGS_UnknownFetch)
+        m_FetchType(ePSGS_UnknownFetch),
+        m_Cancelled(false)
     {}
 
     virtual ~CCassFetch()
     {}
 
     virtual void ResetCallbacks(void) = 0;
+    virtual string Serialize(void) const = 0;
 
 public:
     CCassBlobWaiter * GetLoader(void)
@@ -75,6 +77,19 @@ public:
 
     bool ReadFinished(void) const
     { return m_FinishedRead; }
+
+    bool Cancelled(void) const
+    { return m_Cancelled; }
+
+    void Cancel(void)
+    {
+        if (m_Loader) {
+            if (!m_Cancelled) {
+                m_Cancelled = true;
+                m_Loader->Cancel();
+            }
+        }
+    }
 
 protected:
     // There are multiple types of the loaders stored here:
@@ -92,6 +107,8 @@ protected:
     // what kind of request it was because an appropriate error message needs
     // to be send. Thus this member is required.
     EPSGS_DbFetchType               m_FetchType;
+
+    bool                            m_Cancelled;
 };
 
 
@@ -109,6 +126,11 @@ public:
 
     virtual ~CCassNamedAnnotFetch()
     {}
+
+    virtual string Serialize(void) const
+    {
+        return "CCassNamedAnnotFetch";
+    }
 
 public:
     void SetLoader(CCassNAnnotTaskFetch *  fetch)
@@ -151,6 +173,13 @@ public:
         m_BlobChunkItemId(0)
     {
         m_FetchType = ePSGS_BlobBySatSatKeyFetch;
+    }
+
+    virtual string Serialize(void) const
+    {
+        return "CCassBlobFetch; BlobId: " + m_BlobId.ToString() +
+               " BlobPropSent: " + to_string(m_BlobPropSent) +
+               " TotalSentBlobChunks: " + to_string(m_TotalSentBlobChunks);
     }
 
     // The TSE chunk request is pretty much the same as a blob request
@@ -262,6 +291,11 @@ public:
     virtual ~CCassBioseqInfoFetch()
     {}
 
+    virtual string Serialize(void) const
+    {
+        return "CCassBioseqInfoFetch";
+    }
+
 public:
     void SetLoader(CCassBioseqInfoTaskFetch *  fetch)
     { m_Loader.reset(fetch); }
@@ -284,6 +318,11 @@ public:
 
     virtual ~CCassSi2csiFetch()
     {}
+
+    virtual string Serialize(void) const
+    {
+        return "CCassSi2csiFetch";
+    }
 
 public:
     void SetLoader(CCassSI2CSITaskFetch *  fetch)
@@ -313,6 +352,11 @@ public:
 
     virtual ~CCassSplitHistoryFetch()
     {}
+
+    virtual string Serialize(void) const
+    {
+        return "CCassSplitHistoryFetch";
+    }
 
 public:
     SCass_BlobId  GetTSEId(void) const
@@ -363,6 +407,11 @@ public:
 
     virtual ~CCassPublicCommentFetch()
     {}
+
+    virtual string Serialize(void) const
+    {
+        return "CCassPublicCommentFetch";
+    }
 
 public:
     EPSGS_Identification  GetIdentification(void) const

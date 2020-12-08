@@ -32,7 +32,6 @@
  *
  */
 
-#include "ipsgs_processor.hpp"
 #include "cass_blob_base.hpp"
 #include "resolve_base.hpp"
 
@@ -43,8 +42,7 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_GetProcessor : public IPSGS_Processor,
-                           public CPSGS_ResolveBase,
+class CPSGS_GetProcessor : public CPSGS_ResolveBase,
                            public CPSGS_CassBlobBase
 {
 public:
@@ -65,6 +63,7 @@ public:
     virtual ~CPSGS_GetProcessor();
 
 private:
+    void x_OnResolutionGoodData(void);
     void x_OnSeqIdResolveError(
                         CRequestStatus::ECode  status,
                         int  code,
@@ -89,12 +88,14 @@ private:
 
 private:
     void x_Peek(bool  need_wait);
-    void x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
 
 private:
     SPSGS_BlobBySeqIdRequest *      m_BlobRequest;
     vector<SCass_BlobId>            m_ExcludeBlobs;
+
+    bool                            m_InPeek;
 };
 
 #endif  // PSGS_GETPROCESSOR__HPP

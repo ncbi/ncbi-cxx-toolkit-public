@@ -42,25 +42,25 @@ using namespace std::placeholders;
 
 
 CPSGS_GetProcessor::CPSGS_GetProcessor() :
-    m_BlobRequest(nullptr)
+    m_BlobRequest(nullptr),
+    m_InPeek(false)
 {}
 
 
 CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                                        shared_ptr<CPSGS_Reply> reply,
                                        TProcessorPriority  priority) :
-    CPSGS_CassProcessorBase(request, reply),
+    CPSGS_CassProcessorBase(request, reply, priority),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_GetProcessor::x_OnSeqIdResolveFinished,
                            this, _1),
                       bind(&CPSGS_GetProcessor::x_OnSeqIdResolveError,
-                           this, _1, _2, _3, _4)),
-    CPSGS_CassBlobBase(request, reply, GetName())
+                           this, _1, _2, _3, _4),
+                      bind(&CPSGS_GetProcessor::x_OnResolutionGoodData,
+                           this)),
+    CPSGS_CassBlobBase(request, reply, GetName()),
+    m_InPeek(false)
 {
-    IPSGS_Processor::m_Request = request;
-    IPSGS_Processor::m_Reply = reply;
-    IPSGS_Processor::m_Priority = priority;
-
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>() everywhere
     m_BlobRequest = & request->GetRequest<SPSGS_BlobBySeqIdRequest>();
@@ -108,6 +108,11 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
                         EDiagSev  severity,
                         const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
@@ -129,7 +134,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
-    IPSGS_Processor::m_Reply->SignalProcessorFinished();
+    SignalFinishProcessing();
 }
 
 
@@ -138,6 +143,11 @@ void
 CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
                             SBioseqResolution &&  bioseq_resolution)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
@@ -169,7 +179,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     PSG_ERROR(msg);
 
     m_Completed = true;
-    IPSGS_Processor::m_Reply->SignalProcessorFinished();
+    SignalFinishProcessing();
 }
 
 
@@ -211,7 +221,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                 IPSGS_Processor::m_Reply->GetItemId(), GetName(),
                 m_BlobId.ToString(), ePSGS_BlobExcluded);
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
         return;
     }
 
@@ -239,7 +249,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                                     m_BlobId.ToString(), GetName(),
                                     ePSGS_BlobInProgress);
                 m_Completed = true;
-                IPSGS_Processor::m_Reply->SignalProcessorFinished();
+                SignalFinishProcessing();
                 return;
             }
 
@@ -308,7 +318,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             // Finished without reaching cassandra
             UpdateOverallStatus(ret_status);
             m_Completed = true;
-            IPSGS_Processor::m_Reply->SignalProcessorFinished();
+            SignalFinishProcessing();
             return;
         }
 
@@ -352,6 +362,11 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                        CBlobRecord const &  blob,
                                        bool is_found)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetProcessor::OnGetBlobProp,
                                            this, _1, _2, _3),
                                       bind(&CPSGS_GetProcessor::OnGetBlobChunk,
@@ -371,6 +386,11 @@ void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                         EDiagSev  severity,
                                         const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
 
@@ -385,6 +405,11 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                         unsigned int  data_size,
                                         int  chunk_no)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
@@ -396,12 +421,20 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 void CPSGS_GetProcessor::Cancel(void)
 {
     m_Cancelled = true;
+    CancelLoaders();
 }
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_GetProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::GetStatus();
+    auto    status = CPSGS_CassProcessorBase::GetStatus();
+    if (status == IPSGS_Processor::ePSGS_InProgress)
+        return status;
+
+    if (m_Cancelled)
+        return IPSGS_Processor::ePSGS_Cancelled;
+
+    return status;
 }
 
 
@@ -422,12 +455,28 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
     if (m_Cancelled)
         return;
 
+    if (m_InPeek)
+        return;
+
+    m_InPeek = true;
+
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    for (auto &  details: m_FetchDetails) {
-        if (details)
-            x_Peek(details, need_wait);
+    bool        overall_final_state = false;
+
+    while (true) {
+        auto initial_size = m_FetchDetails.size();
+
+        for (auto &  details: m_FetchDetails) {
+            if (details) {
+                overall_final_state |= x_Peek(details, need_wait);
+            }
+        }
+
+        if (initial_size == m_FetchDetails.size()) {
+            break;
+        }
     }
 
     // Blob specific: ready packets need to be sent right away
@@ -454,18 +503,24 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
             blob_request.m_ExcludeBlobCacheCompleted = true;
         }
     }
+
+    m_InPeek = false;
 }
 
 
-void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+bool CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                                 bool  need_wait)
 {
     if (!fetch_details->GetLoader())
-        return;
+        return true;
 
+    bool    final_state = false;
     if (need_wait)
-        if (!fetch_details->ReadFinished())
-            fetch_details->GetLoader()->Wait();
+        if (!fetch_details->ReadFinished()) {
+            final_state = fetch_details->GetLoader()->Wait();
+            if (final_state)
+                fetch_details->SetReadFinished();
+        }
 
     if (fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
@@ -483,7 +538,23 @@ void CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
+    }
+
+    return final_state;
+}
+
+
+void CPSGS_GetProcessor::x_OnResolutionGoodData(void)
+{
+    // The resolution process started to receive data which look good so
+    // the dispatcher should be notified that the other processors can be
+    // stopped
+    if (m_Cancelled || m_Completed)
+        return;
+
+    if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
+        m_Completed = true;
     }
 }
 

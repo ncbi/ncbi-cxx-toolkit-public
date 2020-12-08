@@ -56,6 +56,9 @@ using TSeqIdResolutionErrorCB =
                               int  code,
                               EDiagSev  severity,
                               const string &  message)>;
+using TSeqIdResolutionStartProcessingCB =
+                function<void(void)>;
+
 
 
 class CPSGS_AsyncResolveBase : virtual public CPSGS_CassProcessorBase
@@ -65,7 +68,8 @@ public:
     CPSGS_AsyncResolveBase(shared_ptr<CPSGS_Request> request,
                            shared_ptr<CPSGS_Reply> reply,
                            TSeqIdResolutionFinishedCB finished_cb,
-                           TSeqIdResolutionErrorCB error_cb);
+                           TSeqIdResolutionErrorCB error_cb,
+                           TSeqIdResolutionStartProcessingCB  start_processing_cb);
     virtual ~CPSGS_AsyncResolveBase();
 
 public:
@@ -140,10 +144,12 @@ public:
 private:
     void x_OnSeqIdAsyncResolutionFinished(
                         SBioseqResolution &&  async_bioseq_resolution);
+    void x_SignalStartProcessing(void);
 
 protected:
     TSeqIdResolutionFinishedCB          m_FinishedCB;
     TSeqIdResolutionErrorCB             m_ErrorCB;
+    TSeqIdResolutionStartProcessingCB   m_StartProcessingCB;
 
     EPSGS_ResolveStage                  m_ResolveStage;
     bool                                m_ComposedOk;
@@ -165,6 +171,8 @@ protected:
     TPSGS_HighResolutionTimePoint       m_BioseqInfoStart;
     TPSGS_HighResolutionTimePoint       m_Si2csiStart;
     TPSGS_HighResolutionTimePoint       m_AsyncCassResolutionStart;
+
+    bool                                m_StartProcessingCalled;
 };
 
 #endif  // PSGS_ASYNCRESOLVEBASE__HPP

@@ -45,7 +45,8 @@ using namespace std::placeholders;
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
     m_AnnotRequest(nullptr),
-    m_Cancelled(false)
+    m_Cancelled(false),
+    m_InPeek(false)
 {}
 
 
@@ -53,18 +54,17 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                                 shared_ptr<CPSGS_Request> request,
                                 shared_ptr<CPSGS_Reply> reply,
                                 TProcessorPriority  priority) :
-    CPSGS_CassProcessorBase(request, reply),
+    CPSGS_CassProcessorBase(request, reply, priority),
     CPSGS_ResolveBase(request, reply,
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished,
                            this, _1),
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveError,
-                           this, _1, _2, _3, _4)),
-    m_Cancelled(false)
+                           this, _1, _2, _3, _4),
+                      bind(&CPSGS_AnnotProcessor::x_OnResolutionGoodData,
+                           this)),
+    m_Cancelled(false),
+    m_InPeek(false)
 {
-    IPSGS_Processor::m_Request = request;
-    IPSGS_Processor::m_Reply = reply;
-    IPSGS_Processor::m_Priority = priority;
-
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_AnnotRequest>() everywhere
     m_AnnotRequest = & request->GetRequest<SPSGS_AnnotRequest>();
@@ -123,7 +123,7 @@ void CPSGS_AnnotProcessor::Process(void)
     if (m_ValidNames.empty()) {
         UpdateOverallStatus(CRequestStatus::e200_Ok);
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
         return;
     }
 
@@ -162,7 +162,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
-    IPSGS_Processor::m_Reply->SignalProcessorFinished();
+    SignalFinishProcessing();
 }
 
 
@@ -221,8 +221,9 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
     // Initiate the retrieval loop
     for (auto &  fetch_details: m_FetchDetails) {
         if (fetch_details)
-            if (!fetch_details->ReadFinished())
+            if (!fetch_details->ReadFinished()) {
                 fetch_details->GetLoader()->Wait();
+            }
     }
 }
 
@@ -230,6 +231,38 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 void
 CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 {
+    if (m_Cancelled) {
+        return;
+    }
+
+    auto    other_proc_priority = m_AnnotRequest->RegisterBioseqInfo(m_Priority);
+    if (other_proc_priority == kUnknownPriority) {
+        // Has not been processed yet at all
+        // Fall through
+    } else if (other_proc_priority < m_Priority) {
+        // Was processed by a lower priority processor so it needs to be
+        // send anyway
+        if (IPSGS_Processor::m_Request->NeedTrace()) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Bioseq info has already been sent by the other processor. "
+                "The data are to be sent because the other processor priority (" +
+                to_string(other_proc_priority) + ") is lower than mine (" +
+                to_string(m_Priority) + ")",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+    } else {
+        // The other processor has already processed it
+        if (IPSGS_Processor::m_Request->NeedTrace()) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Skip sending bioseq info because the other processor with priority " +
+                to_string(other_proc_priority) + " has already sent it "
+                "(my priority is " + to_string(m_Priority) + ")",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+        return;
+    }
+
+
     if (bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB ||
         bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache)
         AdjustBioseqAccession(bioseq_resolution);
@@ -280,7 +313,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
 
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
         return false;
     }
 
@@ -293,7 +326,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         // should continue.
         if (AreAllFinishedRead()) {
             m_Completed = true;
-            IPSGS_Processor::m_Reply->SignalProcessorFinished();
+            SignalFinishProcessing();
             return false;
         }
 
@@ -385,7 +418,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
         // There will be no more activity
         fetch_details->SetReadFinished();
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     } else {
         x_Peek(false);
     }
@@ -395,12 +428,20 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
 void CPSGS_AnnotProcessor::Cancel(void)
 {
     m_Cancelled = true;
+    CancelLoaders();
 }
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::GetStatus();
+    auto    status = CPSGS_CassProcessorBase::GetStatus();
+    if (status == IPSGS_Processor::ePSGS_InProgress)
+        return status;
+
+    if (m_Cancelled)
+        return IPSGS_Processor::ePSGS_Cancelled;
+
+    return status;
 }
 
 
@@ -421,30 +462,50 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
     if (m_Cancelled)
         return;
 
+    if (m_InPeek)
+        return;
+    m_InPeek = true;
+
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    for (auto &  details: m_FetchDetails) {
-        if (details)
-            x_Peek(details, need_wait);
+    bool        overall_final_state = false;
+
+    while (true) {
+        auto initial_size = m_FetchDetails.size();
+
+        for (auto &  details: m_FetchDetails) {
+            if (details)
+                overall_final_state |= x_Peek(details, need_wait);
+        }
+        if (initial_size == m_FetchDetails.size())
+            break;
     }
 
     // Ready packets needs to be send only once when everything is finished
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
-        if (AreAllFinishedRead())
-            IPSGS_Processor::m_Reply->Flush(false);
+    if (overall_final_state) {
+        if (AreAllFinishedRead()) {
+            if (IPSGS_Processor::m_Reply->IsOutputReady()) {
+                IPSGS_Processor::m_Reply->Flush(false);
+            }
+        }
+    }
+
+    m_InPeek = false;
 }
 
 
-void CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                                   bool  need_wait)
 {
     if (!fetch_details->GetLoader())
-        return;
+        return true;
 
+    bool        final_state = false;
     if (need_wait)
-        if (!fetch_details->ReadFinished())
-            fetch_details->GetLoader()->Wait();
+        if (!fetch_details->ReadFinished()) {
+            final_state = fetch_details->GetLoader()->Wait();
+        }
 
     if (fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
@@ -464,7 +525,18 @@ void CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     }
+
+    return final_state;
+}
+
+
+void CPSGS_AnnotProcessor::x_OnResolutionGoodData(void)
+{
+    // The resolution process started to receive data which look good
+    // however the annotations processor should not do anything.
+    // The processor uses the an API to check bioseq info and named annotations
+    // before sending them.
 }
 

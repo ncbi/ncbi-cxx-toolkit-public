@@ -109,12 +109,30 @@ public:
         ePSGS_UnknownRequest
     };
 
+    static string TypeToString(EPSGS_Type  req_type)
+    {
+        switch (req_type) {
+            case ePSGS_ResolveRequest:          return "ResolveRequest";
+            case ePSGS_BlobBySeqIdRequest:      return "BlobBySeqIdRequest";
+            case ePSGS_BlobBySatSatKeyRequest:  return "BlobBySatSatKeyRequest";
+            case ePSGS_AnnotationRequest:       return "AnnotationRequest";
+            case ePSGS_TSEChunkRequest:         return "TSEChunkRequest";
+            case ePSGS_UnknownRequest:          return "UnknownRequest";
+            default: break;
+        }
+        return "UnknownRequestTypeValue";
+    }
+
 public:
     CPSGS_Request();
     CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                   CRef<CRequestContext>  request_context);
 
     EPSGS_Type  GetRequestType(void) const;
+    size_t  GetRequestId(void) const
+    {
+        return m_RequestId;
+    }
 
     template<typename TRequest> TRequest& GetRequest(void)
     {
@@ -147,6 +165,7 @@ private:
 private:
     unique_ptr<SPSGS_RequestBase>   m_Request;
     CRef<CRequestContext>           m_RequestContext;
+    size_t                          m_RequestId;
 };
 
 
@@ -164,6 +183,18 @@ struct SPSGS_RequestBase
         ePSGS_UnknownUseCache
     };
 
+    static string  CacheAndDbUseToString(EPSGS_CacheAndDbUse  option)
+    {
+        switch (option) {
+            case ePSGS_CacheOnly:       return "CacheOnly";
+            case ePSGS_DbOnly:          return "DbOnly";
+            case ePSGS_CacheAndDb:      return "CacheAndDb";
+            case ePSGS_UnknownUseCache: return "UnknownUseCache";
+            default: break;
+        }
+        return "UnknownCacheAndDbUseOptionValue";
+    }
+
     // The accession substitution option comes from the user (the URL
     // 'acc_substitution' parameter)
     enum EPSGS_AccSubstitutioOption {
@@ -174,10 +205,32 @@ struct SPSGS_RequestBase
         ePSGS_UnknownAccSubstitution
     };
 
+    static string AccSubstitutioOptionToString(EPSGS_AccSubstitutioOption option)
+    {
+        switch (option) {
+            case ePSGS_DefaultAccSubstitution:  return "DefaultAccSubstitution";
+            case ePSGS_LimitedAccSubstitution:  return "LimitedAccSubstitution";
+            case ePSGS_NeverAccSubstitute:      return "NeverAccSubstitute";
+            case ePSGS_UnknownAccSubstitution:  return "UnknownAccSubstitution";
+            default: break;
+        }
+        return "UnknownAccSubstitutioOptionValue";
+    }
+
     enum EPSGS_Trace {
         ePSGS_NoTracing,
         ePSGS_WithTracing
     };
+
+    static string TraceToString(EPSGS_Trace  trace)
+    {
+        switch (trace) {
+            case ePSGS_NoTracing:   return "NoTracing";
+            case ePSGS_WithTracing: return "WithTracing";
+            default:    break;
+        }
+        return "UnknownTraceOptionValue";
+    }
 
     int                             m_Hops;
     EPSGS_Trace                     m_Trace;
@@ -236,6 +289,18 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
 
         ePSGS_UnknownFormat
     };
+
+    static string OutputFormatToString(EPSGS_OutputFormat  format)
+    {
+        switch (format) {
+            case ePSGS_ProtobufFormat:  return "ProtobufFormat";
+            case ePSGS_JsonFormat:      return "JsonFormat";
+            case ePSGS_NativeFormat:    return "NativeFormat";
+            case ePSGS_UnknownFormat:   return "UnknownFormat";
+            default: break;
+        }
+        return "UnknownFormatOptionValue";
+    }
 
     // The user can specify what fields of the bioseq_info should be included
     // into the server response.
@@ -334,6 +399,20 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
 
         ePSGS_UnknownTSE
     };
+
+    static string TSEOptionToString(EPSGS_TSEOption  option)
+    {
+        switch (option) {
+            case ePSGS_NoneTSE:     return "NoneTSE";
+            case ePSGS_SlimTSE:     return "SlimTSE";
+            case ePSGS_SmartTSE:    return "SmartTSE";
+            case ePSGS_WholeTSE:    return "WholeTSE";
+            case ePSGS_OrigTSE:     return "OrigTSE";
+            case ePSGS_UnknownTSE:  return "UnknownTSE";
+            default: break;
+        }
+        return "UnknownOptionValue";
+    }
 
 
     EPSGS_TSEOption         m_TSEOption;
@@ -506,12 +585,16 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
-        m_UseCache(use_cache)
+        m_UseCache(use_cache),
+        m_Lock(false),
+        m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
     SPSGS_AnnotRequest() :
         m_SeqIdType(-1),
-        m_UseCache(ePSGS_UnknownUseCache)
+        m_UseCache(ePSGS_UnknownUseCache),
+        m_Lock(false),
+        m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
     SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = default;
@@ -541,6 +624,12 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
     TProcessorPriority RegisterProcessedName(TProcessorPriority  priority,
                                              const string &  name);
 
+    // If bioseq info has already been sent then the priority of the processor
+    // which sent it will be returned. Otherwise kUnknownPriority constant is
+    // returned.
+    // The highest priority of all the calls will be stored.
+    TProcessorPriority RegisterBioseqInfo(TProcessorPriority  priority);
+
     // Names which have not been processed by a processor which priority
     // is higher than given
     vector<string> GetNotProcessedName(TProcessorPriority  priority);
@@ -555,6 +644,8 @@ public:
 
 private:
     // A list of names which have been already processed by some processors
+    mutable atomic<bool>                        m_Lock;
+    TProcessorPriority                          m_ProcessedBioseqInfo;
     vector<pair<TProcessorPriority, string>>    m_Processed;
 };
 

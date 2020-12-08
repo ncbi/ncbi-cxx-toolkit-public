@@ -50,8 +50,10 @@ class CPSGS_Reply
 public:
     CPSGS_Reply(unique_ptr<CHttpReply<CPendingOperation>>  low_level_reply) :
         m_Reply(low_level_reply.release()),
+        m_NextItemIdLock(false),
         m_NextItemId(0),
-        m_TotalSentReplyChunks(0)
+        m_TotalSentReplyChunks(0),
+        m_ChunksLock(false)
     {}
 
     ~CPSGS_Reply();
@@ -72,10 +74,11 @@ public:
 
     size_t  GetItemId(void)
     {
-        return ++m_NextItemId;
+        while (m_NextItemIdLock.exchange(true)) {}
+        auto    ret = ++m_NextItemId;
+        m_NextItemIdLock = false;
+        return ret;
     }
-
-    void SignalProcessorFinished(void);
 
 public:
     // PSG protocol facilities
@@ -261,8 +264,10 @@ private:
 
 private:
     CHttpReply<CPendingOperation> *     m_Reply;
+    atomic<bool>                        m_NextItemIdLock;
     size_t                              m_NextItemId;
     int32_t                             m_TotalSentReplyChunks;
+    atomic<bool>                        m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
 };
 

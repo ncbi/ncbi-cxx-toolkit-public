@@ -184,7 +184,6 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
             // exclude blob cache
             if (x_CheckExcludeBlobCache(fetch_details,
                                         blob_request) == ePSGS_InCache) {
-                m_Reply->SignalProcessorFinished();
                 return;
             }
 
@@ -193,7 +192,6 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
         } else {
             // Nothing else to be sent, the original blob is big
         }
-        m_Reply->SignalProcessorFinished();
         return;
     }
 
@@ -201,7 +199,6 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
     // blob request
     if (x_CheckExcludeBlobCache(fetch_details,
                                 blob_request) == ePSGS_InCache) {
-        m_Reply->SignalProcessorFinished();
         return;
     }
 
@@ -212,7 +209,6 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
     // It is important to send completion after: there could be
     // an error of converting/translating ID2 info
     x_PrepareBlobPropCompletion(fetch_details);
-    m_Reply->SignalProcessorFinished();
 }
 
 
@@ -238,7 +234,6 @@ CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(TBlobPropsCB  blob_props_cb,
         // an error of converting/translating ID2 info
         x_PrepareBlobPropCompletion(fetch_details);
     }
-    m_Reply->SignalProcessorFinished();
 }
 
 
@@ -264,7 +259,6 @@ CPSGS_CassBlobBase::x_OnBlobPropWholeTSE(TBlobPropsCB  blob_props_cb,
         // an error of converting/translating ID2 info
         x_PrepareBlobPropCompletion(fetch_details);
     }
-    m_Reply->SignalProcessorFinished();
 }
 
 
@@ -280,7 +274,6 @@ CPSGS_CassBlobBase::x_OnBlobPropOrigTSE(TBlobChunkCB  blob_chunk_cb,
     x_RequestOriginalBlobChunks(blob_chunk_cb,
                                 blob_error_cb,
                                 fetch_details, blob);
-    m_Reply->SignalProcessorFinished();
 }
 
 
@@ -805,10 +798,11 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     app->GetErrorCounters().IncBlobPropsNotFoundError();
 
     auto    blob_id = fetch_details->GetBlobId();
-    string  message = "Blob " + blob_id.ToString() + " properties are not found";
+    string  message = "Blob " + blob_id.ToString() +
+                      " properties are not found (last modified: " +
+                      to_string(fetch_details->GetLoader()->GetModified()) + ")";
     if (fetch_details->GetFetchType() == ePSGS_BlobBySatSatKeyFetch) {
         // User requested wrong sat_key, so it is a client error
-        PSG_WARNING(message);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         x_PrepareBlobPropMessage(fetch_details, message,
                                  CRequestStatus::e404_NotFound,
@@ -871,7 +865,6 @@ void
 CPSGS_CassBlobBase::SetFinished(CCassBlobFetch *  fetch_details)
 {
     fetch_details->SetReadFinished();
-    m_Reply->SignalProcessorFinished();
 }
 
 

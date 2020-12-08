@@ -34,6 +34,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <memory>
 #include <new>
 #include <atomic>
@@ -132,10 +133,11 @@ public:
 
     void Clear(void)
     {
-        if (m_PendingReq)
-            m_PendingReq->Clear();
+        for (auto req: m_PendingReqs) {
+            req = nullptr;
+        }
+        m_PendingReqs.clear();
 
-        m_PendingReq = nullptr;
         m_Req = nullptr;
         m_RespGenerator = {0};
         m_OutputIsReady = false;
@@ -150,14 +152,17 @@ public:
 
     void AssignPendingReq(unique_ptr<P> pending_req)
     {
-        m_PendingReq = std::move(pending_req);
+        m_PendingReqs.emplace_back(move(pending_req));
     }
 
     // The method is used only when the reply is finished.
     // See the comments at the point of invocation.
     void ResetPendingRequest(void)
     {
-        m_PendingReq = nullptr;
+        for (auto req: m_PendingReqs) {
+            req = nullptr;
+        }
+        m_PendingReqs.clear();
     }
 
     void SetContentLength(uint64_t  content_length)
@@ -238,7 +243,9 @@ public:
             if (!m_Postponed)
                 NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
                            "Request has not been postponed");
-            m_PendingReq->Peek(true);
+            for (auto  req: m_PendingReqs) {
+                req->Peek(true);
+            }
         } catch (const std::exception &  e) {
             Error(e.what());
         } catch (...) {
@@ -269,12 +276,12 @@ public:
     void SetPostponed(void)
     { m_Postponed = true; }
 
-    shared_ptr<P> GetPendingReq(void)
+    list<shared_ptr<P>> GetPendingReqs(void)
     {
-        if (!m_PendingReq)
+        if (m_PendingReqs.empty())
             NCBI_THROW(CPubseqGatewayException, ePendingReqNotAssigned,
-                       "PendingReq is not assigned");
-        return m_PendingReq;
+                       "There are no assigned pending requests");
+        return m_PendingReqs;
     }
 
     h2o_iovec_t PrepareChunk(const unsigned char *  data, unsigned int  size)
@@ -326,12 +333,14 @@ private:
             bool        b = false;
             if (m_Triggered.compare_exchange_weak(b, true) && m_Proto)
                 m_Proto->WakeWorker();
+
         }
 
         bool CheckResetTriggered(void)
         {
             bool        b = true;
             return m_Triggered.compare_exchange_weak(b, false);
+
         }
 
     private:
@@ -471,8 +480,8 @@ private:
 
         if (!m_OutputFinished && m_OutputIsReady)
             SendCancelled();
-        if (m_PendingReq)
-            m_PendingReq->Cancel();
+        for (auto req: m_PendingReqs)
+            req->ConnectionCancel();
     }
 
     void x_GenericSendError(int  status, const char *  head,
@@ -581,8 +590,10 @@ private:
     EReplyState                     m_State;
     CHttpProto<P> *                 m_HttpProto;
     CHttpConnection<P> *            m_HttpConn;
-    std::shared_ptr<P>              m_PendingReq;
-    std::shared_ptr<CDataTrigger>   m_DataReady;
+
+    list<shared_ptr<P>>             m_PendingReqs;
+
+    shared_ptr<CDataTrigger>        m_DataReady;
     EPSGS_ReplyMimeType             m_ReplyContentType;
 };
 
@@ -649,12 +660,15 @@ public:
         x_MaintainBacklog();
     }
 
-    void RegisterPending(unique_ptr<P>  pending_req,
+
+    void RegisterPending(list<unique_ptr<P>>  pending_reqs,
                          shared_ptr<CPSGS_Reply>  reply)
     {
         if (m_Pending.size() < m_HttpMaxPending) {
             auto req_it = x_RegisterPending(reply, m_Pending);
-            reply->GetHttpReply()->AssignPendingReq(move(pending_req));
+            for (auto & pending_req: pending_reqs) {
+                reply->GetHttpReply()->AssignPendingReq(move(pending_req));
+            }
             PostponedStart(reply);
             if (reply->IsFinished()) {
                 PSG_TRACE("Postpone self-drained");
@@ -662,7 +676,9 @@ public:
             }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
             x_RegisterPending(reply, m_Backlog);
-            reply->GetHttpReply()->AssignPendingReq(move(pending_req));
+            for (auto & pending_req: pending_reqs) {
+                reply->GetHttpReply()->AssignPendingReq(move(pending_req));
+            }
         } else {
             reply->Send503("Too many pending requests");
         }
@@ -677,10 +693,11 @@ public:
         if (IsClosed())
             NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
                        "Request handling can not be started after connection was closed");
-        http_reply->GetPendingReq()->Start();
+        for (auto req: http_reply->GetPendingReqs())
+            req->Start();
     }
 
-    void Postpone(unique_ptr<P>  pending_req,
+    void Postpone(list<unique_ptr<P>>  pending_reqs,
                   shared_ptr<CPSGS_Reply>  reply)
     {
         auto    http_reply = reply->GetHttpReply();
@@ -692,7 +709,6 @@ public:
                                "Request has already been postponed");
                 break;
             case CHttpReply<P>::eReplyStarted:
-                // req holds address of generator
                 NCBI_THROW(CPubseqGatewayException, eRequestCannotBePostponed,
                            "Request that has already started "
                            "can't be postponed");
@@ -704,9 +720,9 @@ public:
         }
 
         http_reply->SetPostponed();
-        RegisterPending(move(pending_req), reply);
-    }
+        RegisterPending(move(pending_reqs), reply);
 
+    }
     void OnTimer(void)
     {
         PeekAsync(false);

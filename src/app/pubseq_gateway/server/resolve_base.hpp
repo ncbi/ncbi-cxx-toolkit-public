@@ -61,7 +61,8 @@ public:
     CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
                       shared_ptr<CPSGS_Reply> reply,
                       TSeqIdResolutionFinishedCB finished_cb,
-                      TSeqIdResolutionErrorCB error_cb);
+                      TSeqIdResolutionErrorCB error_cb,
+                      TSeqIdResolutionStartProcessingCB resolution_start_processing_cb);
     virtual ~CPSGS_ResolveBase();
 
 private:
@@ -97,6 +98,7 @@ private:
                                 SBioseqResolution &  bioseq_resolution);
 
 private:
+    void x_OnResolutionGoodData(void);
     void x_OnSeqIdResolveError(
                         CRequestStatus::ECode  status,
                         int  code,
@@ -110,10 +112,11 @@ protected:
     void ResolveInputSeqId(void);
 
 private:
-    TSeqIdResolutionFinishedCB      m_FinalFinishedCB;
-    TSeqIdResolutionErrorCB         m_FinalErrorCB;
+    TSeqIdResolutionFinishedCB          m_FinalFinishedCB;
+    TSeqIdResolutionErrorCB             m_FinalErrorCB;
+    TSeqIdResolutionStartProcessingCB   m_FinalStartProcessingCB;
 
-    bool                            m_AsyncStarted;
+    bool                                m_AsyncStarted;
 };
 
 #endif  // PSGS_RESOLVEBASE__HPP

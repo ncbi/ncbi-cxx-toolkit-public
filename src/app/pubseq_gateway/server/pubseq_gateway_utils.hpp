@@ -285,10 +285,11 @@ string GetPublicCommentCompletionHeader(size_t  item_id,
 class CRequestContextResetter
 {
 public:
-    CRequestContextResetter()
-    {}
-
+    CRequestContextResetter();
     ~CRequestContextResetter();
+
+private:
+    bool        m_NeedReset;
 };
 
 

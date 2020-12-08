@@ -238,7 +238,7 @@ void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 void CPSGS_OSGProcessorBase::FinalizeResult()
 {
     _ASSERT(m_Status != ePSGS_InProgress);
-    GetReply()->SignalProcessorFinished();
+    SignalFinishProcessing();
 }
 
 

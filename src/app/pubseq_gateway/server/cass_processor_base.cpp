@@ -47,12 +47,15 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
                                             shared_ptr<CPSGS_Request> request,
-                                            shared_ptr<CPSGS_Reply> reply) :
+                                            shared_ptr<CPSGS_Reply> reply,
+                                            TProcessorPriority  priority) :
     m_Completed(false),
-    m_Request(request),
-    m_Reply(reply),
     m_Status(CRequestStatus::e200_Ok)
-{}
+{
+    IPSGS_Processor::m_Request = request;
+    IPSGS_Processor::m_Reply = reply;
+    IPSGS_Processor::m_Priority = priority;
+}
 
 
 CPSGS_CassProcessorBase::~CPSGS_CassProcessorBase()
@@ -81,11 +84,32 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
     for (const auto &  details: m_FetchDetails) {
         if (details) {
             ++started_count;
-            if (!details->ReadFinished())
-                return false;
+            if (!details->Cancelled()) {
+                if (!details->ReadFinished()) {
+                    return false;
+                }
+            }
         }
     }
     return started_count != 0;
+}
+
+
+void CPSGS_CassProcessorBase::CancelLoaders(void)
+{
+    for (auto &  loader: m_FetchDetails) {
+        if (loader) {
+            if (!loader->ReadFinished()) {
+                loader->Cancel();
+
+                // Imitate the Cassandra data ready event. This will eventually
+                // lead to a pending operation Peek() call which in turn calls
+                // Wait() for the loader. The Wait() return value should say in
+                // this case that there will be nothing else.
+                IPSGS_Processor::m_Reply->GetDataReadyCB()->OnData();
+            }
+        }
+    }
 }
 
 

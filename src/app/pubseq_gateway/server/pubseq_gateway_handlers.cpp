@@ -96,7 +96,7 @@ static vector<pair<string, SPSGS_ResolveRequest::EPSGS_BioseqIncludeData>>
     make_pair("seq_state", SPSGS_ResolveRequest::fPSGS_SeqState)
 };
 static string  kBadUrlMessage = "Unknown request, the provided URL "
-                                "is not recognized";
+                                "is not recognized: ";
 
 
 int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
@@ -133,12 +133,12 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             http_reply->SetContentType(ePSGS_PSGMime);
 
             m_ErrorCounters.IncBadUrlPath();
-            x_SendMessageAndCompletionChunks(reply, kBadUrlMessage,
+            x_SendMessageAndCompletionChunks(reply, kBadUrlMessage + req.GetPath(),
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL,
                                              eDiag_Error);
 
-            PSG_WARNING(kBadUrlMessage);
+            PSG_WARNING(kBadUrlMessage + req.GetPath());
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         } catch (const exception &  exc) {
             string      msg = "Exception when handling a bad URL event: " +
@@ -264,13 +264,10 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                                client_id_param.m_Value.size()),
                         hops, trace, enabled_processors, disabled_processors,
                         now));
-        unique_ptr<CPSGS_Request>
+        shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
-        unique_ptr<CPendingOperation>
-            pending_req(new CPendingOperation(move(request), reply));
 
-        auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-        http_conn->Postpone(move(pending_req), reply);
+        x_DispatchRequest(request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get request: " +
                           string(exc.what());
@@ -380,12 +377,10 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                        client_id_param.m_Value.size()),
                                 hops, trace,
                                 enabled_processors, disabled_processors, now));
-            unique_ptr<CPSGS_Request>
+            shared_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
-            unique_ptr<CPendingOperation>
-                    pending_req(new CPendingOperation(move(request), reply));
-            auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-            http_conn->Postpone(move(pending_req), reply);
+
+            x_DispatchRequest(request, reply);
             return 0;
         }
 
@@ -526,13 +521,10 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                         seq_id_type, include_data_flags, output_format,
                         use_cache, subst_option, hops, trace,
                         enabled_processors, disabled_processors, now));
-        unique_ptr<CPSGS_Request>
+        shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
-        unique_ptr<CPendingOperation>
-            pending_req(new CPendingOperation(move(request), reply));
 
-        auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-        http_conn->Postpone(move(pending_req), reply);
+        x_DispatchRequest(request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a resolve request: " +
                           string(exc.what());
@@ -633,13 +625,10 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
                         id2_chunk_value, id2_info_param.m_Value,
                         use_cache, hops, trace,
                         enabled_processors, enabled_processors, now));
-        unique_ptr<CPSGS_Request>
+        shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
-        unique_ptr<CPendingOperation>
-            pending_req(new CPendingOperation(move(request), reply));
 
-        auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-        http_conn->Postpone(move(pending_req), reply);
+        x_DispatchRequest(request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_tse_chunk request: " +
                           string(exc.what());
@@ -749,13 +738,10 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         seq_id_type, names, use_cache, hops, trace,
                         enabled_processors, disabled_processors,
                         now));
-        unique_ptr<CPSGS_Request>
+        shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
-        unique_ptr<CPendingOperation>
-            pending_req(new CPendingOperation(move(request), reply));
 
-        auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-        http_conn->Postpone(move(pending_req), reply);
+        x_DispatchRequest(request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_na request: " +
                           string(exc.what());
@@ -1629,5 +1615,29 @@ bool CPubseqGatewayApp::x_IsDBOK(shared_ptr<CPSGS_Reply>  reply)
         return false;
     }
     return true;
+}
+
+
+void CPubseqGatewayApp::x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
+                                          shared_ptr<CPSGS_Reply>  reply)
+{
+    // The dispatcher works in terms of processors while the infrastructure
+    // works in terms of pending operation. So, lets create the corresponding
+    // pending operations.
+    // Note: the case when no processors are available is handled in the
+    //       dispatcher (reply is sent to the client).
+
+    list<unique_ptr<CPendingOperation>>     pending_ops;
+    for (auto processor: m_RequestDispatcher.DispatchRequest(request, reply)) {
+        pending_ops.push_back(
+            move(
+                unique_ptr<CPendingOperation>(
+                    new CPendingOperation(request, reply, processor))));
+    }
+
+    if (!pending_ops.empty()) {
+        auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
+        http_conn->Postpone(move(pending_ops), reply);
+    }
 }
 

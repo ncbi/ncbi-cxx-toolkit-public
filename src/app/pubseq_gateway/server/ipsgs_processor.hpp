@@ -74,17 +74,20 @@ public:
     /// The GetStatus() method returns a processor current status.
     enum EPSGS_Status {
         ePSGS_InProgress,   //< Processor is still working.
-                            //< The other processors (if any) will wait.
         ePSGS_Found,        //< Processor finished and found what needed.
-                            //< The other processor (if any) will not start.
         ePSGS_NotFound,     //< Processor finished and did not find anything.
-                            //< The other processor (if any) will start.
-        ePSGS_Error         //< Processor finished and there was an error.
-                            //< The other processor (if any) will start.
+        ePSGS_Error,        //< Processor finished and there was an error.
+        ePSGS_Cancelled     //< Processor finished because earlier it received
+                            //< the Cancel() call.
     };
 
+    /// Converts the processor status to a string for tracing and logging
+    /// purposes.
+    static string  StatusToString(EPSGS_Status  status);
+
 public:
-    IPSGS_Processor()
+    IPSGS_Processor() :
+        m_FinishSignalled(false)
     {}
 
     virtual ~IPSGS_Processor()
@@ -152,10 +155,32 @@ public:
         return m_Priority;
     }
 
+public:
+    /// Tells wether to continue or not after a processor called
+    /// SignalStartProcessing() method.
+    enum EPSGS_StartProcessing {
+        ePSGS_Proceed,
+        ePSGS_Cancel
+    };
+
+    /// A processor should call the method when it decides that it
+    /// successfully started processing the request. The other processors
+    /// which are handling this request will be cancelled.
+    /// @return
+    ///  The flag to continue or to stop further activity
+    EPSGS_StartProcessing SignalStartProcessing(void);
+
+    /// A processor should call this method when it decides that there is
+    /// nothing else to be done.
+    void SignalFinishProcessing(void);
+
 protected:
     shared_ptr<CPSGS_Request>  m_Request;
     shared_ptr<CPSGS_Reply>    m_Reply;
     TProcessorPriority         m_Priority;
+
+protected:
+    bool        m_FinishSignalled;
 };
 
 #endif  // IPSGS_PROCESSOR__HPP

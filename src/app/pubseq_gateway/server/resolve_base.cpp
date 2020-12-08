@@ -60,13 +60,16 @@ CPSGS_ResolveBase::CPSGS_ResolveBase()
 CPSGS_ResolveBase::CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
                                      shared_ptr<CPSGS_Reply> reply,
                                      TSeqIdResolutionFinishedCB finished_cb,
-                                     TSeqIdResolutionErrorCB error_cb) :
+                                     TSeqIdResolutionErrorCB error_cb,
+                                     TSeqIdResolutionStartProcessingCB resolution_start_processing_cb) :
     CPSGS_CassProcessorBase(request, reply),
     CPSGS_AsyncResolveBase(request, reply,
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                 this, _1),
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveError,
-                                this, _1, _2, _3, _4)),
+                                this, _1, _2, _3, _4),
+                           bind(&CPSGS_ResolveBase::x_OnResolutionGoodData,
+                                this)),
     CPSGS_AsyncBioseqInfoBase(request, reply,
                               bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                    this, _1),
@@ -74,6 +77,7 @@ CPSGS_ResolveBase::CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
                                    this, _1, _2, _3, _4)),
     m_FinalFinishedCB(finished_cb),
     m_FinalErrorCB(error_cb),
+    m_FinalStartProcessingCB(resolution_start_processing_cb),
     m_AsyncStarted(false)
 {}
 
@@ -666,6 +670,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
     }
 
     // All good
+    x_OnResolutionGoodData();
     x_RegisterSuccessTiming(bioseq_resolution);
     m_FinalFinishedCB(move(bioseq_resolution));
 }
@@ -695,5 +700,11 @@ CPSGS_ResolveBase::x_RegisterSuccessTiming(
         app->GetTiming().Register(eResolutionLmdb, eOpStatusFound,
                                   m_Request->GetStartTimestamp());
     }
+}
+
+
+void CPSGS_ResolveBase::x_OnResolutionGoodData(void)
+{
+    m_FinalStartProcessingCB();
 }
 

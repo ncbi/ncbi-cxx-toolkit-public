@@ -32,7 +32,6 @@
  *
  */
 
-#include "ipsgs_processor.hpp"
 #include "cass_blob_base.hpp"
 
 USING_NCBI_SCOPE;
@@ -42,8 +41,7 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_GetBlobProcessor : public IPSGS_Processor,
-                               public CPSGS_CassBlobBase
+class CPSGS_GetBlobProcessor : public CPSGS_CassBlobBase
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -76,11 +74,13 @@ private:
 
 private:
     void x_Peek(bool  need_wait);
-    void x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
 
 private:
     SPSGS_BlobBySatSatKeyRequest *  m_BlobRequest;
+
+    bool                            m_InPeek;
 };
 
 #endif  // PSGS_GETBLOBPROCESSOR__HPP

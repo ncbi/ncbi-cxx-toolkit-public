@@ -98,7 +98,7 @@ class CUserExcludeBlobs
 
     public:
         // The lock is exposed so that the upper level can grab it before
-        // the upeer lock is released. An alternative would be to store the
+        // the upper lock is released. An alternative would be to store the
         // lock in the upper level but it seems better to store it here because
         // it goes into the cathegory of the user associated data
         atomic<bool>                                        m_Lock;

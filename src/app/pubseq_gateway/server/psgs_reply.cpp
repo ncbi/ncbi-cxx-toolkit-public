@@ -47,35 +47,38 @@ CPSGS_Reply::~CPSGS_Reply()
 
 void CPSGS_Reply::Flush(void)
 {
+    while (m_ChunksLock.exchange(true)) {}
     m_Reply->Send(m_Chunks, true);
     m_Chunks.clear();
+    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::Flush(bool  is_last)
 {
+    while (m_ChunksLock.exchange(true)) {}
     m_Reply->Send(m_Chunks, is_last);
     m_Chunks.clear();
+    m_ChunksLock = false;
+
+    if (is_last)
+        m_Reply->CancelPending();
 }
 
 
 void CPSGS_Reply::Clear(void)
 {
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.clear();
     m_Reply = nullptr;
     m_TotalSentReplyChunks = 0;
+    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::SetContentType(EPSGS_ReplyMimeType  mime_type)
 {
     m_Reply->SetContentType(mime_type);
-}
-
-
-void CPSGS_Reply::SignalProcessorFinished(void)
-{
-    m_Reply->PeekPending();
 }
 
 
@@ -107,11 +110,13 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
     string  header = GetBioseqMessageHeader(item_id, processor_id,
                                             msg.size(), status,
                                             err_code, severity);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -124,11 +129,13 @@ void CPSGS_Reply::PrepareBioseqData(
 {
     string      header = GetBioseqInfoHeader(item_id, processor_id,
                                              content.size(), output_format);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(content.data()), content.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -139,10 +146,12 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
     string      bioseq_meta = GetBioseqCompletionHeader(item_id,
                                                         processor_id,
                                                         chunk_count);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(bioseq_meta.data()),
                 bioseq_meta.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -156,11 +165,13 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
     string      header = GetBlobPropMessageHeader(item_id, processor_id,
                                                   msg.size(), status, err_code,
                                                   severity);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -176,11 +187,13 @@ void CPSGS_Reply::x_PrepareTSEBlobPropMessage(size_t                 item_id,
     string      header = GetTSEBlobPropMessageHeader(
                                 item_id, processor_id, id2_chunk, id2_info,
                                 msg.size(), status, err_code, severity);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -224,12 +237,14 @@ void CPSGS_Reply::PrepareBlobPropData(size_t                   item_id,
                                        blob_id,
                                        content.size(),
                                        last_modified);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(content.data()),
                     content.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -269,12 +284,14 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
                                           processor_id,
                                           id2_chunk, id2_info,
                                           content.size());
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(content.data()),
                     content.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -294,12 +311,14 @@ void CPSGS_Reply::PrepareBlobData(size_t                   item_id,
                             blob_id,
                             data_size, chunk_no,
                             last_modified);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
                     header.size()));
 
     if (data_size > 0 && chunk_data != nullptr)
         m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
+    m_ChunksLock = false;
 }
 
 
@@ -334,12 +353,14 @@ void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
                             processor_id,
                             data_size, chunk_no,
                             id2_chunk, id2_info);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
                     header.size()));
 
     if (data_size > 0 && chunk_data != nullptr)
         m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
+    m_ChunksLock = false;
 }
 
 
@@ -366,10 +387,12 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
                                                              processor_id,
                                                              chunk_count);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(blob_prop_meta.data()),
                     blob_prop_meta.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -380,10 +403,12 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
     string      blob_prop_meta = GetTSEBlobPropCompletionHeader(item_id,
                                                                 processor_id,
                                                                 chunk_count);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(blob_prop_meta.data()),
                     blob_prop_meta.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -428,11 +453,13 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
                                               blob_id, msg.size(),
                                               status, err_code, severity,
                                               last_modified);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -464,11 +491,13 @@ void CPSGS_Reply::x_PrepareTSEBlobMessage(size_t  item_id,
     string      header = GetTSEBlobMessageHeader(item_id, processor_id,
                                                  id2_chunk, id2_info, msg.size(),
                                                  status, err_code, severity);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -493,10 +522,12 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
 {
     string completion = GetBlobCompletionHeader(item_id, processor_id,
                                                 chunk_count);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -517,10 +548,12 @@ void CPSGS_Reply::PrepareTSEBlobCompletion(size_t  item_id,
 {
     string completion = GetTSEBlobCompletionHeader(item_id, processor_id,
                                                    chunk_count);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -531,10 +564,12 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
 {
     string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
                                            blob_id, skip_reason, last_modified);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -545,10 +580,12 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &  processor_id,
 {
     string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
                                               id2_chunk, id2_info, skip_reason);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -559,10 +596,12 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 {
     string  exclude = GetBlobExcludeHeader(item_id, processor_id,
                                            blob_id, skip_reason);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -584,11 +623,13 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
 {
     string      header = GetReplyMessageHeader(msg.size(),
                                                status, err_code, severity);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -602,18 +643,20 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
     string      header = GetProcessorMessageHeader(item_id, processor_id,
                                                    msg.size(),
                                                    status, err_code, severity);
+    string      completion = GetProcessorMessageCompletionHeader(item_id,
+                                                                 processor_id,
+                                                                 2);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
 
-    string      completion = GetProcessorMessageCompletionHeader(item_id,
-                                                                 processor_id,
-                                                                 2);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -625,18 +668,20 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
     auto        item_id = GetItemId();
     string      header = GetPublicCommentHeader(item_id, processor_id, blob_id,
                                                 last_modified, public_comment.size());
+    string      completion = GetPublicCommentCompletionHeader(item_id,
+                                                              processor_id,
+                                                              2);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(public_comment.data()), public_comment.size()));
     ++m_TotalSentReplyChunks;
 
-    string      completion = GetPublicCommentCompletionHeader(item_id,
-                                                              processor_id,
-                                                              2);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -648,18 +693,20 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
     auto        item_id = GetItemId();
     string      header = GetPublicCommentHeader(item_id, processor_id, id2_chunk,
                                                 id2_info, public_comment.size());
+    string      completion = GetPublicCommentCompletionHeader(item_id,
+                                                              processor_id,
+                                                              2);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(public_comment.data()), public_comment.size()));
     ++m_TotalSentReplyChunks;
 
-    string      completion = GetPublicCommentCompletionHeader(item_id,
-                                                              processor_id,
-                                                              2);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
@@ -670,31 +717,35 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
     size_t      item_id = GetItemId();
     string      header = GetNamedAnnotationHeader(item_id, processor_id,
                                                   annot_name, content.size());
+    // There are always 2 chunks
+    string      bioseq_na_meta = GetNamedAnnotationCompletionHeader(item_id,
+                                                                    processor_id,
+                                                                    2);
+    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(content.data()), content.size()));
     ++m_TotalSentReplyChunks;
 
-    // There are always 2 chunks
-    string      bioseq_na_meta = GetNamedAnnotationCompletionHeader(item_id,
-                                                                    processor_id,
-                                                                    2);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(bioseq_na_meta.data()),
                 bioseq_na_meta.size()));
     ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::PrepareReplyCompletion(void)
 {
+    while (m_ChunksLock.exchange(true)) {}
     ++m_TotalSentReplyChunks;
 
     string  reply_completion = GetReplyCompletionHeader(m_TotalSentReplyChunks);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
+    m_ChunksLock = false;
 }
 
 

@@ -214,11 +214,20 @@ public:
         return m_CassandraProcessorsEnabled;
     }
 
-    list<unique_ptr<IPSGS_Processor>>
-        DispatchRequest(shared_ptr<CPSGS_Request> request,
-                        shared_ptr<CPSGS_Reply> reply) const
+    IPSGS_Processor::EPSGS_StartProcessing
+    SignalStartProcessing(IPSGS_Processor *  processor)
     {
-        return m_RequestDispatcher.DispatchRequest(request, reply);
+        return m_RequestDispatcher.SignalStartProcessing(processor);
+    }
+
+    void SignalFinishProcessing(IPSGS_Processor *  processor)
+    {
+        m_RequestDispatcher.SignalFinishProcessing(processor);
+    }
+
+    void SignalConnectionCancelled(IPSGS_Processor *  processor)
+    {
+        m_RequestDispatcher.SignalConnectionCancelled(processor);
     }
 
 private:
@@ -304,6 +313,8 @@ private:
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
+    void x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
+                           shared_ptr<CPSGS_Reply>  reply);
 
 private:
     string                              m_Si2csiDbFile;

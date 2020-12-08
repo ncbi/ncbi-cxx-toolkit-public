@@ -43,7 +43,8 @@ USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
 CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor() :
-    m_TSEChunkRequest(nullptr)
+    m_TSEChunkRequest(nullptr),
+    m_InPeek(false)
 {}
 
 
@@ -53,15 +54,12 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
             TProcessorPriority  priority,
             shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info> sat_info_chunk_ver_id2info,
             shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>    id_mod_ver_id2info) :
-    CPSGS_CassProcessorBase(request, reply),
+    CPSGS_CassProcessorBase(request, reply, priority),
     CPSGS_CassBlobBase(request, reply, GetName()),
     m_SatInfoChunkVerId2Info(sat_info_chunk_ver_id2info),
-    m_IdModVerId2Info(id_mod_ver_id2info)
+    m_IdModVerId2Info(id_mod_ver_id2info),
+    m_InPeek(false)
 {
-    IPSGS_Processor::m_Request = request;
-    IPSGS_Processor::m_Reply = reply;
-    IPSGS_Processor::m_Priority = priority;
-
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_TSEChunkRequest>() everywhere
     m_TSEChunkRequest = & request->GetRequest<SPSGS_TSEChunkRequest>();
@@ -158,7 +156,7 @@ bool CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
                              ePSGS_InvalidId2Info);
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     } else {
         PSG_WARNING(err_msg);
     }
@@ -187,7 +185,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
         // necessary to finish the reply anyway.
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     } else {
         PSG_WARNING(msg);
     }
@@ -216,6 +214,9 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
     // This option is when id2info came in a shape of
     // tse_id~~last_modified~~split_version
 
+    CRequestContextResetter     context_resetter;
+    IPSGS_Processor::m_Request->SetRequestContext();
+
     auto    app = CPubseqGatewayApp::GetInstance();
     string  err_msg;
 
@@ -229,7 +230,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                              ePSGS_UnknownResolvedSatellite);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         m_Completed = true;
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
 
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
@@ -367,11 +368,24 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             return;
         } while (false);
     } else {
-        err_msg = "Blob " + m_IdModVerId2Info->GetTSEId().ToString() +
-                  " properties are not found in cache";
-        if (blob_prop_cache_lookup_result == ePSGS_CacheFailure)
-            err_msg += " due to LMDB error";
-        PSG_WARNING(err_msg);
+        if (psg_cache.IsAllowed()) {
+            err_msg = "Blob " + m_IdModVerId2Info->GetTSEId().ToString() +
+                      " properties are not found in cache";
+            if (blob_prop_cache_lookup_result == ePSGS_CacheFailure) {
+                err_msg += " due to LMDB error";
+                PSG_WARNING(err_msg);
+            } else {
+                // This warning could be confusing for the following cases:
+                // - requested blob has been recently removed
+                //   but the split history still has the record for it
+                // - so the cache has nothing but split history directs to the
+                //   still hanging blo
+                // The data will be sent back sucessfully and a log file will
+                // have a confusing warning. So it was decided to comment the
+                // warning out.
+                // PSG_WARNING(err_msg);
+            }
+        }
     }
 
 
@@ -529,6 +543,16 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                             CBlobRecord const &  blob,
                                             bool is_found)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
+    if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
+        m_Completed = true;
+        return;
+    }
+
     // Note: cannot use CPSGS_CassBlobBase::OnGetBlobChunk() anymore because
     // the reply has to have a few more fields for ID/get_tse_chunk request
     CRequestContextResetter     context_resetter;
@@ -578,6 +602,11 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                              EDiagSev  severity,
                                              const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     // Cannot use CPSGS_CassBlobBase::OnGetBlobError() anymore because
     // the TSE messages have different parameters
 
@@ -702,6 +731,11 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
                                     EDiagSev  severity,
                                     const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
@@ -761,9 +795,14 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
         return;
     }
 
+    if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
+        m_Completed = true;
+        return;
+    }
+
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
-                "Split history callback; found: " + to_string(result.empty()),
+                "Split history callback; number of records: " + to_string(result.size()),
                 IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -782,7 +821,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
                 IPSGS_Processor::m_Reply->GetItemId(),
                 GetName(), message, CRequestStatus::e404_NotFound,
                 ePSGS_SplitHistoryNotFound, eDiag_Error);
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     } else {
         // Split history found.
         // Note: the request was issued so that there could be exactly one
@@ -848,7 +887,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
                              ePSGS_BlobPropsNotFound);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
         return;
     }
 
@@ -924,6 +963,12 @@ CPSGS_TSEChunkProcessor::x_SendProcessorError(const string &  msg,
                                               CRequestStatus::ECode  status,
                                               int  code)
 {
+    if (m_Cancelled)
+        return;
+
+    CRequestContextResetter     context_resetter;
+    IPSGS_Processor::m_Request->SetRequestContext();
+
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
                 GetName(), msg, status, code, eDiag_Error);
@@ -961,7 +1006,7 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
                                  ePSGS_MalformedParameter);
             UpdateOverallStatus(CRequestStatus::e400_BadRequest);
             m_Completed = true;
-            IPSGS_Processor::m_Reply->SignalProcessorFinished();
+            SignalFinishProcessing();
         } else {
             PSG_WARNING(msg);
         }
@@ -991,7 +1036,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
     // necessary to finish the reply anyway.
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     m_Completed = true;
-    IPSGS_Processor::m_Reply->SignalProcessorFinished();
+    SignalFinishProcessing();
     return false;
 }
 
@@ -999,12 +1044,20 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
 void CPSGS_TSEChunkProcessor::Cancel(void)
 {
     m_Cancelled = true;
+    CancelLoaders();
 }
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
 {
-    return CPSGS_CassProcessorBase::GetStatus();
+    auto    status = CPSGS_CassProcessorBase::GetStatus();
+    if (status == IPSGS_Processor::ePSGS_InProgress)
+        return status;
+
+    if (m_Cancelled)
+        return IPSGS_Processor::ePSGS_Cancelled;
+
+    return status;
 }
 
 
@@ -1025,29 +1078,47 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
     if (m_Cancelled)
         return;
 
+    if (m_InPeek)
+        return;
+    m_InPeek = true;
+
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    for (auto &  details: m_FetchDetails) {
-        if (details)
-            x_Peek(details, need_wait);
+    bool        overall_final_state = false;
+
+    while (true) {
+        auto initial_size = m_FetchDetails.size();
+
+        for (auto &  details: m_FetchDetails) {
+            if (details)
+                overall_final_state |= x_Peek(details, need_wait);
+        }
+
+        if (initial_size == m_FetchDetails.size())
+            break;
     }
 
     // TSE chunk: ready packets need to be sent right away
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         IPSGS_Processor::m_Reply->Flush(false);
+
+    m_InPeek = false;
 }
 
 
-void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                                      bool  need_wait)
 {
     if (!fetch_details->GetLoader())
-        return;
+        return true;
 
-    if (need_wait)
-        if (!fetch_details->ReadFinished())
-            fetch_details->GetLoader()->Wait();
+    bool    final_state = false;
+    if (need_wait) {
+        if (!fetch_details->ReadFinished()) {
+            final_state = fetch_details->GetLoader()->Wait();
+        }
+    }
 
     if (fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
@@ -1081,7 +1152,9 @@ void CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        IPSGS_Processor::m_Reply->SignalProcessorFinished();
+        SignalFinishProcessing();
     }
+
+    return final_state;
 }
 

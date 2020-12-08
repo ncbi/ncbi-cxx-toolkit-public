@@ -44,29 +44,15 @@
 USING_IDBLOB_SCOPE;
 
 
-string  ProcessorStatusToString(IPSGS_Processor::EPSGS_Status  status)
-{
-    switch (status) {
-        case IPSGS_Processor::ePSGS_InProgress:
-            return "ePSGS_InProgress";
-        case IPSGS_Processor::ePSGS_Found:
-            return "ePSGS_Found";
-        case IPSGS_Processor::ePSGS_NotFound:
-            return "ePSGS_NotFound";
-        case IPSGS_Processor::ePSGS_Error:
-            return "ePSGS_Error";
-        default:
-            break;
-    }
-    return "unknown (" + to_string(status) + ")";
-}
-
-
-CPendingOperation::CPendingOperation(unique_ptr<CPSGS_Request>  user_request,
-                                     shared_ptr<CPSGS_Reply>  reply) :
-    m_UserRequest(move(user_request)),
+CPendingOperation::CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
+                                     shared_ptr<CPSGS_Reply>  reply,
+                                     IPSGS_Processor *  processor) :
+    m_UserRequest(user_request),
     m_Reply(reply),
-    m_Cancelled(false)
+    m_Started(false),
+    m_ConnectionCancelled(false),
+    m_Processor(unique_ptr<IPSGS_Processor>(processor)),
+    m_InProcess(false)
 {
     CRequestContextResetter     context_resetter;
     m_UserRequest->SetRequestContext();
@@ -85,10 +71,6 @@ CPendingOperation::~CPendingOperation()
     PSG_TRACE("CPendingOperation::~CPendingOperation() request: " <<
               m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
               ", this: " << this);
-
-    // Just in case if a request ended without a normal request stop,
-    // finish it here as the last resort.
-    x_PrintRequestStop();
 }
 
 
@@ -102,172 +84,62 @@ void CPendingOperation::Clear()
               ", this: " << this);
 
     m_Reply->Clear();
-    m_Cancelled = false;
+    m_ConnectionCancelled = false;
 }
 
 
 void CPendingOperation::Start(void)
 {
-    auto *          app = CPubseqGatewayApp::GetInstance();
-
-    m_Processors = app->DispatchRequest(m_UserRequest, m_Reply);
-    if (m_Processors.empty()) {
-        string  msg = "No matching processors found to serve the request";
-        PSG_TRACE(msg);
-
-        m_FinishStatuses.push_back(IPSGS_Processor::ePSGS_NotFound);
-        m_Reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
-                                     ePSGS_NoProcessor, eDiag_Error);
-        m_Reply->PrepareReplyCompletion();
-        m_Reply->Flush(true);
-        x_PrintRequestStop();
+    if (m_Started)
         return;
-    }
+    m_Started = true;
 
-    m_CurrentProcessor = m_Processors.begin();
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace(
             "Start pending request: " +
             m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) +
-            ". Number of processors: " + to_string(m_Processors.size()) +
-            ". Running processor: " + (*m_CurrentProcessor)->GetName(),
+            "\nRunning processor: " + m_Processor->GetName() +
+            " (priority: " + to_string(m_Processor->GetPriority()) + ")",
             m_UserRequest->GetStartTimestamp());
     }
-    PSG_TRACE("Running processor: " << (*m_CurrentProcessor)->GetName());
 
-    (*m_CurrentProcessor)->Process();
+    m_Processor->Process();
 }
 
 
 void CPendingOperation::Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_ConnectionCancelled) {
+        CPubseqGatewayApp::GetInstance()->SignalConnectionCancelled(
+                                                            m_Processor.get());
+
         if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {
             m_Reply->GetHttpReply()->Send(nullptr, 0, true, true);
         }
         return;
     }
 
-    if (m_CurrentProcessor == m_Processors.end()) {
-        // No more processors
-        x_FinalizeReply();
+    if (m_InProcess) {
+        // Prevent recursion due to SignalProcessorFinished() call from
+        // processor->ProcessEvent()
         return;
     }
 
-
-    auto    processor_status = (*m_CurrentProcessor)->GetStatus();
+    m_InProcess = true;
+    auto    processor_status = m_Processor->GetStatus();
     if (processor_status == IPSGS_Processor::ePSGS_InProgress) {
         // Note: the ProcessEvent() _may_ lead to the situation when a
         // processor has completed its job. In this case the processor
         // _may_ call SignalProcessorFinish() which leads to a recursive call
-        // of Peek() and thus can move the current processor iterator forward.
-        // To avoid it the current iterator is saved and checked that it is
-        // still the same processor in handling.
-        auto    current_processor = m_CurrentProcessor;
-        (*m_CurrentProcessor)->ProcessEvent();
-        if (current_processor != m_CurrentProcessor)
-            return;
-        processor_status = (*m_CurrentProcessor)->GetStatus();
+        // of Peek().
+        m_Processor->ProcessEvent();
+        processor_status = m_Processor->GetStatus();
     }
+    m_InProcess = false;
 
     if (processor_status != IPSGS_Processor::ePSGS_InProgress) {
-        m_FinishStatuses.push_back(processor_status);
-
-        PSG_TRACE("Processor: " << (*m_CurrentProcessor)->GetName() <<
-                  " finished with status " <<
-                  ProcessorStatusToString(processor_status));
-        if (m_UserRequest->NeedTrace()) {
-            m_Reply->SendTrace(
-                "Processor: " + (*m_CurrentProcessor)->GetName() +
-                " finished with status " + ProcessorStatusToString(processor_status),
-                m_UserRequest->GetStartTimestamp());
-        }
-
-        if (processor_status == IPSGS_Processor::ePSGS_Found) {
-            switch (m_UserRequest->GetRequestType()) {
-                case CPSGS_Request::ePSGS_ResolveRequest:
-                case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-                case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-                case CPSGS_Request::ePSGS_TSEChunkRequest:
-                    // Upon success no need to continue
-                    x_FinalizeReply();
-                    return;
-                case CPSGS_Request::ePSGS_AnnotationRequest:
-                    // It needs to be checked if all the annotations are processed.
-                    {
-                        auto    proc_priority = (*m_CurrentProcessor)->GetPriority();
-                        auto    annot_request = m_UserRequest->GetRequest<SPSGS_AnnotRequest>();
-                        auto    not_processed_names = annot_request.GetNotProcessedName(proc_priority);
-                        if (not_processed_names.empty()) {
-                            x_FinalizeReply();
-                            return;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        ++m_CurrentProcessor;
-        if (m_CurrentProcessor == m_Processors.end()) {
-            x_FinalizeReply();
-        } else {
-            PSG_TRACE("Running next processor: " <<
-                      (*m_CurrentProcessor)->GetName());
-            if (m_UserRequest->NeedTrace()) {
-                m_Reply->SendTrace(
-                    "Running next processor: " + (*m_CurrentProcessor)->GetName(),
-                    m_UserRequest->GetStartTimestamp());
-            }
-            (*m_CurrentProcessor)->Process();
-        }
+        CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
+                                                            m_Processor.get());
     }
-}
-
-
-void CPendingOperation::x_FinalizeReply(void)
-{
-    if (!m_Reply->IsFinished() && m_Reply->IsOutputReady()) {
-        m_Reply->PrepareReplyCompletion();
-        m_Reply->Flush(true);
-
-        x_PrintRequestStop();
-    }
-}
-
-
-void CPendingOperation::x_PrintRequestStop(void)
-{
-    if (m_UserRequest->GetRequestContext().NotNull()) {
-        CDiagContext::SetRequestContext(m_UserRequest->GetRequestContext());
-        m_UserRequest->GetRequestContext()->SetReadOnly(false);
-        m_UserRequest->GetRequestContext()->SetRequestStatus(x_GetRequestStopStatus());
-        GetDiagContext().PrintRequestStop();
-        m_UserRequest->GetRequestContext().Reset();
-        CDiagContext::SetRequestContext(NULL);
-    }
-}
-
-
-CRequestStatus::ECode CPendingOperation::x_GetRequestStopStatus(void) const
-{
-    IPSGS_Processor::EPSGS_Status   best_status = IPSGS_Processor::ePSGS_Error;
-    for (const auto &  status : m_FinishStatuses) {
-        best_status = min(best_status, status);
-    }
-
-    switch (best_status) {
-        case IPSGS_Processor::ePSGS_Found:
-            return CRequestStatus::e200_Ok;
-        case IPSGS_Processor::ePSGS_NotFound:
-            return CRequestStatus::e404_NotFound;
-        default:
-            break;
-    }
-
-    // Do we need to distinguish between a user request error like 400 and
-    // a server problem like 500?
-    return CRequestStatus::e500_InternalServerError;
 }
 
