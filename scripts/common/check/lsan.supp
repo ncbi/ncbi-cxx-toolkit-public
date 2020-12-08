@@ -4,6 +4,7 @@ leak:^d_growable_string_callback_adapter$
 leak:^ncbi::CBDB_Env::Remove(
 leak:^ncbi::CDataType::GetAnyTypeInfo()$
 leak:^ncbi::CDiagContextThreadData::GetThreadData()$
+leak:^ncbi::CDiagContext::SetupDiag(
 leak:^ncbi::CEnumeratedTypeValues::NameToValue
 leak:^ncbi::CEnumeratedTypeValues::ValueToName
 leak:^ncbi::CNcbiEnvironment::Set(
