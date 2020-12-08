@@ -2420,7 +2420,7 @@ int main()
     SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
-throw(0);
+
     // Reinit global timezone variables
     NcbiSys_tzset();
 
