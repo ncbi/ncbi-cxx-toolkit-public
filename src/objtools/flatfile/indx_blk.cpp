@@ -411,8 +411,6 @@ bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const CTempString& keywor
  **********************************************************/
 static bool CheckLocus(char* locus, Parser::ESource source)
 {
-    return false;
-
     char* p = locus;
     if(StringNCmp(locus, "SEG_", 4) == 0 &&
        (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
@@ -971,7 +969,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
             FtaInstallPrefix(PREFIX_ACCESSION, entry->locusname, NULL);
         }
 
-        if(!badlocus)
+        if(pp->mode != Parser::EMode::Relaxed && !badlocus)
         {
             if(pp->format == Parser::EFormat::SPROT)
             {
