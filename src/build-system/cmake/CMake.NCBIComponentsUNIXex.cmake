@@ -647,6 +647,7 @@ endif()
 
 ##############################################################################
 # OpenGL
+set(OpenGL_GL_PREFERENCE LEGACY)
 NCBI_define_Xcomponent(NAME OpenGL PACKAGE OpenGL LIB GLU GL)
 if(NCBI_COMPONENT_OpenGL_FOUND)
     set(NCBI_COMPONENT_OpenGL_LIBS ${NCBI_COMPONENT_OpenGL_LIBS}  -lXmu -lXt -lXext -lX11)
@@ -709,9 +710,6 @@ endif()
 
 ##############################################################################
 # PERL
-
-#does not work
-#NCBI_find_package(PERL PerlLibs)
 if(NOT NCBI_COMPONENT_PERL_DISABLED)
     find_package(PerlLibs)
     if (PERLLIBS_FOUND)
@@ -719,6 +717,11 @@ if(NOT NCBI_COMPONENT_PERL_DISABLED)
         set(NCBI_COMPONENT_PERL_INCLUDE ${PERL_INCLUDE_PATH})
         set(NCBI_COMPONENT_PERL_LIBS    ${PERL_LIBRARY})
         list(APPEND NCBI_ALL_COMPONENTS PERL)
+
+        if(NCBI_TRACE_COMPONENT_PERL OR NCBI_TRACE_ALLCOMPONENTS)
+            message("PERL: include dir = ${NCBI_COMPONENT_PERL_INCLUDE}")
+            message("PERL: libs = ${NCBI_COMPONENT_PERL_LIBS}")
+        endif()
     endif()
 else()
     message("DISABLED PERL")
@@ -726,11 +729,7 @@ endif()
 
 #############################################################################
 # OpenSSL
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(OpenSSL OpenSSL)
-else()
-    NCBI_find_library(OpenSSL ssl crypto)
-endif()
+NCBI_define_Xcomponent(NAME OpenSSL PACKAGE OpenSSL LIB ssl crypto)
 if(NCBI_COMPONENT_OpenSSL_FOUND)
     list(APPEND NCBI_ALL_LEGACY OPENSSL)
     set(NCBI_COMPONENT_OPENSSL_FOUND OpenSSL)
@@ -738,7 +737,7 @@ endif()
 
 #############################################################################
 # MSGSL  (Microsoft Guidelines Support Library)
-NCBI_define_component(MSGSL)
+NCBI_define_Xcomponent(NAME MSGSL)
 
 #############################################################################
 # SGE  (Sun Grid Engine)
@@ -759,20 +758,9 @@ endif()
 
 #############################################################################
 # MONGOCXX
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(MONGOCXX libmongocxx)
-endif()
-if(NOT NCBI_COMPONENT_MONGOCXX_FOUND)
-    NCBI_define_component(MONGOCXX mongocxx bsoncxx)
-    if(NCBI_COMPONENT_MONGOCXX_FOUND)
-        set(NCBI_COMPONENT_MONGOCXX_INCLUDE ${NCBI_COMPONENT_MONGOCXX_INCLUDE}/mongocxx/v_noabi ${NCBI_COMPONENT_MONGOCXX_INCLUDE}/bsoncxx/v_noabi)
-        NCBI_define_component(MONGOC mongoc bson)
-        if(NCBI_COMPONENT_MONGOC_FOUND)
-            set(NCBI_COMPONENT_MONGOCXX_INCLUDE ${NCBI_COMPONENT_MONGOCXX_INCLUDE} ${NCBI_COMPONENT_MONGOC_INCLUDE})
-            set(NCBI_COMPONENT_MONGOCXX_LIBS    ${NCBI_COMPONENT_MONGOCXX_LIBS}    ${NCBI_COMPONENT_MONGOC_LIBS})
-        endif()
-    endif()
-endif()
+NCBI_define_Xcomponent(NAME MONGOC LIB mongoc bson)
+NCBI_define_Xcomponent(NAME MONGOCXX MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
+NCBIcomponent_add(MONGOCXX MONGOC)
 if(NCBI_COMPONENT_MONGOCXX_FOUND)
     list(APPEND NCBI_ALL_LEGACY MONGODB3)
     set(NCBI_COMPONENT_MONGODB3_FOUND MONGOCXX)
@@ -781,7 +769,7 @@ endif()
 #############################################################################
 # LEVELDB
 # only has cmake cfg
-NCBI_define_component(LEVELDB leveldb)
+NCBI_define_Xcomponent(NAME LEVELDB LIB leveldb)
 
 #############################################################################
 # WGMLST
@@ -814,12 +802,7 @@ endif()
 
 #############################################################################
 # UV
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(UV libuv)
-endif()
-if(NOT NCBI_COMPONENT_UV_FOUND)
-    NCBI_define_component(UV uv)
-endif()
+NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
 if(NCBI_COMPONENT_UV_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBUV)
     set(NCBI_COMPONENT_LUBUV_FOUND UV)
@@ -827,49 +810,22 @@ endif()
 
 #############################################################################
 # NGHTTP2
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(NGHTTP2 libnghttp2)
-endif()
-if(NOT NCBI_COMPONENT_NGHTTP2_FOUND)
-    NCBI_define_component(NGHTTP2 nghttp2)
-endif()
+NCBI_define_Xcomponent(NAME NGHTTP2 MODULE libnghttp2 LIB nghttp2)
 
 #############################################################################
 # GL2PS
-NCBI_define_component(GL2PS gl2ps)
+NCBI_define_Xcomponent(NAME GL2PS LIB gl2ps)
 
 #############################################################################
 # GMOCK
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(GMOCK gmock)
-    NCBI_find_module(GTEST gtest)
-    if(NCBI_COMPONENT_GMOCK_FOUND)
-        set(NCBI_COMPONENT_GMOCK_INCLUDE ${NCBI_COMPONENT_GMOCK_INCLUDE} ${NCBI_COMPONENT_GTEST_INCLUDE})
-        set(NCBI_COMPONENT_GMOCK_LIBS    ${NCBI_COMPONENT_GMOCK_LIBS}    ${NCBI_COMPONENT_GTEST_LIBS})
-        set(NCBI_COMPONENT_GMOCK_DEFINES ${NCBI_COMPONENT_GMOCK_DEFINES} ${NCBI_COMPONENT_GTEST_DEFINES})
-    endif()
-endif()
-if(NOT NCBI_COMPONENT_GMOCK_FOUND)
-    NCBI_define_component(GMOCK gmock gtest)
-endif()
+NCBI_define_Xcomponent(NAME GTEST MODULE gtest LIB gtest)
+NCBI_define_Xcomponent(NAME GMOCK MODULE gmock LIB gmock COMPONENT GTEST)
 
 #############################################################################
 # CASSANDRA
-if(OFF)
-    NCBI_find_module(CASSANDRA cassandra)
-endif()
-if(NOT NCBI_COMPONENT_CASSANDRA_FOUND)
-    NCBI_define_component(CASSANDRA cassandra)
-endif()
+NCBI_define_Xcomponent(NAME CASSANDRA LIB cassandra)
 
 #############################################################################
 # H2O
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(H2O libh2o)
-endif()
-if(NOT NCBI_COMPONENT_H2O_FOUND)
-    NCBI_define_component(H2O h2o)
-    if(NCBI_COMPONENT_H2O_FOUND AND NCBI_COMPONENT_OpenSSL_FOUND)
-        set(NCBI_COMPONENT_H2O_LIBS ${NCBI_COMPONENT_H2O_LIBS} ${NCBI_COMPONENT_OpenSSL_LIBS})
-    endif()
-endif()
+NCBI_define_Xcomponent(NAME H2O MODULE libh2o LIB h2o)
+
