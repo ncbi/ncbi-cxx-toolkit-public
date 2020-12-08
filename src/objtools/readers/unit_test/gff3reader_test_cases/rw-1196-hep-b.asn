@@ -654,12 +654,6 @@ Seq-annot ::= {
       xref {
         {
           id local id 16
-        },
-        {
-          id local id 17
-        },
-        {
-          id local id 18
         }
       }
     },
@@ -670,7 +664,34 @@ Seq-annot ::= {
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 801,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 3171,
           to 3214,
           strand plus,
           id genbank {
@@ -721,120 +742,13 @@ Seq-annot ::= {
           tag str "AAF24661.1"
         }
       }
-    },
-    {
-      id local id 17,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3171,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121239",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 801,
-          strand plus,
-          id genbank {
-            accession "AF121239",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24662.1-2"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24662.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S"
-        }
-      },
-      xref {
-        {
-          id local id 15
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24662.1"
-        }
-      }
-    },
-    {
-      id local id 18,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121239",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24663.1-2"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24663.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S"
-        }
-      },
-      xref {
-        {
-          id local id 15
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24663.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 19,
+      id local id 17,
       data biosrc {
         org {
           orgname {
@@ -892,7 +806,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 20,
+      id local id 18,
       data gene {
         locus "X"
       },
@@ -921,12 +835,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 21
+          id local id 19
         }
       }
     },
     {
-      id local id 21,
+      id local id 19,
       data cdregion {
         frame one
       },
@@ -963,7 +877,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 20
+          id local id 18
         }
       },
       dbxref {
@@ -974,7 +888,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 20,
       data gene {
         locus "C"
       },
@@ -1003,25 +917,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 23
-        },
-        {
-          id local id 24
+          id local id 21
         }
       }
     },
     {
-      id local id 23,
+      id local id 21,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121240",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
         }
       },
       qual {
@@ -1048,7 +970,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 22
+          id local id 20
         }
       },
       dbxref {
@@ -1059,55 +981,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 24,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121240",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24671.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24671.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-2"
-        }
-      },
-      xref {
-        {
-          id local id 22
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24671.1"
-        }
-      }
-    },
-    {
-      id local id 25,
+      id local id 22,
       data gene {
         locus "P"
       },
@@ -1147,12 +1021,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 26
+          id local id 23
         }
       }
     },
     {
-      id local id 26,
+      id local id 23,
       data cdregion {
         frame one
       },
@@ -1200,7 +1074,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 25
+          id local id 22
         }
       },
       dbxref {
@@ -1211,7 +1085,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 27,
+      id local id 24,
       data gene {
         locus "S"
       },
@@ -1251,24 +1125,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 28
-        },
-        {
-          id local id 29
-        },
-        {
-          id local id 30
+          id local id 25
         }
       }
     },
     {
-      id local id 28,
+      id local id 25,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 801,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 3171,
           to 3214,
           strand plus,
           id genbank {
@@ -1310,7 +1205,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 27
+          id local id 24
         }
       },
       dbxref {
@@ -1319,120 +1214,13 @@ Seq-annot ::= {
           tag str "AAF24667.1"
         }
       }
-    },
-    {
-      id local id 29,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3171,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121240",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 801,
-          strand plus,
-          id genbank {
-            accession "AF121240",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24668.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24668.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-2"
-        }
-      },
-      xref {
-        {
-          id local id 27
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24668.1"
-        }
-      }
-    },
-    {
-      id local id 30,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121240",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24669.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24669.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-2"
-        }
-      },
-      xref {
-        {
-          id local id 27
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24669.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 31,
+      id local id 26,
       data biosrc {
         org {
           orgname {
@@ -1490,7 +1278,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 32,
+      id local id 27,
       data gene {
         locus "X"
       },
@@ -1519,12 +1307,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 33
+          id local id 28
         }
       }
     },
     {
-      id local id 33,
+      id local id 28,
       data cdregion {
         frame one
       },
@@ -1561,7 +1349,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 32
+          id local id 27
         }
       },
       dbxref {
@@ -1572,7 +1360,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 29,
       data gene {
         locus "C"
       },
@@ -1601,25 +1389,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 35
-        },
-        {
-          id local id 36
+          id local id 30
         }
       }
     },
     {
-      id local id 35,
+      id local id 30,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121241",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
         }
       },
       qual {
@@ -1646,7 +1442,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 34
+          id local id 29
         }
       },
       dbxref {
@@ -1657,55 +1453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 36,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121241",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24678.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24678.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-3"
-        }
-      },
-      xref {
-        {
-          id local id 34
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24678.1"
-        }
-      }
-    },
-    {
-      id local id 37,
+      id local id 31,
       data gene {
         locus "P"
       },
@@ -1745,12 +1493,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 38
+          id local id 32
         }
       }
     },
     {
-      id local id 38,
+      id local id 32,
       data cdregion {
         frame one
       },
@@ -1798,7 +1546,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 37
+          id local id 31
         }
       },
       dbxref {
@@ -1809,7 +1557,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 39,
+      id local id 33,
       data gene {
         locus "S"
       },
@@ -1849,24 +1597,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 40
-        },
-        {
-          id local id 41
-        },
-        {
-          id local id 42
+          id local id 34
         }
       }
     },
     {
-      id local id 40,
+      id local id 34,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 801,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 3171,
           to 3214,
           strand plus,
           id genbank {
@@ -1908,7 +1677,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 39
+          id local id 33
         }
       },
       dbxref {
@@ -1917,120 +1686,13 @@ Seq-annot ::= {
           tag str "AAF24674.1"
         }
       }
-    },
-    {
-      id local id 41,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3171,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121241",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 801,
-          strand plus,
-          id genbank {
-            accession "AF121241",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24675.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24675.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-3"
-        }
-      },
-      xref {
-        {
-          id local id 39
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24675.1"
-        }
-      }
-    },
-    {
-      id local id 42,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121241",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24676.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24676.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-3"
-        }
-      },
-      xref {
-        {
-          id local id 39
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24676.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 43,
+      id local id 35,
       data biosrc {
         org {
           orgname {
@@ -2088,7 +1750,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 44,
+      id local id 36,
       data gene {
         locus "X"
       },
@@ -2117,12 +1779,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 45
+          id local id 37
         }
       }
     },
     {
-      id local id 45,
+      id local id 37,
       data cdregion {
         frame one
       },
@@ -2159,7 +1821,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 44
+          id local id 36
         }
       },
       dbxref {
@@ -2170,7 +1832,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 38,
       data gene {
         locus "C"
       },
@@ -2199,12 +1861,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 47
+          id local id 39
         }
       }
     },
     {
-      id local id 47,
+      id local id 39,
       data cdregion {
         frame one
       },
@@ -2241,7 +1903,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 46
+          id local id 38
         }
       },
       dbxref {
@@ -2252,7 +1914,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 48,
+      id local id 40,
       data imp {
         key "misc_feature"
       },
@@ -2278,7 +1940,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 41,
       data gene {
         locus "P"
       },
@@ -2318,12 +1980,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 50
+          id local id 42
         }
       }
     },
     {
-      id local id 50,
+      id local id 42,
       data cdregion {
         frame one
       },
@@ -2371,7 +2033,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 49
+          id local id 41
         }
       },
       dbxref {
@@ -2382,7 +2044,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 51,
+      id local id 43,
       data gene {
         locus "S"
       },
@@ -2422,24 +2084,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 52
-        },
-        {
-          id local id 53
-        },
-        {
-          id local id 54
+          id local id 44
         }
       }
     },
     {
-      id local id 52,
+      id local id 44,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 801,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 3171,
           to 3214,
           strand plus,
           id genbank {
@@ -2481,7 +2164,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 51
+          id local id 43
         }
       },
       dbxref {
@@ -2490,120 +2173,13 @@ Seq-annot ::= {
           tag str "AAF24681.1"
         }
       }
-    },
-    {
-      id local id 53,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3171,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121242",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 801,
-          strand plus,
-          id genbank {
-            accession "AF121242",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24682.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24682.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-4"
-        }
-      },
-      xref {
-        {
-          id local id 51
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24682.1"
-        }
-      }
-    },
-    {
-      id local id 54,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121242",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24683.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24683.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-4"
-        }
-      },
-      xref {
-        {
-          id local id 51
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24683.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 55,
+      id local id 45,
       data biosrc {
         org {
           orgname {
@@ -2661,7 +2237,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 56,
+      id local id 46,
       data gene {
         locus "X"
       },
@@ -2690,12 +2266,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 57
+          id local id 47
         }
       }
     },
     {
-      id local id 57,
+      id local id 47,
       data cdregion {
         frame one
       },
@@ -2732,7 +2308,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 56
+          id local id 46
         }
       },
       dbxref {
@@ -2743,7 +2319,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 48,
       data gene {
         locus "C"
       },
@@ -2772,25 +2348,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 59
-        },
-        {
-          id local id 60
+          id local id 49
         }
       }
     },
     {
-      id local id 59,
+      id local id 49,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121243",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
         }
       },
       qual {
@@ -2817,7 +2401,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 58
+          id local id 48
         }
       },
       dbxref {
@@ -2828,55 +2412,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 60,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121243",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24691.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24691.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-5"
-        }
-      },
-      xref {
-        {
-          id local id 58
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24691.1"
-        }
-      }
-    },
-    {
-      id local id 61,
+      id local id 50,
       data gene {
         locus "P"
       },
@@ -2916,12 +2452,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 62
+          id local id 51
         }
       }
     },
     {
-      id local id 62,
+      id local id 51,
       data cdregion {
         frame one
       },
@@ -2969,7 +2505,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 61
+          id local id 50
         }
       },
       dbxref {
@@ -2980,7 +2516,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 63,
+      id local id 52,
       data gene {
         locus "S"
       },
@@ -3020,24 +2556,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 64
-        },
-        {
-          id local id 65
-        },
-        {
-          id local id 66
+          id local id 53
         }
       }
     },
     {
-      id local id 64,
+      id local id 53,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -3079,7 +2636,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 63
+          id local id 52
         }
       },
       dbxref {
@@ -3088,120 +2645,13 @@ Seq-annot ::= {
           tag str "AAF24687.1"
         }
       }
-    },
-    {
-      id local id 65,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121243",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121243",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24688.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24688.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-5"
-        }
-      },
-      xref {
-        {
-          id local id 63
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24688.1"
-        }
-      }
-    },
-    {
-      id local id 66,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121243",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24689.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24689.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-5"
-        }
-      },
-      xref {
-        {
-          id local id 63
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24689.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 67,
+      id local id 54,
       data biosrc {
         org {
           orgname {
@@ -3259,7 +2709,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 68,
+      id local id 55,
       data gene {
         locus "X"
       },
@@ -3288,12 +2738,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 69
+          id local id 56
         }
       }
     },
     {
-      id local id 69,
+      id local id 56,
       data cdregion {
         frame one
       },
@@ -3330,7 +2780,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 68
+          id local id 55
         }
       },
       dbxref {
@@ -3341,7 +2791,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 57,
       data gene {
         locus "C"
       },
@@ -3370,25 +2820,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 71
-        },
-        {
-          id local id 72
+          id local id 58
         }
       }
     },
     {
-      id local id 71,
+      id local id 58,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121244",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
         }
       },
       qual {
@@ -3415,7 +2873,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 70
+          id local id 57
         }
       },
       dbxref {
@@ -3426,55 +2884,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 72,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121244",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24698.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24698.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-6"
-        }
-      },
-      xref {
-        {
-          id local id 70
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24698.1"
-        }
-      }
-    },
-    {
-      id local id 73,
+      id local id 59,
       data gene {
         locus "P"
       },
@@ -3514,12 +2924,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 74
+          id local id 60
         }
       }
     },
     {
-      id local id 74,
+      id local id 60,
       data cdregion {
         frame one
       },
@@ -3567,7 +2977,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 73
+          id local id 59
         }
       },
       dbxref {
@@ -3578,7 +2988,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 75,
+      id local id 61,
       data gene {
         locus "S"
       },
@@ -3618,24 +3028,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 76
-        },
-        {
-          id local id 77
-        },
-        {
-          id local id 78
+          id local id 62
         }
       }
     },
     {
-      id local id 76,
+      id local id 62,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -3677,7 +3108,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 75
+          id local id 61
         }
       },
       dbxref {
@@ -3686,120 +3117,13 @@ Seq-annot ::= {
           tag str "AAF24694.1"
         }
       }
-    },
-    {
-      id local id 77,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121244",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121244",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24695.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24695.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-6"
-        }
-      },
-      xref {
-        {
-          id local id 75
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24695.1"
-        }
-      }
-    },
-    {
-      id local id 78,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121244",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24696.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24696.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-6"
-        }
-      },
-      xref {
-        {
-          id local id 75
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24696.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 79,
+      id local id 63,
       data biosrc {
         org {
           orgname {
@@ -3857,7 +3181,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 80,
+      id local id 64,
       data gene {
         locus "X"
       },
@@ -3886,12 +3210,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 81
+          id local id 65
         }
       }
     },
     {
-      id local id 81,
+      id local id 65,
       data cdregion {
         frame one
       },
@@ -3928,7 +3252,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 80
+          id local id 64
         }
       },
       dbxref {
@@ -3939,7 +3263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 82,
+      id local id 66,
       data gene {
         locus "C"
       },
@@ -3968,25 +3292,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 83
-        },
-        {
-          id local id 84
+          id local id 67
         }
       }
     },
     {
-      id local id 83,
+      id local id 67,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121245",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
         }
       },
       qual {
@@ -4013,7 +3345,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 82
+          id local id 66
         }
       },
       dbxref {
@@ -4024,55 +3356,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 84,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121245",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24705.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24705.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-7"
-        }
-      },
-      xref {
-        {
-          id local id 82
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24705.1"
-        }
-      }
-    },
-    {
-      id local id 85,
+      id local id 68,
       data gene {
         locus "P"
       },
@@ -4112,12 +3396,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 86
+          id local id 69
         }
       }
     },
     {
-      id local id 86,
+      id local id 69,
       data cdregion {
         frame one
       },
@@ -4165,7 +3449,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 85
+          id local id 68
         }
       },
       dbxref {
@@ -4176,7 +3460,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 87,
+      id local id 70,
       data gene {
         locus "S"
       },
@@ -4216,24 +3500,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 88
-        },
-        {
-          id local id 89
-        },
-        {
-          id local id 90
+          id local id 71
         }
       }
     },
     {
-      id local id 88,
+      id local id 71,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -4275,7 +3580,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 87
+          id local id 70
         }
       },
       dbxref {
@@ -4284,120 +3589,13 @@ Seq-annot ::= {
           tag str "AAF24701.1"
         }
       }
-    },
-    {
-      id local id 89,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121245",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121245",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24702.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24702.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-7"
-        }
-      },
-      xref {
-        {
-          id local id 87
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24702.1"
-        }
-      }
-    },
-    {
-      id local id 90,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121245",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24703.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24703.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-7"
-        }
-      },
-      xref {
-        {
-          id local id 87
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24703.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 91,
+      id local id 72,
       data biosrc {
         org {
           orgname {
@@ -4455,7 +3653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 92,
+      id local id 73,
       data gene {
         locus "X"
       },
@@ -4484,12 +3682,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 93
+          id local id 74
         }
       }
     },
     {
-      id local id 93,
+      id local id 74,
       data cdregion {
         frame one
       },
@@ -4526,7 +3724,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 92
+          id local id 73
         }
       },
       dbxref {
@@ -4537,7 +3735,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 94,
+      id local id 75,
       data gene {
         locus "C"
       },
@@ -4566,25 +3764,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 95
-        },
-        {
-          id local id 96
+          id local id 76
         }
       }
     },
     {
-      id local id 95,
+      id local id 76,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121246",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
         }
       },
       qual {
@@ -4611,7 +3817,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 94
+          id local id 75
         }
       },
       dbxref {
@@ -4622,55 +3828,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 96,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121246",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24712.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24712.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-8"
-        }
-      },
-      xref {
-        {
-          id local id 94
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24712.1"
-        }
-      }
-    },
-    {
-      id local id 97,
+      id local id 77,
       data gene {
         locus "P"
       },
@@ -4710,12 +3868,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 98
+          id local id 78
         }
       }
     },
     {
-      id local id 98,
+      id local id 78,
       data cdregion {
         frame one
       },
@@ -4763,7 +3921,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 97
+          id local id 77
         }
       },
       dbxref {
@@ -4774,7 +3932,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 99,
+      id local id 79,
       data gene {
         locus "S"
       },
@@ -4814,24 +3972,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 100
-        },
-        {
-          id local id 101
-        },
-        {
-          id local id 102
+          id local id 80
         }
       }
     },
     {
-      id local id 100,
+      id local id 80,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -4873,7 +4052,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 99
+          id local id 79
         }
       },
       dbxref {
@@ -4882,120 +4061,13 @@ Seq-annot ::= {
           tag str "AAF24708.1"
         }
       }
-    },
-    {
-      id local id 101,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121246",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121246",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24709.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24709.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-8"
-        }
-      },
-      xref {
-        {
-          id local id 99
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24709.1"
-        }
-      }
-    },
-    {
-      id local id 102,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121246",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24710.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24710.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-8"
-        }
-      },
-      xref {
-        {
-          id local id 99
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24710.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 103,
+      id local id 81,
       data biosrc {
         org {
           orgname {
@@ -5053,7 +4125,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 104,
+      id local id 82,
       data gene {
         locus "X"
       },
@@ -5082,12 +4154,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 105
+          id local id 83
         }
       }
     },
     {
-      id local id 105,
+      id local id 83,
       data cdregion {
         frame one
       },
@@ -5124,7 +4196,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 104
+          id local id 82
         }
       },
       dbxref {
@@ -5135,7 +4207,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 106,
+      id local id 84,
       data gene {
         locus "C"
       },
@@ -5164,25 +4236,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 107
-        },
-        {
-          id local id 108
+          id local id 85
         }
       }
     },
     {
-      id local id 107,
+      id local id 85,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121247",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
         }
       },
       qual {
@@ -5209,7 +4289,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 106
+          id local id 84
         }
       },
       dbxref {
@@ -5220,55 +4300,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 108,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121247",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24719.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24719.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-9"
-        }
-      },
-      xref {
-        {
-          id local id 106
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24719.1"
-        }
-      }
-    },
-    {
-      id local id 109,
+      id local id 86,
       data gene {
         locus "P"
       },
@@ -5308,12 +4340,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 110
+          id local id 87
         }
       }
     },
     {
-      id local id 110,
+      id local id 87,
       data cdregion {
         frame one
       },
@@ -5361,7 +4393,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 109
+          id local id 86
         }
       },
       dbxref {
@@ -5372,7 +4404,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 111,
+      id local id 88,
       data gene {
         locus "S"
       },
@@ -5412,24 +4444,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 112
-        },
-        {
-          id local id 113
-        },
-        {
-          id local id 114
+          id local id 89
         }
       }
     },
     {
-      id local id 112,
+      id local id 89,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -5471,7 +4524,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 111
+          id local id 88
         }
       },
       dbxref {
@@ -5480,120 +4533,13 @@ Seq-annot ::= {
           tag str "AAF24715.1"
         }
       }
-    },
-    {
-      id local id 113,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121247",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121247",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24716.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24716.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-9"
-        }
-      },
-      xref {
-        {
-          id local id 111
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24716.1"
-        }
-      }
-    },
-    {
-      id local id 114,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121247",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24717.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24717.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-9"
-        }
-      },
-      xref {
-        {
-          id local id 111
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24717.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 115,
+      id local id 90,
       data biosrc {
         org {
           orgname {
@@ -5651,7 +4597,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 116,
+      id local id 91,
       data gene {
         locus "X"
       },
@@ -5680,12 +4626,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 117
+          id local id 92
         }
       }
     },
     {
-      id local id 117,
+      id local id 92,
       data cdregion {
         frame one
       },
@@ -5722,7 +4668,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 116
+          id local id 91
         }
       },
       dbxref {
@@ -5733,7 +4679,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 118,
+      id local id 93,
       data gene {
         locus "C"
       },
@@ -5762,12 +4708,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 119
+          id local id 94
         }
       }
     },
     {
-      id local id 119,
+      id local id 94,
       data cdregion {
         frame one
       },
@@ -5804,7 +4750,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 118
+          id local id 93
         }
       },
       dbxref {
@@ -5815,7 +4761,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 120,
+      id local id 95,
       data imp {
         key "misc_feature"
       },
@@ -5841,7 +4787,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 121,
+      id local id 96,
       data gene {
         locus "P"
       },
@@ -5881,12 +4827,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 122
+          id local id 97
         }
       }
     },
     {
-      id local id 122,
+      id local id 97,
       data cdregion {
         frame one
       },
@@ -5934,7 +4880,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 121
+          id local id 96
         }
       },
       dbxref {
@@ -5945,7 +4891,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 123,
+      id local id 98,
       data gene {
         locus "S"
       },
@@ -5985,24 +4931,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 124
-        },
-        {
-          id local id 125
-        },
-        {
-          id local id 126
+          id local id 99
         }
       }
     },
     {
-      id local id 124,
+      id local id 99,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -6044,7 +5011,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 123
+          id local id 98
         }
       },
       dbxref {
@@ -6053,120 +5020,13 @@ Seq-annot ::= {
           tag str "AAF24722.1"
         }
       }
-    },
-    {
-      id local id 125,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121248",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121248",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24723.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24723.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-10"
-        }
-      },
-      xref {
-        {
-          id local id 123
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24723.1"
-        }
-      }
-    },
-    {
-      id local id 126,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121248",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24724.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24724.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-10"
-        }
-      },
-      xref {
-        {
-          id local id 123
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24724.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 127,
+      id local id 100,
       data biosrc {
         org {
           orgname {
@@ -6224,7 +5084,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 128,
+      id local id 101,
       data gene {
         locus "X"
       },
@@ -6253,12 +5113,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 129
+          id local id 102
         }
       }
     },
     {
-      id local id 129,
+      id local id 102,
       data cdregion {
         frame one
       },
@@ -6295,7 +5155,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 128
+          id local id 101
         }
       },
       dbxref {
@@ -6306,7 +5166,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 130,
+      id local id 103,
       data gene {
         locus "C"
       },
@@ -6335,25 +5195,33 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 131
-        },
-        {
-          id local id 132
+          id local id 104
         }
       }
     },
     {
-      id local id 131,
+      id local id 104,
       data cdregion {
         frame one
       },
-      location int {
-        from 1813,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121249",
-          version 1
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
         }
       },
       qual {
@@ -6380,7 +5248,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 130
+          id local id 103
         }
       },
       dbxref {
@@ -6391,55 +5259,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 132,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 1900,
-        to 2451,
-        strand plus,
-        id genbank {
-          accession "AF121249",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24732.1"
-        },
-        {
-          qual "gene",
-          val "C"
-        },
-        {
-          qual "product",
-          val "core protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24732.1"
-        },
-        {
-          qual "Parent",
-          val "gene-C-11"
-        }
-      },
-      xref {
-        {
-          id local id 130
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24732.1"
-        }
-      }
-    },
-    {
-      id local id 133,
+      id local id 105,
       data gene {
         locus "P"
       },
@@ -6479,12 +5299,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 134
+          id local id 106
         }
       }
     },
     {
-      id local id 134,
+      id local id 106,
       data cdregion {
         frame one
       },
@@ -6532,7 +5352,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 133
+          id local id 105
         }
       },
       dbxref {
@@ -6543,7 +5363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 135,
+      id local id 107,
       data gene {
         locus "S"
       },
@@ -6583,24 +5403,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 136
-        },
-        {
-          id local id 137
-        },
-        {
-          id local id 138
+          id local id 108
         }
       }
     },
     {
-      id local id 136,
+      id local id 108,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -6642,7 +5483,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 135
+          id local id 107
         }
       },
       dbxref {
@@ -6651,120 +5492,13 @@ Seq-annot ::= {
           tag str "AAF24728.1"
         }
       }
-    },
-    {
-      id local id 137,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121249",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121249",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24729.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24729.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-11"
-        }
-      },
-      xref {
-        {
-          id local id 135
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24729.1"
-        }
-      }
-    },
-    {
-      id local id 138,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121249",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24730.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24730.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-11"
-        }
-      },
-      xref {
-        {
-          id local id 135
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24730.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 139,
+      id local id 109,
       data biosrc {
         org {
           orgname {
@@ -6822,7 +5556,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 140,
+      id local id 110,
       data gene {
         locus "X"
       },
@@ -6851,12 +5585,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 141
+          id local id 111
         }
       }
     },
     {
-      id local id 141,
+      id local id 111,
       data cdregion {
         frame one
       },
@@ -6893,7 +5627,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 140
+          id local id 110
         }
       },
       dbxref {
@@ -6904,7 +5638,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 142,
+      id local id 112,
       data gene {
         locus "C"
       },
@@ -6933,12 +5667,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 143
+          id local id 113
         }
       }
     },
     {
-      id local id 143,
+      id local id 113,
       data cdregion {
         frame one
       },
@@ -6975,7 +5709,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 142
+          id local id 112
         }
       },
       dbxref {
@@ -6986,7 +5720,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 144,
+      id local id 114,
       data imp {
         key "misc_feature"
       },
@@ -7012,7 +5746,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 145,
+      id local id 115,
       data gene {
         locus "P"
       },
@@ -7052,12 +5786,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 146
+          id local id 116
         }
       }
     },
     {
-      id local id 146,
+      id local id 116,
       data cdregion {
         frame one
       },
@@ -7105,7 +5839,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 145
+          id local id 115
         }
       },
       dbxref {
@@ -7116,7 +5850,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 147,
+      id local id 117,
       data gene {
         locus "S"
       },
@@ -7156,24 +5890,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 148
-        },
-        {
-          id local id 149
-        },
-        {
-          id local id 150
+          id local id 118
         }
       }
     },
     {
-      id local id 148,
+      id local id 118,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -7215,7 +5970,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 147
+          id local id 117
         }
       },
       dbxref {
@@ -7224,120 +5979,13 @@ Seq-annot ::= {
           tag str "AAF24735.1"
         }
       }
-    },
-    {
-      id local id 149,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121250",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121250",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24736.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24736.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-12"
-        }
-      },
-      xref {
-        {
-          id local id 147
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24736.1"
-        }
-      }
-    },
-    {
-      id local id 150,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121250",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24737.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24737.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-12"
-        }
-      },
-      xref {
-        {
-          id local id 147
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24737.1"
-        }
-      }
     }
   }
 }
 Seq-annot ::= {
   data ftable {
     {
-      id local id 151,
+      id local id 119,
       data biosrc {
         org {
           orgname {
@@ -7395,7 +6043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 152,
+      id local id 120,
       data gene {
         locus "X"
       },
@@ -7424,12 +6072,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 153
+          id local id 121
         }
       }
     },
     {
-      id local id 153,
+      id local id 121,
       data cdregion {
         frame one
       },
@@ -7466,7 +6114,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 152
+          id local id 120
         }
       },
       dbxref {
@@ -7477,7 +6125,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 154,
+      id local id 122,
       data gene {
         locus "C"
       },
@@ -7506,12 +6154,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 155
+          id local id 123
         }
       }
     },
     {
-      id local id 155,
+      id local id 123,
       data cdregion {
         frame one
       },
@@ -7548,7 +6196,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 154
+          id local id 122
         }
       },
       dbxref {
@@ -7559,7 +6207,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 156,
+      id local id 124,
       data imp {
         key "misc_feature"
       },
@@ -7585,7 +6233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 157,
+      id local id 125,
       data gene {
         locus "P"
       },
@@ -7625,12 +6273,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 158
+          id local id 126
         }
       }
     },
     {
-      id local id 158,
+      id local id 126,
       data cdregion {
         frame one
       },
@@ -7678,7 +6326,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 157
+          id local id 125
         }
       },
       dbxref {
@@ -7689,7 +6337,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 159,
+      id local id 127,
       data gene {
         locus "S"
       },
@@ -7729,24 +6377,45 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 160
-        },
-        {
-          id local id 161
-        },
-        {
-          id local id 162
+          id local id 128
         }
       }
     },
     {
-      id local id 160,
+      id local id 128,
       data cdregion {
         frame one
       },
       location mix {
         int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
           from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 3204,
           to 3214,
           strand plus,
           id genbank {
@@ -7788,120 +6457,13 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 159
+          id local id 127
         }
       },
       dbxref {
         {
           db "NCBI_GP",
           tag str "AAF24741.1"
-        }
-      }
-    },
-    {
-      id local id 161,
-      data cdregion {
-        frame one
-      },
-      location mix {
-        int {
-          from 3204,
-          to 3214,
-          strand plus,
-          id genbank {
-            accession "AF121251",
-            version 1
-          }
-        },
-        int {
-          from 0,
-          to 834,
-          strand plus,
-          id genbank {
-            accession "AF121251",
-            version 1
-          }
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24742.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "middle S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24742.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-13"
-        }
-      },
-      xref {
-        {
-          id local id 159
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24742.1"
-        }
-      }
-    },
-    {
-      id local id 162,
-      data cdregion {
-        frame one
-      },
-      location int {
-        from 154,
-        to 834,
-        strand plus,
-        id genbank {
-          accession "AF121251",
-          version 1
-        }
-      },
-      qual {
-        {
-          qual "ID",
-          val "cds-AAF24743.1"
-        },
-        {
-          qual "gene",
-          val "S"
-        },
-        {
-          qual "product",
-          val "S protein"
-        },
-        {
-          qual "protein_id",
-          val "AAF24743.1"
-        },
-        {
-          qual "Parent",
-          val "gene-S-13"
-        }
-      },
-      xref {
-        {
-          id local id 159
-        }
-      },
-      dbxref {
-        {
-          db "NCBI_GP",
-          tag str "AAF24743.1"
         }
       }
     }
