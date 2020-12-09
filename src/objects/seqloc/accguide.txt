@@ -1310,6 +1310,9 @@ version  1 # of file format
 2+6  OG  ddbj_patent
 2+8  OG  ddbj_other_nuc
 2+10 OG  ddbj_other_nuc
+2+6  OH  ddbj_est
+2+8  OH  ddbj_other_nuc
+2+10 OH  ddbj_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
