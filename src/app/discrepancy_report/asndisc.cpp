@@ -301,20 +301,20 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         severity = Tests->Summarize();
     }
     else {
-        for (auto& tname : m_Tests) {
-            Tests->AddTest(tname);
-        }
-        Tests->SetLineage(m_Lineage);
         for (auto& fname : m_Files) {
+            for (auto& tname : m_Tests) {
+                Tests->AddTest(tname);
+            }
+            Tests->SetLineage(m_Lineage);
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
             x_ProcessFile(fname, *Tests);
-        }
-        severity = Tests->Summarize();
-        if (m_AutoFix) {
-            x_Autofix(*Tests);
+            severity = Tests->Summarize();
+            if (m_AutoFix) {
+                x_Autofix(*Tests);
+            }
         }
     }
     unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0) | CDiscrepancySet::eOutput_Files;
