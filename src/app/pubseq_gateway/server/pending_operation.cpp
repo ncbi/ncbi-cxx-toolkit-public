@@ -84,7 +84,9 @@ void CPendingOperation::Clear()
               ", this: " << this);
 
     m_Reply->Clear();
+    m_Started = false;
     m_ConnectionCancelled = false;
+    m_InProcess = false;
 }
 
 
@@ -138,6 +140,19 @@ void CPendingOperation::Peek(bool  need_wait)
     m_InProcess = false;
 
     if (processor_status != IPSGS_Processor::ePSGS_InProgress) {
+        // The SignalFinishProcessing() call needs to be made even if it has
+        // already been called.
+        // The processor may think it has finished but the output is not ready
+        // so the final Flush() cannot be called. The processors group may not
+        // be deleted before the output is finally flushed.
+        // So one of the consequent SignalFinishProcessing() calls will detect
+        // again that all the members of the group finished and that the output
+        // is ready then the dispatcher will:
+        // - prepare the final PSG chunk
+        // - call the last flush for the output
+        // - do request stop
+        // - destroy the processors group which will free all the
+        //   allocated memory
         CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
                                                             m_Processor.get());
     }

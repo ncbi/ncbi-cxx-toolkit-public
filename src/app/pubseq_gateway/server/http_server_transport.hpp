@@ -357,7 +357,7 @@ private:
     void NeedOutput(void)
     {
         if (m_State == eReplyFinished) {
-            PSG_INFO("NeedOutput -> finished -> wake");
+            PSG_TRACE("NeedOutput -> finished -> wake");
             m_HttpProto->WakeWorker();
         } else {
             PeekPending();
@@ -368,11 +368,11 @@ private:
     // using this connection
     void StopCB(void)
     {
-        PSG_INFO("CHttpReply::Stop");
+        PSG_TRACE("CHttpReply::Stop");
         m_OutputIsReady = true;
         m_OutputFinished = true;
         if (m_State != eReplyFinished) {
-            PSG_INFO("CHttpReply::Stop: need cancel");
+            PSG_TRACE("CHttpReply::Stop: need cancel");
             DoCancel();
             NeedOutput();
         }
@@ -385,23 +385,33 @@ private:
     // it is ready for the next portion
     void ProceedCB(void)
     {
-        PSG_INFO("CHttpReply::Proceed");
+        PSG_TRACE("CHttpReply::Proceed");
         m_OutputIsReady = true;
         NeedOutput();
     }
 
     static void s_StopCB(h2o_generator_t *  _generator, h2o_req_t *  req)
     {
-        CHttpReply<P> *     repl = CONTAINER_OF(_generator, CHttpReply<P>,
-                                                m_RespGenerator);
-        repl->StopCB();
+        // Note: it is expected to have a warning here.
+        // h2o_req_t structure does not have any user data field so a pointer
+        // to a reply is calculated by a pointer to one of it members.
+        // Unfortunately the reply has a non POD member as well - a list of
+        // pending operations for the request - so there is a warning.
+        CHttpReply<P> *     http_reply = CONTAINER_OF(_generator, CHttpReply<P>,
+                                                      m_RespGenerator);
+        http_reply->StopCB();
     }
 
     static void s_ProceedCB(h2o_generator_t *  _generator, h2o_req_t *  req)
     {
-        CHttpReply<P> *     repl = CONTAINER_OF(_generator, CHttpReply<P>,
-                                                m_RespGenerator);
-        repl->ProceedCB();
+        // Note: it is expected to have a warning here.
+        // h2o_req_t structure does not have any user data field so a pointer
+        // to a reply is calculated by a pointer to one of it members.
+        // Unfortunately the reply has a non POD member as well - a list of
+        // pending operations for the request - so there is a warning.
+        CHttpReply<P> *     http_reply = CONTAINER_OF(_generator, CHttpReply<P>,
+                                                      m_RespGenerator);
+        http_reply->ProceedCB();
     }
 
     void x_DoSend(h2o_iovec_t *  vec, size_t  count, bool  is_last,
@@ -637,7 +647,7 @@ public:
 
     void OnBeforeClosedConnection(void)
     {
-        PSG_INFO("OnBeforeClosedConnection:");
+        PSG_TRACE("OnBeforeClosedConnection:");
         m_IsClosed = true;
         x_CancelAll();
     }
@@ -971,12 +981,12 @@ public:
         m_H2oCtxInitialized(false),
         m_HttpAcceptCtx({0})
     {
-        PSG_INFO("CHttpProto::CHttpProto");
+        PSG_TRACE("CHttpProto::CHttpProto");
     }
 
     ~CHttpProto()
     {
-        PSG_INFO("~CHttpProto");
+        PSG_TRACE("~CHttpProto");
     }
 
     void BeforeStart(void)
