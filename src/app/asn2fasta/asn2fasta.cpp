@@ -111,14 +111,14 @@ private:
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
 
-    auto_ptr<CFastaOstreamEx>     m_Os;           // all sequence output stream
+    unique_ptr<CFastaOstreamEx> m_Os;           // all sequence output stream
 
-    auto_ptr<CFastaOstreamEx>     m_On;           // nucleotide output stream
-    auto_ptr<CFastaOstreamEx>     m_Og;           // genomic output stream
-    auto_ptr<CFastaOstreamEx>     m_Or;           // RNA output stream
-    auto_ptr<CFastaOstreamEx>     m_Op;           // protein output stream
-    auto_ptr<CFastaOstreamEx>     m_Ou;           // unknown output stream
-    CNcbiOstream*                 m_Oq;           // quality score output stream
+    unique_ptr<CFastaOstreamEx> m_On;           // nucleotide output stream
+    unique_ptr<CFastaOstreamEx> m_Og;           // genomic output stream
+    unique_ptr<CFastaOstreamEx> m_Or;           // RNA output stream
+    unique_ptr<CFastaOstreamEx> m_Op;           // protein output stream
+    unique_ptr<CFastaOstreamEx> m_Ou;           // unknown output stream
+    CNcbiOstream*               m_Oq;           // quality score output stream
     unique_ptr<CQualScoreWriter>  m_pQualScoreWriter;
 
     string                      m_OgHead;
@@ -157,7 +157,7 @@ CAsn2FastaApp::~CAsn2FastaApp (void)
 void CAsn2FastaApp::Init(void)
 //  --------------------------------------------------------------------------
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
         "Convert an ASN.1 Seq-entry into a FASTA report",
@@ -341,7 +341,7 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
         }
     }
 
-    auto_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
+    unique_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
     fasta_os->SetAllFlags(        
         CFastaOstreamEx::fInstantiateGaps |
         CFastaOstreamEx::fAssembleParts |
