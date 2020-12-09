@@ -1,11 +1,16 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbiargs)
+
   NCBI_sources(test_ncbiargs)
   NCBI_uses_toolkit_libraries(xncbi)
+
+  NCBI_begin_test(test_ncbiargs)
+    NCBI_set_test_command(test_ncbiargs.sh)
+    NCBI_set_test_assets(test_ncbiargs.sh)
+  NCBI_end_test()
+
   NCBI_project_watchers(gouriano ivanov)
-  NCBI_add_test(test_ncbiargs.sh)
+
 NCBI_end_app()
 

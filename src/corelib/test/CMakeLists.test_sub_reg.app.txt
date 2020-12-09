@@ -1,15 +1,16 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_sub_reg)
+
   NCBI_sources(test_sub_reg)
   NCBI_uses_toolkit_libraries(xncbi)
-  NCBI_project_watchers(ucko)
 
-  NCBI_begin_test()
+  NCBI_begin_test(test_sub_reg)
     NCBI_set_test_command(test_sub_reg.sh)
     NCBI_set_test_assets(test_sub_reg.sh test_sub_reg_data)
   NCBI_end_test()
+
+  NCBI_project_watchers(ucko)
+
 NCBI_end_app()
 

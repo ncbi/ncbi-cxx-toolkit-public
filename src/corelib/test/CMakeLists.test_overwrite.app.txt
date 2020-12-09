@@ -1,9 +1,8 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_overwrite)
   NCBI_sources(overwrite)
   NCBI_uses_toolkit_libraries(xncbi)
+#  NCBI_add_test()
   NCBI_project_watchers(vasilche)
 NCBI_end_app()

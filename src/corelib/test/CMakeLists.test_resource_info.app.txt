@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_resource_info)
   NCBI_sources(test_resource_info)
   NCBI_uses_toolkit_libraries(xncbi)
-  NCBI_project_watchers(grichenk)
-
   NCBI_set_test_assets(resinfo_plain.txt .ncbi_test_key .ncbi_keys.domain test_resource_info.ini)
   NCBI_add_test()
+  NCBI_project_watchers(grichenk)
 NCBI_end_app()
 

@@ -1,8 +1,7 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbitime)
+
   NCBI_sources(test_ncbitime)
   NCBI_uses_toolkit_libraries(xncbi)
 
@@ -12,5 +11,6 @@ NCBI_begin_app(test_ncbitime)
   NCBI_end_test()
 
   NCBI_project_watchers(ivanov)
+
 NCBI_end_app()
 

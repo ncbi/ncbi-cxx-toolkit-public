@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbiargs_sample)
+
   NCBI_sources(test_ncbiargs_sample)
   NCBI_uses_toolkit_libraries(xncbi)
-  NCBI_project_watchers(vakatov)
 
   NCBI_begin_test(test_ncbiargs_sample1)
     NCBI_set_test_command(test_ncbiargs_sample -k a -f1 -ko true foo - B False t f)
@@ -19,6 +17,8 @@ NCBI_begin_app(test_ncbiargs_sample)
   NCBI_begin_test(test_ncbiargs_sample4)
     NCBI_set_test_command(test_ncbiargs_sample -help)
   NCBI_end_test()
+
+  NCBI_project_watchers(vakatov)
 
 NCBI_end_app()
 

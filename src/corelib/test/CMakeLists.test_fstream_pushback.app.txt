@@ -1,11 +1,16 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_fstream_pushback)
+
   NCBI_sources(test_fstream_pushback)
   NCBI_uses_toolkit_libraries(test_mt xpbacktest)
-  NCBI_add_test(test_fstream_pushback.sh)
+
+  NCBI_begin_test(test_fstream_pushback)
+    NCBI_set_test_command(test_fstream_pushback.sh)
+    NCBI_set_test_assets(test_fstream_pushback.sh)
+  NCBI_end_test()
+
   NCBI_project_watchers(lavr)
+
 NCBI_end_app()
 
