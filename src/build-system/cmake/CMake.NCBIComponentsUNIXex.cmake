@@ -65,9 +65,10 @@ set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 ############################################################################
 # Kerberos 5 (via GSSAPI)
-find_external_library(KRB5 INCLUDES gssapi/gssapi_krb5.h LIBS gssapi_krb5 krb5 k5crypto com_err)
-if(KRB5_FOUND)
-    set(HAVE_LIBKRB5 1)
+NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err)
+if(NCBI_COMPONENT_KRB5_FOUND)
+    set(KRB5_INCLUDE ${NCBI_COMPONENT_KRB5_INCLUDE})
+    set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
 endif()
 
 #############################################################################
@@ -222,19 +223,15 @@ endif(NOT NCBI_COMPONENT_UNWIND_DISABLED)
 
 ##############################################################################
 # UUID
-NCBI_find_library(UUID uuid)
+NCBI_define_Xcomponent(NAME UUID MODULE uuid LIB uuid)
 
 ##############################################################################
 # CURL
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(CURL CURL)
-else()
-    NCBI_find_library(CURL curl)
-endif()
+NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl)
 
 #############################################################################
 # LMDB
-NCBI_define_component(LMDB lmdb)
+NCBI_define_Xcomponent(NAME LMDB LIB lmdb)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
     set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
@@ -243,9 +240,7 @@ endif()
 
 #############################################################################
 # PCRE
-if(NOT USE_LOCAL_PCRE)
-    NCBI_find_library(PCRE pcre)
-endif()
+NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
@@ -254,11 +249,7 @@ endif()
 
 #############################################################################
 # Z
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(Z ZLIB)
-else()
-    NCBI_find_library(Z z)
-endif()
+NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
     set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
@@ -267,13 +258,7 @@ endif()
 
 #############################################################################
 # BZ2
-if(NOT USE_LOCAL_BZLIB)
-    if(PKG_CONFIG_FOUND)
-        NCBI_find_package(BZ2 BZip2)
-    else()
-        NCBI_find_library(BZ2 bz2)
-    endif()
-endif()
+NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
     set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
@@ -282,7 +267,7 @@ endif()
 
 #############################################################################
 # LZO
-NCBI_define_component(LZO lzo2)
+NCBI_define_Xcomponent(NAME LZO LIB lzo2)
 
 #############################################################################
 # BOOST
@@ -330,35 +315,19 @@ endif()
 
 #############################################################################
 # JPEG
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(JPEG JPEG)
-else()
-    NCBI_find_library(JPEG jpeg)
-endif()
+NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg)
 
 #############################################################################
 # PNG
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(PNG PNG)
-else()
-    NCBI_find_library(PNG png)
-endif()
+NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
 
 #############################################################################
 # GIF
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(GIF GIF)
-else()
-    NCBI_find_library(GIF gif)
-endif()
+NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
 
 #############################################################################
 # TIFF
-if(PKG_CONFIG_FOUND)
-    NCBI_find_package(TIFF TIFF)
-else()
-    NCBI_find_library(TIFF tiff)
-endif()
+NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
 
 #############################################################################
 # TLS
@@ -367,7 +336,7 @@ list(APPEND NCBI_ALL_COMPONENTS TLS)
 
 #############################################################################
 # FASTCGI
-NCBI_define_component(FASTCGI fcgi)
+NCBI_define_Xcomponent(NAME FASTCGI LIB fcgi)
 if(NCBI_COMPONENT_FASTCGI_FOUND)
     list(APPEND NCBI_ALL_LEGACY Fast-CGI)
     set(NCBI_COMPONENT_Fast-CGI_FOUND FASTCGI)
@@ -375,12 +344,7 @@ endif()
 
 #############################################################################
 # SQLITE3
-if(PKG_CONFIG_FOUND)
-    NCBI_find_module(SQLITE3 sqlite3)
-endif()
-if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
-    NCBI_define_component(SQLITE3 sqlite3)
-endif()
+NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
     check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
     check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -388,7 +352,7 @@ endif()
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_component(BerkeleyDB db)
+NCBI_define_Xcomponent(NAME BerkeleyDB LIB db)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -423,7 +387,7 @@ if(_files)
     list(GET _files 0 NCBI_ThirdParty_Sybase)
 endif()
 #NCBI_define_component(Sybase sybdb64 sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
-NCBI_define_component(Sybase          sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
+NCBI_define_Xcomponent(NAME Sybase  LIB sybblk_r64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(NCBI_COMPONENT_Sybase_DEFINES ${NCBI_COMPONENT_Sybase_DEFINES} SYB_LP64)
     set(SYBASE_PATH ${NCBI_ThirdParty_SybaseNetPath})
@@ -432,10 +396,7 @@ endif()
 
 #############################################################################
 # PYTHON
-NCBI_define_component(PYTHON python3.8 python3)
-if (NCBI_COMPONENT_PYTHON_FOUND)
-    set(NCBI_COMPONENT_PYTHON_INCLUDE ${NCBI_COMPONENT_PYTHON_INCLUDE}/python3.8)
-endif()
+NCBI_define_Xcomponent(NAME PYTHON LIB python3.8 python3 INCLUDE python3.8)
 
 #############################################################################
 # VDB
@@ -590,7 +551,7 @@ endif()
 
 #############################################################################
 # XLSXWRITER
-NCBI_define_component(XLSXWRITER xlsxwriter)
+NCBI_define_Xcomponent(NAME XLSXWRITER LIB xlsxwriter)
 if(NCBI_COMPONENT_XLSXWRITER_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBXLSXWRITER)
     set(NCBI_COMPONENT_LIBXLSXWRITER_FOUND XLSXWRITER)
