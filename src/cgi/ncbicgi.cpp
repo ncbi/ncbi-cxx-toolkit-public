@@ -1139,7 +1139,7 @@ void CCgiRequest::x_Init
     TCgiEntries::const_iterator empty_it = m_Entries.find(kEmptyStr);
     if (empty_it != m_Entries.end()) {
         // there is already empty name key
-        ERR_POST_X(5, "Encountered query parameter with empty name, "
+        ERR_POST_X(5, Warning << "Encountered query parameter with empty name, "
             "its value is: '" << empty_it->second << "'. ATTENTION: "
             "Because of this, check for image names will be disabled.");
         return;
