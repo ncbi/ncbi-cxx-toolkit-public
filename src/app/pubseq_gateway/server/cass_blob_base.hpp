@@ -165,10 +165,7 @@ private:
 
 protected:
     // Used for get blob by sat/sat key request
-    SCass_BlobId                    m_BlobId;
-
-    // Used by get/getblob/gettsechunk processors
-    bool                            m_Cancelled;
+    SCass_BlobId                                        m_BlobId;
 
 private:
     bool                                                m_NeedToParseId2Info;
@@ -176,7 +173,7 @@ private:
     string                                              m_ProcessorId;
 
     // last_modified from the original blob props
-    CBlobRecord::TTimestamp         m_LastModified;
+    CBlobRecord::TTimestamp                             m_LastModified;
 };
 
 #endif  // PSGS_CASSBLOBBASE__HPP

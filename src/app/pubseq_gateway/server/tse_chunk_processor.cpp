@@ -43,8 +43,7 @@ USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
 CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor() :
-    m_TSEChunkRequest(nullptr),
-    m_InPeek(false)
+    m_TSEChunkRequest(nullptr)
 {}
 
 
@@ -57,8 +56,7 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
     CPSGS_CassProcessorBase(request, reply, priority),
     CPSGS_CassBlobBase(request, reply, GetName()),
     m_SatInfoChunkVerId2Info(sat_info_chunk_ver_id2info),
-    m_IdModVerId2Info(id_mod_ver_id2info),
-    m_InPeek(false)
+    m_IdModVerId2Info(id_mod_ver_id2info)
 {
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_TSEChunkRequest>() everywhere

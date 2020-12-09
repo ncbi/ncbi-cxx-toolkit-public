@@ -44,9 +44,7 @@ using namespace std::placeholders;
 
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
-    m_AnnotRequest(nullptr),
-    m_Cancelled(false),
-    m_InPeek(false)
+    m_AnnotRequest(nullptr)
 {}
 
 
@@ -61,9 +59,7 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_AnnotProcessor::x_OnResolutionGoodData,
-                           this)),
-    m_Cancelled(false),
-    m_InPeek(false)
+                           this))
 {
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_AnnotRequest>() everywhere

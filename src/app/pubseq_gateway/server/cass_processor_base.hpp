@@ -73,6 +73,9 @@ protected:
     // m_Completed signals such conditions
     bool                            m_Completed;
 
+    bool                            m_Cancelled;
+    bool                            m_InPeek;
+
     // The overall processor status.
     // It should not interfere the other processor statuses and be updated
     // exclusively on per processor basis.

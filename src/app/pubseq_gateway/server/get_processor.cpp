@@ -42,8 +42,7 @@ using namespace std::placeholders;
 
 
 CPSGS_GetProcessor::CPSGS_GetProcessor() :
-    m_BlobRequest(nullptr),
-    m_InPeek(false)
+    m_BlobRequest(nullptr)
 {}
 
 
@@ -58,8 +57,7 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_GetProcessor::x_OnResolutionGoodData,
                            this)),
-    CPSGS_CassBlobBase(request, reply, GetName()),
-    m_InPeek(false)
+    CPSGS_CassBlobBase(request, reply, GetName())
 {
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>() everywhere

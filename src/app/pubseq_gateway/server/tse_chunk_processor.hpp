@@ -32,7 +32,6 @@
  *
  */
 
-#include "ipsgs_processor.hpp"
 #include "cass_blob_base.hpp"
 #include "id2info.hpp"
 
@@ -43,8 +42,7 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_TSEChunkProcessor : public IPSGS_Processor,
-                                public CPSGS_CassBlobBase
+class CPSGS_TSEChunkProcessor : public CPSGS_CassBlobBase
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -112,7 +110,7 @@ private:
 
 private:
     void x_Peek(bool  need_wait);
-    void x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
 
 private:

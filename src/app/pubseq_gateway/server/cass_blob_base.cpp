@@ -49,7 +49,6 @@ using namespace std::placeholders;
 
 
 CPSGS_CassBlobBase::CPSGS_CassBlobBase() :
-    m_Cancelled(false),
     m_LastModified(-1)
 {}
 
@@ -58,7 +57,6 @@ CPSGS_CassBlobBase::CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
                                        shared_ptr<CPSGS_Reply>  reply,
                                        const string &  processor_id) :
     CPSGS_CassProcessorBase(request, reply),
-    m_Cancelled(false),
     m_NeedToParseId2Info(true),
     m_ProcessorId(processor_id),
     m_LastModified(-1)

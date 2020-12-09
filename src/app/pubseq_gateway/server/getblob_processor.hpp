@@ -79,8 +79,6 @@ private:
 
 private:
     SPSGS_BlobBySatSatKeyRequest *  m_BlobRequest;
-
-    bool                            m_InPeek;
 };
 
 #endif  // PSGS_GETBLOBPROCESSOR__HPP

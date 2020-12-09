@@ -42,9 +42,7 @@ using namespace std::placeholders;
 
 
 CPSGS_ResolveProcessor::CPSGS_ResolveProcessor() :
-    m_ResolveRequest(nullptr),
-    m_Cancelled(false),
-    m_InPeek(false)
+    m_ResolveRequest(nullptr)
 {}
 
 
@@ -59,9 +57,7 @@ CPSGS_ResolveProcessor::CPSGS_ResolveProcessor(
                       bind(&CPSGS_ResolveProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_ResolveProcessor::x_OnResolutionGoodData,
-                           this)),
-    m_Cancelled(false),
-    m_InPeek(false)
+                           this))
 {
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_ResolveRequest>() everywhere
@@ -193,11 +189,13 @@ void CPSGS_ResolveProcessor::Cancel(void)
 IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
-    if (status == IPSGS_Processor::ePSGS_InProgress)
+    if (status == IPSGS_Processor::ePSGS_InProgress) {
         return status;
+    }
 
-    if (m_Cancelled)
+    if (m_Cancelled) {
         return IPSGS_Processor::ePSGS_Cancelled;
+    }
 
     return status;
 }

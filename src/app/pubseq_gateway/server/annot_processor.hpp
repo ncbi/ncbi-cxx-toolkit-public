@@ -96,8 +96,6 @@ private:
     vector<string>              m_ValidNames;
 
     SPSGS_AnnotRequest *        m_AnnotRequest;
-    bool                        m_Cancelled;
-    bool                        m_InPeek;
 };
 
 #endif  // PSGS_RESOLVEPROCESSOR__HPP

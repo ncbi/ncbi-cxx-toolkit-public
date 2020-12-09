@@ -41,6 +41,8 @@
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
     m_Completed(false),
+    m_Cancelled(false),
+    m_InPeek(false),
     m_Status(CRequestStatus::e200_Ok)
 {}
 
@@ -50,6 +52,8 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
                                             shared_ptr<CPSGS_Reply> reply,
                                             TProcessorPriority  priority) :
     m_Completed(false),
+    m_Cancelled(false),
+    m_InPeek(false),
     m_Status(CRequestStatus::e200_Ok)
 {
     IPSGS_Processor::m_Request = request;
