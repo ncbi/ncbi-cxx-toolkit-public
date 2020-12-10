@@ -7,7 +7,7 @@ LIB = connect $(NCBIATOMIC_LIB)
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
-CHECK_CMD = test_ncbi_server_info.sh
+CHECK_CMD = test_ncbi_server_info.sh /CHECK_NAME=test_ncbi_server_info
 CHECK_COPY = test_ncbi_server_info.sh
 
 WATCHERS = lavr

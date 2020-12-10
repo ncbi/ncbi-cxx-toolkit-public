@@ -9,6 +9,6 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources
 CHECK_COPY = test_ncbi_download.sh
-CHECK_CMD = test_ncbi_download.sh
+CHECK_CMD = test_ncbi_download.sh /CHECK_NAME=test_ncbi_download
 
 WATCHERS = lavr

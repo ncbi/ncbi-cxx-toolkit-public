@@ -10,7 +10,7 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 REQUIRES = MT
 
 # (neither of these can contain make variables)
-CHECK_CMD = test_threaded_client_server.sh
+CHECK_CMD = test_threaded_client_server.sh /CHECK_NAME=test_threaded_client_server
 CHECK_COPY = test_threaded_client_server.sh
 
 WATCHERS = ucko

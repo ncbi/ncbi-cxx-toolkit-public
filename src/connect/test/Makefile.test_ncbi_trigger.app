@@ -9,7 +9,7 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = MT
 
-CHECK_CMD = test_ncbi_trigger.sh
+CHECK_CMD = test_ncbi_trigger.sh /CHECK_NAME=test_ncbi_trigger
 CHECK_COPY = test_ncbi_trigger.sh
 
 WATCHERS = lavr
