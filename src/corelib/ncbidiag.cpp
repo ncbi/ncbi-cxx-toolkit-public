@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <common/ncbi_source_ver.h>
 #include <common/ncbi_package_ver.h>
+#include <common/ncbi_sanitizers.h>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/version.hpp>
 #include <corelib/ncbi_process.hpp>
@@ -3539,16 +3540,16 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         switch ( ds ) {
         case eDS_ToStdout:
             if (old_log_name != kLogName_Stdout) {
-                SetDiagHandler(new CStreamDiagHandler(&cout,
-                    true, kLogName_Stdout), true);
+                NCBI_LSAN_DISABLE_GUARD;
+                SetDiagHandler(new CStreamDiagHandler(&cout, true, kLogName_Stdout), true);
                 log_set = true;
                 new_log_name = kLogName_Stdout;
             }
             break;
         case eDS_ToStderr:
             if (old_log_name != kLogName_Stderr) {
-                SetDiagHandler(new CStreamDiagHandler(&cerr,
-                    true, kLogName_Stderr), true);
+                NCBI_LSAN_DISABLE_GUARD;
+                SetDiagHandler(new CStreamDiagHandler(&cerr, true, kLogName_Stderr), true);
                 log_set = true;
                 new_log_name = kLogName_Stderr;
             }
@@ -3584,6 +3585,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         case eDS_ToSyslog:
             if (old_log_name != CSysLog::kLogName_Syslog) {
                 try {
+                    NCBI_LSAN_DISABLE_GUARD;
                     SetDiagHandler(new CSysLog);
                     log_set = true;
                     new_log_name = CSysLog::kLogName_Syslog;
@@ -3685,6 +3687,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 const char* log_name = TTeeToStderr::GetDefault() ?
                     kLogName_Tee : kLogName_Stderr;
                 if (!log_set  &&  old_log_name != log_name) {
+                    NCBI_LSAN_DISABLE_GUARD;
                     SetDiagHandler(new CStreamDiagHandler(&cerr,
                         true, kLogName_Stderr), true);
                     log_set = true;
