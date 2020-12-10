@@ -43,35 +43,9 @@ set(NCBI_TOOLS_ROOT $ENV{NCBI})
 set(NCBI_OPT_ROOT  /opt/ncbi/64)
 set(NCBI_PlatformBits 64)
 
-check_library_exists(dl dlopen "" HAVE_LIBDL)
-if(HAVE_LIBDL)
-    set(DL_LIBS -ldl)
-else(HAVE_LIBDL)
-    message(FATAL_ERROR "dl library not found")
-endif(HAVE_LIBDL)
-
-set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
-find_library(CRYPT_LIBS NAMES crypt)
-find_library(MATH_LIBS NAMES m)
-
-if (APPLE)
-    find_library(NETWORK_LIBS c)
-    find_library(RT_LIBS c)
-else (APPLE)
-    find_library(NETWORK_LIBS nsl)
-    find_library(RT_LIBS        rt)
-endif (APPLE)
-set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-
-############################################################################
-# Kerberos 5 (via GSSAPI)
-NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err)
-if(NCBI_COMPONENT_KRB5_FOUND)
-    set(KRB5_INCLUDE ${NCBI_COMPONENT_KRB5_INCLUDE})
-    set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
-endif()
-
 #############################################################################
+# prebuilt libraries
+
 set(NCBI_ThirdParty_BACKWARD      ${NCBI_TOOLS_ROOT}/backward-cpp-1.3.20180206-44ae960 CACHE PATH "BACKWARD root")
 set(NCBI_ThirdParty_UNWIND        ${NCBI_TOOLS_ROOT}/libunwind-1.1 CACHE PATH "UNWIND root")
 set(NCBI_ThirdParty_LMDB          ${NCBI_TOOLS_ROOT}/lmdb-0.9.24 CACHE PATH "LMDB root")
@@ -88,6 +62,7 @@ set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XM
 set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XSLT root")
 set(NCBI_ThirdParty_EXSLT         ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_XLSXWRITER    ${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9 CACHE PATH "XLSXWRITER root")
+set(NCBI_ThirdParty_SAMTOOLS      ${NCBI_TOOLS_ROOT}/samtools CACHE PATH "SAMTOOLS root")
 set(NCBI_ThirdParty_FTGL          ${NCBI_TOOLS_ROOT}/ftgl-2.1.3-rc5 CACHE PATH "FTGL root")
 set(NCBI_ThirdParty_GLEW          ${NCBI_TOOLS_ROOT}/glew-1.5.8 CACHE PATH "GLEW root")
 set(NCBI_ThirdParty_OpenGL        ${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2 CACHE PATH "OpenGL root")
@@ -109,6 +84,7 @@ if (APPLE)
 else(APPLE)
   set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1 CACHE PATH "wxWidgets root")
 endif(APPLE)
+set(NCBI_ThirdParty_GLPK          "/usr/local/glpk/4.45" CACHE PATH "GLPK root")
 set(NCBI_ThirdParty_UV            ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
 set(NCBI_ThirdParty_NGHTTP2       ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHTTP2 root")
 set(NCBI_ThirdParty_GL2PS         ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2PS root")
@@ -119,6 +95,26 @@ set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.5 CACHE PATH "H2O r
 
 #############################################################################
 #############################################################################
+
+check_library_exists(dl dlopen "" HAVE_LIBDL)
+if(HAVE_LIBDL)
+    set(DL_LIBS -ldl)
+else(HAVE_LIBDL)
+    message(FATAL_ERROR "dl library not found")
+endif(HAVE_LIBDL)
+
+set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
+find_library(CRYPT_LIBS NAMES crypt)
+find_library(MATH_LIBS NAMES m)
+
+if (APPLE)
+    find_library(NETWORK_LIBS c)
+    find_library(RT_LIBS c)
+else (APPLE)
+    find_library(NETWORK_LIBS nsl)
+    find_library(RT_LIBS        rt)
+endif (APPLE)
+set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 #############################################################################
 # in-house-resources
@@ -220,6 +216,14 @@ if(NOT NCBI_COMPONENT_UNWIND_DISABLED)
 else(NOT NCBI_COMPONENT_UNWIND_DISABLED)
     message("DISABLED UNWIND")
 endif(NOT NCBI_COMPONENT_UNWIND_DISABLED)
+
+############################################################################
+# Kerberos 5 (via GSSAPI)
+NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err)
+if(NCBI_COMPONENT_KRB5_FOUND)
+    set(KRB5_INCLUDE ${NCBI_COMPONENT_KRB5_INCLUDE})
+    set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
+endif()
 
 ##############################################################################
 # UUID
@@ -365,19 +369,7 @@ set(NCBI_COMPONENT_ODBC_FOUND NO)
 
 #############################################################################
 # MySQL
-if(NOT NCBI_COMPONENT_MySQL_DISABLED)
-    find_external_library(Mysql INCLUDES mysql/mysql.h LIBS mysqlclient)
-    if(MYSQL_FOUND)
-        set(NCBI_COMPONENT_MySQL_FOUND YES)
-        set(NCBI_COMPONENT_MySQL_INCLUDE ${MYSQL_INCLUDE})
-        set(NCBI_COMPONENT_MySQL_LIBS    ${MYSQL_LIBS})
-        list(APPEND NCBI_ALL_COMPONENTS MySQL)
-    else()
-      set(NCBI_COMPONENT_MySQL_FOUND NO)
-    endif()
-else()
-    message("DISABLED MySQL")
-endif()
+NCBI_define_Xcomponent(NAME MySQL PACKAGE Mysql LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
 
 #############################################################################
 # Sybase
@@ -400,28 +392,22 @@ NCBI_define_Xcomponent(NAME PYTHON LIB python3.8 python3 INCLUDE python3.8)
 
 #############################################################################
 # VDB
-if(NOT NCBI_COMPONENT_VDB_DISABLED)
-    find_external_library(VDB INCLUDES sra/sradb.h LIBS ncbi-vdb
-        INCLUDE_HINTS ${NCBI_ThirdParty_VDB}/interfaces
-        LIBS_HINTS    ${NCBI_ThirdParty_VDB}/linux/release/x86_64/lib
-    )
-    if(VDB_FOUND)
-        set(NCBI_COMPONENT_VDB_FOUND YES)
-        set(NCBI_COMPONENT_VDB_INCLUDE 
-            ${VDB_INCLUDE} 
-            ${VDB_INCLUDE}/os/linux 
-            ${VDB_INCLUDE}/os/unix
-            ${VDB_INCLUDE}/cc/gcc/x86_64
-            ${VDB_INCLUDE}/cc/gcc
-        )
-        set(NCBI_COMPONENT_VDB_LIBS    ${VDB_LIBS})
-        set(HAVE_NCBI_VDB 1)
-        list(APPEND NCBI_ALL_COMPONENTS VDB)
-    else()
-        set(NCBI_COMPONENT_VDB_FOUND NO)
-    endif()
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
+        LIBPATH_SUFFIX linux/debug/x86_64/lib INCPATH_SUFFIX interfaces)
 else()
-    message("DISABLED VDB")
+    NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
+        LIBPATH_SUFFIX linux/release/x86_64/lib INCPATH_SUFFIX interfaces)
+endif()
+if(NCBI_COMPONENT_VDB_FOUND)
+    set(NCBI_COMPONENT_VDB_INCLUDE
+        ${NCBI_COMPONENT_VDB_INCLUDE} 
+        ${NCBI_COMPONENT_VDB_INCLUDE}/os/linux 
+        ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
+        ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc/x86_64
+        ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc
+    )
+    set(HAVE_NCBI_VDB 1)
 endif()
 
 ##############################################################################
@@ -568,19 +554,7 @@ endif()
 
 #############################################################################
 # SAMTOOLS
-if(NOT NCBI_COMPONENT_SAMTOOLS_DISABLED)
-    find_external_library(samtools INCLUDES bam.h  LIBS bam HINTS "${NCBI_TOOLS_ROOT}/samtools")
-    if(SAMTOOLS_FOUND)
-        set(NCBI_COMPONENT_SAMTOOLS_FOUND YES)
-        set(NCBI_COMPONENT_SAMTOOLS_INCLUDE ${SAMTOOLS_INCLUDE})
-        set(NCBI_COMPONENT_SAMTOOLS_LIBS    ${SAMTOOLS_LIBS})
-        list(APPEND NCBI_ALL_COMPONENTS SAMTOOLS)
-    else()
-        set(NCBI_COMPONENT_SAMTOOLS_FOUND NO)
-    endif()
-else()
-    message("DISABLED SAMTOOLS")
-endif()
+NCBI_define_Xcomponent(NAME SAMTOOLS LIB bam)
 
 #############################################################################
 # FreeType
@@ -702,20 +676,7 @@ NCBI_define_Xcomponent(NAME MSGSL)
 
 #############################################################################
 # SGE  (Sun Grid Engine)
-if(NOT NCBI_COMPONENT_SGE_DISABLED)
-    find_external_library(SGE INCLUDES drmaa.h LIBS drmaa
-        INCLUDE_HINTS "${NCBI_ThirdParty_SGE}/include"
-        LIBS_HINTS "${NCBI_ThirdParty_SGE}/ncbi-lib/lx-amd64/")
-    if (SGE_FOUND)
-        set(NCBI_COMPONENT_SGE_FOUND YES)
-        set(NCBI_COMPONENT_SGE_INCLUDE ${SGE_INCLUDE})
-        set(NCBI_COMPONENT_SGE_LIBS    ${SGE_LIBS})
-        set(HAVE_LIBSGE 1)
-        list(APPEND NCBI_ALL_COMPONENTS SGE)
-    endif()
-else()
-    message("DISABLED SGE")
-endif()
+NCBI_define_Xcomponent(NAME SGE LIB drmaa LIBPATH_SUFFIX ncbi-lib/lx-amd64)
 
 #############################################################################
 # MONGOCXX
@@ -748,18 +709,7 @@ endif()
 
 #############################################################################
 # GLPK
-if(NOT NCBI_COMPONENT_GLPK_DISABLED)
-    find_external_library(glpk INCLUDES glpk.h LIBS glpk
-        HINTS "/usr/local/glpk/4.45")
-    if(GLPK_FOUND)
-        set(NCBI_COMPONENT_GLPK_FOUND YES)
-        set(NCBI_COMPONENT_GLPK_INCLUDE ${GLPK_INCLUDE})
-        set(NCBI_COMPONENT_GLPK_LIBS    ${GLPK_LIBS})
-        list(APPEND NCBI_ALL_COMPONENTS GLPK)
-    endif()
-else()
-    message("DISABLED GLPK")
-endif()
+NCBI_define_Xcomponent(NAME GLPK LIB glpk)
 
 #############################################################################
 # UV
