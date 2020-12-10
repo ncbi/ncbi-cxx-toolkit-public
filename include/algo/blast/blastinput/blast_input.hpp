@@ -357,8 +357,8 @@ public:
     /// Determine if we have reached the end of the BLAST input
     bool End() { return m_Source->End(); }
 
-    int GetNumSeqsProcessed() const { return m_NumSeqs; }
-    int GetTotalLengthProcessed() const { return m_TotalLength; }
+    Int8 GetNumSeqsProcessed() const { return m_NumSeqs; }
+    Int8 GetTotalLengthProcessed() const { return m_TotalLength; }
 private:
     CRef<CBlastInputSource> m_Source;  ///< pointer to source of sequences
     TSeqPos m_BatchSize;          ///< total size of one block of sequences
@@ -373,10 +373,10 @@ private:
     void do_copy(const CBlastInput& input);
 
     // # of seqs processed
-    int m_NumSeqs;
+    Int8 m_NumSeqs;
 
     // Total length processed
-    int m_TotalLength;
+    Int8 m_TotalLength;
 };
 
 /// Auxiliary class for creating Bioseqs given SeqIds
