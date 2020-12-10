@@ -2740,23 +2740,21 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
 
 void CSeqDBVol::x_UnLeaseIsam(void) const
 {
-    if(m_Atlas.GetOpenedFilseCount() > CSeqDBAtlas::e_MaxFileDescritors) {
-        if (m_IsamPig.NotEmpty()) {
-            m_PigFileOpened = false;
-            m_IsamPig->UnLease();
-        }
-        if (m_IsamGi.NotEmpty()) {
-            m_GiFileOpened = false;
-            m_IsamGi->UnLease();
-        }
-        if (m_IsamStr.NotEmpty()) {
-            m_StrFileOpened = false;
-            m_IsamStr->UnLease();
-        }    
-        if (m_IsamTi.NotEmpty()) {
-            m_TiFileOpened = false;
-            m_IsamTi->UnLease();
-        }
+    if (m_IsamPig.NotEmpty()) {
+        m_PigFileOpened = false;
+        m_IsamPig->UnLease();
+    }
+    if (m_IsamGi.NotEmpty()) {
+        m_GiFileOpened = false;
+        m_IsamGi->UnLease();
+    }
+    if (m_IsamStr.NotEmpty()) {
+        m_StrFileOpened = false;
+        m_IsamStr->UnLease();
+    }
+    if (m_IsamTi.NotEmpty()) {
+        m_TiFileOpened = false;
+        m_IsamTi->UnLease();
     }
 }
 

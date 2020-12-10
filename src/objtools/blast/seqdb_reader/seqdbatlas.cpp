@@ -52,78 +52,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#ifdef SEQDB_TRACE_LOGFILE
-
-// By default, the first 16 trace classes are enabled
-
-ofstream * seqdb_logfile  = 0;
-int        seqdb_logclass = 0xFFFF;
-
-void seqdb_log(const char * s)
-{
-    seqdb_log(1, s);
-}
-
-void seqdb_log(const char * s1, const string & s2)
-{
-    seqdb_log(1, s1, s2);
-}
-
-inline bool seqdb_log_disabled(int cl)
-{
-    return ! (seqdb_logfile && (cl & seqdb_logclass));
-}
-
-void seqdb_log(int cl, const char * s)
-{
-    if (seqdb_log_disabled(cl))
-        return;
-
-    (*seqdb_logfile) << s << endl;
-}
-
-void seqdb_log(int cl, const char * s1, const string & s2)
-{
-    if (seqdb_log_disabled(cl))
-        return;
-
-    (*seqdb_logfile) << s1 << s2 << endl;
-}
-
-void seqdb_log(int cl, const char * s1, int s2)
-{
-    if (seqdb_log_disabled(cl))
-        return;
-
-    (*seqdb_logfile) << s1 << s2 << endl;
-}
-
-void seqdb_log(int cl, const char * s1, int s2, const char * s3)
-{
-    if (seqdb_log_disabled(cl))
-        return;
-
-    (*seqdb_logfile) << s1 << s2 << s3 << endl;
-}
-
-void seqdb_log(int cl, const char * s1, int s2, const char * s3, int s4)
-{
-    if (seqdb_log_disabled(cl))
-        return;
-
-    (*seqdb_logfile) << s1 << s2 << s3 << s4 << endl;
-}
-
-void seqdb_log(int cl, const char * s1, int s2, const char * s3, int s4, const char * s5, int s6)
-{
-    if (seqdb_log_disabled(cl))
-        return;
-
-    (*seqdb_logfile) << s1 << s2 << s3 << s4 << s5 << s6 << endl;
-}
-#endif // SEQDB_TRACE_LOGFILE
-
-
 // Further optimizations:
 
 // 1. Regions could be stored in a map<>, sorted by file, then offset.
@@ -212,25 +140,36 @@ CSeqDBAtlas::~CSeqDBAtlas()
 
 CMemoryFile* CSeqDBAtlas::GetMemoryFile(const string& fileName)
 {
-    {
-        std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
-        auto it = m_FileMemMap.find(fileName);
-        if (it != m_FileMemMap.end())
-            return it->second.get();
+    std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
+    auto it = m_FileMemMap.find(fileName);
+    if (it != m_FileMemMap.end()) {
+    	it->second.get()->m_Count++;
+    	//LOG_POST(Info << "File: " << fileName << " count " << it->second.get()->m_Count);
+        return it->second.get();
     }
+    CAtlasMappedFile* file(new CAtlasMappedFile(fileName));
+    m_FileMemMap[fileName].reset(file);
+   	LOG_POST(Info << "Open File: " << fileName);
+    ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
+    return file;
+}
 
-    unique_ptr<CMemoryFile> file(new CMemoryFile(fileName));
-
-    {
-        std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
-        auto it = m_FileMemMap.find(fileName);
-        if (it != m_FileMemMap.end())
-            return it->second.get();
-        CMemoryFile* memFile = file.release();
-        m_FileMemMap[fileName].reset(memFile);
-        ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
-        return memFile;
+CMemoryFile* CSeqDBAtlas::ReturnMemoryFile(const string& fileName)
+{
+    std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
+    auto it = m_FileMemMap.find(fileName);
+    if (it == m_FileMemMap.end()) {
+        NCBI_THROW(CSeqDBException, eMemErr, "File not in mapped file list: " + fileName);
     }
+    it->second.get()->m_Count--;
+   	//LOG_POST(Info << "Return File: " << fileName << "count " << it->second.get()->m_Count);
+   	if ((GetOpenedFilseCount() > CSeqDBAtlas::e_MaxFileDescritors) &&
+   		(it->second.get()->m_isIsam) && (it->second.get()->m_Count == 0)) {
+   		m_FileMemMap.erase(it);
+   		LOG_POST(Info << "Unmap max file descriptor reached: " << fileName);
+   		ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterDecrement);
+   	}
+    return NULL;
 }
 
 bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)

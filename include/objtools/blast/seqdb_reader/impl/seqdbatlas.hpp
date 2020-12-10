@@ -586,6 +586,8 @@ public:
         eFileCounterDecrement
     };
 
+    CMemoryFile* ReturnMemoryFile(const string& fileName);
+
     int ChangeOpenedFilseCount(EFilesCount fc) 
     {
         switch(fc) {
@@ -607,6 +609,25 @@ public:
     int GetOpenedFilseCount(void) { return m_OpenedFilesCount;}
     
 private:
+
+    class CAtlasMappedFile : public CMemoryFile {
+    public:
+    	CAtlasMappedFile(const string & filename): CMemoryFile(filename),m_Count(1){
+    		const string exts="hd|hi|nd|ni|pd|pi|si|sd|ti|td";
+    		string ext = filename.substr(filename.length()-2);
+    		if (exts.find(ext) != NPOS) {
+    			m_isIsam = true;
+    		}
+    		else {
+    			m_isIsam = false;
+    		}
+    	}
+    	~CAtlasMappedFile() {
+    		_ASSERT(m_Count == 0);
+    	}
+    	int m_Count;
+    	bool m_isIsam;
+    };
     /// Private method to prevent copy construction.
     CSeqDBAtlas(const CSeqDBAtlas &);
 
@@ -656,7 +677,7 @@ private:
     Uint8 m_MaxFileSize;
 
     std::mutex m_FileMemMapMutex;
-    map<string, unique_ptr<CMemoryFile> > m_FileMemMap;    
+    map<string, unique_ptr<CAtlasMappedFile> > m_FileMemMap;
     int m_OpenedFilesCount;
     int m_MaxOpenedFilesCount;
 
@@ -755,6 +776,7 @@ public:
     void Init(const string filename) {                
         if(!m_MappedFile || m_Filename != filename)
         {
+        	Clear();
             m_Filename = filename;
             Init();
         }
@@ -764,18 +786,10 @@ public:
     void Init(void)
     {
         try {
-            if (IsIndexFile()) {
-                m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
-            }
-            else {
-                m_MappedFile = new CMemoryFile(m_Filename);
-                m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
-                x_LogMessage(eMapNew);
-            }
+            m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
             m_Mapped = true;
         }
         catch (const std::exception&) {
-            x_LogMessage(eMapError);
             NCBI_THROW(CSeqDBException,
                 eFileErr,
                 "Cannot memory map " + m_Filename + ". Number of files opened: " + NStr::IntToString(m_Atlas.GetOpenedFilseCount()));
@@ -790,13 +804,9 @@ public:
     void Clear()
     {
         
-        if(m_MappedFile && m_Mapped && !IsIndexFile()) { 
-                m_MappedFile->Unmap();		                                                        
-                m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterDecrement);                        
-                x_LogMessage(eUnmap);
-                delete m_MappedFile;
-                m_MappedFile = NULL;
-                m_Mapped = false;
+        if(m_MappedFile && m_Mapped ) {
+        	m_MappedFile = m_Atlas.ReturnMemoryFile(m_Filename);
+            m_Mapped = false;
         }        
     }
 
@@ -825,74 +835,7 @@ public:
         return(const char *)(m_DataPtr + offset);    
     }
 
-    bool IsIndexFile() {
-        bool isIndex = (NStr::Find(m_Filename,".pin") != NPOS ||  NStr::Find(m_Filename,".nin") != NPOS) ? true : false;      
-        return isIndex;
-    }
-
 private:
-    enum ELogMessage {
-        eNone,
-        eMapNew,
-        eMapNewLocked,
-        eMapExists,
-        eMapExistsLocked,
-        eUnmap,
-        eMapError
-    };
-
-    void x_LogMessage(ELogMessage em,CSeqDBAtlas::EFilesCount fc = CSeqDBAtlas::eFileCounterNoChange)
-    {
-        //Disable logging
-        if(em != eMapError) return; 
-        int openedFilesCount;
-        if(fc != CSeqDBAtlas::eFileCounterNoChange)
-        {
-            CSeqDBLockHold locked(m_Atlas);
-            m_Atlas.Lock(locked);          
-            openedFilesCount = m_Atlas.ChangeOpenedFilseCount(fc);
-        }
-        else {
-            openedFilesCount = m_Atlas.GetOpenedFilseCount();        
-        }
-        int threadID = CThread::GetSelf();
-                
-        string logMessage;
-        switch (em) {
-            case eMapNew: 
-                logMessage = "Map    new   :";
-                break;
-
-            case eMapNewLocked: 
-                logMessage = "Map    new(l):";
-                break;
-
-            case eMapExists:
-                logMessage = "Map exists   :";                
-                break;
-
-            case eMapExistsLocked:
-                logMessage = "Map exists(l):";               
-                break;
-
-            case eUnmap:
-                logMessage = "Unmap        :";
-                break;
-
-            case eMapError:
-                logMessage = "Error memory mapping:";                
-                break;
-
-            case eNone:
-                break;
-
-            default:
-                break;
-        }
-        if(!logMessage.empty()) {
-            cerr << logMessage << m_Filename  << " openedFilesCount=" << openedFilesCount << " threadID=" << threadID << endl;
-        }
-    }
     CSeqDBAtlas & m_Atlas;    
      /// Points to the beginning of the data area.
     const char * m_DataPtr;
