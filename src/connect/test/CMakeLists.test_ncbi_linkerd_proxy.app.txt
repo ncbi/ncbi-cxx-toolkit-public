@@ -1,14 +1,12 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_linkerd_proxy)
   NCBI_sources(test_ncbi_linkerd_proxy)
   NCBI_uses_toolkit_libraries(xregexp xconnect)
-  NCBI_project_watchers(lavr)
   NCBI_requires(-MSWin)
   NCBI_set_test_timeout(600)
   NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
+  NCBI_project_watchers(lavr)
 NCBI_end_app()
 

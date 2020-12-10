@@ -1,14 +1,12 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_netcache_api)
   NCBI_sources(test_netcache_api)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xconnserv)
-  NCBI_project_watchers(sadyrovr gouriano fukanchi)
   NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_timeout(800)
   NCBI_add_test()
+  NCBI_project_watchers(sadyrovr gouriano fukanchi)
 NCBI_end_app()
 

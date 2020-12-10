@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xthrserv)
   NCBI_sources(threaded_server server server_monitor connection_pool)

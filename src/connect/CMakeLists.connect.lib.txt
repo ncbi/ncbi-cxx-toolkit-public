@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(connect)
   NCBI_sources(${SRC_C})
@@ -10,6 +8,6 @@ NCBI_begin_lib(connect)
     NCBI_uses_toolkit_libraries(xncbi)
   endif()
   NCBI_project_tags(core mod_loadinfo mod_caf)
-  NCBI_project_watchers(lavr mcelhany)
+  NCBI_project_watchers(lavr)
 NCBI_end_lib()
 

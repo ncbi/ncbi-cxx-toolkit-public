@@ -1,14 +1,18 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_namerd)
+
   NCBI_sources(test_ncbi_namerd)
   NCBI_uses_toolkit_libraries(connect)
-  NCBI_project_watchers(lavr mcelhany)
-  NCBI_set_test_timeout(30)
-  NCBI_set_test_requires(in-house-resources)
-  NCBI_set_test_assets(../../check/ncbi_test_data)
-  NCBI_add_test(test_ncbi_namerd.sh)
+
+  NCBI_begin_test(test_ncbi_namerd)
+    NCBI_set_test_command(test_ncbi_namerd.sh)
+    NCBI_set_test_assets(test_ncbi_namerd.sh ../../check/ncbi_test_data)
+    NCBI_set_test_requires(in-house-resources)
+    NCBI_set_test_timeout(30)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
 NCBI_end_app()
 

@@ -1,12 +1,14 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_ipv6)
+
   NCBI_sources(test_ncbi_ipv6)
   NCBI_uses_toolkit_libraries(connect)
-  NCBI_project_watchers(lavr)
+
   NCBI_begin_test(test_ncbi_ipv6)
     NCBI_set_test_command(test_ncbi_ipv6 2607:F220:041E:4000::/52)
   NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
 NCBI_end_app()

@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_threaded_client)
   NCBI_sources(test_threaded_client)
   NCBI_uses_toolkit_libraries(xconnect xutil)
-  NCBI_project_watchers(ucko)
   NCBI_add_test(test_threaded_client_server.sh)
+  NCBI_project_watchers(ucko)
 NCBI_end_app()
 

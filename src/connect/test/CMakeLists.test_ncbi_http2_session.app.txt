@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_http2_session)
   NCBI_sources(test_ncbi_http2_session)
   NCBI_requires(MT)
   NCBI_uses_toolkit_libraries(xxconnect2)
-  NCBI_project_watchers(sadyrovr)
   NCBI_add_test()
+  NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 

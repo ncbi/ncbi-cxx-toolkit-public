@@ -1,15 +1,19 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_linkerd_mt)
+
   NCBI_sources(test_ncbi_linkerd_mt)
   NCBI_requires(unix)
   NCBI_uses_toolkit_libraries(test_mt xregexp xconnect)
-  NCBI_project_watchers(lavr mcelhany)
-  NCBI_set_test_timeout(600)
-  NCBI_set_test_requires(in-house-resources)
-  NCBI_set_test_assets(test_ncbi_linkerd_mt.ini)
-  NCBI_add_test(test_ncbi_linkerd_mt.sh)
+
+  NCBI_begin_test(test_ncbi_linkerd_mt)
+    NCBI_set_test_command(test_ncbi_linkerd_mt.sh)
+    NCBI_set_test_assets(test_ncbi_linkerd_mt.ini)
+    NCBI_set_test_requires(in-house-resources)
+    NCBI_set_test_timeout(600)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
 NCBI_end_app()
 

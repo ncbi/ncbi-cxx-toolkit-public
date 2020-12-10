@@ -1,12 +1,16 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_http_upload)
+
   NCBI_sources(test_ncbi_http_upload)
   NCBI_uses_toolkit_libraries(xconnect)
+
+  NCBI_begin_test(test_ncbi_http_upload)
+    NCBI_set_test_command(test_ncbi_http_upload.sh)
+    NCBI_set_test_assets(test_ncbi_http_upload.sh ../../check/ncbi_test_data)
+  NCBI_end_test()
+
   NCBI_project_watchers(lavr)
-  NCBI_set_test_assets(../../check/ncbi_test_data)
-  NCBI_add_test(test_ncbi_http_upload.sh)
+
 NCBI_end_app()
 

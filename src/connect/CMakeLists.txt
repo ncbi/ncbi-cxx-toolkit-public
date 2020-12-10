@@ -1,8 +1,5 @@
-#############################################################################
 # $Id$
-#############################################################################
 
-#
 # The connect library uses a split between a shared C toolkit library and an
 # independent C++ toolkit library
 # These variables capture the split
@@ -16,7 +13,6 @@ else()
         set(lbsm_src ncbi_lbsmd_stub)
     endif()
 endif()
-
 
 set(SRC_TLS
     ncbi_gnutls ncbi_mbedtls ncbi_tls
@@ -65,7 +61,6 @@ set(SRC_CXX
     connect_misc
     ${SRC_TLS}
     )
-
 
 NCBI_disable_pch()
 NCBI_add_library(connect connssl xxconnect xxconnect2 xconnect xthrserv)

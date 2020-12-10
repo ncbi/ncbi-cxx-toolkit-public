@@ -1,13 +1,15 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_iprange)
+
   NCBI_sources(test_ncbi_iprange)
   NCBI_uses_toolkit_libraries(connect)
-  NCBI_project_watchers(lavr)
+
   NCBI_begin_test(test_ncbi_iprange)
     NCBI_set_test_command(test_ncbi_iprange 127.0.0.1 2607:F220:041E:4000::/52 130.14.29.128-255)
   NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
 NCBI_end_app()
 

@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xncbi)
 
@@ -28,5 +26,7 @@ NCBI_uses_external_libraries(${DL_LIBS} ${ORIG_LIBS})
 if(UNIX)
   NCBI_optional_components(BACKWARD UNWIND)
 endif()
+
 NCBI_project_watchers(vakatov)
+
 NCBI_end_lib()
