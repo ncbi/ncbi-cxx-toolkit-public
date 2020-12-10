@@ -144,7 +144,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp (void)
 {
-   SetVersionByBuild(1);
+    SetVersion(CVersionInfo(1, 0, 0));
 }
 
 // destructor
