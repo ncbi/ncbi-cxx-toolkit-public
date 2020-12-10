@@ -163,7 +163,7 @@
 1.1.1.176	12-alpha-hydroxysteroid dehydrogenase
 1.1.1.177	Glycerol-3-phosphate 1-dehydrogenase (NADP(+))
 1.1.1.178	3-hydroxy-2-methylbutyryl-CoA dehydrogenase
-1.1.1.179	D-xylose 1-dehydrogenase (NADP(+))
+1.1.1.179	D-xylose 1-dehydrogenase (NADP(+), D-xylono-1,5-lactone-forming)
 1.1.1.181	Cholest-5-ene-3-beta,7-alpha-diol 3-beta-dehydrogenase
 1.1.1.183	Geraniol dehydrogenase (NADP(+))
 1.1.1.184	Carbonyl reductase (NADPH)
@@ -399,7 +399,7 @@
 1.1.1.420	D-apiose dehydrogenase
 1.1.1.421	D-apionate oxidoisomerase
 1.1.1.422	Pseudoephedrine dehydrogenase
-1.1.1.423	Ephedrine dehydrogenase
+1.1.1.423	(1R,2S)-ephedrine 1-dehydrogenase
 1.1.1.n4	(-)-trans-carveol dehydrogenase
 1.1.1.n5	3-methylmalate dehydrogenase
 1.1.1.n11	Succinic semialdehyde reductase
@@ -591,7 +591,6 @@
 1.2.1.103	[Amino-group carrier protein]-6-phospho-L-2-aminoadipate reductase
 1.2.1.n2	Fatty acyl-CoA reductase
 1.2.2.1	Formate dehydrogenase (cytochrome)
-1.2.2.4	Carbon-monoxide dehydrogenase (cytochrome b-561)
 1.2.3.1	Aldehyde oxidase
 1.2.3.3	Pyruvate oxidase
 1.2.3.4	Oxalate oxidase
@@ -752,7 +751,7 @@
 1.3.4.1	Fumarate reductase (CoM/CoB)
 1.3.5.1	Succinate dehydrogenase (quinone)
 1.3.5.2	Dihydroorotate dehydrogenase (quinone)
-1.3.5.3	Protoporphyrinogen IX dehydrogenase (menaquinone)
+1.3.5.3	Protoporphyrinogen IX dehydrogenase (quinone)
 1.3.5.4	Fumarate reductase (quinol)
 1.3.5.5	15-cis-phytoene desaturase
 1.3.5.6	9,9'-di-cis-zeta-carotene desaturase
@@ -2259,7 +2258,6 @@
 2.1.1.355	[Histone H3]-lysine(9) N-trimethyltransferase
 2.1.1.356	[Histone H3]-lysine(27) N-trimethyltransferase
 2.1.1.357	[Histone H3]-lysine(36) N-dimethyltransferase
-2.1.1.358	[Histone H3]-dimethyl-L-lysine(36) N-methyltransferase
 2.1.1.359	[Histone H3]-lysine(36) N-trimethyltransferase
 2.1.1.360	[Histone H3]-lysine(79) N-trimethyltransferase
 2.1.1.361	[Histone H4]-lysine(20) N-methyltransferase
@@ -2267,6 +2265,13 @@
 2.1.1.363	Pre-sodorifen synthase
 2.1.1.364	[Histone H3]-lysine(4) N-methyltransferase
 2.1.1.365	MMP 1-O-methyltransferase
+2.1.1.366	[Histone H3]-N(6),N(6)-dimethyl-lysine(9) N-methyltransferase
+2.1.1.367	[Histone H3]-lysine(9) N-methyltransferase
+2.1.1.368	[Histone H3]-lysine(9) N-dimethyltransferase
+2.1.1.369	[Histone H3]-lysine(27) N-methyltransferase
+2.1.1.370	[Histone H3]-lysine(4) N-dimethyltransferase
+2.1.1.371	[Histone H3]-lysine(27) N-dimethyltransferase
+2.1.1.372	[Histone H4]-lysine(20) N-trimethyltransferase
 2.1.1.n1	Resorcinol O-methyltransferase
 2.1.1.n4	Thiocyanate methyltransferase
 2.1.1.n7	5-pentadecatrienyl resorcinol O-methyltransferase
@@ -3656,7 +3661,7 @@
 2.7.7.65	Diguanylate cyclase
 2.7.7.66	Malonate decarboxylase holo-[acyl-carrier protein] synthase
 2.7.7.67	CDP-2,3-bis-(O-geranylgeranyl)-sn-glycerol synthase
-2.7.7.68	Phosphoenolpyruvate guanylyltransferase
+2.7.7.68	2-phospho-L-lactate guanylyltransferase
 2.7.7.69	GDP-L-galactose phosphorylase
 2.7.7.70	D-glycero-beta-D-manno-heptose 1-phosphate adenylyltransferase
 2.7.7.71	D-glycero-alpha-D-manno-heptose 1-phosphate guanylyltransferase
@@ -3690,6 +3695,8 @@
 2.7.7.102	DNA primase AEP
 2.7.7.103	L-glutamine-phosphate cytidylyltransferase
 2.7.7.104	2-hydroxyethylphosphonate cytidylyltransferase
+2.7.7.105	Phosphoenolpyruvate guanylyltransferase
+2.7.7.106	3-phospho-D-glycerate guanylyltransferase
 2.7.7.n1	Protein adenylyltransferase
 2.7.7.n6	Guanine phosphate-protein transferase
 2.7.8.1	Ethanolaminephosphotransferase
@@ -3717,7 +3724,7 @@
 2.7.8.24	Phosphatidylcholine synthase
 2.7.8.26	Adenosylcobinamide-GDP ribazoletransferase
 2.7.8.27	Sphingomyelin synthase
-2.7.8.28	Phosphoenolpyruvate transferase
+2.7.8.28	2-phospho-L-lactate transferase
 2.7.8.29	L-serine-phosphatidylethanolamine phosphatidyltransferase
 2.7.8.31	Undecaprenyl-phosphate glucose phosphotransferase
 2.7.8.32	3-O-alpha-D-mannopyranosyl-alpha-D-mannopyranose xylosylphosphotransferase
@@ -5957,7 +5964,6 @@
 5.1.3.9	N-acylglucosamine-6-phosphate 2-epimerase
 5.1.3.10	CDP-paratose 2-epimerase
 5.1.3.11	Cellobiose epimerase
-5.1.3.12	UDP-glucuronate 5'-epimerase
 5.1.3.13	dTDP-4-dehydrorhamnose 3,5-epimerase
 5.1.3.14	UDP-N-acetylglucosamine 2-epimerase (non-hydrolyzing)
 5.1.3.15	Glucose-6-phosphate 1-epimerase
