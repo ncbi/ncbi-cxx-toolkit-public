@@ -4,8 +4,7 @@ DLL = ncbi_xloader_trace
 
 HOSTED_LIBS    = ncbi_xloader_trace
 
-DEPENDENCIES   = ncbi_core   ncbi_general ncbi_seq \
-                 ncbi_seqext
+DEPENDENCIES   = ncbi_core ncbi_general ncbi_seq ncbi_seqext
 
 CPPFLAGS = -DNCBI_XLOADER_TRACE_EXPORTS
 
