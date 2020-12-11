@@ -321,8 +321,8 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
 
     if (! use_stdout) {
         if (strname.empty()) {
-            if (argname.empty()) return NULL;
-            if (! args[argname]) return NULL;
+            if (argname.empty()) return nullptr;
+            if (! args[argname]) return nullptr;
         }
     }
 
@@ -332,12 +332,12 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     } else if ( !strname.empty() ) {
         // NB: This stream will leak unless explicitly managed.
         // (An app-wide smart pointer should suffice.)
-        os = new CNcbiOfstream(strname.c_str());
+        os = new CNcbiOfstream(strname);
     } else {
         if (args[argname]) {
             os = &args[argname].AsOutputFile();
         } else {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -421,7 +421,7 @@ int CAsn2FastaApp::Run(void)
 
         x_InitOStreams(args);
         unique_ptr<CObjectIStream> is(x_OpenIStream(args));
-        if (is.get() == nullptr) {
+        if (!is) {
             string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
                         "Unable to read data from stdin";
             NCBI_THROW(CException, eUnknown, msg);
@@ -501,10 +501,10 @@ void CAsn2FastaApp::x_InitOStreams(const CArgs& args)
     m_Or.reset( OpenFastaOstream ("or", "", false) );
     m_Op.reset( OpenFastaOstream ("op", "", false) );
     m_Ou.reset( OpenFastaOstream ("ou", "", false) );
-    m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : NULL;
+    m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : nullptr;
 
-    m_OgHead = "";
-    m_OgTail = "";
+    m_OgHead.clear();
+    m_OgTail.clear();
     m_OgIndex = 0;
     m_OgMax = 0;
     m_OgCurrLen = 0;
@@ -520,9 +520,7 @@ void CAsn2FastaApp::x_InitOStreams(const CArgs& args)
         m_Og.reset( OpenFastaOstream ("", ogx, false) );
     }
 
-    if (m_Os.get() == NULL  &&  m_On.get() == NULL  &&  m_Og.get() == NULL  &&
-        m_Or.get() == NULL  &&  m_Op.get() == NULL  &&  m_Ou.get() == NULL  &&
-        m_Oq == NULL) {
+    if ( !m_Os && !m_On && !m_Og && !m_Or && !m_Op && !m_Ou && !m_Oq ) {
         // No output (-o*) argument given - default to stdout
         m_Os.reset( OpenFastaOstream ("", "", true) );
     }
@@ -777,7 +775,7 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
 {
     CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-    CFastaOstreamEx* fasta_os = NULL;
+    CFastaOstreamEx* fasta_os = nullptr;
 
     bool is_genomic = false;
     bool is_RNA = false;
@@ -828,18 +826,18 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
         }
     }
 
-    if ( m_Oq != NULL && bsh.IsNa() ) {
+    if ( m_Oq && bsh.IsNa() ) {
         PrintQualityScores (*bsr, *m_Oq);
     }
 
-    if ( m_Os.get() != NULL ) {
-        if ( m_OnlyNucs && ! bsh.IsNa() ) return NULL;
-        if ( m_OnlyProts && ! bsh.IsAa() ) return NULL;
+    if ( m_Os ) {
+        if ( m_OnlyNucs && ! bsh.IsNa() ) return nullptr;
+        if ( m_OnlyProts && ! bsh.IsAa() ) return nullptr;
         fasta_os = m_Os.get();
     } else if ( bsh.IsNa() ) {
-        if ( m_On.get() != NULL ) {
+        if ( m_On ) {
             fasta_os = m_On.get();
-        } else if ( (is_genomic || ! closest_molinfo) && m_Og.get() != NULL ) {
+        } else if ( (is_genomic || ! closest_molinfo) && m_Og ) {
             fasta_os = m_Og.get();
             if (! m_OgHead.empty() && ! m_OgTail.empty()) {
                 TSeqPos len = bsr->GetLength();
@@ -852,22 +850,22 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
                 }
                 m_OgCurrLen += len;
             }
-        } else if ( is_RNA && m_Or.get() != NULL ) {
+        } else if ( is_RNA && m_Or ) {
             fasta_os = m_Or.get();
         } else {
-            return NULL;
+            return nullptr;
         }
     } else if ( bsh.IsAa() ) {
-        if ( m_Op.get() != NULL ) {
+        if ( m_Op ) {
             fasta_os = m_Op.get();
         }
     } else {
-        if ( m_Ou.get() != NULL ) {
+        if ( m_Ou ) {
             fasta_os = m_Ou.get();
-        } else if ( m_On.get() != NULL ) {
+        } else if ( m_On ) {
             fasta_os = m_On.get();
         } else {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -933,7 +931,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
                 continue;
             CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
 
-            if ( fasta_os == NULL) continue;
+            if ( !fasta_os ) continue;
 
             if ( m_DeflineOnly ) {
                 fasta_os->WriteTitle(bsh);
@@ -989,7 +987,6 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
 //  --------------------------------------------------------------------------
 {
-
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
     ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
@@ -1009,13 +1006,13 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
     if ( args["i"] ) {
-        pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+        pInputStream = new CNcbiIfstream( args["i"].AsString(), ios::binary  );
         bDeleteOnClose = true;
     }
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
     // turning it into an object stream:
-    CObjectIStream* pI = NULL;
+    CObjectIStream* pI = nullptr;
     if ( args["c"] ) {
         CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
             512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
@@ -1028,7 +1025,7 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
             serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     }
 
-    if ( 0 != pI ) {
+    if ( pI ) {
         pI->UseMemoryPool();
     }
     return pI;
