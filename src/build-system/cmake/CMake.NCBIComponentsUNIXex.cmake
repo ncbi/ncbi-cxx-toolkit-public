@@ -412,82 +412,34 @@ endif()
 
 ##############################################################################
 # wxWidgets
-if(OFF)
-    include(${NCBI_TREE_CMAKECFG}/CMakeChecks.wxwidgets.cmake)
-    if (WXWIDGETS_FOUND)
-        set(NCBI_COMPONENT_wxWidgets_FOUND   YES)
-        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${WXWIDGETS_INCLUDE})
-        set(NCBI_COMPONENT_wxWidgets_LIBS    ${WXWIDGETS_LIBS})
-        set(HAVE_WXWIDGETS 1)
-        if(BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
-        else()
-            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
-        endif()
-        list(APPEND NCBI_ALL_COMPONENTS wxWidgets)
-    endif()
-else()
-    if(PKG_CONFIG_FOUND)
-        NCBI_find_package(GTK2 GTK2)
-        NCBI_find_package(FONTCONFIG Fontconfig)
-        set(_wx_ver 3.1)
-        NCBI_define_component(wxWidgets
-            wx_gtk2_gl-${_wx_ver}
-            wx_gtk2_richtext-${_wx_ver}
-            wx_gtk2_aui-${_wx_ver}
-            wx_gtk2_propgrid-${_wx_ver}
-            wx_gtk2_xrc-${_wx_ver}
-            wx_gtk2_html-${_wx_ver}
-            wx_gtk2_qa-${_wx_ver}
-            wx_gtk2_adv-${_wx_ver}
-            wx_gtk2_core-${_wx_ver}
-            wx_base_xml-${_wx_ver}
-            wx_base_net-${_wx_ver}
-            wx_base-${_wx_ver}
-            wxscintilla-${_wx_ver}
-        )
-        if(NCBI_COMPONENT_wxWidgets_FOUND)
-            list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
-            get_filename_component(_libdir ${_lib} DIRECTORY)
-            set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-${_wx_ver} ${_libdir}/wx/include/gtk2-ansi-${_wx_ver} ${NCBI_COMPONENT_GTK2_INCLUDE})
-            set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} ${NCBI_COMPONENT_FONTCONFIG_LIBS} ${NCBI_COMPONENT_GTK2_LIBS} -lXxf86vm -lSM -lexpat)
-            if(BUILD_SHARED_LIBS)
-                set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
-            else()
-                set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
-            endif()
-        endif()
+NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
+NCBI_define_Xcomponent(NAME FONTCONFIG MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
+set(_wx_ver 3.1)
+NCBI_define_Xcomponent(NAME wxWidgets LIB
+    wx_gtk2_gl-${_wx_ver}
+    wx_gtk2_richtext-${_wx_ver}
+    wx_gtk2_aui-${_wx_ver}
+    wx_gtk2_propgrid-${_wx_ver}
+    wx_gtk2_xrc-${_wx_ver}
+    wx_gtk2_html-${_wx_ver}
+    wx_gtk2_qa-${_wx_ver}
+    wx_gtk2_adv-${_wx_ver}
+    wx_gtk2_core-${_wx_ver}
+    wx_base_xml-${_wx_ver}
+    wx_base_net-${_wx_ver}
+    wx_base-${_wx_ver}
+    wxscintilla-${_wx_ver}
+    INCLUDE wx-${_wx_ver} COMPONENT FONTCONFIG GTK2
+)
+if(NCBI_COMPONENT_wxWidgets_FOUND)
+    list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
+    get_filename_component(_libdir ${_lib} DIRECTORY)
+    set(NCBI_COMPONENT_wxWidgets_INCLUDE ${_libdir}/wx/include/gtk2-ansi-${_wx_ver} ${NCBI_COMPONENT_wxWidgets_INCLUDE})
+    set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} -lXxf86vm -lSM -lexpat)
+    if(BUILD_SHARED_LIBS)
+        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
     else()
-        find_package(GTK2)
-        NCBI_find_library(FONTCONFIG fontconfig)
-        if (GTK2_FOUND)
-            NCBI_define_component(wxWidgets
-                wx_gtk2_gl-3.1
-                wx_gtk2_richtext-3.1
-                wx_gtk2_aui-3.1
-                wx_gtk2_propgrid-3.1
-                wx_gtk2_xrc-3.1
-                wx_gtk2_html-3.1
-                wx_gtk2_qa-3.1
-                wx_gtk2_adv-3.1
-                wx_gtk2_core-3.1
-                wx_base_xml-3.1
-                wx_base_net-3.1
-                wx_base-3.1
-                wxscintilla-3.1
-            )
-            if(NCBI_COMPONENT_wxWidgets_FOUND)
-                list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
-                get_filename_component(_libdir ${_lib} DIRECTORY)
-                set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-3.1 ${_libdir}/wx/include/gtk2-ansi-3.1 ${GTK2_INCLUDE_DIRS})
-                set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} ${NCBI_COMPONENT_FONTCONFIG_LIBS} ${GTK2_LIBRARIES} -lXxf86vm -lSM -lexpat)
-                if(BUILD_SHARED_LIBS)
-                    set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
-                else()
-                    set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
-                endif()
-            endif()
-        endif()
+        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
     endif()
 endif()
 
@@ -558,7 +510,7 @@ NCBI_define_Xcomponent(NAME SAMTOOLS LIB bam)
 
 #############################################################################
 # FreeType
-NCBI_define_Xcomponent(NAME FreeType PACKAGE Freetype LIB freetype INCLUDE freetype2)
+NCBI_define_Xcomponent(NAME FreeType MODULE freetype2 PACKAGE Freetype LIB freetype INCLUDE freetype2)
 
 #############################################################################
 # FTGL
@@ -608,32 +560,28 @@ endif()
 # GRPC/PROTOBUF
 set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/protoc")
 set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/grpc_cpp_plugin")
+if(NOT EXISTS "${NCBI_PROTOC_APP}")
+    find_program(NCBI_PROTOC_APP protoc)
+endif()
+if(NOT EXISTS "${NCBI_GRPC_PLUGIN}")
+    find_program(NCBI_GRPC_PLUGIN grpc_cpp_plugin)
+endif()
 
-if(PKG_CONFIG_FOUND)
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        NCBI_define_component(PROTOBUF protobufd)
-    else()
-        NCBI_find_module(PROTOBUF protobuf)
-    endif()
-    NCBI_find_module(GRPC grpc++)
-    NCBI_define_component(Boring boringssl boringcrypto)
-    if(NCBI_COMPONENT_GRPC_FOUND)
-        set(NCBI_COMPONENT_GRPC_LIBS  ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
-    endif()
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    NCBI_define_Xcomponent(NAME PROTOBUF LIB protobufd)
+else()
+    NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
 endif()
-if(NOT NCBI_COMPONENT_GRPC_FOUND)
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-      set(_suffix "d")
-    else()
-      set(_suffix "")
-    endif()
-    NCBI_define_component(PROTOBUF protobuf${_suffix})
-    NCBI_define_component(GRPC 
-        grpc++ grpc address_sorting upb cares gpr absl_bad_optional_access absl_str_format_internal
-        absl_strings absl_strings_internal absl_base absl_spinlock_wait absl_dynamic_annotations
-        absl_int128 absl_throw_delegate absl_raw_logging_internal absl_log_severity boringssl boringcrypto
-        protobuf${_suffix})
+NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
+NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
+    grpc++ grpc address_sorting upb cares gpr absl_bad_optional_access absl_str_format_internal
+    absl_strings absl_strings_internal absl_base absl_spinlock_wait absl_dynamic_annotations
+    absl_int128 absl_throw_delegate absl_raw_logging_internal absl_log_severity
+    )
+if(NCBI_COMPONENT_GRPC_FOUND)
+    set(NCBI_COMPONENT_GRPC_LIBS  ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
 endif()
+list(REMOVE_ITEM NCBI_ALL_COMPONENTS Boring)
 
 #############################################################################
 # XALAN
@@ -664,7 +612,7 @@ endif()
 
 #############################################################################
 # OpenSSL
-NCBI_define_Xcomponent(NAME OpenSSL PACKAGE OpenSSL LIB ssl crypto)
+NCBI_define_Xcomponent(NAME OpenSSL MODULE openssl PACKAGE OpenSSL LIB ssl crypto)
 if(NCBI_COMPONENT_OpenSSL_FOUND)
     list(APPEND NCBI_ALL_LEGACY OPENSSL)
     set(NCBI_COMPONENT_OPENSSL_FOUND OpenSSL)
