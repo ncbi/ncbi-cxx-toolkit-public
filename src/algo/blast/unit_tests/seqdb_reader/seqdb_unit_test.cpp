@@ -4484,6 +4484,60 @@ BOOST_AUTO_TEST_CASE(TaxFilterWithGiListDB)
     BOOST_REQUIRE(total_length > 0);
 }
 
+BOOST_AUTO_TEST_CASE(TestMemoryMapFile)
+{
+	const int MAX_FD_COUNT = CSeqDBAtlas::e_MaxFileDescritors;
+	CSeqDBAtlas atlas(true);
+	for(int i=0; i < MAX_FD_COUNT; i++) {
+		atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
+	}
+	BOOST_REQUIRE_EQUAL(atlas.GetOpenedFilseCount(), MAX_FD_COUNT);
+	CRef<CSeqDBIsam> isam( new CSeqDBIsam(atlas, "data/big_gi", 'p', 'n', eGiId));
+	// 2 Files (index, data) are opened for each CSeqDBIsam
+	BOOST_REQUIRE_EQUAL(atlas.GetOpenedFilseCount(), MAX_FD_COUNT+2);
+	isam->UnLease();
+	BOOST_REQUIRE_EQUAL(atlas.GetOpenedFilseCount(), MAX_FD_COUNT);
+}
+
+#ifdef NCBI_THREADS
+class CTestThread : public CThread
+{
+public:
+    CTestThread(CSeqDBAtlas & atlas): m_atlas(atlas) { }
+
+    virtual void* Main(void) {
+    	m_Isam.Reset(new CSeqDBIsam(m_atlas, "data/seqp_v5", 'p', 'n', eGiId));
+    	CSeqDB::TOID oid;
+    	for (Int8 i=0; i < 10000; i++) {
+    		m_Isam->IdToOid(i, oid);
+    	}
+    	return NULL;
+    }
+    ~CTestThread() {}
+private:
+    CSeqDBAtlas & m_atlas;
+    CRef<CSeqDBIsam> m_Isam;
+};
+
+
+BOOST_AUTO_TEST_CASE(TestMemoryMapFile_MT)
+{
+	CSeqDBAtlas atlas(true);
+	const int kNumThreads=64;
+	vector<CTestThread*> threads;
+	BOOST_REQUIRE_EQUAL(atlas.GetOpenedFilseCount(), 0);
+	for (int i=0; i < kNumThreads; i++) {
+		threads.push_back(new CTestThread(atlas));
+	}
+	for (int i=0; i < kNumThreads; i++) {
+		threads[i]->Run();
+	}
+	for (int i=0; i < kNumThreads; i++) {
+		threads[i]->Join();
+	}
+	BOOST_REQUIRE_EQUAL(atlas.GetOpenedFilseCount(), 2);
+}
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
