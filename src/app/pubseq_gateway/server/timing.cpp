@@ -502,7 +502,8 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  max_stat_value,
                                    unsigned long  n_bins,
                                    const string &  stat_type,
-                                   unsigned long  small_blob_size)
+                                   unsigned long  small_blob_size) :
+    m_HugeBlobByteCounter(0)
 {
     auto        scale_type = TOnePSGTiming::eLog2;
     if (NStr::CompareNocase(stat_type, "linear") == 0)
@@ -753,7 +754,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         { "HugeBlobRetrieval",
           SInfo(m_HugeBlobRetrievalTiming.get(),
                 "Huge blob retrieval",
-                "The timing of the very large blob retrieval"
+                "The timing of the very large blob retrieval",
+                &m_HugeBlobByteCounter,
+                "HugeBlobByteCounter",
+                "Huge blob bytes counter",
+                "The number of bytes transferred to the user as very large blobs"
                )
         },
         { "BlobRetrievalNotFound",
@@ -823,6 +828,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         }
     };
 
+    size_t      index = 0;
     for (auto & retieve_timing : m_BlobRetrieveTiming) {
         string      min_size_str = to_string(retieve_timing->GetMinBlobSize());
         string      max_size_str = to_string(retieve_timing->GetMaxBlobSize());
@@ -832,7 +838,19 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         string      description = "The timing of a blob retrieval when "
                         "the blob size is between " + min_size_str +
                         " and " + max_size_str + " bytes";
-        m_NamesMap[id] = SInfo(retieve_timing.get(), name, description);
+
+        string      counter_id = "BlobByteCounterFrom" + min_size_str +
+                                 "To" + max_size_str;
+        string      counter_name = "Blob byte counter (blob size: " +
+                                   min_size_str + " to " + max_size_str + ")";
+        string      counter_description = "The number of bytes transferred to "
+                                          "the user as blobs size between " +
+                                          min_size_str + " and " +
+                                          max_size_str;
+        m_NamesMap[id] = SInfo(retieve_timing.get(), name, description,
+                               &m_BlobByteCounters[index],
+                               counter_id, counter_name, counter_description);
+        ++index;
     }
 
     // Overwrite the default names and descriptions with what came from
@@ -844,6 +862,16 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         if (m_NamesMap.find(item.first) != m_NamesMap.end()) {
             m_NamesMap[item.first].m_Name = get<0>(item.second);
             m_NamesMap[item.first].m_Description = get<1>(item.second);
+        } else {
+            // May need to overwrite the associated counters names and
+            // descriptions
+            for (auto &  info : m_NamesMap) {
+                if (info.second.m_CounterId == item.first) {
+                    info.second.m_CounterName = get<0>(item.second);
+                    info.second.m_CounterDescription = get<1>(item.second);
+                    break;
+                }
+            }
         }
     }
 }
@@ -863,6 +891,7 @@ bool COperationTiming::x_SetupBlobSizeBins(unsigned long  min_stat_value,
                                         min_stat_value, max_stat_value,
                                         n_bins, stat_type,
                                         reset_to_default)));
+    m_BlobByteCounters.push_back(0);
     m_Ends.push_back(small_blob_size);
 
     unsigned long   range_end = small_blob_size;
@@ -882,6 +911,7 @@ bool COperationTiming::x_SetupBlobSizeBins(unsigned long  min_stat_value,
                                             min_stat_value, max_stat_value,
                                             n_bins, stat_type,
                                             reset_to_default)));
+        m_BlobByteCounters.push_back(0);
         m_Ends.push_back(range_end);
 
         range_start = range_end + 1;
@@ -949,10 +979,13 @@ void COperationTiming::Register(EPSGOperation  operation,
                 m_NotFoundBlobRetrievalTiming->Add(mks);
             else {
                 ssize_t     bin_index = x_GetBlobRetrievalBinIndex(blob_size);
-                if (bin_index < 0)
+                if (bin_index < 0) {
+                    m_HugeBlobByteCounter += blob_size;
                     m_HugeBlobRetrievalTiming->Add(mks);
-                else
+                } else {
+                    m_BlobByteCounters[bin_index] += blob_size;
                     m_BlobRetrieveTiming[bin_index]->Add(mks);
+                }
             }
             break;
         case eNARetrieve:
@@ -1045,6 +1078,10 @@ void COperationTiming::Reset(void)
 
     for (auto &  item : m_BlobRetrieveTiming)
         item->Reset();
+
+    for (auto &  item : m_BlobByteCounters)
+        item = 0;
+    m_HugeBlobByteCounter = 0;
 }
 
 
@@ -1073,6 +1110,17 @@ COperationTiming::Serialize(int  most_ancient_time,
                              tick_span,
                              name_to_histogram.second.m_Name,
                              name_to_histogram.second.m_Description));
+            if (name_to_histogram.second.m_Counter != nullptr) {
+                CJsonNode       bytes_counter(CJsonNode::NewObjectNode());
+                bytes_counter.SetString("name",
+                                        name_to_histogram.second.m_CounterName);
+                bytes_counter.SetString("description",
+                                        name_to_histogram.second.m_CounterDescription);
+                bytes_counter.SetInteger("bytes",
+                                         *name_to_histogram.second.m_Counter);
+                ret.SetByKey(name_to_histogram.second.m_CounterId,
+                             bytes_counter);
+            }
         }
     } else {
         for (const auto &  name : histogram_names) {
@@ -1086,6 +1134,17 @@ COperationTiming::Serialize(int  most_ancient_time,
                                                            tick_span,
                                                            iter->second.m_Name,
                                                            iter->second.m_Description));
+                if (iter->second.m_Counter != nullptr) {
+                    CJsonNode       bytes_counter(CJsonNode::NewObjectNode());
+                    bytes_counter.SetString("name",
+                                            iter->second.m_CounterName);
+                    bytes_counter.SetString("description",
+                                            iter->second.m_CounterDescription);
+                    bytes_counter.SetInteger("bytes",
+                                             *(iter->second.m_Counter));
+                    ret.SetByKey(iter->second.m_CounterId,
+                                 bytes_counter);
+                }
             }
         }
     }

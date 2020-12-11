@@ -370,6 +370,8 @@ class COperationTiming
         vector<unsigned long>                               m_Ends;
         unique_ptr<CHugeBlobRetrieveTiming>                 m_HugeBlobRetrievalTiming;
         unique_ptr<CNotFoundBlobRetrieveTiming>             m_NotFoundBlobRetrievalTiming;
+        vector<uint64_t>                                    m_BlobByteCounters;
+        uint64_t                                            m_HugeBlobByteCounter;
 
         // Resolution timing
         unique_ptr<CResolutionTiming>                       m_ResolutionErrorTiming;
@@ -384,13 +386,35 @@ class COperationTiming
             string              m_Name;
             string              m_Description;
 
+            // Specific for blob retrieval. They also have a cummulative
+            // counter for the blob bytes sent to the user.
+            uint64_t *          m_Counter;
+            string              m_CounterId;
+            string              m_CounterName;
+            string              m_CounterDescription;
+
             SInfo() :
-                m_Timing(nullptr)
+                m_Timing(nullptr),
+                m_Counter(nullptr)
             {}
 
             SInfo(CPSGTimingBase *  timing,
                   const string &  name, const string &  description) :
-                m_Timing(timing), m_Name(name), m_Description(description)
+                m_Timing(timing), m_Name(name), m_Description(description),
+                m_Counter(nullptr)
+            {}
+
+            SInfo(CPSGTimingBase *  timing,
+                  const string &  name, const string &  description,
+                  uint64_t *  counter,
+                  const string &  counter_id,
+                  const string &  counter_name,
+                  const string &  counter_description) :
+                m_Timing(timing), m_Name(name), m_Description(description),
+                m_Counter(counter),
+                m_CounterId(counter_id),
+                m_CounterName(counter_name),
+                m_CounterDescription(counter_description)
             {}
 
             SInfo(const SInfo &) = default;
