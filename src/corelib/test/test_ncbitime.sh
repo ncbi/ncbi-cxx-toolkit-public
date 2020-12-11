@@ -1,8 +1,7 @@
 #! /bin/sh
 # $Id$
 
-unamestr=`uname -s`
-if [ "$unamestr" == CYGWIN* ]; then
+if test -n "`uname -s | grep CYGWIN`" ; then
    # Disable CTime API tests on Windows outside NCBI.
    # Tests depends on a EST timezone, setting TZ environment variable 
    # (as we do for Unix below) doesn't works on Windows.
