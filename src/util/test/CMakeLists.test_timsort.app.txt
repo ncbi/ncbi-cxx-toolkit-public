@@ -1,14 +1,9 @@
-#############################################################################
 # $Id$
-# Author:  Eugene Vasilchenko (vasilche@ncbi.nlm.nih.gov)
-# Build timsort test application
-#############################################################################
-
 
 NCBI_begin_app(test_timsort)
   NCBI_sources(test_timsort)
   NCBI_uses_toolkit_libraries(xutil)
-  NCBI_project_watchers(vasilche)
   NCBI_add_test()
+  NCBI_project_watchers(vasilche)
 NCBI_end_app()
 

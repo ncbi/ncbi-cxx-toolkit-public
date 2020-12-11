@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_floating_point_comparison)
   NCBI_sources(test_floating_point_comparison)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(test_boost)
-  NCBI_project_watchers(satskyse)
   NCBI_add_test()
+  NCBI_project_watchers(satskyse)
 NCBI_end_app()
 

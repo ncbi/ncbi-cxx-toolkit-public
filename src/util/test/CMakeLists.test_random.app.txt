@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_random)
   NCBI_sources(test_random)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xutil)
-  NCBI_project_watchers(satskyse)
   NCBI_add_test()
+  NCBI_project_watchers(satskyse)
 NCBI_end_app()
 

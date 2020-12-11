@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_align)
   NCBI_sources(test_align)
   NCBI_headers(test_align.hpp)
   NCBI_requires(Boost.Test.Included)
-  NCBI_project_watchers(todorov)
   NCBI_add_test()
+  NCBI_project_watchers(todorov)
 NCBI_end_app()
 

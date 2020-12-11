@@ -1,14 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_regexp)
   NCBI_sources(test_regexp)
   NCBI_uses_toolkit_libraries(xregexp)
-  NCBI_project_watchers(ivanov)
   NCBI_begin_test(test_regexp)
     NCBI_set_test_command(test_regexp Abc Ef Ghh Ooo Pppk)
   NCBI_end_test()
+  NCBI_project_watchers(ivanov)
 NCBI_end_app()
 

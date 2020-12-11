@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_thread_pool)
   NCBI_sources(test_thread_pool)
   NCBI_requires(MT)
   NCBI_uses_toolkit_libraries(test_mt xutil)
-  NCBI_project_watchers(vakatov)
   NCBI_add_test()
+  NCBI_project_watchers(vakatov)
 NCBI_end_app()
 

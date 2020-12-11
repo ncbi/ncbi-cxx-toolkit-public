@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xqueryparse)
   NCBI_sources(query_parse parser query_tree_print query_exec parse_utils)

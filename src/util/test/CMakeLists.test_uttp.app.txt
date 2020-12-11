@@ -1,14 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_uttp)
   NCBI_sources(test_uttp)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xutil)
   NCBI_project_tags(grid)
-  NCBI_project_watchers(sadyrovr)
   NCBI_add_test()
+  NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 

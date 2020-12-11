@@ -1,11 +1,16 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(lmdb_test4)
+
   NCBI_sources(mtest4)
   NCBI_requires(LocalLMDB)
   NCBI_project_tags(test)
+
+  NCBI_begin_test(lmdb_test4)
+    NCBI_set_test_command(lmdb_test.sh 4)
+    NCBI_set_test_assets(lmdb_test.sh)
+  NCBI_end_test()
+
   NCBI_project_watchers(ivanov)
-  NCBI_add_test(lmdb_test.sh 4)
+
 NCBI_end_app()

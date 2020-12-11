@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_strsearch)
   NCBI_sources(test_strsearch)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xutil)
-  NCBI_project_watchers(ivanov)
   NCBI_add_test()
+  NCBI_project_watchers(ivanov)
 NCBI_end_app()
 

@@ -1,13 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_cache_mt)
   NCBI_sources(test_cache_mt)
   NCBI_requires(MT)
   NCBI_uses_toolkit_libraries(test_mt xutil)
-  NCBI_project_watchers(grichenk)
   NCBI_add_test()
+  NCBI_project_watchers(grichenk)
 NCBI_end_app()
 

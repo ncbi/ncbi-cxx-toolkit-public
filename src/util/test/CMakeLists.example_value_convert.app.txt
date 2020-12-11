@@ -1,12 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(example_value_convert)
   NCBI_sources(example_value_convert)
   NCBI_uses_toolkit_libraries(xncbi)
-  NCBI_project_watchers(vakatov)
   NCBI_add_test()
+  NCBI_project_watchers(vakatov)
 NCBI_end_app()
 
