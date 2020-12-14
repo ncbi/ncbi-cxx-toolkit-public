@@ -352,7 +352,7 @@ CLDS2_Database::x_GetDbConnection(void) const
     }
     SLDS2_DbConnection* db_conn = tls->GetValue();
     if ( !db_conn ) {
-        auto_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
+        unique_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
         db_conn = conn_ptr.get();
         tls->SetValue(conn_ptr.release(), CTlsBase::DefaultCleanup<SLDS2_DbConnection>);
     }
@@ -893,7 +893,7 @@ void CLDS2_Database::GetAnnots(Int8 blob_id, TLDS2Annots& infos)
 
     CSQLITE_Statement& st = x_GetStatement(eSt_GetAnnotInfosForBlob);
     st.Bind(1, blob_id);
-    auto_ptr<SLDS2_Annot> annot;
+    unique_ptr<SLDS2_Annot> annot;
     while ( st.Step() ) {
         Int8 annot_id = st.GetInt8(0);
         if (!annot.get()  ||  annot_id != annot->id) {
