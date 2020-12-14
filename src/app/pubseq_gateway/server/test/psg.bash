@@ -81,6 +81,22 @@ if echo $TESTS | grep -w $obasename > /dev/null; then
     exit 0
 fi
 
+# If there are two processors of the same type they will produce double output
+# in case of expected errors and may produce double output in case of named
+# annotations. So filter those test cases in a special way
+TESTS="pdb_1_5 pdb_1_6 pdb_2_5 pdb_2_6 pdb_3_5 pdb_3_6 pdb_4_5 pdb_4_6
+       non_existing_seq_id_no_cass get_incorrect_prim_seq_id_type_no_cass
+       get_incorrect_sec_seq_id_type_no_cass tse_chunk_chunk_too_big
+       non_existing_seq_id_1 invalid_seq_id_type_1
+       invalid_primary_seq_id non_exsting_sat get_non_existing_seq_id
+       get_incorrect_sec_seq_id_type get_incorrect_prim_seq_id_type
+       get_na_two_valid_annot get_na_one_of_two_valid_annot get_na_one_valid_annot"
+if echo $TESTS | grep -w $obasename > /dev/null; then
+    echo "GOT IT: $obasename"
+    curl -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | sed -e 's/\r$//' | grep . | sed  -r 's/item_id=[0-9]+&//g' | sed -r 's/&n_chunks=[0-9]+//g' | sort | uniq > $ofile
+    exit 0
+fi
+
 # The most common case
 curl -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
 exit 0
