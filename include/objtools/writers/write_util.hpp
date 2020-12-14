@@ -197,6 +197,16 @@ public:
     static bool IsProteinSequence(
         CBioseq_Handle);
 
+    static bool IsTransspliced(
+        const CSeq_feat& feature);
+
+    static bool IsTransspliced(
+        const CMappedFeat& mf);
+
+    static bool GetTranssplicedEndpoints(
+        const CSeq_loc& loc, 
+        unsigned int& inPoint,
+        unsigned int& outPoint);
 };
 
 END_objects_SCOPE

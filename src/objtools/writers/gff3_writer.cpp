@@ -92,74 +92,6 @@ USING_SCOPE(objects);
     ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
 //  ----------------------------------------------------------------------------
-static bool sIsTransspliced(const CSeq_feat& feature)
-//  ----------------------------------------------------------------------------
-{
-    return (feature.IsSetExcept_text() && feature.GetExcept_text() == "trans-splicing");
-}
-
-//  ----------------------------------------------------------------------------
-bool sIsTransspliced(const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-    return sIsTransspliced(mf.GetMappedFeature());
-    //return (mf.IsSetExcept_text()  &&  mf.GetExcept_text() == "trans-splicing");
-}
-
-
-//  ----------------------------------------------------------------------------
-bool sGetTranssplicedEndpoints(
-    const CSeq_loc& loc, 
-    unsigned int& inPoint,
-    unsigned int& outPoint)
-//  start determined by the minimum start of any sub interval
-//  stop determined by the maximum stop of any sub interval
-//  ----------------------------------------------------------------------------
-{
-    typedef list<CRef<CSeq_interval> >::const_iterator CIT;
-
-    if (!loc.IsPacked_int()) {
-        return false;
-    }
-    const CPacked_seqint& packedInt = loc.GetPacked_int();
-    inPoint = packedInt.GetStart(eExtreme_Biological);
-    outPoint = packedInt.GetStop(eExtreme_Biological);
-    const list<CRef<CSeq_interval> >& intvs = packedInt.Get();
-    for (CIT cit = intvs.begin(); cit != intvs.end(); cit++) {
-        const CSeq_interval& intv = **cit;
-        if (intv.GetFrom() < inPoint) {
-            inPoint = intv.GetFrom();
-        }
-        if (intv.GetTo() > outPoint) {
-            outPoint = intv.GetTo();
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool sGetTranssplicedOutPoint(const CSeq_loc& loc, unsigned int& outPoint)
-//  stop determined by the maximum stop of any sub interval
-//  ----------------------------------------------------------------------------
-{
-    typedef list<CRef<CSeq_interval> >::const_iterator CIT;
-
-    if (!loc.IsPacked_int()) {
-        return false;
-    }
-    const CPacked_seqint& packedInt = loc.GetPacked_int();
-    outPoint = packedInt.GetStop(eExtreme_Biological);
-    const list<CRef<CSeq_interval> >& intvs = packedInt.Get();
-    for (CIT cit = intvs.begin(); cit != intvs.end(); cit++) {
-        const CSeq_interval& intv = **cit;
-        if (intv.GetTo() > outPoint) {
-            outPoint = intv.GetTo();
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool
 sInheritScores(
     const CSeq_align& alignFrom,
@@ -1590,7 +1522,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 	}
 
 
-    if(sIsTransspliced(mf)){    
+    if(CWriteUtil::IsTransspliced(mf)){    
         xAssignFeatureAttributeParentGene(*pRna, fc, mf);
         TSeqPos seqlength = 0;
         if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
@@ -1736,8 +1668,8 @@ bool CGff3Writer::xAssignFeatureEndpoints(
     unsigned int seqStart(0);
     unsigned int seqStop(0);
 
-    if (sIsTransspliced(mf)) {
-        if (!sGetTranssplicedEndpoints(record.Location(), 
+    if (CWriteUtil::IsTransspliced(mf)) {
+        if (!CWriteUtil::GetTranssplicedEndpoints(record.Location(), 
                 seqStart, seqStop)) {
             return false;
         }

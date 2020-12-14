@@ -567,9 +567,21 @@ bool CGff2Writer::xAssignFeatureEndpoints(
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
-    auto start = mf.GetLocation().GetStart(eExtreme_Positional);
-    auto stop = mf.GetLocation().GetStop(eExtreme_Positional);
+    unsigned int start(0);
+    unsigned int stop(0);
     auto strand = mf.GetLocation().GetStrand();
+
+    if (CWriteUtil::IsTransspliced(mf)) {
+       if (!CWriteUtil::GetTranssplicedEndpoints(mf.GetLocation(), 
+                start, stop)) {
+            return false;
+        }
+        CGffBaseRecord& baseRecord = record;
+        baseRecord.SetLocation(start, stop, strand);
+        return true;
+    }
+    start = mf.GetLocation().GetStart(eExtreme_Positional);
+    stop = mf.GetLocation().GetStop(eExtreme_Positional);
     record.SetEndpoints(start, stop, strand);
     return true;
 }

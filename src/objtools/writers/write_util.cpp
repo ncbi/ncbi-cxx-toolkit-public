@@ -1327,6 +1327,59 @@ bool CWriteUtil::IsProteinSequence(CBioseq_Handle bsh)
     return false;
 }
 
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsTransspliced(const CSeq_feat& feature)
+//  ----------------------------------------------------------------------------
+{
+    return (feature.IsSetExcept_text() && feature.GetExcept_text() == "trans-splicing");
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsTransspliced(const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    return CWriteUtil::IsTransspliced(mf.GetMappedFeature());
+    //return (mf.IsSetExcept_text()  &&  mf.GetExcept_text() == "trans-splicing");
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetTranssplicedEndpoints(
+//  ----------------------------------------------------------------------------
+    const CSeq_loc& loc, 
+    unsigned int& inPoint,
+    unsigned int& outPoint)
+//  start determined by the minimum start of any sub interval
+//  stop determined by the maximum stop of any sub interval
+//  ----------------------------------------------------------------------------
+{
+    typedef list<CRef<CSeq_interval> >::const_iterator CIT;
+
+    CSeq_loc testLoc;
+    testLoc.Assign(loc);
+    if (testLoc.IsMix()) {
+        testLoc.ChangeToPackedInt();
+    }
+    if (!testLoc.IsPacked_int()) {
+        return false;
+    }
+    const CPacked_seqint& packedInt = testLoc.GetPacked_int();
+    inPoint = packedInt.GetStart(eExtreme_Biological);
+    outPoint = packedInt.GetStop(eExtreme_Biological);
+    const list<CRef<CSeq_interval> >& intvs = packedInt.Get();
+    for (CIT cit = intvs.begin(); cit != intvs.end(); cit++) {
+        const CSeq_interval& intv = **cit;
+        if (intv.GetFrom() < inPoint) {
+            inPoint = intv.GetFrom();
+        }
+        if (intv.GetTo() > outPoint) {
+            outPoint = intv.GetTo();
+        }
+    }
+    return true;
+}
+
 
 
 END_NCBI_SCOPE
