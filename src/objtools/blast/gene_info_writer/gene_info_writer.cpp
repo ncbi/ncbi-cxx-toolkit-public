@@ -361,7 +361,7 @@ void CGeneFileWriter::x_Gene2Accn_ProcessFile(bool bOverwrite)
     // parse each line and populate the records array
     // also populate the m_mapGiToType map with the Gi types
 
-    auto_ptr<CLineProcessor> proc(new CGene2AccnProcessor(this));
+    unique_ptr<CLineProcessor> proc(new CGene2AccnProcessor(this));
     x_ReadAndProcessFile
                 (inGene2Accn,
                  proc.get(),
@@ -567,7 +567,7 @@ void CGeneFileWriter::x_GeneInfo_ProcessFile(bool bOverwrite)
     // (side effects within x_GeneInfo_LineToRecord)
 
     m_nCurrentOffset = 0;
-    auto_ptr<CLineProcessor> proc(new CGeneInfoProcessor(this));
+    unique_ptr<CLineProcessor> proc(new CGeneInfoProcessor(this));
     x_ReadAndProcessFile
                 (inGeneInfo,
                  proc.get(),
@@ -674,7 +674,7 @@ void CGeneFileWriter::
 
     // parse each line and populate the records array
 
-    auto_ptr<CLineProcessor> proc(new CGene2PMProcessor(this));
+    unique_ptr<CLineProcessor> proc(new CGene2PMProcessor(this));
     x_ReadAndProcessFile
                 (inGene2PM,
                  proc.get(),
