@@ -454,7 +454,7 @@ private:
 
     // Structure to hold per-thread connection and all statements.
     struct SLDS2_DbConnection {
-        auto_ptr<CSQLITE_Connection> Connection;
+        unique_ptr<CSQLITE_Connection> Connection;
         TStatements                  Statements;
 
         SLDS2_DbConnection(void);
