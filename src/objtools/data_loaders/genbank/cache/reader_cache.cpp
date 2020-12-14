@@ -1644,7 +1644,7 @@ GetCacheParams(const SCacheInfo::TParams* src_params,
     else {
         section_name = NCBI_GBLOADER_READER_CACHE_PARAM_BLOB_SECTION;
     }
-    auto_ptr<SCacheInfo::TParams> section
+    unique_ptr<SCacheInfo::TParams> section
         (GetCacheParamsCopy(src_params, section_name));
     if ( !section.get() ) {
         // disabled
@@ -1673,7 +1673,7 @@ ICache* SCacheInfo::CreateCache(const TParams* params,
                                 EReaderOrWriter reader_or_writer,
                                 EIdOrBlob id_or_blob)
 {
-    auto_ptr<TParams> cache_params
+    unique_ptr<TParams> cache_params
         (GetCacheParams(params, reader_or_writer, id_or_blob));
     if ( !cache_params.get() ) {
         return 0;
@@ -1693,9 +1693,9 @@ void CCacheReader::InitializeCache(CReaderCacheManager& cache_manager,
         params->FindNode(NCBI_GBLOADER_READER_CACHE_DRIVER_NAME) : 0;
     ICache* id_cache = 0;
     ICache* blob_cache = 0;
-    auto_ptr<TParams> id_params
+    unique_ptr<TParams> id_params
         (GetCacheParams(reader_params, eCacheReader, eIdCache));
-    auto_ptr<TParams> blob_params
+    unique_ptr<TParams> blob_params
         (GetCacheParams(reader_params, eCacheReader, eBlobCache));
     _ASSERT(id_params.get());
     _ASSERT(blob_params.get());
