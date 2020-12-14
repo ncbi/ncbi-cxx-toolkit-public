@@ -178,44 +178,18 @@ endif()
 
 #############################################################################
 # BACKWARD, UNWIND
-if(NOT NCBI_COMPONENT_BACKWARD_DISABLED)
-    if(EXISTS ${NCBI_ThirdParty_BACKWARD}/include)
-        set(LIBBACKWARD_INCLUDE ${NCBI_ThirdParty_BACKWARD}/include)
-        set(HAVE_LIBBACKWARD_CPP YES)
-        set(NCBI_COMPONENT_BACKWARD_FOUND YES)
-        set(NCBI_COMPONENT_BACKWARD_INCLUDE ${LIBBACKWARD_INCLUDE})
-        list(APPEND NCBI_ALL_COMPONENTS BACKWARD)
-    else()
-        message("NOT FOUND BACKWARD")
-    endif()
-    find_library(LIBBACKWARD_LIBS NAMES backward HINTS ${NCBI_ThirdParty_BACKWARD}/lib)
+NCBI_define_Xcomponent(NAME BACKWARD)
+list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
+if(NCBI_COMPONENT_BACKWARD_FOUND)
+    set(HAVE_LIBBACKWARD_CPP YES)
     find_library(LIBDW_LIBS NAMES dw)
     if (LIBDW_LIBS)
-        set(HAVE_LIBDW YES)
+        set(HAVE_LIBDW 1)
+        set(NCBI_COMPONENT_BACKWARD_LIBS ${NCBI_COMPONENT_BACKWARD_LIBS} ${LIBDW_LIBS})
     endif()
-    if(HAVE_LIBBACKWARD_CPP AND HAVE_LIBDW)
-        set(NCBI_COMPONENT_BACKWARD_LIBS ${LIBDW_LIBS})
-#        set(NCBI_COMPONENT_BACKWARD_LIBS ${LIBBACKWARD_LIBS} ${LIBDW_LIBS})
-    endif()
-else(NOT NCBI_COMPONENT_BACKWARD_DISABLED)
-    message("DISABLED BACKWARD")
-endif(NOT NCBI_COMPONENT_BACKWARD_DISABLED)
-
-if(NOT NCBI_COMPONENT_UNWIND_DISABLED)
-    if(EXISTS ${NCBI_ThirdParty_UNWIND}/include)
-        set(LIBUNWIND_INCLUDE ${NCBI_ThirdParty_UNWIND}/include)
-        set(HAVE_LIBUNWIND YES)
-        find_library(LIBUNWIND_LIBS NAMES unwind HINTS "${NCBI_ThirdParty_UNWIND}/lib" )
-        set(NCBI_COMPONENT_UNWIND_FOUND YES)
-        set(NCBI_COMPONENT_UNWIND_INCLUDE ${LIBUNWIND_INCLUDE})
-        set(NCBI_COMPONENT_UNWIND_LIBS ${LIBUNWIND_LIBS})
-        list(APPEND NCBI_ALL_COMPONENTS UNWIND)
-    else()
-        message("NOT FOUND UNWIND")
-    endif()
-else(NOT NCBI_COMPONENT_UNWIND_DISABLED)
-    message("DISABLED UNWIND")
-endif(NOT NCBI_COMPONENT_UNWIND_DISABLED)
+endif()
+NCBI_define_Xcomponent(NAME UNWIND MODULE libunwind LIB unwind)
+list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 ############################################################################
 # Kerberos 5 (via GSSAPI)
@@ -282,6 +256,7 @@ include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
 if(Boost_FOUND)
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
   set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${Boost_INCLUDE_DIRS})
+  set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
 else()
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
@@ -429,7 +404,7 @@ NCBI_define_Xcomponent(NAME wxWidgets LIB
     wx_base_net-${_wx_ver}
     wx_base-${_wx_ver}
     wxscintilla-${_wx_ver}
-    INCLUDE wx-${_wx_ver} COMPONENT FONTCONFIG GTK2
+    INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
 )
 if(NCBI_COMPONENT_wxWidgets_FOUND)
     list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
@@ -446,7 +421,7 @@ endif()
 ##############################################################################
 # GCRYPT
 NCBI_define_Xcomponent(NAME GPG    LIB gpg-error)
-NCBI_define_Xcomponent(NAME GCRYPT LIB gcrypt COMPONENT GPG)
+NCBI_define_Xcomponent(NAME GCRYPT LIB gcrypt ADD_COMPONENT GPG)
 
 #############################################################################
 # XML
@@ -458,7 +433,7 @@ endif()
 
 #############################################################################
 # XSLT
-NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt COMPONENT XML)
+NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML)
 if(NCBI_COMPONENT_XSLT_FOUND)
     if(LIBXSLT_XSLTPROC_EXECUTABLE)
         set(NCBI_XSLTPROCTOOL ${LIBXSLT_XSLTPROC_EXECUTABLE})
@@ -478,7 +453,7 @@ endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt COMPONENT XML GCRYPT)
+NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT)
 if(NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
 endif()
@@ -542,7 +517,7 @@ endif()
 
 ##############################################################################
 # OSMesa
-NCBI_define_Xcomponent(NAME OSMesa LIB OSMesa COMPONENT OpenGL)
+NCBI_define_Xcomponent(NAME OSMesa LIB OSMesa ADD_COMPONENT OpenGL)
 if(NCBI_COMPONENT_OSMesa_FOUND)
     list(APPEND NCBI_ALL_LEGACY MESA)
     set(NCBI_COMPONENT_MESA_FOUND OSMesa)
@@ -678,7 +653,7 @@ NCBI_define_Xcomponent(NAME GL2PS LIB gl2ps)
 #############################################################################
 # GMOCK
 NCBI_define_Xcomponent(NAME GTEST MODULE gtest LIB gtest)
-NCBI_define_Xcomponent(NAME GMOCK MODULE gmock LIB gmock COMPONENT GTEST)
+NCBI_define_Xcomponent(NAME GMOCK MODULE gmock LIB gmock ADD_COMPONENT GTEST)
 
 #############################################################################
 # CASSANDRA
