@@ -52,7 +52,7 @@ class CFastaRoundTripTestApp : public CNcbiApplication
 
 void CFastaRoundTripTestApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test round-trip FASTA <-> ASN.1 conversion",
                               false);
@@ -73,9 +73,9 @@ void CFastaRoundTripTestApp::Init(void)
 }
 
 static
-auto_ptr<CFastaOstream> s_GetFastaOstream(CNcbiOstream& os, const CArgs& args)
+unique_ptr<CFastaOstream> s_GetFastaOstream(CNcbiOstream& os, const CArgs& args)
 {
-    auto_ptr<CFastaOstream> out(new CFastaOstream(os));
+    unique_ptr<CFastaOstream> out(new CFastaOstream(os));
     if (args["outflags"]) {
         out->SetAllFlags(args["outflags"].AsInteger());
     }
@@ -90,7 +90,7 @@ int CFastaRoundTripTestApp::Run(void)
 {
     const CArgs&          args = GetArgs();
     CFastaReader::TFlags  inflags = args["inflags"].AsInteger();
-    auto_ptr<CMemoryFile> mf(new CMemoryFile(args["in"].AsString()));
+    unique_ptr<CMemoryFile> mf(new CMemoryFile(args["in"].AsString()));
     CRef<CSeq_entry>      se, se2;
     CRef<CSeq_loc>        mask;
     string                str;
@@ -115,7 +115,7 @@ int CFastaRoundTripTestApp::Run(void)
 
     {{
         CNcbiOstrstream         oss;
-        auto_ptr<CFastaOstream> fos(s_GetFastaOstream(oss, args));
+        unique_ptr<CFastaOstream> fos(s_GetFastaOstream(oss, args));
         fos->SetMask(CFastaOstream::eSoftMask, mask);
         fos->Write(*se);
         str = CNcbiOstrstreamToString(oss);
