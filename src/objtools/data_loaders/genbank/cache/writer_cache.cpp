@@ -63,9 +63,9 @@ void CCacheWriter::InitializeCache(CReaderCacheManager& cache_manager,
         params->FindNode(NCBI_GBLOADER_WRITER_CACHE_DRIVER_NAME) : 0;
     ICache* id_cache = 0;
     ICache* blob_cache = 0;
-    auto_ptr<TParams> id_params
+    unique_ptr<TParams> id_params
         (GetCacheParams(writer_params, eCacheWriter, eIdCache));
-    auto_ptr<TParams> blob_params
+    unique_ptr<TParams> blob_params
         (GetCacheParams(writer_params, eCacheWriter, eBlobCache));
     _ASSERT(id_params.get());
     _ASSERT(blob_params.get());
@@ -333,7 +333,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
             s<<key<<","<<GetSeq_idsSubkey();
         }
         _ASSERT(!lock.GetSeq_ids().empty());
-        auto_ptr<IWriter> writer
+        unique_ptr<IWriter> writer
             (m_IdCache->GetWriteStream(key, 0, GetSeq_idsSubkey()));
         if ( !writer.get() ) {
             return;
@@ -529,8 +529,8 @@ private:
     string              m_Key;
     TVersion            m_Version;
     string              m_Subkey;
-    auto_ptr<IWriter>   m_Writer;
-    auto_ptr<CWStream>  m_Stream;
+    unique_ptr<IWriter>   m_Writer;
+    unique_ptr<CWStream>  m_Stream;
 };
 
 
