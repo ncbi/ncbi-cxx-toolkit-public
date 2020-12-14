@@ -145,7 +145,7 @@ shared_ptr<CNcbiIstream> CLDS2_UrlHandler_File::OpenOrGetStream(const SLDS2_File
     size_t max_streams = TMaxCachedStreams::GetDefault();
     if (max_streams == 0) {
         // Do not use cached streams at all.
-        auto_ptr<CNcbiIfstream> fin(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+        unique_ptr<CNcbiIfstream> fin(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
         if (!fin->is_open()) {
             return nullptr;
         }
@@ -168,7 +168,7 @@ shared_ptr<CNcbiIstream> CLDS2_UrlHandler_File::OpenOrGetStream(const SLDS2_File
     }
     else {
         // Not yet cached
-        auto_ptr<CNcbiIfstream> fin(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+        unique_ptr<CNcbiIfstream> fin(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
         if (!fin->is_open()) {
             return nullptr;
         }
@@ -231,7 +231,7 @@ void CLDS2_UrlHandler_GZipFile::SaveChunks(const SLDS2_File& file_info,
                                            CLDS2_Database&   db)
 {
     // Collect information about chunks, store in in the database.
-    auto_ptr<CNcbiIfstream> in(
+    unique_ptr<CNcbiIfstream> in(
         new CNcbiIfstream(file_info.name.c_str(), ios::binary));
     if ( !in->is_open() ) {
         return;
@@ -265,7 +265,7 @@ CLDS2_UrlHandler_GZipFile::OpenStream(const SLDS2_File& file_info,
     if ( rewind ) {
         in->seekg(0);
     }
-    auto_ptr<CCompressionIStream> zin(
+    unique_ptr<CCompressionIStream> zin(
         new CCompressionIStream(
         *in,
         new CZipStreamDecompressor(CZipCompression::fGZip),
