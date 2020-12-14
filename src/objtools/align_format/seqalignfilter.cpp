@@ -513,13 +513,13 @@ CRef<CSeqDB> CSeqAlignFilter::PrepareSeqDB(const string& fname_db, bool is_prot,
 
 void CSeqAlignFilter::ReadSeqalignSet(const string& fname, CSeq_align_set& aln)
 {
-    auto_ptr<CObjectIStream> asn_in(CObjectIStream::Open(fname, eSerial_AsnText));
+    unique_ptr<CObjectIStream> asn_in(CObjectIStream::Open(fname, eSerial_AsnText));
     *asn_in >> aln;
 }
 
 void CSeqAlignFilter::WriteSeqalignSet(const string& fname, const CSeq_align_set& aln)
 {
-    auto_ptr<CObjectOStream> asn_out(CObjectOStream::Open(fname, eSerial_AsnText));
+    unique_ptr<CObjectOStream> asn_out(CObjectOStream::Open(fname, eSerial_AsnText));
     *asn_out << aln;
 }
 

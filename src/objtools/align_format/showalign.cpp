@@ -1923,7 +1923,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     int num_align = 0;
     m_cur_align = m_currAlignSeqListIndex - 1;
     m_currAlignHsp = 0;
-    auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
+    unique_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
     //*out2 << *m_SeqalignSetRef;
     //get segs first and get hsp number - m_segs,m_Hsp,m_subjRange
     x_PreProcessSeqAlign(actual_aln_list);

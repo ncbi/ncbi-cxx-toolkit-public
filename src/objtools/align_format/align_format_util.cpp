@@ -90,7 +90,7 @@ const char k_PSymbol[ePMatrixSize+1] =
 unique_ptr<CNcbiRegistry> CAlignFormatUtil::m_Reg;
 string CAlignFormatUtil::m_Protocol = "";
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
-auto_ptr<CGeneInfoFileReader> CAlignFormatUtil::m_GeneInfoReader;
+unique_ptr<CGeneInfoFileReader> CAlignFormatUtil::m_GeneInfoReader;
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
 ///@param score: place to extract the raw score to
@@ -1445,8 +1445,8 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
     //i2->Set().sort(SortHspByPercentIdentityDescending);
 
 
-    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo1( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info1)); 
-    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo2( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info2)); 
+    unique_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo1( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info1));
+    unique_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo2( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info2));
     double evalue1 = seqSetInfo1->evalue;
     double evalue2 = seqSetInfo2->evalue;
     double percentIdent1 = seqSetInfo1->percent_identity;
@@ -4073,7 +4073,7 @@ CAlignFormatUtil::GetSeqAlignCalcParams(const CSeq_align& aln)
     GetAlnScores(aln, score, bits, evalue, sum_n, 
                                        num_ident, use_this_gi);
 
-    auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
+    unique_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
     seqSetInfo->sum_n = sum_n == -1 ? 1:sum_n ;
     seqSetInfo->id = &(aln.GetSeq_id(1));
     seqSetInfo->use_this_gi = use_this_gi;
@@ -4352,7 +4352,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     }
 
 
-    auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
+    unique_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
     seqSetInfo->evalue = evalue;    
     seqSetInfo->bit_score = bitScore;    
     seqSetInfo->total_bit_score = totalBitScore;

@@ -92,7 +92,7 @@ struct CVecscreenTest : public CVecscreen {
     static void VecscreenDisplay(void)
     {
         CNcbiIfstream is("data/seqalign.vectorscreen");
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
         CRef<CSeq_annot> san(new CSeq_annot);
         *in >> *san;
         const CSeq_annot::TData& data = san->GetData();

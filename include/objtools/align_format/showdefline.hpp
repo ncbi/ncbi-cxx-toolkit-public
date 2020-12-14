@@ -446,8 +446,8 @@ protected:
     string  m_ImagePath;
 
     ///Internal configure file, i.e. .ncbirc
-    auto_ptr<CNcbiIfstream> m_ConfigFile;
-    auto_ptr<CNcbiRegistry> m_Reg;
+    unique_ptr<CNcbiIfstream> m_ConfigFile;
+    unique_ptr<CNcbiRegistry> m_Reg;
 
     ///query number
     int m_QueryNumber;

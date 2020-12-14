@@ -73,7 +73,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
     static void GetDeflineInfo(CBlastOM::ELocation location)
     {
         CNcbiIfstream is("data/showdefline-cppunit.aln");
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
         CRef<CSeq_annot> san(new CSeq_annot);
         *in >> *san;
         
@@ -98,9 +98,9 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
         
         int i = 0;
         ITERATE(CSeq_align_set::Tdata, iter, seqalign->Get()){
-            auto_ptr<CShowBlastDefline::SScoreInfo>
+            unique_ptr<CShowBlastDefline::SScoreInfo>
                 si(sbd.x_GetScoreInfo(**iter, 1));
-            auto_ptr<CShowBlastDefline::SDeflineInfo>
+            unique_ptr<CShowBlastDefline::SDeflineInfo>
                 dl(sbd.x_GetDeflineInfo(si->id, si->use_this_seqid, 1));
             CShowBlastDeflineTest::TestData(dl.get(), si.get(), i);
             i++;
