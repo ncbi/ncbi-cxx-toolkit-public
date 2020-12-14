@@ -1,3 +1,4 @@
+
 /*  $Id$
  * ===========================================================================
  *
@@ -162,7 +163,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 // read request
     if (request.GetInputStream()) {
         try {
-            auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
+            unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
             if (m_OmitScopePrefixes) {
                 dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
             }
@@ -188,9 +189,9 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     else {
         try {
 #if 0
-            auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"-",eSerial_StdWhenDash));
+            unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"-",eSerial_StdWhenDash));
 #else
-            auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"input.xml"));
+            unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"input.xml"));
 #endif
             if (m_OmitScopePrefixes) {
                 dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
@@ -243,7 +244,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     }
     response.WriteHeader();
     {
-        auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_Xml,response.out()));
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_Xml,response.out()));
         if (m_OmitScopePrefixes) {
             dynamic_cast<CObjectOStreamXml*>(out.get())->SetEnforcedStdXml(true);
         }

@@ -59,7 +59,7 @@ class CStlClassInfo_auto_ptr
 {
 public:
     typedef Data TDataType;
-    typedef auto_ptr<TDataType> TObjectType;
+    typedef unique_ptr<TDataType> TObjectType;
 
     static TTypeInfo GetTypeInfo(TTypeInfo dataType)
         {

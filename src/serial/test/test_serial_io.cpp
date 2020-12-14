@@ -1300,7 +1300,7 @@ void CSerialIOTestApp::Init(void)
 {
     CONNECT_Init(&GetConfig());
 
-    auto_ptr<CArgDescriptions> descrs(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> descrs(new CArgDescriptions);
 
     descrs->AddOptionalKey("io", "IOMethods", "I/O methods", CArgDescriptions::eString);
     descrs->SetConstraint("io", new CArgAllow_Set(IOMethodNames));
