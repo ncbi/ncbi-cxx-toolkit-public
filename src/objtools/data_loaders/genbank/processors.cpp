@@ -1788,8 +1788,8 @@ CObjectIStream* CProcessor_ID2::x_OpenDataStream(const CID2_Reply_Data& data)
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "CId2Reader::x_ReadData(): unknown data format");
     }
-    auto_ptr<IReader> reader(new COSSReader(data.GetData()));
-    auto_ptr<CNcbiIstream> stream;
+    unique_ptr<IReader> reader(new COSSReader(data.GetData()));
+    unique_ptr<CNcbiIstream> stream;
     switch ( data.GetData_compression() ) {
     case CID2_Reply_Data::eData_compression_none:
         break;
@@ -1812,7 +1812,7 @@ CObjectIStream* CProcessor_ID2::x_OpenDataStream(const CID2_Reply_Data& data)
         stream.reset(new CRStream(reader.release(),
                                   0, 0, CRWStreambuf::fOwnAll));
     }
-    auto_ptr<CObjectIStream> in;
+    unique_ptr<CObjectIStream> in;
     in.reset(CObjectIStream::Open(format, *stream.release(), eTakeOwnership));
     return in.release();
 }
@@ -1822,7 +1822,7 @@ void CProcessor_ID2::x_ReadData(const CID2_Reply_Data& data,
                                 const CObjectInfo& object,
                                 size_t& data_size)
 {
-    auto_ptr<CObjectIStream> in(x_OpenDataStream(data));
+    unique_ptr<CObjectIStream> in(x_OpenDataStream(data));
     switch ( data.GetData_type() ) {
     case CID2_Reply_Data::eData_type_seq_entry:
         if ( object.GetTypeInfo() != CSeq_entry::GetTypeInfo() ) {
@@ -1857,8 +1857,8 @@ void CProcessor_ID2::x_ReadData(const CID2_Reply_Data& data,
 void CProcessor_ID2::DumpDataAsText(const CID2_Reply_Data& data,
                                     CNcbiOstream& out_stream)
 {
-    auto_ptr<CObjectIStream> in(x_OpenDataStream(data));
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText,
+    unique_ptr<CObjectIStream> in(x_OpenDataStream(data));
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText,
                                                       out_stream));
     TTypeInfo type;
     switch ( data.GetData_type() ) {
