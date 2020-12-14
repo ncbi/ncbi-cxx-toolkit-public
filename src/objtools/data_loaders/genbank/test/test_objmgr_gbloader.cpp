@@ -111,7 +111,7 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Let test application add its own arguments
     TestApp_Args(*arg_desc);
     SetupArgDescriptions(arg_desc.release());
