@@ -337,7 +337,7 @@ size_t CListProcessor::Run(void)
         return 0;
     }
 
-    auto_ptr<CTar::TEntries> filelist;
+    unique_ptr<CTar::TEntries> filelist;
     size_t n = 0;
     do {
         string line;
@@ -607,7 +607,7 @@ void CTestFTPDownloadApp::Init(void)
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalPositional("url",
                                     "URL to test",

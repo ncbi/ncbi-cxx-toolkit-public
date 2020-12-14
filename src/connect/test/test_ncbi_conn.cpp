@@ -164,7 +164,7 @@ void CTestApp::Init(void)
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
 
-    auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist ("h"))
         args->Delete("h");
     if (args->Exist ("xmlhelp"))

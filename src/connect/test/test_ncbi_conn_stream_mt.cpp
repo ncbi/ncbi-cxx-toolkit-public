@@ -116,7 +116,7 @@ bool CTestApp::Thread_Run(int idx)
     CSink      sink;
     CWStream   out(&sink, 1 << 20);
     CStopWatch sw(CStopWatch::eStart);
-    auto_ptr<CConn_IOStream> inp(NcbiOpenURL(sm_URL));
+    unique_ptr<CConn_IOStream> inp(NcbiOpenURL(sm_URL));
 
     bool retval = inp.get()  &&  out ? NcbiStreamCopy(out, *inp) : false;
 

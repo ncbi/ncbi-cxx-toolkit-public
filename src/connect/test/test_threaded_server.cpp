@@ -93,7 +93,7 @@ void CThreadedServerApp::Init(void)
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetLOCK(MT_LOCK_cxx2c());
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                              "sample server using thread pools");
 

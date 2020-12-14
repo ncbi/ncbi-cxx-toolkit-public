@@ -386,7 +386,7 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
     // socket's accept method, but postpone connection's OnOpen for
     // pool thread because it can be arbitrarily long.
     static const STimeout kZeroTimeout = { 0, 0 };
-    auto_ptr<CServer_Connection> conn(
+    unique_ptr<CServer_Connection> conn(
                         new CServer_Connection(listener->m_Factory->Create()));
     if (listener->Accept(*conn, &kZeroTimeout) != eIO_Success)
         return;

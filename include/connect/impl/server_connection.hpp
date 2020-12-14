@@ -110,7 +110,7 @@ public:
     void OnSocketEvent(EServIO_Event event);
     virtual ~CServer_Connection();
 private:
-    auto_ptr<IServer_ConnectionHandler> m_Handler;
+    unique_ptr<IServer_ConnectionHandler> m_Handler;
     bool m_Open;
 };
 
@@ -142,7 +142,7 @@ public:
     unsigned short GetPort(void) const { return m_Port; }
 private:
     friend class CAcceptRequest;
-    auto_ptr<IServer_ConnectionFactory> m_Factory;
+    unique_ptr<IServer_ConnectionFactory> m_Factory;
     unsigned short m_Port;
 } ;
 

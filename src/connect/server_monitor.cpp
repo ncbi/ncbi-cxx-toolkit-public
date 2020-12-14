@@ -53,7 +53,7 @@ void CServer_Monitor::SetSocket(CSocket& socket)
     CFastMutexGuard guard(m_Lock);
     delete m_Sock;
 
-    auto_ptr<CSocket> s(new CSocket());
+    unique_ptr<CSocket> s(new CSocket());
 
     // Pass internals of socket into new one
     SOCK sock = socket.GetSOCK();

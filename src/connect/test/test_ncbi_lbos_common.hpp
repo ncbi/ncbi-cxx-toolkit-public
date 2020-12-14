@@ -5033,7 +5033,7 @@ void ServerExists__ReturnLbosOperations()
 {
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";
-    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    unique_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
     if (iter.get() == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(iter.get() == NULL,
                                "Problem with memory allocation, "
@@ -5078,7 +5078,7 @@ void InfoPointerProvided__WriteNull()
 {
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";    
-    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    unique_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
     iter->name = service.c_str();
     iter->ismask = 0;
     iter->arg = NULL;
@@ -5109,7 +5109,7 @@ void NoSuchService__ReturnNull()
     CLBOSStatus lbos_status(true, true);
     string service = "/service/donotexist";
     
-    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    unique_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(iter.get() != NULL,
                                      "Problem with memory allocation, "
                                      "calloc failed. Not enough RAM?");
@@ -5131,7 +5131,7 @@ void Dbaf__AppendDBNameToServiceName()
                             g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates,
                             s_FakeFillCandidates<1>);
     string service = "dbinfo";    
-    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    unique_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
     iter->name = service.c_str();
     iter->ismask = 0;
     iter->arg = "dbaf";
@@ -5153,7 +5153,7 @@ void NameIsMask__ReturnNull()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";
     
-    auto_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
+    unique_ptr<SSERV_IterTag> iter(new SSERV_IterTag);
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(iter.get() != NULL,
                                      "Problem with memory allocation, "
                                      "calloc failed. Not enough RAM?");

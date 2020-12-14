@@ -1853,7 +1853,7 @@ CPipe::CPipe(const string&         cmd,
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
-    auto_ptr<CPipeHandle> pipe_handle_ptr(new CPipeHandle);
+    unique_ptr<CPipeHandle> pipe_handle_ptr(new CPipeHandle);
     EIO_Status status = pipe_handle_ptr->Open(cmd, args, create_flags,
                                               current_dir, env, pipe_size);
     if (status != eIO_Success) {
