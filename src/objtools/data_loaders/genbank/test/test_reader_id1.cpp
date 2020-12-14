@@ -52,7 +52,7 @@ void CTestApplication::Init(void)
 {
     CONNECT_Init(&GetConfig());
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->AddDefaultKey("gi_from", "GiFrom",
                             "first GI to fetch",
                             CArgDescriptions::eInt8, "100");
