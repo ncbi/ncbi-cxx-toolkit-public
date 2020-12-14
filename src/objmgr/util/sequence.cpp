@@ -966,7 +966,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             plugin->processSAnnotSelector( sel );
         }
 
-        auto_ptr<CFeat_CI> feat_it_ptr;
+        unique_ptr<CFeat_CI> feat_it_ptr;
         if( plugin ) {
             plugin->setUpFeatureIterator( bioseq_handle, feat_it_ptr,
                 circular_length, range, loc, sel, scope, strand);
@@ -985,7 +985,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 feat_it_ptr.reset( new CFeat_CI(scope, loc, sel) );
             }
         }
-        // convenience variable so we don't have to keep dereferencing the auto_ptr
+        // convenience variable so we don't have to keep dereferencing the unique_ptr
         CFeat_CI &feat_it = *feat_it_ptr;
 
         CRef<CSeq_loc> cleaned_loc( new CSeq_loc );
@@ -1679,7 +1679,7 @@ public:
 
     virtual void setUpFeatureIterator(
         CBioseq_Handle &bioseq_handle,
-        auto_ptr<CFeat_CI> &feat_ci,
+        unique_ptr<CFeat_CI> &feat_ci,
         TSeqPos circular_length ,
         CRange<TSeqPos> &range,
         const CSeq_loc& loc,
@@ -1768,7 +1768,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> cds_feat;
 
-    auto_ptr<CGetOverlappingFeaturesPlugin> cds_plugin(
+    unique_ptr<CGetOverlappingFeaturesPlugin> cds_plugin(
         new CCdsForMrnaPlugin(plugin));
     // search for a best overlapping CDS
     // we start with a scan through the product accessions because we need

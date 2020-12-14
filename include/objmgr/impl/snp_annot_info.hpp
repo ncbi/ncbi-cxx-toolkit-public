@@ -100,7 +100,7 @@ private:
     typedef map<string, size_t> TIndices;
 
     TStrings m_Strings;
-    auto_ptr<TIndices> m_Indices;
+    unique_ptr<TIndices> m_Indices;
 };
 
 
@@ -151,7 +151,7 @@ private:
 
     size_t m_ElementSize;
     TStrings m_Strings;
-    auto_ptr<TIndices> m_Indices;
+    unique_ptr<TIndices> m_Indices;
 };
 
 

@@ -71,7 +71,7 @@ private:
 void CTestApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddFlag("dump_entries", "print all generated seq entries");
     arg_desc->AddFlag("dump_features", "print all found features");

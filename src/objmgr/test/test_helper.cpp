@@ -310,7 +310,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
     if ( sm_DumpEntries ) {
         NcbiCout << "-------------------- "
             "TestEntry1 --------------------" << NcbiEndl;
-        auto_ptr<CObjectOStream>
+        unique_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *entry;
     }
@@ -398,7 +398,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1a(int index)
     if ( sm_DumpEntries ) {
         NcbiCout << "-------------------- "
             "TestEntry1a --------------------" << NcbiEndl;
-        auto_ptr<CObjectOStream>
+        unique_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *entry;
     }
@@ -657,7 +657,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
     if ( sm_DumpEntries ) {
         NcbiCout << "-------------------- "
             "TestEntry2 --------------------" << NcbiEndl;
-        auto_ptr<CObjectOStream>
+        unique_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *entry;
     }
@@ -697,7 +697,7 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
     if ( sm_DumpEntries ) {
         NcbiCout << "-------------------- "
             "ConstructedEntry --------------------" << NcbiEndl;
-        auto_ptr<CObjectOStream>
+        unique_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *constr_entry;
     }
@@ -800,7 +800,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
     if ( sm_DumpEntries ) {
         NcbiCout << "-------------------- "
             "Annotation1 --------------------" << NcbiEndl;
-        auto_ptr<CObjectOStream>
+        unique_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *annot;
     }
@@ -1155,7 +1155,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
               feat_it;  ++feat_it) {
             count++;
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
@@ -1166,7 +1166,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
               feat_it;  ++feat_it) {
             count++;
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
@@ -1178,7 +1178,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
               feat_it;  ++feat_it) {
             count++;
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
@@ -1202,7 +1202,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             count++;
             annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
@@ -1218,7 +1218,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             count++;
             annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
@@ -1237,7 +1237,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             count++;
             annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }
@@ -1256,7 +1256,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             count++;
             annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
-                auto_ptr<CObjectOStream>
+                unique_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
             }

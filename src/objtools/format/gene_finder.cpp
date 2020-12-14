@@ -75,7 +75,7 @@ void CGeneFinder::CGeneSearchPlugin::processSAnnotSelector(
 
 void CGeneFinder::CGeneSearchPlugin::setUpFeatureIterator ( 
     CBioseq_Handle &ignored_bioseq_handle,
-    auto_ptr<CFeat_CI> &feat_ci,
+    unique_ptr<CFeat_CI> &feat_ci,
     TSeqPos circular_length,
     CRange<TSeqPos> &range,
     const CSeq_loc& loc,

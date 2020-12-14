@@ -274,7 +274,7 @@ private:
     // CSeq_id_Mapper lock to provide a single mapper while OM is running
     CRef<CSeq_id_Mapper> m_Seq_id_Mapper;
 
-    auto_ptr<TPluginManager> m_PluginManager;
+    unique_ptr<TPluginManager> m_PluginManager;
     friend class CScope_Impl;
     friend class CDataSource; // To get id-mapper
     friend class CDataLoader; // To register data loaders

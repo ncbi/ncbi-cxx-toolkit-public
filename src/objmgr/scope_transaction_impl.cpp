@@ -164,7 +164,7 @@ void CScopeTransaction_Impl::Commit()
         if (m_Commands.size() == 1 ) {
             m_Parent->AddCommand(*m_Commands.begin());
         } else {
-            auto_ptr<CMultEditCommand> cmd(new CMultEditCommand);
+            unique_ptr<CMultEditCommand> cmd(new CMultEditCommand);
             cmd->AddCommands(m_Commands.begin(), m_CurCmd);
             m_Parent->AddCommand(CRef<IEditCommand>(cmd.release()));
         }
@@ -261,7 +261,7 @@ void CScopeSubTransaction_Impl::Commit()
     if (m_Commands.size() == 1 ) {
         m_Parent->AddCommand(*m_Commands.begin());
     } else {
-        auto_ptr<CMultEditCommand> cmd(new CMultEditCommand);
+        unique_ptr<CMultEditCommand> cmd(new CMultEditCommand);
         cmd->AddCommands(m_Commands.begin(), m_CurCmd);
         m_Parent->AddCommand(CRef<IEditCommand>(cmd.release()));
     }

@@ -273,7 +273,7 @@ private:
 
     TEditHandle       m_Handle;
     TStorage          m_Value;
-    auto_ptr<TMemeto> m_Memeto;   
+    unique_ptr<TMemeto> m_Memeto;   
 };
 
 template<typename TEditHandle, typename T>
@@ -319,7 +319,7 @@ public:
 
 private:
     TEditHandle       m_Handle;
-    auto_ptr<TMemeto> m_Memeto;
+    unique_ptr<TMemeto> m_Memeto;
     
 };
 
@@ -364,7 +364,7 @@ public:
 
 private:
     TEditHandle                 m_Handle;
-    auto_ptr<TSeq_descr_Memeto> m_Memeto;
+    unique_ptr<TSeq_descr_Memeto> m_Memeto;
     CRef<CSeq_descr>            m_Descr;
 };
 

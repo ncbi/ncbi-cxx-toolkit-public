@@ -139,7 +139,7 @@ namespace {
 
     CSequenceAmbigTrimmer::TTrimRuleVec *s_DefaultRuleCreator(void)
     {
-        auto_ptr<CSequenceAmbigTrimmer::TTrimRuleVec> pTrimRuleVec( new CSequenceAmbigTrimmer::TTrimRuleVec );
+        unique_ptr<CSequenceAmbigTrimmer::TTrimRuleVec> pTrimRuleVec( new CSequenceAmbigTrimmer::TTrimRuleVec );
         CSequenceAmbigTrimmer::STrimRule arrTrimRules[] = {
             { 10, 5 },
             { 50, 15 }

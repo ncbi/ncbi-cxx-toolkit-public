@@ -512,7 +512,7 @@ private:
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockMap                     m_TSE_LockMap;
-    auto_ptr<CAnnotMappingCollector> m_MappingCollector;
+    unique_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;
 
@@ -520,12 +520,12 @@ private:
     CRef<CCreatedFeat_Ref>  m_CreatedOriginal;
     CRef<CCreatedFeat_Ref>  m_CreatedMapped;
 
-    auto_ptr<TAnnotLocsSet> m_AnnotLocsSet;
+    unique_ptr<TAnnotLocsSet> m_AnnotLocsSet;
     TAnnotTypesBitset       m_AnnotTypes;
     TAnnotTypesBitset       m_TriggerTypes;
     TAnnotTypesBitset       m_UnseenAnnotTypes;
     TAnnotTypesBitset       m_CollectAnnotTypes;
-    mutable auto_ptr<TAnnotNames> m_AnnotNames;
+    mutable unique_ptr<TAnnotNames> m_AnnotNames;
     Uint8 m_LoadBytes;
     double m_LoadSeconds;
     

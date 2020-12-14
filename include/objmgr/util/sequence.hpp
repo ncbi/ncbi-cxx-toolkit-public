@@ -361,7 +361,7 @@ public:
 
     virtual void setUpFeatureIterator ( 
         CBioseq_Handle &bioseq_handle,
-        auto_ptr<CFeat_CI> &feat_ci,
+        unique_ptr<CFeat_CI> &feat_ci,
         TSeqPos circular_length ,
         CRange<TSeqPos> &range,
         const CSeq_loc& loc,
@@ -865,7 +865,7 @@ public:
 
 protected:
     CNcbiOstream&       m_Out;
-    auto_ptr<sequence::CDeflineGenerator> m_Gen;
+    unique_ptr<sequence::CDeflineGenerator> m_Gen;
 
     virtual void x_WriteSeqIds    ( const CBioseq& bioseq,
                                     const CSeq_loc* location);

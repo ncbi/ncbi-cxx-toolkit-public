@@ -768,7 +768,7 @@ private:
         CTSE_Lock      m_BaseTSE;
         TObjectCopyMap m_ObjectCopyMap;
     };
-    auto_ptr<SBaseTSE> m_BaseTSE;
+    unique_ptr<SBaseTSE> m_BaseTSE;
 
     CRef<IEditSaver>              m_EditSaver;
     int                           m_InternalBioObjNumber;

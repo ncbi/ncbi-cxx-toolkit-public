@@ -62,7 +62,7 @@ public:
 void CTestSeqMapSwitch::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
 
     arg_desc->AddDefaultKey("id", "id",
@@ -91,7 +91,7 @@ int CTestSeqMapSwitch::Run()
 
     if ( args["file"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText,
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText,
                                                          args["file"].AsInputFile()));
         *in >> *entry;
         scope.AddTopLevelSeqEntry(*entry);

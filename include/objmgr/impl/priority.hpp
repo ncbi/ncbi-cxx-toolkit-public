@@ -150,7 +150,7 @@ private:
     TPriorityMap*           m_Map;
     TMap_I                  m_Map_I;
     CPriorityNode*          m_Node;
-    auto_ptr<CPriority_I>   m_Sub_I;
+    unique_ptr<CPriority_I>   m_Sub_I;
 };
 
 

@@ -463,7 +463,7 @@ CSeq_align_Mapper_Base*
 CSeq_align_Mapper::CreateSubAlign(const CSpliced_seg& spliced,
                                   const CSpliced_exon& exon)
 {
-    auto_ptr<CSeq_align_Mapper> sub(new CSeq_align_Mapper(GetLocMapper()));
+    unique_ptr<CSeq_align_Mapper> sub(new CSeq_align_Mapper(GetLocMapper()));
     sub->InitExon(spliced, exon);
     return sub.release();
 }
