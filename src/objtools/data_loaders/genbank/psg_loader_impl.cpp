@@ -693,7 +693,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
       m_BioseqCache(new CPSGBioseqCache()),
       m_ThreadPool(new CThreadPool(kMax_UInt, TPSG_MaxPoolThreads::GetDefault()))
 {
-    auto_ptr<CPSGDataLoader::TParamTree> app_params;
+    unique_ptr<CPSGDataLoader::TParamTree> app_params;
     const CPSGDataLoader::TParamTree* psg_params = 0;
     if (params.GetParamTree()) {
         psg_params = CPSGDataLoader::GetParamsSubnode(params.GetParamTree(), NCBI_PSGLOADER_NAME);
@@ -1253,7 +1253,7 @@ void CPSG_Blob_Task::DoExecute(void)
                 continue;
             }
 
-            auto_ptr<CObjectIStream> in
+            unique_ptr<CObjectIStream> in
                 (CPSGDataLoader_Impl::GetBlobDataStream(*chunk_slot.second.first,
                                                         *chunk_slot.second.second));
             CRef<CID2S_Chunk> id2_chunk(new CID2S_Chunk);
@@ -1459,7 +1459,7 @@ void CPSG_LoadChunk_Task::DoExecute(void)
     }
 
     if (IsCancelled()) return;
-    auto_ptr<CObjectIStream> in(CPSGDataLoader_Impl::GetBlobDataStream(*m_BlobInfo, *m_BlobData));
+    unique_ptr<CObjectIStream> in(CPSGDataLoader_Impl::GetBlobDataStream(*m_BlobInfo, *m_BlobData));
     if (!in.get()) {
         _TRACE("Failed to open chunk data stream for blob-id " << m_BlobInfo->GetId()->Repr());
         m_Status = eFailed;
@@ -2119,7 +2119,7 @@ void CPSGDataLoader_Impl::x_ReadBlobData(
         load_lock->SetBlobState(psg_blob_info.blob_state);
     }
 
-    auto_ptr<CObjectIStream> in(GetBlobDataStream(blob_info, blob_data));
+    unique_ptr<CObjectIStream> in(GetBlobDataStream(blob_info, blob_data));
     if (!in.get()) {
         _TRACE("Failed to open blob data stream for blob-id " << blob_info.GetId()->Repr());
         return;
@@ -2154,7 +2154,7 @@ CObjectIStream* CPSGDataLoader_Impl::GetBlobDataStream(
 {
     istream& data_stream = blob_data.GetStream();
     CNcbiIstream* in = &data_stream;
-    auto_ptr<CNcbiIstream> z_stream;
+    unique_ptr<CNcbiIstream> z_stream;
     CObjectIStream* ret = nullptr;
 
     if (blob_info.GetCompression() == "gzip") {
