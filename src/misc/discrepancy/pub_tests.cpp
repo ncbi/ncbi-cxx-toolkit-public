@@ -1220,6 +1220,9 @@ static bool FixCapitalization(string& name, bool apostroph)
 static bool FixCapitalization(CAuth_list* auth_list)
 {
     bool ret = false;
+    if (! auth_list) {
+        return false;
+    }
     for (auto auth : auth_list->SetNames().SetStd()) {
         if (auth->GetName().IsName()) {
             CName_std& name = auth->SetName().SetName();
@@ -1256,16 +1259,20 @@ DISCREPANCY_AUTOFIX(CHECK_AUTH_CAPS)
     }
     if (desc) {
         for (auto& authors : desc->SetPub().SetPub().Set()) {
-            if (FixCapitalization(&authors->SetAuthors())) {
-                obj->SetFixed();
-                n++;
+            if (authors->IsSetAuthors()) {
+                if (FixCapitalization(&authors->SetAuthors())) {
+                    obj->SetFixed();
+                    n++;
+                }
             }
         }
     }
     if (subb) {
-        if (FixCapitalization(&subb->SetCit().SetAuthors())) {
-            obj->SetFixed();
-            n++;
+        if (subb->SetCit().IsSetAuthors()) {
+            if (FixCapitalization(&subb->SetCit().SetAuthors())) {
+                obj->SetFixed();
+                n++;
+            }
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("CHECK_AUTH_CAPS: capitalization of [n] author[s] is fixed", n) : 0);
