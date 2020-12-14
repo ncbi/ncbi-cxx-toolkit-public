@@ -223,7 +223,7 @@ bool CFormatGuessEx::x_TryRmo()
         CRmReader::fIncludeRepeatName;
     CRef<CSerialObject> Result;
 
-    auto_ptr<CRepeatMaskerReader> reader(new CRepeatMaskerReader(Flags));
+    unique_ptr<CRepeatMaskerReader> reader(new CRepeatMaskerReader(Flags));
     try
     {
         Result = reader->ReadObject(m_LocalBuffer);
