@@ -234,7 +234,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
                                                       strGeneInfoFile,
                                                       strGene2PubMedFile,
                                                       strOutputDirPath));
-        auto_ptr<CGeneFileWriter> fileWriter(pWriter);
+        unique_ptr<CGeneFileWriter> fileWriter(pWriter);
 
         fileWriter->EnableMultipleGeneIdsForRNAGis(true);
         fileWriter->EnableMultipleGeneIdsForProteinGis(true);
