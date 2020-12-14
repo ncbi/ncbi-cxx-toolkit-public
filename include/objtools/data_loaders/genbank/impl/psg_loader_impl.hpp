@@ -83,7 +83,9 @@ struct SPsgBioseqInfo
 {
     SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info);
 
+    typedef CPSG_Request_Resolve::TIncludeInfo TIncludedInfo;
     typedef vector<CSeq_id_Handle> TIds;
+    TIncludedInfo included_info;
     CSeq_inst::TMol molecule_type;
     Uint8 length;
     CPSG_BioseqInfo::TState state;
@@ -95,6 +97,8 @@ struct SPsgBioseqInfo
     string blob_id;
 
     CDeadline deadline;
+
+    TIncludedInfo Update(const CPSG_BioseqInfo& bioseq_info);
 
 private:
     SPsgBioseqInfo(const SPsgBioseqInfo&);

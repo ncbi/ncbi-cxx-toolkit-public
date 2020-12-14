@@ -301,7 +301,10 @@ shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Add(const CPSG_BioseqInfo& info, CSe
     // Try to find an existing entry (though this should not be a common case).
     CFastMutexGuard guard(m_Mutex);
     auto found = m_Ids.find(idh);
-    if (found != m_Ids.end()) return found->second;
+    if (found != m_Ids.end()) {
+        found->second->Update(info);
+        return found->second;
+    }
     // Create new entry.
     shared_ptr<SPsgBioseqInfo> ret = make_shared<SPsgBioseqInfo>(info);
     while (!m_Infos.empty() && (m_Infos.size() > m_MaxSize || m_Infos.front()->deadline.IsExpired())) {
@@ -367,14 +370,21 @@ private:
 
 
 SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
-    : molecule_type(CSeq_inst::eMol_not_set),
+    : included_info(0),
+      molecule_type(CSeq_inst::eMol_not_set),
       length(0),
       state(0),
       tax_id(ZERO_TAX_ID),
       hash(0),
       deadline(kMaxCacheLifespanSeconds)
 {
-    CPSG_Request_Resolve::TIncludeInfo inc_info = bioseq_info.IncludedInfo();
+    Update(bioseq_info);
+}
+
+
+SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bioseq_info)
+{
+    TIncludedInfo inc_info = bioseq_info.IncludedInfo() & ~included_info;
     if (inc_info & CPSG_Request_Resolve::fMoleculeType)
         molecule_type = bioseq_info.GetMoleculeType();
 
@@ -405,6 +415,9 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
     }
     if (inc_info & CPSG_Request_Resolve::fBlobId)
         blob_id = bioseq_info.GetBlobId().GetId();
+
+    included_info |= inc_info;
+    return inc_info;
 }
 
 
