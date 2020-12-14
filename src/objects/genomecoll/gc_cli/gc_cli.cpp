@@ -221,10 +221,10 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
         arg_desc->AddOptionalKey("-sort", "sort", "Get assembly by sequence - sort", CArgDescriptions::eString);
     };
 
-    auto_ptr<CCommandArgDescriptions> cmds_desc(new CCommandArgDescriptions());
+    unique_ptr<CCommandArgDescriptions> cmds_desc(new CCommandArgDescriptions());
     cmds_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Genomic Collections Service client application");
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext("", "Validate chromosome type and location");
     arg_desc->AddKey("type", "chr_type", "chromosome type", CArgDescriptions::eString);
     arg_desc->AddKey("loc", "chr_loc", "chromosome location", CArgDescriptions::eString);

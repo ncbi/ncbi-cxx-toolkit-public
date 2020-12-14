@@ -63,7 +63,7 @@ public:
 
 void CTestApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test of CUser_field serialization");
     
@@ -117,8 +117,8 @@ int CTestApp::Run(void)
     if (toolkit == "cpp") {
         CNcbiIstream& inFile  = args["in"].AsInputFile();
         CNcbiOstream& outFile = args["out"].AsOutputFile();
-        auto_ptr<CObjectIStream> in( CObjectIStream::Open( inFormat,  inFile));
-        auto_ptr<CObjectOStream> out(CObjectOStream::Open(outFormat, outFile));
+        unique_ptr<CObjectIStream> in( CObjectIStream::Open( inFormat,  inFile));
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(outFormat, outFile));
 #if 0
     {
         CUser_field  sample;

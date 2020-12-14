@@ -70,7 +70,7 @@ CTrackMgrClient::~CTrackMgrClient(void)
 void
 CTrackMgrClient::x_Init(void)
 {
-    auto_ptr<STimeout> to(new STimeout());
+    unique_ptr<STimeout> to(new STimeout());
     to->sec = 40;
     SetTimeout(to.release());
 }

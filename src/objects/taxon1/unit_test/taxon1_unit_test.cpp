@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(test_tax1m_getbyid)
 static CRef< COrg_ref >
 s_String2OrgRef( const string& orgref_in )
 {
-    auto_ptr< CObjectIStream > is( CObjectIStream::CreateFromBuffer( eSerial_AsnText, orgref_in.data(), orgref_in.size() ) );
+    unique_ptr< CObjectIStream > is( CObjectIStream::CreateFromBuffer( eSerial_AsnText, orgref_in.data(), orgref_in.size() ) );
     //try {
     CRef< COrg_ref > orp( new COrg_ref );
     *is >> *orp;
@@ -184,7 +184,7 @@ static string // empty if unable to write orgref
 s_OrgRef2String( const COrg_ref& orgref )
 {
     stringstream ss;
-    auto_ptr< CObjectOStream > os( CObjectOStream::Open( eSerial_AsnText, ss ) );
+    unique_ptr< CObjectOStream > os( CObjectOStream::Open( eSerial_AsnText, ss ) );
     os->SetUseEol(false); // make it a single line
     os->SetSeparator(""); // ... without endline character
     *os << orgref;

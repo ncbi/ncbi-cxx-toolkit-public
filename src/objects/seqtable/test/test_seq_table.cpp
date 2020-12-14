@@ -124,7 +124,7 @@ public:
 
 void CTestSeq_table::Init()
 {
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->SetUsageContext("test_seq_table",
                        "test various encodings of Seq-table data");

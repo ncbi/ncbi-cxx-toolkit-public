@@ -110,7 +110,7 @@ void CAbstractProjectItem::PreWrite() const
     if (m_OtherObject) {
         CConn_MemoryStream ostr;
         {{
-            auto_ptr<CObjectOStream> os
+                unique_ptr<CObjectOStream> os
                 (CObjectOStream::Open(eSerial_AsnBinary, ostr));
             os->Write(m_OtherObject, m_OtherObject->GetThisTypeInfo());
         }}
@@ -150,7 +150,7 @@ void CAbstractProjectItem::PostRead()
             for (size_t i = 0;  i < sizeof(fmts) / sizeof(ESerialDataFormat);  ++i) {
                 try {
                     CNcbiIstrstream istr(&GetData()[0], GetData().size());
-                    auto_ptr<CObjectIStream> is
+                    unique_ptr<CObjectIStream> is
                         (CObjectIStream::Open(fmts[i], istr));
                     is->Read(ref, ref->GetThisTypeInfo());
 

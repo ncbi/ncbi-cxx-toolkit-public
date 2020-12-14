@@ -68,7 +68,7 @@ public:
 private:
     CRef<CEntrez2Client>     m_Client;
     CNcbiOstream*            m_Ostream;
-    auto_ptr<CObjectOStream> m_ObjOstream;
+    unique_ptr<CObjectOStream> m_ObjOstream;
 
     //
     // handlers for specific requests
@@ -121,7 +121,7 @@ CEntrez2ClientApp::CEntrez2ClientApp()
 void CEntrez2ClientApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddKey("query", "QueryString", "Query to submit",
                      CArgDescriptions::eString);

@@ -115,7 +115,7 @@ static void s_InitializeStructuredCommentRules(void)
     string file = g_FindDataFile("validrules.prt");
   
     if ( !file.empty() ) {
-        auto_ptr<CObjectIStream> in;
+        unique_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_CommentRules), CObjectIStream::eNoFileHeader);    

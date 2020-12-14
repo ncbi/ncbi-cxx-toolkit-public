@@ -1304,7 +1304,7 @@ CRef<CSeq_code_set> CSeqportUtil_implementation::Init()
     // Create an in memory stream on sm_StrAsnData
     CNcbiIstrstream is(str.c_str(), str.length());
 
-    auto_ptr<CObjectIStream>
+    unique_ptr<CObjectIStream>
         asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));
 
     // Create a CSeq_code_set
@@ -2920,7 +2920,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
 
     // Instantiate an ambiguity context object, if BLAST-style 
     // ambiguity output is requested.
-    auto_ptr<CAmbiguityContext> amb_context(NULL);
+    unique_ptr<CAmbiguityContext> amb_context;
     if (blast_ambig) {
         amb_context.reset(new CAmbiguityContext(*blast_ambig, total_length));
     }
@@ -3225,7 +3225,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na(
 
     // Instantiate an ambiguity context object, if BLAST-style 
     // ambiguity output is requested.
-    auto_ptr<CAmbiguityContext> amb_context(NULL);
+    unique_ptr<CAmbiguityContext> amb_context;
     if (blast_ambig) {
         amb_context.reset(new CAmbiguityContext(*blast_ambig, total_length));
     }

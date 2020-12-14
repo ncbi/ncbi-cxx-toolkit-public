@@ -60,13 +60,13 @@ private:
 
     CRef<CID1Client>         m_Client;
     CNcbiOstream*            m_Out;
-    auto_ptr<CObjectOStream> m_OutAsn;
+    unique_ptr<CObjectOStream> m_OutAsn;
 };
 
 
 void CTestID1ClientApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "simple ID1 client to test datatool changes");
 

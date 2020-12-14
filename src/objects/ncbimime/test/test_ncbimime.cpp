@@ -66,7 +66,7 @@ int main(void)
 
     Struct1 object1;
     try {
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(File1".ent",
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(File1".ent",
                                                          eSerial_AsnText));
         *in >> object1;
     }
@@ -74,7 +74,7 @@ int main(void)
         ERR_POST("Exception: " << exc.what());
     }
     try {
-        auto_ptr<CObjectOStream> out(CObjectOStream::Open(File1".out",
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(File1".out",
                                                           eSerial_AsnText));
         *out << object1;
     }
@@ -83,7 +83,7 @@ int main(void)
     }
     Struct2 object2;
     try {
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(File2".ent",
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(File2".ent",
                                                          eSerial_AsnText));
         *in >> object2;
     }
@@ -91,7 +91,7 @@ int main(void)
         ERR_POST("Exception: " << exc.what());
     }
     try {
-        auto_ptr<CObjectOStream> out(CObjectOStream::Open(File2".out",
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(File2".out",
                                                           eSerial_AsnText));
         *out << object2;
     }

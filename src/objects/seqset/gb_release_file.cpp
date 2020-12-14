@@ -65,7 +65,7 @@ public:
 
 private:
     THandler                    m_Handler;
-    auto_ptr<CObjectIStream>    m_In;
+    unique_ptr<CObjectIStream>  m_In;
     CBioseq_set                 m_Seqset;
     bool                        m_Stopped;
     bool                        m_Propagate;

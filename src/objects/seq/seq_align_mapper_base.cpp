@@ -3061,7 +3061,7 @@ CSeq_align_Mapper_Base::CreateSubAlign(const CSpliced_seg&  spliced,
                                        const CSpliced_exon& exon)
 {
     // Create a sub-mapper instance for the exon.
-    auto_ptr<CSeq_align_Mapper_Base> sub(
+    unique_ptr<CSeq_align_Mapper_Base> sub(
         new CSeq_align_Mapper_Base(m_LocMapper));
     sub->InitExon(spliced, exon);
     return sub.release();

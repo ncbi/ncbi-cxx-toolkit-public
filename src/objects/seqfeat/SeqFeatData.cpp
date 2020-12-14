@@ -3746,7 +3746,7 @@ bool CSeqFeatData::ProhibitXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::E
 
 const CFeatList* CSeqFeatData::GetFeatList()
 {
-    static auto_ptr<CFeatList> theFeatList;
+    static unique_ptr<CFeatList> theFeatList;
 
     if ( !theFeatList.get() ) {
         DEFINE_STATIC_MUTEX(s_Mutex);
@@ -3760,7 +3760,7 @@ const CFeatList* CSeqFeatData::GetFeatList()
 
 const CBondList* CSeqFeatData::GetBondList()
 {
-    static auto_ptr<CBondList> theBondList;
+    static unique_ptr<CBondList> theBondList;
 
     if ( !theBondList.get() ) {
         DEFINE_STATIC_MUTEX(s_Mutex);
@@ -3775,7 +3775,7 @@ const CBondList* CSeqFeatData::GetBondList()
 
 const CSiteList* CSeqFeatData::GetSiteList()
 {
-    static auto_ptr<CSiteList> theSiteList;
+    static unique_ptr<CSiteList> theSiteList;
 
     if ( !theSiteList.get() ) {
         DEFINE_STATIC_MUTEX(s_Mutex);

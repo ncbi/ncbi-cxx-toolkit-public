@@ -242,7 +242,7 @@ private:
 
     void x_ConfigureCache(const string& cache_file);
     string m_CacheFile;
-    auto_ptr<CSQLITE_Connection> m_CacheConn;
+    unique_ptr<CSQLITE_Connection> m_CacheConn;
 };
 
 END_objects_SCOPE

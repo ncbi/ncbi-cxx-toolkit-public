@@ -113,9 +113,9 @@ CTaxon3::SendRequest(const CTaxon3_request& request)
 
 	while (reconnect_attempts < m_nReconnectAttempts) {
 		try {
-			auto_ptr<CObjectOStream> pOut;
-			auto_ptr<CObjectIStream> pIn;
-			auto_ptr<CConn_ServiceStream>
+            unique_ptr<CObjectOStream> pOut;
+            unique_ptr<CObjectIStream> pIn;
+            unique_ptr<CConn_ServiceStream>
 			    pServer( new CConn_ServiceStream(m_sService, fSERV_Any,
 							     0, 0, m_timeout) );
 

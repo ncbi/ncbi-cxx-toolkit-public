@@ -4629,7 +4629,7 @@ void x_MergeAndSort(CSeq_loc& dst,
 {
     bool use_strand = (flags & CSeq_loc::fStrand_Ignore) == 0;
     // Id -> range map for both strands
-    auto_ptr<TIdToRangeMap> pid_map_minus(use_strand ?
+    unique_ptr<TIdToRangeMap> pid_map_minus(use_strand ?
         new TIdToRangeMap : 0);
     TIdToRangeMap id_map_plus;
     TIdToRangeMap& id_map_minus = use_strand ?
@@ -4914,7 +4914,7 @@ void x_SubAndSort(CSeq_loc& dst,
     bool use_strand = (flags & CSeq_loc::fStrand_Ignore) == 0;
 
     // Id -> range map for both strands
-    auto_ptr<TIdToRangeMap> p_id_map_minus(use_strand ?
+    unique_ptr<TIdToRangeMap> p_id_map_minus(use_strand ?
         new TIdToRangeMap : 0);
     TIdToRangeMap id_map_plus;
     TIdToRangeMap& id_map_minus = use_strand ?
@@ -5021,7 +5021,7 @@ public:
 CRef<CSeq_loc> CSeq_loc::Merge(TOpFlags        flags,
                                ISynonymMapper* syn_mapper) const
 {
-    auto_ptr<CDummySynonymMapper> p_mapper;
+    unique_ptr<CDummySynonymMapper> p_mapper;
     if ( !syn_mapper ) {
         p_mapper.reset(new CDummySynonymMapper);
         syn_mapper = p_mapper.get();
@@ -5045,7 +5045,7 @@ CRef<CSeq_loc> CSeq_loc::Add(const CSeq_loc& other,
                              TOpFlags        flags,
                              ISynonymMapper* syn_mapper) const
 {
-    auto_ptr<CDummySynonymMapper> p_mapper;
+    unique_ptr<CDummySynonymMapper> p_mapper;
     if ( !syn_mapper ) {
         p_mapper.reset(new CDummySynonymMapper);
         syn_mapper = p_mapper.get();
@@ -5073,12 +5073,12 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
                                   ISynonymMapper* syn_mapper,
                                   ILengthGetter*  len_getter) const
 {
-    auto_ptr<CDummySynonymMapper> p_mapper;
+    unique_ptr<CDummySynonymMapper> p_mapper;
     if ( !syn_mapper ) {
         p_mapper.reset(new CDummySynonymMapper);
         syn_mapper = p_mapper.get();
     }
-    auto_ptr<CDummyLengthGetter> p_getter;
+    unique_ptr<CDummyLengthGetter> p_getter;
     if ( !len_getter ) {
         p_getter.reset(new CDummyLengthGetter);
         len_getter = p_getter.get();
@@ -5089,7 +5089,7 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
     bool use_strand = (flags & CSeq_loc::fStrand_Ignore) == 0;
 
     // Range collection for each strand
-    auto_ptr<TIdToRangeColl> p_rg_coll_minus(use_strand ?
+    unique_ptr<TIdToRangeColl> p_rg_coll_minus(use_strand ?
         new TIdToRangeColl : 0);
     TIdToRangeColl rg_coll_plus;
     TIdToRangeColl& rg_coll_minus = use_strand ?
@@ -5168,7 +5168,7 @@ CRef<CSeq_loc> CSeq_loc::Intersect(const CSeq_loc& other,
                                    TOpFlags        flags,
                                    ISynonymMapper* syn_mapper) const
 {
-    auto_ptr<CDummyLengthGetter> len_getter(new CDummyLengthGetter);
+    unique_ptr<CDummyLengthGetter> len_getter(new CDummyLengthGetter);
     CRef<CSeq_loc> tmp = Subtract(other,
         // This flag should be used only in the second subtraction
         flags & ~fMerge_SingleRange,

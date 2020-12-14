@@ -57,7 +57,7 @@ static ENa_strand s_GetPackedPntStrand(const CSeq_loc & loc )
 
 static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i)
 {
-    auto_ptr<CSeq_interval> rev_int(new CSeq_interval);
+    unique_ptr<CSeq_interval> rev_int(new CSeq_interval);
     rev_int->Assign(i);
     
     ENa_strand s = i.CanGetStrand() ? i.GetStrand() : eNa_strand_unknown;
@@ -69,7 +69,7 @@ static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i)
 
 static CSeq_point* s_SeqPntRevCmp(const CSeq_point& pnt)
 {
-    auto_ptr<CSeq_point> rev_pnt(new CSeq_point);
+    unique_ptr<CSeq_point> rev_pnt(new CSeq_point);
     rev_pnt->Assign(pnt);
     
     ENa_strand s = pnt.CanGetStrand() ? pnt.GetStrand() : eNa_strand_unknown;
@@ -83,7 +83,7 @@ GetReverseComplement(const CSeq_loc& loc, CReverseComplementHelper* helper)
 {
     _ASSERT( helper != NULL ); 
 
-    auto_ptr<CSeq_loc> rev_loc( new CSeq_loc );
+    unique_ptr<CSeq_loc> rev_loc( new CSeq_loc );
 
     switch ( loc.Which() ) {
 

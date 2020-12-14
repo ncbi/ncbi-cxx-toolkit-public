@@ -326,7 +326,7 @@ void TestMapping_Order()
 {
     CNcbiIfstream in("mapper_test_data/order.asn");
     cout << "Order of mapped intervals, direct" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Mapping plus to plus strand" << endl;
     TestMappingSeq_loc(*mapper, in);
     cout << "  Mapping minus to minus strand" << endl;
@@ -533,7 +533,7 @@ void TestMapping_ThroughMix()
 {
     CNcbiIfstream in("mapper_test_data/through_mix.asn");
     cout << "Mapping through mix" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     mapper->SetMergeAbutting();
     cout << "  Single interval overlapping all source ranges" << endl;
     TestMappingSeq_loc(*mapper, in);
@@ -555,7 +555,7 @@ void TestMapping_Dendiag()
 {
     CNcbiIfstream in("mapper_test_data/dendiag.asn");
     cout << "Mapping dense-diag alignment" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Single segment" << endl;
     TestMappingSeq_align(*mapper, in);
     cout << "  Unsupported mapped alignment - gaps in dense-diag" << endl;
@@ -572,7 +572,7 @@ void TestMapping_Denseg()
 {
     CNcbiIfstream in("mapper_test_data/denseg.asn");
     cout << "Mapping dense-seg alignments" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Nuc to prot, converted to std-seg (mixed types)" << endl;
     TestMappingSeq_align(*mapper, in);
 
@@ -593,7 +593,7 @@ void TestMapping_Spliced()
 {
     CNcbiIfstream in("mapper_test_data/spliced.asn");
     cout << "Mapping spliced-seg alignments" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Mapping spliced-seg product, nuc to nuc" << endl;
     TestMappingSeq_align(*mapper, in);
 
@@ -629,7 +629,7 @@ void TestMapping_Scores()
 {
     CNcbiIfstream in("mapper_test_data/scores.asn");
     cout << "Mapping scores" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Dense-diag - scores are preserved" << endl;
     TestMappingSeq_align(*mapper, in);
     cout << "  Dense-seg, scores are preserved" << endl;
@@ -651,7 +651,7 @@ void TestMapping_Graph()
 {
     CNcbiIfstream in("mapper_test_data/graph.asn");
     cout << "Mapping graphs" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Mapping whole graph" << endl;
     TestMappingSeq_graph(*mapper, in);
     cout << "  Partial - skip a range in the middle" << endl;
@@ -682,7 +682,7 @@ void TestMapping_AlignmentsToParts()
 
     in >> MSerial_AsnText >> orig;
     cout << "  Alignment #1, mapping row 1" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     TestMappingSeq_align(*mapper, orig, in);
     cout << "  Alignment #1, mapping row 2" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
@@ -734,7 +734,7 @@ void TestMapping_ThroughAlignments()
     for (size_t i = 0; i < sizeof(titles)/sizeof(titles[0]); i++) {
         cout << titles[i] << endl;
         in >> MSerial_AsnText >> aln;
-        auto_ptr<CSeq_loc_Mapper_Base> mapper(new CSeq_loc_Mapper_Base(aln, 0));
+        unique_ptr<CSeq_loc_Mapper_Base> mapper(new CSeq_loc_Mapper_Base(aln, 0));
         cout << "    Whole sequence" << endl;
         TestMappingSeq_loc(*mapper, in);
         cout << "    Interval, complete" << endl;
@@ -797,7 +797,7 @@ void TestMapper_Sequence_Info()
     // Read seq-locs first to skip ASN.1 comments
     in >> MSerial_AsnText >> src;
     in >> MSerial_AsnText >> dst;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(
         new CSeq_loc_Mapper_Base(src, dst, info.GetPointer()));
 
     cout << "  Test mapping whole, nuc to prot" << endl;
@@ -1170,7 +1170,7 @@ void TestMapper_Trimming()
 
     // No trimming - stop codon should be preserved.
     cout << "  Test stop codon mapping: trimming=off" << endl;
-    auto_ptr<CSeq_loc_Mapper_Base> mapper(
+    unique_ptr<CSeq_loc_Mapper_Base> mapper(
         new CSeq_loc_Mapper_Base(src, dst,
         CSeq_loc_Mapper_Options(info.GetPointer())));
     TestMappingSeq_loc(*mapper, orig, in);

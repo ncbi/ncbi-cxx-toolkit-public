@@ -376,7 +376,7 @@ void CGen_code_table::LoadTransTable(CObjectIStream& ois)
 void CGen_code_table::LoadTransTable(const string& path,
                                      ESerialDataFormat format)
 {
-    auto_ptr<CObjectIStream> ois(CObjectIStream::Open(path, format));
+    unique_ptr<CObjectIStream> ois(CObjectIStream::Open(path, format));
     LoadTransTable(*ois);
 }
 
@@ -449,7 +449,7 @@ CGen_code_table_imp::CGen_code_table_imp(void)
 
     // create an in memory stream on sm_GenCodeTblMemStr
     CNcbiIstrstream is(str.c_str(), str.length());
-    auto_ptr<CObjectIStream>
+    unique_ptr<CObjectIStream>
         asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));
 
     // read single copy of genetic-code table

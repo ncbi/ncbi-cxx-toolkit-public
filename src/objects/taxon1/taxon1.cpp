@@ -138,9 +138,9 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts, unsigned cac
             ( (tmp=getenv("NI_SERVICE_NAME_TAXONOMY")) != NULL ) ) {
             m_pchService = tmp;
         }
-        auto_ptr<CConn_ServiceStream> pServer;
-        auto_ptr<CObjectOStream> pOut;
-        auto_ptr<CObjectIStream> pIn;
+        unique_ptr<CConn_ServiceStream> pServer;
+        unique_ptr<CObjectOStream> pOut;
+        unique_ptr<CObjectIStream> pIn;
 	pNi = ConnNetInfo_Create( m_pchService );
 	if( pNi == NULL ) {
 	    SetLastError( "ERROR: Init(): Unable to create net info" );
@@ -1481,9 +1481,9 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnec
             m_pIn = NULL;
             m_pServer = NULL;
             try {
-                auto_ptr<CObjectOStream> pOut;
-                auto_ptr<CObjectIStream> pIn;
-                auto_ptr<CConn_ServiceStream>
+                unique_ptr<CObjectOStream> pOut;
+                unique_ptr<CObjectIStream> pIn;
+                unique_ptr<CConn_ServiceStream>
                     pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
                                                      0, 0, m_timeout) );
 
