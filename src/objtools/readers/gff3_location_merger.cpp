@@ -53,7 +53,12 @@ CGff3LocationRecord::CGff3LocationRecord(
     mPartNum = 0;
     string recordPart;
     if (record.GetAttribute("part", recordPart)) {
-        mPartNum = NStr::StringToInt(recordPart);
+        try {
+            mPartNum = NStr::StringToInt(recordPart);
+        }
+        catch (CStringException&) {
+            //mPartNum = 0;
+        }
     }
 }
 
