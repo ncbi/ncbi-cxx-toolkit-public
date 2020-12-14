@@ -69,7 +69,7 @@ class CSourceModParserTestApp : public CNcbiApplication
 
 void CSourceModParserTestApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Simple test of CSourceModParser");
 
