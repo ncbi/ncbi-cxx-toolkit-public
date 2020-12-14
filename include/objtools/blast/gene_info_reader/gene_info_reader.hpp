@@ -105,16 +105,16 @@ private:
     bool m_bGiToOffsetLookup;
 
     /// Memory-mapped Gi to Gene ID file.
-    auto_ptr<CMemoryFile> m_memGi2GeneFile;
+    unique_ptr<CMemoryFile> m_memGi2GeneFile;
 
     /// Memory-mapped Gene ID to Offset file.
-    auto_ptr<CMemoryFile> m_memGene2OffsetFile;
+    unique_ptr<CMemoryFile> m_memGene2OffsetFile;
 
     /// Memory-mapped Gi to Offset file.
-    auto_ptr<CMemoryFile> m_memGi2OffsetFile;
+    unique_ptr<CMemoryFile> m_memGi2OffsetFile;
 
     /// Memory-mapped Gene ID to Gi file.
-    auto_ptr<CMemoryFile> m_memGene2GiFile;
+    unique_ptr<CMemoryFile> m_memGene2GiFile;
 
     /// Input stream for the Gene data file. 
     CNcbiIfstream m_inAllData;
