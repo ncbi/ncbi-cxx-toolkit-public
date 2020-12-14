@@ -319,7 +319,7 @@ void CLDS2_DataLoader::x_LoadTSE(CTSE_LoadLock& load_lock,
         return;
     }
     try {
-        auto_ptr<CObjectIStream> obj_in;
+        unique_ptr<CObjectIStream> obj_in;
         switch ( finfo.format ) {
         case CFormatGuess::eBinaryASN:
             obj_in.reset(CObjectIStream::Open(eSerial_AsnBinary, *in));
@@ -619,7 +619,7 @@ void CLDS2_DataLoader::GetChunk(TChunk chunk_info)
     }
     shared_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
     _ASSERT(in.get());
-    auto_ptr<CObjectIStream> obj_in;
+    unique_ptr<CObjectIStream> obj_in;
     switch ( finfo.format ) {
     case CFormatGuess::eBinaryASN:
         obj_in.reset(CObjectIStream::Open(eSerial_AsnBinary, *in));
