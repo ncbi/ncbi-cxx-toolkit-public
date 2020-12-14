@@ -88,7 +88,7 @@ private:
 
 void CLDS2TestApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "LDS2 test program");
 
@@ -154,10 +154,10 @@ void CLDS2TestApplication::x_ConvertFile(const string& rel_name)
     cout << "Converting " << src.GetName() << " to " << dst.GetName() << endl;
 
     CNcbiIfstream fin(src.GetPath().c_str(), ios::binary | ios::in);
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, fin));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, fin));
 
     CNcbiOfstream fout(dst.GetPath().c_str(), ios::binary | ios::out);
-    auto_ptr<CObjectOStream> out;
+    unique_ptr<CObjectOStream> out;
     if ( m_GZip ) {
         unique_ptr<CZipStreamCompressor> zcomp
             (new CZipStreamCompressor(CZipCompression::eLevel_Default,
@@ -308,7 +308,7 @@ void CLDS2TestApplication::x_InitStressTest(void)
         string fname = CDirEntry::ConcatPath(m_DataDir,
             "data" + NStr::Int8ToString(f) + "." + m_FmtName);
         CNcbiOfstream fout(fname.c_str(), ios::binary | ios::out);
-        auto_ptr<CNcbiOstream> zout;
+        unique_ptr<CNcbiOstream> zout;
         CNcbiOstream* out_stream = &fout;
         if ( m_GZip ) {
             unique_ptr<CZipStreamCompressor> zcomp
@@ -319,8 +319,8 @@ void CLDS2TestApplication::x_InitStressTest(void)
                         CCompressionOStream::fOwnProcessor));
             out_stream = zout.get();
         }
-        auto_ptr<CObjectOStream> out;
-        auto_ptr<CFastaOstream> fasta_out;
+        unique_ptr<CObjectOStream> out;
+        unique_ptr<CFastaOstream> fasta_out;
         if (m_FmtName == "fasta") {
             fasta_out.reset(new CFastaOstream(*out_stream));
         }
