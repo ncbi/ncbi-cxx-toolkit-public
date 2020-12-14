@@ -86,7 +86,7 @@ bool        QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
 //bool  IsValidAccessPrefix(char* acc, char** accpref);
 
 void  DelNoneDigitTail(char* str);
-Int4  fta_if_wgs_acc(const Char* acc);
+int  fta_if_wgs_acc(const CTempString& accession);
 Int2  CheckSTRAND(const char* str);
 Int2  CheckTPG(char* str);
 Int2  CheckDIV(char* str);

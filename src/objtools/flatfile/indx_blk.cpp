@@ -174,12 +174,15 @@ static const char *ddbj_wgs_accpref[] = {
     "HT", "HU", NULL
 };
 
-static const char *wgs_scfld_pref[] = {"CH", "CT", "CU", "DF", "DG", "DS",
-                                       "EM", "EN", "EP", "EQ", "FA", "FM",
-                                       "GG", "GJ", "GK", "GL", "HT", "HU",
-                                       "JH", "KB", "KD", "KE", "KI", "KK",
-                                       "KL", "KN", "KQ", "KV", "KZ", "LD",
-                                       "ML", "MU", NULL};
+static const set<string> k_WgsScaffoldPrefix =
+    {"CH", "CT", "CU", "DF", "DG", "DS",
+     "EM", "EN", "EP", "EQ", "FA", "FM",
+     "GG", "GJ", "GK", "GL", "HT", "HU",
+     "JH", "KB", "KD", "KE", "KI", "KK",
+     "KL", "KN", "KQ", "KV", "KZ", "LD",
+     "ML", "MU"};
+
+//static const char *wgs_scfld_pref[] = 
 
 static const char *source[11] = {
     "unknown",
@@ -1201,143 +1204,182 @@ static bool fta_if_master_wgs_accession(const char* acnum, Int4 accformat)
     return false;
 }
 
+
+static bool s_IsVDBWGSScaffold(const CTempString& accession)
+{
+    // 4+2+S+[6,7,8]
+    if (accession.length() < 13 ||
+        accession.length() > 15 ||
+        accession[6] != 'S') {
+        return false;
+    }
+
+    // check that the first 4 chars are letters
+    if (any_of(begin(accession), 
+              begin(accession)+4, 
+              [](const char c){ return !isalpha(c); })) {
+        return false;
+    }
+
+    // check that the next 2 chars are letters
+    if (!isdigit(accession[4]) ||
+        !isdigit(accession[5])) {
+        return false;
+    }
+
+    // The characters after 'S' should all be digits 
+    // with at least one non-zero digit
+
+    // First check for digits
+    if (any_of(begin(accession)+7, 
+               end(accession), 
+               [](const char c){ return !isdigit(c); })) {
+        return false;
+    }
+
+    // Now check to see if at least one is not zero
+    if (all_of(begin(accession)+7,
+               end(accession),
+               [](const char c) { return c == '0'; })) {
+        return false;
+    }
+
+    return true;
+}
+
+static int s_RefineWGSType(const CTempString& accession, int initialType)
+{
+    if (initialType == -1) {
+        return initialType;
+    }
+        // Identify as TSA or TLS
+    if(accession[0] == 'G')                       /* TSA-WGS */
+    {
+        switch(initialType) 
+        {
+        case 0:
+            return 4;
+        case 1:
+            return 5;
+        case 3:
+            return 6;
+        default:
+            return initialType;
+        }
+    }
+
+    if (accession[0] == 'K' || accession[1] == 'T') { // TLS
+        switch(initialType)
+        {
+        case 0:
+            return 10;
+        case 1:
+            return 11;
+        case 3:
+            return 12;
+        default:
+            return initialType;
+        }
+    }
+
+    if (initialType == 1) { // TSA again
+        if (accession[0] == 'I') {
+            return 8;
+        }
+        if (accession[0] == 'H') {
+            return 9;
+        }   
+    }
+
+    return initialType;
+}
+
 /**********************************************************/
-/* Returns:  0 - if Master WGS accession;
- *           1 - contig WGS accession;
- *           2 - scaffold WGS accession (2+6);
- *           3 - WGS project accession (XXXX00000000);
- *           4 - Master TSA-WGS accession;
- *           5 - contig TSA-WGS accession
- *           6 - TSA-WGS project accession;
- *           7 - WGS scaffold accession (4+2+S+[6,7,8]);
- *           8 - contig TSA-WGS DDBJ accession
- *           9 - contig TSA-WGS EMBL accession
- *          10 - Master TLS-WGS accession;
- *          11 - contig TLS-WGS accession
- *          12 - TLS-WGS project accession;
+/* Returns:  0 - if WGS project accession;
+ *           1 - WGS contig accession;
+ *           2 - WGS scaffold accession (2+6);
+ *           3 - WGS master accession (XXXX00000000);
+ *           4 - TSA-WGS project accession;
+ *           5 - TSA-WGS contig accession
+ *           6 - TSA-WGS master accession;
+ *           7 - VDB WGS scaffold accession (4+2+S+[6,7,8]);
+ *           8 - TSA-WGS contig DDBJ accession
+ *           9 - TSA-WGS contig EMBL accession
+ *          10 - TLS-WGS project accession;
+ *          11 - TLS-WGS contig accession
+ *          12 - TLS-WGS master accession;
  *          -1 - something else.
  */
-Int4 fta_if_wgs_acc(const Char* acc)
+int fta_if_wgs_acc(const CTempString& accession)
 {
-    const Char* p;
-    Char    ch;
 
-    if(acc == NULL || *acc == '\0')
-        return(-1);
+    if (accession.empty() ||
+        NStr::IsBlank(accession)) {
+        return -1;
+    }
 
-    if(StringLen(acc) == 8 && fta_StringMatch(wgs_scfld_pref, acc) > -1 &&
-       acc[2] >= '0' && acc[2] <= '9' && acc[3] >= '0' && acc[3] <= '9' &&
-       acc[4] >= '0' && acc[4] <= '9' && acc[5] >= '0' && acc[5] <= '9' &&
-       acc[6] >= '0' && acc[6] <= '9' && acc[7] >= '0' && acc[7] <= '9')
-        return(2);
+    const auto length = accession.length();
 
-    if(StringNCmp(acc, "NZ_", 3) == 0)
-        p = acc + 3;
-    else
-        p = acc;
+    if(length == 8 && 
+       k_WgsScaffoldPrefix.find(accession.substr(0,2)) != k_WgsScaffoldPrefix.end() && 
+       all_of(begin(accession)+2, end(accession), [](const char c) { return isdigit(c); })) {
+        return 2;
+    }
 
+    if(length > 12 && length < 16 && accession[6] == 'S')
+    {
+        if (s_IsVDBWGSScaffold(accession)) {
+            return 7;
+        }
+        return -1;
+    }
+
+    const char* p = accession.data();
+    if(StringNCmp(p, "NZ_", 3) == 0) {
+        p += 3;
+    }
     size_t j = StringLen(p);
-    if(j > 12 && j < 16 && p[6] == 'S')
-    {
-        if(p[0] < 'A' || p[0] > 'Z' || p[1] < 'A' || p[1] > 'Z' ||
-           p[2] < 'A' || p[2] > 'Z' || p[3] < 'A' || p[3] > 'Z' ||
-           p[4] < '0' || p[4] > '9' || p[5] < '0' || p[5] > '9')
-            return(-1);
-
-        for(p += 7; *p == '0';)
-            p++;
-        if(*p == '\0')
-            return(-1);
-        while(*p >= '0' && *p <= '9')
-            p++;
-        if(*p == '\0')
-            return(7);
-        return(-1);
+    if(j < 12 || j > 17) {
+        return -1;
     }
 
-    if(j < 12 || j > 17)
-        return(-1);
-
-    int i = -1;
-    ch = p[0];
-
-    if(p[4] >= '0' && p[4] <= '9')
+    if(isdigit(p[4]))
     {
-        if(p[0] >= 'A' && p[0] <= 'Z' && p[1] >= 'A' && p[1] <= 'Z' &&
-           p[2] >= 'A' && p[2] <= 'Z' && p[3] >= 'A' && p[3] <= 'Z' &&
-           p[4] >= '0' && p[4] <= '9' && p[5] >= '0' && p[5] <= '9')
-        {
-            if(p[4] == '0' && p[5] == '0')
-                i = 3;
-            else
-                i = 0;
-            for(p += 6; *p == '0';)
-                p++;
-            if(*p != '\0')
-            {
-                while(*p >= '0' && *p <= '9')
-                    p++;
-                if(*p == '\0')
-                    i = 1;
-            }
-        }
+        if(all_of(p, p+4, [](const char c) { return isalpha(c); }) &&
+           all_of(p+4, end(accession), [](const char c) { return isdigit(c); })) {
 
-        if(i != -1)
-        {
-            if(ch == 'G')                       /* TSA-WGS */
-            {
-                if(i == 0)
-                    i = 4;
-                else if(i == 1)
-                    i = 5;
-                else if(i == 3)
-                    i = 6;
+            int i = -1;
+            if (any_of(p+6, end(accession), [](const char c) { return c != '0'; })) {
+                i = 1; // WGS contig
             }
-            else if(ch == 'K' || ch == 'T')     /* TLS-WGS */
-            {
-                if(i == 0)
-                    i = 10;
-                else if(i == 1)
-                    i = 11;
-                else if(i == 3)
-                    i = 12;
+            else 
+            if (p[4] == '0' && p[5] == '0') {
+                i = 3; // WGS master 
             }
-            else if(ch == 'I')
-            {
-                if(i == 1)
-                    i = 8;
+            else {
+                i = 0; // WGS project
             }
-            else if(ch == 'H')
-            {
-                if(i == 1)
-                    i = 9;
-            }
+            return s_RefineWGSType(p, i);
         }
-    }
-    else
-    {
-        if(p[0] >= 'A' && p[0] <= 'C' && p[1] >= 'A' && p[1] <= 'Z' &&
-           p[2] >= 'A' && p[2] <= 'Z' && p[3] >= 'A' && p[3] <= 'Z' &&
-           p[4] >= 'A' && p[4] <= 'Z' && p[5] >= 'A' && p[5] <= 'Z' &&
-           p[6] >= '0' && p[6] <= '9' && p[7] >= '0' && p[7] <= '9')
-        {
-            if(p[6] == '0' && p[6] == '0')
-                i = 3;
-            else
-                i = 0;
-            for(p += 8; *p == '0';)
-                p++;
-            if(*p != '\0')
-            {
-                while(*p >= '0' && *p <= '9')
-                    p++;
-                if(*p == '\0')
-                    i = 1;
-            }
-        }
+        return -1;
     }
 
-    return static_cast<Int4>(i);
+
+    // 6 letters + 2 digits
+    if (all_of(p, p+6, [](const char c){ return isalpha(c); }) &&
+        all_of(p+6, end(accession), [](const char c) { return isdigit(c); })) {
+
+        if (any_of(p+8, end(accession), [](const char c) { return c != '0'; })) {
+            return 1; // WGS contig
+        }
+            
+        if (p[6] == '0' && p[7] == '0') {
+            return 3; // WGS master 
+        }
+        return 0; // WGS project
+    }
+
+    return -1; // unknown
 }
 
 /**********************************************************/

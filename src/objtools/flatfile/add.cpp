@@ -884,13 +884,13 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
             continue;
         }
         sec_acc = fta_if_wgs_acc(accessionString.c_str());
-        if(sec_acc == 0) { // Master WGS accession
+        if(sec_acc == 0) { // Project WGS accession
             continue;
         }
 
         if (sec_acc == 1) // Contig WGS accession
         {
-            if (pri_acc == 0 || pri_acc == 2) { // A Master WGS accession or
+            if (pri_acc == 0 || pri_acc == 2) { // A project WGS accession or
                 continue;                       // a scaffold WGS accession
             }
 

@@ -1,4 +1,4 @@
-APP_PROJ = unit_test_flatfile_secondaries
+APP_PROJ = unit_test_flatfile_parser
 PROJ_TAG = test
 
 srcdir = @srcdir@

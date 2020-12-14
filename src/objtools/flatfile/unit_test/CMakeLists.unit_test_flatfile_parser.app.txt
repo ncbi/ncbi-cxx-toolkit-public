@@ -2,8 +2,8 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(unit_test_flatfile_secondaries)
-  NCBI_sources(unit_test_flatfile_secondaries)
+NCBI_begin_app(unit_test_flatfile_parser)
+  NCBI_sources(unit_test_flatfile_parser)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xflatfile)
   NCBI_project_watchers(foleyjp)

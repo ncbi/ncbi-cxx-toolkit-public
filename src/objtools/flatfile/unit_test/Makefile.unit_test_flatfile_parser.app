@@ -1,7 +1,7 @@
 # $Id$
 
-APP = unit_test_flatfile_secondaries
-SRC = unit_test_flatfile_secondaries
+APP = unit_test_flatfile_parser
+SRC = unit_test_flatfile_parser
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
