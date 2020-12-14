@@ -640,7 +640,7 @@ SLDS2_Blob::EBlobType CLDS2_ObjectParser::x_GetBlobType(void)
         return ret;
     }
     CNcbiIstrstream test_str(buf, sz);
-    auto_ptr<CObjectIStream> test_in(CObjectIStream::Open(
+    unique_ptr<CObjectIStream> test_in(CObjectIStream::Open(
         m_Format, test_str));
     switch ( m_Format ) {
     case eSerial_AsnText:
@@ -805,7 +805,7 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
     // Prepare to load multiple seq-aligns into a single blob.
     int count = 0;
     while (m_BlobType == blob_type) {
-        auto_ptr<CObjectIStream> objstr(CObjectIStream::Open(m_Format, m_Stream));
+        unique_ptr<CObjectIStream> objstr(CObjectIStream::Open(m_Format, m_Stream));
 
         // Hook for reading seq-ids and storing them to a collection.
         CLDS2_Seq_id_Hook id_hook;
@@ -1005,7 +1005,7 @@ void CLDS2_Manager::AddDataDir(const string& data_dir, EDirMode mode)
 
 bool CLDS2_Manager::x_IsGZipFile(const SLDS2_File& file_info)
 {
-    auto_ptr<CNcbiIstream> in(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+    unique_ptr<CNcbiIstream> in(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
     return CFormatGuess::Format(*in) == CFormatGuess::eGZip;
 }
 
