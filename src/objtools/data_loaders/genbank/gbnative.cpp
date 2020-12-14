@@ -288,7 +288,7 @@ CObjectManager::TPriority CGBDataLoader_Native::GetDefaultPriority(void) const
 
 void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
 {
-    auto_ptr<TParamTree> app_params;
+    unique_ptr<TParamTree> app_params;
     const TParamTree* gb_params = 0;
     if ( params.GetParamTree() ) {
         gb_params = GetLoaderParams(params.GetParamTree());
