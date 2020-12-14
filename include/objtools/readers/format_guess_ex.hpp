@@ -78,7 +78,7 @@ protected:
    
 private:
 protected:
-    auto_ptr<CFormatGuess> m_Guesser;
+    unique_ptr<CFormatGuess> m_Guesser;
 	std::stringstream m_LocalBuffer;
 	bool x_FillLocalBuffer(CNcbiIstream& In);
 	
