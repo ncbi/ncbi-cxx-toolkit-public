@@ -325,8 +325,8 @@ BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
 
         CGeneInfoFileReader *pReader1 = NULL, *pReader2 = NULL;
         BOOST_REQUIRE_NO_THROW(s_MakeGeneInfoFileReaders(pReader1, pReader2));
-        auto_ptr<CGeneInfoFileReader> fileReader1(pReader1);
-        auto_ptr<CGeneInfoFileReader> fileReader2(pReader2);
+        unique_ptr<CGeneInfoFileReader> fileReader1(pReader1);
+        unique_ptr<CGeneInfoFileReader> fileReader2(pReader2);
 
         IGeneInfoInput::TGiList::iterator itGi = listGis.begin();
         for (; itGi != listGis.end(); itGi++)
@@ -373,8 +373,8 @@ BOOST_AUTO_TEST_CASE(s_GiWithNoGeneIdTest)
 
         CGeneInfoFileReader *pReader1 = NULL, *pReader2 = NULL;
         BOOST_REQUIRE_NO_THROW(s_MakeGeneInfoFileReaders(pReader1, pReader2));
-        auto_ptr<CGeneInfoFileReader> fileReader1(pReader1);
-        auto_ptr<CGeneInfoFileReader> fileReader2(pReader2);
+        unique_ptr<CGeneInfoFileReader> fileReader1(pReader1);
+        unique_ptr<CGeneInfoFileReader> fileReader2(pReader2);
 
         IGeneInfoInput::TGiList::iterator itGi = listGis.begin();
         for (; itGi != listGis.end(); itGi++)
