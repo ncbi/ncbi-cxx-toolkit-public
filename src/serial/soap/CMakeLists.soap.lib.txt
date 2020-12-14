@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xsoap)
   NCBI_sources(soap_message soap_readhook soap_writehook soap_client soap_11__ soap_11___)

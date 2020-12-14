@@ -1,9 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
-#
-#
-#
 
 NCBI_begin_app(datatool)
   NCBI_sources(
@@ -19,12 +14,13 @@ NCBI_begin_app(datatool)
         traversal_node traversal_spec_file_parser
   )
   NCBI_uses_toolkit_libraries(xser)
-  NCBI_project_watchers(gouriano)
   NCBI_set_property(EXPORT YES)
 
   NCBI_set_test_timeout(600)
   NCBI_set_test_assets(testdata)
   NCBI_add_test(datatool.sh)
   NCBI_add_test(datatool_xml.sh)
+
+  NCBI_project_watchers(gouriano)
 NCBI_end_app()
 

@@ -1,12 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_ctransition_nlmzip)
   NCBI_sources(test_ctransition_nlmzip)
   NCBI_uses_toolkit_libraries(ctransition_nlmzip xcompress)
-  NCBI_project_watchers(ivanov)
   NCBI_add_test()
+  NCBI_project_watchers(ivanov)
 NCBI_end_app()
 

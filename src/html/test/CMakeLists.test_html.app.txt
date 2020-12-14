@@ -1,12 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_begin_app(test_html)
   NCBI_sources(test_html)
   NCBI_uses_toolkit_libraries(xhtml)
-  NCBI_project_watchers(ivanov)
   NCBI_add_test()
+  NCBI_project_watchers(ivanov)
 NCBI_end_app()
 

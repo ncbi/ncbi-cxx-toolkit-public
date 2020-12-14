@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(bdb_cverify-app
     bdb_cverify
 )

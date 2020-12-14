@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(bdbtest_vmerge-app
     test_bdb_vmerge
 )

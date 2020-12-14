@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 function(check_definition)
   set(SCRIPT_NAME "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS}/check/check_make_unix.sh")

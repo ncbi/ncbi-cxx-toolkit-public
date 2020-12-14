@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_serial)
   NCBI_sources(serialobject serialobject_Base test_serial test_cserial test_common cppwebenv twebenv)
@@ -8,9 +6,10 @@ NCBI_begin_app(test_serial)
   NCBI_requires(Boost.Test.Included)
   NCBI_optional_components(NCBI_C)
   NCBI_uses_toolkit_libraries(test_boost xcser)
-  NCBI_project_watchers(gouriano)
 
   NCBI_set_test_assets(webenv.ent webenv.bin ctest_serial.asn cpptest_serial.asn ctest_serial.asb cpptest_serial.asb)
   NCBI_add_test()
+
+  NCBI_project_watchers(gouriano)
 NCBI_end_app()
 
