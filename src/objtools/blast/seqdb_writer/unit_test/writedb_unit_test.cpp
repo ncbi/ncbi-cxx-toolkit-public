@@ -557,7 +557,7 @@ static CRef<CScope> s_GetScope()
 
     CRef<CScope> scope(new CScope(*obj_mgr));
 
-    auto_ptr<CObjectIStream> ois
+    unique_ptr<CObjectIStream> ois
         (CObjectIStream::Open(eSerial_AsnText, "data/gi129295.asn"));
     CRef<CSeq_entry> entry(new CSeq_entry);
 
@@ -2824,7 +2824,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WGS_gap)
                                 CWriteDB::eNoIndex, false, &log));
     bd->StartBuild();
 
-    auto_ptr<CObjectIStream> ois
+    unique_ptr<CObjectIStream> ois
     (CObjectIStream::Open(eSerial_AsnText, "data/AXBT01000003.asn"));
     CRef<CSeq_entry> entry(new CSeq_entry);
     *ois >> *entry;
