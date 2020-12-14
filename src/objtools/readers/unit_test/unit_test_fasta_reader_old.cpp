@@ -319,7 +319,7 @@ namespace {
     void s_LoadObjectRefFromTextASN(
         TObjRef & pObj, const CTempString & sTextASN )
     {
-        auto_ptr<CObjectIStream> pObjIStrm(
+        unique_ptr<CObjectIStream> pObjIStrm(
             CObjectIStream::CreateFromBuffer(
             eSerial_AsnText, 
             sTextASN.data(), sTextASN.length() ) );
