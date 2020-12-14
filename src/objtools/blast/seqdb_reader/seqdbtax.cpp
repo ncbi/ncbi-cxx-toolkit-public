@@ -108,8 +108,8 @@ private:
     Int4 m_AllTaxidCount;
 
     /// Memory map of the index file
-    auto_ptr<CMemoryFile> m_IndexFileMap;
-    auto_ptr<CMemoryFile> m_DataFileMap;
+    unique_ptr<CMemoryFile> m_IndexFileMap;
+    unique_ptr<CMemoryFile> m_DataFileMap;
     CSeqDBTaxId* m_IndexPtr;
     char * m_DataPtr;
 
