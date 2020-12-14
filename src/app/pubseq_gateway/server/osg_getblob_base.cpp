@@ -73,6 +73,10 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
     switch ( reply.GetReply().Which() ) {
     case CID2_Reply::TReply::e_Get_blob:
         if ( IsOSGBlob(reply.GetReply().GetGet_blob().GetBlob_id()) ) {
+            if ( 0 && reply.GetReply().GetGet_blob().GetBlob_id().GetSat() == 8087 ) {
+                ERR_POST("OSG: simulating CDD blob read failure");
+                return;
+            }
             if ( m_Blob ) {
                 ERR_POST(GetName()<<": "
                          "Duplicate blob reply: "<<MSerial_AsnText<<reply);
@@ -82,6 +86,10 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
         break;
     case CID2_Reply::TReply::e_Get_split_info:
         if ( IsOSGBlob(reply.GetReply().GetGet_split_info().GetBlob_id()) ) {
+            if ( 0 && reply.GetReply().GetGet_blob().GetBlob_id().GetSat() == 8087 ) {
+                ERR_POST("OSG: simulating CDD blob read failure");
+                return;
+            }
             if ( m_SplitInfo ) {
                 ERR_POST(GetName()<<": "
                          "Duplicate blob reply: "<<MSerial_AsnText<<reply);
@@ -258,6 +266,25 @@ void CPSGS_OSGGetBlobBase::x_SendChunk(const CID2_Blob_Id& osg_blob_id,
     x_SetBlobDataProps(chunk_blob_props, data);
     x_SendChunkBlobProps(id2_info, chunk_id, chunk_blob_props);
     x_SendChunkBlobData(id2_info, chunk_id, data);
+}
+
+
+bool CPSGS_OSGGetBlobBase::HasBlob() const
+{
+    if ( m_SplitInfo ) {
+        if ( !m_SplitInfo->IsSetData() ) {
+            return false;
+        }
+        if ( m_Blob ) {
+            return m_Blob->IsSetData();
+        }
+    }
+    else {
+        if ( m_Blob ) {
+            return m_Blob->IsSetData();
+        }
+    }
+    return false;
 }
 
 

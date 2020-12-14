@@ -44,6 +44,7 @@ class CConn_IOStream;
 
 BEGIN_NAMESPACE(objects);
 
+class CID2_Request;
 class CID2_Request_Packet;
 class CID2_Reply;
 
@@ -74,15 +75,24 @@ public:
         {
             return m_RequestCount++;
         }
+
+    bool InitRequestWasSent() const
+        {
+            return m_InitRequestWasSent;
+        }
     
     void SendRequestPacket(const CID2_Request_Packet& packet);
     CRef<CID2_Reply> ReceiveReply();
 
+    static CRef<CID2_Request> MakeInitRequest();
+    CRef<CID2_Request_Packet> MakeInitRequestPacket();
+    
     double UpdateTimestamp();
 
 protected:
     friend class COSGConnectionPool;
 
+    COSGConnection(size_t connection_id);
     COSGConnection(size_t connection_id,
                    unique_ptr<CConn_IOStream>&& stream);
     
@@ -91,6 +101,7 @@ private:
     CRef<COSGConnectionPool> m_RemoveFrom;
     unique_ptr<CConn_IOStream> m_Stream;
     int m_RequestCount;
+    bool m_InitRequestWasSent;
     CStopWatch m_Timestamp;
 };
 
@@ -105,8 +116,11 @@ public:
     void LoadConfig(const CNcbiRegistry& registry, string section = string());
     void SetLogging(EDiagSev severity);
 
-    int GetRetryCount() const {
-        return m_RetryCount;
+    size_t GetMaxConnectionCount() const {
+        return size_t(m_MaxConnectionCount);
+    }
+    size_t GetRetryCount() const {
+        return size_t(m_RetryCount);
     }
 
     double GetCDDRetryTimeout() const {
@@ -121,11 +135,11 @@ protected:
 
     void RemoveConnection(COSGConnection& conn);
 
-    CRef<COSGConnection> x_CreateConnection();
+    void x_OpenConnection(COSGConnection& conn);
     
 private:
     string m_ServiceName;
-    size_t m_MaxConnectionCount;
+    int m_MaxConnectionCount;
     double m_ExpirationTimeout;
     double m_ReadTimeout;
     double m_CDDRetryTimeout;
@@ -133,7 +147,8 @@ private:
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;
     size_t m_NextConnectionID;
-    size_t m_ConnectionCount;
+    int m_ConnectionCount;
+    int m_ConnectFailureCount;
     list<CRef<COSGConnection>> m_FreeConnections;
 };
 

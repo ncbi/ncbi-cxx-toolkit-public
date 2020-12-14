@@ -52,7 +52,8 @@ public:
 
     static bool CanProcess(SPSGS_BlobBySatSatKeyRequest& request);
     
-    void CreateRequests() override;
+    virtual void NotifyOSGCallStart() override;
+    virtual void CreateRequests() override;
     virtual void ProcessReplies() override;
 };
 
@@ -70,7 +71,7 @@ public:
 
     static bool CanProcess(SPSGS_TSEChunkRequest& request);
     
-    void CreateRequests() override;
+    virtual void CreateRequests() override;
     virtual void ProcessReplies() override;
 };
 

@@ -38,6 +38,7 @@
 #include "osg_caller.hpp"
 #include "osg_connection.hpp"
 
+#include <objects/id2/ID2_Request_Packet.hpp>
 #include <objects/id2/ID2_Request.hpp>
 #include <objects/id2/ID2_Params.hpp>
 #include <objects/id2/ID2_Param.hpp>
@@ -108,76 +109,91 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 }
 
 
-void CPSGS_OSGProcessorBase::PrepareOSGRequest()
-{
-    if ( m_Fetches.empty() ) {
-        CreateRequests();
-    }
-    _ASSERT(!m_Fetches.empty());
-}
-
-
-bool CPSGS_OSGProcessorBase::CallOSG(bool last_attempt)
-{
-    try {
-        NotifyOSGCallStart();
-        COSGCaller caller(m_ConnectionPool, m_Context, m_Fetches);
-        caller.WaitForReplies(*this);
-        NotifyOSGCallEnd();
-        return true;
-    }
-    catch ( CException& exc ) {
-        if ( last_attempt ) {
-            ERR_POST("OSG: failed processing request: "<<exc);
-            throw;
-        }
-        else {
-            ERR_POST("OSG: retrying after failed processing request: "<<exc);
-            return false;
-        }
-    }
-    catch ( exception& exc ) {
-        if ( last_attempt ) {
-            ERR_POST("OSG: failed processing request: "<<exc.what());
-            throw;
-        }
-        else {
-            ERR_POST("OSG: retrying after failed processing request: "<<exc.what());
-            return false;
-        }
-    }
-}
-
-
-void CPSGS_OSGProcessorBase::ProcessOSGReply()
-{
-    ProcessReplies();
-}
-
-
 void CPSGS_OSGProcessorBase::Process()
 {
     if ( m_Canceled ) {
         return;
     }
-    PrepareOSGRequest();
-    for ( int i = m_ConnectionPool->GetRetryCount(); i > 0; --i ) {
+    if ( m_Fetches.empty() ) {
+        CreateRequests();
+    }
+    _ASSERT(!m_Fetches.empty());
+
+    for ( double retry_count = m_ConnectionPool->GetRetryCount(); retry_count > 0; ) {
         if ( m_Canceled ) {
             return;
         }
-        if ( CallOSG(i == 1) ) {
-            // succeeded - exit retry loop
-            break;
+        
+        // We need to distinguish different kinds of communication failures with different
+        //   effect on retry logic.
+        // 1. stale/disconnected connection failure - there maybe multiple in active connection pool
+        // 2. multiple simultaneous failures from concurrent incoming requests
+        // 3. repeated failure of specific request at OSG server
+        // In the first case we shouldn't account all such failures in the same retry counter -
+        //   it will overflow easily, and quite unnecessary.
+        // In the first case we shouldn't increase wait time too much -
+        //   the failures should be treated as single failure for the sake of waiting before
+        //   next connection attempt.
+        // In the third case we should make sure we abandon the failing request when retry limit
+        //   is reached. It should be detected no matter of concurrent successful requests.
+        
+        bool last_attempt = retry_count <= 1;
+        COSGCaller caller;
+        try {
+            caller.AllocateConnection(m_ConnectionPool, m_Context);
         }
-        else {
-            // failed attempt
-            ResetReplies();
+        catch ( exception& exc ) {
+            if ( last_attempt ) {
+                ERR_POST("OSG: failed opening connection: "<<exc.what());
+                throw;
+            }
+            else {
+                // failed new connection - consume full retry
+                ERR_POST("OSG: retrying after failure opening connection: "<<exc.what());
+                retry_count -= 1;
+                continue;
+            }
         }
+        
+        if ( m_Canceled ) {
+            return;
+        }
+        
+        try {
+            caller.SendRequest(*this);
+            if ( m_Canceled ) {
+                return;
+            }
+            caller.WaitForReplies(*this);
+        }
+        catch ( exception& exc ) {
+            if ( last_attempt ) {
+                ERR_POST("OSG: failed receiving replies: "<<exc.what());
+                throw;
+            }
+            else {
+                // this may be failure of old connection
+                ERR_POST("OSG: retrying after failure receiving replies: "<<exc.what());
+                if ( caller.GetRequestPacket().Get().front()->GetSerial_number() <= 1 ) {
+                    // new connection - consume full retry
+                    retry_count -= 1;
+                }
+                else {
+                    // old connection from pool - consume part of retry
+                    retry_count -= 1./m_ConnectionPool->GetMaxConnectionCount();
+                }
+                continue;
+            }
+        }
+        
+        // successful
+        break;
     }
+
     if ( m_Canceled ) {
         return;
     }
-    ProcessOSGReply();
+    ProcessReplies();
 }
 
 

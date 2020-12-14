@@ -79,6 +79,7 @@ public:
                                 TID2SplitVersion split_version);
 protected:
     void ProcessBlobReply(const CID2_Reply& reply);
+    bool HasBlob() const;
     void SendBlob();
     
     static string x_GetSplitInfoPSGBlobId(const string& main_blob_id);

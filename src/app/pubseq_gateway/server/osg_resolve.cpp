@@ -221,7 +221,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
             }
         }
     }
-    if ( m_BioseqInfoFlags == 0 ) {
+    if ( m_BioseqInfoFlags == 0 || !HasBlob() ) {
         FinalizeResult(ePSGS_NotFound);
     }
     else {

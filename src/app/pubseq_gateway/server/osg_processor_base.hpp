@@ -104,25 +104,22 @@ public:
     virtual void NotifyOSGCallReply(const CID2_Reply& reply);
     virtual void NotifyOSGCallEnd();
     
+    typedef vector<CRef<COSGFetch>> TFetches;
+    const TFetches& GetFetches() const
+        {
+            return m_Fetches;
+        }
+    
 protected:
     COSGConnectionPool& GetConnectionPool() const {
         return m_ConnectionPool.GetNCObject();
     }
-    void PrepareOSGRequest();
-    bool CallOSG(bool last_attempt);
-    void ProcessOSGReply();
     
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
     void FinalizeResult();
 
-    typedef vector<CRef<COSGFetch>> TFetches;
-    
     void AddRequest(const CRef<CID2_Request>& req);
-    const TFetches& GetFetches() const
-        {
-            return m_Fetches;
-        }
 
     // create ID2 requests for the PSG request
     virtual void CreateRequests() = 0;

@@ -69,6 +69,17 @@ bool CPSGS_OSGGetBlob::CanProcess(SPSGS_BlobBySatSatKeyRequest& request)
 }
 
 
+void CPSGS_OSGGetBlob::NotifyOSGCallStart()
+{
+    auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
+    if ( auto blob_id = ParsePSGBlobId(psg_req.m_BlobId) ) {
+        if ( blob_id->GetSat() == 8087 ) {
+            //NCBI_THROW(CIOException, eRead, "simulating CDD blob read failure");
+        }
+    }
+}
+
+
 void CPSGS_OSGGetBlob::CreateRequests()
 {
     auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();

@@ -51,15 +51,8 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-COSGCaller::COSGCaller(const CRef<COSGConnectionPool>& connection_pool,
-                       const CRef<CRequestContext>& context,
-                       const TFetches& fetches)
-    : m_ConnectionPool(connection_pool),
-      m_Context(context),
-      m_WaitingRequestCount(0)
+COSGCaller::COSGCaller()
 {
-    _ASSERT(m_ConnectionPool);
-    Start(fetches);
 }
 
 
@@ -140,48 +133,13 @@ CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
 {
     CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
     m_Fetches.clear();
-    if ( kAlwaysSendInit || m_Connection->GetNextRequestSerialNumber() == 0 ) {
+    if ( kAlwaysSendInit || !m_Connection->InitRequestWasSent() ) {
         AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
     }
     for ( auto& f : fetches ) {
         AddFetch(*packet, f);
     }
     return packet;
-}
-
-
-void COSGCaller::Start(const TFetches& fetches)
-{
-    // retry sending
-    for ( int i = m_ConnectionPool->GetRetryCount(); i > 0; --i ) {
-        try {
-            m_Connection = nullptr;
-            m_Connection = m_ConnectionPool->AllocateConnection();
-            m_RequestPacket = MakePacket(fetches);
-            _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
-            m_WaitingRequestCount = m_RequestPacket->Get().size();
-            m_Connection->SendRequestPacket(*m_RequestPacket);
-            break;
-        }
-        catch ( CException& exc ) {
-            if ( i == 1 ) {
-                ERR_POST("OSG: failed sending packet: "<<exc);
-                throw;
-            }
-            else {
-                ERR_POST("OSG: retrying after failing sending packet: "<<exc);
-            }
-        }
-        catch ( exception& exc ) {
-            if ( i == 1 ) {
-                ERR_POST("OSG: failed sending packet: "<<exc.what());
-                throw;
-            }
-            else {
-                ERR_POST("OSG: retrying after failing sending packet: "<<exc.what());
-            }
-        }
-    }
 }
 
 
@@ -204,9 +162,34 @@ size_t COSGCaller::GetRequestIndex(const CID2_Reply& reply) const
 }
 
 
+void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_pool,
+                                    const CRef<CRequestContext>& context)
+{
+    _ASSERT(!m_ConnectionPool);
+    m_ConnectionPool = connection_pool;
+    m_Context = context;
+    _ASSERT(m_ConnectionPool);
+    m_Connection = m_ConnectionPool->AllocateConnection();
+}
+
+
+void COSGCaller::SendRequest(CPSGS_OSGProcessorBase& processor)
+{
+    _ASSERT(m_Connection);
+    _ASSERT(!m_RequestPacket);
+    processor.NotifyOSGCallStart();
+    m_RequestPacket = MakePacket(processor.GetFetches());
+    _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
+    m_Connection->SendRequestPacket(*m_RequestPacket);
+}
+
+
 void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
 {
-    while ( m_WaitingRequestCount > 0 ) {
+    _ASSERT(m_Connection);
+    _ASSERT(m_RequestPacket);
+    size_t waiting_count = m_RequestPacket->Get().size();
+    while ( waiting_count > 0 ) {
         if ( processor.IsCanceled() ) {
             return;
         }
@@ -214,12 +197,13 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
         size_t index = GetRequestIndex(*reply);
         m_Fetches[index]->AddReply(move(reply));
         if ( m_Fetches[index]->EndOfReplies() ) {
-            --m_WaitingRequestCount;
+            --waiting_count;
         }
         processor.NotifyOSGCallReply(*reply);
     }
     m_ConnectionPool->ReleaseConnection(m_Connection);
     _ASSERT(!m_Connection);
+    processor.NotifyOSGCallEnd();
 }
 
 

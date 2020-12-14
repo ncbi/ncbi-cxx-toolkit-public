@@ -36,11 +36,16 @@
 
 #include <corelib/ncbithr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <objects/id2/ID2_Request.hpp>
+#include <objects/id2/ID2_Param.hpp>
+#include <objects/id2/ID2_Params.hpp>
 #include <objects/id2/ID2_Request_Packet.hpp>
 #include <objects/id2/ID2_Reply.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
+#include <cmath>
+#include <corelib/ncbi_system.hpp>
 #include "osg_processor_base.hpp"
 
 
@@ -61,12 +66,26 @@ static const char kParamRetryCount[] = "retry_count";
 
 // Default configuration parameters' values
 static const char kDefaultServiceName[] = "ID2_SNP2";
+static const int kMinMaxConnectionCount = 1;
 static const int kDefaultMaxConnectionCount = 8;
 static const EDebugLevel kDefaultDebugLevel = eDebug_error;
+static const double kMinExpirationTimeout = 1;
 static const double kDefaultExpirationTimeout = 60;
+static const double kMinReadTimeout = .1;
 static const double kDefaultReadTimeout = 30;
+static const double kMinCDDRetryTimeout = .1;
 static const double kDefaultCDDRetryTimeout = 0.9;
-static const double kDefaultRetryCount = 3;
+static const int kMinRetryCount = 1;
+static const int kDefaultRetryCount = 3;
+
+
+COSGConnection::COSGConnection(size_t connection_id)
+    : m_ConnectionID(connection_id),
+      m_RequestCount(0),
+      m_InitRequestWasSent(false),
+      m_Timestamp(CStopWatch::eStart)
+{
+}
 
 
 COSGConnection::COSGConnection(size_t connection_id,
@@ -74,6 +93,7 @@ COSGConnection::COSGConnection(size_t connection_id,
     : m_ConnectionID(connection_id),
       m_Stream(move(stream)),
       m_RequestCount(0),
+      m_InitRequestWasSent(false),
       m_Timestamp(CStopWatch::eStart)
 {
 }
@@ -156,8 +176,16 @@ void COSGConnection::SendRequestPacket(const CID2_Request_Packet& packet)
         LOG_POST(GetDiagSeverity() << "OSG("<<GetConnectionID()<<"): "
                  "Sending "<<LogASNIf(packet, GetDebugLevel() >= eDebug_asn));
     }
+    _ASSERT(!packet.Get().empty());
+    _ASSERT(packet.Get().front()->GetSerial_number()+int(packet.Get().size()) == GetNextRequestSerialNumber());
+    _ASSERT(packet.Get().back()->GetSerial_number()+1 == GetNextRequestSerialNumber());
     s_SimulateFailure("send");
+    _ASSERT(m_InitRequestWasSent || packet.Get().front()->GetRequest().IsInit());
     *m_Stream << MSerial_AsnBinary << packet;
+    if ( packet.Get().front()->GetRequest().IsInit() ) {
+        m_InitRequestWasSent = true;
+    }
+    _ASSERT(m_InitRequestWasSent);
 }
 
 
@@ -198,6 +226,44 @@ CRef<CID2_Reply> COSGConnection::ReceiveReply()
 }
 
 
+CRef<CID2_Request> COSGConnection::MakeInitRequest()
+{
+    CRef<CID2_Request> req(new CID2_Request());
+    req->SetRequest().SetInit();
+    if ( 1 ) {
+        // set client name
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("log:client_name");
+        param->SetValue().push_back("pubseq_gateway");
+        req->SetParams().Set().push_back(param);
+    }
+    if ( 1 ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("id2:allow");
+
+        // allow new blob-state field in several ID2 replies
+        param->SetValue().push_back("*.blob-state");
+        // enable VDB-based WGS sequences
+        param->SetValue().push_back("vdb-wgs");
+        // enable VDB-based SNP sequences
+        param->SetValue().push_back("vdb-snp");
+        // enable VDB-based CDD sequences
+        param->SetValue().push_back("vdb-cdd");
+        req->SetParams().Set().push_back(param);
+    }
+    return req;
+}
+
+
+CRef<CID2_Request_Packet> COSGConnection::MakeInitRequestPacket()
+{
+    CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
+    packet->Set().push_back(MakeInitRequest());
+    packet->Set().back()->SetSerial_number(AllocateRequestSerialNumber());
+    return packet;
+}
+
+
 COSGConnectionPool::COSGConnectionPool()
     : m_ServiceName(kDefaultServiceName),
       m_MaxConnectionCount(kDefaultMaxConnectionCount),
@@ -207,7 +273,8 @@ COSGConnectionPool::COSGConnectionPool()
       m_RetryCount(kDefaultRetryCount),
       m_WaitConnectionSlot(0, kMax_Int),
       m_NextConnectionID(1),
-      m_ConnectionCount(0)
+      m_ConnectionCount(0),
+      m_ConnectFailureCount(0)
 {
 }
 
@@ -228,6 +295,15 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
     if ( section.empty() ) {
         section = kConfigSection;
     }
+
+#define CHECK_PARAM_MIN(value, name, min_value)                         \
+    do {                                                                \
+        if ( value < min_value ) {                                      \
+            NCBI_THROW_FMT(CPubseqGatewayException, eConfigurationError, \
+                           name<<"(="<<value<<") < "<<min_value);       \
+        }                                                               \
+    } while (0)
+    
     m_ServiceName =
         registry.GetString(section,
                            kParamServiceName,
@@ -236,22 +312,34 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
         registry.GetInt(section,
                         kParamMaxConnectionCount,
                         kDefaultMaxConnectionCount);
+    CHECK_PARAM_MIN(m_MaxConnectionCount, kParamMaxConnectionCount, kMinMaxConnectionCount);
+
     m_ExpirationTimeout =
         registry.GetDouble(section,
                            kParamExpirationTimeout,
                            kDefaultExpirationTimeout);
+    CHECK_PARAM_MIN(m_ExpirationTimeout, kParamExpirationTimeout, kMinExpirationTimeout);
+    
     m_ReadTimeout =
         registry.GetDouble(section,
                            kParamReadTimeout,
                            kDefaultReadTimeout);
+    CHECK_PARAM_MIN(m_ReadTimeout, kParamReadTimeout, kMinReadTimeout);
+    
     m_CDDRetryTimeout =
         registry.GetDouble(section,
                            kParamCDDRetryTimeout,
                            kDefaultCDDRetryTimeout);
+    CHECK_PARAM_MIN(m_CDDRetryTimeout, kParamCDDRetryTimeout, kMinCDDRetryTimeout);
+
     m_RetryCount =
         registry.GetInt(section,
                            kParamRetryCount,
                            kDefaultRetryCount);
+    CHECK_PARAM_MIN(m_RetryCount, kParamRetryCount, kMinRetryCount);
+
+#undef CHECK_PARAM_MIN
+
     SetDebugLevel(registry.GetInt(section,
                                   kParamDebugLevel,
                                   eDebugLevel_default));
@@ -277,6 +365,7 @@ CRef<COSGConnection> COSGConnectionPool::AllocateConnection()
             while ( !conn && !m_FreeConnections.empty() ) {
                 conn = move(m_FreeConnections.front());
                 m_FreeConnections.pop_front();
+                _ASSERT(!conn->m_RemoveFrom);
                 if ( conn->UpdateTimestamp() > m_ExpirationTimeout ) {
                     if ( GetDebugLevel() >= eDebug_open ) {
                         LOG_POST(GetDiagSeverity()<<"OSG("<<conn->GetConnectionID()<<"): "
@@ -287,7 +376,7 @@ CRef<COSGConnection> COSGConnectionPool::AllocateConnection()
                 }
             }
             if ( !conn && m_ConnectionCount < m_MaxConnectionCount ) {
-                conn = x_CreateConnection();
+                conn = new COSGConnection(m_NextConnectionID++);
                 ++m_ConnectionCount;
             }
         }}
@@ -298,19 +387,43 @@ CRef<COSGConnection> COSGConnectionPool::AllocateConnection()
     _ASSERT(m_ConnectionCount > 0);
     _ASSERT(!conn->m_RemoveFrom);
     conn->m_RemoveFrom = this;
+    if ( !conn->m_Stream ) {
+        try {
+            x_OpenConnection(*conn);
+            m_ConnectFailureCount = 0;
+        }
+        catch ( ... ) {
+            ++m_ConnectFailureCount;
+            throw;
+        }
+    }
     return conn;
 }
 
 
-CRef<COSGConnection> COSGConnectionPool::x_CreateConnection()
+void COSGConnectionPool::x_OpenConnection(COSGConnection& conn)
 {
-    _ASSERT(m_ConnectionCount < m_MaxConnectionCount);
-    size_t connection_id = m_NextConnectionID++;
+    _ASSERT(conn.m_RemoveFrom == this);
+    size_t connection_id = conn.GetConnectionID();
     if ( GetDebugLevel() >= eDebug_open ) {
         LOG_POST(GetDiagSeverity() << "OSG("<<connection_id<<"): "
                  "Connecting to "<<m_ServiceName);
     }
+    int wait_count = m_ConnectFailureCount;
+    if ( wait_count > 0 ) {
+        // delay before opening new connection to a failing server
+        double wait_seconds = .5*pow(2., wait_count-1)+.5*wait_count;
+        wait_seconds = min(wait_seconds, 10.);
+        if ( GetDebugLevel() >= eDebug_open ) {
+            LOG_POST(GetDiagSeverity() << "OSG("<<connection_id<<"): waiting "<<
+                     wait_seconds<<"s before new connection");
+        }
+        SleepMicroSec((unsigned long)(wait_seconds*1e6));
+    }
     unique_ptr<CConn_IOStream> stream = make_unique<CConn_ServiceStream>(m_ServiceName);
+    if ( !stream || !*stream ) {
+        NCBI_THROW(CIOException, eWrite, "failed to open connection");
+    }
     if ( GetDebugLevel() >= eDebug_open ) {
         string descr = m_ServiceName;
         if ( CONN conn = stream->GetCONN() ) {
@@ -323,7 +436,16 @@ CRef<COSGConnection> COSGConnectionPool::x_CreateConnection()
         LOG_POST(GetDiagSeverity() << "OSG("<<connection_id<<"): "
                  "Connected to "<<descr);
     }
-    return Ref(new COSGConnection(connection_id, move(stream)));
+    conn.m_Stream = move(stream);
+    if ( 1 ) {
+        auto req_packet = conn.MakeInitRequestPacket();
+        conn.SendRequestPacket(*req_packet);
+        _ASSERT(conn.InitRequestWasSent());
+        auto reply = conn.ReceiveReply();
+        if ( !reply->GetReply().IsInit() || !reply->IsSetEnd_of_reply() ) {
+            NCBI_THROW(CIOException, eRead, "bad init reply");
+        }
+    }
 }
 
 

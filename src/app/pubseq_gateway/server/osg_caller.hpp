@@ -63,12 +63,21 @@ class COSGCaller : public CObject
 public:
     typedef vector<CRef<COSGFetch>> TFetches;
     
+    COSGCaller();
     explicit COSGCaller(const CRef<COSGConnectionPool>& connection_pool,
                         const CRef<CRequestContext>& context,
                         const TFetches& fetches);
     virtual ~COSGCaller();
 
+    void AllocateConnection(const CRef<COSGConnectionPool>& connection_pool,
+                            const CRef<CRequestContext>& context);
+    void SendRequest(CPSGS_OSGProcessorBase& processor);
     void WaitForReplies(CPSGS_OSGProcessorBase& processor);
+
+    const CID2_Request_Packet& GetRequestPacket() const
+        {
+            return *m_RequestPacket;
+        }
 
 protected:
     const CRef<COSGConnection>& GetConnection() const
@@ -76,7 +85,6 @@ protected:
             return m_Connection;
         }
     
-    void Start(const TFetches& fetches);
     CRef<CID2_Request> MakeInitRequest();
     void SetContext(CID2_Request& req, const CRef<COSGFetch>& fetch);
     void AddFetch(CID2_Request_Packet& packet, const CRef<COSGFetch>& fetch);
@@ -92,7 +100,6 @@ private:
     CRef<CRequestContext> m_Context;
     CRef<CID2_Request_Packet> m_RequestPacket;
     vector<CRef<COSGFetch>> m_Fetches;
-    size_t m_WaitingRequestCount;
 };
 
 
