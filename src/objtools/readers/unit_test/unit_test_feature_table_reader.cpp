@@ -229,7 +229,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
 }
 
 typedef list< CRef<CSeq_annot> > TAnnotRefList;
-typedef auto_ptr<TAnnotRefList> TAnnotRefListPtr;
+typedef unique_ptr<TAnnotRefList> TAnnotRefListPtr;
 
 static TAnnotRefListPtr
 s_ReadMultipleTablesFromString(
@@ -254,7 +254,7 @@ s_ReadMultipleTablesFromString(
     CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
     tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
 
-    auto_ptr<ILineErrorListener> p_temp_err_container;
+    unique_ptr<ILineErrorListener> p_temp_err_container;
     if( ! pMessageListener ) {
         p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();
