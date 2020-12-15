@@ -3727,7 +3727,7 @@ CQueryBlobImpl::AsIStream(void) const
     const CVariant& var_val = *GetValue();
     m_ValueForStream = var_val.GetString();
     m_IStream.reset
-      (new CNcbiIstrstream(m_ValueForStream.data(), m_ValueForStream.size()));
+      (new CNcbiIstrstream(m_ValueForStream));
     return *m_IStream;
 }
 
