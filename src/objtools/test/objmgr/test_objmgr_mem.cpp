@@ -48,7 +48,7 @@ public:
 void CMemTestApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalKey("gi", "SeqEntryID",
                              "GI id of the Seq-Entry to fetch",
@@ -80,7 +80,7 @@ int CMemTestApp::Run(void)
     vector< CRef<CSeq_entry> > entries;
     if ( file.size() ) {
         ifstream ifs(file.c_str());
-        auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText,
+        unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText,
                                                          ifs));
         const CClassTypeInfo *seqSetInfo =
             (const CClassTypeInfo*)CBioseq_set::GetTypeInfo();
