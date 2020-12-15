@@ -2135,7 +2135,7 @@ void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs ) const
     CRef<CSourceFeatureItem> focus = srcs.front();
     const CSeq_loc & focus_seq_loc = focus->GetLoc();
 
-    auto_ptr<CSeq_loc> copyOfOriginalSeqLocOfFocus( new CSeq_loc() );
+    unique_ptr<CSeq_loc> copyOfOriginalSeqLocOfFocus( new CSeq_loc() );
     copyOfOriginalSeqLocOfFocus->Assign( focus_seq_loc );
 
     // check if focus is completely contained inside any other source.
