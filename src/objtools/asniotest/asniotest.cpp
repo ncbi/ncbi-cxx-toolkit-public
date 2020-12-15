@@ -98,7 +98,7 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
     err->erase();
 
     // initialize the binary input stream
-    auto_ptr<CNcbiIstream> inStream;
+    unique_ptr<CNcbiIstream> inStream;
     inStream.reset(new CNcbiIfstream(
         (pathToFiles + CDirEntry::GetPathSeparator() + filename).c_str(),
         IOS_BASE::in | IOS_BASE::binary));
@@ -107,7 +107,7 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
         return false;
     }
 
-    auto_ptr<CObjectIStream> inObject;
+    unique_ptr<CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new CObjectIStreamAsnBinary(*inStream));
@@ -149,7 +149,7 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
     }
 
     // initialize a binary output stream
-    auto_ptr<CNcbiOstream> outStream;
+    unique_ptr<CNcbiOstream> outStream;
     outStream.reset(new CNcbiOfstream(
         fullPath.c_str(),
         isBinary ? (IOS_BASE::out | IOS_BASE::binary) : IOS_BASE::out));
@@ -159,7 +159,7 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
     }
     filesCreated.push_back(fullPath);
 
-    auto_ptr<CObjectOStream> outObject;
+    unique_ptr<CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new CObjectOStreamAsnBinary(*outStream, fixNonPrint));
@@ -479,7 +479,7 @@ BEGIN_TEST_FUNCTION(FullBlobs)
         }
         CConn_MemoryStream stream;
         try {
-            auto_ptr<CObjectOStream> out(CObjectOStream::Open(sdf, stream));
+            unique_ptr<CObjectOStream> out(CObjectOStream::Open(sdf, stream));
             *out << *se;
         } catch (exception& e) {
             ADD_ERR("failed to generate " << sdf_name << " for GI " << gi
@@ -488,7 +488,7 @@ BEGIN_TEST_FUNCTION(FullBlobs)
         }
         CSeq_entry se2;
         try {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(sdf, stream));
+            unique_ptr<CObjectIStream> in(CObjectIStream::Open(sdf, stream));
             *in >> se2;
         } catch (exception& e) {
             ADD_ERR("failed to parse " << sdf_name << " for GI " << gi << ": "
@@ -562,11 +562,11 @@ BEGIN_TEST_FUNCTION(BitString)
         // dump object to strstream in either asn text, asn binary, or xml
         CNcbiStrstream ss;
         ESerialDataFormat format = (ESerialDataFormat) r.GetRand(eSerial_AsnText, eSerial_Xml);
-        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(format, ss, eNoOwnership));
+        unique_ptr < CObjectOStream > osa(CObjectOStream::Open(format, ss, eNoOwnership));
         *osa << orig;
 
         // read object back in from stream
-        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(format, ss, eNoOwnership));
+        unique_ptr < CObjectIStream > isa(CObjectIStream::Open(format, ss, eNoOwnership));
         CPC_InfoData copy;
         *isa >> copy;
 
@@ -606,7 +606,7 @@ bool GetAsnDataViaHTTP(
     try {
         // load data from stream using given URL params
         CConn_HttpStream httpStream(host, path, args, kEmptyStr, port);
-        auto_ptr<CObjectIStream> inObject;
+        unique_ptr<CObjectIStream> inObject;
         if (binaryData)
             inObject.reset(new CObjectIStreamAsnBinary(httpStream));
         else
