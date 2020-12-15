@@ -1535,7 +1535,7 @@ static void WriteOutTemp (CRef<CSeq_entry> entry)
     string fullPath = CDirEntry::MakePath(".", filename);
 
     // initialize a binary output stream
-    auto_ptr<CNcbiOstream> outStream;
+    unique_ptr<CNcbiOstream> outStream;
     outStream.reset(new CNcbiOfstream(
         fullPath.c_str(),
         IOS_BASE::out));
@@ -1543,7 +1543,7 @@ static void WriteOutTemp (CRef<CSeq_entry> entry)
         return;
     }
 
-    auto_ptr<CObjectOStream> outObject;
+    unique_ptr<CObjectOStream> outObject;
     // Associate ASN.1 text serialization methods with the input
     outObject.reset(new CObjectOStreamAsn(*outStream));
 
@@ -5344,7 +5344,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSubSource)
 void ShowOrgRef(const COrg_ref& org)
 {
     ESerialDataFormat outFormat = eSerial_AsnText;
-    auto_ptr<CObjectOStream> os;
+    unique_ptr<CObjectOStream> os;
     os.reset(CObjectOStream::Open(outFormat, cout));
     *os << org;    
 }
