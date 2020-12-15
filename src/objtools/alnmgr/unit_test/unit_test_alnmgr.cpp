@@ -126,7 +126,7 @@ size_t LoadAligns(CNcbiIstream& in,
 // The aln_id_map argument is required because TScopeAlnStat keeps const
 // reference to the id-map. So, the map needs to be returned to the caller.
 CRef<TScopeAlnStats> InitAlnStats(const CAlnContainer& aligns,
-                                  auto_ptr<TScopeAlnIdMap>& aln_id_map)
+                                  unique_ptr<TScopeAlnIdMap>& aln_id_map)
 {
     TScopeAlnSeqIdConverter id_conv(&GetScope());
     TScopeIdExtract id_extract(id_conv);
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(s_TestLoadAlign)
         BOOST_CHECK(num_aligns == expected_num_aligns);
     }
 
-    auto_ptr<TScopeAlnIdMap> aln_id_map;
+    unique_ptr<TScopeAlnIdMap> aln_id_map;
     CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
     if ( !DumpExpected() ) {
@@ -499,7 +499,7 @@ BOOST_AUTO_TEST_CASE(s_TestPairwiseAln)
         BOOST_CHECK(num_aligns == expected_num_aligns);
     }
 
-    auto_ptr<TScopeAlnIdMap> aln_id_map;
+    unique_ptr<TScopeAlnIdMap> aln_id_map;
     CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
     const TScopeAlnStats::TAlnVec& aln_vec = aln_stats->GetAlnVec();
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(s_TestPairwiseAlnRanged)
         BOOST_CHECK(num_aligns == expected_num_aligns);
     }
 
-    auto_ptr<TScopeAlnIdMap> aln_id_map;
+    unique_ptr<TScopeAlnIdMap> aln_id_map;
     CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
     const TScopeAlnStats::TAlnVec& aln_vec = aln_stats->GetAlnVec();
@@ -704,7 +704,7 @@ BOOST_AUTO_TEST_CASE(s_TestAnchoredAln)
         BOOST_CHECK(num_aligns == expected_num_aligns);
     }
 
-    auto_ptr<TScopeAlnIdMap> aln_id_map;
+    unique_ptr<TScopeAlnIdMap> aln_id_map;
     CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
     for (size_t aln_idx = 0; aln_idx < aligns.size(); ++aln_idx) {
@@ -758,7 +758,7 @@ BOOST_AUTO_TEST_CASE(s_TestAnchoredAlnBuilt)
             BOOST_CHECK(num_aligns == expected_num_aligns);
         }
 
-        auto_ptr<TScopeAlnIdMap> aln_id_map;
+        unique_ptr<TScopeAlnIdMap> aln_id_map;
         CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
         const TScopeAlnStats::TIdVec& aln_ids = aln_stats->GetAnchorIdVec();
@@ -834,7 +834,7 @@ BOOST_AUTO_TEST_CASE(s_TestSparseAlnCoords)
             BOOST_CHECK(num_aligns == expected_num_aligns);
         }
 
-        auto_ptr<TScopeAlnIdMap> aln_id_map;
+        unique_ptr<TScopeAlnIdMap> aln_id_map;
         CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
         const TScopeAlnStats::TIdVec& aln_ids = aln_stats->GetAnchorIdVec();
@@ -905,7 +905,7 @@ BOOST_AUTO_TEST_CASE(s_TestSparseAlnData)
             BOOST_CHECK(num_aligns == expected_num_aligns);
         }
 
-        auto_ptr<TScopeAlnIdMap> aln_id_map;
+        unique_ptr<TScopeAlnIdMap> aln_id_map;
         CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
         const TScopeAlnStats::TIdVec& aln_ids = aln_stats->GetAnchorIdVec();
@@ -980,7 +980,7 @@ BOOST_AUTO_TEST_CASE(s_TestAlnTypes)
         BOOST_CHECK(num_aligns == expected_num_aligns);
     }
 
-    auto_ptr<TScopeAlnIdMap> aln_id_map;
+    unique_ptr<TScopeAlnIdMap> aln_id_map;
     CRef<TScopeAlnStats> aln_stats = InitAlnStats(aligns, aln_id_map);
 
     for (size_t aln_idx = 0; aln_idx < aligns.size(); ++aln_idx) {
