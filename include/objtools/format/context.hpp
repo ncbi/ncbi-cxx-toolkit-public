@@ -319,7 +319,7 @@ private:
     const CPacked_seqpnt* m_pOpticalMapPoints;
     // used to destroy m_pOpticalMapPoints if it was manually
     // created.
-    auto_ptr<CPacked_seqpnt> m_pOpticalMapPointsDestroyer;
+    unique_ptr<CPacked_seqpnt> m_pOpticalMapPointsDestroyer;
     
 
     CSeq_inst::TRepr      m_Repr;
@@ -476,7 +476,7 @@ private:
     CSeq_entry_Handle           m_Entry;
     TSections                   m_Sections;
     CConstRef<CSubmit_block>    m_Submit;
-    auto_ptr<SAnnotSelector>    m_Selector;
+    unique_ptr<SAnnotSelector>  m_Selector;
     CConstRef<CSeq_loc>         m_Loc;
     CRef<feature::CFeatTree>    m_FeatTree;
     CRef<CSeqEntryIndex>        m_Idx;
