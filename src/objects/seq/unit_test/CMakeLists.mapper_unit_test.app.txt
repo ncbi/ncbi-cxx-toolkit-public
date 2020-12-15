@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(mapper_unit_test)
   NCBI_sources(mapper_unit_test)
   NCBI_uses_toolkit_libraries(seq test_boost)
-  NCBI_project_watchers(grichenk)
   NCBI_set_test_assets(mapper_unit_test.ini mapper_test_data)
   NCBI_add_test()
+  NCBI_project_watchers(grichenk)
 NCBI_end_app()
 

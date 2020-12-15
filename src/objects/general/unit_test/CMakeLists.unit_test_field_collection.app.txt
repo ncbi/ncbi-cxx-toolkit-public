@@ -1,12 +1,12 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_field_collection)
   NCBI_sources(unit_test_field_collection)
   NCBI_uses_toolkit_libraries(general test_boost)
-  NCBI_project_watchers(whlavina)
+
   NCBI_set_test_assets(uo.asnt)
   NCBI_add_test(unit_test_field_collection -data-in uo.asnt)
+
+  NCBI_project_watchers(whlavina)
 NCBI_end_app()
 

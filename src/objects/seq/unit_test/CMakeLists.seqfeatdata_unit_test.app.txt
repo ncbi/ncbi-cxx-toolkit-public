@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(seqfeatdata_unit_test)
   NCBI_sources(seqfeatdata_unit_test)
   NCBI_uses_toolkit_libraries(seq test_boost)
-  NCBI_project_watchers(grichenk foleyjp)
   NCBI_add_test()
+  NCBI_project_watchers(grichenk foleyjp)
 NCBI_end_app()
 
