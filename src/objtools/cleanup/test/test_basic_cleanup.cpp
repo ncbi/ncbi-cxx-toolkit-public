@@ -101,8 +101,8 @@ private:
     SIZE_TYPE PrintChanges(CConstRef<CCleanupChange> errors, 
         const CArgs& args);
 
-    auto_ptr<CObjectIStream> m_In;
-    auto_ptr<CObjectOStream> m_Out;
+    unique_ptr<CObjectIStream> m_In;
+    unique_ptr<CObjectOStream> m_Out;
     unsigned int m_Options;
     bool m_Continue;
     bool m_NoCleanup;
@@ -129,7 +129,7 @@ void CTest_cleanupApplication::Init(void)
     // Prepare command line descriptions
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
         ("i", "ASNFile", "Input Seq-entry/Seq_submit ASN.1 text file",
