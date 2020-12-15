@@ -60,7 +60,7 @@ class CRelLocTester : public CNcbiApplication
 
 void CRelLocTester::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test the use of SRelLoc", false);
 
