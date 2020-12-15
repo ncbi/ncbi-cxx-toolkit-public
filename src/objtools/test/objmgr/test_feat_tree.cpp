@@ -69,7 +69,7 @@ void CTestApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
     arg_desc->AddKey("i", "InFile",
@@ -244,7 +244,7 @@ string s_GuessType(CNcbiIstream& in, ESerialDataFormat format)
     CStreamUtils::Pushback(in, buf, size);
 
     CNcbiIstrstream test_str(buf, size);
-    auto_ptr<CObjectIStream> test_in(CObjectIStream::Open(format, test_str));
+    unique_ptr<CObjectIStream> test_in(CObjectIStream::Open(format, test_str));
     if ( format == eSerial_AsnText || format == eSerial_Xml ) {
         return test_in->ReadFileHeader();
     }
