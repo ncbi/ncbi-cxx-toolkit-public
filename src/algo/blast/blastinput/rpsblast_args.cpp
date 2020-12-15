@@ -179,7 +179,7 @@ CRPSBlastNodeArgs::GetOutputStream()
 
 CRPSBlastNodeArgs::CRPSBlastNodeArgs(const string & input)
 {
-	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+	m_InputStream = new CNcbiIstrstream(input);
 }
 
 CRPSBlastNodeArgs::~CRPSBlastNodeArgs()

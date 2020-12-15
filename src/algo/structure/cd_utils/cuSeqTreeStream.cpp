@@ -147,7 +147,7 @@ bool CdTreeStream::read(std::istream& is, SeqTree& seqTree)
 
 void CdTreeStream::fromString(const std::string& str, SeqTree& stree)
 {
-    ncbi::CNcbiIstrstream iss(str.c_str(), str.length()+1);
+    ncbi::CNcbiIstrstream iss(str);
 
 	read(iss, stree);
 }

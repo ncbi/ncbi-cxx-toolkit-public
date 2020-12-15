@@ -112,7 +112,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -236,7 +236,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -294,7 +294,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -360,7 +360,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -428,7 +428,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -493,7 +493,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -550,7 +550,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 

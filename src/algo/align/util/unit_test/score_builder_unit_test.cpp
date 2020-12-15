@@ -744,7 +744,7 @@ Seq-align ::= { \
 
     int expected_score = 1301;
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
 

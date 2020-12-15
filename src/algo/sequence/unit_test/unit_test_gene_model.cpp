@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     }
                     if ((*ext_it)->HasField("cdregion")) {
                         string cdregion = (*ext_it)->GetField("cdregion").GetData().GetStr();
-                        CNcbiIstrstream istrs(cdregion.c_str());
+                        CNcbiIstrstream istrs(cdregion);
                         unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
                         feat.Reset(new CSeq_feat);
                         *istr >> *feat;
@@ -1290,7 +1290,7 @@ Seq-align ::= { \
 
     TSeqPos genomic_size = 321744;
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_align align;
@@ -1428,7 +1428,7 @@ Seq-feat ::= { \
             } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -1505,7 +1505,7 @@ Seq-align ::= { \
 } \
 ";
 
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
 
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
@@ -1555,7 +1555,7 @@ Seq-loc ::= packed-int { \
             } \
           } \
 ";
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
@@ -1608,12 +1608,12 @@ ATAAAGATGAGATCGACTTCATTTTTAAGCAACCAATCGGTAGCTTCACGCACTGTTGTTATAATCGTAG\n\
 ATTGAAATTTGGAAGCAATCAATTGGTCTAATTTCTCCAAAAGACTTTCCGAAGCCCAGTTTTCATCTTC\n\
 TACGATCAATA\n\
 ";
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
 
-    CNcbiIstrstream fasta_stream(fasta_string.c_str());
+    CNcbiIstrstream fasta_stream(fasta_string);
     CFastaReader fasta_reader(fasta_stream, CFastaReader::fAddMods);
     scope->AddTopLevelSeqEntry(*fasta_reader.ReadOneSeq());
 
@@ -1656,7 +1656,7 @@ Seq-loc ::= packed-int { \
             } \
           } \
 ";
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
@@ -1712,7 +1712,7 @@ Seq-loc ::= packed-int { \
             } \
           } \
 ";
-    CNcbiIstrstream istrs(buf.c_str());
+    CNcbiIstrstream istrs(buf);
     unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;

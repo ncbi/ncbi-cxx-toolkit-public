@@ -164,7 +164,7 @@ int CSpectrumSet::LoadMultDTA(CNcbiIstream& DTA, int Max)
                     MyGetline(DTA, Line);
                 } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
                 
-                CNcbiIstrstream istr(Line.c_str());
+                CNcbiIstrstream istr(Line);
     
                 if(!GetDTAHeader(istr, MySpectrum)) {
                     ERR_POST(Info << "LoadMultDTA: not able to get header");
@@ -175,7 +175,7 @@ int CSpectrumSet::LoadMultDTA(CNcbiIstream& DTA, int Max)
             TInputPeaks InputPeaks;
 
             while (NStr::Compare(Line, 0, 5, "</dta") != 0) {
-                CNcbiIstrstream istr(Line.c_str());
+                CNcbiIstrstream istr(Line);
                 if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
@@ -228,7 +228,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(CNcbiIstream& DTA, int Max, bool isPKL)
                     MyGetline(DTA, Line);
                 } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
                 
-                CNcbiIstrstream istr(Line.c_str());
+                CNcbiIstrstream istr(Line);
 
                 if (!GetDTAHeader(istr, MySpectrum, isPKL)) 
                     if(GotOne) 
@@ -248,7 +248,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(CNcbiIstream& DTA, int Max, bool isPKL)
             TInputPeaks InputPeaks;
             // loop while line is long (the > 1 deals with eol issues)
             while (Line.size() > 1) {
-                CNcbiIstrstream istr(Line.c_str());
+                CNcbiIstrstream istr(Line);
                 if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
@@ -390,14 +390,14 @@ int CSpectrumSet::LoadDTA(CNcbiIstream& DTA)
                 MyGetline(DTA, Line);
             } while (Line.size() < 3 && !DTA.eof()); // skip blank lines
             
-            CNcbiIstrstream istr(Line.c_str());
+            CNcbiIstrstream istr(Line);
             if(!GetDTAHeader(istr, MySpectrum)) return 1;
         }
 
         TInputPeaks InputPeaks;
         while (DTA) {
             MyGetline(DTA, Line);
-            CNcbiIstrstream istr(Line.c_str());
+            CNcbiIstrstream istr(Line);
             if (!GetDTABody(istr, InputPeaks)) break;
             GotOne = true;
         } 
@@ -498,7 +498,7 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
             GotMass = true;
             // create istrstream as some broken mgf generators insert whitespace separated cruft after mass
             string LastLine(Line.substr(8, Line.size()-8));
-            CNcbiIstrstream istr(LastLine.c_str());
+            CNcbiIstrstream istr(LastLine);
             double precursor;
             if(istr >> precursor) {
                 MySpectrum->SetPrecursormz(MSSCALE2INT(precursor));
@@ -513,7 +513,7 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
             NStr::ReplaceInPlace(LastLine, "+", " ");
             NStr::ReplaceInPlace(LastLine, ",", " ");
 
-            CNcbiIstrstream istr(LastLine.c_str());
+            CNcbiIstrstream istr(LastLine);
             int charge;
             MySpectrum->SetCharge().clear();
             do {
@@ -540,7 +540,7 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
     while (NStr::CompareNocase(Line, 0, 8, "END IONS") != 0) {
         if(!DTA || DTA.eof()) 
             return 1;
-        CNcbiIstrstream istr(Line.c_str());
+        CNcbiIstrstream istr(Line);
         // get rid of blank lines (technically not allowed, but they do occur)
         // size one allows for dos/mac end of line chars.
         if(Line.size() <= 1) 

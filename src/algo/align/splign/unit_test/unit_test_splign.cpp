@@ -127,7 +127,7 @@ void s_RoundScores(CRef<CSeq_align_set> align) {
                                             CNcbiOstrstream ots1;		
                                             ots1 << setprecision(7) << scientific << re;
                                             string tstr1 = CNcbiOstrstreamToString(ots1);
-                                            CNcbiIstrstream its1(tstr1.c_str()); 
+                                            CNcbiIstrstream its1(tstr1); 
                                             its1 >> re;
                                             (*sit)->SetValue().SetReal(re);
                                         }
