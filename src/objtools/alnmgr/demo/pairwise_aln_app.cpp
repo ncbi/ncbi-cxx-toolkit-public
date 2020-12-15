@@ -97,7 +97,7 @@ private:
 
 void CPairwiseAlnApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
         ("in", "InputFileName",
@@ -137,7 +137,7 @@ void CPairwiseAlnApp::LoadInputAlns(void)
     /// get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = !asn_type.empty();
-    auto_ptr<CObjectIStream> in
+    unique_ptr<CObjectIStream> in
         (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
     
     CAlnAsnReader reader;
