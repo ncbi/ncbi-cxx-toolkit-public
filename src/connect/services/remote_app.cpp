@@ -120,7 +120,7 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
                 string msg =
                         "Job output does not match remote_app output format";
                 ERR_POST_X(1, msg);
-                m_GridRead.stream.reset(new CNcbiIstrstream(msg.c_str()));
+                m_GridRead.stream.reset(new CNcbiIstrstream(msg));
             }
             return *m_GridRead.stream.get();
         }
@@ -135,7 +135,7 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
                 string msg = "Can not open " + name;
                 msg += " for reading";
                 ERR_POST_X(2, msg);
-                m_GridRead.stream.reset(new CNcbiIstrstream(msg.c_str()));
+                m_GridRead.stream.reset(new CNcbiIstrstream(msg));
             }
         }
     }
