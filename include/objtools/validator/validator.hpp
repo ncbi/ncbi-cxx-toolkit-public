@@ -121,7 +121,7 @@ public:
         CCache(void);
 
         // the containing CCache object owns the m_impl
-        auto_ptr<CCacheImpl> m_impl;
+        unique_ptr<CCacheImpl> m_impl;
     };
     static CRef<CCache> MakeEmptyCache(void);
 
