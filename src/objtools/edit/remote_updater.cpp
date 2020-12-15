@@ -291,8 +291,8 @@ public:
         return result;
     }  
 protected:
-    auto_ptr<CTaxon3> m_taxon;
-    auto_ptr<CCachedReplyMap> m_cache;
+    unique_ptr<CTaxon3> m_taxon;
+    unique_ptr<CCachedReplyMap> m_cache;
 };
 
 void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& obj)
