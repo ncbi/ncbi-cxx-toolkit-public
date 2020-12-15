@@ -269,9 +269,9 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                 {
                     const TFieldData::TStrs * pStrs = NULL;
 
-                    // auto_ptr just used to destroy the pStrs if it's
+                    // unique_ptr just used to destroy the pStrs if it's
                     // dynamically created.
-                    auto_ptr<TFieldData::TStrs> pStrsDestroyer;
+                    unique_ptr<TFieldData::TStrs> pStrsDestroyer;
 
                     if(  field_data.IsStrs() ) {
                         pStrs = & field_data.GetStrs();
@@ -302,7 +302,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 
                     const TFieldData::TInts * pInts = NULL;
                     // destroys pInts if it's dynamically created
-                    auto_ptr<TFieldData::TInts> pIntsDestroyer;
+                    unique_ptr<TFieldData::TInts> pIntsDestroyer;
 
                     if( field_data.IsInts() ) {
                         pInts = & field_data.GetInts();
