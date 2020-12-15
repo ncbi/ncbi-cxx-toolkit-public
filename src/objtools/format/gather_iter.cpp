@@ -142,14 +142,14 @@ bool CGather_Iter::x_AddSeqEntryToStack(
         return false;
     }
 
-    auto_ptr<CBioseq_CI> seq_iter( new CBioseq_CI(entry, mol_type, CBioseq_CI::eLevel_Mains) );
+    unique_ptr<CBioseq_CI> seq_iter( new CBioseq_CI(entry, mol_type, CBioseq_CI::eLevel_Mains) );
     for( ; (*seq_iter); ++(*seq_iter) ) {
         if( ! x_IsBioseqHandleOkay(**seq_iter) ) {
             continue;
         }
 
         // found a good one
-        m_BioseqIter = seq_iter;
+        m_BioseqIter.reset(seq_iter.release());
         x_found = true;
         return true;
     }

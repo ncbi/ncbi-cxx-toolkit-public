@@ -75,7 +75,7 @@ private:
     // Also, if m_SeqEntryIterStack
     // is non-empty, m_BioseqIter is guaranteed to be valid.
     std::vector< CSeq_entry_CI > m_SeqEntryIterStack;
-    auto_ptr<CBioseq_CI> m_BioseqIter;
+    unique_ptr<CBioseq_CI> m_BioseqIter;
 
     const CFlatFileConfig& m_Config;
 
