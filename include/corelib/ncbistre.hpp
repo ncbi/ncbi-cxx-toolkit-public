@@ -78,7 +78,12 @@
 #    define _BACKWARD_BACKWARD_WARNING_H 1
 #    include <backward/strstream>
 #  else
+#if 1
 #    include <strstream>
+#else
+#define NCBI_SHUN_OSTRSTREAM 1
+#endif
+#    include <sstream>
 #  endif
 #  include <iomanip>
 #  define IO_PREFIX     NCBI_NS_STD
@@ -143,23 +148,203 @@ typedef IO_PREFIX::ostream       CNcbiOstream;
 /// Portable alias for iostream.
 typedef IO_PREFIX::iostream      CNcbiIostream;
 
+#ifndef NCBI_SHUN_OSTRSTREAM
 /// Portable alias for strstreambuf.
-typedef IO_PREFIX::strstreambuf  CNcbiStrstreambuf;
+//typedef IO_PREFIX::strstreambuf  CNcbiStrstreambuf;
 
 /// Portable alias for istrstream.
-typedef IO_PREFIX::istrstream    CNcbiIstrstream;
+//typedef IO_PREFIX::istrstream    CNcbiIstrstream;
 
-#ifndef NCBI_SHUN_OSTRSTREAM
 /// Portable alias for ostrstream.
-typedef IO_PREFIX::ostrstream    CNcbiOstrstream;
+//typedef IO_PREFIX::ostrstream    CNcbiOstrstream;
 
 /// Portable alias for strstream.
-typedef IO_PREFIX::strstream     CNcbiStrstream;
+//typedef IO_PREFIX::strstream     CNcbiStrstream;
 #  define NCBI_STRSTREAM_INIT(p, l) (p), (l)
+
+class CNcbiIstrstream : public IO_PREFIX::istrstream
+{
+public:
+	typedef IO_PREFIX::istrstream _Mybase;
+
+	explicit CNcbiIstrstream(const string& _Str)
+        : _Mybase(_Str.data(), _Str.size()) {
+    }
+//    [[deprecated("(const char*) constructor: review, maybe using string argument is better")]]
+	explicit CNcbiIstrstream(const char *_Ptr)
+        : _Mybase(_Ptr) {
+    }
+
+    [[deprecated("(char*) constructor is deprecated, WILL BE REMOVED SOON")]]
+	explicit CNcbiIstrstream(char *_Ptr)
+        : _Mybase(_Ptr) {
+    }
+#if !defined(NCBI_COMPILER_MSVC) || (NCBI_COMPILER_VERSION > 1916) 
+    template<class T>
+    using enable_if_integral = typename std::enable_if<std::is_integral<T>::value>;
+
+    template< typename TInteger, typename = typename enable_if_integral<TInteger>::type >
+    [[deprecated("(char*, Tinteger) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbiIstrstream(char *_Ptr, TInteger _Count)
+		: _Mybase(_Ptr, _Count) {
+	}
+    template< typename TInteger, typename = typename enable_if_integral<TInteger>::type >
+//    [[deprecated("(const char*, Tinteger) constructor is deprecated, consider using string argument instead")]]
+	CNcbiIstrstream(const char *_Ptr, TInteger _Count)
+		: _Mybase(_Ptr, _Count) {
+	}
 #else
-typedef IO_PREFIX::ostringstream CNcbiOstrstream;
-typedef IO_PREFIX::stringstream  CNcbiStrstream;
+    [[deprecated("(char*, streamsize) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbiIstrstream(char *_Ptr, streamsize _Count)
+        : _Mybase(_Ptr, (int)_Count) {
+    }
+    [[deprecated("(char*, size_t) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbiIstrstream(char *_Ptr, size_t _Count)
+        : _Mybase(_Ptr, (int)_Count) {
+    }
+    [[deprecated("(char*, int) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbiIstrstream(char *_Ptr, int _Count)
+        : _Mybase(_Ptr, _Count) {
+    }
+//    [[deprecated("(const char*, streamsize) constructor is deprecated, consider using string argument instead")]]
+	CNcbiIstrstream(const char *_Ptr, streamsize _Count)
+        : _Mybase(_Ptr, _Count) {
+    }
+//    [[deprecated("(const char*, size_t) constructor is deprecated, consider using string argument instead")]]
+	CNcbiIstrstream(const char *_Ptr, size_t _Count)
+        : _Mybase(_Ptr, _Count) {
+    }
+//    [[deprecated("(const char*, int) constructor is deprecated, consider using string argument instead")]]
+	CNcbiIstrstream(const char *_Ptr, int _Count)
+        : _Mybase(_Ptr, _Count) {
+    }
+#endif
+
+#if 0
+	CNcbiIstrstream(CNcbiIstrstream&& _Right)
+		: _Mybase(std::move(_Right)) {
+	}
+	CNcbiIstrstream& operator=(CNcbiIstrstream&& _Right) {
+        _Mybase::operator=(std::move(_Right));
+		return (*this);
+	}
+#endif
+};
+
+template<typename _Base, IOS_BASE::openmode _DefMode>
+class CNcbistrstream_Base : public _Base
+{
+public:
+	typedef _Base _Mybase;
+	CNcbistrstream_Base(void)
+		: _Mybase() {
+	}
+#if 0
+	CNcbistrstream_Base(const string& _Str, IOS_BASE::openmode _Mode = _DefMode)
+        : _Mybase( const_cast<char*>(_Str.data()), _Str.size(), _Mode) {
+    }
+#endif
+#if !defined(NCBI_COMPILER_MSVC) || (NCBI_COMPILER_VERSION > 1916) 
+    template<class T>
+    using enable_if_integral = typename std::enable_if<std::is_integral<T>::value>;
+
+    template< typename TInteger, typename = typename enable_if_integral<TInteger>::type >
+    [[deprecated("(char*, Tinteger, ios::openmode) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbistrstream_Base(char *_Ptr, TInteger _Count, IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(_Ptr, _Count, _Mode) {
+	}
+#else
+    [[deprecated("(char*, streamsize, ios::openmode) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbistrstream_Base(char *_Ptr, streamsize _Count, IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(_Ptr, _Count, _Mode) {
+	}
+    [[deprecated("(char*, size_t, ios::openmode) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbistrstream_Base(char *_Ptr, size_t _Count, IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(_Ptr, _Count, _Mode) {
+	}
+    [[deprecated("(char*, int, ios::openmode) constructor is deprecated, WILL BE REMOVED SOON")]]
+	CNcbistrstream_Base(char *_Ptr, int _Count, IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(_Ptr, _Count, _Mode) {
+	}
+#endif
+
+#if 0
+	CNcbistrstream_Base(CNcbistrstream_Base&& _Right)
+		: _Mybase(std::move(_Right)) {
+	}
+	CNcbistrstream_Base& operator=(CNcbistrstream_Base&& _Right) {
+        _Mybase::operator=(std::move(_Right));
+		return (*this);
+	}
+#endif
+};
+using CNcbiOstrstream = CNcbistrstream_Base<IO_PREFIX::ostrstream, IOS_BASE::out>;
+using CNcbiStrstream  = CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_BASE::in | IOS_BASE::out>;
+
+#else
+#if 0
+//typedef IO_PREFIX::stringbuf      CNcbiStrstreambuf;
+typedef IO_PREFIX::istringstream  CNcbiIstrstream;
+typedef IO_PREFIX::ostringstream  CNcbiOstrstream;
+typedef IO_PREFIX::stringstream   CNcbiStrstream;
 #  define NCBI_STRSTREAM_INIT(p, l) string(p, l)
+#else
+#  define NCBI_STRSTREAM_INIT(p, l) (p), (l)
+template<typename _Base, IOS_BASE::openmode _DefMode>
+class CNcbistrstream_Base : public _Base
+{
+public:
+	typedef _Base _Mybase;
+	explicit CNcbistrstream_Base(IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(_Mode) {
+    }
+	explicit CNcbistrstream_Base(const string& _Str, IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(_Str, _Mode) {
+    }
+
+#if !defined(NCBI_COMPILER_MSVC) || (NCBI_COMPILER_VERSION > 1916) 
+    template<class T>
+    using enable_if_integral = typename std::enable_if<std::is_integral<T>::value>;
+
+    template< typename TInteger, typename = typename enable_if_integral<TInteger>::type >
+    [[deprecated("(const char*, Tinteger, ios::openmode) constructor is deprecated, use string argument instead")]]
+	CNcbistrstream_Base(const char *_Ptr, TInteger _Count, IOS_BASE::openmode _Mode = _DefMode)
+		: _Mybase(string(_Ptr, _Count), _Mode) {
+	}
+#else
+    [[deprecated("(const char*, streamsize, ios::openmode) constructor is deprecated, use string argument instead")]]
+    CNcbistrstream_Base(const char* s, streamsize n, IOS_BASE::openmode _Mode = _DefMode)
+        : _Mybase(string(s,n), _Mode) {
+    }
+    [[deprecated("(const char*, size_t, ios::openmode) constructor is deprecated, use string argument instead")]]
+    CNcbistrstream_Base(const char* s, size_t n, IOS_BASE::openmode _Mode = _DefMode)
+        : _Mybase(string(s,n), _Mode) {
+    }
+    [[deprecated("(const char*, int, ios::openmode) constructor is deprecated, use string argument instead")]]
+    CNcbistrstream_Base(const char* s, int n, IOS_BASE::openmode _Mode = _DefMode)
+        : _Mybase(string(s,n), _Mode) {
+    }
+#endif
+
+    template< typename TInteger>
+    CNcbistrstream_Base(char* s, TInteger n) = delete;
+    template< typename TInteger>
+    CNcbistrstream_Base(char* s, TInteger n, IOS_BASE::openmode _Mode) = delete;
+
+#if 0
+	CNcbistrstream_Base(CNcbistrstream_Base&& _Right)
+		: _Mybase(std::move(_Right)) {
+	}
+	CNcbistrstream_Base& operator=(CNcbistrstream_Base&& _Right) {
+        _Mybase::operator=(std::move(_Right));
+		return (*this);
+	}
+#endif
+};
+using CNcbiIstrstream = CNcbistrstream_Base<IO_PREFIX::istringstream, IOS_BASE::in>;
+using CNcbiOstrstream = CNcbistrstream_Base<IO_PREFIX::ostringstream, IOS_BASE::out>;
+using CNcbiStrstream  = CNcbistrstream_Base<IO_PREFIX::stringstream,  IOS_BASE::in | IOS_BASE::out>;
+#endif
 #endif
 
 /// Portable alias for filebuf.
