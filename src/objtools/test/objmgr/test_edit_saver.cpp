@@ -335,7 +335,7 @@ void CTestEditSaver::Detach(const CSeq_entry_Handle&,
 void CTestApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
                      CArgDescriptions::eIntId);
