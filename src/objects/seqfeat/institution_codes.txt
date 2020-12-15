@@ -129,7 +129,7 @@ AKU<JPN>	c	Faculty of Agriculture
 AKU<NZ>	s	University of Auckland, School of Biological Sciences			
 AL	s	Universite d'Alger			
 ALA<USA-AK>	s	Herbarium, University of Alaska Museum of the North			
-ALA<USA-AL>	s	University of Alabama Museum of Natural History			
+ALA<USA-AL>	s	University of Alabama Museum of Natural History	ALMNH		
 ALAJ	s	Herbarium, University of Alaska SE			
 ALAM	s	Adams State College, Biology Department			
 ALB	s	Civico Museo Archeologico e di Scienze Naturali Federico Eusebio			
@@ -169,7 +169,7 @@ AM:Mineralogy	s	Australian Museum, Earth Sciences: Mineralogy and Petrology Coll
 AM:Ornithology	s	Australian Museum, Vertebrate Collections: Ornithology		
 AM:Palaeontology	s	Australian Museum, Palaeontology Collection		
 AM<ARG>	s	Acatushun Museum at the Estancia Haberton			
-AM<BLG>	s	Asenovgrad Paleontology Museum			
+AM<BLG>	s	Asenovgrad Paleontology Museum	AM-BG		
 AMAL	s	Anniston Museum of Natural History			
 AMAZ	s	Universidad Nacional de la Amazonia Peruana			
 AMB	s	Associazione Micologica Bresadola			
@@ -181,7 +181,7 @@ AMDE	s	Brathay Field Centre for Exploration and Field Studies
 AMES	s	Harvard University			
 AMF	s	Marine Science Museum, Fukushima (Aquamarine Fukushima)			
 AMG	s	Albany Museum	AMGS		
-AMGS	s	Albany Museum			
+AMGS	s	Albany Museum	AMG		
 AMH	s	Agharkar Research Institute, Mycology and Plant Pathology Department			
 AMMRL	c	Australian National Reference Laboratory in Medical Mycology			
 AMMS	s	Academy of Military Medical Sciences			
@@ -231,6 +231,7 @@ ANSP:HRP	s	Academy of Natural Sciences of Drexel University, Herpetology collect
 ANSP:Malacology	s	Academy of Natural Sciences of Drexel University, Malacology Collection		
 ANSP:MAM	s	Academy of Natural Sciences of Drexel University, Mammal collection		
 ANSP:ORN	s	Academy of Natural Sciences of Drexel University, Ornithology collection		
+ANT	s	Anguilla National Trust			
 ANTU	s	Changbai Mountain National Nature Reserve Administration Bureau			
 ANU<AUS>	s	Australian National University	ANU<AUS>,ANU<AUST>		
 ANU<CHN>	s	Anhui University, Biology Department			
@@ -611,7 +612,7 @@ BNFF	s	Banff Museum
 BNFH	s	U.S. Forest Service, Bitterroot National Forest			
 BNH	s	Nassau Botanical Gardens, Department of Agriculture			
 BNHD	s	Bengal Natural History Museum			
-BNHM<CHN>	s	Beijing Natural History Museum			
+BNHM<CHN>	s	Beijing Natural History Museum	BMAM		
 BNHM<IND>	s	Bombay Natural History Museum			
 BNHS	s	Bombay Natural History Society			
 BNI	c	Bernhard Nocht Institute for Tropical Medicine			
@@ -2882,6 +2883,7 @@ ICBR	s	International Centre for Bamboo and Rattan
 ICBU	s	Bishop's University, Natural History Museum			
 ICCF	c	Collection of Industrial Microorganisms			
 ICEB	s	Eurouniversity			
+ICEBB	c	Indonesian Centre for Extremophile Bioresources and Biotechnology			
 ICEL	s	Icelandic Institute of Natural History			
 ICESI	s	Herbario Icesi, Universidad ICESI			
 ICF	s	INIFAP			
@@ -7247,7 +7249,7 @@ UMTP	s	Universiti Malaysia Terengganu
 UMUT	s	University Museum, University of Tokyo			
 UMUTZ	s	Department of Zoology, University Museum	ZUMT		
 UMZ	s	Univesity Museum of Zoology, Cambridge University			
-UMZC	s	University Museum of Zoology Cambridge			
+UMZC	s	University Museum of Zoology Cambridge	CUMZ ,UMZC 		
 UMZM	s	University of Montana, Zoological Museum			
 UN	s	University of Nebraska			
 UNA	s	University of Alabama, Department of Biological Sciences			
