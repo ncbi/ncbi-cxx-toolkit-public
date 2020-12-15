@@ -95,7 +95,7 @@ private:
 
 void CAlnTestApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey("in", "InputFileName",
         "Name of file to read from (standard input by default)",
@@ -149,7 +149,7 @@ void CAlnTestApp::Init(void)
 void CAlnTestApp::LoadInputAlns(const string& file_name, const string& asn_type)
 {
     bool binary = !asn_type.empty();
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(
         binary ? eSerial_AsnBinary : eSerial_AsnText, file_name));
 
     CAlnAsnReader reader(&GetScope());
