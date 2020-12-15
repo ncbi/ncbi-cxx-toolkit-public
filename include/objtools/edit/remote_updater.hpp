@@ -104,7 +104,7 @@ private:
 
    IObjtoolsListener* m_pMessageListener=nullptr;
    CRef<CMLAClient>  m_mlaClient;
-   auto_ptr<CCachedTaxon3_impl>  m_taxClient;
+   unique_ptr<CCachedTaxon3_impl>  m_taxClient;
    bool m_enable_caching=true;
    CMutex m_Mutex;
    DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
