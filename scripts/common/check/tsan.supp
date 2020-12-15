@@ -87,3 +87,11 @@ race:^MT_LOCK_AddRef$
 race:^tds_socket_write$
 race:^tds_socket_read$
 
+
+################################################################
+# satskyse CXX-11282
+
+# It has already been checked by the original developer long ago,
+# see the SVN revision 347572 (false positive)
+race:>::x_GuardedUnlock() const$
+
